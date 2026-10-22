@@ -42,4 +42,4 @@
 
 ## Estado de publicación
 
-Los cambios de código de esta fase están en el repositorio local. No se creó un commit, no se hizo `push` ni se desplegó un nuevo build de Vercel en esta fase. La compilación local debe pasar antes de publicar.
+La compilación local de producción pasó. El commit `5a6cfef` está publicado en `main`; GitHub reportó que Vercel completó el despliegue. La ruta de POS en producción respondió con el acceso interno y el archivo JavaScript público contiene `record_sale_payment`, `catalog_inventory_links` y los mensajes de órdenes urgentes. La página interna requiere iniciar sesión con una cuenta autorizada para ver el panel.
