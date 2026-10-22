@@ -31,3 +31,30 @@
 .site-footer{position:relative}.footer-link-column a,.footer-contact-column a{transition:color .18s ease,transform .18s ease}.footer-link-column a:hover,.footer-contact-column a:hover{transform:translateX(2px)}
 @media(max-width:760px){.site-services-section{padding-top:65px;padding-bottom:70px}.site-services-grid{gap:10px}.site-contact-page{width:calc(100% - 28px);margin-bottom:44px}.site-contact-links a{max-width:100%;flex-wrap:wrap}.site-contact-intro>p{max-width:35ch}.site-contact-hours{margin-top:23px}}
 @media(prefers-reduced-motion:reduce){.public-site *,.public-site *:before,.public-site *:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* Claridad de navegación y lectura en las páginas públicas. */
+@font-face{font-family:VisualCorpPublicDMSans;src:url('/public-site/fonts/DMSans-Regular.ttf') format('truetype');font-style:normal;font-weight:400;font-display:swap}
+@font-face{font-family:VisualCorpPublicDMSans;src:url('/public-site/fonts/DMSans-SemiBold.ttf') format('truetype');font-style:normal;font-weight:600;font-display:swap}
+@font-face{font-family:VisualCorpPublicDMSans;src:url('/public-site/fonts/DMSans-Bold.ttf') format('truetype');font-style:normal;font-weight:700 900;font-display:swap}
+.public-site,.public-site .about-mark small{font-family:VisualCorpPublicDMSans,Arial,sans-serif}
+.quote-label-short{display:none}
+.site-nav-group.is-active>summary{color:#181a21}
+.site-nav-group.is-active>summary:after,.site-nav-link.is-active:after{content:"";position:absolute;bottom:14px;left:0;right:0;height:2px;border-radius:2px;background:linear-gradient(90deg,#009ee2,#e5007e,#ffec00)}
+.site-nav-link{position:relative}.site-nav-group>summary{position:relative}
+.site-service-card{display:flex;flex-direction:column}
+.site-service-card p{min-height:0;font-size:13px;line-height:1.6}
+.site-card-link{margin-top:auto;padding-top:20px;font-size:12px}
+.site-service-icon{color:#a51091}
+.site-service-note{max-width:720px;margin:28px 0 0;padding-left:15px;border-left:2px solid #bd128f;color:#666874;font-size:13px;line-height:1.7}
+.site-address-link{display:inline-flex;align-items:center;gap:6px;margin-top:12px;color:#871078;font-size:12px;font-weight:750}
+.site-address-link:hover{color:#5f0a58}
+.site-contact-hours small{font-size:12px;line-height:1.5}
+.site-contact-page>div[id],.site-quote-page>div[id]{min-width:0;scroll-margin-top:95px}
+.site-quote-page>div[id]>.site-lead-form{background:#fafafd}
+.site-form-error a{display:inline-flex;align-items:center;gap:3px;margin-left:5px;color:inherit;font-weight:750;text-decoration:underline}
+.site-lead-form>label,.site-form-row label{font-size:12px}
+.site-lead-form input,.site-lead-form select,.site-lead-form textarea{font-size:14px}
+.site-form-note,.site-form-title small{font-size:11px}
+.footer-link-column>a,.footer-contact-column>a,.footer-brand-column>p,.footer-contact-column>p,.footer-location{font-size:12px}
+@media(max-width:760px){.quote-label-wide{display:none}.quote-label-short{display:inline}.site-quote-button{width:auto;min-width:84px;padding:0 10px;font-size:11px;gap:5px}.site-nav-group.is-active>summary:after,.site-nav-link.is-active:after{display:none}.site-service-card p{font-size:12px}.site-service-note{font-size:12px}.site-contact-hours small{font-size:11px}}
+@media(max-width:360px){.site-quote-button{min-width:72px;padding:0 7px;font-size:10px}.site-header-inner{padding:0 12px;gap:9px}.site-brand{width:116px}}

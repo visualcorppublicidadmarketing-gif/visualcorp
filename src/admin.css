@@ -1,0 +1,84 @@
+.area-admin .admin-edit-status,
+.area-admin .admin-list-message {
+  margin: -4px 0 18px;
+  color: #626371;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.area-admin .admin-error,
+.area-operations .admin-error {
+  margin: 14px 0;
+  padding: 11px 13px;
+  border: 1px solid #f1c5d0;
+  border-radius: 9px;
+  background: #fff5f7;
+  color: #a92249;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.area-admin .admin-request-filters,
+.area-operations .admin-request-filters {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+.admin-request-filters label:first-child { flex: 1; }
+.admin-request-filters label:nth-child(2) { width: 170px; }
+.admin-request-filters .button { flex: none; }
+
+.area-admin .admin-requests-layout,
+.area-operations .admin-requests-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(245px, 29%);
+  gap: 18px;
+  align-items: start;
+}
+
+.admin-requests-layout .table-wrap { min-width: 0; }
+.admin-requests-layout table { min-width: 580px; }
+.admin-request-selected td { background: #faf5fb; }
+.admin-request-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.admin-request-open b { color: #7b1a77; text-decoration: underline; text-underline-offset: 2px; }
+.admin-request-open small { color: #777985; }
+.admin-request-open:focus-visible { outline: 3px solid #a5109145; outline-offset: 3px; }
+
+.admin-request-detail {
+  padding: 20px;
+  border: 1px solid #e8e4ef;
+  border-radius: 13px;
+  background: #fbfafd;
+}
+.admin-request-detail h3 { margin: 9px 0 10px; font-size: 18px; line-height: 1.2; }
+.admin-request-detail dl { margin: 17px 0; }
+.admin-request-detail dl > div { padding: 10px 0; border-top: 1px solid #e9e6ed; }
+.admin-request-detail dt { margin-bottom: 5px; color: #777885; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.admin-request-detail dd { margin: 0; color: #272833; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
+.admin-contact-actions { display: grid; gap: 8px; }
+.admin-contact-actions a,
+.admin-contact-actions span { font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.admin-contact-actions a { color: #781774; font-weight: 700; }
+
+@media (max-width: 1150px) {
+  .area-admin .admin-requests-layout,
+  .area-operations .admin-requests-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+  .area-admin .admin-request-filters,
+  .area-operations .admin-request-filters { flex-wrap: wrap; }
+  .admin-request-filters label:first-child { flex-basis: 100%; }
+  .admin-request-filters label:nth-child(2) { flex: 1; width: auto; }
+  .admin-request-filters .button { min-height: 40px; }
+}

@@ -153,7 +153,7 @@ export function WorkspaceProvider({ children }) {
     const hydrate = async () => {
       const [settingsResult, servicesResult, catalogResult] = await Promise.all([
         supabase.from('site_settings').select('*').eq('id', 'main').maybeSingle(),
-        supabase.from('services').select('*').eq('is_published', true).order('sort_order'),
+        supabase.from('services').select('*').order('sort_order'),
         supabase.from('public_quote_catalog_products').select('*').order('sort_order'),
       ]);
       if (!active || settingsResult.error || servicesResult.error || catalogResult.error) return;
@@ -169,13 +169,13 @@ export function WorkspaceProvider({ children }) {
       }));
       setData((current) => ({ ...current,
         settings: settings ? { ...current.settings, name: settings.brand, location: settings.address, heroEyebrow: settings.hero_kicker, heroTitle: settings.hero_title, heroText: settings.hero_text, contactPhone: settings.phone, email: settings.email } : current.settings,
-        services: services.length ? services : current.services,
+        services: servicesResult.data ? services : current.services,
         catalog: remoteCatalog.length ? remoteCatalog : current.catalog,
       }));
     };
     void hydrate();
     return () => { active = false; };
-  }, []);
+  }, [user]);
   const refreshRemote = useCallback(async () => {
     if (!supabase || !organizationId || !user) return;
     const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, movementsResult, customersResult, salesResult, costsResult, metricsResult] = await Promise.all([
@@ -185,9 +185,9 @@ export function WorkspaceProvider({ children }) {
       supabase.from('areas').select('id,code,name').eq('organization_id', organizationId),
       supabase.from('inventory_categories').select('id,code,name').eq('organization_id', organizationId),
       supabase.from('branches').select('id,code,name').eq('organization_id', organizationId),
-      supabase.from('inventory_movements').select('id,variant_id,branch_id,movement_type,quantity_delta,reason,reference_type,reference_id,created_by,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
+      supabase.from('inventory_movements').select('id,variant_id,branch_id,location_code,movement_type,quantity_delta,reason,reference_type,reference_id,created_by,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
       supabase.from('customers').select('id,full_name,phone,email,notes,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }),
-      supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity,backordered_quantity),sale_payments(method,amount)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
+      supabase.from('sales').select('id,sale_code,branch_id,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity,backordered_quantity),sale_payments(method,amount)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
       supabase.from('inventory_item_costs').select('variant_id,unit_cost,supplier_name,updated_at').eq('organization_id', organizationId),
       supabase.from('inventory_stock_metrics').select('variant_id,branch_id,location_code,quantity,reserved_quantity,available_quantity,reserved_percent,last_restock_at,lifetime_consumed,consumed_last_30_days,movement_count,last_movement_at').eq('organization_id', organizationId),
     ]);
@@ -228,12 +228,12 @@ export function WorkspaceProvider({ children }) {
     const movementLabel = { receipt: 'entrada', consumption: 'consumo', return: 'devolución', waste: 'merma', sale: 'venta', adjustment: 'ajuste', transfer_out: 'transferencia_salida', transfer_in: 'recepcion_transferencia' };
     const remoteMovements = (movementsResult.data || []).map((row) => {
       const variant = variantById.get(row.variant_id); const item = itemById.get(variant?.item_id); const branch = branchById.get(row.branch_id);
-      return { id: row.id, itemId: row.variant_id, itemName: item?.name || variant?.sku || 'Artículo', quantity: Math.abs(Number(row.quantity_delta)), type: movementLabel[row.movement_type] || row.movement_type, actor: row.created_by === user.id ? user.email : 'Equipo autorizado', reason: row.reason, reference: row.reference_id || '', branch: branch?.name || '', createdAt: row.created_at, shortage: 0 };
+      return { id: row.id, itemId: row.variant_id, itemName: item?.name || variant?.sku || 'Artículo', unit: item?.base_unit || '', quantity: Math.abs(Number(row.quantity_delta)), quantityDelta: Number(row.quantity_delta), type: movementLabel[row.movement_type] || row.movement_type, actor: row.created_by === user.id ? user.email : `Usuario ${row.created_by}`, reason: row.reason, referenceType: row.reference_type || '', reference: row.reference_id || '', branch: branch?.name || '', location: row.location_code || 'MAIN', createdAt: row.created_at, shortage: 0 };
     });
     const remoteCustomers = (customersResult.data || []).map((row) => ({ id: row.id, name: row.full_name, phone: row.phone, email: row.email, notes: row.notes, createdAt: row.created_at }));
     const customerById = new Map(remoteCustomers.map((row) => [row.id, row]));
     const paymentLabels = { cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', other: 'Otro' };
-    const remoteSales = (salesResult.data || []).map((row) => { const paid = (row.sale_payments || []).reduce((sum, payment) => sum + Number(payment.amount), 0); const methods = [...new Set((row.sale_payments || []).map((payment) => payment.method))]; return { id: row.id, code: row.sale_code || row.id.slice(0, 8), total: Number(row.total), paid, balance: Math.max(0, Number(row.total) - paid), date: row.created_at, method: methods.length > 1 ? 'Pago dividido' : paymentLabels[methods[0] || row.payment_method] || 'Otro', customer: customerById.get(row.customer_id)?.name || '', description: (row.sale_lines || []).map((line) => line.description_snapshot).join(', '), quantity: (row.sale_lines || []).reduce((sum, line) => sum + Number(line.quantity), 0), urgent: row.urgent_backorder, status: row.status, note: row.note }; });
+    const remoteSales = (salesResult.data || []).map((row) => { const paid = (row.sale_payments || []).reduce((sum, payment) => sum + Number(payment.amount), 0); const methods = [...new Set((row.sale_payments || []).map((payment) => payment.method))]; return { id: row.id, code: row.sale_code || row.id.slice(0, 8), branchId: row.branch_id, branchCode: branchById.get(row.branch_id)?.code || '', branchName: branchById.get(row.branch_id)?.name || '', total: Number(row.total), paid, balance: Math.max(0, Number(row.total) - paid), date: row.created_at, method: methods.length > 1 ? 'Pago dividido' : paymentLabels[methods[0] || row.payment_method] || 'Otro', customer: customerById.get(row.customer_id)?.name || '', description: (row.sale_lines || []).map((line) => line.description_snapshot).join(', '), quantity: (row.sale_lines || []).reduce((sum, line) => sum + Number(line.quantity), 0), urgent: row.urgent_backorder, status: row.status, note: row.note }; });
     setData((current) => ({ ...current, inventory: remoteInventory, inventoryMovements: remoteMovements, customers: remoteCustomers, sales: remoteSales }));
   }, [organizationId, user]);
   useEffect(() => { void refreshRemote(); }, [refreshRemote]);

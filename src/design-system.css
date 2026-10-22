@@ -235,3 +235,118 @@
 @media(max-width:640px){.pos-cart-builder{padding:12px}.pos-cart-inputs{grid-template-columns:1fr 1.5fr}.pos-cart-line{grid-template-columns:34px minmax(0,1fr) auto 28px;gap:7px}.pos-cart-line>img,.pos-line-placeholder{width:34px;height:34px}.pos-cart-line>strong{font-size:10px}.pos-cart-heading>strong{font-size:15px}}
 .pos-product-browser{display:grid;gap:10px}.pos-product-browser>label{margin:0}.pos-product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:280px;overflow:auto;padding:1px}.pos-product-tile{display:grid;grid-template-columns:42px minmax(0,1fr);align-items:center;gap:9px;min-width:0;padding:9px;text-align:left;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);cursor:pointer;transition:border-color .15s,background .15s,transform .15s}.pos-product-tile:hover{border-color:#b9a9d4;transform:translateY(-1px)}.pos-product-tile.selected{border-color:#7958a5;background:#f8f4fc;box-shadow:0 0 0 2px #7958a51a}.pos-product-tile>img,.pos-product-tile>.pos-line-placeholder{width:42px;height:42px;object-fit:cover;border-radius:7px}.pos-product-tile-copy{display:grid;gap:3px;min-width:0}.pos-product-tile-copy b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}.pos-product-tile-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#858691;font-size:8px}.pos-product-tile-copy strong{font-size:9px}.pos-search-hint{color:#858691;font-size:9px}
 @media(max-width:520px){.pos-product-grid{grid-template-columns:1fr;max-height:230px}.pos-product-tile{grid-template-columns:38px minmax(0,1fr)}.pos-product-tile>img,.pos-product-tile>.pos-line-placeholder{width:38px;height:38px}}
+
+/* Shared foundations used by the public site and both internal workspaces.
+   Keep page-specific composition in its own stylesheet. */
+:root {
+  --vc-ink: #20212b;
+  --vc-muted: #5f626f;
+  --vc-line: #e2e4eb;
+  --vc-surface: #fff;
+  --vc-accent: #a51091;
+  --vc-focus: #8d117e;
+  --vc-radius-control: 11px;
+  --vc-radius-panel: 17px;
+  --vc-shadow-panel: 0 8px 26px #25233a0a;
+}
+
+.public-site,
+.work-app,
+.access-screen { accent-color: var(--vc-accent); }
+
+:is(.public-site, .work-app, .access-screen) :is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--vc-focus);
+  outline-offset: 3px;
+}
+
+:where(.public-site, .work-app, .access-screen) :where(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+
+/* Internal shells: readable shared controls without changing module layouts. */
+.work-app {
+  --surface: var(--vc-surface);
+  --line: var(--vc-line);
+  --ink: var(--vc-ink);
+  --muted: var(--vc-muted);
+}
+
+.work-app .sidebar-link { min-height: 44px; font-size: 13px; }
+.work-app .sidebar-caption,
+.work-app .workspace-pill { font-size: 10px; }
+.work-app .sidebar-profile b,
+.work-app .switch-app b { font-size: 11px; overflow-wrap: anywhere; }
+.work-app .breadcrumbs,
+.work-app .breadcrumbs b,
+.work-app .local-badge { font-size: 12px; }
+.work-app .page-heading p { color: var(--vc-muted); font-size: 13px; }
+.work-app .panel,
+.work-app .stat-card,
+.work-app .operation-card { border-radius: var(--vc-radius-panel); box-shadow: var(--vc-shadow-panel); }
+.work-app .stat-meta > span,
+.work-app .panel-intro,
+.work-app .notice-box p { color: var(--vc-muted); font-size: 11px; }
+.work-app .stat-meta > small { color: var(--vc-muted); font-size: 10px; white-space: normal; line-height: 1.4; }
+.work-app .text-link,
+.work-app .quick-links b,
+.work-app .activity-row b,
+.work-app .sale-row b { font-size: 12px; }
+.work-app .quick-links small,
+.work-app .activity-row small,
+.work-app .sale-row small { font-size: 10px; }
+.work-app :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  min-height: 44px;
+  border-radius: var(--vc-radius-control);
+  font-size: 14px;
+}
+.work-app :is(input, select, textarea):focus-visible { border-color: var(--vc-focus); }
+.work-app .icon-button,
+.work-app .top-avatar,
+.work-app .sidebar-brand > button { min-width: 44px; min-height: 44px; }
+.work-app .table-wrap { max-width: 100%; overflow-x: auto; }
+.work-app :where(th, td) { font-size: 11px; line-height: 1.5; }
+.work-app td { color: #4d505d; }
+
+/* Public controls retain their visual design and gain consistent keyboard/touch use. */
+.public-site :where(.site-menu-toggle, .site-quote-button, .site-primary-button, .site-secondary-button) {
+  min-height: 44px;
+}
+.public-site :where(input, select, textarea) { accent-color: var(--vc-accent); }
+.public-site :is(.site-lead-form input, .site-lead-form select, .site-lead-form textarea) {
+  font-size: 14px;
+}
+.public-site :is(.site-lead-form label, .site-form-note) { font-size: 12px; }
+
+.access-card {
+  border-color: var(--vc-line);
+  border-radius: var(--vc-radius-panel);
+  box-shadow: 0 18px 55px #20212b14;
+}
+.access-card .site-primary-button {
+  min-height: 48px;
+  border-radius: var(--vc-radius-control);
+  background: var(--vc-ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 750;
+}
+.access-card .site-primary-button:hover { background: #363746; }
+.access-card input { min-height: 46px; font-size: 14px; }
+.access-card :is(button, input):focus-visible {
+  outline: 3px solid var(--vc-focus);
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .work-app :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+  .public-site :is(.site-lead-form input, .site-lead-form select, .site-lead-form textarea),
+  .access-card input {
+    font-size: 16px;
+  }
+}
+
+@media (forced-colors: active) {
+  :is(.public-site, .work-app, .access-screen) :is(a, button, input, select, textarea, summary):focus-visible {
+    outline-color: Highlight;
+  }
+}
