@@ -79,3 +79,11 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 - Un token de GitHub fue pegado anteriormente en el chat: revocarlo en GitHub y no reutilizarlo.
 - No publicar stock confirmado hasta completar conteo. Mantener los libros y capturas originales; la cola conserva los datos leídos para conciliación.
 - El catálogo se copió solamente desde `public.quote_calculator_products` de `estebanico.com`; tablas académicas, credenciales y datos ajenos a Visual Corp se excluyeron.
+
+## Novedades internas — 22 de octubre de 2026
+
+- Se agregó un changelog común en Supabase, administrable desde `/admin/cambios` y consultable desde `/operaciones/cambios`. El resumen de publicaciones también aparece en los paneles principales y se actualiza en tiempo real.
+- Las entradas admiten borrador, publicación, edición, archivo, categoría, etiqueta de versión y audiencia (ambos paneles, solo administración o solo operaciones). RLS limita lectura por audiencia/rol y gestión a perfiles administrativos autorizados.
+- Se publicaron entradas iniciales para inventario, POS y flujos operativos conectados, junto con la propia función del changelog.
+- Migraciones aplicadas: `20261022184130_internal_change_log` y `20261022184223_publish_changelog_feature`.
+- Guía de uso y límites: [`../docs/CHANGELOG_INTERNO.md`](../docs/CHANGELOG_INTERNO.md).
