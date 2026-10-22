@@ -4,6 +4,8 @@
 **Proyecto:** Visual Corp Suite  
 **Ruta interna:** `/operaciones/flujos`
 
+**Publicación comprobada:** commit `3365e65c4e20ac3f22a08d1f17e44668130c51e9`; Vercel producción `READY`; la ruta devolvió HTTP 200. El contenido operativo requiere iniciar sesión.
+
 Se completó la primera implementación integrada de los cinco flujos que estaban pendientes. Los cambios quedaron en migraciones de Supabase y en la app web; las operaciones conservan actor, fecha, sucursal y referencia. No se generaron operaciones de prueba ni se alteraron saldos físicos.
 
 ## Caja y cierres
