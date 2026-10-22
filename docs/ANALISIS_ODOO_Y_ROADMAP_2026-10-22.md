@@ -47,7 +47,7 @@ El POS actual guarda ventas, clientes, abonos y saldos; puede convertir cotizaci
 
 La navegación interna en teléfono y tableta ahora abre un panel lateral con botón accesible, fondo de cierre y tecla Escape; al elegir una sección el panel se cierra y el área principal ocupa todo el ancho. Se añadió una capa visual compartida para Admin Web, Operaciones y POS: superficies modulares, jerarquía tipográfica, controles táctiles y foco visible. En inventario, la cola de importación ahora pagina por hoja, permite vincular una fila con una variante existente o excluirla con motivo, y guarda cada decisión junto al actor en una bitácora protegida. El vínculo nunca crea stock. Al crear un artículo, dejar vacío el conteo significa “sin conteo”; cero requiere ingresarse explícitamente.
 
-En esta iteración de la Fase 0, el resumen del POS se ajusta para mostrar sus tres métricas en una sola fila en pantallas medianas, pasar a tarjetas legibles en móvil y presentar las órdenes recientes como módulos independientes. La versión se mantiene en la rama de revisión hasta validar el despliegue; no se modificaron ventas, pagos ni existencias.
+En esta iteración de la Fase 0, el resumen del POS se ajusta para mostrar sus tres métricas en una sola fila en pantallas medianas, pasar a tarjetas legibles en móvil y presentar las órdenes recientes como módulos independientes. También inicia la Fase 3 con un carrito multiartículo conectado al registro transaccional existente: conserva cotizaciones aceptadas y sus líneas, distingue precios confirmados de valores acordados manualmente, y mantiene vínculos de inventario para reserva al confirmar. La versión queda en rama de revisión hasta validar el despliegue; no se modificaron ventas, pagos ni existencias reales durante el desarrollo.
 
 ## Plan maestro de implementación por fases
 
@@ -86,6 +86,8 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 **Cierre:** un pedido puede seguirse desde faltante hasta recepción parcial/final, cada unidad recibida actualiza el saldo una sola vez y un reintento no duplica stock.
 
 ### Fase 3 — POS de mostrador y experiencia de asesoría
+
+**Estado:** parcial. Ya existe carrito multiartículo con búsqueda por nombre, filtro por familia, imágenes de catálogo, cantidad, precio unitario explícito y total en vivo; se registra en una sola operación idempotente, con cliente y abono, y conserva los artículos trazables de cotizaciones aceptadas. El resumen y el carrito se adaptan a móvil. Siguen pendientes cajero asignado, pagos combinados, guardar/recuperar ventas en espera y ciclo completo de turnos y cierres.
 
 - Reemplazar la captura de una sola línea por catálogo visual con búsqueda, categorías, imágenes, variantes, cantidades, descuentos autorizados y carrito multiartículo.
 - Agilizar selección o alta de cliente, vincular asesor/caja/sucursal y mostrar disponibilidad reservable antes de confirmar.
