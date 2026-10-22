@@ -47,6 +47,8 @@ El POS actual guarda ventas, clientes, abonos y saldos; puede convertir cotizaci
 
 La navegación interna en teléfono y tableta ahora abre un panel lateral con botón accesible, fondo de cierre y tecla Escape; al elegir una sección el panel se cierra y el área principal ocupa todo el ancho. Se añadió una capa visual compartida para Admin Web, Operaciones y POS: superficies modulares, jerarquía tipográfica, controles táctiles y foco visible. En inventario, la cola de importación ahora pagina por hoja, permite vincular una fila con una variante existente o excluirla con motivo, y guarda cada decisión junto al actor en una bitácora protegida. El vínculo nunca crea stock. Al crear un artículo, dejar vacío el conteo significa “sin conteo”; cero requiere ingresarse explícitamente.
 
+En esta iteración de la Fase 0, el resumen del POS se ajusta para mostrar sus tres métricas en una sola fila en pantallas medianas, pasar a tarjetas legibles en móvil y presentar las órdenes recientes como módulos independientes. La versión se mantiene en la rama de revisión hasta validar el despliegue; no se modificaron ventas, pagos ni existencias.
+
 ## Plan maestro de implementación por fases
 
 El orden prioriza primero la confiabilidad de los datos y luego automatiza los movimientos que dependen de ellos. Cada fase se publica como una entrega pequeña, documentada en el changelog, migrada de forma compatible y verificada en la app desplegada. No se declara disponible una función solo por existir su pantalla: debe completar el flujo y dejar evidencia en la base central.
