@@ -14,8 +14,9 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 - Páginas iniciales para Inicio y seis familias de servicios, más configuración confirmada de Visual Corp. No se inventaron artículos ni publicaciones editoriales.
 - Inventario sugerido: 70 artículos con códigos `VC-INV-*`, categorías y áreas de Impresión, Sublimación, Troquelado, Láser, Taller, Neones y Bodega general. No se crearon saldos para esos artículos: todos requieren conteo físico.
 - Inventarios fuente: 749 filas de los libros de Visual Corp y Gigaprint en una cola de importación con lotes, sucursal, hoja, fila, datos originales y estado pendiente de revisión. No se convirtieron textos ambiguos en stock.
-- Base de clientes: tabla de Supabase lista y formulario del POS conectado. Empieza vacía; no se importaron datos personales de clientes.
-- Operaciones de inventario y POS: conteo auditado, entradas/salidas, traspasos entre sucursales y ventas se registran mediante RPC transaccionales en Supabase. Las ventas urgentes permiten dejar la parte no disponible como pendiente de compra.
+- Base de clientes: tabla `customers` de Supabase; al confirmar una orden, el POS asocia un cliente existente o crea uno y busca evitar duplicados por teléfono.
+- Inventario: las RPC centrales de conteo, movimiento, transferencia y `create_pos_sale` están aplicadas. En la revisión del 22 de octubre, los 70 artículos y 70 variantes no tenían filas de saldo en `inventory_stock`; eso sigue siendo pendiente de conteo, no stock físico confirmado.
+- POS: `/operaciones/pos` guarda órdenes y pagos en Supabase mediante una RPC transaccional, con clave de reintento, bloqueo de variante y salida de stock dentro de la misma transacción. Los abonos conservan saldo pendiente y admiten pagos posteriores idempotentes. Solo las variantes vinculadas explícitamente en Inventario reducen stock; los faltantes se marcan como compra urgente pendiente. El POS no emite comprobantes tributarios.
 - Costos privados: lectura/edición disponible en inventario solo para propietario, admin POS y gerencia; RLS en Supabase limita el acceso.
 
 ## Accesos internos
@@ -28,11 +29,11 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 
 ## Publicación y límites actuales
 
-- Las migraciones aplicadas y sus archivos locales usan los mismos identificadores remotos: `20261022161906`, `20261022162602`, `20261022162803`, `20261022162916`, `20261022163021`, `20261022163625` y `20261022165634` (además de las tres migraciones base `20261022154601`–`20261022154835`).
+- Las migraciones de POS/inventario recién aplicadas se guardan localmente con sus versiones remotas `20261022172435`, `20261022172638`, `20261022173445` y `20261022173630`.
 - La compilación de producción de Vite pasó después de conectar Auth, catálogo, solicitudes públicas, clientes, POS y movimientos transaccionales. Vite muestra una advertencia de paquete principal mayor a 500 kB.
 - El asesor de seguridad no reporta errores; sí marca 4 funciones `SECURITY DEFINER` como advertencia porque son RPC autenticadas y con validación de rol/sucursal dentro de la función. El asesor de rendimiento muestra recomendaciones informativas de índices y políticas permisivas.
 - El commit `dd9e3fb858cc60dc2129466a99ad41e648e24cba` se publicó en `main`. La compilación local de producción pasó; Vite advierte que el paquete principal supera 500 kB. Se comprobó en el navegador que `https://visualcorp-suite.vercel.app/admin` entrega la versión actual y muestra el acceso con Google y el enlace por correo. La API de gestión de Vercel no permitió consultar el detalle del despliegue en esta sesión.
-- El panel web, solicitudes públicas, lista de clientes, catálogo, inventario y ventas usan Supabase. Las cotizaciones internas siguen guardándose localmente y deben conectarse a una tabla remota en una fase posterior. El inventario fuente está disponible para revisar; no se deben usar sus filas pendientes para prometer stock.
+- El panel web, solicitudes públicas, catálogo, movimientos del inventario, clientes, ventas y pagos usan Supabase. No hay vínculos producto-variante preasignados: el equipo autorizado debe configurarlos tras cotejar existencia física y variante. Las filas importadas siguen pendientes de conciliación y no se deben usar para prometer stock. Las cotizaciones internas continúan en almacenamiento local y su integración compartida queda para una fase posterior.
 - Las variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` aparecen configuradas en Vercel. El propietario y el administrador deben completar su primer inicio de sesión para crear y activar sus perfiles.
 
 ## Inicio de sesión con Google — 22 de octubre de 2026
@@ -48,6 +49,14 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 - La app Google sigue en estado «Prueba» y permite iniciar sesión solo a las dos cuentas de prueba registradas. Para incorporar más cuentas, agregarlas en Usuarios de prueba de Google Cloud.
 - La migración `20261022165634_bootstrap_primary_admins` ya está aplicada y asigna roles solo a identidades con correo confirmado: `visualcorp.publicidad.marketing@gmail.com` recibe `owner`; `estebanico10@gmail.com` recibe `admin` y `website_admin`. Supabase reportaba cero perfiles antes de activarla, por lo que cada cuenta debe iniciar sesión una vez para que se cree su perfil.
 - La dirección visual del Plan v02 está presentada como prototipo revisable en `docs/design-v02/`; no cambia la aplicación ni se publica como parte de la interfaz del producto.
+
+## Auditoría del flujo POS e inventario — 22 de octubre de 2026
+
+- Diagnóstico local en `docs/AUDITORIA_TECNICA_POS_INVENTARIO_2026-10-22.md`; contrastado con las tablas y funciones del proyecto Supabase VISUAL.
+- Decisión confirmada por el usuario: reservar/descontar el artículo físico al confirmar la orden, incluso si queda saldo pendiente.
+- Clasificación de productos/variantes pendiente; criterio seguro de trabajo mientras tanto: solo una variante asignada explícitamente al inventario puede generar un movimiento de stock.
+- Fase técnica aplicada: venta y salida de stock atómicas, reintento seguro, vínculo explícito del catálogo con variante/sucursal, alta de cliente desde POS, registro inicial y posterior de abonos. La cantidad POS se limita a unidades enteras hasta verificar conversiones por familia.
+- Pendiente antes del uso amplio: crear vínculos después del conteo físico, validar roles/sucursales, y ensayar caja y bodega con usuarios. Turnos de caja, devoluciones, unidades fraccionadas, producción y cierre requieren reglas operativas aprobadas.
 
 ## Seguridad y procedencia
 

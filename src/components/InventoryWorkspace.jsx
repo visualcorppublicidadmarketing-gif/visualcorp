@@ -17,9 +17,12 @@ export function InventoryWorkspace() {
   const [importRows, setImportRows] = useState([]);
   const [importBatches, setImportBatches] = useState({});
   const [pendingImportCount, setPendingImportCount] = useState(null);
+  const [catalogLinks, setCatalogLinks] = useState([]);
+  const [linkDraft, setLinkDraft] = useState({ catalogProductId:'', variantId:'', branch:'Visual Corp', location:'MAIN' });
   const [term,setTerm]=useState(''); const [area,setArea]=useState('Todas'); const [branch,setBranch]=useState('Todas');
   const [showForm,setShowForm]=useState(false); const [movement,setMovement]=useState(null); const [draft,setDraft]=useState(blankItem); const [costEdit,setCostEdit]=useState(null);
   const canSeeCosts=roles.some((role)=>['owner','admin','manager'].includes(role));
+  const canManageLinks=roles.some((role)=>['owner','admin','manager','warehouse'].includes(role));
   const items=data.inventory||[]; const events=data.inventoryMovements||[];
   React.useEffect(() => {
     if (!supabase || !organizationId) return;
@@ -34,6 +37,17 @@ export function InventoryWorkspace() {
       setPendingImportCount(rowsResult.count || 0);
       setImportBatches(Object.fromEntries((batchesResult.data || []).map((batch) => [batch.id, batch])));
     });
+    return () => { active = false; };
+  }, [organizationId]);
+  React.useEffect(() => {
+    if (!supabase || !organizationId) return;
+    let active = true;
+    supabase.from('catalog_inventory_links').select('id,catalog_product_id,inventory_variant_id,branch_id,location_code,active').eq('organization_id',organizationId).order('created_at')
+      .then(({data: rows,error}) => {
+        if (!active) return;
+        if (error) { flash(`No se pudieron cargar los vínculos catálogo-inventario: ${error.message}`); return; }
+        setCatalogLinks(rows || []);
+      });
     return () => { active = false; };
   }, [organizationId]);
   const visible=useMemo(()=>items.filter(i=>(area==='Todas'||i.area===area)&&(branch==='Todas'||i.branch===branch)&&`${i.name} ${i.category} ${i.variant} ${i.sku}`.toLowerCase().includes(term.toLowerCase())),[items,area,branch,term]);
@@ -60,8 +74,21 @@ export function InventoryWorkspace() {
   };
   const removeItem=async(item)=>{if(!window.confirm(`¿Archivar ${item.name}? Se conserva el historial y no se borra el artículo.`))return;const {error}=await supabase.from('inventory_items').update({active:false}).eq('id',item.remoteItemId).eq('organization_id',organizationId);if(error){flash(`No se pudo archivar el artículo: ${error.message}`);return;}await refreshRemote();flash('Artículo archivado; se conservó su historial.');};
   const saveCost=async(e)=>{e.preventDefault();const cost=Number(costEdit?.unitCost);if(!costEdit||!Number.isFinite(cost)||cost<0)return;const {error}=await supabase.from('inventory_item_costs').upsert({organization_id:organizationId,variant_id:costEdit.variantId,unit_cost:cost,supplier_name:costEdit.supplierName.trim()||null,updated_by:user.id},{onConflict:'organization_id,variant_id'});if(error){flash(`No se pudo guardar el costo: ${error.message}`);return;}await refreshRemote();setCostEdit(null);flash('Costo guardado. Solo los perfiles autorizados pueden verlo.');};
+  const saveCatalogLink=async(e)=>{e.preventDefault();if(!canManageLinks||!linkDraft.catalogProductId||!linkDraft.variantId||!supabase||!organizationId||!user)return;const inventoryRow=items.find((item)=>item.variantId===linkDraft.variantId&&item.branch===linkDraft.branch);if(!inventoryRow){flash('Selecciona una variante física activa para esa sucursal.');return;}const {error}=await supabase.from('catalog_inventory_links').upsert({organization_id:organizationId,catalog_product_id:linkDraft.catalogProductId,inventory_variant_id:linkDraft.variantId,branch_id:inventoryRow.branchId,location_code:linkDraft.location.trim()||'MAIN',active:true,created_by:user.id},{onConflict:'organization_id,catalog_product_id,branch_id'});if(error){flash(`No se pudo vincular el producto: ${error.message}`);return;}const {data:rows,error:readError}=await supabase.from('catalog_inventory_links').select('id,catalog_product_id,inventory_variant_id,branch_id,location_code,active').eq('organization_id',organizationId).order('created_at');if(readError){flash(`El vínculo se guardó, pero no se pudo refrescar la lista: ${readError.message}`);return;}setCatalogLinks(rows||[]);setLinkDraft({...linkDraft,catalogProductId:'',variantId:''});flash('Vínculo guardado. Solo esta asignación explícita hará que una venta afecte el inventario.');};
+  const archiveCatalogLink=async(link)=>{if(!canManageLinks)return;const {error}=await supabase.from('catalog_inventory_links').update({active:false,updated_at:new Date().toISOString()}).eq('id',link.id).eq('organization_id',organizationId);if(error){flash(`No se pudo desactivar el vínculo: ${error.message}`);return;}setCatalogLinks((rows)=>rows.map((row)=>row.id===link.id?{...row,active:false}:row));flash('Vínculo desactivado; el historial de ventas se conserva.');};
   return <div className="inventory-workspace">
     <div className="inventory-heading-row"><div><span className="eyebrow">INVENTARIO · VISUAL CORP + GIGAPRINT</span><h2>Existencias por área y sucursal</h2><p>{pendingImportCount===null?'Cargando las fuentes de inventario…':`${pendingImportCount} filas recibidas y pendientes de cotejo; no cuentan como stock activo hasta revisar cantidades y variantes.`} El catálogo sugerido mantiene IDs únicos y stock cero.</p></div><button className="button button-dark" onClick={()=>setShowForm(v=>!v)}><Plus size={16}/> Añadir artículo</button></div>
+    <section className="panel inventory-list-panel">
+      <div className="panel-heading"><div><span className="eyebrow">CONEXIÓN POS · INVENTARIO</span><h3>Productos de venta vinculados a stock</h3><p>Los productos sin vínculo explícito se registran como conceptos sin control de stock. No se deduce la variante por coincidencia de nombres.</p></div></div>
+      {canManageLinks&&<form className="inventory-form-grid" onSubmit={saveCatalogLink}>
+        <label>Producto del catálogo<select required value={linkDraft.catalogProductId} onChange={e=>setLinkDraft({...linkDraft,catalogProductId:e.target.value})}><option value="">Seleccionar producto</option>{(data.catalog||[]).map(product=><option key={product.id} value={product.id}>{product.name}</option>)}</select></label>
+        <label>Sucursal<select value={linkDraft.branch} onChange={e=>setLinkDraft({...linkDraft,branch:e.target.value})}>{branches.map(value=><option key={value}>{value}</option>)}</select></label>
+        <label>Variante de inventario<select required value={linkDraft.variantId} onChange={e=>setLinkDraft({...linkDraft,variantId:e.target.value})}><option value="">Seleccionar artículo físico</option>{items.filter(item=>item.branch===linkDraft.branch&&!item.archived).map(item=><option key={`${item.variantId}:${item.branchId}`} value={item.variantId}>{item.name}{item.variant?` · ${item.variant}`:''} · {item.sku} · {item.sourceStatus||`${item.quantity} ${item.unit}`}</option>)}</select></label>
+        <label>Ubicación de salida<input value={linkDraft.location} onChange={e=>setLinkDraft({...linkDraft,location:e.target.value})} placeholder="MAIN"/></label>
+        <button className="button button-dark" type="submit">Guardar vínculo</button>
+      </form>}
+      <div className="inventory-events">{catalogLinks.filter(link=>link.active).map(link=>{const product=(data.catalog||[]).find(row=>row.id===link.catalog_product_id);const stock=items.find(row=>row.variantId===link.inventory_variant_id&&row.branchId===link.branch_id);return <article className="inventory-event-row" key={link.id}><span className="inventory-event-icon"><Boxes size={15}/></span><div><b>{product?.name||link.catalog_product_id}</b><small>{stock?`${stock.name}${stock.variant?` · ${stock.variant}`:''} · ${stock.branch} · ${link.location_code}`:`Variante ${link.inventory_variant_id} · Ubicación ${link.location_code}`}</small></div>{canManageLinks&&<button className="button button-outline" type="button" onClick={()=>archiveCatalogLink(link)}>Desactivar</button>}</article>})}{!catalogLinks.some(link=>link.active)&&<div className="inventory-empty">Aún no hay vínculos. Las ventas no reducirán saldo hasta que se asigne cada producto aquí.</div>}</div>
+    </section>
     {pendingImportCount>0&&<section className="panel"><div className="panel-heading"><div><span className="eyebrow">IMPORTACIÓN CON PROCEDENCIA</span><h3>Inventario recibido · revisión necesaria</h3></div><span className="muted-count">{pendingImportCount} filas</span></div><p className="panel-intro">Los libros de Visual Corp y Gigaprint se guardaron sin modificar su contenido. Las cantidades textuales, vacías o ambiguas necesitan validación antes de afectar el stock del POS.</p><div className="table-wrap"><table><thead><tr><th>Archivo fuente</th><th>Hoja</th><th>Fila</th><th>Artículo candidato</th><th>Dato de cantidad recibido</th></tr></thead><tbody>{importRows.slice(0,40).map((row)=><tr key={row.id}><td>{importBatches[row.batch_id]?.source_file||'Inventario importado'}</td><td>{row.source_sheet}</td><td>{row.source_row}</td><td><b>{row.candidate?.name||row.source_reference||row.raw_row?.name||'Por identificar'}</b><small>{row.candidate?.area||''}</small></td><td>{String(row.candidate?.quantity ?? row.raw_row?.quantity ?? row.raw_row?.stock ?? 'Por revisar')}</td></tr>)}</tbody></table>{pendingImportCount>40&&<div className="table-more">Mostrando 40 de {pendingImportCount} filas pendientes.</div>}</div></section>}
     <div className="inventory-stats"><article><Boxes/><span>Artículos</span><b>{items.filter(i=>!i.archived).length}</b></article><article className={low.length?'inventory-stat-alert':''}><CircleAlert/><span>En mínimo / agotados</span><b>{low.length}</b></article><article><ArrowLeftRight/><span>Movimientos</span><b>{events.length}</b></article><article><ClipboardList/><span>Áreas</span><b>{new Set(items.filter(i=>!i.archived).map(i=>i.area).filter(Boolean)).size}</b></article></div>
     {low.length>0&&<div className="inventory-alert"><CircleAlert size={17}/><div><b>{low.length} artículos requieren atención</b><small>{low.slice(0,4).map(i=>`${i.name}${i.variant?` · ${i.variant}`:''}`).join(' · ')}{low.length>4?' · y más':''}</small></div></div>}

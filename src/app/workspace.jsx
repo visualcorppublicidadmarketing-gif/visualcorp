@@ -187,7 +187,7 @@ export function WorkspaceProvider({ children }) {
       supabase.from('branches').select('id,code,name').eq('organization_id', organizationId),
       supabase.from('inventory_movements').select('id,variant_id,branch_id,movement_type,quantity_delta,reason,reference_type,reference_id,created_by,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
       supabase.from('customers').select('id,full_name,phone,email,notes,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }),
-      supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity,backordered_quantity)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
+      supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity,backordered_quantity),sale_payments(method,amount)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
       supabase.from('inventory_item_costs').select('variant_id,unit_cost,supplier_name,updated_at').eq('organization_id', organizationId),
     ]);
     const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, movementsResult, customersResult, salesResult, costsResult].find((result) => result.error);
@@ -222,7 +222,8 @@ export function WorkspaceProvider({ children }) {
     });
     const remoteCustomers = (customersResult.data || []).map((row) => ({ id: row.id, name: row.full_name, phone: row.phone, email: row.email, notes: row.notes, createdAt: row.created_at }));
     const customerById = new Map(remoteCustomers.map((row) => [row.id, row]));
-    const remoteSales = (salesResult.data || []).map((row) => ({ id: row.id, code: row.sale_code || row.id.slice(0, 8), total: Number(row.total), date: row.created_at, method: row.payment_method, customer: customerById.get(row.customer_id)?.name || '', description: (row.sale_lines || []).map((line) => line.description_snapshot).join(', '), quantity: (row.sale_lines || []).reduce((sum, line) => sum + Number(line.quantity), 0), urgent: row.urgent_backorder, status: row.status, note: row.note }));
+    const paymentLabels = { cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', other: 'Otro' };
+    const remoteSales = (salesResult.data || []).map((row) => { const paid = (row.sale_payments || []).reduce((sum, payment) => sum + Number(payment.amount), 0); const methods = [...new Set((row.sale_payments || []).map((payment) => payment.method))]; return { id: row.id, code: row.sale_code || row.id.slice(0, 8), total: Number(row.total), paid, balance: Math.max(0, Number(row.total) - paid), date: row.created_at, method: methods.length > 1 ? 'Pago dividido' : paymentLabels[methods[0] || row.payment_method] || 'Otro', customer: customerById.get(row.customer_id)?.name || '', description: (row.sale_lines || []).map((line) => line.description_snapshot).join(', '), quantity: (row.sale_lines || []).reduce((sum, line) => sum + Number(line.quantity), 0), urgent: row.urgent_backorder, status: row.status, note: row.note }; });
     setData((current) => ({ ...current, inventory: remoteInventory, inventoryMovements: remoteMovements, customers: remoteCustomers, sales: remoteSales }));
   }, [organizationId, user]);
   useEffect(() => { void refreshRemote(); }, [refreshRemote]);
