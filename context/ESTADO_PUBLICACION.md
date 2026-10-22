@@ -23,17 +23,31 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 - `/admin`: administración de la página pública, protegida por el rol `website_admin`.
 - `/operaciones`: POS y gestión interna, protegidos por roles de operación.
 - `/operaciones/equipo`: propietario/admin puede asignar roles tras el primer inicio de sesión de cada cuenta.
-- El acceso usa enlace de un solo uso por correo de Supabase Auth. El primer inicio de sesión confirmado del correo de Visual Corp asigna el rol `owner` mediante trigger; después el propietario puede asignar `website_admin`, `admin` (POS), gerencia, asesoras, bodega, producción y marketing.
+- El acceso conserva enlace de un solo uso por correo y añade Google OAuth. Las identidades principales están sujetas a los roles definidos por la migración `20261022165634_bootstrap_primary_admins`; cada cuenta necesita iniciar sesión una vez para que Auth cree su perfil y se aplique el rol inicial. El propietario puede asignar después los perfiles internos restantes.
 - Los costos de inventario siguen protegidos por permisos de base de datos. No hay contraseñas ni claves privadas guardadas en el repositorio.
 
 ## Publicación y límites actuales
 
-- Las migraciones aplicadas y sus archivos locales usan los mismos identificadores remotos: `20261022161906`, `20261022162602`, `20261022162803`, `20261022162916`, `20261022163021` y `20261022163625` (además de las tres migraciones base `20261022154601`–`20261022154835`).
+- Las migraciones aplicadas y sus archivos locales usan los mismos identificadores remotos: `20261022161906`, `20261022162602`, `20261022162803`, `20261022162916`, `20261022163021`, `20261022163625` y `20261022165634` (además de las tres migraciones base `20261022154601`–`20261022154835`).
 - La compilación de producción de Vite pasó después de conectar Auth, catálogo, solicitudes públicas, clientes, POS y movimientos transaccionales. Vite muestra una advertencia de paquete principal mayor a 500 kB.
 - El asesor de seguridad no reporta errores; sí marca 4 funciones `SECURITY DEFINER` como advertencia porque son RPC autenticadas y con validación de rol/sucursal dentro de la función. El asesor de rendimiento muestra recomendaciones informativas de índices y políticas permisivas.
 - Vercel reportó `success` para el despliegue del commit de aplicación `6f5b7c3688e69e4cef9e1bd087d2d90cc86bad00`; el commit posterior solo alineó nombres de migración y documentación. La API de esta sesión devuelve 403 al leer proyecto/dominios del equipo `visual19`, por lo que el dominio público y la presencia de variables de entorno siguen pendientes de verificación. La compilación local de producción pasó.
 - El panel web, solicitudes públicas, lista de clientes, catálogo, inventario y ventas usan Supabase. Las cotizaciones internas siguen guardándose localmente y deben conectarse a una tabla remota en una fase posterior. El inventario fuente está disponible para revisar; no se deben usar sus filas pendientes para prometer stock.
-- El propietario aún debe iniciar sesión para que el trigger cree su membresía. El correo de acceso, las variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` (o `VITE_SUPABASE_ANON_KEY`) deben estar configurados en Vercel antes de habilitar el panel.
+- Las variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` aparecen configuradas en Vercel. El propietario y el administrador deben completar su primer inicio de sesión para crear y activar sus perfiles.
+
+## Inicio de sesión con Google — 22 de octubre de 2026
+
+- Se creó en la cuenta Visual Corp el proyecto Google Cloud `Visual Corp`, ID `eighth-anvil-512416-t7`.
+- Se creó el cliente OAuth web `Visual Corp Web y POS` con ID público `128536253381-ki7t4nmod9qk1tee35bj8mif190p186j.apps.googleusercontent.com`. El secreto se guarda únicamente en el proveedor Google de Supabase Auth; no se incluye en el repositorio, Vercel ni este documento.
+- Google Auth está habilitado en Supabase. La interfaz permite iniciar con Google y conserva el enlace de acceso por correo.
+- El dominio de producción confirmado en Vercel es `https://visualcorp-suite.vercel.app`; Vercel muestra las variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` ya creadas. No se revelaron sus valores.
+- Callback registrado en Google: `https://iomdmclkimfmvlzcrkyz.supabase.co/auth/v1/callback`.
+- Orígenes registrados en el cliente web de Google: `https://visualcorp-suite.vercel.app` y `http://127.0.0.1:5173` para desarrollo local.
+- Consentimiento aceptado por el propietario. La app permanece en estado «Prueba» y las dos cuentas principales ya se agregaron como usuarios de prueba.
+- Supabase Auth tiene como Site URL `https://visualcorp-suite.vercel.app` y permite retornos al dominio de producción y a `http://127.0.0.1:5173` para desarrollo. El cliente de Google conserva el callback `https://iomdmclkimfmvlzcrkyz.supabase.co/auth/v1/callback`.
+- La app Google sigue en estado «Prueba» y permite iniciar sesión solo a las dos cuentas de prueba registradas. Para incorporar más cuentas, agregarlas en Usuarios de prueba de Google Cloud.
+- La migración `20261022165634_bootstrap_primary_admins` ya está aplicada y asigna roles solo a identidades con correo confirmado: `visualcorp.publicidad.marketing@gmail.com` recibe `owner`; `estebanico10@gmail.com` recibe `admin` y `website_admin`. Supabase reportaba cero perfiles antes de activarla, por lo que cada cuenta debe iniciar sesión una vez para que se cree su perfil.
+- La dirección visual del Plan v02 está presentada como prototipo revisable en `docs/design-v02/`; no cambia la aplicación ni se publica como parte de la interfaz del producto.
 
 ## Seguridad y procedencia
 

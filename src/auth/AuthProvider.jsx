@@ -38,6 +38,14 @@ export function AuthProvider({ children }) {
       const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } });
       if (error) throw error;
     },
+    signInWithGoogle: async () => {
+      if (!supabase) throw new Error('La conexión con Supabase todavía no está configurada.');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
+      });
+      if (error) throw error;
+    },
     signOut: async () => { if (supabase) await supabase.auth.signOut(); },
   }), [session, roles, organizationId, loading]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
