@@ -1,0 +1,6 @@
+.site-form-error { padding: 12px 14px; border: 1px solid #f2b8b5; border-radius: 10px; color: #8e2725; background: #fff6f5; font-size: .92rem; }
+.site-primary-button:disabled { opacity: .68; cursor: wait; }
+.public-access-closed { min-height: 100vh; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 18px; max-width: 720px; margin: auto; padding: 40px 24px; }
+.public-access-closed > img { width: min(220px, 60vw); height: auto; margin-bottom: 28px; }
+.public-access-closed h1 { max-width: 650px; margin: 0; font-size: clamp(2.25rem, 7vw, 4.5rem); line-height: 1.02; letter-spacing: -.04em; }
+.public-access-closed p { max-width: 560px; color: #656675; line-height: 1.7; }

@@ -1,0 +1,75 @@
+import React, { useMemo, useState } from 'react';
+import { Check, Clipboard, Copy, ExternalLink, FileCheck, MessageCircle, Pencil, Plus, Save, Search, Send, Settings2, Sparkles, Truck, Users, X } from 'lucide-react';
+import { AdminHeader, AdminShell } from '../components';
+import { useSite } from '../store';
+import { buildWhatsAppUrl } from '../lib/whatsapp';
+
+const MESSAGE_KEY = 'gigaprint-whatsapp-message-library-v1';
+
+const DEFAULT_MESSAGES = [
+  { id: 'hours', category: 'Información', title: 'Horarios de atención', body: '¡Hola {cliente}! 😊 Nuestro horario de atención es: {horario}. Si nos escribes fuera de horario, te responderemos al retomar la jornada.' },
+  { id: 'location', category: 'Información', title: 'Ubicación', body: '¡Hola {cliente}! 📍 Estamos ubicados en {direccion}. Puedes escribirnos antes de venir para confirmar que el área que necesitas esté disponible.' },
+  { id: 'faq', category: 'Información', title: 'Preguntas frecuentes', body: '¡Hola {cliente}! Para ayudarte más rápido, cuéntanos: 1) qué producto necesitas, 2) cantidad, 3) medidas, 4) fecha requerida y 5) si ya tienes el arte listo. Con esos datos podremos orientarte mejor.' },
+  { id: 'measurements', category: 'Producción', title: 'Cómo enviar medidas', body: 'Para cotizar {producto}, envíanos el ancho × alto en centímetros, la cantidad y una foto del lugar si aplica. Ejemplo: 250 × 120 cm, 1 unidad. Si no tienes las medidas exactas, podemos ayudarte a definirlas.' },
+  { id: 'eyelets', category: 'Producción', title: 'Explicar ojales', body: 'Los ojales son aros metálicos que se colocan en el borde de la lona para facilitar la instalación. Podemos ubicarlos en esquinas o alrededor del perímetro, según cómo se vaya a tensar la pieza.' },
+  { id: 'materials', category: 'Producción', title: 'Explicar materiales', body: 'Elegimos el material según el uso: interior o exterior, duración esperada, iluminación, superficie, presupuesto y acabado. Antes de producir te confirmamos la recomendación y cualquier diferencia de precio.' },
+  { id: 'design-ready', category: 'Diseño', title: 'Arte listo para producción', body: 'Si ya tienes el diseño, envíanos el archivo en PDF, AI, CDR o PNG de buena resolución. Indícanos también las medidas finales y si el diseño debe adaptarse a una plantilla.' },
+  { id: 'design-service', category: 'Diseño', title: 'Servicio de diseño', body: 'Podemos adaptar tu arte existente o crear una propuesta desde cero. Para comenzar necesitamos tu logo, textos, colores, referencias y medidas. El valor del diseño se confirma antes de iniciar.' },
+  { id: 'revisions', category: 'Diseño', title: 'Revisiones de diseño', body: 'Incluimos una revisión ordenada del arte. Envíanos todos los cambios juntos y descríbelos con claridad. Cambios adicionales o modificaciones que cambien el alcance pueden generar un valor extra, siempre informado antes.' },
+  { id: 'price', category: 'Ventas', title: 'Explicar precio', body: 'El valor de {producto} depende de medidas, cantidad, material, acabados, diseño, instalación y fecha de entrega. El precio enviado es referencial hasta confirmar todos esos datos. Tu total actual es {total}.' },
+  { id: 'quote-followup', category: 'Ventas', title: 'Seguimiento de cotización', body: '¡Hola {cliente}! Te escribimos para saber si pudiste revisar la cotización {pedido}. Estamos disponibles para resolver dudas, ajustar cantidades o revisar alternativas de material.' },
+  { id: 'payment', category: 'Ventas', title: 'Datos para transferencia', body: 'Para confirmar tu pedido puedes realizar la transferencia con estos datos:\n\nBanco: {banco}\nCuenta: {cuenta}\nTitular: {titular}\nIdentificación: {identificacion}\n\nEnvíanos el comprobante indicando el número de pedido {pedido}. No olvides confirmar el valor transferido: {total}.' },
+  { id: 'terms', category: 'Ventas', title: 'Términos y condiciones', body: 'La producción inicia después de confirmar especificaciones, aprobar el arte y recibir el anticipo o pago acordado. Los tiempos dependen de materiales, complejidad y agenda. Una vez aprobado el arte, los cambios posteriores pueden generar costos adicionales.' },
+  { id: 'thank-you', category: 'Postventa', title: 'Gracias por la compra', body: '¡Gracias por confiar en Gigaprint, {cliente}! 🙌 Tu pedido {pedido} quedó registrado. Te avisaremos cuando avance de etapa y estaremos atentos si necesitas ayuda.' },
+  { id: 'ready', category: 'Postventa', title: 'Pedido listo', body: '¡Buenas noticias, {cliente}! 🎉 Tu pedido {pedido} ya está listo. Puedes retirarlo en {direccion}. Si corresponde a instalación o entrega, te contactaremos para coordinar.' },
+  { id: 'consultation', category: 'Ventas', title: 'Consulta general', body: '¡Hola {cliente}! Gracias por escribir a Gigaprint. Cuéntanos qué idea tienes y te ayudaremos a elegir producto, material, medidas y acabado.' },
+];
+
+const variableLabels = {
+  cliente: 'Nombre del cliente', pedido: 'Número de pedido', producto: 'Producto', total: 'Total', enlace: 'Enlace de seguimiento', medidas: 'Medidas', fecha: 'Fecha', asesora: 'Asesora', direccion: 'Dirección', horario: 'Horario vigente', banco: 'Banco', cuenta: 'Número de cuenta', titular: 'Titular', identificacion: 'Identificación',
+};
+
+function loadMessages() {
+  try { return JSON.parse(localStorage.getItem(MESSAGE_KEY)) || DEFAULT_MESSAGES; } catch { return DEFAULT_MESSAGES; }
+}
+
+function loadOperationalData() {
+  try { return JSON.parse(localStorage.getItem('gigaprint-whatsapp-operational-v1')) || { banco: '', cuenta: '', titular: '', identificacion: '', horario: 'Lun 10:00–18:00 · Mar–Vie 08:30–18:00 · Sáb 08:30–12:30' }; } catch { return { banco: '', cuenta: '', titular: '', identificacion: '', horario: 'Lun 10:00–18:00 · Mar–Vie 08:30–18:00 · Sáb 08:30–12:30' }; }
+}
+
+function interpolate(text, values) {
+  return String(text || '').replace(/\{(\w+)\}/g, (_, key) => values[key] ?? `{${key}}`);
+}
+
+function WhatsAppMessageComposer({ message, data, operational: providedOperational, onSave, onClose }) {
+  const [draft, setDraft] = useState(message);
+  const operational = providedOperational || loadOperationalData();
+  const [values, setValues] = useState({ cliente: 'Cliente', pedido: 'GP-0000', producto: 'tu producto', total: '$0.00', enlace: '', medidas: '250 × 120 cm', fecha: 'por confirmar', asesora: 'el equipo Gigaprint', direccion: data.settings.address || '', horario: operational.horario || '', banco: operational.banco || '[Completar banco]', cuenta: operational.cuenta || '[Completar cuenta]', titular: operational.titular || '[Completar titular]', identificacion: operational.identificacion || '[Completar identificación]' });
+  const body = interpolate(draft.body, values);
+  const number = data.settings.whatsapp || data.settings.quoteWhatsappRoutes?.[0]?.number || '';
+  const openWhatsApp = () => window.open(buildWhatsAppUrl(number, body), '_blank', 'noopener,noreferrer');
+  return <div className="modal-backdrop"><div className="admin-modal whatsapp-message-modal"><div className="modal-heading"><div><span className="eyebrow orange">Biblioteca de mensajes</span><h2>{draft.title || 'Nuevo mensaje'}</h2><small>Las variables se reemplazan antes de enviar.</small></div><button onClick={onClose}><X /></button></div><div className="whatsapp-compose-grid"><div className="whatsapp-compose-editor"><label>Título<input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label><label>Categoría<input value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} /></label><label>Mensaje<textarea rows="12" value={draft.body} onChange={(event) => setDraft({ ...draft, body: event.target.value })} /></label><div className="whatsapp-variable-list">{Object.entries(variableLabels).map(([key, label]) => <button type="button" key={key} onClick={() => setDraft((current) => ({ ...current, body: `${current.body}{${key}}` }))}>+ {`{${key}}`}<small>{label}</small></button>)}</div></div><div className="whatsapp-compose-preview"><span className="eyebrow">Vista previa</span><div className="whatsapp-preview-bubble">{body.split('\n').map((line, index) => <React.Fragment key={`${line}-${index}`}>{line}{index < body.split('\n').length - 1 && <br />}</React.Fragment>)}</div><div className="whatsapp-values"><b>Datos de prueba</b>{Object.entries(variableLabels).slice(0, 10).map(([key, label]) => <label key={key}>{label}<input value={values[key] || ''} onChange={(event) => setValues({ ...values, [key]: event.target.value })} /></label>)}</div></div></div><div className="modal-actions"><button className="button button-ghost" onClick={onClose}>Cancelar</button><button className="button button-ghost" onClick={() => { navigator.clipboard?.writeText(body); }}><Copy size={15} /> Copiar</button><button className="button button-ghost" onClick={() => onSave(draft)}><Save size={15} /> Guardar cambios</button><button className="button button-primary" onClick={openWhatsApp}><Send size={15} /> Abrir WhatsApp</button></div></div></div>;
+}
+
+export function WhatsAppCenterPage() {
+  const { data } = useSite();
+  const [messages, setMessages] = useState(loadMessages);
+  const [operational, setOperational] = useState(loadOperationalData);
+  const [selected, setSelected] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('Todas');
+  const [search, setSearch] = useState('');
+  const [notice, setNotice] = useState('');
+  const categories = useMemo(() => ['Todas', ...Array.from(new Set(messages.map((message) => message.category)))], [messages]);
+  const filtered = messages.filter((message) => (activeCategory === 'Todas' || message.category === activeCategory) && `${message.title} ${message.body}`.toLowerCase().includes(search.toLowerCase()));
+  const persist = (next) => { setMessages(next); localStorage.setItem(MESSAGE_KEY, JSON.stringify(next)); setNotice('Biblioteca guardada en este dispositivo'); window.setTimeout(() => setNotice(''), 2600); };
+  const saveOperational = (next) => { setOperational(next); localStorage.setItem('gigaprint-whatsapp-operational-v1', JSON.stringify(next)); setNotice('Datos operativos guardados en este dispositivo'); window.setTimeout(() => setNotice(''), 2600); };
+  const saveMessage = (message) => { persist(messages.some((item) => item.id === message.id) ? messages.map((item) => item.id === message.id ? message : item) : [...messages, message]); setSelected(null); };
+  const addMessage = () => setSelected({ id: `custom-${Date.now()}`, category: 'Personalizado', title: 'Nuevo mensaje', body: '¡Hola {cliente}! ' });
+  const quickLinks = [
+    { icon: <Clipboard size={18} />, title: 'Solicitudes y cotizaciones', text: 'Revisar clientes que esperan respuesta.', href: '/admin/solicitudes' },
+    { icon: <FileCheck size={18} />, title: 'Aprobaciones de arte', text: 'Enviar enlaces para aprobar o pedir cambios.', href: '/admin/pos' },
+    { icon: <Sparkles size={18} />, title: 'Brief para diseño', text: 'Preparar datos antes de pasar una orden.', href: '/admin/pos' },
+    { icon: <Truck size={18} />, title: 'Taller y seguimiento', text: 'Consultar etapas y pedidos comprometidos.', href: '/admin/taller' },
+  ];
+  return <AdminShell><AdminHeader eyebrow="WhatsApp & flujo operativo" title="Conversaciones que se convierten en producción" text="Mensajes, cotizaciones, aprobaciones y seguimiento en un solo lugar." action={<button className="button button-primary" onClick={addMessage}><Plus size={16} /> Nuevo mensaje</button>} />{notice && <div className="whatsapp-save-notice"><Check size={16} /> {notice}</div>}<section className="whatsapp-status-grid"><div className="whatsapp-status-card active"><MessageCircle /><div><b>Modo asistido activo</b><small>Mensajes preparados y enlaces directos funcionando.</small></div><span>Listo</span></div><div className="whatsapp-status-card"><Settings2 /><div><b>API oficial pendiente</b><small>Conecta Cloud API después para automatizar entrada y salida.</small></div><span>Fase 2</span></div><div className="whatsapp-status-card"><Users /><div><b>{messages.length} mensajes disponibles</b><small>Organizados por etapa del cliente.</small></div><span>Local-first</span></div></section><div className="whatsapp-center-layout"><main><div className="admin-card whatsapp-library-toolbar"><div className="whatsapp-category-tabs">{categories.map((category) => <button key={category} className={activeCategory === category ? 'active' : ''} onClick={() => setActiveCategory(category)}>{category}</button>)}</div><label className="whatsapp-search"><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar horario, diseño, pago, materiales…" /></label></div><div className="whatsapp-message-grid">{filtered.map((message) => <article className="admin-card whatsapp-message-card" key={message.id}><div><span className="whatsapp-message-category">{message.category}</span><button className="icon-button" title="Editar" onClick={() => setSelected(message)}><Pencil size={15} /></button></div><h3>{message.title}</h3><p>{message.body}</p><div><button className="button button-ghost compact" onClick={() => setSelected(message)}><Send size={14} /> Usar mensaje</button><button className="button button-ghost compact" onClick={() => setSelected(message)}><Pencil size={14} /> Editar</button></div></article>)}</div></main><aside className="whatsapp-center-aside"><div className="admin-card"><div className="admin-card-heading"><div><span className="eyebrow">Flujos rápidos</span><h2>Trabajo conectado</h2></div><Sparkles size={19} /></div><div className="whatsapp-flow-list">{quickLinks.map((item) => <a href={item.href} key={item.title}><span>{item.icon}</span><div><b>{item.title}</b><small>{item.text}</small></div><ExternalLink size={14} /></a>)}</div></div><div className="admin-card whatsapp-variables-card"><span className="eyebrow">Variables inteligentes</span><h3>Personaliza cada respuesta</h3><p>Escribe variables entre llaves dentro de un mensaje y la asesora las completa antes de abrir WhatsApp.</p><div>{Object.entries(variableLabels).map(([key, label]) => <span key={key}><b>{`{${key}}`}</b>{label}</span>)}</div></div><div className="admin-card whatsapp-operational-card"><span className="eyebrow">Datos para respuestas</span><h3>Transferencias y horario</h3><p>Estos datos completan automáticamente los mensajes de pago y atención.</p><div className="whatsapp-operational-fields">{[['banco','Banco'],['cuenta','Cuenta'],['titular','Titular'],['identificacion','Identificación'],['horario','Horario']].map(([key, label]) => <label key={key}>{label}<input value={operational[key] || ''} onChange={(event) => setOperational({ ...operational, [key]: event.target.value })} /></label>)}</div><button className="button button-primary compact" onClick={() => saveOperational(operational)}><Save size={14} /> Guardar datos</button></div></aside></div>{selected && <WhatsAppMessageComposer message={selected} data={data} onSave={saveMessage} onClose={() => setSelected(null)} />}</AdminShell>;
+}

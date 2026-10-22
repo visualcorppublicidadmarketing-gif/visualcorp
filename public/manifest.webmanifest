@@ -1,0 +1,14 @@
+{
+  "name": "Visual Corp",
+  "short_name": "Visual Corp",
+  "description": "Portal local de Visual Corp.",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f5f8",
+  "theme_color": "#111217",
+  "icons": [
+    { "src": "/brand/visualcorp-symbol.png", "sizes": "any", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

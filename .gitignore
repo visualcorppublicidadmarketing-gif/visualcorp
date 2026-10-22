@@ -1,0 +1,32 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+supabase/.temp/
+# Respaldos locales contienen datos privados del negocio; no subirlos al repositorio.
+/backups/*.json
+*.visualcorp-backup.json
+.DS_Store
+Thumbs.db
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+*.local.json
+
+# Original source pack supplied by the brand team. Optimized copies live in public/.
+Recursos (no borrar)/
+# Only the curated showcase files referenced by resourceManifest.js are tracked.
+public/media/showcase/
+public/brand/logos/*-2.webp
+public/brand/logos/*-2.svg
+public/brand/mascot/*-2.webp
+public/media/products/*-2.webp
+public/media/resources/*-2.webp
+!public/brand/logos/ilustracion-2.webp
+!public/brand/logos/recurso-2.webp
+public/media/resources/*milagro*.webp
+
+# Análisis interno de ventas; contiene datos de rendimiento comercial.
+scripts/excel_analysis.json
+docs/inventario/borrador_migracion_local.json
