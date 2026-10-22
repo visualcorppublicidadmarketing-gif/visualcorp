@@ -29,3 +29,7 @@
 - La función `set_inventory_reservation` requiere sesión y valida rol, organización, sucursal, existencia contada y cantidad máxima.
 - El asesor de Supabase puede marcar esta RPC como `SECURITY DEFINER` accesible a autenticados; su ejecución se limita a `authenticated`, no a `anon`, y valida permisos dentro de la función.
 - El historial de costos registra cambios futuros; no reconstruye precios anteriores a la migración.
+
+## Publicación
+
+Commit `483136c7d380eeb8a0532b6ef05f575d35658a81` publicado en `main`; GitHub reportó el despliegue Vercel exitoso. `/operaciones/inventario` respondió HTTP 200 y el paquete servido contiene el catálogo de inventario, las reservas y las métricas.
