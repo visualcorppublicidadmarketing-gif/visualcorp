@@ -45,7 +45,7 @@ El POS actual guarda ventas, clientes, abonos y saldos; puede convertir cotizaci
 
 ## Hecho en esta revisión
 
-La navegación interna en teléfono y tableta ahora abre un panel lateral con botón accesible, fondo de cierre y tecla Escape; al elegir una sección el panel se cierra y el área principal ocupa todo el ancho. Se añadió una capa visual compartida para Admin Web, Operaciones y POS: superficies modulares, jerarquía tipográfica, controles táctiles y foco visible. La siguiente fase funcional debe completar el conteo y conciliación del inventario, y luego **Compras y proveedores**, para que las reposiciones partan de saldos confiables.
+La navegación interna en teléfono y tableta ahora abre un panel lateral con botón accesible, fondo de cierre y tecla Escape; al elegir una sección el panel se cierra y el área principal ocupa todo el ancho. Se añadió una capa visual compartida para Admin Web, Operaciones y POS: superficies modulares, jerarquía tipográfica, controles táctiles y foco visible. En inventario, la cola de importación ahora pagina por hoja, permite vincular una fila con una variante existente o excluirla con motivo, y guarda cada decisión junto al actor en una bitácora protegida. El vínculo nunca crea stock. Al crear un artículo, dejar vacío el conteo significa “sin conteo”; cero requiere ingresarse explícitamente.
 
 ## Plan maestro de implementación por fases
 
@@ -53,7 +53,7 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 
 ### Fase 0 — Base segura, responsive y operación observable
 
-**Estado:** iniciada. El menú lateral móvil ya se publicó; queda hacer la comprobación visual completa de cada área.
+**Estado:** iniciada. El menú lateral móvil y la primera capa compartida ya se publicaron; la comprobación integral de todas las rutas y tamaños sigue pendiente.
 
 - Revisar página pública, Admin Web, Operaciones, POS, CRM, Clientes, Inventario, Cotizador y flujos en 360 × 800, 768 × 1024 y 1440 × 900.
 - Asegurar controles táctiles cómodos, formularios utilizables con teclado móvil, estados de carga/vacío/error y que ninguna tabla ensanche la página.
@@ -63,6 +63,8 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 **Cierre:** las rutas funcionan en los tres tamaños; cada rol ve y modifica solo lo autorizado; una migración puede aplicarse desde una base respaldada; el changelog y el despliegue reflejan la versión activa.
 
 ### Fase 1 — Inventario confiable y catálogo operativo
+
+**Estado:** parcial. La revisión de procedencia tiene decisiones auditadas; no se ha conciliado físicamente ninguna fila fuente.
 
 - Separar consumibles, materia prima, producto para reventa, herramientas y servicios; definir unidad de medida, variantes, área, sucursal y ubicación cuando se confirme esa información.
 - Añadir flujo guiado de conteo físico, conciliación contra las 749 filas fuente pendientes, aprobación y saldo inicial con actor, fecha y procedencia.
@@ -156,7 +158,7 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 ## Secuencia inmediata recomendada
 
 1. Completar Fase 0 con revisión real en teléfono, tableta y escritorio.
-2. Arrancar Fase 1 con la revisión de inventario físico y conciliación de la cola fuente; esto evita automatizar reposición sobre cifras no confiables.
+2. Continuar Fase 1: revisar las filas importadas, confirmar variantes y completar conteos físicos aprobados. En la base siguen pendientes las 749 filas fuente y las existencias activas no tienen saldo contado.
 3. Construir Fase 2 (proveedores, órdenes y recepción parcial) antes de automatizar alertas de compra.
 4. Rediseñar el POS multiartículo en Fase 3 usando el stock ya saneado y las compras conectadas.
 
