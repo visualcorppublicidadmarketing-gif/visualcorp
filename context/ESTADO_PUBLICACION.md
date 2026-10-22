@@ -18,6 +18,11 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 - Inventario: las RPC centrales de conteo, movimiento, transferencia y `create_pos_sale` están aplicadas. En la revisión del 22 de octubre, los 70 artículos y 70 variantes no tenían filas de saldo en `inventory_stock`; eso sigue siendo pendiente de conteo, no stock físico confirmado.
 - POS: `/operaciones/pos` guarda órdenes y pagos en Supabase mediante una RPC transaccional, con clave de reintento, bloqueo de variante y salida de stock dentro de la misma transacción. Los abonos conservan saldo pendiente y admiten pagos posteriores idempotentes. Solo las variantes vinculadas explícitamente en Inventario reducen stock; los faltantes se marcan como compra urgente pendiente. El POS no emite comprobantes tributarios.
 - Costos privados: lectura/edición disponible en inventario solo para propietario, admin POS y gerencia; RLS en Supabase limita el acceso.
+- Ficha ampliada de inventario: tipo, tags, URL de imagen de referencia y objeto JSON editable para campos futuros; tabla/tarjetas/métricas y filtros por sucursal, área, tipo, estado y tag.
+- Abastecimiento y uso: última compra derivada del último movimiento de recepción; días desde la entrada, consumos a 30 días e históricos salen del libro de movimientos. Sin registro significa dato desconocido, no cero.
+- Reservas: unidades reservadas y disponibilidad (stock menos reserva) por variante, sucursal y ubicación; RPC auditada y rol restringido. La RPC de POS utiliza el saldo disponible al decidir si la venta requiere compra urgente.
+- Costos: se guarda historial de los cambios posteriores a esta migración, con proveedor y actor; no se reconstruyen precios históricos anteriores.
+- Migraciones de ampliación `20261022174504_inventory_catalog_metrics` y `20261022180025_inventory_metrics_fk_indexes` aplicadas en Supabase. Al aplicar: 70 artículos en catálogo, 0 saldos físicos contados; las 749 filas de fuente siguen pendientes de conciliación.
 
 ## Accesos internos
 
@@ -29,9 +34,9 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 
 ## Publicación y límites actuales
 
-- Las migraciones de POS/inventario recién aplicadas se guardan localmente con sus versiones remotas `20261022172435`, `20261022172638`, `20261022173445` y `20261022173630`.
+- Las migraciones de POS/inventario recién aplicadas se guardan localmente con sus versiones remotas `20261022172435`, `20261022172638`, `20261022173445`, `20261022173630`, `20261022174504` y `20261022180025`.
 - La compilación de producción de Vite pasó después de conectar Auth, catálogo, solicitudes públicas, clientes, POS y movimientos transaccionales. Vite muestra una advertencia de paquete principal mayor a 500 kB.
-- El asesor de seguridad no reporta errores; sí marca 4 funciones `SECURITY DEFINER` como advertencia porque son RPC autenticadas y con validación de rol/sucursal dentro de la función. El asesor de rendimiento muestra recomendaciones informativas de índices y políticas permisivas.
+- El asesor de seguridad marca RPC `SECURITY DEFINER` accesibles a usuarios autenticados; las funciones de operación validan sesión y rol/sucursal dentro de la función. La RPC de reservas es solo para `authenticated`, valida permisos y no se ejecuta como `anon`. El asesor de rendimiento mantiene recomendaciones informativas de índices y políticas.
 - El commit `dd9e3fb858cc60dc2129466a99ad41e648e24cba` se publicó en `main`. La compilación local de producción pasó; Vite advierte que el paquete principal supera 500 kB. Se comprobó en el navegador que `https://visualcorp-suite.vercel.app/admin` entrega la versión actual y muestra el acceso con Google y el enlace por correo. La API de gestión de Vercel no permitió consultar el detalle del despliegue en esta sesión.
 - La fase POS/inventario se publicó en `main` con el commit `5a6cfef`. GitHub reportó el estado de Vercel como exitoso. La ruta de acceso interno `https://visualcorp-suite.vercel.app/operaciones/pos` respondió y el paquete público incluye el registro de abonos y los vínculos de inventario.
 - El panel web, solicitudes públicas, catálogo, movimientos del inventario, clientes, ventas y pagos usan Supabase. No hay vínculos producto-variante preasignados: el equipo autorizado debe configurarlos tras cotejar existencia física y variante. Las filas importadas siguen pendientes de conciliación y no se deben usar para prometer stock. Las cotizaciones internas continúan en almacenamiento local y su integración compartida queda para una fase posterior.

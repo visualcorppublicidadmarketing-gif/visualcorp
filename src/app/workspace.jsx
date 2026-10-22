@@ -178,8 +178,8 @@ export function WorkspaceProvider({ children }) {
   }, []);
   const refreshRemote = useCallback(async () => {
     if (!supabase || !organizationId || !user) return;
-    const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, movementsResult, customersResult, salesResult, costsResult] = await Promise.all([
-      supabase.from('inventory_items').select('id,category_id,area_id,sku,name,description,base_unit,minimum_quantity,active,created_at,updated_at').eq('organization_id', organizationId),
+    const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, movementsResult, customersResult, salesResult, costsResult, metricsResult] = await Promise.all([
+      supabase.from('inventory_items').select('id,category_id,area_id,sku,name,description,item_type,tags,reference_image_url,custom_fields,base_unit,minimum_quantity,active,created_at,updated_at').eq('organization_id', organizationId),
       supabase.from('inventory_variants').select('id,item_id,sku,label,attributes,active').eq('organization_id', organizationId),
       supabase.from('inventory_stock').select('variant_id,branch_id,location_code,quantity,updated_at').eq('organization_id', organizationId),
       supabase.from('areas').select('id,code,name').eq('organization_id', organizationId),
@@ -189,8 +189,9 @@ export function WorkspaceProvider({ children }) {
       supabase.from('customers').select('id,full_name,phone,email,notes,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }),
       supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity,backordered_quantity),sale_payments(method,amount)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
       supabase.from('inventory_item_costs').select('variant_id,unit_cost,supplier_name,updated_at').eq('organization_id', organizationId),
+      supabase.from('inventory_stock_metrics').select('variant_id,branch_id,location_code,quantity,reserved_quantity,available_quantity,reserved_percent,last_restock_at,lifetime_consumed,consumed_last_30_days,movement_count,last_movement_at').eq('organization_id', organizationId),
     ]);
-    const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, movementsResult, customersResult, salesResult, costsResult].find((result) => result.error);
+    const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, movementsResult, customersResult, salesResult, costsResult, metricsResult].find((result) => result.error);
     if (failed) { setNotice(`No se pudieron sincronizar todos los datos operativos: ${failed.error.message}`); return; }
     const itemById = new Map((itemsResult.data || []).map((row) => [row.id, row]));
     const areaById = new Map((areasResult.data || []).map((row) => [row.id, row]));
@@ -198,21 +199,30 @@ export function WorkspaceProvider({ children }) {
     const branchById = new Map((branchesResult.data || []).map((row) => [row.id, row]));
     const variantById = new Map((variantsResult.data || []).map((row) => [row.id, row]));
     const costByVariant = new Map((costsResult.data || []).map((row) => [row.variant_id, row]));
-    const stockByKey = new Map((stockResult.data || []).map((row) => [`${row.variant_id}|${row.branch_id}|${row.location_code}`, row]));
+    const metricsByKey = new Map((metricsResult.data || []).map((row) => [`${row.variant_id}|${row.branch_id}|${row.location_code}`, row]));
     const remoteInventory = [];
     for (const variant of variantsResult.data || []) {
       const item = itemById.get(variant.item_id);
       if (!item) continue;
       for (const branch of branchesResult.data || []) {
-        const stock = stockByKey.get(`${variant.id}|${branch.id}|MAIN`);
+        const branchStocks = (stockResult.data || []).filter((row) => row.variant_id === variant.id && row.branch_id === branch.id);
+        for (const stock of branchStocks.length ? branchStocks : [null]) {
+        const location = stock?.location_code || 'MAIN';
+        const metrics = metricsByKey.get(`${variant.id}|${branch.id}|${location}`);
         remoteInventory.push({
-          id: `${variant.id}:${branch.id}`, remoteItemId: item.id, variantId: variant.id, sku: item.sku, variantSku: variant.sku,
+          id: `${variant.id}:${branch.id}:${location}`, remoteItemId: item.id, variantId: variant.id, sku: item.sku, variantSku: variant.sku,
           name: item.name, category: categoryById.get(item.category_id)?.name || '', variant: variant.label || item.description,
+          itemType: item.item_type || '', tags: item.tags || [], referenceImageUrl: item.reference_image_url || '', customFields: item.custom_fields || {},
           area: areaById.get(item.area_id)?.name || 'Sin área', branch: branch.name, branchId: branch.id,
-          location: stock?.location_code || 'MAIN', unit: item.base_unit, quantity: Number(stock?.quantity || 0),
+          location, unit: item.base_unit, quantity: stock ? Number(stock.quantity) : 0,
+          reservedQuantity: Number(metrics?.reserved_quantity || 0), availableQuantity: metrics ? Number(metrics.available_quantity) : null,
+          reservedPercent: metrics?.reserved_percent == null ? null : Number(metrics.reserved_percent), lastRestockAt: metrics?.last_restock_at || null,
+          lifetimeConsumed: metrics ? Number(metrics.lifetime_consumed) : null, consumedLast30Days: metrics ? Number(metrics.consumed_last_30_days) : null,
+          movementCount: metrics ? Number(metrics.movement_count) : 0, lastMovementAt: metrics?.last_movement_at || null,
           minimum: Number(item.minimum_quantity || 0), unitCost: costByVariant.has(variant.id) ? Number(costByVariant.get(variant.id).unit_cost) : null, supplierName: costByVariant.get(variant.id)?.supplier_name || '', sourceStatus: stock ? '' : 'Sin conteo físico', archived: !item.active || !variant.active,
           createdAt: item.created_at, updatedAt: stock?.updated_at || item.updated_at,
         });
+        }
       }
     }
     const movementLabel = { receipt: 'entrada', consumption: 'consumo', return: 'devolución', waste: 'merma', sale: 'venta', adjustment: 'ajuste', transfer_out: 'transferencia_salida', transfer_in: 'recepcion_transferencia' };
