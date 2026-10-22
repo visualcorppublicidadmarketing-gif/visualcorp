@@ -21,7 +21,7 @@ Las migraciones aplicadas están versionadas bajo `supabase/migrations/`. La úl
 
 ## Pasos para activar cuentas
 
-1. Verificar las variables Vite en Vercel y que el despliegue automático quede `READY`.
+1. GitHub reportó `success` para el commit `450247802dd52b8735fdb279f1ff59435db8377f`; confirmar variables Vite y dominio desde el panel Vercel cuando el equipo autorice acceso.
 2. El propietario debe iniciar sesión usando enlace de correo en `/operaciones`; el primer correo confirmado asigna `owner`.
 3. Cada integrante inicia sesión una vez con su correo; luego el propietario usa `/operaciones/equipo` para asignar `website_admin`, `admin` POS u otro perfil.
 4. Confirmar cada saldo con conteo físico antes de registrar movimientos/ventas. Conservar procedencia de archivos y filas fuente.

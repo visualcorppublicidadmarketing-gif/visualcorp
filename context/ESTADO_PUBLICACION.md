@@ -28,8 +28,8 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 
 - Las migraciones `20261022210000`, `20261022223000`, `20261022230000`, `20261022233000` y `20261022234000` están aplicadas en Supabase VISUAL y versionadas en `supabase/migrations/`.
 - La compilación de producción de Vite pasó después de conectar Auth, catálogo, solicitudes públicas y clientes. El asesor de seguridad de Supabase terminó sin hallazgos tras pasar las vistas públicas a permisos del llamante. Vite muestra una advertencia de paquete principal mayor a 500 kB.
-- El despliegue directo en Vercel no se pudo comprobar porque la conexión devolvió 403 para el equipo `visual19`. El repositorio está vinculado a Vercel según la interfaz revisada; el estado de un nuevo despliegue automático después del push aún debe confirmarse.
-- El punto de venta, las ventas y los movimientos de stock de las pantallas actuales todavía necesitan la sincronización transaccional con las tablas remotas. El inventario fuente está disponible para revisar; no se deben usar sus filas pendientes para prometer stock.
+- El commit `450247802dd52b8735fdb279f1ff59435db8377f` se subió a GitHub y el estado de Vercel reportó `success`. La API de Vercel devolvió 403 al leer el detalle/dominio del despliegue para el equipo `visual19`, por lo que el dominio público final no se pudo confirmar desde esta conexión.
+- El panel web, solicitudes públicas, lista de clientes y cola de revisión usan Supabase. El punto de venta, las ventas y los movimientos de stock de las pantallas actuales todavía necesitan la sincronización transaccional con las tablas remotas. El inventario fuente está disponible para revisar; no se deben usar sus filas pendientes para prometer stock.
 - El propietario aún debe iniciar sesión para que el trigger cree su membresía. El correo de acceso, las variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` (o `VITE_SUPABASE_ANON_KEY`) deben estar configurados en Vercel antes de habilitar el panel.
 
 ## Seguridad y procedencia
