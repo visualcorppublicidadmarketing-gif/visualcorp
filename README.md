@@ -39,6 +39,7 @@ Vite muestra la dirección local al iniciar. Abre estas rutas:
 - `src/app/workspace.jsx`: datos compartidos y persistencia local.
 - `src/App.jsx`: rutas y páginas de las tres experiencias.
 - `src/app.css`: sistema visual y componentes responsive.
+- `src/design-system.css`: ajustes visuales compartidos de las vistas activas; [alcance y verificación](docs/SISTEMA_VISUAL_COMPARTIDO.md).
 - `src/data/visualcorpCatalog.json`: copia de trabajo del catálogo del cotizador de Visual Corp, conservando su estado de tarifa pendiente.
 - `public/brand/`: logotipo y símbolo de Visual Corp.
 - `public/fonts/`: tipografía Bebas Kai para titulares.
