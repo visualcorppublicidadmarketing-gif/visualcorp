@@ -1,6 +1,6 @@
 # Contrato inicial de datos — Visual Corp
 
-Estado: diseño de referencia; no es una migración aplicada ni una fuente de existencias vigentes.
+Estado: esquema y controles de base aplicados; las filas de inventario de origen aún requieren conciliación y conteo físico.
 
 ## Dominios que deben compartir identidad y auditoría
 
@@ -26,6 +26,6 @@ Estado: diseño de referencia; no es una migración aplicada ni una fuente de ex
 - IDs de origen estables para una migración idempotente; conservar los respaldos originales.
 - Cantidades cero o especificaciones pendientes se conservan como pendientes de verificación, nunca como existencia confirmada.
 
-## Antes de escribir SQL
+## Estado de migraciones
 
-Revisar con el perfil Supabase `VISUAL` el proyecto exacto, región, estado, tablas y migraciones. Hacer un respaldo de cualquier base existente. Resolver primero nombres/IDs de sucursales y áreas reales; no copiar datos de Iglesia Jerusalén o GigaPrint como si fueran datos de Visual Corp. Crear migración versionada en `supabase/migrations/`, revisar políticas y probar en un proyecto de desarrollo antes de aplicar a producción.
+La base de producción de Visual Corp ya tiene las tablas núcleo, RLS, permisos por rol, catálogo de cotización, páginas y subpáginas, importaciones pendientes, directorio de clientes, asignación de roles y 70 artículos sugeridos sin saldos. Las migraciones aplicadas y sus límites están registrados en `context/ESTADO_PUBLICACION.md`. Las 749 filas importadas no son stock confirmado. Para cambios futuros, revisar primero el esquema y escribir una migración versionada en `supabase/migrations/`; conservar respaldos y verificar políticas antes de aplicarla.

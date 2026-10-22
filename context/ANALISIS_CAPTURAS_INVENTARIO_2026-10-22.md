@@ -1,7 +1,7 @@
 # Análisis de capturas del inventario actualizado
 
-Fecha de revisión: 22 de octubre de 2026  
-Fuente: `E:\VISUAL CORP\PRECIOS\Inventario\`  
+Fecha de revisión: 22 de octubre de 2026
+Fuente: `E:\VISUAL CORP\PRECIOS\Inventario\`
 Alcance: 67 capturas PNG: 33 de `Area Sublimación` y 34 de `Area Taller`.
 
 ## Lectura de la fuente
@@ -29,10 +29,10 @@ Alcance: 67 capturas PNG: 33 de `Area Sublimación` y 34 de `Area Taller`.
 
 ## Aplicación e importación
 
-- El módulo de inventario de `apps/visualcorp-suite` todavía guarda su estado operativo en el navegador (`localStorage`); esta app local no sincroniza esos cambios con otros equipos.
-- La base Supabase de Visual Corp tiene el esquema creado, pero al consultar el 22 de octubre de 2026 había **0 artículos, 0 variantes, 0 saldos, 0 categorías y 0 usuarios autenticados**. Por eso las capturas aún no se han cargado a un inventario compartido ni deben presentarse como datos ya sincronizados.
-- Antes de una importación compartida, se necesita conectar la app y definir una importación idempotente que asigne IDs Visual Corp únicos, guarde el nombre/código de Excel como referencia heredada, mantenga `0` separado de “sin dato”, registre el origen de cada saldo y preserve las cantidades cualitativas como texto pendiente.
-- La sucursal origen se interpreta como Visual Corp por la carpeta `Area Taller`/`Area Sublimación` y el título `MATERIAL TALLER VISUAL`; no se atribuyó ninguna existencia a Gigaprint.
+- La base Supabase de Visual Corp ya contiene 70 artículos sugeridos con IDs únicos, categorías jerárquicas y áreas para impresión, sublimación, troquelado, láser, taller, neones y bodega general. No se registraron saldos para estos artículos: requieren conteo físico.
+- Se cargaron 749 filas brutas de los libros de inventario de Visual Corp y Gigaprint en lotes separados con hoja, fila y datos originales. El estado de todas las filas importadas permanece pendiente de revisión; no son existencias disponibles para vender ni consumir.
+- La app tiene un panel de revisión que muestra filas de origen. El módulo operativo mantiene movimientos locales hasta completar la sincronización transaccional con Supabase.
+- Los archivos y las capturas originales permanecen en su ubicación de origen. No se asignó stock a Gigaprint fuera de lo que indiquen y confirmen sus propios registros.
 
 ## Uso recomendado
 

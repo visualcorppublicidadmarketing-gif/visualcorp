@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Boxes, CircleAlert, ClipboardList, Plus, Search, Trash2 } from 'lucide-react';
 import { useWorkspace, formatDate, formatMoney } from '../app/workspace';
+import { useAuth } from '../auth/AuthProvider';
+import { supabase } from '../lib/supabaseClient';
 import './InventoryWorkspace.css';
 
 const areas = ['Impresión', 'Sublimación', 'Troquelado', 'Láser', 'Taller', 'Neones', 'Bodega general'];
@@ -11,9 +13,28 @@ const areaCodes = { 'Impresión':'IMP', 'Sublimación':'SUB', 'Troquelado':'TRO'
 
 export function InventoryWorkspace() {
   const { data, setData, flash } = useWorkspace();
+  const { organizationId } = useAuth();
+  const [importRows, setImportRows] = useState([]);
+  const [importBatches, setImportBatches] = useState({});
+  const [pendingImportCount, setPendingImportCount] = useState(null);
   const [term,setTerm]=useState(''); const [area,setArea]=useState('Todas'); const [branch,setBranch]=useState('Todas');
   const [showForm,setShowForm]=useState(false); const [movement,setMovement]=useState(null); const [draft,setDraft]=useState(blankItem);
   const items=data.inventory||[]; const events=data.inventoryMovements||[];
+  React.useEffect(() => {
+    if (!supabase || !organizationId) return;
+    let active = true;
+    Promise.all([
+      supabase.from('inventory_import_rows').select('id,batch_id,source_sheet,source_row,source_reference,candidate,raw_row,review_note', { count: 'exact' }).eq('organization_id', organizationId).eq('mapping_status', 'pending_review').order('source_sheet').order('source_row').limit(100),
+      supabase.from('inventory_import_batches').select('id,source_file,branch_id,row_count,import_status,source_uri').eq('organization_id', organizationId),
+    ]).then(([rowsResult, batchesResult]) => {
+      if (!active) return;
+      if (rowsResult.error || batchesResult.error) { flash(`No se pudo leer la cola de importación: ${(rowsResult.error || batchesResult.error).message}`); return; }
+      setImportRows(rowsResult.data || []);
+      setPendingImportCount(rowsResult.count || 0);
+      setImportBatches(Object.fromEntries((batchesResult.data || []).map((batch) => [batch.id, batch])));
+    });
+    return () => { active = false; };
+  }, [organizationId]);
   const visible=useMemo(()=>items.filter(i=>(area==='Todas'||i.area===area)&&(branch==='Todas'||i.branch===branch)&&`${i.name} ${i.category} ${i.variant} ${i.sku}`.toLowerCase().includes(term.toLowerCase())),[items,area,branch,term]);
   const low=items.filter(i=>!i.archived&&!i.sourceStatus&&Number(i.quantity)<=Number(i.minimum));
   const saveItem=(e)=>{e.preventDefault();if(!draft.name.trim())return;const prefix=`VC-INV-${areaCodes[draft.area]||'GEN'}-`;const existing=(data.inventory||[]).reduce((max,item)=>{const match=String(item.sku||item.id||'').match(new RegExp(`^${prefix}(\\d+)$`));return match?Math.max(max,Number(match[1])):max;},0);const sku=draft.sku.trim()||`${prefix}${String(existing+1).padStart(3,'0')}`;if((data.inventory||[]).some(item=>item.sku===sku||item.id===sku)){flash(`El ID ${sku} ya existe. Usa otro código.`);return;}const now=new Date().toISOString();const item={...draft,id:sku,sku,quantity:Number(draft.quantity)||0,minimum:Number(draft.minimum)||0,createdAt:now,sourceStatus:'Conteo inicial pendiente'};setData(s=>({...s,inventory:[item,...(s.inventory||[])],inventoryMovements:[{id:uid(),itemId:item.id,itemName:item.name,type:'conteo_inicial',quantity:item.quantity,branch:item.branch,area:item.area,actor:'Usuario local',reason:'Alta inicial; pendiente de cotejo físico',createdAt:now},...(s.inventoryMovements||[])]}));setDraft(blankItem);setShowForm(false);flash(`Artículo ${sku} añadido. Confirma el conteo inicial antes de usarlo como existencia real.`);};
@@ -24,7 +45,8 @@ export function InventoryWorkspace() {
   };
   const removeItem=(item)=>{if(!window.confirm(`¿Archivar ${item.name}? Se conserva el historial y no se borra el artículo.`))return;setData(s=>({...s,inventory:(s.inventory||[]).map(x=>x.id===item.id?{...x,archived:true,updatedAt:new Date().toISOString()}:x)}));};
   return <div className="inventory-workspace">
-    <div className="inventory-heading-row"><div><span className="eyebrow">INVENTARIO COMPARTIDO · MODO LOCAL</span><h2>Existencias por área y sucursal</h2><p>Hay {items.filter(i=>!i.archived&&i.starterCatalog).length} artículos sugeridos con ID único y stock cero; confirma especificaciones y conteo físico antes de usarlos.</p></div><button className="button button-dark" onClick={()=>setShowForm(v=>!v)}><Plus size={16}/> Añadir artículo</button></div>
+    <div className="inventory-heading-row"><div><span className="eyebrow">INVENTARIO · VISUAL CORP + GIGAPRINT</span><h2>Existencias por área y sucursal</h2><p>{pendingImportCount===null?'Cargando las fuentes de inventario…':`${pendingImportCount} filas recibidas y pendientes de cotejo; no cuentan como stock activo hasta revisar cantidades y variantes.`} El catálogo sugerido mantiene IDs únicos y stock cero.</p></div><button className="button button-dark" onClick={()=>setShowForm(v=>!v)}><Plus size={16}/> Añadir artículo</button></div>
+    {pendingImportCount>0&&<section className="panel"><div className="panel-heading"><div><span className="eyebrow">IMPORTACIÓN CON PROCEDENCIA</span><h3>Inventario recibido · revisión necesaria</h3></div><span className="muted-count">{pendingImportCount} filas</span></div><p className="panel-intro">Los libros de Visual Corp y Gigaprint se guardaron sin modificar su contenido. Las cantidades textuales, vacías o ambiguas necesitan validación antes de afectar el stock del POS.</p><div className="table-wrap"><table><thead><tr><th>Archivo fuente</th><th>Hoja</th><th>Fila</th><th>Artículo candidato</th><th>Dato de cantidad recibido</th></tr></thead><tbody>{importRows.slice(0,40).map((row)=><tr key={row.id}><td>{importBatches[row.batch_id]?.source_file||'Inventario importado'}</td><td>{row.source_sheet}</td><td>{row.source_row}</td><td><b>{row.candidate?.name||row.source_reference||row.raw_row?.name||'Por identificar'}</b><small>{row.candidate?.area||''}</small></td><td>{String(row.candidate?.quantity ?? row.raw_row?.quantity ?? row.raw_row?.stock ?? 'Por revisar')}</td></tr>)}</tbody></table>{pendingImportCount>40&&<div className="table-more">Mostrando 40 de {pendingImportCount} filas pendientes.</div>}</div></section>}
     <div className="inventory-stats"><article><Boxes/><span>Artículos</span><b>{items.filter(i=>!i.archived).length}</b></article><article className={low.length?'inventory-stat-alert':''}><CircleAlert/><span>En mínimo / agotados</span><b>{low.length}</b></article><article><ArrowLeftRight/><span>Movimientos</span><b>{events.length}</b></article><article><ClipboardList/><span>Áreas</span><b>{new Set(items.filter(i=>!i.archived).map(i=>i.area).filter(Boolean)).size}</b></article></div>
     {low.length>0&&<div className="inventory-alert"><CircleAlert size={17}/><div><b>{low.length} artículos requieren atención</b><small>{low.slice(0,4).map(i=>`${i.name}${i.variant?` · ${i.variant}`:''}`).join(' · ')}{low.length>4?' · y más':''}</small></div></div>}
     {showForm&&<form className="panel inventory-form" onSubmit={saveItem}><header><h3>Nuevo artículo</h3><span>Se asigna automáticamente el siguiente ID de su área. El stock queda pendiente de cotejo físico.</span></header><div className="inventory-form-grid"><label>Artículo<input required value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})} placeholder="Ej. Taza metalizada"/></label><label>Variante<input value={draft.variant} onChange={e=>setDraft({...draft,variant:e.target.value})} placeholder="Color, medida, calibre…"/></label><label>Categoría<input value={draft.category} onChange={e=>setDraft({...draft,category:e.target.value})} placeholder="Tazas, lonas, tinta…"/></label><label>Área<select value={draft.area} onChange={e=>setDraft({...draft,area:e.target.value})}>{areas.map(x=><option key={x}>{x}</option>)}</select></label><label>Sucursal<select value={draft.branch} onChange={e=>setDraft({...draft,branch:e.target.value})}>{branches.map(x=><option key={x}>{x}</option>)}</select></label><label>Ubicación<input value={draft.location} onChange={e=>setDraft({...draft,location:e.target.value})} placeholder="Bodega, estante…"/></label><label>Unidad base<input required value={draft.unit} onChange={e=>setDraft({...draft,unit:e.target.value})} placeholder="unidad, metro, litro…"/></label><label>Existencia del conteo<input type="number" min="0" step="any" value={draft.quantity} onChange={e=>setDraft({...draft,quantity:e.target.value})}/></label><label>Mínimo de reposición<input type="number" min="0" step="any" value={draft.minimum} onChange={e=>setDraft({...draft,minimum: e.target.value})}/></label><label>ID / código<input value={draft.sku} onChange={e=>setDraft({...draft,sku:e.target.value})} placeholder="Automático según área"/></label><label className="inventory-notes">Notas<textarea value={draft.notes} onChange={e=>setDraft({...draft,notes:e.target.value})} rows="2"/></label></div><button className="button button-dark" type="submit">Guardar artículo</button></form>}

@@ -1,24 +1,45 @@
 import React, { useMemo, useState } from 'react';
 import { Search, UserRoundPlus, Users } from 'lucide-react';
 import { useWorkspace, formatDate } from '../app/workspace';
+import { useAuth } from '../auth/AuthProvider';
+import { supabase } from '../lib/supabaseClient';
 
 export function CustomerBook() {
   const { data, add, flash } = useWorkspace();
+  const { organizationId, user } = useAuth();
   const [term, setTerm] = useState('');
+  const [remoteCustomers, setRemoteCustomers] = useState(null);
+  const [loading, setLoading] = useState(Boolean(supabase));
   const [form, setForm] = useState({ name: '', phone: '', email: '', notes: '' });
-  const customers = data.customers || [];
+  React.useEffect(() => {
+    if (!supabase || !organizationId) { setLoading(false); return; }
+    let active = true;
+    supabase.from('customers').select('id,full_name,phone,email,notes,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).then(({ data: rows, error }) => {
+      if (!active) return;
+      if (error) flash(`No se pudo cargar la base de clientes: ${error.message}`);
+      else setRemoteCustomers((rows || []).map((row) => ({ id: row.id, name: row.full_name, phone: row.phone, email: row.email, notes: row.notes, createdAt: row.created_at })));
+      setLoading(false);
+    });
+    return () => { active = false; };
+  }, [organizationId]);
+  const customers = remoteCustomers || data.customers || [];
   const visible = useMemo(() => customers.filter((c) => `${c.name} ${c.phone} ${c.email}`.toLowerCase().includes(term.toLowerCase())), [customers, term]);
-  const save = (event) => {
+  const save = async (event) => {
     event.preventDefault();
     if (!form.name.trim()) return;
     const duplicate = customers.find((c) => c.name.trim().toLowerCase() === form.name.trim().toLowerCase() && (c.phone || '') === form.phone.trim());
     if (duplicate) { flash('Ese cliente ya está registrado.'); return; }
-    add('customers', { ...form, name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim(), notes: form.notes.trim(), source: 'Registro manual' });
+    const values = { name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim(), notes: form.notes.trim() };
+    if (supabase && organizationId && user) {
+      const { data: saved, error } = await supabase.from('customers').insert({ organization_id: organizationId, full_name: values.name, phone: values.phone, email: values.email, notes: values.notes, created_by: user.id }).select('id,full_name,phone,email,notes,created_at').single();
+      if (error) { flash(`No se guardó el cliente: ${error.message}`); return; }
+      setRemoteCustomers((current) => [{ id: saved.id, name: saved.full_name, phone: saved.phone, email: saved.email, notes: saved.notes, createdAt: saved.created_at }, ...(current || [])]);
+    } else add('customers', { ...values, source: 'Registro manual' });
     setForm({ name: '', phone: '', email: '', notes: '' });
-    flash('Cliente guardado en la base local.');
+    flash(supabase ? 'Cliente guardado en la base compartida.' : 'Cliente guardado localmente.');
   };
   return <div className="customer-book">
-    <div className="page-heading"><div><div className="eyebrow">CLIENTES · BASE LOCAL</div><h1>Directorio de clientes</h1><p>Registra y busca clientes para asociarlos a ventas del POS. Los datos permanecen en este navegador.</p></div><span className="local-badge"><Users size={14}/> {customers.length} clientes</span></div>
+    <div className="page-heading"><div><div className="eyebrow">CLIENTES · BASE COMPARTIDA</div><h1>Directorio de clientes</h1><p>Registra y busca clientes para asociarlos a ventas del POS. Los datos se guardan en Supabase con acceso para el equipo autorizado.</p></div><span className="local-badge"><Users size={14}/> {loading?'…':customers.length} clientes</span></div>
     <div className="customer-book-grid">
       <form className="panel form-panel" onSubmit={save}><div className="panel-heading"><div><span className="eyebrow">NUEVO REGISTRO</span><h2>Agregar cliente</h2></div><UserRoundPlus size={19}/></div>
         <label>Nombre o razón social *<input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>

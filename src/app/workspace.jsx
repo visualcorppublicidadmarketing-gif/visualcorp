@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import sourceCatalog from '../data/estebanicoSupabaseCatalog.snapshot.json';
+import { supabase, supabaseConfigured } from '../lib/supabaseClient';
 
 const STORAGE_KEY = 'visualcorp-suite-local-v1';
 const WorkspaceContext = createContext(null);
@@ -144,6 +145,35 @@ function readState() {
 export function WorkspaceProvider({ children }) {
   const [data, setData] = useState(readState);
   const [notice, setNotice] = useState('');
+  useEffect(() => {
+    if (!supabaseConfigured) return;
+    let active = true;
+    const hydrate = async () => {
+      const [settingsResult, servicesResult, catalogResult] = await Promise.all([
+        supabase.from('site_settings').select('*').eq('id', 'main').maybeSingle(),
+        supabase.from('services').select('*').eq('is_published', true).order('sort_order'),
+        supabase.from('public_quote_catalog_products').select('*').order('sort_order'),
+      ]);
+      if (!active || settingsResult.error || servicesResult.error || catalogResult.error) return;
+      const settings = settingsResult.data;
+      const services = (servicesResult.data || []).map((row) => ({ id: row.id, name: row.name, description: row.short || row.detail || '', enabled: row.is_published }));
+      const remoteCatalog = (catalogResult.data || []).map((row) => ({
+        id: row.id, name: row.name, slug: row.slug, family: row.category || 'General', mode: row.calc_type === 'm2' ? 'area' : 'quantity',
+        priceBasis: 'unit', tiers: (row.price_scales || []).filter((scale) => scale.qty != null && (scale.pvp != null || scale.price != null)).map((scale) => ({ min_qty: Number(scale.qty), unit_price: Number(scale.pvp ?? scale.price) })),
+        optionPrices: (row.price_scales || []).filter((scale) => scale.option != null && scale.price != null).map((scale) => ({ label: String(scale.option), price: Number(scale.price) })),
+        unit: row.calc_type === 'm2' ? 'm²' : 'unidad', price: Number(row.price) || 0, installPrice: row.price_inst == null ? null : Number(row.price_inst),
+        corporatePrice: row.price_corp == null ? null : Number(row.price_corp), image: row.image || '', images: row.images || [],
+        confirmed: Number(row.price) > 0, published: true, description: row.description || '', source: 'Supabase · Visual Corp',
+      }));
+      setData((current) => ({ ...current,
+        settings: settings ? { ...current.settings, name: settings.brand, location: settings.address, heroEyebrow: settings.hero_kicker, heroTitle: settings.hero_title, heroText: settings.hero_text, contactPhone: settings.phone, email: settings.email } : current.settings,
+        services: services.length ? services : current.services,
+        catalog: remoteCatalog.length ? remoteCatalog : current.catalog,
+      }));
+    };
+    void hydrate();
+    return () => { active = false; };
+  }, []);
   useEffect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(data)), [data]);
   useEffect(() => {
     const sync = (event) => {
