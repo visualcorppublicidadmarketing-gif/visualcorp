@@ -95,6 +95,30 @@
 
 .work-app .pos-grid { gap: 18px; align-items: start; }
 .work-app .pos-grid > .panel { min-width: 0; }
+.work-app .compact-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.work-app .compact-stats .stat-card {
+  min-height: 116px;
+  padding: 20px;
+  border-color: #e8e5ee;
+  background: linear-gradient(145deg, #fff 72%, #fbf8fd);
+}
+.work-app .compact-stats .stat-icon { box-shadow: 0 8px 20px #1d16300c; }
+.work-app .pos-grid > .panel {
+  border-color: #e7e5ed;
+  border-radius: 18px;
+  box-shadow: 0 12px 32px #21152b08;
+}
+.work-app .pos-grid > .panel > .panel-heading {
+  padding-bottom: 13px;
+  border-bottom: 1px solid #f0edf3;
+}
+.work-app .pos-grid .form-panel > .panel-heading > svg {
+  box-sizing: content-box;
+  padding: 10px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #f8eafa, #edf8fc);
+  color: #8f1988;
+}
 .work-app .form-panel { gap: 12px; }
 .work-app .form-panel > label { color: #42434d; font-size: 11px; font-weight: 700; }
 .work-app .form-panel input,
@@ -116,7 +140,15 @@
 .work-app .form-submit { min-height: 50px; border-radius: 12px; }
 .work-app .money-input { overflow: hidden; min-height: 45px; border-color: #e0e1e8; border-radius: 11px; }
 .work-app .money-input:focus-within { border-color: #a51091; box-shadow: 0 0 0 4px #a5109117; }
-.work-app .sale-activity { padding: 13px 0; }
+.work-app .sale-activity {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid #eeedf2;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #fff, #fdfcfe);
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.work-app .sale-activity:hover { border-color: #ddd4e5; box-shadow: 0 8px 22px #2415330a; }
 .work-app .sale-row { min-height: 62px; }
 .work-app .sale-icon { width: 37px; height: 37px; display: grid; place-items: center; border-radius: 12px; }
 .work-app .sale-row b { font-size: 12px; }
@@ -172,6 +204,8 @@
   .work-app .page-heading h1 { font-size: clamp(25px, 7vw, 31px); }
   .work-app .heading-action { width: 100%; }
   .work-app .stat-grid { gap: 10px; }
+  .work-app .compact-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .work-app .compact-stats .stat-card { min-height: 104px; padding: 13px; }
   .work-app .stat-card { min-height: 96px; padding: 13px; gap: 10px; }
   .work-app .stat-meta > small { white-space: normal; line-height: 1.35; }
   .work-app .panel { padding: 16px; }
@@ -187,6 +221,7 @@
   .work-app .local-badge .status-dot { flex: none; width: 8px; height: 8px; }
   .work-app .main-content { padding-right: 13px; padding-left: 13px; }
   .work-app .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .work-app .compact-stats { grid-template-columns: minmax(0, 1fr); }
   .work-app .stat-card { min-height: 102px; flex-direction: column; align-items: flex-start; }
   .work-app .stat-meta > b { margin-top: 5px; font-size: 19px; }
   .work-app .panel-heading { gap: 8px; }
