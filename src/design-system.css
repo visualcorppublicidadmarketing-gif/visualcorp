@@ -1,0 +1,197 @@
+/* Visual Corp Suite — shared product UI layer. */
+.work-app {
+  --surface: #fff;
+  --surface-soft: #f8f8fb;
+  --line: #e7e8ef;
+  --ink: #191a22;
+  --muted: #737582;
+  --purple: #a51091;
+  --blue: #168fc8;
+  --amber: #e99a13;
+  background:
+    radial-gradient(ellipse at 95% 0%, #f4eafa 0, transparent 26rem),
+    #f5f6fa;
+  color: var(--ink);
+}
+
+.work-app .sidebar {
+  border-right-color: #e6e6ed;
+  background: rgb(255 255 255 / 94%);
+  backdrop-filter: blur(18px);
+}
+
+.work-app .sidebar-link {
+  position: relative;
+  transition: background-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.work-app .sidebar-link:hover { transform: translateX(2px); }
+.work-app .sidebar-link.active { background: #f6eef8; color: #74136f; }
+.work-app .sidebar-link.active svg { color: #a51091; }
+.work-app .sidebar-link:focus-visible,
+.work-app .switch-app:focus-visible,
+.work-app .icon-button:focus-visible,
+.work-app .button:focus-visible,
+.work-app input:focus-visible,
+.work-app select:focus-visible,
+.work-app textarea:focus-visible,
+.work-app a:focus-visible,
+.work-app button:focus-visible {
+  outline: 3px solid #a5109145;
+  outline-offset: 2px;
+}
+
+.work-app .topbar {
+  position: sticky;
+  z-index: 3;
+  top: 0;
+  background: rgb(255 255 255 / 88%);
+  backdrop-filter: blur(16px);
+}
+
+.work-app .main-content { padding-top: clamp(24px, 3vw, 42px); }
+.work-app .page-heading { align-items: end; }
+.work-app .page-heading h1 { font-size: clamp(24px, 2.1vw, 32px); letter-spacing: -.045em; }
+.work-app .page-heading .eyebrow { letter-spacing: .13em; }
+
+.work-app .panel,
+.work-app .stat-card,
+.work-app .operation-card {
+  border-color: #e6e7ee;
+  border-radius: 17px;
+  box-shadow: 0 8px 26px #25233a08;
+}
+
+.work-app .panel { padding: clamp(17px, 2vw, 24px); }
+.work-app .panel-heading { margin-bottom: 18px; }
+.work-app .panel-heading h2 { font-size: 16px; letter-spacing: -.03em; }
+.work-app .stat-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 112px;
+  padding: 18px;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.work-app .stat-card::after {
+  position: absolute;
+  right: -36px;
+  bottom: -58px;
+  width: 112px;
+  height: 112px;
+  border: 1px solid #a5109114;
+  border-radius: 50%;
+  content: "";
+}
+.work-app .stat-card:hover { transform: translateY(-2px); border-color: #d9c7e2; box-shadow: 0 14px 32px #25233a10; }
+.work-app .stat-icon { width: 40px; height: 40px; border-radius: 13px; }
+.work-app .stat-meta > span { font-weight: 650; }
+.work-app .stat-meta > b { font-size: clamp(20px, 2vw, 25px); }
+.work-app .operation-card { min-height: 108px; transition: transform .2s ease, box-shadow .2s ease; }
+.work-app .operation-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px #25233a10; }
+.work-app .button { min-height: 44px; }
+.work-app .button-dark { background: linear-gradient(115deg, #20212b, #383044); }
+.work-app .button-dark:hover { background: linear-gradient(115deg, #363744, #54224e); }
+.work-app .local-footer { padding-top: 18px; }
+
+.work-app .pos-grid { gap: 18px; align-items: start; }
+.work-app .pos-grid > .panel { min-width: 0; }
+.work-app .form-panel { gap: 12px; }
+.work-app .form-panel > label { color: #42434d; font-size: 11px; font-weight: 700; }
+.work-app .form-panel input,
+.work-app .form-panel select,
+.work-app .form-panel textarea,
+.work-app .payment-form input,
+.work-app .payment-form select {
+  min-height: 45px;
+  border-color: #e0e1e8;
+  border-radius: 11px;
+  background-color: #fff;
+  color: #24252e;
+  font-size: 12px;
+}
+.work-app .form-panel textarea { min-height: 82px; }
+.work-app .form-panel input:focus,
+.work-app .form-panel select:focus,
+.work-app .form-panel textarea:focus { border-color: #a51091; box-shadow: 0 0 0 4px #a5109117; }
+.work-app .form-submit { min-height: 50px; border-radius: 12px; }
+.work-app .money-input { overflow: hidden; min-height: 45px; border-color: #e0e1e8; border-radius: 11px; }
+.work-app .money-input:focus-within { border-color: #a51091; box-shadow: 0 0 0 4px #a5109117; }
+.work-app .sale-activity { padding: 13px 0; }
+.work-app .sale-row { min-height: 62px; }
+.work-app .sale-icon { width: 37px; height: 37px; display: grid; place-items: center; border-radius: 12px; }
+.work-app .sale-row b { font-size: 12px; }
+.work-app .sale-row > strong { font-size: 13px; }
+.work-app .notice-box { border-radius: 15px; }
+
+.mobile-menu-button { display: none; }
+.mobile-nav-backdrop { display: none; }
+
+@media (max-width: 1100px) {
+  .work-app .sidebar {
+    z-index: 31;
+    width: min(310px, 86vw);
+    padding: 20px 15px 13px;
+    overflow-y: auto;
+    transform: translateX(-105%);
+    transition: transform .22s ease, box-shadow .22s ease;
+    box-shadow: none;
+  }
+  .work-app .sidebar.sidebar-open { transform: translateX(0); box-shadow: 0 18px 54px #17191f35; }
+  .work-app .sidebar-brand { justify-content: space-between; padding: 0 8px 19px; }
+  .work-app .sidebar-brand .brand { width: 136px; height: auto; overflow: visible; }
+  .work-app .sidebar-brand .brand img { width: 100%; max-width: 100%; }
+  .work-app .sidebar-brand > button,
+  .work-app .workspace-pill,
+  .work-app .sidebar-caption,
+  .work-app .sidebar-link span,
+  .work-app .sidebar-link .sidebar-count,
+  .work-app .switch-app > span,
+  .work-app .switch-app > svg,
+  .work-app .sidebar-profile span,
+  .work-app .sidebar-profile > svg { display: initial; }
+  .work-app .sidebar-brand > button { display: grid; }
+  .work-app .workspace-pill { display: flex; margin-bottom: 24px; }
+  .work-app .sidebar-caption { display: block; }
+  .work-app .sidebar-link { justify-content: flex-start; width: auto; height: 44px; margin: 0; padding: 0 11px; }
+  .work-app .sidebar-bottom { padding-bottom: 3px; }
+  .work-app .switch-app { justify-content: flex-start; width: auto; height: auto; padding: 11px 8px; }
+  .work-app .switch-app > span:nth-child(2), .work-app .sidebar-profile span { flex: 1; }
+  .work-app .sidebar-profile { justify-content: flex-start; padding: 12px 6px 2px; }
+  .work-app .main-shell { margin-left: 0; }
+  .work-app .topbar { justify-content: flex-start; gap: 11px; padding-right: 18px; padding-left: 15px; }
+  .mobile-menu-button { display: inline-grid; flex: none; width: 40px; height: 40px; place-items: center; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink); }
+  .work-app .breadcrumbs { min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; }
+  .work-app .breadcrumbs b { overflow: hidden; text-overflow: ellipsis; }
+  .work-app .topbar-right { margin-left: auto; }
+  .mobile-nav-backdrop { display: block; position: fixed; z-index: 30; inset: 0; width: 100%; height: 100%; border: 0; background: #15162070; }
+}
+
+@media (max-width: 760px) {
+  .work-app .main-content { padding: 23px 16px 14px; }
+  .work-app .page-heading { align-items: flex-start; }
+  .work-app .page-heading h1 { font-size: clamp(25px, 7vw, 31px); }
+  .work-app .heading-action { width: 100%; }
+  .work-app .stat-grid { gap: 10px; }
+  .work-app .stat-card { min-height: 96px; padding: 13px; gap: 10px; }
+  .work-app .stat-meta > small { white-space: normal; line-height: 1.35; }
+  .work-app .panel { padding: 16px; }
+  .work-app .panel-heading { align-items: flex-start; }
+  .work-app .form-panel { gap: 11px; }
+  .work-app .sale-payment-summary { padding-left: 0; }
+  .work-app .table-wrap { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+}
+
+@media (max-width: 430px) {
+  .work-app .topbar { gap: 9px; padding-right: 12px; padding-left: 12px; }
+  .work-app .local-badge { max-width: 14px; overflow: hidden; white-space: nowrap; font-size: 0; }
+  .work-app .local-badge .status-dot { flex: none; width: 8px; height: 8px; }
+  .work-app .main-content { padding-right: 13px; padding-left: 13px; }
+  .work-app .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .work-app .stat-card { min-height: 102px; flex-direction: column; align-items: flex-start; }
+  .work-app .stat-meta > b { margin-top: 5px; font-size: 19px; }
+  .work-app .panel-heading { gap: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .work-app *, .work-app *::before, .work-app *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

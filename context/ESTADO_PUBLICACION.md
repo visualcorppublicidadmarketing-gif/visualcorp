@@ -90,6 +90,6 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 
 ## Comparación Odoo y responsive — 22 de octubre de 2026
 
-- Análisis de funciones y roadmap priorizado en [`../docs/ANALISIS_ODOO_Y_ROADMAP_2026-10-22.md`](../docs/ANALISIS_ODOO_Y_ROADMAP_2026-10-22.md), con fuentes oficiales de Odoo.
+- Análisis y plan maestro por fases 0–9 en [`../docs/ANALISIS_ODOO_Y_ROADMAP_2026-10-22.md`](../docs/ANALISIS_ODOO_Y_ROADMAP_2026-10-22.md), con dependencias y criterios de cierre por fase.
 - Odoo destaca POS multidevice, cajeros, pagos, modo sin conexión, fidelización y conexión con inventario/comercio electrónico. Visual Corp ya integra ventas, clientes, inventario, cotizaciones, CRM, caja, devoluciones, transferencias y producción; compras/proveedores, caja multiartículo, escaneo, offline robusto, trazabilidad por lote y contabilidad son brechas priorizadas.
-- Mejora implementada: navegación lateral adaptativa para teléfono y tableta, con botón accesible, fondo de cierre, panel desplazable y cierre al elegir una sección. La siguiente fase funcional recomendada es compras/proveedores con recepciones parciales auditadas.
+- Mejora inicial de interfaz: menú accesible para teléfono y tabletas de hasta 1100 px, con cierre por Escape; capa visual compartida para Admin Web, Operaciones y POS con tarjetas modulares, controles táctiles y foco visible. La novedad se publicó en el changelog compartido. Siguiente secuencia: validación visual en dispositivos y conciliación de inventario antes de activar compras/proveedores.

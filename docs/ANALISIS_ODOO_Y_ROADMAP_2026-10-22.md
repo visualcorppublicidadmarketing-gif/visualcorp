@@ -45,4 +45,119 @@ El POS actual guarda ventas, clientes, abonos y saldos; puede convertir cotizaci
 
 ## Hecho en esta revisión
 
-La navegación interna en teléfono ahora abre un panel lateral con botón accesible y fondo de cierre; al elegir una sección el panel se cierra y el área principal ocupa todo el ancho. La página pública y el resto de los estilos ya tenían breakpoints para móvil. La fase funcional recomendada para implementar a continuación es **Compras y proveedores**, porque conecta directamente alertas de faltantes con una recepción auditable y stock real.
+La navegación interna en teléfono y tableta ahora abre un panel lateral con botón accesible, fondo de cierre y tecla Escape; al elegir una sección el panel se cierra y el área principal ocupa todo el ancho. Se añadió una capa visual compartida para Admin Web, Operaciones y POS: superficies modulares, jerarquía tipográfica, controles táctiles y foco visible. La siguiente fase funcional debe completar el conteo y conciliación del inventario, y luego **Compras y proveedores**, para que las reposiciones partan de saldos confiables.
+
+## Plan maestro de implementación por fases
+
+El orden prioriza primero la confiabilidad de los datos y luego automatiza los movimientos que dependen de ellos. Cada fase se publica como una entrega pequeña, documentada en el changelog, migrada de forma compatible y verificada en la app desplegada. No se declara disponible una función solo por existir su pantalla: debe completar el flujo y dejar evidencia en la base central.
+
+### Fase 0 — Base segura, responsive y operación observable
+
+**Estado:** iniciada. El menú lateral móvil ya se publicó; queda hacer la comprobación visual completa de cada área.
+
+- Revisar página pública, Admin Web, Operaciones, POS, CRM, Clientes, Inventario, Cotizador y flujos en 360 × 800, 768 × 1024 y 1440 × 900.
+- Asegurar controles táctiles cómodos, formularios utilizables con teclado móvil, estados de carga/vacío/error y que ninguna tabla ensanche la página.
+- Revisar perfiles y permisos para propietario, administración web, administración POS, asesoría, bodega y producción; conceder solo los accesos necesarios.
+- Mantener respaldo previo, migraciones versionadas, claves fuera del repositorio, changelog por entrega y forma de reversión.
+
+**Cierre:** las rutas funcionan en los tres tamaños; cada rol ve y modifica solo lo autorizado; una migración puede aplicarse desde una base respaldada; el changelog y el despliegue reflejan la versión activa.
+
+### Fase 1 — Inventario confiable y catálogo operativo
+
+- Separar consumibles, materia prima, producto para reventa, herramientas y servicios; definir unidad de medida, variantes, área, sucursal y ubicación cuando se confirme esa información.
+- Añadir flujo guiado de conteo físico, conciliación contra las 749 filas fuente pendientes, aprobación y saldo inicial con actor, fecha y procedencia.
+- Completar mínimos/máximos y reglas de reposición por artículo solo cuando el responsable los confirme; mostrar “sin conteo” como desconocido, nunca como cero.
+- Normalizar SKU/códigos, fotos de referencia, proveedor preferido y etiquetas sin reemplazar originales ni inventar precios o cantidades.
+
+**Cierre:** cada saldo activo proviene de conteo o movimiento registrado; se puede rastrear quién, cuándo y por qué lo cambió; filtros y métricas distinguen dato confirmado de dato pendiente.
+
+### Fase 2 — Proveedores, compras y reposición
+
+- Crear la base central de proveedores y sus contactos comerciales confirmados.
+- Generar solicitudes de reposición desde mínimos, agotados y compra urgente del POS; permitir revisión y consolidación por proveedor.
+- Crear órdenes con líneas, unidades, costo confirmado, fecha prevista, notas y estados de borrador, aprobación, envío, recepción parcial y cierre/cancelación.
+- Recibir cantidades parciales y registrar automáticamente movimientos auditados; la orden conserva saldo por recibir y diferencia entre pedido y recibido.
+- Incorporar historial por proveedor, artículo, última compra y variación de costo sin cambiar el costo vigente hasta confirmar la recepción.
+
+**Cierre:** un pedido puede seguirse desde faltante hasta recepción parcial/final, cada unidad recibida actualiza el saldo una sola vez y un reintento no duplica stock.
+
+### Fase 3 — POS de mostrador y experiencia de asesoría
+
+- Reemplazar la captura de una sola línea por catálogo visual con búsqueda, categorías, imágenes, variantes, cantidades, descuentos autorizados y carrito multiartículo.
+- Agilizar selección o alta de cliente, vincular asesor/caja/sucursal y mostrar disponibilidad reservable antes de confirmar.
+- Añadir pagos combinados y abonos, cálculo visible del saldo, venta en espera y recuperación de una venta abierta.
+- Crear turnos de caja: apertura con fondo, ingresos/retiros autorizados, cierre, conteo declarado, diferencia y revisión de responsable.
+- Conectar devoluciones, anulaciones y notas de crédito operativas con su venta original; registrar motivo, aprobación y restablecimiento de stock cuando corresponda.
+- Mantener separado el recibo interno del comprobante tributario. La emisión fiscal requiere alcance y proveedor de Ecuador confirmados.
+
+**Cierre:** una asesora completa una venta con varios productos, cliente y uno o varios pagos; caja, saldo de cliente y stock quedan consistentes aunque haya reintentos; una devolución no borra la venta original.
+
+### Fase 4 — Escaneo, ubicaciones y preparación de pedidos
+
+- Añadir SKU/código de barras o QR; priorizar lector USB como teclado y habilitar cámara solo con permiso y compatibilidad confirmada.
+- Registrar ubicaciones de bodega y guiar recepción, traslado, conteo, picking, empaque y entrega.
+- Añadir lotes o series únicamente a los artículos que realmente los requieran, con reglas de captura por tipo.
+- Permitir preparación individual, por varias órdenes o por lotes; reservar cantidades y registrar sustituciones/faltantes con autorización.
+
+**Cierre:** el escaneo identifica el artículo correcto; cada movimiento registra origen/destino, actor, cantidad y documento relacionado; una orden no se marca entregada si quedan líneas pendientes.
+
+### Fase 5 — CRM, clientes y cotizaciones conectadas
+
+- Unificar cliente, solicitud pública, oportunidad, cotización, venta y seguimiento en una ficha con historial y permisos.
+- Definir etapas y responsables, recordatorios y motivos de pérdida; evitar duplicados con reglas revisables.
+- Convertir una cotización aceptada en orden sin volver a digitar cliente ni artículos; conservar versiones, vencimiento y aprobación de descuentos.
+- Mostrar actividad y métricas por fuente, estado y responsable; limitar datos personales a quienes los necesitan.
+
+**Cierre:** una solicitud puede recorrerse hasta cotización y venta con un mismo identificador y sin registros duplicados; las métricas coinciden con los documentos fuente.
+
+### Fase 6 — Producción, calidad y mantenimiento
+
+- Definir listas de materiales/recetas versionadas por producto o tipo de trabajo, con consumos planificados separados de consumos reales.
+- Enlazar ventas aprobadas con órdenes de producción, áreas, responsables, fechas, entregas parciales y tiempos.
+- Añadir puntos de control de calidad, rechazo/retrabajo y motivo; solo consumos reales aprobados descuentan inventario.
+- Mantener equipos, mantenimiento preventivo y registro de fallas si el equipo confirma responsables y frecuencias.
+
+**Cierre:** cada trabajo deja trazabilidad de insumos planificados/usados, responsables, calidad y entregas; cambios de receta no alteran órdenes ya iniciadas.
+
+### Fase 7 — Caja, contabilidad gerencial e indicadores
+
+- Conciliar ventas, pagos por método, abonos, saldos por cobrar, devoluciones, caja y depósitos.
+- Construir reportes de ventas, margen, rotación, consumo, quiebres, reposición, tiempos de producción y desempeño comercial con definiciones visibles.
+- Incorporar costos históricos y costos de producción confirmados; permitir filtros por fecha, sucursal, familia, asesor y canal.
+- Validar con el responsable contable políticas de impuestos, documentos, cierres y exportaciones antes de usarlos para decisiones contables oficiales.
+
+**Cierre:** totales de los paneles se reconcilian con ventas, movimientos y pagos fuente; las métricas indican periodo, moneda, fórmula y calidad del dato.
+
+### Fase 8 — Fidelización y pedidos desde la web
+
+- Definir con el negocio reglas de puntos, descuentos, cupones, vigencia, acumulación y autorización; no activar beneficios con condiciones supuestas.
+- Publicar catálogo con disponibilidad y precios aprobados, solicitud/pedido, retiro o entrega según operación confirmada.
+- Sincronizar estado de pedido, cliente y pagos con POS, CRM e inventario; impedir vender cantidades que no pueden reservarse.
+
+**Cierre:** un pedido iniciado en web se sigue desde operaciones hasta entrega y se refleja igual en cliente, venta, cobro y stock; reglas promocionales tienen vigencia y registro de aprobación.
+
+### Fase 9 — Modo sin conexión y endurecimiento
+
+- Después de estabilizar los flujos en línea, diseñar una cola local cifrada o protegida, con identificador idempotente, orden de operaciones, reintentos y estado visible.
+- Definir qué acciones pueden operar desconectadas y cuáles deben bloquearse (por ejemplo, disponibilidad en tiempo real o pagos externos no confirmados).
+- Simular desconexiones, duplicados, sesión vencida, conflicto de stock y recuperación; no presentar datos locales como sincronizados.
+- Revisar alertas de errores, latencia, permisos, respaldos y recuperación antes de habilitar a todo el equipo.
+
+**Cierre:** ninguna operación se pierde o duplica; el usuario ve pendiente, sincronizado o requiere revisión; las decisiones con conflicto quedan auditadas y no cambian stock silenciosamente.
+
+## Reglas de salida de cada entrega
+
+1. Acordar la regla de negocio y los campos antes de migrar; valores desconocidos siguen marcados como pendientes.
+2. Implementar migración compatible y segura, protegerla con permisos/RLS y mantener secretos fuera del repositorio.
+3. Terminar la interfaz de escritorio y móvil en la misma fase, incluidos carga, vacío, error y permisos insuficientes.
+4. Comprobar el flujo de extremo a extremo con datos de prueba identificables; no introducir ventas, saldos o clientes ficticios en producción.
+5. Actualizar guía de operación, changelog, contexto del proyecto y estado del despliegue; revisar el resultado en Vercel.
+
+## Secuencia inmediata recomendada
+
+1. Completar Fase 0 con revisión real en teléfono, tableta y escritorio.
+2. Arrancar Fase 1 con la revisión de inventario físico y conciliación de la cola fuente; esto evita automatizar reposición sobre cifras no confiables.
+3. Construir Fase 2 (proveedores, órdenes y recepción parcial) antes de automatizar alertas de compra.
+4. Rediseñar el POS multiartículo en Fase 3 usando el stock ya saneado y las compras conectadas.
+
+La duración y las fechas de cada fase quedan sin fijar hasta definir quién aprobará conteos, compras, reglas de caja y criterios contables; el alcance técnico y los cierres sí quedan establecidos aquí.
