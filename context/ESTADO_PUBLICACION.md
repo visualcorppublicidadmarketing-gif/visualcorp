@@ -87,3 +87,9 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 - Se publicaron entradas iniciales para inventario, POS y flujos operativos conectados, junto con la propia función del changelog.
 - Migraciones aplicadas: `20261022184130_internal_change_log` y `20261022184223_publish_changelog_feature`.
 - Guía de uso y límites: [`../docs/CHANGELOG_INTERNO.md`](../docs/CHANGELOG_INTERNO.md).
+
+## Comparación Odoo y responsive — 22 de octubre de 2026
+
+- Análisis de funciones y roadmap priorizado en [`../docs/ANALISIS_ODOO_Y_ROADMAP_2026-10-22.md`](../docs/ANALISIS_ODOO_Y_ROADMAP_2026-10-22.md), con fuentes oficiales de Odoo.
+- Odoo destaca POS multidevice, cajeros, pagos, modo sin conexión, fidelización y conexión con inventario/comercio electrónico. Visual Corp ya integra ventas, clientes, inventario, cotizaciones, CRM, caja, devoluciones, transferencias y producción; compras/proveedores, caja multiartículo, escaneo, offline robusto, trazabilidad por lote y contabilidad son brechas priorizadas.
+- Mejora implementada: navegación lateral adaptativa para teléfono y tableta, con botón accesible, fondo de cierre, panel desplazable y cierre al elegir una sección. La siguiente fase funcional recomendada es compras/proveedores con recepciones parciales auditadas.
