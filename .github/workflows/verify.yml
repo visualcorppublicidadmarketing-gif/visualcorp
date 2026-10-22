@@ -1,4 +1,31 @@
-©Uêâ%b²æ¥
-ŠéJè­z‰éºYkz«²Öëjw!zÉšŠzn²ëjw!zÉšŠz^®h¬²*'±Ê'µéí²·šuÊ'rêëzw2‚º.¦÷«‰ü ŠØno
-+‘ùhÂ­†æëy÷Ç¥Šzk¢
-Ş²Ëk¹èènÊk¡Ûœ¶*'nè¥vv¦xúèvç-Š‰Ûº)]®éì¢{›º{n•«^²Û-z›'jg‚…ç$¢ën±ërØ¨ÏÜ…ç$¢ëoâv¦y'­º“huèìºÇ¬iËb¢{?±ën¦zzş0ŠØg¡×¯z»"¢}¶q§!zzf©"{-jYe¡Éu×©zw^È²»§™¢ËZ–Yèjçb¶zºwgjgº)]jše‰Æ­Š‰ëºyéš»§nè¥
+name: Verify Visual Corp Suite
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  production-build:
+    name: Production build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build application
+        run: npm run build
