@@ -46,4 +46,4 @@ La compilación local de producción pasó. El commit `5a6cfef` está publicado 
 
 ## Actualización de fases — 22 de octubre de 2026
 
-Las cinco fases pendientes se implementaron en `/operaciones/flujos`: caja/cierres, devoluciones/anulaciones, transferencias parciales, órdenes de producción y cotizaciones centrales enlazadas al POS. Detalle, límites, migraciones y verificación en [`FASES_OPERATIVAS_COMPLETADAS_2026-10-22.md`](FASES_OPERATIVAS_COMPLETADAS_2026-10-22.md). La última migración de índices de FK aplicada es `20261022183400_lifecycle_fk_indexes`.
+Las cinco fases pendientes se implementaron en `/operaciones/flujos`: caja/cierres, devoluciones/anulaciones, transferencias parciales, órdenes de producción y cotizaciones centrales enlazadas al POS. Detalle, límites, migraciones y verificación en [`FASES_OPERATIVAS_COMPLETADAS_2026-10-22.md`](FASES_OPERATIVAS_COMPLETADAS_2026-10-22.md). La última migración de índices de FK aplicada es `20261022183221_lifecycle_fk_indexes`.

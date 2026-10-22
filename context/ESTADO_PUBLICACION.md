@@ -46,7 +46,7 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 ## Fases operativas conectadas — 22 de octubre de 2026
 
 - La ruta `/operaciones/flujos` incorpora caja y cierres, devoluciones/anulaciones, transferencias con recepción parcial, órdenes de producción y cotizaciones centrales enlazables al POS.
-- Migraciones Supabase aplicadas: `20261022181109_pos_operations_lifecycle`, `20261022182050_quote_sale_links_and_cash_guard`, `20261022182237_atomic_transfer_request_customer_match`, `20261022182536_operations_lifecycle_fk_indexes`, `20261022182630_sale_refund_settlement` y `20261022183400_lifecycle_fk_indexes`.
+- Migraciones Supabase aplicadas: `20261022182015_pos_operations_lifecycle`, `20261022182145_quote_sale_links_and_cash_guard`, `20261022182319_atomic_transfer_request_customer_match`, `20261022182606_operations_lifecycle_fk_indexes`, `20261022182650_sale_refund_settlement` y `20261022183221_lifecycle_fk_indexes`.
 - Sin operaciones ficticias. Se mantiene pendiente el ensayo controlado con usuarios reales. No se procesa dinero de reembolso externamente ni se factura tributariamente. La producción registra consumos explícitos, no recetas automáticas.
 - Evidencia y límites: [`../docs/FASES_OPERATIVAS_COMPLETADAS_2026-10-22.md`](../docs/FASES_OPERATIVAS_COMPLETADAS_2026-10-22.md).
 - Publicación: commit `3365e65c4e20ac3f22a08d1f17e44668130c51e9`; Vercel reportó producción `READY` con alias `visualcorp-suite.vercel.app`. La ruta `/operaciones/flujos` respondió HTTP 200 con la app SPA; el panel requiere una sesión y rol interno autorizado.

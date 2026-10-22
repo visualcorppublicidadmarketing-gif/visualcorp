@@ -49,7 +49,7 @@ Se completó la primera implementación integrada de los cinco flujos que estaba
 
 - Las RPC validan autenticación, rol y alcance de sucursal dentro de la base; las tablas nuevas tienen RLS.
 - Supabase sigue mostrando avisos para funciones `SECURITY DEFINER` ejecutables por usuarios autenticados. Es el patrón usado para estas RPC: las funciones validan internamente permisos y sucursal. No equivale a auditoría de penetración.
-- El asesor de rendimiento informó inicialmente claves foráneas sin índice por orden de columnas; se añadió la migración `20261022183400_lifecycle_fk_indexes`. Persisten hallazgos informativos en tablas existentes y advertencias de políticas RLS permisivas que requieren revisión aparte.
+- El asesor de rendimiento informó inicialmente claves foráneas sin índice por orden de columnas; se añadió la migración `20261022183221_lifecycle_fk_indexes`. Persisten hallazgos informativos en tablas existentes y advertencias de políticas RLS permisivas que requieren revisión aparte.
 - Compilación de producción de Vite: correcta. Tamaño del JS principal: 618 kB minificado, con advertencia de paquete mayor a 500 kB.
 - No se generaron ventas, cierres, devoluciones, transferencias, órdenes ni cotizaciones ficticias en producción. Las pruebas de aceptación con cuentas reales y cantidades verificadas quedan para el equipo.
 - No emite comprobantes tributarios ni ejecuta reembolsos externos. Las reglas contables, tolerancias de caja y consumos estándar de materiales necesitan confirmación de la empresa.
