@@ -19,5 +19,6 @@ La tabla tiene políticas RLS por organización, audiencia y rol. Usuarios inter
 - POS conectado con clientes e inventario (`5a6cfef`).
 - Caja, devoluciones, transferencias y producción (`95126df`).
 - Novedades compartidas para el equipo (`2026-10`).
+- POS: carrito de varios artículos con búsqueda y filtros, imágenes de catálogo, total en vivo, selección de cliente y cotización aprobada; publicación en Supabase pendiente de acceso autenticado (`Fase 3 parcial`, 2026-10-22).
 
 Las futuras publicaciones las redacta el equipo desde el panel; la lista no se rellena automáticamente a partir de commits para evitar publicar cambios sin revisar su alcance o impacto.
