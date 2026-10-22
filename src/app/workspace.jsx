@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import sourceCatalog from '../data/estebanicoSupabaseCatalog.snapshot.json';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
+import { useAuth } from '../auth/AuthProvider';
 
 const STORAGE_KEY = 'visualcorp-suite-local-v1';
 const WorkspaceContext = createContext(null);
@@ -145,6 +146,7 @@ function readState() {
 export function WorkspaceProvider({ children }) {
   const [data, setData] = useState(readState);
   const [notice, setNotice] = useState('');
+  const { organizationId, user } = useAuth();
   useEffect(() => {
     if (!supabaseConfigured) return;
     let active = true;
@@ -174,6 +176,56 @@ export function WorkspaceProvider({ children }) {
     void hydrate();
     return () => { active = false; };
   }, []);
+  const refreshRemote = useCallback(async () => {
+    if (!supabase || !organizationId || !user) return;
+    const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, movementsResult, customersResult, salesResult, costsResult] = await Promise.all([
+      supabase.from('inventory_items').select('id,category_id,area_id,sku,name,description,base_unit,minimum_quantity,active,created_at,updated_at').eq('organization_id', organizationId),
+      supabase.from('inventory_variants').select('id,item_id,sku,label,attributes,active').eq('organization_id', organizationId),
+      supabase.from('inventory_stock').select('variant_id,branch_id,location_code,quantity,updated_at').eq('organization_id', organizationId),
+      supabase.from('areas').select('id,code,name').eq('organization_id', organizationId),
+      supabase.from('inventory_categories').select('id,code,name').eq('organization_id', organizationId),
+      supabase.from('branches').select('id,code,name').eq('organization_id', organizationId),
+      supabase.from('inventory_movements').select('id,variant_id,branch_id,movement_type,quantity_delta,reason,reference_type,reference_id,created_by,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
+      supabase.from('customers').select('id,full_name,phone,email,notes,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }),
+      supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity,backordered_quantity)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
+      supabase.from('inventory_item_costs').select('variant_id,unit_cost,supplier_name,updated_at').eq('organization_id', organizationId),
+    ]);
+    const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, movementsResult, customersResult, salesResult, costsResult].find((result) => result.error);
+    if (failed) { setNotice(`No se pudieron sincronizar todos los datos operativos: ${failed.error.message}`); return; }
+    const itemById = new Map((itemsResult.data || []).map((row) => [row.id, row]));
+    const areaById = new Map((areasResult.data || []).map((row) => [row.id, row]));
+    const categoryById = new Map((categoriesResult.data || []).map((row) => [row.id, row]));
+    const branchById = new Map((branchesResult.data || []).map((row) => [row.id, row]));
+    const variantById = new Map((variantsResult.data || []).map((row) => [row.id, row]));
+    const costByVariant = new Map((costsResult.data || []).map((row) => [row.variant_id, row]));
+    const stockByKey = new Map((stockResult.data || []).map((row) => [`${row.variant_id}|${row.branch_id}|${row.location_code}`, row]));
+    const remoteInventory = [];
+    for (const variant of variantsResult.data || []) {
+      const item = itemById.get(variant.item_id);
+      if (!item) continue;
+      for (const branch of branchesResult.data || []) {
+        const stock = stockByKey.get(`${variant.id}|${branch.id}|MAIN`);
+        remoteInventory.push({
+          id: `${variant.id}:${branch.id}`, remoteItemId: item.id, variantId: variant.id, sku: item.sku, variantSku: variant.sku,
+          name: item.name, category: categoryById.get(item.category_id)?.name || '', variant: variant.label || item.description,
+          area: areaById.get(item.area_id)?.name || 'Sin área', branch: branch.name, branchId: branch.id,
+          location: stock?.location_code || 'MAIN', unit: item.base_unit, quantity: Number(stock?.quantity || 0),
+          minimum: Number(item.minimum_quantity || 0), unitCost: costByVariant.has(variant.id) ? Number(costByVariant.get(variant.id).unit_cost) : null, supplierName: costByVariant.get(variant.id)?.supplier_name || '', sourceStatus: stock ? '' : 'Sin conteo físico', archived: !item.active || !variant.active,
+          createdAt: item.created_at, updatedAt: stock?.updated_at || item.updated_at,
+        });
+      }
+    }
+    const movementLabel = { receipt: 'entrada', consumption: 'consumo', return: 'devolución', waste: 'merma', sale: 'venta', adjustment: 'ajuste', transfer_out: 'transferencia_salida', transfer_in: 'recepcion_transferencia' };
+    const remoteMovements = (movementsResult.data || []).map((row) => {
+      const variant = variantById.get(row.variant_id); const item = itemById.get(variant?.item_id); const branch = branchById.get(row.branch_id);
+      return { id: row.id, itemId: row.variant_id, itemName: item?.name || variant?.sku || 'Artículo', quantity: Math.abs(Number(row.quantity_delta)), type: movementLabel[row.movement_type] || row.movement_type, actor: row.created_by === user.id ? user.email : 'Equipo autorizado', reason: row.reason, reference: row.reference_id || '', branch: branch?.name || '', createdAt: row.created_at, shortage: 0 };
+    });
+    const remoteCustomers = (customersResult.data || []).map((row) => ({ id: row.id, name: row.full_name, phone: row.phone, email: row.email, notes: row.notes, createdAt: row.created_at }));
+    const customerById = new Map(remoteCustomers.map((row) => [row.id, row]));
+    const remoteSales = (salesResult.data || []).map((row) => ({ id: row.id, code: row.sale_code || row.id.slice(0, 8), total: Number(row.total), date: row.created_at, method: row.payment_method, customer: customerById.get(row.customer_id)?.name || '', description: (row.sale_lines || []).map((line) => line.description_snapshot).join(', '), quantity: (row.sale_lines || []).reduce((sum, line) => sum + Number(line.quantity), 0), urgent: row.urgent_backorder, status: row.status, note: row.note }));
+    setData((current) => ({ ...current, inventory: remoteInventory, inventoryMovements: remoteMovements, customers: remoteCustomers, sales: remoteSales }));
+  }, [organizationId, user]);
+  useEffect(() => { void refreshRemote(); }, [refreshRemote]);
   useEffect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(data)), [data]);
   useEffect(() => {
     const sync = (event) => {
@@ -196,7 +248,7 @@ export function WorkspaceProvider({ children }) {
   };
   const update = (collection, id, patch) => setData((current) => ({ ...current, [collection]: current[collection].map((row) => row.id === id ? { ...row, ...patch, updatedAt: new Date().toISOString() } : row) }));
   const remove = (collection, id) => setData((current) => ({ ...current, [collection]: current[collection].filter((row) => row.id !== id) }));
-  const api = useMemo(() => ({ data, setData, add, update, remove, flash, notice }), [data, notice]);
+  const api = useMemo(() => ({ data, setData, add, update, remove, flash, notice, refreshRemote }), [data, notice, refreshRemote]);
   return <WorkspaceContext.Provider value={api}>{children}{notice && <div className="toast" role="status">{notice}</div>}</WorkspaceContext.Provider>;
 }
 

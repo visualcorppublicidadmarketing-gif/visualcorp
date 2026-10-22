@@ -33,5 +33,6 @@ Las migraciones aplicadas están versionadas bajo `supabase/migrations/`. La úl
 - `20261022230000_team_role_assignment.sql`
 - `20261022233000_seed_suggested_inventory_catalog.sql`
 - `20261022234000_public_catalog_invoker_security.sql`
+- `20261022240000_atomic_inventory_pos.sql`
 
 No se guardan tokens, claves, contraseñas ni códigos de acceso aquí. Revocar el token GitHub compartido previamente en el chat.
