@@ -226,7 +226,10 @@ export function WorkspaceProvider({ children }) {
     setData((current) => ({ ...current, inventory: remoteInventory, inventoryMovements: remoteMovements, customers: remoteCustomers, sales: remoteSales }));
   }, [organizationId, user]);
   useEffect(() => { void refreshRemote(); }, [refreshRemote]);
-  useEffect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(data)), [data]);
+  useEffect(() => {
+    const publicCache = { ...data, inventory: (data.inventory || []).map(({ unitCost, supplierName, ...item }) => item) };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(publicCache));
+  }, [data]);
   useEffect(() => {
     const sync = (event) => {
       if (event.key === STORAGE_KEY && event.newValue) {
