@@ -21,18 +21,18 @@ Las migraciones aplicadas están versionadas bajo `supabase/migrations/`. La úl
 
 ## Pasos para activar cuentas
 
-1. GitHub reportó `success` para el commit `450247802dd52b8735fdb279f1ff59435db8377f`; confirmar variables Vite y dominio desde el panel Vercel cuando el equipo autorice acceso.
+1. Confirmar en GitHub/Vercel que el despliegue del último commit terminó y que `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` estén definidas para producción.
 2. El propietario debe iniciar sesión usando enlace de correo en `/operaciones`; el primer correo confirmado asigna `owner`.
 3. Cada integrante inicia sesión una vez con su correo; luego el propietario usa `/operaciones/equipo` para asignar `website_admin`, `admin` POS u otro perfil.
 4. Confirmar cada saldo con conteo físico antes de registrar movimientos/ventas. Conservar procedencia de archivos y filas fuente.
 
 ## Migraciones versionadas
 
-- `20261022210000_catalog_site_content_and_inventory_import.sql`
-- `20261022223000_public_catalog_and_site_seed.sql`
-- `20261022230000_team_role_assignment.sql`
-- `20261022233000_seed_suggested_inventory_catalog.sql`
-- `20261022234000_public_catalog_invoker_security.sql`
-- `20261022240000_atomic_inventory_pos.sql`
+- `20261022161906_catalog_site_content_and_inventory_import.sql`
+- `20261022162602_public_catalog_and_site_seed.sql`
+- `20261022162803_team_role_assignment.sql`
+- `20261022162916_seed_suggested_inventory_catalog.sql`
+- `20261022163021_public_catalog_invoker_security.sql`
+- `20261022163625_atomic_inventory_pos.sql`
 
 No se guardan tokens, claves, contraseñas ni códigos de acceso aquí. Revocar el token GitHub compartido previamente en el chat.

@@ -28,10 +28,10 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 
 ## Publicación y límites actuales
 
-- Las migraciones `20261022210000`, `20261022223000`, `20261022230000`, `20261022233000`, `20261022234000` y `20261022240000` están aplicadas en Supabase VISUAL y versionadas en `supabase/migrations/`.
+- Las migraciones aplicadas y sus archivos locales usan los mismos identificadores remotos: `20261022161906`, `20261022162602`, `20261022162803`, `20261022162916`, `20261022163021` y `20261022163625` (además de las tres migraciones base `20261022154601`–`20261022154835`).
 - La compilación de producción de Vite pasó después de conectar Auth, catálogo, solicitudes públicas, clientes, POS y movimientos transaccionales. Vite muestra una advertencia de paquete principal mayor a 500 kB.
 - El asesor de seguridad no reporta errores; sí marca 4 funciones `SECURITY DEFINER` como advertencia porque son RPC autenticadas y con validación de rol/sucursal dentro de la función. El asesor de rendimiento muestra recomendaciones informativas de índices y políticas permisivas.
-- El commit `450247802dd52b8735fdb279f1ff59435db8377f` se subió a GitHub y el estado de Vercel reportó `success`. La API de Vercel devolvió 403 al leer el detalle/dominio del despliegue para el equipo `visual19`, por lo que el dominio público final no se pudo confirmar desde esta conexión.
+- El repositorio está conectado a Vercel y cada push a `main` solicita un despliegue. La conexión de Vercel de esta sesión no tiene permiso para leer el proyecto bajo `visual19` (403); el estado y dominio del último despliegue deben confirmarse allí. La última compilación local de producción pasó.
 - El panel web, solicitudes públicas, lista de clientes, catálogo, inventario y ventas usan Supabase. Las cotizaciones internas siguen guardándose localmente y deben conectarse a una tabla remota en una fase posterior. El inventario fuente está disponible para revisar; no se deben usar sus filas pendientes para prometer stock.
 - El propietario aún debe iniciar sesión para que el trigger cree su membresía. El correo de acceso, las variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` (o `VITE_SUPABASE_ANON_KEY`) deben estar configurados en Vercel antes de habilitar el panel.
 
