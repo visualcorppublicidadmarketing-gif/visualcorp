@@ -35,11 +35,15 @@
 1. Contar físicamente y conciliar las filas importadas por lote antes de considerar saldos disponibles.
 2. Crear vínculos catálogo-variante únicamente con equivalencias verificadas, por sucursal y ubicación.
 3. Revisar roles y probar acceso permitido/denegado con cuentas reales del equipo.
-4. Acordar y luego implementar turnos/cierre de caja, devoluciones, anulaciones, órdenes de producción y transferencias con tránsito/recepción parcial.
+4. Ensayar los turnos/cierre de caja, devoluciones, anulaciones, órdenes de producción y transferencias con tránsito/recepción parcial ya implementados, usando cuentas y cantidades reales controladas.
 5. Verificar unidades y conversiones para habilitar cantidades fraccionadas con precisión.
-6. Conectar las cotizaciones internas al backend central; actualmente continúan en almacenamiento local.
+6. Revisar y ensayar la integración central de cotizaciones internas con conversión POS.
 7. Realizar un ensayo controlado con caja y bodega: stock suficiente, faltante, doble envío, interrupción, abono y dos ventas concurrentes.
 
 ## Estado de publicación
 
 La compilación local de producción pasó. El commit `5a6cfef` está publicado en `main`; GitHub reportó que Vercel completó el despliegue. La ruta de POS en producción respondió con el acceso interno y el archivo JavaScript público contiene `record_sale_payment`, `catalog_inventory_links` y los mensajes de órdenes urgentes. La página interna requiere iniciar sesión con una cuenta autorizada para ver el panel.
+
+## Actualización de fases — 22 de octubre de 2026
+
+Las cinco fases pendientes se implementaron en `/operaciones/flujos`: caja/cierres, devoluciones/anulaciones, transferencias parciales, órdenes de producción y cotizaciones centrales enlazadas al POS. Detalle, límites, migraciones y verificación en [`FASES_OPERATIVAS_COMPLETADAS_2026-10-22.md`](FASES_OPERATIVAS_COMPLETADAS_2026-10-22.md). La última migración de índices de FK aplicada es `20261022183400_lifecycle_fk_indexes`.

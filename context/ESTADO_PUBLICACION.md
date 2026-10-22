@@ -40,8 +40,15 @@ Proyecto Vercel: `visualcorp-suite`, equipo `visual19`
 - El commit `dd9e3fb858cc60dc2129466a99ad41e648e24cba` se publicó en `main`. La compilación local de producción pasó; Vite advierte que el paquete principal supera 500 kB. Se comprobó en el navegador que `https://visualcorp-suite.vercel.app/admin` entrega la versión actual y muestra el acceso con Google y el enlace por correo. La API de gestión de Vercel no permitió consultar el detalle del despliegue en esta sesión.
 - La fase POS/inventario se publicó en `main` con el commit `5a6cfef`. GitHub reportó el estado de Vercel como exitoso. La ruta de acceso interno `https://visualcorp-suite.vercel.app/operaciones/pos` respondió y el paquete público incluye el registro de abonos y los vínculos de inventario.
 - El catálogo avanzado de inventario, la auditoría de reservas/costos y sus métricas se publicaron en `main` con el commit `483136c7d380eeb8a0532b6ef05f575d35658a81`. GitHub reportó Vercel exitoso; `/operaciones/inventario` respondió HTTP 200 y el paquete público incluye los tres modos, la interfaz de reserva y las métricas.
-- El panel web, solicitudes públicas, catálogo, movimientos del inventario, clientes, ventas y pagos usan Supabase. No hay vínculos producto-variante preasignados: el equipo autorizado debe configurarlos tras cotejar existencia física y variante. Las filas importadas siguen pendientes de conciliación y no se deben usar para prometer stock. Las cotizaciones internas continúan en almacenamiento local y su integración compartida queda para una fase posterior.
+- El panel web, solicitudes públicas, catálogo, movimientos del inventario, clientes, ventas, pagos y cotizaciones centrales usan Supabase. No hay vínculos producto-variante preasignados: el equipo autorizado debe configurarlos tras cotejar existencia física y variante. Las filas importadas siguen pendientes de conciliación y no se deben usar para prometer stock.
 - Las variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` aparecen configuradas en Vercel. El propietario y el administrador deben completar su primer inicio de sesión para crear y activar sus perfiles.
+
+## Fases operativas conectadas — 22 de octubre de 2026
+
+- La ruta `/operaciones/flujos` incorpora caja y cierres, devoluciones/anulaciones, transferencias con recepción parcial, órdenes de producción y cotizaciones centrales enlazables al POS.
+- Migraciones Supabase aplicadas: `20261022181109_pos_operations_lifecycle`, `20261022182050_quote_sale_links_and_cash_guard`, `20261022182237_atomic_transfer_request_customer_match`, `20261022182536_operations_lifecycle_fk_indexes`, `20261022182630_sale_refund_settlement` y `20261022183400_lifecycle_fk_indexes`.
+- Sin operaciones ficticias. Se mantiene pendiente el ensayo controlado con usuarios reales. No se procesa dinero de reembolso externamente ni se factura tributariamente. La producción registra consumos explícitos, no recetas automáticas.
+- Evidencia y límites: [`../docs/FASES_OPERATIVAS_COMPLETADAS_2026-10-22.md`](../docs/FASES_OPERATIVAS_COMPLETADAS_2026-10-22.md).
 
 ## Inicio de sesión con Google — 22 de octubre de 2026
 
