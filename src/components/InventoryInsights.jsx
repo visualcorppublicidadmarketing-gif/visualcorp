@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, ChartNoAxesCombined, DollarSign, Image as ImageIcon, LayoutGrid, List, Search, SlidersHorizontal, Trash2 } from 'lucide-react';
 import './InventoryInsights.css';
 
@@ -11,7 +11,15 @@ export function InventoryInsights({ items, canSeeCosts, canEdit, canReserve, can
   const [type, setType] = useState('Todos');
   const [status, setStatus] = useState('Todos');
   const [tag, setTag] = useState('Todos');
-  const [mode, setMode] = useState('table');
+  const [mode, setMode] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches ? 'cards' : 'table');
+  const [modeCustomized, setModeCustomized] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 900px)');
+    const syncDefaultMode = () => { if (!modeCustomized) setMode(query.matches ? 'cards' : 'table'); };
+    syncDefaultMode();
+    query.addEventListener?.('change', syncDefaultMode);
+    return () => query.removeEventListener?.('change', syncDefaultMode);
+  }, [modeCustomized]);
   const areas = [...new Set(items.map((item) => item.area).filter(Boolean))].sort();
   const branches = [...new Set(items.map((item) => item.branch).filter(Boolean))].sort();
   const types = [...new Set(items.map((item) => item.itemType).filter(Boolean))].sort();
@@ -32,7 +40,7 @@ export function InventoryInsights({ items, canSeeCosts, canEdit, canReserve, can
 
   return <><section className="panel inventory-insights">
     <header className="inventory-insights-header"><div><span className="eyebrow">FICHA Y MÉTRICAS</span><h3>Catálogo de inventario</h3><p>La fecha de abastecimiento y el uso se calculan desde los movimientos registrados. Sin conteo físico se conserva como pendiente.</p></div>
-      <nav className="inventory-insights-modes" aria-label="Modo de vista">{[['table', List], ['cards', LayoutGrid], ['analytics', ChartNoAxesCombined]].map(([key, Icon]) => <button type="button" key={key} className={mode === key ? 'active' : ''} onClick={() => setMode(key)} title={`Vista ${modeNames[key]}`} aria-pressed={mode === key}><Icon size={16}/><span>{modeNames[key]}</span></button>)}</nav>
+      <nav className="inventory-insights-modes" aria-label="Modo de vista">{[['table', List], ['cards', LayoutGrid], ['analytics', ChartNoAxesCombined]].map(([key, Icon]) => <button type="button" key={key} className={mode === key ? 'active' : ''} onClick={() => { setModeCustomized(true); setMode(key); }} title={`Vista ${modeNames[key]}`} aria-pressed={mode === key}><Icon size={16}/><span>{modeNames[key]}</span></button>)}</nav>
     </header>
     <div className="inventory-insights-filters"><label className="inventory-insights-search"><Search size={15}/><input value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Buscar nombre, ID o tag"/></label>
       {[['Sucursal', branch, setBranch, branches], ['Área', area, setArea, areas], ['Tipo', type, setType, types], ['Estado', status, setStatus, ['Sin conteo', 'En stock', 'Reponer', 'Agotado']], ['Tag', tag, setTag, tags]].map(([label, value, setter, choices]) => <select key={label} aria-label={label} value={value} onChange={(event) => setter(event.target.value)}><option>{label === 'Sucursal' ? 'Todas' : label === 'Área' ? 'Todas' : 'Todos'}</option>{choices.map((choice) => <option key={choice}>{choice}</option>)}</select>)}
