@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowDownRight, ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, Check, ChevronRight, CircleHelp, ClipboardList, Database, FileText, Globe2, History, Image, LayoutDashboard, LogOut, Megaphone, Menu, Package, Plus, Search, Settings2, ShoppingBag, ShoppingCart, Users, Wallet, X } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, Check, ChevronRight, CircleHelp, ClipboardList, Database, FileText, Globe2, History, Image, LayoutDashboard, LogOut, Megaphone, Menu, Package, Plus, Search, Settings2, ShoppingBag, ShoppingCart, Truck, Users, Wallet, X } from 'lucide-react';
 import { WorkspaceProvider, formatDate, formatMoney, localDateKey, useWorkspace } from './app/workspace';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { saveWebsiteContent } from './lib/websiteAdminRepository';
@@ -9,6 +9,7 @@ import { PublicSiteLayout, PublicHomePage, ServicesIndexPage, ServiceDetailPage,
 import { QuotePriceComparison } from './components/QuotePriceComparison';
 import { calculateQuotePrice, getQuoteBasis } from './lib/quotePricing';
 import { InventoryWorkspace } from './components/InventoryWorkspace';
+import { PurchasingWorkspace } from './components/PurchasingWorkspace';
 import { CustomerBook } from './components/CustomerBook';
 import { TeamAccess } from './components/TeamAccess';
 import { BackupWorkspace } from './components/BackupWorkspace';
@@ -40,6 +41,7 @@ const operationsLinks = [
   { to: '/operaciones/cambios', label: 'Novedades', icon: History },
   { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText },
   { to: '/operaciones/inventario', label: 'Inventario', icon: Boxes },
+  { to: '/operaciones/compras', label: 'Compras', icon: Truck },
   { to: '/operaciones/crm', label: 'CRM', icon: Users },
   { to: '/operaciones/clientes', label: 'Clientes', icon: Users },
   { to: '/operaciones/marketing', label: 'Marketing', icon: CalendarDays },
@@ -313,6 +315,7 @@ function InventoryPageLegacy() {
 }
 
 function InventoryPage() { return <AppFrame area="operations"><PageHeading eyebrow="INVENTARIO" title="Existencias y movimientos" description="Consulta stock por sucursal y área; registra entradas, consumos, mermas y traspasos con responsable."/><InventoryWorkspace/></AppFrame>; }
+function PurchasingPage() { return <AppFrame area="operations"><PageHeading eyebrow="ABASTECIMIENTO" title="Compras y proveedores" description="Consolida necesidades, sigue órdenes y registra recepciones parciales con trazabilidad hasta el inventario."/><PurchasingWorkspace/></AppFrame>; }
 
 function AppRouter() {
   const location=useLocation();
@@ -328,7 +331,7 @@ function AppRouter() {
       <Route path="/cotizador" element={<MultiPageQuotePage/>}/>
     </Route>
     <Route path="/admin" element={<ProtectedPage area="website"><AdminHome/></ProtectedPage>}/><Route path="/admin/sitio" element={<ProtectedPage area="website"><WebsiteAdmin/></ProtectedPage>}/><Route path="/admin/cambios" element={<ProtectedPage area="website"><AppFrame area="admin"><PageHeading eyebrow="REGISTRO INTERNO" title="Novedades" description="Redacta y publica cambios para administración y operaciones."/><ChangeLogPanel area="admin"/></AppFrame></ProtectedPage>}/> <Route path="/admin/solicitudes" element={<ProtectedPage area="website"><LeadsPage/></ProtectedPage>}/><Route path="/operaciones/catalogo" element={<ProtectedPage area="catalog"><CatalogPage/></ProtectedPage>}/><Route path="/admin/catalogo" element={<Navigate to="/operaciones/catalogo" replace/>}/><Route path="/admin/marketing" element={<ProtectedPage area="website"><CampaignPage/></ProtectedPage>}/><Route path="/admin/respaldo" element={<ProtectedPage area="website"><AppFrame area="admin"><PageHeading eyebrow="DATOS" title="Respaldo y migración" description="Consulta el respaldo y la procedencia de datos."/><BackupWorkspace/></AppFrame></ProtectedPage>}/>
-    <Route path="/operaciones" element={<ProtectedPage area="operations"><OperationsHome/></ProtectedPage>}/><Route path="/operaciones/cambios" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="EQUIPO" title="Novedades" description="Consulta los cambios compartidos por administración."/><ChangeLogPanel area="operations"/></AppFrame></ProtectedPage>}/> <Route path="/operaciones/pos" element={<ProtectedPage area="operations"><PosPage/></ProtectedPage>}/><Route path="/operaciones/flujos" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="OPERACIONES" title="Flujos conectados" description="Gestiona caja, devoluciones, traslados, producción y cotizaciones desde el mismo registro compartido."/><OperationsLifecycle/></AppFrame></ProtectedPage>}/><Route path="/operaciones/cotizador" element={<ProtectedPage area="operations"><QuotePage/></ProtectedPage>}/><Route path="/operaciones/inventario" element={<ProtectedPage area="operations"><InventoryPage/></ProtectedPage>}/><Route path="/operaciones/clientes" element={<ProtectedPage area="operations"><AppFrame area="operations"><CustomerBook/></AppFrame></ProtectedPage>}/><Route path="/operaciones/crm" element={<ProtectedPage area="operations"><LeadsPage area="operations"/></ProtectedPage>}/><Route path="/operaciones/marketing" element={<ProtectedPage area="operations"><CampaignPage area="operations"/></ProtectedPage>}/><Route path="/operaciones/equipo" element={<ProtectedPage area="team"><AppFrame area="operations"><TeamAccess/></AppFrame></ProtectedPage>}/>
+    <Route path="/operaciones" element={<ProtectedPage area="operations"><OperationsHome/></ProtectedPage>}/><Route path="/operaciones/cambios" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="EQUIPO" title="Novedades" description="Consulta los cambios compartidos por administración."/><ChangeLogPanel area="operations"/></AppFrame></ProtectedPage>}/> <Route path="/operaciones/pos" element={<ProtectedPage area="operations"><PosPage/></ProtectedPage>}/><Route path="/operaciones/flujos" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="OPERACIONES" title="Flujos conectados" description="Gestiona caja, devoluciones, traslados, producción y cotizaciones desde el mismo registro compartido."/><OperationsLifecycle/></AppFrame></ProtectedPage>}/><Route path="/operaciones/cotizador" element={<ProtectedPage area="operations"><QuotePage/></ProtectedPage>}/><Route path="/operaciones/inventario" element={<ProtectedPage area="operations"><InventoryPage/></ProtectedPage>}/><Route path="/operaciones/compras" element={<ProtectedPage area="operations"><PurchasingPage/></ProtectedPage>}/><Route path="/operaciones/clientes" element={<ProtectedPage area="operations"><AppFrame area="operations"><CustomerBook/></AppFrame></ProtectedPage>}/><Route path="/operaciones/crm" element={<ProtectedPage area="operations"><LeadsPage area="operations"/></ProtectedPage>}/><Route path="/operaciones/marketing" element={<ProtectedPage area="operations"><CampaignPage area="operations"/></ProtectedPage>}/><Route path="/operaciones/equipo" element={<ProtectedPage area="team"><AppFrame area="operations"><TeamAccess/></AppFrame></ProtectedPage>}/>
     <Route path="*" element={<Navigate to="/" replace/>}/>
   </Routes>;
 }
