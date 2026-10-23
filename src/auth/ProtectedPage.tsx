@@ -67,6 +67,15 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
     </form></main>;
   }
 
+  if (auth.accessError && !auth.roles.length) return <main className="access-screen"><section className="access-card" role="alert">
+    <img src={wordmark} alt="Visual Corp" />
+    <span className="site-eyebrow"><i /> CONEXIÓN SEGURA</span>
+    <h1>No pudimos comprobar tus permisos.</h1>
+    <p>Revisa tu conexión y vuelve a intentarlo. Tu acceso no se cambiará por un problema temporal de conexión.</p>
+    <button className="site-primary-button" type="button" onClick={() => void auth.refreshAccess()}>Reintentar</button>
+    <button className="site-secondary-button" type="button" onClick={() => void auth.signOut()}>Cerrar sesión <LogOut size={16} /></button>
+  </section></main>;
+
   const moduleByPath: Record<string, string> = {
     '/admin': 'dashboard', '/admin/sitio': 'website', '/admin/contenido': 'website', '/admin/solicitudes': 'crm',
     '/admin/marketing': 'marketing', '/admin/cambios': 'team', '/admin/respaldo': 'backup',
@@ -86,3 +95,4 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
 
   return children;
 }
+
