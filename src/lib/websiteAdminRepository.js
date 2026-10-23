@@ -1,20 +1,31 @@
 import { supabase } from './supabaseClient';
 
-export async function saveWebsiteContent(settings, services, organizationId) {
+function requireWebsiteSession(organizationId) {
   if (!supabase || !organizationId) throw new Error('La sesión no tiene una organización Visual Corp activa.');
-  const [settingsResult, servicesResult] = await Promise.all([
-    supabase.from('site_settings').upsert({
-      id: 'main', organization_id: organizationId, brand: settings.name, slogan: settings.heroEyebrow || '',
-      phone: settings.contactPhone || '', email: settings.email || '', address: settings.location || '',
-      whatsapp: settings.contactPhone || '', hero_kicker: settings.heroEyebrow || '',
-      hero_title: settings.heroTitle || '', hero_text: settings.heroText || '', updated_at: new Date().toISOString(),
-    }, { onConflict: 'id' }),
-    supabase.from('services').upsert((services || []).map((row, index) => ({
-      id: row.id, organization_id: organizationId, name: row.name, short: row.description || '',
-      detail: row.description || '', icon: 'sparkles', tag: 'Servicio Visual Corp',
-      sort_order: index, is_published: row.enabled !== false, updated_at: new Date().toISOString(),
-    })), { onConflict: 'id' }),
-  ]);
-  const error = settingsResult.error || servicesResult.error;
+}
+
+export async function saveWebsiteSettings(settings, organizationId) {
+  requireWebsiteSession(organizationId);
+  const { data, error } = await supabase.from('site_settings').update({
+    slogan: settings.heroEyebrow.trim(),
+    phone: settings.contactPhone.trim(),
+    whatsapp: settings.contactPhone.trim(),
+    address: settings.location.trim(),
+    hero_kicker: settings.heroEyebrow.trim(),
+    hero_title: settings.heroTitle.trim(),
+    hero_text: settings.heroText.trim(),
+    updated_at: new Date().toISOString(),
+  }).eq('id', 'main').eq('organization_id', organizationId).select('id').single();
   if (error) throw error;
+  if (!data) throw new Error('No se encontró la configuración del sitio para guardar.');
+}
+
+export async function saveServiceVisibility(id, enabled, organizationId) {
+  requireWebsiteSession(organizationId);
+  const { data, error } = await supabase.from('services').update({
+    is_published: enabled,
+    updated_at: new Date().toISOString(),
+  }).eq('id', id).eq('organization_id', organizationId).select('id').single();
+  if (error) throw error;
+  if (!data) throw new Error('No se encontró el servicio para actualizar.');
 }

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import sourceCatalog from '../data/estebanicoSupabaseCatalog.snapshot.json';
+import { catalogImagesForProduct } from '../data/catalogProductImages';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
 import { useAuth } from '../auth/AuthProvider';
 
@@ -67,7 +68,8 @@ const defaultServices = [
   { id: 'eventos', name: 'Exhibición y eventos', description: 'Material visual para presentar ideas y proyectos.', enabled: true },
 ];
 
-const catalog = (sourceCatalog.products || []).map((product, index) => ({
+const catalog = (sourceCatalog.products || []).map((product, index) => {
+  const normalized = {
   id: product.id || `vc-${index + 1}`,
   name: product.name,
   family: product.category || 'General',
@@ -86,7 +88,9 @@ const catalog = (sourceCatalog.products || []).map((product, index) => ({
   description: product.description || '',
   source: 'Supabase · estebanico.com',
   updatedAt: product.updatedAt,
-}));
+  };
+  return { ...normalized, images: catalogImagesForProduct(normalized) };
+});
 
 function createInitialState() {
   return {
@@ -153,7 +157,7 @@ export function WorkspaceProvider({ children }) {
     const hydrate = async () => {
       const [settingsResult, servicesResult, catalogResult] = await Promise.all([
         supabase.from('site_settings').select('*').eq('id', 'main').maybeSingle(),
-        supabase.from('services').select('*').eq('is_published', true).order('sort_order'),
+        supabase.from('services').select('*').order('sort_order'),
         supabase.from('public_quote_catalog_products').select('*').order('sort_order'),
       ]);
       if (!active || settingsResult.error || servicesResult.error || catalogResult.error) return;
@@ -164,18 +168,18 @@ export function WorkspaceProvider({ children }) {
         priceBasis: 'unit', tiers: (row.price_scales || []).filter((scale) => scale.qty != null && (scale.pvp != null || scale.price != null)).map((scale) => ({ min_qty: Number(scale.qty), unit_price: Number(scale.pvp ?? scale.price) })),
         optionPrices: (row.price_scales || []).filter((scale) => scale.option != null && scale.price != null).map((scale) => ({ label: String(scale.option), price: Number(scale.price) })),
         unit: row.calc_type === 'm2' ? 'm²' : 'unidad', price: Number(row.price) || 0, installPrice: row.price_inst == null ? null : Number(row.price_inst),
-        corporatePrice: row.price_corp == null ? null : Number(row.price_corp), image: row.image || '', images: row.images || [],
+        corporatePrice: row.price_corp == null ? null : Number(row.price_corp), image: row.image || '', images: catalogImagesForProduct({ id: row.id, name: row.name, family: row.category, image: row.image, images: row.images || [] }),
         confirmed: Number(row.price) > 0, published: true, description: row.description || '', source: 'Supabase · Visual Corp',
       }));
       setData((current) => ({ ...current,
         settings: settings ? { ...current.settings, name: settings.brand, location: settings.address, heroEyebrow: settings.hero_kicker, heroTitle: settings.hero_title, heroText: settings.hero_text, contactPhone: settings.phone, email: settings.email } : current.settings,
-        services: services.length ? services : current.services,
+        services: servicesResult.data ? services : current.services,
         catalog: remoteCatalog.length ? remoteCatalog : current.catalog,
       }));
     };
     void hydrate();
     return () => { active = false; };
-  }, []);
+  }, [user]);
   const refreshRemote = useCallback(async () => {
     if (!supabase || !organizationId || !user) return;
     const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, movementsResult, customersResult, salesResult, costsResult, metricsResult] = await Promise.all([
