@@ -150,7 +150,7 @@ function readState() {
 export function WorkspaceProvider({ children }) {
   const [data, setData] = useState(readState);
   const [notice, setNotice] = useState('');
-  const { organizationId, user } = useAuth();
+  const { organizationId, user, hasPermission } = useAuth();
   useEffect(() => {
     if (!supabaseConfigured) return;
     let active = true;
@@ -182,19 +182,23 @@ export function WorkspaceProvider({ children }) {
   }, [user]);
   const refreshRemote = useCallback(async () => {
     if (!supabase || !organizationId || !user) return;
+    const read = (query, module, action = 'view') => {
+      const costActionAllowed = !['view_costs','edit_costs'].includes(action) || hasPermission('inventory_costs', action === 'view_costs' ? 'view' : 'edit');
+      return hasPermission(module, action) && costActionAllowed ? query : Promise.resolve({ data: [], error: null });
+    };
     const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult] = await Promise.all([
-      supabase.from('inventory_items').select('id,category_id,area_id,sku,name,description,item_type,tags,reference_image_url,custom_fields,base_unit,minimum_quantity,active,created_at,updated_at').eq('organization_id', organizationId),
-      supabase.from('inventory_variants').select('id,item_id,sku,label,attributes,active').eq('organization_id', organizationId),
-      supabase.from('inventory_stock').select('variant_id,branch_id,location_code,quantity,updated_at').eq('organization_id', organizationId),
-      supabase.from('areas').select('id,code,name').eq('organization_id', organizationId),
-      supabase.from('inventory_categories').select('id,code,name').eq('organization_id', organizationId),
+      read(supabase.from('inventory_items').select('id,category_id,area_id,sku,name,description,item_type,tags,reference_image_url,custom_fields,base_unit,minimum_quantity,active,created_at,updated_at').eq('organization_id', organizationId),'inventory'),
+      read(supabase.from('inventory_variants').select('id,item_id,sku,label,attributes,active').eq('organization_id', organizationId),'inventory'),
+      read(supabase.from('inventory_stock').select('variant_id,branch_id,location_code,quantity,updated_at').eq('organization_id', organizationId),'inventory'),
+      read(supabase.from('areas').select('id,code,name').eq('organization_id', organizationId),'workshop'),
+      read(supabase.from('inventory_categories').select('id,code,name').eq('organization_id', organizationId),'inventory'),
       supabase.from('branches').select('id,code,name').eq('organization_id', organizationId),
-      supabase.from('inventory_locations').select('id,branch_id,parent_id,code,name,location_type,active,is_system').eq('organization_id', organizationId).order('name'),
-      supabase.from('inventory_movements').select('id,variant_id,branch_id,location_code,movement_type,quantity_delta,reason,reference_type,reference_id,created_by,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
-      supabase.from('customers').select('id,full_name,phone,email,notes,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }),
-      supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity,backordered_quantity),sale_payments(method,amount)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
-      supabase.from('inventory_item_costs').select('variant_id,unit_cost,supplier_name,updated_at').eq('organization_id', organizationId),
-      supabase.from('inventory_stock_metrics').select('variant_id,branch_id,location_code,quantity,reserved_quantity,available_quantity,reserved_percent,last_restock_at,lifetime_consumed,consumed_last_30_days,movement_count,last_movement_at').eq('organization_id', organizationId),
+      read(supabase.from('inventory_locations').select('id,branch_id,parent_id,code,name,location_type,active,is_system').eq('organization_id', organizationId).order('name'),'inventory'),
+      read(supabase.from('inventory_movements').select('id,variant_id,branch_id,location_code,movement_type,quantity_delta,reason,reference_type,reference_id,created_by,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),'inventory'),
+      read(supabase.from('customers').select('id,full_name,phone,email,notes,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }), 'crm'),
+      read(supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity,backordered_quantity),sale_payments(method,amount)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),'sales'),
+      read(supabase.from('inventory_item_costs').select('variant_id,unit_cost,supplier_name,updated_at').eq('organization_id', organizationId),'inventory_costs','view_costs'),
+      read(supabase.from('inventory_stock_metrics').select('variant_id,branch_id,location_code,quantity,reserved_quantity,available_quantity,reserved_percent,last_restock_at,lifetime_consumed,consumed_last_30_days,movement_count,last_movement_at').eq('organization_id', organizationId),'inventory'),
     ]);
     const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult].find((result) => result.error);
     if (failed) { setNotice(`No se pudieron sincronizar todos los datos operativos: ${failed.error.message}`); return; }
@@ -246,7 +250,7 @@ export function WorkspaceProvider({ children }) {
     const paymentLabels = { cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', other: 'Otro' };
     const remoteSales = (salesResult.data || []).map((row) => { const paid = (row.sale_payments || []).reduce((sum, payment) => sum + Number(payment.amount), 0); const methods = [...new Set((row.sale_payments || []).map((payment) => payment.method))]; return { id: row.id, code: row.sale_code || row.id.slice(0, 8), total: Number(row.total), paid, balance: Math.max(0, Number(row.total) - paid), date: row.created_at, method: methods.length > 1 ? 'Pago dividido' : paymentLabels[methods[0] || row.payment_method] || 'Otro', customer: customerById.get(row.customer_id)?.name || '', description: (row.sale_lines || []).map((line) => line.description_snapshot).join(', '), quantity: (row.sale_lines || []).reduce((sum, line) => sum + Number(line.quantity), 0), urgent: row.urgent_backorder, status: row.status, note: row.note }; });
     setData((current) => ({ ...current, branches: branchesResult.data || [], inventoryLocations, inventory: remoteInventory, inventoryMovements: remoteMovements, customers: remoteCustomers, sales: remoteSales }));
-  }, [organizationId, user]);
+  }, [organizationId, user, hasPermission]);
   useEffect(() => { void refreshRemote(); }, [refreshRemote]);
   useEffect(() => {
     const publicCache = { ...data, inventory: (data.inventory || []).map(({ unitCost, supplierName, ...item }) => item) };

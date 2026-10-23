@@ -1,53 +1,72 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
+type AccessProfile = { key: string; name: string; role: string };
+type PermissionMap = Record<string, Record<string, boolean>>;
 const AuthContext = createContext<any>(null);
 
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(null);
-  const [roles, setRoles] = useState([]);
-  const [organizationId, setOrganizationId] = useState(null);
+  const [session, setSession] = useState<any>(null);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [profiles, setProfiles] = useState<AccessProfile[]>([]);
+  const [permissions, setPermissions] = useState<PermissionMap>({});
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
+
+  const refreshAccess = useCallback(async (currentSession = session) => {
+    if (!supabase) { setLoading(false); return; }
+    setSession(currentSession);
+    if (!currentSession?.user) {
+      setRoles([]); setProfiles([]); setPermissions({}); setOrganizationId(null); setLoading(false); return;
+    }
+    if (session?.user?.id !== currentSession.user.id) setLoading(true);
+    const { data, error } = await supabase.rpc('get_my_visualcorp_access');
+    if (error) {
+      setRoles([]); setProfiles([]); setPermissions({}); setOrganizationId(null);
+    } else {
+      const access = data || {};
+      const assigned = Array.isArray(access.roles) ? access.roles : [];
+      setProfiles(assigned);
+      setRoles([...new Set<string>(assigned.map((profile: AccessProfile) => profile.role).filter(Boolean))]);
+      setPermissions(access.permissions || {});
+      setOrganizationId(access.organization_id || null);
+    }
+    setLoading(false);
+  }, [session]);
 
   useEffect(() => {
     if (!supabase) { setLoading(false); return undefined; }
     let alive = true;
-    const loadRoles = async (currentSession) => {
-      setSession(currentSession);
-      if (!currentSession?.user) { setRoles([]); setOrganizationId(null); setLoading(false); return; }
-      setLoading(true);
-      const { data: org } = await supabase.from('organizations').select('id').eq('slug', 'visual-corp').maybeSingle();
-      if (!alive) return;
-      setOrganizationId(org?.id || null);
-      if (!org?.id) { setRoles([]); setLoading(false); return; }
-      const { data: memberships } = await supabase.from('organization_memberships').select('role').eq('organization_id', org.id).eq('user_id', currentSession.user.id).eq('active', true);
-      if (!alive) return;
-      setRoles((memberships || []).map((membership) => membership.role));
-      setLoading(false);
+    supabase.auth.getSession().then(({ data }) => { if (alive) void refreshAccess(data.session); });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      if (alive) setTimeout(() => { if (alive) void refreshAccess(currentSession); }, 0);
+    });
+    const refreshVisible = () => { if (document.visibilityState === 'visible') void refreshAccess(); };
+    window.addEventListener('focus', refreshVisible);
+    document.addEventListener('visibilitychange', refreshVisible);
+    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void refreshAccess(); }, 60_000);
+    return () => {
+      alive = false; listener.subscription.unsubscribe(); window.removeEventListener('focus', refreshVisible);
+      document.removeEventListener('visibilitychange', refreshVisible); window.clearInterval(interval);
     };
-    supabase.auth.getSession().then(({ data }) => loadRoles(data.session));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, currentSession) => { void loadRoles(currentSession); });
-    return () => { alive = false; listener.subscription.unsubscribe(); };
-  }, []);
+  }, [refreshAccess]);
 
   const value = useMemo(() => ({
-    session, user: session?.user || null, roles, organizationId, loading,
-    canAccess: (allowed) => roles.includes('owner') || allowed.some((role) => roles.includes(role)),
-    sendSignInLink: async (email) => {
+    session, user: session?.user || null, roles, profiles, permissions, organizationId, loading, refreshAccess,
+    hasPermission: (module: string, action: string) => roles.includes('owner') || permissions?.[module]?.[action] === true || (action === 'view' && permissions?.[module]?.edit === true),
+    canAccess: (allowed: string[]) => roles.includes('owner') || allowed.some((role) => roles.includes(role)),
+    sendSignInLink: async (email: string) => {
       if (!supabase) throw new Error('La conexión con Supabase todavía no está configurada.');
       const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } });
       if (error) throw error;
     },
     signInWithGoogle: async () => {
       if (!supabase) throw new Error('La conexión con Supabase todavía no está configurada.');
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
-      });
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}${window.location.pathname}` } });
       if (error) throw error;
     },
     signOut: async () => { if (supabase) await supabase.auth.signOut(); },
-  }), [session, roles, organizationId, loading]);
+  }), [session, roles, profiles, permissions, organizationId, loading, refreshAccess]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
