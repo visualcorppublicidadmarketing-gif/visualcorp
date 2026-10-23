@@ -189,7 +189,7 @@ export function WorkspaceProvider({ children }) {
       supabase.from('areas').select('id,code,name').eq('organization_id', organizationId),
       supabase.from('inventory_categories').select('id,code,name').eq('organization_id', organizationId),
       supabase.from('branches').select('id,code,name').eq('organization_id', organizationId),
-      supabase.from('inventory_movements').select('id,variant_id,branch_id,movement_type,quantity_delta,reason,reference_type,reference_id,created_by,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
+      supabase.from('inventory_movements').select('id,variant_id,branch_id,location_code,movement_type,quantity_delta,reason,reference_type,reference_id,created_by,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
       supabase.from('customers').select('id,full_name,phone,email,notes,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }),
       supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity,backordered_quantity),sale_payments(method,amount)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),
       supabase.from('inventory_item_costs').select('variant_id,unit_cost,supplier_name,updated_at').eq('organization_id', organizationId),
@@ -210,8 +210,9 @@ export function WorkspaceProvider({ children }) {
       if (!item) continue;
       for (const branch of branchesResult.data || []) {
         const branchStocks = (stockResult.data || []).filter((row) => row.variant_id === variant.id && row.branch_id === branch.id);
+        if (!branchStocks.length && item.custom_fields?.initial_branch_id && item.custom_fields.initial_branch_id !== branch.id) continue;
         for (const stock of branchStocks.length ? branchStocks : [null]) {
-        const location = stock?.location_code || 'MAIN';
+        const location = stock?.location_code || item.custom_fields?.default_location_code || 'MAIN';
         const metrics = metricsByKey.get(`${variant.id}|${branch.id}|${location}`);
         remoteInventory.push({
           id: `${variant.id}:${branch.id}:${location}`, remoteItemId: item.id, variantId: variant.id, sku: item.sku, variantSku: variant.sku,
@@ -232,7 +233,7 @@ export function WorkspaceProvider({ children }) {
     const movementLabel = { receipt: 'entrada', consumption: 'consumo', return: 'devolución', waste: 'merma', sale: 'venta', adjustment: 'ajuste', transfer_out: 'transferencia_salida', transfer_in: 'recepcion_transferencia' };
     const remoteMovements = (movementsResult.data || []).map((row) => {
       const variant = variantById.get(row.variant_id); const item = itemById.get(variant?.item_id); const branch = branchById.get(row.branch_id);
-      return { id: row.id, itemId: row.variant_id, itemName: item?.name || variant?.sku || 'Artículo', quantity: Math.abs(Number(row.quantity_delta)), type: movementLabel[row.movement_type] || row.movement_type, actor: row.created_by === user.id ? user.email : 'Equipo autorizado', reason: row.reason, reference: row.reference_id || '', branch: branch?.name || '', createdAt: row.created_at, shortage: 0 };
+      return { id: row.id, itemId: row.variant_id, itemName: item?.name || variant?.sku || 'Artículo', unit: item?.base_unit || '', quantity: Math.abs(Number(row.quantity_delta)), quantityDelta: Number(row.quantity_delta), type: movementLabel[row.movement_type] || row.movement_type, actor: row.created_by === user.id ? user.email : `Usuario ${row.created_by}`, reason: row.reason, referenceType: row.reference_type || '', reference: row.reference_id || '', branch: branch?.name || '', location: row.location_code || 'MAIN', createdAt: row.created_at, shortage: 0 };
     });
     const remoteCustomers = (customersResult.data || []).map((row) => ({ id: row.id, name: row.full_name, phone: row.phone, email: row.email, notes: row.notes, createdAt: row.created_at }));
     const customerById = new Map(remoteCustomers.map((row) => [row.id, row]));

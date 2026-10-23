@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ArrowDownToLine, ArrowUpFromLine, Boxes, Check, ClipboardList, Clock3, Factory, FileText, LoaderCircle, PackageCheck, Plus, RotateCcw, ShieldAlert, Wallet } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
@@ -15,7 +16,8 @@ const mainLocation = 'MAIN';
 
 export function OperationsLifecycle() {
   const {organizationId,user,roles}=useAuth();
-  const [tab,setTab]=useState('cash'); const [loading,setLoading]=useState(true); const [busy,setBusy]=useState(false); const [error,setError]=useState(''); const [notice,setNotice]=useState('');
+  const [searchParams] = useSearchParams();
+  const [tab,setTab]=useState(tabs.some(([id])=>id===searchParams.get('tab'))?searchParams.get('tab'):'cash'); const [loading,setLoading]=useState(true); const [busy,setBusy]=useState(false); const [error,setError]=useState(''); const [notice,setNotice]=useState('');
   const [branches,setBranches]=useState([]); const [areas,setAreas]=useState([]); const [variants,setVariants]=useState([]); const [cash,setCash]=useState([]); const [cashMoves,setCashMoves]=useState([]);
   const [sales,setSales]=useState([]); const [saleLines,setSaleLines]=useState([]); const [returns,setReturns]=useState([]); const [transfers,setTransfers]=useState([]); const [transferLines,setTransferLines]=useState([]); const [orders,setOrders]=useState([]); const [quotes,setQuotes]=useState([]);
   const [branchId,setBranchId]=useState(''); const [opening,setOpening]=useState('0'); const [counted,setCounted]=useState(''); const [cashNote,setCashNote]=useState('');
@@ -48,6 +50,12 @@ export function OperationsLifecycle() {
     }catch(e){setError(errText(e));}finally{setLoading(false);}
   },[organizationId]);
   useEffect(()=>{refresh();},[refresh]);
+  useEffect(()=>{
+    if(searchParams.get('tab')!=='transfers')return;
+    const variant=searchParams.get('variant');const from=searchParams.get('from');const location=searchParams.get('location');
+    setTab('transfers');
+    setTransferForm(current=>({...current,variant:variants.some(row=>row.id===variant)?variant:current.variant,from:branches.some(row=>row.id===from)?from:current.from,fromLocation:location||current.fromLocation,to:branches.find(row=>row.id!==from)?.id||current.to}));
+  },[searchParams.toString(),branches,variants]);
   const run=async(action,success)=>{setBusy(true);setError('');setNotice('');try{const value=await action();setNotice(typeof success==='function'?success(value):success);await refresh();return value;}catch(e){setError(errText(e));return null;}finally{setBusy(false);}};
   const activeCash=cash.find(s=>s.status==='open'&&s.branch_id===branchId&&s.opened_by===user?.id);
   const selectedSale=sales.find(s=>s.id===saleId); const linesForSale=saleLines.filter(l=>l.sale_id===saleId);

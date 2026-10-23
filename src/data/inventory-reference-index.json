@@ -1,0 +1,1244 @@
+{
+  "title": "Biblioteca de referencias visuales de inventario",
+  "generatedAt": "2026-10-23T14:09:35.902Z",
+  "provenance": [
+    "PNG_transparentes_2026-10",
+    "Variantes_Marcas_2026-10"
+  ],
+  "note": "Mockups visuales para identificar productos relacionados. No representan fotografías ni cantidades de stock.",
+  "count": 88,
+  "products": [
+    {
+      "id": "01",
+      "name": "Roll Up",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "01_Roll_Up_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/01-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Roll Up Tia",
+          "source": "01_Roll_Up_Tia.png",
+          "path": "/inventory-reference-library/images/01-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Banner Arana",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "02_Banner_Arana_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/02-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Banner Arana Aki",
+          "source": "02_Banner_Arana_Aki.png",
+          "path": "/inventory-reference-library/images/02-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Stand Publicitario",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "03_Stand_Publicitario_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/03-visual-corp.webp",
+          "width": 720,
+          "height": 556
+        },
+        {
+          "series": "Marcas",
+          "label": "Stand Coca Cola",
+          "source": "03_Stand_Coca_Cola.png",
+          "path": "/inventory-reference-library/images/03-marcas.webp",
+          "width": 720,
+          "height": 556
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Taza",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "04_Taza_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/04-visual-corp.webp",
+          "width": 720,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Taza Cafe Sol",
+          "source": "04_Taza_Cafe_Sol.png",
+          "path": "/inventory-reference-library/images/04-marcas.webp",
+          "width": 720,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Gorra",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "05_Gorra_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/05-visual-corp.webp",
+          "width": 720,
+          "height": 588
+        },
+        {
+          "series": "Marcas",
+          "label": "Gorra Nike",
+          "source": "05_Gorra_Nike.png",
+          "path": "/inventory-reference-library/images/05-marcas.webp",
+          "width": 720,
+          "height": 588
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Banner en A",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "06_Banner_en_A_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/06-visual-corp.webp",
+          "width": 720,
+          "height": 658
+        },
+        {
+          "series": "Marcas",
+          "label": "Banner A McDonalds",
+          "source": "06_Banner_A_McDonalds.png",
+          "path": "/inventory-reference-library/images/06-marcas.webp",
+          "width": 720,
+          "height": 658
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "name": "Totem Publicitario",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "07_Totem_Publicitario_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/07-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Totem Netlife",
+          "source": "07_Totem_Netlife.png",
+          "path": "/inventory-reference-library/images/07-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "08",
+      "name": "Exhibidor de Mesa",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "08_Exhibidor_de_Mesa_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/08-visual-corp.webp",
+          "width": 693,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Exhibidor Oreo",
+          "source": "08_Exhibidor_Oreo.png",
+          "path": "/inventory-reference-library/images/08-marcas.webp",
+          "width": 693,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "09",
+      "name": "Credencial",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "09_Credencial_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/09-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Credencial Evento",
+          "source": "09_Credencial_Evento.png",
+          "path": "/inventory-reference-library/images/09-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "name": "Camiseta",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "10_Camiseta_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/10-visual-corp.webp",
+          "width": 720,
+          "height": 710
+        },
+        {
+          "series": "Marcas",
+          "label": "Camiseta Sublimada Milagro",
+          "source": "10_Camiseta_Sublimada_Milagro.png",
+          "path": "/inventory-reference-library/images/10-marcas.webp",
+          "width": 720,
+          "height": 710
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "name": "Rotulo Comercial",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "11_Rotulo_Comercial_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/11-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Rotulo Adidas",
+          "source": "11_Rotulo_Adidas.png",
+          "path": "/inventory-reference-library/images/11-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "name": "Letrero Luminoso",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "12_Letrero_Luminoso_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/12-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Letrero Netflix",
+          "source": "12_Letrero_Netflix.png",
+          "path": "/inventory-reference-library/images/12-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "name": "Neon LED",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "13_Neon_LED_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/13-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Neon Barbie",
+          "source": "13_Neon_Barbie.png",
+          "path": "/inventory-reference-library/images/13-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "14",
+      "name": "Senaletica PVC",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "14_Senaletica_PVC_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/14-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Senaletica IKEA",
+          "source": "14_Senaletica_IKEA.png",
+          "path": "/inventory-reference-library/images/14-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "15",
+      "name": "Tarjetas de Presentacion",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "15_Tarjetas_de_Presentacion_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/15-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Tarjetas Apple",
+          "source": "15_Tarjetas_Apple.png",
+          "path": "/inventory-reference-library/images/15-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "16",
+      "name": "Flyer",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "16_Flyer_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/16-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Flyer KFC",
+          "source": "16_Flyer_KFC.png",
+          "path": "/inventory-reference-library/images/16-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "17",
+      "name": "Carpeta Corporativa",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "17_Carpeta_Corporativa_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/17-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Carpeta Samsung",
+          "source": "17_Carpeta_Samsung.png",
+          "path": "/inventory-reference-library/images/17-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "18",
+      "name": "Boligrafo",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "18_Boligrafo_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/18-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Boligrafo BIC",
+          "source": "18_Boligrafo_BIC.png",
+          "path": "/inventory-reference-library/images/18-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "19",
+      "name": "Bolsa Promocional",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "19_Bolsa_Promocional_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/19-visual-corp.webp",
+          "width": 658,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Bolsa HM",
+          "source": "19_Bolsa_HM.png",
+          "path": "/inventory-reference-library/images/19-marcas.webp",
+          "width": 658,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "20",
+      "name": "Tomatodo",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "20_Tomatodo_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/20-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Tomatodo Gatorade",
+          "source": "20_Tomatodo_Gatorade.png",
+          "path": "/inventory-reference-library/images/20-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "21",
+      "name": "Cuaderno",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "21_Cuaderno_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/21-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Cuaderno Comics",
+          "source": "21_Cuaderno_Comics.png",
+          "path": "/inventory-reference-library/images/21-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "22",
+      "name": "Stickers",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "22_Stickers_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/22-visual-corp.webp",
+          "width": 720,
+          "height": 658
+        },
+        {
+          "series": "Marcas",
+          "label": "Stickers Amor",
+          "source": "22_Stickers_Amor.png",
+          "path": "/inventory-reference-library/images/22-marcas.webp",
+          "width": 720,
+          "height": 658
+        }
+      ]
+    },
+    {
+      "id": "23",
+      "name": "Trofeo Acrilico",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "23_Trofeo_Acrilico_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/23-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Trofeo RedBull",
+          "source": "23_Trofeo_RedBull.png",
+          "path": "/inventory-reference-library/images/23-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "24",
+      "name": "Sudadera",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "24_Sudadera_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/24-visual-corp.webp",
+          "width": 673,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Sudadera Pepsi",
+          "source": "24_Sudadera_Pepsi.png",
+          "path": "/inventory-reference-library/images/24-marcas.webp",
+          "width": 673,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "25",
+      "name": "Triptico",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "25_Triptico_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/25-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Triptico Academia",
+          "source": "25_Triptico_Academia.png",
+          "path": "/inventory-reference-library/images/25-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "26",
+      "name": "Calendario de Mesa",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "26_Calendario_de_Mesa_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/26-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Calendario Netlife",
+          "source": "26_Calendario_Netlife.png",
+          "path": "/inventory-reference-library/images/26-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "27",
+      "name": "Polo",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "27_Polo_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/27-visual-corp.webp",
+          "width": 600,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Polo Puma",
+          "source": "27_Polo_Puma.png",
+          "path": "/inventory-reference-library/images/27-marcas.webp",
+          "width": 600,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "28",
+      "name": "Mochila de Cuerdas",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "28_Mochila_de_Cuerdas_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/28-visual-corp.webp",
+          "width": 658,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Mochila Spotify",
+          "source": "28_Mochila_Spotify.png",
+          "path": "/inventory-reference-library/images/28-marcas.webp",
+          "width": 658,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "29",
+      "name": "Pin Corporativo",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "29_Pin_Corporativo_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/29-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Pin CocaCola",
+          "source": "29_Pin_CocaCola.png",
+          "path": "/inventory-reference-library/images/29-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "30",
+      "name": "Valla Publicitaria",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "30_Valla_Publicitaria_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/30-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Valla Toyota",
+          "source": "30_Valla_Toyota.png",
+          "path": "/inventory-reference-library/images/30-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "31",
+      "name": "Banderola Publicitaria",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "31_Banderola_Publicitaria_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/31-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Banderola Pepsi",
+          "source": "31_Banderola_Pepsi.png",
+          "path": "/inventory-reference-library/images/31-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "32",
+      "name": "Formas Corporeas Acrilicas",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "32_Formas_Corporeas_Acrilicas_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/32-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Formas Acrilicas TikTok",
+          "source": "32_Formas_Acrilicas_TikTok.png",
+          "path": "/inventory-reference-library/images/32-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "33",
+      "name": "Brandeo Vehicular",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "33_Brandeo_Vehicular_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/33-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Brandeo Vehiculo DHL",
+          "source": "33_Brandeo_Vehiculo_DHL.png",
+          "path": "/inventory-reference-library/images/33-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "34",
+      "name": "Vinil Adhesivo",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "34_Vinil_Adhesivo_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/34-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Vinil Airbnb",
+          "source": "34_Vinil_Airbnb.png",
+          "path": "/inventory-reference-library/images/34-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "35",
+      "name": "Sobre Corporativo",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "35_Sobre_Corporativo_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/35-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Sobre Mastercard",
+          "source": "35_Sobre_Mastercard.png",
+          "path": "/inventory-reference-library/images/35-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "36",
+      "name": "Hoja Membretada",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "36_Hoja_Membretada_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/36-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Hoja Google",
+          "source": "36_Hoja_Google.png",
+          "path": "/inventory-reference-library/images/36-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "37",
+      "name": "Lanyard",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "37_Lanyard_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/37-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Lanyard Spotify",
+          "source": "37_Lanyard_Spotify.png",
+          "path": "/inventory-reference-library/images/37-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "38",
+      "name": "Mousepad",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "38_Mousepad_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/38-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Mousepad PlayStation",
+          "source": "38_Mousepad_PlayStation.png",
+          "path": "/inventory-reference-library/images/38-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "39",
+      "name": "Pulsera Promocional",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "39_Pulsera_Promocional_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/39-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Pulsera Barbie",
+          "source": "39_Pulsera_Barbie.png",
+          "path": "/inventory-reference-library/images/39-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "40",
+      "name": "Gigantografia",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "40_Gigantografia_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/40-visual-corp.webp",
+          "width": 720,
+          "height": 360
+        },
+        {
+          "series": "Marcas",
+          "label": "Gigantografia Ecuador",
+          "source": "40_Gigantografia_Ecuador.png",
+          "path": "/inventory-reference-library/images/40-marcas.webp",
+          "width": 720,
+          "height": 360
+        }
+      ]
+    },
+    {
+      "id": "41",
+      "name": "Backlight",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "41_Backlight_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/41-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Backlight CocaCola",
+          "source": "41_Backlight_CocaCola.png",
+          "path": "/inventory-reference-library/images/41-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    },
+    {
+      "id": "42",
+      "name": "Pendon",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "42_Pendon_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/42-visual-corp.webp",
+          "width": 480,
+          "height": 720
+        },
+        {
+          "series": "Marcas",
+          "label": "Pendon Tia",
+          "source": "42_Pendon_Tia.png",
+          "path": "/inventory-reference-library/images/42-marcas.webp",
+          "width": 480,
+          "height": 720
+        }
+      ]
+    },
+    {
+      "id": "43",
+      "name": "Placa Acrilica QR",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "43_Placa_Acrilica_QR_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/43-visual-corp.webp",
+          "width": 720,
+          "height": 658
+        },
+        {
+          "series": "Marcas",
+          "label": "Placa QR Instagram",
+          "source": "43_Placa_QR_Instagram.png",
+          "path": "/inventory-reference-library/images/43-marcas.webp",
+          "width": 720,
+          "height": 658
+        }
+      ]
+    },
+    {
+      "id": "44",
+      "name": "Etiquetas Adhesivas",
+      "category": "Mockup de producto",
+      "tags": [
+        "referencia visual",
+        "mockup",
+        "impresión"
+      ],
+      "images": [
+        {
+          "series": "Visual Corp",
+          "label": "Visual Corp",
+          "source": "44_Etiquetas_Adhesivas_Visual_Corp.png",
+          "path": "/inventory-reference-library/images/44-visual-corp.webp",
+          "width": 720,
+          "height": 480
+        },
+        {
+          "series": "Marcas",
+          "label": "Etiquetas Fanta",
+          "source": "44_Etiquetas_Fanta.png",
+          "path": "/inventory-reference-library/images/44-marcas.webp",
+          "width": 720,
+          "height": 480
+        }
+      ]
+    }
+  ]
+}
