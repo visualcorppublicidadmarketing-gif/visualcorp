@@ -82,16 +82,16 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 
 ### Fase 3 — POS de mostrador y experiencia de asesoría
 
-**Estado:** parcial. Ya existe carrito multiartículo con búsqueda por nombre, filtro por familia, imágenes de catálogo, cantidad, precio unitario explícito y total en vivo; se registra en una sola operación idempotente, con cliente y abono, y conserva los artículos trazables de cotizaciones aceptadas. También permite dividir el cobro entre varios métodos o registrar la venta con saldo pendiente; el efectivo requiere turno abierto. El resumen, carrito y pagos se adaptan a móvil. Siguen pendientes cajero asignado, guardar/recuperar ventas en espera y ciclo completo de turnos y cierres.
+**Estado:** parcial, en curso. Ya existe carrito multiartículo con búsqueda por nombre, filtro por familia, imágenes de catálogo, cantidad, precio unitario explícito y total en vivo; se registra en una sola operación idempotente, con cliente y abono, y conserva los artículos trazables de cotizaciones aceptadas. También permite dividir el cobro entre varios métodos o registrar la venta con saldo pendiente; el efectivo requiere turno abierto. Ahora el POS permite guardar borradores recuperables en Supabase y retomarlos en cualquier dispositivo autorizado de la sucursal. El borrador conserva el cliente, carrito o cotización y total; no cobra ni aparta existencias, y queda cerrado solo al enlazarlo con su venta confirmada. Los cambios quedaron migrados y publicados en Novedades. Siguen pendientes revisión visual autenticada del preview y terminar de validar el ciclo de turnos/cierres junto con la asignación explícita de cajero.
 
 - Reemplazar la captura de una sola línea por catálogo visual con búsqueda, categorías, imágenes, variantes, cantidades, descuentos autorizados y carrito multiartículo.
 - Agilizar selección o alta de cliente, vincular asesor/caja/sucursal y mostrar disponibilidad reservable antes de confirmar.
-- Añadir pagos combinados y abonos, cálculo visible del saldo, venta en espera y recuperación de una venta abierta.
+- Añadir pagos combinados y abonos, cálculo visible del saldo, borradores persistentes en espera y recuperación idempotente de una orden abierta.
 - Crear turnos de caja: apertura con fondo, ingresos/retiros autorizados, cierre, conteo declarado, diferencia y revisión de responsable.
 - Conectar devoluciones, anulaciones y notas de crédito operativas con su venta original; registrar motivo, aprobación y restablecimiento de stock cuando corresponda.
 - Mantener separado el recibo interno del comprobante tributario. La emisión fiscal requiere alcance y proveedor de Ecuador confirmados.
 
-**Cierre:** una asesora completa una venta con varios productos, cliente y uno o varios pagos; caja, saldo de cliente y stock quedan consistentes aunque haya reintentos; una devolución no borra la venta original.
+**Cierre:** una asesora completa una venta con varios productos, cliente y uno o varios pagos; caja, saldo de cliente y stock quedan consistentes aunque haya reintentos; los borradores se recuperan entre dispositivos y no alteran stock; una devolución no borra la venta original.
 
 ### Fase 4 — Escaneo, ubicaciones y preparación de pedidos
 
