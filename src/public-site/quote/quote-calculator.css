@@ -1,0 +1,78 @@
+.site-quote-workspace{max-width:1440px;margin:0 auto;padding:56px clamp(20px,6vw,92px) 96px}
+.quote-builder{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(300px,.72fr);gap:18px;align-items:start}
+.quote-builder-panel,.quote-builder-summary,.site-quote-request{border:1px solid #e8e7ed;border-radius:19px;background:#fff;box-shadow:0 18px 50px #201b2a08}
+.quote-builder-panel{padding:clamp(22px,4vw,38px)}
+.quote-builder-heading{max-width:620px;margin-bottom:27px}
+.quote-builder-heading h2{margin:13px 0 7px;color:#1c1929;font-family:BebasKai,'Arial Narrow',sans-serif;font-size:clamp(38px,4.3vw,54px);font-weight:400;line-height:.98;text-transform:uppercase}
+.quote-builder-heading p{margin:0;color:#616574;font-size:14px;line-height:1.65}
+.quote-builder-fields{display:grid;gap:17px}
+.quote-builder-fields>label,.quote-field-pair label{display:grid;gap:7px;color:#282634;font-size:13px;font-weight:700}
+.quote-builder-fields label>span{color:#797a87;font-weight:500}
+.quote-builder-fields input:not([type=checkbox]),.quote-builder-fields select{width:100%;min-height:47px;padding:0 13px;border:1px solid #dedee6;border-radius:10px;background:#fff;color:#24232d;font:inherit;font-size:14px;outline:none;transition:border-color .18s,box-shadow .18s}
+.quote-builder-fields input:focus,.quote-builder-fields select:focus{border-color:#b21a8f;box-shadow:0 0 0 3px #b21a8f18}
+.quote-builder-mode{min-width:0;margin:0;padding:0;border:0}
+.quote-builder-mode legend{margin-bottom:9px;color:#282634;font-size:13px;font-weight:750}
+.quote-mode-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.quote-mode-options button,.quote-unit-toggle button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:43px;padding:8px 10px;border:1px solid #e2e0e8;border-radius:10px;background:#fff;color:#50515e;font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:border-color .18s,background .18s,color .18s}
+.quote-mode-options button:hover,.quote-unit-toggle button:hover{border-color:#b51b8c}
+.quote-mode-options button.active,.quote-unit-toggle button.active{border-color:#b51b8c;background:#fcf2fa;color:#971573}
+.quote-unit-icon{font-size:18px;font-weight:500;line-height:1}
+.quote-dimension-block{padding:15px;border:1px solid #eceaf0;border-radius:13px;background:#faf9fc}
+.quote-unit-toggle{display:flex;justify-content:flex-end;gap:6px;margin-bottom:12px}
+.quote-unit-toggle button{min-height:33px;min-width:48px;padding:5px 10px}
+.quote-field-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.quote-area-readout{display:flex;justify-content:space-between;gap:12px;margin:12px 0 0;padding-top:11px;border-top:1px solid #eae8ee;color:#626371;font-size:12px}
+.quote-area-readout b{color:#a3167f;font-size:13px}
+.quote-installation-option{display:flex!important;align-items:flex-start;gap:12px;padding:14px;border:1px solid #e8e5ed;border-radius:12px;background:#fcfbfd;cursor:pointer}
+.quote-installation-option>input{flex:none;width:18px;height:18px;margin:2px 0 0;accent-color:#b51b8c}
+.quote-installation-option>span{display:flex;align-items:flex-start;gap:10px}
+.quote-installation-option svg{flex:none;color:#a51b85}
+.quote-installation-option b,.quote-installation-option small{display:block}
+.quote-installation-option b{color:#302c38;font-size:12px}
+.quote-installation-option small{margin-top:4px;color:#737381;font-size:11px;font-weight:450;line-height:1.5}
+.quote-builder-summary{position:sticky;top:24px;padding:25px;background:linear-gradient(150deg,#fff,#fcf8fc)}
+.quote-summary-icon{display:grid;place-items:center;width:43px;height:43px;margin-bottom:17px;border:1px solid #f0dcea;border-radius:13px;background:#fff0fa;color:#a71683}
+.quote-builder-summary>.site-eyebrow{font-size:9px}
+.quote-builder-summary h3{margin:11px 0 19px;color:#211e2b;font-size:22px;line-height:1.2;overflow-wrap:anywhere}
+.quote-builder-summary dl,.quote-print-sheet dl{display:grid;gap:0;margin:0}
+.quote-builder-summary dl>div,.quote-print-sheet dl>div{display:grid;grid-template-columns:minmax(82px,.6fr) minmax(0,1fr);gap:12px;padding:11px 0;border-top:1px solid #ebe8ef}
+.quote-builder-summary dt,.quote-print-sheet dt{color:#73717e;font-size:11px}
+.quote-builder-summary dd,.quote-print-sheet dd{margin:0;color:#302c38;font-size:12px;font-weight:700;line-height:1.5}
+.quote-summary-price{display:flex;align-items:flex-start;gap:10px;margin-top:19px;padding:14px;border:1px solid #eedfec;border-radius:12px;background:#fff8fe;color:#9f187c}
+.quote-price-comparison{margin-top:18px;padding:14px;border:1px solid #e9e5ed;border-radius:12px;background:#fff}
+.quote-price-comparison-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.quote-price-comparison-heading .site-eyebrow{font-size:9px}
+.quote-price-comparison-heading>small{color:#74717c;font-size:10px}
+.quote-price-option{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #eeebf0;color:#484450;font-size:12px}
+.quote-price-option b{color:#a3167f;font-size:12px;text-align:right}
+.quote-price-option b small{display:block;margin-top:3px;color:#77727d;font-size:9px;font-weight:500}
+.quote-price-comparison>p{margin:9px 0 0;color:#74717c;font-size:10px;line-height:1.5}
+.quote-summary-price>svg{flex:none;margin-top:1px}
+.quote-summary-price b,.quote-summary-price small{display:block}
+.quote-summary-price b{color:#39283a;font-size:12px}
+.quote-summary-price small{margin-top:4px;color:#686270;font-size:11px;line-height:1.5}
+.quote-print-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:43px;margin-top:13px;border:1px solid #dedbe4;border-radius:10px;background:#fff;color:#383541;font:inherit;font-size:12px;font-weight:750;cursor:pointer}
+.quote-print-button:hover{border-color:#b51b8c;color:#971573}
+.site-quote-request{max-width:860px;margin:28px auto 0;padding:clamp(20px,4vw,36px);scroll-margin-top:100px}
+.site-quote-request .site-lead-form{max-width:none;margin:0;padding:0;border:0;box-shadow:none}
+.site-quote-request .quote-form-service{display:none!important}
+.quote-print-sheet{display:none}
+.crm-quote-details{margin-top:6px;color:#62616d;font-size:11px}
+.crm-quote-details summary{width:max-content;color:#9f187c;font-weight:700;cursor:pointer}
+.crm-quote-details>span{display:block;margin-top:4px;color:#62616d;font-size:11px;line-height:1.5}
+@media(max-width:860px){.site-quote-workspace{padding:42px 22px 72px}.quote-builder{grid-template-columns:1fr}.quote-builder-summary{position:static}.site-quote-request{margin-top:18px}}
+@media(max-width:520px){.site-quote-workspace{padding:28px 14px 56px}.quote-builder-panel,.quote-builder-summary,.site-quote-request{border-radius:15px}.quote-builder-panel,.quote-builder-summary,.site-quote-request{padding:20px}.quote-mode-options{grid-template-columns:1fr}.quote-mode-options button{justify-content:flex-start}.quote-field-pair{gap:8px}.quote-builder-heading p{font-size:13px}}
+@media print{
+  @page{size:A4;margin:18mm}
+  body.print-quote-summary .quote-print-sheet{display:block!important;position:absolute;top:0;left:0;width:100%;padding:0;color:#20212b;font-family:Arial,sans-serif}
+  body.print-quote-summary *{visibility:hidden!important}
+  body.print-quote-summary .quote-print-sheet,body.print-quote-summary .quote-print-sheet *{visibility:visible!important}
+  .quote-print-sheet>img{width:170px;height:auto;object-fit:contain;margin-bottom:30px}
+  .quote-print-sheet .quote-print-kicker{margin:0 0 8px;color:#a3167f;font-size:10px;font-weight:800;letter-spacing:.16em}
+  .quote-print-sheet h1{margin:0 0 10px;font-size:26px}
+  .quote-print-sheet>p:not(.quote-print-kicker){color:#62616c;font-size:12px;line-height:1.6}
+  .quote-print-sheet dl{margin-top:25px}
+  .quote-print-sheet dl>div{grid-template-columns:150px 1fr;padding:14px 0}
+  .quote-print-sheet dt,.quote-print-sheet dd{font-size:12px}
+  .quote-print-sheet .quote-print-disclaimer{margin-top:30px;padding:14px;border:1px solid #ddd6e2;border-radius:9px;color:#56525e;font-size:10px}
+}

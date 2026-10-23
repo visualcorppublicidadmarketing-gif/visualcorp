@@ -3,8 +3,8 @@ import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, use
 import { ArrowDownRight, ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, Check, ChevronRight, CircleHelp, ClipboardList, Database, FileText, Globe2, History, Image, LayoutDashboard, LogOut, Megaphone, Menu, Package, Plus, Search, Settings2, ShoppingBag, ShoppingCart, Truck, Users, Wallet, X } from 'lucide-react';
 import { WorkspaceProvider, formatDate, formatMoney, localDateKey, useWorkspace } from './app/workspace';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
+import { ProtectedPage } from './auth/ProtectedPage';
 import { supabase } from './lib/supabaseClient';
-import { PublicSiteLayout, PublicHomePage, ServicesIndexPage, ServiceDetailPage, AboutPage, ProcessPage, ContactPage, PublicQuotePage as MultiPageQuotePage } from './public-site/PublicSite.tsx';
 import { AppFrame, Brand, PageHeading, StatCard } from './app/layout';
 import { EmptyState, StageBadge } from './components/feedback';
 import { QuotePriceComparison } from './components/QuotePriceComparison';
@@ -23,10 +23,26 @@ import './design-system.css';
 const AdminHome = lazy(() => import('./pages/admin/DashboardPages').then((module) => ({ default: module.AdminHome })));
 const OperationsHome = lazy(() => import('./pages/admin/DashboardPages').then((module) => ({ default: module.OperationsHome })));
 const WebsiteAdmin = lazy(() => import('./pages/admin/WebsiteAdminPage').then((module) => ({ default: module.WebsiteAdmin })));
+const SiteArticleManager = lazy(() => import('./pages/admin/SiteArticleManager').then((module) => ({ default: module.SiteArticleManager })));
 const LeadsPage = lazy(() => import('./pages/admin/CRMPage').then((module) => ({ default: module.LeadsPage })));
 const CampaignPage = lazy(() => import('./pages/admin/CampaignPage').then((module) => ({ default: module.CampaignPage })));
 const CatalogPage = lazy(() => import('./pages/admin/CatalogPage').then((module) => ({ default: module.CatalogPage })));
 const PosPage = lazy(() => import('./pages/pos/CheckoutWorkspace').then((module) => ({ default: module.PosPage })));
+const PublicSiteLayout = lazy(() => import('./public-site/PublicSite').then((module) => ({ default: module.PublicSiteLayout })));
+const PublicHomePage = lazy(() => import('./public-site/PublicSite').then((module) => ({ default: module.PublicHomePage })));
+const ServicesIndexPage = lazy(() => import('./public-site/PublicSite').then((module) => ({ default: module.ServicesIndexPage })));
+const ServiceDetailPage = lazy(() => import('./public-site/PublicSite').then((module) => ({ default: module.ServiceDetailPage })));
+const AboutPage = lazy(() => import('./public-site/PublicSite').then((module) => ({ default: module.AboutPage })));
+const ProcessPage = lazy(() => import('./public-site/PublicSite').then((module) => ({ default: module.ProcessPage })));
+const ContactPage = lazy(() => import('./public-site/PublicSite').then((module) => ({ default: module.ContactPage })));
+const MultiPageQuotePage = lazy(() => import('./public-site/PublicSite').then((module) => ({ default: module.PublicQuotePage })));
+const BlogIndexPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.BlogIndexPage })));
+const PublicationIndexPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.PublicationIndexPage })));
+const PortfolioIndexPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.PortfolioIndexPage })));
+const ArticleDetailPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.ArticleDetailPage })));
+const PublicationDetailPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.PublicationArticleDetailPage })));
+const PortfolioDetailPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.PortfolioArticleDetailPage })));
+const StorefrontPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.StorefrontPage })));
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 const symbol = '/brand/visualcorp-symbol.png';
@@ -91,8 +107,15 @@ function AppRouter() {
       <Route path="/como-trabajamos" element={<ProcessPage/>}/>
       <Route path="/contacto" element={<ContactPage/>}/>
       <Route path="/cotizador" element={<MultiPageQuotePage/>}/>
+      <Route path="/tienda" element={<StorefrontPage/>}/>
+      <Route path="/portafolio" element={<PortfolioIndexPage/>}/>
+      <Route path="/portafolio/:slug" element={<PortfolioDetailPage/>}/>
+      <Route path="/blog" element={<BlogIndexPage/>}/>
+      <Route path="/blog/:slug" element={<ArticleDetailPage/>}/>
+      <Route path="/publicaciones" element={<PublicationIndexPage/>}/>
+      <Route path="/publicaciones/:slug" element={<PublicationDetailPage/>}/>
     </Route>
-    <Route path="/admin" element={<ProtectedPage area="website"><AdminHome/></ProtectedPage>}/><Route path="/admin/sitio" element={<ProtectedPage area="website"><WebsiteAdmin/></ProtectedPage>}/><Route path="/admin/cambios" element={<ProtectedPage area="website"><AppFrame area="admin"><PageHeading eyebrow="REGISTRO INTERNO" title="Novedades" description="Redacta y publica cambios para administración y operaciones."/><ChangeLogPanel area="admin"/></AppFrame></ProtectedPage>}/> <Route path="/admin/solicitudes" element={<ProtectedPage area="website"><LeadsPage/></ProtectedPage>}/><Route path="/operaciones/catalogo" element={<ProtectedPage area="catalog"><CatalogPage/></ProtectedPage>}/><Route path="/admin/catalogo" element={<Navigate to="/operaciones/catalogo" replace/>}/><Route path="/admin/marketing" element={<ProtectedPage area="website"><CampaignPage/></ProtectedPage>}/><Route path="/admin/respaldo" element={<ProtectedPage area="website"><AppFrame area="admin"><PageHeading eyebrow="DATOS" title="Respaldo y migración" description="Consulta el respaldo y la procedencia de datos."/><BackupWorkspace/></AppFrame></ProtectedPage>}/>
+    <Route path="/admin" element={<ProtectedPage area="website"><AdminHome/></ProtectedPage>}/><Route path="/admin/sitio" element={<ProtectedPage area="website"><WebsiteAdmin/></ProtectedPage>}/><Route path="/admin/contenido" element={<ProtectedPage area="website"><SiteArticleManager/></ProtectedPage>}/><Route path="/admin/cambios" element={<ProtectedPage area="website"><AppFrame area="admin"><PageHeading eyebrow="REGISTRO INTERNO" title="Novedades" description="Redacta y publica cambios para administración y operaciones."/><ChangeLogPanel area="admin"/></AppFrame></ProtectedPage>}/> <Route path="/admin/solicitudes" element={<ProtectedPage area="website"><LeadsPage/></ProtectedPage>}/><Route path="/operaciones/catalogo" element={<ProtectedPage area="catalog"><CatalogPage/></ProtectedPage>}/><Route path="/admin/catalogo" element={<Navigate to="/operaciones/catalogo" replace/>}/><Route path="/admin/marketing" element={<ProtectedPage area="website"><CampaignPage/></ProtectedPage>}/><Route path="/admin/respaldo" element={<ProtectedPage area="website"><AppFrame area="admin"><PageHeading eyebrow="DATOS" title="Respaldo y migración" description="Consulta el respaldo y la procedencia de datos."/><BackupWorkspace/></AppFrame></ProtectedPage>}/>
     <Route path="/operaciones" element={<ProtectedPage area="operations"><OperationsHome/></ProtectedPage>}/><Route path="/operaciones/cambios" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="EQUIPO" title="Novedades" description="Consulta los cambios compartidos por administración."/><ChangeLogPanel area="operations"/></AppFrame></ProtectedPage>}/> <Route path="/operaciones/pos" element={<ProtectedPage area="operations"><PosPage/></ProtectedPage>}/><Route path="/operaciones/flujos" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="OPERACIONES" title="Flujos conectados" description="Gestiona caja, devoluciones, traslados, producción y cotizaciones desde el mismo registro compartido."/><OperationsLifecycle/></AppFrame></ProtectedPage>}/><Route path="/operaciones/cotizador" element={<ProtectedPage area="operations"><QuotePage/></ProtectedPage>}/><Route path="/operaciones/inventario" element={<ProtectedPage area="operations"><InventoryPage/></ProtectedPage>}/><Route path="/operaciones/compras" element={<ProtectedPage area="operations"><PurchasingPage/></ProtectedPage>}/><Route path="/operaciones/clientes" element={<ProtectedPage area="operations"><AppFrame area="operations"><CustomerBook/></AppFrame></ProtectedPage>}/><Route path="/operaciones/crm" element={<ProtectedPage area="operations"><LeadsPage area="operations"/></ProtectedPage>}/><Route path="/operaciones/marketing" element={<ProtectedPage area="operations"><CampaignPage area="operations"/></ProtectedPage>}/><Route path="/operaciones/equipo" element={<ProtectedPage area="team"><AppFrame area="operations"><TeamAccess/></AppFrame></ProtectedPage>}/>
     <Route path="*" element={<Navigate to="/" replace/>}/>
   </Routes></Suspense>;

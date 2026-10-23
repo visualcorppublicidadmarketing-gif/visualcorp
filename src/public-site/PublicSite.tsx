@@ -4,7 +4,11 @@ import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, Globe2, M
 import { useWorkspace } from '../app/workspace';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
 import { publicAddress, publicServiceFamilies, serviceProjectPrompts } from './content.ts';
+import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
 import './public-site-v2.css';
+import './glass-system.css';
+
+const HomeContentHighlights = React.lazy(() => import('./ShowcasePages').then((module) => ({ default: module.HomeContentHighlights })));
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 const familyInfo = (id) => publicServiceFamilies.find((family) => family.id === id);
@@ -74,6 +78,9 @@ function SiteHeader() {
         <NavLink to="/" end onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Inicio</NavLink>
         <button ref={servicesRef} type="button" className={`site-nav-trigger${serviceIsActive || openMenu === 'services' ? ' is-active' : ''}`} aria-expanded={openMenu === 'services'} aria-controls="site-services-panel" onClick={() => setOpenMenu((current) => current === 'services' ? null : 'services')}>Servicios<ChevronDown size={15} aria-hidden="true" /></button>
         <button ref={companyRef} type="button" className={`site-nav-trigger${companyIsActive || openMenu === 'company' ? ' is-active' : ''}`} aria-expanded={openMenu === 'company'} aria-controls="site-company-panel" onClick={() => setOpenMenu((current) => current === 'company' ? null : 'company')}>La empresa<ChevronDown size={15} aria-hidden="true" /></button>
+        <NavLink to="/portafolio" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Portafolio</NavLink>
+        <NavLink to="/blog" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Blog</NavLink>
+        <NavLink to="/tienda" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Tienda</NavLink>
         <NavLink to="/contacto" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Contacto</NavLink>
       </nav>
       <div className="site-header-actions"><Link className="site-quote-button" to="/cotizador" onClick={closeNavigation}><span className="quote-label-wide">Solicitar cotizaci├│n</span><span className="quote-label-short">Cotizar</span><ArrowUpRight size={16} aria-hidden="true" /></Link><button ref={mobileButtonRef} type="button" className="site-menu-toggle" onClick={() => { setOpenMenu(null); setMobileOpen((open) => !open); }} aria-label={mobileOpen ? 'Cerrar men├║' : 'Abrir men├║'} aria-expanded={mobileOpen} aria-controls="site-mobile-navigation">{mobileOpen ? <X size={21}/> : <Menu size={21}/>}</button></div>
@@ -83,14 +90,14 @@ function SiteHeader() {
       </div>}
       {openMenu === 'company' && <div className="site-mega-panel site-company-panel" id="site-company-panel"><div className="site-mega-intro"><span className="site-mega-kicker">VISUAL CORP <i/></span><h2>Conoce<br/>nuestro mundo<span>.</span></h2><p>Una mirada a qui├®nes somos y c├│mo damos forma a cada proyecto.</p></div><div className="site-company-links"><Link to="/nosotros" onClick={closeNavigation}><span className="site-company-number">01</span><strong>Qui├®nes somos</strong><small>La marca, el equipo y lo que nos mueve.</small><ArrowUpRight size={20} aria-hidden="true" /></Link><Link to="/como-trabajamos" onClick={closeNavigation}><span className="site-company-number">02</span><strong>C├│mo trabajamos</strong><small>Del primer contacto a la producci├│n.</small><ArrowUpRight size={20} aria-hidden="true" /></Link></div></div>}
     </div>
-    {mobileOpen && <><button type="button" className="site-mobile-backdrop" tabIndex={-1} onClick={closeNavigation} aria-label="Cerrar navegaci├│n"/><nav ref={mobilePanelRef} className="site-mobile-panel" id="site-mobile-navigation" aria-label="Navegaci├│n m├│vil"><span className="site-mobile-kicker">EXPLORA VISUAL CORP</span><div className="site-mobile-primary"><NavLink to="/" end onClick={closeNavigation}>Inicio<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/servicios" onClick={closeNavigation}>Servicios<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/nosotros" onClick={closeNavigation}>La empresa<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/contacto" onClick={closeNavigation}>Contacto<ArrowUpRight size={18} aria-hidden="true" /></NavLink></div><div className="site-mobile-services"><span>ESPECIALIDADES</span><div>{services.map((service) => { const Icon = serviceIcons[service.id] || Sparkles; return <Link key={service.id} to={`/servicios/${service.id}`} onClick={closeNavigation}><Icon size={17} aria-hidden="true" />{service.name}<ArrowUpRight size={15} aria-hidden="true" /></Link>; })}</div></div><Link className="site-mobile-process" to="/como-trabajamos" onClick={closeNavigation}>C├│mo trabajamos <ArrowUpRight size={16} aria-hidden="true" /></Link><Link className="site-mobile-quote" to="/cotizador" onClick={closeNavigation}>Cu├®ntanos tu idea <ArrowUpRight size={19} aria-hidden="true" /></Link></nav></>}
+    {mobileOpen && <><button type="button" className="site-mobile-backdrop" tabIndex={-1} onClick={closeNavigation} aria-label="Cerrar navegaci├│n"/><nav ref={mobilePanelRef} className="site-mobile-panel" id="site-mobile-navigation" aria-label="Navegaci├│n m├│vil"><span className="site-mobile-kicker">EXPLORA VISUAL CORP</span><div className="site-mobile-primary"><NavLink to="/" end onClick={closeNavigation}>Inicio<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/servicios" onClick={closeNavigation}>Servicios<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/nosotros" onClick={closeNavigation}>La empresa<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/portafolio" onClick={closeNavigation}>Portafolio<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/publicaciones" onClick={closeNavigation}>Publicaciones<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/blog" onClick={closeNavigation}>Blog<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/tienda" onClick={closeNavigation}>Tienda<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/contacto" onClick={closeNavigation}>Contacto<ArrowUpRight size={18} aria-hidden="true" /></NavLink></div><div className="site-mobile-services"><span>ESPECIALIDADES</span><div>{services.map((service) => { const Icon = serviceIcons[service.id] || Sparkles; return <Link key={service.id} to={`/servicios/${service.id}`} onClick={closeNavigation}><Icon size={17} aria-hidden="true" />{service.name}<ArrowUpRight size={15} aria-hidden="true" /></Link>; })}</div></div><Link className="site-mobile-process" to="/como-trabajamos" onClick={closeNavigation}>C├│mo trabajamos <ArrowUpRight size={16} aria-hidden="true" /></Link><Link className="site-mobile-quote" to="/cotizador" onClick={closeNavigation}>Cu├®ntanos tu idea <ArrowUpRight size={19} aria-hidden="true" /></Link></nav></>}
   </header>;
 }
 
 function SiteFooter() {
   const { data } = useWorkspace();
   const services = data.services.filter((service) => service.enabled);
-  return <footer className="site-footer"><div className="footer-shell"><div className="footer-topline"><span><i/> VISUAL CORP ┬À MILAGRO, ECUADOR</span><span>IDEAS QUE TOMAN FORMA</span></div><div className="site-footer-main"><div className="footer-brand-column"><BrandLink/><p>Ideas, producci├│n y comunicaci├│n para que tu marca ocupe su espacio.</p><span className="footer-location"><Globe2 size={15}/>{data.settings.location}</span></div><div className="footer-link-column"><b>Explorar</b><Link to="/">Inicio</Link><Link to="/nosotros">La empresa</Link><Link to="/como-trabajamos">C├│mo trabajamos</Link><Link to="/contacto">Contacto</Link></div><div className="footer-link-column"><b>Servicios</b>{services.slice(0, 5).map((service) => <Link key={service.id} to={`/servicios/${service.id}`}>{service.name}</Link>)}<Link to="/servicios">Ver todos</Link></div><div className="footer-contact-column"><b>Hablemos de tu idea</b><p>Cu├®ntanos qu├® necesitas y revisaremos contigo el siguiente paso.</p><Link className="footer-contact-link" to="/cotizador">Iniciar una cotizaci├│n <ArrowUpRight size={15}/></Link><a href={`https://instagram.com/${data.settings.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer">Instagram ┬À {data.settings.instagram}<ArrowUpRight size={13}/></a><a href={`https://wa.me/593${data.settings.contactPhone.replace(/^0/, '')}`} target="_blank" rel="noreferrer">WhatsApp ┬À {data.settings.contactPhone}<ArrowUpRight size={13}/></a></div></div><div className="footer-cta-strip"><span>┬┐Tienes una idea en mente?</span><Link to="/cotizador">Hablemos de tu proyecto <ArrowUpRight size={18}/></Link></div><div className="site-footer-bottom"><BrandLink/><span>┬® {new Date().getFullYear()} Visual Corp ┬À {data.settings.location}</span><Link to="/contacto">Contacto</Link></div></div></footer>;
+  return <footer className="site-footer"><div className="footer-shell"><div className="footer-topline"><span><i/> VISUAL CORP ┬À MILAGRO, ECUADOR</span><span>IDEAS QUE TOMAN FORMA</span></div><div className="site-footer-main"><div className="footer-brand-column"><BrandLink/><p>Ideas, producci├│n y comunicaci├│n para que tu marca ocupe su espacio.</p><span className="footer-location"><Globe2 size={15}/>{data.settings.location}</span></div><div className="footer-link-column"><b>Explorar</b><Link to="/">Inicio</Link><Link to="/nosotros">La empresa</Link><Link to="/como-trabajamos">C├│mo trabajamos</Link><Link to="/portafolio">Portafolio</Link><Link to="/publicaciones">Publicaciones</Link><Link to="/blog">Blog</Link><Link to="/tienda">Tienda</Link><Link to="/contacto">Contacto</Link></div><div className="footer-link-column"><b>Servicios</b>{services.slice(0, 5).map((service) => <Link key={service.id} to={`/servicios/${service.id}`}>{service.name}</Link>)}<Link to="/servicios">Ver todos</Link></div><div className="footer-contact-column"><b>Hablemos de tu idea</b><p>Cu├®ntanos qu├® necesitas y revisaremos contigo el siguiente paso.</p><Link className="footer-contact-link" to="/cotizador">Iniciar una cotizaci├│n <ArrowUpRight size={15}/></Link><a href={`https://instagram.com/${data.settings.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer">Instagram ┬À {data.settings.instagram}<ArrowUpRight size={13}/></a><a href={`https://wa.me/593${data.settings.contactPhone.replace(/^0/, '')}`} target="_blank" rel="noreferrer">WhatsApp ┬À {data.settings.contactPhone}<ArrowUpRight size={13}/></a></div></div><div className="footer-cta-strip"><span>┬┐Tienes una idea en mente?</span><Link to="/cotizador">Hablemos de tu proyecto <ArrowUpRight size={18}/></Link></div><div className="site-footer-bottom"><BrandLink/><span>┬® {new Date().getFullYear()} Visual Corp ┬À {data.settings.location}</span><Link to="/contacto">Contacto</Link></div></div></footer>;
 }
 
 export function PublicSiteLayout() {
@@ -114,7 +121,7 @@ function ContactLinks() {
   return <div className="site-contact-links"><a href={`https://wa.me/593${data.settings.contactPhone.replace(/^0/, '')}`} target="_blank" rel="noreferrer"><MessageCircle size={16}/>WhatsApp ┬À {data.settings.contactPhone}<ArrowUpRight size={13}/></a><a href={`https://instagram.com/${data.settings.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer">Instagram ┬À {data.settings.instagram}<ArrowUpRight size={13}/></a></div>;
 }
 
-function LeadForm({ variant = 'contact', initialService = '' }) {
+function LeadForm({ variant = 'contact', initialService = '', quoteData = null }) {
   const { data, add } = useWorkspace();
   const [form, setForm] = useState({ name: '', phone: '', company: '', service: initialService, details: '' });
   const [sent, setSent] = useState(false);
@@ -124,6 +131,11 @@ function LeadForm({ variant = 'contact', initialService = '' }) {
   const submit = async (event) => {
     event.preventDefault();
     if (!form.name.trim() || !form.phone.trim() || sending) return;
+    if (variant === 'quote' && quoteData && (!quoteData.service || !quoteData.project.trim())) {
+      setError('Selecciona una familia de servicio y describe tu proyecto para continuar.');
+      return;
+    }
+    const requestService = variant === 'quote' && quoteData?.service ? quoteData.service : form.service;
     setSending(true);
     setError('');
     try {
@@ -131,14 +143,14 @@ function LeadForm({ variant = 'contact', initialService = '' }) {
         const { error: requestError } = await supabase.from('public_requests').insert({
           request_type: variant === 'quote' ? 'quote' : 'contact',
           name: form.name.trim(), phone: form.phone.trim(), company: form.company.trim(),
-          service: form.service, message: form.details.trim(),
-          quote_data: variant === 'quote' ? { details: form.details.trim(), service: form.service } : {},
+          service: requestService, message: form.details.trim(),
+          quote_data: variant === 'quote' ? { details: form.details.trim(), service: requestService, request: quoteData } : {},
         });
         if (requestError) throw requestError;
       } else if (import.meta.env.PROD) {
         throw new Error('El formulario todav├¡a no est├í conectado. Escr├¡benos por WhatsApp.');
       } else {
-        add('leads', { ...form, source: variant === 'quote' ? 'Cotizador p├║blico' : 'Sitio web', stage: 'Nuevo', notes: '', campaignId: '' });
+        add('leads', { ...form, service: requestService, quoteData: variant === 'quote' ? quoteData : null, source: variant === 'quote' ? 'Cotizador p├║blico' : 'Sitio web', stage: 'Nuevo', notes: '', campaignId: '' });
       }
       setForm({ name: '', phone: '', company: '', service: initialService, details: '' });
       setSent(true);
@@ -155,8 +167,8 @@ function LeadForm({ variant = 'contact', initialService = '' }) {
     {error && <div className="site-form-error" role="alert">{error} <a href={`https://wa.me/593${data.settings.contactPhone.replace(/^0/, '')}`} target="_blank" rel="noreferrer">Abrir WhatsApp <ArrowUpRight size={13}/></a></div>}
     <div className="site-form-row"><label>Nombre *<input required autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Tu nombre"/></label><label>Tel├®fono o WhatsApp *<input required type="tel" autoComplete="tel" inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="09ÔÇª"/></label></div>
     <label>Negocio <span>(opcional)</span><input value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} placeholder="Nombre de tu negocio"/></label>
-    <label>┬┐Qu├® necesitas?<select value={form.service} onChange={(event) => setForm({ ...form, service: event.target.value })}><option value="">Selecciona una familia de trabajo</option>{services.map((service) => <option value={service.name} key={service.id}>{service.name}</option>)}</select></label>
-    <label>{variant === 'quote' ? 'Describe tu proyecto *' : 'Cu├®ntanos un poco m├ís'}<textarea required={variant === 'quote'} rows={variant === 'quote' ? 5 : 3} value={form.details} onChange={(event) => setForm({ ...form, details: event.target.value })} placeholder={variant === 'quote' ? 'Medidas aproximadas, cantidad, objetivo o referencia' : 'Objetivo, referencia o plazo que tienes en mente'}/></label>
+    <label className={variant === 'quote' ? 'quote-form-service' : undefined}>┬┐Qu├® necesitas?<select value={form.service} onChange={(event) => setForm({ ...form, service: event.target.value })}><option value="">Selecciona una familia de trabajo</option>{services.map((service) => <option value={service.name} key={service.id}>{service.name}</option>)}</select></label>
+    <label>{variant === 'quote' ? (quoteData ? 'Detalles adicionales (opcional)' : 'Describe tu proyecto *') : 'Cu├®ntanos un poco m├ís'}<textarea required={variant === 'quote' && !quoteData} rows={variant === 'quote' ? 4 : 3} value={form.details} onChange={(event) => setForm({ ...form, details: event.target.value })} placeholder={variant === 'quote' ? 'Agrega cualquier contexto que ayude a entender tu proyecto' : 'Objetivo, referencia o plazo que tienes en mente'}/></label>
     <button className="site-primary-button form-submit" type="submit" disabled={sending}>{sending ? 'EnviandoÔÇª' : variant === 'quote' ? 'Enviar solicitud' : 'Enviar a Visual Corp'}<ArrowUpRight size={17}/></button>
     <small className="site-form-note">Usaremos estos datos para responder tu solicitud. No incluyas informaci├│n sensible.</small>
   </form>;
@@ -174,7 +186,8 @@ export function PublicHomePage() {
     </section>
     <section className="site-services-section" id="servicios"><SectionTitle eyebrow="SERVICIOS CONECTADOS" title={<>Una idea puede tomar<br/>muchas formas.</>} description="Elige una familia de trabajo para conocerla mejor. Si no sabes por d├│nde empezar, cu├®ntanos tu idea y te orientamos."/><div className="site-services-grid">{services.map((service, index) => <ServiceCard service={service} index={index} key={service.id}/>)}</div><Link className="site-text-link" to="/servicios">Ver todas las familias de servicio <ArrowRight size={16}/></Link></section>
     <section className="site-bridge"><div className="bridge-copy"><Eyebrow>DEL CONCEPTO A LA REALIDAD</Eyebrow><h2>Dise├▒o, producci├│n<br/>y una idea en com├║n.</h2><p>Visual Corp es una agencia de publicidad y marketing en Milagro. Conversamos sobre lo que necesitas y te ayudamos a definir un siguiente paso.</p><Link className="site-primary-button" to="/como-trabajamos">Conoce c├│mo trabajamos <ArrowUpRight size={16}/></Link></div><div className="bridge-steps"><article><b>01</b><div><h3>Cu├®ntanos</h3><p>Comparte tu idea y el objetivo que buscas.</p></div><ArrowUpRight size={15}/></article><article><b>02</b><div><h3>Lo revisamos</h3><p>Aterrizamos juntos los detalles del proyecto.</p></div><ArrowUpRight size={15}/></article><article><b>03</b><div><h3>Avanzamos</h3><p>Definimos el camino adecuado para tu solicitud.</p></div><ArrowUpRight size={15}/></article></div></section>
-    <Callout data={data}/>
+     <React.Suspense fallback={null}><HomeContentHighlights/></React.Suspense>
+     <Callout data={data}/>
   </>;
 }
 
@@ -213,9 +226,11 @@ export function ContactPage() {
 export function PublicQuotePage() {
   const [searchParams] = useSearchParams();
   const service = searchParams.get('servicio') || '';
-  return <><SiteTitle>Solicitar cotizaci├│n</SiteTitle><PageHero eyebrow="COTIZA TU PROYECTO" title={<>Cu├®ntanos lo que<br/>quieres hacer.</>} description="Describe tu idea y el equipo podr├í revisar los detalles contigo. Tarifas, disponibilidad y condiciones se confirman seg├║n el proyecto." primary={{ label: 'Completar solicitud', to: '#formulario-cotizacion' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-page"><div id="formulario-cotizacion"><LeadForm variant="quote" initialService={service}/></div><aside className="site-quote-aside"><span className="site-aside-icon"><Check size={20}/></span><Eyebrow>UNA BUENA COTIZACI├ôN</Eyebrow><h2>Empieza con<br/>los detalles.</h2><p>Si ya los tienes, incluye medidas aproximadas, cantidades y una referencia. El equipo te ayudar├í a completar lo que haga falta.</p><ul><li><Check size={15}/>Comparte el objetivo de la pieza</li><li><Check size={15}/>Incluye medidas y cantidad aproximadas</li><li><Check size={15}/>Confirmamos el alcance antes de cotizar</li></ul></aside></section></>;
+  const { data } = useWorkspace();
+  const [quoteData, setQuoteData] = useState<QuoteDraft | null>(null);
+  const services = useMemo(() => data.services.filter((item) => item.enabled), [data.services]);
+  return <><SiteTitle>Solicitar cotización</SiteTitle><PageHero eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp"><QuoteConfigurator services={services} initialService={service} onChange={setQuoteData}/><div className="site-quote-request" id="formulario-cotizacion"><LeadForm variant="quote" initialService={quoteData?.service || service} quoteData={quoteData}/></div></section></>;
 }
-
 function PageHero({ eyebrow, title, description, compact = false, primary, secondary }) {
   const action = (item, className, Icon) => item.to.startsWith('#')
     ? <a className={className} href={item.to}>{item.label} <Icon size={16}/></a>
