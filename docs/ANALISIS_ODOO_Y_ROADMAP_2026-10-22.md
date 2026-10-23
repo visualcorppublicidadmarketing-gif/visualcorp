@@ -18,22 +18,13 @@ Fuentes oficiales:
 
 ## Lo que Visual Corp ya tiene
 
-La versión activa ya integra el sitio público y su administración, catálogo/cotizador, CRM y clientes, POS transaccional, inventario por artículo/variante/sucursal, costos con permisos, movimientos y reservas, transferencias entre Visual Corp y Gigaprint, caja, devoluciones, órdenes de producción, cotizaciones centrales y novedades internas. Las ventas confirmadas actualizan stock solo para las variantes vinculadas; los datos de existencias que aún requieren conteo se conservan como pendientes.
+La versión activa integra el sitio público y su administración, catálogo/cotizador, CRM y clientes, POS transaccional, inventario por artículo/variante/sucursal, costos con permisos, movimientos y reservas, transferencias entre Visual Corp y Gigaprint, caja, devoluciones, órdenes de producción, cotizaciones centrales y novedades internas. La Fase 2 incorpora el directorio de proveedores, órdenes de compra con estados y recepciones parciales conectadas al ledger. Las ventas confirmadas actualizan stock solo para las variantes vinculadas; los datos de existencias que aún requieren conteo se conservan como pendientes.
 
-El POS actual guarda ventas, clientes, abonos y saldos; puede convertir cotizaciones aceptadas. Es un flujo inicial de registro de venta. Aún no equivale a una caja de mostrador con carrito visual multiartículo, lectura de código de barras, turno de cajero o pago dividido. En compras, el costo puede guardar el nombre de un proveedor, pero la aplicación activa no tiene una base central de proveedores ni órdenes de compra conectadas a recepciones. El módulo de compras visto en archivos heredados de GigaPrint no está conectado a las rutas ni a las tablas de Visual Corp, por lo que no se debe presentar como función activa.
+El POS actual guarda ventas, clientes, abonos y saldos; puede convertir cotizaciones aceptadas. Es un flujo inicial de registro de venta. Aún no equivale a una caja de mostrador con carrito visual multiartículo, lectura de código de barras, turno de cajero o pago dividido. Compras ahora cuenta con tablas, permisos y flujo propios en Visual Corp Suite; el módulo legado de GigaPrint sigue separado y no se presenta como conectado.
 
-## Prioridades recomendadas
+## Roadmap por fases
 
-| Fase | Crear o mejorar | Resultado comprobable |
-|---|---|---|
-| 0. Responsive y navegación | Menú móvil accesible para Admin Web y Operaciones, con panel lateral, foco táctil y estado claro. Adaptar tablas a tarjetas o desplazamiento contenido. | Operable sin zoom en teléfono, tableta y escritorio. El menú móvil queda implementado en esta entrega. |
-| 1. Compras y proveedores | Registro de proveedores; solicitudes de reposición desde faltantes/minimos; órdenes con líneas, fecha esperada, costo, estados y recepción parcial; cada recepción genera movimientos auditados de inventario. | Una compra de lona/tazas u otro material puede seguirse de solicitud a recepción; el stock cambia solo por unidades realmente recibidas. |
-| 2. Caja de mostrador | Carrito multiartículo con fotos/categorías y búsqueda rápida; selección/alta de cliente; cajero identificado; pagos combinados y abonos; guardar venta en espera y recuperarla. | Asesora termina una venta cotidiana desde móvil/tableta o computadora y el registro queda enlazado a cliente, caja e inventario. |
-| 3. Escaneo y preparación | Lector USB/cámara para SKU o código; ubicaciones; conteos y recepciones guiados; preparación y entrega de pedidos; lotes/series solo donde el tipo de artículo lo necesite. | Escaneo reduce digitación y cada salida/recepción conserva actor, artículo, cantidad y ubicación. |
-| 4. Confiabilidad sin conexión | Cola local idempotente con indicador de pendiente/sincronizado, reintentos y resolución visible de conflictos. | Una desconexión temporal no pierde ventas; la aplicación no declara stock sincronizado hasta confirmación. |
-| 5. Producción y calidad | Recetas/listas de materiales versionadas, consumos reales, asignación a área/responsable, control de calidad y retrabajo. | Una orden de venta dirige materiales y estados sin descontar cantidades estimadas como si fueran consumo real. |
-| 6. Contabilidad e informes | Conciliar caja, pagos, cuentas por cobrar, costos y márgenes; separar esta fase de facturación tributaria. | Reportes trazables y revisados por responsables contables. Integración con SRI queda pendiente de requisitos y proveedor autorizado. |
-| 7. Fidelización y canales | Descuentos autorizados, saldo/beneficios del cliente y pedido/recogida desde la web, respetando precios e inventario compartidos. | La misma condición comercial y estado del pedido se entienden en web y sucursal. |
+El detalle, criterios de cierre y estado se mantienen en la sección **Plan integral de mejora operativa** al final de este documento (Fases 0–9). Esa secuencia reemplaza la lista inicial de prioridades y se actualiza con cada entrega. La Fase 3 POS está en curso; la primera mejora de la Fase 4 añade lectura por SKU desde lector USB.
 
 ## Criterios de responsive para cada fase
 
@@ -48,6 +39,8 @@ El POS actual guarda ventas, clientes, abonos y saldos; puede convertir cotizaci
 La navegación interna en teléfono y tableta ahora abre un panel lateral con botón accesible, fondo de cierre y tecla Escape; al elegir una sección el panel se cierra y el área principal ocupa todo el ancho. Se añadió una capa visual compartida para Admin Web, Operaciones y POS: superficies modulares, jerarquía tipográfica, controles táctiles y foco visible. En inventario, la cola de importación ahora pagina por hoja, permite vincular una fila con una variante existente o excluirla con motivo, y guarda cada decisión junto al actor en una bitácora protegida. El vínculo nunca crea stock. Al crear un artículo, dejar vacío el conteo significa “sin conteo”; cero requiere ingresarse explícitamente.
 
 En esta iteración de la Fase 0, el resumen del POS se ajusta para mostrar sus tres métricas en una sola fila en pantallas medianas, pasar a tarjetas legibles en móvil y presentar las órdenes recientes como módulos independientes. También inicia la Fase 3 con un carrito multiartículo conectado al registro transaccional existente: conserva cotizaciones aceptadas y sus líneas, distingue precios confirmados de valores acordados manualmente, y mantiene vínculos de inventario para reserva al confirmar. La versión queda en rama de revisión hasta validar el despliegue; no se modificaron ventas, pagos ni existencias reales durante el desarrollo.
+
+En la continuación de la Fase 1, el área de inventario incorpora un recorrido guiado de conteo físico para variantes y sucursales sin saldo confirmado. Cada registro requiere una cantidad observada y un responsable, se guarda mediante la función auditada existente, admite omisiones sin asignarles cantidad y muestra el avance. El panel se adapta a pantallas estrechas; esta mejora está en la rama de trabajo y todavía no significa que se hayan contado o conciliado las existencias reales.
 
 ## Plan maestro de implementación por fases
 
@@ -66,7 +59,7 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 
 ### Fase 1 — Inventario confiable y catálogo operativo
 
-**Estado:** parcial. La revisión de procedencia tiene decisiones auditadas; no se ha conciliado físicamente ninguna fila fuente.
+**Estado:** parcial. La revisión de procedencia tiene decisiones auditadas y esta iteración añade un recorrido guiado para confirmar conteos físicos. Aún no se ha conciliado físicamente ninguna fila fuente; los conteos deben ingresarlos responsables que observen las existencias reales.
 
 - Separar consumibles, materia prima, producto para reventa, herramientas y servicios; definir unidad de medida, variantes, área, sucursal y ubicación cuando se confirme esa información.
 - Añadir flujo guiado de conteo físico, conciliación contra las 749 filas fuente pendientes, aprobación y saldo inicial con actor, fecha y procedencia.
@@ -76,6 +69,8 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 **Cierre:** cada saldo activo proviene de conteo o movimiento registrado; se puede rastrear quién, cuándo y por qué lo cambió; filtros y métricas distinguen dato confirmado de dato pendiente.
 
 ### Fase 2 — Proveedores, compras y reposición
+
+**Estado:** implementada en código y migrada a Supabase. Se publicaron tablas protegidas por RLS para proveedores, órdenes, líneas, recepciones y líneas recibidas; RPC transaccionales para borradores, envío, cancelación sin recepciones y recepción parcial/final; la recepción idempotente genera movimientos auditados y actualiza el costo solo al recibir. Operaciones tiene un panel responsive, reposición sugerida desde saldos contados y mínimos confirmados, y proveedores archivables. Se publicó una novedad compartida para Admin y Operaciones. Vercel generó el preview `visualcorp-suite-git-feature-inventory-import-review-visual19.vercel.app` y figura **Ready**. La validación visual con sesión está pendiente porque OAuth redirige al host del preview, y solo está autorizada la URL temporal anterior; Producción no se ha actualizado con esta entrega.
 
 - Crear la base central de proveedores y sus contactos comerciales confirmados.
 - Generar solicitudes de reposición desde mínimos, agotados y compra urgente del POS; permitir revisión y consolidación por proveedor.
@@ -87,18 +82,20 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 
 ### Fase 3 — POS de mostrador y experiencia de asesoría
 
-**Estado:** parcial. Ya existe carrito multiartículo con búsqueda por nombre, filtro por familia, imágenes de catálogo, cantidad, precio unitario explícito y total en vivo; se registra en una sola operación idempotente, con cliente y abono, y conserva los artículos trazables de cotizaciones aceptadas. El resumen y el carrito se adaptan a móvil. Siguen pendientes cajero asignado, pagos combinados, guardar/recuperar ventas en espera y ciclo completo de turnos y cierres.
+**Estado:** parcial, en curso. Ya existe carrito multiartículo con búsqueda por nombre, filtro por familia, imágenes de catálogo, cantidad, precio unitario explícito y total en vivo; se registra en una sola operación idempotente, con cliente y abono, y conserva los artículos trazables de cotizaciones aceptadas. También permite dividir el cobro entre varios métodos o registrar la venta con saldo pendiente; el efectivo requiere turno abierto. Ahora el POS muestra el cajero autenticado y el estado de su caja, y permite guardar borradores recuperables en Supabase para retomarlos en cualquier dispositivo autorizado de la sucursal. El borrador conserva el cliente, carrito o cotización y total; no cobra ni aparta existencias, y queda cerrado solo al enlazarlo con su venta confirmada. Caja ahora resume fondo, pagos en efectivo y entradas/retiros del turno; permite registrar movimientos con motivo desde un formulario táctil, anticipa la diferencia del arqueo y conserva el valor conciliado en el historial. El cierre vuelve a calcularse en el servidor. Los cambios quedaron migrados y publicados en Novedades. Siguen pendientes la prueba de uso con el equipo, control de caja ciega y revisión final en dimensiones móviles y tableta.
 
 - Reemplazar la captura de una sola línea por catálogo visual con búsqueda, categorías, imágenes, variantes, cantidades, descuentos autorizados y carrito multiartículo.
-- Agilizar selección o alta de cliente, vincular asesor/caja/sucursal y mostrar disponibilidad reservable antes de confirmar.
-- Añadir pagos combinados y abonos, cálculo visible del saldo, venta en espera y recuperación de una venta abierta.
+- Agilizar selección o alta de cliente, atribuir cada venta a la cuenta cajera autenticada y a su turno/sucursal, y mostrar disponibilidad reservable antes de confirmar.
+- Añadir pagos combinados y abonos, cálculo visible del saldo, borradores persistentes en espera y recuperación idempotente de una orden abierta.
 - Crear turnos de caja: apertura con fondo, ingresos/retiros autorizados, cierre, conteo declarado, diferencia y revisión de responsable.
 - Conectar devoluciones, anulaciones y notas de crédito operativas con su venta original; registrar motivo, aprobación y restablecimiento de stock cuando corresponda.
 - Mantener separado el recibo interno del comprobante tributario. La emisión fiscal requiere alcance y proveedor de Ecuador confirmados.
 
-**Cierre:** una asesora completa una venta con varios productos, cliente y uno o varios pagos; caja, saldo de cliente y stock quedan consistentes aunque haya reintentos; una devolución no borra la venta original.
+**Cierre:** una asesora completa una venta con varios productos, cliente y uno o varios pagos; caja, saldo de cliente y stock quedan consistentes aunque haya reintentos; los borradores se recuperan entre dispositivos y no alteran stock; una devolución no borra la venta original.
 
 ### Fase 4 — Escaneo, ubicaciones y preparación de pedidos
+
+**Estado:** iniciada. El buscador del POS reconoce por Enter el SKU de una variante de inventario enlazada al producto vendible en la sucursal activa. El lector USB funciona como teclado; no se asignan códigos supuestos, el producto sigue requiriendo confirmación de cantidad y precio, y el escaneo no modifica stock. El uso de cámara/QR, ubicaciones y preparación guiada quedan para el siguiente tramo.
 
 - Añadir SKU/código de barras o QR; priorizar lector USB como teclado y habilitar cámara solo con permiso y compatibilidad confirmada.
 - Registrar ubicaciones de bodega y guiar recepción, traslado, conteo, picking, empaque y entrega.
@@ -163,7 +160,7 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 
 1. Completar Fase 0 con revisión real en teléfono, tableta y escritorio.
 2. Continuar Fase 1: revisar las filas importadas, confirmar variantes y completar conteos físicos aprobados. En la base siguen pendientes las 749 filas fuente y las existencias activas no tienen saldo contado.
-3. Construir Fase 2 (proveedores, órdenes y recepción parcial) antes de automatizar alertas de compra.
-4. Rediseñar el POS multiartículo en Fase 3 usando el stock ya saneado y las compras conectadas.
+3. Revisar esta Fase 2 con una cuenta autorizada y verificar el flujo completo de borrador, envío y recepción parcial/final sin crear compras reales.
+4. Continuar con el POS de mostrador de la Fase 3: cajero, ventas en espera y recuperación, usando la compra/inventario conectados.
 
 La duración y las fechas de cada fase quedan sin fijar hasta definir quién aprobará conteos, compras, reglas de caja y criterios contables; el alcance técnico y los cierres sí quedan establecidos aquí.
