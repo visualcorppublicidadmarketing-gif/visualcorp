@@ -49,6 +49,8 @@ La navegación interna en teléfono y tableta ahora abre un panel lateral con bo
 
 En esta iteración de la Fase 0, el resumen del POS se ajusta para mostrar sus tres métricas en una sola fila en pantallas medianas, pasar a tarjetas legibles en móvil y presentar las órdenes recientes como módulos independientes. También inicia la Fase 3 con un carrito multiartículo conectado al registro transaccional existente: conserva cotizaciones aceptadas y sus líneas, distingue precios confirmados de valores acordados manualmente, y mantiene vínculos de inventario para reserva al confirmar. La versión queda en rama de revisión hasta validar el despliegue; no se modificaron ventas, pagos ni existencias reales durante el desarrollo.
 
+En la continuación de la Fase 1, el área de inventario incorpora un recorrido guiado de conteo físico para variantes y sucursales sin saldo confirmado. Cada registro requiere una cantidad observada y un responsable, se guarda mediante la función auditada existente, admite omisiones sin asignarles cantidad y muestra el avance. El panel se adapta a pantallas estrechas; esta mejora está en la rama de trabajo y todavía no significa que se hayan contado o conciliado las existencias reales.
+
 ## Plan maestro de implementación por fases
 
 El orden prioriza primero la confiabilidad de los datos y luego automatiza los movimientos que dependen de ellos. Cada fase se publica como una entrega pequeña, documentada en el changelog, migrada de forma compatible y verificada en la app desplegada. No se declara disponible una función solo por existir su pantalla: debe completar el flujo y dejar evidencia en la base central.
@@ -66,7 +68,7 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 
 ### Fase 1 — Inventario confiable y catálogo operativo
 
-**Estado:** parcial. La revisión de procedencia tiene decisiones auditadas; no se ha conciliado físicamente ninguna fila fuente.
+**Estado:** parcial. La revisión de procedencia tiene decisiones auditadas y esta iteración añade un recorrido guiado para confirmar conteos físicos. Aún no se ha conciliado físicamente ninguna fila fuente; los conteos deben ingresarlos responsables que observen las existencias reales.
 
 - Separar consumibles, materia prima, producto para reventa, herramientas y servicios; definir unidad de medida, variantes, área, sucursal y ubicación cuando se confirme esa información.
 - Añadir flujo guiado de conteo físico, conciliación contra las 749 filas fuente pendientes, aprobación y saldo inicial con actor, fecha y procedencia.
