@@ -40,7 +40,8 @@ Los scripts `scripts/migrate-supabase.mjs`, `scripts/apply-one-migration.mjs` y 
 Desde esta carpeta:
 
 ```text
-npm ci
+npm install
+npm run typecheck
 npm run build
 ```
 
@@ -59,3 +60,8 @@ supabase migration list --linked
 - Elegir si usar Supabase Branching para PRs. Puede tener costo y requiere revisar disponibilidad del plan; mientras tanto, usar solo una instancia local aislada para validar SQL.
 
 El workflow y la guía están en el checkout local y deben integrarse mediante pull request. No se hizo push de cambios desde esta sesión.
+
+
+## Código TypeScript
+
+El sitio, la administración y las pantallas POS usan módulos `.ts` y `.tsx`. Los componentes compartidos se ubican en `src/app/layout.tsx` y `src/components/`; las páginas de administración se separan en `src/pages/admin/` y las pantallas POS en `src/pages/pos/`. El workflow de GitHub instala las dependencias, ejecuta `npm run typecheck` y construye la aplicación antes de integrar cambios.
