@@ -58,7 +58,7 @@ export function PurchasingWorkspace() {
     if (lineResult.error || receiptResult.error) { setError(`No se pudo cargar el detalle: ${(lineResult.error||receiptResult.error).message}`); setLoading(false); return; }
     setSuppliers(supplierResult.data || []);
     setOrders(nextOrders);
-    setOrderLines(Object.groupBy ? Object.groupBy(lineResult.data||[],'purchase_order_id') : (lineResult.data||[]).reduce((acc,line)=>{(acc[line.purchase_order_id] ||= []).push(line);return acc;},{}));
+    setOrderLines((lineResult.data||[]).reduce((acc,line)=>{(acc[line.purchase_order_id] ||= []).push(line);return acc;},{}));
     setReceipts((receiptResult.data||[]).reduce((acc,receipt)=>{(acc[receipt.purchase_order_id] ||= []).push(receipt);return acc;},{}));
     setLoading(false);
   }, [organizationId]);
