@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, ChartNoAxesCombined, ChevronRight, FileText, Image, Megaphone, Settings2, ShoppingBag, Users, Wallet } from 'lucide-react';
 import { formatDate, formatMoney, useWorkspace } from '../../app/workspace';
@@ -6,6 +6,8 @@ import { AppFrame, PageHeading, StatCard, operationsLinks } from '../../app/layo
 import { ChangeLogPanel } from '../../components/ChangeLog';
 import { EmptyState, StageBadge } from '../../components/feedback';
 import { LeadsTable } from './CRMPage';
+import { useAuth } from '../../auth/AuthProvider';
+import { supabase } from '../../lib/supabaseClient';
 
 export function AdminHome() {
   const { data } = useWorkspace();
@@ -15,8 +17,22 @@ export function AdminHome() {
 }
 
 export function OperationsHome() {
-  const { data }=useWorkspace();
-  const today=new Date().toISOString().slice(0,10);
-  const salesToday=data.sales.filter((sale)=>sale.date?.slice(0,10)===today);
-  return <AppFrame area="operations"><PageHeading eyebrow="OPERACIONES · PANEL PRINCIPAL" title="Buenos días, equipo." description="Actividad comercial y de trabajo registrada en este equipo." action={<Link to="/operaciones/pos" className="button button-dark">Abrir POS <ArrowUpRight size={16}/></Link>}/><div className="stat-grid"><StatCard label="Ventas del día" value={formatMoney(salesToday.reduce((sum,sale)=>sum+sale.total,0))} icon={Wallet} note={`${salesToday.length} movimientos locales`} tone="blue"/><StatCard label="Solicitudes abiertas" value={data.leads.filter((item)=>!['Ganado','Perdido'].includes(item.stage)).length} icon={Users} note="CRM compartido con la web" tone="violet"/><StatCard label="Cotizaciones" value={data.quotes.length} icon={FileText} note="Incluye tarifas por confirmar" tone="amber"/><StatCard label="Artículos inventariados" value={data.inventory.length} icon={Boxes} note={`${data.inventory.filter((item)=>item.quantity<=item.minimum).length} en nivel mínimo`} tone="rose"/></div><ChangeLogPanel area="operations" compact/><div className="operations-launcher">{operationsLinks.slice(1).map(({to,label,icon:Icon},index)=><Link to={to} key={to} className="operation-card"><span className={`operation-icon operation-${index}`}><Icon size={20}/></span><span><b>{label}</b><small>{['Registrar movimientos de venta','Crear propuestas y compartirlas internamente','Controlar materiales y alertas de stock','Dar seguimiento a clientes y oportunidades','Administrar contactos y datos de clientes','Preparar calendario y estados de campaña'][index]}</small></span><ChevronRight size={17}/></Link>)}</div><section className="panel"><div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO</span><h2>Solicitudes recientes</h2></div><Link className="text-link" to="/operaciones/crm">Ver CRM <ArrowUpRight size={14}/></Link></div><LeadsTable/></section></AppFrame>;
+  const { hasPermission }=useAuth();
+  const [summary,setSummary]=useState<any>(null);
+  const [loading,setLoading]=useState(Boolean(supabase));
+  const [error,setError]=useState('');
+  useEffect(()=>{
+    if(!supabase){setLoading(false);setError('No hay conexión con la base compartida.');return;}
+    let active=true;
+    supabase.rpc('get_visualcorp_operations_summary').then(({data:result,error:queryError})=>{
+      if(!active)return;
+      if(queryError)setError(queryError.message);else setSummary(result);
+      setLoading(false);
+    });
+    return()=>{active=false;};
+  },[]);
+  const metric=(key:string)=>loading?'…':error?'—':summary?.[key]==null?'Sin permiso':summary[key];
+  const count=(key:string)=>{const value=metric(key);return typeof value==='number'?value.toLocaleString('es-EC'):value;};
+  return <AppFrame area="operations"><PageHeading eyebrow="OPERACIONES · PANEL PRINCIPAL" title="Buenos días, equipo." description="Indicadores compartidos y actualizados desde los registros operativos." action={<Link to="/operaciones/pos" className="button button-dark">Abrir POS <ArrowUpRight size={16}/></Link>}/>{error&&<p className="access-error" role="status">No se pudo actualizar el resumen: {error}</p>}<div className="stat-grid"><StatCard label="Ventas de hoy" value={metric('sales_today_total')==='—'?'—':metric('sales_today_total')==='Sin permiso'?'Sin permiso':formatMoney(Number(metric('sales_today_total')||0))} icon={Wallet} note={`${count('sales_today_count')} ventas confirmadas`} tone="blue"/><StatCard label="Solicitudes abiertas" value={count('open_leads')} icon={Users} note={hasPermission('crm','view')?'Seguimiento del CRM':'Permiso CRM requerido'} tone="violet"/><StatCard label="Cotizaciones del mes" value={count('quotes_this_month')} icon={FileText} note={hasPermission('quotes','view')?'Registradas en la base compartida':'Permiso de cotizaciones requerido'} tone="amber"/><StatCard label="Artículos inventariados" value={count('inventory_items')} icon={Boxes} note={`${count('inventory_low_stock')} en nivel mínimo`} tone="rose"/></div><ChangeLogPanel area="operations" compact/><div className="operations-launcher">{operationsLinks.slice(1).map(({to,label,icon:Icon},index)=><Link to={to} key={to} className="operation-card"><span className={`operation-icon operation-${index}`}><Icon size={20}/></span><span><b>{label}</b><small>{['Registrar movimientos de venta','Crear propuestas y compartirlas internamente','Controlar materiales y alertas de stock','Dar seguimiento a clientes y oportunidades','Administrar contactos y datos de clientes','Preparar calendario y estados de campaña'][index]}</small></span><ChevronRight size={17}/></Link>)}</div><section className="panel"><div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO</span><h2>Solicitudes recientes</h2></div><Link className="text-link" to="/operaciones/crm">Ver CRM <ArrowUpRight size={14}/></Link></div><LeadsTable/></section></AppFrame>;
 }
+
