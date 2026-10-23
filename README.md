@@ -43,6 +43,7 @@ Vite muestra la dirección local al iniciar. Abre estas rutas:
 - `src/data/visualcorpCatalog.json`: copia de trabajo del catálogo del cotizador de Visual Corp, conservando su estado de tarifa pendiente.
 - `public/brand/`: logotipo y símbolo de Visual Corp.
 - `public/fonts/`: tipografía Bebas Kai para titulares.
+- Flujo de trabajo en paralelo, pull requests, vistas previas y migraciones: `docs/FLUJO_TRABAJO_EN_PARALELO_Y_PUBLICACION.md`.
 
 El repositorio origen fue `E:\CODE\Giga`. Se copió su código React/Vite como base, y el contenido activo de esta versión parte de una interfaz de Visual Corp. Sus pantallas anteriores permanecen fuera de las rutas activas. Se excluyeron `.env.local`, `.env`, Git, dependencias instaladas, compilaciones, configuración de GitHub y carpetas privadas de recursos. El material de referencia de Giga conservado en `src/legacy-reference/` no se importa en la app; no uses sus migraciones, datos, logotipos, fotos ni valores de demostración en Visual Corp. El CRM de Iglesia Jerusalén solo aportó patrones de organización por dominio; no se importaron sus datos ni políticas de permisos.
 
