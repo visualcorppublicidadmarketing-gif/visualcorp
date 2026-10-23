@@ -6,10 +6,10 @@ Prototipo funcional local de tres experiencias: sitio público, administración 
 
 Requiere Node.js y npm instalados.
 
-También puedes abrir `Iniciar Visual Corp Suite.bat`; si `node_modules` no existe, instalará las dependencias con `npm ci` y luego iniciará el servidor local.
+También puedes abrir `Iniciar Visual Corp Suite.bat`; si `node_modules` no existe, instalará las dependencias con `npm install` y luego iniciará el servidor local.
 
 ```powershell
-npm ci
+npm install
 npm run dev -- --host 127.0.0.1
 ```
 
