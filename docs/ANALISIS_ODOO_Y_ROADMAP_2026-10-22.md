@@ -24,7 +24,7 @@ El POS actual guarda ventas, clientes, abonos y saldos; puede convertir cotizaci
 
 ## Roadmap por fases
 
-El detalle, criterios de cierre y estado se mantienen en la sección **Plan integral de mejora operativa** al final de este documento (Fases 0–9). Esa secuencia reemplaza la lista inicial de prioridades y se actualiza con cada entrega. La siguiente fase funcional después de Compras es el POS de mostrador (Fase 3).
+El detalle, criterios de cierre y estado se mantienen en la sección **Plan integral de mejora operativa** al final de este documento (Fases 0–9). Esa secuencia reemplaza la lista inicial de prioridades y se actualiza con cada entrega. La Fase 3 POS está en curso; la primera mejora de la Fase 4 añade lectura por SKU desde lector USB.
 
 ## Criterios de responsive para cada fase
 
@@ -94,6 +94,8 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 **Cierre:** una asesora completa una venta con varios productos, cliente y uno o varios pagos; caja, saldo de cliente y stock quedan consistentes aunque haya reintentos; los borradores se recuperan entre dispositivos y no alteran stock; una devolución no borra la venta original.
 
 ### Fase 4 — Escaneo, ubicaciones y preparación de pedidos
+
+**Estado:** iniciada. El buscador del POS reconoce por Enter el SKU de una variante de inventario enlazada al producto vendible en la sucursal activa. El lector USB funciona como teclado; no se asignan códigos supuestos, el producto sigue requiriendo confirmación de cantidad y precio, y el escaneo no modifica stock. El uso de cámara/QR, ubicaciones y preparación guiada quedan para el siguiente tramo.
 
 - Añadir SKU/código de barras o QR; priorizar lector USB como teclado y habilitar cámara solo con permiso y compatibilidad confirmada.
 - Registrar ubicaciones de bodega y guiar recepción, traslado, conteo, picking, empaque y entrega.

@@ -167,6 +167,7 @@
 .work-app .pos-cashier-copy small { color: #8e568c; font-size: 9px; font-weight: 800; letter-spacing: .08em; }
 .work-app .pos-cashier-copy b { overflow: hidden; color: #292832; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .work-app .pos-cashier-copy span { color: #777580; font-size: 10px; line-height: 1.4; }
+.work-app .pos-scan-hint { margin-top: -5px; color: #777580; font-size: 9px; line-height: 1.45; }
 .work-app .notice-box { border-radius: 15px; }
 
 .mobile-menu-button { display: none; }
