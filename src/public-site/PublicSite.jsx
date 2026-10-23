@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, Globe2, MapPin, Menu, MessageCircle, Printer, ScanLine, Scissors, Shirt, Sparkles, Store, PanelsTopLeft, X } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
@@ -15,48 +15,82 @@ function SiteTitle({ children }) {
   return null;
 }
 
-function BrandLink() {
-  return <Link className="site-brand" to="/" aria-label="Visual Corp, inicio"><img src={wordmark} alt="Visual Corp — Agencia Creativa" /></Link>;
+function BrandLink({ onClick }) {
+  return <Link className="site-brand" to="/" onClick={onClick} aria-label="Visual Corp, inicio"><img src={wordmark} alt="Visual Corp — Agencia Creativa" /></Link>;
 }
 
 function SiteHeader() {
   const { data } = useWorkspace();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState(null);
+  const headerRef = useRef(null);
+  const servicesRef = useRef(null);
+  const companyRef = useRef(null);
+  const mobileButtonRef = useRef(null);
+  const mobilePanelRef = useRef(null);
+  const closeNavigation = () => { setOpenMenu(null); setMobileOpen(false); };
   useEffect(() => {
-    setMobileOpen(false);
-    document.querySelectorAll('.site-nav-group[open]').forEach((group) => { group.open = false; });
+    closeNavigation();
   }, [location.pathname]);
+  useEffect(() => {
+    const handlePointer = (event) => {
+      if (!headerRef.current?.contains(event.target)) closeNavigation();
+    };
+    const handleEscape = (event) => {
+      if (event.key === 'Tab' && mobileOpen) {
+        const focusable = [mobileButtonRef.current, ...mobilePanelRef.current.querySelectorAll('a[href]')];
+        if (event.shiftKey && document.activeElement === focusable[0]) { event.preventDefault(); focusable.at(-1)?.focus(); }
+        else if (!event.shiftKey && document.activeElement === focusable.at(-1)) { event.preventDefault(); focusable[0]?.focus(); }
+        return;
+      }
+      if (event.key !== 'Escape') return;
+      if (mobileOpen) { setMobileOpen(false); mobileButtonRef.current?.focus(); }
+      else if (openMenu) {
+        const trigger = openMenu === 'services' ? servicesRef : companyRef;
+        setOpenMenu(null);
+        trigger.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', handlePointer);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointer);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [mobileOpen, openMenu]);
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [mobileOpen]);
   const services = data.services.filter((service) => service.enabled);
-  const menuGroups = [
-    { label: 'Servicios', to: '/servicios', children: [{ label: 'Ver todos los servicios', to: '/servicios' }, ...services.map((service) => ({ label: service.name, to: `/servicios/${service.id}` }))] },
-    { label: 'La empresa', to: '/nosotros', children: [{ label: 'Quiénes somos', to: '/nosotros' }, { label: 'Cómo trabajamos', to: '/como-trabajamos' }] },
-  ];
-  return <header className="site-header">
-    <div className="site-header-inner"><BrandLink />
+  const serviceIsActive = location.pathname.startsWith('/servicios');
+  const companyIsActive = ['/nosotros', '/como-trabajamos'].includes(location.pathname);
+  return <header className="site-header" ref={headerRef}>
+    <div className="site-header-inner"><BrandLink onClick={closeNavigation} />
       <nav className="site-nav" aria-label="Navegación principal">
-        <NavLink to="/" end className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Inicio</NavLink>
-        {menuGroups.map((group) => <details className={`site-nav-group${location.pathname === group.to || group.children.some((item) => item.to === location.pathname) ? ' is-active' : ''}`} key={group.label}>
-          <summary aria-label={`${group.label}, abrir subpáginas`}>{group.label}<ChevronDown size={14} /></summary>
-          <div className="site-nav-dropdown"><span className="dropdown-kicker">{group.label}</span>{group.children.map((item) => <Link key={item.to} to={item.to} className={location.pathname === item.to ? 'is-active' : ''}>{item.label}<ArrowUpRight size={13} /></Link>)}</div>
-        </details>)}
-        <NavLink to="/contacto" className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Contacto</NavLink>
+        <NavLink to="/" end onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Inicio</NavLink>
+        <button ref={servicesRef} type="button" className={`site-nav-trigger${serviceIsActive || openMenu === 'services' ? ' is-active' : ''}`} aria-expanded={openMenu === 'services'} aria-controls="site-services-panel" onClick={() => setOpenMenu((current) => current === 'services' ? null : 'services')}>Servicios<ChevronDown size={15} aria-hidden="true" /></button>
+        <button ref={companyRef} type="button" className={`site-nav-trigger${companyIsActive || openMenu === 'company' ? ' is-active' : ''}`} aria-expanded={openMenu === 'company'} aria-controls="site-company-panel" onClick={() => setOpenMenu((current) => current === 'company' ? null : 'company')}>La empresa<ChevronDown size={15} aria-hidden="true" /></button>
+        <NavLink to="/contacto" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Contacto</NavLink>
       </nav>
-      <div className="site-header-actions"><Link className="site-quote-button" to="/cotizador"><span className="quote-label-wide">Solicitar cotización</span><span className="quote-label-short">Cotizar</span><ArrowUpRight size={15}/></Link><button className="site-menu-toggle" onClick={() => setMobileOpen((open) => !open)} aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={mobileOpen} aria-controls="site-mobile-navigation">{mobileOpen ? <X/> : <Menu/>}</button></div>
+      <div className="site-header-actions"><Link className="site-quote-button" to="/cotizador" onClick={closeNavigation}><span className="quote-label-wide">Solicitar cotización</span><span className="quote-label-short">Cotizar</span><ArrowUpRight size={16} aria-hidden="true" /></Link><button ref={mobileButtonRef} type="button" className="site-menu-toggle" onClick={() => { setOpenMenu(null); setMobileOpen((open) => !open); }} aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={mobileOpen} aria-controls="site-mobile-navigation">{mobileOpen ? <X size={21}/> : <Menu size={21}/>}</button></div>
+      {openMenu === 'services' && <div className="site-mega-panel" id="site-services-panel">
+        <div className="site-mega-intro"><span className="site-mega-kicker">LO QUE HACEMOS <i/></span><h2>De la idea<br/>a lo tangible<span>.</span></h2><p>Explora lo que podemos crear para tu marca, tu espacio o tu próximo proyecto.</p><Link to="/servicios" onClick={closeNavigation}>Explorar todos los servicios <ArrowUpRight size={16} aria-hidden="true" /></Link></div>
+        <div className="site-mega-content"><span className="site-mega-label">ELIGE UNA ESPECIALIDAD</span><div className="site-mega-services">{services.map((service) => { const Icon = serviceIcons[service.id] || Sparkles; return <Link key={service.id} to={`/servicios/${service.id}`} onClick={closeNavigation} className={location.pathname === `/servicios/${service.id}` ? 'is-active' : ''}><span className="site-mega-icon"><Icon size={19} aria-hidden="true" /></span><span><strong>{service.name}</strong><small>{service.description}</small></span><ArrowUpRight className="site-mega-arrow" size={17} aria-hidden="true" /></Link>; })}</div></div>
+      </div>}
+      {openMenu === 'company' && <div className="site-mega-panel site-company-panel" id="site-company-panel"><div className="site-mega-intro"><span className="site-mega-kicker">VISUAL CORP <i/></span><h2>Conoce<br/>nuestro mundo<span>.</span></h2><p>Una mirada a quiénes somos y cómo damos forma a cada proyecto.</p></div><div className="site-company-links"><Link to="/nosotros" onClick={closeNavigation}><span className="site-company-number">01</span><strong>Quiénes somos</strong><small>La marca, el equipo y lo que nos mueve.</small><ArrowUpRight size={20} aria-hidden="true" /></Link><Link to="/como-trabajamos" onClick={closeNavigation}><span className="site-company-number">02</span><strong>Cómo trabajamos</strong><small>Del primer contacto a la producción.</small><ArrowUpRight size={20} aria-hidden="true" /></Link></div></div>}
     </div>
-    {mobileOpen && <nav className="site-mobile-nav" id="site-mobile-navigation" aria-label="Navegación móvil">
-      <NavLink to="/" end>Inicio</NavLink>
-      {menuGroups.map((group) => <details key={group.label} className="mobile-nav-group"><summary>{group.label}<ChevronDown size={17}/></summary><div>{group.children.map((item) => <Link key={item.to} to={item.to}>{item.label}<ArrowUpRight size={13}/></Link>)}</div></details>)}
-      <NavLink to="/contacto">Contacto</NavLink>
-      <Link className="mobile-quote-cta" to="/cotizador">Solicitar cotización <ArrowUpRight size={16}/></Link>
-    </nav>}
+    {mobileOpen && <><button type="button" className="site-mobile-backdrop" tabIndex={-1} onClick={closeNavigation} aria-label="Cerrar navegación"/><nav ref={mobilePanelRef} className="site-mobile-panel" id="site-mobile-navigation" aria-label="Navegación móvil"><span className="site-mobile-kicker">EXPLORA VISUAL CORP</span><div className="site-mobile-primary"><NavLink to="/" end onClick={closeNavigation}>Inicio<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/servicios" onClick={closeNavigation}>Servicios<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/nosotros" onClick={closeNavigation}>La empresa<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/contacto" onClick={closeNavigation}>Contacto<ArrowUpRight size={18} aria-hidden="true" /></NavLink></div><div className="site-mobile-services"><span>ESPECIALIDADES</span><div>{services.map((service) => { const Icon = serviceIcons[service.id] || Sparkles; return <Link key={service.id} to={`/servicios/${service.id}`} onClick={closeNavigation}><Icon size={17} aria-hidden="true" />{service.name}<ArrowUpRight size={15} aria-hidden="true" /></Link>; })}</div></div><Link className="site-mobile-process" to="/como-trabajamos" onClick={closeNavigation}>Cómo trabajamos <ArrowUpRight size={16} aria-hidden="true" /></Link><Link className="site-mobile-quote" to="/cotizador" onClick={closeNavigation}>Cuéntanos tu idea <ArrowUpRight size={19} aria-hidden="true" /></Link></nav></>}
   </header>;
 }
 
 function SiteFooter() {
   const { data } = useWorkspace();
   const services = data.services.filter((service) => service.enabled);
-  return <footer className="site-footer"><div className="site-footer-main"><div className="footer-brand-column"><BrandLink/><p>Ideas, producción y comunicación para que tu marca ocupe su espacio.</p><span className="footer-location"><Globe2 size={15}/>{data.settings.location}</span></div><div className="footer-link-column"><b>Explorar</b><Link to="/">Inicio</Link><Link to="/nosotros">La empresa</Link><Link to="/como-trabajamos">Cómo trabajamos</Link><Link to="/contacto">Contacto</Link></div><div className="footer-link-column"><b>Servicios</b>{services.slice(0, 5).map((service) => <Link key={service.id} to={`/servicios/${service.id}`}>{service.name}</Link>)}<Link to="/servicios">Ver todos</Link></div><div className="footer-contact-column"><b>Hablemos de tu idea</b><p>Cuéntanos qué necesitas y revisaremos contigo el siguiente paso.</p><Link className="footer-contact-link" to="/cotizador">Iniciar una cotización <ArrowUpRight size={15}/></Link><a href={`https://instagram.com/${data.settings.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer">Instagram · {data.settings.instagram}<ArrowUpRight size={13}/></a><a href={`https://wa.me/593${data.settings.contactPhone.replace(/^0/, '')}`} target="_blank" rel="noreferrer">WhatsApp · {data.settings.contactPhone}<ArrowUpRight size={13}/></a></div></div><div className="site-footer-bottom"><BrandLink/><span>© {new Date().getFullYear()} Visual Corp · {data.settings.location}</span><Link to="/contacto">Contacto</Link></div></footer>;
+  return <footer className="site-footer"><div className="footer-shell"><div className="footer-topline"><span><i/> VISUAL CORP · MILAGRO, ECUADOR</span><span>IDEAS QUE TOMAN FORMA</span></div><div className="site-footer-main"><div className="footer-brand-column"><BrandLink/><p>Ideas, producción y comunicación para que tu marca ocupe su espacio.</p><span className="footer-location"><Globe2 size={15}/>{data.settings.location}</span></div><div className="footer-link-column"><b>Explorar</b><Link to="/">Inicio</Link><Link to="/nosotros">La empresa</Link><Link to="/como-trabajamos">Cómo trabajamos</Link><Link to="/contacto">Contacto</Link></div><div className="footer-link-column"><b>Servicios</b>{services.slice(0, 5).map((service) => <Link key={service.id} to={`/servicios/${service.id}`}>{service.name}</Link>)}<Link to="/servicios">Ver todos</Link></div><div className="footer-contact-column"><b>Hablemos de tu idea</b><p>Cuéntanos qué necesitas y revisaremos contigo el siguiente paso.</p><Link className="footer-contact-link" to="/cotizador">Iniciar una cotización <ArrowUpRight size={15}/></Link><a href={`https://instagram.com/${data.settings.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer">Instagram · {data.settings.instagram}<ArrowUpRight size={13}/></a><a href={`https://wa.me/593${data.settings.contactPhone.replace(/^0/, '')}`} target="_blank" rel="noreferrer">WhatsApp · {data.settings.contactPhone}<ArrowUpRight size={13}/></a></div></div><div className="footer-cta-strip"><span>¿Tienes una idea en mente?</span><Link to="/cotizador">Hablemos de tu proyecto <ArrowUpRight size={18}/></Link></div><div className="site-footer-bottom"><BrandLink/><span>© {new Date().getFullYear()} Visual Corp · {data.settings.location}</span><Link to="/contacto">Contacto</Link></div></div></footer>;
 }
 
 export function PublicSiteLayout() {
@@ -132,7 +166,12 @@ export function PublicHomePage() {
   const { data } = useWorkspace();
   const services = data.services.filter((service) => service.enabled);
   return <><SiteTitle>Inicio</SiteTitle>
-    <section className="site-hero"><div className="site-hero-glow glow-pink"/><div className="site-hero-glow glow-blue"/><div className="site-hero-content"><Eyebrow light>{data.settings.heroEyebrow}</Eyebrow><h1>{data.settings.heroTitle}</h1><p>{data.settings.heroText}</p><div className="site-hero-actions"><Link className="site-primary-button" to="/cotizador">Cuéntanos tu idea <ArrowUpRight size={17}/></Link><Link className="site-secondary-button" to="/servicios">Explorar servicios <ArrowRight size={16}/></Link></div><div className="site-hero-proof"><span><Check size={14}/>Atención directa</span><span><Check size={14}/>Ideas y producción</span><span><Check size={14}/>{data.settings.location}</span></div></div><div className="site-hero-art" role="img" aria-label="Identidad visual de Visual Corp: diseño y producción"><div className="site-art-ring ring-one"/><div className="site-art-ring ring-two"/><div className="site-art-board"><img src="/brand/visualcorp-symbol.png" alt=""/><span>DISEÑO<br/><b>PRODUCCIÓN</b></span><i/><i/><i/></div><div className="site-art-label label-top">IDEAS QUE SE HACEN VISIBLES</div><div className="site-art-label label-bottom"><span/>MILAGRO · ECUADOR</div></div><a className="site-scroll-cue" href="#servicios">Descubre Visual Corp <ArrowDownRight size={15}/></a></section>
+    <section className="site-hero">
+      <div className="site-hero-glow glow-pink"/><div className="site-hero-glow glow-blue"/>
+      <div className="site-hero-content"><Eyebrow light>{data.settings.heroEyebrow}</Eyebrow><h1>{data.settings.heroTitle}</h1><p>{data.settings.heroText}</p><div className="site-hero-actions"><Link className="site-primary-button" to="/cotizador">Cuéntanos tu idea <ArrowUpRight size={17}/></Link><Link className="site-secondary-button" to="/servicios">Explorar servicios <ArrowRight size={16}/></Link></div><div className="site-hero-proof"><span><Check size={14}/>Atención directa</span><span><Check size={14}/>Ideas y producción</span><span><Check size={14}/>{data.settings.location}</span></div></div>
+      <div className="site-hero-art"><div className="site-mascot-halo" aria-hidden="true"/><div className="site-mascot-floor" aria-hidden="true"/><img className="site-mascot-image" src="/public-site/visualito-hero.webp" alt="Visualito, mascota de Visual Corp" width="720" height="1080" fetchPriority="high"/><div className="site-art-label label-top">IDEAS EN MOVIMIENTO</div></div>
+      <a className="site-scroll-cue" href="#servicios">Descubre Visual Corp <ArrowDownRight size={15}/></a>
+    </section>
     <section className="site-services-section" id="servicios"><SectionTitle eyebrow="SERVICIOS CONECTADOS" title={<>Una idea puede tomar<br/>muchas formas.</>} description="Elige una familia de trabajo para conocerla mejor. Si no sabes por dónde empezar, cuéntanos tu idea y te orientamos."/><div className="site-services-grid">{services.map((service, index) => <ServiceCard service={service} index={index} key={service.id}/>)}</div><Link className="site-text-link" to="/servicios">Ver todas las familias de servicio <ArrowRight size={16}/></Link></section>
     <section className="site-bridge"><div className="bridge-copy"><Eyebrow>DEL CONCEPTO A LA REALIDAD</Eyebrow><h2>Diseño, producción<br/>y una idea en común.</h2><p>Visual Corp es una agencia de publicidad y marketing en Milagro. Conversamos sobre lo que necesitas y te ayudamos a definir un siguiente paso.</p><Link className="site-primary-button" to="/como-trabajamos">Conoce cómo trabajamos <ArrowUpRight size={16}/></Link></div><div className="bridge-steps"><article><b>01</b><div><h3>Cuéntanos</h3><p>Comparte tu idea y el objetivo que buscas.</p></div><ArrowUpRight size={15}/></article><article><b>02</b><div><h3>Lo revisamos</h3><p>Aterrizamos juntos los detalles del proyecto.</p></div><ArrowUpRight size={15}/></article><article><b>03</b><div><h3>Avanzamos</h3><p>Definimos el camino adecuado para tu solicitud.</p></div><ArrowUpRight size={15}/></article></div></section>
     <Callout data={data}/>

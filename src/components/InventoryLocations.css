@@ -1,0 +1,19 @@
+.inventory-location-panel{display:grid;gap:18px}
+.inventory-location-note{display:flex;align-items:flex-start;gap:9px;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--surface-soft,#f7f8fa);padding:12px 14px;color:var(--text-muted,#5d6675);font-size:13px;line-height:1.45}
+.inventory-location-note svg{flex:0 0 auto;margin-top:1px;color:var(--accent,#76506f)}
+.inventory-location-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end}
+.inventory-location-form label,.inventory-location-toolbar label{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--text-muted,#5d6675)}
+.inventory-location-form input,.inventory-location-form select,.inventory-location-toolbar select{min-width:0;min-height:42px;border:1px solid var(--line,#d8dce2);border-radius:10px;background:var(--surface,#fff);padding:9px 11px;color:var(--text,#18202d);font:inherit;font-size:14px}
+.inventory-location-form .button{min-height:42px;justify-content:center}
+.inventory-location-toolbar{display:flex;align-items:end;justify-content:space-between;gap:12px}
+.inventory-location-toolbar span{padding-bottom:10px;color:var(--text-muted,#687080);font-size:12px}
+.inventory-location-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.inventory-location-card{display:flex;align-items:center;gap:12px;min-width:0;border:1px solid var(--line,#e5e7eb);border-radius:13px;background:var(--surface,#fff);padding:12px}
+.inventory-location-card.is-inactive{opacity:.68;background:var(--surface-soft,#f7f8fa)}
+.inventory-location-icon{display:grid;place-items:center;width:36px;height:36px;flex:0 0 auto;border-radius:11px;background:color-mix(in srgb,var(--accent,#76506f) 12%,white);color:var(--accent,#76506f)}
+.inventory-location-copy{display:grid;gap:3px;min-width:0;flex:1}
+.inventory-location-copy b{overflow-wrap:anywhere;font-size:13px;color:var(--text,#18202d)}
+.inventory-location-copy small,.inventory-location-copy span{font-size:11px;line-height:1.4;color:var(--text-muted,#687080)}
+.inventory-location-card>.button{min-height:34px;padding:7px 9px;white-space:nowrap}
+@media(max-width:760px){.inventory-location-form{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-location-grid{grid-template-columns:1fr}}
+@media(max-width:480px){.inventory-location-form{grid-template-columns:1fr}.inventory-location-card{align-items:flex-start;flex-wrap:wrap}.inventory-location-card>.button{margin-left:48px}.inventory-location-toolbar{align-items:stretch;flex-direction:column}.inventory-location-toolbar span{padding:0}}

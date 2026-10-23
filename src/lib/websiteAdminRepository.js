@@ -29,3 +29,12 @@ export async function saveServiceVisibility(id, enabled, organizationId) {
   if (error) throw error;
   if (!data) throw new Error('No se encontró el servicio para actualizar.');
 }
+
+// Adapter for the website editor: persist settings and visibility changes
+// through the narrow, organization-scoped update functions above.
+export async function saveWebsiteContent(settings, services, organizationId) {
+  await saveWebsiteSettings(settings, organizationId);
+  await Promise.all((services || []).map((service) =>
+    saveServiceVisibility(service.id, service.enabled !== false, organizationId),
+  ));
+}
