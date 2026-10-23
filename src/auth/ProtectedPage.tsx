@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ArrowUpRight, LogOut } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 
@@ -11,19 +12,13 @@ type ProtectedPageProps = {
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 
-const allowedRoles: Record<AccessArea, string[]> = {
-  website: ['website_admin'],
-  catalog: ['admin', 'manager'],
-  team: ['admin', 'manager'],
-  operations: ['admin', 'manager', 'advisor', 'warehouse', 'production', 'marketing'],
-};
-
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'No pudimos iniciar sesión.';
 }
 
 export function ProtectedPage({ area, children }: ProtectedPageProps) {
   const auth = useAuth();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -72,7 +67,16 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
     </form></main>;
   }
 
-  if (!auth.canAccess(allowedRoles[area])) return <main className="access-screen"><section className="access-card">
+  const moduleByPath: Record<string, string> = {
+    '/admin': 'dashboard', '/admin/sitio': 'website', '/admin/contenido': 'website', '/admin/solicitudes': 'crm',
+    '/admin/marketing': 'marketing', '/admin/cambios': 'team', '/admin/respaldo': 'backup',
+    '/operaciones': 'dashboard', '/operaciones/pos': 'sales', '/operaciones/flujos': 'workshop',
+    '/operaciones/cambios': 'team', '/operaciones/cotizador': 'quotes', '/operaciones/inventario': 'inventory',
+    '/operaciones/compras': 'purchases', '/operaciones/clientes': 'crm', '/operaciones/crm': 'crm',
+    '/operaciones/marketing': 'marketing', '/operaciones/equipo': 'team', '/operaciones/catalogo': 'catalog_admin',
+  };
+  const requiredModule = moduleByPath[location.pathname] || ({ website: 'website', catalog: 'catalog_admin', team: 'team', operations: 'dashboard' }[area]);
+  if (!auth.hasPermission(requiredModule, 'view')) return <main className="access-screen"><section className="access-card">
     <img src={wordmark} alt="Visual Corp" />
     <span className="site-eyebrow"><i /> PERMISOS</span>
     <h1>Tu perfil no tiene acceso a este panel.</h1>

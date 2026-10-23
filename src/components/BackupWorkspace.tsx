@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AlertCircle, CheckCircle2, Database, Download, FileUp, ShieldCheck } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
+import { useAuth } from '../auth/AuthProvider';
 import './BackupWorkspace.css';
 
 const COLLECTIONS = ['services', 'catalog', 'legacyCatalog', 'customers', 'inventory', 'inventoryMovements', 'leads', 'quotes', 'sales', 'campaigns'];
@@ -8,7 +9,7 @@ const BACKUP_FORMAT = 'visualcorp-suite-workspace-backup';
 const stamp = () => new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
 
 function recordCounts(data) {
-  return Object.fromEntries(COLLECTIONS.map((key) => [key, Array.isArray(data?.[key]) ? data[key].length : 0]));
+  return Object.fromEntries(COLLECTIONS.map((key) => [key, Array.isArray(data?.[key]) ? data[key].length : 0])) as Record<string, number>;
 }
 
 function validateBackup(value) {
@@ -24,7 +25,7 @@ function validateBackup(value) {
 
 function mergeWithoutOverwrite(current, incoming) {
   const result = { ...current };
-  const summary = {};
+  const summary: Record<string, { added: number; kept: number; conflicts: number }> = {};
   for (const key of COLLECTIONS) {
     const localRows = Array.isArray(current[key]) ? current[key] : [];
     const importedRows = incoming[key];
@@ -53,9 +54,12 @@ function mergeWithoutOverwrite(current, incoming) {
 
 export function BackupWorkspace() {
   const { data, setData, flash } = useWorkspace();
-  const [pendingBackup, setPendingBackup] = useState(null);
+  const { hasPermission } = useAuth();
+  const canExport = hasPermission('backup', 'view');
+  const canImport = hasPermission('backup', 'edit');
+  const [pendingBackup, setPendingBackup] = useState<null | { fileName: string; exportedAt?: string; data: any; recordCounts: Record<string, number> }>(null);
   const [error, setError] = useState('');
-  const [lastImport, setLastImport] = useState(null);
+  const [lastImport, setLastImport] = useState<null | { fileName: string; summary: Record<string, { added: number; kept: number; conflicts: number }> }>(null);
   const counts = useMemo(() => recordCounts(data), [data]);
   const totalRecords = Object.values(counts).reduce((sum, value) => sum + value, 0);
 
@@ -73,9 +77,10 @@ export function BackupWorkspace() {
     const fileName = `VisualCorp_Respaldo_${stamp()}.json`;
     const content = JSON.stringify(payload, null, 2);
     let savedWithPicker = false;
-    if (window.showSaveFilePicker) {
+    const saveFilePicker = (window as Window & { showSaveFilePicker?: (options: any) => Promise<any> }).showSaveFilePicker;
+    if (saveFilePicker) {
       try {
-        const handle = await window.showSaveFilePicker({ suggestedName: fileName, types: [{ description: 'Respaldo de Visual Corp Suite', accept: { 'application/json': ['.json'] } }] });
+        const handle = await saveFilePicker({ suggestedName: fileName, types: [{ description: 'Respaldo de Visual Corp Suite', accept: { 'application/json': ['.json'] } }] });
         const writable = await handle.createWritable();
         await writable.write(new Blob([content], { type: 'application/json;charset=utf-8' }));
         await writable.close();
@@ -97,6 +102,7 @@ export function BackupWorkspace() {
   };
 
   const readBackup = async (file) => {
+    if (!canImport) return;
     setError(''); setPendingBackup(null); setLastImport(null);
     if (!file) return;
     try {
@@ -110,7 +116,7 @@ export function BackupWorkspace() {
   };
 
   const importMerge = () => {
-    if (!pendingBackup) return;
+    if (!canImport || !pendingBackup) return;
     const { data: merged, summary } = mergeWithoutOverwrite(data, pendingBackup.data);
     setData(merged);
     setLastImport({ fileName: pendingBackup.fileName, summary });
@@ -122,8 +128,8 @@ export function BackupWorkspace() {
     <div className="backup-intro panel"><span className="backup-intro-icon"><ShieldCheck size={22}/></span><div><span className="eyebrow">RESPALDO Y MIGRACIÓN</span><h2>Protege los datos antes de conectar servicios</h2><p>La información actual vive en el almacenamiento local de este navegador. Descarga un respaldo antes de cambiar la persistencia o trabajar en otro dispositivo.</p></div></div>
     <div className="backup-stats"><article><Database/><span>Registros locales</span><b>{totalRecords}</b></article><article><FileUp/><span>Inventario</span><b>{counts.inventory}</b></article><article><ShieldCheck/><span>Estado</span><b>Solo local</b></article></div>
     <div className="backup-actions-grid">
-      <section className="panel backup-card"><div className="backup-card-icon"><Download size={20}/></div><h3>Crear respaldo completo</h3><p>Incluye inventario, movimientos, ventas, clientes, solicitudes, cotizaciones, campañas, catálogo y configuración en un archivo JSON legible.</p><button className="button button-dark" onClick={makeBackup}><Download size={16}/> Guardar respaldo</button><small>Guárdalo dentro del proyecto, en `backups/`. Esa carpeta quedará excluida de Git.</small></section>
-      <section className="panel backup-card"><div className="backup-card-icon"><FileUp size={20}/></div><h3>Recuperar o combinar respaldo</h3><p>Revisa el archivo antes de aplicarlo. La combinación agrega registros faltantes y conserva los locales en cualquier conflicto.</p><label className="backup-file-input">Seleccionar respaldo JSON<input type="file" accept=".json,application/json" onChange={(event) => readBackup(event.target.files?.[0])}/></label>{pendingBackup&&<div className="backup-preview"><b>{pendingBackup.fileName}</b><span>Exportado: {pendingBackup.exportedAt ? new Date(pendingBackup.exportedAt).toLocaleString('es-EC') : 'Fecha no registrada'}</span><span>{Object.values(pendingBackup.recordCounts).reduce((sum,value)=>sum+value,0)} registros · modo seguro: solo agregar y conservar conflictos</span><button className="button button-outline" onClick={importMerge}>Combinar sin sobrescribir</button></div>}</section>
+      {canExport&&<section className="panel backup-card"><div className="backup-card-icon"><Download size={20}/></div><h3>Crear respaldo completo</h3><p>Incluye inventario, movimientos, ventas, clientes, solicitudes, cotizaciones, campañas, catálogo y configuración en un archivo JSON legible.</p><button className="button button-dark" onClick={makeBackup}><Download size={16}/> Guardar respaldo</button><small>Guárdalo dentro del proyecto, en `backups/`. Esa carpeta quedará excluida de Git.</small></section>}
+      {canImport&&<section className="panel backup-card"><div className="backup-card-icon"><FileUp size={20}/></div><h3>Recuperar o combinar respaldo</h3><p>Revisa el archivo antes de aplicarlo. La combinación agrega registros faltantes y conserva los locales en cualquier conflicto.</p><label className="backup-file-input">Seleccionar respaldo JSON<input type="file" accept=".json,application/json" onChange={(event) => readBackup(event.target.files?.[0])}/></label>{pendingBackup&&<div className="backup-preview"><b>{pendingBackup.fileName}</b><span>Exportado: {pendingBackup.exportedAt ? new Date(pendingBackup.exportedAt).toLocaleString('es-EC') : 'Fecha no registrada'}</span><span>{Object.values(pendingBackup.recordCounts).reduce((sum,value)=>sum+value,0)} registros · modo seguro: solo agregar y conservar conflictos</span><button className="button button-outline" onClick={importMerge}>Combinar sin sobrescribir</button></div>}</section>}
     </div>
     {error&&<div className="backup-message error"><AlertCircle size={17}/>{error}</div>}
     {lastImport&&<section className="panel backup-result"><h3><CheckCircle2 size={18}/> Respaldo combinado</h3><p>{lastImport.fileName}; los registros locales con IDs coincidentes se conservaron.</p><div className="backup-result-grid">{Object.entries(lastImport.summary).filter(([,result])=>result.added||result.conflicts).map(([name,result])=><span key={name}><b>{name}</b> · +{result.added} agregados · {result.conflicts} conflictos conservados</span>)}</div></section>}

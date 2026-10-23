@@ -14,7 +14,7 @@ const emptyForm = { title:'', summary:'', details:'', category:'operations', aud
 const dateLabel = (value) => value ? new Date(value).toLocaleDateString('es-EC',{year:'numeric',month:'short',day:'numeric'}) : 'Borrador';
 
 export function ChangeLogPanel({ area='operations', compact=false }) {
-  const { organizationId, user, roles } = useAuth();
+  const { organizationId, user, hasPermission } = useAuth();
   const [entries,setEntries]=useState([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState('');
@@ -22,7 +22,7 @@ export function ChangeLogPanel({ area='operations', compact=false }) {
   const [form,setForm]=useState(emptyForm);
   const [editing,setEditing]=useState(null);
   const [saving,setSaving]=useState(false);
-  const canManage=roles.some(role=>['owner','admin','manager','website_admin'].includes(role));
+  const canManage=hasPermission('dashboard','edit');
   const audiencesForArea=area==='admin'?['both','admin']:['both','operations'];
 
   const refresh=useCallback(async()=>{

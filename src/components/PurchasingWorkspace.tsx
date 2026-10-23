@@ -12,7 +12,7 @@ const states = { draft:'Borrador', ordered:'Enviada', partially_received:'Recepc
 
 export function PurchasingWorkspace() {
   const { data, flash } = useWorkspace();
-  const { organizationId, user, roles } = useAuth();
+  const { organizationId, user, hasPermission } = useAuth();
   const [suppliers, setSuppliers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [orderLines, setOrderLines] = useState({});
@@ -27,8 +27,10 @@ export function PurchasingWorkspace() {
   const [orderDraft, setOrderDraft] = useState(null);
   const [receiveOrder, setReceiveOrder] = useState(null);
   const [receiveDraft, setReceiveDraft] = useState({ quantities:{}, reference:'', note:'', location:'MAIN' });
-  const canManage = roles.some((role) => ['owner','admin','manager'].includes(role));
-  const canReceive = canManage || roles.includes('warehouse');
+  const canManage = hasPermission('purchases','edit');
+  const canApprove = hasPermission('purchases','approve_purchase');
+  const canCancel = hasPermission('purchases','cancel_purchase');
+  const canReceive = hasPermission('purchases','receive_purchase');
   const variants = useMemo(() => {
     const distinct = new Map();
     (data.inventory || []).filter((row) => !row.archived).forEach((row) => {
@@ -92,13 +94,14 @@ export function PurchasingWorkspace() {
   };
 
   const submitOrder = async (order) => {
-    if (!canManage || !window.confirm(`¿Marcar ${order.order_number} como enviada al proveedor?`)) return;
+    if (!canApprove || !window.confirm(`¿Marcar ${order.order_number} como enviada al proveedor?`)) return;
     setSaving(true); const {error:saveError}=await supabase.rpc('submit_purchase_order',{p_order_id:order.id});
     if(saveError){setError(`No se pudo enviar la orden: ${saveError.message}`);setSaving(false);return;}
     setSaving(false);await refresh();flash('Orden marcada como enviada.');
   };
 
   const cancelOrder = async (order) => {
+    if (!canCancel) return;
     const reason=window.prompt(`Motivo de cancelación de ${order.order_number}:`);
     if(reason===null)return;
     if(!reason.trim()){setError('Escribe el motivo antes de cancelar la orden.');return;}
@@ -151,7 +154,7 @@ export function PurchasingWorkspace() {
         <div className="purchase-lines">{lines.map((line)=><div className="purchase-line" key={line.id}><span><b>{line.description_snapshot}</b><small>{line.sku_snapshot} · {line.unit_snapshot} · {formatMoney(line.unit_cost)} c/u</small></span><strong>{line.quantity_received} / {line.quantity_ordered}</strong><small>pendiente {Math.max(0,Number(line.quantity_ordered)-Number(line.quantity_received))}</small></div>)}</div>
         {!!(receipts[order.id]||[]).length&&<details className="purchase-receipt-history"><summary>Recepciones registradas ({receipts[order.id].length}) <ChevronDown size={14}/></summary>{receipts[order.id].map((receipt)=><div key={receipt.id}><span>{receipt.reference||'Sin referencia'} · {new Date(receipt.received_at).toLocaleString('es-EC')}</span><small>{receipt.note||'Sin nota'}</small></div>)}</details>}
         {(order.note||order.cancellation_reason)&&<p className="purchase-order-note">{order.cancellation_reason?`Cancelada el ${new Date(order.cancelled_at).toLocaleString('es-EC')} · motivo: ${order.cancellation_reason}`:order.note}</p>}
-        <footer>{canManage&&order.status==='draft'&&<><button className="button button-outline" onClick={()=>submitOrder(order)} disabled={saving}><Send size={14}/> Marcar enviada</button><button className="button button-quiet" onClick={()=>cancelOrder(order)} disabled={saving}>Cancelar</button></>}{canReceive&&['ordered','partially_received'].includes(order.status)&&<button className="button button-dark" onClick={()=>beginReceipt(order)} disabled={saving}><Truck size={15}/> Registrar recepción</button>}</footer>
+        <footer>{order.status==='draft'&&canApprove&&<button className="button button-outline" onClick={()=>submitOrder(order)} disabled={saving}><Send size={14}/> Marcar enviada</button>}{order.status==='draft'&&canCancel&&<button className="button button-quiet" onClick={()=>cancelOrder(order)} disabled={saving}>Cancelar</button>}{canReceive&&['ordered','partially_received'].includes(order.status)&&<button className="button button-dark" onClick={()=>beginReceipt(order)} disabled={saving}><Truck size={15}/> Registrar recepción</button>}</footer>
       </article>;})}</div>}
     </section>
     <div className="purchasing-footnote"><CircleAlert size={16}/><span>Las sugerencias se basan solo en saldos de inventario con conteo físico confirmado y mínimos registrados. Costos y cantidades de compra se ingresan y confirman manualmente.</span></div>

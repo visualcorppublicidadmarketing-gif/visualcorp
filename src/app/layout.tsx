@@ -7,30 +7,30 @@ import { AdminCommandPalette } from '../components/AdminCommandPalette';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 export type AppArea = 'admin' | 'operations';
-export type AppNavLink = { to: string; label: string; icon: LucideIcon; end?: boolean; roles?: string[] };
+export type AppNavLink = { to: string; label: string; icon: LucideIcon; end?: boolean; module: string };
 
 export const adminLinks: AppNavLink[] = [
-  { to: '/admin', label: 'Resumen', icon: LayoutDashboard, end: true },
-  { to: '/admin/sitio', label: 'Página pública', icon: Globe2 },
-  { to: '/admin/contenido', label: 'Blog y portafolio', icon: FileText },
-  { to: '/admin/solicitudes', label: 'Solicitudes CRM', icon: Users },
-  { to: '/admin/marketing', label: 'Marketing', icon: Megaphone },
-  { to: '/admin/cambios', label: 'Novedades', icon: History },
-  { to: '/admin/respaldo', label: 'Respaldo y migración', icon: Database },
+  { to: '/admin', label: 'Resumen', icon: LayoutDashboard, end: true, module: 'dashboard' },
+  { to: '/admin/sitio', label: 'Página pública', icon: Globe2, module: 'website' },
+  { to: '/admin/contenido', label: 'Blog y portafolio', icon: FileText, module: 'website' },
+  { to: '/admin/solicitudes', label: 'Solicitudes CRM', icon: Users, module: 'crm' },
+  { to: '/admin/marketing', label: 'Marketing', icon: Megaphone, module: 'marketing' },
+  { to: '/admin/cambios', label: 'Novedades', icon: History, module: 'team' },
+  { to: '/admin/respaldo', label: 'Respaldo y migración', icon: Database, module: 'backup' },
 ];
 export const operationsLinks: AppNavLink[] = [
-  { to: '/operaciones', label: 'Resumen', icon: LayoutDashboard, end: true },
-  { to: '/operaciones/pos', label: 'Punto de venta', icon: ShoppingCart },
-  { to: '/operaciones/flujos', label: 'Caja y producción', icon: ClipboardList },
-  { to: '/operaciones/cambios', label: 'Novedades', icon: History },
-  { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText },
-  { to: '/operaciones/inventario', label: 'Inventario', icon: Boxes },
-  { to: '/operaciones/compras', label: 'Compras', icon: Truck },
-  { to: '/operaciones/crm', label: 'CRM', icon: Users },
-  { to: '/operaciones/clientes', label: 'Clientes', icon: Users },
-  { to: '/operaciones/marketing', label: 'Marketing', icon: CalendarDays },
-  { to: '/operaciones/equipo', label: 'Equipo y permisos', icon: Users, roles: ['admin','manager'] },
-  { to: '/operaciones/catalogo', label: 'Catálogo y tarifas', icon: ShoppingBag, roles: ['admin','manager'] },
+  { to: '/operaciones', label: 'Resumen', icon: LayoutDashboard, end: true, module: 'dashboard' },
+  { to: '/operaciones/pos', label: 'Punto de venta', icon: ShoppingCart, module: 'sales' },
+  { to: '/operaciones/flujos', label: 'Caja y producción', icon: ClipboardList, module: 'workshop' },
+  { to: '/operaciones/cambios', label: 'Novedades', icon: History, module: 'team' },
+  { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText, module: 'quotes' },
+  { to: '/operaciones/inventario', label: 'Inventario', icon: Boxes, module: 'inventory' },
+  { to: '/operaciones/compras', label: 'Compras', icon: Truck, module: 'purchases' },
+  { to: '/operaciones/crm', label: 'CRM', icon: Users, module: 'crm' },
+  { to: '/operaciones/clientes', label: 'Clientes', icon: Users, module: 'crm' },
+  { to: '/operaciones/marketing', label: 'Marketing', icon: CalendarDays, module: 'marketing' },
+  { to: '/operaciones/equipo', label: 'Equipo y permisos', icon: Users, module: 'team' },
+  { to: '/operaciones/catalogo', label: 'Catálogo y tarifas', icon: ShoppingBag, module: 'catalog_admin' },
 ];
 export interface BrandProps { dark?: boolean }
 export function Brand({ dark = false }: BrandProps) {
@@ -39,7 +39,7 @@ export function Brand({ dark = false }: BrandProps) {
 export interface AppFrameProps { area: AppArea; children: React.ReactNode }
 export function AppFrame({ area, children }: AppFrameProps) {
   const { data } = useWorkspace();
-  const { user, roles, signOut } = useAuth();
+  const { user, roles, profiles, hasPermission, signOut } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   useEffect(() => {
     if (!mobileNavOpen) return undefined;
@@ -47,9 +47,11 @@ export function AppFrame({ area, children }: AppFrameProps) {
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [mobileNavOpen]);
-  const nav = (area === 'admin' ? adminLinks : operationsLinks).filter((link) => !link.roles || roles.includes('owner') || link.roles.some((role) => roles.includes(role)));
+  const nav = (area === 'admin' ? adminLinks : operationsLinks).filter((link) => hasPermission(link.module, 'view'));
   const areaTitle = area === 'admin' ? 'Administración web' : 'Operaciones';
-  return <div className={`work-app area-${area}`}><aside id={`sidebar-${area}`} className={`sidebar ${mobileNavOpen?'sidebar-open':''}`}><div className="sidebar-brand"><Brand/><button title="Ayuda"><CircleHelp size={18}/></button></div><div className="workspace-pill"><span className="status-dot"/> SESIÓN SEGURA <span>· {roles.join(', ')}</span></div><div className="sidebar-group"><small className="sidebar-caption">{areaTitle.toUpperCase()}</small>{nav.map(({to,label,icon:Icon,end})=><NavLink key={to} end={end} to={to} title={label} onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`sidebar-link ${isActive?'active':''}`}><Icon size={18}/><span>{label}</span>{label==='Solicitudes CRM'&&data.leads.length>0&&<b className="sidebar-count">{data.leads.length}</b>}</NavLink>)}</div><div className="sidebar-bottom">{roles.includes('owner')&&<Link to={area==='admin'?'/operaciones':'/admin'} onClick={()=>setMobileNavOpen(false)} className="switch-app"><span className="switch-icon"><ArrowUpRight size={16}/></span><span><b>{area==='admin'?'Abrir Operaciones':'Abrir Admin web'}</b><small>Cambiar de espacio</small></span><ChevronRight size={15}/></Link>}<div className="sidebar-profile"><div className="profile-avatar">VC</div><span><b>{user?.email || 'Visual Corp'}</b><small>{roles.join(' · ')}</small></span><button className="icon-button" aria-label="Cerrar sesión" onClick={signOut}><LogOut size={16}/></button></div></div></aside>{mobileNavOpen&&<button className="mobile-nav-backdrop" aria-label="Cerrar menú" onClick={()=>setMobileNavOpen(false)}/>}<div className="main-shell"><header className="topbar"><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen?'Cerrar menú de navegación':'Abrir menú de navegación'} aria-expanded={mobileNavOpen} aria-controls={`sidebar-${area}`} onClick={()=>setMobileNavOpen((open)=>!open)}>{mobileNavOpen?<X size={20}/>:<Menu size={20}/>}</button><div className="breadcrumbs"><span>{areaTitle}</span><ChevronRight size={14}/><b>{data.settings.name}</b></div><div className="topbar-right"><AdminCommandPalette area={area} items={nav}/><span className="local-badge"><span className="status-dot"/> Supabase conectado</span><button className="top-avatar" aria-label="Perfil" onClick={signOut}>VC</button></div></header><main className="main-content">{children}<footer className="local-footer">Acceso basado en el perfil autenticado; los datos se protegen con permisos en Supabase.</footer></main></div></div>;
+  const profileLabel = profiles.map((profile) => profile.name).join(' · ') || roles.join(' · ');
+  const canSwitch = area === 'admin' ? operationsLinks.some((link) => hasPermission(link.module, 'view')) : adminLinks.some((link) => hasPermission(link.module, 'view'));
+  return <div className={`work-app area-${area}`}><aside id={`sidebar-${area}`} className={`sidebar ${mobileNavOpen?'sidebar-open':''}`}><div className="sidebar-brand"><Brand/><button title="Ayuda"><CircleHelp size={18}/></button></div><div className="workspace-pill"><span className="status-dot"/> SESIÓN SEGURA <span>· {profileLabel}</span></div><div className="sidebar-group"><small className="sidebar-caption">{areaTitle.toUpperCase()}</small>{nav.map(({to,label,icon:Icon,end})=><NavLink key={to} end={end} to={to} title={label} onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`sidebar-link ${isActive?'active':''}`}><Icon size={18}/><span>{label}</span>{label==='Solicitudes CRM'&&data.leads.length>0&&<b className="sidebar-count">{data.leads.length}</b>}</NavLink>)}</div><div className="sidebar-bottom">{canSwitch&&<Link to={area==='admin'?'/operaciones':'/admin'} onClick={()=>setMobileNavOpen(false)} className="switch-app"><span className="switch-icon"><ArrowUpRight size={16}/></span><span><b>{area==='admin'?'Abrir Operaciones':'Abrir Admin web'}</b><small>Cambiar de espacio</small></span><ChevronRight size={15}/></Link>}<div className="sidebar-profile"><div className="profile-avatar">VC</div><span><b>{user?.email || 'Visual Corp'}</b><small>{profileLabel}</small></span><button className="icon-button" aria-label="Cerrar sesión" onClick={signOut}><LogOut size={16}/></button></div></div></aside>{mobileNavOpen&&<button className="mobile-nav-backdrop" aria-label="Cerrar menú" onClick={()=>setMobileNavOpen(false)}/>}<div className="main-shell"><header className="topbar"><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen?'Cerrar menú de navegación':'Abrir menú de navegación'} aria-expanded={mobileNavOpen} aria-controls={`sidebar-${area}`} onClick={()=>setMobileNavOpen((open)=>!open)}>{mobileNavOpen?<X size={20}/>:<Menu size={20}/>}</button><div className="breadcrumbs"><span>{areaTitle}</span><ChevronRight size={14}/><b>{data.settings.name}</b></div><div className="topbar-right"><AdminCommandPalette area={area} items={nav}/><span className="local-badge"><span className="status-dot"/> Supabase conectado</span><button className="top-avatar" aria-label="Perfil" onClick={signOut}>VC</button></div></header><main className="main-content">{children}<footer className="local-footer">Acceso basado en el perfil autenticado; los datos se protegen con permisos en Supabase.</footer></main></div></div>;
 }
 
 function ProtectedPage({ area, children }) {

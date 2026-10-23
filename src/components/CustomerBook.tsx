@@ -6,7 +6,8 @@ import { supabase } from '../lib/supabaseClient';
 
 export function CustomerBook() {
   const { data, add, flash } = useWorkspace();
-  const { organizationId, user } = useAuth();
+  const { organizationId, user, hasPermission } = useAuth();
+  const canEdit = hasPermission('crm','edit');
   const [term, setTerm] = useState('');
   const [remoteCustomers, setRemoteCustomers] = useState(null);
   const [loading, setLoading] = useState(Boolean(supabase));
@@ -26,7 +27,7 @@ export function CustomerBook() {
   const visible = useMemo(() => customers.filter((c) => `${c.name} ${c.phone} ${c.email}`.toLowerCase().includes(term.toLowerCase())), [customers, term]);
   const save = async (event) => {
     event.preventDefault();
-    if (!form.name.trim()) return;
+    if (!canEdit || !form.name.trim()) return;
     const duplicate = customers.find((c) => c.name.trim().toLowerCase() === form.name.trim().toLowerCase() && (c.phone || '') === form.phone.trim());
     if (duplicate) { flash('Ese cliente ya está registrado.'); return; }
     const values = { name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim(), notes: form.notes.trim() };
@@ -46,7 +47,7 @@ export function CustomerBook() {
         <label>Teléfono<input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
         <label>Correo electrónico<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
         <label>Notas<textarea rows="3" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
-        <button className="button button-dark form-submit" type="submit">Guardar cliente <UserRoundPlus size={15}/></button>
+        <button className="button button-dark form-submit" type="submit" disabled={!canEdit}>Guardar cliente <UserRoundPlus size={15}/></button>
       </form>
       <section className="panel"><div className="panel-heading"><div><span className="eyebrow">DIRECTORIO</span><h2>Clientes registrados</h2></div></div>
         <label className="search-box"><Search size={16}/><input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Buscar por nombre, teléfono o correo" /></label>
