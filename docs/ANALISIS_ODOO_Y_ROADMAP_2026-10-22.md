@@ -87,7 +87,7 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 
 ### Fase 3 — POS de mostrador y experiencia de asesoría
 
-**Estado:** parcial. Ya existe carrito multiartículo con búsqueda por nombre, filtro por familia, imágenes de catálogo, cantidad, precio unitario explícito y total en vivo; se registra en una sola operación idempotente, con cliente y abono, y conserva los artículos trazables de cotizaciones aceptadas. El resumen y el carrito se adaptan a móvil. Siguen pendientes cajero asignado, pagos combinados, guardar/recuperar ventas en espera y ciclo completo de turnos y cierres.
+**Estado:** parcial. Ya existe carrito multiartículo con búsqueda por nombre, filtro por familia, imágenes de catálogo, cantidad, precio unitario explícito y total en vivo; se registra en una sola operación idempotente, con cliente y abono, y conserva los artículos trazables de cotizaciones aceptadas. También permite dividir el cobro entre varios métodos o registrar la venta con saldo pendiente; el efectivo requiere turno abierto. El resumen, carrito y pagos se adaptan a móvil. Siguen pendientes cajero asignado, guardar/recuperar ventas en espera y ciclo completo de turnos y cierres.
 
 - Reemplazar la captura de una sola línea por catálogo visual con búsqueda, categorías, imágenes, variantes, cantidades, descuentos autorizados y carrito multiartículo.
 - Agilizar selección o alta de cliente, vincular asesor/caja/sucursal y mostrar disponibilidad reservable antes de confirmar.
