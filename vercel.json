@@ -1,9 +1,4 @@
 {
-  "installCommand": "npm ci --no-audit --no-fund",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "installCommand": "npm install --no-audit --no-fund",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
