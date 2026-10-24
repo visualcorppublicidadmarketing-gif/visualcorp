@@ -34,3 +34,15 @@
 .op-finance-ledger-payroll-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:900px){.op-finance-ledger-payroll-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.op-finance-ledger-payroll-kpis{grid-template-columns:1fr}}
+.op-finance-month-comparison{display:grid;gap:10px;padding:14px;border:1px solid #e8e1ed;border-radius:12px;background:linear-gradient(145deg,#fbf8fc,#fff)}
+.op-finance-month-comparison-heading h3{margin:4px 0;font-size:16px;color:#26242b}
+.op-finance-month-comparison-heading p{margin:4px 0 0;color:#737580;font-size:12px}
+.op-finance-month-comparison-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.op-finance-month-comparison-grid article{display:grid;gap:6px;min-width:0;padding:12px;border:1px solid #e8e8ed;border-radius:10px;background:#fff}
+.op-finance-month-comparison-grid span,.op-finance-month-comparison-grid small{color:#737580;font-size:11px;line-height:1.45}
+.op-finance-month-comparison-grid b{font-size:18px;letter-spacing:-.025em;color:#24252c}
+.op-finance-month-comparison-grid small.is-negative{color:#a5332d}
+.op-finance-month-comparison-grid small.is-positive{color:#287348}
+.op-finance-month-comparison>.op-finance-cost-note{margin:0}
+@media(max-width:900px){.op-finance-month-comparison-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.op-finance-month-comparison-grid{grid-template-columns:1fr}.op-finance-month-comparison-grid b{font-size:17px}}
