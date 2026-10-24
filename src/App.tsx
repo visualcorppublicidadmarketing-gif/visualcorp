@@ -103,7 +103,7 @@ function InventoryPageLegacy() {
 }
 
 function InventoryPage() { return <AppFrame area="operations"><PageHeading eyebrow="INVENTARIO" title="Existencias y movimientos" description="Consulta stock por sucursal y área; registra entradas, consumos, mermas y traspasos con responsable."/><InventoryWorkspace/></AppFrame>; }
-function PurchasingPage() { return <AppFrame area="operations"><PageHeading eyebrow="ABASTECIMIENTO" title="Compras y proveedores" description="Consolida necesidades, sigue órdenes y registra recepciones parciales con trazabilidad hasta el inventario."/><PurchasingWorkspace/></AppFrame>; }
+function PurchasingPage() { return <AppFrame area="operations"><PageHeading eyebrow="ABASTECIMIENTO" title="Compras" description="Encuentra proveedores, prepara órdenes y registra cada recepción. El stock se actualiza solo con lo que llegó."/><PurchasingWorkspace/></AppFrame>; }
 
 function AppRouter() {
   const location=useLocation();
