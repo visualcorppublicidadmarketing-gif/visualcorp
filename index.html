@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#111217" />
+    <script>
+      try {
+        const savedTheme = localStorage.getItem('visualcorp-public-theme-v1');
+        document.documentElement.dataset.publicTheme = savedTheme === 'light' ? 'light' : 'dark';
+      } catch { document.documentElement.dataset.publicTheme = 'dark'; }
+    </script>
     <meta name="application-name" content="Visual Corp" />
     <meta name="description" content="Visual Corp, agencia de publicidad y marketing en Milagro, Ecuador." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
