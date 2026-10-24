@@ -172,7 +172,7 @@ export function OperationsFinance() {
     setExpensePaymentsError('');
     void readAllRows(() => supabase
       .from('finance_expense_payments')
-      .select('id,amount,method,paid_at,finance_expenses!inner(description,category,branch_id)')
+      .select('id,amount,method,paid_at,reference,finance_expenses!inner(description,category,branch_id,reference)')
       .eq('organization_id', organizationId)
       .gte('paid_at', range.start)
       .lt('paid_at', range.end)
@@ -352,6 +352,7 @@ export function OperationsFinance() {
     return totals;
   }, new Map()), [payments]);
   const branchNames = useMemo(() => new Map(branches.map((item) => [item.id, item.name])), [branches]);
+  const branchName = (id) => branchNames.get(id) || 'Sucursal';
   const cashMovementTotals = useMemo(() => cashSessionMovements.reduce((totals, movement) => {
     const amount = Number(movement.amount || 0) * (movement.direction === 'in' ? 1 : -1);
     totals.set(movement.session_id, (totals.get(movement.session_id) || 0) + amount);
@@ -436,6 +437,31 @@ export function OperationsFinance() {
       expenseCount: expensesInPeriod.length,
     };
   }, [payments, salesById, refundSettlements, expensePayments, month, branch]);
+  const operatingCashflowRows = useMemo(() => {
+    const rows = [];
+    payments.forEach((payment) => {
+      const sale = salesById.get(payment.sale_id);
+      if ((!month || monthInBusinessTimeZone(payment.created_at) === month)
+        && (branch === 'all' || sale?.branch_id === branch)) {
+        rows.push({ date: payment.created_at, type: 'Cobro POS', reference: sale?.sale_code || payment.sale_id, description: sale?.customers?.full_name ? `Cobro POS · ${sale.customers.full_name}` : 'Cobro POS', category: 'Venta', branch: branchName(sale?.branch_id), method: payment.method || '', amount: Number(payment.amount || 0) });
+      }
+    });
+    refundSettlements.forEach((refund) => {
+      if ((!month || monthInBusinessTimeZone(refund.settled_at) === month)
+        && (branch === 'all' || refund.branch_id === branch)) {
+        const sale = salesById.get(refund.sale_id);
+        rows.push({ date: refund.settled_at, type: 'Devolución liquidada', reference: refund.return_code || refund.return_id, description: `Reembolso de venta ${sale?.sale_code || refund.sale_id}`, category: 'Devolución', branch: branchName(refund.branch_id), method: refund.method || '', amount: -Math.abs(Number(refund.amount || 0)) });
+      }
+    });
+    expensePayments.forEach((payment) => {
+      const expense = payment.finance_expenses;
+      if ((branch === 'all' || expense?.branch_id === branch)
+        && (!month || monthInBusinessTimeZone(payment.paid_at) === month)) {
+        rows.push({ date: payment.paid_at, type: 'Pago de egreso', reference: payment.reference || expense?.reference || '', description: expense?.description || 'Egreso', category: expense?.category || 'Sin categoría', branch: expense?.branch_id ? branchName(expense.branch_id) : 'General', method: payment.method || '', amount: -Math.abs(Number(payment.amount || 0)) });
+      }
+    });
+    return rows.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [payments, salesById, refundSettlements, expensePayments, month, branch, branchNames]);
   const operatingExpenseCategories = useMemo(() => {
     const totals = new Map<string, number>();
     expensePayments
@@ -487,7 +513,6 @@ export function OperationsFinance() {
   const advisorSummary = [...grouped.values()].sort((a, b) => b.sold - a.sold);
   const maxSold = Math.max(1, ...advisorSummary.map((item) => item.sold));
   const paymentMethods = [...new Set([...payments, ...refundSettlements].map((movement) => movement.method).filter(Boolean))].sort();
-  const branchName = (id) => branchNames.get(id) || 'Sucursal';
   const personName = (id) => advisorNames.get(id) || `Usuario ${String(id || '').slice(0, 8) || 'sin asignar'}`;
 
   const downloadCsv = () => {
@@ -531,6 +556,21 @@ export function OperationsFinance() {
     const link = document.createElement('a');
     link.href = url;
     link.download = `reembolsos-liquidados-${month || 'historico'}.csv`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
+  const downloadOperatingCashflowCsv = () => {
+    const rows = [
+      ['Fecha efectiva', 'Tipo', 'Referencia', 'Detalle', 'Categoría', 'Sucursal', 'Medio de pago', 'Monto USD (+/-)'],
+      ...operatingCashflowRows.map((row) => [timestamp(row.date), row.type, row.reference, row.description, row.category, row.branch, row.method, row.amount.toFixed(2)]),
+    ];
+    const escape = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+    const blob = new Blob(['\ufeff', rows.map((row) => row.map(escape).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `flujo-operativo-${month || 'historico'}.csv`;
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
@@ -604,7 +644,7 @@ export function OperationsFinance() {
       </>}
     </section>}
     {canSeeInventoryCosts && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-operating-title">
-      <div className="panel-heading"><div><span className="eyebrow">POS + DEVOLUCIONES + EGRESOS → FINANZAS</span><h2 id="op-finance-operating-title">Flujo de efectivo operativo registrado</h2><p className="op-finance-cost-note">Solo considera cobros POS y pagos efectivos de egresos o devoluciones en el mes y sucursal seleccionados. No usa filtros de asesora ni medio de pago.</p></div><a className="button button-outline" href="/operaciones/flujos">Gestionar egresos <ArrowUpRight size={15}/></a></div>
+      <div className="panel-heading"><div><span className="eyebrow">POS + DEVOLUCIONES + EGRESOS → FINANZAS</span><h2 id="op-finance-operating-title">Flujo de efectivo operativo registrado</h2><p className="op-finance-cost-note">Solo considera cobros POS y pagos efectivos de egresos o devoluciones en el mes y sucursal seleccionados. No usa filtros de asesora ni medio de pago. Es un flujo de movimientos registrados, no una medida de utilidad.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadOperatingCashflowCsv} disabled={!operatingCashflowRows.length || expensePaymentsLoading || !!refundSettlementError || !!expensePaymentsError}><Download size={15}/> Exportar flujo CSV</button><a className="button button-outline" href="/operaciones/flujos">Gestionar egresos <ArrowUpRight size={15}/></a></div></div>
       {refundSettlementError && <p className="op-finance-cost-error" role="alert">{refundSettlementError}</p>}
       {expensePaymentsError && <p className="op-finance-cost-error" role="alert">{expensePaymentsError}</p>}
       {!refundSettlementError && !expensePaymentsError && expensePaymentsLoading && <p className="muted">Cargando cobros, liquidaciones y pagos efectivos de egresos…</p>}
