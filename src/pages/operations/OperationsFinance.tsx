@@ -213,7 +213,9 @@ export function OperationsFinance() {
         const [salesRows, paymentRows, teamResult, branchResult, customersResult] = await Promise.all([
           readAllRows(() => supabase
             .from('sales')
-            .select('id,sale_code,status,total,created_at,branch_id,advisor_id,created_by,customer_id,customers(full_name)')
+            .select(canSeeCrm
+              ? 'id,sale_code,status,total,created_at,branch_id,advisor_id,created_by,customer_id,customers(full_name,preferences)'
+              : 'id,sale_code,status,total,created_at,branch_id,advisor_id,created_by,customer_id,customers(full_name)')
             .eq('organization_id', organizationId)
             .order('created_at', { ascending: false })),
           readAllRows(() => supabase
@@ -601,6 +603,9 @@ export function OperationsFinance() {
     let unlinkedSales = 0;
     let unlinkedRevenue = 0;
     let linkedRevenue = 0;
+    let websiteOriginRevenue = 0;
+    let websiteOriginSales = 0;
+    const websiteOriginCustomers = new Set<string>();
     salesInPeriod.forEach((sale) => {
       const returns = returnsBySale.get(sale.id) || { returnedValue: 0, settledRefund: 0 };
       const adjustedTotal = Math.max(0, Number(sale.total || 0) - returns.returnedValue);
@@ -623,6 +628,11 @@ export function OperationsFinance() {
       customer.openBalance += openBalance;
       byCustomer.set(sale.customer_id, customer);
       linkedRevenue += adjustedTotal;
+      if (sale.customers?.preferences?.source === 'solicitud web') {
+        websiteOriginRevenue += adjustedTotal;
+        websiteOriginSales += 1;
+        websiteOriginCustomers.add(sale.customer_id);
+      }
     });
     const rankedCustomers = [...byCustomer.values()].sort((a, b) => b.revenue - a.revenue || a.name.localeCompare(b.name, 'es'));
     const topCustomers = rankedCustomers.slice(0, 5);
@@ -633,6 +643,9 @@ export function OperationsFinance() {
       linkedRevenue,
       unlinkedRevenue,
       unlinkedSales,
+      websiteOriginRevenue,
+      websiteOriginSales,
+      websiteOriginCustomers: websiteOriginCustomers.size,
       topCustomers,
       topFiveShare: linkedRevenue > 0 ? topFiveRevenue / linkedRevenue : 0,
     };
@@ -1159,6 +1172,11 @@ export function OperationsFinance() {
           <article><span>Clientes recurrentes</span><b>{customerRevenueAnalysis.repeatCustomers}</b><small>Más de una venta en el periodo</small></article>
           <article><span>Ventas de los 5 principales</span><b>{customerRevenueAnalysis.customers ? `${Math.round(customerRevenueAnalysis.topFiveShare * 100)}%` : '—'}</b><small>Porción de ventas vinculadas al CRM</small></article>
           <article className={customerRevenueAnalysis.unlinkedSales ? 'is-unlinked' : ''}><span>Ventas sin ficha CRM</span><b>{money(customerRevenueAnalysis.unlinkedRevenue)}</b><small>{customerRevenueAnalysis.unlinkedSales} ventas sin cliente asociado</small></article>
+        </div>
+        <div className="op-finance-customer-source-summary">
+          <div><span className="eyebrow">SITIO WEB → CRM → FINANZAS</span><h3>Compras de clientes captados desde el sitio</h3><p>Ventas del periodo vinculadas a clientes cuyo origen en CRM es una solicitud web.</p></div>
+          <div><b>{money(customerRevenueAnalysis.websiteOriginRevenue)}</b><span>{customerRevenueAnalysis.websiteOriginSales} ventas · {customerRevenueAnalysis.websiteOriginCustomers} clientes</span></div>
+          <small>Conecta solicitudes públicas, CRM y POS; no mide retorno ni atribuye ventas a una campaña específica.</small>
         </div>
         {customerRevenueAnalysis.topCustomers.length ? <div className="op-finance-customer-list">{customerRevenueAnalysis.topCustomers.map((customer, index) => <article key={customer.id}>
           <div className="op-finance-customer-rank"><span>{index + 1}</span><div><b>{customer.name}</b><small>{customer.sales} {customer.sales === 1 ? 'venta' : 'ventas'} · saldo abierto {money(customer.openBalance)}</small></div></div>
