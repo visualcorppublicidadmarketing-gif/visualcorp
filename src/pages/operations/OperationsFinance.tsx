@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowUpRight, ChartNoAxesCombined, Download, LoaderCircle, PackageCheck, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
+import { OperationsFinanceControls } from './OperationsFinanceControls';
 import './operations-lifecycle.css';
 
 const BUSINESS_TIME_ZONE = 'America/Guayaquil';
@@ -197,6 +198,7 @@ export function OperationsFinance() {
   if (loading) return <div className="op-flow-loading"><LoaderCircle className="spin" /> Cargando ventas y pagos registrados…</div>;
 
   return <div className="op-finance-page">
+    <OperationsFinanceControls />
     <section className="panel op-finance-intro">
       <div>
         <span className="eyebrow">INGRESOS Y RECAUDACIÓN</span>
@@ -268,6 +270,6 @@ export function OperationsFinance() {
         })}{!paymentsInPeriod.length && <tr><td colSpan={7}>No hay abonos para mostrar con los filtros elegidos.</td></tr>}</tbody>
       </table></div>
     </section>
-    <aside className="op-flow-footnote"><PackageCheck size={16} /><span>Este panel muestra ventas y pagos capturados en POS; no contabiliza gastos, comisiones, impuestos, nómina ni utilidad. Los pagos externos deben registrarse en su fuente correspondiente para que aparezcan aquí.</span></aside>
+    <aside className="op-flow-footnote"><PackageCheck size={16} /><span>Las ventas confirmadas y sus abonos provienen de POS. El centro financiero incorpora egresos operativos, obligaciones y previsiones; nómina permanece separada y no se procesa aquí.</span></aside>
   </div>;
 }
