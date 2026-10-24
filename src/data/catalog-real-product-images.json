@@ -1,0 +1,23 @@
+{
+  "note": "Fotografías y muestras internas de Visual Corp para familias de productos coincidentes. No certifican que el lote fotografiado sea el disponible actualmente.",
+  "products": [
+    { "keywords": ["boligrafo", "boligrafos", "lapicero"], "name": "Bolígrafo sublimado", "file": "../../03_Oferta_comercial/Catalogos_vigentes/BOLIGRAFO SUBLIMADO.jpg", "image": "/images/catalog-real/boligrafo-sublimado.webp" },
+    { "keywords": ["bolso", "bolsos"], "name": "Bolso", "file": "../../03_Oferta_comercial/Catalogos_vigentes/BOLSO.jpg", "image": "/images/catalog-real/bolso.webp" },
+    { "keywords": ["buzo", "sudadera"], "name": "Buzo sublimado", "file": "../../03_Oferta_comercial/Catalogos_vigentes/BUZO SUBLIMADO.jpg", "image": "/images/catalog-real/buzo-sublimado.webp" },
+    { "keywords": ["calendario"], "name": "Calendario", "file": "../../03_Oferta_comercial/Catalogos_vigentes/CALENDARIO 1.jpg", "image": "/images/catalog-real/calendario.webp" },
+    { "keywords": ["carpeta"], "name": "Carpeta corporativa", "file": "../../03_Oferta_comercial/Catalogos_vigentes/CARPETA CORPORATIVA.jpg", "image": "/images/catalog-real/carpeta-corporativa.webp" },
+    { "keywords": ["cuaderno", "agenda"], "name": "Cuaderno corporativo", "file": "../../03_Oferta_comercial/Catalogos_vigentes/CUADERNO CORPORATIVO.jpg", "image": "/images/catalog-real/cuaderno-corporativo.webp" },
+    { "keywords": ["etiqueta"], "name": "Etiqueta de producto", "file": "../../03_Oferta_comercial/Catalogos_vigentes/ETIQUETA PRODUCTO.jpg", "image": "/images/catalog-real/etiqueta-producto.webp" },
+    { "keywords": ["flyer", "volante"], "name": "Flyer", "file": "../../03_Oferta_comercial/Catalogos_vigentes/FLYER.jpg", "image": "/images/catalog-real/flyer.webp" },
+    { "keywords": ["funda", "fundas", "bolsa"], "name": "Fundas promocionales", "file": "../../03_Oferta_comercial/Catalogos_vigentes/FUNDAS 1.jpg", "image": "/images/catalog-real/fundas.webp" },
+    { "keywords": ["gorra", "gorras"], "name": "Gorra sublimada", "file": "../../03_Oferta_comercial/Catalogos_vigentes/GORRA SUBLIMADA.jpg", "image": "/images/catalog-real/gorra-sublimada.webp" },
+    { "keywords": ["hablador", "menu de mesa", "menudero"], "name": "Hablador", "file": "../../03_Oferta_comercial/Catalogos_vigentes/HABLADOR 1.jpg", "image": "/images/catalog-real/hablador.webp" },
+    { "keywords": ["mochila"], "name": "Mochila", "file": "../../03_Oferta_comercial/Catalogos_vigentes/MOCHILA 1.jpg", "image": "/images/catalog-real/mochila.webp" },
+    { "keywords": ["pin", "pines"], "name": "Pines", "file": "../../03_Oferta_comercial/Catalogos_vigentes/PINES.jpg", "image": "/images/catalog-real/pines.webp" },
+    { "keywords": ["polo"], "name": "Polo", "file": "../../03_Oferta_comercial/Catalogos_vigentes/POLO 1.jpg", "image": "/images/catalog-real/polo.webp" },
+    { "keywords": ["pulsera"], "name": "Pulsera", "file": "../../03_Oferta_comercial/Catalogos_vigentes/PULSERA 1.jpg", "image": "/images/catalog-real/pulsera.webp" },
+    { "keywords": ["tarjeta", "tarjetas", "presentacion", "presentación"], "name": "Tarjeta de presentación", "file": "../../03_Oferta_comercial/Catalogos_vigentes/TARJETA DE PRESENTACION.jpg", "image": "/images/catalog-real/tarjeta-presentacion.webp" },
+    { "keywords": ["triptico", "tríptico"], "name": "Tríptico", "file": "../../03_Oferta_comercial/Catalogos_vigentes/TRIPTICO.jpg", "image": "/images/catalog-real/triptico.webp" },
+    { "keywords": ["taza", "jarro", "mug"], "name": "Taza promocional personalizada", "file": "../../03_Oferta_comercial/Productos_y_servicios/Tazas/Referencias_fotograficas_2026-10-12/Foto_Tazas_Personalizadas_Promocion.jpeg", "image": "/images/catalog-real/taza-personalizada.webp" }
+  ]
+}

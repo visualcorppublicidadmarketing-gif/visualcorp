@@ -1,141 +1,24 @@
-import { assetPath, media } from './data/media.ts';
-import { estebanCatalogProducts, catalogCategories } from './catalog.ts';
-import { DEFAULT_BUSINESS_SCHEDULE } from './lib/scheduleEngine.ts';
+YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éíçôN‹Z–‹­¦ëeŠw¬Ù¥µÁ½ÉĞì…ÍÍ•ÑA…Ñ °µ•‘¥„ô™É½´€œ¸½‘…Ñ„½µ•‘¥„¹ÑÌœì4)¥µÁ½ÉĞì•ÍÑ•‰…¹…Ñ…±½AÉ½‘ÕÑÌ°…Ñ…±½…Ñ•½É¥•Ìô™É½´€œ¸½…Ñ…±½œ¹ÑÌœì4)¥µÁ½ÉĞìU1Q}	UM%9MM}M!U1ô™É½´€œ¸½±¥ˆ½Í¡•‘Õ±•¹¥¹”¹ÑÌœì4(4)•áÁ½ÉĞì…ÍÍ•ÑA…Ñ °µ•‘¥„ôì4(4)•áÁ½ÉĞ½¹ÍĞÑ¡•µ•AÉ•Í•ÑÌ€ôl4(€ì4(€€€¥è€‘•™…Õ±Ğœ°4(€€€¹…µ”è€¥…ÁÉ¥¹Ğ‰…Í”œ°4(€€€•å•‰É½Üè€M¥•µÁÉ”…Ñ¥Ù¼œ°4(€€€‘•ÍÉ¥ÁÑ¥½¸è€9…É…¹©„°Ñ¥¹Ñ„äÉ•µ„è•°Í¥ÍÑ•µ„Ù¥ÍÕ…°ÁÉ¥¹¥Á…°‘”¥…ÁÉ¥¹Ğ¸œ°4(€€€Á…±•ÑÑ”èì…•¹Ğè€œ•„ÔàÁŒœ°…•¹Ñ…É¬è€œŒÈĞÄÁŒœ°…•¹ÑM½™Ğè€œ™™˜Å”àœ°Í•½¹‘…Éäè€œŒÄÜÄÜÄĞœô°4(€€€±…‰•°è€¥…ÁÉ¥¹Ğœ°4(€€€‘•½É…Ñ¥½¹ÌèlŸŠr˜œ°€œ¬œ°€ŸŠ"xt°4(€ô°4(€ì4(€€€¥è€¹…Ù¥‘…œ°4(€€€¹…µ”è€9…Ù¥‘…¥…ÁÉ¥¹Ğœ°4(€€€•å•‰É½Üè€Q•µÁ½É…‘„¹…Ù¥‘—Å„œ°4(€€€‘•ÍÉ¥ÁÑ¥½¸è€I½©¼äÙ•É‘”™•ÍÑ¥Ù½ÌÍ¥¸Á•É‘•È•°¹…É…¹©„‘”±„µ…É„¸œ°4(€€€Á…±•ÑÑ”èì…•¹Ğè€œŒäÌØÉ˜œ°…•¹Ñ…É¬è€œŒäàÈÔÈÄœ°…•¹ÑM½™Ğè€œ™‘”å”Ôœ°Í•½¹‘…Éäè€œŒÉ˜ÜĞĞÜœô°4(€€€±…‰•°è€9…Ù¥‘…œ°4(€€€‘•½É…Ñ¥½¹ÌèlŸŠr˜œ°€ŸŠvœ°€ŸŠrœœ°€ŸÂ~:t°4(€ô°4(€ì4(€€€¥è€µ¥±…É¼œ°4(€€€¹…µ”è€¥•ÍÑ…Ì‘”5¥±…É¼œ°4(€€€•å•‰É½Üè€Q•µÁ½É…‘„‘”Í•ÁÑ¥•µ‰É”œ°4(€€€‘•ÍÉ¥ÁÑ¥½¸è€Y•É‘”ä‘½É…‘¼¥¹ÍÁ¥É…‘½Ì•¸5¥±…É¼°µ…¹Ñ•¹¥•¹‘¼•°¹…É…¹©„½µ¼™¥Éµ„¸œ°4(€€€Á…±•ÑÑ”èì…•¹Ğè€œŒÉ˜á˜Õˆœ°…•¹Ñ…É¬è€œŒÅ”ØàĞÄœ°…•¹ÑM½™Ğè€œ”Õ˜Ñ”äœ°Í•½¹‘…Éäè€œå„ØÉ”œô°4(€€€±…‰•°è€5¥±…É¼œ°4(€€€‘•½É…Ñ¥½¹ÌèlŸŠr˜œ°€ŸŠ^<œ°€ŸŠrœœ°€Ÿ¾ò,t°4(€ô°4(€ì4(€€€¥è€‰±…¬µ™É¥‘…äœ°4(€€€¹…µ”è€	±…¬É¥‘…ä¥…ÁÉ¥¹Ğœ°4(€€€•å•‰É½Üè€…µÁ‡Å„½µ•É¥…°œ°4(€€€‘•ÍÉ¥ÁÑ¥½¸è€±Ñ¼½¹ÑÉ…ÍÑ”Á…É„ÁÉ½µ½¥½¹•Ì°±…¹é…µ¥•¹Ñ½ÌäÑ•µÁ½É…‘…Ì‘”Ù•¹Ñ„¸œ°4(€€€Á…±•ÑÑ”èì…•¹Ğè€œ•„ÔàÁŒœ°…•¹Ñ…É¬è€œŒÈĞÄÁŒœ°…•¹ÑM½™Ğè€œ™™˜Å”àœ°Í•½¹‘…Éäè€œŒÀäÀäÀäœô°4(€€€±…‰•°è€	±…¬É¥‘…äœ°4(€€€‘•½É…Ñ¥½¹Ìèlœ”œ°€ŸŠr˜œ°€ŸŠ\œ°€œ¬t°4(€ô°4(€ì4(€€€¥è€¥¹‘•Á•¹‘•¹¥„œ°4(€€€¹…µ”è€¥•ÍÑ…Ì‘”Õ…‘½Èœ°4(€€€•å•‰É½Üè€Q•µÁ½É…‘„Á…ÑÉ¥„œ°4(€€€‘•ÍÉ¥ÁÑ¥½¸è€Y•É‘”ä‘½É…‘¼Á…É„…µÁ‡Å…ÌÁ…ÑÉ¥…Ì°½¹Í•ÉÙ…¹‘¼±„™¥Éµ„¹…É…¹©„‘”¥…ÁÉ¥¹Ğ¸œ°4(€€€Á…±•ÑÑ”èì…•¹Ğè€œŒÁ˜ÜØÙ”œ°…•¹Ñ…É¬è€œŒÄÄÕ”Ôäœ°…•¹ÑM½™Ğè€œ”Õ˜Ù˜Ìœ°Í•½¹‘…Éäè€œäÜÜÀØœô°4(€€€±…‰•°è€Õ…‘½Èœ°4(€€€‘•½É…Ñ¥½¹ÌèlŸŠr˜œ°€ŸŠ^œ°€ŸŠrœœ°€Ÿ¾ò,t°4(€ô°4(€ì4(€€€¥è€Ù•É…¹¼œ°4(€€€¹…µ”è€Y•É…¹¼•¸É…¹‘”œ°4(€€€•å•‰É½Üè€…µÁ‡Å„‘”Ñ•µÁ½É…‘„œ°4(€€€‘•ÍÉ¥ÁÑ¥½¸è€U¹„•¹•ÉŸµ„™É•Í„Á…É„…Ñ¥Ù…¥½¹•Ì°•Ù•¹Ñ½ÌäÁÉ½‘ÕÑ½ÌÁÉ½µ½¥½¹…±•Ì¸œ°4(€€€Á…±•ÑÑ”èì…•¹Ğè€œŒÀàäÅˆÈœ°…•¹Ñ…É¬è€œŒÁ”ÜĞäÀœ°…•¹ÑM½™Ğè€œ”Ù˜á™Œœ°Í•½¹‘…Éäè€œ˜Ôå”Áˆœô°4(€€€±…‰•°è€Y•É…¹¼œ°4(€€€‘•½É…Ñ¥½¹ÌèlŸŠbğœ°€ŸŠr˜œ°€ŸŠ& œ°€Ÿ¾ò,t°4(€ô°4)tì4(4)•áÁ½ÉĞ½¹ÍĞ¥¹¥Ñ¥…±…Ñ„€ôì4(€Í¡•µ…Y•ÉÍ¥½¸è€Ğ°4(€…Ñ…±½Y•ÉÍ¥½¸è€ÄØ°4(€Í•ÑÑ¥¹Ìèì4(€€€‰É…¹è€¥…ÁÉ¥¹Ğœ°4(€€€Í±½…¸è€QÕÌ¥‘•…Ì•¸É…¹‘”œ°4(€€€Á¡½¹”è€œ¬ÔäÌ€äà€ÜØÔ€ĞÌÈÄœ°4(€€€•µ…¥°è€¡½±…¥…ÁÉ¥¹Ğ¹•Œœ°4(€€€…‘‘É•ÍÌè€Ø¸…Éµ„5½É•¹¼ä€ä‘”=ÑÕ‰É”°5¥±…É¼°Õ…å…Ì€´Õ…‘½Èœ°4(€€€İ¡…ÑÍ…ÁÀè€œÔäÌäàÜØÔĞÌÈÄœ°4(€€€ÅÕ½Ñ•]¡…ÑÍ…ÁÁI½ÕÑ•Ìèl4(€€€€€ì¥è€Ù•¹Ñ…ÌµÁÉ¥¹¥Á…°œ°±…‰•°è€Y•¹Ñ…Ìœ°¹Õµ‰•Èè€œÔäÌäàÜØÔĞÌÈÄœ°…Ñ•½É¥•Ìèmt°…Ñ¥Ù”èÑÉÕ”°ÁÉ¥½É¥Ñäè€Àô°4(€€€t°4(€€€ÅÕ½Ñ•5•ÍÍ…•%¹ÑÉ¼è€Ÿ
+…!½±„¥…ÁÉ¥¹Ğ„…‰¼‘”•¹•É…ÈÕ¹„Í½±¥¥ÑÕ‘”½Ñ¥é…§Í¸¸œ°4(€€€ÅÕ½Ñ•5•ÍÍ…•±½Í¥¹œè€Ÿ
+ıA½‘Ëµ…¸½¹™¥Éµ…È‘¥ÍÁ½¹¥‰¥±¥‘…°ÁÉ•¥¼™¥¹…°äÑ¥•µÁ¼‘”•¹ÑÉ•„üœ°4(€€€Ñ¡•µ•AÉ•Í•Ğè€‘•™…Õ±Ğœ°4(€€€¡•É½-¥­•Èè€AÕ‰±¥¥‘…ÅÕ”Í”Ù”¸5…É…ÌÅÕ”Í”É•Õ•É‘…¸¸œ°4(€€€¡•É½Q¥Ñ±”è€!…èÅÕ”ÑÔµ…É„½ÕÁ”•ÍÁ…¥¼¸œ°4(€€€¡•É½Q•áĞè€¥Í—Å…µ½Ì°ÁÉ½‘Õ¥µ½Ì”¥¹ÍÑ…±…µ½ÌÍ½±Õ¥½¹•ÌÙ¥ÍÕ…±•ÌÁ…É„ÅÕ”ÑÔ¹•½¥¼Í”Ù•„ÁÉ½™•Í¥½¹…°‘•Í‘”•°ÁÉ¥µ•ÈÙ¥ÍÑ…é¼¸œ°4(€€€‰ÕÍ¥¹•ÍÍM¡•‘Õ±”èU1Q}	UM%9MM}M!U1°4(€ô°4(€…±Õ±…Ñ½ÉM•ÑÑ¥¹Ìèì4(€€€Ñ…áI…Ñ”è€ÄÔ°4(€€€µ¥¹¥µ•¹Í¥½¹´è€Ä°4(€€€µ…á¥µ•¹Í¥½¹´è€ÔÀÀÀ°4(€€€‘•Í¥¹‘…ÁÑ…Ñ¥½¹AÉ¥”è€Ô°4(€€€‘•Í¥¹É½µMÉ…Ñ¡AÉ¥”è€ÄÔ°4(€€€•å•±•ÑMµ…±±AÉ¥”è€À¸Ì°4(€€€•å•±•Ñ1…É•AÉ¥”è€À¸Ô°4(€€€™±ÕÍ¡ÕÑAÉ¥”è€Ä¸À°€¼¼½ÉÑ”…°É…Ì½Á¥½¹…°4(€€€‘¥Í±…¥µ•Èè€1½ÌÙ…±½É•ÌÍ½¸É•™•É•¹¥…±•ÌäÁÕ•‘•¸Ù…É¥…ÈÍ•Ÿé¸……‰…‘½Ì°¥¹ÍÑ…±…§Í¸ä½¹‘¥¥½¹•Ì‘•°ÁÉ½å•Ñ¼¸œ°4(€ô°4(€Í•ÉÙ¥•Ìèl4(€€€ì¥è€É½ÑÕ±½Ìœ°¹…µ”è€KÍÑÕ±½Ì€˜™…¡…‘…Ìœ°Í¡½ÉĞè€QÔ±½…°•µÁ¥•é„„Ù•¹‘•È‘•Í‘”±„…±±”¸œ°‘•Ñ…¥°è€KÍÑÕ±½ÌÍ•¹¥±±½Ì°±Õµ¥¹½Í½Ì°½ÉÃÍÉ•½Ìä™…¡…‘…Ì½µÁ±•Ñ…Ì½¸µ…Ñ•É¥…±•ÌÁ•¹Í…‘½ÌÁ…É„‘ÕÉ…È¸œ°¥½¸è€	Õ¥±‘¥¹œÈœ°¥µ…”èµ•‘¥„¹Í¡½İ…Í•5…µÁ…É„°Ñ…œè€7…ÌÍ½±¥¥Ñ…‘¼œô°4(€€€ì¥è€¥µÁÉ•Í¥½¸œ°¹…µ”è€%µÁÉ•Í§Í¸É…¸™½Éµ…Ñ¼œ°Í¡½ÉĞè€EÕ”ÑÔ…µÁ‡Å„Í”Ù•„„‘¥ÍÑ…¹¥„¸œ°‘•Ñ…¥°è€1½¹…Ì°Ù¥¹¥±•Ì°µ¥É½Á•É™½É…‘½Ì°Á•¹‘½¹•ÌäÑ½‘¼±¼ÅÕ”¹••Í¥Ñ…ÌÁ…É„½µÕ¹¥…È•¸É…¹‘”¸œ°¥½¸è€AÉ¥¹Ñ•Èœ°¥µ…”èµ•‘¥„¹±½¹„°Ñ…œè€AÉ½‘Õ§Í¸Ë…Á¥‘„œô°4(€€€ì¥è€Á•ÉÍ½¹…±¥é…‘½Ìœ°¹…µ”è€A•ÉÍ½¹…±¥é…‘½Ì€˜É•…±½Ìœ°Í¡½ÉĞè€•Ñ…±±•ÌÅÕ”¡…•¸ÅÕ”Ñ”É•Õ•É‘•¸¸œ°‘•Ñ…¥°è€3…µÁ…É…Ì°¹•½¹•Ì°Í—Å…³¥Ñ¥„°Á±……ÌEHäÁ¥•é…Ìƒé¹¥…ÌÁ…É„É•…±…È¼…µ‰¥•¹Ñ…È¸œ°¥½¸è€MÁ…É­±•Ìœ°¥µ…”èµ•‘¥„¹Í¡½İ…Í••Í¥¹Ì°Ñ…œè€µ•‘¥‘„œô°4(€€€ì¥è€±…Í•Èœ°¹…µ”è€½ÉÑ”äÉ…‰…‘¼³…Í•Èœ°Í¡½ÉĞè€AÉ•¥Í§Í¸Á…É„¥‘•…Ì½¸…Ë…Ñ•È¸œ°‘•Ñ…¥°è€½ÉÑ…µ½ÌäÉ…‰…µ½Ì5°…Ëµ±¥¼°µ…‘•É„ä½ÑÉ½Ìµ…Ñ•É¥…±•ÌÁ…É„ÁÉ½å•Ñ½Ì•ÍÁ•¥…±•Ì¸œ°¥½¸è€M…¹1¥¹”œ°¥µ…”èµ•‘¥„¹±…Í•È°Ñ…œè€AÉ•¥Í§Í¸œô°4(€t°4(€ÁÉ½‘ÕÑÌèl4(€€€ì¥è€±½¹„œ°¹…µ”è€1½¹„ÁÕ‰±¥¥Ñ…É¥„•½»Íµ¥„€¼•ÍÓ…¹‘…È€ ÄÌ½è¤œ°…Ñ•½Éäè€É…¸™½Éµ…Ñ¼œ°ÑåÁ”è€´Èœ°…±QåÁ”è€´Èœ°ÁÉ¥¥¹5½‘”è€…É•„œ°ÁÉ¥”è€Ô¸À°ÁÉ¥•}¥¹ÍĞè€à¸Ô°ÁÉ¥•}½ÉÀè€Ğ¸ÔÀ°Õ¹¥Ğè€·
+Èœ°¥µ…”èµ•‘¥„¹±½¹„°‘•ÍÉ¥ÁÑ¥½¸è€1½¹„É•Í¥ÍÑ•¹Ñ”Á…É„™…¡…‘…Ì°•Ù•¹Ñ½Ìä…µÁ‡Å…Ì¸±Ñ„É•Í½±Õ§Í¸™Õ±°½±½È¸œ°™•…ÑÕÉ•èÑÉÕ”°ÍÁ•ÌèlœÄÌ½è€¼€ÔÄÀœœ°€Õ±°½±½È5e,œ°€…‰…‘¼µ…Ñ”¼‰É¥±±…¹Ñ”œ°€…±Õ±¼•á…Ñ¼Á½È·
+Ètô°4(€€€ì¥è€Ù¥¹¥°œ°¹…µ”è€Y¥¹¥±¼…‘¡•Í¥Ù¼Á•ÉÍ½¹…±¥é…‘¼œ°…Ñ•½Éäè€É…¸™½Éµ…Ñ¼œ°ÑåÁ”è€´Èœ°…±QåÁ”è€´Èœ°ÁÉ¥¥¹5½‘”è€…É•„œ°ÁÉ¥”è€ä¸Ô°ÁÉ¥•}¥¹ÍĞè€ÄĞ¸À°ÁÉ¥•}½ÉÀè€à¸ÜÔ°Õ¹¥Ğè€·
+Èœ°¥µ…”èµ•‘¥„¹Ù¥¹¥°°‘•ÍÉ¥ÁÑ¥½¸è€Y¥¹¥±¼‘”¥µÁÉ•Í§Í¸ä½ÉÑ”Á…É„Ù¥ÑÉ¥¹…Ì°Í—Å…±¥é…§Í¸äÙ•£µÕ±½Ì¸œ°™•…ÑÕÉ•èÑÉÕ”°ÍÁ•Ìèl½ÉÑ”½Á¥½¹…°œ°€%¹Ñ•É¥½È€¼•áÑ•É¥½Èœ°€Á±¥…§Í¸ÁÉ½™•Í¥½¹…°œ°€…±Õ±¼•á…Ñ¼Á½È·
+Ètô°4(€€€ì¥è€‰…¹¹•Èµ„œ°¹…µ”è€	…¹¹•È•¸€¡A½ÉÑ„µ‰…¹¹•È¤œ°…Ñ•½Éäè€É…¸™½Éµ…Ñ¼œ°ÑåÁ”è€´Èœ°…±QåÁ”è€´Èœ°ÁÉ¥¥¹5½‘”è€…É•„œ°ÁÉ¥”è€ÄÈ¸À°Õ¹¥Ğè€·
+Èœ°¥µ…”èµ•‘¥„¹ÍÑ…¹°‘•ÍÉ¥ÁÑ¥½¸è€M½Á½ÉÑ”ÁÕ‰±¥¥Ñ…É¥¼‘”‘½‰±”…É„Ñ¥Á¼¥‘•…°Á…É„ÁÕ¹Ñ½Ì‘”Ù•¹Ñ„ä™•É¥…Ì¸œ°™•…ÑÕÉ•è™…±Í”°ÍÁ•ÌèlÍÑÉÕÑÕÉ„‘”…±Õµ¥¹¥¼œ°€1½¹„¥¹Ñ•É…µ‰¥…‰±”œ°€½‰±”…É„tô°4(€€€ì¥è€‰…¹¹•Èµ…É…¹„œ°¹…µ”è€	…¹¹•ÈÉ‡Å„€¡Q•¹Í§Í¸•¸`€ØÁàÄØÁ´¤œ°…Ñ•½Éäè€É…¸™½Éµ…Ñ¼œ°ÑåÁ”è€Í…±”œ°…±QåÁ”è€Í…±”œ°ÁÉ¥¥¹5½‘”è€Õ¹¥Ğœ°ÁÉ¥”è€Äà¸À°Õ¹¥Ğè€Õ¹¥‘…œ°¥µ…”èµ•‘¥„¹‰…¹¹•É`°‘•ÍÉ¥ÁÑ¥½¸è€¥ÍÁ±…ä½¸•ÍÑÉÕÑÕÉ„‘”™¥‰É„Ñ¥Á¼…É‡Å„ä±½¹„Ñ•¹Í…‘„Í¥¸…ÉÉÕ…Ì½¸½©…±•Ì•¸±…Ì€Ğ•ÍÅÕ¥¹…Ì¸œ°™•…ÑÕÉ•èÑÉÕ”°ÍÁ•ÌèlÍÑÉÕÑÕÉ„±¥•É„œ°€1½¹„‘”…±Ñ„Ñ•¹Í§Í¸œ°€…¥°…Éµ…‘¼œ°€%¹±Õå”•ÍÑÕ¡”tô°4(€€€ì¥è€Ù¥¹¥°µµ¥É½Á•É™½É…‘¼œ°¹…µ”è€Y¥¹¥°5¥É½Á•É™½É…‘¼Á…É„Y¥ÑÉ¥¹…ÌäY•£µÕ±½Ìœ°…Ñ•½Éäè€É…¸™½Éµ…Ñ¼œ°ÑåÁ”è€´Èœ°…±QåÁ”è€´Èœ°ÁÉ¥¥¹5½‘”è€…É•„œ°ÁÉ¥”è€ÄÈ¸Ô°ÁÉ¥•}¥¹ÍĞè€ÄØ¸À°Õ¹¥Ğè€·
+Èœ°¥µ…”èµ•‘¥„¹Ù¥¹¥±5¥É¼°‘•ÍÉ¥ÁÑ¥½¸è€Y¥Í§Í¸Õ¹¥‘¥É•¥½¹…°ÅÕ”Á•Éµ¥Ñ”Ù•È¡…¥„…™Õ•É„µ…¹Ñ•¹¥•¹‘¼ÁÉ¥Ù…¥‘…äÁÕ‰±¥¥‘…‘•Í‘”•°•áÑ•É¥½È¸œ°™•…ÑÕÉ•èÑÉÕ”°ÍÁ•ÌèlY¥Í§Í¸€ÄÛµ„œ°€AÉ½Ñ•§Í¸Í½±…ÈUXœ°€%‘•…°±½…±•Ìä…ÕÑ½Ìœ°€…±Õ±¼Á½È·
+Ètô°4(€€€ì¥è€Ù¥¹¥°µ•Íµ•É¥±…‘¼œ°¹…µ”è€Y¥¹¥°Íµ•É¥±…‘¼€¼É½ÍÑ•±…ÍÌÁ…É„=™¥¥¹…Ìœ°…Ñ•½Éäè€É…¸™½Éµ…Ñ¼œ°ÑåÁ”è€´Èœ°…±QåÁ”è€´Èœ°ÁÉ¥¥¹5½‘”è€…É•„œ°ÁÉ¥”è€ÄĞ¸À°ÁÉ¥•}¥¹ÍĞè€Äà¸Ô°Õ¹¥Ğè€·
+Èœ°¥µ…”èµ•‘¥„¹Ù¥¹¥±Íµ•É¥±…‘¼°‘•ÍÉ¥ÁÑ¥½¸è€±•…¹Ñ”™¥±´ÑÉ…Í³é¥‘¼Á…É„µ…µÁ…É…Ì‘”Ù¥‘É¥¼½¸½ÉÑ•Ì•½·¥ÑÉ¥½Ìä±½½Ñ¥Á½Ì½ÉÁ½É…Ñ¥Ù¿ô¶‰ËkºwµçZpìÛˆQ[šY›Ü›YIË	Ñ\İXİ\˜HH[[Z[š[ÉË	ĞXÜ°ë[XÛÈY\ÛÜ‰×HKBˆÈYˆ	Ü›Û\	Ë˜[YNˆ	Ô›Û\
+˜[›™\ˆ™]°èXİ[
+IËØ]YÛÜNˆ	ÑÜ˜[ˆ›Ü›X]ÉË\Nˆ	ÜØØ[IËØ[Õ\Nˆ	ÜØØ[IËšXÚ[™Ó[ÙNˆ	İ[š]	ËšXÙNˆKŒšXÙTØØ[\ÎˆŞÈ]NˆKšXÙNˆKŒKÈ]NˆËšXÙNˆ‹ŒKÈ]NˆKšXÙNˆÎKŒKÈ]NˆLšXÙNˆÍKŒWK[š]ˆ	İ[šYY	Ë[XYÙNˆYYXKœ›Û\›ÙXİ\ØÜš\[Ûˆ	Ğ˜[›™\ˆ™]°èXİ[H[[Z[š[ÈpåÌŒÛHÛÛˆ[HÙ[Z\œ°ëYÚYH[Xœš[Ë‰Ë™X]\™Yˆ˜[ÙKÜXÜÎˆÉÑ\İXİ\˜H™]°èXİ[	Ë	ÎH0åÈŒÛIË	Ğ›ÛÛÈH˜[œÜÜH[˜ÛZYÉË	Ñ\ØØ[\ÈÜˆ›Û[Y[‰×HKBˆÈYˆ	Ø[[ÚYK\İX›[XYIË˜[YNˆ	Ğ[[ÚYHÈÛÚ°ë[ˆİX›[XYÈ\œÛÛ˜[^˜YÉËØ]YÛÜNˆ	Ô\œÛÛ˜[^˜YÜÉË\Nˆ	İ[š]	ËØ[Õ\Nˆ	İ[š]	ËšXÚ[™Ó[ÙNˆ	İ[š]	ËšXÙNˆL‹Œ[š]ˆ	İ[šYY	Ë[XYÙNˆYYXK˜[[ÚYK\ØÜš\[Ûˆ	ĞÛÚ°ë[ˆXÛÜ˜]]›ÈÛÛˆ\İ[\YÈ[ÛÛÜˆH[HYš[šXÚpìÛ‹[HİX]™H]˜X›HHÚY\œ™H[š\ÚX›K‰Ë™X]\™YˆYKÜXÜÎˆÉÍ0åÈÛIË	ÔİX›[XXÚpìÛˆ^[	Ë	Ô™[[›È[X[0ê\™ÚXÛÉË	ĞÚY\œ™H[š\ÚX›I×HKBˆÈYˆ	İÛX]ÙËX[[Z[š[ÉË˜[YNˆ	ÕÛX]ÙÈÈ›İ[H0ê\›ZXØHH[[Z[š[ÉËØ]YÛÜNˆ	Ô\œÛÛ˜[^˜YÜÉË\Nˆ	ÜØØ[IËØ[Õ\Nˆ	ÜØØ[IËšXÚ[™Ó[ÙNˆ	İ[š]	ËšXÙNˆKKšXÙTØØ[\ÎˆŞÈ]NˆKšXÙNˆKHKÈ]Nˆ‹šXÙNˆHKÈ]NˆL‹šXÙNˆËHKÈ]NˆLšXÙNˆ‹HWK[š]ˆ	İ[šYY	Ë[XYÙNˆYYXKÛX]ÙË\ØÜš\[Ûˆ	Ğ›İ[H\Ü]˜HH[[Z[š[ÈÛÛˆÜ˜X˜YÈ0è\Ù\ˆÈİX›[XXÚpìÛˆHÙÛÈH[ÜÜ]Y]0ìÛ‹‰Ë™X]\™YˆYKÜXÜÎˆÉĞ[[Z[š[ÈŒ[ÈÍL[	Ë	Õ\HH›ÜØØHÛÛˆ[ÜÜ]Y]0ìÛ‰Ë	ÑÜ˜X˜YÈ0è\Ù\ˆÈÛÛÜ‰Ë	ÒYX[Y\˜Ú[™\Ú[™É×HKBˆÈYˆ	Û]™\›ÜËXXÜš[XÛÉË˜[YNˆ	Ó]™\›ÜÈXÜ°ë[XÛÜÈÛÛˆÛÜH0è\Ù\‰ËØ]YÛÜNˆ	Ô\œÛÛ˜[^˜YÜÉË\Nˆ	ÜØØ[IËØ[Õ\Nˆ	ÜØØ[IËšXÚ[™Ó[ÙNˆ	İ[š]	ËšXÙNˆ‹KšXÙTØØ[\ÎˆŞÈ]NˆKšXÙNˆ‹HKÈ]NˆL‹šXÙNˆKKÈ]NˆLšXÙNˆKŒˆKÈ]NˆLšXÙNˆMHWK[š]ˆ	İ[šYY	Ë[XYÙNˆYYXK›]™\›ÜË\ØÜš\[Ûˆ	Ó]™\›ÜÈ˜[œÜ\™[\È›Ü]Y[YÜÈ[ˆXÜ°ë[XÛÈÛÛˆ\™ÛÛHY]0è[XØHHÜ˜X˜YÈÈ[\™\ÚpìÛˆUˆ[ÛÛÜ‹‰Ë™X]\™YˆYKÜXÜÎˆÉĞXÜ°ë[XÛÈÜš\İ[Û[IË	ĞÛÜH0è\Ù\ˆ[YÉË	Ğ\™ÛÛHš\]Y[YIË	ÔÚ[Y]\È\œÛÛ˜[^˜Y\É×HKBˆÈYˆ	ÙÛÜœ˜K]XÚÙ\‰Ë˜[YNˆ	ÑÛÜœ˜HXÚÙ\ˆX›XÚ]\šXH\œÛÛ˜[^˜YIËØ]YÛÜNˆ	Ô\œÛÛ˜[^˜YÜÉË\Nˆ	ÜØØ[IËØ[Õ\Nˆ	ÜØØ[IËšXÚ[™Ó[ÙNˆ	İ[š]	ËšXÙNˆKšXÙTØØ[\ÎˆŞÈ]NˆKšXÙNˆHKÈ]Nˆ‹šXÙNˆËHKÈ]NˆL‹šXÙNˆ‹HKÈ]NˆLšXÙNˆKHWK[š]ˆ	İ[šYY	Ë[XYÙNˆYYXK™ÛÜœ˜UXÚÙ\‹\ØÜš\[Ûˆ	ÑÛÜœ˜H\ÈXÚÙ\ˆÛÛˆX[H˜[œÜ\˜X›Kœ›ØÚHZ\İX›HH\˜ÚH›Ü™YÈÈİX›[XYÈœ›Û[‰Ë™X]\™YˆYKÜXÜÎˆÉÓX[H˜[œÜ\˜X›IË	Ô\˜ÚHİX›[XYËØ›Ü™YÉË	ĞZ\İHÛ˜\˜XÚÉË	Õ˜\š[ÜÈÛÛÜ™\É×HKBˆÈYˆ	İ\š™]\Ë\™\Ù[XÚ[Û‰Ë˜[YNˆ	Õ\š™]\ÈH™\Ù[XÚpìÛˆ™[Z][HÛÛˆ˜\›š^ˆU‰ËØ]YÛÜNˆ	Ò[\™[IË\Nˆ	ÜØØ[IËØ[Õ\Nˆ	ÜØØ[IËšXÚ[™Ó[ÙNˆ	İ[š]	ËšXÙNˆNŒšXÙTØØ[\ÎˆŞÈ]NˆLšXÙNˆNŒKÈ]NˆLšXÙNˆÌ‹ŒKÈ]NˆLšXÙNˆKŒWK[š]ˆ	ØØZ˜IË[XYÙNˆYYXK\š™]\Ë\ØÜš\[Ûˆ	Õ\š™]\ÈÛÜœÜ˜]]˜\È[ˆØ\[[˜HÛİXÚ0êHÍLÈÛÛˆ[Z[˜YÈX]HHœš[ÈUˆÙXİÜš^˜YË‰Ë™X]\™YˆYKÜXÜÎˆÉĞÛİXÚ0êHÍLÈÜY\ÛÉË	Ó[Z[˜YÈX]HİX]™IË	Ğœš[ÈUˆÙXİÜš^˜YÉË	ĞØZ˜HHLÍLÌLI×HKBˆÈYˆ	Ù›Y\œË\X›XÚ]\š[ÜÉË˜[YNˆ	Ñ›Y\œÈH›Û[\ÈX›XÚ]\š[ÜÈ[ÛÛÜ‰ËØ]YÛÜNˆ	Ò[\™[IË\Nˆ	ÜØØ[IËØ[Õ\Nˆ	ÜØØ[IËšXÚ[™Ó[ÙNˆ	İ[š]	ËšXÙNˆKŒšXÙTØØ[\ÎˆŞÈ]NˆLšXÙNˆKŒKÈ]NˆLšXÙNˆÎŒKÈ]NˆLšXÙNˆÍKŒWK[š]ˆ	ÛZ[\‰Ë[XYÙNˆYYXK™›Y\œË\ØÜš\[Ûˆ	Õ›Û[\ÈÛÛY\˜ÚX[\È[\™\ÛÜÈ[ˆ\[ÛİXÚ0êHœš[[HHMLÈHÙÈÛÛÜˆ\›ÈH™]\›Ë‰Ë™X]\™YˆYKÜXÜÎˆÉÔ\[ÛİXÚ0êHMLÉË	Ò[\™\ÚpìÛˆÙ™œÙ]YÚ][	Ë	Õ[Xpì[ÈKÍÙšXÚ[ÈÈMIË	Ñ[ÛÛÜˆˆØ\˜\É×HKBˆÈYˆ	Û\Ù\‹XXÜš[XÛÉË˜[YNˆ	Ó]™\›ÈXÜ°ë[XÛÈÛÜYÈ[ˆ0è\Ù\‰ËØ]YÛÜNˆ	Ô\œÛÛ˜[^˜YÜÉË\Nˆ	İ[š]	ËØ[Õ\Nˆ	İ[š]	ËšXÚ[™Ó[ÙNˆ	İ[š]	ËšXÙNˆÍKŒ[š]ˆ	İ[šYY	Ë[XYÙNˆYYXK›\Ù\‹\ØÜš\[Ûˆ	Ñ˜XœšXØXÚpìÛˆHYYYHÛÛˆÙ[XØÚpìÛˆHÛÛÜ‹\Ü\ÛÜˆHÚ\İ[XHHİZ™XÚpìÛ‹‰Ë™X]\™Yˆ˜[ÙKÜXÜÎˆÉĞÛÜH0è\Ù\ˆ[YÉË	Ô\››ÜÈ\İ[˜ÚXYÜ™\ÉË	ĞXÜ°ë[XÛÈ[\ÜYÉ×HKBˆÈYˆ	ÜXØK\\‰Ë˜[YNˆ	ÔXØHTˆ\˜H™YÛØÚ[ÜÉËØ]YÛÜNˆ	Ô\œÛÛ˜[^˜YÜÉË\Nˆ	ÜØØ[IËØ[Õ\Nˆ	ÜØØ[IËšXÚ[™Ó[ÙNˆ	İ[š]	ËšXÙNˆNŒ[š]ˆ	İ[šYY	Ë[XYÙNˆYYXKœXØK\ØÜš\[Ûˆ	ÔXØHHY\ØHÈ\™YÛÛˆğìÙYÛÈTˆ™\šYšXØYÈ\˜HY[°îœËYÛÜÈÈ™Y\Ë‰Ë™X]\™Yˆ˜[ÙKÜXÜÎˆÉĞXÜ°ë[XÛÈH˜\ÙHXY\˜IË	ÔTˆÜ˜X˜YÈÈ[\™\ÛÉË	Ñ\Ùpì[È\œÛÛ˜[^˜YÉ×HKBˆÈYˆ	Û™[Û‰Ë˜[YNˆ	Ó™pìÛˆQ\œÛÛ˜[^˜YÉËØ]YÛÜNˆ	Ô\œÛÛ˜[^˜YÜÉË\Nˆ	İ[š]	ËØ[Õ\Nˆ	İ[š]	ËšXÚ[™Ó[ÙNˆ	İ[š]	ËšXÙNˆMKŒ[š]ˆ	Ù\ÙIË[XYÙNˆYYXK›™[Û‹\ØÜš\[Ûˆ	ÕHœ˜\ÙHÈÙÛÈÛÛ™\YÈ[ˆ[˜HY^˜H[Z[›ÜØHH™pìÛˆ›^X›HH0î›[XHÙ[™\˜XÚpìÛ‹‰Ë™X]\™Yˆ˜[ÙKÜXÜÎˆÉĞ˜\ÙHXÜ°ë[XØH˜[œÜ\™[IË	ÑY[HH[[Y[XÚpìÛˆL•‰Ë	Ñ\Ùpì[ÈHYYYI×HKBˆÈYˆ	ÜİXÚÙ\œÉË˜[YNˆ	ÔİXÚÙ\œÈ\œÛÛ˜[^˜YÜÉËØ]YÛÜNˆ	Ò[\™[IË\Nˆ	İ[š]	ËØ[Õ\Nˆ	İ[š]	ËšXÚ[™Ó[ÙNˆ	İ[š]	ËšXÙNˆŒÍK[š]ˆ	İ[šYY	Ë[XYÙNˆYYXKœİXÚÙ\œË\ØÜš\[Ûˆ	Õš[š[Y\Ú]›È›Ü]Y[YÈ[ˆİX[]ZY\ˆÚ[Y]H\˜H›Û[ØÚ[Û™\ÈH[\\]Y\Ë‰Ë™X]\™Yˆ˜[ÙKÜXÜÎˆÉÕš[š[Y\Ú]›ÉË	ĞÛÜH\œÛÛ˜[^˜YÉË	Ô™\Ú\İ[H[YİXI×HKBˆ‹‹™\İX˜[Ø][ÙÔ›ÙXİËBˆKBˆ›Û[İ[ÛœÎˆÃBˆÈYˆ	Ü›Û[ËLIË]Nˆ	ÒÚ]\\\˜IË^YXœ›İÎˆ	Ô\˜HY]›ÜÈ™YÛØÚ[ÜÉË\ØÜš\[Ûˆ	Ô°ìİ[È
+È\š™]\È
+ÈİXÚÙ\œÈ\˜HXœš\ˆÛÛˆ[˜H[XYÙ[ˆ]YHÙHÚY[H^XK‰ËšXÙNˆNKÛšXÙNˆK˜YÙNˆ	ĞZÜœ˜HŒÉIËXİ]™NˆYHKBˆÈYˆ	Ü›Û[ËL‰Ë]Nˆ	ÕHš]š[˜HX›IË^YXœ›İÎˆ	Ñ\İHY\ÉË\ØÜš\[Ûˆ	Ñ\Ùpì[ÈH[œİ[XÚpìÛˆHš[š[\˜Hš]š[˜H\İHp¬‹‰ËšXÙNˆÎKÛšXÙNˆLK˜YÙNˆ	Ğİ\È[Z]YÉËXİ]™NˆYHKBˆÈYˆ	Ü›Û[ËLÉË]Nˆ	ÔXÚÈ™\šXIË^YXœ›İÎˆ	Ñ]™[ÜÈHXİ]˜XÚ[Û™\ÉË\ØÜš\[Ûˆ	Ô›Û\
+ÈL\š™]\È
+ÈLİXÚÙ\œÈ\˜HØ[\ˆH™[™\‹‰ËšXÙNˆLKÛšXÙNˆM˜YÙNˆ	Ópè\È™[™YÉËXİ]™NˆYHKBˆKBˆ[œ]Z\šY\Îˆ×KBˆÛYP›ØÚÜÎˆÃBˆÈYˆ	ÚÛYKZ[›ÉË\Nˆ	İ^	Ëš\ÚX›NˆYK[š[X][Ûˆ	Û›Û™IËÛÛ[ˆ	Ï]ˆÛ\ÜÏHšÛYKX›ØÚËZÚXÚÙ\ˆ‘ÚYØ\š[ÈÚ\İ[XHš\İX[Ù]•[˜HZ\ÛXHYXHYYHš]š\ˆ[ˆ[˜H˜XÚYK[˜Hš]š[˜HH[˜H^\šY[˜ÚXKÚ•\ØH\İH\ÜXÚ[È\ÙH[Y]Üˆ\˜HÛÛ\ˆØ[\pìX\Ë[Üİ˜\ˆ›ØÙ\ÛÜÈÈ\İXØ\ˆ[ˆÙ\šXÚ[ÈH[\Ü˜YKÜ‰ÈKBˆÈYˆ	ÚÛYK\İÜIË\Nˆ	ÛYYXK]^	Ëš\ÚX›NˆYK[š[X][Ûˆ	Û›Û™IËÚYNˆ	ÛY	Ë]Nˆ	Ñ\ÙpìX[[ÜÈ\˜H]YHH›ÙXØÚpìÛˆ[™ØHÙ[YË‰ËÛÛ[ˆ	Ï‘[\Ùpì[È›È\›Z[˜H[ˆH[[Kˆ›Ø˜[[ÜÈ›ÜÜ˜Ú[Û™\ËX]\šX[\ÈHXØX˜YÜÈ\˜H]YHHYXHYİYH[][™ÈÛÛˆHY\˜HÛÜœ™XİKÜ‰ËÜ˜ÎˆYYXKÛÜšÜÜXÙK[ˆ	Ñ\]Z\ÈHÚYØ\š[˜X˜Z˜[™ÉÈKBˆÈYˆ	ÚÛYKYØ[\IË\Nˆ	ÙØ[\IËš\ÚX›NˆYK[š[X][Ûˆ	Û›Û™IË^[İ]ˆ	ÛX\ÛÛœIËÛÛ[[œÎˆË][\ÎˆÛYYXKœÚİØØ\ÙSX[\\˜KYYXKœÚİØØ\ÙPØ[\ZYÛ‹YYXK›™[Û‹YYXKœÚİØØ\ÙQ\ÚYÛœËYYXK›[Z[›ÜÛËYYXKœ›Û\›ÙXİK›X\
 
-export { assetPath, media };
-
-export const themePresets = [
-  {
-    id: 'default',
-    name: 'Gigaprint base',
-    eyebrow: 'Siempre activo',
-    description: 'Naranja, tinta y crema: el sistema visual principal de Gigaprint.',
-    palette: { accent: '#ea580c', accentDark: '#c2410c', accentSoft: '#fff1e8', secondary: '#171714' },
-    label: 'Gigaprint',
-    decorations: ['âœ¦', '+', 'âˆ'],
-  },
-  {
-    id: 'navidad',
-    name: 'Navidad Gigaprint',
-    eyebrow: 'Temporada navideÃ±a',
-    description: 'Rojo y verde festivos sin perder el naranja de la marca.',
-    palette: { accent: '#c9362f', accentDark: '#982521', accentSoft: '#fde9e5', secondary: '#2f7447' },
-    label: 'Navidad',
-    decorations: ['âœ¦', 'â„', 'âœ§', 'ğŸ„'],
-  },
-  {
-    id: 'milagro',
-    name: 'Fiestas de Milagro',
-    eyebrow: 'Temporada de septiembre',
-    description: 'Verde y dorado inspirados en Milagro, manteniendo el naranja como firma.',
-    palette: { accent: '#2f8f5b', accentDark: '#1e6841', accentSoft: '#e5f4e9', secondary: '#d9a62e' },
-    label: 'Milagro',
-    decorations: ['âœ¦', 'â—', 'âœ§', 'ï¼‹'],
-  },
-  {
-    id: 'black-friday',
-    name: 'Black Friday Gigaprint',
-    eyebrow: 'CampaÃ±a comercial',
-    description: 'Alto contraste para promociones, lanzamientos y temporadas de venta.',
-    palette: { accent: '#ea580c', accentDark: '#c2410c', accentSoft: '#fff1e8', secondary: '#090909' },
-    label: 'Black Friday',
-    decorations: ['%', 'âœ¦', 'â†—', '+'],
-  },
-  {
-    id: 'independencia',
-    name: 'Fiestas de Ecuador',
-    eyebrow: 'Temporada patria',
-    description: 'Verde y dorado para campaÃ±as patrias, conservando la firma naranja de Gigaprint.',
-    palette: { accent: '#0f766e', accentDark: '#115e59', accentSoft: '#e5f6f3', secondary: '#d97706' },
-    label: 'Ecuador',
-    decorations: ['âœ¦', 'â—†', 'âœ§', 'ï¼‹'],
-  },
-  {
-    id: 'verano',
-    name: 'Verano en grande',
-    eyebrow: 'CampaÃ±a de temporada',
-    description: 'Una energÃ­a fresca para activaciones, eventos y productos promocionales.',
-    palette: { accent: '#0891b2', accentDark: '#0e7490', accentSoft: '#e6f8fc', secondary: '#f59e0b' },
-    label: 'Verano',
-    decorations: ['â˜¼', 'âœ¦', 'â‰ˆ', 'ï¼‹'],
-  },
-];
-
-export const initialData = {
-  schemaVersion: 4,
-  catalogVersion: 16,
-  settings: {
-    brand: 'Gigaprint',
-    slogan: 'Tus ideas en grande',
-    phone: '+593 98 765 4321',
-    email: 'hola@gigaprint.ec',
-    address: 'Av. GarcÃ­a Moreno y 9 de Octubre, Milagro, Guayas - Ecuador',
-    whatsapp: '593987654321',
-    quoteWhatsappRoutes: [
-      { id: 'ventas-principal', label: 'Ventas', number: '593987654321', categories: [], active: true, priority: 0 },
-    ],
-    quoteMessageIntro: 'Â¡Hola Gigaprint! Acabo de generar una solicitud de cotizaciÃ³n.',
-    quoteMessageClosing: 'Â¿PodrÃ­an confirmar disponibilidad, precio final y tiempo de entrega?',
-    themePreset: 'default',
-    heroKicker: 'Publicidad que se ve. Marcas que se recuerdan.',
-    heroTitle: 'Haz que tu marca ocupe espacio.',
-    heroText: 'DiseÃ±amos, producimos e instalamos soluciones visuales para que tu negocio se vea profesional desde el primer vistazo.',
-    businessSchedule: DEFAULT_BUSINESS_SCHEDULE,
-  },
-  calculatorSettings: {
-    taxRate: 15,
-    minDimensionCm: 1,
-    maxDimensionCm: 5000,
-    designAdaptationPrice: 5,
-    designFromScratchPrice: 15,
-    eyeletSmallPrice: 0.3,
-    eyeletLargePrice: 0.5,
-    flushCutPrice: 1.0, // Corte al ras opcional
-    disclaimer: 'Los valores son referenciales y pueden variar segÃºn acabados, instalaciÃ³n y condiciones del proyecto.',
-  },
-  services: [
-    { id: 'rotulos', name: 'RÃ³tulos & fachadas', short: 'Tu local empieza a vender desde la calle.', detail: 'RÃ³tulos sencillos, luminosos, corpÃ³reos y fachadas completas con materiales pensados para durar.', icon: 'Building2', image: media.showcaseMampara, tag: 'MÃ¡s solicitado' },
-    { id: 'impresion', name: 'ImpresiÃ³n gran formato', short: 'Que tu campaÃ±a se vea a distancia.', detail: 'Lonas, viniles, microperforados, pendones y todo lo que necesitas para comunicar en grande.', icon: 'Printer', image: media.lona, tag: 'ProducciÃ³n rÃ¡pida' },
-    { id: 'personalizados', name: 'Personalizados & regalos', short: 'Detalles que hacen que te recuerden.', detail: 'LÃ¡mparas, neones, seÃ±alÃ©tica, placas QR y piezas Ãºnicas para regalar o ambientar.', icon: 'Sparkles', image: media.showcaseDesigns, tag: 'A medida' },
-    { id: 'laser', name: 'Corte y grabado lÃ¡ser', short: 'PrecisiÃ³n para ideas con carÃ¡cter.', detail: 'Cortamos y grabamos MDF, acrÃ­lico, madera y otros materiales para proyectos especiales.', icon: 'ScanLine', image: media.laser, tag: 'PrecisiÃ³n' },
-  ],
-  products: [
-    { id: 'lona', name: 'Lona publicitaria econÃ³mica / estÃ¡ndar (13 oz)', category: 'Gran formato', type: 'm2', calcType: 'm2', pricingMode: 'area', price: 5.0, price_inst: 8.5, price_corp: 4.50, unit: 'mÂ²', image: media.lona, description: 'Lona resistente para fachadas, eventos y campaÃ±as. Alta resoluciÃ³n full color.', featured: true, specs: ['13 oz / 510 g', 'Full color CMYK', 'Acabado mate o brillante', 'CÃ¡lculo exacto por mÂ²'] },
-    { id: 'vinil', name: 'Vinilo adhesivo personalizado', category: 'Gran formato', type: 'm2', calcType: 'm2', pricingMode: 'area', price: 9.5, price_inst: 14.0, price_corp: 8.75, unit: 'mÂ²', image: media.vinil, description: 'Vinilo de impresiÃ³n y corte para vitrinas, seÃ±alizaciÃ³n y vehÃ­culos.', featured: true, specs: ['Corte opcional', 'Interior / exterior', 'AplicaciÃ³n profesional', 'CÃ¡lculo exacto por mÂ²'] },
-    { id: 'banner-a', name: 'Banner en A (Porta-banner)', category: 'Gran formato', type: 'm2', calcType: 'm2', pricingMode: 'area', price: 12.0, unit: 'mÂ²', image: media.stand, description: 'Soporte publicitario de doble cara tipo A ideal para puntos de venta y ferias.', featured: false, specs: ['Estructura de aluminio', 'Lona intercambiable', 'Doble cara'] },
-    { id: 'banner-arana', name: 'Banner AraÃ±a (TensiÃ³n en X 60x160cm)', category: 'Gran formato', type: 'scale', calcType: 'scale', pricingMode: 'unit', price: 18.0, unit: 'unidad', image: media.bannerX, description: 'Display con estructura de fibra tipo araÃ±a y lona tensada sin arrugas con ojales en las 4 esquinas.', featured: true, specs: ['Estructura ligera', 'Lona de alta tensiÃ³n', 'FÃ¡cil armado', 'Incluye estuche'] },
-    { id: 'vinil-microperforado', name: 'Vinil Microperforado para Vitrinas y VehÃ­culos', category: 'Gran formato', type: 'm2', calcType: 'm2', pricingMode: 'area', price: 12.5, price_inst: 16.0, unit: 'mÂ²', image: media.vinilMicro, description: 'VisiÃ³n unidireccional que permite ver hacia afuera manteniendo privacidad y publicidad desde el exterior.', featured: true, specs: ['VisiÃ³n 1 vÃ­a', 'ProtecciÃ³n solar UV', 'Ideal locales y autos', 'CÃ¡lculo por mÂ²'] },
-    { id: 'vinil-esmerilado', name: 'Vinil Esmerilado / Frosted Glass para Oficinas', category: 'Gran formato', type: 'm2', calcType: 'm2', pricingMode: 'area', price: 14.0, price_inst: 18.5, unit: 'mÂ²', image: media.vinilEsmerilado, description: 'Elegante film traslÃºcido para mamparas de vidrio con cortes geomÃ©tricos y logotipos corporativos.', featured: true, specs: ['Privacidad elegante', 'Corte computarizado', 'FÃ¡cil limpieza', 'Acabado arenado'] },
-    { id: 'rotulos', name: 'RÃ³tulos Publicitarios', category: 'RÃ³tulos', type: 'm2', calcType: 'm2', pricingMode: 'area', price: 18.0, price_inst: 22.0, unit: 'mÂ²', image: media.showcaseMampara, description: 'SeÃ±alÃ©tica exterior e interior de alta durabilidad en vinilo sobre rÃ­gidos.', featured: true, specs: ['Interior y exterior', 'Resistente al sol y lluvia', 'InstalaciÃ³n disponible'] },
-    { id: 'corporeo', name: 'Letras 3D CorpÃ³reas en AcrÃ­lico y Relieve', category: 'RÃ³tulos', type: 'm2', calcType: 'm2', pricingMode: 'area', price: 35.0, unit: 'mÂ²', image: media.letras3D, description: 'Letras y logos en relieve cortados con precisiÃ³n lÃ¡ser en acrÃ­lico, PVC o MDF con iluminaciÃ³n LED.', featured: true, specs: ['AcrÃ­lico, PVC o MDF', 'Corte lÃ¡ser pulido', 'IluminaciÃ³n LED opcional', 'Pernos distanciadores'] },
-    { id: 'luminoso', name: 'Letreros Luminosos (Lightbox)', category: 'RÃ³tulos', type: 'm2', calcType: 'm2', pricingMode: 'area', price: 45.0, price_inst: 55.0, unit: 'mÂ²', image: media.luminoso, description: 'Cajas de luz con iluminaciÃ³n LED de bajo consumo y marco de aluminio anodizado.', featured: true, specs: ['IluminaciÃ³n LED uniforme', 'Estructura de aluminio', 'AcrÃ­lico difusor'] },
-    { id: 'rollup', name: 'Roll Up (Banner RetrÃ¡ctil)', category: 'Gran formato', type: 'scale', calcType: 'scale', pricingMode: 'unit', price: 45.0, priceScales: [{ qty: 1, price: 45.0 }, { qty: 3, price: 42.0 }, { qty: 5, price: 39.0 }, { qty: 10, price: 35.0 }], unit: 'unidad', image: media.rollupProduct, description: 'Banner retrÃ¡ctil de aluminio 85Ã—200 cm con tela semirrÃ­gida antibrillo.', featured: false, specs: ['Estructura retrÃ¡ctil', '85 Ã— 200 cm', 'Bolso de transporte incluido', 'Escalas por volumen'] },
-    { id: 'almohada-sublimada', name: 'Almohada / CojÃ­n Sublimado Personalizado', category: 'Personalizados', type: 'unit', calcType: 'unit', pricingMode: 'unit', price: 12.0, unit: 'unidad', image: media.almohada, description: 'CojÃ­n decorativo con estampado full color de alta definiciÃ³n, tela suave lavable y cierre invisible.', featured: true, specs: ['40 Ã— 40 cm', 'SublimaciÃ³n textil HD', 'Relleno antialÃ©rgico', 'Cierre invisible'] },
-    { id: 'tomatodo-aluminio', name: 'Tomatodo / Botella TÃ©rmica de Aluminio', category: 'Personalizados', type: 'scale', calcType: 'scale', pricingMode: 'unit', price: 9.5, priceScales: [{ qty: 1, price: 9.5 }, { qty: 6, price: 8.5 }, { qty: 12, price: 7.5 }, { qty: 50, price: 6.5 }], unit: 'unidad', image: media.tomatodo, description: 'Botella deportiva de aluminio con grabado lÃ¡ser o sublimaciÃ³n de logo y mosquetÃ³n.', featured: true, specs: ['Aluminio 600ml / 750ml', 'Tapa a rosca con mosquetÃ³n', 'Grabado lÃ¡ser o color', 'Ideal merchandising'] },
-    { id: 'llaveros-acrilico', name: 'Llaveros AcrÃ­licos con Corte LÃ¡ser', category: 'Personalizados', type: 'scale', calcType: 'scale', pricingMode: 'unit', price: 2.5, priceScales: [{ qty: 1, price: 2.5 }, { qty: 12, price: 1.8 }, { qty: 50, price: 1.2 }, { qty: 100, price: 0.95 }], unit: 'unidad', image: media.llaveros, description: 'Llaveros transparentes troquelados en acrÃ­lico con argolla metÃ¡lica y grabado o impresiÃ³n UV full color.', featured: true, specs: ['AcrÃ­lico cristal 3mm', 'Corte lÃ¡ser pulido', 'Argolla niquelada', 'Siluetas personalizadas'] },
-    { id: 'gorra-trucker', name: 'Gorra Trucker Publicitaria Personalizada', category: 'Personalizados', type: 'scale', calcType: 'scale', pricingMode: 'unit', price: 8.5, priceScales: [{ qty: 1, price: 8.5 }, { qty: 6, price: 7.5 }, { qty: 12, price: 6.5 }, { qty: 50, price: 5.5 }], unit: 'unidad', image: media.gorraTrucker, description: 'Gorra tipo trucker con malla transpirable, broche ajustable y parche bordado o sublimado frontal.', featured: true, specs: ['Malla transpirable', 'Parche HD sublimado/bordado', 'Ajuste snapback', 'Varios colores'] },
-    { id: 'tarjetas-presentacion', name: 'Tarjetas de PresentaciÃ³n Premium con Barniz UV', category: 'Imprenta', type: 'scale', calcType: 'scale', pricingMode: 'unit', price: 18.0, priceScales: [{ qty: 100, price: 18.0 }, { qty: 500, price: 32.0 }, { qty: 1000, price: 45.0 }], unit: 'caja', image: media.tarjetas, description: 'Tarjetas corporativas en cartulina couchÃ© 350g con laminado mate y brillo UV sectorizado.', featured: true, specs: ['CouchÃ© 350g grueso', 'Laminado mate suave', 'Brillo UV sectorizado', 'Caja de 100/500/1000 u'] },
-    { id: 'flyers-publicitarios', name: 'Flyers y Volantes Publicitarios Full Color', category: 'Imprenta', type: 'scale', calcType: 'scale', pricingMode: 'unit', price: 25.0, priceScales: [{ qty: 500, price: 25.0 }, { qty: 1000, price: 38.0 }, { qty: 2500, price: 75.0 }], unit: 'millar', image: media.flyers, description: 'Volantes comerciales impresos en papel couchÃ© brillante de 150g a todo color tiro y retiro.', featured: true, specs: ['Papel couchÃ© 150g', 'ImpresiÃ³n offset digital', 'TamaÃ±o 1/4 oficio o A5', 'Full color 2 caras'] },
-    { id: 'laser-acrilico', name: 'Letrero acrÃ­lico cortado en lÃ¡ser', category: 'Personalizados', type: 'unit', calcType: 'unit', pricingMode: 'unit', price: 35.0, unit: 'unidad', image: media.laser, description: 'FabricaciÃ³n a medida con selecciÃ³n de color, espesor y sistema de sujeciÃ³n.', featured: false, specs: ['Corte lÃ¡ser pulido', 'Pernos distanciadores', 'AcrÃ­lico importado'] },
-    { id: 'placa-qr', name: 'Placa QR para negocios', category: 'Personalizados', type: 'scale', calcType: 'scale', pricingMode: 'unit', price: 18.0, unit: 'unidad', image: media.placa, description: 'Placa de mesa o pared con cÃ³digo QR verificado para menÃºs, pagos o redes.', featured: false, specs: ['AcrÃ­lico y base madera', 'QR grabado o impreso', 'DiseÃ±o personalizado'] },
-    { id: 'neon', name: 'NeÃ³n LED personalizado', category: 'Personalizados', type: 'unit', calcType: 'unit', pricingMode: 'unit', price: 95.0, unit: 'desde', image: media.neon, description: 'Tu frase o logo convertido en una pieza luminosa de neÃ³n flexible de Ãºltima generaciÃ³n.', featured: false, specs: ['Base acrÃ­lica transparente', 'Fuente de alimentaciÃ³n 12V', 'DiseÃ±o a medida'] },
-    { id: 'stickers', name: 'Stickers personalizados', category: 'Imprenta', type: 'unit', calcType: 'unit', pricingMode: 'unit', price: 0.35, unit: 'unidad', image: media.stickers, description: 'Vinil adhesivo troquelado en cualquier silueta para promociones y empaques.', featured: false, specs: ['Vinil adhesivo', 'Corte personalizado', 'Resistente al agua'] },
-  ].concat(estebanCatalogProducts),
-  promotions: [
-    { id: 'promo-1', title: 'Kit apertura', eyebrow: 'Para nuevos negocios', description: 'RÃ³tulo + tarjetas + stickers para abrir con una imagen que se sienta tuya.', price: 189, oldPrice: 245, badge: 'Ahorra 23%', active: true },
-    { id: 'promo-2', title: 'Tu vitrina habla', eyebrow: 'Este mes', description: 'DiseÃ±o e instalaciÃ³n de vinil para vitrina hasta 4 mÂ².', price: 79, oldPrice: 105, badge: 'Cupo limitado', active: true },
-    { id: 'promo-3', title: 'Pack feria', eyebrow: 'Eventos y activaciones', description: 'Roll up + 500 tarjetas + 100 stickers para salir a vender.', price: 129, oldPrice: 168, badge: 'MÃ¡s vendido', active: true },
-  ],
-  inquiries: [],
-  homeBlocks: [
-    { id: 'home-intro', type: 'text', visible: true, animation: 'none', content: '<div class="home-block-kicker">Gigaprint / sistema visual</div><h2>Una misma idea puede vivir en una fachada, una vitrina y una experiencia.</h2><p>Usa este espacio desde el editor para contar campaÃ±as, mostrar procesos o destacar un servicio de temporada.</p>' },
-    { id: 'home-story', type: 'media-text', visible: true, animation: 'none', side: 'left', title: 'DiseÃ±amos para que la producciÃ³n tenga sentido.', content: '<p>El diseÃ±o no termina en la pantalla. Probamos proporciones, materiales y acabados para que tu idea llegue al mundo con la fuerza correcta.</p>', src: media.workspace, alt: 'Equipo de Gigaprint trabajando' },
-    { id: 'home-gallery', type: 'gallery', visible: true, animation: 'none', layout: 'masonry', columns: 3, items: [media.showcaseMampara, media.showcaseCampaign, media.neon, media.showcaseDesigns, media.luminoso, media.rollupProduct].map((src) => ({ src, alt: 'Trabajo real de publicidad y producciÃ³n Gigaprint' })) },
-  ],
-};
-
-export const categories = Array.from(new Set([...catalogCategories, 'Gran formato', 'RÃ³tulos', 'Personalizados', 'Imprenta']));
-
-export function money(value) {
-  return new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(value || 0);
-}
+Ü˜ÊHOˆ
+ÈÜ˜Ë[ˆ	Õ˜X˜Z›È™X[HX›XÚYYH›ÙXØÚpìÛˆÚYØ\š[	ÈJJHKBˆKBŸNÃBƒB™^ÜÛÛœİØ]YÛÜšY\ÈH\œ˜^K™œ›ÛJ™]ÈÙ]
+Ë‹‹˜Ø][ÙĞØ]YÛÜšY\Ë	ÑÜ˜[ˆ›Ü›X]ÉË	Ô°ìİ[ÜÉË	Ô\œÛÛ˜[^˜YÜÉË	Ò[\™[I×JJNÃBƒB™^Ü[˜İ[Ûˆ[Û™^J˜[YJHÃBˆ™]\›ˆ™]È[“[X™\‘›Ü›X]
+	Ù\ËQPÉËÈİ[Nˆ	Øİ\œ™[˜ŞIËİ\œ™[˜ŞNˆ	ÕTÑ	ËX^[][Qœ˜Xİ[Û‘YÚ]ÎˆˆJK™›Ü›X]
+˜[YH
+NÃBŸCB

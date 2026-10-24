@@ -1,300 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import {
-  Layout,
-  Eye,
-  Printer,
-  Scissors,
-  CheckSquare,
-  Package,
-  CheckCircle2,
-  Clock,
-  MapPin,
-  Calendar,
-  MessageCircle,
-  AlertCircle,
-  FileCheck,
-  ShieldCheck,
-  Building2,
-  Sparkles,
-  ExternalLink,
-  ChevronRight,
-  Search,
-  ArrowRight,
-  Phone,
-  QrCode
-} from 'lucide-react';
-import { calculateLiveScheduleStatus } from '../../lib/scheduleEngine';
-import {
-  loadPOSStore,
-  fetchPublicPOSOrder,
-  getOrderPublicTracking,
-  submitPublicArtDecision
-} from '../../lib/posStore';
-import { useToast } from '../../components/studio/Toast';
-import { useSite } from '../../store';
-import { buildWhatsAppUrl, resolveQuoteWhatsAppRoute } from '../../lib/whatsapp';
-
-export function OrderTrackingPage() {
-  const toast = useToast();
-  const { data } = useSite();
-  const supportNumber = resolveQuoteWhatsAppRoute(data.settings, [])?.number;
-  const { trackingToken: urlToken } = useParams();
-  const navigate = useNavigate();
-  const [store, setStore] = useState(loadPOSStore());
-  const [searchQuery, setSearchQuery] = useState(urlToken || '');
-  const [activeSearchToken, setActiveSearchToken] = useState(urlToken || '');
-  const [isApproving, setIsApproving] = useState(false);
-  const [approvalName, setApprovalName] = useState('');
-  const [approvedSuccess, setApprovedSuccess] = useState(false);
-
-  useEffect(() => {
-    if (!activeSearchToken) return;
-    fetchPublicPOSOrder(activeSearchToken)
-      .then(setStore)
-      .catch(() => setStore({ ...loadPOSStore(), orders: [], orderItems: [], advisors: [] }));
-  }, [activeSearchToken]);
-
-  useEffect(() => {
-    if (urlToken) {
-      setActiveSearchToken(urlToken);
-      setSearchQuery(urlToken);
-    }
-  }, [urlToken]);
-
-  const orderData = useMemo(() => {
-    if (!activeSearchToken) return null;
-    return getOrderPublicTracking(store, activeSearchToken);
-  }, [store, activeSearchToken]);
-
-  const liveSchedule = useMemo(() => {
-    return calculateLiveScheduleStatus();
-  }, []);
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    const clean = searchQuery.trim();
-    if (!clean) return;
-    setActiveSearchToken(clean);
-  };
-
-  const stages = [
-    { id: 'preprensa', label: '1. Dise√±o & Pre-prensa', icon: Layout, desc: 'Revisi√≥n t√©cnica de archivos y preparaci√≥n para m√°quinas' },
-    { id: 'aprobacion_arte', label: '2. Aprobaci√≥n de Boceto', icon: Eye, desc: 'Esperando visto bueno de arte o boceto digital' },
-    { id: 'impresion', label: '3. En Cola de Impresi√≥n', icon: Printer, desc: 'Imprimiendo en plotter gran formato / cama plana' },
-    { id: 'acabados', label: '4. Acabados & Confecci√≥n', icon: Scissors, desc: 'Ojales, dobladillos, laminado o corte' },
-    { id: 'control_calidad', label: '5. Control de Calidad', icon: CheckSquare, desc: 'Inspecci√≥n de color, medidas y embalaje' },
-    { id: 'listo', label: '6. Listo para Retirar', icon: Package, desc: 'Disponible en mostrador o preparado para despacho' },
-    { id: 'entregado', label: '7. Entregado con √âxito', icon: CheckCircle2, desc: 'Trabajo retirado o entregado a satisfacci√≥n' }
-  ];
-
-  const currentStageIndex = orderData ? stages.findIndex((s) => s.id === orderData.productionStage) : 0;
-  const isReady = orderData?.productionStage === 'listo' || orderData?.productionStage === 'entregado';
-
-  const handleApproveArt = async (e) => {
-    e.preventDefault();
-    if (!approvalName.trim()) {
-      toast.warning('Por favor ingresa tu nombre para registrar la aprobaci√≥n.');
-      return;
-    }
-
-    const order = (store.orders || []).find(
-      (o) => String(o.trackingToken).toLowerCase() === String(activeSearchToken).toLowerCase() || String(o.orderNumber) === String(activeSearchToken)
-    );
-
-    if (!order) return;
-
-    const res = await submitPublicArtDecision(order.trackingToken || activeSearchToken, {
-      approverName: approvalName.trim(),
-      decision: 'approved',
-    });
-    if (res.ok) {
-      setStore(res.updatedStore);
-      setApprovedSuccess(true);
-      setIsApproving(false);
-      toast.success('¬°Aprobaci√≥n de arte registrada con √©xito!');
-    }
-  };
-
-  return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '40px 16px', color: 'var(--ink)' }}>
-      <div style={{ maxWidth: '820px', margin: '0 auto', display: 'grid', gap: '24px' }}>
-        
-        {/* Brand Header */}
-        <div style={{ textAlign: 'center', display: 'grid', gap: '12px', justifyItems: 'center' }}>
-          <Link to="/" style={{ textDecoration: 'none' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'var(--paper)', padding: '8px 24px', borderRadius: '999px', border: '1px solid var(--line)', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
-              <span style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--orange)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '16px' }}>G</span>
-              <span style={{ fontSize: '16px', fontWeight: 900, color: 'var(--ink)' }}>Gigaprint ‚Ä¢ Seguimiento de Trabajos</span>
-            </div>
-          </Link>
-          <p style={{ margin: 0, fontSize: '14px', color: 'var(--muted)', maxWidth: '480px' }}>
-            Consulta el estado en vivo de tu orden de impresi√≥n, revisa bocetos y verifica la fecha de entrega en taller.
-          </p>
-        </div>
-
-        {/* Global Search Bar */}
-        <div style={{ background: 'var(--paper)', borderRadius: '20px', border: '1px solid var(--line)', padding: '16px 20px', boxShadow: '0 10px 25px rgba(0,0,0,0.02)' }}>
-          <form onSubmit={handleSearchSubmit} className="tracking-search-form" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', flex: '1', minWidth: '240px' }}>
-              <Search size={18} style={{ position: 'absolute', left: '14px', top: '14px', color: 'var(--muted)' }} />
-              <input
-                type="text"
-                className="pos-input"
-                placeholder="Ingresa tu N¬∫ de Orden (ej. 61930) o C√≥digo de Seguimiento..."
-                style={{ paddingLeft: '42px', fontSize: '14px', height: '46px', borderRadius: '12px' }}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <button
-              type="submit"
-              className="pos-submit-order-btn"
-              style={{ padding: '0 24px', height: '46px', fontSize: '14px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-            >
-              <Search size={16} /> Consultar Estado
-            </button>
-          </form>
-        </div>
-
-        {/* No Order / Empty State */}
-        {!orderData && (
-          <div style={{ background: 'var(--paper)', borderRadius: '20px', border: '1px solid var(--line)', padding: '40px 24px', textAlign: 'center', display: 'grid', gap: '16px', justifyItems: 'center' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--orange-soft)', color: 'var(--orange)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <QrCode size={32} />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '20px', fontWeight: 900, margin: '0 0 6px' }}>
-                {activeSearchToken ? 'No encontramos una orden con ese c√≥digo' : 'Ingresa tu n√∫mero de orden arriba'}
-              </h2>
-              <p style={{ fontSize: '13px', color: 'var(--muted)', margin: 0, maxWidth: '420px', lineHeight: '1.5' }}>
-                {activeSearchToken
-                  ? `Verifica que el n√∫mero "${activeSearchToken}" sea correcto. Tambi√©n puedes escanear el c√≥digo QR impreso en tu comprobante.`
-                  : 'Encuentra el n√∫mero de 5 d√≠gitos en tu comprobante f√≠sico o en el mensaje de WhatsApp que te envi√≥ tu asesora.'}
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <a
-                href={buildWhatsAppUrl(supportNumber, 'Hola Gigaprint, deseo consultar el estado de mi pedido.')}
-                target="_blank"
-                rel="noreferrer"
-                style={{ textDecoration: 'none', padding: '10px 18px', borderRadius: '10px', background: '#25d366', color: '#fff', fontSize: '13px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-              >
-                <MessageCircle size={16} /> Consultar por WhatsApp
-              </a>
-              <Link
-                to="/cotizador"
-                style={{ textDecoration: 'none', padding: '10px 18px', borderRadius: '10px', background: 'var(--bg)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: '13px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-              >
-                Cotizar Nuevo Trabajo ‚ûî
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* ORDER FOUND: FULL 7-STAGE STEPPER & DETAILS */}
-        {orderData && (
-          <div style={{ display: 'grid', gap: '20px' }}>
-            
-            {/* Main Order Status Header Card */}
-            <div style={{ background: 'var(--paper)', borderRadius: '20px', border: '1px solid var(--line)', padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', display: 'grid', gap: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', flexWrap: 'wrap', gap: '12px' }}>
-                <div>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    ORDEN DE PRODUCCI√ìN #{orderData.orderNumber}
-                  </span>
-                  <h1 style={{ margin: '4px 0 0', fontSize: '24px', fontWeight: 900, color: 'var(--ink)' }}>
-                    {orderData.jobName}
-                  </h1>
-                  <span style={{ fontSize: '14px', color: 'var(--muted)', fontWeight: 600 }}>
-                    Cliente: <b>{orderData.customerName}</b> ‚Ä¢ Asesora: <b>{orderData.advisorName}</b>
-                  </span>
-                </div>
-
-                <div style={{
-                  padding: '8px 16px',
-                  borderRadius: '999px',
-                  background: isReady ? '#dcfce7' : 'var(--orange-soft)',
-                  color: isReady ? '#166534' : 'var(--orange-dark)',
-                  fontSize: '13px',
-                  fontWeight: 900,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}>
-                  <Clock size={15} />
-                  <span>{stages.find((s) => s.id === orderData.productionStage)?.label || orderData.productionStage}</span>
-                </div>
-              </div>
-
-              {/* Delivery Estimate Box */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', background: 'var(--bg)', padding: '16px', borderRadius: '14px', border: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Calendar size={20} style={{ color: 'var(--orange)' }} />
-                  <div>
-                    <small style={{ fontSize: '11px', color: 'var(--muted)', display: 'block', fontWeight: 800 }}>FECHA ESTIMADA DE ENTREGA</small>
-                    <strong style={{ fontSize: '15px', color: 'var(--ink)' }}>{orderData.deliveryDate || 'Por confirmar'}</strong>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <ShieldCheck size={20} style={{ color: '#16a34a' }} />
-                  <div>
-                    <small style={{ fontSize: '11px', color: 'var(--muted)', display: 'block', fontWeight: 800 }}>ESTADO DE PAGO</small>
-                    <strong style={{ fontSize: '14px', color: orderData.balanceDue > 0 ? '#d97706' : '#16a34a' }}>
-                      {orderData.balanceDue > 0 ? `Abonado $${Number(orderData.depositAmount).toFixed(2)} (Saldo: $${Number(orderData.balanceDue).toFixed(2)})` : '100% Pagado'}
-                    </strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* 7-Stage Visual Progress Stepper */}
-              <div style={{ display: 'grid', gap: '12px' }}>
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 900, color: 'var(--ink)' }}>Progreso en Taller</h3>
-                <div style={{ display: 'grid', gap: '10px' }}>
-                  {stages.map((st, idx) => {
-                    const isPassed = idx < currentStageIndex;
-                    const isCurrent = idx === currentStageIndex;
-                    const Icon = st.icon;
-
-                    return (
-                      <div
-                        key={st.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '14px',
-                          padding: '12px 16px',
-                          borderRadius: '12px',
-                          background: isCurrent ? 'var(--paper)' : (isPassed ? '#f0fdf4' : 'var(--bg)'),
-                          border: isCurrent ? '2px solid var(--orange)' : (isPassed ? '1px solid #bbf7d0' : '1px solid var(--line)'),
-                          opacity: isPassed || isCurrent ? 1 : 0.65
-                        }}
-                      >
-                        <div style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '10px',
-                          background: isCurrent ? 'var(--orange)' : (isPassed ? '#16a34a' : 'var(--line)'),
-                          color: '#fff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <Icon size={18} />
-                        </div>
-
-                        <div style={{ flex: '1' }}>
-                          <strong style={{ fontSize: '13px', color: isCurrent ? 'var(--orange-dark)' : (isPassed ? '#166534' : 'var(--ink)'), display: 'block' }}>
-                            {st.label}
-                          </strong>
-                          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{st.desc}</span>
-                        </div>
-
-                        <div>
-                          {isPassed && <CheckCircle2 size={18} style={{ color: '#16a34a' }} />}
-                          {isCurrent && <span style={{ fontSize: '11px', fontWeight: 900, color: 'var(--orange)', background: 'var(--orange-soft)', padding: '2px 8px', borderRadius: '999px' }}>EN CURSO</span>}
+Y™Áäx-ÆÈ‹j◊ù¢Îi∫⁄+äßj[hëÈ‹¢ÈÌÔü|NãZñã≠¶Îeäw¨›•µ¡Ω…–ÅIïÖç–∞ÅÏÅ’ÕïM—Ö—î∞Å’Õïôôïç–∞Å’Õï5ïµºÅÙÅô…Ω¥Äù…ïÖç–úÏ4)•µ¡Ω…–ÅÏÅ’ÕïAÖ…ÖµÃ∞Å’Õï9ÖŸ•ùÖ—î∞Å1•π¨ÅÙÅô…Ω¥Äù…ïÖç–µ…Ω’—ï»µëΩ¥úÏ4)•µ¡Ω…–ÅÏ4(ÄÅ1ÖÂΩ’–∞4(ÄÅÂî∞4(ÄÅA…•π—ï»∞4(ÄÅMç•ÕÕΩ…Ã∞4(ÄÅ°ïç≠M≈’Ö…î∞4(ÄÅAÖç≠Öùî∞4(ÄÅ°ïç≠•…ç±î»∞4(ÄÅ±Ωç¨∞4(ÄÅ5Ö¡A•∏∞4(ÄÅÖ±ïπëÖ»∞4(ÄÅ5ïÕÕÖùï•…ç±î∞4(ÄÅ±ï…—•…ç±î∞4(ÄÅ•±ï°ïç¨∞4(ÄÅM°•ï±ë°ïç¨∞4(ÄÅ	’•±ë•πú»∞4(ÄÅM¡Ö…≠±ïÃ∞4(ÄÅ·—ï…πÖ±1•π¨∞4(ÄÅ°ïŸ…ΩπI•ù°–∞4(ÄÅMïÖ…ç†∞4(ÄÅ……Ω›I•ù°–∞4(ÄÅA°Ωπî∞4(ÄÅE…Ωëî4)ÙÅô…Ω¥Äù±’ç•ëîµ…ïÖç–úÏ4)•µ¡Ω…–ÅÏÅçÖ±ç’±Ö—ï1•ŸïMç°ïë’±ïM—Ö—’ÃÅÙÅô…Ω¥Äú∏∏º∏∏Ω±•àΩÕç°ïë’±ïπù•πîúÏ4)•µ¡Ω…–ÅÏ4(ÄÅ±ΩÖëA=MM—Ω…î∞(ÄÅôï—ç°A’â±•çA=M=…ëï»∞(ÄÅùï—=…ëï…A’â±•çQ…Öç≠•πú∞(ÄÅÕ’âµ•—A’â±•ç…—ïç•Õ•Ω∏)ÙÅô…Ω¥Äú∏∏º∏∏Ω±•àΩ¡ΩÕM—Ω…îúÏ4)•µ¡Ω…–ÅÏÅ’ÕïQΩÖÕ–ÅÙÅô…Ω¥Äú∏∏º∏∏ΩçΩµ¡Ωπïπ—ÃΩÕ—’ë•ºΩQΩÖÕ–úÏ)•µ¡Ω…–ÅÏÅ’ÕïM•—îÅÙÅô…Ω¥Äú∏∏º∏∏ΩÕ—Ω…îúÏ)•µ¡Ω…–ÅÏÅâ’•±ë]°Ö—Õ¡¡U…∞∞Å…ïÕΩ±ŸïE’Ω—ï]°Ö—Õ¡¡IΩ’—îÅÙÅô…Ω¥Äú∏∏º∏∏Ω±•àΩ›°Ö—ÕÖ¡¿úÏ(4)ï·¡Ω…–Åô’πç—•Ω∏Å=…ëï…Q…Öç≠•πùAÖùî†§ÅÏ(ÄÅçΩπÕ–Å—ΩÖÕ–ÄÙÅ’ÕïQΩÖÕ–†§Ï(ÄÅçΩπÕ–ÅÏÅëÖ—ÑÅÙÄÙÅ’ÕïM•—î†§Ï(ÄÅçΩπÕ–ÅÕ’¡¡Ω…—9’µâï»ÄÙÅ…ïÕΩ±ŸïE’Ω—ï]°Ö—Õ¡¡IΩ’—î°ëÖ—ÑπÕï——•πùÃ∞Åmt§¸ππ’µâï»Ï(ÄÅçΩπÕ–ÅÏÅ—…Öç≠•πùQΩ≠ï∏ËÅ’…±QΩ≠ï∏ÅÙÄÙÅ’ÕïAÖ…ÖµÃ†§Ï4(ÄÅçΩπÕ–ÅπÖŸ•ùÖ—îÄÙÅ’Õï9ÖŸ•ùÖ—î†§Ï4(ÄÅçΩπÕ–ÅmÕ—Ω…î∞ÅÕï—M—Ω…ïtÄÙÅ’ÕïM—Ö—î°±ΩÖëA=MM—Ω…î†§§Ï4(ÄÅçΩπÕ–ÅmÕïÖ…ç°E’ï…‰∞ÅÕï—MïÖ…ç°E’ï…ÂtÄÙÅ’ÕïM—Ö—î°’…±QΩ≠ï∏ÅÒÄúú§Ï4(ÄÅçΩπÕ–ÅmÖç—•ŸïMïÖ…ç°QΩ≠ï∏∞ÅÕï—ç—•ŸïMïÖ…ç°QΩ≠ïπtÄÙÅ’ÕïM—Ö—î°’…±QΩ≠ï∏ÅÒÄúú§Ï4(ÄÅçΩπÕ–Åm•Õ¡¡…ΩŸ•πú∞ÅÕï—%Õ¡¡…ΩŸ•πùtÄÙÅ’ÕïM—Ö—î°ôÖ±Õî§Ï4(ÄÅçΩπÕ–ÅmÖ¡¡…ΩŸÖ±9Öµî∞ÅÕï—¡¡…ΩŸÖ±9ÖµïtÄÙÅ’ÕïM—Ö—î†úú§Ï4(ÄÅçΩπÕ–ÅmÖ¡¡…ΩŸïëM’ççïÕÃ∞ÅÕï—¡¡…ΩŸïëM’ççïÕÕtÄÙÅ’ÕïM—Ö—î°ôÖ±Õî§Ï4(4(ÄÅ’Õïôôïç–††§ÄÙ¯ÅÏ(ÄÄÄÅ•òÄ†ÖÖç—•ŸïMïÖ…ç°QΩ≠ï∏§Å…ï—’…∏Ï(ÄÄÄÅôï—ç°A’â±•çA=M=…ëï»°Öç—•ŸïMïÖ…ç°QΩ≠ï∏§(ÄÄÄÄÄÄπ—°ï∏°Õï—M—Ω…î§(ÄÄÄÄÄÄπçÖ—ç†††§ÄÙ¯ÅÕï—M—Ω…î°ÏÄ∏∏π±ΩÖëA=MM—Ω…î†§∞ÅΩ…ëï…ÃËÅmt∞ÅΩ…ëï…%—ïµÃËÅmt∞ÅÖëŸ•ÕΩ…ÃËÅmtÅÙ§§Ï(ÄÅÙ∞ÅmÖç—•ŸïMïÖ…ç°QΩ≠ïπt§Ï(4(ÄÅ’Õïôôïç–††§ÄÙ¯ÅÏ4(ÄÄÄÅ•òÄ°’…±QΩ≠ï∏§ÅÏ4(ÄÄÄÄÄÅÕï—ç—•ŸïMïÖ…ç°QΩ≠ï∏°’…±QΩ≠ï∏§Ï4(ÄÄÄÄÄÅÕï—MïÖ…ç°E’ï…‰°’…±QΩ≠ï∏§Ï4(ÄÄÄÅÙ4(ÄÅÙ∞Åm’…±QΩ≠ïπt§Ï4(4(ÄÅçΩπÕ–ÅΩ…ëï…Ö—ÑÄÙÅ’Õï5ïµº††§ÄÙ¯ÅÏ4(ÄÄÄÅ•òÄ†ÖÖç—•ŸïMïÖ…ç°QΩ≠ï∏§Å…ï—’…∏Åπ’±∞Ï4(ÄÄÄÅ…ï—’…∏Åùï—=…ëï…A’â±•çQ…Öç≠•πú°Õ—Ω…î∞ÅÖç—•ŸïMïÖ…ç°QΩ≠ï∏§Ï4(ÄÅÙ∞ÅmÕ—Ω…î∞ÅÖç—•ŸïMïÖ…ç°QΩ≠ïπt§Ï4(4(ÄÅçΩπÕ–Å±•ŸïMç°ïë’±îÄÙÅ’Õï5ïµº††§ÄÙ¯ÅÏ4(ÄÄÄÅ…ï—’…∏ÅçÖ±ç’±Ö—ï1•ŸïMç°ïë’±ïM—Ö—’Ã†§Ï4(ÄÅÙ∞Åmt§Ï4(4(ÄÅçΩπÕ–Å°Öπë±ïMïÖ…ç°M’âµ•–ÄÙÄ°î§ÄÙ¯ÅÏ4(ÄÄÄÅîπ¡…ïŸïπ—ïôÖ’±–†§Ï4(ÄÄÄÅçΩπÕ–Åç±ïÖ∏ÄÙÅÕïÖ…ç°E’ï…‰π—…•¥†§Ï4(ÄÄÄÅ•òÄ†Öç±ïÖ∏§Å…ï—’…∏Ï4(ÄÄÄÅÕï—ç—•ŸïMïÖ…ç°QΩ≠ï∏°ç±ïÖ∏§Ï4(ÄÅÙÏ4(4(ÄÅçΩπÕ–ÅÕ—ÖùïÃÄÙÅl4(ÄÄÄÅÏÅ•êËÄù¡…ï¡…ïπÕÑú∞Å±Öâï∞ËÄúƒ∏Å•Õó≈ºÄòÅA…îµ¡…ïπÕÑú∞Å•çΩ∏ËÅ1ÖÂΩ’–∞ÅëïÕåËÄùIïŸ•ÕßÕ∏Å”•çπ•çÑÅëîÅÖ…ç°•ŸΩÃÅ‰Å¡…ï¡Ö…ÖçßÕ∏Å¡Ö…ÑÅ∑Ö≈’•πÖÃúÅÙ∞4(ÄÄÄÅÏÅ•êËÄùÖ¡…ΩâÖç•Ωπ}Ö…—îú∞Å±Öâï∞ËÄú»∏Å¡…ΩâÖçßÕ∏ÅëîÅ	Ωçï—ºú∞Å•çΩ∏ËÅÂî∞ÅëïÕåËÄùÕ¡ï…ÖπëºÅŸ•Õ—ºÅâ’ïπºÅëîÅÖ…—îÅºÅâΩçï—ºÅë•ù•—Ö∞úÅÙ∞4(ÄÄÄÅÏÅ•êËÄù•µ¡…ïÕ•Ω∏ú∞Å±Öâï∞ËÄúÃ∏Å∏ÅΩ±ÑÅëîÅ%µ¡…ïÕßÕ∏ú∞Å•çΩ∏ËÅA…•π—ï»∞ÅëïÕåËÄù%µ¡…•µ•ïπëºÅï∏Å¡±Ω——ï»Åù…Ö∏ÅôΩ…µÖ—ºÄºÅçÖµÑÅ¡±ÖπÑúÅÙ∞4(ÄÄÄÅÏÅ•êËÄùÖçÖâÖëΩÃú∞Å±Öâï∞ËÄú–∏ÅçÖâÖëΩÃÄòÅΩπôïççßÕ∏ú∞Å•çΩ∏ËÅMç•ÕÕΩ…Ã∞ÅëïÕåËÄù=©Ö±ïÃ∞ÅëΩâ±Öë•±±ΩÃ∞Å±Öµ•πÖëºÅºÅçΩ…—îúÅÙ∞4(ÄÄÄÅÏÅ•êËÄùçΩπ—…Ω±}çÖ±•ëÖêú∞Å±Öâï∞ËÄú‘∏ÅΩπ—…Ω∞ÅëîÅÖ±•ëÖêú∞Å•çΩ∏ËÅ°ïç≠M≈’Ö…î∞ÅëïÕåËÄù%πÕ¡ïççßÕ∏ÅëîÅçΩ±Ω»∞Åµïë•ëÖÃÅ‰ÅïµâÖ±Ö©îúÅÙ∞4(ÄÄÄÅÏÅ•êËÄù±•Õ—ºú∞Å±Öâï∞ËÄúÿ∏Å1•Õ—ºÅ¡Ö…ÑÅIï—•…Ö»ú∞Å•çΩ∏ËÅAÖç≠Öùî∞ÅëïÕåËÄù•Õ¡Ωπ•â±îÅï∏ÅµΩÕ—…ÖëΩ»ÅºÅ¡…ï¡Ö…ÖëºÅ¡Ö…ÑÅëïÕ¡Öç°ºúÅÙ∞4(ÄÄÄÅÏÅ•êËÄùïπ—…ïùÖëºú∞Å±Öâï∞ËÄú‹∏Åπ—…ïùÖëºÅçΩ∏É%·•—ºú∞Å•çΩ∏ËÅ°ïç≠•…ç±î»∞ÅëïÕåËÄùQ…ÖâÖ©ºÅ…ï—•…ÖëºÅºÅïπ—…ïùÖëºÅÑÅÕÖ—•ÕôÖççßÕ∏úÅÙ4(ÄÅtÏ4(4(ÄÅçΩπÕ–Åç’……ïπ—M—Öùï%πëï‡ÄÙÅΩ…ëï…Ö—ÑÄ¸ÅÕ—ÖùïÃπô•πë%πëï‡†°Ã§ÄÙ¯ÅÃπ•êÄÙÙÙÅΩ…ëï…Ö—Ñπ¡…Ωë’ç—•ΩπM—Öùî§ÄËÄ¿Ï4(ÄÅçΩπÕ–Å•ÕIïÖë‰ÄÙÅΩ…ëï…Ö—Ñ¸π¡…Ωë’ç—•ΩπM—ÖùîÄÙÙÙÄù±•Õ—ºúÅÒÅΩ…ëï…Ö—Ñ¸π¡…Ωë’ç—•ΩπM—ÖùîÄÙÙÙÄùïπ—…ïùÖëºúÏ4(4(ÄÅçΩπÕ–Å°Öπë±ï¡¡…ΩŸï…–ÄÙÅÖÕÂπåÄ°î§ÄÙ¯ÅÏ(ÄÄÄÅîπ¡…ïŸïπ—ïôÖ’±–†§Ï4(ÄÄÄÅ•òÄ†ÖÖ¡¡…ΩŸÖ±9Öµîπ—…•¥†§§ÅÏ4(ÄÄÄÄÄÅ—ΩÖÕ–π›Ö…π•πú†ùAΩ»ÅôÖŸΩ»Å•πù…ïÕÑÅ—‘ÅπΩµâ…îÅ¡Ö…ÑÅ…ïù•Õ—…Ö»Å±ÑÅÖ¡…ΩâÖçßÕ∏∏ú§Ï4(ÄÄÄÄÄÅ…ï—’…∏Ï4(ÄÄÄÅÙ4(4(ÄÄÄÅçΩπÕ–ÅΩ…ëï»ÄÙÄ°Õ—Ω…îπΩ…ëï…ÃÅÒÅmt§πô•πê†4(ÄÄÄÄÄÄ°º§ÄÙ¯ÅM—…•πú°ºπ—…Öç≠•πùQΩ≠ï∏§π—Ω1Ω›ï…ÖÕî†§ÄÙÙÙÅM—…•πú°Öç—•ŸïMïÖ…ç°QΩ≠ï∏§π—Ω1Ω›ï…ÖÕî†§ÅÒÅM—…•πú°ºπΩ…ëï…9’µâï»§ÄÙÙÙÅM—…•πú°Öç—•ŸïMïÖ…ç°QΩ≠ï∏§4(ÄÄÄÄ§Ï4(4(ÄÄÄÅ•òÄ†ÖΩ…ëï»§Å…ï—’…∏Ï4(4(ÄÄÄÅçΩπÕ–Å…ïÃÄÙÅÖ›Ö•–ÅÕ’âµ•—A’â±•ç…—ïç•Õ•Ω∏°Ω…ëï»π—…Öç≠•πùQΩ≠ï∏ÅÒÅÖç—•ŸïMïÖ…ç°QΩ≠ï∏∞ÅÏ(ÄÄÄÄÄÅÖ¡¡…ΩŸï…9ÖµîËÅÖ¡¡…ΩŸÖ±9Öµîπ—…•¥†§∞(ÄÄÄÄÄÅëïç•Õ•Ω∏ËÄùÖ¡¡…ΩŸïêú∞(ÄÄÄÅÙ§Ï(ÄÄÄÅ•òÄ°…ïÃπΩ¨§ÅÏ4(ÄÄÄÄÄÅÕï—M—Ω…î°…ïÃπ’¡ëÖ—ïëM—Ω…î§Ï4(ÄÄÄÄÄÅÕï—¡¡…ΩŸïëM’ççïÕÃ°—…’î§Ï4(ÄÄÄÄÄÅÕï—%Õ¡¡…ΩŸ•πú°ôÖ±Õî§Ï4(ÄÄÄÄÄÅ—ΩÖÕ–πÕ’ççïÕÃ†ü
+Ö¡…ΩâÖçßÕ∏ÅëîÅÖ…—îÅ…ïù•Õ—…ÖëÑÅçΩ∏É•·•—ºÑú§Ï4(ÄÄÄÅÙ4(ÄÅÙÏ4(4(ÄÅ…ï—’…∏Ä†4(ÄÄÄÄÒë•ÿÅÕ—Â±îıÌÏÅµ•π!ï•ù°–ËÄúƒ¿¡Ÿ†ú∞ÅâÖç≠ù…Ω’πêËÄùŸÖ»†¥µâú§ú∞Å¡Öëë•πúËÄú–¡¡‡ÄƒŸ¡‡ú∞ÅçΩ±Ω»ËÄùŸÖ»†¥µ•π¨§úÅıÙ¯4(ÄÄÄÄÄÄÒë•ÿÅÕ—Â±îıÌÏÅµÖ·]•ë—†ËÄú‡»¡¡‡ú∞ÅµÖ…ù•∏ËÄú¿ÅÖ’—ºú∞Åë•Õ¡±Ö‰ËÄùù…•êú∞ÅùÖ¿ËÄú»—¡‡úÅıÙ¯4(ÄÄÄÄÄÄÄÄ4(ÄÄÄÄÄÄÄÅÏº®Å	…ÖπêÅ!ïÖëï»Ä®ΩÙ4(ÄÄÄÄÄÄÄÄÒë•ÿÅÕ—Â±îıÌÏÅ—ï·—±•ù∏ËÄùçïπ—ï»ú∞Åë•Õ¡±Ö‰ËÄùù…•êú∞ÅùÖ¿ËÄúƒ…¡‡ú∞Å©’Õ—•ôÂ%—ïµÃËÄùçïπ—ï»úÅıÙ¯4(ÄÄÄÄÄÄÄÄÄÄÒ1•π¨Å—ºÙàºàÅÕ—Â±îıÌÏÅ—ï·—ïçΩ…Ö—•Ω∏ËÄùπΩπîúÅıÙ¯4(ÄÄÄÄÄÄÄÄÄÄÄÄÒë•ÿÅÕ—Â±îıÌÏÅë•Õ¡±Ö‰ËÄù•π±•πîµô±ï‡ú∞ÅÖ±•ùπ%—ïµÃËÄùçïπ—ï»ú∞ÅùÖ¿ËÄúƒ¡¡‡ú∞ÅâÖç≠ù…Ω’πêËÄùŸÖ»†¥µ¡Ö¡ï»§ú∞Å¡Öëë•πúËÄú·¡‡Ä»—¡‡ú∞ÅâΩ…ëï…IÖë•’ÃËÄú‰‰Â¡‡ú∞ÅâΩ…ëï»ËÄú≈¡‡ÅÕΩ±•êÅŸÖ»†¥µ±•πî§ú∞ÅâΩ·M°ÖëΩ‹ËÄú¿Ä—¡‡Äƒ’¡‡Å…ùâÑ†¿∞¿∞¿∞¿∏¿Ã§úÅıÙ¯4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÒÕ¡Ö∏ÅÕ—Â±îıÌÏÅ›•ë—†ËÄú»·¡‡ú∞Å°ï•ù°–ËÄú»·¡‡ú∞ÅâΩ…ëï…IÖë•’ÃËÄú·¡‡ú∞ÅâÖç≠ù…Ω’πêËÄùŸÖ»†¥µΩ…Öπùî§ú∞ÅçΩ±Ω»ËÄúçôôòú∞Åë•Õ¡±Ö‰ËÄùô±ï‡ú∞ÅÖ±•ùπ%—ïµÃËÄùçïπ—ï»ú∞Å©’Õ—•ôÂΩπ—ïπ–ËÄùçïπ—ï»ú∞ÅôΩπ—]ï•ù°–ËÄ‰¿¿∞ÅôΩπ—M•ÈîËÄúƒŸ¡‡úÅıÙ˘ΩÕ¡Ö∏¯4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÒÕ¡Ö∏ÅÕ—Â±îıÌÏÅôΩπ—M•ÈîËÄúƒŸ¡‡ú∞ÅôΩπ—]ï•ù°–ËÄ‰¿¿∞ÅçΩ±Ω»ËÄùŸÖ»†¥µ•π¨§úÅıÙ˘•ùÖ¡…•π–ÉäàÅMïù’•µ•ïπ—ºÅëîÅQ…ÖâÖ©ΩÃΩÕ¡Ö∏¯4(ÄÄÄÄÄÄÄÄÄÄÄÄΩë•ÿ¯4(ÄÄÄÄÄÄÄÄÄÄΩ1•π¨¯4(ÄÄÄÄÄÄÄÄÄÄÒ¿ÅÕ—Â±îıÌÏÅµÖ…ù•∏ËÄ¿∞ÅôΩπ—M•ÈîËÄúƒ—¡‡ú∞ÅçΩ±Ω»ËÄùŸÖ»†¥µµ’—ïê§ú∞ÅµÖ·]•ë—†ËÄú–‡¡¡‡úÅıÙ¯4(ÄÄÄÄÄÄÄÄÄÄÄÅΩπÕ’±—ÑÅï∞ÅïÕ—ÖëºÅï∏ÅŸ•ŸºÅëîÅ—‘ÅΩ…ëï∏ÅëîÅ•µ¡…ïÕßÕ∏∞Å…ïŸ•ÕÑÅâΩçï—ΩÃÅ‰ÅŸï…•ô•çÑÅ±ÑÅôïç°ÑÅëîÅïπ—…ïùÑÅï∏Å—Ö±±ï»∏4(ÄÄÄÄÄÄÄÄÄÄΩ¿¯4(ÄÄÄÄÄÄÄÄΩë•ÿ¯4(4(ÄÄÄÄÄÄÄÅÏº®Å±ΩâÖ∞ÅMïÖ…ç†Å	Ö»Ä®ΩÙ4(ÄÄÄÄÄÄÄÄÒë•ÿÅÕ—Â±îıÌÏÅâÖç≠ù…Ω’πêËÄùŸÖ»†¥µ¡Ö¡ï»§ú∞ÅâΩ…ëï…IÖë•’ÃËÄú»¡¡‡ú∞ÅâΩ…ëï»ËÄú≈¡‡ÅÕΩ±•êÅŸÖ»†¥µ±•πî§ú∞Å¡Öëë•πúËÄúƒŸ¡‡Ä»¡¡‡ú∞ÅâΩ·M°ÖëΩ‹ËÄú¿Äƒ¡¡‡Ä»’¡‡Å…ùâÑ†¿∞¿∞¿∞¿∏¿»§úÅıÙ¯4(ÄÄÄÄÄÄÄÄÄÄÒôΩ…¥ÅΩπM’âµ•–ıÌ°Öπë±ïMïÖ…ç°M’âµ•—ÙÅç±ÖÕÕ9ÖµîÙâ—…Öç≠•πúµÕïÖ…ç†µôΩ…¥àÅÕ—Â±îıÌÏÅë•Õ¡±Ö‰ËÄùô±ï‡ú∞ÅùÖ¿ËÄúƒ¡¡‡ú∞ÅÖ±•ùπ%—ïµÃËÄùçïπ—ï»ú∞Åô±ï·]…Ö¿ËÄù›…Ö¿úÅıÙ¯4(ÄÄÄÄÄÄÄÄÄÄÄÄÒë•ÿÅÕ—Â±îıÌÏÅ¡ΩÕ•—•Ω∏ËÄù…ï±Ö—•Ÿîú∞Åô±ï‡ËÄúƒú∞Åµ•π]•ë—†ËÄú»–¡¡‡úÅıÙ¯4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÒMïÖ…ç†ÅÕ•ÈîıÏƒ·ÙÅÕ—Â±îıÌÏÅ¡ΩÕ•—•Ω∏ËÄùÖâÕΩ±’—îú∞Å±ïô–ËÄúƒ—¡‡ú∞Å—Ω¿ËÄúƒ—¡‡ú∞ÅçΩ±Ω»ËÄùŸÖ»†¥µµ’—ïê§úÅıÙÄº¯4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÒ•π¡’–4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅ—Â¡îÙâ—ï·–à4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅç±ÖÕÕ9ÖµîÙâ¡ΩÃµ•π¡’–à4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅ¡±Öçï°Ω±ëï»Ùâ%πù…ïÕÑÅ—‘Å;
+ËÅëîÅ=…ëï∏Ä°ï®∏Äÿƒ‰Ã¿§ÅºÅÕë•ùºÅëîÅMïù’•µ•ïπ—º∏∏∏à4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÕ—Â±îıÌÏÅ¡Öëë•πù1ïô–ËÄú–…¡‡ú∞ÅôΩπ—M•ÈîËÄúƒ—¡‡ú∞Å°ï•ù°–ËÄú–Ÿ¡‡ú∞ÅâΩ…ëï…IÖë•’ÃËÄúƒ…¡‡úÅıÙ4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅŸÖ±’îıÌÕïÖ…ç°E’ï…ÂÙ4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅΩπ°ÖπùîıÏ°î§ÄÙ¯ÅÕï—MïÖ…ç°E’ï…‰°îπ—Ö…ùï–πŸÖ±’î•Ù4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄº¯4(ÄÄÄÄÄÄÄÄÄÄÄÄΩë•ÿ¯4(ÄÄÄÄÄÄÄÄÄÄÄÄÒâ’——Ω∏4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÅ—Â¡îÙâÕ’âµ•–à4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÅç±ÖÕÕ9ÖµîÙâ¡ΩÃµÕ’âµ•–µΩ…ëï»µâ—∏à4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÅÕ—Â±îıÌÏÅ¡Öëë•πúËÄú¿Ä»—¡‡ú∞Å°ï•ù°–ËÄú–Ÿ¡‡ú∞ÅôΩπ—M•ÈîËÄúƒ—¡‡ú∞ÅâΩ…ëï…IÖë•’ÃËÄúƒ…¡‡ú∞Åë•Õ¡±Ö‰ËÄùô±ï‡ú∞ÅÖ±•ùπ%—ïµÃËÄùçïπ—ï»ú∞Å©’Õ—•ôÂΩπ—ïπ–ËÄùçïπ—ï»ú∞ÅùÖ¿ËÄú·¡‡úÅıÙ4(ÄÄÄÄÄÄÄÄÄÄÄÄ¯4(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÒMïÖ…ç†ÅÕ•ÈîıÏƒŸÙÄº¯ÅΩπÕ’±—Ö»ÅÕ—Öëº4(ÄÄÄÄÄÄÄÄÄÄÄÄΩâ’——Ω∏¯4(ÄÄÄÄÄÄÄÄÄÄΩôΩ…¥¯4(ÄÄÄÄÄÄÄÄΩë•ÿ¯4(4(ÄÄÄÄÄÄÄÅÏº®Å9ºÅ=…ëï»ÄºÅµ¡—‰ÅM—Ö—îÄ®ΩÙ4(ÄÄÄÄÄÄÄÅÏÖΩ…ëï…Ö—ÑÄòòÄ†4(ÄÄÄÄÄÄÄÄÄÄÒë•ÿÅÕ—Â±îıÌÏÅâÖç≠ù…Ω’πêËÄùŸÖ»†¥µ¡Ö¡ï»§ú∞ÅâΩ…ëï…IÖë•’ÃËÄú»¡¡‡ú∞ÅâΩ…ëï»ËÄú≈¡‡ÅÕΩ±•êÅŸÖ»†¥µ±•πî§ú∞Å¡Öëë•πúËÄú–¡¡‡Ä»—¡‡ú∞Å—ï·—±•ù∏ËÄùçïπ—ï»ú∞Åë•Õ¡±Ö‰ËÄùù…•êú∞ÅùÖ¿ËÄúƒŸ¡‡ú∞Å©’Õ—•ôÂ%—ïµÃËÄùçïπ—ï»úÅıÙ¯4(ÄÄÄÄÄÄÄÄÄÄÄÄÒë•ÿÅÕ—Â±îıÌÏÅ›•ë—†ËÄúÿ—¡‡ú∞Å°ï•ù°–ËÄúÿ—¡‡ú∞ÅâΩ…ëï…IÖë•’ÃËÄú‘¿îú∞ÅâÖç≠ù…Ω’πêËÄùŸÖ»†¥µΩ…ÖπùîµÕΩô–§ú∞ÅçΩ±Ω»ËÄùŸÖ»†¥µΩ…Öπùî§ú∞Åë•Õ¡±Ö‰ËÄùô±ï‡ú∞ÅÖ±•ùπ%—ïµÃËÄùçïπ—ï»ú∞Å©’Õ—•ôÂΩπ—ïπ–ËÄùçïπ—ï»úÅıÙ¯4(Én}Ú⁄$z{-ÆÈ‹j◊ùr(--orange)', background: 'var(--orange-soft)', padding: '2px 8px', borderRadius: '999px' }}>EN CURSO</span>}
                         </div>
                       </div>
                     );
@@ -312,7 +18,7 @@ export function OrderTrackingPage() {
                   </h3>
                   {orderData.artApproved ? (
                     <span style={{ padding: '4px 10px', borderRadius: '999px', background: '#dcfce7', color: '#166534', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <FileCheck size={14} /> Arte Aprobado por {orderData.artApprovedBy || 'Cliente'}
+                    <FileCheck size={14} /> Arte Aprobado por {orderData.artApprovedBy || 'Cliente'}
                     </span>
                   ) : (
                     <span style={{ padding: '4px 10px', borderRadius: '999px', background: '#fef3c7', color: '#b45309', fontSize: '12px', fontWeight: 800 }}>

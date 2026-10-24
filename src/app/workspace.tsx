@@ -1,234 +1,15 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import sourceCatalog from '../data/estebanicoSupabaseCatalog.snapshot.json';
-import { catalogImagesForProduct } from '../data/catalogProductImages';
-import { supabase, supabaseConfigured } from '../lib/supabaseClient';
-import { useAuth } from '../auth/AuthProvider';
-
-const STORAGE_KEY = 'visualcorp-suite-local-v1';
-const WorkspaceContext = createContext<any>(null);
-const uid = (prefix = 'item') => `${prefix}-${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}`;
-
-// CatÃ¡logo inicial de necesidades: guÃ­a para completar el inventario, no prueba de compra ni de existencia.
-const inventoryStarterRows = [
-  ['IMP', 'Papel bond', 'PapelerÃ­a', '', 'hoja'], ['IMP', 'Papel couchÃ©', 'PapelerÃ­a', 'Gramaje por confirmar', 'hoja'],
-  ['IMP', 'Papel adhesivo', 'PapelerÃ­a', 'Acabado por confirmar', 'hoja'], ['IMP', 'Cartulina', 'PapelerÃ­a', 'Color y gramaje por confirmar', 'hoja'],
-  ['IMP', 'Vinil adhesivo', 'Viniles', 'Ancho y acabado por confirmar', 'metro'], ['IMP', 'Vinil transparente', 'Viniles', 'Ancho por confirmar', 'metro'],
-  ['IMP', 'Lona estÃ¡ndar', 'Lonas', 'Ancho por confirmar', 'metro'], ['IMP', 'Lona translÃºcida', 'Lonas', 'Ancho por confirmar', 'metro'],
-  ['IMP', 'Tinta de impresiÃ³n', 'Tintas', 'Color y equipo compatibles por confirmar', 'ml'], ['IMP', 'Laminado protector', 'Acabados', 'Tipo y ancho por confirmar', 'metro'],
-  ['SUB', 'Taza blanca para sublimaciÃ³n', 'Tazas', 'Capacidad y acabado por confirmar', 'unidad'], ['SUB', 'Taza metalizada', 'Tazas', 'Color y capacidad por confirmar', 'unidad'],
-  ['SUB', 'Taza mÃ¡gica', 'Tazas', 'Color y capacidad por confirmar', 'unidad'], ['SUB', 'Papel para sublimaciÃ³n', 'Papeles', 'Formato por confirmar', 'hoja'],
-  ['SUB', 'Tinta para sublimaciÃ³n', 'Tintas', 'Color y equipo compatibles por confirmar', 'ml'], ['SUB', 'Camiseta para sublimaciÃ³n', 'Textil', 'Talla y color por confirmar', 'unidad'],
-  ['SUB', 'Mouse pad sublimable', 'Promocionales', 'Medida por confirmar', 'unidad'], ['SUB', 'Llavero sublimable', 'Promocionales', 'Modelo por confirmar', 'unidad'],
-  ['SUB', 'Botella sublimable', 'Promocionales', 'Material y capacidad por confirmar', 'unidad'], ['SUB', 'Placa sublimable', 'Placas', 'Material y medida por confirmar', 'unidad'],
-  ['TRO', 'Vinil adhesivo', 'Viniles', 'Color, acabado y ancho por confirmar', 'metro'], ['TRO', 'Vinil textil', 'Viniles', 'Color y ancho por confirmar', 'metro'],
-  ['TRO', 'Vinil reflectivo', 'Viniles', 'Color y ancho por confirmar', 'metro'], ['TRO', 'Vinil esmerilado', 'Viniles', 'Ancho por confirmar', 'metro'],
-  ['TRO', 'Vinil microperforado', 'Viniles', 'Ancho por confirmar', 'metro'], ['TRO', 'Vinil transparente', 'Viniles', 'Ancho por confirmar', 'metro'],
-  ['TRO', 'Cinta de transferencia', 'Transferencia', 'Ancho por confirmar', 'metro'], ['TRO', 'Laminado para vinil', 'Acabados', 'Tipo y ancho por confirmar', 'metro'],
-  ['TRO', 'MÃ¡scara de transferencia', 'Transferencia', 'Ancho por confirmar', 'metro'], ['TRO', 'Papel transportador', 'Transferencia', 'Ancho por confirmar', 'metro'],
-  ['LAS', 'MDF para corte lÃ¡ser', 'Tableros', 'Espesor y formato por confirmar', 'hoja'], ['LAS', 'AcrÃ­lico para corte lÃ¡ser', 'PlÃ¡sticos', 'Color, espesor y formato por confirmar', 'hoja'],
-  ['LAS', 'Triplay para corte lÃ¡ser', 'Maderas', 'Espesor y formato por confirmar', 'hoja'], ['LAS', 'CartÃ³n para corte lÃ¡ser', 'Papeles', 'Tipo y formato por confirmar', 'hoja'],
-  ['LAS', 'Cuero sintÃ©tico para grabado', 'Textiles', 'Color y formato por confirmar', 'hoja'], ['LAS', 'Papel para corte lÃ¡ser', 'Papeles', 'Tipo y formato por confirmar', 'hoja'],
-  ['LAS', 'Repuesto de lente lÃ¡ser', 'Repuestos', 'DiÃ¡metro y equipo compatibles por confirmar', 'unidad'], ['LAS', 'Repuesto de espejo lÃ¡ser', 'Repuestos', 'Medida y equipo compatibles por confirmar', 'unidad'],
-  ['LAS', 'Material de prueba para grabado', 'Muestras', 'Material por confirmar', 'unidad'], ['LAS', 'Material de enmascarado', 'Consumibles', 'Tipo y ancho por confirmar', 'metro'],
-  ['TAL', 'Silicona transparente', 'Adhesivos', 'PresentaciÃ³n por confirmar', 'unidad'], ['TAL', 'Silicona blanca', 'Adhesivos', 'PresentaciÃ³n por confirmar', 'unidad'],
-  ['TAL', 'Silicona negra', 'Adhesivos', 'PresentaciÃ³n por confirmar', 'unidad'], ['TAL', 'Pegamento de contacto', 'Adhesivos', 'PresentaciÃ³n por confirmar', 'unidad'],
-  ['TAL', 'Tornillos', 'Fijaciones', 'Tipo y medida por confirmar', 'unidad'], ['TAL', 'Pernos', 'Fijaciones', 'Tipo y medida por confirmar', 'unidad'],
-  ['TAL', 'Cable elÃ©ctrico', 'Electricidad', 'Calibre y color por confirmar', 'metro'], ['TAL', 'Pintura', 'Acabados', 'Tipo y color por confirmar', 'litro'],
-  ['TAL', 'Discos de corte', 'Consumibles', 'DiÃ¡metro y material por confirmar', 'unidad'], ['TAL', 'Brocas', 'Consumibles', 'DiÃ¡metro y material por confirmar', 'unidad'],
-  ['NEO', 'Manguera neÃ³n LED', 'IluminaciÃ³n', 'Color y voltaje por confirmar', 'metro'], ['NEO', 'Tira LED', 'IluminaciÃ³n', 'Color, densidad y voltaje por confirmar', 'metro'],
-  ['NEO', 'Fuente de alimentaciÃ³n LED', 'Electricidad', 'Voltaje y potencia por confirmar', 'unidad'], ['NEO', 'Cable para neÃ³n', 'Electricidad', 'Calibre por confirmar', 'metro'],
-  ['NEO', 'Conector para iluminaciÃ³n LED', 'Conectores', 'Modelo por confirmar', 'unidad'], ['NEO', 'Controlador LED', 'Electricidad', 'Compatibilidad por confirmar', 'unidad'],
-  ['NEO', 'AcrÃ­lico para letrero luminoso', 'PlÃ¡sticos', 'Color, espesor y formato por confirmar', 'hoja'], ['NEO', 'Perfil para letrero luminoso', 'Estructuras', 'Tipo y medida por confirmar', 'metro'],
-  ['NEO', 'Cinta aislante', 'Electricidad', 'Color y ancho por confirmar', 'unidad'], ['NEO', 'Terminal elÃ©ctrico', 'Conectores', 'Tipo y calibre por confirmar', 'unidad'],
-  ['BOD', 'Cinta de embalaje', 'Empaque', 'Ancho por confirmar', 'unidad'], ['BOD', 'CartÃ³n para empaque', 'Empaque', 'Formato por confirmar', 'hoja'],
-  ['BOD', 'Fundas para despacho', 'Empaque', 'TamaÃ±o y material por confirmar', 'unidad'], ['BOD', 'Etiquetas de identificaciÃ³n', 'OrganizaciÃ³n', 'Formato por confirmar', 'unidad'],
-  ['BOD', 'Guantes de protecciÃ³n', 'Seguridad', 'Material y talla por confirmar', 'par'], ['BOD', 'Mascarillas de protecciÃ³n', 'Seguridad', 'Tipo por confirmar', 'unidad'],
-  ['BOD', 'Alcohol de limpieza', 'Limpieza', 'ConcentraciÃ³n y presentaciÃ³n por confirmar', 'litro'], ['BOD', 'PaÃ±os de limpieza', 'Limpieza', 'Material por confirmar', 'unidad'],
-  ['BOD', 'Marcadores permanentes', 'OrganizaciÃ³n', 'Colores y puntas por confirmar', 'unidad'], ['BOD', 'Bolsas resellables', 'Empaque', 'TamaÃ±o por confirmar', 'unidad'],
-];
-
-const starterInventory = inventoryStarterRows.map(([areaCode, name, category, variant, unit], index) => {
-  const serial = String(inventoryStarterRows.slice(0, index + 1).filter((row) => row[0] === areaCode).length).padStart(3, '0');
-  const sku = `VC-INV-${areaCode}-${serial}`;
-  return {
-    id: sku, sku, name, category, variant, unit, area: ({ IMP: 'ImpresiÃ³n', SUB: 'SublimaciÃ³n', TRO: 'Troquelado', LAS: 'LÃ¡ser', TAL: 'Taller', NEO: 'Neones', BOD: 'Bodega general' })[areaCode],
-    branch: 'Visual Corp', location: 'Pendiente de ubicar', quantity: 0, minimum: 0,
-    sourceStatus: 'CatÃ¡logo sugerido Â· existencia por verificar',
-    notes: `Registro sugerido para completar el catÃ¡logo. Confirmar especificaciÃ³n, unidad y existencia fÃ­sica. ${variant || 'Verificar presentaciÃ³n y variante antes de comprar.'}`,
-    starterCatalog: true,
-  };
-});
-
-const defaultServices = [
-  { id: 'impresion', name: 'ImpresiÃ³n y papelerÃ­a', description: 'Piezas grÃ¡ficas para comunicar tu marca.', enabled: true },
-  { id: 'gran-formato', name: 'Publicidad de gran formato', description: 'Soluciones para que tu mensaje se vea.', enabled: true },
-  { id: 'rotulos', name: 'RÃ³tulos y fachadas', description: 'Identidad visible para espacios y negocios.', enabled: true },
-  { id: 'textil', name: 'Textil y promocionales', description: 'Piezas personalizadas para marcas y equipos.', enabled: true },
-  { id: 'corte', name: 'Corte, grabado y seÃ±alÃ©tica', description: 'Piezas grÃ¡ficas y seÃ±alizaciÃ³n a medida.', enabled: true },
-  { id: 'eventos', name: 'ExhibiciÃ³n y eventos', description: 'Material visual para presentar ideas y proyectos.', enabled: true },
-];
-
-const catalog = (sourceCatalog.products || []).map((product, index) => {
-  const normalized = {
-  id: product.id || `vc-${index + 1}`,
-  name: product.name,
-  family: product.category || 'General',
-  mode: product.calcType === 'm2' ? 'area' : 'quantity',
-  priceBasis: 'unit',
-  tiers: (product.priceScales || []).filter((scale) => scale.qty != null && (scale.pvp != null || scale.price != null)).map((scale) => ({ min_qty: Number(scale.qty), unit_price: Number(scale.pvp ?? scale.price) })),
-  optionPrices: (product.priceScales || []).filter((scale) => scale.option != null && scale.price != null).map((scale) => ({ label: String(scale.option), price: Number(scale.price) })),
-  unit: product.calcType === 'm2' ? 'mÂ²' : 'unidad',
-  price: Number(product.price) || 0,
-  installPrice: product.installPrice == null ? null : Number(product.installPrice),
-  corporatePrice: product.corporatePrice == null ? null : Number(product.corporatePrice),
-  image: product.image || '',
-  images: product.images || [],
-  confirmed: product.published === true && Number(product.price) > 0,
-  published: product.published === true,
-  description: product.description || '',
-  source: 'Supabase Â· estebanico.com',
-  updatedAt: product.updatedAt,
-  };
-  return { ...normalized, images: catalogImagesForProduct(normalized) };
-});
-
-function createInitialState() {
-  return {
-    schemaVersion: 1,
-    settings: {
-      name: 'Visual Corp',
-      location: 'Milagro, Ecuador',
-      heroEyebrow: 'Agencia de publicidad y marketing',
-      heroTitle: 'Hacemos visible lo que imaginas.',
-      heroText: 'DiseÃ±o, producciÃ³n y marketing para marcas que quieren ocupar su espacio.',
-      contactPhone: '0967872396',
-      instagram: '@visualcorpec',
-    },
-    services: defaultServices,
-    catalog,
-    legacyCatalog: [],
-    customers: [],
-    inventoryMovements: [],
-    leads: [],
-    quotes: [],
-    inventory: starterInventory,
-    sales: [],
-    campaigns: [],
-  };
-}
-
-function readState() {
-  const initial = createInitialState();
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!saved || saved.schemaVersion !== 1) return initial;
-    const seedById = new Map(initial.catalog.map((item)=>[item.id,item]));
-    const storedById = new Map((Array.isArray(saved.catalog) ? saved.catalog : []).map((item) => [item.id, item]));
-    const catalogWithEdits = initial.catalog.map((seed) => {
-      const item = storedById.get(seed.id);
-      return item ? { ...seed, ...item, tiers: seed.tiers, optionPrices: seed.optionPrices, installPrice: seed.installPrice, corporatePrice: seed.corporatePrice, image: seed.image } : seed;
-    });
-    const legacyCatalog = (Array.isArray(saved.catalog) ? saved.catalog : []).filter((item) => !seedById.has(item.id));
-    const storedInventory = Array.isArray(saved.inventory) ? saved.inventory : initial.inventory;
-    const storedMovements = Array.isArray(saved.inventoryMovements) ? saved.inventoryMovements : initial.inventoryMovements;
-    const storedCustomers = Array.isArray(saved.customers) ? saved.customers : initial.customers;
-    return {
-      ...initial,
-      ...saved,
-      settings: { ...initial.settings, ...saved.settings },
-      catalog: catalogWithEdits,
-      legacyCatalog,
-      inventory: [...storedInventory.map((item) => Object.prototype.hasOwnProperty.call(item, 'sourceStatus') ? item : { ...item, sourceStatus: 'Conteo inicial pendiente' }), ...starterInventory.filter((seed) => !storedInventory.some((item) => item.id === seed.id || item.sku === seed.sku))],
-      inventoryMovements: storedMovements,
-      customers: storedCustomers,
-    };
-  } catch {
-    return initial;
-  }
-}
-
-export function WorkspaceProvider({ children }) {
-  const [data, setData] = useState(readState);
-  const [notice, setNotice] = useState('');
-  const { organizationId, user, hasPermission } = useAuth();
-  useEffect(() => {
-    if (!supabaseConfigured) return;
-    let active = true;
-    const hydrate = async () => {
-      const [settingsResult, servicesResult, catalogResult] = await Promise.all([
-        supabase.from('site_settings').select('*').eq('id', 'main').maybeSingle(),
-        supabase.from('services').select('*').order('sort_order'),
-        supabase.from('public_quote_catalog_products').select('*').order('sort_order'),
-      ]);
-      if (!active || settingsResult.error || servicesResult.error || catalogResult.error) return;
-      const settings = settingsResult.data;
-      const services = (servicesResult.data || []).map((row) => ({ id: row.id, name: row.name, description: row.short || row.detail || '', enabled: row.is_published }));
-      const remoteCatalog = (catalogResult.data || []).map((row) => ({
-        id: row.id, name: row.name, slug: row.slug, family: row.category || 'General', mode: row.calc_type === 'm2' ? 'area' : 'quantity',
-        priceBasis: 'unit', tiers: (row.price_scales || []).filter((scale) => scale.qty != null && (scale.pvp != null || scale.price != null)).map((scale) => ({ min_qty: Number(scale.qty), unit_price: Number(scale.pvp ?? scale.price) })),
-        optionPrices: (row.price_scales || []).filter((scale) => scale.option != null && scale.price != null).map((scale) => ({ label: String(scale.option), price: Number(scale.price) })),
-        unit: row.calc_type === 'm2' ? 'mÂ²' : 'unidad', price: Number(row.price) || 0, installPrice: row.price_inst == null ? null : Number(row.price_inst),
-        corporatePrice: row.price_corp == null ? null : Number(row.price_corp), image: row.image || '', images: catalogImagesForProduct({ id: row.id, name: row.name, family: row.category, image: row.image, images: row.images || [] }),
-        confirmed: Number(row.price) > 0, published: true, description: row.description || '', source: 'Supabase Â· Visual Corp',
-      }));
-      setData((current) => ({ ...current,
-        settings: settings ? { ...current.settings, name: settings.brand, location: settings.address, heroEyebrow: settings.hero_kicker, heroTitle: settings.hero_title, heroText: settings.hero_text, contactPhone: settings.phone, email: settings.email } : current.settings,
-        services: servicesResult.data ? services : current.services,
-        catalog: remoteCatalog.length ? remoteCatalog : current.catalog,
-      }));
-    };
-    void hydrate();
-    return () => { active = false; };
-  }, [user]);
-  const refreshRemote = useCallback(async () => {
-    if (!supabase || !organizationId || !user) return;
-    const read = (query, module, action = 'view') => {
-      const costActionAllowed = !['view_costs','edit_costs'].includes(action) || hasPermission('inventory_costs', action === 'view_costs' ? 'view' : 'edit');
-      return hasPermission(module, action) && costActionAllowed ? query : Promise.resolve({ data: [], error: null });
-    };
-    const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult] = await Promise.all([
-      read(supabase.from('inventory_items').select('id,category_id,area_id,sku,name,description,item_type,tags,reference_image_url,custom_fields,base_unit,minimum_quantity,active,created_at,updated_at').eq('organization_id', organizationId),'inventory'),
-      read(supabase.from('inventory_variants').select('id,item_id,sku,label,attributes,active').eq('organization_id', organizationId),'inventory'),
-      read(supabase.from('inventory_stock').select('variant_id,branch_id,location_code,quantity,updated_at').eq('organization_id', organizationId),'inventory'),
-      read(supabase.from('areas').select('id,code,name').eq('organization_id', organizationId),'workshop'),
-      read(supabase.from('inventory_categories').select('id,code,name').eq('organization_id', organizationId),'inventory'),
-      supabase.from('branches').select('id,code,name').eq('organization_id', organizationId),
-      read(supabase.from('inventory_locations').select('id,branch_id,parent_id,code,name,location_type,active,is_system').eq('organization_id', organizationId).order('name'),'inventory'),
-      read(supabase.from('inventory_movements').select('id,variant_id,branch_id,location_code,movement_type,quantity_delta,reason,reference_type,reference_id,created_by,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),'inventory'),
-      read(supabase.from('customers').select('id,full_name,phone,email,notes,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }), 'crm'),
-      read(supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity,backordered_quantity),sale_payments(method,amount)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),'sales'),
-      read(supabase.from('inventory_item_costs').select('variant_id,unit_cost,supplier_name,updated_at').eq('organization_id', organizationId),'inventory_costs','view_costs'),
-      read(supabase.from('inventory_stock_metrics').select('variant_id,branch_id,location_code,quantity,reserved_quantity,available_quantity,reserved_percent,last_restock_at,lifetime_consumed,consumed_last_30_days,movement_count,last_movement_at').eq('organization_id', organizationId),'inventory'),
-    ]);
-    const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult].find((result) => result.error);
-    if (failed) { setNotice(`No se pudieron sincronizar todos los datos operativos: ${failed.error.message}`); return; }
-    const itemById = new Map((itemsResult.data || []).map((row) => [row.id, row]));
-    const areaById = new Map((areasResult.data || []).map((row) => [row.id, row]));
-    const categoryById = new Map((categoriesResult.data || []).map((row) => [row.id, row]));
-    const branchById = new Map((branchesResult.data || []).map((row) => [row.id, row]));
-    const inventoryLocations = (locationsResult.data || []).map((row) => ({
-      id: row.id, branchId: row.branch_id, branch: branchById.get(row.branch_id)?.name || '',
-      parentId: row.parent_id, code: row.code, name: row.name, type: row.location_type,
-      active: row.active, isSystem: row.is_system,
-    }));
-    const variantById = new Map((variantsResult.data || []).map((row) => [row.id, row]));
-    const costByVariant = new Map((costsResult.data || []).map((row) => [row.variant_id, row]));
-    const metricsByKey = new Map((metricsResult.data || []).map((row) => [`${row.variant_id}|${row.branch_id}|${row.location_code}`, row]));
-    const remoteInventory = [];
-    for (const variant of variantsResult.data || []) {
-      const item = itemById.get(variant.item_id);
-      if (!item) continue;
-      for (const branch of branchesResult.data || []) {
-        const branchStocks = (stockResult.data || []).filter((row) => row.variant_id === variant.id && row.branch_id === branch.id);
-        if (!branchStocks.length && item.custom_fields?.initial_branch_id && item.custom_fields.initial_branch_id !== branch.id) continue;
-        for (const stock of branchStocks.length ? branchStocks : [null]) {
+YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éí÷n5N‹Z–‹­¦ëeŠw¬á¥µÁ½ÉÐI•…Ð°ìÉ•…Ñ•½¹Ñ•áÐ°ÕÍ•…±±‰…¬°ÕÍ•½¹Ñ•áÐ°ÕÍ•™™•Ð°ÕÍ•5•µ¼°ÕÍ•MÑ…Ñ”ô™É½´€É•…Ðœì4)¥µÁ½ÉÐÍ½ÕÉ•…Ñ…±½œ™É½´€œ¸¸½‘…Ñ„½•ÍÑ•‰…¹¥½MÕÁ…‰…Í•…Ñ…±½œ¹Í¹…ÁÍ¡½Ð¹©Í½¸œì4)¥µÁ½ÉÐì…Ñ…±½%µ…•Í½ÉAÉ½‘ÕÐô™É½´€œ¸¸½‘…Ñ„½…Ñ…±½AÉ½‘ÕÑ%µ…•Ìœì4)¥µÁ½ÉÐì¥¹Ù•¹Ñ½Éå%µ…•½ÉM­Ôô™É½´€œ¸¸½‘…Ñ„½¥¹Ù•¹Ñ½ÉåAÉ½‘ÕÑ%µ…•Ìœì4)¥µÁ½ÉÐìÍÕÁ…‰…Í”°ÍÕÁ…‰…Í•½¹™¥ÕÉ•ô™É½´€œ¸¸½±¥ˆ½ÍÕÁ…‰…Í•±¥•¹Ðœì4)¥µÁ½ÉÐìÕÍ•ÕÑ ô™É½´€œ¸¸½…ÕÑ ½ÕÑ¡AÉ½Ù¥‘•Èœì4(4)½¹ÍÐMQ=I}-d€ô€Ù¥ÍÕ…±½ÉÀµÍÕ¥Ñ”µ±½…°µØÄœì4)½¹ÍÐ]½É­ÍÁ…•½¹Ñ•áÐ€ôÉ•…Ñ•½¹Ñ•áÐñ…¹äø¡¹Õ±°¤ì4)½¹ÍÐÕ¥€ô€¡ÁÉ•™¥à€ô€¥Ñ•´œ¤€ôø€‘íÁÉ•™¥áô´‘í±½‰…±Q¡¥Ì¹ÉåÁÑ¼ü¹É…¹‘½µUU%ü¸ ¤ñð€‘í…Ñ”¹¹½Ü ¥ô´‘í5…Ñ ¹É…¹‘½´ ¤¹Ñ½MÑÉ¥¹œ ÌØ¤¹Í±¥” È°€à¥õõ€ì4(4(¼¼…Ó…±½¼¥¹¥¥…°‘”¹••Í¥‘…‘•Ìè×µ„Á…É„½µÁ±•Ñ…È•°¥¹Ù•¹Ñ…É¥¼°¹¼ÁÉÕ•‰„‘”½µÁÉ„¹¤‘”•á¥ÍÑ•¹¥„¸4)½¹ÍÐ¥¹Ù•¹Ñ½ÉåMÑ…ÉÑ•ÉI½ÝÌ€ôl4(€l%5@œ°€A…Á•°‰½¹œ°€A…Á•±•Ëµ„œ°€œœ°€¡½©„t°l%5@œ°€A…Á•°½Õ£¤œ°€A…Á•±•Ëµ„œ°€É…µ…©”Á½È½¹™¥Éµ…Èœ°€¡½©„t°4(€l%5@œ°€A…Á•°…‘¡•Í¥Ù¼œ°€A…Á•±•Ëµ„œ°€…‰…‘¼Á½È½¹™¥Éµ…Èœ°€¡½©„t°l%5@œ°€…ÉÑÕ±¥¹„œ°€A…Á•±•Ëµ„œ°€½±½ÈäÉ…µ…©”Á½È½¹™¥Éµ…Èœ°€¡½©„t°4(€l%5@œ°€Y¥¹¥°…‘¡•Í¥Ù¼œ°€Y¥¹¥±•Ìœ°€¹¡¼ä……‰…‘¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°l%5@œ°€Y¥¹¥°ÑÉ…¹ÍÁ…É•¹Ñ”œ°€Y¥¹¥±•Ìœ°€¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°4(€l%5@œ°€1½¹„•ÍÓ…¹‘…Èœ°€1½¹…Ìœ°€¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°l%5@œ°€1½¹„ÑÉ…¹Í³é¥‘„œ°€1½¹…Ìœ°€¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°4(€l%5@œ°€Q¥¹Ñ„‘”¥µÁÉ•Í§Í¸œ°€Q¥¹Ñ…Ìœ°€½±½Èä•ÅÕ¥Á¼½µÁ…Ñ¥‰±•ÌÁ½È½¹™¥Éµ…Èœ°€µ°t°l%5@œ°€1…µ¥¹…‘¼ÁÉ½Ñ•Ñ½Èœ°€…‰…‘½Ìœ°€Q¥Á¼ä…¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°4(€lMUœ°€Q…é„‰±…¹„Á…É„ÍÕ‰±¥µ…§Í¸œ°€Q…é…Ìœ°€…Á…¥‘…ä……‰…‘¼Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°lMUœ°€Q…é„µ•Ñ…±¥é…‘„œ°€Q…é…Ìœ°€½±½Èä…Á…¥‘…Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€lMUœ°€Q…é„·…¥„œ°€Q…é…Ìœ°€½±½Èä…Á…¥‘…Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°lMUœ°€A…Á•°Á…É„ÍÕ‰±¥µ…§Í¸œ°€A…Á•±•Ìœ°€½Éµ…Ñ¼Á½È½¹™¥Éµ…Èœ°€¡½©„t°4(€lMUœ°€Q¥¹Ñ„Á…É„ÍÕ‰±¥µ…§Í¸œ°€Q¥¹Ñ…Ìœ°€½±½Èä•ÅÕ¥Á¼½µÁ…Ñ¥‰±•ÌÁ½È½¹™¥Éµ…Èœ°€µ°t°lMUœ°€…µ¥Í•Ñ„Á…É„ÍÕ‰±¥µ…§Í¸œ°€Q•áÑ¥°œ°€Q…±±„ä½±½ÈÁ½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€lMUœ°€5½ÕÍ”Á…ÍÕ‰±¥µ…‰±”œ°€AÉ½µ½¥½¹…±•Ìœ°€5•‘¥‘„Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°lMUœ°€1±…Ù•É¼ÍÕ‰±¥µ…‰±”œ°€AÉ½µ½¥½¹…±•Ìœ°€5½‘•±¼Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€lMUœ°€	½Ñ•±±„ÍÕ‰±¥µ…‰±”œ°€AÉ½µ½¥½¹…±•Ìœ°€5…Ñ•É¥…°ä…Á…¥‘…Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°lMUœ°€A±…„ÍÕ‰±¥µ…‰±”œ°€A±……Ìœ°€5…Ñ•É¥…°äµ•‘¥‘„Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€lQI<œ°€Y¥¹¥°…‘¡•Í¥Ù¼œ°€Y¥¹¥±•Ìœ°€½±½È°……‰…‘¼ä…¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°lQI<œ°€Y¥¹¥°Ñ•áÑ¥°œ°€Y¥¹¥±•Ìœ°€½±½Èä…¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°4(€lQI<œ°€Y¥¹¥°É•™±•Ñ¥Ù¼œ°€Y¥¹¥±•Ìœ°€½±½Èä…¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°lQI<œ°€Y¥¹¥°•Íµ•É¥±…‘¼œ°€Y¥¹¥±•Ìœ°€¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°4(€lQI<œ°€Y¥¹¥°µ¥É½Á•É™½É…‘¼œ°€Y¥¹¥±•Ìœ°€¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°lQI<œ°€Y¥¹¥°ÑÉ…¹ÍÁ…É•¹Ñ”œ°€Y¥¹¥±•Ìœ°€¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°4(€lQI<œ°€¥¹Ñ„‘”ÑÉ…¹Í™•É•¹¥„œ°€QÉ…¹Í™•É•¹¥„œ°€¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°lQI<œ°€1…µ¥¹…‘¼Á…É„Ù¥¹¥°œ°€…‰…‘½Ìœ°€Q¥Á¼ä…¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°4(€lQI<œ°€7…Í…É„‘”ÑÉ…¹Í™•É•¹¥„œ°€QÉ…¹Í™•É•¹¥„œ°€¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°lQI<œ°€A…Á•°ÑÉ…¹ÍÁ½ÉÑ…‘½Èœ°€QÉ…¹Í™•É•¹¥„œ°€¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°4(€l1Lœ°€5Á…É„½ÉÑ”³…Í•Èœ°€Q…‰±•É½Ìœ°€ÍÁ•Í½Èä™½Éµ…Ñ¼Á½È½¹™¥Éµ…Èœ°€¡½©„t°l1Lœ°€Ëµ±¥¼Á…É„½ÉÑ”³…Í•Èœ°€A³…ÍÑ¥½Ìœ°€½±½È°•ÍÁ•Í½Èä™½Éµ…Ñ¼Á½È½¹™¥Éµ…Èœ°€¡½©„t°4(€l1Lœ°€QÉ¥Á±…äÁ…É„½ÉÑ”³…Í•Èœ°€5…‘•É…Ìœ°€ÍÁ•Í½Èä™½Éµ…Ñ¼Á½È½¹™¥Éµ…Èœ°€¡½©„t°l1Lœ°€…ÉÓÍ¸Á…É„½ÉÑ”³…Í•Èœ°€A…Á•±•Ìœ°€Q¥Á¼ä™½Éµ…Ñ¼Á½È½¹™¥Éµ…Èœ°€¡½©„t°4(€l1Lœ°€Õ•É¼Í¥¹Ó¥Ñ¥¼Á…É„É…‰…‘¼œ°€Q•áÑ¥±•Ìœ°€½±½Èä™½Éµ…Ñ¼Á½È½¹™¥Éµ…Èœ°€¡½©„t°l1Lœ°€A…Á•°Á…É„½ÉÑ”³…Í•Èœ°€A…Á•±•Ìœ°€Q¥Á¼ä™½Éµ…Ñ¼Á½È½¹™¥Éµ…Èœ°€¡½©„t°4(€l1Lœ°€I•ÁÕ•ÍÑ¼‘”±•¹Ñ”³…Í•Èœ°€I•ÁÕ•ÍÑ½Ìœ°€§…µ•ÑÉ¼ä•ÅÕ¥Á¼½µÁ…Ñ¥‰±•ÌÁ½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°l1Lœ°€I•ÁÕ•ÍÑ¼‘”•ÍÁ•©¼³…Í•Èœ°€I•ÁÕ•ÍÑ½Ìœ°€5•‘¥‘„ä•ÅÕ¥Á¼½µÁ…Ñ¥‰±•ÌÁ½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€l1Lœ°€5…Ñ•É¥…°‘”ÁÉÕ•‰„Á…É„É…‰…‘¼œ°€5Õ•ÍÑÉ…Ìœ°€5…Ñ•É¥…°Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°l1Lœ°€5…Ñ•É¥…°‘”•¹µ…Í…É…‘¼œ°€½¹ÍÕµ¥‰±•Ìœ°€Q¥Á¼ä…¹¡¼Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°4(€lQ0œ°€M¥±¥½¹„ÑÉ…¹ÍÁ…É•¹Ñ”œ°€‘¡•Í¥Ù½Ìœ°€AÉ•Í•¹Ñ…§Í¸Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°lQ0œ°€M¥±¥½¹„‰±…¹„œ°€‘¡•Í¥Ù½Ìœ°€AÉ•Í•¹Ñ…§Í¸Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€lQ0œ°€M¥±¥½¹„¹•É„œ°€‘¡•Í¥Ù½Ìœ°€AÉ•Í•¹Ñ…§Í¸Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°lQ0œ°€A•…µ•¹Ñ¼‘”½¹Ñ…Ñ¼œ°€‘¡•Í¥Ù½Ìœ°€AÉ•Í•¹Ñ…§Í¸Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€lQ0œ°€Q½É¹¥±±½Ìœ°€¥©…¥½¹•Ìœ°€Q¥Á¼äµ•‘¥‘„Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°lQ0œ°€A•É¹½Ìœ°€¥©…¥½¹•Ìœ°€Q¥Á¼äµ•‘¥‘„Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€lQ0œ°€…‰±”•³¥ÑÉ¥¼œ°€±•ÑÉ¥¥‘…œ°€…±¥‰É”ä½±½ÈÁ½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°lQ0œ°€A¥¹ÑÕÉ„œ°€…‰…‘½Ìœ°€Q¥Á¼ä½±½ÈÁ½È½¹™¥Éµ…Èœ°€±¥ÑÉ¼t°4(€lQ0œ°€¥Í½Ì‘”½ÉÑ”œ°€½¹ÍÕµ¥‰±•Ìœ°€§…µ•ÑÉ¼äµ…Ñ•É¥…°Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°lQ0œ°€	É½…Ìœ°€½¹ÍÕµ¥‰±•Ìœ°€§…µ•ÑÉ¼äµ…Ñ•É¥…°Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€l9<œ°€5…¹Õ•É„¹—Í¸1œ°€%±Õµ¥¹…§Í¸œ°€½±½ÈäÙ½±Ñ…©”Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°l9<œ°€Q¥É„1œ°€%±Õµ¥¹…§Í¸œ°€½±½È°‘•¹Í¥‘…äÙ½±Ñ…©”Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°4(€l9<œ°€Õ•¹Ñ”‘”…±¥µ•¹Ñ…§Í¸1œ°€±•ÑÉ¥¥‘…œ°€Y½±Ñ…©”äÁ½Ñ•¹¥„Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°l9<œ°€…‰±”Á…É„¹—Í¸œ°€±•ÑÉ¥¥‘…œ°€…±¥‰É”Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°4(€l9<œ°€½¹•Ñ½ÈÁ…É„¥±Õµ¥¹…§Í¸1œ°€½¹•Ñ½É•Ìœ°€5½‘•±¼Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°l9<œ°€½¹ÑÉ½±…‘½È1œ°€±•ÑÉ¥¥‘…œ°€½µÁ…Ñ¥‰¥±¥‘…Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€l9<œ°€Ëµ±¥¼Á…É„±•ÑÉ•É¼±Õµ¥¹½Í¼œ°€A³…ÍÑ¥½Ìœ°€½±½È°•ÍÁ•Í½Èä™½Éµ…Ñ¼Á½È½¹™¥Éµ…Èœ°€¡½©„t°l9<œ°€A•É™¥°Á…É„±•ÑÉ•É¼±Õµ¥¹½Í¼œ°€ÍÑÉÕÑÕÉ…Ìœ°€Q¥Á¼äµ•‘¥‘„Á½È½¹™¥Éµ…Èœ°€µ•ÑÉ¼t°4(€l9<œ°€¥¹Ñ„…¥Í±…¹Ñ”œ°€±•ÑÉ¥¥‘…œ°€½±½Èä…¹¡¼Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°l9<œ°€Q•Éµ¥¹…°•³¥ÑÉ¥¼œ°€½¹•Ñ½É•Ìœ°€Q¥Á¼ä…±¥‰É”Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€l	=œ°€¥¹Ñ„‘”•µ‰…±…©”œ°€µÁ…ÅÕ”œ°€¹¡¼Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°l	=œ°€…ÉÓÍ¸Á…É„•µÁ…ÅÕ”œ°€µÁ…ÅÕ”œ°€½Éµ…Ñ¼Á½È½¹™¥Éµ…Èœ°€¡½©„t°4(€l	=œ°€Õ¹‘…ÌÁ…É„‘•ÍÁ…¡¼œ°€µÁ…ÅÕ”œ°€Q…µ‡Å¼äµ…Ñ•É¥…°Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°l	=œ°€Ñ¥ÅÕ•Ñ…Ì‘”¥‘•¹Ñ¥™¥…§Í¸œ°€=É…¹¥é…§Í¸œ°€½Éµ…Ñ¼Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€l	=œ°€Õ…¹Ñ•Ì‘”ÁÉ½Ñ•§Í¸œ°€M•ÕÉ¥‘…œ°€5…Ñ•É¥…°äÑ…±±„Á½È½¹™¥Éµ…Èœ°€Á…Èt°l	=œ°€5…Í…É¥±±…Ì‘”ÁÉ½Ñ•§Í¸œ°€M•ÕÉ¥‘…œ°€Q¥Á¼Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€l	=œ°€±½¡½°‘”±¥µÁ¥•é„œ°€1¥µÁ¥•é„œ°€½¹•¹ÑÉ…§Í¸äÁÉ•Í•¹Ñ…§Í¸Á½È½¹™¥Éµ…Èœ°€±¥ÑÉ¼t°l	=œ°€A‡Å½Ì‘”±¥µÁ¥•é„œ°€1¥µÁ¥•é„œ°€5…Ñ•É¥…°Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4(€l	=œ°€5…É…‘½É•ÌÁ•Éµ…¹•¹Ñ•Ìœ°€=É…¹¥é…§Í¸œ°€½±½É•ÌäÁÕ¹Ñ…ÌÁ½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°l	=œ°€	½±Í…ÌÉ•Í•±±…‰±•Ìœ°€µÁ…ÅÕ”œ°€Q…µ‡Å¼Á½È½¹™¥Éµ…Èœ°€Õ¹¥‘…t°4)tì4(4)½¹ÍÐÍÑ…ÉÑ•É%¹Ù•¹Ñ½Éä€ô¥¹Ù•¹Ñ½ÉåMÑ…ÉÑ•ÉI½ÝÌ¹µ…À ¡m…É•…½‘”°¹…µ”°…Ñ•½Éä°Ù…É¥…¹Ð°Õ¹¥Ñt°¥¹‘•à¤€ôøì4(€½¹ÍÐÍ•É¥…°€ôMÑÉ¥¹œ¡¥¹Ù•¹Ñ½ÉåMÑ…ÉÑ•ÉI½ÝÌ¹Í±¥” À°¥¹‘•à€¬€Ä¤¹™¥±Ñ•È ¡É½Ü¤€ôøÉ½ÝlÁt€ôôô…É•…½‘”¤¹±•¹Ñ ¤¹Á…‘MÑ…ÉÐ Ì°€œÀœ¤ì4(€½¹ÍÐÍ­Ô€ôYµ%9X´‘í…É•…½‘•ô´‘íÍ•É¥…±õ€ì4(€É•ÑÕÉ¸ì4(€€€¥èÍ­Ô°Í­Ô°¹…µ”°…Ñ•½Éä°Ù…É¥…¹Ð°Õ¹¥Ð°É•™•É•¹•%µ…•UÉ°è¥¹Ù•¹Ñ½Éå%µ…•½ÉM­Ô¡Í­Ô¤°…É•„è€¡ì%5@è€%µÁÉ•Í§Í¸œ°MUè€MÕ‰±¥µ…§Í¸œ°QI<è€QÉ½ÅÕ•±…‘¼œ°1Lè€3…Í•Èœ°Q0è€Q…±±•Èœ°9<è€9•½¹•Ìœ°	=è€	½‘•„•¹•É…°œô¥m…É•…½‘•t°4(€€€‰É…¹ è€Y¥ÍÕ…°½ÉÀœ°±½…Ñ¥½¸è€A•¹‘¥•¹Ñ”‘”Õ‹¸ÖÚ$z{-®éÜj×= (branchesResult.data || []).find((row) => row.id === item.custom_fields?.initial_branch_id);
+      const inventoryRows = branchStocks.length
+        ? branchStocks.map((stock) => ({ stock, branch: branchById.get(stock.branch_id) || { id: stock.branch_id, name: 'Sucursal desconocida' } }))
+        : [{ stock: null, branch: initialBranch || null }];
+      for (const { stock, branch } of inventoryRows) {
         const location = stock?.location_code || item.custom_fields?.default_location_code || 'MAIN';
-        const metrics = metricsByKey.get(`${variant.id}|${branch.id}|${location}`);
+        const metrics = branch ? metricsByKey.get(`${variant.id}|${branch.id}|${location}`) : null;
         remoteInventory.push({
-          id: `${variant.id}:${branch.id}:${location}`, remoteItemId: item.id, variantId: variant.id, sku: item.sku, variantSku: variant.sku,
-          name: item.name, category: categoryById.get(item.category_id)?.name || '', variant: variant.label || item.description,
-          itemType: item.item_type || '', tags: item.tags || [], referenceImageUrl: item.reference_image_url || '', customFields: item.custom_fields || {},
-          area: areaById.get(item.area_id)?.name || 'Sin Ã¡rea', branch: branch.name, branchId: branch.id,
+          id: `${variant.id}:${branch?.id || 'unassigned'}:${location}`, remoteItemId: item.id, variantId: variant.id, sku: item.sku, variantSku: variant.sku,
+          name: item.name, category: categoryById.get(item.category_id)?.name || '', variant: variant.label || item.description, variantAttributes: variant.attributes || {},
+          itemType: item.item_type || '', tags: item.tags || [], referenceImageUrl: item.reference_image_url || inventoryImageForSku(item.sku), customFields: item.custom_fields || {},
+          area: areaById.get(item.area_id)?.name || 'Sin Ã¡rea', branch: branch?.name || 'Sucursal por asignar', branchId: branch?.id || null,
           location, unit: item.base_unit, quantity: stock ? Number(stock.quantity) : 0,
           reservedQuantity: Number(metrics?.reserved_quantity || 0), availableQuantity: metrics ? Number(metrics.available_quantity) : null,
           reservedPercent: metrics?.reserved_percent == null ? null : Number(metrics.reserved_percent), lastRestockAt: metrics?.last_restock_at || null,
@@ -237,7 +18,6 @@ export function WorkspaceProvider({ children }) {
           minimum: Number(item.minimum_quantity || 0), unitCost: costByVariant.has(variant.id) ? Number(costByVariant.get(variant.id).unit_cost) : null, supplierName: costByVariant.get(variant.id)?.supplier_name || '', sourceStatus: stock ? '' : 'Sin conteo fÃ­sico', archived: !item.active || !variant.active,
           createdAt: item.created_at, updatedAt: stock?.updated_at || item.updated_at,
         });
-        }
       }
     }
     const movementLabel = { receipt: 'entrada', consumption: 'consumo', return: 'devoluciÃ³n', waste: 'merma', sale: 'venta', adjustment: 'ajuste', transfer_out: 'transferencia_salida', transfer_in: 'recepcion_transferencia' };
@@ -246,7 +26,7 @@ export function WorkspaceProvider({ children }) {
       return { id: row.id, itemId: row.variant_id, itemName: item?.name || variant?.sku || 'ArtÃ­culo', unit: item?.base_unit || '', quantity: Math.abs(Number(row.quantity_delta)), quantityDelta: Number(row.quantity_delta), type: movementLabel[row.movement_type] || row.movement_type, actor: row.created_by === user.id ? user.email : `Usuario ${row.created_by}`, reason: row.reason, referenceType: row.reference_type || '', reference: row.reference_id || '', branch: branch?.name || '', location: row.location_code || 'MAIN', createdAt: row.created_at, shortage: 0 };
     });
     const remoteCustomers = (customersResult.data || []).map((row) => ({ id: row.id, name: row.full_name, phone: row.phone, email: row.email, notes: row.notes, createdAt: row.created_at }));
-    const customerById = new Map(remoteCustomers.map((row) => [row.id, row]));
+    const customerById = new Map<string, any>(remoteCustomers.map((row) => [row.id, row]));
     const paymentLabels = { cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', other: 'Otro' };
     const remoteSales = (salesResult.data || []).map((row) => { const paid = (row.sale_payments || []).reduce((sum, payment) => sum + Number(payment.amount), 0); const methods = [...new Set((row.sale_payments || []).map((payment) => payment.method))]; return { id: row.id, code: row.sale_code || row.id.slice(0, 8), total: Number(row.total), paid, balance: Math.max(0, Number(row.total) - paid), date: row.created_at, method: methods.length > 1 ? 'Pago dividido' : paymentLabels[methods[0] || row.payment_method] || 'Otro', customer: customerById.get(row.customer_id)?.name || '', description: (row.sale_lines || []).map((line) => line.description_snapshot).join(', '), quantity: (row.sale_lines || []).reduce((sum, line) => sum + Number(line.quantity), 0), urgent: row.urgent_backorder, status: row.status, note: row.note }; });
     setData((current) => ({ ...current, branches: branchesResult.data || [], inventoryLocations, inventory: remoteInventory, inventoryMovements: remoteMovements, customers: remoteCustomers, sales: remoteSales }));

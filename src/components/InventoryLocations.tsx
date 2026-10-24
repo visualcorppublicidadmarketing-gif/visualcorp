@@ -20,7 +20,7 @@ export function InventoryLocations({ canManage, catalogLinks = [] }) {
   const { organizationId, user } = useAuth();
   const locations = data.inventoryLocations || [];
   const branches = data.branches || [];
-  const [draft, setDraft] = useState(blankDraft);
+  const [draft, setDraft] = useState<any>(blankDraft);
   const [busy, setBusy] = useState(false);
   const [branchFilter, setBranchFilter] = useState('Todas');
 
@@ -90,8 +90,8 @@ export function InventoryLocations({ canManage, catalogLinks = [] }) {
     {canManage && <form className="inventory-location-form" onSubmit={saveLocation}>
       <label>Sucursal<select required value={draft.branchId} onChange={(event) => setDraft({ ...draft, branchId: event.target.value, parentId: '' })}><option value="">Selecciona sucursal</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label>
       <label>Ubicación superior<select value={draft.parentId} onChange={(event) => setDraft({ ...draft, parentId: event.target.value })}><option value="">Sin ubicación superior</option>{parentOptions.map((location) => <option key={location.id} value={location.id}>{location.code} · {location.name}</option>)}</select></label>
-      <label>Código<input required maxLength="40" value={draft.code} onChange={(event) => setDraft({ ...draft, code: event.target.value.toUpperCase().replace(/\s+/g, '-') })} placeholder="BOD-01, EST-A1"/></label>
-      <label>Nombre<input required maxLength="120" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Estante de viniles"/></label>
+      <label>Código<input required maxLength={40} value={draft.code} onChange={(event) => setDraft({ ...draft, code: event.target.value.toUpperCase().replace(/\s+/g, '-') })} placeholder="BOD-01, EST-A1"/></label>
+      <label>Nombre<input required maxLength={120} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Estante de viniles"/></label>
       <label>Uso<select value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value })}>{locationTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <button className="button button-dark" disabled={busy || !draft.branchId}><Plus size={15}/>{busy ? 'Guardando…' : 'Añadir ubicación'}</button>
     </form>}

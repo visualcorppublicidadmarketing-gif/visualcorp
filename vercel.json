@@ -1,4 +1,5 @@
 {
   "installCommand": "npm install --no-audit --no-fund",
+  "git": { "deploymentEnabled": true },
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

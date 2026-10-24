@@ -72,7 +72,7 @@ export function SupabaseFileUploader({
         // Fallback: Read as Local Data URL
         const reader = new FileReader();
         reader.onload = (e) => {
-          const localUrl = e.target.result;
+          const localUrl = typeof e.target.result === 'string' ? e.target.result : '';
           setUploadedUrl(localUrl);
           setProgress(100);
           setUploading(false);
@@ -85,7 +85,7 @@ export function SupabaseFileUploader({
       // Fallback local reader
       const reader = new FileReader();
       reader.onload = (e) => {
-        const localUrl = e.target.result;
+        const localUrl = typeof e.target.result === 'string' ? e.target.result : '';
         setUploadedUrl(localUrl);
         setProgress(100);
         setUploading(false);

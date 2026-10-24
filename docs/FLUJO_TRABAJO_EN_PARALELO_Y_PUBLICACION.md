@@ -13,6 +13,12 @@ Permitir varios frentes de trabajo sin sobrescribir archivos y agrupar cambios p
 5. Confirmar que los checks automáticos del pull request estén en verde. Vercel usa Preview para ramas que no son de producción y Production para `main`.
 6. Integrar el lote aprobado en `main`. El despliegue de producción ocurre desde esa rama; verificar el commit, el estado de Vercel y las rutas modificadas.
 
+## Protección del despliegue automático
+
+- `vercel.json` fija `git.deploymentEnabled: true`; el workflow de GitHub falla si este valor deja de estar activo.
+- En Vercel, el proyecto `visualcorp-suite` del equipo `visual19` debe conservar GitHub conectado al repositorio `visualcorppublicidadmarketing-gif/visualcorp`, la rama de producción `main` y la opción de crear despliegues desde Git habilitada. El ajuste remoto de creación de despliegues no se controla desde el repositorio.
+- Antes de publicar desde CLI, confirmar el equipo/proyecto enlazado y la rama/estado local. La CLI puede publicar cambios locales sin commit o desde otra rama; se reserva para una publicación de emergencia y no sustituye integrar los cambios en `main`.
+
 ## Cambios de base de datos
 
 - Crear una migración nueva, pequeña y con timestamp único en `supabase/migrations/`; no editar una migración ya aplicada.
@@ -64,4 +70,4 @@ El workflow verifica la compilación de producción en cada pull request. Manten
 
 ## Código TypeScript
 
-El sitio, la administración y las pantallas POS usan módulos `.ts` y `.tsx`. Los componentes compartidos se ubican en `src/app/layout.tsx` y `src/components/`; las páginas de administración se separan en `src/pages/admin/` y las pantallas POS en `src/pages/pos/`. El workflow de GitHub instala las dependencias con `npm ci` y construye la aplicación. `npm run typecheck` sigue disponible, pero aún reporta errores en módulos convertidos; se añadirá al workflow cuando se resuelva esa deuda.
+El sitio, la administración y las pantallas POS usan módulos `.ts` y `.tsx`. Los componentes compartidos se ubican en `src/app/layout.tsx` y `src/components/`; las páginas de administración se separan en `src/pages/admin/` y las pantallas POS en `src/pages/pos/`. El workflow de GitHub instala las dependencias con `npm ci`, ejecuta `npm run typecheck` y construye la aplicación en cada PR y push a `main`.
