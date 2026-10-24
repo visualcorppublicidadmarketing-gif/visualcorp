@@ -1,3 +1,299 @@
-YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éí×O{Ù:-jZ.¶›­–)Ş³†–×÷'B&V7BÂ²W6TVffV7BÂW6TÖVÖòÂW6U&VbÂW6U7FFRÒg&öÒw&V7Bs°Ğ¦–×÷'B²Æ–æ²ÂædÆ–æ²Â÷WFÆWBÂW6TÆö6F–öâÂW6U&×2ÂW6U6V&6…&×2Òg&öÒw&V7B×&÷WFW"ÖFöÒs°Ğ¦–×÷'B²Ö÷F–öâÂW6U&VGV6VDÖ÷F–öâÒg&öÒvÖ÷F–öâ÷&V7Bs°Ğ¦–×÷'B²'&÷tF÷vå&–v‡BÂ'&÷u&–v‡BÂ'&÷uW&–v‡BÂ6†V6²Â6†Wg&öäF÷vâÂvÆö&S"ÂÖ–âÂÖVçRÂÖW76vT6—&6ÆRÂ&–çFW"Â66äÆ–æRÂ66—76÷'2Â6†—'BÂ7&¶ÆW2Â7F÷&RÂæVÇ5F÷ÆVgBÂ‚Òg&öÒvÇV6–FR×&V7Bs°Ğ¦–×÷'B²W6Uv÷&·76RÒg&öÒrââö÷v÷&·76Rs°Ğ¦–×÷'B²7W&6RÂ7W&6T6öæf–wW&VBÒg&öÒrââöÆ–"÷7W&6T6Æ–VçBs°Ğ¦–×÷'B²V&Æ–4FG&W72ÂV&Æ–56W'f–6TfÖ–Æ–W2Â6W'f–6U&ö¦V7E&ö×G2Òg&öÒrâö6öçFVçBçG2s°Ğ¦–×÷'B²V÷FT6öæf–wW&F÷"ÂG—RV÷FTG&gBÒg&öÒrâ÷V÷FRõV÷FT6öæf–wW&F÷"s°Ğ¦–×÷'B²æ–ÖFVDÆ—7BÂ67&öÆÅ&öw&W72Â7÷FÆ–v‡DÆ–W"Â6ÆV%7÷FÆ–v‡BÂWFFU7÷FÆ–v‡BÒg&öÒrââö6ö×öæVçG2÷V’ôÖv–46ö×öæVçG2s°Ğ¦–×÷'Brâ÷V&Æ–2×6—FR×c"æ772s°Ğ¦–×÷'BrâövÆ72×7—7FVÒæ772s°Ğ¦–×÷'Brâ÷V&Æ–2Öæf–vF–öâæ772s°Ğ¦–×÷'Brâ÷V&Æ–2Öfö÷FW"æ772s°Ğ Ğ¦6öç7B†öÖT6öçFVçD†–v†Æ–v‡G2Ò&V7BæÆ§’‚‚’Óâ–×÷'B‚râõ6†÷v66UvW2r’çF†Vâ‚†ÖöGVÆR’Óâ‡²FVfVÇC¢ÖöGVÆRä†öÖT6öçFVçD†–v†Æ–v‡G2Ò’’“°Ğ Ğ¦6öç7Bv÷&FÖ&²Òrö'&æB÷f—7VÆ6÷'×v÷&FÖ&²çærs°Ğ¦6öç7BfÖ–Ç”–æfòÒ†–B’ÓâV&Æ–56W'f–6TfÖ–Æ–W2æf–æB‚†fÖ–Ç’’ÓâfÖ–Ç’æ–BÓÓÒ–B“°Ğ¦6öç7B6W'f–6T–6öç2Ò²–×&W6–öã¢&–çFW"Âvw&âÖf÷&ÖFòs¢æVÇ5F÷ÆVgBÂ&÷GVÆ÷3¢7F÷&RÂFW‡F–Ã¢6†—'BÂ6÷'FS¢66—76÷'2ÂWfVçF÷3¢66äÆ–æRÓ°Ğ Ğ¦gVæ7F–öâ6—FUF—FÆR‡²6†–ÆG&VâÒ’°Ğ¢W6TVffV7B‚‚’Óâ²Fö7VÖVçBçF—FÆRÒG¶6†–ÆG&VçÒ+rf—7VÂ6÷'²ÒÂ¶6†–ÆG&VåÒ“°Ğ¢&WGW&âçVÆÃ°Ğ§ĞĞ Ğ¦gVæ7F–öâ'&æDÆ–æ²‡²öä6Æ–6²ÒVæFVf–æVBÒ’°Ğ¢&WGW&âÄÆ–æ²6Æ74æÖSÒ'6—FRÖ'&æB"FóÒ"ò"öä6Æ–6³×¶öä6Æ–6·Ò&–ÖÆ&VÃÒ%f—7VÂ6÷'Â–æ–6–ò#ãÆ–Ör7&3×·v÷&FÖ&·ÒÇCÒ%f—7VÂ6÷'(	BvVæ6–7&VF—f"óãÂôÆ–æ³ã°Ğ§ĞĞ Ğ¦gVæ7F–öâ6—FT†VFW"‚’°Ğ¢6öç7B²FFÒÒW6Uv÷&·76R‚“°Ğ¢6öç7BÆö6F–öâÒW6TÆö6F–öâ‚“°Ğ¢6öç7B¶Öö&–ÆT÷VâÂ6WDÖö&–ÆT÷VåÒÒW6U7FFR†fÇ6R“°Ğ¢6öç7B¶÷VäÖVçRÂ6WD÷VäÖVçUÒÒW6U7FFSÂw6W'f–6W2rÂv6ö×ç’rÂçVÆÃâ†çVÆÂ“°Ğ¢6öç7B†VFW%&VbÒW6U&Vb†çVÆÂ“°Ğ¢6öç7B6W'f–6W5&VbÒW6U&Vb†çVÆÂ“°Ğ¢6öç7B6ö×ç•&VbÒW6U&Vb†çVÆÂ“°Ğ¢6öç7BÖö&–ÆT'WGFöå&VbÒW6U&Vb†çVÆÂ“°Ğ¢6öç7BÖö&–ÆUæVÅ&VbÒW6U&Vb†çVÆÂ“°Ğ¢6öç7B6Æ÷6Tæf–vF–öâÒ‚’Óâ²6WD÷VäÖVçR†çVÆÂ“²6WDÖö&–ÆT÷Vâ†fÇ6R“²Ó°Ğ¢W6TVffV7B‚‚’Óâ°Ğ¢6Æ÷6Tæf–vF–öâ‚“°Ğ¢ÒÂ¶Æö6F–öâçF†æÖUÒ“°Ğ¢W6TVffV7B‚‚’Óâ°Ğ¢6öç7BÆ–÷WD6†ævRÒv–æF÷ræÖF6„ÖVF–‚r†Ö‚×v–GFƒ¢#‚’r“°Ğ¢6öç7B†æFÆTÆ–÷WD6†ævRÒ‚’Óâ6Æ÷6Tæf–vF–öâ‚“°Ğ¢Æ–÷WD6†ævRæFDWfVçDÆ—7FVæW"‚v6†ævRrÂ†æFÆTÆ–÷WD6†ævR“°Ğ¢&WGW&â‚’ÓâÆ–÷WD6†ævRç&VÖ÷fTWfVçDÆ—7FVæW"‚v6†ævRrÂ†æFÆTÆ–÷WD6†ævR“°Ğ¢ÒÂµÒ“°Ğ¢W6TVffV7B‚‚’Óâ°Ğ¢6öç7B†æFÆUö–çFW"Ò†WfVçB’Óâ°Ğ¢–b‚†VFW%&Vbæ7W'&VçCòæ6öçF–ç2†WfVçBçF&vWB’’6Æ÷6Tæf–vF–öâ‚“°Ğ¢Ó°Ğ¢6öç7B†æFÆTW66RÒ†WfVçB’Óâ°Ğ¢–b†WfVçBæ¶W’ÓÓÒuF"rbbÖö&–ÆT÷Vâ’°Ğ¢6öç7Bfö7W6&ÆRÒ¶Öö&–ÆT'WGFöå&Vbæ7W'&VçBÂââæÖö&–ÆUæVÅ&Vbæ7W'&VçBçVW'•6VÆV7F÷$ÆÂ‚v¶‡&VeÒr•Ó°Ğ¢–b†WfVçBç6†–gD¶W’bbFö7VÖVçBæ7F—fTVÆVÖVçBÓÓÒfö7W6&ÆU³Ò’²WfVçBç&WfVçDFVfVÇB‚“²fö7W6&ÆRæB‚Ó“òæfö7W2‚“²ĞĞ¢VÇ6R–b‚WfVçBç6†–gD¶W’bbFö7VÖVçBæ7F—fTVÆVÖVçBÓÓÒfö7W6&ÆRæB‚Ó’’²WfVçBç&WfVçDFVfVÇB‚“²fö7W6&ÆU³Óòæfö7W2‚“²ĞĞ¢&WGW&ã°Ğ¢ĞĞ¢–b†WfVçBæ¶W’ÓÒtW66Rr’&WGW&ã°Ğ¢–b†Öö&–ÆT÷Vâ’²6WDÖö&–ÆT÷Vâ†fÇ6R“²Öö&–ÆT'WGFöå&Vbæ7W'&VçCòæfö7W2‚“²ĞĞ¢VÇ6R–b†÷VäÖVçR’°Ğ¢6öç7BG&–vvW"Ò÷VäÖVçRÓÓÒw6W'f–6W2rò6W'f–6W5&Vb¢6ö×ç•&Vc°Ğ¢6WD÷VäÖVçR†çVÆÂ“°Ğ¢G&–vvW"æ7W'&VçCòæfö7W2‚“°Ğ¢ĞĞ¢Ó°Ğ¢Fö7VÖVçBæFDWfVçDÆ—7FVæW"‚wö–çFW&F÷vârÂ†æFÆUö–çFW"“°Ğ¢Fö7VÖVçBæFDWfVçDÆ—7FVæW"‚v¶W–F÷vârÂ†æFÆTW66R“°Ğ¢&WGW&â‚’Óâ°Ğ¢Fö7VÖVçBç&VÖ÷fTWfVçDÆ—7FVæW"‚wö–çFW&F÷vârÂ†æFÆUö–çFW"“°Ğ¢Fö7VÖVçBç&VÖ÷fTWfVçDÆ—7FVæW"‚v¶W–F÷vârÂ†æFÆTW66R“°Ğ¢Ó°Ğ¢ÒÂ¶Öö&–ÆT÷VâÂ÷VäÖVçUÒ“°Ğ¢W6TVffV7B‚‚’Óâ°Ğ¢–b‚Öö&–ÆT÷Vâ’&WGW&âVæFVf–æVC°Ğ¢6öç7B&Wf–÷W4÷fW&fÆ÷rÒFö7VÖVçBæ&öG’ç7G–ÆRæ÷fW&fÆ÷s°Ğ¢Fö7VÖVçBæ&öG’ç7G–ÆRæ÷fW&fÆ÷rÒv†–FFVâs°Ğ¢&WGW&â‚’Óâ²Fö7VÖVçBæ&öG’ç7G–ÆRæ÷fW&fÆ÷rÒ&Wf–÷W4÷fW&fÆ÷s²Ó°Ğ¢ÒÂ¶Öö&–ÆT÷VåÒ“°Ğ¢6öç7B6W'f–6W2ÒFFç6W'f–6W2æf–ÇFW"‚‡6W'f–6R’Óâ6W'f–6RæVæ&ÆVB“°Ğ¢6öç7B6W'f–6T—47F—fRÒÆö6F–öâçF†æÖRç7F'G5v—F‚‚r÷6W'f–6–÷2r“°Ğ¢6öç7B6ö×ç”—47F—fRÒ²röæ÷6÷G&÷2rÂrö6öÖò×G&&¦Ö÷2uÒæ–æ6ÇVFW2†Æö6F–öâçF†æÖR“°Ğ¢&WGW&âÆ†VFW"6Æ74æÖSÒ'6—FRÖ†VFW""&Vc×¶†VFW%&VgÓàĞ¢ÆF—b6Æ74æÖSÒ'6—FRÖ†VFW"Ö–ææW"#ãÄ'&æDÆ–æ²öä6Æ–6³×¶6Æ÷6Tæf–vF–öçÒóàĞ¢Ææb6Æ74æÖSÒ'6—FRÖæb"&–ÖÆ&VÃÒ$æfVv6œ;6â&–æ6—Â#àĞ¢ÄædÆ–æ²FóÒ"ò"VæBöä6Æ–6³×¶6Æ÷6Tæf–vF–öçÒ6Æ74æÖS×²‡²—47F—fRÒ’Óâ6—FRÖæbÖÆ–æ²G¶—47F—fRòr—2Ö7F—fRr¢rwÖÓä–æ–6–óÂôædÆ–æ³àĞ¢Æ'WGFöâ&Vc×·6W'f–6W5&VgÒG—SÒ&'WGFöâ"6Æ74æÖS×¶6—FRÖæb×G&–vvW"G·6W'f–6T—47F—fRÇÂ÷VäÖVçRÓÓÒw6W'f–6W2ròr—2Ö7F—fRr¢rwÖÒ&–ÖW‡æFVC×¶÷VäÖVçRÓÓÒw6W'f–6W2wÒ&–Ö6öçG&öÇ3Ò'6—FR×6W'f–6W2×æVÂ"öä6Æ–6³×²‚’Óâ6WD÷VäÖVçR‚†7W'&VçB’Óâ7W'&VçBÓÓÒw6W'f–6W2ròçVÆÂ¢w6W'f–6W2r—Óå6W'f–6–÷3Ä6†Wg&öäF÷vâ6—¦S×³WÒ&–Ö†–FFVãÒ'G'VR"óãÂö'WGFöãàĞ¢Æ'WGFöâ&Vc×¶6ö×ç•&VgÒG—SÒ&'WGFöâ"6Æ74æÖS×¶6—FRÖæb×G&–vvW"G¶6ö×ç”—47F—fRÇÂ÷VäÖVçRÓÓÒv6ö×ç’ròr—2Ö7F—fRr¢rwÖÒ&–ÖW‡æFVC×¶÷VäÖVçRÓÓÒv6ö×ç’wÒ&–Ö6öçG&öÇ3Ò'6—FRÖ6ö×ç’×æVÂ"öä6Æ–6³×²‚’Óâ6WD÷VäÖVçR‚†7W'&VçB’Óâ7W'&VçBÓÓÒv6ö×ç’ròçVÆÂ¢v6ö×ç’r—ÓäÆV×&W6Ä6†Wg&öäF÷vâ6—¦S×³WÒ&–Ö†–FFVãÒ'G'VR"óãÂö'WGFöãàĞ¢ÄædÆ–æ²FóÒ"÷÷'FföÆ–ò"öä6Æ–6³×¶6Æ÷6Tæf–vF–öçÒ6Æ74æÖS×²‡²—47F—fRÒ’Óâ6—FRÖæbÖÆ–æ²G¶—47F—fRòr—2Ö7F—fRr¢rwÖÓå÷'FföÆ–óÂôædÆ–æ³àĞ¢ÄædÆ–æ²FóÒ"÷V&Æ–66–öæW2"öä6Æ–6³×¶6Æ÷6Tæf–vF–öçÒ6Æ74æÖS×²‡²—47F—fRÒ’Óâ6—FRÖæbÖÆ–æ²G¶—47F—fRòr—2Ö7F—fRr¢rwÖÓåV&Æ–66–öæW3ÂôædÆ–æ³àĞ¢ÄædÆ–æ²FóÒ"ö&Æör"öä6Æ–6³×¶6Æ÷6Tæf–vF–öçÒ6Æ74æÖS×²‡²—47F—fRÒ’Óâ6—FRÖæbÖÆ–æ²G¶—47F—fRòr—2Ö7F—fRr¢rwÖÓä&ÆösÂôædÆ–æ³àĞ¢ÄædÆ–æ²FóÒ"÷F–VæF"öä6Æ–6³×¶6Æ÷6Tæf–vF–öçÒ6Æ74æÖS×²‡²—47F—fRÒ’Óâ6—FRÖæbÖÆ–æ²G¶—47F—fRòr—2Ö7F—fRr¢rwÖÓåF–VæFÂôædÆ–æ³àĞ¢ÄædÆ–æ²FóÒ"ö6öçF7Fò"öä6Æ–6³×¶6Æ÷6Tæf–vF–öçÒ6Æ74æÖS×²‡²—47F—fRÒ’Óâ6—FRÖæbÖÆ–æ²G¶—47F—fRòr—2Ö7F—fRr¢rwÖÓä6öçF7FóÂôædÆ–æ³àĞ¢ÂöæcàĞ¢ÆF—b6Æ74æÖSÒ'6—FRÖ†VFW"Ö7F–öç2#ãÄÆ–æ²6Æ74æÖSÒ'6—FR×V÷FRÖ'WGFöâf2×6†–ÖÖW"Ö'WGFöâ"FóÒ"ö6÷F—¦F÷""öä6Æ–6³×¶6Æ÷6Tæf–vF–öçÓãÇ7â6Æ74æÖSÒ'V÷FRÖÆ&VÂ×v–FR#å6öÆ–6—F"6÷F—¦6œ;6ãÂ÷7ããÇ7â6Æ74æÖSÒ'V÷FRÖÆ&VÂ×6†÷'B#ä6÷F—¦#Â÷7ããÄ'&÷uW&–v‡B6—¦S×³gÒ&–Ö†–FFVãÒ'G'VR"óãÂôÆ–æ³ãÆ'WGFöâ&Vc×¶Öö&–ÆT'WGFöå&VgÒG—SÒ&'WGFöâ"6Æ74æÖSÒ'6—FRÖÖVçR×FövvÆR"öä6Æ–6³×²‚’Óâ²6WD÷VäÖVçR†çVÆÂ“²6WDÖö&–ÆT÷Vâ‚†÷Vâ’Óâ÷Vâ“²×Ò&–ÖÆ&VÃ×¶Öö&–ÆT÷Vâòt6W'&"ÖVì;¢r¢t'&—"ÖVì;¢wÒ&–ÖW‡æFVC×¶Öö&–ÆT÷VçÒ&–Ö6öçG&öÇ3Ò'6—FRÖÖö&–ÆRÖæf–vF–öâ#ç¶Öö&–ÆT÷VâòÅ‚6—¦S×³#Òóâ¢ÄÖVçR6—¦S×³#ÒóçÓÂö'WGFöããÂöF—càĞ¢¶÷VäÖVçRÓÓÒw6W'f–6W2rbbÆF—b6Æ74æÖSÒ'6—FRÖÖVv×æVÂ"–CÒ'6—FR×6W'f–6W2×æVÂ#àĞ¢ÆF—b6Æ74æÖSÒ'6—FRÖÖVvÖ–çG&ò#ãÇ7â6Æ74æÖSÒ'6—FRÖÖVvÖ¶–6¶W"#äÄòTR„4TÔõ2Æ’óãÂ÷7ããÆƒ#äFRÆ–FVÆ'"óæÆòFæv–&ÆSÇ7ãâãÂ÷7ããÂöƒ#ãÇäW‡Æ÷&ÆòVRöFVÖ÷27&V"&GRÖ&6ÂGRW76–òòGR,;7†–Öò&÷–V7FòãÂ÷ãÄÆ–æ²FóÒ"÷6W'f–6–÷2"öä6Æ–6³×¶6Æ÷6Tæf–vF–öçÓäW‡Æ÷&"FöF÷2Æ÷26W'f–6–÷2Ä'&÷uW&–v‡B6—¦S×³gÒ&–Ö†–FFVãÒ'G'VR"óãÂôÆ–æ³ãÂöF—càĞ¢ÆF—b6Æ74æÖSÒ'6—FRÖÖVvÖ6öçFVçB#ãÇ7â6Æ74æÖSÒ'6—FRÖÖVvÖÆ&VÂ#äTÄ”tRTäU5T4”Ä”DCÂ÷7ããÆF—b6Æ74æÖSÒ'6—FRŞ}ïkh‘éì¶»§q«^uÍ¥Ñ”µ‘•Ñ…¥°µÍ•Ñ¥½¸ˆøñ‘¥Ø±…ÍÍ9…µ”ô‰Í¥Ñ”µ‘•Ñ…¥°µ½Áäˆøñå•‰É½ÜùAI5AiHğ½å•‰É½Üøñ Èù#…‰±…¹½Ì‘”ñ‰È¼ùÑÔÁÉ½å•Ñ¼¸ğ½ ÈøñÀùíÍ•ÉÙ¥•AÉ½©•ÑAÉ½µÁÑÍmÍ•ÉÙ¥”¹¥‘tñğ€×¥¹Ñ…¹½Ì•°½‰©•Ñ¥Ù¼ä½µÁ…ÉÑ”Õ¹„É•™•É•¹¥„Í¤±„Ñ¥•¹•Ì¸ôI•Ù¥Í…É•µ½Ì½¹Ñ¥¼•°…±…¹”…¹Ñ•Ì‘”½¹™¥Éµ…ÈÙ…±½É•Ì¼Ñ¥•µÁ½Ì¸ğ½Àøñ1¥¹¬±…ÍÍ9…µ”ô‰Í¥Ñ”µÁÉ¥µ…Éäµ‰ÕÑÑ½¸ˆÑ¼õí€½½Ñ¥é…‘½ÈıÍ•ÉÙ¥¥¼ô‘í•¹½‘•UI%½µÁ½¹•¹Ğ¡Í•ÉÙ¥”¹¹…µ”¥õôù•ÍÉ¥‰¥Èµ¤ÁÉ½å•Ñ¼€ñÉÉ½İUÁI¥¡ĞÍ¥é”õìÄÙô¼øğ½1¥¹¬øğ½‘¥Øøñ‘¥Ø±…ÍÍ9…µ”ô‰Í¥Ñ”µ‘•Ñ…¥°µ…ÉˆøñÍÁ…¸±…ÍÍ9…µ”ô‰Í¥Ñ”µ‘•Ñ…¥°µ¹Õµ‰•Èˆùí‘•Ñ…¥±Ìü¹µ…É¬ñğ€Yôğ½ÍÁ…¸øñ%½¸Í¥é”õìÈÕô…É¥„µ¡¥‘‘•¸ô‰ÑÉÕ”ˆ¼øñ ÌùíÍ•ÉÙ¥”¹¹…µ•ôğ½ ÌøñÀùíÍ•ÉÙ¥”¹‘•ÍÉ¥ÁÑ¥½¹ôğ½Àøñ‘¥Ø±…ÍÍ9…µ”ô‰‘•Ñ…¥°µ…Éµ‘¥Ù¥‘•Èˆ¼øñÍÁ…¸ù±…¹”ÍÕ©•Ñ¼„É•Ù¥Í§Í¸½¸•°•ÅÕ¥Á¼ğ½ÍÁ…¸øğ½‘¥Øøğ½Í•Ñ¥½¸øñ…±±½ÕĞ‘…Ñ„õí‘…Ñ…ôÑ¥Ñ±”ô‹
-ı9¼Í…‰•ÌÍ¤•ÍÑ„•Ì±„™…µ¥±¥„…‘•Õ…‘„üˆ¼øğ¼øì4)ô4(4)•áÁ½ÉĞ™Õ¹Ñ¥½¸‰½ÕÑA…” ¤ì4(€½¹ÍĞì‘…Ñ„ô€ôÕÍ•]½É­ÍÁ…” ¤ì4(€É•ÑÕÉ¸€ğøñM¥Ñ•Q¥Ñ±”ù1„•µÁÉ•Í„ğ½M¥Ñ•Q¥Ñ±”øñA…•!•É¼•å•‰É½Üô‰Y%MU0=I@ˆÑ¥Ñ±”õìğù%‘•…ÌÁ…É„µ…É…Ìñ‰È¼ùÅÕ”ÅÕ¥•É•¸‘•ÍÑ……È¸ğ¼ùô‘•ÍÉ¥ÁÑ¥½¸õíM½µ½ÌÕ¹„…•¹¥„‘”ÁÕ‰±¥¥‘…äµ…É­•Ñ¥¹œ•¸€‘í‘…Ñ„¹Í•ÑÑ¥¹Ì¹±½…Ñ¥½¹ô¸½µÁ‡Å…µ½Ì¥‘•…Ì‘•Í‘”•°‘¥Í—Å¼¡…ÍÑ„Í½±Õ¥½¹•ÌÙ¥ÍÕ…±•ÌÁ…É„µ…É…Ìä•ÍÁ…¥½Ì¹ôÁÉ¥µ…Éäõíì±…‰•°è€½¹Ù•ÉÍ•µ½Ìœ°Ñ¼è€œ½½¹Ñ…Ñ¼œõôÍ•½¹‘…Éäõíì±…‰•°è€Íµ¼ÑÉ…‰…©…µ½Ìœ°Ñ¼è€œ½½µ¼µÑÉ…‰…©…µ½Ìœõô¼øñÍ•Ñ¥½¸±…ÍÍ9…µ”ô‰Í¥Ñ”µ…‰½ÕĞµÍ•Ñ¥½¸ˆøñ‘¥Ø±…ÍÍ9…µ”ô‰…‰½ÕĞµµ…É¬ˆøñ¥µœÍÉŒôˆ½‰É…¹½Ù¥ÍÕ…±½ÉÀµÍåµ‰½°¹Á¹œˆ…±Ğô‰Oµµ‰½±¼Y¥ÍÕ…°½ÉÀˆ¼øñÍÁ…¸ùY%MU0=I@ñ‰È¼øñÍµ…±°ù9%IQ%Yğ½Íµ…±°øğ½ÍÁ…¸øğ½‘¥Øøñ‘¥Øøñå•‰É½ÜùEU'%9LM=5=Lğ½å•‰É½Üøñ Èù!…•µ½ÌÙ¥Í¥‰±”ñ‰È¼ù±¼ÅÕ”¥µ…¥¹…Ì¸ğ½ ÈøñÀù¸Y¥ÍÕ…°½ÉÀÉ••µ½ÌÅÕ”…‘„¹•½¥¼Ñ¥•¹”Õ¹„¡¥ÍÑ½É¥„ÅÕ”µ•É•”Ù•ÉÍ”¸I•Õ¹¥µ½ÌÉ•…Ñ¥Ù¥‘…°ÁÕ‰±¥¥‘…äÁÉ½‘Õ§Í¸Ù¥ÍÕ…°Á…É„…åÕ‘…È„½¹Ù•ÉÑ¥È¥‘•…Ì•¸ÁÉ½å•Ñ½Ì½¹É•Ñ½Ì¸ğ½ÀøñÀùÍÑ…µ½Ì•¸5¥±…É¼°Õ…‘½È¸×¥¹Ñ…¹½ÌÅ×¤•ÍÓ…ÌÁ•¹Í…¹‘¼ä•¹½¹ÑÉ…É•µ½ÌÕ¸ÁÉ¥µ•ÈÁ…Í¼½¹Ñ¥¼¸ğ½Àøñ1¥¹¬Ñ¼ôˆ½½µ¼µÑÉ…‰…©…µ½Ìˆ±…ÍÍ9…µ”ô‰Í¥Ñ”µÑ•áĞµ±¥¹¬ˆù½¹½”¹Õ•ÍÑÉ¼ÁÉ½•Í¼€ñÉÉ½İI¥¡ĞÍ¥é”õìÄÙô¼øğ½1¥¹¬øğ½‘¥Øøğ½Í•Ñ¥½¸øñ…±±½ÕĞ‘…Ñ„õí‘…Ñ…ô¼øğ¼øì4)ô4(4)•áÁ½ÉĞ™Õ¹Ñ¥½¸AÉ½•ÍÍA…” ¤ì4(€½¹ÍĞì‘…Ñ„ô€ôÕÍ•]½É­ÍÁ…” ¤ì4(€½¹ÍĞÍÑ•ÁÌ€ômì¸è€œÀÄœ°Ñ¥Ñ±”è€9½ÌÕ•¹Ñ…Ì±„¥‘•„œ°Ñ•áĞè€½µÁ…ÉÑ”•°½‰©•Ñ¥Ù¼°•°•ÍÁ…¥¼¼±„¹••Í¥‘…ÅÕ”ÅÕ¥•É•ÌÉ•Í½±Ù•È¸œô°ì¸è€œÀÈœ°Ñ¥Ñ±”è€I•Ù¥Í…µ½Ì±½Ì‘•Ñ…±±•Ìœ°Ñ•áĞè€½¹Ù•ÉÍ…µ½ÌÍ½‰É”É•™•É•¹¥…Ì°µ•‘¥‘…Ì°…¹Ñ¥‘…‘•Ìä•°…±…¹”‘•°ÁÉ½å•Ñ¼¸œô°ì¸è€œÀÌœ°Ñ¥Ñ±”è€•™¥¹¥µ½Ì•°Í¥Õ¥•¹Ñ”Á…Í¼œ°Ñ•áĞè€Q”½É¥•¹Ñ…µ½ÌÍ½‰É”Íµ¼…Ù…¹é…È¸Y…±½É•Ì°‘¥ÍÁ½¹¥‰¥±¥‘…äÑ¥•µÁ½ÌÍ”½¹™¥Éµ…¸Í•Ÿé¸…‘„Í½±¥¥ÑÕ¸œõtì4(€É•ÑÕÉ¸€ğøñM¥Ñ•Q¥Ñ±”ùÍµ¼ÑÉ…‰…©…µ½Ìğ½M¥Ñ•Q¥Ñ±”øñA…•!•É¼•å•‰É½Üô‰U85%9<1I<ˆÑ¥Ñ±”õìğù”±„ÁÉ¥µ•É„¥‘•„ñ‰È¼ù…°Í¥Õ¥•¹Ñ”Á…Í¼¸ğ¼ùô‘•ÍÉ¥ÁÑ¥½¸ô‰U¹„½¹Ù•ÉÍ…§Í¸Í•¹¥±±„¹½Ì…åÕ‘„„•¹Ñ•¹‘•È±¼ÅÕ”‰ÕÍ…ÌäÉ•Ù¥Í…ÈÍµ¼Á½‘•µ½Ì…åÕ‘…ÉÑ”¸ˆÁÉ¥µ…Éäõíì±…‰•°è€%¹¥¥…ÈÕ¹„½¹Ù•ÉÍ…§Í¸œ°Ñ¼è€œ½½¹Ñ…Ñ¼œõôÍ•½¹‘…Éäõíì±…‰•°è€áÁ±½É…ÈÍ•ÉÙ¥¥½Ìœ°Ñ¼è€œ½Í•ÉÙ¥¥½Ìœõô¼øñÍ•Ñ¥½¸±…ÍÍ9…µ”ô‰Í¥Ñ”µÁÉ½•ÍÌµÍ•Ñ¥½¸ˆøñ‘¥Ø±…ÍÍ9…µ”ô‰ÁÉ½•ÍÌµ¥¹ÑÉ¼ˆøñå•‰É½ÜùO45Ai5=Lğ½å•‰É½Üøñ ÈùAÉ¥µ•É¼•¹Ñ•¹‘•µ½Ìñ‰È¼ù•°ÁÉ½å•Ñ¼¸ğ½ ÈøñÀù9¼¹••Í¥Ñ…ÌÑ•¹•ÈÑ½‘…Ì±…ÌÉ•ÍÁÕ•ÍÑ…Ì±¥ÍÑ…Ì¸×¥¹Ñ…¹½Ì±¼ÅÕ”Ñ¥•¹•Ì•¸µ•¹Ñ”ä½µÁ±•Ñ…µ½Ì±„¥¹™½Éµ…§Í¸½¹Ñ¥¼¸ğ½Àøñ1¥¹¬±…ÍÍ9…µ”ô‰Í¥Ñ”µÁÉ¥µ…Éäµ‰ÕÑÑ½¸ˆÑ¼ôˆ½½¹Ñ…Ñ¼ˆù%¹¥¥…ÈÕ¹„½¹Ù•ÉÍ…§Í¸€ñÉÉ½İUÁI¥¡ĞÍ¥é”õìÄÙô¼øğ½1¥¹¬øğ½‘¥Øøñ¹¥µ…Ñ•‘1¥ÍĞ±…ÍÍ9…µ”ô‰ÁÉ½•ÍÌµ±¥ÍĞˆÍÑ…•ÈõìÀ¸ÅôùíÍÑ•ÁÌ¹µ…À ¡ÍÑ•À¤€ôø€ñ…ÉÑ¥±”­•äõíÍÑ•À¹¹ôøñˆùíÍÑ•À¹¹ôğ½ˆøñ‘¥Øøñ ÌùíÍÑ•À¹Ñ¥Ñ±•ôğ½ ÌøñÀùíÍÑ•À¹Ñ•áÑôğ½Àøğ½‘¥Øøğ½…ÉÑ¥±”ø¥ôğ½¹¥µ…Ñ•‘1¥ÍĞøğ½Í•Ñ¥½¸øñÍ•Ñ¥½¸±…ÍÍ9…µ”ô‰Í¥Ñ”µÁÉ½•ÍÌµ±½…Ñ¥½¸ˆøñ±½‰”ÈÍ¥é”õìÄáô¼øñÍÁ…¸øñˆùí‘…Ñ„¹Í•ÑÑ¥¹Ì¹±½…Ñ¥½¹ôğ½ˆøñÍµ…±°ù•¹¥„‘”ÁÕ‰±¥¥‘…äµ…É­•Ñ¥¹œğ½Íµ…±°øğ½ÍÁ…¸øñ1¥¹¬Ñ¼ôˆ½½¹Ñ…Ñ¼ˆù½¹Ñ…Ñ…È€ñÉÉ½İUÁI¥¡ĞÍ¥é”õìÄÑô¼øğ½1¥¹¬øğ½Í•Ñ¥½¸øğ¼øì4)ô4(4)•áÁ½ÉĞ™Õ¹Ñ¥½¸½¹Ñ…ÑA…” ¤ì4(€½¹ÍĞì‘…Ñ„ô€ôÕÍ•]½É­ÍÁ…” ¤ì4(€É•ÑÕÉ¸€ğøñM¥Ñ•Q¥Ñ±”ù½¹Ñ…Ñ¼ğ½M¥Ñ•Q¥Ñ±”øñA…•!•É¼•å•‰É½Üô‰!	15=LˆÑ¥Ñ±”õìğùQÔÁËÍá¥µ„¥‘•„ñ‰È¼ù•µÁ¥•é„…Å×´¸ğ¼ùô‘•ÍÉ¥ÁÑ¥½¸ô‰×¥¹Ñ…¹½ÌÅ×¤ÅÕ¥•É•Ì±½É…È¸I•Ù¥Í…É•µ½ÌÑÔÍ½±¥¥ÑÕäÁ½‘É•µ½Ì½µÁ±•Ñ…È±½Ì‘•Ñ…±±•Ì½¹Ñ¥¼¸ˆÁÉ¥µ…Éäõíì±…‰•°è€ÍÉ¥‰¥Èµ¤Í½±¥¥ÑÕœ°Ñ¼è€œ½¹Ñ…Ñ¼µ™½ÉµÕ±…É¥¼œõôÍ•½¹‘…Éäõíì±…‰•°è€Y•ÈÍ•ÉÙ¥¥½Ìœ°Ñ¼è€œ½Í•ÉÙ¥¥½Ìœõô¼øñÍ•Ñ¥½¸±…ÍÍ9…µ”ô‰Í¥Ñ”µ½¹Ñ…ĞµÁ…”ˆøñ‘¥Ø±…ÍÍ9…µ”ô‰Í¥Ñ”µ½¹Ñ…Ğµ¥¹ÑÉ¼ˆøñå•‰É½Üù=9QQ<%IQ<ğ½å•‰É½Üøñ ÈùÍÑ…µ½Ì•¸ñ‰È¼øñ•´ùí‘…Ñ„¹Í•ÑÑ¥¹Ì¹±½…Ñ¥½¹ô¸ğ½•´øğ½ ÈøñÀù±¥”Íµ¼ÁÉ•™¥•É•Ì¥¹¥¥…È±„½¹Ù•ÉÍ…§Í¸¼“¥©…¹½ÌÑÕÌ‘…Ñ½Ì•¸•°™½ÉµÕ±…É¥¼¸ğ½Àøñ½¹Ñ…Ñ1¥¹­Ì¼øñ‘¥Ø±…ÍÍ9…µ”ô‰Í¥Ñ”µ½¹Ñ…Ğµ¡½ÕÉÌˆøñÍÁ…¸±…ÍÍ9…µ”ô‰½¹Ñ…ĞµÁ¥¸ˆøñ5…ÁA¥¸Í¥é”õìÄáô¼øğ½ÍÁ…¸øñÍÁ…¸øñˆùY¥ÏµÑ…¹½Ì•¸5¥±…É¼ğ½ˆøñÍµ…±°ùíÁÕ‰±¥‘‘É•ÍÍôğ½Íµ…±°øğ½ÍÁ…¸øğ½‘¥Øøñ„±…ÍÍ9…µ”ô‰Í¥Ñ”µ…‘‘É•ÍÌµ±¥¹¬ˆ¡É•˜õí¡ÑÑÁÌè¼½İİÜ¹½½±”¹½´½µ…ÁÌ½Í•…É ¼ı…Á¤ôÄ™ÅÕ•Éäô‘í•¹½‘•UI%½µÁ½¹•¹Ğ¡ÁÕ‰±¥‘‘É•ÍÌ¥õôÑ…É•Ğô‰}‰±…¹¬ˆÉ•°ô‰¹½É•™•ÉÉ•ÈˆùY•ÈÕ‰¥…§Í¸•¸•°µ…Á„€ñÉÉ½İUÁI¥¡ĞÍ¥é”õìÄÑô¼øğ½„øğ½‘¥Øøñ‘¥Ø¥ô‰½¹Ñ…Ñ¼µ™½ÉµÕ±…É¥¼ˆøñ1•…‘½É´¼øğ½‘¥Øøğ½Í•Ñ¥½¸øğ¼øì4)ô4(4)•áÁ½ÉĞ™Õ¹Ñ¥½¸AÕ‰±¥EÕ½Ñ•A…” ¤ì4(€½¹ÍĞmÍ•…É¡A…É…µÍt€ôÕÍ•M•…É¡A…É…µÌ ¤ì4(€½¹ÍĞÍ•ÉÙ¥”€ôÍ•…É¡A…É…µÌ¹•Ğ Í•ÉÙ¥¥¼œ¤ñğ€œœì4(€½¹ÍĞì‘…Ñ„ô€ôÕÍ•]½É­ÍÁ…” ¤ì4(€½¹ÍĞmÅÕ½Ñ•…Ñ„°Í•ÑEÕ½Ñ•…Ñ…t€ôÕÍ•MÑ…Ñ”ñEÕ½Ñ•É…™Ğğ¹Õ±°ø¡¹Õ±°¤ì4(€½¹ÍĞÍ•ÉÙ¥•Ì€ôÕÍ•5•µ¼  ¤€ôø‘…Ñ„¹Í•ÉÙ¥•Ì¹™¥±Ñ•È ¡¥Ñ•´¤€ôø¥Ñ•´¹•¹…‰±•¤°m‘…Ñ„¹Í•ÉÙ¥•Ít¤ì4(€É•ÑÕÉ¸€ğøñM¥Ñ•Q¥Ñ±”ùM½±¥¥Ñ…È½Ñ¥é…§Í¸ğ½M¥Ñ•Q¥Ñ±”øñA…•!•É¼•å•‰É½Üô‰=Q%iQTAI=eQ<ˆÑ¥Ñ±”õìğù×¥¹Ñ…¹½Ì±¼ÅÕ”ñ‰È¼ùÅÕ¥•É•Ì¡…•È¸ğ¼ùô‘•ÍÉ¥ÁÑ¥½¸ô‰AÉ•Á…É„±½Ì‘•Ñ…±±•Ì‘”ÑÔÁÉ½å•Ñ¼ä•¹Ûµ„Õ¹„Í½±¥¥ÑÕ…°•ÅÕ¥Á¼¸1½ÌÙ…±½É•Ìä½¹‘¥¥½¹•ÌÍ”½¹™¥Éµ…¸…¹Ñ•Ì‘”½Ñ¥é…È¸ˆÁÉ¥µ…Éäõíì±…‰•°è€Éµ…Èµ¤Í½±¥¥ÑÕœ°Ñ¼è€œ½Ñ¥é…‘½ÈµÙ¥ÍÕ…±½ÉÀœõôÍ•½¹‘…Éäõíì±…‰•°è€Y•ÈÍ•ÉÙ¥¥½Ìœ°Ñ¼è€œ½Í•ÉÙ¥¥½Ìœõô¼øñÍ•Ñ¥½¸±…ÍÍ9…µ”ô‰Í¥Ñ”µÅÕ½Ñ”µİ½É­ÍÁ…”ˆ¥ô‰½Ñ¥é…‘½ÈµÙ¥ÍÕ…±½ÉÀˆøñEÕ½Ñ•½¹™¥ÕÉ…Ñ½ÈÍ•ÉÙ¥•ÌõíÍ•ÉÙ¥•Íô¥¹¥Ñ¥…±M•ÉÙ¥”õíÍ•ÉÙ¥•ô½¹¡…¹”õíÍ•ÑEÕ½Ñ•…Ñ…ô¼øñ‘¥Ø±…ÍÍ9…µ”ô‰Í¥Ñ”µÅÕ½Ñ”µÉ•ÅÕ•ÍĞˆ¥ô‰™½ÉµÕ±…É¥¼µ½Ñ¥é…¥½¸ˆøñ1•…‘½É´Ù…É¥…¹Ğô‰ÅÕ½Ñ”ˆ¥¹¥Ñ¥…±M•ÉÙ¥”õíÅÕ½Ñ•…Ñ„ü¹Í•ÉÙ¥”ñğÍ•ÉÙ¥•ôÅÕ½Ñ•…Ñ„õíÅÕ½Ñ•…Ñ…ô¼øğ½‘¥Øøğ½Í•Ñ¥½¸øğ¼øì4)ô4)™Õ¹Ñ¥½¸A…•!•É¼¡ì•å•‰É½Ü°Ñ¥Ñ±”°‘•ÍÉ¥ÁÑ¥½¸°½µÁ…Ğ€ô™…±Í”°ÁÉ¥µ…Éä°Í•½¹‘…Éäô¤ì4(€½¹ÍĞ…Ñ¥½¸€ô€¡¥Ñ•´°±…ÍÍ9…µ”°%½¸¤€ôø¥Ñ•´¹Ñ¼¹ÍÑ…ÉÑÍ]¥Ñ  œŒœ¤4(€€€€ü€ñ„±…ÍÍ9…µ”õí±…ÍÍ9…µ•ô¡É•˜õí¥Ñ•´¹Ñ½ôùí¥Ñ•´¹±…‰•±ô€ñ%½¸Í¥é”õìÄÙô¼øğ½„ø4(€€€€è€ñ1¥¹¬±…ÍÍ9…µ”õí±…ÍÍ9…µ•ôÑ¼õí¥Ñ•´¹Ñ½ôùí¥Ñ•´¹±…‰•±ô€ñ%½¸Í¥é”õìÄÙô¼øğ½1¥¹¬øì4(€É•ÑÕÉ¸€ñÍ•Ñ¥½¸±…ÍÍ9…µ”õíÍ¥Ñ”µÁ…”µ¡•É¼‘í½µÁ…Ğ€ü€œ½µÁ…Ğœ€è€œõôøñ‘¥Ø±…ÍÍ9…µ”ô‰Í¥Ñ”µ¡•É¼µ±½Ü±½ÜµÁ¥¹¬ˆ¼øñ‘¥Ø±…ÍÍ9…µ”ô‰Í¥Ñ”µÁ…”µ¡•É¼µ¥¹¹•Èˆøñå•‰É½Ü±¥¡Ğùí•å•‰É½İôğ½å•‰É½Üøñ ÄùíÑ¥Ñ±•ôğ½ ÄøñÀùí‘•ÍÉ¥ÁÑ¥½¹ôğ½Àøñ‘¥Ø±…ÍÍ9…µ”ô‰Í¥Ñ”µÁ…”µ¡•É¼µ…Ñ¥½¹ÌˆùíÁÉ¥µ…Éä€˜˜…Ñ¥½¸¡ÁÉ¥µ…Éä°€Í¥Ñ”µÁÉ¥µ…Éäµ‰ÕÑÑ½¸œ°ÉÉ½İUÁI¥¡Ğ¥õíÍ•½¹‘…Éä€˜˜…Ñ¥½¸¡Í•½¹‘…Éä°€Í¥Ñ”µÍ•½¹‘…Éäµ‰ÕÑÑ½¸œ°ÉÉ½İI¥¡Ğ¥ôğ½‘¥Øøğ½‘¥Øøğ½Í•Ñ¥½¸øì4)ô4(4)™Õ¹Ñ¥½¸…±±½ÕĞ¡ì‘…Ñ„°Ñ¥Ñ±”€ô€Ÿ
-ıQ¥•¹•ÌÕ¹„¥‘•„•¸µ•¹Ñ”üœô¤ì4(€É•ÑÕÉ¸€ñÍ•Ñ¥½¸±…ÍÍ9…µ”ô‰Í¥Ñ”µ…±±½ÕĞˆøñ‘¥Øøñå•‰É½Ü±¥¡Ğù!	15=LQTAI=eQ<ğ½å•‰É½Üøñ ÈùíÑ¥Ñ±•ôğ½ ÈøñÀù½µÁ…ÉÑ”±¼ÅÕ”‰ÕÍ…Ì¸I•Ù¥Í…É•µ½Ì½¹Ñ¥¼•°Í¥Õ¥•¹Ñ”Á…Í¼¸ğ½Àøğ½‘¥Øøñ1¥¹¬±…ÍÍ9…µ”ô‰Í¥Ñ”µÁÉ¥µ…Éäµ‰ÕÑÑ½¸ˆÑ¼ôˆ½½¹Ñ…Ñ¼ˆù½¹Ñ…Ñ…È„Y¥ÍÕ…°½ÉÀ€ñÉÉ½İUÁI¥¡ĞÍ¥é”õìÄÙô¼øğ½1¥¹¬øğ½Í•Ñ¥½¸øì4)ô4(4)™Õ¹Ñ¥½¸A…•9½Ñ½Õ¹¡ìÑ¥Ñ±”ô¤ìÉ•ÑÕÉ¸€ñÍ•Ñ¥½¸±…ÍÍ9…µ”ô‰Í¥Ñ”µ¹½Ğµ™½Õ¹ˆøñå•‰É½ÜùY%MU0=I@ğ½å•‰É½Üøñ ÄùíÑ¥Ñ±•ôğ½ ÄøñÀùI•Ù¥Í„±„±¥ÍÑ„‘”Í•ÉÙ¥¥½Ì¼ÙÕ•±Ù”…°¥¹¥¥¼¸ğ½Àøñ1¥¹¬Ñ¼ôˆ½Í•ÉÙ¥¥½Ìˆ±…ÍÍ9…µ”ô‰Í¥Ñ”µÁÉ¥µ…Éäµ‰ÕÑÑ½¸ˆùY•ÈÍ•ÉÙ¥¥½Ì€ñÉÉ½İI¥¡ĞÍ¥é”õìÄÙô¼øğ½1¥¹¬øğ½Í•Ñ¥½¸øìô4(
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, Globe2, MapPin, Menu, MessageCircle, Printer, ScanLine, Scissors, Shirt, Sparkles, Store, PanelsTopLeft, X } from 'lucide-react';
+import { useWorkspace } from '../app/workspace';
+import { supabase, supabaseConfigured } from '../lib/supabaseClient';
+import { publicAddress, publicServiceFamilies, serviceProjectPrompts } from './content.ts';
+import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
+import { AnimatedList, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
+import './public-site-v2.css';
+import './glass-system.css';
+import './public-navigation.css';
+import './public-footer.css';
+
+const HomeContentHighlights = React.lazy(() => import('./ShowcasePages').then((module) => ({ default: module.HomeContentHighlights })));
+
+const wordmark = '/brand/visualcorp-wordmark.png';
+const familyInfo = (id) => publicServiceFamilies.find((family) => family.id === id);
+const serviceIcons = { impresion: Printer, 'gran-formato': PanelsTopLeft, rotulos: Store, textil: Shirt, corte: Scissors, eventos: ScanLine };
+
+function SiteTitle({ children }) {
+  useEffect(() => { document.title = `${children} Â· Visual Corp`; }, [children]);
+  return null;
+}
+
+function BrandLink({ onClick = undefined }) {
+  return <Link className="site-brand" to="/" onClick={onClick} aria-label="Visual Corp, inicio"><img src={wordmark} alt="Visual Corp â€” Agencia Creativa" /></Link>;
+}
+
+function SiteHeader() {
+  const { data } = useWorkspace();
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<'services' | 'company' | null>(null);
+  const headerRef = useRef(null);
+  const servicesRef = useRef(null);
+  const companyRef = useRef(null);
+  const mobileButtonRef = useRef(null);
+  const mobilePanelRef = useRef(null);
+  const closeNavigation = () => { setOpenMenu(null); setMobileOpen(false); };
+  useEffect(() => {
+    closeNavigation();
+  }, [location.pathname]);
+  useEffect(() => {
+    const layoutChange = window.matchMedia('(max-width: 1120px)');
+    const handleLayoutChange = () => closeNavigation();
+    layoutChange.addEventListener('change', handleLayoutChange);
+    return () => layoutChange.removeEventListener('change', handleLayoutChange);
+  }, []);
+  useEffect(() => {
+    const handlePointer = (event) => {
+      if (!headerRef.current?.contains(event.target)) closeNavigation();
+    };
+    const handleEscape = (event) => {
+      if (event.key === 'Tab' && mobileOpen) {
+        const focusable = [mobileButtonRef.current, ...mobilePanelRef.current.querySelectorAll('a[href]')];
+        if (event.shiftKey && document.activeElement === focusable[0]) { event.preventDefault(); focusable.at(-1)?.focus(); }
+        else if (!event.shiftKey && document.activeElement === focusable.at(-1)) { event.preventDefault(); focusable[0]?.focus(); }
+        return;
+      }
+      if (event.key !== 'Escape') return;
+      if (mobileOpen) { setMobileOpen(false); mobileButtonRef.current?.focus(); }
+      else if (openMenu) {
+        const trigger = openMenu === 'services' ? servicesRef : companyRef;
+        setOpenMenu(null);
+        trigger.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', handlePointer);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointer);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [mobileOpen, openMenu]);
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [mobileOpen]);
+  const services = data.services.filter((service) => service.enabled);
+  const serviceIsActive = location.pathname.startsWith('/servicios');
+  const companyIsActive = ['/nosotros', '/como-trabajamos'].includes(location.pathname);
+  return <header className="site-header" ref={headerRef}>
+    <div className="site-header-inner"><BrandLink onClick={closeNavigation} />
+      <nav className="site-nav" aria-label="NavegaciÃ³n principal">
+        <NavLink to="/" end onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Inicio</NavLink>
+        <button ref={servicesRef} type="button" className={`site-nav-trigger${serviceIsActive || openMenu === 'services' ? ' is-active' : ''}`} aria-expanded={openMenu === 'services'} aria-controls="site-services-panel" onClick={() => setOpenMenu((current) => current === 'services' ? null : 'services')}>Servicios<ChevronDown size={15} aria-hidden="true" /></button>
+        <button ref={companyRef} type="button" className={`site-nav-trigger${companyIsActive || openMenu === 'company' ? ' is-active' : ''}`} aria-expanded={openMenu === 'company'} aria-controls="site-company-panel" onClick={() => setOpenMenu((current) => current === 'company' ? null : 'company')}>La empresa<ChevronDown size={15} aria-hidden="true" /></button>
+        <NavLink to="/portafolio" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Portafolio</NavLink>
+        <NavLink to="/publicaciones" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Publicaciones</NavLink>
+        <NavLink to="/blog" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Blog</NavLink>
+        <NavLink to="/tienda" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Tienda</NavLink>
+        <NavLink to="/contacto" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Contacto</NavLink>
+      </nav>
+      <div className="site-header-actions"><Link className="site-quote-button vc-shimmer-button" to="/cotizador" onClick={closeNavigation}><span className="quote-label-wide">Solicitar cotizaciÃ³n</span><span className="quote-label-short">Cotizar</span><ArrowUpRight size={16} aria-hidden="true" /></Link><button ref={mobileButtonRef} type="button" className="site-menu-toggle" onClick={() => { setOpenMenu(null); setMobileOpen((open) => !open); }} aria-label={mobileOpen ? 'Cerrar menÃº' : 'Abrir menÃº'} aria-expanded={mobileOpen} aria-controls="site-mobile-navigation">{mobileOpen ? <X size={21}/> : <Menu size={21}/>}</button></div>
+      {openMenu === 'services' && <div className="site-mega-panel" id="site-services-panel">
+        <div className="site-mega-intro"><span className="site-mega-kicker">LO QUE HACEMOS <i/></span><h2>De la idea<br/>a lo tangible<span>.</span></h2><p>Explora lo que podemos crear para tu marca, tu espacio o tu prÃ³ximo proyecto.</p><Link to="/servicios" onClick={closeNavigation}>Explorar todos los servicios <ArrowUpRight size={16} aria-hidden="true" /></Link></div>
+        <div className="site-mega-content"><span className="site-mega-label">ELIGE UNA ESPECIALIDAD</span><div className="site-mega-services">{services.map((service) => { const Icon = serviceIcons[service.id] || Sparkles; return <Link key={service.id} to={`/servicios/${service.id}`} onClick={closeNavigation} className={location.pathname === `/servicios/${service.id}` ? 'is-active' : ''}><span className="site-mega-icon"><Icon size={19} aria-hidden="true" /></span><span><strong>{service.name}</strong><small>{service.description}</small></span><ArrowUpRight className="site-mega-arrow" size={17} aria-hidden="true" /></Link>; })}</div></div>
+      </div>}
+      {openMenu === 'company' && <div className="site-mega-panel site-company-panel" id="site-company-panel"><div className="site-mega-intro"><span className="site-mega-kicker">VISUAL CORP <i/></span><h2>Conoce<br/>nuestro mundo<span>.</span></h2><p>Una mirada a quiÃ©nes somos y cÃ³mo damos forma a cada proyecto.</p></div><div className="site-company-links"><Link to="/nosotros" onClick={closeNavigation}><span className="site-company-number">01</span><strong>QuiÃ©nes somos</strong><small>La marca, el equipo y lo que nos mueve.</small><ArrowUpRight size={20} aria-hidden="true" /></Link><Link to="/como-trabajamos" onClick={closeNavigation}><span className="site-company-number">02</span><strong>CÃ³mo trabajamos</strong><small>Del primer contacto a la producciÃ³n.</small><ArrowUpRight size={20} aria-hidden="true" /></Link></div></div>}
+    </div>
+    {mobileOpen && <><button type="button" className="site-mobile-backdrop" tabIndex={-1} onClick={closeNavigation} aria-label="Cerrar navegaciÃ³n"/><nav ref={mobilePanelRef} className="site-mobile-panel" id="site-mobile-navigation" aria-label="NavegaciÃ³n mÃ³vil"><span className="site-mobile-kicker">EXPLORA VISUAL CORP</span><div className="site-mobile-primary"><NavLink to="/" end onClick={closeNavigation}>Inicio<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/servicios" onClick={closeNavigation}>Servicios<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/nosotros" onClick={closeNavigation}>La empresa<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/portafolio" onClick={closeNavigation}>Portafolio<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/publicaciones" onClick={closeNavigation}>Publicaciones<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/blog" onClick={closeNavigation}>Blog<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/tienda" onClick={closeNavigation}>Tienda<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/contacto" onClick={closeNavigation}>Contacto<ArrowUpRight size={18} aria-hidden="true" /></NavLink></div><div className="site-mobile-services"><span>ESPECIALIDADES</span><div>{services.map((service) => { const Icon = serviceIcons[service.id] || Sparkles; return <Link key={service.id} to={`/servicios/${service.id}`} onClick={closeNavigation}><Icon size={17} aria-hidden="true" />{service.name}<ArrowUpRight size={15} aria-hidden="true" /></Link>; })}</div></div><Link className="site-mobile-process" to="/como-trabajamos" onClick={closeNavigation}>CÃ³mo trabajamos <ArrowUpRight size={16} aria-hidden="true" /></Link><Link className="site-mobile-quote" to="/cotizador" onClick={closeNavigation}>CuÃ©ntanos tu idea <ArrowUpRight size={19} aria-hidden="true" /></Link></nav></>}
+  </header>;
+}
+
+function SiteFooter() {
+  const { data } = useWorkspace();
+  const services = data.services.filter((service) => service.enabled);
+  return <footer className="site-footer" aria-label="Pie de pÃ¡gina">
+    <div className="footer-shell">
+      <div className="footer-topline">
+        <span><i aria-hidden="true"/> VISUAL CORP <b>Â·</b> {data.settings.location.toUpperCase()}</span>
+        <span className="footer-topline-promise">IDEAS QUE TOMAN FORMA <Sparkles size={13} aria-hidden="true"/></span>
+      </div>
+      <div className="site-footer-main">
+        <div className="footer-brand-column">
+          <BrandLink/>
+          <p>Ideas, producciÃ³n y comunicaciÃ³n para que tu marca ocupe su espacio.</p>
+          <span className="footer-location"><Globe2 size={15} aria-hidden="true"/>{data.settings.location}</span>
+        </div>
+        <nav className="footer-link-column" aria-label="Explorar">
+          <b>Explorar</b>
+          <Link to="/">Inicio</Link><Link to="/nosotros">La empresa</Link><Link to="/como-trabajamos">CÃ³mo trabajamos</Link>
+          <Link to="/portafolio">Portafolio</Link><Link to="/publicaciones">Publicaciones</Link><Link to="/blog">Blog</Link>
+          <Link to="/tienda">Tienda</Link><Link to="/contacto">Contacto</Link>
+        </nav>
+        <nav className="footer-link-column" aria-label="Servicios">
+          <b>Servicios</b>
+          {services.slice(0, 5).map((service) => <Link key={service.id} to={`/servicios/${service.id}`}>{service.name}</Link>)}
+          <Link className="footer-all-services" to="/servicios">Ver todos <ArrowUpRight size={13} aria-hidden="true"/></Link>
+        </nav>
+        <div className="footer-contact-column">
+          <b>Canales directos</b>
+          <p>CuÃ©ntanos quÃ© necesitas y revisaremos contigo el siguiente paso.</p>
+          <div className="footer-social-links">
+            <a href={`https://instagram.com/${data.settings.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer"><Globe2 size={16} aria-hidden="true"/><span>Instagram<small>{data.settings.instagram}</small></span><ArrowUpRight size={14} aria-hidden="true"/></a>
+            <a href={`https://wa.me/593${data.settings.contactPhone.replace(/^0/, '')}`} target="_blank" rel="noreferrer"><MessageCircle size={16} aria-hidden="true"/><span>WhatsApp<small>{data.settings.contactPhone}</small></span><ArrowUpRight size={14} aria-hidden="true"/></a>
+          </div>
+        </div>
+      </div>
+      <div className="footer-cta-strip">
+        <div className="footer-cta-copy"><span>HAGAMOS ESPACIO PARA TU PRÃ“XIMA IDEA</span><strong>Â¿Tienes una idea en mente?</strong></div>
+        <Link className="footer-cta-link" to="/cotizador"><span>Hablemos de tu proyecto</span><ArrowUpRight size={18} aria-hidden="true"/></Link>
+      </div>
+      <div className="site-footer-bottom">
+        <span>Â© {new Date().getFullYear()} Visual Corp Â· {data.settings.location}</span>
+        <Link to="/contacto">Contacto</Link>
+      </div>
+    </div>
+  </footer>;
+}
+
+export function PublicSiteLayout() {
+  const location = useLocation();
+  const reduceMotion = useReducedMotion();
+  return <div className="public-site"><ScrollProgress/><SiteHeader/><main className="site-main"><motion.div key={location.pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.28 }}><Outlet/></motion.div></main><SiteFooter/></div>;
+}
+
+function Eyebrow({ children, light = false }) { return <span className={`site-eyebrow${light ? ' light' : ''}`}><i/>{children}</span>; }
+
+function SectionTitle({ eyebrow, title, description, light = false }) {
+  return <div className={`site-section-title${light ? ' light' : ''}`}><div><Eyebrow light={light}>{eyebrow}</Eyebrow><h2>{title}</h2></div>{description && <p>{description}</p>}</div>;
+}
+
+function ServiceCard({ service, index = 0 }) {
+  const info = familyInfo(service.id);
+  const Icon = serviceIcons[service.id] || Sparkles;
+  return <Link className="site-service-card vc-magic-card" to={`/servicios/${service.id}`} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}><SpotlightLayer/><span className="site-service-index">{info?.mark || String(index + 1).padStart(2, '0')}</span><span className="site-service-icon"><Icon size={20} aria-hidden="true"/></span><h3>{service.name}</h3><p>{service.description}</p><span className="site-card-link">Explorar servicio <ArrowUpRight size={15}/></span></Link>;
+}
+
+function ContactLinks() {
+  const { data } = useWorkspace();
+  return <div className="site-contact-links"><a href={`https://wa.me/593${data.settings.contactPhone.replace(/^0/, '')}`} target="_blank" rel="noreferrer"><MessageCircle size={16}/>WhatsApp Â· {data.settings.contactPhone}<ArrowUpRight size={13}/></a><a href={`https://instagram.com/${data.settings.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer">Instagram Â· {data.settings.instagram}<ArrowUpRight size={13}/></a></div>;
+}
+
+function LeadForm({ variant = 'contact', initialService = '', quoteData = null }) {
+  const { data, add } = useWorkspace();
+  const [form, setForm] = useState({ name: '', phone: '', company: '', service: initialService, details: '' });
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => setForm((current) => ({ ...current, service: initialService || current.service })), [initialService]);
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!form.name.trim() || !form.phone.trim() || sending) return;
+    if (variant === 'quote' && quoteData && (!quoteData.service || !quoteData.project.trim())) {
+      setError('Selecciona una familia de servicio y describe tu proyecto para continuar.');
+      return;
+    }
+    const requestService = variant === 'quote' && quoteData?.service ? quoteData.service : form.service;
+    setSending(true);
+    setError('');
+    try {
+      if (supabaseConfigured) {
+        const { error: requestError } = await supabase.from('public_requests').insert({
+          request_type: variant === 'quote' ? 'quote' : 'contact',
+          name: form.name.trim(), phone: form.phone.trim(), company: form.company.trim(),
+          service: requestService, message: form.details.trim(),
+          quote_data: variant === 'quote' ? { details: form.details.trim(), service: requestService, request: quoteData } : {},
+        });
+        if (requestError) throw requestError;
+      } else if (import.meta.env.PROD) {
+        throw new Error('El formulario todavÃ­a no estÃ¡ conectado. EscrÃ­benos por WhatsApp.');
+      } else {
+        add('leads', { ...form, service: requestService, quoteData: variant === 'quote' ? quoteData : null, source: variant === 'quote' ? 'Cotizador pÃºblico' : 'Sitio web', stage: 'Nuevo', notes: '', campaignId: '' });
+      }
+      setForm({ name: '', phone: '', company: '', service: initialService, details: '' });
+      setSent(true);
+    } catch (cause) {
+      setError(cause?.message || 'No se pudo enviar la solicitud. Intenta nuevamente o escrÃ­benos por WhatsApp.');
+    } finally {
+      setSending(false);
+    }
+  };
+  const services = data.services.filter((service) => service.enabled);
+  return <form className="site-lead-form" onSubmit={submit}>
+    <div className="site-form-title"><b>{variant === 'quote' ? 'Detalles del proyecto' : 'Solicitud de contacto'}</b><small>Los campos con * son necesarios.</small></div>
+    {sent && <div className="site-success" role="status"><Check size={16}/> Solicitud registrada. Gracias por escribirnos.</div>}
+    {error && <div className="site-form-error" role="alert">{error} <a href={`https://wa.me/593${data.settings.contactPhone.replace(/^0/, '')}`} target="_blank" rel="noreferrer">Abrir WhatsApp <ArrowUpRight size={13}/></a></div>}
+    <div className="site-form-row"><label>Nombre *<input required autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Tu nombre"/></label><label>TelÃ©fono o WhatsApp *<input required type="tel" autoComplete="tel" inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="09â€¦"/></label></div>
+    <label>Negocio <span>(opcional)</span><input value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} placeholder="Nombre de tu negocio"/></label>
+    <label className={variant === 'quote' ? 'quote-form-service' : undefined}>Â¿QuÃ© necesitas?<select value={form.service} onChange={(event) => setForm({ ...form, service: event.target.value })}><option value="">Selecciona una familia de trabajo</option>{services.map((service) => <option value={service.name} key={service.id}>{service.name}</option>)}</select></label>
+    <label>{variant === 'quote' ? (quoteData ? 'Detalles adicionales (opcional)' : 'Describe tu proyecto *') : 'CuÃ©ntanos un poco mÃ¡s'}<textarea required={variant === 'quote' && !quoteData} rows={variant === 'quote' ? 4 : 3} value={form.details} onChange={(event) => setForm({ ...form, details: event.target.value })} placeholder={variant === 'quote' ? 'Agrega cualquier contexto que ayude a entender tu proyecto' : 'Objetivo, referencia o plazo que tienes en mente'}/></label>
+    <button className="site-primary-button form-submit" type="submit" disabled={sending}>{sending ? 'Enviandoâ€¦' : variant === 'quote' ? 'Enviar solicitud' : 'Enviar a Visual Corp'}<ArrowUpRight size={17}/></button>
+    <small className="site-form-note">Usaremos estos datos para responder tu solicitud. No incluyas informaciÃ³n sensible.</small>
+  </form>;
+}
+
+export function PublicHomePage() {
+  const { data } = useWorkspace();
+  const services = data.services.filter((service) => service.enabled);
+  return <><SiteTitle>Inicio</SiteTitle>
+    <section className="site-hero">
+      <div className="site-hero-glow glow-pink"/><div className="site-hero-glow glow-blue"/>
+      <div className="site-hero-content"><Eyebrow light>{data.settings.heroEyebrow}</Eyebrow><h1>{data.settings.heroTitle}</h1><p>{data.settings.heroText}</p><div className="site-hero-actions"><Link className="site-primary-button" to="/cotizador">CuÃ©ntanos tu idea <ArrowUpRight size={17}/></Link><Link className="site-secondary-button" to="/servicios">Explorar servicios <ArrowRight size={16}/></Link></div><div className="site-hero-proof"><span><Check size={14}/>AtenciÃ³n directa</span><span><Check size={14}/>Ideas y producciÃ³n</span><span><Check size={14}/>{data.settings.location}</span></div></div>
+      <div className="site-hero-art"><div className="site-mascot-halo" aria-hidden="true"/><div className="site-mascot-floor" aria-hidden="true"/><img className="site-mascot-image" src="/public-site/visualito-hero.webp" alt="Visualito, mascota de Visual Corp" width={720} height={1080} fetchPriority="high"/><div className="site-art-label label-top">IDEAS EN MOVIMIENTO</div></div>
+      <a className="site-scroll-cue" href="#servicios">Descubre Visual Corp <ArrowDownRight size={15}/></a>
+    </section>
+    <section className="site-services-section" id="servicios"><SectionTitle eyebrow="SERVICIOS CONECTADOS" title={<>Una idea puede tomar<br/>muchas formas.</>} description="Elige una familia de trabajo para conocerla mejor. Si no sabes por dÃ³nde empezar, cuÃ©ntanos tu idea y te orientamos."/><AnimatedList className="site-services-grid" stagger={0.075}>{services.map((service, index) => <ServiceCard service={service} index={index} key={service.id}/>)}</AnimatedList><Link className="site-text-link" to="/servicios">Ver todas las familias de servicio <ArrowRight size={16}/></Link></section>
+    <section className="site-bridge"><div className="bridge-copy"><Eyebrow>DEL CONCEPTO A LA REALIDAD</Eyebrow><h2>DiseÃ±o, producciÃ³n<br/>y una idea en comÃºn.</h2><p>Visual Corp es una agencia de publicidad y marketing en Milagro. Conversamos sobre lo que necesitas y te ayudamos a definir un siguiente paso.</p><Link className="site-primary-button" to="/como-trabajamos">Conoce cÃ³mo trabajamos <ArrowUpRight size={16}/></Link></div><AnimatedList className="bridge-steps"><article key="01"><b>01</b><div><h3>CuÃ©ntanos</h3><p>Comparte tu idea y el objetivo que buscas.</p></div><ArrowUpRight size={15}/></article><article key="02"><b>02</b><div><h3>Lo revisamos</h3><p>Aterrizamos juntos los detalles del proyecto.</p></div><ArrowUpRight size={15}/></article><article key="03"><b>03</b><div><h3>Avanzamos</h3><p>Definimos el camino adecuado para tu solicitud.</p></div><ArrowUpRight size={15}/></article></AnimatedList></section>
+     <React.Suspense fallback={null}><HomeContentHighlights/></React.Suspense>
+     <Callout data={data}/>
+  </>;
+}
+
+export function ServicesIndexPage() {
+  const { data } = useWorkspace();
+  const services = data.services.filter((service) => service.enabled);
+  return <><SiteTitle>Servicios</SiteTitle><PageHero eyebrow="LO QUE HACEMOS" title={<>Ideas que encuentran<br/>su forma.</>} description="Explora las familias de trabajo de Visual Corp. Cada proyecto empieza con una conversaciÃ³n sobre lo que necesitas." primary={{ label: 'CuÃ©ntanos tu proyecto', to: '/cotizador' }} secondary={{ label: 'CÃ³mo trabajamos', to: '/como-trabajamos' }}/><section className="site-page-section"><AnimatedList className="site-services-grid" stagger={0.075}>{services.map((service, index) => <ServiceCard key={service.id} service={service} index={index}/>)}</AnimatedList><p className="site-service-note">Cada solicitud se revisa segÃºn su alcance. Materiales, disponibilidad, valores y tiempos se confirman para cada proyecto.</p></section><Callout data={data}/></>;
+}
+
+export function ServiceDetailPage() {
+  const { slug } = useParams();
+  const { data } = useWorkspace();
+  const service = data.services.find((item) => item.id === slug);
+  const details = familyInfo(slug);
+  if (!service?.enabled) return <PageNotFound title="Este servicio no estÃ¡ disponible"/>;
+  const Icon = serviceIcons[service.id] || Sparkles;
+  return <><SiteTitle>{service.name}</SiteTitle><PageHero eyebrow={`SERVICIOS Â· ${details?.mark || ''}`} title={service.name} description={service.description} compact primary={{ label: 'Solicitar cotizaciÃ³n', to: `/cotizador?servicio=${encodeURIComponent(service.name)}` }} secondary={{ label: 'Todos los servicios', to: '/servicios' }}/><section className="site-detail-section"><div className="site-detail-copy"><Eyebrow>PARA EMPEZAR</Eyebrow><h2>HÃ¡blanos de<br/>tu proyecto.</h2><p>{serviceProjectPrompts[service.id] || 'CuÃ©ntanos el objetivo y comparte una referencia si la tienes.'} Revisaremos contigo el alcance antes de confirmar valores o tiempos.</p><Link className="site-primary-button" to={`/cotizador?servicio=${encodeURIComponent(service.name)}`}>Describir mi proyecto <ArrowUpRight size={16}/></Link></div><div className="site-detail-card"><span className="site-detail-number">{details?.mark || 'VC'}</span><Icon size={25} aria-hidden="true"/><h3>{service.name}</h3><p>{service.description}</p><div className="detail-card-divider"/><span>Alcance sujeto a revisiÃ³n con el equipo</span></div></section><Callout data={data} title="Â¿No sabes si esta es la familia adecuada?"/></>;
+}
+
+export function AboutPage() {
+  const { data } = useWorkspace();
+  return <><SiteTitle>La empresa</SiteTitle><PageHero eyebrow="VISUAL CORP" title={<>Ideas para marcas<br/>que quieren destacar.</>} description={`Somos una agencia de publicidad y marketing en ${data.settings.location}. AcompaÃ±amos ideas desde el diseÃ±o hasta soluciones visuales para marcas y espacios.`} primary={{ label: 'Conversemos', to: '/contacto' }} secondary={{ label: 'CÃ³mo trabajamos', to: '/como-trabajamos' }}/><section className="site-about-section"><div className="about-mark"><img src="/brand/visualcorp-symbol.png" alt="SÃ­mbolo Visual Corp"/><span>VISUAL CORP<br/><small>AGENCIA CREATIVA</small></span></div><div><Eyebrow>QUIÃ‰NES SOMOS</Eyebrow><h2>Hacemos visible<br/>lo que imaginas.</h2><p>En Visual Corp creemos que cada negocio tiene una historia que merece verse. Reunimos creatividad, publicidad y producciÃ³n visual para ayudar a convertir ideas en proyectos concretos.</p><p>Estamos en Milagro, Ecuador. CuÃ©ntanos quÃ© estÃ¡s pensando y encontraremos un primer paso contigo.</p><Link to="/como-trabajamos" className="site-text-link">Conoce nuestro proceso <ArrowRight size={16}/></Link></div></section><Callout data={data}/></>;
+}
+
+export function ProcessPage() {
+  const { data } = useWorkspace();
+  const steps = [{ n: '01', title: 'Nos cuentas la idea', text: 'Comparte el objetivo, el espacio o la necesidad que quieres resolver.' }, { n: '02', title: 'Revisamos los detalles', text: 'Conversamos sobre referencias, medidas, cantidades y el alcance del proyecto.' }, { n: '03', title: 'Definimos el siguiente paso', text: 'Te orientamos sobre cÃ³mo avanzar. Valores, disponibilidad y tiempos se confirman segÃºn cada solicitud.' }];
+  return <><SiteTitle>CÃ³mo trabajamos</SiteTitle><PageHero eyebrow="UN CAMINO CLARO" title={<>De la primera idea<br/>al siguiente paso.</>} description="Una conversaciÃ³n sencilla nos ayuda a entender lo que buscas y revisar cÃ³mo podemos ayudarte." primary={{ label: 'Iniciar una conversaciÃ³n', to: '/contacto' }} secondary={{ label: 'Explorar servicios', to: '/servicios' }}/><section className="site-process-section"><div className="process-intro"><Eyebrow>ASÃ EMPEZAMOS</Eyebrow><h2>Primero entendemos<br/>el proyecto.</h2><p>No necesitas tener todas las respuestas listas. CuÃ©ntanos lo que tienes en mente y completamos la informaciÃ³n contigo.</p><Link className="site-primary-button" to="/contacto">Iniciar una conversaciÃ³n <ArrowUpRight size={16}/></Link></div><AnimatedList className="process-list" stagger={0.1}>{steps.map((step) => <article key={step.n}><b>{step.n}</b><div><h3>{step.title}</h3><p>{step.text}</p></div></article>)}</AnimatedList></section><section className="site-process-location"><Globe2 size={18}/><span><b>{data.settings.location}</b><small>Agencia de publicidad y marketing</small></span><Link to="/contacto">Contactar <ArrowUpRight size={14}/></Link></section></>;
+}
+
+export function ContactPage() {
+  const { data } = useWorkspace();
+  return <><SiteTitle>Contacto</SiteTitle><PageHero eyebrow="HABLEMOS" title={<>Tu prÃ³xima idea<br/>empieza aquÃ­.</>} description="CuÃ©ntanos quÃ© quieres lograr. Revisaremos tu solicitud y podremos completar los detalles contigo." primary={{ label: 'Escribir mi solicitud', to: '#contacto-formulario' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-contact-page"><div className="site-contact-intro"><Eyebrow>CONTACTO DIRECTO</Eyebrow><h2>Estamos en<br/><em>{data.settings.location}.</em></h2><p>Elige cÃ³mo prefieres iniciar la conversaciÃ³n o dÃ©janos tus datos en el formulario.</p><ContactLinks/><div className="site-contact-hours"><span className="contact-pin"><MapPin size={18}/></span><span><b>VisÃ­tanos en Milagro</b><small>{publicAddress}</small></span></div><a className="site-address-link" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(publicAddress)}`} target="_blank" rel="noreferrer">Ver ubicaciÃ³n en el mapa <ArrowUpRight size={14}/></a></div><div id="contacto-formulario"><LeadForm/></div></section></>;
+}
+
+export function PublicQuotePage() {
+  const [searchParams] = useSearchParams();
+  const service = searchParams.get('servicio') || '';
+  const { data } = useWorkspace();
+  const [quoteData, setQuoteData] = useState<QuoteDraft | null>(null);
+  const services = useMemo(() => data.services.filter((item) => item.enabled), [data.services]);
+  return <><SiteTitle>Solicitar cotizaciÃ³n</SiteTitle><PageHero eyebrow="COTIZA TU PROYECTO" title={<>CuÃ©ntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envÃ­a una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp"><QuoteConfigurator services={services} initialService={service} onChange={setQuoteData}/><div className="site-quote-request" id="formulario-cotizacion"><LeadForm variant="quote" initialService={quoteData?.service || service} quoteData={quoteData}/></div></section></>;
+}
+function PageHero({ eyebrow, title, description, compact = false, primary, secondary }) {
+  const action = (item, className, Icon) => item.to.startsWith('#')
+    ? <a className={className} href={item.to}>{item.label} <Icon size={16}/></a>
+    : <Link className={className} to={item.to}>{item.label} <Icon size={16}/></Link>;
+  return <section className={`site-page-hero${compact ? ' compact' : ''}`}><div className="site-hero-glow glow-pink"/><div className="site-page-hero-inner"><Eyebrow light>{eyebrow}</Eyebrow><h1>{title}</h1><p>{description}</p><div className="site-page-hero-actions">{primary && action(primary, 'site-primary-button', ArrowUpRight)}{secondary && action(secondary, 'site-secondary-button', ArrowRight)}</div></div></section>;
+}
+
+function Callout({ data, title = 'Â¿Tienes una idea en mente?' }) {
+  return <section className="site-callout"><div><Eyebrow light>HABLEMOS DE TU PROYECTO</Eyebrow><h2>{title}</h2><p>Comparte lo que buscas. Revisaremos contigo el siguiente paso.</p></div><Link className="site-primary-button" to="/contacto">Contactar a Visual Corp <ArrowUpRight size={16}/></Link></section>;
+}
+
+function PageNotFound({ title }) { return <section className="site-not-found"><Eyebrow>VISUAL CORP</Eyebrow><h1>{title}</h1><p>Revisa la lista de servicios o vuelve al inicio.</p><Link to="/servicios" className="site-primary-button">Ver servicios <ArrowRight size={16}/></Link></section>; }

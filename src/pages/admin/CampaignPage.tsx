@@ -1,7 +1,245 @@
-YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éí×O6á:-jZ.¶›­–)Ş³†–×÷'B&V7BÂ²W6T6ÆÆ&6²ÂW6TVffV7BÂW6TÖVÖòÂW6U7FFRÒg&öÒw&V7Bs°Ğ¦–×÷'B°Ğ¢7F—f—G’ÂÆW'D6—&6ÆRÂ'&÷tF÷vå&–v‡BÂ'&÷uW&–v‡BÂ&$6†'C2Â6ÆVæF$F—2Â6†V6²ÀĞ¢6†V6´6—&6ÆS"Â6Æö6³2Âf–ÆT–ÖvRÂf–ÆUFW‡BÂf–ÇFW"ÂföÆFW$÷VâÂ–ÖvW2ÂÆ–v‡F'VÆ"ÀĞ¢ÆöFW$6—&6ÆRÂÖVv†öæRÂÇW2Â&Vg&W6„7rÂ6V&6‚Â6fRÂ7&¶ÆW2ÂF&vWBÂG&VæF–æuWÂ‚ÀĞ§Òg&öÒvÇV6–FR×&V7Bs°Ğ¦–×÷'B²g&ÖRÂvT†VF–ærÒg&öÒrââòââööÆ–÷WBs°Ğ¦–×÷'B²W6TWF‚Òg&öÒrââòââöWF‚ôWF…&÷f–FW"s°Ğ¦–×÷'B²æ–ÖFVDÆ—7BÒg&öÒrââòââö6ö×öæVçG2÷V’ôÖv–46ö×öæVçG2s°Ğ¦–×÷'B²V×G•7FFRÂ7FvT&FvRÒg&öÒrââòââö6ö×öæVçG2öfVVF&6²s°Ğ¦–×÷'B²7W&6RÒg&öÒrââòââöÆ–"÷7W&6T6Æ–VçBs°Ğ Ğ§G—R÷7BÒ&V6÷&CÇ7G&–ærÂç“âb²–C¢7G&–æs²F—FÆS¢7G&–æs²7FGW3¢7G&–æs²66†VGVÆVEöFFS¢7G&–æs²ÆFf÷&Ó¢7G&–ærÓ°Ğ§G—R76WBÒ&V6÷&CÇ7G&–ærÂç“âb²–C¢7G&–æs²f–ÆVæÖS¢7G&–æs²&VÅ÷Fƒ¢7G&–æs²6V7F–öã¢7G&–æs²—5öf–Æ&ÆS¢&ööÆVâÓ°Ğ§G—R6V7F–öâÒv÷fW'f–WrrÂv6ÆVæF"rÂvÆ–'&'’rÂw7G&FVw’rÂv÷W&F–öç2rÂw&W7VÇG2s°Ğ§G—Rv÷&·76TFFÒ²÷7G3¢÷7EµÓ²76WG3¢76WEµÓ²÷7D76WG3¢ç•µÓ²7G&FVw“¢ç•µÓ²v÷&³¢ç•µÓ²†—7F÷'“¢ç•µÓ²ÆVG3¢ç•µÓ²6ÆW3¢ç•µÓ²WfVçG3¢ç•µÒÓ°Ğ Ğ¦6öç7BV×G”FF¢v÷&·76TFFÒ²÷7G3¢µÒÂ76WG3¢µÒÂ÷7D76WG3¢µÒÂ7G&FVw“¢µÒÂv÷&³¢µÒÂ†—7F÷'“¢µÒÂÆVG3¢µÒÂ6ÆW3¢µÒÂWfVçG3¢µÒÓ°Ğ¦6öç7B6V7F–öç3¢²–C¢6V7F–öã²Æ&VÃ¢7G&–æs²–6öã¢&V7BäVÆVÖVçEG—RÕµÒÒ°Ğ¢²–C¢v÷fW'f–WrrÂÆ&VÃ¢u&W7VÖVârÂ–6öã¢&$6†'C2ÒÀĞ¢²–C¢v6ÆVæF"rÂÆ&VÃ¢t6ÆVæF&–òrÂ–6öã¢6ÆVæF$F—2ÒÀĞ¢²–C¢vÆ–'&'’rÂÆ&VÃ¢t&–&Æ–÷FV6rÂ–6öã¢–ÖvW2ÒÀĞ¢²–C¢w7G&FVw’rÂÆ&VÃ¢tW7G&FVv–rÂ–6öã¢F&vWBÒÀĞ¢²–C¢v÷W&F–öç2rÂÆ&VÃ¢t÷W&6œ;6ârÂ–6öã¢6†V6´6—&6ÆS"ÒÀĞ¢²–C¢w&W7VÇG2rÂÆ&VÃ¢u&W7VÇFF÷2rÂ–6öã¢G&VæF–æuWÒÀĞ¥Ó°Ğ Ğ¦6öç7Bf÷&ÖDFFRÒ‡fÇVSó¢7G&–ær’Óâ°Ğ¢–b‚fÇVR’&WGW&âtfV6†VæF–VçFRs°Ğ¢6öç7BFFRÒæWrFFR†G·fÇVRç6Æ–6RƒÂ—ÕC#££“°Ğ¢&WGW&âçVÖ&W"æ—4æâ†FFRævWEF–ÖR‚’’òfÇVR¢æWr–çFÂäFFUF–ÖTf÷&ÖB‚vW2ÔT2rÂ²F“¢vçVÖW&–2rÂÖöçFƒ¢w6†÷'BrÂ–V#¢vçVÖW&–2rÒ’æf÷&ÖB†FFR“°Ğ§Ó°Ğ¦6öç7Bf÷&ÖDÖöæW’Ò‡fÇVSó¢çVÖ&W"’ÓâæWr–çFÂäçVÖ&W$f÷&ÖB‚vW2ÔT2rÂ²7G–ÆS¢v7W'&Væ7’rÂ7W'&Væ7“¢uU4BrÂÖ†–×VÔg&7F–öäF–v—G3¢Ò’æf÷&ÖB„çVÖ&W"‡fÇVR’ÇÂ“°Ğ¦6öç7B7FGW5FöæRÒ‡fÇVRÒrr’Óâ÷V&Æ–6GÆ6ö×ÆWGÆ&ö&GÆvæBö’çFW7B‡fÇVR’òvvööBr¢ö&Æ÷VWÆG&7ÇfVæ6–Bö’çFW7B‡fÇVR’òvFævW"r¢÷&Wf—6—ÆW7W&ÇfÆ–Bö’çFW7B‡fÇVR’òw&Wf–Wrr¢v7F—fRs°Ğ¦6öç7B6†V6¶Æ—7Df–VÆG2Ò°Ğ¢²v6÷fW%÷7FGW2rÂu÷'FFuÒÂ²v'E÷7FGW2rÂt'FRuÒÂ²v6F–öå÷7FGW2rÂt6÷’uÒÀĞ¢²wf–FVõ÷7FGW2rÂuf–FVòuÒÂ²wfö–6V÷fW%÷7FGW2rÂuf÷¢uÒÂ²wF–·Föµ÷7FGW2rÂuF–µFö²uÒÀĞ¥Ò26öç7C°Ğ¦6öç7BFVfVÇDG&gBÒ‚’Óâ‡²F—FÆS¢rrÂ6öçFVçEöÆ–æS¢rrÂÆFf÷&Ó¢t–ç7Fw&ÒrÂf÷&ÖC¢u÷7BrÂ66†VGVÆVEöFFS¢rrÂ66†VGVÆVE÷F–ÖS¢rrÂ÷væW#¢rrÂ7FGW3¢u÷"–æ–6–"rÂ6F–öã¢rrÂæW‡Eö7F–öã¢rrÂGVUöFFS¢rrÒ“°Ğ Ğ¦7–æ2gVæ7F–öâ&VDÆÂ‡F&ÆS¢7G&–ærÂ÷&væ—¦F–öä–C¢7G&–ærÂ÷&FW$'“ó¢7G&–ær’°Ğ¢–b‚7W&6R’&WGW&âµÓ°Ğ¢6öç7BvU6—¦RÒ°Ğ¢6öç7B&÷w3¢ç•µÒÒµÓ°Ğ¢f÷"†ÆWBöfg6WBÒ²²öfg6WB³ÒvU6—¦R’°Ğ¢ÆWBVW'’Ò7W&6Ræg&öÒ‡F&ÆR’ç6VÆV7B‚r¢r’æW‚v÷&væ—¦F–öåö–BrÂ÷&væ—¦F–öä–B“°Ğ¢–b†÷&FW$'’’VW'’ÒVW'’æ÷&FW"†÷&FW$'’Â²66VæF–æs¢G'VRÂçVÆÇ4f—'7C¢fÇ6RÒ’æ÷&FW"‚v–BrÂ²66VæF–æs¢G'VRÒ“°Ğ¢6öç7B²FFÂW'&÷"ÒÒv—BVW'’ç&ævR†öfg6WBÂöfg6WB²vU6—¦RÒ“°Ğ¢–b†W'&÷"’F‡&÷rW'&÷#°Ğ¢&÷w2çW6‚‚âââ†FFÇÂµÒ’“°Ğ¢–b‚FFÇÂFFæÆVæwF‚ÂvU6—¦R’&WGW&â&÷w3°Ğ¢ĞĞ§ĞĞ Ğ¦W‡÷'BgVæ7F–öâ6×–våvR‡²&VÒvFÖ–ârÓ¢²&Vó¢vFÖ–ârÂv÷W&F–öç2rÒ’°Ğ¢6öç7B²÷&væ—¦F–öä–BÂ†5W&Ö—76–öâÒÒW6TWF‚‚“°Ğ¢6öç7B6åf–WrÒ†5W&Ö—76–öâ‚vÖ&¶WF–ærrÂwf–Wrr“°Ğ¢6öç7B6äVF—BÒ†5W&Ö—76–öâ‚vÖ&¶WF–ærrÂvVF—Br“°Ğ¢6öç7B¶FFÂ6WDFFÒÒW6U7FFSÅv÷&·76TFFâ†V×G”FF“°Ğ¢6öç7B¶ÆöF–ærÂ6WDÆöF–æuÒÒW6U7FFR‡G'VR“°Ğ¢6öç7B·6f–ærÂ6WE6f–æuÒÒW6U7FFR†fÇ6R“°Ğ¢6öç7B¶ÆöDW'&÷"Â6WDÆöDW'&÷%ÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶æ÷F–6RÂ6WDæ÷F–6UÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶7F—fU6V7F–öâÂ6WD7F—fU6V7F–öåÒÒW6U7FFSÅ6V7F–öãâ‚v÷fW'f–Wrr“°Ğ¢6öç7B·VW'’Â6WEVW'•ÒÒW6U7FFR‚rr“°Ğ¢6öç7B·7FGW4f–ÇFW"Â6WE7FGW4f–ÇFW%ÒÒW6U7FFR‚uFöF÷2Æ÷2W7FF÷2r“°Ğ¢6öç7B¶76WDf–ÇFW"Â6WD76WDf–ÇFW%ÒÒW6U7FFR‚uFöF÷2Æ÷2&6†—f÷2r“°Ğ¢6öç7B·6VÆV7FVE÷7BÂ6WE6VÆV7FVE÷7EÒÒW6U7FFSÅ÷7BÂçVÆÃâ†çVÆÂ“°Ğ¢6öç7B¶ÖöFÄ÷VâÂ6WDÖöFÄ÷VåÒÒW6U7FFR†fÇ6R“°Ğ¢6öç7B¶G&gBÂ6WDG&gEÒÒW6U7FFR†FVfVÇDG&gB“°Ğ¢6öç7B¶—4æWrÂ6WD—4æWuÒÒW6U7FFR†fÇ6R“°Ğ Ğ¢6öç7B&Vg&W6‚ÒW6T6ÆÆ&6²†7–æ2‚’Óâ°Ğ¢–b‚7W&6RÇÂ÷&væ—¦F–öä–BÇÂ6åf–Wr’°Ğ¢6WDÆöF–ær†fÇ6R“°Ğ¢&WGW&ã°Ğ¢ĞĞ¢6WDÆöF–ær‡G'VR“°Ğ¢6WDÆöDW'&÷"‚rr“°Ğ¢G'’°Ğ¢6öç7B·÷7G2Â76WG2Â÷7D76WG2Â7G&FVw’Âv÷&²Â†—7F÷'’ÂÆVG2Â6ÆW2ÂWfVçG5ÒÒv—B&öÖ—6RæÆÂ…°Ğ¢&VDÆÂ‚vÖ&¶WF–æu÷÷7G2rÂ÷&væ—¦F–öä–BÂw66†VGVÆVEöFFRr’ÀĞ¢&VDÆÂ‚vÖ&¶WF–æuö76WG2rÂ÷&væ—¦F–öä–BÂvf–ÆVæÖRr’ÀĞ¢&VDÆÂ‚vÖ&¶WF–æu÷÷7Eö76WG2rÂ÷&væ—¦F–öä–BÂv7&VFVEöBr’ÀĞ¢&VDÆÂ‚vÖ&¶WF–æu÷7G&FVw•ö—FV×2rÂ÷&væ—¦F–öä–BÂv6FVv÷'’r’ÀĞ¢&VDÆÂ‚vÖ&¶WF–æu÷v÷&µö—FV×2rÂ÷&væ—¦F–öä–BÂvGVUöFFRr’ÀĞ¢&VDÆÂ‚vÖ&¶WF–æu÷v÷&µö—FVÕö†—7F÷'’rÂ÷&væ—¦F–öä–BÂv7&VFVEöBr’ÀĞ¢&VDÆÂ‚vÖ&¶WF–æuöÆVE÷G&6¶–ærrÂ÷&væ—¦F–öä–BÂv7&VFVEöBr’ÀĞ¢&VDÆÂ‚vÖ&¶WF–æu÷6ÆW5÷6æ6†÷G2rÂ÷&væ—¦F–öä–BÂv–×÷'FVEöBr’ÀĞ¢&VDÆÂ‚vÖ&¶WF–æu÷÷7EöWfVçG2rÂ÷&væ—¦F–öä–BÂv7&VFVEöBr’ÀĞ¢Ò“°Ğ¢6WDFF‡²÷7G2Â76WG2Â÷7D76WG2Â7G&FVw’Âv÷&²Â†—7F÷'’ÂÆVG2Â6ÆW2ÂWfVçG2Ò“°Ğ¢Ò6F6‚†W'&÷#¢ç’’°Ğ¢6WDÆöDW'&÷"†W'&÷#òæÖW76vRÇÂtæòVF–Ö÷26&v"VÂW76–òFRÖ&¶WF–ærâr“°Ğ¢Òf–æÆÇ’°Ğ¢6WDÆöF–ær†fÇ6R“°Ğ¢ĞĞ¢ÒÂ¶÷&væ—¦F–öä–BÂ6åf–WuÒ“°Ğ Ğ¢W6TVffV7B‚‚’Óâ²fö–B&Vg&W6‚‚“²ÒÂ·&Vg&W6…Ò“°Ğ¢W6TVffV7B‚‚’Óâ°Ğ¢–b‚æ÷F–6R’&WGW&âVæFVf–æVC°Ğ¢6öç7BF–ÖV÷WBÒv–æF÷rç6WEF–ÖV÷WB‚‚’Óâ6WDæ÷F–6R‚rr’Â3c“°Ğ¢&WGW&â‚’Óâv–æF÷ræ6ÆV%F–ÖV÷WB‡F–ÖV÷WB“°Ğ¢ÒÂ¶æ÷F–6UÒ“°Ğ¢W6TVffV7B‚‚’Óâ°Ğ¢–b‚ÖöFÄ÷Vâ’&WGW&âVæFVf–æVC°Ğ¢6öç7B6Æ÷6TöäW66RÒ†WfVçC¢¶W–&ö&DWfVçB’Óâ°Ğ¢–b†WfVçBæ¶W’ÓÓÒtW66Rr’²6WE6VÆV7FVE÷7B†çVÆÂ“²6WDÖöFÄ÷Vâ†fÇ6R“²ĞĞ¢Ó°Ğ¢v–æF÷ræFDWfVçDÆ—7FVæW"‚v¶W–F÷vârÂ6Æ÷6TöäW66R“°Ğ¢&WGW&â‚’Óâv–æF÷rç&VÖ÷fTWfVçDÆ—7FVæW"‚v¶W–F÷vârÂ6Æ÷6TöäW66R“°Ğ¢ÒÂ¶ÖöFÄ÷VåÒ“°Ğ Ğ¢6öç7B7FGW6W2ÒW6TÖVÖò‚‚’Óâ²uFöF÷2Æ÷2W7FF÷2rÂââææWr6WB†FFç÷7G2æÖ‚‡÷7B’Óâ÷7Bç7FGW2’æf–ÇFW"„&ööÆVâ’ç6÷'B‚’•ÒÂ¶FFç÷7G5Ò“°Ğ¢6öç7Bf–ÇFW&VE÷7G2ÒW6TÖVÖò‚‚’Óâ°Ğ¢6öç7B6V&6‚ÒVW'’çG&–Ò‚’çFôÆö6ÆTÆ÷vW$66R‚vW2r“°Ğ¢&WGW&âFFç÷7G2æf–ÇFW"‚‡÷7B’Óâ°Ğ¢6öç7BÖF6†W56V&6‚Ò6V&6‚ÇÂ·÷7BçF—FÆRÂ÷7Bæ6öçFVçEöÆ–æRÂ÷7BçÆFf÷&ÒÂ÷7Bæ÷væW"Â÷7Bæ6F–öâÂ÷7Bç7FGW5Òç6öÖR‚†f–VÆB’Óâ7G&–ær†f–VÆBÇÂrr’çFôÆö6ÆTÆ÷vW$66R‚vW2r’æ–æ6ÇVFW2‡6V&6‚’“°Ğ¢&WGW&âÖF6†W56V&6‚bb‡7FGW4f–ÇFW"ÓÓÒuFöF÷2Æ÷2W7FF÷2rÇÂ÷7Bç7FGW2ÓÓÒ7FGW4f–ÇFW"“°Ğ¢Ò’ç6÷'B‚†Â"’Óâ°Ğ¢6öç7B÷VâÒ÷V&Æ–6GÆ6ö×ÆWGÆ6æ6VÆBö’çFW7B†ç7FGW2ÇÂrr“°Ğ¢6öç7B$÷VâÒ÷V&Æ–6GÆ6ö×ÆWGÆ6æ6VÆBö’çFW7B†"ç7FGW2ÇÂrr“°Ğ¢–b†÷VâÓÒ$÷Vâ’&WGW&â÷VâòÓ¢°Ğ¢&WGW&â†æGVUöFFRÇÂç66†VGVÆVEöFFRÇÂs“““’Ó"Ó3r’æÆö6ÆT6ö×&R†"æGVUöFFRÇÂ"ç66†VGVÆVEöFFRÇÂs“““’Ó"Ó3r“°Ğ¢Ò“°Ğ¢ÒÂ¶FFç÷7G2ÂVW'’Â7FGW4f–ÇFW%Ò“°Ğ¢6öç7Bf—6–&ÆT76WG2ÒW6TÖVÖò‚‚’Óâ°Ğ¢6öç7B6V&6‚ÒVW'’çG&–Ò‚’çFôÆö6ÆTÆ÷vW$66R‚vW2r“°Ğ¢&WGW&âFFæ7>|Û‹h‘éì¶»§q«^tùôğ½Í•Ñ¥½¸ùô4(4(€€€€€í…Ñ¥Ù•M•Ñ¥½¸€ôôô€É•ÍÕ±ÑÌœ€˜˜€ñÍ•Ñ¥½¸±…ÍÍ9…µ”ô‰ÙŒµÉ•ÍÕ±ÑÌµÍ•Ñ¥½¸ˆøñ‘¥Ø±…ÍÍ9…µ”ô‰ÙŒµ½¹Ñ•¹ĞµÑ½½±‰…ÈÙŒµ½¹Ñ•¹ĞµÑ½½±‰…Èµ¥¹±¥¹”ˆøñ‘¥ØøñÍÁ…¸±…ÍÍ9…µ”ô‰ÙŒµ½¹Ñ•¹ĞµÍ•Ñ¥½¸µ¥½¸ˆøñQÉ•¹‘¥¹UÀÍ¥é”õìÄÙô¼øğ½ÍÁ…¸øñ‘¥ØøñˆùI•ÍÕ±Ñ…‘½Ì½¸½¹Ñ•áÑ¼ğ½ˆøñÍµ…±°ù=‰Í•ÉÙ…¥½¹•Ì‘”ÁÕ‰±¥…¥½¹•ÌäÉ•ÍÕµ•¸¡¥ÍÓÍÉ¥¼…É•…‘¼ğ½Íµ…±°øğ½‘¥Øøğ½‘¥Øøğ½‘¥Øùí±½…‘¥¹œ€ü€ñ‘¥Ø±…ÍÍ9…µ”ô‰ÙŒµ½¹Ñ•¹Ğµ±½…‘¥¹œˆøñ1½…‘•É¥É±”Í¥é”õìÈÅô¼ù…É…¹‘¼É•ÍÕ±Ñ…‘½ÏŠ˜ğ½‘¥Øø€è€ğøñ‘¥Ø±…ÍÍ9…µ”ô‰ÙŒµÉ•ÍÕ±ÑÌµÑ½ÀµÉ¥ˆøñ…ÉÑ¥±”±…ÍÍ9…µ”ô‰ÙŒµÉ•ÍÕ±ÑÌµ…É¥ÌµÍ…±•ÌˆøñÍÁ…¸±…ÍÍ9…µ”ô‰•å•‰É½ÜˆùIMU58!%MSMI%<ƒ
-ÜY9QLğ½ÍÁ…¸øñÍÑÉ½¹œùí™½Éµ…Ñ5½¹•ä¡ÕÉÉ•¹ÑM¹…ÁÍ¡½Ğü¹…µ½Õ¹Ğ¥ôğ½ÍÑÉ½¹œøñÀùí9Õµ‰•È¡ÕÉÉ•¹ÑM¹…ÁÍ¡½Ğü¹Í…±•Ì¥ñğÁô½Á•É…¥½¹•Ìƒ
-ÜÁÉ½µ•‘¥¼í™½Éµ…Ñ5½¹•ä¡ÕÉÉ•¹ÑM¹…ÁÍ¡½Ğü¹…Ù•É…”¥ôÁ½ÈÙ•¹Ñ„ğ½ÀøñÍµ…±°ùíÕÉÉ•¹ÑM¹…ÁÍ¡½Ğü¹‘…Ñ•}™É½´˜™ÕÉÉ•¹ÑM¹…ÁÍ¡½Ğü¹‘…Ñ•}Ñ¼ı€‘í™½Éµ…Ñ…Ñ”¡ÕÉÉ•¹ÑM¹…ÁÍ¡½Ğ¹‘…Ñ•}™É½´¥ôƒŠP€‘í™½Éµ…Ñ…Ñ”¡ÕÉÉ•¹ÑM¹…ÁÍ¡½Ğ¹‘…Ñ•}Ñ¼¥õ€èI…¹¼¡¥ÍÓÍÉ¥¼Á½È½¹™¥Éµ…Èôƒ
-ÜÕ•¹Ñ”èÉ•ÍÕµ•¸¥µÁ½ÉÑ…‘¼‘”QÉ…­¥¹œğ½Íµ…±°øñ‘¥Ø±…ÍÍ9…µ”ô‰ÙŒµÉ•ÍÕ±ÑÌµÑ…ÌˆøñÍÁ…¸ùÉ•…‘¼ğ½ÍÁ…¸øñÍÁ…¸ùM¥¸…ÑÉ¥‰Õ§Í¸„…µÁ‡Å„ğ½ÍÁ…¸øñÍÁ…¸ùM¥¸½ÍÑ½Ì™¥…‰±•Ìğ½ÍÁ…¸øğ½‘¥Øøğ½…ÉÑ¥±”øñ…ÉÑ¥±”±…ÍÍ9…µ”ô‰ÙŒµÉ•ÍÕ±ÑÌµ…ÉˆøñÍÁ…¸±…ÍÍ9…µ”ô‰•å•‰É½Üˆù5	U<=5I%0ğ½ÍÁ…¸øñÍÑÉ½¹œùí‘…Ñ„¹±•…‘Ì¹±•¹Ñ¡ôğ½ÍÑÉ½¹œøñÀù½Á½ÉÑÕ¹¥‘…‘•Ì½¸Í•Õ¥µ¥•¹Ñ¼ğ½ÀøñÍµ…±°ùí‘…Ñ„¹±•…‘Ì¹±•¹Ñ ü1½ÌÉ•¥ÍÑÉ½ÌÁ•Éµ…¹••¸Ù¥¹Õ±…‘½Ì„ÍÔÉ•™•É•¹¥„¥¹Ñ•É¹„¸œè°·Í‘Õ±¼•ÍÓ„ÁÉ•Á…É…‘¼ì±„‰…Í”½É¥¥¹…°¹¼Ñ•»µ„½Á½ÉÑÕ¹¥‘…‘•ÌÉ•¥ÍÑÉ…‘…Ì¸ôğ½Íµ…±°øğ½…ÉÑ¥±”øğ½‘¥Øøñ‘¥Ø±…ÍÍ9…µ”ô‰ÙŒµÉ•ÍÕ±ÑÌµÁ½ÍÑÌˆøñ‘¥Ø±…ÍÍ9…µ”ô‰ÙŒµ½¹Ñ•¹ĞµÍ¥‘”µ¡•…‘¥¹œˆøñ‘¥ØøñÍÁ…¸±…ÍÍ9…µ”ô‰•å•‰É½ÜˆùM5AE<I%MQI<ğ½ÍÁ…¸øñ ÌùAÕ‰±¥…¥½¹•Ì½¸·¥ÑÉ¥…Ìğ½ Ìøğ½‘¥ØøñÍÁ…¸±…ÍÍ9…µ”ô‰ÙŒµÉ•ÍÕ±ÑÌµ½Õ¹Ğˆùíµ•ÑÉ¥A½ÍÑÌ¹±•¹Ñ¡ôğ½ÍÁ…¸øğ½‘¥Øùíµ•ÑÉ¥A½ÍÑÌ¹±•¹Ñ €üµ•ÑÉ¥A½ÍÑÌ¹µ…À ¡Á½ÍĞ¤ôøñ…ÉÑ¥±”­•äõíÁ½ÍĞ¹¥‘ôøñ‘¥ØøñˆùíÁ½ÍĞ¹Ñ¥Ñ±•ôğ½ˆøñÍÁ…¸ùíÁ½ÍĞ¹Á±…Ñ™½Éµôƒ
-ÜíÁ½ÍĞ¹ÍÑ…ÑÕÍôğ½ÍÁ…¸øğ½‘¥Øøñ‘¥ØøñÍÑÉ½¹œùí9Õµ‰•È¡Á½ÍĞ¹É•… ¤¹Ñ½1½…±•MÑÉ¥¹œ •Ìµœ¥ôğ½ÍÑÉ½¹œøñÍµ…±°ù…±…¹”ğ½Íµ…±°øñÍÑÉ½¹œùí9Õµ‰•È¡Á½ÍĞ¹¥¹Ñ•É…Ñ¥½¹Ì¤¹Ñ½1½…±•MÑÉ¥¹œ •Ìµœ¥ôğ½ÍÑÉ½¹œøñÍµ…±°ù¥¹Ñ•É…¥½¹•Ìğ½Íµ…±°øñÍÑÉ½¹œùí9Õµ‰•È¡Á½ÍĞ¹±¥­Ì¤¹Ñ½1½…±•MÑÉ¥¹œ •Ìµœ¥ôğ½ÍÑÉ½¹œøñÍµ…±°ù±¥Ìğ½Íµ…±°øñÍÑÉ½¹œùí9Õµ‰•È¡Á½ÍĞ¹±•…‘Ì¤¹Ñ½1½…±•MÑÉ¥¹œ •Ìµœ¥ôğ½ÍÑÉ½¹œøñÍµ…±°ù±•…‘Ì¥¹™½Éµ…‘½Ìğ½Íµ…±°øğ½‘¥Øøğ½…ÉÑ¥±”ø¤€è€ñµÁÑåMÑ…Ñ”¥½¸õí	…É¡…ÉĞÍôÑ¥Ñ±”ô‰é¸¹¼¡…ä·¥ÑÉ¥…Ì‘”ÁÕ‰±¥…¥½¹•ÌˆÑ•áĞô‰I•¥ÍÑÉ„É•ÍÕ±Ñ…‘½ÌÕ…¹‘¼±„Á±…Ñ…™½Éµ„ä•°Á•É¥½‘¼‘”µ•‘¥§Í¸•ÍÓ¥¸½¹™¥Éµ…‘½Ì¸ˆ¼ùôğ½‘¥ØøñÀ±…ÍÍ9…µ”ô‰ÙŒµ½¹Ñ•¹Ğµ™½½Ñ¹½Ñ”ˆù°É•ÍÕµ•¸‘”Ù•¹Ñ…ÌÕ‰É”Õ¹„½Á¥„¡¥ÍÓÍÉ¥„‘”Õ¹„Í•µ…¹„‘”…½ÍÑ¼‘”€ÈÀÈØ¸9¼¥¹±Õå”Õ¹„‘¥µ•¹Í§Í¸™¥…‰±”‘”±¥•¹Ñ”¹¤½ÍÑ½Ìì¹¼µ¥‘”É•¹Ñ…‰¥±¥‘…¹¤…ÑÉ¥‰Õå”Ù•¹Ñ…Ì„ÁÕ‰±¥…¥½¹•Ì¸°…±…¹”°¥¹Ñ•É…¥½¹•Ì°±¥Ìä±•…‘Ì‘”…‘„ÁÕ‰±¥…§Í¸Í”µÕ•ÍÑÉ…¸½µ¼Ù…±½É•Ì¥¹™½Éµ…‘½Ì•¸QÉ…­¥¹œ¸ğ½Àøğ¼ùôğ½Í•Ñ¥½¸ùô4(4(€€€€€€ñ™½½Ñ•È±…ÍÍ9…µ”ô‰ÙŒµ½¹Ñ•¹ĞµÍ½ÕÉ”ˆøñÍÁ…¸øñ¡•­¥É±”ÈÍ¥é”õìÄÕô¼øğ½ÍÁ…¸øñÀøñˆù	…Í”•¹ÑÉ…°½¹•Ñ…‘„ƒ
-ÜY¥ÍÕ…°½ÉÀğ½ˆøñÍµ…±°ù…Ñ½Ì½Á¥…‘½Ì‘•Í‘”QÉ…­¥¹œ½¸ÍÕÌ%ÌäÉ•±…¥½¹•Ì¸1½Ì…µ‰¥½ÌÅÕ”¡……Ì…Å×´ÅÕ•‘…¸•¸±„ÍÕ¥Ñ”äÍ”É•¥ÍÑÉ…¸•¸•°¡¥ÍÑ½É¥…°¸ğ½Íµ…±°øğ½ÀøñÍÁ…¸±…ÍÍ9…µ”ô‰ÙŒµ½¹Ñ•¹ĞµÍ½ÕÉ”µÑ…œˆùí‘…Ñ„¹…ÍÍ•ÑÌ¹±•¹Ñ ¹Ñ½1½…±•MÑÉ¥¹œ •Ìµœ¥ô…É¡¥Ù½Ì…Ñ…±½…‘½Ìğ½ÍÁ…¸øğ½™½½Ñ•Èø4(€€€€ğ½µ…¥¸ø4(4(€€€í¹½Ñ¥”˜˜ñ‘¥Ø±…ÍÍ9…µ”ô‰ÙŒµ½¹Ñ•¹ĞµÑ½…ÍĞˆÉ½±”ô‰ÍÑ…ÑÕÌˆøñ¡•­¥É±”ÈÍ¥é”õìÄÙô¼ùí¹½Ñ¥•ôğ½‘¥Øùô4(€€€íµ½‘…±=Á•¸˜˜ñ‘¥Ø±…ÍÍ9…µ”ô‰ÙŒµ½¹Ñ•¹Ğµµ½‘…°µÍÉ¥´ˆÉ½±”ô‰ÁÉ•Í•¹Ñ…Ñ¥½¸ˆ½¹5½ÕÍ•½İ¸õì¡•Ù•¹Ğ¤ôùí¥˜¡•Ù•¹Ğ¹Ñ…É•Ğôôõ•Ù•¹Ğ¹ÕÉÉ•¹ÑQ…É•Ğ¥íÍ•ÑM•±•Ñ•‘A½ÍĞ¡¹Õ±°¤íÍ•Ñ5½‘…±=Á•¸¡™…±Í”¥õõôøñÍ•Ñ¥½¸±…ÍÍ9…µ”ô‰ÙŒµ½¹Ñ•¹Ğµµ½‘…°ˆÉ½±”ô‰‘¥…±½œˆ…É¥„µµ½‘…°ô‰ÑÉÕ”ˆ…É¥„µ±…‰•±±•‘‰äô‰ÙŒµÁ½ÍĞµµ½‘…°µÑ¥Ñ±”ˆøñ¡•…‘•Èøñ‘¥ØøñÍÁ…¸±…ÍÍ9…µ”ô‰•å•‰É½Üˆùí¥Í9•Üü9UY%!œè%!AU	1%'M8ôğ½ÍÁ…¸øñ È¥ô‰ÙŒµÁ½ÍĞµµ½‘…°µÑ¥Ñ±”ˆùí¥Í9•ÜüA±…¹¥™¥„Õ¹„ÁÕ‰±¥…§Í¸œè‘¥Ñ„•°½¹Ñ•¹¥‘¼ôğ½ Èøğ½‘¥Øøñ‰ÕÑÑ½¸ÑåÁ”ô‰‰ÕÑÑ½¸ˆ±…ÍÍ9…µ”ô‰¥½¸µ‰ÕÑÑ½¸ˆ…É¥„µ±…‰•°ô‰•ÉÉ…Èˆ½¹±¥¬õì ¤ôùíÍ•ÑM•±•Ñ•‘A½ÍĞ¡¹Õ±°¤íÍ•Ñ5½‘…±=Á•¸¡™…±Í”¥õôøñ`Í¥é”õìÄáô¼øğ½‰ÕÑÑ½¸øğ½¡•…‘•Èøñ™½É´½¹MÕ‰µ¥ĞõíÍ…Ù•A½ÍÑôøñ™¥•±‘Í•Ğ±…ÍÍ9…µ”ô‰ÙŒµÁ½ÍĞµ™½É´µ™¥•±‘Í•Ğˆ‘¥Í…‰±•õì……¹‘¥Ñôøñ‘¥Ø±…ÍÍ9…µ”ô‰ÙŒµÁ½ÍĞµ™½É´µÉ¥ˆøñ±…‰•°±…ÍÍ9…µ”ô‰¥Ìµİ¥‘”ˆùSµÑÕ±¼ñ¥¹ÁÕĞÉ•ÅÕ¥É•…ÕÑ½½ÕÌÙ…±Õ”õí‘É…™Ğ¹Ñ¥Ñ±•ô½¹¡…¹”õì¡•Ù•¹Ğ¤ôùÍ•ÑÉ…™Ğ¡ì¸¸¹‘É…™Ğ±Ñ¥Ñ±”é•Ù•¹Ğ¹Ñ…É•Ğ¹Ù…±Õ•ô¥ôÁ±…•¡½±‘•Èô‰Q•µ„‘”±„ÁÕ‰±¥…§Í¸ˆ¼øğ½±…‰•°øñ±…‰•°ù…¹…°ñÍ•±•ĞÙ…±Õ”õí‘É…™Ğ¹Á±…Ñ™½Éµô½¹¡…¹”õì¡•Ù•¹Ğ¤ôùÍ•ÑÉ…™Ğ¡ì¸¸¹‘É…™Ğ±Á±…Ñ™½É´é•Ù•¹Ğ¹Ñ…É•Ğ¹Ù…±Õ•ô¥ôøñ½ÁÑ¥½¸ù%¹ÍÑ…É…´ğ½½ÁÑ¥½¸øñ½ÁÑ¥½¸ù…•‰½½¬ğ½½ÁÑ¥½¸øñ½ÁÑ¥½¸ùQ¥­Q½¬ğ½½ÁÑ¥½¸øñ½ÁÑ¥½¸ù]¡…ÑÍÁÀğ½½ÁÑ¥½¸øñ½ÁÑ¥½¸ù1¥¹­•‘%¸ğ½½ÁÑ¥½¸øñ½ÁÑ¥½¸ù5Õ±Ñ¥…¹…°ğ½½ÁÑ¥½¸øñ½ÁÑ¥½¸ùA½È‘•™¥¹¥Èğ½½ÁÑ¥½¸øğ½Í•±•Ğøğ½±…‰•°øñ±…‰•°ù½Éµ…Ñ¼ñÍ•±•ĞÙ…±Õ”õí‘É…™Ğ¹™½Éµ…Ñô½¹¡…¹”õì¡•Ù•¹Ğ¤ôùÍ•ÑÉ…™Ğ¡ì¸¸¹‘É…™Ğ±™½Éµ…Ğé•Ù•¹Ğ¹Ñ…É•Ğ¹Ù…±Õ•ô¥ôøñ½ÁÑ¥½¸ùA½ÍĞğ½½ÁÑ¥½¸øñ½ÁÑ¥½¸ù!¥ÍÑ½É¥„ğ½½ÁÑ¥½¸øñ½ÁÑ¥½¸ù…ÉÉÕÍ•°ğ½½ÁÑ¥½¸øñ½ÁÑ¥½¸ùI••°ğ½½ÁÑ¥½¸øñ½ÁÑ¥½¸ùY¥‘•¼ğ½½ÁÑ¥½¸øñ½ÁÑ¥½¸ù¥Í—Å¼ğ½½ÁÑ¥½¸øñ½ÁÑ¥½¸ùA½È‘•™¥¹¥Èğ½½ÁÑ¥½¸øğ½Í•±•Ğøğ½±…‰•°øñ±…‰•°ù•¡„‘”ÁÕ‰±¥…§Í¸ñ¥¹ÁÕĞÑåÁ”ô‰‘…Ñ”ˆÙ…±Õ”õí‘É…™Ğ¹Í¡•‘Õ±•‘}‘…Ñ•ô½¹¡…¹”õì¡•Ù•¹Ğ¤ôùÍ•ÑÉ…™Ğ¡ì¸¸¹‘É…™Ğ±Í¡•‘Õ±•‘}‘…Ñ”é•Ù•¹Ğ¹Ñ…É•Ğ¹Ù…±Õ•ô¥ô¼øğ½±…‰•°øñ±…‰•°ù!½É„ñ¥¹ÁÕĞÑåÁ”ô‰Ñ¥µ”ˆÙ…±Õ”õí‘É…™Ğ¹Í¡•‘Õ±•‘}Ñ¥µ•ô½¹¡…¹”õì¡•Ù•¹Ğ¤ôùÍ•ÑÉ…™Ğ¡ì¸¸¹‘É…™Ğ±Í¡•‘Õ±•‘}Ñ¥µ”é•Ù•¹Ğ¹Ñ…É•Ğ¹Ù…±Õ•ô¥ô¼øğ½±…‰•°øñ±…‰•°ùI•ÍÁ½¹Í…‰±”ñ¥¹ÁÕĞÙ…±Õ”õí‘É…™Ğ¹½İ¹•Éô½¹¡…¹”õì¡•Ù•¹Ğ¤ôùÍ•ÑÉ…™Ğ¡ì¸¸¹‘É…™Ğ±½İ¹•Èé•Ù•¹Ğ¹Ñ…É•Ğ¹Ù…±Õ•ô¥ôÁ±…•¡½±‘•Èô‰A½È…Í¥¹…Èˆ¼øğ½±…‰•°øñ±…‰•°ùÍÑ…‘¼ñÍ•±•ĞÙ…±Õ”õí‘É…™Ğ¹ÍÑ…ÑÕÍô½¹¡…¹”õì¡•Ù•¹Ğ¤ôùÍ•ÑÉ…™Ğ¡ì¸¸¹‘É…™Ğ±ÍÑ…ÑÕÌé•Ù•¹Ğ¹Ñ…É•Ğ¹Ù…±Õ•ô¥ôùíl¸¸¹¹•ÜM•Ğ¡lA½È¥¹¥¥…Èœ°¸‘¥Í—Å¼œ°¸É•Ù¥Í§Í¸œ°ÁÉ½‰…‘„œ°AÉ½É…µ…‘„œ°AÕ‰±¥…‘„œ°	±½ÅÕ•…‘„œ±‘É…™Ğ¹ÍÑ…ÑÕÍt¥t¹µ…À ¡ÍÑ…ÑÕÌ¤ôøñ½ÁÑ¥½¸­•äõíÍÑ…ÑÕÍôùíÍÑ…ÑÕÍôğ½½ÁÑ¥½¸ø¥ôğ½Í•±•Ğøğ½±…‰•°øñ±…‰•°±…ÍÍ9…µ”ô‰¥Ìµİ¥‘”ˆù%‘•„¼³µ¹•„‘”½¹Ñ•¹¥‘¼ñ¥¹ÁÕĞÙ…±Õ”õí‘É…™Ğ¹½¹Ñ•¹Ñ}±¥¹•ô½¹¡…¹”õì¡•Ù•¹Ğ¤ôùÍ•ÑÉ…™Ğ¡ì¸¸¹‘É…™Ğ±½¹Ñ•¹Ñ}±¥¹”é•Ù•¹Ğ¹Ñ…É•Ğ¹Ù…±Õ•ô¥ôÁ±…•¡½±‘•Èô‰E×¤ÅÕ•É•µ½Ì½µÕ¹¥…Èˆ¼øğ½±…‰•°øñ±…‰•°±…ÍÍ9…µ”ô‰¥Ìµİ¥‘”ˆù…ÁÑ¥½¸ñÑ•áÑ…É•„É½İÌõìÍôÙ…±Õ”õí‘É…™Ğ¹…ÁÑ¥½¹ô½¹¡…¹”õì¡•Ù•¹Ğ¤ôùÍ•ÑÉ…™Ğ¡ì¸¸¹‘É…™Ğ±…ÁÑ¥½¸é•Ù•¹Ğ¹Ñ…É•Ğ¹Ù…±Õ•ô¥ôÁ±…•¡½±‘•Èô‰	½ÉÉ…‘½È‘”½Áää±±…µ…‘¼„±„…§Í¸ˆ¼øğ½±…‰•°øñ±…‰•°ùAËÍá¥µ¼Á…Í¼ñ¥¹ÁÕĞÙ…±Õ”õí‘É…™Ğ¹¹•áÑ}…Ñ¥½¹ô½¹¡…¹”õì¡•Ù•¹Ğ¤ôùÍ•ÑÉ…™Ğ¡ì¸¸¹‘É…™Ğ±¹•áÑ}…Ñ¥½¸é•Ù•¹Ğ¹Ñ…É•Ğ¹Ù…±Õ•ô¥ôÁ±…•¡½±‘•Èô‰§Í¸½¹É•Ñ„Á•¹‘¥•¹Ñ”ˆ¼øğ½±…‰•°øñ±…‰•°ù•¡„³µµ¥Ñ”ñ¥¹ÁÕĞÑåÁ”ô‰‘…Ñ”ˆÙ…±Õ”õí‘É…™Ğ¹‘Õ•}‘…Ñ•ô½¹¡…¹”õì¡•Ù•¹Ğ¤ôùÍ•ÑÉ…™Ğ¡ì¸¸¹‘É…™Ğ±‘Õ•}‘…Ñ”é•Ù•¹Ğ¹Ñ…É•Ğ¹Ù…±Õ•ô¥ô¼øğ½±…‰•°øğ½‘¥Øøğ½™¥•±‘Í•Ğùì…¥Í9•Ü˜˜ñ‘¥Ø±…ÍÍ9…µ”ô‰ÙŒµÁ½ÍĞµ¡•­±¥ÍĞˆøñÍÁ…¸±…ÍÍ9…µ”ô‰•å•‰É½Üˆù!-1%MP%5A=IQ<ğ½ÍÁ…¸øñ‘¥Øùí¡•­±¥ÍÑ¥•±‘Ì¹µ…À ¡m™¥•±±±…‰•±t¤ôøñÍÁ…¸­•äõí™¥•±‘ôøñ¤±…ÍÍ9…µ”õì½½µÁ±•Ññ…ÁÉ½‰ñ±¥ÍÑ½ñ¡•¡¼½¤¹Ñ•ÍĞ¡Í•±•Ñ•‘A½ÍÑm™¥•±‘uñğœœ¤ü¥Ìµ‘½¹”œèœô¼ùí±…‰•±ôñÍµ…±°ùíÍ•±•Ñ•‘A½ÍÑm™¥•±‘uñğA½È½¹™¥Éµ…Èôğ½Íµ…±°øğ½ÍÁ…¸ø¥ôğ½‘¥ØùíÍ•±•Ñ•‘Ù•¹ÑÌ¹±•¹Ñ øÀ˜˜ñÀùíÍ•±•Ñ•‘Ù•¹ÑÌ¹Í±¥” À°Ì¤¹µ…À ¡•¹ÑÉä¤ôøñÍÁ…¸­•äõí•¹ÑÉä¹¥‘ôùí•¹ÑÉä¹™¥•±‘}¹…µ•ôèí•¹ÑÉä¹ÁÉ•Ù¥½ÕÍ}Ù…±Õ•ñğÙ…µ¼ôƒŠHí•¹ÑÉä¹¹•İ}Ù…±Õ•ôƒ
-Üí™½Éµ…Ñ…Ñ”¡MÑÉ¥¹œ¡•¹ÑÉä¹É•…Ñ•‘}…Ğ¤¹Í±¥” À°ÄÀ¤¥ôğ½ÍÁ…¸ø¥ôğ½Àùôğ½‘¥Øùôñ‘¥Ø±…ÍÍ9…µ”ô‰ÙŒµ½¹Ñ•¹Ğµµ½‘…°µ…Ñ¥½¹ÌˆøñÍÁ…¸ùí…¹‘¥ĞüM½±¼±½ÌÁ•É™¥±•Ì…ÕÑ½É¥é…‘½ÌÁÕ•‘•¸Õ…É‘…È…µ‰¥½Ì¸œèQÔÁ•É™¥°Ñ¥•¹”…•Í¼‘”Í½±¼±•ÑÕÉ„¸ôğ½ÍÁ…¸øñ‰ÕÑÑ½¸ÑåÁ”ô‰‰ÕÑÑ½¸ˆ±…ÍÍ9…µ”ô‰‰ÕÑÑ½¸‰ÕÑÑ½¸µ½ÕÑ±¥¹”ˆ½¹±¥¬õì ¤ôùíÍ•ÑM•±•Ñ•‘A½ÍĞ¡¹Õ±°¤íÍ•Ñ5½‘…±=Á•¸¡™…±Í”¥õôù•ÉÉ…Èğ½‰ÕÑÑ½¸ùí…¹‘¥Ğ˜˜ñ‰ÕÑÑ½¸ÑåÁ”ô‰ÍÕ‰µ¥Ğˆ±…ÍÍ9…µ”ô‰‰ÕÑÑ½¸‰ÕÑÑ½¸µ‘…É¬ˆ‘¥Í…‰±•õíÍ…Ù¥¹ôùíÍ…Ù¥¹œüñ1½…‘•É¥É±”±…ÍÍ9…µ”ô‰ÙŒµ½¹Ñ•¹ĞµÍÁ¥¸ˆÍ¥é”õìÄÕô¼øèñM…Ù”Í¥é”õìÄÕô¼ùôíÍ…Ù¥¹œüÕ…É‘…¹‘¿Š˜œèÕ…É‘…È…µ‰¥½Ìôğ½‰ÕÑÑ½¸ùôğ½‘¥Øøğ½™½É´øğ½Í•Ñ¥½¸øğ½‘¥Øùô4(€€ğ½ÁÁÉ…µ”øì4)ô4(
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Activity, AlertCircle, ArrowDownRight, ArrowUpRight, BarChart3, CalendarDays, Check,
+  CheckCircle2, Clock3, FileImage, FileText, Filter, FolderOpen, Images, Lightbulb,
+  LoaderCircle, Megaphone, Plus, RefreshCw, Search, Save, Sparkles, Target, TrendingUp, X,
+} from 'lucide-react';
+import { AppFrame, PageHeading } from '../../app/layout';
+import { useAuth } from '../../auth/AuthProvider';
+import { AnimatedList } from '../../components/ui/MagicComponents';
+import { EmptyState, StageBadge } from '../../components/feedback';
+import { supabase } from '../../lib/supabaseClient';
+
+type Post = Record<string, any> & { id: string; title: string; status: string; scheduled_date: string; platform: string };
+type Asset = Record<string, any> & { id: string; filename: string; rel_path: string; section: string; is_available: boolean };
+type Section = 'overview' | 'calendar' | 'library' | 'strategy' | 'operations' | 'results';
+type WorkspaceData = { posts: Post[]; assets: Asset[]; postAssets: any[]; strategy: any[]; work: any[]; history: any[]; leads: any[]; sales: any[]; events: any[] };
+
+const emptyData: WorkspaceData = { posts: [], assets: [], postAssets: [], strategy: [], work: [], history: [], leads: [], sales: [], events: [] };
+const sections: { id: Section; label: string; icon: React.ElementType }[] = [
+  { id: 'overview', label: 'Resumen', icon: BarChart3 },
+  { id: 'calendar', label: 'Calendario', icon: CalendarDays },
+  { id: 'library', label: 'Biblioteca', icon: Images },
+  { id: 'strategy', label: 'Estrategia', icon: Target },
+  { id: 'operations', label: 'OperaciÃ³n', icon: CheckCircle2 },
+  { id: 'results', label: 'Resultados', icon: TrendingUp },
+];
+
+const formatDate = (value?: string) => {
+  if (!value) return 'Fecha pendiente';
+  const date = new Date(`${value.slice(0, 10)}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('es-EC', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+};
+const formatMoney = (value?: number) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value) || 0);
+const statusTone = (value = '') => /publicad|complet|aprobad|ganad/i.test(value) ? 'good' : /bloque|atras|vencid/i.test(value) ? 'danger' : /revisi|espera|valid/i.test(value) ? 'review' : 'active';
+const checklistFields = [
+  ['cover_status', 'Portada'], ['art_status', 'Arte'], ['caption_status', 'Copy'],
+  ['video_status', 'Video'], ['voiceover_status', 'Voz'], ['tiktok_status', 'TikTok'],
+] as const;
+const defaultDraft = () => ({ title: '', content_line: '', platform: 'Instagram', format: 'Post', scheduled_date: '', scheduled_time: '', owner: '', status: 'Por iniciar', caption: '', next_action: '', due_date: '' });
+
+async function readAll(table: string, organizationId: string, orderBy?: string) {
+  if (!supabase) return [];
+  const pageSize = 1000;
+  const rows: any[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    let query = supabase.from(table).select('*').eq('organization_id', organizationId);
+    if (orderBy) query = query.order(orderBy, { ascending: true, nullsFirst: false }).order('id', { ascending: true });
+    const { data, error } = await query.range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    rows.push(...(data || []));
+    if (!data || data.length < pageSize) return rows;
+  }
+}
+
+export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations' }) {
+  const { organizationId, hasPermission } = useAuth();
+  const canView = hasPermission('marketing', 'view');
+  const canEdit = hasPermission('marketing', 'edit');
+  const [data, setData] = useState<WorkspaceData>(emptyData);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [activeSection, setActiveSection] = useState<Section>('overview');
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Todos los estados');
+  const [assetFilter, setAssetFilter] = useState('Todos los archivos');
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [draft, setDraft] = useState(defaultDraft);
+  const [isNew, setIsNew] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!supabase || !organizationId || !canView) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setLoadError('');
+    try {
+      const [posts, assets, postAssets, strategy, work, history, leads, sales, events] = await Promise.all([
+        readAll('marketing_posts', organizationId, 'scheduled_date'),
+        readAll('marketing_assets', organizationId, 'filename'),
+        readAll('marketing_post_assets', organizationId, 'created_at'),
+        readAll('marketing_strategy_items', organizationId, 'category'),
+        readAll('marketing_work_items', organizationId, 'due_date'),
+        readAll('marketing_work_item_history', organizationId, 'created_at'),
+        readAll('marketing_lead_tracking', organizationId, 'created_at'),
+        readAll('marketing_sales_snapshots', organizationId, 'imported_at'),
+        readAll('marketing_post_events', organizationId, 'created_at'),
+      ]);
+      setData({ posts, assets, postAssets, strategy, work, history, leads, sales, events });
+    } catch (error: any) {
+      setLoadError(error?.message || 'No pudimos cargar el espacio de marketing.');
+    } finally {
+      setLoading(false);
+    }
+  }, [organizationId, canView]);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    if (!notice) return undefined;
+    const timeout = window.setTimeout(() => setNotice(''), 3600);
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
+  useEffect(() => {
+    if (!modalOpen) return undefined;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setSelectedPost(null); setModalOpen(false); }
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [modalOpen]);
+
+  const statuses = useMemo(() => ['Todos los estados', ...new Set(data.posts.map((post) => post.status).filter(Boolean).sort())], [data.posts]);
+  const filteredPosts = useMemo(() => {
+    const search = query.trim().toLocaleLowerCase('es');
+    return data.posts.filter((post) => {
+      const matchesSearch = !search || [post.title, post.content_line, post.platform, post.owner, post.caption, post.status].some((field) => String(field || '').toLocaleLowerCase('es').includes(search));
+      return matchesSearch && (statusFilter === 'Todos los estados' || post.status === statusFilter);
+    }).sort((a, b) => {
+      const aOpen = !/publicad|complet|cancelad/i.test(a.status || '');
+      const bOpen = !/publicad|complet|cancelad/i.test(b.status || '');
+      if (aOpen !== bOpen) return aOpen ? -1 : 1;
+      return (a.due_date || a.scheduled_date || '9999-12-31').localeCompare(b.due_date || b.scheduled_date || '9999-12-31');
+    });
+  }, [data.posts, query, statusFilter]);
+  const visibleAssets = useMemo(() => {
+    const search = query.trim().toLocaleLowerCase('es');
+    return data.assets.filter((asset) => {
+      const matchesSearch = !search || [asset.filename, asset.rel_path, asset.section, asset.folder].some((field) => String(field || '').toLocaleLowerCase('es').includes(search));
+      const matchesAvailability = assetFilter === 'Todos los archivos' || (assetFilter === 'Disponibles en el equipo' ? asset.is_available : !asset.is_available);
+      return matchesSearch && matchesAvailability;
+    }).slice(0, 150);
+  }, [data.assets, query, assetFilter]);
+
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const published = data.posts.filter((post) => /publicad/i.test(post.status || '')).length;
+  const overdue = data.posts.filter((post) => post.due_date && post.due_date < today && !/publicad|complet/i.test(post.status || '')).length;
+  const inProduction = data.posts.filter((post) => !/publicad|complet|cancelad/i.test(post.status || '')).length;
+  const linkedAssets = new Set(data.postAssets.map((link) => link.asset_id)).size;
+  const linkedPosts = new Set(data.postAssets.map((link) => link.post_id)).size;
+  const currentSnapshot = data.sales[0]?.data_json;
+  const metricPosts = data.posts.filter((post) => Number(post.reach) || Number(post.interactions) || Number(post.clicks) || Number(post.leads));
+  const selectedEvents = selectedPost ? data.events.filter((event) => event.post_id === selectedPost.id).slice(-8).reverse() : [];
+
+  const openPost = (post?: Post) => {
+    setModalOpen(true);
+    setIsNew(!post);
+    setSelectedPost(post || null);
+    setDraft(post ? {
+      title: post.title || '', content_line: post.content_line || '', platform: post.platform || 'Instagram',
+      format: post.format || 'Post', scheduled_date: post.scheduled_date || '', scheduled_time: post.scheduled_time || '',
+      owner: post.owner || '', status: post.status || 'Por iniciar', caption: post.caption || '',
+      next_action: post.next_action || '', due_date: post.due_date || '',
+    } : defaultDraft());
+  };
+  const savePost = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supabase || !organizationId || !canEdit || !draft.title.trim()) return;
+    setSaving(true);
+    try {
+      const fields = { ...draft, title: draft.title.trim(), updated_at: new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Guayaquil', dateStyle: 'short', timeStyle: 'medium', hour12: false }).format(new Date()) };
+      const result = isNew
+        ? await supabase.from('marketing_posts').insert({ ...fields, organization_id: organizationId, source_system: 'visualcorp-suite', source_id: `suite-${globalThis.crypto.randomUUID()}` }).select('id').single()
+        : await supabase.from('marketing_posts').update(fields).eq('organization_id', organizationId).eq('id', selectedPost?.id).select('id').maybeSingle();
+      if (result.error) throw result.error;
+      if (!result.data) throw new Error('No encontramos la publicaciÃ³n o tu perfil no puede editarla.');
+      setSelectedPost(null);
+      setModalOpen(false);
+      setNotice(isNew ? 'PublicaciÃ³n creada en el calendario central.' : 'PublicaciÃ³n actualizada y cambio registrado.');
+      await refresh();
+    } catch (error: any) {
+      setLoadError(error?.message || 'No se pudo guardar la publicaciÃ³n.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sectionTitle = sections.find((section) => section.id === activeSection)?.label || 'Resumen';
+  const searchPlaceholder = activeSection === 'library' ? 'Buscar por archivo, carpeta o secciÃ³nâ€¦' : 'Buscar publicaciones por tema, canal o responsableâ€¦';
+
+  return <AppFrame area={area}>
+    <PageHeading eyebrow="MARKETING Â· CENTRO DE CONTENIDO" title="Marketing y contenido" description="Planifica, produce y revisa publicaciones, piezas, tareas y resultados en el espacio compartido de Visual Corp." action={<div className="vc-content-actions"><button className="button button-outline" type="button" onClick={() => void refresh()} disabled={loading}><RefreshCw size={15} className={loading ? 'vc-content-spin' : ''}/>Actualizar</button>{canEdit && <button className="button button-dark vc-shimmer-button" type="button" onClick={() => openPost()}><Plus size={16}/>Nueva publicaciÃ³n</button>}</div>} />
+
+    <main className="vc-content-workspace" aria-label="Centro de gestiÃ³n de marketing">
+      <section className="vc-content-hero">
+        <div className="vc-content-hero-glow" aria-hidden="true" />
+        <div className="vc-content-hero-copy"><span className="vc-content-brand"><span><Sparkles size={16}/></span> VISUAL CONTENT STUDIO <i>Â·</i> ESPACIO CENTRAL</span><h2>Todo el contenido,<br/><em>conectado y en movimiento.</em></h2><p>El calendario y los registros de Tracking ya viven en la suite, con acceso por perfil, biblioteca catalogada y seguimiento de cambios.</p></div>
+        <div className="vc-content-hero-stat"><span><Megaphone size={17}/></span><strong>{data.posts.length}</strong><small>publicaciones centralizadas</small><div className="vc-content-sparkline" aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div></div>
+      </section>
+
+      {!supabase && <div className="vc-content-alert"><AlertCircle size={18}/><div><b>Falta conectar la suite a su base de datos</b><span>La biblioteca migrada estÃ¡ en Supabase; configura la conexiÃ³n del entorno para cargarla.</span></div></div>}
+      {!organizationId && supabase && !loading && <div className="vc-content-alert"><AlertCircle size={18}/><div><b>Tu cuenta aÃºn no tiene una organizaciÃ³n activa</b><span>Solicita que administraciÃ³n vincule tu perfil de acceso de Visual Corp.</span></div></div>}
+      {!canView && organizationId && !loading && <div className="vc-content-alert"><AlertCircle size={18}/><div><b>Tu perfil no tiene acceso a Marketing</b><span>El contenido se protege con los permisos de tu organizaciÃ³n.</span></div></div>}
+      {loadError && <div className="vc-content-alert is-error"><AlertCircle size={18}/><div><b>No se pudo completar la carga</b><span>{loadError}</span></div><button className="icon-button" type="button" onClick={() => void refresh()} aria-label="Reintentar"><RefreshCw size={16}/></button></div>}
+
+      <section className="vc-content-kpis" aria-label="Estado del contenido">
+        <article className="vc-content-kpi"><span className="is-purple"><FileText size={17}/></span><div><small>En producciÃ³n</small><strong>{loading ? 'â€”' : inProduction}</strong><em>publicaciones activas</em></div><ArrowUpRight size={15}/></article>
+        <article className="vc-content-kpi"><span className="is-teal"><CheckCircle2 size={17}/></span><div><small>Publicadas</small><strong>{loading ? 'â€”' : published}</strong><em>en el registro histÃ³rico</em></div><ArrowUpRight size={15}/></article>
+        <article className="vc-content-kpi"><span className="is-amber"><Clock3 size={17}/></span><div><small>Requieren atenciÃ³n</small><strong>{loading ? 'â€”' : overdue}</strong><em>vencidas por fecha lÃ­mite</em></div><ArrowDownRight size={15}/></article>
+        <article className="vc-content-kpi"><span className="is-blue"><Images size={17}/></span><div><small>Biblioteca vinculada</small><strong>{loading ? 'â€”' : linkedAssets}</strong><em>{linkedPosts} publicaciones con piezas</em></div><ArrowUpRight size={15}/></article>
+      </section>
+
+      <nav className="vc-content-tabs" aria-label="Ãreas de marketing">
+        {sections.map(({ id, label, icon: Icon }) => <button key={id} type="button" className={activeSection === id ? 'is-active' : ''} onClick={() => { setActiveSection(id); setQuery(''); }} aria-current={activeSection === id ? 'page' : undefined}><Icon size={16}/>{label}{id === 'calendar' && <span>{data.posts.length}</span>}{id === 'library' && <span>{data.assets.length}</span>}</button>)}
+      </nav>
+
+      {(activeSection === 'overview' || activeSection === 'calendar' || activeSection === 'library') && <div className="vc-content-toolbar"><div><span className="vc-content-section-icon"><FolderOpen size={16}/></span><div><b>{activeSection === 'overview' ? 'Flujo editorial' : sectionTitle}</b><small>{activeSection === 'library' ? `${data.assets.length} recursos catalogados Â· ${linkedAssets} vinculados` : `${filteredPosts.length} de ${data.posts.length} publicaciones`}</small></div></div><label className="vc-content-search"><Search size={15}/><input aria-label="Buscar" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder}/></label><label className="vc-content-filter"><Filter size={14}/><select aria-label="Filtrar resultados" value={activeSection === 'library' ? assetFilter : statusFilter} onChange={(event) => activeSection === 'library' ? setAssetFilter(event.target.value) : setStatusFilter(event.target.value)}>{activeSection === 'library' ? <><option>Todos los archivos</option><option>Disponibles en el equipo</option><option>Solo referencia de ruta</option></> : statuses.map((status) => <option key={status}>{status}</option>)}</select></label></div>}
+
+      {(activeSection === 'overview' || activeSection === 'calendar') && <>
+        {loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando publicaciones, piezas y tareasâ€¦</div>
+          : data.posts.length === 0 ? <EmptyState icon={CalendarDays} title="El calendario estÃ¡ listo para comenzar" text="AÃºn no hay publicaciones en la base central. Crea la primera ficha para iniciar el flujo editorial." action={canEdit && <button className="button button-dark" onClick={() => openPost()}><Plus size={15}/>Nueva publicaciÃ³n</button>}/>
+            : filteredPosts.length === 0 ? <EmptyState icon={Search} title="No encontramos coincidencias" text="Prueba con otro tÃ­tulo, canal, responsable o estado." action={<button className="button button-outline" onClick={() => { setQuery(''); setStatusFilter('Todos los estados'); }}>Limpiar bÃºsqueda</button>}/>
+              : <div className={`vc-content-post-grid ${activeSection === 'overview' ? 'is-overview' : ''}`}>
+                <AnimatedList className="vc-content-post-list" itemClassName="vc-content-post-entry">{filteredPosts.slice(0, activeSection === 'overview' ? 8 : undefined).map((post) => {
+                  const linked = data.postAssets.filter((link) => link.post_id === post.id).length;
+                  const complete = checklistFields.filter(([field]) => /complet|aprob|listo|hecho/i.test(post[field] || '')).length;
+                  return <article className="vc-content-post" key={post.id}>
+                    <div className="vc-content-date"><strong>{post.scheduled_date ? post.scheduled_date.slice(8,10) : 'â€”'}</strong><span>{post.scheduled_date ? new Intl.DateTimeFormat('es-EC',{month:'short'}).format(new Date(`${post.scheduled_date.slice(0,10)}T12:00:00`)) : 'PEND.'}</span></div>
+                    <button className="vc-content-post-main" type="button" onClick={() => openPost(post)}><span className="vc-content-post-eyebrow">{post.content_line || post.platform || 'Contenido'} <i>Â·</i> {post.format || 'Formato pendiente'}</span><strong>{post.title || 'Sin tÃ­tulo'}</strong><span className="vc-content-post-caption">{post.caption || post.next_action || 'Copy y siguiente paso por completar.'}</span><span className="vc-content-post-meta"><span><Megaphone size={13}/>{post.platform || 'Canal pendiente'}</span><span><Images size={13}/>{linked} piezas</span><span><Check size={13}/>{complete}/{checklistFields.length} checklist</span>{post.owner && <span>{post.owner}</span>}</span></button>
+                    <div className="vc-content-post-end"><StageBadge stage={post.status || 'Por iniciar'}/><span className={`vc-content-dot is-${statusTone(post.status)}`}/></div>
+                  </article>;
+                })}</AnimatedList>
+                {activeSection === 'overview' && <aside className="vc-content-side-panel"><div className="vc-content-side-heading"><div><span className="eyebrow">PULSO EDITORIAL</span><h3>Lo que sigue</h3></div><Activity size={17}/></div><div className="vc-content-next-list">{data.posts.filter((post) => post.scheduled_date && post.scheduled_date >= today && !/publicad/i.test(post.status || '')).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)).slice(0,4).map((post) => <button type="button" key={post.id} onClick={() => openPost(post)}><span className="vc-content-next-date">{formatDate(post.scheduled_date)}</span><b>{post.title}</b><small>{post.platform || 'Canal pendiente'}{post.owner ? ` Â· ${post.owner}` : ''}</small></button>)}{!data.posts.some((post) => post.scheduled_date && post.scheduled_date >= today && !/publicad/i.test(post.status || '')) && <p className="vc-content-side-empty">No hay publicaciones futuras con fecha asignada.</p>}</div><button className="vc-content-text-link" type="button" onClick={() => setActiveSection('calendar')}>Ver calendario completo <ArrowUpRight size={14}/></button><div className="vc-content-side-callout"><span><Lightbulb size={15}/></span><p><b>{overdue ? `${overdue} fichas necesitan atenciÃ³n` : 'El flujo estÃ¡ al dÃ­a'}</b><br/>Define responsable, fecha lÃ­mite y prÃ³ximo paso para que las alertas tengan contexto.</p></div></aside>}
+              </div>}
+      </>}
+
+      {activeSection === 'library' && <>
+        {loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando bibliotecaâ€¦</div> : visibleAssets.length === 0 ? <EmptyState icon={Images} title="Sin recursos con este filtro" text="Prueba con otra bÃºsqueda o cambia el filtro de disponibilidad."/> : <><div className="vc-library-grid">{visibleAssets.map((asset) => <article className="vc-library-card" key={asset.id}><div className="vc-library-icon"><FileImage size={19}/><span>{asset.extension?.replace('.','').toUpperCase() || 'FILE'}</span></div><div className="vc-library-info"><b title={asset.filename}>{asset.filename}</b><span>{asset.section || 'SecciÃ³n pendiente'}{asset.folder ? ` Â· ${asset.folder}` : ''}</span><small>{Math.max(1,Math.round((asset.size_bytes || 0)/1024))} KB Â· {asset.width && asset.height ? `${asset.width} Ã— ${asset.height}` : 'Dimensiones pendientes'}</small></div><span className={`vc-library-availability ${asset.is_available ? 'is-available' : ''}`} title={asset.is_available ? 'Disponible en el equipo de Tracking' : 'La ruta se conserva como referencia'}><i/>{asset.is_available ? 'Local' : 'Referencia'}</span><code title={asset.rel_path}>{asset.rel_path}</code></article>)}</div><p className="vc-content-footnote">Se muestran hasta 150 resultados a la vez. La base central guarda metadatos y relaciones; los archivos originales siguen en las carpetas de Visual Corp.</p></>}
+      </>}
+
+      {activeSection === 'strategy' && <section className="vc-strategy-section"><div className="vc-content-toolbar vc-content-toolbar-inline"><div><span className="vc-content-section-icon"><Target size={16}/></span><div><b>FODA y decisiones estratÃ©gicas</b><small>{data.strategy.length} observaciones con su evidencia y estado</small></div></div></div>{loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando estrategiaâ€¦</div> : <div className="vc-strategy-grid">{['fortaleza','debilidad','oportunidad','amenaza'].map((category) => {const items=data.strategy.filter((item)=>item.category.toLocaleLowerCase('es')===category);return <section className={`vc-strategy-column is-${category}`} key={category}><header><span>{category==='fortaleza'?'F':category==='debilidad'?'D':category==='oportunidad'?'O':'A'}</span><div><b>{category[0].toLocaleUpperCase('es')+category.slice(1)}</b><small>{items.length} registros</small></div></header>{items.map((item)=><article key={item.id}><b>{item.title}</b><p>{item.detail}</p><div><span>{item.evidence}</span><StageBadge stage={item.status}/></div>{item.owner&&<small>Responsable histÃ³rico: {item.owner}</small>}</article>)}</section>})}</div>}</section>}
+
+      {activeSection === 'operations' && <section className="vc-ops-section"><div className="vc-content-toolbar vc-content-toolbar-inline"><div><span className="vc-content-section-icon"><CheckCircle2 size={16}/></span><div><b>Trabajo y responsabilidades</b><small>Ã“rdenes importadas con fechas, prÃ³ximos pasos e historial</small></div></div></div>{loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando tareasâ€¦</div> : <div className="vc-ops-grid">{data.work.length ? data.work.map((item) => {const events=data.history.filter((event)=>event.source_work_item_id===item.source_id);return <article className="vc-ops-card" key={item.id}><div className="vc-ops-card-top"><span>{item.process_area}</span><StageBadge stage={item.stage}/></div><h3>{item.title}</h3><p>{item.next_action || item.notes || 'Siguiente paso pendiente.'}</p><div className="vc-ops-meta"><span><CalendarDays size={13}/>{item.due_date ? formatDate(item.due_date) : 'Sin fecha lÃ­mite'}</span><span><Activity size={13}/>{events.length} cambios</span><span className={item.priority==='Alta'?'is-priority':''}>{item.priority}</span></div>{item.blocked_reason&&<div className="vc-ops-blocked"><AlertCircle size={14}/>{item.blocked_reason}</div>}</article>}) : <EmptyState icon={CheckCircle2} title="No hay tareas importadas" text="Las prÃ³ximas tareas de marketing pueden registrarse aquÃ­ con responsable, fecha y prÃ³ximo paso."/>}</div>}</section>}
+
+      {activeSection === 'results' && <section className="vc-results-section"><div className="vc-content-toolbar vc-content-toolbar-inline"><div><span className="vc-content-section-icon"><TrendingUp size={16}/></span><div><b>Resultados con contexto</b><small>Observaciones de publicaciones y resumen histÃ³rico agregado</small></div></div></div>{loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando resultadosâ€¦</div> : <><div className="vc-results-top-grid"><article className="vc-results-card is-sales"><span className="eyebrow">RESUMEN HISTÃ“RICO Â· VENTAS</span><strong>{formatMoney(currentSnapshot?.amount)}</strong><p>{Number(currentSnapshot?.sales)||0} operaciones Â· promedio {formatMoney(currentSnapshot?.average)} por venta</p><small>{currentSnapshot?.date_from&&currentSnapshot?.date_to?`${formatDate(currentSnapshot.date_from)} â€” ${formatDate(currentSnapshot.date_to)}`:'Rango histÃ³rico por confirmar'} Â· Fuente: resumen importado de Tracking</small><div className="vc-results-tags"><span>Agregado</span><span>Sin atribuciÃ³n a campaÃ±a</span><span>Sin costos fiables</span></div></article><article className="vc-results-card"><span className="eyebrow">EMBUDO COMERCIAL</span><strong>{data.leads.length}</strong><p>oportunidades con seguimiento</p><small>{data.leads.length?'Los registros permanecen vinculados a su referencia interna.':'El mÃ³dulo estÃ¡ preparado; la base original no tenÃ­a oportunidades registradas.'}</small></article></div><div className="vc-results-posts"><div className="vc-content-side-heading"><div><span className="eyebrow">DESEMPEÃ‘O REGISTRADO</span><h3>Publicaciones con mÃ©tricas</h3></div><span className="vc-results-count">{metricPosts.length}</span></div>{metricPosts.length ? metricPosts.map((post)=><article key={post.id}><div><b>{post.title}</b><span>{post.platform} Â· {post.status}</span></div><div><strong>{Number(post.reach).toLocaleString('es-EC')}</strong><small>alcance</small><strong>{Number(post.interactions).toLocaleString('es-EC')}</strong><small>interacciones</small><strong>{Number(post.clicks).toLocaleString('es-EC')}</strong><small>clics</small><strong>{Number(post.leads).toLocaleString('es-EC')}</strong><small>leads informados</small></div></article>) : <EmptyState icon={BarChart3} title="AÃºn no hay mÃ©tricas de publicaciones" text="Registra resultados cuando la plataforma y el periodo de mediciÃ³n estÃ©n confirmados."/>}</div><p className="vc-content-footnote">El resumen de ventas cubre una copia histÃ³rica de una semana de agosto de 2026. No incluye una dimensiÃ³n fiable de cliente ni costos; no mide rentabilidad ni atribuye ventas a publicaciones. El alcance, interacciones, clics y leads de cada publicaciÃ³n se muestran como valores informados en Tracking.</p></>}</section>}
+
+      <footer className="vc-content-source"><span><CheckCircle2 size={15}/></span><p><b>Base central conectada Â· Visual Corp</b><small>Datos copiados desde Tracking con sus IDs y relaciones. Los cambios que hagas aquÃ­ quedan en la suite y se registran en el historial.</small></p><span className="vc-content-source-tag">{data.assets.length.toLocaleString('es-EC')} archivos catalogados</span></footer>
+    </main>
+
+    {notice&&<div className="vc-content-toast" role="status"><CheckCircle2 size={16}/>{notice}</div>}
+    {modalOpen&&<div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget){setSelectedPost(null);setModalOpen(false)}}}><section className="vc-content-modal" role="dialog" aria-modal="true" aria-labelledby="vc-post-modal-title"><header><div><span className="eyebrow">{isNew?'NUEVA FICHA':'FICHA DE PUBLICACIÃ“N'}</span><h2 id="vc-post-modal-title">{isNew?'Planifica una publicaciÃ³n':'Edita el contenido'}</h2></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={()=>{setSelectedPost(null);setModalOpen(false)}}><X size={18}/></button></header><form onSubmit={savePost}><fieldset className="vc-post-form-fieldset" disabled={!canEdit}><div className="vc-post-form-grid"><label className="is-wide">TÃ­tulo<input required autoFocus value={draft.title} onChange={(event)=>setDraft({...draft,title:event.target.value})} placeholder="Tema de la publicaciÃ³n"/></label><label>Canal<select value={draft.platform} onChange={(event)=>setDraft({...draft,platform:event.target.value})}><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>WhatsApp</option><option>LinkedIn</option><option>Multicanal</option><option>Por definir</option></select></label><label>Formato<select value={draft.format} onChange={(event)=>setDraft({...draft,format:event.target.value})}><option>Post</option><option>Historia</option><option>Carrusel</option><option>Reel</option><option>Video</option><option>DiseÃ±o</option><option>Por definir</option></select></label><label>Fecha de publicaciÃ³n<input type="date" value={draft.scheduled_date} onChange={(event)=>setDraft({...draft,scheduled_date:event.target.value})}/></label><label>Hora<input type="time" value={draft.scheduled_time} onChange={(event)=>setDraft({...draft,scheduled_time:event.target.value})}/></label><label>Responsable<input value={draft.owner} onChange={(event)=>setDraft({...draft,owner:event.target.value})} placeholder="Por asignar"/></label><label>Estado<select value={draft.status} onChange={(event)=>setDraft({...draft,status:event.target.value})}>{[...new Set(['Por iniciar','En diseÃ±o','En revisiÃ³n','Aprobada','Programada','Publicada','Bloqueada',draft.status])].map((status)=><option key={status}>{status}</option>)}</select></label><label className="is-wide">Idea o lÃ­nea de contenido<input value={draft.content_line} onChange={(event)=>setDraft({...draft,content_line:event.target.value})} placeholder="QuÃ© queremos comunicar"/></label><label className="is-wide">Caption<textarea rows={3} value={draft.caption} onChange={(event)=>setDraft({...draft,caption:event.target.value})} placeholder="Borrador de copy y llamado a la acciÃ³n"/></label><label>PrÃ³ximo paso<input value={draft.next_action} onChange={(event)=>setDraft({...draft,next_action:event.target.value})} placeholder="AcciÃ³n concreta pendiente"/></label><label>Fecha lÃ­mite<input type="date" value={draft.due_date} onChange={(event)=>setDraft({...draft,due_date:event.target.value})}/></label></div></fieldset>{!isNew&&<div className="vc-post-checklist"><span className="eyebrow">CHECKLIST IMPORTADO</span><div>{checklistFields.map(([field,label])=><span key={field}><i className={/complet|aprob|listo|hecho/i.test(selectedPost[field]||'')?'is-done':''}/>{label}<small>{selectedPost[field]||'Por confirmar'}</small></span>)}</div>{selectedEvents.length>0&&<p>{selectedEvents.slice(0,3).map((entry)=><span key={entry.id}>{entry.field_name}: {entry.previous_value||'vacÃ­o'} â†’ {entry.new_value} Â· {formatDate(String(entry.created_at).slice(0,10))}</span>)}</p>}</div>}<div className="vc-content-modal-actions"><span>{canEdit?'Solo los perfiles autorizados pueden guardar cambios.':'Tu perfil tiene acceso de solo lectura.'}</span><button type="button" className="button button-outline" onClick={()=>{setSelectedPost(null);setModalOpen(false)}}>Cerrar</button>{canEdit&&<button type="submit" className="button button-dark" disabled={saving}>{saving?<LoaderCircle className="vc-content-spin" size={15}/>:<Save size={15}/>} {saving?'Guardandoâ€¦':'Guardar cambios'}</button>}</div></form></section></div>}
+  </AppFrame>;
+}

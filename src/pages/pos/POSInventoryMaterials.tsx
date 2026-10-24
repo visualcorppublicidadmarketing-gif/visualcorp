@@ -1,5 +1,428 @@
-YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éíó^úN‹Z–‹­¦ëeŠw¬Ý¥µÁ½ÉÐI•…Ð°ìÕÍ•MÑ…Ñ”°ÕÍ•5•µ¼°ÕÍ•I•˜ô™É½´€É•…Ðœì4)¥µÁ½ÉÐì€4(€A…­…”°M•…É °A±ÕÌ°±•ÉÑQÉ¥…¹±”°¡•­¥É±”È°€4(€1…å•ÉÌ°ÉÉ½Ý½Ý¹I¥¡Ð°I•™É•Í¡Ü°‘¥ÐÈ°M¡¥•±‘±•ÉÐ°4(€AÉ¥¹Ñ•È°Q…œ°QÉ…Í È°a¥É±”°¡•¬°MÁ…É­±•Ì°EÉ½‘”4)ô™É½´€±Õ¥‘”µÉ•…Ðœì4)¥µÁ½ÉÐìU1Q}5QI%1L°Ñ½%M=…Ñ”°±½5…Ñ•É¥…±MÉ…Àô™É½´€œ¸¸¼¸¸½±¥ˆ½Á½ÍMÑ½É”œì4(4)•áÁ½ÉÐ™Õ¹Ñ¥½¸A=M%¹Ù•¹Ñ½Éå5…Ñ•É¥…±Ì¡ìÍÑ½É”°Í•ÑMÑ½É”ô¤ì4(€½¹ÍÐmÍ•…É °Í•ÑM•…É¡t€ôÕÍ•MÑ…Ñ” œœ¤ì4(€½¹ÍÐm…Ñ•½Éå¥±Ñ•È°Í•Ñ…Ñ•½Éå¥±Ñ•Ét€ôÕÍ•MÑ…Ñ” …±°œ¤ì4(€½¹ÍÐm…‘©ÕÍÑ5½‘…±5…Ñ•É¥…°°Í•Ñ‘©ÕÍÑ5½‘…±5…Ñ•É¥…±t€ôÕÍ•MÑ…Ñ”¡¹Õ±°¤ì4(€½¹ÍÐm…‘©ÕÍÑEÑä°Í•Ñ‘©ÕÍÑEÑåt€ôÕÍ•MÑ…Ñ” œœ¤ì4(€½¹ÍÐm…‘©ÕÍÑ9½Ñ•Ì°Í•Ñ‘©ÕÍÑ9½Ñ•Ít€ôÕÍ•MÑ…Ñ” œœ¤ì4(4(€€¼¼I½±°1…‰•°5½‘…°MÑ…Ñ”4(€½¹ÍÐmÉ½±±1…‰•±5½‘…±5…Ñ•É¥…°°Í•ÑI½±±1…‰•±5½‘…±5…Ñ•É¥…±t€ôÕÍ•MÑ…Ñ”¡¹Õ±°¤ì4(€½¹ÍÐmÉ½±±]¥‘Ñ¡4°Í•ÑI½±±]¥‘Ñ¡5t€ôÕÍ•MÑ…Ñ” œÄ¸ØÀœ¤ì4(€½¹ÍÐmÉ½±±1•¹Ñ¡4°Í•ÑI½±±1•¹Ñ¡5t€ôÕÍ•MÑ…Ñ” œÔÀœ¤ì4(€½¹ÍÐmÉ½±±1½Ñ½‘”°Í•ÑI½±±1½Ñ½‘•t€ôÕÍ•MÑ…Ñ”¡1=P´‘í¹•Ü…Ñ” ¤¹•ÑÕ±±e•…È ¥ô´ÀÀÅ€¤ì4(4(€€¼¼Q•¡¹¥…°MÉ…À5½‘…°MÑ…Ñ”4(€½¹ÍÐmÍÉ…Á5½‘…±5…Ñ•É¥…°°Í•ÑMÉ…Á5½‘…±5…Ñ•É¥…±t€ôÕÍ•MÑ…Ñ”¡¹Õ±°¤ì4(€½¹ÍÐmÍÉ…ÁEÑå4È°Í•ÑMÉ…ÁEÑå4Ét€ôÕÍ•MÑ…Ñ” œœ¤ì4(€½¹ÍÐmÍÉ…ÁI•…Í½¸°Í•ÑMÉ…ÁI•…Í½¹t€ôÕÍ•MÑ…Ñ” …±±„‘”…‰•é…°€¼%¹å•§Í¸œ¤ì4(€½¹ÍÐmÍÉ…Á9½Ñ•Ì°Í•ÑMÉ…Á9½Ñ•Ít€ôÕÍ•MÑ…Ñ” œœ¤ì4(4(€½¹ÍÐµ…Ñ•É¥…±Ì€ôÍÑ½É”¹µ…Ñ•É¥…±Ìü¹±•¹Ñ €üÍÑ½É”¹µ…Ñ•É¥…±Ì€èU1Q}5QI%1Lì4(4(€½¹ÍÐ…Ñ•½É¥•Ì€ôÕÍ•5•µ¼  ¤€ôøì4(€€€É•ÑÕÉ¸l…±°œ°€¸¸¹ÉÉ…ä¹™É½´¡¹•ÜM•Ð¡µ…Ñ•É¥…±Ì¹µ…À ¡´¤€ôø´¹…Ñ•½Éä¤¤¥tì4(€ô°mµ…Ñ•É¥…±Ít¤ì4(4(€½¹ÍÐ™¥±Ñ•É•‘5…Ñ•É¥…±Ì€ôÕÍ•5•µ¼  ¤€ôøì4(€€€É•ÑÕÉ¸µ…Ñ•É¥…±Ì¹™¥±Ñ•È ¡´¤€ôøì4(€€€€€½¹ÍÐÄ€ôÍ•…É ¹Ñ½1½Ý•É…Í” ¤ì4(€€€€€½¹ÍÐµ…Ñ¡Q•áÐ€ô€¡´¹¹…µ”ñð€œœ¤¹Ñ½1½Ý•É…Í” ¤¹¥¹±Õ‘•Ì¡Ä¤ñð4(€€€€€€€€¡´¹ÍÕÁÁ±¥•É9…µ”ñð€œœ¤¹Ñ½1½Ý•É…Í” ¤¹¥¹±Õ‘•Ì¡Ä¤ì4(€€€€€½¹ÍÐµ…Ñ¡…Ð€ô…Ñ•½Éå¥±Ñ•È€ôôô€…±°œñð´¹…Ñ•½Éä€ôôô…Ñ•½Éå¥±Ñ•Èì4(€€€€€É•ÑÕÉ¸µ…Ñ¡Q•áÐ€˜˜µ…Ñ¡…Ðì4(€€€ô¤ì4(€ô°mµ…Ñ•É¥…±Ì°Í•…É °…Ñ•½Éå¥±Ñ•Ét¤ì4(4(€½¹ÍÐ¡…¹‘±•M…Ù•‘©ÕÍÑµ•¹Ð€ô€¡”¤€ôøì4(€€€”¹ÁÉ•Ù•¹Ñ•™…Õ±Ð ¤ì4(€€€¥˜€ ……‘©ÕÍÑ5½‘…±5…Ñ•É¥…°ñð€……‘©ÕÍÑEÑä¤É•ÑÕÉ¸ì4(4(€€€½¹ÍÐÅÑå9Õµ‰•È€ô9Õµ‰•È¡…‘©ÕÍÑEÑä¤ñð€Àì4(€€€½¹ÍÐÕÁ‘…Ñ•‘5…Ñ•É¥…±Ì€ôµ…Ñ•É¥…±Ì¹µ…À ¡´¤€ôøì4(€€€€€¥˜€¡´¹¥€ôôô…‘©ÕÍÑ5½‘…±5…Ñ•É¥…°¹¥¤ì4(€€€€€€€É•ÑÕÉ¸ì4(€€€€€€€€€€¸¸¹´°4(€€€€€€€€€ÕÉÉ•¹ÑMÑ½¬è5…Ñ ¹µ…à À°€¡9Õµ‰•È¡´¹ÕÉÉ•¹ÑMÑ½¬¤ñð€À¤€¬ÅÑå9Õµ‰•È¤4(€€€€€€€ôì4(€€€€€ô4(€€€€€É•ÑÕÉ¸´ì4(€€€ô¤ì4(4(€€€½¹ÍÐ¹•Ý1½œ€ôì4(€€€€€¥è€±½œ´œ€¬…Ñ”¹¹½Ü ¤°4(€€€€€µ…Ñ•É¥…±%è…‘©ÕÍÑ5½‘…±5…Ñ•É¥…°¹¥°4(€€€€€ÅÕ…¹Ñ¥ÑåUÍ•è€µÅÑå9Õµ‰•È°4(€€€€€½ÍÑÁÁ±¥•èÅÑå9Õµ‰•È€¨€¡…‘©ÕÍÑ5½‘…±5…Ñ•É¥…°¹½ÍÑA•ÉU¹¥Ðñð€Ä¤°4(€€€€€¹½Ñ•Ìè…‘©ÕÍÑ9½Ñ•Ìñð€©ÕÍÑ”µ…¹Õ…°‘”¥¹Ù•¹Ñ…É¥¼œ°4(€€€€€É•…Ñ•‘Ðè¹•Ü…Ñ” ¤¹Ñ½%M=MÑÉ¥¹œ ¤4(€€€ôì4(4(€€€½¹ÍÐ¹•áÑMÑ…Ñ”€ôì4(€€€€€€¸¸¹ÍÑ½É”°4(€€€€€µ…Ñ•É¥…±ÌèÕÁ‘…Ñ•‘5…Ñ•É¥…±Ì°4(€€€€€µ…Ñ•É¥…±1½Ìèm¹•Ý1½œ°€¸¸¸¡ÍÑ½É”¹µ…Ñ•É¥…±1½Ìñðmt¥t4(€€€ôì4(4(€€€Í•ÑMÑ½É”¡¹•áÑMÑ…Ñ”¤ì4(€€€Í•Ñ‘©ÕÍÑ5½‘…±5…Ñ•É¥…°¡¹Õ±°¤ì4(€€€Í•Ñ‘©ÕÍÑEÑä œœ¤ì4(€€€Í•Ñ‘©ÕÍÑ9½Ñ•Ì œœ¤ì4(€ôì4(4(€½¹ÍÐ¡…¹‘±•M…Ù•MÉ…À€ô€¡”¤€ôøì4(€€€”¹ÁÉ•Ù•¹Ñ•™…Õ±Ð ¤ì4(€€€¥˜€ …ÍÉ…Á5½‘…±5…Ñ•É¥…°ñð€…ÍÉ…ÁEÑå4È¤É•ÑÕÉ¸ì4(4(€€€½¹ÍÐÉ•Ì€ô±½5…Ñ•É¥…±MÉ…À¡ÍÑ½É”°ì4(€€€€€µ…Ñ•É¥…±%èÍÉ…Á5½‘…±5…Ñ•É¥…°¹¥°4(€€€€€ÅÕ…¹Ñ¥Ñå4ÈèÍÉ…ÁEÑå4È°4(€€€€€É•…Í½¸èÍÉ…ÁI•…Í½¸°4(€€€€€¹½Ñ•ÌèÍÉ…Á9½Ñ•Ì4(€€€ô¤ì4(4(€€€¥˜€¡É•Ì¹½¬¤ì4(€€€€€Í•ÑMÑ½É”¡É•Ì¹ÕÁ‘…Ñ•‘MÑ½É”¤ì4(€€€€€…±•ÉÐ¡ƒŠrL5•Éµ„‘”€‘íÍÉ…ÁEÑå4Éô·
-ÈÉ•¥ÍÑÉ…‘„ä‘•Í½¹Ñ…‘„‘”¥¹Ù•¹Ñ…É¥¼¹€¤ì4(€€€€€Í•ÑMÉ…Á5½‘…±5…Ñ•É¥…°¡¹Õ±°¤ì4(€€€€€Í•ÑMÉ…ÁEÑå4È œœ¤ì4(€€€€€Í•ÑMÉ…Á9½Ñ•Ì œœ¤ì4(€€€ô•±Í”ì4(€€€€€…±•ÉÐ¡ƒŠjƒ¾â<ÉÉ½Èè€‘íÉ•Ì¹•ÉÉ½Éõ€¤ì4(€€€ô4(€ôì4(4(€É•ÑÕÉ¸€ 4(€€€€ñ‘¥Ø±…ÍÍ9…µ”ô‰Á½Ìµ¥¹Ù•¹Ñ½Éäµ½¹Ñ…¥¹•ÈˆÍÑå±”õíì‘¥ÍÁ±…äè€É¥œ°…Àè€œÄÙÁàœõôø4(€€€€€ì¼¨Q½À½¹ÑÉ½±Ì€¨½ô4(€€€€€€ñ‘¥ØÍÑå±”õíì4(€€€€€€€‘¥ÍÁ±…äè€™±•àœ°4(€€€€€€€©ÕÍÑ¥™å½¹Ñ•¹Ðè€ÍÁ…”µ‰•ÑÝ••¸œ°4(€€€€€€€…±¥¹%Ñ•µÌè€•¹Ñ•Èœ°4(€€€€€€€™±•á]É…Àè€ÝÉ…Àœ°4(€€€€€€€…Àè€œÄÉÁàœ°4(€€€€€€€‰…­É½Õ¹è€Ù…È ´µÁ…Á•È¤œ°4(€€€€€€€Á…‘‘¥¹œè€œÄÙÁàœ°4(€€€€€€€‰½É‘•ÉI…‘¥ÕÌè€œÄÙÁàœ°4(€€€€€€€‰½É‘•Èè€œÅÁàÍ½±¥Ù…È ´µ±¥¹”¤œ4(€€€€€õôø4(€€€€€€€€ñ‘¥ØÍÑå±”õíì‘¥ÍÁ±…äè€™±•àœ°…±¥¹%Ñ•µÌè€•¹Ñ•Èœ°…Àè€œÄÁÁàœ°™±•àè€Ä°µ¥¹]¥‘Ñ è€œÈØÁÁàœõôø4(€€€€€€€€€€ñ‘¥ØÍÑå±”õíìÁ½Í¥Ñ¥½¸è€É•±…Ñ¥Ù”œ°Ý¥‘Ñ è€œÄÀÀ”œ°µ…á]¥‘Ñ è€œÌÀÁÁàœõôø4(€€€€€€€€€€€€ñM•…É Í¥é”õìÄÕôÍÑå±”õíìÁ½Í¥Ñ¥½¸è€…‰Í½±ÕÑ”œ°±•™Ðè€œÄÁÁàœ°Ñ½Àè€œåÁàœ°½±½Èè€Ù…È ´µµÕÑ•¤œõô€¼ø4(€€€€€€€€€€€€ñ¥¹ÁÕÐ4(€€€€€€€€€€€€€ÑåÁ”ô‰Ñ•áÐˆ4(€€€€€€€€€€€€€Á±…•¡½±‘•Èô‰	ÕÍ…ÈÍÕÍÑÉ…Ñ¼°Ù¥¹¥°°±½¹„¸¸¸ˆ4(€€€€€€€€€€€€€Ù…±Õ”õíÍ•…É¡ô4(€€€€€€€€€€€€€½¹¡…¹”õì¡”¤€ôøÍ•ÑM•…É ¡”¹Ñ…É•Ð¹Ù…±Õ”¥ô4(€€€€€€€€€€€€€ÍÑå±”õíì4(€€€€€€€€€€€€€€€Ý¥‘Ñ è€œÄÀÀ”œ°4(€€€€€€€€€€€€€€€Á…‘‘¥¹œè€œáÁà€ÄÁÁà€áÁà€ÌÉÁàœ°4(€€€€€€€€€€€€€€€‰½É‘•ÉI…‘¥ÕÌè€œáÁàœ°4(€€€€€€€€€€€€€€€‰½É‘•Èè€œÅÁàÍ½±¥Ù…È ´µ±¥¹”¤œ°4(€€€€€€€€€€€€€€€‰…­É½Õ¹è€Ù…È ´µ‰œ¤œ°4(€€€€€€€€€€€€€€€™½¹ÑM¥é”è€œÄÉÁàœ4(€€€€€€€€€€€€€õô4(€€€€€€€€€€€€¼ø4(€€€€€€€€€€ð½‘¥Øø4(4(€€€€€€€€€€ñÍ•±•Ð4(€€€€€€€€€€€Ù…±Õ”õí…Ñ•½Éå¥±Ñ•Éô4(€€€€€€€€€€€½¹¡…¹”õì¡”¤€ôøÍ•Ñ…Ñ•½Éå¥±Ñ•È¡”¹Ñ…É•Ð¹Ù…±Õ”¥ô4(€€€€€€€€€€€ÍÑå±”õíì4(€€€€€€€€€€€€€Á…‘‘¥¹œè€œáÁà€ÄÉÁàœ°4(€€€€€€€€€€€€€‰½É‘•ÉI…‘¥ÕÌè€œáÁàœ°4(€€€€€€€€€€€€€‰½É‘•Èè€œÅÁàÍ½±¥Ù…È ´µ±¥¹”¤œ°4(€€€€€€€€€€€€€‰…­É½Õ¹è€Ù…È ´µ‰œ¤œ°4(€€€€€€€€€€€€€™½¹ÑM¥é”è€œÄÉÁàœ°4(€€€€€€€€€€€€€™½¹Ñ]•¥¡Ðè€œÜÀÀœ4(€€€€€€€€€€€õô4(€€€€€€€€€€ø4(€€€€€€€€€€€€ñ½ÁÑ¥½¸Ù…±Õ”ô‰…±°ˆùQ½‘…Ì±…Ì…Ñ•½Ëµ…Ìð½½ÁÑ¥½¸ø4(€€€€€€€€€€€ì¡…Ñ•½É¥•Ì…ÌÍÑÉ¥¹mt¤¹™¥±Ñ•È ¡Œ¤€ôøŒ€„ôô€…±°œ¤¹µ…À ¡Œ¤€ôø€ 4(€€€€€€€€€€€€€€ñ½ÁÑ¥½¸­•äõíôÙ…±Õ”õíôùíŒ¹Ñ½UÁÁ•É…Í” ¥ôð½½ÁÑ¥½¸ø4(€€€€€€€€€€€€¤¥ô4(€€€€€€€€€€ð½Í•±•Ðø4(€€€€€€€€ð½‘¥Øø4(4(€€€€€€€€ñ‘¥ØÍÑå±”õíì‘¥ÍÁ±…äè€™±•àœ°…±¥¹%Ñ•µÌè€•¹Ñ•Èœ°…Àè€œáÁàœ°™½¹ÑM¥é”è€œÄÍÁàœ°½±½Èè€Ù…È ´µµÕÑ•¤œ°™½¹Ñ]•¥¡Ðè€œÜÀÀœõôø4(€€€€€€€€€€ñ1…å•ÉÌÍ¥é”õìÄÙô½±½Èô‰Ù…È ´µ½É…¹”¤ˆ€¼ø4(€€€€€€€€€€ñÍÁ…¸ùí™¥±Ñ•É•‘5…Ñ•É¥…±Ì¹±•¹Ñ¡ôMÕÍÑÉ…Ñ½Ì€˜	½‰¥¹…ÌI•¥ÍÑÉ…‘…Ìð½ÍÁ…¸ø4(€€€€€€€€ð½‘¥Øø4(€€€€€€ð½‘¥Øø4(4(€€€€€ì¼¨5…Ñ•É¥…±Ì…É‘ÌÉ¥€¨½ô4(€€€€€€ñ‘¥ØÍÑå±”õíì4(€€€€€€€‘¥ÍÁ±…äè€É¥œ°4(€€€€€€€É¥‘Q•µÁ±…Ñ•½±Õµ¹Ìè€É•Á•…Ð¡…ÕÑ¼µ™¥±°°µ¥¹µ…à ÈàÁÁà°€Å™È¤¤œ°4(€€€€€€€…Àè€œÄÑÁàœ4(€€€€€õôø4(€€€€€€€í™¥±Ñ•É•‘5…Ñ•É¥…±Ì¹µ…À ¡µ…Ð¤€ôøì4(€€€€€€€€€½¹ÍÐ¥Í1½ÝMÑ½¬€ô€¡9Õµ‰•È¡µ…Ð¹ÕÉÉ•¹ÑMÑ½¬¤ñð€À¤€ðô€¡9Õµ‰•È¡µ…Ð¹µ¥¹MÑ½­±•ÉÐ¤ñð€ÄÀ¤ì4(4(€€€€€€€€€É•ÑÕÉ¸€ 4(€€€€€€€€€€€€ñ‘¥Ø4(€€€€€€€€€€€€€­•äõíµ…Ð¹¥‘ô4(€€€€€€€€€€€€€ÍÑå±”õíì4(€€€€€€€€€€€€€€€‰…­É½Õ¹è€Ù…È ´µÁ…Á•È¤œ°4(€€€€€€€€€€€€€€€‰½É‘•ÉI…‘¥ÕÌè€œÄÑÁàœ°4(€€€€€€€€€€€€€€€‰½É‘•Èè¥Í1½ÝMÑ½¬€ü€œÄ¸ÕÁàÍ½±¥€•˜ÐÐÐÐœ€è€œÅÁàÍ½±¥Ù…È ´µ±¥¹”¤œ°4(€€€€€€€€€€€€€€€Á…‘‘¥¹œè€œÄÙÁàœ°4(€€€€€€€€€€€€€€€‘¥ÍÁ±…äè€É¥œ°4(€€€€€€€€€€€€€€€…Àè€œÄÁÁàœ°4(€€€€€€€€€€€€€€€‰½áM¡…‘½Üè€œÀ€ÉÁà€áÁàÉ‰„ À°À°À°À¸ÀÌ¤œ4(€€€€€€€€€€€€€õô4(€€€€€€€€€€€€ø4(€€€€€€€€€€€€€€ñ‘¥ØÍÑå±”õíì‘¥ÍÁ±…äè€™±•àœ°©ÕÍÑ¥™å½¹Ñ•¹Ðè€ÍÁ…”µ‰•ÑÝ••¸œ°…±¥¹%Ñ•µÌè€ÍÑ…ÉÐœõôø4(€€€€€€€€€€€€€€€€ñ‘¥Øø4(€€€€€€€€€€€€€€€€€€ñÍÁ…¸ÍÑå±”õíì™½¹ÑM¥é”è€œÄÁÁàœ°™½¹Ñ]•¥¡Ðè€œàÀÀœ°Ñ•áÑQÉ…¹Í™½É´è€ÕÁÁ•É…Í”œ°½±½Èè€Ù…È ´µ½É…¹”µ‘…É¬¤œ°‰…­É½Õ¹è€Ù…È ´µ½É…¹”µÍ½™Ð¤œ°Á…‘‘¥¹œè€œÉÁà€ÙÁàœ°‰½É‘•ÉI…‘¥ÕÌè€œÑÁàœõôø4(€€€€€€€€€€€€€€€€€€€íµ…Ð¹…Ñ•½Éåô4(€€€€€€€€€€€€€€€€€€ð½ÍÁ…¸ø4(€€€€€€€€€€€€€€€€€€ñÍÑÉ½¹œÍÑå±”õíì™½¹ÑM¥é”è€œÄÑÁàœ°½±½Èè€Ù…È ´µ¥¹¬¤œ°‘¥ÍÁ±…äè€‰±½¬œ°µ…É¥¹Q½Àè€œÑÁàœ°±¥¹•!•¥¡Ðè€Ä¸ÈÔõôø4(€€€€€€€€€€€€€€€€€€€íµ…Ð¹¹…µ•ô4(€€€€€€€€€€€€€€€€€€ð½ÍÑÉ½¹œø4(€€€€€€€€€€€€€€€€ð½‘¥Øø4(4(€€€€€€€€€€€€€€€í¥Í1½ÝMÑ½¬€ü€ 4(€€€€€€€€€€€€€€€€€€ñÍÁ…¸ÍÑå±”õíì™½¹ÑM¥é”è€œÄÁÁàœ°™½¹Ñ]•¥¡Ðè€œàÀÀœ°Á…‘‘¥¹œè€œÉÁà€ÙÁàœ°‰½É‘•ÉI…‘¥ÕÌè€œÑÁàœ°‰…­É½Õ¹è€œ™•”É”Èœ°½±½Èè€œ‘ŒÈØÈØœ°‘¥ÍÁ±…äè€™±•àœ°…±¥¹%Ñ•µÌè€•¹Ñ•Èœ°…Àè€œÍÁàœõôø4(€€€€€€€€€€€€€€€€€€€€ñM¡¥•±‘±•ÉÐÍ¥é”õìÄÉô€¼øMÑ½¬ƒ}{êÚ$z{-®éÜj×er="Ej. 3.50"
+import React, { useState, useMemo, useRef } from 'react';
+import { 
+  Package, Search, Plus, AlertTriangle, CheckCircle2, 
+  Layers, ArrowDownRight, RefreshCw, Edit2, ShieldAlert,
+  Printer, Tag, Trash2, XCircle, Check, Sparkles, QrCode
+} from 'lucide-react';
+import { DEFAULT_MATERIALS, toISODate, logMaterialScrap } from '../../lib/posStore';
+
+export function POSInventoryMaterials({ store, setStore }) {
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [adjustModalMaterial, setAdjustModalMaterial] = useState(null);
+  const [adjustQty, setAdjustQty] = useState('');
+  const [adjustNotes, setAdjustNotes] = useState('');
+
+  // Roll Label Modal State
+  const [rollLabelModalMaterial, setRollLabelModalMaterial] = useState(null);
+  const [rollWidthM, setRollWidthM] = useState('1.60');
+  const [rollLengthM, setRollLengthM] = useState('50');
+  const [rollLotCode, setRollLotCode] = useState(`LOT-${new Date().getFullYear()}-001`);
+
+  // Technical Scrap Modal State
+  const [scrapModalMaterial, setScrapModalMaterial] = useState(null);
+  const [scrapQtyM2, setScrapQtyM2] = useState('');
+  const [scrapReason, setScrapReason] = useState('Falla de cabezal / InyecciÃ³n');
+  const [scrapNotes, setScrapNotes] = useState('');
+
+  const materials = store.materials?.length ? store.materials : DEFAULT_MATERIALS;
+
+  const categories = useMemo(() => {
+    return ['all', ...Array.from(new Set(materials.map((m) => m.category)))];
+  }, [materials]);
+
+  const filteredMaterials = useMemo(() => {
+    return materials.filter((m) => {
+      const q = search.toLowerCase();
+      const matchText = (m.name || '').toLowerCase().includes(q) ||
+        (m.supplierName || '').toLowerCase().includes(q);
+      const matchCat = categoryFilter === 'all' || m.category === categoryFilter;
+      return matchText && matchCat;
+    });
+  }, [materials, search, categoryFilter]);
+
+  const handleSaveAdjustment = (e) => {
+    e.preventDefault();
+    if (!adjustModalMaterial || !adjustQty) return;
+
+    const qtyNumber = Number(adjustQty) || 0;
+    const updatedMaterials = materials.map((m) => {
+      if (m.id === adjustModalMaterial.id) {
+        return {
+          ...m,
+          currentStock: Math.max(0, (Number(m.currentStock) || 0) + qtyNumber)
+        };
+      }
+      return m;
+    });
+
+    const newLog = {
+      id: 'log-' + Date.now(),
+      materialId: adjustModalMaterial.id,
+      quantityUsed: -qtyNumber,
+      costApplied: qtyNumber * (adjustModalMaterial.costPerUnit || 1),
+      notes: adjustNotes || 'Ajuste manual de inventario',
+      createdAt: new Date().toISOString()
+    };
+
+    const nextState = {
+      ...store,
+      materials: updatedMaterials,
+      materialLogs: [newLog, ...(store.materialLogs || [])]
+    };
+
+    setStore(nextState);
+    setAdjustModalMaterial(null);
+    setAdjustQty('');
+    setAdjustNotes('');
+  };
+
+  const handleSaveScrap = (e) => {
+    e.preventDefault();
+    if (!scrapModalMaterial || !scrapQtyM2) return;
+
+    const res = logMaterialScrap(store, {
+      materialId: scrapModalMaterial.id,
+      quantityM2: scrapQtyM2,
+      reason: scrapReason,
+      notes: scrapNotes
+    });
+
+    if (res.ok) {
+      setStore(res.updatedStore);
+      alert(`âœ“ Merma de ${scrapQtyM2} mÂ² registrada y descontada de inventario.`);
+      setScrapModalMaterial(null);
+      setScrapQtyM2('');
+      setScrapNotes('');
+    } else {
+      alert(`âš ï¸ Error: ${res.error}`);
+    }
+  };
+
+  return (
+    <div className="pos-inventory-container" style={{ display: 'grid', gap: '16px' }}>
+      {/* Top Controls */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px',
+        background: 'var(--paper)',
+        padding: '16px',
+        borderRadius: '16px',
+        border: '1px solid var(--line)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '260px' }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
+            <Search size={15} style={{ position: 'absolute', left: '10px', top: '9px', color: 'var(--muted)' }} />
+            <input
+              type="text"
+              placeholder="Buscar sustrato, vinil, lona..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 10px 8px 32px',
+                borderRadius: '8px',
+                border: '1px solid var(--line)',
+                background: 'var(--bg)',
+                fontSize: '12px'
+              }}
+            />
+          </div>
+
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid var(--line)',
+              background: 'var(--bg)',
+              fontSize: '12px',
+              fontWeight: '700'
+            }}
+          >
+            <option value="all">Todas las CategorÃ­as</option>
+            {(categories as string[]).filter((c) => c !== 'all').map((c) => (
+              <option key={c} value={c}>{c.toUpperCase()}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--muted)', fontWeight: '700' }}>
+          <Layers size={16} color="var(--orange)" />
+          <span>{filteredMaterials.length} Sustratos & Bobinas Registradas</span>
+        </div>
+      </div>
+
+      {/* Materials Cards Grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: '14px'
+      }}>
+        {filteredMaterials.map((mat) => {
+          const isLowStock = (Number(mat.currentStock) || 0) <= (Number(mat.minStockAlert) || 10);
+
+          return (
+            <div
+              key={mat.id}
+              style={{
+                background: 'var(--paper)',
+                borderRadius: '14px',
+                border: isLowStock ? '1.5px solid #ef4444' : '1px solid var(--line)',
+                padding: '16px',
+                display: 'grid',
+                gap: '10px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                <div>
+                  <span style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--orange-dark)', background: 'var(--orange-soft)', padding: '2px 6px', borderRadius: '4px' }}>
+                    {mat.category}
+                  </span>
+                  <strong style={{ fontSize: '14px', color: 'var(--ink)', display: 'block', marginTop: '4px', lineHeight: 1.25 }}>
+                    {mat.name}
+                  </strong>
+                </div>
+
+                {isLowStock ? (
+                  <span style={{ fontSize: '10px', fontWeight: '800', padding: '2px 6px', borderRadius: '4px', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <ShieldAlert size={12} /> Stock Bajo
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '10px', fontWeight: '800', padding: '2px 6px', borderRadius: '4px', background: '#dcfce7', color: '#166534' }}>
+                    Disponible
+                  </span>
+                )}
+              </div>
+
+              {/* Stock numbers */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                background: 'var(--bg)',
+                padding: '10px',
+                borderRadius: '10px',
+                border: '1px solid var(--line)'
+              }}>
+                <div>
+                  <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block' }}>Stock Actual</span>
+                  <strong style={{ fontSize: '20px', fontWeight: '900', color: isLowStock ? '#dc2626' : 'var(--ink)' }}>
+                    {Number(mat.currentStock || 0).toFixed(1)} {mat.unit}
+                  </strong>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block' }}>Costo Base</span>
+                  <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>
+                    {'$' + Number(mat.costPerUnit || 0).toFixed(2) + ' / ' + mat.unit}
+                  </strong>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--muted)' }}>
+                <span>{mat.widthM ? 'Ancho: ' + mat.widthM + 'm' : ''} {mat.lengthM ? '| Rollo: ' + mat.lengthM + 'm' : ''}</span>
+                <span>{mat.supplierName || 'Proveedor'}</span>
+              </div>
+
+              {/* Action Buttons Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setAdjustModalMaterial(mat)}
+                  style={{
+                    padding: '7px 8px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--line)',
+                    background: 'var(--bg)',
+                    color: 'var(--ink)',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                  title="Ajuste manual o recepciÃ³n de rollos"
+                >
+                  <Plus size={13} /> Ajustar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRollLabelModalMaterial(mat);
+                    setRollWidthM(mat.widthM || '1.60');
+                    setRollLengthM(mat.lengthM || '50');
+                  }}
+                  style={{
+                    padding: '7px 8px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--line)',
+                    background: '#eff6ff',
+                    color: '#1e40af',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                  title="Generar e imprimir etiqueta tÃ©rmica para rollo / bobina"
+                >
+                  <Printer size={13} /> Etiqueta
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setScrapModalMaterial(mat)}
+                  style={{
+                    padding: '7px 8px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--line)',
+                    background: '#fef2f2',
+                    color: '#dc2626',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                  title="Registrar merma o desperdicio tÃ©cnico"
+                >
+                  <AlertTriangle size={13} /> Merma
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Adjust Stock Modal */}
+      {adjustModalMaterial && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.6)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <form onSubmit={handleSaveAdjustment} style={{
+            background: 'var(--paper)',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '400px',
+            width: '100%',
+            border: '1px solid var(--line)',
+            display: 'grid',
+            gap: '14px'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: 'var(--ink)' }}>
+              Ajuste de Stock: {adjustModalMaterial.name}
+            </h3>
+
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--muted)' }}>
+              Stock actual: <strong>{adjustModalMaterial.currentStock} {adjustModalMaterial.unit}</strong>
+            </p>
+
+            <div style={{ display: 'grid', gap: '4px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--ink)' }}>
+                Cantidad a agregar (ej. +50) o restar (ej. -10):
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                required
+                placeholder="Ej. 50 (para un rollo nuevo)"
+                value={adjustQty}
+                onChange={(e) => setAdjustQty(e.target.value)}
+                style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--line)', background: 'var(--bg)' }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gap: '4px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--ink)' }}>Motivo / Nota:</label>
+              <input
+                type="text"
+                placeholder="Ej. Factura #4012 de Importadora GrÃ¡fica"
+                value={adjustNotes}
+                onChange={(e) => setAdjustNotes(e.target.value)}
+                style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--line)', background: 'var(--bg)' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setAdjustModalMaterial(null)}
+                style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--line)', background: 'var(--bg)', cursor: 'pointer', fontWeight: '700' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                style={{ padding: '8px 16px', borderRadius: '8px', border: 0, background: 'var(--orange)', color: '#fff', cursor: 'pointer', fontWeight: '800' }}
+              >
+                Aplicar Ajuste
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Technical Scrap / Waste Modal */}
+      {scrapModalMaterial && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.6)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <form onSubmit={handleSaveScrap} style={{
+            background: 'var(--paper)',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '440px',
+            width: '100%',
+            border: '1px solid var(--line)',
+            display: 'grid',
+            gap: '14px',
+            boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#dc2626' }}>
+              <AlertTriangle size={22} />
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900' }}>
+                Registro de Merma / Desperdicio TÃ©cnico
+              </h3>
+            </div>
+
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--muted)' }}>
+              Sustrato afectado: <strong>{scrapModalMaterial.name}</strong> (Stock: {scrapModalMaterial.currentStock} {scrapModalMaterial.unit})
+            </p>
+
+            <div style={{ display: 'grid', gap: '4px' }}>
+              <label className="pos-label required">Cantidad Desperdiciada / DaÃ±ada ({scrapModalMaterial.unit}):</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                required
+                placeholder="Ej. 3.50"
                 value={scrapQtyM2}
                 onChange={(e) => setScrapQtyM2(e.target.value)}
                 className="pos-input"
