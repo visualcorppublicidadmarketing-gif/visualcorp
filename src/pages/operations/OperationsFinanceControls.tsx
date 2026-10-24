@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ArrowUpRight, CalendarClock, Check, CircleDollarSign, Clock3, Download, Plus, ReceiptText, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight, CalendarClock, ChartNoAxesCombined, Check, CircleDollarSign, Clock3, Download, Plus, ReceiptText, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -36,6 +36,7 @@ async function readAllFinanceRows(createQuery: () => any) {
 }
 
 type Expense = { id: string; description: string; category: string; status: string; document_date: string; due_date: string | null; total: number; paid_total: number; branch_id: string | null; supplier_id: string | null; purchase_order_id: string | null; receipt_id: string | null; reference: string };
+type FinanceBudget = { id: string; period_start: string; category: string; branch_id: string | null; budget_amount: number; note: string };
 type TeamMember = { user_id: string; full_name: string; email: string; role: string; active: boolean };
 type PersonnelOption = { personnel_id: string; full_name: string; department: string; job_title: string };
 const payrollMonthLabel = (value: string) => new Date(`${value.slice(0, 7)}-01T12:00:00`).toLocaleDateString('es-EC', { year: 'numeric', month: 'long' });
@@ -46,6 +47,9 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const canSeeDeductions = roles.some((role: string) => ['owner', 'admin'].includes(role));
   const [section, setSection] = useState('egresos');
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [budgets, setBudgets] = useState<FinanceBudget[]>([]);
+  const [budgetsLoading, setBudgetsLoading] = useState(false);
+  const [budgetsError, setBudgetsError] = useState('');
   const [templates, setTemplates] = useState<any[]>([]);
   const [recurringOccurrences, setRecurringOccurrences] = useState<any[]>([]);
   const [deductions, setDeductions] = useState<any[]>([]);
@@ -72,6 +76,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const [deductionForm, setDeductionForm] = useState({ employee: '', description: '', amount: '', period: today().slice(0, 7), authorization: '', evidence: '' });
   const [reviewRefs, setReviewRefs] = useState<Record<string, { authorization: string; evidence: string }>>({});
   const [payrollDeliveryRefs, setPayrollDeliveryRefs] = useState<Record<string, string>>({});
+  const [budgetForm, setBudgetForm] = useState({ category: categories[0], branch: '', amount: '', note: '' });
 
   const refresh = async () => {
     if (!supabase || !organizationId || !canManage) return;
@@ -159,6 +164,36 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
 
   useEffect(() => { void refresh(); }, [organizationId, canManage, canSeeDeductions]);
 
+  useEffect(() => {
+    let active = true;
+    if (!supabase || !organizationId || !canManage || !month) {
+      setBudgets([]);
+      setBudgetsError('');
+      setBudgetsLoading(false);
+      return () => { active = false; };
+    }
+    setBudgetsLoading(true);
+    setBudgetsError('');
+    setBudgets([]);
+    let budgetQuery = supabase.from('finance_budgets')
+      .select('id,period_start,category,branch_id,budget_amount,note')
+      .eq('organization_id', organizationId)
+      .eq('period_start', `${month}-01`);
+    if (branch !== 'all') budgetQuery = budgetQuery.eq('branch_id', branch);
+    void budgetQuery.order('category').order('branch_id').then(({ data, error: loadError }) => {
+        if (!active) return;
+        if (loadError) {
+          setBudgets([]);
+          setBudgetsError(loadError.message || 'No se pudieron cargar los presupuestos del periodo.');
+        } else setBudgets((data || []) as FinanceBudget[]);
+        setBudgetsLoading(false);
+      });
+    return () => { active = false; };
+  }, [organizationId, canManage, month, branch]);
+  useEffect(() => {
+    if (branch !== 'all') setBudgetForm((current) => ({ ...current, branch }));
+  }, [branch]);
+
   const branchNames = useMemo(() => new Map(branches.map((branch) => [branch.id, branch.name])), [branches]);
   const supplierNames = useMemo(() => new Map(suppliers.map((supplier) => [supplier.id, supplier.name])), [suppliers]);
   const orderNames = useMemo(() => new Map(orders.map((order) => [order.id, order.order_number])), [orders]);
@@ -241,6 +276,40 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
       && isInSelectedBranch(expense);
   });
   const paidInPeriod = expensePaymentsInScope.reduce((sum, payment) => sum + Number(payment.amount), 0);
+  const budgetReport = useMemo(() => {
+    const reportExpenses = expenses.filter((expense) => Boolean(month)
+      && expense.status !== 'void'
+      && expense.document_date.slice(0, 7) === month
+      && (branch === 'all' || expense.branch_id === branch));
+    const amountByKey = new Map<string, { category: string; branch_id: string | null; amount: number; count: number }>();
+    reportExpenses.forEach((expense) => {
+      const key = JSON.stringify([expense.branch_id, expense.category]);
+      const row = amountByKey.get(key) || { category: expense.category, branch_id: expense.branch_id, amount: 0, count: 0 };
+      row.amount += Number(expense.total || 0);
+      row.count += 1;
+      amountByKey.set(key, row);
+    });
+    const scopedBudgets = budgets.filter((budget) => branch === 'all' || budget.branch_id === branch);
+    const coveredKeys = new Set(scopedBudgets.map((budget) => JSON.stringify([budget.branch_id, budget.category])));
+    const rows = scopedBudgets.map((budget) => {
+      const actual = amountByKey.get(JSON.stringify([budget.branch_id, budget.category]));
+      return { ...budget, actual: actual?.amount || 0, expenseCount: actual?.count || 0 };
+    }).sort((a, b) => a.category.localeCompare(b.category, 'es-EC') || (a.branch_id || '').localeCompare(b.branch_id || ''));
+    const unbudgetedRows = [...amountByKey.entries()]
+      .filter(([key]) => !coveredKeys.has(key))
+      .map(([, row]) => row)
+      .sort((a, b) => b.amount - a.amount);
+    const totalBudget = scopedBudgets.reduce((sum, budget) => sum + Number(budget.budget_amount || 0), 0);
+    const totalActual = reportExpenses.reduce((sum, expense) => sum + Number(expense.total || 0), 0);
+    return {
+      rows,
+      unbudgetedRows,
+      totalBudget,
+      totalActual,
+      variance: totalBudget - totalActual,
+      unbudgetedTotal: unbudgetedRows.reduce((sum, row) => sum + row.amount, 0),
+    };
+  }, [expenses, budgets, month, branch]);
   const visibleExpenses = useMemo(() => {
     const term = expenseSearch.trim().toLocaleLowerCase('es-EC');
     return expenses.filter((expense) => {
@@ -340,6 +409,74 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
     setBusy(false);
   };
 
+  const saveBudget = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!supabase || !organizationId || !month) return;
+    if (branch !== 'all' && budgetForm.branch !== branch) {
+      setError('Elige la sucursal seleccionada para guardar este presupuesto. Usa todas las sucursales para editar un presupuesto general.');
+      return;
+    }
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const { data, error: saveError } = await supabase.from('finance_budgets').upsert({
+        organization_id: organizationId,
+        period_start: `${month}-01`,
+        category: budgetForm.category,
+        branch_id: budgetForm.branch || null,
+        budget_amount: Number(budgetForm.amount),
+        note: budgetForm.note.trim(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'organization_id,period_start,category,branch_id' })
+        .select('id,period_start,category,branch_id,budget_amount,note')
+        .single();
+      if (saveError) throw saveError;
+      setBudgets((current) => [...current.filter((item) => item.id !== data.id
+        && !(item.period_start === data.period_start && item.category === data.category && item.branch_id === data.branch_id)), data as FinanceBudget]
+        .sort((a, b) => a.category.localeCompare(b.category, 'es-EC')));
+      setNotice(`Presupuesto de ${budgetForm.category} guardado para ${payrollMonthLabel(`${month}-01`)}.`);
+      setBudgetForm({ ...budgetForm, amount: '', note: '' });
+    } catch (saveError: any) {
+      setError(saveError.message || 'No se pudo guardar el presupuesto.');
+    } finally { setBusy(false); }
+  };
+
+  const downloadBudgetComparisonCsv = () => {
+    const rows = [
+      ['Mes', 'Sucursal', 'Categoría', 'Presupuesto USD', 'Egreso registrado USD', 'Disponible / exceso USD', 'Nota'],
+      ...budgetReport.rows.map((item) => [
+        month,
+        item.branch_id ? branchNames.get(item.branch_id) || 'Sucursal' : 'General / sin sucursal',
+        item.category,
+        Number(item.budget_amount),
+        item.actual,
+        Number(item.budget_amount) - item.actual,
+        item.note || '',
+      ]),
+      ...budgetReport.unbudgetedRows.map((item) => [
+        month,
+        item.branch_id ? branchNames.get(item.branch_id) || 'Sucursal' : 'General / sin sucursal',
+        item.category,
+        '',
+        item.amount,
+        '',
+        'Egreso sin presupuesto asignado',
+      ]),
+    ];
+    const escape = (value: unknown) => {
+      if (typeof value === 'number' && Number.isFinite(value)) return value.toFixed(2);
+      let text = String(value ?? '');
+      if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+      return `"${text.replaceAll('"', '""')}"`;
+    };
+    const blob = new Blob(['\ufeff', rows.map((row) => row.map(escape).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `presupuesto-egresos-${month || 'sin-periodo'}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const generateRecurringExpense = async (template: any) => {
     setBusy(true); setError(''); setNotice('');
     try {
@@ -389,6 +526,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
     {(error || notice) && <div className={`op-finance-ledger-alert ${error ? 'is-error' : 'is-success'}`} role={error ? 'alert' : 'status'}>{error || notice}</div>}
     <nav className="op-finance-ledger-tabs" aria-label="Secciones financieras">
       <button className={section === 'egresos' ? 'active' : ''} onClick={() => setSection('egresos')}><ReceiptText size={16}/> Egresos y cuentas por pagar</button>
+      <button className={section === 'budget' ? 'active' : ''} onClick={() => setSection('budget')}><ChartNoAxesCombined size={16}/> Presupuesto vs egresos</button>
       <button className={section === 'recurring' ? 'active' : ''} onClick={() => setSection('recurring')}><CalendarClock size={16}/> Pagos periódicos</button>
       {canSeeDeductions && <button className={section === 'deductions' ? 'active' : ''} onClick={() => setSection('deductions')}><ShieldCheck size={16}/> Deducciones de remuneración</button>}
     </nav>
@@ -468,6 +606,47 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         </section>
       </div>
     </>}
+    {section === 'budget' && <div className="op-finance-ledger-columns op-finance-budget-columns">
+      <form id="op-finance-budget-form" className="panel op-finance-ledger-form" onSubmit={saveBudget}>
+        <div className="panel-heading"><div><span className="eyebrow">PLAN MENSUAL · EGRESOS</span><h3>Definir presupuesto por categoría</h3></div><ChartNoAxesCombined size={18}/></div>
+        <p className="muted">Los montos los defines tú. Se comparan con egresos registrados por fecha de documento; guardar un presupuesto no crea gastos ni pagos.</p>
+        {!month ? <p className="op-finance-cost-error" role="alert">Selecciona un mes en el filtro superior para planificar.</p> : <>
+          <div className="op-finance-budget-period"><span>Periodo del presupuesto</span><b>{payrollMonthLabel(`${month}-01`)}</b></div>
+          <label>Categoría<select value={budgetForm.category} onChange={(event) => setBudgetForm({ ...budgetForm, category: event.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
+          <label>Sucursal<select required value={budgetForm.branch} onChange={(event) => setBudgetForm({ ...budgetForm, branch: event.target.value })}>
+            <option value="" disabled={branch !== 'all'}>General / sin sucursal{branch !== 'all' ? ' · usa Todas las sucursales para editar' : ''}</option>
+            {branches.filter((item) => branch === 'all' || item.id === branch).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select></label>
+          <label>Monto presupuestado USD<input required type="number" min="0.01" step="0.01" placeholder="Ingresa el monto aprobado" value={budgetForm.amount} onChange={(event) => setBudgetForm({ ...budgetForm, amount: event.target.value })}/></label>
+          <label>Nota (opcional)<textarea maxLength={1000} value={budgetForm.note} onChange={(event) => setBudgetForm({ ...budgetForm, note: event.target.value })} placeholder="Criterio o referencia del monto"/></label>
+          <button className="button button-primary" disabled={busy}><Plus size={15}/> Guardar presupuesto del mes</button>
+        </>}
+      </form>
+      <section className="panel op-finance-budget-register">
+        <div className="panel-heading"><div><span className="eyebrow">CONTROL POR FECHA DE DOCUMENTO</span><h3>Presupuesto frente a egresos</h3><p className="muted">{branch === 'all' ? 'Incluye sucursales y egresos generales, sin distribuirlos.' : `Solo incluye ${branchNames.get(branch) || 'la sucursal seleccionada'}; los egresos generales se revisan con Todas las sucursales.`}</p></div><div className="op-finance-budget-actions"><button className="button button-outline" onClick={downloadBudgetComparisonCsv} disabled={budgetsLoading || !!budgetsError || (!budgetReport.rows.length && !budgetReport.unbudgetedRows.length)}><Download size={15}/> Exportar CSV</button><CircleDollarSign size={19}/></div></div>
+        <div className="op-finance-ledger-kpis op-finance-budget-kpis">
+          <article><span>Presupuesto asignado</span><b>{money(budgetReport.totalBudget)}</b><small>{budgetReport.rows.length} categorías y sucursales configuradas</small></article>
+          <article><span>Egresos registrados</span><b>{money(budgetReport.totalActual)}</b><small>Importes de documentos del mes seleccionado; incluye cuentas pagadas y por pagar</small></article>
+          <article className={budgetReport.totalBudget > 0 && budgetReport.variance < 0 ? 'is-overdue' : ''}><span>{budgetReport.variance < 0 ? 'Excedido del presupuesto' : 'Disponible del presupuesto'}</span><b>{budgetReport.totalBudget > 0 ? money(budgetReport.variance) : '—'}</b><small>{budgetReport.totalBudget > 0 ? 'Presupuesto menos egresos registrados' : 'Define presupuestos para calcular la diferencia'}</small></article>
+          <article className={budgetReport.unbudgetedTotal > 0 ? 'is-overdue' : ''}><span>Egresos sin presupuesto</span><b>{money(budgetReport.unbudgetedTotal)}</b><small>{budgetReport.unbudgetedRows.length} combinaciones de categoría y sucursal</small></article>
+        </div>
+        {budgetsError ? <p className="op-finance-cost-error" role="alert">{budgetsError}</p> : budgetsLoading ? <p className="muted">Cargando presupuestos del periodo…</p> : <>
+          {!!budgetReport.rows.length && <div className="op-finance-budget-list">{budgetReport.rows.map((item) => {
+            const remaining = Number(item.budget_amount) - item.actual;
+            const usedPercent = item.budget_amount > 0 ? item.actual / Number(item.budget_amount) * 100 : 0;
+            return <article key={item.id} className={remaining < 0 ? 'is-over-budget' : ''}>
+              <div className="op-finance-budget-row-heading"><div><b>{item.category}</b><small>{item.branch_id ? branchNames.get(item.branch_id) || 'Sucursal' : 'General / sin sucursal'} · {item.expenseCount} egresos</small></div><button type="button" className="button button-outline" onClick={() => { setBudgetForm({ category: item.category, branch: item.branch_id || '', amount: String(item.budget_amount), note: item.note || '' }); document.getElementById('op-finance-budget-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>Editar</button></div>
+              <div className="op-finance-budget-values"><span>Presupuesto <b>{money(Number(item.budget_amount))}</b></span><span>Registrado <b>{money(item.actual)}</b></span><span className={remaining < 0 ? 'is-over' : ''}>{remaining < 0 ? 'Exceso' : 'Disponible'} <b>{money(Math.abs(remaining))}</b></span></div>
+              <div className="op-finance-ledger-progress op-finance-budget-progress" role="progressbar" aria-label={`Uso de presupuesto para ${item.category}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(usedPercent))}><i style={{ width: `${Math.min(100, Math.max(0, usedPercent))}%` }}/></div>
+              <small className="op-finance-budget-usage">{Math.round(usedPercent)}% usado{item.note ? ` · ${item.note}` : ''}</small>
+            </article>;
+          })}</div>}
+          {!!budgetReport.unbudgetedRows.length && <div className="op-finance-budget-unbudgeted"><div><b>Categorías con egresos sin presupuesto</b><small>Asígnales un monto para incluirlas en el control por categoría.</small></div>{budgetReport.unbudgetedRows.map((item) => <article key={`${item.branch_id || 'general'}-${item.category}`}><span><b>{item.category}</b><small>{item.branch_id ? branchNames.get(item.branch_id) || 'Sucursal' : 'General / sin sucursal'} · {item.count} egresos</small></span><strong>{money(item.amount)}</strong><button type="button" className="button button-outline" onClick={() => { setBudgetForm({ category: item.category, branch: item.branch_id || '', amount: '', note: '' }); document.getElementById('op-finance-budget-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>Asignar</button></article>)}</div>}
+          {!budgetReport.rows.length && !budgetReport.unbudgetedRows.length && <div className="op-finance-ledger-empty"><ChartNoAxesCombined size={24}/><b>Sin presupuestos ni egresos registrados</b><span>Define un monto mensual por categoría y sucursal para comparar el gasto real.</span></div>}
+          <p className="op-finance-cost-note">Los documentos se asignan al mes de su fecha de emisión, aunque sigan pendientes de pago. Los pagos efectivos se consultan en Egresos y flujo de caja. Los presupuestos generales no se reparten automáticamente entre sucursales.</p>
+        </>}
+      </section>
+    </div>}
     {section === 'recurring' && <div className="op-finance-ledger-columns">
       <form className="panel op-finance-ledger-form" onSubmit={saveTemplate}><div className="panel-heading"><div><span className="eyebrow">PREVISIÓN Y RECORDATORIOS</span><h3>Programar pago periódico</h3></div><CalendarClock size={18}/></div><p className="muted">Cada vencimiento crea una cuenta por pagar solo cuando lo confirmes. No se ejecutan cargos ni pagos automáticos.</p>
         <label>Concepto<input required placeholder="Internet, arriendo, agua…" value={templateForm.description} onChange={(event) => setTemplateForm({ ...templateForm, description: event.target.value })}/></label><div className="op-finance-ledger-field-pair"><label>Categoría<select value={templateForm.category} onChange={(event) => setTemplateForm({ ...templateForm, category: event.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label><label>Frecuencia<select value={templateForm.cadence} onChange={(event) => setTemplateForm({ ...templateForm, cadence: event.target.value })}><option value="monthly">Mensual</option><option value="quarterly">Trimestral</option><option value="annual">Anual</option></select></label></div><div className="op-finance-ledger-field-pair"><label>Monto esperado USD<input required type="number" min="0.01" step="0.01" value={templateForm.amount} onChange={(event) => setTemplateForm({ ...templateForm, amount: event.target.value })}/></label><label>Próximo vencimiento<input required type="date" value={templateForm.due} onChange={(event) => setTemplateForm({ ...templateForm, due: event.target.value })}/></label></div>
