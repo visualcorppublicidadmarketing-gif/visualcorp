@@ -46,6 +46,20 @@ const monthLabel = (value) => value
 const timestamp = (value) => value
   ? new Date(value).toLocaleString('es-EC', { timeZone: BUSINESS_TIME_ZONE, dateStyle: 'short', timeStyle: 'short' })
   : '—';
+const businessDate = (value) => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: BUSINESS_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(value));
+  return `${parts.find((part) => part.type === 'year')?.value}-${parts.find((part) => part.type === 'month')?.value}-${parts.find((part) => part.type === 'day')?.value}`;
+};
+const daysSinceBusinessDate = (value, todayValue = businessDate(new Date())) => {
+  const [year, month, day] = value.split('-').map(Number);
+  const [todayYear, todayMonth, todayDay] = todayValue.split('-').map(Number);
+  return Math.max(0, Math.round((Date.UTC(todayYear, todayMonth - 1, todayDay) - Date.UTC(year, month - 1, day)) / 86_400_000));
+};
 
 async function readAllRows(createQuery) {
   const allRows = [];
@@ -436,6 +450,29 @@ export function OperationsFinance() {
     && (advisor === 'all' || sale.advisor_id === advisor)
     && (branch === 'all' || sale.branch_id === branch)
   )), [sales, advisor, branch]);
+  const openReceivables = useMemo(() => salesMatchingTeamAndBranch.flatMap((sale) => {
+    const total = Number(sale.total || 0);
+    const collected = Number(paymentsBySale.get(sale.id) || 0);
+    const balance = Math.max(0, total - collected);
+    if (balance < 0.005) return [];
+    return [{ sale, total, collected, balance, ageDays: daysSinceBusinessDate(sale.created_at) }];
+  }).sort((a, b) => b.ageDays - a.ageDays || b.balance - a.balance), [salesMatchingTeamAndBranch, paymentsBySale]);
+  const receivableAging = useMemo(() => {
+    const buckets = [
+      { label: '0–7 días', min: 0, max: 7, amount: 0, count: 0 },
+      { label: '8–30 días', min: 8, max: 30, amount: 0, count: 0 },
+      { label: '31–60 días', min: 31, max: 60, amount: 0, count: 0 },
+      { label: 'Más de 60 días', min: 61, max: Number.POSITIVE_INFINITY, amount: 0, count: 0 },
+    ];
+    openReceivables.forEach((item) => {
+      const bucket = buckets.find((entry) => item.ageDays >= entry.min && item.ageDays <= entry.max);
+      if (bucket) {
+        bucket.amount += item.balance;
+        bucket.count += 1;
+      }
+    });
+    return buckets;
+  }, [openReceivables]);
   const paymentSaleIds = useMemo(() => new Set(salesMatchingTeamAndBranch.map((sale) => sale.id)), [salesMatchingTeamAndBranch]);
   const salesInScope = useMemo(() => sales.filter((sale) => (
     (advisor === 'all' || sale.advisor_id === advisor)
@@ -631,6 +668,28 @@ export function OperationsFinance() {
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
+  const downloadReceivablesCsv = () => {
+    const rows = [
+      ['Fecha de venta', 'Antigüedad en días', 'Asesora responsable', 'Venta', 'Cliente', 'Sucursal', 'Total venta USD', 'Pagos POS registrados USD', 'Saldo por cobrar USD'],
+      ...openReceivables.map(({ sale, total, collected, balance, ageDays }) => [
+        timestamp(sale.created_at), ageDays, personName(sale.advisor_id), sale.sale_code || sale.id,
+        sale.customers?.full_name || '', branchName(sale.branch_id), total.toFixed(2), collected.toFixed(2), balance.toFixed(2),
+      ]),
+    ];
+    const escape = (value) => {
+      let text = String(value ?? '');
+      if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+      return `"${text.replaceAll('"', '""')}"`;
+    };
+    const blob = new Blob(['\ufeff', rows.map((row) => row.map(escape).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `saldos-por-cobrar-${businessDate(new Date())}.csv`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
   const downloadRefundsCsv = () => {
     const rows = [
       ['Fecha de liquidación', 'Devolución', 'Venta', 'Asesora', 'Sucursal', 'Medio', 'Referencia', 'Caja', 'Monto de salida USD'],
@@ -751,6 +810,17 @@ export function OperationsFinance() {
       <article className="is-collected"><span>Pagos recibidos en el periodo</span><b>{money(totalCollected)}</b><small>Abonos asociados a las ventas filtradas</small></article>
       <article><span>Saldo por cobrar</span><b>{money(outstanding)}</b><small>Saldo vigente de las ventas filtradas</small></article>
       <article><span>Valor promedio por venta</span><b>{money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b><small>Solo ventas confirmadas</small></article>
+    </section>
+    <section className="panel op-finance-receivables" aria-labelledby="op-finance-receivables-title">
+      <div className="panel-heading"><div><span className="eyebrow">POS → FINANZAS · SALDOS ABIERTOS</span><h2 id="op-finance-receivables-title">Antigüedad de saldos por cobrar</h2><p className="op-finance-cost-note">Se calcula desde la fecha de venta confirmada, restando los pagos POS registrados. El filtro de mes y medio de pago no aplica; se usan asesora y sucursal.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadReceivablesCsv} disabled={!openReceivables.length}><Download size={15}/> Exportar saldos CSV</button><a className="button button-outline" href="/operaciones/pos">Abrir POS <ArrowUpRight size={15}/></a></div></div>
+      <div className="op-finance-receivables-metrics"><article className="is-total"><span>Saldo abierto</span><b>{money(openReceivables.reduce((sum, item) => sum + item.balance, 0))}</b><small>{openReceivables.length} ventas con saldo</small></article>{receivableAging.map((bucket) => <article key={bucket.label}><span>{bucket.label}</span><b>{money(bucket.amount)}</b><small>{bucket.count} ventas desde POS</small></article>)}</div>
+      {openReceivables.length ? <div className="op-finance-receivables-list">{openReceivables.slice(0, 10).map(({ sale, total, collected, balance, ageDays }) => <article key={sale.id}>
+        <div className="op-finance-receivables-sale"><b>{sale.sale_code || sale.id.slice(0, 8)} · {sale.customers?.full_name || 'Cliente sin nombre'}</b><span>{timestamp(sale.created_at)} · {personName(sale.advisor_id)} · {branchName(sale.branch_id)}</span></div>
+        <div className="op-finance-receivables-progress"><div><span>Pagado {money(collected)} de {money(total)}</span><b>{money(balance)}</b></div><div className="op-finance-receivables-track" role="progressbar" aria-label={`Pagado ${money(collected)} de ${money(total)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(total > 0 ? collected / total * 100 : 0))}><i style={{ width: `${Math.min(100, Math.max(0, total > 0 ? collected / total * 100 : 0))}%` }}/></div></div>
+        <span className={`op-finance-receivables-age ${ageDays > 30 ? 'is-aged' : ''}`}>{ageDays} días desde la venta</span>
+      </article>)}</div> : <div className="op-finance-ledger-empty"><Banknote size={23}/><b>Sin saldos abiertos en este alcance</b><span>Cambia la asesora o la sucursal para revisar otras ventas confirmadas.</span></div>}
+      {openReceivables.length > 10 && <p className="op-finance-cost-note">Se muestran las 10 ventas con mayor antigüedad; el resumen y el CSV consideran las {openReceivables.length} con saldo abierto.</p>}
+      <p className="op-finance-cost-note">Los días son antigüedad desde la venta, no días de mora: no se consulta un plazo de pago acordado, no agrega recargos y no aplica compensaciones por devoluciones. El total refleja ventas confirmadas menos abonos POS registrados.</p>
     </section>
     {canSeeInventoryCosts && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-refund-title">
       <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → CAJA → FINANZAS</span><h2 id="op-finance-refund-title">Cobros y reembolsos liquidados</h2><p className="op-finance-cost-note">Filtra por la fecha real del cobro o de la liquidación, además de asesora, sucursal y medio.</p></div><button className="button button-outline" onClick={downloadRefundsCsv} disabled={!refundsSettledInPeriod.length}><Download size={15}/> Exportar reembolsos</button></div>
