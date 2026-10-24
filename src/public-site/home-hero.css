@@ -14,14 +14,14 @@
 .site-hero-proof{gap:8px;margin-top:31px}
 .site-hero-proof span{border-color:#ffffff18;background:#ffffff08;color:#d5d2dc;font-size:10px}
 .site-hero-proof svg{color:#48d0aa}
-.site-hero-art{min-height:clamp(495px,47vw,650px);margin:0;overflow:hidden;border:1px solid #ffffff2b;border-radius:36px;background:radial-gradient(ellipse at 50% 43%,#761e6690 0,#43213d80 27%,transparent 61%),radial-gradient(ellipse at 53% 105%,#008bb83a,transparent 48%),linear-gradient(145deg,#211923,#11121a 67%);box-shadow:0 35px 100px #0007,inset 0 1px #ffffff26}
+.site-hero-art{min-height:clamp(495px,47vw,650px);margin:0;overflow:hidden;border:1px solid #ffffff2b;border-radius:36px;background:radial-gradient(ellipse at 50% 43%,#64255748 0,#39213d32 25%,transparent 61%),radial-gradient(ellipse at 53% 105%,#008bb82e,transparent 48%),linear-gradient(145deg,#211923,#11121a 67%);box-shadow:0 28px 76px #0006,inset 0 1px #ffffff26}
 .site-hero-art:before{opacity:.22;background-image:linear-gradient(#ffffff11 1px,transparent 1px),linear-gradient(90deg,#ffffff11 1px,transparent 1px);background-size:38px 38px;mask-image:linear-gradient(#000,transparent 88%)}
 .site-hero-art:after{position:absolute;inset:0;z-index:0;border-radius:inherit;content:"";background:linear-gradient(125deg,#ffffff0d,transparent 23% 72%,#e5007e14);pointer-events:none}
 .hero-stage-grid{position:absolute;inset:0;z-index:0;background:radial-gradient(circle at 50% 44%,transparent 0 34%,#ffffff08 34.15% 34.35%,transparent 34.5%),radial-gradient(circle at 50% 44%,transparent 0 47%,#ffffff07 47.15% 47.3%,transparent 47.45%);pointer-events:none}
 .hero-stage-word{position:absolute;z-index:1;top:50%;left:50%;transform:translate(-50%,-57%);color:#ffffff0a;font-family:BebasKai,'Arial Narrow',sans-serif;font-size:clamp(130px,17vw,260px);line-height:.8;letter-spacing:-.03em;pointer-events:none}
-.site-mascot-halo{top:13%;left:50%;width:min(76%,470px);border-color:#f36be865;background:radial-gradient(circle,#e82ea43d 0,#a2219c1b 42%,transparent 70%);box-shadow:0 0 0 24px #ffffff06,0 0 0 52px #ffffff04,0 0 90px #d4269840}
+.site-mascot-halo{top:13%;left:50%;width:min(70%,430px);border-color:#f36be84a;background:radial-gradient(circle,#d5268b12 0,#a2219c0b 38%,transparent 68%);box-shadow:0 0 0 22px #ffffff04,0 0 64px #d4269820}
 .site-mascot-floor{bottom:8px;width:70%;height:60px;background:radial-gradient(ellipse,#20c8e375 0,#cf198c47 38%,transparent 72%);filter:blur(18px)}
-.site-mascot-image{z-index:2;bottom:3%;height:89%;max-width:82%;filter:drop-shadow(0 25px 25px #000a) drop-shadow(0 0 26px #00a3dc22);animation:hero-mascot-float 5.8s ease-in-out infinite}
+.site-mascot-image{z-index:2;bottom:2%;height:94%;max-width:82%;filter:drop-shadow(0 18px 19px #0007) drop-shadow(0 0 18px #00a3dc18);animation:hero-mascot-float 5.8s ease-in-out infinite}
 .hero-orbit{position:absolute;z-index:1;top:50%;left:50%;width:76%;height:42%;border:1px solid #ffffff27;border-radius:50%;pointer-events:none}
 .orbit-a{transform:translate(-50%,-50%) rotate(-28deg);border-color:#1faeda80;box-shadow:0 0 20px #029fce22}
 .orbit-b{width:88%;height:30%;transform:translate(-50%,-50%) rotate(34deg);border-color:#ed2e9b70}
