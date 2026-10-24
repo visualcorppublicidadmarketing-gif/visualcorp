@@ -20,7 +20,7 @@ Los 70 SKU actuales de Visual Corp se asignaron a 70 archivos WebP en `public/in
 
 Las imágenes identifican visualmente un artículo y no confirman marca, acabado, ancho, calibre, saldo ni existencia física. En particular, las muestras impresas de vinil y lona conservan los nombres y arte de las fichas internas; deben reemplazarse por fotos del rollo físico si se necesita comprobar el lote exacto.
 
-La app muestra las imágenes por SKU incluso antes de la sincronización de datos. La migración `20261024070000_visualcorp_inventory_reference_images.sql` completa `reference_image_url` en Supabase solo cuando ese campo sigue vacío y solo para la organización `visual-corp`. No cambia stock ni costos. A la fecha de este registro no se aplicó la migración ni se publicó esta versión.
+La app muestra las imágenes por SKU incluso antes de la sincronización de datos. La migración `20261024060606_visualcorp_inventory_reference_images.sql` completa `reference_image_url` en Supabase solo cuando ese campo sigue vacío y solo para la organización `visual-corp`. No cambia stock ni costos. A la fecha de este registro no se aplicó la migración ni se publicó esta versión.
 
 Los formularios para crear y editar una ficha de inventario ahora exigen seleccionar una imagen existente de la biblioteca. La biblioteca indexada reúne 114 familias y 158 imágenes.
 
@@ -33,4 +33,4 @@ Los formularios para crear y editar una ficha de inventario ahora exigen selecci
 - Resolver rutas de inventario: `src/data/inventoryProductImages.ts`.
 - Imágenes finales: `public/inventory/`.
 - Índice visual para la interfaz: `src/data/inventory-reference-index.json` y `public/inventory-reference-library/index.json`.
-- Migración para persistir las rutas: `supabase/migrations/20261024070000_visualcorp_inventory_reference_images.sql`.
+- Migración para persistir las rutas: `supabase/migrations/20261024060606_visualcorp_inventory_reference_images.sql`.
