@@ -87,7 +87,16 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
   const [draft, setDraft] = useState<QuoteDraft>(() => initialDraft(initialService, initialProducts, requestedRanges));
   const [productId, setProductId] = useState('');
   const [products, setProducts] = useState<QuoteProduct[]>([]);
-  useEffect(() => { loadQuoteProducts().then(setProducts).catch(() => setProducts([])); }, []);
+  const [productLoadError, setProductLoadError] = useState(false);
+  const [productLoadAttempt, setProductLoadAttempt] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setProductLoadError(false);
+    loadQuoteProducts().then((rows) => { if (active) setProducts(rows); }).catch(() => {
+      if (active) { setProducts([]); setProductLoadError(true); }
+    });
+    return () => { active = false; };
+  }, [productLoadAttempt]);
   const pricingMode: PricingMode = draft.calculationMode === 'area' ? 'area' : 'quantity';
   const modeProducts = products.filter((product) => product.mode === pricingMode || (pricingMode === 'quantity' && product.mode === 'fixed'));
   const selectedProduct = modeProducts.find((product) => product.source_key === productId) || modeProducts[0];
@@ -159,6 +168,7 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
         <h2 id="quote-builder-title">Arma tu solicitud</h2>
           <p>Elige la calculadora por medidas o por cantidad y mira los escenarios de tarifa mientras configuras el pedido.</p>
       </div>
+      {productLoadError && <div className="quote-data-warning" role="alert"><span>No se cargó la matriz de tarifas. Puedes enviar tu solicitud, pero los estimados no aparecerán hasta que la calculadora esté disponible.</span><button type="button" onClick={() => setProductLoadAttempt((attempt) => attempt + 1)}>Reintentar</button></div>}
 
       <div className="quote-builder-fields">
         <label>Familia de servicio

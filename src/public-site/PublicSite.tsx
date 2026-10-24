@@ -19,6 +19,11 @@ const HomeContentHighlights = React.lazy(() => import('./ShowcasePages').then((m
 const wordmark = '/brand/visualcorp-wordmark.png';
 const familyInfo = (id) => publicServiceFamilies.find((family) => family.id === id);
 const serviceIcons = { impresion: Printer, 'gran-formato': PanelsTopLeft, rotulos: Store, textil: Shirt, corte: Scissors, eventos: ScanLine };
+const whatsappHref = (phone: string) => {
+  const digits = String(phone || '').replace(/\D/g, '');
+  const international = digits.startsWith('593') ? digits : `593${digits.replace(/^0/, '')}`;
+  return `https://wa.me/${international}`;
+};
 
 function SiteTitle({ children }) {
   useEffect(() => { document.title = `${children} · Visual Corp`; }, [children]);
@@ -138,7 +143,7 @@ function SiteFooter() {
           <p>Cuéntanos qué necesitas y revisaremos contigo el siguiente paso.</p>
           <div className="footer-social-links">
             <a href={`https://instagram.com/${data.settings.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer"><Globe2 size={16} aria-hidden="true"/><span>Instagram<small>{data.settings.instagram}</small></span><ArrowUpRight size={14} aria-hidden="true"/></a>
-            <a href={`https://wa.me/593${data.settings.contactPhone.replace(/^0/, '')}`} target="_blank" rel="noreferrer"><MessageCircle size={16} aria-hidden="true"/><span>WhatsApp<small>{data.settings.contactPhone}</small></span><ArrowUpRight size={14} aria-hidden="true"/></a>
+            <a href={whatsappHref(data.settings.contactPhone)} target="_blank" rel="noreferrer"><MessageCircle size={16} aria-hidden="true"/><span>WhatsApp<small>{data.settings.contactPhone}</small></span><ArrowUpRight size={14} aria-hidden="true"/></a>
           </div>
         </div>
       </div>
@@ -216,7 +221,7 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
   return <form className={`site-lead-form${variant === 'contact' ? ' contact-form' : ''}`} onSubmit={submit}>
     <div className="site-form-title">{variant === 'contact' ? <div><span className="contact-form-kicker">CUÉNTANOS TU IDEA</span><b>Empecemos por lo esencial.</b></div> : <b>Detalles del proyecto</b>}<small>Los campos con * son necesarios.</small></div>
     {sent && <div className="site-success" role="status"><Check size={16}/> Solicitud registrada. Gracias por escribirnos.</div>}
-    {error && <div className="site-form-error" role="alert">{error} <a href={`https://wa.me/593${data.settings.contactPhone.replace(/^0/, '')}`} target="_blank" rel="noreferrer">Abrir WhatsApp <ArrowUpRight size={13}/></a></div>}
+    {error && <div className="site-form-error" role="alert">{error} <a href={whatsappHref(data.settings.contactPhone)} target="_blank" rel="noreferrer">Abrir WhatsApp <ArrowUpRight size={13}/></a></div>}
     <div className="site-form-row"><label>Nombre *<input required autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Tu nombre"/></label><label>Teléfono o WhatsApp *<input required type="tel" autoComplete="tel" inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="09…"/></label></div>
     <label>Negocio <span>(opcional)</span><input value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} placeholder="Nombre de tu negocio"/></label>
     <label className={variant === 'quote' ? 'quote-form-service' : undefined}>¿Qué necesitas?<select value={selectedService ?? form.service} onChange={(event) => { setForm({ ...form, service: event.target.value }); onServiceChange?.(event.target.value); }}><option value="">Selecciona una familia de trabajo</option>{(selectedService ?? form.service) === multiProductQuoteService && <option value={multiProductQuoteService}>{multiProductQuoteService}</option>}{services.map((service) => <option value={service.name} key={service.id}>{service.name}</option>)}</select></label>
@@ -314,7 +319,7 @@ export function ContactPage() {
   const whatsappText = selectedService
     ? `Hola, Visual Corp. Quisiera conversar sobre un proyecto de ${selectedService.toLocaleLowerCase('es')}.`
     : 'Hola, Visual Corp. Quisiera conversar sobre un proyecto.';
-  const whatsapp = `https://wa.me/593${data.settings.contactPhone.replace(/^0/, '')}?text=${encodeURIComponent(whatsappText)}`;
+  const whatsapp = `${whatsappHref(data.settings.contactPhone)}?text=${encodeURIComponent(whatsappText)}`;
   const phoneLink = `tel:${data.settings.contactPhone.replace(/[^\d+]/g, '')}`;
   return <><SiteTitle>Contacto</SiteTitle>
     <section className="contact-hero" ref={contactHeroRef} aria-labelledby="contact-page-title">
