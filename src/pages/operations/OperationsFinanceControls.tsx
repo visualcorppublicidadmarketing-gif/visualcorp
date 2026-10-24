@@ -10,7 +10,7 @@ const dayDistance = (value: string, todayValue = today()) => {
   const [todayYear, todayMonth, todayDay] = todayValue.split('-').map(Number);
   return Math.round((Date.UTC(year, month - 1, day) - Date.UTC(todayYear, todayMonth - 1, todayDay)) / 86_400_000);
 };
-const addBusinessDays = (value: string, days: number) => {
+const addCalendarDays = (value: string, days: number) => {
   const [year, month, day] = value.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
 };
@@ -101,7 +101,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
     }
     try {
       const forecastStart = today();
-      const forecastEnd = addBusinessDays(forecastStart, 29);
+      const forecastEnd = addCalendarDays(forecastStart, 29);
       [expenseRows, templateRows, recurringOccurrenceRows, deductionRows, paymentRows] = await Promise.all([
         readAllFinanceRows(() => supabase.from('finance_expenses').select('id,description,category,status,document_date,due_date,total,paid_total,branch_id,supplier_id,purchase_order_id,receipt_id,reference').eq('organization_id', organizationId).order('document_date', { ascending: false }).order('id')),
         readAllFinanceRows(() => supabase.from('finance_recurring_templates').select('id,description,category,expected_amount,cadence,next_due_date,cadence_anchor_day,branch_id,supplier_id,active').eq('organization_id', organizationId).order('next_due_date').order('id')),
@@ -218,7 +218,26 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
     });
     const rows = [...openOrders.values()].filter((order) => order.remainingLines > 0);
     rows.sort((a, b) => (a.expected_date || '9999-12-31').localeCompare(b.expected_date || '9999-12-31') || a.order_number.localeCompare(b.order_number, 'es-EC'));
-    return { rows, total: rows.reduce((sum, order) => sum + order.amount, 0) };
+    const summary = rows.reduce((totals, order) => {
+      if (!order.expected_date) {
+        totals.withoutDate += order.amount;
+        totals.withoutDateCount += 1;
+      } else {
+        const distance = dayDistance(order.expected_date);
+        if (distance < 0) {
+          totals.overdue += order.amount;
+          totals.overdueCount += 1;
+        } else if (distance < 7) {
+          totals.next7Days += order.amount;
+          totals.next7DaysCount += 1;
+        } else if (distance < 30) {
+          totals.days8to30 += order.amount;
+          totals.days8to30Count += 1;
+        }
+      }
+      return totals;
+    }, { overdue: 0, overdueCount: 0, next7Days: 0, next7DaysCount: 0, days8to30: 0, days8to30Count: 0, withoutDate: 0, withoutDateCount: 0 });
+    return { rows, total: rows.reduce((sum, order) => sum + order.amount, 0), ...summary };
   }, [orders, orderLines, branch]);
   const payableAging = useMemo(() => {
     const todayValue = today();
@@ -561,13 +580,13 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
       <section className="panel op-finance-obligations-forecast" aria-labelledby="op-finance-purchase-commitments-title">
         <div className="panel-heading"><div><span className="eyebrow">COMPRAS → FINANZAS · ÓRDENES ABIERTAS</span><h3 id="op-finance-purchase-commitments-title">Compras pendientes de recepción</h3><p className="muted">Estimación del valor de las cantidades aún no recibidas en órdenes emitidas.</p></div><a className="button button-outline" href="/operaciones/compras">Revisar Compras <ArrowUpRight size={15}/></a></div>
         {purchaseCommitmentsError ? <p className="op-finance-cost-error" role="alert">{purchaseCommitmentsError}</p> : <>
-        <div className="op-finance-obligations-metrics"><article><span>Compromiso estimado abierto</span><b>{money(purchaseCommitments.total)}</b></article><article><span>Órdenes con cantidades pendientes</span><b>{purchaseCommitments.rows.length}</b><small>Sucursal según el filtro actual</small></article></div>
+        <div className="op-finance-obligations-metrics"><article><span>Compromiso estimado abierto</span><b>{money(purchaseCommitments.total)}</b><small>{purchaseCommitments.rows.length} órdenes con cantidades pendientes</small></article><article className={purchaseCommitments.overdue ? 'is-overdue' : ''}><span>Fecha de entrega prevista vencida</span><b>{money(purchaseCommitments.overdue)}</b><small>{purchaseCommitments.overdueCount} órdenes · confirmar estado en Compras</small></article><article><span>Entrega esperada en 7 días</span><b>{money(purchaseCommitments.next7Days)}</b><small>{purchaseCommitments.next7DaysCount} órdenes</small></article><article><span>Entrega esperada en 8–30 días</span><b>{money(purchaseCommitments.days8to30)}</b><small>{purchaseCommitments.days8to30Count} órdenes</small></article><article className={purchaseCommitments.withoutDateCount ? 'is-overdue' : ''}><span>Sin fecha de entrega</span><b>{money(purchaseCommitments.withoutDate)}</b><small>{purchaseCommitments.withoutDateCount} órdenes por programar</small></article></div>
         {purchaseCommitments.rows.length ? <div className="op-finance-obligations-list">{purchaseCommitments.rows.slice(0, 8).map((order) => <article key={order.id}>
-          <div className="op-finance-obligations-description"><b>{order.order_number} · {supplierNames.get(order.supplier_id) || 'Proveedor'}</b><span>{branchNames.get(order.branch_id) || 'Sucursal'} · {order.remainingLines} líneas con unidades pendientes · {order.status === 'partially_received' ? 'Recepción parcial' : 'Emitida'}</span></div>
+          <div className="op-finance-obligations-description"><b>{order.order_number} · {supplierNames.get(order.supplier_id) || 'Proveedor'}</b><span>{branchNames.get(order.branch_id) || 'Sucursal'} · {order.remainingLines} líneas con unidades pendientes · {order.status === 'partially_received' ? 'Recepción parcial' : 'Emitida'}{order.expected_date && dayDistance(order.expected_date) < 0 ? ` · Fecha prevista vencida ${Math.abs(dayDistance(order.expected_date))} días` : ''}</span></div>
           <div className="op-finance-obligations-due"><span>{order.expected_date ? `Entrega esperada ${new Date(`${order.expected_date}T12:00:00`).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil', day: 'numeric', month: 'short' })}` : 'Sin fecha esperada'}</span><b>{money(order.amount)}</b></div>
         </article>)}</div> : <div className="op-finance-ledger-empty"><Check size={22}/><b>Sin compromisos pendientes de recepción</b><span>Las órdenes emitidas con cantidades pendientes aparecerán aquí desde Compras.</span></div>}
         {purchaseCommitments.rows.length > 8 && <p className="op-finance-cost-note">Se muestran 8 de {purchaseCommitments.rows.length} órdenes; el total considera todas.</p>}
-        <p className="op-finance-cost-note">Importe estimado según cantidad pendiente × costo unitario de la orden. No es una cuenta por pagar ni un pago confirmado; excluye órdenes en borrador, canceladas y recibidas. El importe final se confirma con la factura al conciliar la recepción.</p>
+        <p className="op-finance-cost-note">Importe estimado según cantidad pendiente × costo unitario de la orden. La fecha es una previsión de entrega desde Compras, no un vencimiento ni fecha de pago; estos compromisos se mantienen fuera de la previsión de efectivo hasta confirmar factura y condiciones. No es una cuenta por pagar ni un pago confirmado; excluye órdenes en borrador, canceladas y recibidas. El importe final se confirma con la factura al conciliar la recepción.</p>
         </>}
       </section>
       <section className="panel op-finance-ledger-register"><div className="panel-heading"><div><span className="eyebrow">COMPRAS CON INVENTARIO RECIBIDO</span><h3>Recepciones pendientes de vincular</h3><p className="muted">El valor de la orden es solo una referencia. Confirma el total de la factura antes de crear el compromiso. Este listado de Compras muestra recepciones pendientes de todas las sucursales.</p></div><ReceiptText size={18}/></div>
