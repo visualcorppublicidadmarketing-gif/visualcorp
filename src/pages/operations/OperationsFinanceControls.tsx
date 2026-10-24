@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { CalendarClock, Check, CircleDollarSign, Clock3, Plus, ReceiptText, ShieldCheck } from 'lucide-react';
+import { CalendarClock, Check, CircleDollarSign, Clock3, Download, Plus, ReceiptText, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -170,6 +170,38 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   }, [expenses, expenseSearch, expenseStatusFilter, branch, branchNames, supplierNames, orderNames]);
   const visibleTemplates = templates.filter((item) => item.active && (branch === 'all' || item.branch_id === branch));
   const visibleDeductions = deductions.filter((item) => !month || String(item.payroll_period || '').slice(0, 7) === month);
+  const deductionPersonName = (item: any) => (item.personnel_id && personnelNames.get(item.personnel_id)) || teamNames.get(item.employee_user_id) || 'Integrante del equipo';
+  const authorizedDeductions = visibleDeductions.filter((item) => item.status === 'authorized');
+  const deductionStatusSummary = visibleDeductions.reduce((summary, item) => {
+    if (item.status === 'pending_authorization') summary.pending += Number(item.amount || 0);
+    else if (item.status === 'authorized') summary.authorized += Number(item.amount || 0);
+    else if (item.status === 'applied_externally') summary.applied += Number(item.amount || 0);
+    return summary;
+  }, { pending: 0, authorized: 0, applied: 0 });
+
+  const downloadAuthorizedDeductionsCsv = () => {
+    if (!authorizedDeductions.length) return;
+    const rows = [
+      ['Persona', 'ID de ficha', 'Periodo de nómina', 'Motivo', 'Monto USD', 'Referencia de autorización', 'Referencia de evidencia', 'Estado'],
+      ...authorizedDeductions.map((item) => [
+        deductionPersonName(item), item.personnel_id || '', payrollMonthLabel(item.payroll_period), item.description,
+        Number(item.amount || 0).toFixed(2), item.authorization_reference, item.evidence_reference,
+        'Autorizada · pendiente de procesamiento externo',
+      ]),
+    ];
+    const escape = (value: unknown) => {
+      let text = String(value ?? '');
+      if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+      return `"${text.replaceAll('"', '""')}"`;
+    };
+    const blob = new Blob(['\ufeff', rows.map((row) => row.map(escape).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `deducciones-nomina-${month || 'todos-los-periodos'}.csv`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
 
   const createReceiptPayable = async (receipt: any) => {
     const form = receiptForms[receipt.id] || { total: String(Number(receipt.referenceTotal).toFixed(2)), due: '', document: '' };
@@ -328,10 +360,15 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         <button className="button button-primary" disabled={busy || !personnelOptions.length || Boolean(personnelOptionsError)}><Plus size={15}/> Guardar como pendiente</button>
       </form>
       <section className="panel op-finance-ledger-register">
-        <div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO CONFIDENCIAL</span><h3>Deducciones registradas</h3></div><ShieldCheck size={18}/></div>
+        <div className="panel-heading op-finance-deductions-heading"><div><span className="eyebrow">SEGUIMIENTO CONFIDENCIAL</span><h3>Deducciones registradas</h3><p className="muted">El CSV sirve de referencia para nómina y no registra una aplicación externa.</p></div><button className="button button-outline" onClick={downloadAuthorizedDeductionsCsv} disabled={!authorizedDeductions.length || busy}><Download size={15}/> Exportar autorizadas ({authorizedDeductions.length})</button></div>
+        <div className="op-finance-ledger-kpis op-finance-ledger-payroll-kpis">
+          <article><span>Pendiente de autorización</span><b>{money(deductionStatusSummary.pending)}</b><small>{visibleDeductions.filter((item) => item.status === 'pending_authorization').length} solicitudes</small></article>
+          <article><span>Autorizado para entregar a nómina</span><b>{money(deductionStatusSummary.authorized)}</b><small>{authorizedDeductions.length} solicitudes · periodo seleccionado</small></article>
+          <article><span>Reportado como aplicado externamente</span><b>{money(deductionStatusSummary.applied)}</b><small>{visibleDeductions.filter((item) => item.status === 'applied_externally').length} registros</small></article>
+        </div>
         {!visibleDeductions.length ? <div className="op-finance-ledger-empty"><ShieldCheck size={24}/><b>Sin solicitudes para este periodo</b><span>Las deducciones se filtran por el mes de nómina y nunca se aplican automáticamente.</span></div> : <div className="op-finance-ledger-list">{visibleDeductions.map((item) => {
           const refs = reviewRefs[item.id] || { authorization: item.authorization_reference || '', evidence: item.evidence_reference || '' };
-          const personName = (item.personnel_id && personnelNames.get(item.personnel_id)) || teamNames.get(item.employee_user_id) || 'Integrante del equipo';
+          const personName = deductionPersonName(item);
           const statusLabel = item.status === 'pending_authorization' ? 'Pendiente de autorización' : item.status === 'authorized' ? 'Autorizada' : item.status === 'applied_externally' ? 'Reportada como aplicada externamente' : item.status === 'cancelled' ? 'Cancelada' : item.status;
           return <article key={item.id}>
             <div className="op-finance-ledger-record-top"><div><b>{personName}</b><span>{item.description}</span></div><span className="op-finance-ledger-status">{statusLabel}</span></div>
