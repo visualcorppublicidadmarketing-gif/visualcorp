@@ -231,7 +231,7 @@ export function OperationsFinance() {
     </section>
     <div className="op-finance-grid">
       <section className="panel">
-        <div className="panel-heading"><div><span className="eyebrow">COMPARATIVO DEL PERIODO</span><h2>Desempeño por persona</h2></div><ChartNoAxesCombined size={19} /></div>
+        <div className="panel-heading"><div><span className="eyebrow">COMPARATIVO DEL PERIODO</span><h2>Desempeño por asesora</h2></div><ChartNoAxesCombined size={19} /></div>
         <div className="op-finance-advisors">{advisorSummary.map((item) => (
           <article key={item.id}>
             <div className="op-finance-advisor-line"><b>{personName(item.id)}</b><span>{money(item.sold)} · {item.count} ventas</span></div>
