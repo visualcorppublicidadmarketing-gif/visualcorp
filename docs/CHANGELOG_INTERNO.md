@@ -32,3 +32,8 @@ Las futuras publicaciones las redacta el equipo desde el panel; la lista no se r
 - Auditoría remota de solo lectura: 247 productos del cotizador y 247 del catálogo web ya tenían una imagen cada uno; actualmente el inventario conserva 70 imágenes vacías en Supabase.
 - La migración de datos está preparada y no aplicada. No se publicó esta versión.
 - Detalle y procedencia: `docs/REFERENCIAS_VISUALES_CATALOGO_E_INVENTARIO_2026-10-24.md`.
+
+## 2026-10-24 — Ubicaciones activas en traslados y consumo productivo
+
+- Los formularios de traslado y consumo de materiales muestran únicamente ubicaciones activas de la sucursal elegida y exigen una selección explícita antes de registrar movimientos.
+- No se agregó esquema ni se ejecutó una migración; se usa la tabla de ubicaciones ya desplegada.
