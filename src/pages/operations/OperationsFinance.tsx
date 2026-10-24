@@ -10,6 +10,7 @@ const PAGE_SIZE = 500;
 const FINANCE_ROLES = ['advisor', 'owner', 'admin', 'manager'];
 type InventoryCostSummary = { inventory_lines: number; missing_inventory_cost_lines: number; non_inventory_lines: number; cost_total: number };
 type MaterialCostSummary = { consumption_movements: number; costed_movements: number; missing_cost_movements: number; material_cost_total: number };
+type InventoryCatalogCostSummary = { active_variants: number; configured_variants: number; missing_variants: any[] };
 const money = (value) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(Number(value) || 0);
 
 function monthInBusinessTimeZone(value) {
@@ -78,6 +79,10 @@ export function OperationsFinance() {
   const [inventoryCostSummary, setInventoryCostSummary] = useState<InventoryCostSummary | null>(null);
   const [inventoryCostLoading, setInventoryCostLoading] = useState(false);
   const [inventoryCostError, setInventoryCostError] = useState('');
+  const [inventoryCatalogCostSummary, setInventoryCatalogCostSummary] = useState<InventoryCatalogCostSummary | null>(null);
+  const [inventoryCatalogCostLoading, setInventoryCatalogCostLoading] = useState(false);
+  const [inventoryCatalogCostError, setInventoryCatalogCostError] = useState('');
+  const [inventoryCatalogCostRefreshKey, setInventoryCatalogCostRefreshKey] = useState(0);
   const [materialCostSummary, setMaterialCostSummary] = useState<MaterialCostSummary | null>(null);
   const [materialCostLoading, setMaterialCostLoading] = useState(false);
   const [materialCostError, setMaterialCostError] = useState('');
@@ -309,6 +314,50 @@ export function OperationsFinance() {
     });
     return () => { active = false; };
   }, [organizationId, canSeeInventoryCosts, month, branch, advisor]);
+
+  useEffect(() => {
+    let active = true;
+    if (!canSeeInventoryCosts || !supabase || !organizationId) {
+      setInventoryCatalogCostSummary(null);
+      setInventoryCatalogCostError('');
+      setInventoryCatalogCostLoading(false);
+      return () => { active = false; };
+    }
+    setInventoryCatalogCostLoading(true);
+    setInventoryCatalogCostError('');
+    void readAllRows(() => supabase
+      .from('inventory_variants')
+      .select('id,item_id,sku,label,inventory_items!inner(id,sku,name,active),inventory_item_costs(variant_id)')
+      .eq('organization_id', organizationId)
+      .eq('active', true)
+      .eq('inventory_items.active', true)
+      .order('sku')
+      .order('id'))
+      .then((rows) => {
+        if (!active) return;
+        const variants = rows.map((variant) => ({
+          ...variant,
+          inventory_item: Array.isArray(variant.inventory_items) ? variant.inventory_items[0] : variant.inventory_items,
+        }));
+        const missingVariants = variants.filter((variant) => (
+          Array.isArray(variant.inventory_item_costs)
+            ? variant.inventory_item_costs.length === 0
+            : !variant.inventory_item_costs
+        ));
+        setInventoryCatalogCostSummary({
+          active_variants: variants.length,
+          configured_variants: variants.length - missingVariants.length,
+          missing_variants: missingVariants,
+        });
+        setInventoryCatalogCostLoading(false);
+      }, (cause) => {
+        if (!active) return;
+        setInventoryCatalogCostError(cause instanceof Error ? cause.message : 'No se pudieron consultar los costos vigentes del inventario.');
+        setInventoryCatalogCostSummary(null);
+        setInventoryCatalogCostLoading(false);
+      });
+    return () => { active = false; };
+  }, [organizationId, canSeeInventoryCosts, inventoryCatalogCostRefreshKey]);
 
   useEffect(() => {
     let active = true;
@@ -575,6 +624,34 @@ export function OperationsFinance() {
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
+  const downloadMissingInventoryCostsCsv = () => {
+    const missingVariants = inventoryCatalogCostSummary?.missing_variants || [];
+    if (!missingVariants.length) return;
+    const rows = [
+      ['Producto', 'SKU de producto', 'Variante', 'SKU de variante', 'ID de variante', 'Estado del costo'],
+      ...missingVariants.map((variant) => [
+        variant.inventory_item?.name || 'Producto sin nombre',
+        variant.inventory_item?.sku || '',
+        variant.label || 'Variante general',
+        variant.sku || '',
+        variant.id,
+        'Sin costo unitario configurado',
+      ]),
+    ];
+    const escape = (value) => {
+      let text = String(value ?? '');
+      if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+      return `"${text.replaceAll('"', '""')}"`;
+    };
+    const blob = new Blob(['\ufeff', rows.map((row) => row.map(escape).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'inventario-variantes-sin-costo.csv';
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
   const downloadCashReconciliationCsv = () => {
     const rows = [
       ['Estado', 'Apertura', 'Cierre', 'Sucursal', 'Responsable', 'Efectivo esperado USD', 'Efectivo contado USD', 'Diferencia USD'],
@@ -686,6 +763,22 @@ export function OperationsFinance() {
         <article><span>Cobertura de costo en líneas de inventario</span><b>{Number(inventoryCostSummary.inventory_lines || 0) + Number(inventoryCostSummary.missing_inventory_cost_lines || 0) > 0 ? `${Math.round(Number(inventoryCostSummary.inventory_lines || 0) / (Number(inventoryCostSummary.inventory_lines || 0) + Number(inventoryCostSummary.missing_inventory_cost_lines || 0)) * 100)}%` : '—'}</b><small>{inventoryCostSummary.inventory_lines || 0} con costo · {inventoryCostSummary.missing_inventory_cost_lines || 0} sin costo configurado</small></article>
       </div> : <p className="muted">Aún no hay datos de costo para este periodo.</p>}
       <p className="op-finance-cost-note">Es una referencia operativa basada en el costo de inventario vigente al registrar la venta. No calcula utilidad contable e identifica por separado líneas sin costo; los servicios y costos indirectos no están incluidos.</p>
+    </section>}
+    {canSeeInventoryCosts && <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-catalog-cost-title">
+      <div className="panel-heading op-finance-catalog-cost-heading"><div><span className="eyebrow">INVENTARIO → FINANZAS · CATÁLOGO ACTUAL</span><h2 id="op-finance-catalog-cost-title">Variantes activas sin costo unitario</h2></div><div className="op-finance-cost-actions"><button className="button button-outline" onClick={() => setInventoryCatalogCostRefreshKey((key) => key + 1)} disabled={inventoryCatalogCostLoading}><RefreshCw className={inventoryCatalogCostLoading ? 'spin' : ''} size={15}/> Actualizar</button><a className="button button-outline" href="/operaciones/inventario">Revisar en Inventario <ArrowUpRight size={15}/></a><button className="button button-outline" onClick={downloadMissingInventoryCostsCsv} disabled={!inventoryCatalogCostSummary?.missing_variants.length}><Download size={15}/> Exportar pendientes</button></div></div>
+      <p className="op-finance-cost-note">Este control es global para las variantes activas del catálogo y no cambia con los filtros de mes, asesora o sucursal. Configurar un costo mejora las próximas capturas; no modifica los snapshots de ventas pasadas.</p>
+      {inventoryCatalogCostError ? <p className="op-finance-cost-error" role="alert">{inventoryCatalogCostError}</p> : inventoryCatalogCostLoading ? <p className="muted">Revisando costos unitarios del catálogo activo…</p> : inventoryCatalogCostSummary ? <>
+        <div className="op-finance-cost-metrics op-finance-catalog-cost-metrics">
+          <article><span>Variantes activas</span><b>{inventoryCatalogCostSummary.active_variants}</b><small>Productos vigentes en Inventario</small></article>
+          <article><span>Con costo configurado</span><b>{inventoryCatalogCostSummary.configured_variants}</b><small>Costos privados gestionados desde Inventario</small></article>
+          <article><span>Sin costo configurado</span><b>{inventoryCatalogCostSummary.missing_variants.length}</b><small>Requieren revisión de costo unitario</small></article>
+          <article><span>Cobertura del catálogo</span><b>{inventoryCatalogCostSummary.active_variants ? `${Math.round(inventoryCatalogCostSummary.configured_variants / inventoryCatalogCostSummary.active_variants * 100)}%` : '—'}</b><small>Variantes activas con costo registrado</small></article>
+        </div>
+        {inventoryCatalogCostSummary.missing_variants.length ? <>
+          <div className="op-finance-table-wrap"><table className="op-finance-table"><thead><tr><th>Producto</th><th>SKU de producto</th><th>Variante</th><th>SKU de variante</th></tr></thead><tbody>{inventoryCatalogCostSummary.missing_variants.slice(0, 12).map((variant) => <tr key={variant.id}><td>{variant.inventory_item?.name || 'Producto sin nombre'}</td><td>{variant.inventory_item?.sku || '—'}</td><td>{variant.label || 'Variante general'}</td><td>{variant.sku}</td></tr>)}</tbody></table></div>
+          {inventoryCatalogCostSummary.missing_variants.length > 12 && <p className="op-finance-cost-note">Se muestran las primeras 12 variantes por SKU; el CSV exporta las {inventoryCatalogCostSummary.missing_variants.length} pendientes.</p>}
+        </> : <p className="op-finance-cost-note">Todas las variantes activas tienen un costo unitario configurado.</p>}
+      </> : <p className="muted">No se pudo preparar el resumen de costos del catálogo.</p>}
     </section>}
     {canSeeInventoryCosts && <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-material-title">
       <div className="panel-heading"><div><span className="eyebrow">INVENTARIO → POS Y PRODUCCIÓN → FINANZAS</span><h2 id="op-finance-material-title">Costo de materiales consumidos</h2></div></div>
