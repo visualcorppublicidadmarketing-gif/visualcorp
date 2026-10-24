@@ -16,5 +16,20 @@ function githubPagesFallback() {
 
 export default defineConfig({
   plugins: [react(), githubPagesFallback()],
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'react-vendor', test: /node_modules[\\/]react(?:-dom)?[\\/]/, priority: 20 },
+            { name: 'supabase-vendor', test: /node_modules[\\/]@supabase[\\/]/, priority: 15 },
+            { name: 'editor-vendor', test: /node_modules[\\/](@tiptap|prosemirror)[\\/]/, priority: 12 },
+            { name: 'pdf-vendor', test: /node_modules[\\/]jspdf[\\/]/, priority: 10 },
+            { name: 'router-vendor', test: /node_modules[\\/]react-router(?:-dom)?[\\/]/, priority: 8 },
+          ],
+        },
+      },
+    },
+  },
   server: { port: 5173 },
 });

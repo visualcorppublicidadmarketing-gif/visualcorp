@@ -18,7 +18,7 @@ export function generateQuotePDF({
   deliverySpeed = 'standard',
   shippingOption = null,
   notes = ''
-} = {}) {
+}: { client?: Record<string, any>; items?: Array<Record<string, any>>; totals?: Record<string, any>; folio?: string; deliverySpeed?: string; shippingOption?: { price?: number; name?: string } | null; notes?: string } = {}) {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -31,11 +31,11 @@ export function generateQuotePDF({
   const contentWidth = pageWidth - (margin * 2);
 
   // Palette
-  const brandDark = [24, 24, 27];      // #18181b
-  const brandOrange = [234, 88, 12];   // #ea580c
-  const brandGray = [113, 113, 122];   // #71717a
-  const brandLight = [244, 244, 245];  // #f4f4f5
-  const textDark = [39, 39, 42];       // #27272a
+  const brandDark: [number, number, number] = [24, 24, 27];      // #18181b
+  const brandOrange: [number, number, number] = [234, 88, 12];   // #ea580c
+  const brandGray: [number, number, number] = [113, 113, 122];   // #71717a
+  const brandLight: [number, number, number] = [244, 244, 245];  // #f4f4f5
+  const textDark: [number, number, number] = [39, 39, 42];       // #27272a
 
   // 1. Header Banner & Branding
   doc.setFillColor(...brandDark);
@@ -215,7 +215,7 @@ export function generateQuotePDF({
 
   // Right Totals
   const subtotal = Number(totals.subtotal || totals.total / 1.15 || 0).toFixed(2);
-  const tax = Number(totals.taxAmount || (totals.total - subtotal) || 0).toFixed(2);
+  const tax = Number(totals.taxAmount || (Number(totals.total) - Number(subtotal)) || 0).toFixed(2);
   const total = Number(totals.total || (Number(subtotal) + Number(tax))).toFixed(2);
 
   doc.setFillColor(255, 255, 255);

@@ -69,7 +69,7 @@ export function searchPOSCustomers(customers, query = '', limit = 7) {
     .slice(0, limit);
 }
 
-export function findExactPOSCustomer(customers, customerData = {}) {
+export function findExactPOSCustomer(customers: Array<Record<string, any>>, customerData: Record<string, any> = {}) {
   const identification = normalizePOSDigits(customerData.identification);
   const phone = normalizePOSDigits(customerData.phone);
   const name = normalizePOSSearch(customerData.name);

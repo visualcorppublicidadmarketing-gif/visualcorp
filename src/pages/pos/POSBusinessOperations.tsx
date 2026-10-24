@@ -80,7 +80,7 @@ export function POSBusinessOperations() {
       toast.warning('Completa el título y la orden relacionada.');
       return;
     }
-    const { error } = await supabase.from(module.table).insert(createPayload(activeModule, draft));
+    const { error } = await supabase.from(module.table).insert(createPayload(activeModule, draft) as any);
     if (error) { toast.error(error.message); return; }
     setDraft({ title: '', orderId: '', notes: '', priority: 'normal', scheduledAt: '', visitType: 'installation', address: '', mapsUrl: '' });
     setShowForm(false);
@@ -89,7 +89,7 @@ export function POSBusinessOperations() {
   };
 
   const changeStatus = async (record, status) => {
-    const patch = { status, updated_at: new Date().toISOString() };
+    const patch: Record<string, any> = { status, updated_at: new Date().toISOString() };
     if (activeModule === 'quality' && status !== 'pending') patch.inspected_at = new Date().toISOString();
     if (activeModule === 'maintenance' && status === 'completed') patch.completed_at = new Date().toISOString();
     const { error } = await supabase.from(module.table).update(patch).eq('id', record.id);
@@ -130,7 +130,7 @@ export function POSBusinessOperations() {
         {(activeModule === 'maintenance' || activeModule === 'field') && <label>Fecha y hora<input type="datetime-local" value={draft.scheduledAt} onChange={(event) => setDraft({ ...draft, scheduledAt: event.target.value })} /></label>}
         {activeModule === 'field' && <><label>Tipo<select value={draft.visitType} onChange={(event) => setDraft({ ...draft, visitType: event.target.value })}><option value="measurement">Medición</option><option value="installation">Instalación</option><option value="repair">Garantía / reparación</option><option value="delivery">Entrega</option></select></label><label>Dirección<input value={draft.address} onChange={(event) => setDraft({ ...draft, address: event.target.value })} /></label><label>Google Maps<input value={draft.mapsUrl} onChange={(event) => setDraft({ ...draft, mapsUrl: event.target.value })} placeholder="https://maps.google.com/..." /></label></>}
       </div>
-      <label>Notas<textarea rows="3" value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} /></label>
+      <label>Notas<textarea rows={3} value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} /></label>
       <div className="modal-actions"><button type="button" className="button button-ghost" onClick={() => setShowForm(false)}>Cancelar</button><button className="button button-primary">Guardar</button></div>
     </form>}
 

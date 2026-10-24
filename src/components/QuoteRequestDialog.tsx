@@ -14,7 +14,7 @@ const cleanItems = (items = []) => items.map((item) => ({
   quoteBreakdown: item.quoteBreakdown || null,
 }));
 
-export function QuoteRequestDialog({ open, onClose, items = [], totals = {}, source = 'cotizador' }) {
+export function QuoteRequestDialog({ open, onClose, items = [], totals = {}, source = 'cotizador' }: { open: boolean; onClose?: () => void; items?: Array<Record<string, any>>; totals?: { subtotal?: number; taxRate?: number; taxAmount?: number; total?: number }; source?: string }) {
   const { data, saveQuoteRequest, notify } = useSite();
   const [form, setForm] = useState({ name: '', phone: '', city: '', email: '', company: '', notes: '' });
   const [sending, setSending] = useState(false);
@@ -89,7 +89,7 @@ export function QuoteRequestDialog({ open, onClose, items = [], totals = {}, sou
             <label>Ciudad / sector *<input value={form.city} onChange={(event) => update('city', event.target.value)} autoComplete="address-level2" /></label>
             <label>Correo (opcional)<input value={form.email} onChange={(event) => update('email', event.target.value)} type="email" autoComplete="email" /></label>
             <label>Empresa (opcional)<input value={form.company} onChange={(event) => update('company', event.target.value)} autoComplete="organization" /></label>
-            <label className="wide">Observaciones (opcional)<textarea value={form.notes} onChange={(event) => update('notes', event.target.value)} rows="3" placeholder="Fecha deseada, instalación, referencias…" /></label>
+            <label className="wide">Observaciones (opcional)<textarea value={form.notes} onChange={(event) => update('notes', event.target.value)} rows={3} placeholder="Fecha deseada, instalación, referencias…" /></label>
           </div>
           {error && <div className="quote-request-error">{error}</div>}
           <div className="quote-request-assurance"><ShieldCheck size={17} /><span>La solicitud queda registrada antes de abrir WhatsApp.</span></div>

@@ -760,8 +760,8 @@ export function POSStationWorkspaces({
                   <label className="pos-label">Cantidad (m²)</label>
                   <input
                     type="number"
-                    step="0.1"
-                    min="0.1"
+                    step={0.1}
+                    min={0.1}
                     className="pos-input"
                     value={scrapQuantityM2}
                     onChange={(e) => setScrapQuantityM2(e.target.value)}

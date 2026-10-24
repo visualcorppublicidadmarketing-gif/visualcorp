@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp, PieChart as PieIcon } from 'lucide-react';
 
-export function POSFinancialCharts({ dailyBreakdown = [], paymentMethods = {} }) {
+export function POSFinancialCharts({ dailyBreakdown = [], paymentMethods = {} }: { dailyBreakdown?: Array<{ totalSales?: number; totalDeposits?: number; date?: string; label?: string; dayName?: string }>; paymentMethods?: Record<string, number> }) {
   const money = (val) => `$${(Number(val) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   // Prepare Daily Trend Data

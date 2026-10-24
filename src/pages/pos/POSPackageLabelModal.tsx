@@ -75,7 +75,7 @@ export function POSPackageLabelModal({ order, items = [], isOpen, onClose }) {
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               <input
                 type="number"
-                min="1"
+                min={1}
                 className="pos-input"
                 value={packageIndex}
                 onChange={(e) => setPackageIndex(Math.max(1, Number(e.target.value) || 1))}
@@ -84,7 +84,7 @@ export function POSPackageLabelModal({ order, items = [], isOpen, onClose }) {
               <span style={{ fontSize: '12px', fontWeight: 800, color: '#64748b' }}>de</span>
               <input
                 type="number"
-                min="1"
+                min={1}
                 className="pos-input"
                 value={totalPackages}
                 onChange={(e) => setTotalPackages(Math.max(1, Number(e.target.value) || 1))}

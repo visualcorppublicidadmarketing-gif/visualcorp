@@ -73,7 +73,7 @@ export function POSLockScreen({ advisors = [], onAuthenticated, onUnlockSuccess,
           setPinInput((prev) => prev.slice(0, -1));
           setErrorMsg('');
         } else if (e.key === 'Enter') {
-          handleAdvisorSubmit();
+          handleAdvisorSubmit(e);
         } else if (e.key === 'Escape') {
           setPinInput('');
           setErrorMsg('');

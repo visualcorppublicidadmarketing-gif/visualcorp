@@ -149,7 +149,7 @@ export function POSAdminDashboard() {
     filteredOrders.forEach((o) => {
       const items = (store.orderItems || []).filter((it) => it.orderId === o.id);
       const margin = calculateOrderMargin(o, items, store.materials || []);
-      totalDirectCost += margin.estimatedCost;
+      totalDirectCost += margin.totalCost;
     });
 
     const grossProfit = Math.max(0, grossSales - totalDirectCost - totalExpenses);
@@ -186,7 +186,7 @@ export function POSAdminDashboard() {
 
   // Top Performing Substrates
   const substrateBreakdown = useMemo(() => {
-    const map = {};
+    const map: Record<string, { revenue: number; count: number; areaM2: number }> = {};
     filteredOrders.forEach((o) => {
       const items = (store.orderItems || []).filter((it) => it.orderId === o.id);
       items.forEach((it) => {

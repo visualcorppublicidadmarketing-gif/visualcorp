@@ -24,7 +24,7 @@ const icons = { undo: Undo2, redo: Redo2, h1: Heading1, h2: Heading2, paragraph:
 export function RichTextEditor({ value = '<p>Escribe algo con intención…</p>', onChange, placeholder = 'Escribe algo con intención…', minHeight = 230, label = 'Contenido', fullscreen = true }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const editor = useEditor({ extensions: [StarterKit.configure({ heading: { levels: [1, 2, 3] } }), Link.configure({ openOnClick: false }), Image, TextAlign.configure({ types: ['heading', 'paragraph'] }), Underline, Highlight, TextStyle, Color], content: value, onUpdate: ({ editor: instance }) => onChange?.(instance.getHTML()), editorProps: { attributes: { class: 'rich-editor-content', 'data-placeholder': placeholder } } });
-  useEffect(() => { if (editor && value !== editor.getHTML() && !editor.isFocused) editor.commands.setContent(value, false); }, [value, editor]);
+  useEffect(() => { if (editor && value !== editor.getHTML() && !editor.isFocused) editor.commands.setContent(value, { emitUpdate: false }); }, [value, editor]);
   if (!editor) return null;
   const run = (action) => {
     const chain = editor.chain().focus();

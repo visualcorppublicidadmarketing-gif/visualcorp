@@ -111,7 +111,7 @@ export function POSProductionKanban({
       setScanCode('');
       alert(`✓ Orden #${res.order?.orderNumber} avanzada a etapa: ${res.order?.productionStage}`);
     } else {
-      alert(`⚠️ ${res.error}`);
+      alert(`⚠️ ${'error' in res ? res.error : 'No se pudo avanzar la orden.'}`);
     }
   };
 

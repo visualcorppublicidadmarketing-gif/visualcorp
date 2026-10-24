@@ -112,6 +112,7 @@ export function POSWorkshopMasterBillboard({
       installationAddress: editInstallationAddress,
       installationMapsUrl: editInstallationMapsUrl,
       fieldMeasurementsNotes: editFieldNotes,
+      notes: '',
       advisorId: session?.id || ''
     });
 

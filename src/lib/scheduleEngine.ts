@@ -81,7 +81,7 @@ export function getISODateString(date = new Date()) {
 export function calculateLiveScheduleStatus(scheduleConfig = DEFAULT_BUSINESS_SCHEDULE, referenceDate = new Date()) {
   const config = { ...DEFAULT_BUSINESS_SCHEDULE, ...(scheduleConfig || {}) };
   const days = config.days || DEFAULT_BUSINESS_SCHEDULE.days;
-  const holidays = Array.isArray(config.holidays) ? config.holidays : DEFAULT_BUSINESS_SCHEDULE.holidays;
+  const holidays: Array<{ id: string; date: string; name: string; isOpen: boolean; note: string; open?: string; close?: string }> = Array.isArray(config.holidays) ? config.holidays : DEFAULT_BUSINESS_SCHEDULE.holidays;
 
   const currentISODate = getISODateString(referenceDate);
   const currentDayOfWeek = referenceDate.getDay(); // 0 = Dom, 1 = Lun, ..., 6 = Sab
@@ -89,7 +89,7 @@ export function calculateLiveScheduleStatus(scheduleConfig = DEFAULT_BUSINESS_SC
   const currentSeconds = referenceDate.getSeconds();
 
   // Check if today matches any special holiday override
-  const matchedHoliday = holidays.find((h) => h.date === currentISODate);
+  const matchedHoliday = holidays.find((h) => h.date === currentISODate) as (typeof holidays[number] & { open?: string; close?: string }) | undefined;
 
   let todayConfig = days[currentDayOfWeek] || { isOpen: false, open: '09:00', close: '18:00', name: 'Hoy' };
   let isHolidayOverride = false;

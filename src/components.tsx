@@ -48,7 +48,9 @@ export function Brand({ compact = false }) {
   );
 }
 
-export function Button({ children, to, onClick, variant = 'primary', className = '', type = 'button', showArrow = true }) {
+type ButtonProps = { children: React.ReactNode; to?: string; onClick?: React.MouseEventHandler<HTMLButtonElement>; variant?: string; className?: string; type?: React.ButtonHTMLAttributes<HTMLButtonElement>['type']; showArrow?: boolean };
+
+export function Button({ children, to, onClick, variant = 'primary', className = '', type = 'button', showArrow = true }: ButtonProps) {
   const content = (
     <>
       {children}
@@ -234,7 +236,7 @@ export function BottomNavBar() {
 export function Header() {
   const { cart, theme, setTheme } = useSite();
   const [open, setOpen] = React.useState(false);
-  const items = [
+  const items: Array<{ to: string; label: string; badge?: string }> = [
     { to: '/', label: 'Inicio' },
     { to: '/tienda', label: 'Tienda' },
     { to: '/promociones', label: 'Promociones' },
@@ -487,6 +489,7 @@ export function ProductCard({ product, onAdd }) {
 
 export function CartSummary({ compact = false }) {
   const { cart, updateCartItem, removeCartItem, data } = useSite();
+  const [requestOpen, setRequestOpen] = React.useState(false);
   const taxRate = Number(data?.calculatorSettings?.taxRate || 15);
   const total = cart.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0);
   const subtotalNet = cart.reduce((sum, item) => {

@@ -18,7 +18,7 @@ import { DEFAULT_BUSINESS_SCHEDULE } from '../../../lib/scheduleEngine';
 import { LiveScheduleWidget } from '../../../components/LiveScheduleWidget';
 
 export function POSBusinessScheduleEditor({
-  settings = {},
+  settings = {} as Record<string, any>,
   onSaveSettings
 }) {
   const currentSchedule = settings.businessSchedule || DEFAULT_BUSINESS_SCHEDULE;
