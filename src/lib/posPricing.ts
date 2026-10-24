@@ -68,5 +68,3 @@ export function formatPOSLineDescription(line: {
   const option = line.optionChoice ? ` · ${line.optionChoice}` : '';
   return `${line.name} · ${details} · ${line.pricingTierLabel}${option} · ${line.unit} ${line.unitPrice.toFixed(6)}`;
 }
-
-\n
