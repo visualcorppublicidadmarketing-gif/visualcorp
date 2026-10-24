@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { CalendarClock, Check, CircleDollarSign, Clock3, Download, Plus, ReceiptText, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight, CalendarClock, Check, CircleDollarSign, Clock3, Download, Plus, ReceiptText, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -52,6 +52,8 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const [branches, setBranches] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [orderLines, setOrderLines] = useState<any[]>([]);
+  const [purchaseCommitmentsError, setPurchaseCommitmentsError] = useState('');
   const [receipts, setReceipts] = useState<any[]>([]);
   const [receiptForms, setReceiptForms] = useState<Record<string, { total: string; due: string; document: string }>>({});
   const [orderReferenceTotals, setOrderReferenceTotals] = useState<Record<string, number>>({});
@@ -73,6 +75,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const refresh = async () => {
     if (!supabase || !organizationId || !canManage) return;
     setError('');
+    setPurchaseCommitmentsError('');
     let expenseRows: Expense[];
     let templateRows: any[];
     let recurringOccurrenceRows: any[];
@@ -82,10 +85,11 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
       supabase.from('branches').select('id,name').eq('organization_id', organizationId).eq('active', true).order('name'),
       supabase.rpc('list_visualcorp_team_members'),
       supabase.from('suppliers').select('id,name').eq('organization_id', organizationId).eq('active', true).order('name'),
-      supabase.from('purchase_orders').select('id,order_number,status,supplier_id').eq('organization_id', organizationId).not('status', 'eq', 'cancelled').order('created_at', { ascending: false }).limit(300),
+      readAllFinanceRows(() => supabase.from('purchase_orders').select('id,order_number,status,supplier_id,branch_id,expected_date').eq('organization_id', organizationId).not('status', 'eq', 'cancelled').order('created_at', { ascending: false }).order('id')).then((data) => ({ data, error: null }), (error) => ({ data: null, error })),
       canSeeDeductions ? supabase.rpc('list_visualcorp_finance_personnel_options') : Promise.resolve({ data: [], error: null }),
     ]);
     if (branchResult.error || supplierResult.error || orderResult.error) {
+      if (orderResult.error) setPurchaseCommitmentsError('No se pudieron cargar las órdenes de compra abiertas. Revisa la conexión de Compras.');
       setError(branchResult.error?.message || supplierResult.error?.message || orderResult.error?.message || 'No se pudieron cargar las áreas conectadas.');
       return;
     }
@@ -114,14 +118,17 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
     setPersonnelOptions(personnelResult.error ? [] : (personnelResult.data || []) as PersonnelOption[]);
     setPersonnelOptionsError(personnelResult.error?.message || '');
     try {
-      const orderLines = await readAllFinanceRows(() => supabase.from('purchase_order_lines').select('purchase_order_id,quantity_ordered,unit_cost').eq('organization_id', organizationId).order('purchase_order_id').order('id'));
+      const orderLines = await readAllFinanceRows(() => supabase.from('purchase_order_lines').select('id,purchase_order_id,quantity_ordered,quantity_received,unit_cost').eq('organization_id', organizationId).order('purchase_order_id').order('id'));
+      setOrderLines(orderLines);
       const totals = orderLines.reduce((result: Record<string, number>, line: any) => {
         result[line.purchase_order_id] = (result[line.purchase_order_id] || 0) + Number(line.quantity_ordered) * Number(line.unit_cost);
         return result;
       }, {});
       setOrderReferenceTotals(totals);
     } catch {
+      setOrderLines([]);
       setOrderReferenceTotals({});
+      setPurchaseCommitmentsError('No se pudieron calcular los compromisos de compra pendientes. Revisa la conexión de Compras.');
       setError('No se pudieron calcular los valores de referencia de Compras. Puedes registrar el egreso, pero confirma el importe con la factura.');
     }
     try {
@@ -161,6 +168,22 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const openPayables = expenses.filter((expense) => expense.status === 'payable' && isInSelectedBranch(expense));
   const dueNow = openPayables.filter((expense) => expense.due_date && expense.due_date < today()).reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
   const payableTotal = openPayables.reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
+  const purchaseCommitments = useMemo(() => {
+    const openOrders = new Map(orders
+      .filter((order) => ['ordered', 'partially_received'].includes(order.status) && (branch === 'all' || order.branch_id === branch))
+      .map((order) => [order.id, { ...order, amount: 0, remainingLines: 0 }]));
+    orderLines.forEach((line) => {
+      const order = openOrders.get(line.purchase_order_id);
+      if (!order) return;
+      const remaining = Math.max(0, Number(line.quantity_ordered) - Number(line.quantity_received));
+      if (!remaining) return;
+      order.amount += remaining * Number(line.unit_cost);
+      order.remainingLines += 1;
+    });
+    const rows = [...openOrders.values()].filter((order) => order.remainingLines > 0);
+    rows.sort((a, b) => (a.expected_date || '9999-12-31').localeCompare(b.expected_date || '9999-12-31') || a.order_number.localeCompare(b.order_number, 'es-EC'));
+    return { rows, total: rows.reduce((sum, order) => sum + order.amount, 0) };
+  }, [orders, orderLines, branch]);
   const payableAging = useMemo(() => {
     const todayValue = today();
     const overdue: Array<Expense & { balance: number; days_overdue: number }> = [];
@@ -381,6 +404,18 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         </article>)}</div> : <div className="op-finance-ledger-empty"><CalendarClock size={23}/><b>Sin obligaciones previstas en los próximos 30 días</b><span>Registra una fecha de vencimiento o programa internet, arriendo, luz, agua y otros pagos periódicos.</span></div>}
         {upcomingObligations.length > 12 && <p className="op-finance-cost-note">Se muestran 12 de {upcomingObligations.length} obligaciones; el total considera todas.</p>}
         <p className="op-finance-cost-note">Es una previsión de obligaciones, no de saldo disponible: suma saldos pendientes y montos estimados de pagos periódicos. No representa un pago realizado ni incluye ingresos futuros.</p>
+      </section>
+      <section className="panel op-finance-obligations-forecast" aria-labelledby="op-finance-purchase-commitments-title">
+        <div className="panel-heading"><div><span className="eyebrow">COMPRAS → FINANZAS · ÓRDENES ABIERTAS</span><h3 id="op-finance-purchase-commitments-title">Compras pendientes de recepción</h3><p className="muted">Estimación del valor de las cantidades aún no recibidas en órdenes emitidas.</p></div><a className="button button-outline" href="/operaciones/compras">Revisar Compras <ArrowUpRight size={15}/></a></div>
+        {purchaseCommitmentsError ? <p className="op-finance-cost-error" role="alert">{purchaseCommitmentsError}</p> : <>
+        <div className="op-finance-obligations-metrics"><article><span>Compromiso estimado abierto</span><b>{money(purchaseCommitments.total)}</b></article><article><span>Órdenes con cantidades pendientes</span><b>{purchaseCommitments.rows.length}</b><small>Sucursal según el filtro actual</small></article></div>
+        {purchaseCommitments.rows.length ? <div className="op-finance-obligations-list">{purchaseCommitments.rows.slice(0, 8).map((order) => <article key={order.id}>
+          <div className="op-finance-obligations-description"><b>{order.order_number} · {supplierNames.get(order.supplier_id) || 'Proveedor'}</b><span>{branchNames.get(order.branch_id) || 'Sucursal'} · {order.remainingLines} líneas con unidades pendientes · {order.status === 'partially_received' ? 'Recepción parcial' : 'Emitida'}</span></div>
+          <div className="op-finance-obligations-due"><span>{order.expected_date ? `Entrega esperada ${new Date(`${order.expected_date}T12:00:00`).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil', day: 'numeric', month: 'short' })}` : 'Sin fecha esperada'}</span><b>{money(order.amount)}</b></div>
+        </article>)}</div> : <div className="op-finance-ledger-empty"><Check size={22}/><b>Sin compromisos pendientes de recepción</b><span>Las órdenes emitidas con cantidades pendientes aparecerán aquí desde Compras.</span></div>}
+        {purchaseCommitments.rows.length > 8 && <p className="op-finance-cost-note">Se muestran 8 de {purchaseCommitments.rows.length} órdenes; el total considera todas.</p>}
+        <p className="op-finance-cost-note">Importe estimado según cantidad pendiente × costo unitario de la orden. No es una cuenta por pagar ni un pago confirmado; excluye órdenes en borrador, canceladas y recibidas. El importe final se confirma con la factura al conciliar la recepción.</p>
+        </>}
       </section>
       <section className="panel op-finance-ledger-register"><div className="panel-heading"><div><span className="eyebrow">COMPRAS CON INVENTARIO RECIBIDO</span><h3>Recepciones pendientes de vincular</h3><p className="muted">El valor de la orden es solo una referencia. Confirma el total de la factura antes de crear el compromiso. Este listado de Compras muestra recepciones pendientes de todas las sucursales.</p></div><ReceiptText size={18}/></div>
         {!receipts.length ? <div className="op-finance-ledger-empty"><ReceiptText size={22}/><span>No hay recepciones registradas para conciliar.</span></div> : <div className="op-finance-ledger-list">{receipts.map((receipt) => {
