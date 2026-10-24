@@ -11,6 +11,12 @@
 .personnel-metric small{color:#858694;font-size:9px;font-weight:800;letter-spacing:.09em}
 .personnel-metric b{font-size:17px;line-height:1.2}
 .personnel-workspace{display:grid;grid-template-columns:minmax(340px,.88fr) minmax(0,1.12fr);align-items:start;gap:16px}
+.personnel-first-record{display:grid;justify-items:center;align-content:center;gap:10px;min-height:300px;padding:32px;text-align:center}
+.personnel-first-record-icon{display:grid;place-items:center;width:54px;height:54px;margin-bottom:3px;border-radius:17px;background:#f5edf6;color:#885184}
+.personnel-first-record .eyebrow{margin:0}
+.personnel-first-record h2{margin:0;color:#292735;font-size:20px;letter-spacing:-.035em}
+.personnel-first-record p{max-width:480px;margin:0;color:#737582;font-size:12px;line-height:1.6}
+.personnel-first-record .button{margin-top:6px}
 .personnel-directory,.personnel-detail-panel{min-width:0;padding:20px}
 .personnel-directory>.panel-heading,.personnel-detail-panel .panel-heading{margin-bottom:15px}
 .personnel-page .panel-heading h2,.personnel-page .panel-heading h3{margin:4px 0 0;font-size:17px;letter-spacing:-.025em}

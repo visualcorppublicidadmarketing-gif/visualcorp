@@ -85,7 +85,13 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
     '/operaciones/marketing': 'marketing', '/operaciones/personal': 'personnel', '/operaciones/equipo': 'team', '/operaciones/catalogo': 'catalog_admin',
   };
   const requiredModule = moduleByPath[location.pathname] || ({ website: 'website', catalog: 'catalog_admin', team: 'team', operations: 'dashboard' }[area]);
-  if (!auth.hasPermission(requiredModule, 'view')) return <main className="access-screen"><section className="access-card">
+  // The lifecycle page combines several independently permissioned flows.
+  // Let users enter when they can see at least one flow; the page then filters
+  // its tabs and data by each flow's own permission.
+  const canAccessPage = location.pathname === '/operaciones/flujos'
+    ? ['sales', 'inventory', 'workshop', 'quotes'].some((module) => auth.hasPermission(module, 'view'))
+    : auth.hasPermission(requiredModule, 'view');
+  if (!canAccessPage) return <main className="access-screen"><section className="access-card">
     <img src={wordmark} alt="Visual Corp" />
     <span className="site-eyebrow"><i /> PERMISOS</span>
     <h1>Tu perfil no tiene acceso a este panel.</h1>
