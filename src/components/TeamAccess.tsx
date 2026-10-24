@@ -29,6 +29,7 @@ export function TeamAccess() {
   const canManageProfiles = hasPermission('team','manage_profiles');
   const canManageMembers = hasPermission('team','manage_members');
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [permissionRows, setPermissionRows] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
   const [pendingAccounts, setPendingAccounts] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState('');
@@ -57,8 +58,13 @@ export function TeamAccess() {
     const profileRows = profileResult.data || [];
     const membershipRows = memberResult.data || [];
     const firstError = profileResult.error || permissionResult.error || memberResult.error || pendingResult.error;
-    if (firstError) setError(firstError.message);
+    if (firstError) {
+      setError(firstError.message);
+      setLoading(false);
+      return;
+    }
     setProfiles(profileRows);
+    setPermissionRows(permissionResult.data || []);
     setMembers(membershipRows.map((member) => ({ ...member, profiles: { full_name: member.full_name, email: member.email }, access_profiles: { name: member.access_profile_name, profile_key: member.access_profile_key } })));
     setPendingAccounts(pendingResult.data || []);
     const permissionRows = permissionResult.data || [];
@@ -75,6 +81,19 @@ export function TeamAccess() {
 
   const selectedProfile = profiles.find((profile) => profile.id === selectedId);
   const activeMembers = useMemo(() => members.filter((member) => member.active).length, [members]);
+  const selectProfile = (id: string) => {
+    setSelectedId(id);
+    setMessage(''); setError('');
+    const selected = profiles.find((profile) => profile.id === id);
+    if (!selected) {
+      setProfileName(''); setProfileDescription(''); setProfileKey('nuevo_perfil'); setMatrix({});
+      return;
+    }
+    setProfileName(selected.name);
+    setProfileDescription(selected.description || '');
+    setProfileKey(selected.profile_key);
+    setMatrix(Object.fromEntries(permissionRows.filter((row) => row.profile_id === id).map((row) => [`${row.module_key}.${row.action_key}`, row.enabled])));
+  };
   const setPermission = (key: string, enabled: boolean) => setMatrix((current) => {
     const next = { ...current, [key]: enabled };
     const [moduleKey, actionKey] = key.split('.');
@@ -138,7 +157,7 @@ export function TeamAccess() {
     {error&&<p className="access-error" role="alert">{error}</p>}{message&&<p className="team-access-message" role="status">{message}</p>}
     {loading ? <section className="panel"><p>Cargando perfiles y accesos…</p></section> : <div className="team-access-grid">
       <section className="panel team-profiles-panel"><div className="panel-heading"><div><span className="eyebrow">PERFILES CONFIGURABLES</span><h2>Perfiles y permisos</h2></div><ShieldCheck size={19}/></div>
-        <div className="team-profile-toolbar"><label>Perfil<select value={selectedId} onChange={(event)=>setSelectedId(event.target.value)}><option value="">Nuevo perfil…</option>{profiles.filter((profile)=>profile.profile_key!=='owner').map((profile)=><option key={profile.id} value={profile.id}>{profile.name}{profile.active?'':' · Desactivado'}</option>)}</select></label>{canManageProfiles&&<button className="button button-outline" type="button" onClick={createProfile}>Crear perfil</button>}</div>
+        <div className="team-profile-toolbar"><label>Perfil<select value={selectedId} onChange={(event)=>selectProfile(event.target.value)}><option value="">Nuevo perfil…</option>{profiles.filter((profile)=>profile.profile_key!=='owner').map((profile)=><option key={profile.id} value={profile.id}>{profile.name}{profile.active?'':' · Desactivado'}</option>)}</select></label>{canManageProfiles&&<button className="button button-outline" type="button" onClick={createProfile}>Crear perfil</button>}</div>
         {selectedId===''&&<p className="team-access-help">Configura un perfil nuevo. Empieza con todos los permisos desactivados y habilita solo lo que necesita el puesto.</p>}
         <form className="team-profile-form" onSubmit={saveProfile}>
           <div className="team-profile-fields"><label>Nombre<input value={profileName} onChange={(event)=>setProfileName(event.target.value)} required minLength={2} maxLength={80} disabled={!canManageProfiles}/></label><label>Identificador<input value={profileKey} onChange={(event)=>setProfileKey(event.target.value)} required pattern="[a-z0-9_]{2,48}" disabled={!canManageProfiles||Boolean(selectedId)}/></label><label className="team-profile-description">Descripción<input value={profileDescription} onChange={(event)=>setProfileDescription(event.target.value)} maxLength={300} disabled={!canManageProfiles}/></label></div>
@@ -150,7 +169,7 @@ export function TeamAccess() {
       </section>
       <div className="team-access-side">
           <section className="panel"><div className="panel-heading"><div><span className="eyebrow">ACCESO DEL EQUIPO</span><h2>Asignar perfil</h2></div><UserPlus size={19}/></div>
-          {canManageMembers?<form onSubmit={assign} className="team-access-form"><label>Correo de una cuenta que ya inició sesión<input required type="email" autoComplete="email" value={email} onChange={(event)=>setEmail(event.target.value)} placeholder="persona@visualcorp.com"/></label><label>Perfil<select required value={assignProfileId} onChange={(event)=>setAssignProfileId(event.target.value)}><option value="">Selecciona un perfil</option>{profiles.filter((profile)=>profile.active&&profile.profile_key!=='owner'&&(roles.includes('owner')||!['admin','website_admin'].includes(profile.profile_key))).map((profile)=><option key={profile.id} value={profile.id}>{profile.name}</option>)}</select></label><p className="team-access-help">Las cuentas que ingresaron aparecen abajo para asignarles un perfil. También puedes escribir su correo.</p><button className="button button-dark" type="submit" disabled={saving||!assignProfileId}><UserPlus size={15}/>{saving?'Guardando…':'Asignar acceso'}</button></form>:<p className="team-access-help">Puedes consultar los accesos del equipo.</p>}
+          {canManageMembers?<form onSubmit={assign} className="team-access-form"><label>Correo de la cuenta<input required type="email" autoComplete="email" value={email} onChange={(event)=>setEmail(event.target.value)} placeholder="persona@visualcorp.com"/></label><label>Perfil<select required value={assignProfileId} onChange={(event)=>setAssignProfileId(event.target.value)}><option value="">Selecciona un perfil</option>{profiles.filter((profile)=>profile.active&&profile.profile_key!=='owner'&&(roles.includes('owner')||!['admin','website_admin'].includes(profile.profile_key))).map((profile)=><option key={profile.id} value={profile.id}>{profile.name}</option>)}</select></label><p className="team-access-help">Asigna un perfil a una cuenta ya registrada. Si la persona aún no aparece en la lista, debe iniciar sesión una vez con Google o correo. Puedes escribir su correo directamente o elegir una cuenta pendiente.</p><button className="button button-dark" type="submit" disabled={saving||!assignProfileId}><UserPlus size={15}/>{saving?'Guardando…':'Asignar acceso'}</button></form>:<p className="team-access-help">Puedes consultar los accesos del equipo.</p>}
           {canManageMembers&&<div className="pending-login-list"><div className="panel-heading"><div><span className="eyebrow">REGISTRO DE INGRESOS</span><h3>Cuentas sin perfil</h3></div><span className="muted-count">{pendingAccounts.length}</span></div>{pendingAccounts.length?pendingAccounts.map((account)=><button key={account.user_id} className="pending-login-row" type="button" onClick={()=>setEmail(account.email)}><span><b>{account.full_name||account.email}</b><small>{account.email} · Último ingreso {account.last_sign_in_at?new Date(account.last_sign_in_at).toLocaleString():'sin fecha'}</small></span><span>Asignar</span></button>):<p className="team-access-help">No hay cuentas pendientes de perfil.</p>}</div>}
         </section>
         <section className="panel"><div className="panel-heading"><div><span className="eyebrow">CUENTAS REGISTRADAS</span><h2>Accesos</h2></div><span className="muted-count">{members.length} asignaciones</span></div>

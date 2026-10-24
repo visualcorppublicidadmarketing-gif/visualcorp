@@ -36,6 +36,10 @@ Los permisos iniciales son una propuesta conservadora y editable, no una descrip
 - La aplicación oculta controles sin permiso y Supabase vuelve a comprobar el acceso en cada lectura o escritura protegida.
 - Los cambios de perfil se vuelven a consultar al iniciar sesión, recuperar el foco de la página y periódicamente durante la sesión.
 
-## Estados de implementación
+## Estado y uso verificado — 24 de octubre de 2026
 
-Este documento describe el modelo preparado para la migración de perfiles editables. La página, las funciones de base de datos y los perfiles iniciales solo se consideran operativos después de que la migración se aplique al proyecto Supabase conectado y la versión correspondiente llegue a producción.
+La gestión de perfiles, la asignación por correo y las políticas de acceso están aplicadas en el proyecto Supabase conectado. La migración `20261023215919_visualcorp_editable_access_profiles` y el listado de equipo están presentes en el historial remoto. La asignación usa `assign_visualcorp_profile`; la autorización se comprueba de nuevo con `get_my_visualcorp_access`, RLS y las reglas de escritura. No depende únicamente de ocultar controles en la interfaz.
+
+Para asignar un perfil, la cuenta debe existir en Supabase Auth. Si todavía no aparece en **Cuentas sin perfil**, la persona debe iniciar sesión una vez mediante Google o correo y luego se puede escribir su correo directamente en **Operaciones → Equipo y permisos**. Una persona puede recibir varios perfiles; sus permisos activos se combinan. El perfil Propietario está protegido y los perfiles administrativos tienen restricciones adicionales.
+
+Comprobación de base del 24 de octubre de 2026: perfiles activos, permisos iniciales de Marketing presentes y RPC de asignación ejecutable solo por usuarios autenticados. No había cuentas pendientes sin asignación para hacer una prueba de asignación real sin modificar el acceso de una persona existente. La vista de gestión requiere una sesión autorizada; el navegador automatizado rechazó el inicio de Google, así que no se confirmó allí el recorrido autenticado. La funcionalidad web y sus controles están en el checkout local; no se publicó esta versión.
