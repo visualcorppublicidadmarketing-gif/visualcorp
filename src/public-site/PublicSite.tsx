@@ -12,6 +12,7 @@ import './glass-system.css';
 import './public-navigation.css';
 import './public-footer.css';
 import './contact-page.css';
+import './home-hero.css';
 
 const HomeContentHighlights = React.lazy(() => import('./ShowcasePages').then((module) => ({ default: module.HomeContentHighlights })));
 
@@ -232,7 +233,19 @@ export function PublicHomePage() {
     <section className="site-hero">
       <div className="site-hero-glow glow-pink"/><div className="site-hero-glow glow-blue"/>
       <div className="site-hero-content"><Eyebrow light>{data.settings.heroEyebrow}</Eyebrow><h1>{data.settings.heroTitle}</h1><p>{data.settings.heroText}</p><div className="site-hero-actions"><Link className="site-primary-button" to="/cotizador">Cuéntanos tu idea <ArrowUpRight size={17}/></Link><Link className="site-secondary-button" to="/servicios">Explorar servicios <ArrowRight size={16}/></Link></div><div className="site-hero-proof"><span><Check size={14}/>Atención directa</span><span><Check size={14}/>Ideas y producción</span><span><Check size={14}/>{data.settings.location}</span></div></div>
-      <div className="site-hero-art"><div className="site-mascot-halo" aria-hidden="true"/><div className="site-mascot-floor" aria-hidden="true"/><img className="site-mascot-image" src="/public-site/visualito-hero.webp" alt="Visualito, mascota de Visual Corp" width={720} height={1080} fetchPriority="high"/><div className="site-art-label label-top">IDEAS EN MOVIMIENTO</div></div>
+      <div className="site-hero-art">
+        <div className="hero-stage-grid" aria-hidden="true"/>
+        <div className="hero-stage-word" aria-hidden="true">IDEAS</div>
+        <div className="site-mascot-halo" aria-hidden="true"/>
+        <div className="site-mascot-floor" aria-hidden="true"/>
+        <div className="hero-orbit orbit-a" aria-hidden="true"/>
+        <div className="hero-orbit orbit-b" aria-hidden="true"/>
+        <div className="hero-stage-index" aria-hidden="true"><span>VC</span><i/>MILAGRO · ECUADOR</div>
+        <img className="site-mascot-image" src="/public-site/visualito-hero.webp" alt="Visualito, mascota de Visual Corp" width={720} height={1080} fetchPriority="high"/>
+        <div className="hero-float-card hero-float-card-top"><span>01 / IDEA</span><b>Todo empieza<br/>con una visión.</b><i/></div>
+        <div className="hero-float-card hero-float-card-bottom"><span className="hero-spectrum"><i/><i/><i/></span><b>DISEÑO</b><b>PRODUCCIÓN</b><b>MARCA</b><ArrowUpRight size={15} aria-hidden="true"/></div>
+        <div className="site-art-label label-top">IDEAS EN MOVIMIENTO</div>
+      </div>
       <a className="site-scroll-cue" href="#servicios">Descubre Visual Corp <ArrowDownRight size={15}/></a>
     </section>
     <section className="site-services-section" id="servicios"><SectionTitle eyebrow="SERVICIOS CONECTADOS" title={<>Una idea puede tomar<br/>muchas formas.</>} description="Elige una familia de trabajo para conocerla mejor. Si no sabes por dónde empezar, cuéntanos tu idea y te orientamos."/><AnimatedList className="site-services-grid" stagger={0.075}>{services.map((service, index) => <ServiceCard service={service} index={index} key={service.id}/>)}</AnimatedList><Link className="site-text-link" to="/servicios">Ver todas las familias de servicio <ArrowRight size={16}/></Link></section>
