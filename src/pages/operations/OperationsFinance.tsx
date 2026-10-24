@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUpRight, Banknote, ChartNoAxesCombined, Download, LoaderCircle, PackageCheck, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
@@ -77,9 +77,15 @@ async function readAllRows(createQuery) {
 
 export function OperationsFinance() {
   const { organizationId, hasPermission, roles } = useAuth();
+  const canManageFinance = roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
+  const canSeePayrollDeductions = roles.some((role) => ['owner', 'admin'].includes(role));
   const canSeeInventoryCosts = roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
   const canSeeCrm = hasPermission('crm', 'view');
   const canSeeCashReconciliation = hasPermission('cash', 'view');
+  const [realtimeStatus, setRealtimeStatus] = useState('connecting');
+  const [realtimeRevision, setRealtimeRevision] = useState({ sales: 0, cash: 0, expenses: 0, expensePayments: 0, inventoryCosts: 0, materialCosts: 0, catalogCosts: 0 });
+  const realtimePending = useRef(new Set<string>());
+  const realtimeFlushTimer = useRef<number | null>(null);
   const [sales, setSales] = useState([]);
   const [payments, setPayments] = useState([]);
   const [saleReturns, setSaleReturns] = useState([]);
@@ -113,6 +119,74 @@ export function OperationsFinance() {
   const [materialCostSummary, setMaterialCostSummary] = useState<MaterialCostSummary | null>(null);
   const [materialCostLoading, setMaterialCostLoading] = useState(false);
   const [materialCostError, setMaterialCostError] = useState('');
+
+  useEffect(() => {
+    if (!supabase || !organizationId) {
+      setRealtimeStatus('offline');
+      return undefined;
+    }
+
+    const channel = supabase.channel(`operations-finance-${organizationId}`);
+    const sources: Array<{ table: string; areas: Array<keyof typeof realtimeRevision>; enabled?: boolean }> = [
+      { table: 'organization_memberships', areas: ['sales'] },
+      { table: 'branches', areas: ['sales', 'expenses'], enabled: canManageFinance },
+      { table: 'customers', areas: ['sales'] },
+      { table: 'suppliers', areas: ['expenses'], enabled: canManageFinance },
+      { table: 'personnel_records', areas: ['expenses'], enabled: canSeePayrollDeductions },
+      { table: 'personnel_account_links', areas: ['expenses'], enabled: canSeePayrollDeductions },
+      { table: 'sales', areas: ['sales', 'inventoryCosts'] },
+      { table: 'sale_payments', areas: ['sales', 'cash'] },
+      { table: 'sale_returns', areas: ['sales'] },
+      { table: 'sale_refund_settlements', areas: ['sales', 'cash'], enabled: canSeeInventoryCosts },
+      { table: 'finance_expenses', areas: ['expenses'], enabled: canManageFinance },
+      { table: 'finance_expense_payments', areas: ['expenses', 'expensePayments'], enabled: canManageFinance },
+      { table: 'finance_recurring_templates', areas: ['expenses'], enabled: canManageFinance },
+      { table: 'finance_recurring_occurrences', areas: ['expenses'], enabled: canManageFinance },
+      { table: 'finance_payroll_deductions', areas: ['expenses'], enabled: canSeePayrollDeductions },
+      { table: 'finance_budgets', areas: ['expenses'], enabled: canManageFinance },
+      { table: 'purchase_orders', areas: ['expenses'], enabled: canManageFinance },
+      { table: 'purchase_order_lines', areas: ['expenses'], enabled: canManageFinance },
+      { table: 'purchase_receipts', areas: ['expenses'], enabled: canManageFinance },
+      { table: 'purchase_receipt_lines', areas: ['expenses'], enabled: canManageFinance },
+      { table: 'cash_sessions', areas: ['cash'], enabled: canSeeCashReconciliation },
+      { table: 'cash_session_movements', areas: ['cash'], enabled: canSeeCashReconciliation },
+      { table: 'inventory_variants', areas: ['catalogCosts'], enabled: canSeeInventoryCosts },
+      { table: 'inventory_items', areas: ['catalogCosts'], enabled: canSeeInventoryCosts },
+      { table: 'inventory_item_costs', areas: ['catalogCosts'], enabled: canSeeInventoryCosts },
+      { table: 'sale_line_cost_snapshots', areas: ['inventoryCosts'], enabled: canSeeInventoryCosts },
+      { table: 'inventory_movement_cost_snapshots', areas: ['materialCosts'], enabled: canSeeInventoryCosts },
+    ];
+
+    sources.filter((source) => source.enabled !== false).forEach((source) => {
+      channel.on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: source.table,
+        filter: `organization_id=eq.${organizationId}`,
+      }, () => {
+        source.areas.forEach((area) => realtimePending.current.add(area));
+        if (realtimeFlushTimer.current !== null) return;
+        realtimeFlushTimer.current = window.setTimeout(() => {
+          const changedAreas = new Set(realtimePending.current);
+          realtimePending.current.clear();
+          realtimeFlushTimer.current = null;
+          setRealtimeRevision((current) => Object.fromEntries(
+            Object.entries(current).map(([area, revision]) => [area, revision + (changedAreas.has(area as keyof typeof current) ? 1 : 0)]),
+          ) as typeof current);
+        }, 350);
+      });
+    });
+
+    channel.subscribe((status) => {
+      setRealtimeStatus(status === 'SUBSCRIBED' ? 'live' : status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' ? 'reconnecting' : 'connecting');
+    });
+    return () => {
+      if (realtimeFlushTimer.current !== null) window.clearTimeout(realtimeFlushTimer.current);
+      realtimeFlushTimer.current = null;
+      realtimePending.current.clear();
+      void supabase.removeChannel(channel);
+    };
+  }, [organizationId, canManageFinance, canSeePayrollDeductions, canSeeInventoryCosts, canSeeCashReconciliation]);
 
   useEffect(() => {
     let active = true;
@@ -203,7 +277,7 @@ export function OperationsFinance() {
 
     void load();
     return () => { active = false; };
-  }, [organizationId, hasPermission, canSeeInventoryCosts, canSeeCashReconciliation]);
+  }, [organizationId, hasPermission, canSeeInventoryCosts, canSeeCashReconciliation, realtimeRevision.sales, realtimeRevision.inventoryCosts]);
 
   useEffect(() => {
     let active = true;
@@ -236,7 +310,7 @@ export function OperationsFinance() {
         setExpensePaymentsLoading(false);
       });
     return () => { active = false; };
-  }, [organizationId, canSeeInventoryCosts, month]);
+  }, [organizationId, canSeeInventoryCosts, month, realtimeRevision.expensePayments]);
 
   useEffect(() => {
     let active = true;
@@ -324,7 +398,7 @@ export function OperationsFinance() {
     };
     void loadCashSessions();
     return () => { active = false; };
-  }, [organizationId, canSeeCashReconciliation, month, branch, cashRefreshKey]);
+  }, [organizationId, canSeeCashReconciliation, month, branch, cashRefreshKey, realtimeRevision.cash]);
 
   useEffect(() => {
     let active = true;
@@ -355,7 +429,7 @@ export function OperationsFinance() {
       setInventoryCostLoading(false);
     });
     return () => { active = false; };
-  }, [organizationId, canSeeInventoryCosts, month, branch, advisor]);
+  }, [organizationId, canSeeInventoryCosts, month, branch, advisor, realtimeRevision.inventoryCosts]);
 
   useEffect(() => {
     let active = true;
@@ -399,7 +473,7 @@ export function OperationsFinance() {
         setInventoryCatalogCostLoading(false);
       });
     return () => { active = false; };
-  }, [organizationId, canSeeInventoryCosts, inventoryCatalogCostRefreshKey]);
+  }, [organizationId, canSeeInventoryCosts, inventoryCatalogCostRefreshKey, realtimeRevision.catalogCosts]);
 
   useEffect(() => {
     let active = true;
@@ -431,7 +505,7 @@ export function OperationsFinance() {
       setMaterialCostLoading(false);
     });
     return () => { active = false; };
-  }, [organizationId, canSeeInventoryCosts, month, branch, advisor]);
+  }, [organizationId, canSeeInventoryCosts, month, branch, advisor, realtimeRevision.materialCosts]);
 
   const advisorNames = useMemo(() => new Map(advisors.map((person) => [
     person.user_id,
@@ -839,12 +913,15 @@ export function OperationsFinance() {
   if (loading) return <div className="op-flow-loading"><LoaderCircle className="spin" /> Cargando ventas y pagos registrados…</div>;
 
   return <div className="op-finance-page">
-    <OperationsFinanceControls month={month} branch={branch} />
+    <OperationsFinanceControls month={month} branch={branch} realtimeRefreshKey={realtimeRevision.expenses} />
     <section className="panel op-finance-intro">
       <div>
         <span className="eyebrow">INGRESOS Y RECAUDACIÓN</span>
         <h2>Finanzas por asesora</h2>
         <p>Ventas confirmadas y pagos recibidos desde el punto de venta. Cada abono conserva su fecha, medio de pago y venta asociada.</p>
+        <span className={`op-finance-sync ${realtimeStatus === 'live' ? 'is-live' : ''}`} role="status">
+          <i aria-hidden="true" />{realtimeStatus === 'live' ? 'Conectado a cambios en vivo' : realtimeStatus === 'offline' ? 'Sin conexión en vivo' : 'Reconectando datos…'}
+        </span>
       </div>
       <a className="button button-outline" href="/operaciones/pos">Registrar venta o abono en POS <ArrowUpRight size={15} /></a>
     </section>

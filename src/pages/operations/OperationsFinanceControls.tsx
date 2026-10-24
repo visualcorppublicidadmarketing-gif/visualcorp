@@ -41,7 +41,7 @@ type TeamMember = { user_id: string; full_name: string; email: string; role: str
 type PersonnelOption = { personnel_id: string; full_name: string; department: string; job_title: string };
 const payrollMonthLabel = (value: string) => new Date(`${value.slice(0, 7)}-01T12:00:00`).toLocaleDateString('es-EC', { year: 'numeric', month: 'long' });
 
-export function OperationsFinanceControls({ month, branch }: { month: string; branch: string }) {
+export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 0 }: { month: string; branch: string; realtimeRefreshKey?: number }) {
   const { organizationId, roles } = useAuth();
   const canManage = roles.some((role: string) => ['owner', 'admin', 'manager'].includes(role));
   const canSeeDeductions = roles.some((role: string) => ['owner', 'admin'].includes(role));
@@ -162,7 +162,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
     setDeductions(deductionRows);
   };
 
-  useEffect(() => { void refresh(); }, [organizationId, canManage, canSeeDeductions]);
+  useEffect(() => { void refresh(); }, [organizationId, canManage, canSeeDeductions, realtimeRefreshKey]);
 
   useEffect(() => {
     let active = true;
@@ -189,7 +189,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         setBudgetsLoading(false);
       });
     return () => { active = false; };
-  }, [organizationId, canManage, month, branch]);
+  }, [organizationId, canManage, month, branch, realtimeRefreshKey]);
   useEffect(() => {
     if (branch !== 'all') setBudgetForm((current) => ({ ...current, branch }));
   }, [branch]);
