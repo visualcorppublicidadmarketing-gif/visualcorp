@@ -77,7 +77,7 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
   </section></main>;
 
   const moduleByPath: Record<string, string> = {
-    '/admin': 'dashboard', '/admin/sitio': 'website', '/admin/contenido': 'website', '/admin/solicitudes': 'crm',
+    '/admin': 'dashboard', '/admin/sitio': 'website', '/admin/servicios': 'website', '/admin/tienda': 'website', '/admin/contacto': 'website', '/admin/contenido': 'website', '/admin/blog': 'website', '/admin/publicaciones': 'website', '/admin/portafolio': 'website', '/admin/solicitudes': 'crm',
     '/admin/marketing': 'marketing', '/admin/cambios': 'team', '/admin/respaldo': 'backup',
     '/operaciones': 'dashboard', '/operaciones/pos': 'sales', '/operaciones/finanzas': 'sales', '/operaciones/flujos': 'workshop',
     '/operaciones/cambios': 'team', '/operaciones/cotizador': 'quotes', '/operaciones/inventario': 'inventory',

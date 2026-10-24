@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { ArrowUpRight, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Database, FileText, Globe2, History, Image, LayoutDashboard, LogOut, Megaphone, Menu, Search, Settings2, ShoppingBag, ShoppingCart, Truck, Users, Wallet, X, type LucideIcon } from 'lucide-react';
+import { ArrowUpRight, BookOpen, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Database, FileText, Globe2, History, Image, LayoutDashboard, LogOut, Megaphone, Menu, Newspaper, Settings2, ShoppingBag, ShoppingCart, Truck, Users, Wallet, X, type LucideIcon } from 'lucide-react';
 import { useWorkspace } from './workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { AdminCommandPalette } from '../components/AdminCommandPalette';
@@ -14,8 +14,13 @@ type AppNavGroup = { id: string; label: string; icon: LucideIcon; paths: string[
 
 export const adminLinks: AppNavLink[] = [
   { to: '/admin', label: 'Resumen', icon: LayoutDashboard, end: true, module: 'dashboard' },
-  { to: '/admin/sitio', label: 'Página pública', icon: Globe2, module: 'website' },
-  { to: '/admin/contenido', label: 'Blog y portafolio', icon: FileText, module: 'website' },
+  { to: '/admin/sitio', label: 'Inicio', icon: Globe2, module: 'website' },
+  { to: '/admin/servicios', label: 'Servicios', icon: BriefcaseBusiness, module: 'website' },
+  { to: '/admin/tienda', label: 'Tienda', icon: ShoppingBag, module: 'website' },
+  { to: '/admin/blog', label: 'Blog', icon: BookOpen, module: 'website' },
+  { to: '/admin/publicaciones', label: 'Publicaciones', icon: Newspaper, module: 'website' },
+  { to: '/admin/portafolio', label: 'Portafolio', icon: Image, module: 'website' },
+  { to: '/admin/contacto', label: 'Contacto', icon: Users, module: 'website' },
   { to: '/admin/solicitudes', label: 'Solicitudes CRM', icon: Users, module: 'crm' },
   { to: '/admin/marketing', label: 'Marketing', icon: Megaphone, module: 'marketing' },
   { to: '/admin/cambios', label: 'Novedades', icon: History, module: 'team' },
@@ -38,7 +43,7 @@ export const operationsLinks: AppNavLink[] = [
   { to: '/operaciones/catalogo', label: 'Catálogo y tarifas', icon: ShoppingBag, module: 'catalog_admin' },
 ];
 const adminNavGroups: AppNavGroup[] = [
-  { id: 'content', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/contenido'] },
+  { id: 'content', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
   { id: 'customers', label: 'Clientes', icon: Users, paths: ['/admin/solicitudes'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/admin/marketing'] },
   { id: 'system', label: 'Administración', icon: Settings2, paths: ['/admin/cambios', '/admin/respaldo'] },
