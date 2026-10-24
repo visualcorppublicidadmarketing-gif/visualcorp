@@ -82,7 +82,7 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
     '/operaciones': 'dashboard', '/operaciones/pos': 'sales', '/operaciones/finanzas': 'sales', '/operaciones/flujos': 'workshop',
     '/operaciones/cambios': 'team', '/operaciones/cotizador': 'quotes', '/operaciones/inventario': 'inventory',
     '/operaciones/compras': 'purchases', '/operaciones/clientes': 'crm', '/operaciones/crm': 'crm',
-    '/operaciones/marketing': 'marketing', '/operaciones/equipo': 'team', '/operaciones/catalogo': 'catalog_admin',
+    '/operaciones/marketing': 'marketing', '/operaciones/personal': 'personnel', '/operaciones/equipo': 'team', '/operaciones/catalogo': 'catalog_admin',
   };
   const requiredModule = moduleByPath[location.pathname] || ({ website: 'website', catalog: 'catalog_admin', team: 'team', operations: 'dashboard' }[area]);
   if (!auth.hasPermission(requiredModule, 'view')) return <main className="access-screen"><section className="access-card">
