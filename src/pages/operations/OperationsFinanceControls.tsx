@@ -28,6 +28,8 @@ async function readAllFinanceRows(createQuery: () => any) {
 
 type Expense = { id: string; description: string; category: string; status: string; document_date: string; due_date: string | null; total: number; paid_total: number; branch_id: string | null; supplier_id: string | null; purchase_order_id: string | null; receipt_id: string | null; reference: string };
 type TeamMember = { user_id: string; full_name: string; email: string; role: string; active: boolean };
+type PersonnelOption = { personnel_id: string; full_name: string; department: string; job_title: string };
+const payrollMonthLabel = (value: string) => new Date(`${value.slice(0, 7)}-01T12:00:00`).toLocaleDateString('es-EC', { year: 'numeric', month: 'long' });
 
 export function OperationsFinanceControls() {
   const { organizationId, roles } = useAuth();
@@ -45,13 +47,15 @@ export function OperationsFinanceControls() {
   const [orderReferenceTotals, setOrderReferenceTotals] = useState<Record<string, number>>({});
   const [expensePayments, setExpensePayments] = useState<any[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
+  const [personnelOptions, setPersonnelOptions] = useState<PersonnelOption[]>([]);
+  const [personnelOptionsError, setPersonnelOptionsError] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [expenseForm, setExpenseForm] = useState({ description: '', category: categories[0], total: '', paid: '', due: '', branch: '', supplier: '', order: '', method: 'transfer', reference: '', documentReference: '', note: '' });
   const [paymentForms, setPaymentForms] = useState<Record<string, { amount: string; method: string }>>({});
   const [templateForm, setTemplateForm] = useState({ description: '', category: 'Servicios básicos', amount: '', cadence: 'monthly', due: today(), branch: '', supplier: '', note: '' });
-  const [deductionForm, setDeductionForm] = useState({ employee: '', description: '', amount: '', period: today(), authorization: '', evidence: '' });
+  const [deductionForm, setDeductionForm] = useState({ employee: '', description: '', amount: '', period: today().slice(0, 7), authorization: '', evidence: '' });
   const [reviewRefs, setReviewRefs] = useState<Record<string, { authorization: string; evidence: string }>>({});
 
   const refresh = async () => {
@@ -61,11 +65,12 @@ export function OperationsFinanceControls() {
     let templateRows: any[];
     let deductionRows: any[];
     let paymentRows: any[];
-    const [branchResult, teamResult, supplierResult, orderResult] = await Promise.all([
+    const [branchResult, teamResult, supplierResult, orderResult, personnelResult] = await Promise.all([
       supabase.from('branches').select('id,name').eq('organization_id', organizationId).eq('active', true).order('name'),
       supabase.rpc('list_visualcorp_team_members'),
       supabase.from('suppliers').select('id,name').eq('organization_id', organizationId).eq('active', true).order('name'),
       supabase.from('purchase_orders').select('id,order_number,status,supplier_id').eq('organization_id', organizationId).not('status', 'eq', 'cancelled').order('created_at', { ascending: false }).limit(300),
+      canSeeDeductions ? supabase.rpc('list_visualcorp_finance_personnel_options') : Promise.resolve({ data: [], error: null }),
     ]);
     if (branchResult.error || supplierResult.error || orderResult.error) {
       setError(branchResult.error?.message || supplierResult.error?.message || orderResult.error?.message || 'No se pudieron cargar las áreas conectadas.');
@@ -76,7 +81,7 @@ export function OperationsFinanceControls() {
         readAllFinanceRows(() => supabase.from('finance_expenses').select('id,description,category,status,document_date,due_date,total,paid_total,branch_id,supplier_id,purchase_order_id,receipt_id,reference').eq('organization_id', organizationId).order('document_date', { ascending: false }).order('id')),
         readAllFinanceRows(() => supabase.from('finance_recurring_templates').select('id,description,category,expected_amount,cadence,next_due_date,cadence_anchor_day,branch_id,supplier_id,active').eq('organization_id', organizationId).order('next_due_date').order('id')),
         canSeeDeductions
-          ? readAllFinanceRows(() => supabase.from('finance_payroll_deductions').select('id,employee_user_id,description,amount,payroll_period,status,authorization_reference,evidence_reference,created_at').eq('organization_id', organizationId).order('payroll_period', { ascending: false }).order('id'))
+          ? readAllFinanceRows(() => supabase.from('finance_payroll_deductions').select('id,personnel_id,employee_user_id,description,amount,payroll_period,status,authorization_reference,evidence_reference,created_at').eq('organization_id', organizationId).order('payroll_period', { ascending: false }).order('id'))
           : Promise.resolve([]),
         readAllFinanceRows(() => supabase.from('finance_expense_payments').select('id,expense_id,amount,method,reference,paid_at').eq('organization_id', organizationId).order('paid_at', { ascending: false }).order('id')),
       ]);
@@ -89,6 +94,8 @@ export function OperationsFinanceControls() {
     setBranches(branchResult.data || []);
     setSuppliers(supplierResult.data || []);
     setOrders(orderResult.data || []);
+    setPersonnelOptions(personnelResult.error ? [] : (personnelResult.data || []) as PersonnelOption[]);
+    setPersonnelOptionsError(personnelResult.error?.message || '');
     try {
       const orderLines = await readAllFinanceRows(() => supabase.from('purchase_order_lines').select('purchase_order_id,quantity_ordered,unit_cost').eq('organization_id', organizationId).order('purchase_order_id').order('id'));
       const totals = orderLines.reduce((result: Record<string, number>, line: any) => {
@@ -131,6 +138,7 @@ export function OperationsFinanceControls() {
   const supplierNames = useMemo(() => new Map(suppliers.map((supplier) => [supplier.id, supplier.name])), [suppliers]);
   const orderNames = useMemo(() => new Map(orders.map((order) => [order.id, order.order_number])), [orders]);
   const teamNames = useMemo(() => new Map(team.map((person) => [person.user_id, person.full_name || person.email || person.user_id.slice(0, 8)])), [team]);
+  const personnelNames = useMemo(() => new Map(personnelOptions.map((person) => [person.personnel_id, person.full_name])), [personnelOptions]);
   const openPayables = expenses.filter((expense) => expense.status === 'payable');
   const dueNow = openPayables.filter((expense) => expense.due_date && expense.due_date < today()).reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
   const payableTotal = openPayables.reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
@@ -202,7 +210,7 @@ export function OperationsFinanceControls() {
 
   const saveDeduction = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setError(''); setNotice('');
-    const { error: saveError } = await supabase.from('finance_payroll_deductions').insert({ organization_id: organizationId, employee_user_id: deductionForm.employee, description: deductionForm.description.trim(), amount: Number(deductionForm.amount), payroll_period: deductionForm.period, authorization_reference: deductionForm.authorization.trim(), evidence_reference: deductionForm.evidence.trim(), status: 'pending_authorization' });
+    const { error: saveError } = await supabase.from('finance_payroll_deductions').insert({ organization_id: organizationId, personnel_id: deductionForm.employee, description: deductionForm.description.trim(), amount: Number(deductionForm.amount), payroll_period: `${deductionForm.period}-01`, authorization_reference: deductionForm.authorization.trim(), evidence_reference: deductionForm.evidence.trim(), status: 'pending_authorization' });
     if (saveError) setError(saveError.message); else { setNotice('Deducción registrada como pendiente; aún no modifica ni procesa la nómina.'); setDeductionForm({ ...deductionForm, description: '', amount: '', authorization: '', evidence: '' }); await refresh(); }
     setBusy(false);
   };
@@ -275,10 +283,42 @@ export function OperationsFinanceControls() {
       </form><section className="panel op-finance-ledger-register"><div className="panel-heading"><div><span className="eyebrow">CALENDARIO DE OBLIGACIONES</span><h3>Pagos esperados</h3></div><Clock3 size={18}/></div>{!templates.length ? <div className="op-finance-ledger-empty"><CalendarClock size={24}/><b>Sin pagos periódicos programados</b><span>Agrega internet, renta, luz, agua u otros pagos recurrentes.</span></div> : <div className="op-finance-ledger-list">{templates.filter((item) => item.active).map((item) => <article key={item.id}><div className="op-finance-ledger-record-top"><div><b>{item.description}</b><span>{item.category} · {item.cadence === 'monthly' ? 'Mensual' : item.cadence === 'quarterly' ? 'Trimestral' : 'Anual'}{item.branch_id ? ` · ${branchNames.get(item.branch_id) || 'Sucursal'}` : ' · General'}{item.supplier_id ? ` · ${supplierNames.get(item.supplier_id) || 'Proveedor'}` : ''}</span></div><span className="op-finance-ledger-status">Recordatorio</span></div><div className="op-finance-ledger-record-numbers"><span>Próximo vencimiento {new Date(`${item.next_due_date}T12:00:00`).toLocaleDateString('es-EC')}</span><b>{money(item.expected_amount)}</b></div><button className="button button-outline" disabled={busy} onClick={() => void generateRecurringExpense(item)}><ReceiptText size={15}/> Crear cuenta por pagar</button></article>)}</div>}</section>
     </div>}
     {section === 'deductions' && canSeeDeductions && <div className="op-finance-ledger-columns">
-      <form className="panel op-finance-ledger-form" onSubmit={saveDeduction}><div className="panel-heading"><div><span className="eyebrow">NÓMINA · ACCESO RESTRINGIDO</span><h3>Registrar solicitud de deducción</h3></div><ShieldCheck size={18}/></div><p className="muted">Solo propietario/administración. Registra evidencia y autorización; este módulo no calcula ni descuenta remuneraciones.</p>
-        <label>Persona<select required value={deductionForm.employee} onChange={(event) => setDeductionForm({ ...deductionForm, employee: event.target.value })}><option value="">Selecciona integrante activo…</option>{team.filter((person) => person.active).map((person) => <option key={person.user_id} value={person.user_id}>{person.full_name || person.email || person.user_id.slice(0, 8)}</option>)}</select></label>
-        <label>Motivo / concepto<input required maxLength={240} value={deductionForm.description} onChange={(event) => setDeductionForm({ ...deductionForm, description: event.target.value })}/></label><div className="op-finance-ledger-field-pair"><label>Monto USD<input required type="number" min="0.01" step="0.01" value={deductionForm.amount} onChange={(event) => setDeductionForm({ ...deductionForm, amount: event.target.value })}/></label><label>Periodo de nómina<input required type="date" value={deductionForm.period} onChange={(event) => setDeductionForm({ ...deductionForm, period: event.target.value })}/></label></div><label>Referencia de autorización<input placeholder="Documento o constancia aprobada" value={deductionForm.authorization} onChange={(event) => setDeductionForm({ ...deductionForm, authorization: event.target.value })}/></label><label>Referencia de evidencia<input placeholder="Ruta interna / código de archivo" value={deductionForm.evidence} onChange={(event) => setDeductionForm({ ...deductionForm, evidence: event.target.value })}/></label><button className="button button-primary" disabled={busy}><Plus size={15}/> Guardar como pendiente</button>
-      </form><section className="panel op-finance-ledger-register"><div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO CONFIDENCIAL</span><h3>Deducciones registradas</h3></div><ShieldCheck size={18}/></div>{!deductions.length ? <div className="op-finance-ledger-empty"><ShieldCheck size={24}/><b>Sin solicitudes registradas</b><span>Los registros nuevos comienzan pendientes de autorización y no se aplican automáticamente.</span></div> : <div className="op-finance-ledger-list">{deductions.map((item) => { const refs = reviewRefs[item.id] || { authorization: item.authorization_reference || '', evidence: item.evidence_reference || '' }; return <article key={item.id}><div className="op-finance-ledger-record-top"><div><b>{teamNames.get(item.employee_user_id) || 'Integrante del equipo'}</b><span>{item.description}</span></div><span className="op-finance-ledger-status">{item.status === 'pending_authorization' ? 'Pendiente de autorización' : item.status === 'authorized' ? 'Autorizada' : item.status === 'applied_externally' ? 'Aplicada externamente' : item.status}</span></div><div className="op-finance-ledger-record-numbers"><span>Periodo {new Date(`${item.payroll_period}T12:00:00`).toLocaleDateString('es-EC')}</span><b>{money(item.amount)}</b></div>{item.status === 'pending_authorization' && <><label>Autorización expresa / referencia<input value={refs.authorization} onChange={(event) => setReviewRefs({ ...reviewRefs, [item.id]: { ...refs, authorization: event.target.value } })}/></label><label>Evidencia / referencia<input value={refs.evidence} onChange={(event) => setReviewRefs({ ...reviewRefs, [item.id]: { ...refs, evidence: event.target.value } })}/></label><button className="button button-outline" disabled={busy || !refs.authorization.trim() || !refs.evidence.trim()} onClick={() => void updateDeductionStatus(item, 'authorized')}><ShieldCheck size={14}/> Confirmar autorización</button></>}{item.status === 'authorized' && <button className="button button-outline" disabled={busy} onClick={() => void updateDeductionStatus(item, 'applied_externally')}><Check size={14}/> Registrar aplicación externa</button>}{item.status === 'applied_externally' && <small>Autorización: {item.authorization_reference} · Evidencia: {item.evidence_reference}</small>}</article>; })}</div>}</section>
+      <form className="panel op-finance-ledger-form" onSubmit={saveDeduction}>
+        <div className="panel-heading"><div><span className="eyebrow">NÓMINA · ACCESO RESTRINGIDO</span><h3>Registrar solicitud de deducción</h3></div><ShieldCheck size={18}/></div>
+        <p className="muted">Selecciona a la persona desde Personal. Registra evidencia y autorización; Finanzas no calcula ni descuenta remuneraciones.</p>
+        <label>Persona<select required value={deductionForm.employee} onChange={(event) => setDeductionForm({ ...deductionForm, employee: event.target.value })}>
+          <option value="">Selecciona una ficha activa…</option>
+          {personnelOptions.map((person) => <option key={person.personnel_id} value={person.personnel_id}>{person.full_name}{person.department ? ' · ' + person.department : ''}{person.job_title ? ' · ' + person.job_title : ''}</option>)}
+        </select></label>
+        {personnelOptionsError && <p className="op-finance-cost-error" role="alert">No se pudieron cargar las fichas de Personal: {personnelOptionsError}</p>}
+        <label>Motivo / concepto<input required maxLength={240} value={deductionForm.description} onChange={(event) => setDeductionForm({ ...deductionForm, description: event.target.value })}/></label>
+        <div className="op-finance-ledger-field-pair">
+          <label>Monto USD<input required type="number" min="0.01" step="0.01" value={deductionForm.amount} onChange={(event) => setDeductionForm({ ...deductionForm, amount: event.target.value })}/></label>
+          <label>Periodo de nómina<input required type="month" value={deductionForm.period} onChange={(event) => setDeductionForm({ ...deductionForm, period: event.target.value })}/></label>
+        </div>
+        <label>Referencia de autorización<input placeholder="Documento o constancia aprobada" value={deductionForm.authorization} onChange={(event) => setDeductionForm({ ...deductionForm, authorization: event.target.value })}/></label>
+        <label>Referencia de evidencia<input placeholder="Ruta interna / código de archivo" value={deductionForm.evidence} onChange={(event) => setDeductionForm({ ...deductionForm, evidence: event.target.value })}/></label>
+        <button className="button button-primary" disabled={busy || !personnelOptions.length || Boolean(personnelOptionsError)}><Plus size={15}/> Guardar como pendiente</button>
+      </form>
+      <section className="panel op-finance-ledger-register">
+        <div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO CONFIDENCIAL</span><h3>Deducciones registradas</h3></div><ShieldCheck size={18}/></div>
+        {!deductions.length ? <div className="op-finance-ledger-empty"><ShieldCheck size={24}/><b>Sin solicitudes registradas</b><span>Los registros nuevos comienzan pendientes de autorización y no se aplican automáticamente.</span></div> : <div className="op-finance-ledger-list">{deductions.map((item) => {
+          const refs = reviewRefs[item.id] || { authorization: item.authorization_reference || '', evidence: item.evidence_reference || '' };
+          const personName = (item.personnel_id && personnelNames.get(item.personnel_id)) || teamNames.get(item.employee_user_id) || 'Integrante del equipo';
+          const statusLabel = item.status === 'pending_authorization' ? 'Pendiente de autorización' : item.status === 'authorized' ? 'Autorizada' : item.status === 'applied_externally' ? 'Reportada como aplicada externamente' : item.status === 'cancelled' ? 'Cancelada' : item.status;
+          return <article key={item.id}>
+            <div className="op-finance-ledger-record-top"><div><b>{personName}</b><span>{item.description}</span></div><span className="op-finance-ledger-status">{statusLabel}</span></div>
+            <div className="op-finance-ledger-record-numbers"><span>Periodo {payrollMonthLabel(item.payroll_period)}</span><b>{money(item.amount)}</b></div>
+            {item.status === 'pending_authorization' && <>
+              <label>Autorización expresa / referencia<input value={refs.authorization} onChange={(event) => setReviewRefs({ ...reviewRefs, [item.id]: { ...refs, authorization: event.target.value } })}/></label>
+              <label>Evidencia / referencia<input value={refs.evidence} onChange={(event) => setReviewRefs({ ...reviewRefs, [item.id]: { ...refs, evidence: event.target.value } })}/></label>
+              <button className="button button-outline" disabled={busy || !refs.authorization.trim() || !refs.evidence.trim()} onClick={() => void updateDeductionStatus(item, 'authorized')}><ShieldCheck size={14}/> Confirmar autorización</button>
+            </>}
+            {item.status === 'authorized' && <button className="button button-outline" disabled={busy} onClick={() => void updateDeductionStatus(item, 'applied_externally')}><Check size={14}/> Registrar aplicación externa</button>}
+            {item.status === 'applied_externally' && <small>Referencia de autorización: {item.authorization_reference} · Evidencia: {item.evidence_reference}</small>}
+          </article>;
+        })}</div>}
+      </section>
     </div>}
     <aside className="op-finance-ledger-footnote"><Check size={16}/><span>Los indicadores de caja reflejan pagos registrados; los saldos por pagar son obligaciones, no dinero ya desembolsado. El margen/utilidad queda pendiente hasta integrar costos completos. Las deducciones se muestran separadas y no forman parte de egresos operativos.</span></aside>
   </section>;

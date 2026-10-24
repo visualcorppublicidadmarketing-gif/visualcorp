@@ -11,6 +11,7 @@ type PersonnelRecord = {
 };
 type PersonnelEvent = { id: number; event_key: string; summary: string; changed_fields: string[]; salary_sensitive: boolean; actor_label: string; created_at: string };
 type Compensation = { id: string; amount: number; currency_code: string; pay_period: string; effective_date: string; note: string; created_at: string; created_by: string };
+type PayrollDeduction = { id: string; description: string; amount: number; payroll_period: string; status: string; authorization_reference: string; evidence_reference: string; created_at: string; reviewed_at: string | null };
 type RecordDraft = Pick<PersonnelRecord, 'full_name' | 'email' | 'phone' | 'department' | 'job_title' | 'status' | 'start_date' | 'end_date'>;
 type GoogleAccount = { user_id: string; email: string; full_name: string; last_sign_in_at: string | null; linked_personnel_id: string | null; linked_personnel_name: string | null; roles: string[]; access_profiles: string[]; access_active: boolean };
 
@@ -18,6 +19,7 @@ const emptyDraft: RecordDraft = { full_name: '', email: '', phone: '', departmen
 const fieldLabels: Record<string, string> = { full_name: 'nombre', email: 'correo', phone: 'teléfono', department: 'área', job_title: 'cargo', status: 'estado', start_date: 'fecha de ingreso', end_date: 'fecha de salida', google_account: 'cuenta Google' };
 const dateLabel = (value?: string | null) => value ? new Date(`${value.slice(0,10)}T12:00:00`).toLocaleDateString('es-EC',{day:'numeric',month:'short',year:'numeric'}) : '—';
 const dateTimeLabel = (value?: string | null) => value ? new Date(value).toLocaleString('es-EC',{dateStyle:'medium',timeStyle:'short'}) : '—';
+const payrollPeriodLabel = (value: string) => new Date(`${value.slice(0,7)}-01T12:00:00`).toLocaleDateString('es-EC',{year:'numeric',month:'long'});
 const errorText = (error: unknown) => error instanceof Error ? error.message : 'No se pudo completar la operación.';
 const formatCompensation = (item: Compensation) => {
   try { return new Intl.NumberFormat('es-EC',{style:'currency',currency:item.currency_code}).format(Number(item.amount)); }
@@ -35,6 +37,7 @@ export function PersonnelPage() {
   const [selectedId, setSelectedId] = useState('');
   const [events, setEvents] = useState<PersonnelEvent[]>([]);
   const [compensation, setCompensation] = useState<Compensation[]>([]);
+  const [payrollDeductions, setPayrollDeductions] = useState<PayrollDeduction[]>([]);
   const [googleAccounts, setGoogleAccounts] = useState<GoogleAccount[]>([]);
   const [accessProfiles, setAccessProfiles] = useState<any[]>([]);
   const [accountUserId, setAccountUserId] = useState('');
@@ -86,21 +89,25 @@ export function PersonnelPage() {
 
   const selected = records.find((record) => record.id === selectedId) || null;
   useEffect(() => {
-    if (!supabase || !organizationId || !selectedId) { setEvents([]); setCompensation([]); return; }
+    if (!supabase || !organizationId || !selectedId) { setEvents([]); setCompensation([]); setPayrollDeductions([]); return; }
     let active = true;
     const loadDetail = async () => {
       setDetailLoading(true); setError('');
       try {
         const requests: any[] = [supabase.from('personnel_events').select('id,event_key,summary,changed_fields,salary_sensitive,actor_label,created_at').eq('organization_id',organizationId).eq('personnel_id',selectedId).order('created_at',{ascending:false}).limit(80)];
         if (canViewCompensation) requests.push(supabase.from('personnel_compensation_history').select('id,amount,currency_code,pay_period,effective_date,note,created_at,created_by').eq('organization_id',organizationId).eq('personnel_id',selectedId).order('effective_date',{ascending:false}).limit(40));
+        if (canViewCompensation) requests.push(supabase.from('finance_payroll_deductions').select('id,description,amount,payroll_period,status,authorization_reference,evidence_reference,created_at,reviewed_at').eq('organization_id',organizationId).eq('personnel_id',selectedId).order('payroll_period',{ascending:false}).order('created_at',{ascending:false}).limit(80));
         const results = await Promise.all(requests);
         const eventResult = results[0];
         if (eventResult.error) throw eventResult.error;
         const payResult = canViewCompensation ? results[1] : null;
         if (payResult?.error) throw payResult.error;
+        const deductionResult = canViewCompensation ? results[2] : null;
+        if (deductionResult?.error) throw deductionResult.error;
         if (!active) return;
         setEvents((eventResult.data || []) as PersonnelEvent[]);
         setCompensation((payResult?.data || []) as Compensation[]);
+        setPayrollDeductions((deductionResult?.data || []) as PayrollDeduction[]);
       } catch (loadError) { if (active) setError(errorText(loadError)); }
       finally { if (active) setDetailLoading(false); }
     };
@@ -193,11 +200,14 @@ export function PersonnelPage() {
     if (!supabase || !organizationId || !selectedId) return;
     const requests: any[] = [supabase.from('personnel_events').select('id,event_key,summary,changed_fields,salary_sensitive,actor_label,created_at').eq('organization_id',organizationId).eq('personnel_id',selectedId).order('created_at',{ascending:false}).limit(80)];
     if (canViewCompensation) requests.push(supabase.from('personnel_compensation_history').select('id,amount,currency_code,pay_period,effective_date,note,created_at,created_by').eq('organization_id',organizationId).eq('personnel_id',selectedId).order('effective_date',{ascending:false}).limit(40));
+    if (canViewCompensation) requests.push(supabase.from('finance_payroll_deductions').select('id,description,amount,payroll_period,status,authorization_reference,evidence_reference,created_at,reviewed_at').eq('organization_id',organizationId).eq('personnel_id',selectedId).order('payroll_period',{ascending:false}).order('created_at',{ascending:false}).limit(80));
     const results = await Promise.all(requests);
     if (results[0].error) throw results[0].error;
     if (results[1]?.error) throw results[1].error;
+    if (results[2]?.error) throw results[2].error;
     setEvents((results[0].data || []) as PersonnelEvent[]);
     setCompensation((results[1]?.data || []) as Compensation[]);
+    setPayrollDeductions((results[2]?.data || []) as PayrollDeduction[]);
   };
 
   return <div className="personnel-page">
@@ -226,6 +236,7 @@ export function PersonnelPage() {
             {detailLoading?<p className="personnel-inline-loading">Cargando remuneración…</p>:!compensation.length?<p className="personnel-inline-empty">No hay registros de remuneración.</p>:<div className="personnel-compensation-list">{compensation.map((item)=><article key={item.id}><div><b>{formatCompensation(item)}</b><small>{item.pay_period} · Vigente desde {dateLabel(item.effective_date)}</small>{item.note&&<span>{item.note}</span>}</div><time>{dateTimeLabel(item.created_at)}</time></article>)}</div>}
           </>}
         </div>
+        {canViewCompensation&&<div className="personnel-subsection"><div className="panel-heading"><div><span className="eyebrow">FINANZAS → NÓMINA</span><h3>Historial de deducciones</h3></div><Banknote size={18}/></div><p className="personnel-privacy-hint">Seguimiento de solicitudes de deducción registradas en Finanzas. La autorización queda vinculada a esta ficha; el cálculo y el procesamiento de nómina siguen siendo externos.</p>{detailLoading?<p className="personnel-inline-loading">Cargando deducciones…</p>:!payrollDeductions.length?<p className="personnel-inline-empty">No hay deducciones registradas para esta persona.</p>:<div className="personnel-compensation-list">{payrollDeductions.map((item)=>{const statusLabel=item.status==='pending_authorization'?'Pendiente de autorización':item.status==='authorized'?'Autorizada':item.status==='applied_externally'?'Reportada como aplicada externamente':item.status==='cancelled'?'Cancelada':item.status;return <article key={item.id}><div><b>{new Intl.NumberFormat('es-EC',{style:'currency',currency:'USD'}).format(Number(item.amount)||0)}</b><small>{payrollPeriodLabel(item.payroll_period)} · {statusLabel}</small><span>{item.description}</span>{item.authorization_reference&&<small>Autorización: {item.authorization_reference}</small>}{item.evidence_reference&&<small>Evidencia: {item.evidence_reference}</small>}</div><time>{dateTimeLabel(item.reviewed_at||item.created_at)}</time></article>;})}</div>}</div>}
         <div className="personnel-subsection"><div className="panel-heading"><div><span className="eyebrow">TRAZABILIDAD</span><h3>Historial de la ficha</h3></div><Clock3 size={18}/></div>{detailLoading?<p className="personnel-inline-loading">Cargando historial…</p>:!events.length?<p className="personnel-inline-empty">Aún no hay cambios registrados.</p>:<ol className="personnel-history-list">{events.filter((item)=>!item.salary_sensitive||canViewCompensation).map((item)=><li key={item.id}><span className="personnel-history-icon">{item.event_key==='compensation_changed'?<Banknote size={14}/>:<History size={14}/>}</span><div><b>{item.summary}</b><small>{item.changed_fields.map((field)=>fieldLabels[field]||field).join(', ')||'Registro creado'} · {item.actor_label}</small><time>{dateTimeLabel(item.created_at)}</time></div></li>)}</ol>}</div>
         <p className="personnel-footnote"><UserRound size={14}/> La ficha laboral y el acceso Google están vinculados. Cambiar o quitar el vínculo no pausa ni elimina los permisos; eso se gestiona desde Equipo y permisos.</p>
       </>}</section>
