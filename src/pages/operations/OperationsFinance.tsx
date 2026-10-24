@@ -562,7 +562,7 @@ export function OperationsFinance() {
   if (loading) return <div className="op-flow-loading"><LoaderCircle className="spin" /> Cargando ventas y pagos registrados…</div>;
 
   return <div className="op-finance-page">
-    <OperationsFinanceControls />
+    <OperationsFinanceControls month={month} branch={branch} />
     <section className="panel op-finance-intro">
       <div>
         <span className="eyebrow">INGRESOS Y RECAUDACIÓN</span>
