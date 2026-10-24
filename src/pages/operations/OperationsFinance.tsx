@@ -77,6 +77,7 @@ async function readAllRows(createQuery) {
 export function OperationsFinance() {
   const { organizationId, hasPermission, roles } = useAuth();
   const canSeeInventoryCosts = roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
+  const canSeeCrm = hasPermission('crm', 'view');
   const canSeeCashReconciliation = hasPermission('cash', 'view');
   const [sales, setSales] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -131,7 +132,7 @@ export function OperationsFinance() {
         const [salesRows, paymentRows, teamResult, branchResult] = await Promise.all([
           readAllRows(() => supabase
             .from('sales')
-            .select('id,sale_code,status,total,created_at,branch_id,advisor_id,created_by,customers(full_name)')
+            .select('id,sale_code,status,total,created_at,branch_id,advisor_id,created_by,customer_id,customers(full_name)')
             .eq('organization_id', organizationId)
             .order('created_at', { ascending: false })),
           readAllRows(() => supabase
@@ -473,6 +474,8 @@ export function OperationsFinance() {
     });
     return buckets;
   }, [openReceivables]);
+  const receivablesWithoutCrm = useMemo(() => openReceivables.filter(({ sale }) => !sale.customer_id), [openReceivables]);
+  const receivablesWithoutCrmAmount = receivablesWithoutCrm.reduce((sum, item) => sum + item.balance, 0);
   const paymentSaleIds = useMemo(() => new Set(salesMatchingTeamAndBranch.map((sale) => sale.id)), [salesMatchingTeamAndBranch]);
   const salesInScope = useMemo(() => sales.filter((sale) => (
     (advisor === 'all' || sale.advisor_id === advisor)
@@ -670,10 +673,10 @@ export function OperationsFinance() {
 
   const downloadReceivablesCsv = () => {
     const rows = [
-      ['Fecha de venta', 'Antigüedad en días', 'Asesora responsable', 'Venta', 'Cliente', 'Sucursal', 'Total venta USD', 'Pagos POS registrados USD', 'Saldo por cobrar USD'],
+      ['Fecha de venta', 'Antigüedad en días', 'Asesora responsable', 'Venta', 'Cliente', 'Ficha CRM', 'Sucursal', 'Total venta USD', 'Pagos POS registrados USD', 'Saldo por cobrar USD'],
       ...openReceivables.map(({ sale, total, collected, balance, ageDays }) => [
         timestamp(sale.created_at), ageDays, personName(sale.advisor_id), sale.sale_code || sale.id,
-        sale.customers?.full_name || '', branchName(sale.branch_id), total.toFixed(2), collected.toFixed(2), balance.toFixed(2),
+        sale.customers?.full_name || '', sale.customer_id ? 'Vinculada' : 'Sin ficha', branchName(sale.branch_id), total.toFixed(2), collected.toFixed(2), balance.toFixed(2),
       ]),
     ];
     const escape = (value) => {
@@ -812,15 +815,16 @@ export function OperationsFinance() {
       <article><span>Valor promedio por venta</span><b>{money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b><small>Solo ventas confirmadas</small></article>
     </section>
     <section className="panel op-finance-receivables" aria-labelledby="op-finance-receivables-title">
-      <div className="panel-heading"><div><span className="eyebrow">POS → FINANZAS · SALDOS ABIERTOS</span><h2 id="op-finance-receivables-title">Antigüedad de saldos por cobrar</h2><p className="op-finance-cost-note">Se calcula desde la fecha de venta confirmada, restando los pagos POS registrados. El filtro de mes y medio de pago no aplica; se usan asesora y sucursal.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadReceivablesCsv} disabled={!openReceivables.length}><Download size={15}/> Exportar saldos CSV</button><a className="button button-outline" href="/operaciones/pos">Abrir POS <ArrowUpRight size={15}/></a></div></div>
-      <div className="op-finance-receivables-metrics"><article className="is-total"><span>Saldo abierto</span><b>{money(openReceivables.reduce((sum, item) => sum + item.balance, 0))}</b><small>{openReceivables.length} ventas con saldo</small></article>{receivableAging.map((bucket) => <article key={bucket.label}><span>{bucket.label}</span><b>{money(bucket.amount)}</b><small>{bucket.count} ventas desde POS</small></article>)}</div>
+      <div className="panel-heading"><div><span className="eyebrow">POS → FINANZAS → CRM · SALDOS ABIERTOS</span><h2 id="op-finance-receivables-title">Antigüedad de saldos por cobrar</h2><p className="op-finance-cost-note">Se calcula desde la fecha de venta confirmada, restando los pagos POS registrados. El filtro de mes y medio de pago no aplica; se usan asesora y sucursal.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadReceivablesCsv} disabled={!openReceivables.length}><Download size={15}/> Exportar saldos CSV</button><a className="button button-outline" href="/operaciones/pos">Abrir POS <ArrowUpRight size={15}/></a>{canSeeCrm && <a className="button button-outline" href="/operaciones/clientes">Abrir CRM <ArrowUpRight size={15}/></a>}</div></div>
+      <div className="op-finance-receivables-metrics"><article className="is-total"><span>Saldo abierto</span><b>{money(openReceivables.reduce((sum, item) => sum + item.balance, 0))}</b><small>{openReceivables.length} ventas con saldo</small></article>{receivableAging.map((bucket) => <article key={bucket.label}><span>{bucket.label}</span><b>{money(bucket.amount)}</b><small>{bucket.count} ventas desde POS</small></article>)}<article className={receivablesWithoutCrm.length ? 'is-unlinked' : ''}><span>Sin ficha CRM vinculada</span><b>{money(receivablesWithoutCrmAmount)}</b><small>{receivablesWithoutCrm.length} ventas con saldo</small></article></div>
       {openReceivables.length ? <div className="op-finance-receivables-list">{openReceivables.slice(0, 10).map(({ sale, total, collected, balance, ageDays }) => <article key={sale.id}>
         <div className="op-finance-receivables-sale"><b>{sale.sale_code || sale.id.slice(0, 8)} · {sale.customers?.full_name || 'Cliente sin nombre'}</b><span>{timestamp(sale.created_at)} · {personName(sale.advisor_id)} · {branchName(sale.branch_id)}</span></div>
         <div className="op-finance-receivables-progress"><div><span>Pagado {money(collected)} de {money(total)}</span><b>{money(balance)}</b></div><div className="op-finance-receivables-track" role="progressbar" aria-label={`Pagado ${money(collected)} de ${money(total)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(total > 0 ? collected / total * 100 : 0))}><i style={{ width: `${Math.min(100, Math.max(0, total > 0 ? collected / total * 100 : 0))}%` }}/></div></div>
         <span className={`op-finance-receivables-age ${ageDays > 30 ? 'is-aged' : ''}`}>{ageDays} días desde la venta</span>
+        {sale.customer_id && canSeeCrm ? <a className="op-finance-receivables-crm" href={`/operaciones/clientes?cliente=${encodeURIComponent(sale.customer_id)}`}>Abrir ficha CRM <ArrowUpRight size={13}/></a> : <span className={`op-finance-receivables-crm ${sale.customer_id ? '' : 'is-unlinked'}`}>{sale.customer_id ? 'Ficha CRM vinculada' : 'Sin ficha CRM'}</span>}
       </article>)}</div> : <div className="op-finance-ledger-empty"><Banknote size={23}/><b>Sin saldos abiertos en este alcance</b><span>Cambia la asesora o la sucursal para revisar otras ventas confirmadas.</span></div>}
       {openReceivables.length > 10 && <p className="op-finance-cost-note">Se muestran las 10 ventas con mayor antigüedad; el resumen y el CSV consideran las {openReceivables.length} con saldo abierto.</p>}
-      <p className="op-finance-cost-note">Los días son antigüedad desde la venta, no días de mora: no se consulta un plazo de pago acordado, no agrega recargos y no aplica compensaciones por devoluciones. El total refleja ventas confirmadas menos abonos POS registrados.</p>
+      <p className="op-finance-cost-note">Los días son antigüedad desde la venta, no días de mora: no se consulta un plazo de pago acordado, no agrega recargos y no aplica compensaciones por devoluciones. El total refleja ventas confirmadas menos abonos POS registrados; las fichas CRM abiertas conservan su historial comercial y permiten documentar el seguimiento.</p>
     </section>
     {canSeeInventoryCosts && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-refund-title">
       <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → CAJA → FINANZAS</span><h2 id="op-finance-refund-title">Cobros y reembolsos liquidados</h2><p className="op-finance-cost-note">Filtra por la fecha real del cobro o de la liquidación, además de asesora, sucursal y medio.</p></div><button className="button button-outline" onClick={downloadRefundsCsv} disabled={!refundsSettledInPeriod.length}><Download size={15}/> Exportar reembolsos</button></div>
