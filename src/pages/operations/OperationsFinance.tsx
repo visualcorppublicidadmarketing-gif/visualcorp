@@ -81,6 +81,8 @@ export function OperationsFinance() {
   const canSeeCashReconciliation = hasPermission('cash', 'view');
   const [sales, setSales] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [saleReturns, setSaleReturns] = useState([]);
+  const [saleReturnsError, setSaleReturnsError] = useState('');
   const [cashSessions, setCashSessions] = useState([]);
   const [cashSessionMovements, setCashSessionMovements] = useState([]);
   const [cashSessionLoading, setCashSessionLoading] = useState(false);
@@ -128,6 +130,7 @@ export function OperationsFinance() {
       setLoading(true);
       setError('');
       setRefundSettlementError('');
+      setSaleReturnsError('');
       try {
         const [salesRows, paymentRows, teamResult, branchResult] = await Promise.all([
           readAllRows(() => supabase
@@ -159,6 +162,19 @@ export function OperationsFinance() {
           setPayments(paymentRows);
           setAdvisors(teamResult.error ? [] : teamResult.data || []);
           setBranches(branchResult.data || []);
+        }
+        try {
+          const returnRows = await readAllRows(() => supabase
+            .from('sale_returns')
+            .select('id,sale_id,kind,refund_amount,refund_status,sale_return_lines(quantity,sale_lines(unit_price))')
+            .eq('organization_id', organizationId)
+            .order('created_at', { ascending: false }));
+          if (active) setSaleReturns(returnRows);
+        } catch (returnLoadError) {
+          if (active) {
+            setSaleReturns([]);
+            setSaleReturnsError(returnLoadError?.message || 'No se pudieron cargar las devoluciones; los saldos ajustados no están disponibles.');
+          }
         }
         if (canSeeInventoryCosts) {
           try {
@@ -425,6 +441,20 @@ export function OperationsFinance() {
     totals.set(payment.sale_id, (totals.get(payment.sale_id) || 0) + Number(payment.amount || 0));
     return totals;
   }, new Map()), [payments]);
+  const returnsBySale = useMemo(() => saleReturns.reduce((totals, saleReturn) => {
+    const current = totals.get(saleReturn.sale_id) || { returnedValue: 0, settledRefund: 0, pendingRefund: 0, count: 0 };
+    const lines = Array.isArray(saleReturn.sale_return_lines) ? saleReturn.sale_return_lines : [];
+    const returnedValue = saleReturn.kind === 'cancellation' ? 0 : lines.reduce((sum, line) => {
+      const saleLine = Array.isArray(line.sale_lines) ? line.sale_lines[0] : line.sale_lines;
+      return sum + Number(line.quantity || 0) * Number(saleLine?.unit_price || 0);
+    }, 0);
+    current.returnedValue += returnedValue;
+    current.settledRefund += saleReturn.refund_status === 'refunded' ? Number(saleReturn.refund_amount || 0) : 0;
+    current.pendingRefund += saleReturn.refund_status === 'pending' ? Number(saleReturn.refund_amount || 0) : 0;
+    current.count += 1;
+    totals.set(saleReturn.sale_id, current);
+    return totals;
+  }, new Map()), [saleReturns]);
   const branchNames = useMemo(() => new Map(branches.map((item) => [item.id, item.name])), [branches]);
   const branchName = (id) => branchNames.get(id) || 'Sucursal';
   const cashMovementTotals = useMemo(() => cashSessionMovements.reduce((totals, movement) => {
@@ -453,11 +483,14 @@ export function OperationsFinance() {
   )), [sales, advisor, branch]);
   const openReceivables = useMemo(() => salesMatchingTeamAndBranch.flatMap((sale) => {
     const total = Number(sale.total || 0);
-    const collected = Number(paymentsBySale.get(sale.id) || 0);
-    const balance = Math.max(0, total - collected);
-    if (balance < 0.005) return [];
-    return [{ sale, total, collected, balance, ageDays: daysSinceBusinessDate(sale.created_at) }];
-  }).sort((a, b) => b.ageDays - a.ageDays || b.balance - a.balance), [salesMatchingTeamAndBranch, paymentsBySale]);
+    const returns = returnsBySale.get(sale.id) || { returnedValue: 0, settledRefund: 0, pendingRefund: 0, count: 0 };
+    const adjustedTotal = Math.max(0, total - returns.returnedValue);
+    const collected = Number(paymentsBySale.get(sale.id) || 0) - returns.settledRefund;
+    const balance = Math.max(0, adjustedTotal - collected);
+    const customerCredit = Math.max(0, collected - adjustedTotal);
+    if (balance < 0.005 && customerCredit < 0.005) return [];
+    return [{ sale, total, adjustedTotal, returnedValue: returns.returnedValue, settledRefund: returns.settledRefund, pendingRefund: returns.pendingRefund, returnCount: returns.count, collected, balance, customerCredit, ageDays: daysSinceBusinessDate(sale.created_at) }];
+  }).sort((a, b) => b.ageDays - a.ageDays || b.balance - a.balance), [salesMatchingTeamAndBranch, paymentsBySale, returnsBySale]);
   const receivableAging = useMemo(() => {
     const buckets = [
       { label: '0–7 días', min: 0, max: 7, amount: 0, count: 0 },
@@ -474,7 +507,9 @@ export function OperationsFinance() {
     });
     return buckets;
   }, [openReceivables]);
-  const receivablesWithoutCrm = useMemo(() => openReceivables.filter(({ sale }) => !sale.customer_id), [openReceivables]);
+  const receivablesWithBalance = useMemo(() => openReceivables.filter(({ balance }) => balance > 0.005), [openReceivables]);
+  const customerCredits = useMemo(() => openReceivables.filter(({ customerCredit }) => customerCredit > 0.005), [openReceivables]);
+  const receivablesWithoutCrm = useMemo(() => receivablesWithBalance.filter(({ sale }) => !sale.customer_id), [receivablesWithBalance]);
   const receivablesWithoutCrmAmount = receivablesWithoutCrm.reduce((sum, item) => sum + item.balance, 0);
   const paymentSaleIds = useMemo(() => new Set(salesMatchingTeamAndBranch.map((sale) => sale.id)), [salesMatchingTeamAndBranch]);
   const salesInScope = useMemo(() => sales.filter((sale) => (
@@ -491,7 +526,10 @@ export function OperationsFinance() {
   const totalSold = salesInPeriod.reduce((sum, sale) => sum + Number(sale.total || 0), 0);
   const totalCollected = paymentsInPeriod.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const outstanding = salesInPeriod.reduce((sum, sale) => (
-    sum + Math.max(0, Number(sale.total || 0) - (paymentsBySale.get(sale.id) || 0))
+    sum + Math.max(0,
+      Math.max(0, Number(sale.total || 0) - (returnsBySale.get(sale.id)?.returnedValue || 0))
+      - ((paymentsBySale.get(sale.id) || 0) - (returnsBySale.get(sale.id)?.settledRefund || 0)),
+    )
   ), 0);
   const allHistoricalPayments = salesInPeriod.reduce((sum, sale) => sum + (paymentsBySale.get(sale.id) || 0), 0);
   const posCashInflows = payments.filter((payment) => (
@@ -673,10 +711,10 @@ export function OperationsFinance() {
 
   const downloadReceivablesCsv = () => {
     const rows = [
-      ['Fecha de venta', 'Antigüedad en días', 'Asesora responsable', 'Venta', 'Cliente', 'Ficha CRM', 'Sucursal', 'Total venta USD', 'Pagos POS registrados USD', 'Saldo por cobrar USD'],
-      ...openReceivables.map(({ sale, total, collected, balance, ageDays }) => [
+      ['Fecha de venta', 'Antigüedad en días', 'Asesora responsable', 'Venta', 'Cliente', 'Ficha CRM', 'Sucursal', 'Total venta USD', 'Artículos devueltos USD', 'Venta ajustada USD', 'Pagos POS USD', 'Reembolsos liquidados USD', 'Reembolso pendiente USD', 'Cobrado neto USD', 'Saldo por cobrar USD', 'Saldo a favor del cliente USD', 'Devoluciones'],
+      ...openReceivables.map(({ sale, total, returnedValue, adjustedTotal, settledRefund, pendingRefund, collected, balance, customerCredit, returnCount, ageDays }) => [
         timestamp(sale.created_at), ageDays, personName(sale.advisor_id), sale.sale_code || sale.id,
-        sale.customers?.full_name || '', sale.customer_id ? 'Vinculada' : 'Sin ficha', branchName(sale.branch_id), total.toFixed(2), collected.toFixed(2), balance.toFixed(2),
+        sale.customers?.full_name || '', sale.customer_id ? 'Vinculada' : 'Sin ficha', branchName(sale.branch_id), total.toFixed(2), returnedValue.toFixed(2), adjustedTotal.toFixed(2), (collected + settledRefund).toFixed(2), settledRefund.toFixed(2), pendingRefund.toFixed(2), collected.toFixed(2), balance.toFixed(2), customerCredit.toFixed(2), returnCount,
       ]),
     ];
     const escape = (value) => {
@@ -811,20 +849,21 @@ export function OperationsFinance() {
     <section className="op-finance-kpis">
       <article><span>Ventas confirmadas</span><b>{money(totalSold)}</b><small>{salesInPeriod.length} ventas registradas</small></article>
       <article className="is-collected"><span>Pagos recibidos en el periodo</span><b>{money(totalCollected)}</b><small>Abonos asociados a las ventas filtradas</small></article>
-      <article><span>Saldo por cobrar</span><b>{money(outstanding)}</b><small>Saldo vigente de las ventas filtradas</small></article>
+      <article><span>Saldo por cobrar</span><b>{saleReturnsError ? '—' : money(outstanding)}</b><small>{saleReturnsError ? 'No disponible: error al cargar devoluciones' : 'Ajustado por devoluciones de ventas filtradas'}</small></article>
       <article><span>Valor promedio por venta</span><b>{money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b><small>Solo ventas confirmadas</small></article>
     </section>
     <section className="panel op-finance-receivables" aria-labelledby="op-finance-receivables-title">
-      <div className="panel-heading"><div><span className="eyebrow">POS → FINANZAS → CRM · SALDOS ABIERTOS</span><h2 id="op-finance-receivables-title">Antigüedad de saldos por cobrar</h2><p className="op-finance-cost-note">Se calcula desde la fecha de venta confirmada, restando los pagos POS registrados. El filtro de mes y medio de pago no aplica; se usan asesora y sucursal.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadReceivablesCsv} disabled={!openReceivables.length}><Download size={15}/> Exportar saldos CSV</button><a className="button button-outline" href="/operaciones/pos">Abrir POS <ArrowUpRight size={15}/></a>{canSeeCrm && <a className="button button-outline" href="/operaciones/clientes">Abrir CRM <ArrowUpRight size={15}/></a>}</div></div>
-      <div className="op-finance-receivables-metrics"><article className="is-total"><span>Saldo abierto</span><b>{money(openReceivables.reduce((sum, item) => sum + item.balance, 0))}</b><small>{openReceivables.length} ventas con saldo</small></article>{receivableAging.map((bucket) => <article key={bucket.label}><span>{bucket.label}</span><b>{money(bucket.amount)}</b><small>{bucket.count} ventas desde POS</small></article>)}<article className={receivablesWithoutCrm.length ? 'is-unlinked' : ''}><span>Sin ficha CRM vinculada</span><b>{money(receivablesWithoutCrmAmount)}</b><small>{receivablesWithoutCrm.length} ventas con saldo</small></article></div>
-      {openReceivables.length ? <div className="op-finance-receivables-list">{openReceivables.slice(0, 10).map(({ sale, total, collected, balance, ageDays }) => <article key={sale.id}>
+      <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → FINANZAS → CRM · SALDOS ABIERTOS</span><h2 id="op-finance-receivables-title">Antigüedad de saldos por cobrar</h2><p className="op-finance-cost-note">La venta se ajusta por el valor de artículos devueltos. Solo los reembolsos liquidados reducen el cobro neto. El filtro de mes y medio de pago no aplica; se usan asesora y sucursal.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadReceivablesCsv} disabled={!openReceivables.length || !!saleReturnsError}><Download size={15}/> Exportar saldos CSV</button><a className="button button-outline" href="/operaciones/pos">Abrir POS <ArrowUpRight size={15}/></a>{canSeeCrm && <a className="button button-outline" href="/operaciones/clientes">Abrir CRM <ArrowUpRight size={15}/></a>}</div></div>
+      {saleReturnsError && <p className="op-finance-cost-error" role="alert">{saleReturnsError}</p>}
+      {!saleReturnsError && <><div className="op-finance-receivables-metrics"><article className="is-total"><span>Saldo abierto ajustado</span><b>{money(openReceivables.reduce((sum, item) => sum + item.balance, 0))}</b><small>{receivablesWithBalance.length} ventas con saldo</small></article>{receivableAging.map((bucket) => <article key={bucket.label}><span>{bucket.label}</span><b>{money(bucket.amount)}</b><small>{bucket.count} ventas desde POS</small></article>)}<article className={customerCredits.length ? 'is-unlinked' : ''}><span>Saldo a favor por revisar</span><b>{money(customerCredits.reduce((sum, item) => sum + item.customerCredit, 0))}</b><small>{customerCredits.length} ventas · sin liquidación automática</small></article><article className={receivablesWithoutCrm.length ? 'is-unlinked' : ''}><span>Sin ficha CRM vinculada</span><b>{money(receivablesWithoutCrmAmount)}</b><small>{receivablesWithoutCrm.length} ventas con saldo</small></article></div>
+      {openReceivables.length ? <div className="op-finance-receivables-list">{openReceivables.slice(0, 10).map(({ sale, total, adjustedTotal, returnedValue, settledRefund, pendingRefund, collected, balance, customerCredit, ageDays }) => <article key={sale.id}>
         <div className="op-finance-receivables-sale"><b>{sale.sale_code || sale.id.slice(0, 8)} · {sale.customers?.full_name || 'Cliente sin nombre'}</b><span>{timestamp(sale.created_at)} · {personName(sale.advisor_id)} · {branchName(sale.branch_id)}</span></div>
-        <div className="op-finance-receivables-progress"><div><span>Pagado {money(collected)} de {money(total)}</span><b>{money(balance)}</b></div><div className="op-finance-receivables-track" role="progressbar" aria-label={`Pagado ${money(collected)} de ${money(total)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(total > 0 ? collected / total * 100 : 0))}><i style={{ width: `${Math.min(100, Math.max(0, total > 0 ? collected / total * 100 : 0))}%` }}/></div></div>
+        <div className="op-finance-receivables-progress"><div><span>Cobrado neto {money(collected)} de {money(adjustedTotal)}{returnedValue > 0 ? ` · devuelto ${money(returnedValue)}` : ''}{settledRefund > 0 ? ` · reembolsado ${money(settledRefund)}` : ''}{pendingRefund > 0 ? ` · reembolso pendiente ${money(pendingRefund)}` : ''}</span><b>{balance > 0 ? money(balance) : `A favor ${money(customerCredit)}`}</b></div><div className="op-finance-receivables-track" role="progressbar" aria-label={`Cobrado neto ${money(collected)} de ${money(adjustedTotal)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(adjustedTotal > 0 ? Math.max(0, collected) / adjustedTotal * 100 : 100))}><i style={{ width: `${Math.min(100, Math.max(0, adjustedTotal > 0 ? Math.max(0, collected) / adjustedTotal * 100 : 100))}%` }}/></div></div>
         <span className={`op-finance-receivables-age ${ageDays > 30 ? 'is-aged' : ''}`}>{ageDays} días desde la venta</span>
         {sale.customer_id && canSeeCrm ? <a className="op-finance-receivables-crm" href={`/operaciones/clientes?cliente=${encodeURIComponent(sale.customer_id)}`}>Abrir ficha CRM <ArrowUpRight size={13}/></a> : <span className={`op-finance-receivables-crm ${sale.customer_id ? '' : 'is-unlinked'}`}>{sale.customer_id ? 'Ficha CRM vinculada' : 'Sin ficha CRM'}</span>}
       </article>)}</div> : <div className="op-finance-ledger-empty"><Banknote size={23}/><b>Sin saldos abiertos en este alcance</b><span>Cambia la asesora o la sucursal para revisar otras ventas confirmadas.</span></div>}
-      {openReceivables.length > 10 && <p className="op-finance-cost-note">Se muestran las 10 ventas con mayor antigüedad; el resumen y el CSV consideran las {openReceivables.length} con saldo abierto.</p>}
-      <p className="op-finance-cost-note">Los días son antigüedad desde la venta, no días de mora: no se consulta un plazo de pago acordado, no agrega recargos y no aplica compensaciones por devoluciones. El total refleja ventas confirmadas menos abonos POS registrados; las fichas CRM abiertas conservan su historial comercial y permiten documentar el seguimiento.</p>
+      {openReceivables.length > 10 && <p className="op-finance-cost-note">Se muestran las 10 ventas con mayor antigüedad; el resumen y el CSV consideran {receivablesWithBalance.length} saldos abiertos y {customerCredits.length} saldos a favor.</p>}
+      <p className="op-finance-cost-note">Los días son antigüedad desde la venta, no mora contractual. El valor devuelto usa cantidad por precio unitario guardado en POS; cobrado neto resta únicamente reembolsos liquidados. Los reembolsos pendientes se muestran aparte y el saldo a favor requiere revisión manual. No se crean pagos, créditos ni compensaciones automáticamente. Las fichas CRM permiten documentar el seguimiento.</p></>}
     </section>
     {canSeeInventoryCosts && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-refund-title">
       <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → CAJA → FINANZAS</span><h2 id="op-finance-refund-title">Cobros y reembolsos liquidados</h2><p className="op-finance-cost-note">Filtra por la fecha real del cobro o de la liquidación, además de asesora, sucursal y medio.</p></div><button className="button button-outline" onClick={downloadRefundsCsv} disabled={!refundsSettledInPeriod.length}><Download size={15}/> Exportar reembolsos</button></div>
