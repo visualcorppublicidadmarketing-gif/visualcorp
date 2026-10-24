@@ -18,6 +18,7 @@ export const publicServiceFamilies: PublicServiceFamily[] = [
 
 // Dirección y canales confirmados por Visual Corp el 8 de octubre de 2026.
 export const publicAddress = 'Av. Jaime Roldós y General Andrade, Milagro';
+export const multiProductQuoteService = 'Varios productos de la tienda';
 
 export const serviceProjectPrompts: Record<PublicServiceId, string> = {
   impresion: 'Cuéntanos qué pieza impresa necesitas, la cantidad aproximada y si ya tienes un diseño.',

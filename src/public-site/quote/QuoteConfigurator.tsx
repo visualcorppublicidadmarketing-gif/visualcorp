@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CircleHelp, Printer, Ruler, Sparkles, Wrench } from 'lucide-react';
 import './quote-calculator.css';
 import { calculateScenario, loadQuoteProducts, type PricingMode, type QuoteProduct } from './pricing';
+import { multiProductQuoteService } from '../content';
 
 export type QuoteService = { id: string; name: string };
 export type QuoteDraft = {
@@ -18,6 +19,8 @@ export type QuoteDraft = {
   finishing: string;
   productId?: string;
   productName?: string;
+  requestedProducts?: string[];
+  requestedQuantityRanges?: string[];
   pricingMode?: PricingMode;
   pricePreview?: { normal: number | null; installation: number | null; corporate: number | null };
   priceStatus?: 'pending-validation';
@@ -26,21 +29,37 @@ export type QuoteDraft = {
 type Props = {
   services: QuoteService[];
   initialService?: string;
+  initialProducts?: string[];
+  initialQuantityRanges?: string[];
   onChange: (quote: QuoteDraft) => void;
 };
 
-const initialDraft = (service = ''): QuoteDraft => ({
+const quantityFromRange = (range: string) => {
+  const first = range.match(/[\d]+(?:[.,][\d]+)?/)?.[0];
+  return first ? Math.max(1, Math.floor(Number(first.replace(',', '.')) || 1)) : 1;
+};
+
+const quantityRangesSummary = (products: string[], ranges: string[]) => products.map((product, index) => {
+  const range = ranges[index]?.trim();
+  if (!range) return '';
+  const cleanRange = range.replace(/(\d+)\.0\b/g, '$1');
+  return `${product}: ${cleanRange} ${cleanRange === '1' ? 'unidad' : 'unidades'}`;
+}).filter(Boolean).join(' · ');
+
+const initialDraft = (service = '', products: string[] = [], quantityRanges: string[] = []): QuoteDraft => ({
   service,
-  project: '',
+  project: products.length === 1 ? products[0] : products.length > 1 ? 'Cotización de varios productos' : '',
   calculationMode: 'unknown',
   measurementUnit: 'cm',
   width: 100,
   height: 100,
   area: 0,
-  quantity: 1,
+  quantity: quantityRanges.find(Boolean) ? quantityFromRange(quantityRanges.find(Boolean) || '') : 1,
   designSupport: 'unknown',
   installation: false,
   finishing: '',
+  requestedProducts: products,
+  requestedQuantityRanges: quantityRanges,
 });
 
 const designLabels: Record<QuoteDraft['designSupport'], string> = {
@@ -61,8 +80,11 @@ function formatPrice(value: number) {
   return new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(value);
 }
 
-export function QuoteConfigurator({ services, initialService = '', onChange }: Props) {
-  const [draft, setDraft] = useState<QuoteDraft>(() => initialDraft(initialService));
+export function QuoteConfigurator({ services, initialService = '', initialProducts = [], initialQuantityRanges = [], onChange }: Props) {
+  const initialProductsKey = initialProducts.join('\u001f');
+  const initialQuantityRangesKey = initialQuantityRanges.join('\u001f');
+  const requestedRanges = initialQuantityRangesKey ? initialQuantityRangesKey.split('\u001f') : [];
+  const [draft, setDraft] = useState<QuoteDraft>(() => initialDraft(initialService, initialProducts, requestedRanges));
   const [productId, setProductId] = useState('');
   const [products, setProducts] = useState<QuoteProduct[]>([]);
   useEffect(() => { loadQuoteProducts().then(setProducts).catch(() => setProducts([])); }, []);
@@ -71,6 +93,8 @@ export function QuoteConfigurator({ services, initialService = '', onChange }: P
   const selectedProduct = modeProducts.find((product) => product.source_key === productId) || modeProducts[0];
   const activeProduct = draft.calculationMode === 'unknown' ? undefined : selectedProduct;
   const selectedService = services.find((service) => service.name === draft.service || service.id === draft.service);
+  const serviceSummary = selectedService?.name || (draft.service === multiProductQuoteService ? multiProductQuoteService : 'Por seleccionar');
+  const quantitySummary = quantityRangesSummary(draft.requestedProducts || [], draft.requestedQuantityRanges || []);
   const productBasis = draft.calculationMode === 'area' ? areaBasis(draft) : draft.quantity;
   const prices = selectedProduct ? {
     normal: calculateScenario(selectedProduct, 'normal', productBasis),
@@ -82,6 +106,8 @@ export function QuoteConfigurator({ services, initialService = '', onChange }: P
     service: selectedService?.name || draft.service,
     productId: activeProduct?.source_key,
     productName: activeProduct?.name,
+    requestedProducts: initialProductsKey ? initialProductsKey.split('\u001f') : draft.requestedProducts,
+    requestedQuantityRanges: initialQuantityRangesKey ? requestedRanges : draft.requestedQuantityRanges,
     pricingMode: activeProduct?.mode === 'area' ? 'area' as const : activeProduct ? 'quantity' as const : undefined,
     pricePreview: activeProduct ? prices : undefined,
     priceStatus: activeProduct ? 'pending-validation' as const : undefined,
@@ -89,7 +115,7 @@ export function QuoteConfigurator({ services, initialService = '', onChange }: P
     height: draft.calculationMode === 'area' ? draft.height : 0,
     area: draft.calculationMode === 'area' ? (draft.measurementUnit === 'cm' ? draft.width * draft.height / 10000 : draft.width * draft.height) : 0,
     quantity: draft.calculationMode === 'unknown' ? 0 : draft.quantity,
-  }), [draft, selectedService, activeProduct]);
+  }), [draft, selectedService, activeProduct, initialProductsKey, initialQuantityRangesKey]);
   const area = draft.calculationMode === 'area'
     ? (draft.measurementUnit === 'cm' ? draft.width * draft.height / 10000 : draft.width * draft.height)
     : 0;
@@ -100,6 +126,20 @@ export function QuoteConfigurator({ services, initialService = '', onChange }: P
     const match = services.find((service) => service.name === initialService || service.id === initialService);
     if (match) setDraft((current) => ({ ...current, service: match.name }));
   }, [initialService, services]);
+  useEffect(() => {
+    const requested = initialProductsKey ? initialProductsKey.split('\u001f') : [];
+    if (!requested.length || !products.length) return;
+    const ranges = initialQuantityRangesKey ? requestedRanges : [];
+    const firstRange = ranges.find(Boolean) || '';
+    setDraft((current) => ({ ...current, project: current.project || (requested.length === 1 ? requested[0] : 'Cotización de varios productos'), requestedProducts: requested, requestedQuantityRanges: ranges, quantity: firstRange ? quantityFromRange(firstRange) : current.quantity }));
+    if (requested.length !== 1) return;
+    const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleLowerCase('es');
+    const target = normalize(requested[0]);
+    const match = products.find((product) => normalize(product.name) === target || normalize(product.source_key) === target);
+    if (!match || match.mode === 'fixed') return;
+    setProductId(match.source_key);
+    setDraft((current) => ({ ...current, calculationMode: match.mode === 'area' ? 'area' : 'units', requestedProducts: requested }));
+  }, [products, initialProductsKey, initialQuantityRangesKey]);
 
   const update = <K extends keyof QuoteDraft>(key: K, value: QuoteDraft[K]) => {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -124,6 +164,7 @@ export function QuoteConfigurator({ services, initialService = '', onChange }: P
         <label>Familia de servicio
           <select value={draft.service} onChange={(event) => update('service', event.target.value)}>
             <option value="">Selecciona una familia</option>
+            {(draft.requestedProducts?.length || 0) > 1 && <option value={multiProductQuoteService}>{multiProductQuoteService}</option>}
             {services.map((service) => <option key={service.id} value={service.name}>{service.name}</option>)}
           </select>
         </label>
@@ -179,8 +220,10 @@ export function QuoteConfigurator({ services, initialService = '', onChange }: P
       <span className="site-eyebrow"><i/> RESUMEN DE TU PROYECTO</span>
       <h3>{draft.project.trim() || 'Tu proyecto'}</h3>
       <dl>
-        <div><dt>Servicio</dt><dd>{selectedService?.name || 'Por seleccionar'}</dd></div>
+        <div><dt>Servicio</dt><dd>{serviceSummary}</dd></div>
         {draft.calculationMode !== 'unknown' && <div><dt>Producto</dt><dd>{selectedProduct?.name || 'Por seleccionar'}</dd></div>}
+        {(draft.requestedProducts?.length || 0) > 0 && (draft.requestedProducts?.length || 0) > 1 || (draft.requestedProducts?.length || 0) > 0 && draft.calculationMode === 'unknown' ? <div><dt>Productos de la tienda</dt><dd>{draft.requestedProducts?.join(' · ')}</dd></div> : null}
+        {quantitySummary && <div><dt>Cantidades elegidas</dt><dd>{quantitySummary}</dd></div>}
         <div><dt>Producción</dt><dd>{draft.calculationMode === 'area' ? `${draft.width} × ${draft.height} ${draft.measurementUnit} · ${area.toFixed(2)} m² por pieza` : draft.calculationMode === 'units' ? 'Por unidades' : 'Por definir con el equipo'}</dd></div>
         {draft.calculationMode !== 'unknown' && <div><dt>Cantidad</dt><dd>{draft.quantity} {draft.quantity === 1 ? 'pieza' : 'piezas'}</dd></div>}
         <div><dt>Diseño</dt><dd>{designLabels[draft.designSupport]}</dd></div>
@@ -206,8 +249,10 @@ export function QuoteConfigurator({ services, initialService = '', onChange }: P
       <h1>{draft.project.trim() || 'Proyecto por definir'}</h1>
       <p>Resumen para revisar con el equipo de Visual Corp · {new Date().toLocaleDateString('es-EC')}</p>
       <dl>
-        <div><dt>Servicio</dt><dd>{selectedService?.name || 'Por seleccionar'}</dd></div>
+        <div><dt>Servicio</dt><dd>{serviceSummary}</dd></div>
         {draft.calculationMode !== 'unknown' && <div><dt>Producto</dt><dd>{selectedProduct?.name || 'Por seleccionar'}</dd></div>}
+        {(draft.requestedProducts?.length || 0) > 0 && (draft.requestedProducts?.length || 0) > 1 || (draft.requestedProducts?.length || 0) > 0 && draft.calculationMode === 'unknown' ? <div><dt>Productos de la tienda</dt><dd>{draft.requestedProducts?.join(' · ')}</dd></div> : null}
+        {quantitySummary && <div><dt>Cantidades elegidas</dt><dd>{quantitySummary}</dd></div>}
         <div><dt>Producción</dt><dd>{draft.calculationMode === 'area' ? `${draft.width} × ${draft.height} ${draft.measurementUnit} · ${area.toFixed(2)} m² por pieza` : draft.calculationMode === 'units' ? 'Por unidades' : 'Por definir con el equipo'}</dd></div>
         {draft.calculationMode !== 'unknown' && <div><dt>Cantidad</dt><dd>{draft.quantity} {draft.quantity === 1 ? 'pieza' : 'piezas'}</dd></div>}
         <div><dt>Diseño</dt><dd>{designLabels[draft.designSupport]}</dd></div>
