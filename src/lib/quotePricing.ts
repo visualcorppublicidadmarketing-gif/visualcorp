@@ -13,7 +13,7 @@ function getBaseRate(product, basis) {
     .filter((tier) => tier.min_qty > 0 && tier.unit_price !== null)
     .sort((a, b) => a.min_qty - b.min_qty);
   if (!tiers.length) return numeric(product?.price);
-  if (basis < tiers[0].min_qty) return null;
+  if (basis < tiers[0].min_qty) return numeric(product?.price);
   return tiers.filter((tier) => basis >= tier.min_qty).at(-1)?.unit_price ?? numeric(product?.price);
 }
 

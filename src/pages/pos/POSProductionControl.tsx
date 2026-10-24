@@ -51,7 +51,7 @@ function OperationCard({ operation, order, advisors, onUpdate, session, canManag
             <option value="">Asignar responsable…</option>
             {eligibleAdvisors.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
           </select>
-          <input type="number" min="5" step="5" value={operation.estimatedMinutes || 30} aria-label="Duración estimada en minutos" onChange={(event) => onUpdate(operation.id, { estimatedMinutes: Math.max(5, Number(event.target.value) || 5) })} />
+          <input type="number" min={5} step={5} value={operation.estimatedMinutes || 30} aria-label="Duración estimada en minutos" onChange={(event) => onUpdate(operation.id, { estimatedMinutes: Math.max(5, Number(event.target.value) || 5) })} />
           <input type="date" value={operation.scheduledStart?.slice(0, 10) || ''} aria-label="Fecha programada" onChange={(event) => {
             const start = new Date(`${event.target.value}T08:00:00`);
             const end = new Date(start.getTime() + Number(operation.estimatedMinutes || 30) * 60000);

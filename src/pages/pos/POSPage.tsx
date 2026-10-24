@@ -382,7 +382,7 @@ export function POSPage({ initialTab = 'cashier' }) {
   }, [store.products, selectedProductId, filteredProductOptions]);
 
   const quickProducts = useMemo(() => {
-    const byId = new Map((store.products || []).map((product) => [product.id, product]));
+    const byId = new Map<string, any>((store.products || []).map((product) => [product.id, product]));
     const ids = [...favoriteProductIds, ...recentProductIds].filter((id, index, all) => all.indexOf(id) === index);
     return ids.map((id) => byId.get(id)).filter((product) => product && product.isActive !== false).slice(0, 10);
   }, [store.products, favoriteProductIds, recentProductIds]);
@@ -761,7 +761,7 @@ export function POSPage({ initialTab = 'cashier' }) {
       if (sourceQuoteRequestId) markQuoteRequestConverted(sourceQuoteRequestId, res.order.id).catch(() => {});
     } else {
       playWarningSound();
-      toast.error('Error al registrar la orden: ' + res.error);
+      toast.error('Error al registrar la orden: ' + ('error' in res ? res.error : 'No se pudo completar la operación.'));
     }
     window.setTimeout(() => setIsSubmittingOrder(false), 600);
   };
@@ -833,7 +833,7 @@ export function POSPage({ initialTab = 'cashier' }) {
           );
           if (matchingOrder) {
             toast.info(`📦 Trabajo #${matchingOrder.orderNumber} localizado mediante escáner.`);
-            setSelectedOrderForReceipt(matchingOrder);
+            setReceiptOrder(matchingOrder);
             return;
           }
 
@@ -908,7 +908,7 @@ export function POSPage({ initialTab = 'cashier' }) {
       } else if (e.key === 'F3') {
         // Quick Exact Transfer
         e.preventDefault();
-        setPayments([{ method: 'transfer', amount: totalAmount.toFixed(2), bankName: 'Banco Pichincha', referenceNumber: '' }]);
+        setPayments([{ method: 'transfer', amount: totalAmount.toFixed(2), tenderedAmount: totalAmount.toFixed(2), changeGiven: 0, bankName: 'Banco Pichincha', referenceNumber: '' }]);
       } else if (e.key === 'F4') {
         // Open Free Item Modal
         e.preventDefault();
@@ -1602,7 +1602,7 @@ export function POSPage({ initialTab = 'cashier' }) {
                         style={{ width: '56px', padding: '3px 6px', fontSize: '12px' }}
                         className="pos-input"
                         value={discountPercent}
-                        onChange={(e) => setDiscountPercent(e.target.value)}
+                        onChange={(e) => setDiscountPercent(Number(e.target.value))}
                       />
                       <span>%</span>
                     </div>
@@ -1637,12 +1637,12 @@ export function POSPage({ initialTab = 'cashier' }) {
                     <div style={{ width: '90px' }}>
                       <input
                         type="number"
-                        step="0.01"
+                        step={0.01}
                         style={{ padding: '3px 8px', fontSize: '12px', textAlign: 'right' }}
                         className="pos-input"
                         placeholder="0.00"
                         value={shippingCost}
-                        onChange={(e) => setShippingCost(e.target.value)}
+                        onChange={(e) => setShippingCost(Number(e.target.value))}
                       />
                     </div>
                   </div>
@@ -1676,7 +1676,7 @@ export function POSPage({ initialTab = 'cashier' }) {
                       <div className="pos-input-group">
                         <input
                           type="number"
-                          step="0.01"
+                          step={0.01}
                           className="pos-input"
                           placeholder="Monto ($)"
                           value={p.amount}
@@ -1773,8 +1773,8 @@ export function POSPage({ initialTab = 'cashier' }) {
       {activeTab === 'kanban' && (
         <POSProductionKanban
           store={store}
-          advisorId={currentAdvisorId}
-          onStoreUpdate={(updated) => setStore(updated)}
+          setStore={setStore}
+          session={session}
           onOpenWorkOrder={(order) => {
             const items = (store.orderItems || []).filter((i) => i.orderId === order.id);
             const adv = (store.advisors || []).find((a) => a.id === order.advisorId);
@@ -1970,7 +1970,7 @@ export function POSPage({ initialTab = 'cashier' }) {
       {activeTab === 'inventory' && (
         <POSInventoryMaterials
           store={store}
-          onStoreUpdate={(updated) => setStore(updated)}
+          setStore={setStore}
         />
       )}
 
@@ -2069,6 +2069,7 @@ export function POSPage({ initialTab = 'cashier' }) {
               if (!desc || !amt) return;
               const res = createPOSExpense(store, {
                 advisorId: currentAdvisorId,
+                expenseDate: toISODate(),
                 description: desc,
                 amount: amt,
                 category: cat
@@ -2086,7 +2087,7 @@ export function POSPage({ initialTab = 'cashier' }) {
             </div>
             <div>
               <label className="pos-label required">Monto ($)</label>
-              <input name="amount" type="number" step="0.01" className="pos-input" placeholder="0.00" required />
+              <input name="amount" type="number" step={0.01} className="pos-input" placeholder="0.00" required />
             </div>
             <div>
               <label className="pos-label">Categoría</label>
@@ -2176,9 +2177,10 @@ export function POSPage({ initialTab = 'cashier' }) {
       {artProofOrder && (
         <POSArtProofModal
           order={artProofOrder}
+          store={store}
+          setStore={setStore}
           isOpen={Boolean(artProofOrder)}
           onClose={() => setArtProofOrder(null)}
-          onSave={(updated) => setStore(updated)}
         />
       )}
 
@@ -2217,12 +2219,12 @@ export function POSPage({ initialTab = 'cashier' }) {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (shiftAction === 'open') {
-                  const res = openCashShift(store, currentAdvisorId, shiftCashAmount, shiftNotes);
+                  const res = openCashShift(store, currentAdvisorId, Number(shiftCashAmount), shiftNotes);
                   if (res.ok) setStore(res.updatedStore);
                   else toast.error(res.error);
                 } else {
                   if (!activeShift) return;
-                  const res = closeCashShift(store, activeShift.id, shiftCashAmount, shiftNotes);
+                  const res = closeCashShift(store, activeShift.id, Number(shiftCashAmount), shiftNotes);
                   if (res.ok) setStore(res.updatedStore);
                 }
                 setIsShiftModalOpen(false);
@@ -2237,7 +2239,7 @@ export function POSPage({ initialTab = 'cashier' }) {
                 </label>
                 <input
                   type="number"
-                  step="0.01"
+                  step={0.01}
                   className="pos-input"
                   value={shiftCashAmount}
                   onChange={(e) => setShiftCashAmount(e.target.value)}
@@ -2302,8 +2304,8 @@ export function POSPage({ initialTab = 'cashier' }) {
                   <label className="pos-label required">Precio Unitario ($)</label>
                   <input
                     type="number"
-                    step="0.01"
-                    min="0"
+                    step={0.01}
+                    min={0}
                     className="pos-input"
                     value={freeItemPrice}
                     onChange={(e) => setFreeItemPrice(e.target.value)}
@@ -2315,11 +2317,11 @@ export function POSPage({ initialTab = 'cashier' }) {
                   <label className="pos-label required">Cantidad</label>
                   <input
                     type="number"
-                    min="1"
-                    step="1"
+                    min={1}
+                    step={1}
                     className="pos-input"
                     value={freeItemQty}
-                    onChange={(e) => setFreeItemQty(e.target.value)}
+                    onChange={(e) => setFreeItemQty(Number(e.target.value))}
                     required
                   />
                 </div>

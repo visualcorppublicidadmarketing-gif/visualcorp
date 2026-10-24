@@ -211,7 +211,7 @@ export function POSAdvisorsManagement({ store: parentStore, setStore: parentSetS
 
   // Copy All Credentials to Clipboard
   const handleCopyAll = () => {
-    const text = formatWeeklyCredentialsText(store.advisors, currentMonday);
+    const text = formatWeeklyCredentialsText(store.advisors);
     navigator.clipboard.writeText(text);
     setCopiedAll(true);
     setTimeout(() => setCopiedAll(false), 3000);
@@ -220,7 +220,7 @@ export function POSAdvisorsManagement({ store: parentStore, setStore: parentSetS
 
   // Share to WhatsApp Web (All)
   const handleShareWhatsApp = () => {
-    const text = formatWeeklyCredentialsText(store.advisors, currentMonday);
+    const text = formatWeeklyCredentialsText(store.advisors);
     const encoded = encodeURIComponent(text);
     window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
   };
@@ -883,7 +883,7 @@ export function POSAdvisorsManagement({ store: parentStore, setStore: parentSetS
                   <label>Meta Semanal ($)</label>
                   <input
                     type="number"
-                    step="50"
+                    step={50}
                     value={formData.weeklyGoal}
                     onChange={(e) => setFormData({ ...formData, weeklyGoal: Number(e.target.value) || 0 })}
                   />

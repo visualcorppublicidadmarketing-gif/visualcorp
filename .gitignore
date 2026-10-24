@@ -30,3 +30,6 @@ public/media/resources/*milagro*.webp
 # Análisis interno de ventas; contiene datos de rendimiento comercial.
 scripts/excel_analysis.json
 docs/inventario/borrador_migracion_local.json
+
+# Vínculo local del proyecto Vercel; se mantiene en el disco de trabajo.
+.vercel/

@@ -122,11 +122,11 @@ export function POSPaymentCollectionModal({ order, store, advisorId, onClose, on
               <span style={{ position: 'absolute', left: '12px', top: '10px', fontWeight: 900, color: 'var(--muted)' }}>$</span>
               <input
                 type="number"
-                step="0.01"
+                step={0.01}
                 className="pos-input"
                 style={{ paddingLeft: '28px', fontSize: '16px', fontWeight: 900 }}
                 value={payAmount}
-                onChange={(e) => setPayAmount(e.target.value)}
+                onChange={(e) => setPayAmount(Number(e.target.value))}
                 required
               />
             </div>

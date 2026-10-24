@@ -69,7 +69,7 @@ export function POSBlindCashCountModal({ store, advisor, shift, onClose, onAudit
   const handleClearAll = () => {
     const reset = {};
     Object.keys(denominations).forEach((k) => { reset[k] = ''; });
-    setDenominations(reset);
+    setDenominations(reset as typeof denominations);
   };
 
   const handleSubmitAudit = (e) => {
@@ -232,8 +232,8 @@ export function POSBlindCashCountModal({ store, advisor, shift, onClose, onAudit
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <input
                           type="number"
-                          min="0"
-                          step="1"
+                          min={0}
+                          step={1}
                           placeholder="Cant."
                           className="pos-input"
                           style={{ padding: '6px 8px', fontSize: '14px', fontWeight: 700, textAlign: 'center' }}
@@ -281,8 +281,8 @@ export function POSBlindCashCountModal({ store, advisor, shift, onClose, onAudit
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <input
                           type="number"
-                          min="0"
-                          step="1"
+                          min={0}
+                          step={1}
                           placeholder="Cant."
                           className="pos-input"
                           style={{ padding: '6px 8px', fontSize: '14px', fontWeight: 700, textAlign: 'center' }}

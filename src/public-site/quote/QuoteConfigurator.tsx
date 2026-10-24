@@ -146,8 +146,8 @@ export function QuoteConfigurator({ services, initialService = '', onChange }: P
             <button type="button" aria-pressed={draft.measurementUnit === 'm'} className={draft.measurementUnit === 'm' ? 'active' : ''} onClick={() => update('measurementUnit', 'm')}>m</button>
           </div>
           <div className="quote-field-pair">
-            <label>Ancho ({draft.measurementUnit})<input type="number" min="0.01" step="any" value={draft.width} onChange={(event) => update('width', Math.max(0.01, Number(event.target.value) || 0.01))}/></label>
-            <label>Alto ({draft.measurementUnit})<input type="number" min="0.01" step="any" value={draft.height} onChange={(event) => update('height', Math.max(0.01, Number(event.target.value) || 0.01))}/></label>
+            <label>Ancho ({draft.measurementUnit})<input type="number" min={0.01} step="any" value={draft.width} onChange={(event) => update('width', Math.max(0.01, Number(event.target.value) || 0.01))}/></label>
+            <label>Alto ({draft.measurementUnit})<input type="number" min={0.01} step="any" value={draft.height} onChange={(event) => update('height', Math.max(0.01, Number(event.target.value) || 0.01))}/></label>
           </div>
           <p className="quote-area-readout">Área referencial por pieza <b>{area.toFixed(2)} m²</b></p>
         </div>}
@@ -159,7 +159,7 @@ export function QuoteConfigurator({ services, initialService = '', onChange }: P
         </label>}
 
         {draft.calculationMode !== 'unknown' && <label>Cantidad de piezas
-          <input type="number" min="1" step="1" value={draft.quantity} onChange={(event) => update('quantity', Math.max(1, Math.floor(Number(event.target.value) || 1)))}/>
+          <input type="number" min={1} step={1} value={draft.quantity} onChange={(event) => update('quantity', Math.max(1, Math.floor(Number(event.target.value) || 1)))}/>
         </label>}
 
         <label>Estado del diseño

@@ -151,6 +151,7 @@ export function POSPurchaseOrdersManager({ store, onStoreUpdate }) {
     // Create Expense in Petty Cash
     createPOSExpense(store, {
       advisorId: 'adv-admin',
+      expenseDate: toISODate(),
       description: `Pago compra ${po.poNumber} (${po.supplierName})`,
       amount: po.totalAmount,
       category: 'Suministros'
@@ -362,17 +363,17 @@ export function POSPurchaseOrdersManager({ store, onStoreUpdate }) {
                     <label style={{ fontSize: '11px', color: 'var(--muted)' }}>Cantidad</label>
                     <input
                       type="number"
-                      step="1"
+                      step={1}
                       className="pos-input"
                       value={itemQty}
-                      onChange={(e) => setItemQty(e.target.value)}
+                      onChange={(e) => setItemQty(Number(e.target.value))}
                     />
                   </div>
                   <div>
                     <label style={{ fontSize: '11px', color: 'var(--muted)' }}>Costo Unit. ($)</label>
                     <input
                       type="number"
-                      step="0.01"
+                      step={0.01}
                       className="pos-input"
                       value={itemCost}
                       onChange={(e) => setItemCost(e.target.value)}

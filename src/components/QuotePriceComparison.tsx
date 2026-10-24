@@ -36,10 +36,10 @@ export function QuotePriceComparison({ product, basis, selectedTier, onSelect, o
           <span className="quote-live-price-top"><b>{tier.label}</b>{active && <i><Check size={13}/> Para cotizar</i>}</span>
           <strong>{total === null ? 'No disponible' : formatMoney(total)}</strong>
           <small>{total === null ? 'Esta tarifa no está registrada para el producto' : `${formatMoney(total / (product.priceBasis === 'total' ? 1 : Math.max(1, Number(basis))))} ${rateUnit}`}</small>
-          {!product.confirmed && total !== null && <em>Referencia pendiente de validar</em>}
+      {!product.confirmed && product.published !== true && total !== null && <em>Referencia pendiente de validar</em>}
         </button>;
       })}
     </div>
-    {!product.confirmed && <p className="quote-price-note"><CircleHelp size={14}/> Los valores se calculan al cambiar producto, cantidad o medidas. La tarifa elegida sigue pendiente hasta validarla en el catálogo.</p>}
+    {!product.confirmed && product.published !== true && <p className="quote-price-note"><CircleHelp size={14}/> Los valores se calculan al cambiar producto, cantidad o medidas. La tarifa elegida sigue pendiente hasta validarla en el catálogo.</p>}
   </section>;
 }

@@ -66,7 +66,7 @@
 @media(max-width:760px){.site-hero{padding:58px 22px 56px;background:linear-gradient(145deg,#faf7fc,#f5edf9 55%,#eef8fb)}.site-hero-art{min-height:320px;margin:12px 0 22px;border-radius:27px}.site-hero h1{font-size:clamp(64px,14vw,94px)}.site-hero-proof span{border-color:#ded4e6}.site-service-card{min-height:212px}}
 @media(max-width:400px){.site-hero-art{min-height:280px}.site-hero-proof{display:grid;grid-template-columns:1fr 1fr}.site-hero-proof span:last-child{grid-column:1/-1;justify-content:center}}
 
-/* Claridad de navegaci├│n y lectura en las p├íginas p├║blicas. */
+/* Claridad de navegación y lectura en las páginas públicas. */
 @font-face{font-family:VisualCorpPublicDMSans;src:url('/public-site/fonts/DMSans-Regular.ttf') format('truetype');font-style:normal;font-weight:400;font-display:swap}
 @font-face{font-family:VisualCorpPublicDMSans;src:url('/public-site/fonts/DMSans-SemiBold.ttf') format('truetype');font-style:normal;font-weight:600;font-display:swap}
 @font-face{font-family:VisualCorpPublicDMSans;src:url('/public-site/fonts/DMSans-Bold.ttf') format('truetype');font-style:normal;font-weight:700 900;font-display:swap}
@@ -93,7 +93,7 @@
 @media(max-width:760px){.quote-label-wide{display:none}.quote-label-short{display:inline}.site-quote-button{width:auto;min-width:84px;padding:0 10px;font-size:11px;gap:5px}.site-nav-group.is-active>summary:after,.site-nav-link.is-active:after{display:none}.site-service-card p{font-size:12px}.site-service-note{font-size:12px}.site-contact-hours small{font-size:11px}}
 @media(max-width:360px){.site-quote-button{min-width:72px;padding:0 7px;font-size:10px}.site-header-inner{padding:0 12px;gap:9px}.site-brand{width:116px}}
 
-/* Dise├▒o p├║blico v03: Visualito integrado y una escala de lectura m├ís c├│moda. */
+/* Diseño público v03: Visualito integrado y una escala de lectura más cómoda. */
 .site-hero{min-height:710px;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:clamp(20px,4vw,68px);padding-top:92px;padding-bottom:90px;background:radial-gradient(ellipse at 76% 48%,#251b32 0,#17151d 38%,#0d0e13 78%)}
 .site-hero h1{max-width:690px;font-size:clamp(76px,8vw,118px);line-height:.87}
 .site-hero-content>p{max-width:510px;font-size:17px;line-height:1.65}
@@ -134,7 +134,7 @@
 @media(max-width:480px){.site-services-grid{grid-template-columns:1fr}.site-service-card{min-height:205px}.site-service-card p{min-height:0}.site-hero-art{min-height:350px}.site-page-hero:after{display:none}}
 @media(max-width:360px){.site-hero h1{font-size:56px}.site-hero-art{min-height:320px}.site-page-hero h1{font-size:47px}.site-primary-button,.site-secondary-button{font-size:12px}}
 
-/* v04 ┬À Navegaci├│n p├║blica con vidrio transl├║cido */
+/* v04 · Navegación pública con vidrio translúcido */
 .site-header{z-index:50;top:0;margin-bottom:-92px;padding:12px clamp(14px,3.5vw,48px) 0;border:0;background:transparent;box-shadow:none;pointer-events:none}
 .site-header-inner{position:relative;width:min(100%,1376px);height:68px;max-width:none;margin:0 auto;padding:0 13px 0 25px;gap:24px;border:1px solid #ffffffa8;border-radius:20px;background:linear-gradient(115deg,#fffffff2 0%,#f8f9fcef 52%,#ffffffdf 100%);box-shadow:0 18px 55px #07091432,0 2px 9px #07091414,inset 0 1px 0 #fff;backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);pointer-events:auto}
 .site-header-inner:before{position:absolute;top:-1px;left:28px;width:145px;height:2px;border-radius:99px;content:"";background:linear-gradient(90deg,#009ee2,#e5007e,#ffec00);opacity:.9}
@@ -179,7 +179,7 @@
 @media(max-width:900px){.site-mobile-backdrop{z-index:0}.site-mobile-panel{z-index:1}}
 @media(min-width:601px) and (max-width:900px){.site-mobile-panel{right:14px;left:auto;width:min(540px,calc(100vw - 28px))}}
 
-/* v05 ┬À Footer en continuidad con la navegaci├│n de vidrio */
+/* v05 · Footer en continuidad con la navegación de vidrio */
 .site-footer{position:relative;overflow:hidden;padding:34px clamp(14px,3.5vw,48px) 18px;background:radial-gradient(ellipse at 8% 100%,#b51b8c24,transparent 35%),radial-gradient(ellipse at 94% 0,#078dc121,transparent 35%),#101116}
 .site-footer:before{position:absolute;top:0;right:clamp(14px,3.5vw,48px);left:clamp(14px,3.5vw,48px);height:1px;content:"";background:linear-gradient(90deg,#009ee2,#e5007e,#ffec00)}
 .footer-shell{max-width:1344px;margin:0 auto;padding:0 26px;border:1px solid #ffffff1d;border-radius:22px;background:linear-gradient(145deg,#ffffff0c,#ffffff05);box-shadow:0 24px 65px #0003,inset 0 1px 0 #ffffff15;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}

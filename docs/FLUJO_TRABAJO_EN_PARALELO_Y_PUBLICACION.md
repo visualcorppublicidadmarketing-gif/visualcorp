@@ -55,13 +55,13 @@ supabase migration list --linked
 
 ## Estado de controles remotos
 
-- GitHub tiene activo el ruleset `Protect main before production` para la rama `main`: requiere pull request, bloquea force-push y borrado, sin bypass configurado y sin exigir aprobaciones para que el proceso no dependa de otro revisor. El check `Production build` aún no está configurado como requisito porque el workflow local debe integrarse primero para que GitHub publique ese contexto.
+- GitHub tiene activo el ruleset `Protect main before production` para la rama `main`: requiere pull request, bloquea force-push y borrado, sin bypass configurado y sin exigir aprobaciones para que el proceso no dependa de otro revisor. `Production build` corre en los pull requests; la protección de rama no lo exige todavía como check obligatorio.
 - Vercel confirma que el repositorio `visualcorppublicidadmarketing-gif/visualcorp` está conectado, que Production sigue `main`, que existe el entorno Preview y que el último despliegue de `main` quedó `Ready`. No se cambiaron valores de entornos ni variables.
 - Elegir si usar Supabase Branching para PRs. Puede tener costo y requiere revisar disponibilidad del plan; mientras tanto, usar solo una instancia local aislada para validar SQL.
 
-El workflow y la guía están en el checkout local y deben integrarse mediante pull request. No se hizo push de cambios desde esta sesión.
+El workflow verifica la compilación de producción en cada pull request. Mantener el despliegue web separado de las migraciones de base de datos y comprobar el preview antes de integrar.
 
 
 ## Código TypeScript
 
-El sitio, la administración y las pantallas POS usan módulos `.ts` y `.tsx`. Los componentes compartidos se ubican en `src/app/layout.tsx` y `src/components/`; las páginas de administración se separan en `src/pages/admin/` y las pantallas POS en `src/pages/pos/`. El workflow de GitHub instala las dependencias, ejecuta `npm run typecheck` y construye la aplicación antes de integrar cambios.
+El sitio, la administración y las pantallas POS usan módulos `.ts` y `.tsx`. Los componentes compartidos se ubican en `src/app/layout.tsx` y `src/components/`; las páginas de administración se separan en `src/pages/admin/` y las pantallas POS en `src/pages/pos/`. El workflow de GitHub instala las dependencias con `npm ci` y construye la aplicación. `npm run typecheck` sigue disponible, pero aún reporta errores en módulos convertidos; se añadirá al workflow cuando se resuelva esa deuda.

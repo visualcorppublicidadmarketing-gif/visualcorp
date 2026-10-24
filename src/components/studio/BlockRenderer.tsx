@@ -33,6 +33,7 @@ export function BlockRenderer({ blocks = [], className = '', onFormSubmit }) {
 }
 
 function SingleBlock({ block, onFormSubmit }) {
+  const [formValues, setFormValues] = React.useState({});
   const style = block.animation !== 'none' ? { '--block-animation': block.animation } : undefined;
   if (block.type === 'text') {
     return (
@@ -179,7 +180,7 @@ function SingleBlock({ block, onFormSubmit }) {
           <span className="eyebrow orange">Formulario configurable</span>
           <h2>{block.title}</h2>
         </div>
-        <FormRenderer fields={block.fields} onSubmit={onFormSubmit} />
+        <FormRenderer fields={block.fields} values={formValues} onChange={setFormValues} onSubmit={onFormSubmit} />
       </section>
     );
   }

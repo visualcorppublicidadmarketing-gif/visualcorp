@@ -251,7 +251,7 @@ export function POSProductQuickMatrix({
       productName: currentProduct.name,
       category: currentProduct.category,
       calcType: currentProduct.calcType,
-      unitPrice: calculated.effectiveUnitPrice,
+      unitPrice: 'effectiveUnitPrice' in calculated ? calculated.effectiveUnitPrice : calculated.unitRate,
       widthCm: currentProduct.calcType === 'area' ? Number(widthCm) : null,
       heightCm: currentProduct.calcType === 'area' ? Number(heightCm) : null,
       areaM2: currentProduct.calcType === 'area' ? Number(calculated.areaM2) : null,
@@ -444,11 +444,11 @@ export function POSProductQuickMatrix({
                   <label className="pos-label" style={{ fontSize: '11px' }}>Ancho (cm)</label>
                   <input
                     type="number"
-                    min="10"
-                    step="1"
+                    min={10}
+                    step={1}
                     className="pos-input"
                     value={widthCm}
-                    onChange={(e) => setWidthCm(e.target.value)}
+                    onChange={(e) => setWidthCm(Number(e.target.value))}
                     style={{ fontSize: '13px', padding: '6px 8px', fontWeight: 700 }}
                   />
                 </div>
@@ -456,11 +456,11 @@ export function POSProductQuickMatrix({
                   <label className="pos-label" style={{ fontSize: '11px' }}>Alto (cm)</label>
                   <input
                     type="number"
-                    min="10"
-                    step="1"
+                    min={10}
+                    step={1}
                     className="pos-input"
                     value={heightCm}
-                    onChange={(e) => setHeightCm(e.target.value)}
+                    onChange={(e) => setHeightCm(Number(e.target.value))}
                     style={{ fontSize: '13px', padding: '6px 8px', fontWeight: 700 }}
                   />
                 </div>
@@ -471,8 +471,8 @@ export function POSProductQuickMatrix({
               <label className="pos-label" style={{ fontSize: '11px' }}>Cantidad</label>
               <input
                 type="number"
-                min="1"
-                step="1"
+                min={1}
+                step={1}
                 className="pos-input"
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
@@ -503,9 +503,9 @@ export function POSProductQuickMatrix({
                 <label className="pos-label" style={{ fontSize: '11px' }}>Núm. Ojales</label>
                 <input
                   type="number"
-                  min="2"
-                  max="100"
-                  step="1"
+                  min={2}
+                  max={100}
+                  step={1}
                   className="pos-input"
                   value={eyeletCount}
                   onChange={(e) => setEyeletCount(Math.max(2, parseInt(e.target.value, 10) || 4))}
@@ -555,8 +555,8 @@ export function POSProductQuickMatrix({
                 <label className="pos-label" style={{ fontSize: '11px' }}>Costo Montaje ($)</label>
                 <input
                   type="number"
-                  step="0.01"
-                  min="0"
+                  step={0.01}
+                  min={0}
                   placeholder="0.00"
                   className="pos-input"
                   value={customInstallationCost}
@@ -618,8 +618,8 @@ export function POSProductQuickMatrix({
               </label>
               <input
                 type="number"
-                step="0.01"
-                min="0"
+                step={0.01}
+                min={0}
                 placeholder={`$${calculated.systemCalculatedTotal.toFixed(2)}`}
                 className="pos-input"
                 value={customPriceOverride}

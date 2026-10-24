@@ -10,7 +10,7 @@ export function normalizeWhatsAppNumber(value = '') {
   return digits;
 }
 
-export function getQuoteWhatsAppRoutes(settings = {}) {
+export function getQuoteWhatsAppRoutes(settings: Record<string, any> = {}) {
   const configured = Array.isArray(settings.quoteWhatsappRoutes) ? settings.quoteWhatsappRoutes : [];
   const routes = configured
     .filter((route) => route?.active !== false && normalizeWhatsAppNumber(route?.number))
@@ -28,7 +28,7 @@ export function getQuoteWhatsAppRoutes(settings = {}) {
   return fallback ? [{ id: 'principal', label: 'Ventas', number: fallback, categories: [], priority: 0 }] : [];
 }
 
-export function resolveQuoteWhatsAppRoute(settings = {}, items = []) {
+export function resolveQuoteWhatsAppRoute(settings: Record<string, any> = {}, items: Array<Record<string, any>> = []) {
   const routes = getQuoteWhatsAppRoutes(settings);
   const searchable = items.map((item) => `${item.category || ''} ${item.name || item.productName || ''}`.toLowerCase()).join(' ');
   return routes.find((route) => route.categories.some((category) => searchable.includes(String(category).toLowerCase())))
@@ -39,7 +39,7 @@ export function resolveQuoteWhatsAppRoute(settings = {}, items = []) {
 
 const amount = (value) => `$${Number(value || 0).toFixed(2)}`;
 
-export function buildQuoteWhatsAppMessage({ reference, customer, items = [], subtotal, taxRate, taxAmount, total, notes, settings = {} }) {
+export function buildQuoteWhatsAppMessage({ reference, customer, items = [], subtotal, taxRate, taxAmount, total, notes, settings = {} }: { reference?: string; customer: Record<string, any>; items?: Array<Record<string, any>>; subtotal?: number; taxRate?: number; taxAmount?: number; total?: number; notes?: string; settings?: Record<string, any> }) {
   const intro = settings.quoteMessageIntro || '¡Hola Gigaprint! Acabo de generar una solicitud de cotización.';
   const closing = settings.quoteMessageClosing || '¿Podrían confirmar disponibilidad, precio final y tiempo de entrega?';
   const lines = [intro, '', `*Solicitud:* ${reference || 'Pendiente de registro'}`];

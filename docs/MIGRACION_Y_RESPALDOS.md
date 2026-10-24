@@ -1,66 +1,50 @@
-# Preparación para GitHub, Supabase y Vercel
+# Datos, migraciones y respaldos
 
-## Estado actual
+## Estado de la aplicación
 
-- Esta suite guarda su espacio de trabajo en `localStorage`, con la clave `visualcorp-suite-local-v1`. Cada navegador/perfil puede tener una copia diferente.
-- La app todavía no lee ni escribe en Supabase. Las credenciales no se agregan al repositorio.
-- Esta carpeta no tiene un proyecto Supabase vinculado ni una carpeta `supabase/migrations/`. No se ha ejecutado SQL remoto.
-- El catálogo de 70 artículos sugeridos tiene saldo cero y `starterCatalog`; son datos de referencia, no prueba de compra o existencias.
-- Hay un panel local de **Administración → Respaldo y migración** para exportar y combinar respaldos JSON. Al combinar, el dato local prevalece ante IDs repetidos.
+- La suite usa React y TypeScript. Su compilación no aplica cambios a la base de datos.
+- La aplicación ya integra Supabase Auth y consultas para módulos de sitio, cotizaciones e inventario. Parte del espacio de trabajo todavía puede funcionar con `localStorage`; esos datos locales no se sincronizan automáticamente entre dispositivos.
+- Las variables de conexión se configuran fuera del repositorio. Consulta `.env.example`; no guardes secretos en Git ni uses una clave `service_role` en el navegador.
+- Las migraciones SQL versionadas están en `supabase/migrations/`. El historial local y el remoto deben cotejarse antes de aplicar una nueva migración.
+- El catálogo sugerido de inventario no certifica compras ni existencias físicas. Mantén pendientes las especificaciones y cantidades no verificadas.
 
-## Reglas para no perder datos
+## Flujo seguro para cambios de base de datos
 
-1. Antes de cambiar el almacenamiento, abrir el panel de respaldo en cada navegador o equipo donde se hayan ingresado datos y exportar un archivo distinto con fecha.
-2. Guardar los JSON en `backups/` dentro de esta carpeta. El contenido de esa carpeta está excluido de Git. No subir respaldos ni `.env` a GitHub.
-3. Conservar los originales; no limpiar `localStorage`, no borrar tablas, no ejecutar `db reset --linked` ni `TRUNCATE` en un proyecto con datos.
-4. Antes de crear migraciones, confirmar el proyecto Supabase (organización, referencia, región) y revisar si ya contiene tablas, políticas, usuarios o datos. No asumir que es una base vacía.
-5. Hacer el primer despliegue de schema y carga en local o staging. Exportar/respaldar la base de destino antes de cada cambio en producción.
-6. Mantener un manifiesto de la importación con nombre/hash del archivo, fecha, número de registros por colección, IDs creados/omitidos y errores. Las importaciones deben ser idempotentes: repetirlas no duplica filas.
-7. Comparar filas y relaciones de origen con destino; solo entonces decidir la fecha de corte. Mantener copia local y respaldo remoto antes de activar lecturas/escrituras en la nube.
+1. Actualiza la rama desde `main` y confirma que estás en el repositorio y proyecto Supabase correctos.
+2. Ejecuta `supabase migration list --linked` y compara todas las versiones locales con las remotas. Revisa también el esquema y las políticas RLS de las tablas afectadas.
+3. Si hay una diferencia de versión o nombre, detente y coteja el SQL y el historial antes de corregirlo. No ejecutes `migration repair`, no renombres archivos aplicados y no borres filas del historial para forzar una coincidencia.
+4. Crea una migración nueva, pequeña y con marca de tiempo única. No edites una migración que ya se aplicó.
+5. Valida el SQL en una base local descartable o una rama aislada. Revisa el plan de cambios, las claves, restricciones e índices y prueba RLS con roles permitidos y denegados.
+6. Respaldar el destino y aplicar la migración pendiente solo después de revisar y confirmar el proyecto enlazado. Una sola persona debe ejecutar `supabase db push --linked` a la vez.
+7. Comprueba el historial remoto y el comportamiento de la aplicación después del cambio. Registra la migración y su resultado en el pull request.
 
-## Diseño de datos por confirmar contra el proyecto existente
+Vercel despliega el código web; no debe ejecutar SQL automáticamente. Publicación web y cambio de esquema son pasos separados para que una vista previa o un build no alteren datos de producción.
 
-Propuesta de dominios, no una migración aprobada todavía:
+## Respaldos de datos locales
 
-- `organizations`, `branches`, `profiles`, `memberships`, `roles` y `permissions` para Visual Corp, GigaPrint y accesos por persona.
-- Catálogo maestro `inventory_items`, variantes (`item_variants`) y ubicaciones; mantener códigos legibles como `VC-INV-IMP-001` y guardar el ID de origen al migrar.
-- Saldos por artículo, variante, sucursal y ubicación separados de `inventory_movements`. Los movimientos deben conservar actor, fecha, motivo, referencia, origen/destino y cantidad; correcciones por nuevos movimientos, no por borrar historial.
-- `customers`, oportunidades/solicitudes, cotizaciones, ventas y líneas de venta conectadas mediante claves foráneas; la venta y su descuento de stock deben confirmarse en una transacción.
-- `sales` y movimientos históricos con idempotency key/origin id para evitar doble carga. La carga inicial no convierte registros sugeridos o conteos pendientes en stock disponible.
+Antes de cambiar una función que use `localStorage`, exporta un respaldo desde cada navegador o dispositivo que contenga registros. Conserva cada archivo original con fecha y no lo subas al repositorio. Antes de importar, compara conteos, relaciones e IDs; la importación debe poder repetirse sin duplicar registros.
 
-## Seguridad y operación
+No borres el almacenamiento local para resolver una diferencia. Conserva una copia de origen y documenta registros omitidos, duplicados o con errores. No conviertas filas sugeridas ni cantidades pendientes de conteo en stock disponible.
 
-- RLS activa en toda tabla expuesta. Cada política debe comprobar membresía, sucursal y permiso de la operación; “usuario autenticado” por sí solo no autoriza todas las filas.
-- Costos y márgenes visibles únicamente con permisos comprobados en servidor/base; nunca confiar en ocultar controles en React.
-- La clave secreta/service role nunca va al navegador ni a variables `VITE_*`. La app solo recibe publishable/anon key y las tablas protegen cada fila con RLS.
-- Revisar políticas con cuentas de prueba de cada rol, incluyendo asesora, taller, administración, sucursal y acceso denegado.
-- Usar migraciones versionadas en Git; revisar cada SQL y su efecto antes de desplegar. Probar la reconstrucción desde cero solo en la base local descartable. Una vuelta atrás en producción debe ser una nueva migración correctiva, con respaldo anterior disponible.
-- Variables de producción se configuran en Vercel/Supabase fuera del código; separar local, staging y producción. No incluir tokens en commits ni capturas.
+## Configuración local
 
-## Secuencia de trabajo al conectar
+```powershell
+Copy-Item .env.example .env.local
+# Completa las variables con credenciales públicas del proyecto correcto.
+npm install
+npm run typecheck
+npm run build
+```
 
-1. Confirmar el repositorio correcto y crear rama de trabajo; revisar `.gitignore`, `git status` y el contenido que se va a publicar.
-2. Verificar proyecto/versión de Supabase CLI y documentación vigente; confirmar el estado del schema remoto y protegerlo con respaldo.
-3. Preparar Supabase local y una primera migración solo después de conocer el estado real del proyecto. Crear las migraciones con la CLI, aplicar y revisar primero en local.
-4. Definir Auth, roles y RLS; validar permisos con usuarios de prueba antes de cargar información real.
-5. Implementar una capa de repositorio para que la app pueda cambiar entre persistencia local y Supabase sin duplicar reglas de negocio.
-6. Importar respaldos en staging con vista previa, conteos, detección de duplicados y errores descargables. No sobrescribir stock verificado ni combinar variantes solo por similitud de nombre.
-7. Comparar reportes de origen y destino, probar POS/CRM/inventario en staging y acordar la fecha de corte antes de producción.
-8. Conectar Vercel con el repositorio y variables adecuadas, desplegar preview, validar recorrido completo y luego producción.
+Para inspeccionar migraciones sin aplicarlas, usa `supabase migration list --linked` después de enlazar explícitamente el proyecto. Revisa la guía `docs/FLUJO_TRABAJO_EN_PARALELO_Y_PUBLICACION.md` antes de desplegar.
 
-## Falta antes de escribir migraciones reales
+## Diferencias de historial observadas anteriormente
 
-- Referencia y estado actual del proyecto Supabase de destino.
-- Exportar los datos locales de cada navegador/dispositivo que haya sido usado.
-- Confirmar el modelo de roles y los responsables de aprobación de traspasos, ajustes y compras.
-- Recibir y cotejar los archivos actualizados de inventario antes de migrar existencias.
-- Confirmar si los registros locales de demostración deben conservarse, depurarse o marcarse como demostración.
+El registro de trabajo de octubre de 2026 reportó dos versiones cuya marca de tiempo local no coincidía con la que devolvió Supabase:
 
-No hay SQL listo para producción en esta etapa. El proyecto Supabase aún no está identificado y una migración escrita sin revisar su schema podría crear conflictos o alterar datos existentes.
+| Nombre | Archivo local observado | Versión remota reportada entonces |
+|---|---:|---:|
+| `inventory_catalog_metrics` | `20261022174504` | `20261022175320` |
+| `inventory_metrics_fk_indexes` | `20261022180025` | `20261022180053` |
 
-## Fuentes oficiales consultadas
-
-- [Migraciones de base de datos](https://supabase.com/docs/guides/local-development/database-migrations)
-- [Flujo de desarrollo local](https://supabase.com/docs/guides/local-development/cli-workflows)
-- [Respaldos de base de datos](https://supabase.com/docs/guides/platform/backups)
-- [Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
+Es una observación histórica, no una comprobación del estado remoto actual. Antes de cualquier `db push`, vuelve a consultar el historial y coteja el SQL aplicado. Los scripts históricos `scripts/migrate-supabase.mjs`, `scripts/apply-one-migration.mjs` y `scripts/apply-supabase-sql.mjs` no sustituyen este procedimiento.

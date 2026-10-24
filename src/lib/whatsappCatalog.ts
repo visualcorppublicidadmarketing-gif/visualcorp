@@ -44,7 +44,7 @@ export function getCatalogImageUrl(product, publicBaseUrl) {
   }
 }
 
-export function buildWhatsAppCatalogRow(product, publicBaseUrl, overrides = {}) {
+export function buildWhatsAppCatalogRow(product: Record<string, any>, publicBaseUrl: string, overrides: Record<string, any> = {}) {
   const price = Number(overrides.price ?? product.price ?? 0);
   const category = overrides.category || product.category || 'General';
   return {

@@ -58,7 +58,7 @@ export function POSProductManager({ store, onStoreUpdate, session }) {
 
   // Extract Unique Categories
   const categories = useMemo(() => {
-    const set = new Set();
+    const set = new Set<string>();
     (store.products || []).forEach((p) => {
       if (p.category) set.add(p.category);
     });
@@ -413,7 +413,7 @@ export function POSProductManager({ store, onStoreUpdate, session }) {
                         <span style={{ fontWeight: 800, color: 'var(--muted)', fontSize: '13px' }}>$</span>
                         <input
                           type="number"
-                          step="0.01"
+                          step={0.01}
                           className="pos-input"
                           style={{ width: '85px', padding: '4px 8px', fontSize: '13px', fontWeight: 800 }}
                           defaultValue={p.basePrice}
@@ -642,10 +642,10 @@ export function POSProductManager({ store, onStoreUpdate, session }) {
                   <label style={{ fontSize: '12px', fontWeight: 800 }}>Precio Base ($) *</label>
                   <input
                     type="number"
-                    step="0.01"
+                    step={0.01}
                     className="pos-input"
                     value={productForm.basePrice}
-                    onChange={(e) => setProductForm({ ...productForm, basePrice: e.target.value })}
+                    onChange={(e) => setProductForm({ ...productForm, basePrice: Number(e.target.value) })}
                     required
                   />
                 </div>
@@ -653,10 +653,10 @@ export function POSProductManager({ store, onStoreUpdate, session }) {
                   <label style={{ fontSize: '12px', fontWeight: 800 }}>Precio Mínimo ($)</label>
                   <input
                     type="number"
-                    step="0.01"
+                    step={0.01}
                     className="pos-input"
                     value={productForm.minPrice}
-                    onChange={(e) => setProductForm({ ...productForm, minPrice: e.target.value })}
+                    onChange={(e) => setProductForm({ ...productForm, minPrice: Number(e.target.value) })}
                   />
                 </div>
                 <div>

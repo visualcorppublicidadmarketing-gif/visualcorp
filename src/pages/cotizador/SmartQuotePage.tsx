@@ -54,7 +54,7 @@ export function SmartQuotePage() {
   const [installation, setInstallation] = useState(false);
   const [deliverySpeed, setDeliverySpeed] = useState('standard');
   const [shippingOption, setShippingOption] = useState('pickup');
-  const [selection, setSelection] = useState({});
+  const [selection, setSelection] = useState<Record<string, string>>({});
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const [finishingModalOpen, setFinishingModalOpen] = useState(false);
 
@@ -135,7 +135,7 @@ export function SmartQuotePage() {
         { key: 'br', className: 'bottom-right' }
       ];
     }
-    const list = [
+    const list: Array<{ key: string; className: string; style?: React.CSSProperties }> = [
       { key: 'tl', className: 'top-left' },
       { key: 'tr', className: 'top-right' },
       { key: 'bl', className: 'bottom-left' },
@@ -147,13 +147,13 @@ export function SmartQuotePage() {
 
     for (let i = 1; i <= horizEach; i++) {
       const pct = (i / (horizEach + 1)) * 100;
-      list.push({ key: `t-${i}`, style: { top: '7px', left: `${pct}%`, transform: 'translateX(-50%)' } });
-      list.push({ key: `b-${i}`, style: { bottom: '7px', left: `${pct}%`, transform: 'translateX(-50%)' } });
+      list.push({ key: `t-${i}`, className: '', style: { top: '7px', left: `${pct}%`, transform: 'translateX(-50%)' } });
+      list.push({ key: `b-${i}`, className: '', style: { bottom: '7px', left: `${pct}%`, transform: 'translateX(-50%)' } });
     }
     for (let j = 1; j <= vertEach; j++) {
       const pct = (j / (vertEach + 1)) * 100;
-      list.push({ key: `l-${j}`, style: { top: `${pct}%`, left: '7px', transform: 'translateY(-50%)' } });
-      list.push({ key: `r-${j}`, style: { top: `${pct}%`, right: '7px', transform: 'translateY(-50%)' } });
+      list.push({ key: `l-${j}`, className: '', style: { top: `${pct}%`, left: '7px', transform: 'translateY(-50%)' } });
+      list.push({ key: `r-${j}`, className: '', style: { top: `${pct}%`, right: '7px', transform: 'translateY(-50%)' } });
     }
     return list;
   }, [finishing, effectiveEyeletCount, widthCm, heightCm]);

@@ -58,3 +58,23 @@ Ayudar a una persona que llega por primera vez a reconocer a Visual Corp, encont
 - Se verificó en navegador que Inicio, `/admin`, `/tienda` y `/blog` montan React y muestran su contenido o estado vacío esperado. No se enviaron formularios ni se crearon ventas o datos operativos.
 - La lista remota de Supabase contiene las 37 migraciones del conjunto del proyecto; una entrada fue renombrada (`phase3_pos_parked_orders`/`pos_parked_orders`). No hay cambio de esquema en esta entrega y no se reaplicaron migraciones ya registradas.
 - La publicación por API de Vercel requiere volver a autorizar el equipo `visual19`; el repositorio está conectado a despliegues automáticos desde `main`. La compilación de Vercel anterior falló por el paso de TypeScript indicado arriba.
+
+## Continuación v07 — corrección de textos y verificación responsive
+
+**Fecha:** 23 de octubre de 2026. **Estado:** correcciones aplicadas y verificadas en el checkout local; pendiente revisión estética y publicación.
+
+- Se reparó la codificación de textos españoles en `PublicSite.tsx`, `content.ts` y `public-site-v2.css`; ya no aparecen las secuencias de caracteres dañados en esos archivos.
+- Se añadió el import faltante de `useMemo` que impedía montar `/cotizador` en navegador.
+- La navegación de 11 rutas públicas se verificó a 320, 390, 768 y 1440 px (44 combinaciones). Todas montaron su encabezado principal y no hubo desplazamiento horizontal del documento.
+- En móvil, el menú abre y cierra con Escape. Desde `/servicios/rotulos`, “Solicitar cotización” abre el cotizador con “Rótulos y fachadas” seleccionado. El formulario no se envió.
+- `npm run build` y `git diff --check` terminaron correctamente después de las correcciones. Vite conserva un aviso de paquete JavaScript de 627.73 kB sin comprimir.
+- No se desplegó ni se publicó. El typecheck señalado en v06 permanece pendiente; esta verificación no lo vuelve a ejecutar.
+
+## Continuación v08 — typecheck, carga modular y revisión visual
+
+**Fecha:** 23 de octubre de 2026. **Estado:** verificado en el checkout local; pendiente revisión del responsable y publicación.
+
+- Se corrigieron las incidencias del chequeo de TypeScript en los módulos activos. `npm run typecheck` termina sin errores.
+- Se cargan bajo demanda las áreas administrativas menos frecuentes y se separaron dependencias de React, Supabase, editor de texto, PDF y enrutador. El chunk de entrada pasó de 627.73 kB a 254.37 kB; el build ya no advierte sobre un chunk de más de 500 kB.
+- Se revisó la composición actual en escritorio y móvil. En el preview de producción respondieron Inicio, Servicios, Cotizador, Portafolio y Contacto a 390 y 1440 px, sin desbordamiento horizontal, imágenes rotas ni errores de consola.
+- `npm run build` y `git diff --check` terminaron correctamente. No se enviaron formularios, no se desplegó y no se publicó.

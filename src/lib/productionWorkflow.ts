@@ -10,26 +10,26 @@ export const PRODUCTION_AREAS = [
   { id: 'entrega', label: 'Entrega / Instalación', icon: 'Truck', color: '#334155', capacityMinutes: 480 }
 ];
 
-export const AREA_BY_ID = Object.fromEntries(PRODUCTION_AREAS.map((area) => [area.id, area]));
+export const AREA_BY_ID: Record<string, (typeof PRODUCTION_AREAS)[number]> = Object.fromEntries(PRODUCTION_AREAS.map((area) => [area.id, area]));
 
-const AREA_KEYWORDS = {
+const AREA_KEYWORDS: Record<string, string[]> = {
   impresion: ['lona', 'vinil', 'banner', 'afiche', 'flyer', 'volante', 'tarjeta', 'adhesiv', 'microperfor', 'impresi', 'gigantograf', 'backlit'],
   corte_laser: ['laser', 'láser', 'acril', 'mdf', 'sintra', 'pvc', 'cnc', 'grabado', 'corte', 'corpóre', 'corpore', 'lámpara', 'lampara'],
   sublimacion: ['sublima', 'dtf', 'camiseta', 'textil', 'taza', 'gorra', 'almohada', 'cojín', 'cojin', 'jarro', 'prenda'],
   taller: ['rótulo', 'rotulo', 'letrero', 'luminos', 'neón', 'neon', 'estructura', 'caja de luz', 'lámpara', 'lampara', 'armado', 'instalación', 'instalacion']
 };
 
-const unique = (values) => [...new Set(values.filter(Boolean))];
+const unique = <T,>(values: T[]) => [...new Set(values.filter(Boolean))];
 
-function itemText(item = {}) {
+function itemText(item: Record<string, any> = {}) {
   return `${item.productName || item.name || ''} ${item.category || ''} ${item.finishing || ''} ${item.notes || ''} ${JSON.stringify(item.customDetails || {})}`.toLowerCase();
 }
 
-function matchesArea(text, area) {
+function matchesArea(text: string, area: string) {
   return (AREA_KEYWORDS[area] || []).some((keyword) => text.includes(keyword));
 }
 
-export function inferProductionAreas(items = [], options = {}) {
+export function inferProductionAreas(items: Array<Record<string, any>> = [], options: Record<string, any> = {}) {
   const detected = [];
   items.forEach((item) => {
     const text = itemText(item);
@@ -48,7 +48,7 @@ export function inferProductionAreas(items = [], options = {}) {
   });
 }
 
-export function estimateAreaMinutes(area, items = []) {
+export function estimateAreaMinutes(area: string, items: Array<Record<string, any>> = []) {
   const quantity = items.reduce((sum, item) => sum + Math.max(1, Number(item.quantity || 1)), 0);
   const squareMeters = items.reduce((sum, item) => sum + Number(item.areaM2 || 0) * Math.max(1, Number(item.quantity || 1)), 0);
   const complex = items.some((item) => /ne[oó]n|luminos|corp[oó]re|estructura|l[aá]mpara/i.test(itemText(item)));
@@ -85,7 +85,7 @@ function addWorkingMinutes(startValue, minutes) {
   while (remaining > 0) {
     const endOfDay = new Date(current);
     endOfDay.setHours(17, 0, 0, 0);
-    const available = Math.max(0, (endOfDay - current) / 60000);
+    const available = Math.max(0, (endOfDay.getTime() - current.getTime()) / 60000);
     const used = Math.min(remaining, available);
     current = new Date(current.getTime() + used * 60000);
     remaining -= used;
@@ -98,7 +98,7 @@ function addWorkingMinutes(startValue, minutes) {
   return current;
 }
 
-export function isEligibleForProductionArea(person, area) {
+export function isEligibleForProductionArea(person: Record<string, any>, area: string) {
   const roleAreas = {
     diseno: ['disenador'],
     impresion: ['operador_impresion'],
@@ -112,7 +112,7 @@ export function isEligibleForProductionArea(person, area) {
   return person.assignedArea === area || (roleAreas[area] || []).includes(person.role);
 }
 
-function selectLeastLoadedStaff(advisors, operations, area) {
+function selectLeastLoadedStaff(advisors: Array<Record<string, any>>, operations: Array<Record<string, any>>, area: string) {
   const candidates = advisors.filter((person) => person.isActive !== false && isEligibleForProductionArea(person, area));
   if (!candidates.length) return null;
   const load = Object.fromEntries(candidates.map((person) => [person.id, 0]));
@@ -124,7 +124,7 @@ function selectLeastLoadedStaff(advisors, operations, area) {
   return candidates.sort((a, b) => load[a.id] - load[b.id])[0];
 }
 
-export function buildProductionPlan(order, items = [], options = {}) {
+export function buildProductionPlan(order: Record<string, any>, items: Array<Record<string, any>> = [], options: Record<string, any> = {}) {
   const idBase = order.id || `ord-${Date.now()}`;
   const now = options.startAt ? new Date(options.startAt) : new Date();
   const selectedAreas = unique(options.involvedAreas?.length
@@ -132,9 +132,9 @@ export function buildProductionPlan(order, items = [], options = {}) {
     : inferProductionAreas(items, { assignedArea: order.assignedArea, requiresInstallation: order.requiresInstallation }));
   const existing = options.existingOperations || [];
   const advisors = options.advisors || [];
-  const operations = [];
+  const operations: Array<Record<string, any>> = [];
 
-  const add = (area, title, dependencies = [], extra = {}) => {
+  const add = (area: string, title: string, dependencies: string[] = [], extra: Record<string, any> = {}) => {
     const estimatedMinutes = extra.estimatedMinutes || estimateAreaMinutes(area, items);
     const dependencyEnds = dependencies
       .map((id) => operations.find((operation) => operation.id === id)?.scheduledEnd)
@@ -177,7 +177,7 @@ export function buildProductionPlan(order, items = [], options = {}) {
   });
   const designId = add('diseno', 'Diseño y preparación de archivos', [adviceId]);
   const approvalId = add('aprobacion', 'Aprobación de arte por el cliente', [designId], { requiresApproval: true });
-  const productionIds = selectedAreas.filter((area) => area !== 'taller').map((area) => add(area, AREA_BY_ID[area]?.label || area, [approvalId]));
+  const productionIds = (selectedAreas as string[]).filter((area) => area !== 'taller').map((area) => add(area, AREA_BY_ID[area]?.label || area, [approvalId]));
   const workshopNeeded = selectedAreas.includes('taller');
   const workshopId = workshopNeeded ? add('taller', 'Fabricación, armado y acabados', productionIds.length ? productionIds : [approvalId]) : null;
   const qualityDependencies = workshopId ? [workshopId] : (productionIds.length ? productionIds : [approvalId]);
@@ -187,7 +187,7 @@ export function buildProductionPlan(order, items = [], options = {}) {
   return { involvedAreas: selectedAreas, operations };
 }
 
-export function recalculateOperationReadiness(operations = []) {
+export function recalculateOperationReadiness(operations: Array<Record<string, any>> = []) {
   const byId = Object.fromEntries(operations.map((operation) => [operation.id, operation]));
   return operations.map((operation) => {
     if (['done', 'in_progress', 'cancelled'].includes(operation.status)) return operation;
@@ -196,7 +196,7 @@ export function recalculateOperationReadiness(operations = []) {
   });
 }
 
-export function getAreaCapacity(operations = [], date, area) {
+export function getAreaCapacity(operations: Array<Record<string, any>> = [], date: string | Date, area: string) {
   const day = typeof date === 'string' ? date : new Date(date).toISOString().slice(0, 10);
   const usedMinutes = operations
     .filter((operation) => operation.area === area && !['done', 'cancelled'].includes(operation.status) && operation.scheduledStart?.slice(0, 10) === day)

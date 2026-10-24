@@ -97,21 +97,21 @@ export function imageFor(category = '', text = '') {
   if (haystack.includes('combo') && haystack.includes('brazo')) return media.comboCredencialBrazoEstandar || media.portacredencialBrazo;
   if (haystack.includes('portacredencial') && haystack.includes('brazo') && haystack.includes('reflectivo')) return media.portacredencialBrazoReflectivoSeguridad || media.portacredencialBrazoNeon;
   if (haystack.includes('portacredencial') && haystack.includes('brazo')) return media.portacredencialBrazoEstandar || media.portacredencialBrazo;
-  if (haystack.includes('horizontal') && (haystack.includes('arenada') || haystack.includes('portacredencial'))) return media.portacredencialArenadaHorizontal || media.portacredencialArenadaRigida;
-  if (haystack.includes('vertical') && haystack.includes('clip')) return media.portacredencialVerticalClip || media.portacredencialArenadaRigida;
+  if (haystack.includes('horizontal') && (haystack.includes('arenada') || haystack.includes('portacredencial'))) return media.portacredencialArenadaHorizontal || media.portacredencialAcrilica;
+  if (haystack.includes('vertical') && haystack.includes('clip')) return media.portacredencialVerticalClip || media.portacredencialAcrilica;
   if (haystack.includes('combo') && (haystack.includes('dos lados') || haystack.includes('2 lados')) && haystack.includes('clip')) return media.comboCredencial2LadosClip || media.comboCredencialEstucheClip;
   if (haystack.includes('combo') && (haystack.includes('un lado') || haystack.includes('1 lado')) && haystack.includes('clip')) return media.comboCredencial1LadoClip || media.comboCredencialEstucheClip;
   if (haystack.includes('combo') && (haystack.includes('dos lados') || haystack.includes('2 lados')) && haystack.includes('portacredencial') && haystack.includes('cordon')) return media.comboCredencial2LadosPortacredencialCordon || media.comboCredencialEstucheCordon;
   if (haystack.includes('combo') && (haystack.includes('un lado') || haystack.includes('1 lado')) && haystack.includes('portacredencial') && haystack.includes('cordon')) return media.comboCredencial1LadoPortacredencialCordon || media.comboCredencialEstucheCordon;
-  if (haystack.includes('portacredencial') && haystack.includes('clip')) return media.comboCredencialEstucheClip || media.portacredencialArenadaRigida;
-  if (haystack.includes('portacredencial') && (haystack.includes('cordon') || haystack.includes('cordón'))) return media.comboCredencialEstucheCordon || media.portacredencialArenadaRigida;
-  if (haystack.includes('arenada') || haystack.includes('portacredencial')) return media.portacredencialArenadaRigida || media.portacredencialAcrilica;
+  if (haystack.includes('portacredencial') && haystack.includes('clip')) return media.comboCredencialEstucheClip || media.portacredencialAcrilica;
+  if (haystack.includes('portacredencial') && (haystack.includes('cordon') || haystack.includes('cordón'))) return media.comboCredencialEstucheCordon || media.portacredencialAcrilica;
+  if (haystack.includes('arenada') || haystack.includes('portacredencial')) return media.portacredencialAcrilica;
   if (haystack.includes('yoyo') || haystack.includes('retractil')) return media.yoyoRetractil || media.credencialesCombo;
   if ((haystack.includes('dos lados') || haystack.includes('2 lados')) && (haystack.includes('cordon') || haystack.includes('cordón'))) return media.comboCredencial2LadosCordon || media.credencialesCombo;
   if ((haystack.includes('un lado') || haystack.includes('1 lado')) && (haystack.includes('cordon') || haystack.includes('cordón'))) return media.comboCredencial1LadoCordon || media.credencialesCombo;
   if (haystack.includes('combo credencial') || (haystack.includes('credencial') && haystack.includes('combo'))) return media.credencialesCombo;
-  if ((haystack.includes('cordon') || haystack.includes('cordón') || haystack.includes('lanyard')) && haystack.includes('llano')) return media.cordonLanyardLlano || media.cordonLanyardSublimado;
-  if (haystack.includes('cordon') || haystack.includes('cordón') || haystack.includes('lanyard')) return media.cordonLanyardSublimado || media.credencialesLanyard;
+  if ((haystack.includes('cordon') || haystack.includes('cordón') || haystack.includes('lanyard')) && haystack.includes('llano')) return media.cordonLanyardLlano || media.credencialesLanyard;
+  if (haystack.includes('cordon') || haystack.includes('cordón') || haystack.includes('lanyard')) return media.credencialesLanyard;
   if (haystack.includes('credencial') && (haystack.includes('dos lados') || haystack.includes('2 lados'))) return media.credencialPVCDosLados || media.credencialesLanyard;
   if (haystack.includes('credencial') || haystack.includes('carnet')) return media.credencialesLanyard;
 
@@ -133,10 +133,10 @@ export function imageFor(category = '', text = '') {
   if (haystack.includes('21 x 15') || haystack.includes('21x15')) return media.calendarioEscritorio21x15 || media.calendarioSobremesa;
   if (haystack.includes('21 x 18') || haystack.includes('21x18')) return media.calendarioEscritorio21x18 || media.calendarioSobremesa;
   if (haystack.includes('escritorio') || haystack.includes('sobremesa') || haystack.includes('wire-o')) return media.calendarioSobremesa || media.calendariosPack;
-  if (haystack.includes('21 x 43') || haystack.includes('21x43')) return media.calendarioParedCouche21x43 || media.calendarioParedVarilla;
-  if (haystack.includes('31 x 43') || haystack.includes('31x43')) return media.calendarioParedCouche31x43 || media.calendarioParedVarilla;
-  if (haystack.includes('personalizado a3') || haystack.includes('a3 tiro') || (haystack.includes('santoral') && haystack.includes('a3'))) return media.calendarioParedA3Santoral || media.calendarioParedVarilla;
-  if (haystack.includes('350 gr') || haystack.includes('santoral') || haystack.includes('varilla')) return media.calendarioParedVarilla || media.calendarioPared;
+  if (haystack.includes('21 x 43') || haystack.includes('21x43')) return media.calendarioParedCouche21x43 || media.calendarioPared;
+  if (haystack.includes('31 x 43') || haystack.includes('31x43')) return media.calendarioParedCouche31x43 || media.calendarioPared;
+  if (haystack.includes('personalizado a3') || haystack.includes('a3 tiro') || (haystack.includes('santoral') && haystack.includes('a3'))) return media.calendarioParedA3Santoral || media.calendarioPared;
+  if (haystack.includes('350 gr') || haystack.includes('santoral') || haystack.includes('varilla')) return media.calendarioPared;
   if (haystack.includes('calendario') || haystack.includes('almanaque')) return media.calendarioPared || media.calendariosPack;
   if (haystack.includes('imprenta') || haystack.includes('factura')) return media.folletosPack;
 
@@ -429,7 +429,7 @@ export function getLeadTimeEstimate(product) {
   return '24 a 72 horas hábiles';
 }
 
-export function calculateCatalogQuote(product, config = {}) {
+export function calculateCatalogQuote(product, config: { quantity?: number; width?: number; height?: number; options?: Record<string, unknown>; designCost?: number; extras?: Array<{ price?: number }>; optionAdjustment?: number; taxRate?: number } = {}) {
   const calcType = getProductCalcType(product);
   const isArea = calcType === 'm2';
   const isTierTotal = product?.pricingMode === 'tier-total' || calcType === 'scale-total';

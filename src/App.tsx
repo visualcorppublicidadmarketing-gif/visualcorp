@@ -9,13 +9,6 @@ import { AppFrame, Brand, PageHeading, StatCard } from './app/layout';
 import { EmptyState, StageBadge } from './components/feedback';
 import { QuotePriceComparison } from './components/QuotePriceComparison';
 import { calculateQuotePrice, getQuoteBasis } from './lib/quotePricing';
-import { InventoryWorkspace } from './components/InventoryWorkspace';
-import { PurchasingWorkspace } from './components/PurchasingWorkspace';
-import { CustomerBook } from './components/CustomerBook';
-import { TeamAccess } from './components/TeamAccess';
-import { BackupWorkspace } from './components/BackupWorkspace';
-import { ChangeLogPanel } from './components/ChangeLog';
-import { OperationsLifecycle } from './pages/operations/OperationsLifecycle';
 import './app.css';
 import './public-site/deployment.css';
 import './design-system.css';
@@ -43,6 +36,13 @@ const ArticleDetailPage = lazy(() => import('./public-site/ShowcasePages').then(
 const PublicationDetailPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.PublicationArticleDetailPage })));
 const PortfolioDetailPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.PortfolioArticleDetailPage })));
 const StorefrontPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.StorefrontPage })));
+const InventoryWorkspace = lazy(() => import('./components/InventoryWorkspace').then((module) => ({ default: module.InventoryWorkspace })));
+const PurchasingWorkspace = lazy(() => import('./components/PurchasingWorkspace').then((module) => ({ default: module.PurchasingWorkspace })));
+const CustomerBook = lazy(() => import('./components/CustomerBook').then((module) => ({ default: module.CustomerBook })));
+const TeamAccess = lazy(() => import('./components/TeamAccess').then((module) => ({ default: module.TeamAccess })));
+const BackupWorkspace = lazy(() => import('./components/BackupWorkspace').then((module) => ({ default: module.BackupWorkspace })));
+const ChangeLogPanel = lazy(() => import('./components/ChangeLog').then((module) => ({ default: module.ChangeLogPanel })));
+const OperationsLifecycle = lazy(() => import('./pages/operations/OperationsLifecycle').then((module) => ({ default: module.OperationsLifecycle })));
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 const symbol = '/brand/visualcorp-symbol.png';
