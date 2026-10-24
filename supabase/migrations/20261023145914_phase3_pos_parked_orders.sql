@@ -105,3 +105,4 @@ select o.id,
   'sales','both','phase3-pos-parked-orders','published',now()
 from public.organizations o where o.slug='visual-corp'
 on conflict do nothing;
+

@@ -7,3 +7,4 @@ select o.id,
   'sales','both','phase4-pos-sku-scanner','published',now()
 from public.organizations o where o.slug='visual-corp'
 on conflict do nothing;
+

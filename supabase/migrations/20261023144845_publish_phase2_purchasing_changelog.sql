@@ -11,3 +11,4 @@ where o.slug='visual-corp'
     select 1 from public.internal_change_log c
     where c.organization_id=o.id and c.version_tag='fase-2-compras'
   );
+

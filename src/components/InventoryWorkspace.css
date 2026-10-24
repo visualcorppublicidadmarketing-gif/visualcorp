@@ -23,3 +23,6 @@
 .inventory-product-group-content .inventory-table-wrap table{min-width:810px}
 .inventory-product-group-content .inventory-table-wrap th{background:#f8f7fa}
 .inventory-actions select{max-width:128px;min-height:30px;padding:3px 7px;border:1px solid #e6e2eb;border-radius:7px;background:#fff;color:#5c5265;font-size:9px}
+.inventory-width-options{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;min-width:0;margin:0;padding:9px 11px;border:1px solid var(--line);border-radius:8px}.inventory-width-options legend{padding:0 4px;color:#676a75;font-size:10px;font-weight:650}.inventory-width-options label{display:flex;align-items:center;gap:6px;color:#444650;font-size:11px}.inventory-width-options input{width:15px;height:15px;min-height:0;accent-color:#a00091}.inventory-setup-actions{display:grid;align-content:start;gap:8px;padding:12px;border:1px solid #eeeaf2;border-radius:10px;background:#fcfbfd;color:#42434c;font-size:11px}.inventory-setup-actions p{margin:0;color:#858792;font-size:10px;line-height:1.5}.inventory-setup-actions .button{justify-self:start}
+@media(max-width:760px){.inventory-form-grid{grid-template-columns:1fr}.inventory-width-options{justify-content:flex-start}}
+

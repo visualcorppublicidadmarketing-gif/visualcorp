@@ -244,3 +244,4 @@ grant execute on function public.create_purchase_order(uuid,uuid,uuid,jsonb,date
 grant execute on function public.submit_purchase_order(uuid) to authenticated;
 grant execute on function public.cancel_purchase_order(uuid,text) to authenticated;
 grant execute on function public.receive_purchase_order(uuid,jsonb,uuid,text,text) to authenticated;
+

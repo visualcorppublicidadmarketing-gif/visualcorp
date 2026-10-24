@@ -19,3 +19,4 @@ end;
 $$;
 revoke all on function app_private.cancel_purchase_order(uuid,text) from public,anon,authenticated;
 grant execute on function app_private.cancel_purchase_order(uuid,text) to authenticated;
+

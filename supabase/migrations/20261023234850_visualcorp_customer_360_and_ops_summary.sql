@@ -192,3 +192,4 @@ $$;
 revoke all on function public.get_visualcorp_operations_summary() from public, anon;
 grant execute on function public.get_visualcorp_operations_summary() to authenticated;
 
+
