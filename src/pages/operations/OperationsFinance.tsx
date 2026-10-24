@@ -9,6 +9,7 @@ const BUSINESS_TIME_ZONE = 'America/Guayaquil';
 const PAGE_SIZE = 500;
 const FINANCE_ROLES = ['advisor', 'owner', 'admin', 'manager'];
 type InventoryCostSummary = { inventory_lines: number; missing_inventory_cost_lines: number; non_inventory_lines: number; cost_total: number };
+type MaterialCostSummary = { consumption_movements: number; costed_movements: number; missing_cost_movements: number; material_cost_total: number };
 const money = (value) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(Number(value) || 0);
 
 function monthInBusinessTimeZone(value) {
@@ -57,6 +58,9 @@ export function OperationsFinance() {
   const [inventoryCostSummary, setInventoryCostSummary] = useState<InventoryCostSummary | null>(null);
   const [inventoryCostLoading, setInventoryCostLoading] = useState(false);
   const [inventoryCostError, setInventoryCostError] = useState('');
+  const [materialCostSummary, setMaterialCostSummary] = useState<MaterialCostSummary | null>(null);
+  const [materialCostLoading, setMaterialCostLoading] = useState(false);
+  const [materialCostError, setMaterialCostError] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -137,6 +141,32 @@ export function OperationsFinance() {
         setInventoryCostSummary(data);
       }
     }).finally(() => { if (active) setInventoryCostLoading(false); });
+    return () => { active = false; };
+  }, [organizationId, canSeeInventoryCosts, month, branch, advisor]);
+
+  useEffect(() => {
+    let active = true;
+    if (!canSeeInventoryCosts || !supabase || !organizationId || !month) {
+      setMaterialCostSummary(null);
+      setMaterialCostError('');
+      setMaterialCostLoading(false);
+      return () => { active = false; };
+    }
+    setMaterialCostLoading(true);
+    setMaterialCostError('');
+    void supabase.rpc('get_finance_material_cost_summary', {
+      p_month: `${month}-01`,
+      p_branch_id: branch === 'all' ? null : branch,
+      p_advisor_id: advisor === 'all' ? null : advisor,
+    }).then(({ data, error: summaryError }) => {
+      if (!active) return;
+      if (summaryError) {
+        setMaterialCostError(summaryError.message || 'No se pudo consultar el costo capturado de materiales.');
+        setMaterialCostSummary(null);
+      } else {
+        setMaterialCostSummary(data);
+      }
+    }).finally(() => { if (active) setMaterialCostLoading(false); });
     return () => { active = false; };
   }, [organizationId, canSeeInventoryCosts, month, branch, advisor]);
 
@@ -268,6 +298,15 @@ export function OperationsFinance() {
         <article><span>Cobertura de costo en líneas de inventario</span><b>{Number(inventoryCostSummary.inventory_lines || 0) + Number(inventoryCostSummary.missing_inventory_cost_lines || 0) > 0 ? `${Math.round(Number(inventoryCostSummary.inventory_lines || 0) / (Number(inventoryCostSummary.inventory_lines || 0) + Number(inventoryCostSummary.missing_inventory_cost_lines || 0)) * 100)}%` : '—'}</b><small>{inventoryCostSummary.inventory_lines || 0} con costo · {inventoryCostSummary.missing_inventory_cost_lines || 0} sin costo configurado</small></article>
       </div> : <p className="muted">Aún no hay datos de costo para este periodo.</p>}
       <p className="op-finance-cost-note">Es una referencia operativa basada en el costo de inventario vigente al registrar la venta. No calcula utilidad contable e identifica por separado líneas sin costo; los servicios y costos indirectos no están incluidos.</p>
+    </section>}
+    {canSeeInventoryCosts && <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-material-title">
+      <div className="panel-heading"><div><span className="eyebrow">INVENTARIO → POS Y PRODUCCIÓN → FINANZAS</span><h2 id="op-finance-material-title">Costo de materiales consumidos</h2></div></div>
+      {materialCostError ? <p className="op-finance-cost-error" role="alert">{materialCostError}</p> : materialCostLoading ? <p className="muted">Calculando consumos de materiales para este periodo…</p> : materialCostSummary ? <div className="op-finance-cost-metrics">
+        <article><span>Costo de materiales registrados</span><b>{money(Number(materialCostSummary.material_cost_total || 0))}</b><small>Basado en el costo guardado al descontar stock</small></article>
+        <article><span>Cobertura de costo por movimiento</span><b>{Number(materialCostSummary.consumption_movements || 0) > 0 ? `${Math.round(Number(materialCostSummary.costed_movements || 0) / Number(materialCostSummary.consumption_movements || 1) * 100)}%` : '—'}</b><small>{materialCostSummary.costed_movements || 0} con costo · {materialCostSummary.missing_cost_movements || 0} sin costo al consumir</small></article>
+      </div> : <p className="muted">Aún no hay consumos de materiales capturados para este periodo.</p>}
+      <div className="op-finance-material-links"><a className="button button-outline" href="/operaciones/flujos">Ver producción</a><a className="button button-outline" href="/operaciones/inventario">Ver inventario</a></div>
+      <p className="op-finance-cost-note">Incluye salidas registradas por recetas de venta y consumos de órdenes de producción. Se captura desde la activación del control; no estima costos históricos sin snapshot ni representa utilidad contable.</p>
     </section>}
     <div className="op-finance-grid">
       <section className="panel">
