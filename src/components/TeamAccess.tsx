@@ -7,7 +7,7 @@ import './team-access.css';
 const modules = [
   ['dashboard','Panel principal'],['website','Página web'],['crm','CRM y clientes'],['sales','Ventas y POS'],['quotes','Cotizaciones'],
   ['inventory','Inventario'],['inventory_costs','Costos de inventario'],['purchases','Compras'],['workshop','Taller y producción'],
-  ['marketing','Marketing'],['team','Equipo'],['catalog_admin','Catálogo y tarifas'],['backup','Respaldo'],['cash','Caja'],
+  ['marketing','Marketing'],['team','Equipo'],['catalog_admin','Catálogo y tarifas'],['backup','Respaldo'],['cash','Caja'],['personnel','Personal'],
 ] as const;
 const specialActions = [
   { module: 'team', action: 'manage_members', label: 'Asignar perfiles y activar o pausar accesos' },
@@ -21,6 +21,8 @@ const specialActions = [
   { module: 'sales', action: 'settle_refund', label: 'Completar reembolsos' },
   { module: 'website', action: 'publish_content', label: 'Publicar cambios en la web' },
   { module: 'cash', action: 'manage_cash', label: 'Registrar movimientos y gestionar caja' },
+  { module: 'personnel', action: 'view_compensation', label: 'Consultar remuneración e historial de pagos del personal' },
+  { module: 'personnel', action: 'edit_compensation', label: 'Registrar cambios de remuneración del personal' },
 ];
 const roleNames: Record<string, string> = { owner: 'Propietario', admin: 'Admin', manager: 'Gerencia', advisor: 'Asesoras', warehouse: 'Inventario', production: 'Taller', marketing: 'Marketing', website_admin: 'Admin página web' };
 
@@ -99,6 +101,11 @@ export function TeamAccess() {
     const [moduleKey, actionKey] = key.split('.');
     if (actionKey === 'edit' && enabled) next[`${moduleKey}.view`] = true;
     if (actionKey === 'view' && !enabled) next[`${moduleKey}.edit`] = false;
+    if (moduleKey === 'personnel' && actionKey === 'view' && !enabled) { next['personnel.view_compensation'] = false; next['personnel.edit_compensation'] = false; }
+    if (moduleKey === 'personnel' && actionKey === 'view_compensation' && enabled) next['personnel.view'] = true;
+    if (moduleKey === 'personnel' && actionKey === 'view_compensation' && !enabled) next['personnel.edit_compensation'] = false;
+    if (moduleKey === 'personnel' && actionKey === 'edit_compensation' && enabled) { next['personnel.view'] = true; next['personnel.edit'] = true; next['personnel.view_compensation'] = true; }
+    if (moduleKey === 'personnel' && actionKey === 'edit' && !enabled) next['personnel.edit_compensation'] = false;
     return next;
   });
 
@@ -161,7 +168,7 @@ export function TeamAccess() {
         {selectedId===''&&<p className="team-access-help">Configura un perfil nuevo. Empieza con todos los permisos desactivados y habilita solo lo que necesita el puesto.</p>}
         <form className="team-profile-form" onSubmit={saveProfile}>
           <div className="team-profile-fields"><label>Nombre<input value={profileName} onChange={(event)=>setProfileName(event.target.value)} required minLength={2} maxLength={80} disabled={!canManageProfiles}/></label><label>Identificador<input value={profileKey} onChange={(event)=>setProfileKey(event.target.value)} required pattern="[a-z0-9_]{2,48}" disabled={!canManageProfiles||Boolean(selectedId)}/></label><label className="team-profile-description">Descripción<input value={profileDescription} onChange={(event)=>setProfileDescription(event.target.value)} maxLength={300} disabled={!canManageProfiles}/></label></div>
-          <div className="team-matrix-wrap"><table className="team-permission-matrix"><thead><tr><th>Módulo</th><th>Ver</th><th>Editar</th><th>Borrar</th></tr></thead><tbody>{modules.map(([key,label])=><tr key={key}><th scope="row">{label}</th>{(['view','edit','delete_records'] as const).map((action)=><td key={action}><input aria-label={`${label}: ${action==='view'?'ver':action==='edit'?'editar':'borrar registros'}`} type="checkbox" checked={Boolean(matrix[`${key}.${action}`])} disabled={!canManageProfiles||action==='delete_records'&&selectedProfile?.profile_key==='admin'} onChange={(event)=>setPermission(`${key}.${action}`,event.target.checked)}/></td>)}</tr>)}</tbody></table></div>
+          <div className="team-matrix-wrap"><table className="team-permission-matrix"><thead><tr><th>Módulo</th><th>Ver</th><th>Editar</th><th>Borrar</th></tr></thead><tbody>{modules.map(([key,label])=><tr key={key}><th scope="row">{label}</th>{(['view','edit','delete_records'] as const).map((action)=><td key={action}><input aria-label={`${label}: ${action==='view'?'ver':action==='edit'?'editar':'borrar registros'}`} type="checkbox" checked={Boolean(matrix[`${key}.${action}`])} disabled={!canManageProfiles||key==='personnel'&&action==='delete_records'||action==='delete_records'&&selectedProfile?.profile_key==='admin'} onChange={(event)=>setPermission(`${key}.${action}`,event.target.checked)}/></td>)}</tr>)}</tbody></table></div>
           <details className="team-advanced-permissions"><summary>Acciones especiales</summary><div className="team-special-grid">{specialActions.map(({module,action,label})=><label key={`${module}.${action}`}><input type="checkbox" checked={Boolean(matrix[`${module}.${action}`])} disabled={!canManageProfiles} onChange={(event)=>setPermission(`${module}.${action}`,event.target.checked)}/><span>{label}</span></label>)}</div></details>
           <div className="team-profile-actions">{canManageProfiles&&<button className="button button-dark" type="submit" disabled={saving}><Save size={15}/>{saving?'Guardando…':'Guardar perfil'}</button>}{selectedProfile&&canManageProfiles&&<button type="button" className="button button-outline" onClick={setProfileActive} disabled={saving||selectedProfile.profile_key==='admin'&&!roles.includes('owner')}><RotateCcw size={15}/>{selectedProfile.active?'Desactivar perfil':'Reactivar perfil'}</button>}</div>
           {!canManageProfiles&&<p className="team-access-help">Puedes consultar la matriz. La configuración está reservada a perfiles con ese permiso.</p>}

@@ -33,6 +33,7 @@ export const operationsLinks: AppNavLink[] = [
   { to: '/operaciones/crm', label: 'CRM', icon: Users, module: 'crm' },
   { to: '/operaciones/clientes', label: 'Clientes', icon: Users, module: 'crm' },
   { to: '/operaciones/marketing', label: 'Marketing', icon: CalendarDays, module: 'marketing' },
+  { to: '/operaciones/personal', label: 'Personal', icon: Users, module: 'personnel' },
   { to: '/operaciones/equipo', label: 'Equipo y permisos', icon: Users, module: 'team' },
   { to: '/operaciones/catalogo', label: 'Catálogo y tarifas', icon: ShoppingBag, module: 'catalog_admin' },
 ];
@@ -46,7 +47,7 @@ const operationsNavGroups: AppNavGroup[] = [
   { id: 'sales', label: 'Ventas', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/finanzas', '/operaciones/cotizador'] },
   { id: 'customers', label: 'Clientes y CRM', icon: Users, paths: ['/operaciones/crm', '/operaciones/clientes'] },
   { id: 'operations', label: 'Producción e inventario', icon: Boxes, paths: ['/operaciones/flujos', '/operaciones/inventario', '/operaciones/compras', '/operaciones/catalogo'] },
-  { id: 'team', label: 'Equipo', icon: Settings2, paths: ['/operaciones/cambios', '/operaciones/equipo'] },
+  { id: 'team', label: 'Equipo', icon: Settings2, paths: ['/operaciones/cambios', '/operaciones/personal', '/operaciones/equipo'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing'] },
 ];
 export interface BrandProps { dark?: boolean }
