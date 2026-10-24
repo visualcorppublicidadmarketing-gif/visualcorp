@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUpRight, Banknote, ChartNoAxesCombined, Download, LoaderCircle, PackageCheck, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
+import { AdvisorIncomeEntry } from './AdvisorIncomeEntry';
 import { OperationsFinanceControls } from './OperationsFinanceControls';
 import './operations-lifecycle.css';
 
@@ -76,7 +77,7 @@ async function readAllRows(createQuery) {
 }
 
 export function OperationsFinance() {
-  const { organizationId, hasPermission, roles } = useAuth();
+  const { organizationId, hasPermission, roles, user } = useAuth();
   const canManageFinance = roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
   const canSeePayrollDeductions = roles.some((role) => ['owner', 'admin'].includes(role));
   const canSeeInventoryCosts = roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
@@ -925,6 +926,7 @@ export function OperationsFinance() {
       </div>
       <a className="button button-outline" href="/operaciones/pos">Registrar venta o abono en POS <ArrowUpRight size={15} /></a>
     </section>
+    <AdvisorIncomeEntry branches={branches} advisors={advisors} currentUserId={user?.id || ''} canChooseAdvisor={hasPermission('team', 'view')} selectedBranch={branch} onRecorded={() => setRealtimeRevision((current) => ({ ...current, sales: current.sales + 1, cash: current.cash + 1 }))} />
     {error && <div className="op-flow-alert error" role="alert"><ShieldAlert size={16} />{error}</div>}
     <section className="panel op-finance-filters">
       <label>Mes<input type="month" value={month} onChange={(event) => setMonth(event.target.value)} /></label>
