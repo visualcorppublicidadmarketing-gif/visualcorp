@@ -50,6 +50,18 @@
 .personnel-subsection{margin-top:20px;padding-top:17px;border-top:1px solid #eeeef2}
 .personnel-subsection .panel-heading{align-items:center}
 .personnel-subsection .panel-heading>svg{color:#777987}
+.personnel-account-panel{padding:15px;border:1px solid #e9e4ed;border-radius:12px;background:linear-gradient(145deg,#fff 0%,#fcf9fd 100%)}
+.personnel-linked-account{display:flex;align-items:center;gap:11px;margin:12px 0;padding:12px;border:1px solid #e9e6ed;border-radius:10px;background:#fff}
+.personnel-google-avatar{display:grid;place-items:center;width:36px;height:36px;flex:none;border:1px solid #e6e7eb;border-radius:50%;background:#fff;color:#4285f4;font-size:18px;font-weight:800}
+.personnel-linked-copy{display:grid;gap:4px;min-width:0;flex:1}
+.personnel-linked-copy b{font-size:12px;overflow-wrap:anywhere}
+.personnel-linked-copy span,.personnel-linked-copy small{color:#737581;font-size:10px;overflow-wrap:anywhere}
+.personnel-unlink-button{min-height:34px;padding:0 9px;font-size:10px}
+.personnel-account-form{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px;margin-top:13px;padding-top:13px;border-top:1px solid #ece9ef}
+.personnel-account-form label{display:grid;gap:6px;color:#4d4e58;font-size:11px;font-weight:700}
+.personnel-account-form select{width:100%;min-width:0;min-height:40px;border:1px solid #e0e2e9;border-radius:9px;padding:8px 10px;background:#fff;color:#252431;font-size:12px}
+.personnel-account-form .personnel-privacy-hint{grid-column:1/-1}
+.personnel-account-form .button{min-height:40px;padding:0 11px;font-size:11px}
 .personnel-private-note,.personnel-inline-empty,.personnel-inline-loading{display:flex;align-items:center;gap:8px;margin:10px 0;padding:11px 12px;border-radius:9px;background:#f7f7f9;color:#696b76;font-size:11px;line-height:1.5}
 .personnel-private-note{background:#fff8ec;color:#755a20}
 .personnel-pay-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:end;gap:9px;margin:12px 0 15px}
@@ -92,5 +104,5 @@
 .personnel-modal-actions .button{min-height:42px}
 @media(max-width:1050px){.personnel-workspace{grid-template-columns:minmax(290px,.8fr) minmax(0,1.2fr)}.personnel-filters{grid-template-columns:1fr 1fr}.personnel-search{grid-column:1/-1}.personnel-pay-form{grid-template-columns:1fr 1fr}.personnel-pay-note{grid-column:1/-1}}
 @media(max-width:780px){.personnel-workspace{grid-template-columns:1fr}.personnel-list{max-height:360px}.personnel-directory,.personnel-detail-panel{padding:16px}}
-@media(max-width:520px){.personnel-heading{align-items:flex-start;flex-direction:column}.personnel-heading>.button{width:100%}.personnel-metrics{grid-template-columns:1fr 1fr}.personnel-metric:last-child{grid-column:1/-1}.personnel-metric{padding:12px}.personnel-metric b{font-size:15px}.personnel-filters{grid-template-columns:1fr}.personnel-search{grid-column:auto}.personnel-filters select{max-width:none}.personnel-detail-heading{align-items:flex-start;flex-wrap:wrap}.personnel-edit-button{margin-left:auto}.personnel-contact-grid{grid-template-columns:1fr}.personnel-pay-form{grid-template-columns:1fr 1fr}.personnel-compensation-list article{flex-direction:column}.personnel-form-grid{grid-template-columns:1fr}.personnel-field-wide{grid-column:auto}.personnel-modal-backdrop{align-items:start;padding:10px}.personnel-modal{padding:16px}.personnel-list-row{grid-template-columns:36px minmax(0,1fr) auto}.personnel-list-row>svg{display:none}}
+@media(max-width:520px){.personnel-heading{align-items:flex-start;flex-direction:column}.personnel-heading>.button{width:100%}.personnel-metrics{grid-template-columns:1fr 1fr}.personnel-metric:last-child{grid-column:1/-1}.personnel-metric{padding:12px}.personnel-metric b{font-size:15px}.personnel-filters{grid-template-columns:1fr}.personnel-search{grid-column:auto}.personnel-filters select{max-width:none}.personnel-detail-heading{align-items:flex-start;flex-wrap:wrap}.personnel-edit-button{margin-left:auto}.personnel-contact-grid{grid-template-columns:1fr}.personnel-pay-form{grid-template-columns:1fr 1fr}.personnel-compensation-list article{flex-direction:column}.personnel-form-grid{grid-template-columns:1fr}.personnel-field-wide{grid-column:auto}.personnel-modal-backdrop{align-items:start;padding:10px}.personnel-modal{padding:16px}.personnel-list-row{grid-template-columns:36px minmax(0,1fr) auto}.personnel-list-row>svg{display:none}.personnel-account-form{grid-template-columns:1fr}.personnel-account-form .personnel-privacy-hint{grid-column:auto}.personnel-linked-account{align-items:flex-start;flex-wrap:wrap}.personnel-unlink-button{margin-left:auto}}
 @media(prefers-reduced-motion:reduce){.personnel-list-row,.personnel-modal-backdrop{scroll-behavior:auto}}
