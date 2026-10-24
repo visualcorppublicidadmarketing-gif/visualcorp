@@ -34,6 +34,15 @@ const businessMonthRange = (value) => {
     end: new Date(Date.UTC(year, month, 1, 5)).toISOString(),
   };
 };
+const previousBusinessMonth = (value) => {
+  if (!value) return '';
+  const [year, month] = value.split('-').map(Number);
+  const previous = new Date(Date.UTC(year, month - 2, 1));
+  return `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, '0')}`;
+};
+const monthLabel = (value) => value
+  ? new Date(`${value}-01T12:00:00`).toLocaleDateString('es-EC', { timeZone: BUSINESS_TIME_ZONE, month: 'long', year: 'numeric' })
+  : '';
 const timestamp = (value) => value
   ? new Date(value).toLocaleString('es-EC', { timeZone: BUSINESS_TIME_ZONE, dateStyle: 'short', timeStyle: 'short' })
   : '—';
@@ -175,11 +184,12 @@ export function OperationsFinance() {
     }
     setExpensePaymentsLoading(true);
     setExpensePaymentsError('');
+    const comparisonRange = businessMonthRange(previousBusinessMonth(month));
     void readAllRows(() => supabase
       .from('finance_expense_payments')
       .select('id,amount,method,paid_at,reference,finance_expenses!inner(description,category,branch_id,reference)')
       .eq('organization_id', organizationId)
-      .gte('paid_at', range.start)
+      .gte('paid_at', comparisonRange?.start || range.start)
       .lt('paid_at', range.end)
       .order('paid_at', { ascending: false })
       .order('id'))
@@ -467,7 +477,8 @@ export function OperationsFinance() {
       && (branch === 'all' || refund.branch_id === branch)
     ));
     const expensesInPeriod = expensePayments.filter((payment) => (
-      branch === 'all' || payment.finance_expenses?.branch_id === branch
+      (!month || monthInBusinessTimeZone(payment.paid_at) === month)
+      && (branch === 'all' || payment.finance_expenses?.branch_id === branch)
     ));
     const collections = paymentsInPeriod.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
     const refunds = refundsInPeriod.reduce((sum, refund) => sum + Number(refund.amount || 0), 0);
@@ -480,12 +491,40 @@ export function OperationsFinance() {
       refunds,
       branchExpenses,
       generalExpenses,
+      expenses: branchExpenses + (branch === 'all' ? generalExpenses : 0),
       net: collections - refunds - branchExpenses - (branch === 'all' ? generalExpenses : 0),
       refundCount: refundsInPeriod.length,
       paymentCount: paymentsInPeriod.length,
       expenseCount: expensesInPeriod.length,
     };
   }, [payments, salesById, refundSettlements, expensePayments, month, branch]);
+  const previousMonth = previousBusinessMonth(month);
+  const previousOperatingCashflow = useMemo(() => {
+    const paymentsInPeriod = payments.filter((payment) => (
+      monthInBusinessTimeZone(payment.created_at) === previousMonth
+      && (branch === 'all' || salesById.get(payment.sale_id)?.branch_id === branch)
+    ));
+    const refundsInPeriod = refundSettlements.filter((refund) => (
+      monthInBusinessTimeZone(refund.settled_at) === previousMonth
+      && (branch === 'all' || refund.branch_id === branch)
+    ));
+    const expensesInPeriod = expensePayments.filter((payment) => (
+      monthInBusinessTimeZone(payment.paid_at) === previousMonth
+      && (branch === 'all' || payment.finance_expenses?.branch_id === branch)
+    ));
+    const collections = paymentsInPeriod.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    const refunds = refundsInPeriod.reduce((sum, refund) => sum + Number(refund.amount || 0), 0);
+    const branchExpenses = expensesInPeriod.filter((payment) => payment.finance_expenses?.branch_id)
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    const generalExpenses = expensesInPeriod.filter((payment) => !payment.finance_expenses?.branch_id)
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    return {
+      collections,
+      refunds,
+      expenses: branchExpenses + (branch === 'all' ? generalExpenses : 0),
+      net: collections - refunds - branchExpenses - (branch === 'all' ? generalExpenses : 0),
+    };
+  }, [payments, salesById, refundSettlements, expensePayments, previousMonth, branch]);
   const operatingCashflowRows = useMemo(() => {
     const rows = [];
     payments.forEach((payment) => {
@@ -514,13 +553,14 @@ export function OperationsFinance() {
   const operatingExpenseCategories = useMemo(() => {
     const totals = new Map<string, number>();
     expensePayments
-      .filter((payment) => branch === 'all' || payment.finance_expenses?.branch_id === branch)
+      .filter((payment) => (!month || monthInBusinessTimeZone(payment.paid_at) === month)
+        && (branch === 'all' || payment.finance_expenses?.branch_id === branch))
       .forEach((payment) => {
         const category = payment.finance_expenses?.category || 'Sin categoría';
         totals.set(category, (totals.get(category) || 0) + Number(payment.amount || 0));
       });
     return [...totals.entries()].sort((a, b) => b[1] - a[1]);
-  }, [expensePayments, branch]);
+  }, [expensePayments, month, branch]);
   const largestOperatingExpenseCategory = Math.max(1, ...operatingExpenseCategories.map(([, amount]) => amount));
   const cashReconciliationRows = useMemo(() => cashSessions.map((session) => {
     const expected = session.status === 'closed'
@@ -733,6 +773,25 @@ export function OperationsFinance() {
           <article><span>Egresos generales</span><b>{money(operatingCashflow.generalExpenses)}</b><small>{branch === 'all' ? 'Incluidos en el flujo neto de toda la empresa' : 'Visibles aparte; excluidos del neto de esta sucursal'}</small></article>
           <article className={operatingCashflow.net < 0 ? 'is-negative' : ''}><span>Flujo neto registrado</span><b>{money(operatingCashflow.net)}</b><small>{branch === 'all' ? 'Cobros menos devoluciones y todos los egresos pagados' : 'Cobros menos devoluciones y egresos de la sucursal'}</small></article>
         </div>
+        {month && <div className="op-finance-month-comparison" aria-labelledby="op-finance-month-comparison-title">
+          <div className="op-finance-month-comparison-heading"><div><span className="eyebrow">TENDENCIA DE CAJA · MISMO ALCANCE</span><h3 id="op-finance-month-comparison-title">Comparación con el mes anterior</h3><p>{monthLabel(month)} frente a {monthLabel(previousMonth)} · {branch === 'all' ? 'toda la empresa' : `sucursal ${branchName(branch)}`}</p></div></div>
+          <div className="op-finance-month-comparison-grid">
+            {[
+              { label: 'Cobros recibidos', current: operatingCashflow.collections, previous: previousOperatingCashflow.collections },
+              { label: 'Devoluciones liquidadas', current: operatingCashflow.refunds, previous: previousOperatingCashflow.refunds },
+              { label: 'Egresos pagados', current: operatingCashflow.expenses, previous: previousOperatingCashflow.expenses },
+              { label: 'Flujo neto registrado', current: operatingCashflow.net, previous: previousOperatingCashflow.net },
+            ].map((item) => {
+              const difference = item.current - item.previous;
+              return <article key={item.label}>
+                <span>{item.label}</span><b>{money(item.current)}</b>
+                <small>Mes anterior: {money(item.previous)}</small>
+                <small className={difference < 0 ? 'is-negative' : difference > 0 ? 'is-positive' : ''}>Variación: {difference > 0 ? '+' : ''}{money(difference)}</small>
+              </article>;
+            })}
+          </div>
+          <p className="op-finance-cost-note">Compara movimientos según su fecha efectiva y la sucursal seleccionada; no aplica los filtros de asesora o medio de pago. La variación es nominal y no representa presupuesto ni utilidad.</p>
+        </div>}
         <div className="op-finance-expense-breakdown" aria-labelledby="op-finance-expense-breakdown-title">
           <div className="op-finance-expense-breakdown-heading"><div><span className="eyebrow">SALIDAS EFECTIVAS</span><h3 id="op-finance-expense-breakdown-title">Egresos pagados por categoría</h3></div><b>{money(operatingCashflow.branchExpenses + (branch === 'all' ? operatingCashflow.generalExpenses : 0))}</b></div>
           {operatingExpenseCategories.length ? <div className="op-finance-expense-breakdown-list">{operatingExpenseCategories.map(([category, amount]) => <div className="op-finance-expense-category" key={category}><div><span>{category}</span><b>{money(amount)}</b></div><div className="op-finance-expense-track" role="progressbar" aria-label={`${category}: ${money(amount)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(amount / largestOperatingExpenseCategory * 100)}><i style={{ width: `${Math.max(2, amount / largestOperatingExpenseCategory * 100)}%` }} /></div></div>)}</div> : <p className="muted">No hay pagos efectivos de egresos para el mes y sucursal seleccionados.</p>}
