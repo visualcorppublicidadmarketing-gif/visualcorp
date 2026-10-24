@@ -172,7 +172,13 @@ export function OperationsFinance() {
       } else {
         setMaterialCostSummary(data);
       }
-    }).finally(() => { if (active) setMaterialCostLoading(false); });
+      setMaterialCostLoading(false);
+    }, (cause) => {
+      if (!active) return;
+      setMaterialCostError(cause instanceof Error ? cause.message : 'No se pudo consultar el costo capturado de materiales.');
+      setMaterialCostSummary(null);
+      setMaterialCostLoading(false);
+    });
     return () => { active = false; };
   }, [organizationId, canSeeInventoryCosts, month, branch, advisor]);
 
