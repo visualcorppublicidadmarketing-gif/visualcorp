@@ -82,6 +82,7 @@ export function OperationsFinance() {
   const canSeePayrollDeductions = roles.some((role) => ['owner', 'admin'].includes(role));
   const canSeeInventoryCosts = roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
   const canSeeCrm = hasPermission('crm', 'view');
+  const canSeeQuotes = hasPermission('quotes', 'view');
   const canSeeCashReconciliation = hasPermission('cash', 'view');
   const [realtimeStatus, setRealtimeStatus] = useState('connecting');
   const [realtimeRevision, setRealtimeRevision] = useState({ sales: 0, cash: 0, expenses: 0, expensePayments: 0, inventoryCosts: 0, materialCosts: 0, catalogCosts: 0 });
@@ -213,9 +214,7 @@ export function OperationsFinance() {
         const [salesRows, paymentRows, teamResult, branchResult, customersResult] = await Promise.all([
           readAllRows(() => supabase
             .from('sales')
-            .select(canSeeCrm
-              ? 'id,sale_code,status,total,created_at,branch_id,advisor_id,created_by,customer_id,customers(full_name,preferences)'
-              : 'id,sale_code,status,total,created_at,branch_id,advisor_id,created_by,customer_id,customers(full_name)')
+            .select(`id,sale_code,status,total,created_at,branch_id,advisor_id,created_by,customer_id${canSeeQuotes ? ',central_quote_id' : ''},customers(${canSeeCrm ? 'full_name,preferences' : 'full_name'})`)
             .eq('organization_id', organizationId)
             .order('created_at', { ascending: false })),
           readAllRows(() => supabase
@@ -650,6 +649,20 @@ export function OperationsFinance() {
       topFiveShare: linkedRevenue > 0 ? topFiveRevenue / linkedRevenue : 0,
     };
   }, [salesInPeriod, returnsBySale, paymentsBySale]);
+  const quoteSalesAnalysis = useMemo(() => {
+    const linkedSales = salesInPeriod.filter((sale) => Boolean(sale.central_quote_id));
+    const quoteIds = new Set(linkedSales.map((sale) => sale.central_quote_id));
+    const netSalesValue = linkedSales.reduce((sum, sale) => {
+      const returnedValue = returnsBySale.get(sale.id)?.returnedValue || 0;
+      return sum + Math.max(0, Number(sale.total || 0) - returnedValue);
+    }, 0);
+    return {
+      sales: linkedSales.length,
+      quotes: quoteIds.size,
+      netSalesValue,
+      salesShare: salesInPeriod.length ? linkedSales.length / salesInPeriod.length : 0,
+    };
+  }, [salesInPeriod, returnsBySale]);
   const paymentSaleIds = useMemo(() => new Set(salesMatchingTeamAndBranch.map((sale) => sale.id)), [salesMatchingTeamAndBranch]);
   const salesInScope = useMemo(() => sales.filter((sale) => (
     (advisor === 'all' || sale.advisor_id === advisor)
@@ -1185,6 +1198,17 @@ export function OperationsFinance() {
         </article>)}</div> : <div className="op-finance-ledger-empty"><Banknote size={22}/><b>Sin ventas vinculadas al CRM en este alcance</b><span>Las ventas sin ficha se cuentan aparte y pueden asociarse al registrar un ingreso manual.</span></div>}
         <p className="op-finance-cost-note">El porcentaje de concentración compara los 5 clientes principales con todas las ventas que sí tienen ficha CRM. El valor no es utilidad y no incluye costos ni gastos.</p>
       </>}
+    </section>}
+    {canSeeQuotes && <section className="panel op-finance-quote-analysis" aria-labelledby="op-finance-quote-analysis-title">
+      <div className="panel-heading"><div><span className="eyebrow">COTIZADOR → POS → FINANZAS</span><h2 id="op-finance-quote-analysis-title">Ventas vinculadas a cotizaciones</h2><p className="op-finance-cost-note">Ventas confirmadas del periodo, asesora y sucursal seleccionados. El filtro de medio de pago no aplica.</p></div><a className="button button-outline" href="/operaciones/cotizador">Abrir Cotizador <ArrowUpRight size={15}/></a></div>
+      {saleReturnsError && <p className="op-finance-cost-error" role="alert">No se puede calcular el valor neto de ventas cotizadas porque no se pudieron cargar las devoluciones; los conteos de vínculos siguen disponibles.</p>}
+      <div className="op-finance-quote-metrics">
+        <article><span>Valor de ventas con vínculo</span><b>{saleReturnsError ? '—' : money(quoteSalesAnalysis.netSalesValue)}</b><small>{saleReturnsError ? 'Devoluciones pendientes de cargar' : 'Valor neto de devoluciones registradas'}</small></article>
+        <article><span>Ventas vinculadas</span><b>{quoteSalesAnalysis.sales}</b><small>{Math.round(quoteSalesAnalysis.salesShare * 100)}% de {salesInPeriod.length} ventas confirmadas del periodo</small></article>
+        <article><span>Cotizaciones asociadas</span><b>{quoteSalesAnalysis.quotes}</b><small>Identificadores únicos vinculados a ventas</small></article>
+      </div>
+      {!quoteSalesAnalysis.sales && <div className="op-finance-ledger-empty"><ChartNoAxesCombined size={22}/><b>Sin ventas vinculadas a cotizaciones en este alcance</b><span>Al confirmar en POS una venta que parte de una cotización, Finanzas podrá medir su valor en este periodo.</span></div>}
+      <p className="op-finance-cost-note">La proporción mide ventas con un vínculo guardado en POS; no es una tasa de conversión del Cotizador porque no compara la cohorte completa de cotizaciones emitidas. El valor no es recaudo ni utilidad.</p>
     </section>}
     <section className="panel">
       <div className="panel-heading"><div><span className="eyebrow">MOVIMIENTOS REGISTRADOS</span><h2>Abonos recibidos</h2></div><button className="button button-outline" onClick={downloadCsv} disabled={!paymentsInPeriod.length}><Download size={15} /> Exportar CSV</button></div>
