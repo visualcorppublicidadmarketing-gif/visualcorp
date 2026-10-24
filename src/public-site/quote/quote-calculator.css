@@ -5,6 +5,9 @@
 .quote-builder-heading{max-width:620px;margin-bottom:27px}
 .quote-builder-heading h2{margin:13px 0 7px;color:#1c1929;font-family:BebasKai,'Arial Narrow',sans-serif;font-size:clamp(38px,4.3vw,54px);font-weight:400;line-height:.98;text-transform:uppercase}
 .quote-builder-heading p{margin:0;color:#616574;font-size:14px;line-height:1.65}
+.quote-data-warning{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:-10px 0 20px;padding:13px 15px;border:1px solid #f0d79c;border-radius:11px;background:#fffaf0;color:#735516;font-size:12px;line-height:1.55}
+.quote-data-warning button{flex:none;padding:7px 10px;border:1px solid #e8cc88;border-radius:8px;background:#fff;color:#735516;font:inherit;font-weight:700;cursor:pointer}
+.quote-data-warning button:focus-visible{outline:3px solid #bd912d;outline-offset:2px}
 .quote-builder-fields{display:grid;gap:17px}
 .quote-builder-fields>label,.quote-field-pair label{display:grid;gap:7px;color:#282634;font-size:13px;font-weight:700}
 .quote-builder-fields label>span{color:#797a87;font-weight:500}
@@ -61,7 +64,7 @@
 .crm-quote-details summary{width:max-content;color:#9f187c;font-weight:700;cursor:pointer}
 .crm-quote-details>span{display:block;margin-top:4px;color:#62616d;font-size:11px;line-height:1.5}
 @media(max-width:860px){.site-quote-workspace{padding:42px 22px 72px}.quote-builder{grid-template-columns:1fr}.quote-builder-summary{position:static}.site-quote-request{margin-top:18px}}
-@media(max-width:520px){.site-quote-workspace{padding:28px 14px 56px}.quote-builder-panel,.quote-builder-summary,.site-quote-request{border-radius:15px}.quote-builder-panel,.quote-builder-summary,.site-quote-request{padding:20px}.quote-mode-options{grid-template-columns:1fr}.quote-mode-options button{justify-content:flex-start}.quote-field-pair{gap:8px}.quote-builder-heading p{font-size:13px}}
+@media(max-width:520px){.site-quote-workspace{padding:28px 14px 56px}.quote-builder-panel,.quote-builder-summary,.site-quote-request{border-radius:15px}.quote-builder-panel,.quote-builder-summary,.site-quote-request{padding:20px}.quote-mode-options{grid-template-columns:1fr}.quote-mode-options button{justify-content:flex-start}.quote-field-pair{gap:8px}.quote-builder-heading p{font-size:13px}.quote-data-warning{align-items:flex-start;flex-direction:column}}
 @media print{
   @page{size:A4;margin:18mm}
   body.print-quote-summary .quote-print-sheet{display:block!important;position:absolute;top:0;left:0;width:100%;padding:0;color:#20212b;font-family:Arial,sans-serif}

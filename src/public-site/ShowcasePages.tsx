@@ -39,23 +39,33 @@ function usePublishedArticles() {
   const [articles, setArticles] = useState<SiteArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
   useEffect(() => {
     let current = true;
+    setLoading(true);
+    setError('');
     if (!supabase || !supabaseConfigured) {
+      setError('El contenido publicado no está conectado en este momento.');
       setLoading(false);
       return () => { current = false; };
     }
-    supabase.from('site_articles').select('id,title,slug,excerpt,body_markdown,cover_image,tags,published_at')
-      .eq('is_published', true).order('published_at', { ascending: false })
-      .then(({ data, error: queryError }) => {
+    const load = async () => {
+      try {
+        const { data, error: queryError } = await supabase.from('site_articles').select('id,title,slug,excerpt,body_markdown,cover_image,tags,published_at')
+          .eq('is_published', true).order('published_at', { ascending: false });
         if (!current) return;
-        if (queryError) setError('No se pudo cargar el contenido publicado.');
+        if (queryError) setError('No se pudo cargar el contenido publicado. Comprueba tu conexión e inténtalo de nuevo.');
         else setArticles((data || []) as SiteArticle[]);
-        setLoading(false);
-      });
+      } catch {
+        if (current) setError('No se pudo conectar para cargar el contenido publicado. Comprueba tu conexión e inténtalo de nuevo.');
+      } finally {
+        if (current) setLoading(false);
+      }
+    };
+    void load();
     return () => { current = false; };
-  }, []);
-  return { articles, loading, error };
+  }, [reloadKey]);
+  return { articles, loading, error, retry: () => { setLoading(true); setReloadKey((key) => key + 1); } };
 }
 
 function normalizedTags(article: SiteArticle) {
@@ -105,8 +115,12 @@ function EmptyContent({ kind }: { kind: ContentKind }) {
   return <div className="showcase-empty glass-card"><span><Sparkles size={20}/></span><h2>{title}</h2><p>{text}</p><Link className="site-secondary-button" to="/servicios">Explorar servicios <ArrowRight size={15}/></Link></div>;
 }
 
+function ContentLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return <div className="showcase-empty glass-card" role="alert"><h2>No pudimos cargar este contenido.</h2><p>{message}</p><button type="button" className="site-secondary-button" onClick={onRetry}>Reintentar <ArrowRight size={15}/></button></div>;
+}
+
 function ArticleIndex({ kind }: { kind: ContentKind }) {
-  const { articles, loading, error } = usePublishedArticles();
+  const { articles, loading, error, retry } = usePublishedArticles();
   const [search, setSearch] = useState('');
   const matches = useMemo(() => articles.filter((article) => articleMatches(article, kind)
     && `${article.title} ${article.excerpt} ${(article.tags || []).join(' ')}`.toLocaleLowerCase('es').includes(search.trim().toLocaleLowerCase('es'))), [articles, kind, search]);
@@ -117,7 +131,7 @@ function ArticleIndex({ kind }: { kind: ContentKind }) {
       : 'Una galería de proyectos confirmados, con contexto sobre el reto y el trabajo realizado.';
   return <><ShowcaseHero kind={kind} description={description}/><section className="showcase-section">
     <div className="showcase-toolbar"><div><span className="site-eyebrow"><i/>VISUAL CORP</span><h2>{kind === 'portafolio' ? 'Trabajo seleccionado' : kind === 'publicaciones' ? 'Últimas publicaciones' : 'Lecturas recientes'}</h2></div><label className="showcase-search"><Search size={16}/><span className="sr-only">Buscar contenido</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar contenido"/></label></div>
-    {loading ? <div className="showcase-empty glass-card" role="status">Cargando contenido…</div> : error ? <div className="showcase-empty glass-card" role="alert">{error}</div> : matches.length ? <AnimatedList className="showcase-grid" stagger={0.045}>{matches.map((article) => <ContentCard key={article.id} article={article} kind={kind}/>)}</AnimatedList> : <EmptyContent kind={kind}/>}
+    {loading ? <div className="showcase-empty glass-card" role="status">Cargando contenido…</div> : error ? <ContentLoadError message={error} onRetry={retry}/> : matches.length ? <AnimatedList className="showcase-grid" stagger={0.045}>{matches.map((article) => <ContentCard key={article.id} article={article} kind={kind}/>)}</AnimatedList> : <EmptyContent kind={kind}/>}
   </section></>;
 }
 
@@ -171,11 +185,12 @@ export function HomeContentHighlights() {
 
 export function ArticleDetailPage({ kind = 'blog' }: { kind?: ContentKind }) {
   const { slug = '' } = useParams();
-  const { articles, loading, error } = usePublishedArticles();
+  const { articles, loading, error, retry } = usePublishedArticles();
   const article = articles.find((item) => item.slug === slug && articleMatches(item, kind));
   useEffect(() => { if (article) document.title = `${article.title} · Visual Corp`; }, [article]);
   if (loading) return <section className="showcase-section"><div className="showcase-empty glass-card" role="status">Cargando artículo…</div></section>;
-  if (error || !article) return <section className="showcase-section"><div className="showcase-empty glass-card"><h1>Este contenido no está disponible.</h1><p>{error || 'Revisa el enlace o vuelve a la lista de artículos.'}</p><Link className="site-secondary-button" to={kind === 'publicaciones' ? '/publicaciones' : kind === 'portafolio' ? '/portafolio' : '/blog'}>Volver <ArrowRight size={15}/></Link></div></section>;
+  if (error) return <section className="showcase-section"><ContentLoadError message={error} onRetry={retry}/></section>;
+  if (!article) return <section className="showcase-section"><div className="showcase-empty glass-card"><h1>Este contenido no está disponible.</h1><p>Revisa el enlace o vuelve a la lista de artículos.</p><Link className="site-secondary-button" to={kind === 'publicaciones' ? '/publicaciones' : kind === 'portafolio' ? '/portafolio' : '/blog'}>Volver <ArrowRight size={15}/></Link></div></section>;
   const lines = article.body_markdown.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   return <><DocumentTitle title={article.title}/><header className="article-hero"><Link className="article-back" to={kind === 'publicaciones' ? '/publicaciones' : kind === 'portafolio' ? '/portafolio' : '/blog'}><ArrowRight size={15}/> Volver</Link><span className="site-eyebrow light"><i/>{kind === 'publicaciones' ? 'PUBLICACIÓN' : kind === 'portafolio' ? 'PORTAFOLIO VISUAL CORP' : 'BLOG VISUAL CORP'}</span><h1>{article.title}</h1>{article.excerpt && <p>{article.excerpt}</p>}{article.published_at && <time dateTime={article.published_at}>{new Date(article.published_at).toLocaleDateString('es-EC', { dateStyle: 'long' })}</time>}</header><article className="article-body glass-card">{article.cover_image && <img className="article-cover" src={article.cover_image} alt=""/>}<div className="article-markdown">{lines.map((line, index) => line.startsWith('#') ? <h2 key={index}>{line.replace(/^#+\s*/, '')}</h2> : <p key={index}>{line.replace(/\*\*(.*?)\*\*/g, '$1')}</p>)}</div>{article.tags?.length > 0 && <div className="article-tags">{article.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}</article></>;
 }
@@ -215,16 +230,21 @@ export function StorefrontPage() {
     setError('');
     if (!supabase || !supabaseConfigured) { setError('El catálogo no está conectado en este momento. Intenta de nuevo más tarde.'); setLoading(false); return () => { current = false; }; }
     const load = async () => {
-      const { data: rows, error: productError } = await supabase.from('public_catalog_products')
-        .select('id,name,slug,description,type,category_id,category,calc_type,featured,sort_order,image,images,features')
-        .eq('is_published', true).order('sort_order', { ascending: true });
-      if (!current) return;
-      if (productError) { setError('No pudimos cargar el catálogo. Comprueba tu conexión e inténtalo de nuevo.'); setLoading(false); return; }
-      setProducts(consolidateQuantityTiers((rows || []) as CatalogProduct[]).map((product) => {
-        const images = catalogImagesForProduct({ id: product.id, name: product.name, family: product.category || '', image: product.image, images: product.images || [] });
-        return { ...product, image: images[0] || product.image };
-      }));
-      setLoading(false);
+      try {
+        const { data: rows, error: productError } = await supabase.from('public_catalog_products')
+          .select('id,name,slug,description,type,category_id,category,calc_type,featured,sort_order,image,images,features')
+          .eq('is_published', true).order('sort_order', { ascending: true });
+        if (!current) return;
+        if (productError) { setError('No pudimos cargar el catálogo. Comprueba tu conexión e inténtalo de nuevo.'); return; }
+        setProducts(consolidateQuantityTiers((rows || []) as CatalogProduct[]).map((product) => {
+          const images = catalogImagesForProduct({ id: product.id, name: product.name, family: product.category || '', image: product.image, images: product.images || [] });
+          return { ...product, image: images[0] || product.image };
+        }));
+      } catch {
+        if (current) setError('No pudimos conectar con el catálogo. Comprueba tu conexión e inténtalo de nuevo.');
+      } finally {
+        if (current) setLoading(false);
+      }
     };
     void load();
     return () => { current = false; };
