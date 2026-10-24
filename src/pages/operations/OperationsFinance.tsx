@@ -103,6 +103,8 @@ export function OperationsFinance() {
   const [expensePaymentsLoading, setExpensePaymentsLoading] = useState(false);
   const [expensePaymentsError, setExpensePaymentsError] = useState('');
   const [advisors, setAdvisors] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [customersError, setCustomersError] = useState('');
   const [branches, setBranches] = useState([]);
   const [month, setMonth] = useState(currentMonth);
   const [advisor, setAdvisor] = useState('all');
@@ -208,7 +210,7 @@ export function OperationsFinance() {
       setRefundSettlementError('');
       setSaleReturnsError('');
       try {
-        const [salesRows, paymentRows, teamResult, branchResult] = await Promise.all([
+        const [salesRows, paymentRows, teamResult, branchResult, customersResult] = await Promise.all([
           readAllRows(() => supabase
             .from('sales')
             .select('id,sale_code,status,total,created_at,branch_id,advisor_id,created_by,customer_id,customers(full_name)')
@@ -230,6 +232,11 @@ export function OperationsFinance() {
             .eq('organization_id', organizationId)
             .eq('active', true)
             .order('name'),
+          canSeeCrm
+            ? readAllRows(() => supabase.from('customers').select('id,full_name,phone').eq('organization_id', organizationId).order('full_name'))
+              .then((data) => ({ data, error: null }))
+              .catch((loadError) => ({ data: [], error: loadError }))
+            : Promise.resolve({ data: [], error: null }),
         ]);
 
         if (branchResult.error) throw branchResult.error;
@@ -238,6 +245,8 @@ export function OperationsFinance() {
           setPayments(paymentRows);
           setAdvisors(teamResult.error ? [] : teamResult.data || []);
           setBranches(branchResult.data || []);
+          setCustomers(customersResult.data || []);
+          setCustomersError(customersResult.error?.message || '');
         }
         try {
           const returnRows = await readAllRows(() => supabase
@@ -278,7 +287,7 @@ export function OperationsFinance() {
 
     void load();
     return () => { active = false; };
-  }, [organizationId, hasPermission, canSeeInventoryCosts, canSeeCashReconciliation, realtimeRevision.sales, realtimeRevision.inventoryCosts]);
+  }, [organizationId, hasPermission, canSeeCrm, canSeeInventoryCosts, canSeeCashReconciliation, realtimeRevision.sales, realtimeRevision.inventoryCosts]);
 
   useEffect(() => {
     let active = true;
@@ -926,7 +935,7 @@ export function OperationsFinance() {
       </div>
       <a className="button button-outline" href="/operaciones/pos">Registrar venta o abono en POS <ArrowUpRight size={15} /></a>
     </section>
-    <AdvisorIncomeEntry branches={branches} advisors={advisors} currentUserId={user?.id || ''} canChooseAdvisor={hasPermission('team', 'view')} selectedBranch={branch} onRecorded={() => setRealtimeRevision((current) => ({ ...current, sales: current.sales + 1, cash: current.cash + 1 }))} />
+    <AdvisorIncomeEntry branches={branches} advisors={advisors} customers={canSeeCrm ? customers : null} customersError={customersError} currentUserId={user?.id || ''} canChooseAdvisor={hasPermission('team', 'view')} selectedBranch={branch} onRecorded={() => setRealtimeRevision((current) => ({ ...current, sales: current.sales + 1, cash: current.cash + 1 }))} />
     {error && <div className="op-flow-alert error" role="alert"><ShieldAlert size={16} />{error}</div>}
     <section className="panel op-finance-filters">
       <label>Mes<input type="month" value={month} onChange={(event) => setMonth(event.target.value)} /></label>
