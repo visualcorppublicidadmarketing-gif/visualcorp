@@ -176,6 +176,32 @@ export function OperationsFinance() {
     return () => { active = false; };
   }, [organizationId, canSeeInventoryCosts, month, branch, advisor]);
 
+  useEffect(() => {
+    let active = true;
+    if (!canSeeInventoryCosts || !supabase || !organizationId || !month) {
+      setMaterialCostSummary(null);
+      setMaterialCostError('');
+      setMaterialCostLoading(false);
+      return () => { active = false; };
+    }
+    setMaterialCostLoading(true);
+    setMaterialCostError('');
+    void supabase.rpc('get_finance_material_cost_summary', {
+      p_month: `${month}-01`,
+      p_branch_id: branch === 'all' ? null : branch,
+      p_advisor_id: advisor === 'all' ? null : advisor,
+    }).then(({ data, error: summaryError }) => {
+      if (!active) return;
+      if (summaryError) {
+        setMaterialCostError(summaryError.message || 'No se pudo consultar el costo capturado de materiales.');
+        setMaterialCostSummary(null);
+      } else {
+        setMaterialCostSummary(data);
+      }
+    }).finally(() => { if (active) setMaterialCostLoading(false); });
+    return () => { active = false; };
+  }, [organizationId, canSeeInventoryCosts, month, branch, advisor]);
+
   const advisorNames = useMemo(() => new Map(advisors.map((person) => [
     person.user_id,
     person.full_name || person.email || `Usuario ${String(person.user_id).slice(0, 8)}`,

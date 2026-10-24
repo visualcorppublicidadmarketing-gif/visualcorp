@@ -26,7 +26,7 @@ async function readAllFinanceRows(createQuery: () => any) {
   }
 }
 
-type Expense = { id: string; description: string; category: string; status: string; document_date: string; due_date: string | null; total: number; paid_total: number; branch_id: string | null; supplier_id: string | null; purchase_order_id: string | null; reference: string };
+type Expense = { id: string; description: string; category: string; status: string; document_date: string; due_date: string | null; total: number; paid_total: number; branch_id: string | null; supplier_id: string | null; purchase_order_id: string | null; receipt_id: string | null; reference: string };
 type TeamMember = { user_id: string; full_name: string; email: string; role: string; active: boolean };
 
 export function OperationsFinanceControls() {
@@ -40,6 +40,8 @@ export function OperationsFinanceControls() {
   const [branches, setBranches] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [receipts, setReceipts] = useState<any[]>([]);
+  const [receiptForms, setReceiptForms] = useState<Record<string, { total: string; due: string; document: string }>>({});
   const [orderReferenceTotals, setOrderReferenceTotals] = useState<Record<string, number>>({});
   const [expensePayments, setExpensePayments] = useState<any[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
@@ -71,7 +73,7 @@ export function OperationsFinanceControls() {
     }
     try {
       [expenseRows, templateRows, deductionRows, paymentRows] = await Promise.all([
-        readAllFinanceRows(() => supabase.from('finance_expenses').select('id,description,category,status,document_date,due_date,total,paid_total,branch_id,supplier_id,purchase_order_id,reference').eq('organization_id', organizationId).order('document_date', { ascending: false }).order('id')),
+        readAllFinanceRows(() => supabase.from('finance_expenses').select('id,description,category,status,document_date,due_date,total,paid_total,branch_id,supplier_id,purchase_order_id,receipt_id,reference').eq('organization_id', organizationId).order('document_date', { ascending: false }).order('id')),
         readAllFinanceRows(() => supabase.from('finance_recurring_templates').select('id,description,category,expected_amount,cadence,next_due_date,cadence_anchor_day,branch_id,supplier_id,active').eq('organization_id', organizationId).order('next_due_date').order('id')),
         canSeeDeductions
           ? readAllFinanceRows(() => supabase.from('finance_payroll_deductions').select('id,employee_user_id,description,amount,payroll_period,status,authorization_reference,evidence_reference,created_at').eq('organization_id', organizationId).order('payroll_period', { ascending: false }).order('id'))
@@ -98,6 +100,26 @@ export function OperationsFinanceControls() {
       setOrderReferenceTotals({});
       setError('No se pudieron calcular los valores de referencia de Compras. Puedes registrar el egreso, pero confirma el importe con la factura.');
     }
+    try {
+      const receiptRows = await readAllFinanceRows(() => supabase.from('purchase_receipts').select('id,purchase_order_id,reference,note,received_at').eq('organization_id', organizationId).order('received_at', { ascending: false }));
+      const receiptIds = receiptRows.map((receipt: any) => receipt.id);
+      if (!receiptIds.length) setReceipts([]);
+      else {
+        const [receiptLineRows, allOrderLines] = await Promise.all([
+          readAllFinanceRows(() => supabase.from('purchase_receipt_lines').select('receipt_id,purchase_order_line_id,quantity_received').eq('organization_id', organizationId).in('receipt_id', receiptIds).order('receipt_id').order('id')),
+          readAllFinanceRows(() => supabase.from('purchase_order_lines').select('id,purchase_order_id,unit_cost').eq('organization_id', organizationId).order('purchase_order_id').order('id')),
+        ]);
+        const costByLine = new Map(allOrderLines.map((line: any) => [line.id, Number(line.unit_cost)]));
+        const totalByReceipt = receiptLineRows.reduce((acc: Record<string, number>, line: any) => {
+          acc[line.receipt_id] = (acc[line.receipt_id] || 0) + Number(line.quantity_received) * (costByLine.get(line.purchase_order_line_id) || 0);
+          return acc;
+        }, {});
+        setReceipts(receiptRows.map((receipt: any) => ({ ...receipt, referenceTotal: totalByReceipt[receipt.id] || 0 })));
+      }
+    } catch (receiptError: any) {
+      setReceipts([]);
+      setError(receiptError?.message || 'No se pudieron cargar las recepciones de Compras.');
+    }
     setExpensePayments(paymentRows);
     setTeam(teamResult.error ? [] : (teamResult.data || []));
     setDeductions(deductionRows);
@@ -114,6 +136,19 @@ export function OperationsFinanceControls() {
   const payableTotal = openPayables.reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
   const thisMonth = today().slice(0, 7);
   const paidThisMonth = expensePayments.filter((payment) => payment.paid_at && businessMonth(payment.paid_at) === thisMonth).reduce((sum, payment) => sum + Number(payment.amount), 0);
+
+  const createReceiptPayable = async (receipt: any) => {
+    const form = receiptForms[receipt.id] || { total: String(Number(receipt.referenceTotal).toFixed(2)), due: '', document: '' };
+    if (!Number(form.total) || Number(form.total) <= 0) { setError('Confirma el importe real de la factura antes de crear la cuenta por pagar.'); return; }
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const { data, error: payableError } = await supabase.rpc('record_finance_receipt_payable', { p_receipt_id: receipt.id, p_total: Number(form.total), p_document_reference: form.document.trim(), p_due_date: form.due || null });
+      if (payableError) throw payableError;
+      setNotice(data?.already_created ? 'Esta recepción ya tiene una cuenta por pagar vinculada; no se duplicó.' : 'Cuenta por pagar creada con el importe confirmado. No se registró ningún pago.');
+      await refresh();
+    } catch (payableError: any) { setError(payableError.message || 'No se pudo crear la cuenta por pagar desde la recepción.'); }
+    finally { setBusy(false); }
+  };
 
   const saveExpense = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setError(''); setNotice('');
@@ -196,6 +231,16 @@ export function OperationsFinanceControls() {
         <article className="is-overdue"><span>Vencido</span><b>{money(dueNow)}</b><small>Con fecha de vencimiento anterior a hoy</small></article>
         <article><span>Pagado este mes</span><b>{money(paidThisMonth)}</b><small>Pagos hechos, no obligaciones pendientes</small></article>
       </div>
+      <section className="panel op-finance-ledger-register"><div className="panel-heading"><div><span className="eyebrow">COMPRAS CON INVENTARIO RECIBIDO</span><h3>Recepciones pendientes de vincular</h3><p className="muted">El valor de la orden es solo una referencia. Confirma el total de la factura antes de crear el compromiso.</p></div><ReceiptText size={18}/></div>
+        {!receipts.length ? <div className="op-finance-ledger-empty"><ReceiptText size={22}/><span>No hay recepciones registradas para conciliar.</span></div> : <div className="op-finance-ledger-list">{receipts.map((receipt) => {
+          const linkedExpense = expenses.find((expense) => expense.receipt_id === receipt.id);
+          const order = orders.find((item) => item.id === receipt.purchase_order_id);
+          const form = receiptForms[receipt.id] || { total: String(Number(receipt.referenceTotal).toFixed(2)), due: '', document: receipt.reference || '' };
+          return <article key={receipt.id}><div className="op-finance-ledger-record-top"><div><b>{order?.order_number || 'Orden de compra'} · {supplierNames.get(order?.supplier_id) || 'Proveedor'}</b><span>{new Date(receipt.received_at).toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })} · {receipt.reference || 'Sin referencia de factura'}</span></div><span className="op-finance-ledger-status">{linkedExpense ? 'Cuenta vinculada' : 'Por conciliar'}</span></div>
+            {linkedExpense ? <div className="op-finance-ledger-record-numbers"><span>Cuenta por pagar · {linkedExpense.reference || 'Factura sin referencia'}</span><b>{money(linkedExpense.total)} · saldo {money(Number(linkedExpense.total) - Number(linkedExpense.paid_total))}</b></div> : <><div className="op-finance-ledger-record-numbers"><span>Referencia estimada de líneas recibidas</span><b>{money(receipt.referenceTotal)}</b></div><div className="op-finance-ledger-pay"><label>Importe real de factura USD<input required aria-label="Importe confirmado de factura" type="number" min="0.01" step="0.01" value={form.total} onChange={(event) => setReceiptForms({ ...receiptForms, [receipt.id]: { ...form, total: event.target.value } })}/></label><label>Vencimiento<input type="date" value={form.due} onChange={(event) => setReceiptForms({ ...receiptForms, [receipt.id]: { ...form, due: event.target.value } })}/></label><label>Factura / comprobante<input maxLength={200} value={form.document} onChange={(event) => setReceiptForms({ ...receiptForms, [receipt.id]: { ...form, document: event.target.value } })}/></label><button className="button button-outline" disabled={busy} onClick={() => void createReceiptPayable(receipt)}>Crear cuenta por pagar</button></div><small>Se vinculará a este proveedor, orden y recepción. No registra abonos ni pagos.</small></>}
+          </article>;
+        })}</div>}
+      </section>
       <div className="op-finance-ledger-columns">
         <form className="panel op-finance-ledger-form" onSubmit={saveExpense}>
           <div className="panel-heading"><div><span className="eyebrow">NUEVO MOVIMIENTO</span><h3>Registrar egreso</h3></div><Plus size={18}/></div>
