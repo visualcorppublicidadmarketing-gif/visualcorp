@@ -54,6 +54,8 @@ export function OperationsFinanceControls() {
   const [busy, setBusy] = useState(false);
   const [expenseForm, setExpenseForm] = useState({ description: '', category: categories[0], total: '', paid: '', due: '', branch: '', supplier: '', order: '', method: 'transfer', reference: '', documentReference: '', note: '' });
   const [paymentForms, setPaymentForms] = useState<Record<string, { amount: string; method: string }>>({});
+  const [expenseSearch, setExpenseSearch] = useState('');
+  const [expenseStatusFilter, setExpenseStatusFilter] = useState('all');
   const [templateForm, setTemplateForm] = useState({ description: '', category: 'Servicios básicos', amount: '', cadence: 'monthly', due: today(), branch: '', supplier: '', note: '' });
   const [deductionForm, setDeductionForm] = useState({ employee: '', description: '', amount: '', period: today().slice(0, 7), authorization: '', evidence: '' });
   const [reviewRefs, setReviewRefs] = useState<Record<string, { authorization: string; evidence: string }>>({});
@@ -144,6 +146,20 @@ export function OperationsFinanceControls() {
   const payableTotal = openPayables.reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
   const thisMonth = today().slice(0, 7);
   const paidThisMonth = expensePayments.filter((payment) => payment.paid_at && businessMonth(payment.paid_at) === thisMonth).reduce((sum, payment) => sum + Number(payment.amount), 0);
+  const visibleExpenses = useMemo(() => {
+    const term = expenseSearch.trim().toLocaleLowerCase('es-EC');
+    return expenses.filter((expense) => {
+      const balance = Number(expense.total) - Number(expense.paid_total);
+      const isOverdue = balance > 0 && Boolean(expense.due_date) && expense.due_date < today();
+      const matchesStatus = expenseStatusFilter === 'all'
+        || (expenseStatusFilter === 'open' && balance > 0)
+        || (expenseStatusFilter === 'overdue' && isOverdue)
+        || (expenseStatusFilter === 'paid' && balance <= 0);
+      const searchable = [expense.description, expense.category, expense.reference, branchNames.get(expense.branch_id), supplierNames.get(expense.supplier_id), orderNames.get(expense.purchase_order_id)]
+        .filter(Boolean).join(' ').toLocaleLowerCase('es-EC');
+      return matchesStatus && (!term || searchable.includes(term));
+    });
+  }, [expenses, expenseSearch, expenseStatusFilter, branchNames, supplierNames, orderNames]);
 
   const createReceiptPayable = async (receipt: any) => {
     const form = receiptForms[receipt.id] || { total: String(Number(receipt.referenceTotal).toFixed(2)), due: '', document: '' };
@@ -265,12 +281,12 @@ export function OperationsFinanceControls() {
           <button className="button button-primary" disabled={busy}><Plus size={15}/> Guardar egreso</button>
         </form>
         <section className="panel op-finance-ledger-register"><div className="panel-heading"><div><span className="eyebrow">COMPROMISOS Y PAGOS</span><h3>Movimientos de egreso</h3></div><CircleDollarSign size={19}/></div>
-          {!expenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={24}/><b>Aún no hay egresos</b><span>Registra compras pagadas al instante o servicios que debas pagar después.</span></div> : <div className="op-finance-ledger-list">{expenses.map((expense) => { const balance = Number(expense.total) - Number(expense.paid_total); const form = paymentForms[expense.id] || { amount: '', method: 'transfer' }; return <article key={expense.id}>
+          {!expenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={24}/><b>Aún no hay egresos</b><span>Registra compras pagadas al instante o servicios que debas pagar después.</span></div> : <><div className="op-finance-ledger-filters"><label>Buscar egreso<input type="search" value={expenseSearch} onChange={(event) => setExpenseSearch(event.target.value)} placeholder="Descripción, proveedor, OC o documento"/></label><label>Estado<select value={expenseStatusFilter} onChange={(event) => setExpenseStatusFilter(event.target.value)}><option value="all">Todos los estados</option><option value="open">Por pagar</option><option value="overdue">Vencidos</option><option value="paid">Pagados</option></select></label><span className="op-finance-ledger-result-count">{visibleExpenses.length} de {expenses.length} egresos</span></div>{!visibleExpenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={22}/><b>Sin coincidencias</b><span>Prueba otro término o estado para encontrar el egreso.</span></div> : <div className="op-finance-ledger-list">{visibleExpenses.map((expense) => { const balance = Number(expense.total) - Number(expense.paid_total); const form = paymentForms[expense.id] || { amount: '', method: 'transfer' }; return <article key={expense.id}>
             <div className="op-finance-ledger-record-top"><div><b>{expense.description}</b><span>{expense.category}{expense.branch_id ? ` · ${branchNames.get(expense.branch_id) || 'Sucursal'}` : ' · General'}{expense.supplier_id ? ` · ${supplierNames.get(expense.supplier_id) || 'Proveedor'}` : ''}{expense.purchase_order_id ? ` · OC ${orderNames.get(expense.purchase_order_id) || 'vinculada'}` : ''}{expense.reference ? ` · Doc. ${expense.reference}` : ''}</span></div><span className={`op-finance-ledger-status ${balance <= 0 ? 'is-paid' : ''}`}>{balance <= 0 ? 'Pagado' : expense.due_date && expense.due_date < today() ? 'Vencido' : 'Por pagar'}</span></div>
             <div className="op-finance-ledger-record-numbers"><span>Registrado {new Date(`${expense.document_date}T12:00:00`).toLocaleDateString('es-EC')} {expense.due_date ? `· vence ${new Date(`${expense.due_date}T12:00:00`).toLocaleDateString('es-EC')}` : ''}</span><b>{money(balance)} <small>pendiente</small></b></div>
             <div className="op-finance-ledger-progress"><i style={{ width: `${Math.min(100, Number(expense.paid_total) / Number(expense.total) * 100)}%` }}/></div><small>Pagado {money(Number(expense.paid_total))} de {money(Number(expense.total))}</small>
             {balance > 0 && <form className="op-finance-ledger-pay" onSubmit={(event) => void registerPayment(event, expense)}><input aria-label="Monto de abono" required type="number" min="0.01" max={balance} step="0.01" placeholder="Abono USD" value={form.amount} onChange={(event) => setPaymentForms({ ...paymentForms, [expense.id]: { ...form, amount: event.target.value } })}/><select aria-label="Medio de pago" value={form.method} onChange={(event) => setPaymentForms({ ...paymentForms, [expense.id]: { ...form, method: event.target.value } })}>{methods.map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select><button className="button button-outline" disabled={busy}>Registrar pago</button></form>}
-          </article>; })}</div>}
+          </article>; })}</div>}</>}
           {!!expensePayments.length && <><div className="panel-heading op-finance-ledger-history-heading"><div><span className="eyebrow">DINERO DESEMBOLSADO</span><h3>Pagos recientes</h3></div></div><div className="op-finance-ledger-list">{expensePayments.slice(0, 15).map((payment) => { const linked = expenses.find((expense) => expense.id === payment.expense_id); return <article className="op-finance-ledger-history-row" key={payment.id}><div><b>{linked?.description || 'Egreso'}</b><span>{payment.method} · {new Date(payment.paid_at).toLocaleString('es-EC', { timeZone: 'America/Guayaquil', dateStyle: 'short', timeStyle: 'short' })}</span></div><b>{money(payment.amount)}</b></article>; })}</div></>}
         </section>
       </div>
