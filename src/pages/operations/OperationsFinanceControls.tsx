@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { CalendarClock, Check, CircleDollarSign, Clock3, Download, Plus, ReceiptText, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight, CalendarClock, ChartNoAxesCombined, Check, CircleDollarSign, Clock3, Download, Plus, ReceiptText, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -36,6 +36,7 @@ async function readAllFinanceRows(createQuery: () => any) {
 }
 
 type Expense = { id: string; description: string; category: string; status: string; document_date: string; due_date: string | null; total: number; paid_total: number; branch_id: string | null; supplier_id: string | null; purchase_order_id: string | null; receipt_id: string | null; reference: string };
+type FinanceBudget = { id: string; period_start: string; category: string; branch_id: string | null; budget_amount: number; note: string };
 type TeamMember = { user_id: string; full_name: string; email: string; role: string; active: boolean };
 type PersonnelOption = { personnel_id: string; full_name: string; department: string; job_title: string };
 const payrollMonthLabel = (value: string) => new Date(`${value.slice(0, 7)}-01T12:00:00`).toLocaleDateString('es-EC', { year: 'numeric', month: 'long' });
@@ -46,12 +47,17 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const canSeeDeductions = roles.some((role: string) => ['owner', 'admin'].includes(role));
   const [section, setSection] = useState('egresos');
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [budgets, setBudgets] = useState<FinanceBudget[]>([]);
+  const [budgetsLoading, setBudgetsLoading] = useState(false);
+  const [budgetsError, setBudgetsError] = useState('');
   const [templates, setTemplates] = useState<any[]>([]);
   const [recurringOccurrences, setRecurringOccurrences] = useState<any[]>([]);
   const [deductions, setDeductions] = useState<any[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [orderLines, setOrderLines] = useState<any[]>([]);
+  const [purchaseCommitmentsError, setPurchaseCommitmentsError] = useState('');
   const [receipts, setReceipts] = useState<any[]>([]);
   const [receiptForms, setReceiptForms] = useState<Record<string, { total: string; due: string; document: string }>>({});
   const [orderReferenceTotals, setOrderReferenceTotals] = useState<Record<string, number>>({});
@@ -69,10 +75,13 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const [templateForm, setTemplateForm] = useState({ description: '', category: 'Servicios básicos', amount: '', cadence: 'monthly', due: today(), branch: '', supplier: '', note: '' });
   const [deductionForm, setDeductionForm] = useState({ employee: '', description: '', amount: '', period: today().slice(0, 7), authorization: '', evidence: '' });
   const [reviewRefs, setReviewRefs] = useState<Record<string, { authorization: string; evidence: string }>>({});
+  const [payrollDeliveryRefs, setPayrollDeliveryRefs] = useState<Record<string, string>>({});
+  const [budgetForm, setBudgetForm] = useState({ category: categories[0], branch: '', amount: '', note: '' });
 
   const refresh = async () => {
     if (!supabase || !organizationId || !canManage) return;
     setError('');
+    setPurchaseCommitmentsError('');
     let expenseRows: Expense[];
     let templateRows: any[];
     let recurringOccurrenceRows: any[];
@@ -82,10 +91,11 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
       supabase.from('branches').select('id,name').eq('organization_id', organizationId).eq('active', true).order('name'),
       supabase.rpc('list_visualcorp_team_members'),
       supabase.from('suppliers').select('id,name').eq('organization_id', organizationId).eq('active', true).order('name'),
-      supabase.from('purchase_orders').select('id,order_number,status,supplier_id').eq('organization_id', organizationId).not('status', 'eq', 'cancelled').order('created_at', { ascending: false }).limit(300),
+      readAllFinanceRows(() => supabase.from('purchase_orders').select('id,order_number,status,supplier_id,branch_id,expected_date').eq('organization_id', organizationId).not('status', 'eq', 'cancelled').order('created_at', { ascending: false }).order('id')).then((data) => ({ data, error: null }), (error) => ({ data: null, error })),
       canSeeDeductions ? supabase.rpc('list_visualcorp_finance_personnel_options') : Promise.resolve({ data: [], error: null }),
     ]);
     if (branchResult.error || supplierResult.error || orderResult.error) {
+      if (orderResult.error) setPurchaseCommitmentsError('No se pudieron cargar las órdenes de compra abiertas. Revisa la conexión de Compras.');
       setError(branchResult.error?.message || supplierResult.error?.message || orderResult.error?.message || 'No se pudieron cargar las áreas conectadas.');
       return;
     }
@@ -97,7 +107,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         readAllFinanceRows(() => supabase.from('finance_recurring_templates').select('id,description,category,expected_amount,cadence,next_due_date,cadence_anchor_day,branch_id,supplier_id,active').eq('organization_id', organizationId).order('next_due_date').order('id')),
         readAllFinanceRows(() => supabase.from('finance_recurring_occurrences').select('template_id,due_date').eq('organization_id', organizationId).gte('due_date', forecastStart).lte('due_date', forecastEnd).order('due_date').order('id')),
         canSeeDeductions
-          ? readAllFinanceRows(() => supabase.from('finance_payroll_deductions').select('id,personnel_id,employee_user_id,description,amount,payroll_period,status,authorization_reference,evidence_reference,created_at').eq('organization_id', organizationId).order('payroll_period', { ascending: false }).order('id'))
+          ? readAllFinanceRows(() => supabase.from('finance_payroll_deductions').select('id,personnel_id,employee_user_id,description,amount,payroll_period,status,authorization_reference,evidence_reference,payroll_handoff_reference,payroll_handed_at,payroll_handed_by,created_at').eq('organization_id', organizationId).order('payroll_period', { ascending: false }).order('id'))
           : Promise.resolve([]),
         readAllFinanceRows(() => supabase.from('finance_expense_payments').select('id,expense_id,amount,method,reference,paid_at').eq('organization_id', organizationId).order('paid_at', { ascending: false }).order('id')),
       ]);
@@ -114,14 +124,17 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
     setPersonnelOptions(personnelResult.error ? [] : (personnelResult.data || []) as PersonnelOption[]);
     setPersonnelOptionsError(personnelResult.error?.message || '');
     try {
-      const orderLines = await readAllFinanceRows(() => supabase.from('purchase_order_lines').select('purchase_order_id,quantity_ordered,unit_cost').eq('organization_id', organizationId).order('purchase_order_id').order('id'));
+      const orderLines = await readAllFinanceRows(() => supabase.from('purchase_order_lines').select('id,purchase_order_id,quantity_ordered,quantity_received,unit_cost').eq('organization_id', organizationId).order('purchase_order_id').order('id'));
+      setOrderLines(orderLines);
       const totals = orderLines.reduce((result: Record<string, number>, line: any) => {
         result[line.purchase_order_id] = (result[line.purchase_order_id] || 0) + Number(line.quantity_ordered) * Number(line.unit_cost);
         return result;
       }, {});
       setOrderReferenceTotals(totals);
     } catch {
+      setOrderLines([]);
       setOrderReferenceTotals({});
+      setPurchaseCommitmentsError('No se pudieron calcular los compromisos de compra pendientes. Revisa la conexión de Compras.');
       setError('No se pudieron calcular los valores de referencia de Compras. Puedes registrar el egreso, pero confirma el importe con la factura.');
     }
     try {
@@ -151,6 +164,36 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
 
   useEffect(() => { void refresh(); }, [organizationId, canManage, canSeeDeductions]);
 
+  useEffect(() => {
+    let active = true;
+    if (!supabase || !organizationId || !canManage || !month) {
+      setBudgets([]);
+      setBudgetsError('');
+      setBudgetsLoading(false);
+      return () => { active = false; };
+    }
+    setBudgetsLoading(true);
+    setBudgetsError('');
+    setBudgets([]);
+    let budgetQuery = supabase.from('finance_budgets')
+      .select('id,period_start,category,branch_id,budget_amount,note')
+      .eq('organization_id', organizationId)
+      .eq('period_start', `${month}-01`);
+    if (branch !== 'all') budgetQuery = budgetQuery.eq('branch_id', branch);
+    void budgetQuery.order('category').order('branch_id').then(({ data, error: loadError }) => {
+        if (!active) return;
+        if (loadError) {
+          setBudgets([]);
+          setBudgetsError(loadError.message || 'No se pudieron cargar los presupuestos del periodo.');
+        } else setBudgets((data || []) as FinanceBudget[]);
+        setBudgetsLoading(false);
+      });
+    return () => { active = false; };
+  }, [organizationId, canManage, month, branch]);
+  useEffect(() => {
+    if (branch !== 'all') setBudgetForm((current) => ({ ...current, branch }));
+  }, [branch]);
+
   const branchNames = useMemo(() => new Map(branches.map((branch) => [branch.id, branch.name])), [branches]);
   const supplierNames = useMemo(() => new Map(suppliers.map((supplier) => [supplier.id, supplier.name])), [suppliers]);
   const orderNames = useMemo(() => new Map(orders.map((order) => [order.id, order.order_number])), [orders]);
@@ -161,6 +204,52 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const openPayables = expenses.filter((expense) => expense.status === 'payable' && isInSelectedBranch(expense));
   const dueNow = openPayables.filter((expense) => expense.due_date && expense.due_date < today()).reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
   const payableTotal = openPayables.reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
+  const purchaseCommitments = useMemo(() => {
+    const openOrders = new Map(orders
+      .filter((order) => ['ordered', 'partially_received'].includes(order.status) && (branch === 'all' || order.branch_id === branch))
+      .map((order) => [order.id, { ...order, amount: 0, remainingLines: 0 }]));
+    orderLines.forEach((line) => {
+      const order = openOrders.get(line.purchase_order_id);
+      if (!order) return;
+      const remaining = Math.max(0, Number(line.quantity_ordered) - Number(line.quantity_received));
+      if (!remaining) return;
+      order.amount += remaining * Number(line.unit_cost);
+      order.remainingLines += 1;
+    });
+    const rows = [...openOrders.values()].filter((order) => order.remainingLines > 0);
+    rows.sort((a, b) => (a.expected_date || '9999-12-31').localeCompare(b.expected_date || '9999-12-31') || a.order_number.localeCompare(b.order_number, 'es-EC'));
+    return { rows, total: rows.reduce((sum, order) => sum + order.amount, 0) };
+  }, [orders, orderLines, branch]);
+  const payableAging = useMemo(() => {
+    const todayValue = today();
+    const overdue: Array<Expense & { balance: number; days_overdue: number }> = [];
+    const withoutDueDate: Array<Expense & { balance: number }> = [];
+    expenses.filter((expense) => expense.status === 'payable' && isInSelectedBranch(expense)).forEach((expense) => {
+      const balance = Number(expense.total) - Number(expense.paid_total);
+      if (balance <= 0) return;
+      if (!expense.due_date) {
+        withoutDueDate.push({ ...expense, balance });
+        return;
+      }
+      const daysOverdue = -dayDistance(expense.due_date, todayValue);
+      if (daysOverdue > 0) overdue.push({ ...expense, balance, days_overdue: daysOverdue });
+    });
+    overdue.sort((a, b) => b.days_overdue - a.days_overdue || b.balance - a.balance);
+    const buckets = [
+      { label: '1–30 días', min: 1, max: 30 },
+      { label: '31–60 días', min: 31, max: 60 },
+      { label: '61 días o más', min: 61, max: Infinity },
+    ].map((bucket) => {
+      const rows = overdue.filter((expense) => expense.days_overdue >= bucket.min && expense.days_overdue <= bucket.max);
+      return { ...bucket, rows, amount: rows.reduce((total, expense) => total + expense.balance, 0) };
+    });
+    return {
+      overdue,
+      buckets,
+      withoutDueDate,
+      withoutDueDateAmount: withoutDueDate.reduce((total, expense) => total + expense.balance, 0),
+    };
+  }, [expenses, branch]);
   const upcomingObligations = useMemo(() => {
     const generatedOccurrences = new Set(recurringOccurrences.map((item) => `${item.template_id}:${item.due_date}`));
     const dueItems = expenses.flatMap((expense) => {
@@ -187,6 +276,40 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
       && isInSelectedBranch(expense);
   });
   const paidInPeriod = expensePaymentsInScope.reduce((sum, payment) => sum + Number(payment.amount), 0);
+  const budgetReport = useMemo(() => {
+    const reportExpenses = expenses.filter((expense) => Boolean(month)
+      && expense.status !== 'void'
+      && expense.document_date.slice(0, 7) === month
+      && (branch === 'all' || expense.branch_id === branch));
+    const amountByKey = new Map<string, { category: string; branch_id: string | null; amount: number; count: number }>();
+    reportExpenses.forEach((expense) => {
+      const key = JSON.stringify([expense.branch_id, expense.category]);
+      const row = amountByKey.get(key) || { category: expense.category, branch_id: expense.branch_id, amount: 0, count: 0 };
+      row.amount += Number(expense.total || 0);
+      row.count += 1;
+      amountByKey.set(key, row);
+    });
+    const scopedBudgets = budgets.filter((budget) => branch === 'all' || budget.branch_id === branch);
+    const coveredKeys = new Set(scopedBudgets.map((budget) => JSON.stringify([budget.branch_id, budget.category])));
+    const rows = scopedBudgets.map((budget) => {
+      const actual = amountByKey.get(JSON.stringify([budget.branch_id, budget.category]));
+      return { ...budget, actual: actual?.amount || 0, expenseCount: actual?.count || 0 };
+    }).sort((a, b) => a.category.localeCompare(b.category, 'es-EC') || (a.branch_id || '').localeCompare(b.branch_id || ''));
+    const unbudgetedRows = [...amountByKey.entries()]
+      .filter(([key]) => !coveredKeys.has(key))
+      .map(([, row]) => row)
+      .sort((a, b) => b.amount - a.amount);
+    const totalBudget = scopedBudgets.reduce((sum, budget) => sum + Number(budget.budget_amount || 0), 0);
+    const totalActual = reportExpenses.reduce((sum, expense) => sum + Number(expense.total || 0), 0);
+    return {
+      rows,
+      unbudgetedRows,
+      totalBudget,
+      totalActual,
+      variance: totalBudget - totalActual,
+      unbudgetedTotal: unbudgetedRows.reduce((sum, row) => sum + row.amount, 0),
+    };
+  }, [expenses, budgets, month, branch]);
   const visibleExpenses = useMemo(() => {
     const term = expenseSearch.trim().toLocaleLowerCase('es-EC');
     return expenses.filter((expense) => {
@@ -205,12 +328,14 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const visibleDeductions = deductions.filter((item) => !month || String(item.payroll_period || '').slice(0, 7) === month);
   const deductionPersonName = (item: any) => (item.personnel_id && personnelNames.get(item.personnel_id)) || teamNames.get(item.employee_user_id) || 'Integrante del equipo';
   const authorizedDeductions = visibleDeductions.filter((item) => item.status === 'authorized');
+  const sentDeductions = visibleDeductions.filter((item) => item.status === 'sent_to_payroll');
   const deductionStatusSummary = visibleDeductions.reduce((summary, item) => {
     if (item.status === 'pending_authorization') summary.pending += Number(item.amount || 0);
     else if (item.status === 'authorized') summary.authorized += Number(item.amount || 0);
+    else if (item.status === 'sent_to_payroll') summary.sent += Number(item.amount || 0);
     else if (item.status === 'applied_externally') summary.applied += Number(item.amount || 0);
     return summary;
-  }, { pending: 0, authorized: 0, applied: 0 });
+  }, { pending: 0, authorized: 0, sent: 0, applied: 0 });
 
   const downloadAuthorizedDeductionsCsv = () => {
     if (!authorizedDeductions.length) return;
@@ -284,6 +409,74 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
     setBusy(false);
   };
 
+  const saveBudget = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!supabase || !organizationId || !month) return;
+    if (branch !== 'all' && budgetForm.branch !== branch) {
+      setError('Elige la sucursal seleccionada para guardar este presupuesto. Usa todas las sucursales para editar un presupuesto general.');
+      return;
+    }
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const { data, error: saveError } = await supabase.from('finance_budgets').upsert({
+        organization_id: organizationId,
+        period_start: `${month}-01`,
+        category: budgetForm.category,
+        branch_id: budgetForm.branch || null,
+        budget_amount: Number(budgetForm.amount),
+        note: budgetForm.note.trim(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'organization_id,period_start,category,branch_id' })
+        .select('id,period_start,category,branch_id,budget_amount,note')
+        .single();
+      if (saveError) throw saveError;
+      setBudgets((current) => [...current.filter((item) => item.id !== data.id
+        && !(item.period_start === data.period_start && item.category === data.category && item.branch_id === data.branch_id)), data as FinanceBudget]
+        .sort((a, b) => a.category.localeCompare(b.category, 'es-EC')));
+      setNotice(`Presupuesto de ${budgetForm.category} guardado para ${payrollMonthLabel(`${month}-01`)}.`);
+      setBudgetForm({ ...budgetForm, amount: '', note: '' });
+    } catch (saveError: any) {
+      setError(saveError.message || 'No se pudo guardar el presupuesto.');
+    } finally { setBusy(false); }
+  };
+
+  const downloadBudgetComparisonCsv = () => {
+    const rows = [
+      ['Mes', 'Sucursal', 'Categoría', 'Presupuesto USD', 'Egreso registrado USD', 'Disponible / exceso USD', 'Nota'],
+      ...budgetReport.rows.map((item) => [
+        month,
+        item.branch_id ? branchNames.get(item.branch_id) || 'Sucursal' : 'General / sin sucursal',
+        item.category,
+        Number(item.budget_amount),
+        item.actual,
+        Number(item.budget_amount) - item.actual,
+        item.note || '',
+      ]),
+      ...budgetReport.unbudgetedRows.map((item) => [
+        month,
+        item.branch_id ? branchNames.get(item.branch_id) || 'Sucursal' : 'General / sin sucursal',
+        item.category,
+        '',
+        item.amount,
+        '',
+        'Egreso sin presupuesto asignado',
+      ]),
+    ];
+    const escape = (value: unknown) => {
+      if (typeof value === 'number' && Number.isFinite(value)) return value.toFixed(2);
+      let text = String(value ?? '');
+      if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+      return `"${text.replaceAll('"', '""')}"`;
+    };
+    const blob = new Blob(['\ufeff', rows.map((row) => row.map(escape).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `presupuesto-egresos-${month || 'sin-periodo'}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const generateRecurringExpense = async (template: any) => {
     setBusy(true); setError(''); setNotice('');
     try {
@@ -309,8 +502,20 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const updateDeductionStatus = async (item: any, status: string) => {
     setBusy(true); setError(''); setNotice('');
     const refs = reviewRefs[item.id] || { authorization: item.authorization_reference || '', evidence: item.evidence_reference || '' };
-    const { error: updateError } = await supabase.from('finance_payroll_deductions').update({ status, authorization_reference: refs.authorization.trim(), evidence_reference: refs.evidence.trim() }).eq('id', item.id);
-    if (updateError) setError(updateError.message); else { setNotice(status === 'authorized' ? 'Autorización registrada; todavía debe procesarse externamente.' : 'Aplicación externa registrada como referencia, sin integración de nómina.'); await refresh(); }
+    const deliveryReference = (payrollDeliveryRefs[item.id] || item.payroll_handoff_reference || '').trim();
+    const update = status === 'sent_to_payroll'
+      ? { status, payroll_handoff_reference: deliveryReference }
+      : { status, authorization_reference: refs.authorization.trim(), evidence_reference: refs.evidence.trim() };
+    const { error: updateError } = await supabase.from('finance_payroll_deductions').update(update).eq('id', item.id);
+    if (updateError) setError(updateError.message); else {
+      setNotice(status === 'authorized'
+        ? 'Autorización registrada; la solicitud aún no se ha entregado a nómina.'
+        : status === 'sent_to_payroll'
+          ? 'Entrega a nómina registrada con su referencia; la aplicación todavía debe confirmarse externamente.'
+          : 'Aplicación externa registrada como referencia, sin integración de nómina.');
+      if (status === 'sent_to_payroll') setPayrollDeliveryRefs({ ...payrollDeliveryRefs, [item.id]: '' });
+      await refresh();
+    }
     setBusy(false);
   };
 
@@ -321,6 +526,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
     {(error || notice) && <div className={`op-finance-ledger-alert ${error ? 'is-error' : 'is-success'}`} role={error ? 'alert' : 'status'}>{error || notice}</div>}
     <nav className="op-finance-ledger-tabs" aria-label="Secciones financieras">
       <button className={section === 'egresos' ? 'active' : ''} onClick={() => setSection('egresos')}><ReceiptText size={16}/> Egresos y cuentas por pagar</button>
+      <button className={section === 'budget' ? 'active' : ''} onClick={() => setSection('budget')}><ChartNoAxesCombined size={16}/> Presupuesto vs egresos</button>
       <button className={section === 'recurring' ? 'active' : ''} onClick={() => setSection('recurring')}><CalendarClock size={16}/> Pagos periódicos</button>
       {canSeeDeductions && <button className={section === 'deductions' ? 'active' : ''} onClick={() => setSection('deductions')}><ShieldCheck size={16}/> Deducciones de remuneración</button>}
     </nav>
@@ -331,6 +537,16 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         <article><span>Pagado en el periodo</span><b>{money(paidInPeriod)}</b><small>Pagos efectivos del mes y la sucursal seleccionados</small></article>
       </div>
       <p className="op-finance-cost-note">Los saldos por pagar y vencidos muestran el estado actual de {branch === 'all' ? 'todas las sucursales y gastos generales' : 'la sucursal seleccionada'}; el mes solo filtra pagos realizados. Usa «Todas las sucursales» para revisar los gastos generales.</p>
+      <section className="panel op-finance-aging-panel" aria-labelledby="op-finance-aging-title">
+        <div className="panel-heading"><div><span className="eyebrow">COMPRAS → FINANZAS · CONTROL DE VENCIMIENTOS</span><h3 id="op-finance-aging-title">Antigüedad de cuentas por pagar</h3><p className="muted">Tramos calculados desde la fecha de vencimiento hasta hoy, sobre el saldo pendiente y la sucursal seleccionada.</p></div><Clock3 size={19}/></div>
+        <div className="op-finance-aging-metrics">{payableAging.buckets.map((bucket) => <article key={bucket.label}><span>{bucket.label}</span><b>{money(bucket.amount)}</b><small>{bucket.rows.length} cuentas</small></article>)}<article className={payableAging.withoutDueDate.length ? 'is-missing-date' : ''}><span>Sin fecha de vencimiento</span><b>{money(payableAging.withoutDueDateAmount)}</b><small>{payableAging.withoutDueDate.length} cuentas abiertas</small></article></div>
+        {payableAging.overdue.length ? <>
+          <div className="op-finance-table-wrap"><table className="op-finance-table op-finance-aging-table"><thead><tr><th>Egreso / proveedor</th><th>Vencía</th><th>Días vencido</th><th>Saldo</th></tr></thead><tbody>{payableAging.overdue.slice(0, 8).map((expense) => <tr key={expense.id}><td><b>{expense.description}</b><small>{supplierNames.get(expense.supplier_id) || 'Sin proveedor'} · {expense.category}{expense.reference ? ` · ${expense.reference}` : ''}</small></td><td>{new Date(`${expense.due_date}T12:00:00`).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil', day: 'numeric', month: 'short', year: 'numeric' })}</td><td><span className="op-finance-aging-days">{expense.days_overdue} {expense.days_overdue === 1 ? 'día' : 'días'}</span></td><td><b>{money(expense.balance)}</b></td></tr>)}</tbody></table></div>
+          {payableAging.overdue.length > 8 && <p className="op-finance-cost-note">Se muestran las 8 cuentas más antiguas de {payableAging.overdue.length}; los tramos incluyen el total.</p>}
+          <button className="button button-outline op-finance-aging-filter" onClick={() => { setExpenseSearch(''); setExpenseStatusFilter('overdue'); document.getElementById('op-finance-expense-register')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ReceiptText size={15}/> Ver todas las cuentas vencidas</button>
+        </> : <div className="op-finance-ledger-empty"><Check size={22}/><b>No hay saldos vencidos</b><span>{payableAging.withoutDueDate.length ? `Completa la fecha de vencimiento de ${payableAging.withoutDueDate.length} cuentas abiertas para que aparezcan en la previsión.` : 'Las cuentas por pagar abiertas no tienen vencimientos atrasados.'}</span></div>}
+        <p className="op-finance-cost-note">La antigüedad no agrega intereses, recargos ni penalidades; muestra solo el saldo registrado.</p>
+      </section>
       <section className="panel op-finance-obligations-forecast" aria-labelledby="op-finance-obligations-title">
         <div className="panel-heading"><div><span className="eyebrow">CUENTAS POR PAGAR + PAGOS PERIÓDICOS</span><h3 id="op-finance-obligations-title">Obligaciones de los próximos 30 días</h3><p className="muted">El calendario usa la fecha actual y el filtro de sucursal; no depende del mes del informe.</p></div><CalendarClock size={19}/></div>
         <div className="op-finance-obligations-metrics"><article><span>En los próximos 7 días</span><b>{money(upcoming7DaysTotal)}</b></article><article><span>En los próximos 30 días</span><b>{money(upcoming30DaysTotal)}</b><small>{upcomingObligations.length} obligaciones previstas</small></article></div>
@@ -341,6 +557,18 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         </article>)}</div> : <div className="op-finance-ledger-empty"><CalendarClock size={23}/><b>Sin obligaciones previstas en los próximos 30 días</b><span>Registra una fecha de vencimiento o programa internet, arriendo, luz, agua y otros pagos periódicos.</span></div>}
         {upcomingObligations.length > 12 && <p className="op-finance-cost-note">Se muestran 12 de {upcomingObligations.length} obligaciones; el total considera todas.</p>}
         <p className="op-finance-cost-note">Es una previsión de obligaciones, no de saldo disponible: suma saldos pendientes y montos estimados de pagos periódicos. No representa un pago realizado ni incluye ingresos futuros.</p>
+      </section>
+      <section className="panel op-finance-obligations-forecast" aria-labelledby="op-finance-purchase-commitments-title">
+        <div className="panel-heading"><div><span className="eyebrow">COMPRAS → FINANZAS · ÓRDENES ABIERTAS</span><h3 id="op-finance-purchase-commitments-title">Compras pendientes de recepción</h3><p className="muted">Estimación del valor de las cantidades aún no recibidas en órdenes emitidas.</p></div><a className="button button-outline" href="/operaciones/compras">Revisar Compras <ArrowUpRight size={15}/></a></div>
+        {purchaseCommitmentsError ? <p className="op-finance-cost-error" role="alert">{purchaseCommitmentsError}</p> : <>
+        <div className="op-finance-obligations-metrics"><article><span>Compromiso estimado abierto</span><b>{money(purchaseCommitments.total)}</b></article><article><span>Órdenes con cantidades pendientes</span><b>{purchaseCommitments.rows.length}</b><small>Sucursal según el filtro actual</small></article></div>
+        {purchaseCommitments.rows.length ? <div className="op-finance-obligations-list">{purchaseCommitments.rows.slice(0, 8).map((order) => <article key={order.id}>
+          <div className="op-finance-obligations-description"><b>{order.order_number} · {supplierNames.get(order.supplier_id) || 'Proveedor'}</b><span>{branchNames.get(order.branch_id) || 'Sucursal'} · {order.remainingLines} líneas con unidades pendientes · {order.status === 'partially_received' ? 'Recepción parcial' : 'Emitida'}</span></div>
+          <div className="op-finance-obligations-due"><span>{order.expected_date ? `Entrega esperada ${new Date(`${order.expected_date}T12:00:00`).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil', day: 'numeric', month: 'short' })}` : 'Sin fecha esperada'}</span><b>{money(order.amount)}</b></div>
+        </article>)}</div> : <div className="op-finance-ledger-empty"><Check size={22}/><b>Sin compromisos pendientes de recepción</b><span>Las órdenes emitidas con cantidades pendientes aparecerán aquí desde Compras.</span></div>}
+        {purchaseCommitments.rows.length > 8 && <p className="op-finance-cost-note">Se muestran 8 de {purchaseCommitments.rows.length} órdenes; el total considera todas.</p>}
+        <p className="op-finance-cost-note">Importe estimado según cantidad pendiente × costo unitario de la orden. No es una cuenta por pagar ni un pago confirmado; excluye órdenes en borrador, canceladas y recibidas. El importe final se confirma con la factura al conciliar la recepción.</p>
+        </>}
       </section>
       <section className="panel op-finance-ledger-register"><div className="panel-heading"><div><span className="eyebrow">COMPRAS CON INVENTARIO RECIBIDO</span><h3>Recepciones pendientes de vincular</h3><p className="muted">El valor de la orden es solo una referencia. Confirma el total de la factura antes de crear el compromiso. Este listado de Compras muestra recepciones pendientes de todas las sucursales.</p></div><ReceiptText size={18}/></div>
         {!receipts.length ? <div className="op-finance-ledger-empty"><ReceiptText size={22}/><span>No hay recepciones registradas para conciliar.</span></div> : <div className="op-finance-ledger-list">{receipts.map((receipt) => {
@@ -367,7 +595,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
           <label>Nota<input maxLength={1000} value={expenseForm.note} onChange={(event) => setExpenseForm({ ...expenseForm, note: event.target.value })}/></label>
           <button className="button button-primary" disabled={busy}><Plus size={15}/> Guardar egreso</button>
         </form>
-        <section className="panel op-finance-ledger-register"><div className="panel-heading"><div><span className="eyebrow">COMPROMISOS Y PAGOS</span><h3>Movimientos de egreso</h3></div><CircleDollarSign size={19}/></div>
+        <section className="panel op-finance-ledger-register" id="op-finance-expense-register"><div className="panel-heading"><div><span className="eyebrow">COMPROMISOS Y PAGOS</span><h3>Movimientos de egreso</h3></div><CircleDollarSign size={19}/></div>
           {!expenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={24}/><b>Aún no hay egresos</b><span>Registra compras pagadas al instante o servicios que debas pagar después.</span></div> : <><div className="op-finance-ledger-filters"><label>Buscar egreso<input type="search" value={expenseSearch} onChange={(event) => setExpenseSearch(event.target.value)} placeholder="Descripción, proveedor, OC o documento"/></label><label>Estado<select value={expenseStatusFilter} onChange={(event) => setExpenseStatusFilter(event.target.value)}><option value="all">Todos los estados</option><option value="open">Por pagar</option><option value="overdue">Vencidos</option><option value="paid">Pagados</option></select></label><span className="op-finance-ledger-result-count">{visibleExpenses.length} de {expenses.length} egresos</span></div>{!visibleExpenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={22}/><b>Sin coincidencias</b><span>Prueba otro término o estado para encontrar el egreso.</span></div> : <div className="op-finance-ledger-list">{visibleExpenses.map((expense) => { const balance = Number(expense.total) - Number(expense.paid_total); const form = paymentForms[expense.id] || { amount: '', method: 'transfer' }; return <article key={expense.id}>
             <div className="op-finance-ledger-record-top"><div><b>{expense.description}</b><span>{expense.category}{expense.branch_id ? ` · ${branchNames.get(expense.branch_id) || 'Sucursal'}` : ' · General'}{expense.supplier_id ? ` · ${supplierNames.get(expense.supplier_id) || 'Proveedor'}` : ''}{expense.purchase_order_id ? ` · OC ${orderNames.get(expense.purchase_order_id) || 'vinculada'}` : ''}{expense.reference ? ` · Doc. ${expense.reference}` : ''}</span></div><span className={`op-finance-ledger-status ${balance <= 0 ? 'is-paid' : ''}`}>{balance <= 0 ? 'Pagado' : expense.due_date && expense.due_date < today() ? 'Vencido' : 'Por pagar'}</span></div>
             <div className="op-finance-ledger-record-numbers"><span>Registrado {new Date(`${expense.document_date}T12:00:00`).toLocaleDateString('es-EC')} {expense.due_date ? `· vence ${new Date(`${expense.due_date}T12:00:00`).toLocaleDateString('es-EC')}` : ''}</span><b>{money(balance)} <small>pendiente</small></b></div>
@@ -378,6 +606,47 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         </section>
       </div>
     </>}
+    {section === 'budget' && <div className="op-finance-ledger-columns op-finance-budget-columns">
+      <form id="op-finance-budget-form" className="panel op-finance-ledger-form" onSubmit={saveBudget}>
+        <div className="panel-heading"><div><span className="eyebrow">PLAN MENSUAL · EGRESOS</span><h3>Definir presupuesto por categoría</h3></div><ChartNoAxesCombined size={18}/></div>
+        <p className="muted">Los montos los defines tú. Se comparan con egresos registrados por fecha de documento; guardar un presupuesto no crea gastos ni pagos.</p>
+        {!month ? <p className="op-finance-cost-error" role="alert">Selecciona un mes en el filtro superior para planificar.</p> : <>
+          <div className="op-finance-budget-period"><span>Periodo del presupuesto</span><b>{payrollMonthLabel(`${month}-01`)}</b></div>
+          <label>Categoría<select value={budgetForm.category} onChange={(event) => setBudgetForm({ ...budgetForm, category: event.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
+          <label>Sucursal<select required value={budgetForm.branch} onChange={(event) => setBudgetForm({ ...budgetForm, branch: event.target.value })}>
+            <option value="" disabled={branch !== 'all'}>General / sin sucursal{branch !== 'all' ? ' · usa Todas las sucursales para editar' : ''}</option>
+            {branches.filter((item) => branch === 'all' || item.id === branch).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select></label>
+          <label>Monto presupuestado USD<input required type="number" min="0.01" step="0.01" placeholder="Ingresa el monto aprobado" value={budgetForm.amount} onChange={(event) => setBudgetForm({ ...budgetForm, amount: event.target.value })}/></label>
+          <label>Nota (opcional)<textarea maxLength={1000} value={budgetForm.note} onChange={(event) => setBudgetForm({ ...budgetForm, note: event.target.value })} placeholder="Criterio o referencia del monto"/></label>
+          <button className="button button-primary" disabled={busy}><Plus size={15}/> Guardar presupuesto del mes</button>
+        </>}
+      </form>
+      <section className="panel op-finance-budget-register">
+        <div className="panel-heading"><div><span className="eyebrow">CONTROL POR FECHA DE DOCUMENTO</span><h3>Presupuesto frente a egresos</h3><p className="muted">{branch === 'all' ? 'Incluye sucursales y egresos generales, sin distribuirlos.' : `Solo incluye ${branchNames.get(branch) || 'la sucursal seleccionada'}; los egresos generales se revisan con Todas las sucursales.`}</p></div><div className="op-finance-budget-actions"><button className="button button-outline" onClick={downloadBudgetComparisonCsv} disabled={budgetsLoading || !!budgetsError || (!budgetReport.rows.length && !budgetReport.unbudgetedRows.length)}><Download size={15}/> Exportar CSV</button><CircleDollarSign size={19}/></div></div>
+        <div className="op-finance-ledger-kpis op-finance-budget-kpis">
+          <article><span>Presupuesto asignado</span><b>{money(budgetReport.totalBudget)}</b><small>{budgetReport.rows.length} categorías y sucursales configuradas</small></article>
+          <article><span>Egresos registrados</span><b>{money(budgetReport.totalActual)}</b><small>Importes de documentos del mes seleccionado; incluye cuentas pagadas y por pagar</small></article>
+          <article className={budgetReport.totalBudget > 0 && budgetReport.variance < 0 ? 'is-overdue' : ''}><span>{budgetReport.variance < 0 ? 'Excedido del presupuesto' : 'Disponible del presupuesto'}</span><b>{budgetReport.totalBudget > 0 ? money(budgetReport.variance) : '—'}</b><small>{budgetReport.totalBudget > 0 ? 'Presupuesto menos egresos registrados' : 'Define presupuestos para calcular la diferencia'}</small></article>
+          <article className={budgetReport.unbudgetedTotal > 0 ? 'is-overdue' : ''}><span>Egresos sin presupuesto</span><b>{money(budgetReport.unbudgetedTotal)}</b><small>{budgetReport.unbudgetedRows.length} combinaciones de categoría y sucursal</small></article>
+        </div>
+        {budgetsError ? <p className="op-finance-cost-error" role="alert">{budgetsError}</p> : budgetsLoading ? <p className="muted">Cargando presupuestos del periodo…</p> : <>
+          {!!budgetReport.rows.length && <div className="op-finance-budget-list">{budgetReport.rows.map((item) => {
+            const remaining = Number(item.budget_amount) - item.actual;
+            const usedPercent = item.budget_amount > 0 ? item.actual / Number(item.budget_amount) * 100 : 0;
+            return <article key={item.id} className={remaining < 0 ? 'is-over-budget' : ''}>
+              <div className="op-finance-budget-row-heading"><div><b>{item.category}</b><small>{item.branch_id ? branchNames.get(item.branch_id) || 'Sucursal' : 'General / sin sucursal'} · {item.expenseCount} egresos</small></div><button type="button" className="button button-outline" onClick={() => { setBudgetForm({ category: item.category, branch: item.branch_id || '', amount: String(item.budget_amount), note: item.note || '' }); document.getElementById('op-finance-budget-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>Editar</button></div>
+              <div className="op-finance-budget-values"><span>Presupuesto <b>{money(Number(item.budget_amount))}</b></span><span>Registrado <b>{money(item.actual)}</b></span><span className={remaining < 0 ? 'is-over' : ''}>{remaining < 0 ? 'Exceso' : 'Disponible'} <b>{money(Math.abs(remaining))}</b></span></div>
+              <div className="op-finance-ledger-progress op-finance-budget-progress" role="progressbar" aria-label={`Uso de presupuesto para ${item.category}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(usedPercent))}><i style={{ width: `${Math.min(100, Math.max(0, usedPercent))}%` }}/></div>
+              <small className="op-finance-budget-usage">{Math.round(usedPercent)}% usado{item.note ? ` · ${item.note}` : ''}</small>
+            </article>;
+          })}</div>}
+          {!!budgetReport.unbudgetedRows.length && <div className="op-finance-budget-unbudgeted"><div><b>Categorías con egresos sin presupuesto</b><small>Asígnales un monto para incluirlas en el control por categoría.</small></div>{budgetReport.unbudgetedRows.map((item) => <article key={`${item.branch_id || 'general'}-${item.category}`}><span><b>{item.category}</b><small>{item.branch_id ? branchNames.get(item.branch_id) || 'Sucursal' : 'General / sin sucursal'} · {item.count} egresos</small></span><strong>{money(item.amount)}</strong><button type="button" className="button button-outline" onClick={() => { setBudgetForm({ category: item.category, branch: item.branch_id || '', amount: '', note: '' }); document.getElementById('op-finance-budget-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>Asignar</button></article>)}</div>}
+          {!budgetReport.rows.length && !budgetReport.unbudgetedRows.length && <div className="op-finance-ledger-empty"><ChartNoAxesCombined size={24}/><b>Sin presupuestos ni egresos registrados</b><span>Define un monto mensual por categoría y sucursal para comparar el gasto real.</span></div>}
+          <p className="op-finance-cost-note">Los documentos se asignan al mes de su fecha de emisión, aunque sigan pendientes de pago. Los pagos efectivos se consultan en Egresos y flujo de caja. Los presupuestos generales no se reparten automáticamente entre sucursales.</p>
+        </>}
+      </section>
+    </div>}
     {section === 'recurring' && <div className="op-finance-ledger-columns">
       <form className="panel op-finance-ledger-form" onSubmit={saveTemplate}><div className="panel-heading"><div><span className="eyebrow">PREVISIÓN Y RECORDATORIOS</span><h3>Programar pago periódico</h3></div><CalendarClock size={18}/></div><p className="muted">Cada vencimiento crea una cuenta por pagar solo cuando lo confirmes. No se ejecutan cargos ni pagos automáticos.</p>
         <label>Concepto<input required placeholder="Internet, arriendo, agua…" value={templateForm.description} onChange={(event) => setTemplateForm({ ...templateForm, description: event.target.value })}/></label><div className="op-finance-ledger-field-pair"><label>Categoría<select value={templateForm.category} onChange={(event) => setTemplateForm({ ...templateForm, category: event.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label><label>Frecuencia<select value={templateForm.cadence} onChange={(event) => setTemplateForm({ ...templateForm, cadence: event.target.value })}><option value="monthly">Mensual</option><option value="quarterly">Trimestral</option><option value="annual">Anual</option></select></label></div><div className="op-finance-ledger-field-pair"><label>Monto esperado USD<input required type="number" min="0.01" step="0.01" value={templateForm.amount} onChange={(event) => setTemplateForm({ ...templateForm, amount: event.target.value })}/></label><label>Próximo vencimiento<input required type="date" value={templateForm.due} onChange={(event) => setTemplateForm({ ...templateForm, due: event.target.value })}/></label></div>
@@ -404,16 +673,17 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         <button className="button button-primary" disabled={busy || !personnelOptions.length || Boolean(personnelOptionsError)}><Plus size={15}/> Guardar como pendiente</button>
       </form>
       <section className="panel op-finance-ledger-register">
-        <div className="panel-heading op-finance-deductions-heading"><div><span className="eyebrow">SEGUIMIENTO CONFIDENCIAL</span><h3>Deducciones registradas</h3><p className="muted">El CSV sirve de referencia para nómina y no registra una aplicación externa.</p></div><button className="button button-outline" onClick={downloadAuthorizedDeductionsCsv} disabled={!authorizedDeductions.length || busy}><Download size={15}/> Exportar autorizadas ({authorizedDeductions.length})</button></div>
+        <div className="panel-heading op-finance-deductions-heading"><div><span className="eyebrow">SEGUIMIENTO CONFIDENCIAL</span><h3>Deducciones registradas</h3><p className="muted">Descarga solo las autorizadas; después registra la referencia de entrega y, cuando corresponda, la aplicación externa.</p></div><button className="button button-outline" onClick={downloadAuthorizedDeductionsCsv} disabled={!authorizedDeductions.length || busy}><Download size={15}/> Exportar autorizadas ({authorizedDeductions.length})</button></div>
         <div className="op-finance-ledger-kpis op-finance-ledger-payroll-kpis">
           <article><span>Pendiente de autorización</span><b>{money(deductionStatusSummary.pending)}</b><small>{visibleDeductions.filter((item) => item.status === 'pending_authorization').length} solicitudes</small></article>
-          <article><span>Autorizado para entregar a nómina</span><b>{money(deductionStatusSummary.authorized)}</b><small>{authorizedDeductions.length} solicitudes · periodo seleccionado</small></article>
+          <article><span>Autorizado, pendiente de entrega</span><b>{money(deductionStatusSummary.authorized)}</b><small>{authorizedDeductions.length} solicitudes · periodo seleccionado</small></article>
+          <article><span>Entregado a nómina, pendiente de aplicación</span><b>{money(deductionStatusSummary.sent)}</b><small>{sentDeductions.length} solicitudes · periodo seleccionado</small></article>
           <article><span>Reportado como aplicado externamente</span><b>{money(deductionStatusSummary.applied)}</b><small>{visibleDeductions.filter((item) => item.status === 'applied_externally').length} registros</small></article>
         </div>
         {!visibleDeductions.length ? <div className="op-finance-ledger-empty"><ShieldCheck size={24}/><b>Sin solicitudes para este periodo</b><span>Las deducciones se filtran por el mes de nómina y nunca se aplican automáticamente.</span></div> : <div className="op-finance-ledger-list">{visibleDeductions.map((item) => {
           const refs = reviewRefs[item.id] || { authorization: item.authorization_reference || '', evidence: item.evidence_reference || '' };
           const personName = deductionPersonName(item);
-          const statusLabel = item.status === 'pending_authorization' ? 'Pendiente de autorización' : item.status === 'authorized' ? 'Autorizada' : item.status === 'applied_externally' ? 'Reportada como aplicada externamente' : item.status === 'cancelled' ? 'Cancelada' : item.status;
+          const statusLabel = item.status === 'pending_authorization' ? 'Pendiente de autorización' : item.status === 'authorized' ? 'Autorizada · pendiente de entrega' : item.status === 'sent_to_payroll' ? 'Entregada a nómina · pendiente de aplicación' : item.status === 'applied_externally' ? 'Reportada como aplicada externamente' : item.status === 'cancelled' ? 'Cancelada' : item.status;
           return <article key={item.id}>
             <div className="op-finance-ledger-record-top"><div><b>{personName}</b><span>{item.description}</span></div><span className="op-finance-ledger-status">{statusLabel}</span></div>
             <div className="op-finance-ledger-record-numbers"><span>Periodo {payrollMonthLabel(item.payroll_period)}</span><b>{money(item.amount)}</b></div>
@@ -422,8 +692,15 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
               <label>Evidencia / referencia<input value={refs.evidence} onChange={(event) => setReviewRefs({ ...reviewRefs, [item.id]: { ...refs, evidence: event.target.value } })}/></label>
               <button className="button button-outline" disabled={busy || !refs.authorization.trim() || !refs.evidence.trim()} onClick={() => void updateDeductionStatus(item, 'authorized')}><ShieldCheck size={14}/> Confirmar autorización</button>
             </>}
-            {item.status === 'authorized' && <button className="button button-outline" disabled={busy} onClick={() => void updateDeductionStatus(item, 'applied_externally')}><Check size={14}/> Registrar aplicación externa</button>}
-            {item.status === 'applied_externally' && <small>Referencia de autorización: {item.authorization_reference} · Evidencia: {item.evidence_reference}</small>}
+            {item.status === 'authorized' && <>
+              <label>Referencia de entrega a nómina<input maxLength={240} placeholder="Código de lote, comprobante o referencia externa" value={payrollDeliveryRefs[item.id] || ''} onChange={(event) => setPayrollDeliveryRefs({ ...payrollDeliveryRefs, [item.id]: event.target.value })}/></label>
+              <button className="button button-outline" disabled={busy || !(payrollDeliveryRefs[item.id] || '').trim()} onClick={() => void updateDeductionStatus(item, 'sent_to_payroll')}><Check size={14}/> Registrar entrega a nómina</button>
+            </>}
+            {item.status === 'sent_to_payroll' && <>
+              <small>Entregada {item.payroll_handed_at ? new Date(item.payroll_handed_at).toLocaleString('es-EC', { timeZone: 'America/Guayaquil', dateStyle: 'short', timeStyle: 'short' }) : ''} · Registró {teamNames.get(item.payroll_handed_by) || 'Finanzas'} · Referencia: {item.payroll_handoff_reference}</small>
+              <button className="button button-outline" disabled={busy} onClick={() => void updateDeductionStatus(item, 'applied_externally')}><Check size={14}/> Registrar aplicación externa</button>
+            </>}
+            {item.status === 'applied_externally' && <small>Referencia de autorización: {item.authorization_reference} · Evidencia: {item.evidence_reference}{item.payroll_handoff_reference ? ` · Entrega: ${item.payroll_handoff_reference}` : ''}</small>}
           </article>;
         })}</div>}
       </section>
