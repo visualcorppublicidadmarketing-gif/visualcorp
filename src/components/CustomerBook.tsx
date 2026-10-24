@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowLeft, Clock3, Search, UserRoundPlus, Users } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useWorkspace, formatDate, formatMoney } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
@@ -11,6 +12,8 @@ type Customer = {
 
 export function CustomerBook() {
   const { data, add, flash } = useWorkspace();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedCustomerId = searchParams.get('cliente') || '';
   const { organizationId, user, hasPermission } = useAuth();
   const canEdit = hasPermission('crm','edit');
   const canViewSales = hasPermission('sales','view');
@@ -18,7 +21,7 @@ export function CustomerBook() {
   const [term, setTerm] = useState('');
   const [remoteCustomers, setRemoteCustomers] = useState<Customer[] | null>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
-  const [selectedId, setSelectedId] = useState('');
+  const [selectedId, setSelectedId] = useState(requestedCustomerId);
   const [sales, setSales] = useState<any[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
   const [interactions, setInteractions] = useState<any[]>([]);
@@ -26,6 +29,11 @@ export function CustomerBook() {
   const [interactionSummary, setInteractionSummary] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', documentReference: '', notes: '', interests: '', tags: '' });
+  const selectCustomer = (id: string) => {
+    setSelectedId(id);
+    setSearchParams(id ? { cliente: id } : {}, { replace: true });
+  };
+  React.useEffect(() => { setSelectedId(requestedCustomerId); }, [requestedCustomerId]);
   React.useEffect(() => {
     if (!supabase || !organizationId) { setLoading(false); return; }
     let active = true;
@@ -67,7 +75,7 @@ export function CustomerBook() {
       const { data: saved, error } = await supabase.from('customers').insert({ organization_id: organizationId, full_name: values.name, phone: values.phone, email: values.email, document_reference: values.documentReference, notes: values.notes, preferences: { interests: values.interests }, tags: values.tags, created_by: user.id }).select('id,full_name,phone,email,document_reference,notes,created_at,preferences,tags').single();
       if (error) { flash(`No se guardó el cliente: ${error.message}`); return; }
       const customer = { id: saved.id, name: saved.full_name, phone: saved.phone, email: saved.email, documentReference: saved.document_reference, notes: saved.notes, createdAt: saved.created_at, preferences: saved.preferences || {}, tags: saved.tags || [] };
-      setRemoteCustomers((current) => [customer, ...(current || [])]); setSelectedId(customer.id);
+      setRemoteCustomers((current) => [customer, ...(current || [])]); selectCustomer(customer.id);
     } else add('customers', { ...values, source: 'Registro manual' });
     setForm({ name: '', phone: '', email: '', documentReference: '', notes: '', interests: '', tags: '' });
     flash(supabase ? 'Cliente guardado en la base compartida.' : 'Cliente guardado localmente.');
@@ -91,7 +99,7 @@ export function CustomerBook() {
   return <div className="customer-book">
     <div className="page-heading"><div><div className="eyebrow">CLIENTES · BASE COMPARTIDA</div><h1>{selectedCustomer ? selectedCustomer.name : 'Directorio de clientes'}</h1><p>{selectedCustomer ? 'Ficha, compras, cotizaciones y conversaciones registradas para este cliente.' : 'Consulta la relación completa del cliente con Visual Corp y registra información útil para atenderle mejor.'}</p></div><span className="local-badge"><Users size={14}/> {loading?'…':customers.length} clientes</span></div>
     {selectedCustomer ? <>
-      <button type="button" className="button button-outline customer-back" onClick={() => setSelectedId('')}><ArrowLeft size={15}/> Volver al directorio</button>
+      <button type="button" className="button button-outline customer-back" onClick={() => selectCustomer('')}><ArrowLeft size={15}/> Volver al directorio</button>
       <div className="customer-summary-grid">
         <article className="panel customer-summary-card"><small>Compras confirmadas</small><b>{canViewSales?sales.length:'Sin permiso'}</b></article>
         <article className="panel customer-summary-card"><small>Total en ventas confirmadas</small><b>{canViewSales?formatMoney(lifetimeValue):'Sin permiso'}</b></article>
@@ -126,7 +134,7 @@ export function CustomerBook() {
       </form>
       <section className="panel"><div className="panel-heading"><div><span className="eyebrow">DIRECTORIO</span><h2>Clientes registrados</h2></div></div>
         <label className="search-box"><Search size={16}/><input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Buscar por nombre, teléfono, correo o etiqueta" /></label>
-        {visible.length ? <div className="customer-list">{visible.map((customer) => <button type="button" className="customer-row customer-row-button" key={customer.id} onClick={() => setSelectedId(customer.id)}><span className="customer-avatar">{customer.name?.slice(0, 1)?.toUpperCase() || 'C'}</span><span><b>{customer.name}</b><small>{[customer.phone, customer.email].filter(Boolean).join(' · ') || 'Sin datos de contacto'} · Agregado {formatDate(customer.createdAt)}</small>{customer.tags?.length>0&&<small>{customer.tags.join(' · ')}</small>}</span><span className="inventory-status ok">Ver ficha</span></button>)}</div> : <div className="inventory-empty">{customers.length ? 'No hay coincidencias.' : 'La base empieza vacía. Puedes agregar clientes aquí o desde el POS al registrar una venta.'}</div>}
+        {visible.length ? <div className="customer-list">{visible.map((customer) => <button type="button" className="customer-row customer-row-button" key={customer.id} onClick={() => selectCustomer(customer.id)}><span className="customer-avatar">{customer.name?.slice(0, 1)?.toUpperCase() || 'C'}</span><span><b>{customer.name}</b><small>{[customer.phone, customer.email].filter(Boolean).join(' · ') || 'Sin datos de contacto'} · Agregado {formatDate(customer.createdAt)}</small>{customer.tags?.length>0&&<small>{customer.tags.join(' · ')}</small>}</span><span className="inventory-status ok">Ver ficha</span></button>)}</div> : <div className="inventory-empty">{customers.length ? 'No hay coincidencias.' : 'La base empieza vacía. Puedes agregar clientes aquí o desde el POS al registrar una venta.'}</div>}
       </section>
     </div>}
     {!selectedCustomer&&<div className="notice-box"><span><Users size={17}/></span><div><b>Historial basado en registros reales</b><p>Las compras y cotizaciones aparecen cuando están vinculadas a una ficha de cliente. Las preferencias y seguimientos se guardan en la base compartida; no se estiman gustos ni montos.</p></div></div>}

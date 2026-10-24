@@ -9,8 +9,10 @@ import { supabase } from '../../lib/supabaseClient';
 import { QuotePriceComparison } from '../../components/QuotePriceComparison';
 import { calculateQuotePrice, getQuoteBasis } from '../../lib/quotePricing';
 import { calculatePOSLine, formatPOSLineDescription } from '../../lib/posPricing';
+import { POSCustomerPicker } from './components/POSCustomerPicker';
 
 const trackedAccessoryProductIds = new Set(['prod-extras-ojal-peque-o-c-u','prod-extras-ojales-grande-c-u']);
+const normalizeCustomerPhone = (value) => { const digits=String(value||'').replace(/\D/g,'');return digits.startsWith('593')&&digits.length===12?`0${digits.slice(3)}`:digits; };
 
 function mostFrequent(values: string[]) { return values.sort((a,b)=>values.filter((item)=>item===b).length-values.filter((item)=>item===a).length)[0]; }
 
@@ -23,8 +25,14 @@ function POSProductVisual({ src, alt = '', className = '', iconSize = 17 }: { sr
 
 export function PosPage() {
   const { data, add, update, flash, refreshRemote }=useWorkspace();
-  const { organizationId, user }=useAuth();
-  const [form,setForm]=useState({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
+  const { organizationId, user, hasPermission }=useAuth();
+  const [form,setForm]=useState({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
+  const [customerQuery,setCustomerQuery]=useState('');
+  const [customerSearch,setCustomerSearch]=useState({loading:false,results:null,error:'',hasMore:false});
+  const [customerSearchLimit,setCustomerSearchLimit]=useState(8);
+  const [customerSearchRequest,setCustomerSearchRequest]=useState(0);
+  const [selectedCustomerSnapshot,setSelectedCustomerSnapshot]=useState(null);
+  const [customerHistory,setCustomerHistory]=useState({loading:false,count:0,rows:[],summary:null});
   const [cart,setCart]=useState([]);
   const [cartMode,setCartMode]=useState<'quantity'|'area'>('quantity');
   const [cartProductId,setCartProductId]=useState('');
@@ -67,6 +75,48 @@ export function PosPage() {
   useEffect(()=>{let active=true;if(!supabase||!organizationId)return undefined;refreshParkedOrders().catch(error=>{if(active)flash(`No se pudieron cargar las órdenes en espera: ${error.message}`);});return()=>{active=false;};},[organizationId]);
   const today=localDateKey();
   const salesToday=data.sales.filter((sale)=>localDateKey(sale.date)===today);
+  const canSearchCustomers=hasPermission('crm','view');
+  const customerLookupActive=customerQuery.trim().length>=2||normalizeCustomerPhone(form.customerPhone).length>=3||form.customerEmail.trim().length>=3||String(form.customerDocumentReference||'').replace(/\D/g,'').length>=4;
+  useEffect(()=>{
+    let active=true;
+    if(!supabase||!organizationId||!canSearchCustomers||form.customerId||!customerLookupActive){setCustomerSearch({loading:false,results:null,error:'',hasMore:false});return()=>{active=false;};}
+    setCustomerSearch({loading:true,results:null,error:'',hasMore:false});
+    const timeout=window.setTimeout(()=>{
+      void (async()=>{try{
+        const {data:rows,error}=await supabase.rpc('search_visualcorp_pos_customers',{p_query:customerQuery,p_phone:form.customerPhone,p_email:form.customerEmail,p_document_reference:form.customerDocumentReference,p_limit:Math.min(customerSearchLimit+1,20)});
+        if(!active)return;
+        if(error){setCustomerSearch({loading:false,results:null,error:error.message||'No se pudo buscar clientes.',hasMore:false});return;}
+        const responseRows=Array.isArray(rows)?rows:[];
+        const results=responseRows.slice(0,customerSearchLimit).map((row)=>({id:row.id,name:row.full_name,phone:row.phone||'',email:row.email||'',documentReference:row.document_reference||'',notes:row.notes||'',preferences:row.preferences||{},tags:row.tags||[]}));
+        setCustomerSearch({loading:false,results,error:'',hasMore:responseRows.length>customerSearchLimit});
+      }catch(error){if(active)setCustomerSearch({loading:false,results:null,error:error.message||'No se pudo buscar clientes.',hasMore:false});}})();
+    },260);
+    return()=>{active=false;window.clearTimeout(timeout);};
+  },[customerQuery,form.customerPhone,form.customerEmail,form.customerDocumentReference,form.customerId,organizationId,canSearchCustomers,customerLookupActive,customerSearchLimit,customerSearchRequest]);
+  const selectedCustomer=(data.customers||[]).find((customer)=>customer.id===form.customerId)||(selectedCustomerSnapshot?.id===form.customerId?selectedCustomerSnapshot:undefined);
+  const customerCandidates=[...(data.customers||[]),...(customerSearch.results||[])];
+  const duplicateCustomer=!selectedCustomer&&customerCandidates.find((customer)=>{
+    const newEmail=String(form.customerEmail||'').trim().toLocaleLowerCase('es');
+    const newDocument=String(form.customerDocumentReference||'').replace(/\W/g,'').toLocaleLowerCase('es');
+    const newPhone=normalizeCustomerPhone(form.customerPhone);
+    return Boolean((newEmail&&String(customer.email||'').trim().toLocaleLowerCase('es')===newEmail)||(newDocument&&String(customer.documentReference||'').replace(/\W/g,'').toLocaleLowerCase('es')===newDocument)||(newPhone.length>=8&&normalizeCustomerPhone(customer.phone)===newPhone));
+  });
+  const customerNameMissing=!selectedCustomer&&Boolean((customerQuery.trim()||form.customerPhone.trim()||form.customerEmail.trim()||form.customerDocumentReference.trim())&&!form.customer.trim());
+  const customerLookupPending=!selectedCustomer&&customerLookupActive&&canSearchCustomers&&(customerSearch.loading||(!customerSearch.results&&!customerSearch.error));
+  const customerLookupFailed=!selectedCustomer&&customerLookupActive&&canSearchCustomers&&Boolean(customerSearch.error);
+  const canViewCustomerHistory=hasPermission('sales','view')&&canSearchCustomers;
+  useEffect(()=>{
+    if(!form.customerId||!canViewCustomerHistory||!supabase||!organizationId){setCustomerHistory({loading:false,count:0,rows:[],summary:null});return;}
+    let active=true;setCustomerHistory({loading:true,count:0,rows:[],summary:null});
+    supabase.rpc('get_visualcorp_pos_customer_summary',{p_customer_id:form.customerId}).then(({data:result,error})=>{
+      if(!active)return;
+      if(error){flash(`No se pudo cargar el historial completo del cliente: ${error.message}`);setCustomerHistory({loading:false,count:0,rows:[],summary:null});return;}
+      const summary=result&&typeof result==='object'?result:{};
+      const rows=Array.isArray(summary.recent_purchases)?summary.recent_purchases:[];
+      setCustomerHistory({loading:false,count:Number(summary.purchase_count)||0,rows:rows.map((sale)=>({id:sale.id,code:sale.code,total:Number(sale.total)||0,date:sale.date,description:sale.description||sale.code||'Compra registrada'})),summary:{netSpent:Number(summary.net_spent)||0,netPaid:Number(summary.net_paid)||0,refunded:Number(summary.refunded)||0,balanceDue:Number(summary.balance_due)||0,lastPurchaseAt:summary.last_purchase_at||'',topProducts:Array.isArray(summary.top_products)?summary.top_products.map((product)=>({name:String(product.name||''),quantity:Number(product.quantity)||0})):[]}});
+    });
+    return()=>{active=false;};
+  },[form.customerId,canViewCustomerHistory,organizationId]);
   const branchName=form.branchCode==='GIGA'?'Gigaprint':'Visual Corp';
   const cartTotal=Math.round(cart.reduce((sum,line)=>sum+(Number(line.total)||Number(line.quantity)*Number(line.unitPrice)),0)*100)/100;
   const activeTotal=form.quoteId?Number(form.total)||0:cartTotal;
@@ -82,8 +132,8 @@ export function PosPage() {
   const cashShiftPending=needsCashShift&&cashierSession.loading;
   const cashShiftUnavailable=needsCashShift&&!cashierSession.loading&&!cashierSession.session;
   const missingCartAccessoryLink=cart.some(line=>trackedAccessoryProductIds.has(line.productId)&&!catalogLinks.some(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.productId));
-  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&catalogLinkStatus==='ready'&&!missingCartAccessoryLink&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
-  const submitBlockReason=savingSale?'Guardando la venta…':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando el control de inventario…':catalogLinkStatus==='error'?'No se pudo comprobar el control de inventario. Recarga antes de confirmar.':missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'';
+  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&catalogLinkStatus==='ready'&&!missingCartAccessoryLink&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
+  const submitBlockReason=savingSale?'Guardando la venta…':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando el control de inventario…':catalogLinkStatus==='error'?'No se pudo comprobar el control de inventario. Recarga antes de confirmar.':missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':duplicateCustomer?`Ya existe ${duplicateCustomer.name} con ese teléfono, correo o identificación. Selecciónalo para evitar crear un duplicado.`:customerLookupFailed?'No se pudo verificar si el cliente ya existe. Reintenta la búsqueda antes de confirmar.':customerLookupPending?'Buscando coincidencias del cliente…':customerNameMissing?'Completa el nombre del cliente o limpia la búsqueda si será una venta de mostrador.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'';
   const cartQuantityNumber=Number(cartQuantity);
   const cartWidthNumber=Number(cartWidthCm);
   const cartHeightNumber=Number(cartHeightCm);
@@ -125,6 +175,8 @@ export function PosPage() {
     setCartMode(product.mode==='area'?'area':'quantity');setCartFamily(product.family||'Todas');setCartProductId(product.id);setCartItemName('');setCartUnitPrice('');setCartPriceTier('pvp');setCartOptionChoice('');
     flash(`Artículo reconocido: ${product.name}. Revisa la cantidad o medida y la tarifa del catálogo.`);
   };
+  const updateCustomerQuery=(value)=>{const trimmed=value.trim();const identityOnly=/^[\d\s+().-]+$/.test(trimmed)||trimmed.includes('@');setSelectedCustomerSnapshot(null);setCustomerSearchLimit(8);setCustomerQuery(value);setForm((current)=>({...current,customerId:'',customer:identityOnly?'':value,customerPhone:'',customerEmail:'',customerDocumentReference:''}));};
+  const choosePOSCustomer=(customer)=>{setSelectedCustomerSnapshot(customer||null);setForm((current)=>({...current,customerId:customer?.id||'',customer:customer?.name||'',customerPhone:customer?.phone||'',customerEmail:customer?.email||'',customerDocumentReference:customer?.documentReference||''}));setCustomerQuery(customer?.name||'');};
   const parkCurrentOrder=async()=>{
     if(!user||!organizationId||parking)return;
     if(activeParkedOrderId){flash('Esta orden ya está en espera; confírmala para cerrarla desde esta pantalla.');return;}
@@ -140,7 +192,8 @@ export function PosPage() {
       const {data:parkedId,error}=await supabase.rpc('park_pos_order',{p_organization_id:organizationId,p_branch_code:form.branchCode,p_idempotency_key:key,p_payload:payload,p_total:activeTotal});
       if(error)throw error;
       await refreshParkedOrders();
-      setForm({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
+      setForm({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
+      setCustomerQuery('');
       setCart([]);setActiveParkedOrderId('');setChargeNow(true);setPayments([{id:'payment-1',method:'Efectivo',amount:''}]);
       flash(`Orden guardada en espera · ${String(parkedId).slice(0,8).toUpperCase()}. No se reservó ni descontó inventario.`);
     }catch(error){flash(`No se pudo guardar la orden en espera: ${error.message}`);}
@@ -212,7 +265,7 @@ export function PosPage() {
         p_idempotency_key:pendingSaleKey.current,
         p_branch_code:form.branchCode,
         p_customer_id:form.customerId||null,
-        p_customer_data:{full_name:form.customer.trim(),phone:form.customerPhone.trim()},
+        p_customer_data:{full_name:form.customer.trim(),phone:form.customerPhone.trim(),email:form.customerEmail.trim(),document_reference:form.customerDocumentReference.trim()},
         p_discount:0,
         p_note:[form.description,quote?`Cotización ${quote.quote_code}`:cart.map(line=>`${line.name} × ${line.quantity}`).join(' · ')].filter(Boolean).join(' · '),
         p_allow_backorder:true,
@@ -228,7 +281,8 @@ export function PosPage() {
       if(form.quoteId){const {error:quoteError}=await supabase.rpc('link_pos_sale_to_central_quote',{p_sale:sale.sale_id,p_quote:form.quoteId});if(quoteError)quoteLinkError=quoteError.message;else setCentralQuotes(rows=>rows.map(q=>q.id===form.quoteId?{...q,status:'converted'}:q));}
       await refreshRemote();
       if(completingParkedOrder)await refreshParkedOrders().catch(()=>{});
-      setForm({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
+      setForm({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
+      setCustomerQuery('');
       setCart([]);
       setChargeNow(true);setPayments([{id:'payment-1',method:'Efectivo',amount:''}]);
       sessionStorage.removeItem('visualcorp-pos-pending-sale-key');pendingSaleKey.current='';
@@ -247,7 +301,7 @@ export function PosPage() {
     <div className="pos-grid">
       <form className="panel form-panel" onSubmit={save}>
         <div className="panel-heading"><div><span className="eyebrow">NUEVA ORDEN · PASO 1 DE 3</span><h2>Agrega los productos</h2><p className="pos-step-caption">Elige del catálogo o carga una cotización aprobada. Revisa el total antes de cobrar.</p></div><ShoppingCart size={19}/></div>
-        <label>Origen de la venta<select value={form.quoteId} onChange={(event)=>{const quote=centralQuotes.find((item)=>item.id===event.target.value);setForm({...form,quoteId:event.target.value,total:quote?.selected_total??'',amountPaid:quote?.selected_total??'',customerId:'',customer:quote?.customer_name||'',customerPhone:quote?.customer_phone||'',description:Array.isArray(quote?.items)?quote.items.map(item=>item.name||item.product_name).join(', '):''});if(event.target.value)setCart([]);}}><option value="">Venta manual: catálogo y carrito</option>{centralQuotes.filter((quote)=>quote.status==='accepted'&&quote.price_confirmed&&quote.selected_total!==null).map((quote)=><option key={quote.id} value={quote.id}>{quote.quote_code} · {quote.customer_name||'Cliente'} · {formatMoney(quote.selected_total)}</option>)}</select><small className="pos-field-help">Puedes armar una venta nueva o cargar una cotización aprobada con su precio confirmado.</small></label>
+        <label>Origen de la venta<select value={form.quoteId} onChange={(event)=>{const quote=centralQuotes.find((item)=>item.id===event.target.value);const knownCustomer=(data.customers||[]).find((customer)=>quote?.customer_id&&customer.id===quote.customer_id)|| (data.customers||[]).find((customer)=>quote?.customer_phone&&customer.phone===quote.customer_phone)|| (data.customers||[]).find((customer)=>quote?.customer_name&&customer.name.trim().toLocaleLowerCase('es')===quote.customer_name.trim().toLocaleLowerCase('es'));setSelectedCustomerSnapshot(knownCustomer||null);setForm({...form,quoteId:event.target.value,total:quote?.selected_total??'',amountPaid:quote?.selected_total??'',customerId:knownCustomer?.id||'',customer:knownCustomer?.name||quote?.customer_name||'',customerPhone:knownCustomer?.phone||quote?.customer_phone||'',customerEmail:knownCustomer?.email||'',customerDocumentReference:knownCustomer?.documentReference||'',description:Array.isArray(quote?.items)?quote.items.map(item=>item.name||item.product_name).join(', '):''});setCustomerQuery(knownCustomer?.name||quote?.customer_name||'');if(event.target.value)setCart([]);}}><option value="">Venta manual: catálogo y carrito</option>{centralQuotes.filter((quote)=>quote.status==='accepted'&&quote.price_confirmed&&quote.selected_total!==null).map((quote)=><option key={quote.id} value={quote.id}>{quote.quote_code} · {quote.customer_name||'Cliente'} · {formatMoney(quote.selected_total)}</option>)}</select><small className="pos-field-help">Puedes armar una venta nueva o cargar una cotización aprobada con su precio confirmado.</small></label>
         {form.quoteId?<div className="pos-quote-total"><span>Total aprobado en cotización</span><strong>{formatMoney(form.total)}</strong><small>El total se conserva igual al aprobado.</small></div>:<>
           <section className="pos-cart-builder" aria-label="Agregar artículos">
             <div className="pos-cart-builder-heading"><span className="eyebrow">CATÁLOGO Y CONCEPTOS</span><span>Precios en USD</span></div>
@@ -273,7 +327,7 @@ export function PosPage() {
           </section>
           <section className="pos-cart" aria-label="Carrito de venta"><div className="pos-cart-heading"><div><span className="eyebrow">ORDEN ACTUAL</span><h3>{cart.length} {cart.length===1?'artículo':'artículos'}</h3></div><strong>{formatMoney(cartTotal)}</strong></div>{cart.length===0?<p className="pos-cart-empty">Agrega productos del catálogo o registra un concepto libre con precio acordado.</p>:<div className="pos-cart-lines">{cart.map((line)=><article className="pos-cart-line" key={line.key}><POSProductVisual src={line.image} className="pos-cart-image" iconSize={16}/><span className="pos-line-main"><b>{line.name}</b><small>{line.description||`${line.quantity} × ${formatMoney(line.unitPrice)}`}</small><small>{cartInventoryStatus(line)}</small></span><strong>{formatMoney(line.total||line.quantity*line.unitPrice)}</strong><button className="icon-button danger" type="button" aria-label={`Quitar ${line.name}`} onClick={()=>setCart(current=>current.filter(item=>item.key!==line.key))}><X size={15}/></button></article>)}</div>}</section></>}
         <section className="pos-payment-section"><div className="pos-payment-title"><div><span className="eyebrow">COBRO</span><h3>Forma de pago</h3></div><label className="pos-charge-toggle"><input type="checkbox" checked={chargeNow} onChange={(event)=>setChargeNow(event.target.checked)}/> Cobrar ahora</label></div>{chargeNow?<><div className="pos-payment-rows">{payments.map((payment)=><div className="pos-payment-row" key={payment.id}><label>Método<select value={payment.method} onChange={(event)=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,method:event.target.value}:row))}><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></label><label>{payments.length===1&&payment.amount===''?'Monto (vacío = total)':'Monto'}<div className="money-input"><span>$</span><input type="number" min={0.01} max={activeTotal||undefined} step={0.01} value={payment.amount} onChange={(event)=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,amount:event.target.value}:row))} placeholder={payments.length===1?'Total de la venta':'0,00'}/></div></label><button className="icon-button danger" type="button" aria-label="Quitar forma de pago" title={payments.length===1?'Debe quedar al menos un método de pago':'Quitar forma de pago'} disabled={payments.length===1} onClick={()=>setPayments(current=>current.length>1?current.filter(row=>row.id!==payment.id):current)}><X size={14}/></button></div>)}</div><button type="button" className="button button-outline pos-add-payment" onClick={()=>setPayments(current=>[...current,{id:globalThis.crypto?.randomUUID?.()||`payment-${Date.now()}-${current.length}`,method:'Transferencia',amount:''}])}><Plus size={14}/> Agregar otro método</button><div className="pos-payment-balance"><span>Recibido al guardar</span><strong>{formatMoney(paymentPreview)}</strong><span>Saldo pendiente: <b>{formatMoney(Math.max(0,activeTotal-paymentPreview))}</b></span></div>{cashShiftUnavailable&&<p className="pos-checkout-guidance" role="status"><CircleHelp size={15}/><span>{cashierSession.error?'No se pudo verificar tu turno. Vuelve a cargar la página o revisa la sucursal.':'Para recibir efectivo, primero abre tu turno en Caja y producción.'}</span>{!cashierSession.error&&<Link to="/operaciones/flujos">Abrir turno</Link>}</p>}</>:<p className="pos-credit-note">La orden se registrará con saldo pendiente y sin pagos recibidos.</p>}</section>
-<div className="field-grid pos-payment-fields"><label>Sucursal<select value={form.branchCode} onChange={(event)=>setForm({...form,branchCode:event.target.value})}><option value="VIS">Visual Corp</option><option value="GIGA">Gigaprint</option></select></label><label>Elegir cliente<select value={form.customerId} onChange={(event)=>{const customer=data.customers.find((row)=>row.id===event.target.value);setForm({...form,customerId:event.target.value,customer:customer?.name||'',customerPhone:customer?.phone||''});}}><option value="">Nuevo cliente / sin asociar</option>{(data.customers||[]).map((customer)=><option key={customer.id} value={customer.id}>{customer.name}{customer.phone?` · ${customer.phone}`:''}</option>)}</select></label><label>Nombre del cliente<input value={form.customer} onChange={(event)=>setForm({...form,customerId:'',customer:event.target.value})} placeholder="Nombre o razón social"/></label><label>Teléfono<input value={form.customerPhone} onChange={(event)=>setForm({...form,customerId:'',customerPhone:event.target.value})} placeholder="Opcional"/></label></div>
+<div className="field-grid pos-payment-fields"><label>Sucursal<select value={form.branchCode} onChange={(event)=>setForm({...form,branchCode:event.target.value})}><option value="VIS">Visual Corp</option><option value="GIGA">Gigaprint</option></select></label><POSCustomerPicker customers={data.customers||[]} remoteMatches={customerLookupActive&&canSearchCustomers&&!form.customerId&&customerSearch.results!==null&&!customerSearch.error?customerSearch.results:null} searchingCustomers={customerSearch.loading} searchError={customerSearch.error} onRetrySearch={()=>setCustomerSearchRequest((request)=>request+1)} canShowMore={Boolean(customerSearch.hasMore&&customerSearchLimit<20)} onShowMore={()=>setCustomerSearchLimit(20)} selectedCustomer={selectedCustomer} duplicateCustomer={duplicateCustomer} customerName={form.customer} onNewNameChange={(value)=>setForm((current)=>({...current,customer:value}))} query={customerQuery} onQueryChange={updateCustomerQuery} onSelect={choosePOSCustomer} phone={form.customerPhone} email={form.customerEmail} documentReference={form.customerDocumentReference} onContactChange={(field,value)=>setForm((current)=>({...current,[field==='phone'?'customerPhone':field==='email'?'customerEmail':'customerDocumentReference']:value}))} canViewSales={canViewCustomerHistory} historyLoading={customerHistory.loading} historyCount={customerHistory.count} historySummary={customerHistory.summary} recentPurchases={customerHistory.rows}/></div>
         <label>Notas internas<textarea rows={2} value={form.description} onChange={(event)=>setForm({...form,description:event.target.value})} placeholder="Detalles acordados para esta orden"/></label>{activeParkedOrderId&&<div className="pos-parked-active"><span>ORDEN RECUPERADA</span><b>Se conserva en espera hasta confirmar la venta.</b></div>}<div className="pos-submit-actions"><button className="button button-outline" type="button" disabled={parking||Boolean(activeParkedOrderId)||(!form.quoteId&&!cart.length)} onClick={parkCurrentOrder}>{activeParkedOrderId?'Ya está en espera':parking?'Guardando…':'Guardar en espera'} <ClipboardList size={15}/></button><button className="button button-dark form-submit" type="submit" disabled={!canSubmitSale}>{savingSale?'Guardando venta…':'Confirmar orden'} <Check size={16}/></button></div>{submitBlockReason&&<p className="pos-submit-guidance" role="status">{submitBlockReason}</p>}
       </form>
       <section className="panel pos-parked-panel"><div className="panel-heading"><div><span className="eyebrow">ÓRDENES RECUPERABLES</span><h2>En espera</h2></div><span className="muted-count">{parkedOrders.length} órdenes</span></div>{parkedOrders.length===0?<EmptyState icon={ClipboardList} title="No hay órdenes en espera" text="Guarda aquí un carrito o cotización para continuarla desde esta sucursal. No reserva stock."/>:<div className="activity-list">{parkedOrders.map(order=>{const payload=order.payload||{};const customerName=payload.form?.customer||payload.form?.quoteId&&centralQuotes.find(quote=>quote.id===payload.form.quoteId)?.customer_name||'Sin cliente';return <article className="sale-activity pos-parked-card" key={order.id}><div className="sale-row"><span className="sale-icon"><ClipboardList size={17}/></span><span><b>{customerName}</b><small>{branchNames[order.branch_id]||'Sucursal'} · {new Date(order.created_at).toLocaleString('es-EC',{dateStyle:'short',timeStyle:'short'})}</small></span><strong>{formatMoney(order.total)}</strong></div><div className="sale-payment-summary"><span>{payload.cart?.length|| (payload.form?.quoteId?'Cotización aprobada':'')} artículo(s)</span><span>Guardada por <b>{order.created_by===user?.id?'ti':'el equipo'}</b></span></div><button className="button button-outline" type="button" onClick={()=>resumeParkedOrder(order)}>Recuperar orden</button></article>;})}</div>}</section>
