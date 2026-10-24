@@ -199,7 +199,7 @@ export function WorkspaceProvider({ children }) {
       read(supabase.from('inventory_categories').select('id,code,name').eq('organization_id', organizationId),'inventory'),
       supabase.from('branches').select('id,code,name').eq('organization_id', organizationId),
       read(supabase.from('inventory_locations').select('id,branch_id,parent_id,code,name,location_type,active,is_system').eq('organization_id', organizationId).order('name'),'inventory'),
-      read(supabase.from('inventory_movements').select('id,variant_id,branch_id,location_code,movement_type,quantity_delta,reason,reference_type,reference_id,created_by,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),'inventory'),
+      read(supabase.from('inventory_movements').select('id,variant_id,branch_id,location_code,movement_type,quantity_delta,reason,reference_type,reference_id,created_by,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(500),'inventory'),
       read(supabase.from('customers').select('id,full_name,phone,email,document_reference,notes,preferences,tags,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }), 'crm'),
       read(supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity,backordered_quantity),sale_payments(method,amount)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),'sales'),
       read(supabase.from('inventory_item_costs').select('variant_id,unit_cost,supplier_name,updated_at').eq('organization_id', organizationId),'inventory_costs','view_costs'),
@@ -219,12 +219,18 @@ export function WorkspaceProvider({ children }) {
     const variantById = new Map<string, any>((variantsResult.data || []).map((row: any) => [row.id, row]));
     const costByVariant = new Map<string, any>((costsResult.data || []).map((row: any) => [row.variant_id, row]));
     const metricsByKey = new Map<string, any>((metricsResult.data || []).map((row: any) => [`${row.variant_id}|${row.branch_id}|${row.location_code}`, row]));
+    const stockRowsByVariant = new Map<string, any[]>();
+    for (const stock of stockResult.data || []) {
+      const rows = stockRowsByVariant.get(stock.variant_id) || [];
+      rows.push(stock);
+      stockRowsByVariant.set(stock.variant_id, rows);
+    }
     const remoteInventory = [];
     for (const variant of variantsResult.data || []) {
       const item = itemById.get(variant.item_id);
       if (!item) continue;
-      const branchStocks = (stockResult.data || []).filter((row) => row.variant_id === variant.id);
-      const initialBranch = (branchesResult.data || []).find((row) => row.id === item.custom_fields?.initial_branch_id);
+      const branchStocks = stockRowsByVariant.get(variant.id) || [];
+      const initialBranch = branchById.get(item.custom_fields?.initial_branch_id);
       const inventoryRows = branchStocks.length
         ? branchStocks.map((stock) => ({ stock, branch: branchById.get(stock.branch_id) || { id: stock.branch_id, name: 'Sucursal desconocida' } }))
         : [{ stock: null, branch: initialBranch || null }];
