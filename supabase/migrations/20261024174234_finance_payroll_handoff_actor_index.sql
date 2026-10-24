@@ -1,0 +1,2 @@
+create index finance_payroll_deductions_payroll_handed_by_idx
+  on public.finance_payroll_deductions (payroll_handed_by);
