@@ -8,7 +8,7 @@ import './operations-lifecycle.css';
 const BUSINESS_TIME_ZONE = 'America/Guayaquil';
 const PAGE_SIZE = 500;
 const FINANCE_ROLES = ['advisor', 'owner', 'admin', 'manager'];
-type InventoryCostSummary = { inventory_lines: number; missing_inventory_cost_lines: number; non_inventory_lines: number; cost_total: number };
+type InventoryCostSummary = { inventory_lines: number; missing_inventory_cost_lines: number; non_inventory_lines: number; cost_total: number; restocked_return_units: number; restocked_return_cost: number };
 type MaterialCostSummary = { consumption_movements: number; costed_movements: number; missing_cost_movements: number; material_cost_total: number };
 type InventoryCatalogCostSummary = { active_variants: number; configured_variants: number; missing_variants: any[] };
 const money = (value) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(Number(value) || 0);
@@ -1043,11 +1043,12 @@ export function OperationsFinance() {
     </section>}
     {canSeeInventoryCosts && <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-cost-title">
       <div className="panel-heading"><div><span className="eyebrow">INVENTARIO → POS → FINANZAS</span><h2 id="op-finance-cost-title">Costo de inventario capturado en ventas</h2></div></div>
-      {inventoryCostError ? <p className="op-finance-cost-error" role="alert">{inventoryCostError}</p> : inventoryCostLoading ? <p className="muted">Calculando referencia de costos para este periodo…</p> : inventoryCostSummary ? <div className="op-finance-cost-metrics">
-        <article><span>Costo de artículos entregados</span><b>{money(Number(inventoryCostSummary.cost_total || 0))}</b><small>Usa el costo vigente guardado al vender cada línea</small></article>
+      {inventoryCostError ? <p className="op-finance-cost-error" role="alert">{inventoryCostError}</p> : inventoryCostLoading ? <p className="muted">Calculando referencia de costos para este periodo…</p> : inventoryCostSummary ? <div className="op-finance-cost-metrics op-finance-return-cost-metrics">
+        <article><span>Costo neto de artículos vendidos</span><b>{money(Number(inventoryCostSummary.cost_total || 0))}</b><small>Descuenta las unidades devueltas que reingresaron al stock</small></article>
+        <article><span>Costo restituido por devoluciones</span><b>{money(Number(inventoryCostSummary.restocked_return_cost || 0))}</b><small>{Number(inventoryCostSummary.restocked_return_units || 0)} unidades registradas como reingresadas a inventario</small></article>
         <article><span>Cobertura de costo en líneas de inventario</span><b>{Number(inventoryCostSummary.inventory_lines || 0) + Number(inventoryCostSummary.missing_inventory_cost_lines || 0) > 0 ? `${Math.round(Number(inventoryCostSummary.inventory_lines || 0) / (Number(inventoryCostSummary.inventory_lines || 0) + Number(inventoryCostSummary.missing_inventory_cost_lines || 0)) * 100)}%` : '—'}</b><small>{inventoryCostSummary.inventory_lines || 0} con costo · {inventoryCostSummary.missing_inventory_cost_lines || 0} sin costo configurado</small></article>
       </div> : <p className="muted">Aún no hay datos de costo para este periodo.</p>}
-      <p className="op-finance-cost-note">Es una referencia operativa basada en el costo de inventario vigente al registrar la venta. No calcula utilidad contable e identifica por separado líneas sin costo; los servicios y costos indirectos no están incluidos.</p>
+      <p className="op-finance-cost-note">Se agrupa por fecha de venta y descuenta devoluciones con destino «Reintegrar como vendible». «Separar para revisión» y «Registrar como merma» conservan el costo de la venta. Es una referencia operativa, no utilidad contable; excluye servicios y costos indirectos.</p>
     </section>}
     {canSeeInventoryCosts && <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-catalog-cost-title">
       <div className="panel-heading op-finance-catalog-cost-heading"><div><span className="eyebrow">INVENTARIO → FINANZAS · CATÁLOGO ACTUAL</span><h2 id="op-finance-catalog-cost-title">Variantes activas sin costo unitario</h2></div><div className="op-finance-cost-actions"><button className="button button-outline" onClick={() => setInventoryCatalogCostRefreshKey((key) => key + 1)} disabled={inventoryCatalogCostLoading}><RefreshCw className={inventoryCatalogCostLoading ? 'spin' : ''} size={15}/> Actualizar</button><a className="button button-outline" href="/operaciones/inventario">Revisar en Inventario <ArrowUpRight size={15}/></a><button className="button button-outline" onClick={downloadMissingInventoryCostsCsv} disabled={!inventoryCatalogCostSummary?.missing_variants.length}><Download size={15}/> Exportar pendientes</button></div></div>
