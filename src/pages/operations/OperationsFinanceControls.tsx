@@ -161,6 +161,36 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const openPayables = expenses.filter((expense) => expense.status === 'payable' && isInSelectedBranch(expense));
   const dueNow = openPayables.filter((expense) => expense.due_date && expense.due_date < today()).reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
   const payableTotal = openPayables.reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
+  const payableAging = useMemo(() => {
+    const todayValue = today();
+    const overdue: Array<Expense & { balance: number; days_overdue: number }> = [];
+    const withoutDueDate: Array<Expense & { balance: number }> = [];
+    expenses.filter((expense) => expense.status === 'payable' && isInSelectedBranch(expense)).forEach((expense) => {
+      const balance = Number(expense.total) - Number(expense.paid_total);
+      if (balance <= 0) return;
+      if (!expense.due_date) {
+        withoutDueDate.push({ ...expense, balance });
+        return;
+      }
+      const daysOverdue = -dayDistance(expense.due_date, todayValue);
+      if (daysOverdue > 0) overdue.push({ ...expense, balance, days_overdue: daysOverdue });
+    });
+    overdue.sort((a, b) => b.days_overdue - a.days_overdue || b.balance - a.balance);
+    const buckets = [
+      { label: '1–30 días', min: 1, max: 30 },
+      { label: '31–60 días', min: 31, max: 60 },
+      { label: '61 días o más', min: 61, max: Infinity },
+    ].map((bucket) => {
+      const rows = overdue.filter((expense) => expense.days_overdue >= bucket.min && expense.days_overdue <= bucket.max);
+      return { ...bucket, rows, amount: rows.reduce((total, expense) => total + expense.balance, 0) };
+    });
+    return {
+      overdue,
+      buckets,
+      withoutDueDate,
+      withoutDueDateAmount: withoutDueDate.reduce((total, expense) => total + expense.balance, 0),
+    };
+  }, [expenses, branch]);
   const upcomingObligations = useMemo(() => {
     const generatedOccurrences = new Set(recurringOccurrences.map((item) => `${item.template_id}:${item.due_date}`));
     const dueItems = expenses.flatMap((expense) => {
@@ -331,6 +361,16 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         <article><span>Pagado en el periodo</span><b>{money(paidInPeriod)}</b><small>Pagos efectivos del mes y la sucursal seleccionados</small></article>
       </div>
       <p className="op-finance-cost-note">Los saldos por pagar y vencidos muestran el estado actual de {branch === 'all' ? 'todas las sucursales y gastos generales' : 'la sucursal seleccionada'}; el mes solo filtra pagos realizados. Usa «Todas las sucursales» para revisar los gastos generales.</p>
+      <section className="panel op-finance-aging-panel" aria-labelledby="op-finance-aging-title">
+        <div className="panel-heading"><div><span className="eyebrow">COMPRAS → FINANZAS · CONTROL DE VENCIMIENTOS</span><h3 id="op-finance-aging-title">Antigüedad de cuentas por pagar</h3><p className="muted">Tramos calculados desde la fecha de vencimiento hasta hoy, sobre el saldo pendiente y la sucursal seleccionada.</p></div><Clock3 size={19}/></div>
+        <div className="op-finance-aging-metrics">{payableAging.buckets.map((bucket) => <article key={bucket.label}><span>{bucket.label}</span><b>{money(bucket.amount)}</b><small>{bucket.rows.length} cuentas</small></article>)}<article className={payableAging.withoutDueDate.length ? 'is-missing-date' : ''}><span>Sin fecha de vencimiento</span><b>{money(payableAging.withoutDueDateAmount)}</b><small>{payableAging.withoutDueDate.length} cuentas abiertas</small></article></div>
+        {payableAging.overdue.length ? <>
+          <div className="op-finance-table-wrap"><table className="op-finance-table op-finance-aging-table"><thead><tr><th>Egreso / proveedor</th><th>Vencía</th><th>Días vencido</th><th>Saldo</th></tr></thead><tbody>{payableAging.overdue.slice(0, 8).map((expense) => <tr key={expense.id}><td><b>{expense.description}</b><small>{supplierNames.get(expense.supplier_id) || 'Sin proveedor'} · {expense.category}{expense.reference ? ` · ${expense.reference}` : ''}</small></td><td>{new Date(`${expense.due_date}T12:00:00`).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil', day: 'numeric', month: 'short', year: 'numeric' })}</td><td><span className="op-finance-aging-days">{expense.days_overdue} {expense.days_overdue === 1 ? 'día' : 'días'}</span></td><td><b>{money(expense.balance)}</b></td></tr>)}</tbody></table></div>
+          {payableAging.overdue.length > 8 && <p className="op-finance-cost-note">Se muestran las 8 cuentas más antiguas de {payableAging.overdue.length}; los tramos incluyen el total.</p>}
+          <button className="button button-outline op-finance-aging-filter" onClick={() => { setExpenseSearch(''); setExpenseStatusFilter('overdue'); document.getElementById('op-finance-expense-register')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ReceiptText size={15}/> Ver todas las cuentas vencidas</button>
+        </> : <div className="op-finance-ledger-empty"><Check size={22}/><b>No hay saldos vencidos</b><span>{payableAging.withoutDueDate.length ? `Completa la fecha de vencimiento de ${payableAging.withoutDueDate.length} cuentas abiertas para que aparezcan en la previsión.` : 'Las cuentas por pagar abiertas no tienen vencimientos atrasados.'}</span></div>}
+        <p className="op-finance-cost-note">La antigüedad no agrega intereses, recargos ni penalidades; muestra solo el saldo registrado.</p>
+      </section>
       <section className="panel op-finance-obligations-forecast" aria-labelledby="op-finance-obligations-title">
         <div className="panel-heading"><div><span className="eyebrow">CUENTAS POR PAGAR + PAGOS PERIÓDICOS</span><h3 id="op-finance-obligations-title">Obligaciones de los próximos 30 días</h3><p className="muted">El calendario usa la fecha actual y el filtro de sucursal; no depende del mes del informe.</p></div><CalendarClock size={19}/></div>
         <div className="op-finance-obligations-metrics"><article><span>En los próximos 7 días</span><b>{money(upcoming7DaysTotal)}</b></article><article><span>En los próximos 30 días</span><b>{money(upcoming30DaysTotal)}</b><small>{upcomingObligations.length} obligaciones previstas</small></article></div>
@@ -367,7 +407,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
           <label>Nota<input maxLength={1000} value={expenseForm.note} onChange={(event) => setExpenseForm({ ...expenseForm, note: event.target.value })}/></label>
           <button className="button button-primary" disabled={busy}><Plus size={15}/> Guardar egreso</button>
         </form>
-        <section className="panel op-finance-ledger-register"><div className="panel-heading"><div><span className="eyebrow">COMPROMISOS Y PAGOS</span><h3>Movimientos de egreso</h3></div><CircleDollarSign size={19}/></div>
+        <section className="panel op-finance-ledger-register" id="op-finance-expense-register"><div className="panel-heading"><div><span className="eyebrow">COMPROMISOS Y PAGOS</span><h3>Movimientos de egreso</h3></div><CircleDollarSign size={19}/></div>
           {!expenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={24}/><b>Aún no hay egresos</b><span>Registra compras pagadas al instante o servicios que debas pagar después.</span></div> : <><div className="op-finance-ledger-filters"><label>Buscar egreso<input type="search" value={expenseSearch} onChange={(event) => setExpenseSearch(event.target.value)} placeholder="Descripción, proveedor, OC o documento"/></label><label>Estado<select value={expenseStatusFilter} onChange={(event) => setExpenseStatusFilter(event.target.value)}><option value="all">Todos los estados</option><option value="open">Por pagar</option><option value="overdue">Vencidos</option><option value="paid">Pagados</option></select></label><span className="op-finance-ledger-result-count">{visibleExpenses.length} de {expenses.length} egresos</span></div>{!visibleExpenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={22}/><b>Sin coincidencias</b><span>Prueba otro término o estado para encontrar el egreso.</span></div> : <div className="op-finance-ledger-list">{visibleExpenses.map((expense) => { const balance = Number(expense.total) - Number(expense.paid_total); const form = paymentForms[expense.id] || { amount: '', method: 'transfer' }; return <article key={expense.id}>
             <div className="op-finance-ledger-record-top"><div><b>{expense.description}</b><span>{expense.category}{expense.branch_id ? ` · ${branchNames.get(expense.branch_id) || 'Sucursal'}` : ' · General'}{expense.supplier_id ? ` · ${supplierNames.get(expense.supplier_id) || 'Proveedor'}` : ''}{expense.purchase_order_id ? ` · OC ${orderNames.get(expense.purchase_order_id) || 'vinculada'}` : ''}{expense.reference ? ` · Doc. ${expense.reference}` : ''}</span></div><span className={`op-finance-ledger-status ${balance <= 0 ? 'is-paid' : ''}`}>{balance <= 0 ? 'Pagado' : expense.due_date && expense.due_date < today() ? 'Vencido' : 'Por pagar'}</span></div>
             <div className="op-finance-ledger-record-numbers"><span>Registrado {new Date(`${expense.document_date}T12:00:00`).toLocaleDateString('es-EC')} {expense.due_date ? `· vence ${new Date(`${expense.due_date}T12:00:00`).toLocaleDateString('es-EC')}` : ''}</span><b>{money(balance)} <small>pendiente</small></b></div>
