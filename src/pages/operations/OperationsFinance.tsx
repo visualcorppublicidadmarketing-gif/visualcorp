@@ -8,6 +8,7 @@ import './operations-lifecycle.css';
 const BUSINESS_TIME_ZONE = 'America/Guayaquil';
 const PAGE_SIZE = 500;
 const FINANCE_ROLES = ['advisor', 'owner', 'admin', 'manager'];
+type InventoryCostSummary = { inventory_lines: number; missing_inventory_cost_lines: number; non_inventory_lines: number; cost_total: number };
 const money = (value) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(Number(value) || 0);
 
 function monthInBusinessTimeZone(value) {
@@ -41,7 +42,8 @@ async function readAllRows(createQuery) {
 }
 
 export function OperationsFinance() {
-  const { organizationId, hasPermission } = useAuth();
+  const { organizationId, hasPermission, roles } = useAuth();
+  const canSeeInventoryCosts = roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
   const [sales, setSales] = useState([]);
   const [payments, setPayments] = useState([]);
   const [advisors, setAdvisors] = useState([]);
@@ -52,6 +54,9 @@ export function OperationsFinance() {
   const [method, setMethod] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [inventoryCostSummary, setInventoryCostSummary] = useState<InventoryCostSummary | null>(null);
+  const [inventoryCostLoading, setInventoryCostLoading] = useState(false);
+  const [inventoryCostError, setInventoryCostError] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -109,6 +114,31 @@ export function OperationsFinance() {
     void load();
     return () => { active = false; };
   }, [organizationId, hasPermission]);
+
+  useEffect(() => {
+    let active = true;
+    if (!canSeeInventoryCosts || !supabase || !organizationId || !month) {
+      setInventoryCostSummary(null);
+      setInventoryCostError('');
+      return () => { active = false; };
+    }
+    setInventoryCostLoading(true);
+    setInventoryCostError('');
+    void supabase.rpc('get_finance_inventory_cost_summary', {
+      p_month: `${month}-01`,
+      p_branch_id: branch === 'all' ? null : branch,
+      p_advisor_id: advisor === 'all' ? null : advisor,
+    }).then(({ data, error: summaryError }) => {
+      if (!active) return;
+      if (summaryError) {
+        setInventoryCostError(summaryError.message || 'No se pudo consultar el costo capturado de inventario.');
+        setInventoryCostSummary(null);
+      } else {
+        setInventoryCostSummary(data);
+      }
+    }).finally(() => { if (active) setInventoryCostLoading(false); });
+    return () => { active = false; };
+  }, [organizationId, canSeeInventoryCosts, month, branch, advisor]);
 
   const advisorNames = useMemo(() => new Map(advisors.map((person) => [
     person.user_id,
@@ -231,6 +261,14 @@ export function OperationsFinance() {
       <article><span>Saldo por cobrar</span><b>{money(outstanding)}</b><small>Saldo vigente de las ventas filtradas</small></article>
       <article><span>Valor promedio por venta</span><b>{money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b><small>Solo ventas confirmadas</small></article>
     </section>
+    {canSeeInventoryCosts && <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-cost-title">
+      <div className="panel-heading"><div><span className="eyebrow">INVENTARIO → POS → FINANZAS</span><h2 id="op-finance-cost-title">Costo de inventario capturado en ventas</h2></div></div>
+      {inventoryCostError ? <p className="op-finance-cost-error" role="alert">{inventoryCostError}</p> : inventoryCostLoading ? <p className="muted">Calculando referencia de costos para este periodo…</p> : inventoryCostSummary ? <div className="op-finance-cost-metrics">
+        <article><span>Costo de artículos entregados</span><b>{money(Number(inventoryCostSummary.cost_total || 0))}</b><small>Usa el costo vigente guardado al vender cada línea</small></article>
+        <article><span>Cobertura de costo en líneas de inventario</span><b>{Number(inventoryCostSummary.inventory_lines || 0) + Number(inventoryCostSummary.missing_inventory_cost_lines || 0) > 0 ? `${Math.round(Number(inventoryCostSummary.inventory_lines || 0) / (Number(inventoryCostSummary.inventory_lines || 0) + Number(inventoryCostSummary.missing_inventory_cost_lines || 0)) * 100)}%` : '—'}</b><small>{inventoryCostSummary.inventory_lines || 0} con costo · {inventoryCostSummary.missing_inventory_cost_lines || 0} sin costo configurado</small></article>
+      </div> : <p className="muted">Aún no hay datos de costo para este periodo.</p>}
+      <p className="op-finance-cost-note">Es una referencia operativa basada en el costo de inventario vigente al registrar la venta. No calcula utilidad contable e identifica por separado líneas sin costo; los servicios y costos indirectos no están incluidos.</p>
+    </section>}
     <div className="op-finance-grid">
       <section className="panel">
         <div className="panel-heading"><div><span className="eyebrow">COMPARATIVO DEL PERIODO</span><h2>Desempeño por asesora</h2></div><ChartNoAxesCombined size={19} /></div>
