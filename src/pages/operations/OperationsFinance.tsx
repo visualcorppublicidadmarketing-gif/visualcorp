@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowUpRight, ChartNoAxesCombined, Download, LoaderCircle, PackageCheck, ShieldAlert } from 'lucide-react';
+import { ArrowUpRight, Banknote, ChartNoAxesCombined, Download, LoaderCircle, PackageCheck, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import { OperationsFinanceControls } from './OperationsFinanceControls';
@@ -45,8 +45,15 @@ async function readAllRows(createQuery) {
 export function OperationsFinance() {
   const { organizationId, hasPermission, roles } = useAuth();
   const canSeeInventoryCosts = roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
+  const canSeeCashReconciliation = hasPermission('cash', 'view');
   const [sales, setSales] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [cashSessions, setCashSessions] = useState([]);
+  const [cashSessionMovements, setCashSessionMovements] = useState([]);
+  const [cashSessionLoading, setCashSessionLoading] = useState(false);
+  const [cashSessionError, setCashSessionError] = useState('');
+  const [cashMovementError, setCashMovementError] = useState('');
+  const [cashRefreshKey, setCashRefreshKey] = useState(0);
   const [refundSettlements, setRefundSettlements] = useState([]);
   const [refundSettlementError, setRefundSettlementError] = useState('');
   const [advisors, setAdvisors] = useState([]);
@@ -90,7 +97,9 @@ export function OperationsFinance() {
             .order('created_at', { ascending: false })),
           readAllRows(() => supabase
             .from('sale_payments')
-            .select('id,sale_id,amount,method,created_by,created_at')
+            .select(canSeeCashReconciliation
+              ? 'id,sale_id,amount,method,created_by,created_at,cash_session_id'
+              : 'id,sale_id,amount,method,created_by,created_at')
             .eq('organization_id', organizationId)
             .order('created_at', { ascending: false })),
           hasPermission('team', 'view')
@@ -137,7 +146,95 @@ export function OperationsFinance() {
 
     void load();
     return () => { active = false; };
-  }, [organizationId, hasPermission, canSeeInventoryCosts]);
+  }, [organizationId, hasPermission, canSeeInventoryCosts, canSeeCashReconciliation]);
+
+  useEffect(() => {
+    let active = true;
+    if (!canSeeCashReconciliation) {
+      setCashSessions([]);
+      setCashSessionMovements([]);
+      setCashSessionError('');
+      setCashMovementError('');
+      setCashSessionLoading(false);
+      return () => { active = false; };
+    }
+    if (!supabase || !organizationId) {
+      setCashSessionError(!supabase ? 'La conexión con la base de datos no está disponible.' : 'Esta cuenta no tiene una organización asignada.');
+      setCashSessionLoading(false);
+      return () => { active = false; };
+    }
+
+    setCashSessionLoading(true);
+    setCashSessionError('');
+    setCashMovementError('');
+    const loadCashSessions = async () => {
+      try {
+        let openQuery = () => supabase.from('cash_sessions')
+          .select('id,branch_id,status,opening_cash,opened_by,opened_at,expected_cash,counted_cash,difference,closed_by,closed_at')
+          .eq('organization_id', organizationId)
+          .eq('status', 'open')
+          .order('opened_at', { ascending: false })
+          .order('id');
+        let closedQuery = () => supabase.from('cash_sessions')
+          .select('id,branch_id,status,opening_cash,opened_by,opened_at,expected_cash,counted_cash,difference,closed_by,closed_at')
+          .eq('organization_id', organizationId)
+          .eq('status', 'closed')
+          .order('closed_at', { ascending: false })
+          .order('id');
+        if (branch !== 'all') {
+          const selectedBranch = branch;
+          const baseOpenQuery = openQuery;
+          const baseClosedQuery = closedQuery;
+          openQuery = () => baseOpenQuery().eq('branch_id', selectedBranch);
+          closedQuery = () => baseClosedQuery().eq('branch_id', selectedBranch);
+        }
+        if (month) {
+          const [year, monthNumber] = month.split('-').map(Number);
+          const start = new Date(Date.UTC(year, monthNumber - 1, 1, 5)).toISOString();
+          const end = new Date(Date.UTC(year, monthNumber, 1, 5)).toISOString();
+          const baseClosedQuery = closedQuery;
+          closedQuery = () => baseClosedQuery().gte('closed_at', start).lt('closed_at', end);
+        }
+        const [openRows, closedRows] = await Promise.all([
+          readAllRows(openQuery),
+          readAllRows(closedQuery),
+        ]);
+        if (!active) return;
+        const sessions = [...openRows, ...closedRows];
+        setCashSessions(sessions);
+        const openSessionIds = openRows.map((session) => session.id);
+        if (!openSessionIds.length) {
+          setCashSessionMovements([]);
+          return;
+        }
+        try {
+          const movements = await readAllRows(() => supabase
+            .from('cash_session_movements')
+            .select('id,session_id,direction,amount,created_at')
+            .eq('organization_id', organizationId)
+            .in('session_id', openSessionIds)
+            .order('created_at', { ascending: false })
+            .order('id'));
+          if (!active) return;
+          setCashSessionMovements(movements);
+        } catch (movementError) {
+          if (!active) return;
+          setCashSessionMovements([]);
+          setCashMovementError(movementError?.message || 'No se pudieron cargar los movimientos manuales.');
+        }
+      } catch (loadError) {
+        if (active) {
+          setCashSessionError(loadError?.message || 'No se pudieron cargar los cierres de Caja.');
+          setCashSessions([]);
+          setCashSessionMovements([]);
+        }
+      } finally {
+        if (active) setCashSessionLoading(false);
+      }
+    };
+    void loadCashSessions();
+    return () => { active = false; };
+  }, [organizationId, canSeeCashReconciliation, month, branch, cashRefreshKey]);
 
   useEffect(() => {
     let active = true;
@@ -202,32 +299,6 @@ export function OperationsFinance() {
     return () => { active = false; };
   }, [organizationId, canSeeInventoryCosts, month, branch, advisor]);
 
-  useEffect(() => {
-    let active = true;
-    if (!canSeeInventoryCosts || !supabase || !organizationId || !month) {
-      setMaterialCostSummary(null);
-      setMaterialCostError('');
-      setMaterialCostLoading(false);
-      return () => { active = false; };
-    }
-    setMaterialCostLoading(true);
-    setMaterialCostError('');
-    void Promise.resolve(supabase.rpc('get_finance_material_cost_summary', {
-      p_month: `${month}-01`,
-      p_branch_id: branch === 'all' ? null : branch,
-      p_advisor_id: advisor === 'all' ? null : advisor,
-    })).then(({ data, error: summaryError }) => {
-      if (!active) return;
-      if (summaryError) {
-        setMaterialCostError(summaryError.message || 'No se pudo consultar el costo capturado de materiales.');
-        setMaterialCostSummary(null);
-      } else {
-        setMaterialCostSummary(data);
-      }
-    }).finally(() => { if (active) setMaterialCostLoading(false); });
-    return () => { active = false; };
-  }, [organizationId, canSeeInventoryCosts, month, branch, advisor]);
-
   const advisorNames = useMemo(() => new Map(advisors.map((person) => [
     person.user_id,
     person.full_name || person.email || `Usuario ${String(person.user_id).slice(0, 8)}`,
@@ -238,6 +309,17 @@ export function OperationsFinance() {
     return totals;
   }, new Map()), [payments]);
   const branchNames = useMemo(() => new Map(branches.map((item) => [item.id, item.name])), [branches]);
+  const cashMovementTotals = useMemo(() => cashSessionMovements.reduce((totals, movement) => {
+    const amount = Number(movement.amount || 0) * (movement.direction === 'in' ? 1 : -1);
+    totals.set(movement.session_id, (totals.get(movement.session_id) || 0) + amount);
+    return totals;
+  }, new Map()), [cashSessionMovements]);
+  const cashPaymentTotals = useMemo(() => payments.reduce((totals, payment) => {
+    if (payment.method === 'cash' && payment.cash_session_id) {
+      totals.set(payment.cash_session_id, (totals.get(payment.cash_session_id) || 0) + Number(payment.amount || 0));
+    }
+    return totals;
+  }, new Map()), [payments]);
 
   const salesInPeriod = useMemo(() => sales.filter((sale) => (
     sale.status === 'confirmed'
@@ -282,6 +364,27 @@ export function OperationsFinance() {
   const posRefundOutflow = refundsSettledInPeriod.reduce((sum, refund) => sum + Number(refund.amount || 0), 0);
   const posCashInflow = posCashInflows.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const posNetCashFlow = posCashInflow - posRefundOutflow;
+  const cashReconciliationRows = useMemo(() => cashSessions.map((session) => {
+    const expected = session.status === 'closed'
+      ? Number(session.expected_cash || 0)
+      : cashMovementError
+        ? null
+        : Number(session.opening_cash || 0) + Number(cashPaymentTotals.get(session.id) || 0) + Number(cashMovementTotals.get(session.id) || 0);
+    return {
+      ...session,
+      expected,
+      counted: session.status === 'closed' ? Number(session.counted_cash || 0) : null,
+      difference: session.status === 'closed' ? Number(session.difference || 0) : null,
+    };
+  }), [cashSessions, cashPaymentTotals, cashMovementError, cashMovementTotals]);
+  const openCashRows = cashReconciliationRows.filter((session) => session.status === 'open');
+  const closedCashRows = cashReconciliationRows.filter((session) => session.status === 'closed');
+  const cashExpectedInOpenSessions = openCashRows.some((session) => session.expected === null)
+    ? null
+    : openCashRows.reduce((sum, session) => sum + session.expected, 0);
+  const cashShortfall = closedCashRows.reduce((sum, session) => sum + Math.max(0, -session.difference), 0);
+  const cashSurplus = closedCashRows.reduce((sum, session) => sum + Math.max(0, session.difference), 0);
+  const cashSessionsWithDifference = closedCashRows.filter((session) => Math.abs(session.difference) >= 0.005).length;
 
   const grouped = new Map();
   salesInPeriod.forEach((sale) => {
@@ -349,6 +452,30 @@ export function OperationsFinance() {
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
+  const downloadCashReconciliationCsv = () => {
+    const rows = [
+      ['Estado', 'Apertura', 'Cierre', 'Sucursal', 'Responsable', 'Efectivo esperado USD', 'Efectivo contado USD', 'Diferencia USD'],
+      ...cashReconciliationRows.map((session) => [
+        session.status === 'open' ? 'Abierta' : 'Cerrada',
+        timestamp(session.opened_at),
+        timestamp(session.closed_at),
+        branchName(session.branch_id),
+        personName(session.opened_by),
+        session.expected === null ? '' : session.expected.toFixed(2),
+        session.counted === null ? '' : session.counted.toFixed(2),
+        session.difference === null ? '' : session.difference.toFixed(2),
+      ]),
+    ];
+    const escape = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+    const blob = new Blob(['\ufeff', rows.map((row) => row.map(escape).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `conciliacion-caja-${month || 'historico'}.csv`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
   if (loading) return <div className="op-flow-loading"><LoaderCircle className="spin" /> Cargando ventas y pagos registrados…</div>;
 
   return <div className="op-finance-page">
@@ -392,6 +519,21 @@ export function OperationsFinance() {
         <div className="op-finance-table-wrap"><table className="op-finance-table"><thead><tr><th>Liquidado</th><th>Devolución</th><th>Venta</th><th>Asesora</th><th>Sucursal</th><th>Medio</th><th>Referencia / caja</th><th>Monto</th></tr></thead><tbody>{[...refundsSettledInPeriod].sort((a, b) => new Date(b.settled_at).getTime() - new Date(a.settled_at).getTime()).slice(0, 100).map((refund) => { const sale = salesById.get(refund.sale_id); return <tr key={refund.id}><td>{timestamp(refund.settled_at)}</td><td>{refund.return_code}</td><td>{sale?.sale_code || refund.sale_id.slice(0, 8)}</td><td>{personName(sale?.advisor_id)}</td><td>{branchName(refund.branch_id)}</td><td>{refund.method}</td><td>{refund.reference || (refund.cash_session_id ? `Caja ${refund.cash_session_id.slice(0, 8)}` : '—')}</td><td>{money(refund.amount)}</td></tr>; })}{!refundsSettledInPeriod.length && <tr><td colSpan={8}>No hay reembolsos liquidados en el periodo seleccionado.</td></tr>}</tbody></table></div>
         <p className="op-finance-cost-note">El flujo neto POS incluye cobros y reembolsos liquidados; no descuenta compras, nómina ni otros egresos. Los reembolsos en efectivo se registran también como salida en el cierre de su caja. La tabla muestra hasta 100 liquidaciones; los indicadores incluyen todo el periodo.</p>
       </>}
+    </section>}
+    {canSeeCashReconciliation && <section className="panel op-finance-cash-panel" aria-labelledby="op-finance-cash-title">
+      <div className="panel-heading">
+        <div><span className="eyebrow">CAJA → FINANZAS</span><h2 id="op-finance-cash-title">Conciliación de cierres de caja</h2><p className="op-finance-cost-note">Los cierres usan esperado y contado de Caja; las sesiones abiertas muestran el efectivo esperado al momento. Aplica mes de cierre y sucursal, no filtros de asesora o medio de pago.</p></div>
+        <div className="op-finance-cash-actions"><button className="button button-outline" onClick={() => setCashRefreshKey((value) => value + 1)} disabled={cashSessionLoading}><RefreshCw size={15}/> Actualizar</button><button className="button button-outline" onClick={downloadCashReconciliationCsv} disabled={cashSessionLoading || !cashReconciliationRows.length}><Download size={15}/> Exportar CSV</button><a className="button button-outline" href="/operaciones/flujos"><Banknote size={15}/> Abrir Caja <ArrowUpRight size={14}/></a></div>
+      </div>
+      <div className="op-finance-cash-metrics">
+        <article><span>Efectivo esperado en cajas abiertas</span><b>{cashExpectedInOpenSessions === null ? '—' : money(cashExpectedInOpenSessions)}</b><small>{openCashRows.length} sesiones abiertas · fuera del efectivo ya cerrado</small></article>
+        <article><span>Cierres del periodo</span><b>{closedCashRows.length}</b><small>{cashSessionsWithDifference} con diferencia registrada</small></article>
+        <article className="is-shortfall"><span>Faltante registrado</span><b>{money(cashShortfall)}</b><small>Suma de diferencias negativas, sin compensarlas con sobrantes</small></article>
+        <article className="is-surplus"><span>Sobrante registrado</span><b>{money(cashSurplus)}</b><small>Suma de diferencias positivas del periodo</small></article>
+      </div>
+      {cashSessionError ? <p className="op-finance-cost-error" role="alert">{cashSessionError}</p> : cashSessionLoading ? <p className="muted">Cargando cierres y turnos abiertos…</p> : !cashReconciliationRows.length ? <div className="op-finance-cash-empty"><Banknote size={22}/><b>Sin cierres ni cajas abiertas para este filtro</b><span>Prueba otro mes o sucursal, o revisa los turnos en Caja.</span></div> : <div className="op-finance-table-wrap"><table className="op-finance-table op-finance-cash-table"><thead><tr><th>Estado</th><th>Apertura / cierre</th><th>Sucursal</th><th>Responsable</th><th>Esperado</th><th>Contado</th><th>Diferencia</th></tr></thead><tbody>{cashReconciliationRows.map((session) => <tr key={session.id}><td><span className={`op-finance-cash-status ${session.status === 'open' ? 'is-open' : 'is-closed'}`}>{session.status === 'open' ? 'Abierta' : 'Cerrada'}</span></td><td>{session.status === 'open' ? `Abierta ${timestamp(session.opened_at)}` : `Cerrada ${timestamp(session.closed_at)}`}</td><td>{branchName(session.branch_id)}</td><td>{personName(session.opened_by)}</td><td>{session.expected === null ? 'No disponible' : money(session.expected)}</td><td>{session.counted === null ? 'Pendiente' : money(session.counted)}</td><td className={session.difference < 0 ? 'is-negative' : session.difference > 0 ? 'is-positive' : ''}>{session.difference === null ? 'Pendiente' : money(session.difference)}</td></tr>)}</tbody></table></div>}
+      {cashMovementError && <p className="op-finance-cost-error" role="alert">No se pudieron cargar todos los movimientos de las cajas abiertas; se oculta su esperado para evitar mostrar un importe incompleto. {cashMovementError}</p>}
+      <p className="op-finance-cost-note">El esperado en una caja abierta se calcula con efectivo inicial + pagos POS en efectivo + entradas y salidas manuales registradas. La diferencia es contado menos esperado. Este informe no vuelve a sumar los cobros ni los reembolsos en los KPIs de ingresos.</p>
     </section>}
     {canSeeInventoryCosts && <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-cost-title">
       <div className="panel-heading"><div><span className="eyebrow">INVENTARIO → POS → FINANZAS</span><h2 id="op-finance-cost-title">Costo de inventario capturado en ventas</h2></div></div>
