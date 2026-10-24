@@ -34,12 +34,13 @@ const businessMonthRange = (value) => {
     end: new Date(Date.UTC(year, month, 1, 5)).toISOString(),
   };
 };
-const previousBusinessMonth = (value) => {
+const shiftBusinessMonth = (value, offset) => {
   if (!value) return '';
   const [year, month] = value.split('-').map(Number);
-  const previous = new Date(Date.UTC(year, month - 2, 1));
-  return `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, '0')}`;
+  const shifted = new Date(Date.UTC(year, month - 1 + offset, 1));
+  return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, '0')}`;
 };
+const previousBusinessMonth = (value) => shiftBusinessMonth(value, -1);
 const monthLabel = (value) => value
   ? new Date(`${value}-01T12:00:00`).toLocaleDateString('es-EC', { timeZone: BUSINESS_TIME_ZONE, month: 'long', year: 'numeric' })
   : '';
@@ -215,12 +216,12 @@ export function OperationsFinance() {
     }
     setExpensePaymentsLoading(true);
     setExpensePaymentsError('');
-    const comparisonRange = businessMonthRange(previousBusinessMonth(month));
+    const trendRange = businessMonthRange(shiftBusinessMonth(month, -5));
     void readAllRows(() => supabase
       .from('finance_expense_payments')
       .select('id,amount,method,paid_at,reference,finance_expenses!inner(description,category,branch_id,reference)')
       .eq('organization_id', organizationId)
-      .gte('paid_at', comparisonRange?.start || range.start)
+      .gte('paid_at', trendRange?.start || range.start)
       .lt('paid_at', range.end)
       .order('paid_at', { ascending: false })
       .order('id'))
@@ -603,6 +604,25 @@ export function OperationsFinance() {
       net: collections - refunds - branchExpenses - (branch === 'all' ? generalExpenses : 0),
     };
   }, [payments, salesById, refundSettlements, expensePayments, previousMonth, branch]);
+  const operatingCashflowTrend = useMemo(() => {
+    if (!month) return [];
+    return Array.from({ length: 6 }, (_, index) => shiftBusinessMonth(month, index - 5)).map((period) => {
+      const collections = payments.filter((payment) => (
+        monthInBusinessTimeZone(payment.created_at) === period
+        && (branch === 'all' || salesById.get(payment.sale_id)?.branch_id === branch)
+      )).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+      const refunds = refundSettlements.filter((refund) => (
+        monthInBusinessTimeZone(refund.settled_at) === period
+        && (branch === 'all' || refund.branch_id === branch)
+      )).reduce((sum, refund) => sum + Number(refund.amount || 0), 0);
+      const expenses = expensePayments.filter((payment) => (
+        monthInBusinessTimeZone(payment.paid_at) === period
+        && (branch === 'all' || payment.finance_expenses?.branch_id === branch)
+      )).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+      return { period, collections, outflows: refunds + expenses, net: collections - refunds - expenses };
+    });
+  }, [month, payments, salesById, refundSettlements, expensePayments, branch]);
+  const operatingCashflowTrendScale = Math.max(1, ...operatingCashflowTrend.map((item) => Math.abs(item.net)));
   const operatingCashflowRows = useMemo(() => {
     const rows = [];
     payments.forEach((payment) => {
@@ -886,8 +906,24 @@ export function OperationsFinance() {
           <article><span>Egresos generales</span><b>{money(operatingCashflow.generalExpenses)}</b><small>{branch === 'all' ? 'Incluidos en el flujo neto de toda la empresa' : 'Visibles aparte; excluidos del neto de esta sucursal'}</small></article>
           <article className={operatingCashflow.net < 0 ? 'is-negative' : ''}><span>Flujo neto registrado</span><b>{money(operatingCashflow.net)}</b><small>{branch === 'all' ? 'Cobros menos devoluciones y todos los egresos pagados' : 'Cobros menos devoluciones y egresos de la sucursal'}</small></article>
         </div>
+        {month && <div className="op-finance-month-comparison" aria-labelledby="op-finance-cash-trend-title">
+          <div className="op-finance-month-comparison-heading"><div><span className="eyebrow">TENDENCIA DE CAJA · MISMO ALCANCE</span><h3 id="op-finance-cash-trend-title">Tendencia de seis meses</h3><p>{monthLabel(operatingCashflowTrend[0]?.period || month)} a {monthLabel(month)} · {branch === 'all' ? 'toda la empresa' : `sucursal ${branchName(branch)}`}</p></div></div>
+          <div className="op-finance-cash-trend" role="list" aria-label="Flujo de caja neto por mes">
+            {operatingCashflowTrend.map((item) => {
+              const extent = Math.min(50, Math.abs(item.net) / operatingCashflowTrendScale * 50);
+              return <article role="listitem" key={item.period}>
+                <b>{monthLabel(item.period)}</b>
+                <span>Cobros <strong>{money(item.collections)}</strong></span>
+                <span>Salidas <strong>{money(item.outflows)}</strong></span>
+                <span className={`op-finance-cash-trend-net ${item.net < 0 ? 'is-negative' : 'is-positive'}`}>Neto <strong>{money(item.net)}</strong></span>
+                <div className="op-finance-cash-trend-track" role="img" aria-label={`Neto ${money(item.net)}`}><i className={item.net < 0 ? 'is-negative' : 'is-positive'} style={{ width: `${extent}%`, left: item.net < 0 ? `calc(50% - ${extent}%)` : '50%' }}/></div>
+              </article>;
+            })}
+          </div>
+          <p className="op-finance-cost-note">Usa cobros POS, reembolsos liquidados y pagos efectivos de egresos por su fecha registrada. La sucursal seleccionada excluye gastos generales; “Todas” los incluye. No es utilidad contable ni presupuesto y no aplica los filtros de asesora o medio de pago.</p>
+        </div>}
         {month && <div className="op-finance-month-comparison" aria-labelledby="op-finance-month-comparison-title">
-          <div className="op-finance-month-comparison-heading"><div><span className="eyebrow">TENDENCIA DE CAJA · MISMO ALCANCE</span><h3 id="op-finance-month-comparison-title">Comparación con el mes anterior</h3><p>{monthLabel(month)} frente a {monthLabel(previousMonth)} · {branch === 'all' ? 'toda la empresa' : `sucursal ${branchName(branch)}`}</p></div></div>
+          <div className="op-finance-month-comparison-heading"><div><span className="eyebrow">ANÁLISIS DEL PERIODO</span><h3 id="op-finance-month-comparison-title">Comparación con el mes anterior</h3><p>{monthLabel(month)} frente a {monthLabel(previousMonth)} · {branch === 'all' ? 'toda la empresa' : `sucursal ${branchName(branch)}`}</p></div></div>
           <div className="op-finance-month-comparison-grid">
             {[
               { label: 'Cobros recibidos', current: operatingCashflow.collections, previous: previousOperatingCashflow.collections },
