@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, Clock3, Search, UserRoundPlus, Users } from 'lucide-react';
+import { ArrowLeft, Clock3, Plus, Search, UserRoundPlus, Users, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useWorkspace, formatDate, formatMoney } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
+import './customer-book.css';
 
 type Customer = {
   id: string; name: string; phone: string; email: string; documentReference?: string; notes: string; createdAt: string;
@@ -19,6 +20,9 @@ export function CustomerBook() {
   const canViewSales = hasPermission('sales','view');
   const canViewQuotes = hasPermission('quotes','view');
   const [term, setTerm] = useState('');
+  const [contactFilter, setContactFilter] = useState<'all' | 'phone' | 'email'>('all');
+  const [sortBy, setSortBy] = useState<'recent' | 'name'>('recent');
+  const [showAddForm, setShowAddForm] = useState(false);
   const [remoteCustomers, setRemoteCustomers] = useState<Customer[] | null>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
   const [selectedId, setSelectedId] = useState(requestedCustomerId);
@@ -63,7 +67,14 @@ export function CustomerBook() {
     }).finally(() => { if (active) setDetailLoading(false); });
     return () => { active = false; };
   }, [selectedId, organizationId, canViewSales, canViewQuotes]);
-  const visible = useMemo(() => customers.filter((c) => `${c.name} ${c.phone} ${c.email} ${(c.tags || []).join(' ')}`.toLowerCase().includes(term.toLowerCase())), [customers, term]);
+  const visible = useMemo(() => customers
+    .filter((customer) => `${customer.name} ${customer.phone} ${customer.email} ${customer.documentReference || ''} ${(customer.tags || []).join(' ')}`.toLowerCase().includes(term.trim().toLowerCase()))
+    .filter((customer) => contactFilter === 'all' || (contactFilter === 'phone' ? Boolean(customer.phone?.trim()) : Boolean(customer.email?.trim())))
+    .sort((a, b) => sortBy === 'name'
+      ? a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+      : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()), [customers, term, contactFilter, sortBy]);
+  const customersWithPhone = customers.filter((customer) => customer.phone?.trim()).length;
+  const customersWithEmail = customers.filter((customer) => customer.email?.trim()).length;
   const lifetimeValue = sales.reduce((total, sale) => total + Number(sale.total || 0), 0);
   const save = async (event) => {
     event.preventDefault();
@@ -78,6 +89,7 @@ export function CustomerBook() {
       setRemoteCustomers((current) => [customer, ...(current || [])]); selectCustomer(customer.id);
     } else add('customers', { ...values, source: 'Registro manual' });
     setForm({ name: '', phone: '', email: '', documentReference: '', notes: '', interests: '', tags: '' });
+    setShowAddForm(false);
     flash(supabase ? 'Cliente guardado en la base compartida.' : 'Cliente guardado localmente.');
   };
   const saveCustomerProfile = async (event) => {
@@ -97,7 +109,7 @@ export function CustomerBook() {
     else { setInteractions((current) => [created, ...current]); setInteractionSummary(''); flash('Nota agregada al historial del cliente.'); }
   };
   return <div className="customer-book">
-    <div className="page-heading"><div><div className="eyebrow">CLIENTES · BASE COMPARTIDA</div><h1>{selectedCustomer ? selectedCustomer.name : 'Directorio de clientes'}</h1><p>{selectedCustomer ? 'Ficha, compras, cotizaciones y conversaciones registradas para este cliente.' : 'Consulta la relación completa del cliente con Visual Corp y registra información útil para atenderle mejor.'}</p></div><span className="local-badge"><Users size={14}/> {loading?'…':customers.length} clientes</span></div>
+    <div className="page-heading"><div><div className="eyebrow">CLIENTES · BASE COMPARTIDA</div><h1>{selectedCustomer ? selectedCustomer.name : 'Clientes'}</h1><p>{selectedCustomer ? 'Ficha, compras, cotizaciones y seguimientos de este cliente.' : 'Encuentra una ficha, revisa su relación comercial o agrega un cliente nuevo.'}</p></div>{!selectedCustomer&&canEdit&&<button type="button" className="button button-dark" onClick={()=>setShowAddForm((open)=>!open)}>{showAddForm?<X size={15}/>:<Plus size={16}/>} {showAddForm?'Cerrar':'Agregar cliente'}</button>}</div>
     {selectedCustomer ? <>
       <button type="button" className="button button-outline customer-back" onClick={() => selectCustomer('')}><ArrowLeft size={15}/> Volver al directorio</button>
       <div className="customer-summary-grid">
@@ -121,22 +133,38 @@ export function CustomerBook() {
           <section className="panel"><div className="panel-heading"><div><span className="eyebrow">PROPUESTAS</span><h2>Cotizaciones</h2></div></div>{!canViewQuotes?<div className="inventory-empty">Tu perfil no permite consultar cotizaciones.</div>:quotes.length?<div className="customer-history-list">{quotes.map((quote)=><article key={quote.id}><span><b>{quote.quote_code}</b><small>{formatDate(quote.created_at)} · {quote.status}</small></span><strong>{quote.selected_total==null?'Por confirmar':formatMoney(quote.selected_total)}</strong></article>)}</div>:<div className="inventory-empty">Sin cotizaciones asociadas a este cliente.</div>}</section></div>
       </div>
       {detailLoading&&<p className="customer-history-loading">Actualizando el historial completo…</p>}
-    </> : <div className="customer-book-grid">
-      <form className="panel form-panel" onSubmit={save}><div className="panel-heading"><div><span className="eyebrow">NUEVO REGISTRO</span><h2>Agregar cliente</h2></div><UserRoundPlus size={19}/></div>
-        <label>Nombre o razón social *<input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
-        <label>Teléfono<input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
-        <label>Correo electrónico<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
-        <label>Cédula o RUC<input value={form.documentReference} onChange={(e) => setForm({ ...form, documentReference: e.target.value })} /></label>
-        <label>Intereses y preferencias<textarea rows={2} value={form.interests} onChange={(e) => setForm({ ...form, interests: e.target.value })} placeholder="Productos, colores, acabados o necesidades comentadas" /></label>
-        <label>Etiquetas<input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="frecuente, empresa, eventos" /></label>
-        <label>Notas<textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
-        <button className="button button-dark form-submit" type="submit" disabled={!canEdit}>Guardar cliente <UserRoundPlus size={15}/></button>
-      </form>
-      <section className="panel"><div className="panel-heading"><div><span className="eyebrow">DIRECTORIO</span><h2>Clientes registrados</h2></div></div>
-        <label className="search-box"><Search size={16}/><input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Buscar por nombre, teléfono, correo o etiqueta" /></label>
-        {visible.length ? <div className="customer-list">{visible.map((customer) => <button type="button" className="customer-row customer-row-button" key={customer.id} onClick={() => selectCustomer(customer.id)}><span className="customer-avatar">{customer.name?.slice(0, 1)?.toUpperCase() || 'C'}</span><span><b>{customer.name}</b><small>{[customer.phone, customer.email].filter(Boolean).join(' · ') || 'Sin datos de contacto'} · Agregado {formatDate(customer.createdAt)}</small>{customer.tags?.length>0&&<small>{customer.tags.join(' · ')}</small>}</span><span className="inventory-status ok">Ver ficha</span></button>)}</div> : <div className="inventory-empty">{customers.length ? 'No hay coincidencias.' : 'La base empieza vacía. Puedes agregar clientes aquí o desde el POS al registrar una venta.'}</div>}
+    </> : <>
+      <div className="customer-directory-stats" aria-label="Resumen del directorio">
+        <article className="panel customer-directory-stat"><span><Users size={16}/></span><div><small>Total registrados</small><b>{loading?'…':customers.length}</b></div></article>
+        <article className="panel customer-directory-stat"><span><UserRoundPlus size={16}/></span><div><small>Con teléfono</small><b>{loading?'…':customersWithPhone}</b></div></article>
+        <article className="panel customer-directory-stat"><span>@</span><div><small>Con correo</small><b>{loading?'…':customersWithEmail}</b></div></article>
+      </div>
+      {showAddForm&&<form className="panel customer-add-panel" onSubmit={save}>
+        <div className="panel-heading"><div><span className="eyebrow">NUEVO REGISTRO</span><h2>Datos de contacto</h2><p>Guarda primero lo esencial; puedes completar la ficha después.</p></div><UserRoundPlus size={19}/></div>
+        <div className="customer-add-primary-fields">
+          <label>Nombre o razón social *<input autoFocus required maxLength={160} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre del cliente" /></label>
+          <label>Teléfono<input autoComplete="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Número de contacto" /></label>
+          <label>Correo electrónico<input autoComplete="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="correo@ejemplo.com" /></label>
+        </div>
+        <details className="customer-add-more"><summary>Agregar más datos (RUC, intereses y notas)</summary><div className="customer-add-extra-fields">
+          <label>Cédula o RUC<input value={form.documentReference} onChange={(e) => setForm({ ...form, documentReference: e.target.value })} /></label>
+          <label>Intereses y preferencias<textarea rows={2} value={form.interests} onChange={(e) => setForm({ ...form, interests: e.target.value })} placeholder="Productos, colores, acabados o necesidades comentadas" /></label>
+          <label>Etiquetas<input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="frecuente, empresa, eventos" /></label>
+          <label>Notas<textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
+        </div></details>
+        <div className="customer-add-actions"><button className="button button-dark" type="submit" disabled={!canEdit}><UserRoundPlus size={15}/> Guardar cliente</button><button className="button button-outline" type="button" onClick={()=>setShowAddForm(false)}>Cancelar</button></div>
+      </form>}
+      <section className="panel customer-directory-panel"><div className="panel-heading"><div><span className="eyebrow">DIRECTORIO</span><h2>Busca y abre una ficha</h2></div><span className="customer-result-count">{loading?'Cargando…':`${visible.length} de ${customers.length}`}</span></div>
+        <div className="customer-directory-toolbar">
+          <label className="search-box"><Search size={16}/><input aria-label="Buscar clientes" value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Nombre, teléfono, correo, RUC o etiqueta" /></label>
+          <label className="customer-sort-control"><span>Ordenar</span><select value={sortBy} onChange={(event)=>setSortBy(event.target.value as 'recent'|'name')}><option value="recent">Más recientes</option><option value="name">Nombre A–Z</option></select></label>
+        </div>
+        <div className="customer-contact-filters" role="group" aria-label="Filtrar clientes por contacto">
+          {[['all','Todos',customers.length],['phone','Con teléfono',customersWithPhone],['email','Con correo',customersWithEmail]].map(([key,label,count])=><button type="button" key={key} className={contactFilter===key?'active':''} aria-pressed={contactFilter===key} onClick={()=>setContactFilter(key as 'all'|'phone'|'email')}>{label}<span>{loading?'…':count}</span></button>)}
+        </div>
+        {loading?<div className="customer-directory-empty"><span className="customer-empty-icon"><Users size={20}/></span><b>Cargando clientes</b><p>Estamos consultando el directorio compartido.</p></div>:visible.length ? <div className="customer-list">{visible.map((customer) => <button type="button" className="customer-row customer-row-button" key={customer.id} onClick={() => selectCustomer(customer.id)}><span className="customer-avatar">{customer.name?.slice(0, 1)?.toUpperCase() || 'C'}</span><span className="customer-row-details"><b>{customer.name||'Cliente sin nombre'}</b><small>{[customer.phone, customer.email].filter(Boolean).join(' · ') || 'Agrega un teléfono o correo a la ficha'}</small>{customer.tags?.length>0&&<span className="customer-tag-list">{customer.tags.slice(0,3).map((tag)=><em key={tag}>{tag}</em>)}{customer.tags.length>3&&<em>+{customer.tags.length-3}</em>}</span>}</span><span className="customer-row-open"><small>Agregado {formatDate(customer.createdAt)}</small><b>Ver ficha <span aria-hidden="true">→</span></b></span></button>)}</div> : <div className="customer-directory-empty"><span className="customer-empty-icon"><Search size={20}/></span><b>{customers.length?'No encontramos clientes':'Aún no hay clientes'}</b><p>{customers.length?'Prueba con otro término o cambia el filtro.':'Puedes agregar una ficha aquí o registrar al cliente desde el POS.'}</p>{(term||contactFilter!=='all')&&<button type="button" className="button button-outline" onClick={()=>{setTerm('');setContactFilter('all')}}>Limpiar búsqueda y filtros</button>}{!customers.length&&canEdit&&<button type="button" className="button button-dark" onClick={()=>setShowAddForm(true)}><Plus size={15}/> Agregar primer cliente</button>}</div>}
       </section>
-    </div>}
+    </>}
     {!selectedCustomer&&<div className="notice-box"><span><Users size={17}/></span><div><b>Historial basado en registros reales</b><p>Las compras y cotizaciones aparecen cuando están vinculadas a una ficha de cliente. Las preferencias y seguimientos se guardan en la base compartida; no se estiman gustos ni montos.</p></div></div>}
   </div>;
 }
