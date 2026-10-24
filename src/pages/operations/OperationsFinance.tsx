@@ -436,6 +436,17 @@ export function OperationsFinance() {
       expenseCount: expensesInPeriod.length,
     };
   }, [payments, salesById, refundSettlements, expensePayments, month, branch]);
+  const operatingExpenseCategories = useMemo(() => {
+    const totals = new Map<string, number>();
+    expensePayments
+      .filter((payment) => branch === 'all' || payment.finance_expenses?.branch_id === branch)
+      .forEach((payment) => {
+        const category = payment.finance_expenses?.category || 'Sin categoría';
+        totals.set(category, (totals.get(category) || 0) + Number(payment.amount || 0));
+      });
+    return [...totals.entries()].sort((a, b) => b[1] - a[1]);
+  }, [expensePayments, branch]);
+  const largestOperatingExpenseCategory = Math.max(1, ...operatingExpenseCategories.map(([, amount]) => amount));
   const cashReconciliationRows = useMemo(() => cashSessions.map((session) => {
     const expected = session.status === 'closed'
       ? Number(session.expected_cash || 0)
@@ -604,6 +615,11 @@ export function OperationsFinance() {
           <article><span>Egresos pagados de la sucursal</span><b>{money(operatingCashflow.branchExpenses)}</b><small>{operatingCashflow.expenseCount} pagos de egreso con este alcance</small></article>
           <article><span>Egresos generales</span><b>{money(operatingCashflow.generalExpenses)}</b><small>{branch === 'all' ? 'Incluidos en el flujo neto de toda la empresa' : 'Visibles aparte; excluidos del neto de esta sucursal'}</small></article>
           <article className={operatingCashflow.net < 0 ? 'is-negative' : ''}><span>Flujo neto registrado</span><b>{money(operatingCashflow.net)}</b><small>{branch === 'all' ? 'Cobros menos devoluciones y todos los egresos pagados' : 'Cobros menos devoluciones y egresos de la sucursal'}</small></article>
+        </div>
+        <div className="op-finance-expense-breakdown" aria-labelledby="op-finance-expense-breakdown-title">
+          <div className="op-finance-expense-breakdown-heading"><div><span className="eyebrow">SALIDAS EFECTIVAS</span><h3 id="op-finance-expense-breakdown-title">Egresos pagados por categoría</h3></div><b>{money(operatingCashflow.branchExpenses + (branch === 'all' ? operatingCashflow.generalExpenses : 0))}</b></div>
+          {operatingExpenseCategories.length ? <div className="op-finance-expense-breakdown-list">{operatingExpenseCategories.map(([category, amount]) => <div className="op-finance-expense-category" key={category}><div><span>{category}</span><b>{money(amount)}</b></div><div className="op-finance-expense-track" role="progressbar" aria-label={`${category}: ${money(amount)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(amount / largestOperatingExpenseCategory * 100)}><i style={{ width: `${Math.max(2, amount / largestOperatingExpenseCategory * 100)}%` }} /></div></div>)}</div> : <p className="muted">No hay pagos efectivos de egresos para el mes y sucursal seleccionados.</p>}
+          <p className="op-finance-cost-note">{branch === 'all' ? 'Incluye egresos generales y de sucursales.' : 'Incluye solo egresos asignados a la sucursal elegida; los generales aparecen aparte arriba.'} Las barras comparan montos entre categorías del filtro actual.</p>
         </div>
       </>}
       <p className="op-finance-cost-note">La cifra es un flujo de efectivo basado en registros, no utilidad contable. No incluye obligaciones pendientes, descuentos de nómina ni movimientos entre cajas. Los gastos generales no se distribuyen entre sucursales.</p>
