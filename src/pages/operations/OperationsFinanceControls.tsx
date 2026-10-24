@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ArrowUpRight, CalendarClock, ChartNoAxesCombined, Check, CircleDollarSign, Clock3, Download, Plus, ReceiptText, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight, CalendarClock, ChartNoAxesCombined, Check, CircleDollarSign, Clock3, Download, Plus, ReceiptText, ShieldCheck, Truck } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -329,6 +329,59 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
       unbudgetedTotal: unbudgetedRows.reduce((sum, row) => sum + row.amount, 0),
     };
   }, [expenses, budgets, month, branch]);
+  const supplierReport = useMemo(() => {
+    const reportExpenses = expenses.filter((expense) => Boolean(month)
+      && expense.status !== 'void'
+      && expense.document_date.slice(0, 7) === month
+      && (branch === 'all' || expense.branch_id === branch));
+    const bySupplier = new Map<string, {
+      id: string;
+      name: string;
+      documents: number;
+      total: number;
+      paidToDate: number;
+      balance: number;
+      overdueBalance: number;
+      orderIds: Set<string>;
+    }>();
+    reportExpenses.forEach((expense) => {
+      if (!expense.supplier_id) return;
+      const id = expense.supplier_id;
+      const row = bySupplier.get(id) || {
+        id,
+        name: supplierNames.get(id) || 'Proveedor',
+        documents: 0,
+        total: 0,
+        paidToDate: 0,
+        balance: 0,
+        overdueBalance: 0,
+        orderIds: new Set<string>(),
+      };
+      const total = Number(expense.total || 0);
+      const paidToDate = Number(expense.paid_total || 0);
+      const balance = Math.max(0, total - paidToDate);
+      row.documents += 1;
+      row.total += total;
+      row.paidToDate += paidToDate;
+      row.balance += balance;
+      if (expense.status === 'payable' && expense.due_date && expense.due_date < today()) row.overdueBalance += balance;
+      if (expense.purchase_order_id) row.orderIds.add(expense.purchase_order_id);
+      bySupplier.set(id, row);
+    });
+    const rows = [...bySupplier.values()]
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'es-EC'))
+      .map(({ orderIds, ...row }) => ({ ...row, purchaseOrders: orderIds.size }));
+    const totalDocumented = reportExpenses.reduce((sum, expense) => sum + Number(expense.total || 0), 0);
+    const totalLinked = reportExpenses.filter((expense) => expense.supplier_id).reduce((sum, expense) => sum + Number(expense.total || 0), 0);
+    return {
+      rows,
+      totalDocumented,
+      unlinkedTotal: totalDocumented - totalLinked,
+      balance: rows.reduce((sum, row) => sum + row.balance, 0),
+      overdue: rows.reduce((sum, row) => sum + row.overdueBalance, 0),
+      documentCount: reportExpenses.length,
+    };
+  }, [expenses, month, branch, supplierNames]);
   const visibleExpenses = useMemo(() => {
     const term = expenseSearch.trim().toLocaleLowerCase('es-EC');
     return expenses.filter((expense) => {
@@ -546,6 +599,7 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
     <nav className="op-finance-ledger-tabs" aria-label="Secciones financieras">
       <button className={section === 'egresos' ? 'active' : ''} onClick={() => setSection('egresos')}><ReceiptText size={16}/> Egresos y cuentas por pagar</button>
       <button className={section === 'budget' ? 'active' : ''} onClick={() => setSection('budget')}><ChartNoAxesCombined size={16}/> Presupuesto vs egresos</button>
+      <button className={section === 'suppliers' ? 'active' : ''} onClick={() => setSection('suppliers')}><Truck size={16}/> Análisis por proveedor</button>
       <button className={section === 'recurring' ? 'active' : ''} onClick={() => setSection('recurring')}><CalendarClock size={16}/> Pagos periódicos</button>
       {canSeeDeductions && <button className={section === 'deductions' ? 'active' : ''} onClick={() => setSection('deductions')}><ShieldCheck size={16}/> Deducciones de remuneración</button>}
     </nav>
@@ -666,6 +720,21 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
         </>}
       </section>
     </div>}
+    {section === 'suppliers' && <section className="panel op-finance-supplier-analysis" aria-labelledby="op-finance-supplier-title">
+      <div className="panel-heading"><div><span className="eyebrow">COMPRAS → FINANZAS · {month || 'SIN PERIODO'}</span><h3 id="op-finance-supplier-title">Egresos documentados por proveedor</h3><p className="muted">Documentos emitidos en el mes y sucursal elegidos arriba. Los abonos son el acumulado actual de esas cuentas.</p></div><a className="button button-outline" href="/operaciones/compras">Abrir Compras <ArrowUpRight size={15}/></a></div>
+      <div className="op-finance-supplier-metrics">
+        <article><span>Egresos documentados</span><b>{money(supplierReport.totalDocumented)}</b><small>{supplierReport.documentCount} documentos del periodo</small></article>
+        <article><span>Saldo abierto vinculado</span><b>{money(supplierReport.balance)}</b><small>De documentos con proveedor asociado</small></article>
+        <article className={supplierReport.overdue ? 'is-overdue' : ''}><span>Vencido vinculado</span><b>{money(supplierReport.overdue)}</b><small>Saldos asociados con vencimiento pasado</small></article>
+        <article className={supplierReport.unlinkedTotal ? 'is-unlinked' : ''}><span>Sin proveedor vinculado</span><b>{money(supplierReport.unlinkedTotal)}</b><small>Importe pendiente de clasificar en el periodo</small></article>
+      </div>
+      {supplierReport.rows.length ? <div className="op-finance-supplier-list">{supplierReport.rows.slice(0, 8).map((supplier, index) => <article key={supplier.id}>
+        <div className="op-finance-supplier-rank"><span>{index + 1}</span><div><b>{supplier.name}</b><small>{supplier.documents} {supplier.documents === 1 ? 'documento' : 'documentos'} · {supplier.purchaseOrders} órdenes de compra vinculadas</small></div></div>
+        <div className="op-finance-supplier-values"><b>{money(supplier.total)}</b><span>Abonado a la fecha {money(supplier.paidToDate)}</span><span className={supplier.overdueBalance ? 'is-overdue' : ''}>Saldo abierto {money(supplier.balance)}{supplier.overdueBalance ? ` · vencido ${money(supplier.overdueBalance)}` : ''}</span></div>
+        <div className="op-finance-supplier-track" role="progressbar" aria-label={`${supplier.name}: ${money(supplier.total)} de egresos documentados`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(supplier.total / Math.max(1, supplierReport.totalDocumented) * 100)}><i style={{ width: `${Math.max(2, supplier.total / Math.max(1, supplierReport.totalDocumented) * 100)}%` }}/></div>
+      </article>)}</div> : <div className="op-finance-ledger-empty"><Truck size={24}/><b>Sin egresos asociados a proveedores</b><span>Registra o vincula facturas con proveedores para ver concentración, órdenes y saldos.</span></div>}
+      <p className="op-finance-cost-note">El total corresponde al valor de los documentos emitidos este mes; «abonado a la fecha» y «saldo abierto» reflejan el estado acumulado de esos documentos, no solo pagos del mes. Las órdenes sin factura no forman parte de estos importes.</p>
+    </section>}
     {section === 'recurring' && <div className="op-finance-ledger-columns">
       <form className="panel op-finance-ledger-form" onSubmit={saveTemplate}><div className="panel-heading"><div><span className="eyebrow">PREVISIÓN Y RECORDATORIOS</span><h3>Programar pago periódico</h3></div><CalendarClock size={18}/></div><p className="muted">Cada vencimiento crea una cuenta por pagar solo cuando lo confirmes. No se ejecutan cargos ni pagos automáticos.</p>
         <label>Concepto<input required placeholder="Internet, arriendo, agua…" value={templateForm.description} onChange={(event) => setTemplateForm({ ...templateForm, description: event.target.value })}/></label><div className="op-finance-ledger-field-pair"><label>Categoría<select value={templateForm.category} onChange={(event) => setTemplateForm({ ...templateForm, category: event.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label><label>Frecuencia<select value={templateForm.cadence} onChange={(event) => setTemplateForm({ ...templateForm, cadence: event.target.value })}><option value="monthly">Mensual</option><option value="quarterly">Trimestral</option><option value="annual">Anual</option></select></label></div><div className="op-finance-ledger-field-pair"><label>Monto esperado USD<input required type="number" min="0.01" step="0.01" value={templateForm.amount} onChange={(event) => setTemplateForm({ ...templateForm, amount: event.target.value })}/></label><label>Próximo vencimiento<input required type="date" value={templateForm.due} onChange={(event) => setTemplateForm({ ...templateForm, due: event.target.value })}/></label></div>
