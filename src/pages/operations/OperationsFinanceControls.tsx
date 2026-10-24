@@ -5,6 +5,15 @@ import { supabase } from '../../lib/supabaseClient';
 
 const money = (value: number) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(Number(value) || 0);
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' });
+const dayDistance = (value: string, todayValue = today()) => {
+  const [year, month, day] = value.split('-').map(Number);
+  const [todayYear, todayMonth, todayDay] = todayValue.split('-').map(Number);
+  return Math.round((Date.UTC(year, month - 1, day) - Date.UTC(todayYear, todayMonth - 1, todayDay)) / 86_400_000);
+};
+const addBusinessDays = (value: string, days: number) => {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+};
 const businessMonth = (value: string) => {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit' }).formatToParts(new Date(value));
   return `${parts.find((part) => part.type === 'year')?.value}-${parts.find((part) => part.type === 'month')?.value}`;
@@ -38,6 +47,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const [section, setSection] = useState('egresos');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
+  const [recurringOccurrences, setRecurringOccurrences] = useState<any[]>([]);
   const [deductions, setDeductions] = useState<any[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -65,6 +75,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
     setError('');
     let expenseRows: Expense[];
     let templateRows: any[];
+    let recurringOccurrenceRows: any[];
     let deductionRows: any[];
     let paymentRows: any[];
     const [branchResult, teamResult, supplierResult, orderResult, personnelResult] = await Promise.all([
@@ -79,9 +90,12 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
       return;
     }
     try {
-      [expenseRows, templateRows, deductionRows, paymentRows] = await Promise.all([
+      const forecastStart = today();
+      const forecastEnd = addBusinessDays(forecastStart, 29);
+      [expenseRows, templateRows, recurringOccurrenceRows, deductionRows, paymentRows] = await Promise.all([
         readAllFinanceRows(() => supabase.from('finance_expenses').select('id,description,category,status,document_date,due_date,total,paid_total,branch_id,supplier_id,purchase_order_id,receipt_id,reference').eq('organization_id', organizationId).order('document_date', { ascending: false }).order('id')),
         readAllFinanceRows(() => supabase.from('finance_recurring_templates').select('id,description,category,expected_amount,cadence,next_due_date,cadence_anchor_day,branch_id,supplier_id,active').eq('organization_id', organizationId).order('next_due_date').order('id')),
+        readAllFinanceRows(() => supabase.from('finance_recurring_occurrences').select('template_id,due_date').eq('organization_id', organizationId).gte('due_date', forecastStart).lte('due_date', forecastEnd).order('due_date').order('id')),
         canSeeDeductions
           ? readAllFinanceRows(() => supabase.from('finance_payroll_deductions').select('id,personnel_id,employee_user_id,description,amount,payroll_period,status,authorization_reference,evidence_reference,created_at').eq('organization_id', organizationId).order('payroll_period', { ascending: false }).order('id'))
           : Promise.resolve([]),
@@ -93,6 +107,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
     }
     setExpenses(expenseRows);
     setTemplates(templateRows);
+    setRecurringOccurrences(recurringOccurrenceRows);
     setBranches(branchResult.data || []);
     setSuppliers(supplierResult.data || []);
     setOrders(orderResult.data || []);
@@ -146,6 +161,24 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const openPayables = expenses.filter((expense) => expense.status === 'payable' && isInSelectedBranch(expense));
   const dueNow = openPayables.filter((expense) => expense.due_date && expense.due_date < today()).reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
   const payableTotal = openPayables.reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
+  const upcomingObligations = useMemo(() => {
+    const generatedOccurrences = new Set(recurringOccurrences.map((item) => `${item.template_id}:${item.due_date}`));
+    const dueItems = expenses.flatMap((expense) => {
+      const balance = Number(expense.total) - Number(expense.paid_total);
+      const distance = expense.due_date ? dayDistance(expense.due_date) : -1;
+      if (expense.status !== 'payable' || balance <= 0 || distance < 0 || distance >= 30 || !isInSelectedBranch(expense)) return [];
+      return [{ id: `expense:${expense.id}`, source: 'payable' as const, date: expense.due_date!, description: expense.description, category: expense.category, branch_id: expense.branch_id, amount: balance, distance }];
+    });
+    const recurringItems = templates.flatMap((template) => {
+      const distance = dayDistance(template.next_due_date);
+      const alreadyGenerated = generatedOccurrences.has(`${template.id}:${template.next_due_date}`);
+      if (!template.active || alreadyGenerated || distance < 0 || distance >= 30 || (branch !== 'all' && template.branch_id !== branch)) return [];
+      return [{ id: `recurring:${template.id}:${template.next_due_date}`, source: 'recurring' as const, date: template.next_due_date, description: template.description, category: template.category, branch_id: template.branch_id, amount: Number(template.expected_amount || 0), distance, template }];
+    });
+    return [...dueItems, ...recurringItems].sort((a, b) => a.date.localeCompare(b.date) || a.description.localeCompare(b.description, 'es-EC'));
+  }, [expenses, templates, recurringOccurrences, branch]);
+  const upcoming7DaysTotal = upcomingObligations.filter((item) => item.distance < 7).reduce((total, item) => total + item.amount, 0);
+  const upcoming30DaysTotal = upcomingObligations.reduce((total, item) => total + item.amount, 0);
   const expensePaymentsInScope = expensePayments.filter((payment) => {
     const expense = expensesById.get(payment.expense_id);
     return payment.paid_at
@@ -298,6 +331,17 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         <article><span>Pagado en el periodo</span><b>{money(paidInPeriod)}</b><small>Pagos efectivos del mes y la sucursal seleccionados</small></article>
       </div>
       <p className="op-finance-cost-note">Los saldos por pagar y vencidos muestran el estado actual de {branch === 'all' ? 'todas las sucursales y gastos generales' : 'la sucursal seleccionada'}; el mes solo filtra pagos realizados. Usa «Todas las sucursales» para revisar los gastos generales.</p>
+      <section className="panel op-finance-obligations-forecast" aria-labelledby="op-finance-obligations-title">
+        <div className="panel-heading"><div><span className="eyebrow">CUENTAS POR PAGAR + PAGOS PERIÓDICOS</span><h3 id="op-finance-obligations-title">Obligaciones de los próximos 30 días</h3><p className="muted">El calendario usa la fecha actual y el filtro de sucursal; no depende del mes del informe.</p></div><CalendarClock size={19}/></div>
+        <div className="op-finance-obligations-metrics"><article><span>En los próximos 7 días</span><b>{money(upcoming7DaysTotal)}</b></article><article><span>En los próximos 30 días</span><b>{money(upcoming30DaysTotal)}</b><small>{upcomingObligations.length} obligaciones previstas</small></article></div>
+        {upcomingObligations.length ? <div className="op-finance-obligations-list">{upcomingObligations.slice(0, 12).map((item) => <article key={item.id}>
+          <div className="op-finance-obligations-description"><b>{item.description}</b><span>{item.category} · {item.branch_id ? branchNames.get(item.branch_id) || 'Sucursal' : 'General'} · {item.source === 'recurring' ? 'Pago periódico estimado' : 'Cuenta por pagar'}</span></div>
+          <div className="op-finance-obligations-due"><span>{new Date(`${item.date}T12:00:00`).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil', day: 'numeric', month: 'short' })}</span><b>{money(item.amount)}</b></div>
+          {item.source === 'recurring' && <button className="button button-outline" disabled={busy} onClick={() => void generateRecurringExpense(item.template)}><ReceiptText size={14}/> Preparar cuenta</button>}
+        </article>)}</div> : <div className="op-finance-ledger-empty"><CalendarClock size={23}/><b>Sin obligaciones previstas en los próximos 30 días</b><span>Registra una fecha de vencimiento o programa internet, arriendo, luz, agua y otros pagos periódicos.</span></div>}
+        {upcomingObligations.length > 12 && <p className="op-finance-cost-note">Se muestran 12 de {upcomingObligations.length} obligaciones; el total considera todas.</p>}
+        <p className="op-finance-cost-note">Es una previsión de obligaciones, no de saldo disponible: suma saldos pendientes y montos estimados de pagos periódicos. No representa un pago realizado ni incluye ingresos futuros.</p>
+      </section>
       <section className="panel op-finance-ledger-register"><div className="panel-heading"><div><span className="eyebrow">COMPRAS CON INVENTARIO RECIBIDO</span><h3>Recepciones pendientes de vincular</h3><p className="muted">El valor de la orden es solo una referencia. Confirma el total de la factura antes de crear el compromiso. Este listado de Compras muestra recepciones pendientes de todas las sucursales.</p></div><ReceiptText size={18}/></div>
         {!receipts.length ? <div className="op-finance-ledger-empty"><ReceiptText size={22}/><span>No hay recepciones registradas para conciliar.</span></div> : <div className="op-finance-ledger-list">{receipts.map((receipt) => {
           const linkedExpense = expenses.find((expense) => expense.receipt_id === receipt.id);
