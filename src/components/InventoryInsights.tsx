@@ -32,7 +32,7 @@ const productImage = (item) => {
   return { path: item.referenceImageUrl || assignedPath || suggested?.path || '', label };
 };
 
-export function InventoryInsights({ items, canSeeCosts, canEditCosts = false, canEdit, canReserve, canMove, canRequestTransfer, onTransfer, onEdit, onReserve, onMovement, onCost, onArchive, formatDate, formatMoney, metadataEdit, setMetadataEdit, reservationEdit, setReservationEdit, onSaveMetadata, onSaveReservation }) {
+export function InventoryInsights({ id, hidden, items, canSeeCosts, canEditCosts = false, canEdit, canReserve, canMove, canRequestTransfer, onTransfer, onEdit, onReserve, onMovement, onCost, onArchive, formatDate, formatMoney, metadataEdit, setMetadataEdit, reservationEdit, setReservationEdit, onSaveMetadata, onSaveReservation }) {
   const [term, setTerm] = useState('');
   const [area, setArea] = useState('Todas');
   const [branch, setBranch] = useState('Todas');
@@ -65,7 +65,7 @@ export function InventoryInsights({ items, canSeeCosts, canEditCosts = false, ca
   const statusOptions = ['Todos', 'En stock', 'Reponer', 'Agotado', 'Sin conteo'];
   const statusCount = (value) => value === 'Todos' ? items.filter((item) => !item.archived).length : items.filter((item) => !item.archived && inventoryState(item) === value).length;
 
-  return <><section className="panel inventory-insights">
+  return <><section id={id} hidden={hidden} className="panel inventory-insights">
     <header className="inventory-insights-header"><div><span className="eyebrow">FICHA Y MÉTRICAS</span><h3>Catálogo de inventario</h3><p>Busca y filtra artículos por sucursal, área y estado. La etiqueta de cada imagen indica su origen; las referencias no confirman stock físico.</p></div>
       <nav className="inventory-insights-modes" aria-label="Modo de vista">{viewModes.map(({ key, Icon }) => <button type="button" key={key} className={mode === key ? 'active' : ''} onClick={() => setMode(key)} title={`Vista ${modeNames[key]}`} aria-pressed={mode === key}><Icon size={16}/><span>{modeNames[key]}</span></button>)}</nav>
     </header>

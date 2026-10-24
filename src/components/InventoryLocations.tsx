@@ -15,7 +15,7 @@ const locationTypes = [
 
 const blankDraft = { branchId: '', parentId: '', code: '', name: '', type: 'storage' };
 
-export function InventoryLocations({ canManage, catalogLinks = [] }) {
+export function InventoryLocations({ id, hidden, canManage, catalogLinks = [] }) {
   const { data, refreshRemote, flash } = useWorkspace();
   const { organizationId, user } = useAuth();
   const locations = data.inventoryLocations || [];
@@ -81,7 +81,7 @@ export function InventoryLocations({ canManage, catalogLinks = [] }) {
 
   const parentOptions = locations.filter((location) => location.active && location.branchId === draft.branchId);
 
-  return <section className="panel inventory-location-panel">
+  return <section id={id} hidden={hidden} className="panel inventory-location-panel">
     <div className="panel-heading">
       <div><span className="eyebrow">FASE 4 · BODEGA Y UBICACIONES</span><h3>Mapa de ubicaciones</h3><p>Registra zonas y sububicaciones por sucursal para usar códigos consistentes en conteos, compras y movimientos.</p></div>
       <MapPin size={19}/>
