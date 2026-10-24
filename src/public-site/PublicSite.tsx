@@ -1,18 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Globe2, MapPin, Menu, MessageCircle, Phone, Printer, ScanLine, Scissors, Shirt, Sparkles, Store, PanelsTopLeft, X } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Globe2, MapPin, Menu, MessageCircle, Phone, Printer, ScanLine, Scissors, Shirt, Sparkles, Store, PanelsTopLeft, X, Sun, Moon } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
 import { multiProductQuoteService, publicAddress, publicServiceFamilies, serviceProjectPrompts } from './content.ts';
 import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
 import { AnimatedList, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
+import { AnimatedThemeToggler } from '../components/ui/AnimatedThemeToggler';
 import './public-site-v2.css';
 import './glass-system.css';
 import './public-navigation.css';
 import './public-footer.css';
 import './contact-page.css';
 import './home-hero.css';
+import './public-theme.css';
 
 const HomeContentHighlights = React.lazy(() => import('./ShowcasePages').then((module) => ({ default: module.HomeContentHighlights })));
 
@@ -30,11 +32,11 @@ function SiteTitle({ children }) {
   return null;
 }
 
-function BrandLink({ onClick = undefined }) {
-  return <Link className="site-brand" to="/" onClick={onClick} aria-label="Visual Corp, inicio"><img src={wordmark} alt="Visual Corp — Agencia Creativa" /></Link>;
+function BrandLink({ onClick = undefined, footer = false, theme = 'dark' }) {
+  return <Link className={`site-brand${footer ? ' site-brand-footer' : ''}`} to="/" onClick={onClick} aria-label="Visual Corp, inicio"><img src={footer || theme === 'light' ? wordmark : '/brand/visualcorp-wordmark-dark.png'} alt="Visual Corp — Agencia Creativa" /></Link>;
 }
 
-function SiteHeader() {
+function SiteHeader({ theme, onThemeChange }) {
   const { data } = useWorkspace();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -90,7 +92,7 @@ function SiteHeader() {
   const serviceIsActive = location.pathname.startsWith('/servicios');
   const companyIsActive = ['/nosotros', '/como-trabajamos'].includes(location.pathname);
   return <header className="site-header" ref={headerRef}>
-    <div className="site-header-inner"><BrandLink onClick={closeNavigation} />
+    <div className="site-header-inner"><BrandLink onClick={closeNavigation} theme={theme} />
       <nav className="site-nav" aria-label="Navegación principal">
         <NavLink to="/" end onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Inicio</NavLink>
         <button ref={servicesRef} type="button" className={`site-nav-trigger${serviceIsActive || openMenu === 'services' ? ' is-active' : ''}`} aria-expanded={openMenu === 'services'} aria-controls="site-services-panel" onClick={() => setOpenMenu((current) => current === 'services' ? null : 'services')}>Servicios<ChevronDown size={15} aria-hidden="true" /></button>
@@ -101,7 +103,7 @@ function SiteHeader() {
         <NavLink to="/tienda" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Tienda</NavLink>
         <NavLink to="/contacto" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Contacto</NavLink>
       </nav>
-      <div className="site-header-actions"><Link className="site-quote-button vc-shimmer-button" to="/cotizador" onClick={closeNavigation}><span className="quote-label-wide">Solicitar cotización</span><span className="quote-label-short">Cotizar</span><ArrowUpRight size={16} aria-hidden="true" /></Link><button ref={mobileButtonRef} type="button" className="site-menu-toggle" onClick={() => { setOpenMenu(null); setMobileOpen((open) => !open); }} aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={mobileOpen} aria-controls="site-mobile-navigation">{mobileOpen ? <X size={21}/> : <Menu size={21}/>}</button></div>
+      <div className="site-header-actions"><AnimatedThemeToggler theme={theme} onThemeChange={onThemeChange} className="site-theme-toggle" aria-label={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}><span className="site-theme-toggle-icons" aria-hidden="true"><Sun className="theme-sun" size={17}/><Moon className="theme-moon" size={17}/></span></AnimatedThemeToggler><Link className="site-quote-button vc-shimmer-button" to="/cotizador" onClick={closeNavigation}><span className="quote-label-wide">Solicitar cotización</span><span className="quote-label-short">Cotizar</span><ArrowUpRight size={16} aria-hidden="true" /></Link><button ref={mobileButtonRef} type="button" className="site-menu-toggle" onClick={() => { setOpenMenu(null); setMobileOpen((open) => !open); }} aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={mobileOpen} aria-controls="site-mobile-navigation">{mobileOpen ? <X size={21}/> : <Menu size={21}/>}</button></div>
       {openMenu === 'services' && <div className="site-mega-panel" id="site-services-panel">
         <div className="site-mega-intro"><span className="site-mega-kicker">LO QUE HACEMOS <i/></span><h2>De la idea<br/>a lo tangible<span>.</span></h2><p>Explora lo que podemos crear para tu marca, tu espacio o tu próximo proyecto.</p><Link to="/servicios" onClick={closeNavigation}>Explorar todos los servicios <ArrowUpRight size={16} aria-hidden="true" /></Link></div>
         <div className="site-mega-content"><span className="site-mega-label">ELIGE UNA ESPECIALIDAD</span><div className="site-mega-services">{services.map((service) => { const Icon = serviceIcons[service.id] || Sparkles; return <Link key={service.id} to={`/servicios/${service.id}`} onClick={closeNavigation} className={location.pathname === `/servicios/${service.id}` ? 'is-active' : ''}><span className="site-mega-icon"><Icon size={19} aria-hidden="true" /></span><span><strong>{service.name}</strong><small>{service.description}</small></span><ArrowUpRight className="site-mega-arrow" size={17} aria-hidden="true" /></Link>; })}</div></div>
@@ -123,7 +125,7 @@ function SiteFooter() {
       </div>
       <div className="site-footer-main">
         <div className="footer-brand-column">
-          <BrandLink/>
+          <BrandLink footer/>
           <p>Ideas, producción y comunicación para que tu marca ocupe su espacio.</p>
           <span className="footer-location"><Globe2 size={15} aria-hidden="true"/>{data.settings.location}</span>
         </div>
@@ -162,7 +164,16 @@ function SiteFooter() {
 export function PublicSiteLayout() {
   const location = useLocation();
   const reduceMotion = useReducedMotion();
-  return <div className="public-site"><ScrollProgress/><SiteHeader/><main className="site-main"><motion.div key={location.pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.28 }}><Outlet/></motion.div></main><SiteFooter/></div>;
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem('visualcorp-public-theme-v1') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
+  });
+  const changeTheme = (nextTheme) => {
+    setTheme(nextTheme);
+    try { localStorage.setItem('visualcorp-public-theme-v1', nextTheme); } catch { /* Storage may be unavailable in private contexts. */ }
+    document.documentElement.dataset.publicTheme = nextTheme;
+  };
+  useEffect(() => { document.documentElement.dataset.publicTheme = theme; }, [theme]);
+  return <div className="public-site"><ScrollProgress/><SiteHeader theme={theme} onThemeChange={changeTheme}/><main className="site-main"><motion.div key={location.pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.28 }}><Outlet/></motion.div></main><SiteFooter/></div>;
 }
 
 function Eyebrow({ children, light = false }) { return <span className={`site-eyebrow${light ? ' light' : ''}`}><i/>{children}</span>; }
