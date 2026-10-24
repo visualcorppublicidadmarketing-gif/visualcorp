@@ -31,3 +31,6 @@
 @media(max-width:560px){.op-finance-aging-metrics{grid-template-columns:1fr}.op-finance-aging-filter{justify-self:stretch;justify-content:center}}
 .op-finance-ledger-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(135px,.42fr);align-items:end;gap:10px;margin:0 0 12px}.op-finance-ledger-filters label{display:grid;gap:6px;margin:0;color:#555762;font-size:12px;font-weight:650}.op-finance-ledger-filters input,.op-finance-ledger-filters select{width:100%;min-width:0;min-height:40px;border:1px solid #dedfe5;border-radius:9px;padding:8px 10px;background:#fff;color:#191a20;font:inherit}.op-finance-ledger-result-count{grid-column:1/-1;color:#777a85;font-size:11px;text-align:right}
 @media(max-width:560px){.op-finance-ledger-filters{grid-template-columns:1fr}.op-finance-ledger-result-count{grid-column:auto}}
+.op-finance-ledger-payroll-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:900px){.op-finance-ledger-payroll-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.op-finance-ledger-payroll-kpis{grid-template-columns:1fr}}

@@ -71,6 +71,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const [templateForm, setTemplateForm] = useState({ description: '', category: 'Servicios básicos', amount: '', cadence: 'monthly', due: today(), branch: '', supplier: '', note: '' });
   const [deductionForm, setDeductionForm] = useState({ employee: '', description: '', amount: '', period: today().slice(0, 7), authorization: '', evidence: '' });
   const [reviewRefs, setReviewRefs] = useState<Record<string, { authorization: string; evidence: string }>>({});
+  const [payrollDeliveryRefs, setPayrollDeliveryRefs] = useState<Record<string, string>>({});
 
   const refresh = async () => {
     if (!supabase || !organizationId || !canManage) return;
@@ -101,7 +102,7 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         readAllFinanceRows(() => supabase.from('finance_recurring_templates').select('id,description,category,expected_amount,cadence,next_due_date,cadence_anchor_day,branch_id,supplier_id,active').eq('organization_id', organizationId).order('next_due_date').order('id')),
         readAllFinanceRows(() => supabase.from('finance_recurring_occurrences').select('template_id,due_date').eq('organization_id', organizationId).gte('due_date', forecastStart).lte('due_date', forecastEnd).order('due_date').order('id')),
         canSeeDeductions
-          ? readAllFinanceRows(() => supabase.from('finance_payroll_deductions').select('id,personnel_id,employee_user_id,description,amount,payroll_period,status,authorization_reference,evidence_reference,created_at').eq('organization_id', organizationId).order('payroll_period', { ascending: false }).order('id'))
+          ? readAllFinanceRows(() => supabase.from('finance_payroll_deductions').select('id,personnel_id,employee_user_id,description,amount,payroll_period,status,authorization_reference,evidence_reference,payroll_handoff_reference,payroll_handed_at,payroll_handed_by,created_at').eq('organization_id', organizationId).order('payroll_period', { ascending: false }).order('id'))
           : Promise.resolve([]),
         readAllFinanceRows(() => supabase.from('finance_expense_payments').select('id,expense_id,amount,method,reference,paid_at').eq('organization_id', organizationId).order('paid_at', { ascending: false }).order('id')),
       ]);
@@ -258,12 +259,14 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const visibleDeductions = deductions.filter((item) => !month || String(item.payroll_period || '').slice(0, 7) === month);
   const deductionPersonName = (item: any) => (item.personnel_id && personnelNames.get(item.personnel_id)) || teamNames.get(item.employee_user_id) || 'Integrante del equipo';
   const authorizedDeductions = visibleDeductions.filter((item) => item.status === 'authorized');
+  const sentDeductions = visibleDeductions.filter((item) => item.status === 'sent_to_payroll');
   const deductionStatusSummary = visibleDeductions.reduce((summary, item) => {
     if (item.status === 'pending_authorization') summary.pending += Number(item.amount || 0);
     else if (item.status === 'authorized') summary.authorized += Number(item.amount || 0);
+    else if (item.status === 'sent_to_payroll') summary.sent += Number(item.amount || 0);
     else if (item.status === 'applied_externally') summary.applied += Number(item.amount || 0);
     return summary;
-  }, { pending: 0, authorized: 0, applied: 0 });
+  }, { pending: 0, authorized: 0, sent: 0, applied: 0 });
 
   const downloadAuthorizedDeductionsCsv = () => {
     if (!authorizedDeductions.length) return;
@@ -362,8 +365,20 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
   const updateDeductionStatus = async (item: any, status: string) => {
     setBusy(true); setError(''); setNotice('');
     const refs = reviewRefs[item.id] || { authorization: item.authorization_reference || '', evidence: item.evidence_reference || '' };
-    const { error: updateError } = await supabase.from('finance_payroll_deductions').update({ status, authorization_reference: refs.authorization.trim(), evidence_reference: refs.evidence.trim() }).eq('id', item.id);
-    if (updateError) setError(updateError.message); else { setNotice(status === 'authorized' ? 'Autorización registrada; todavía debe procesarse externamente.' : 'Aplicación externa registrada como referencia, sin integración de nómina.'); await refresh(); }
+    const deliveryReference = (payrollDeliveryRefs[item.id] || item.payroll_handoff_reference || '').trim();
+    const update = status === 'sent_to_payroll'
+      ? { status, payroll_handoff_reference: deliveryReference }
+      : { status, authorization_reference: refs.authorization.trim(), evidence_reference: refs.evidence.trim() };
+    const { error: updateError } = await supabase.from('finance_payroll_deductions').update(update).eq('id', item.id);
+    if (updateError) setError(updateError.message); else {
+      setNotice(status === 'authorized'
+        ? 'Autorización registrada; la solicitud aún no se ha entregado a nómina.'
+        : status === 'sent_to_payroll'
+          ? 'Entrega a nómina registrada con su referencia; la aplicación todavía debe confirmarse externamente.'
+          : 'Aplicación externa registrada como referencia, sin integración de nómina.');
+      if (status === 'sent_to_payroll') setPayrollDeliveryRefs({ ...payrollDeliveryRefs, [item.id]: '' });
+      await refresh();
+    }
     setBusy(false);
   };
 
@@ -479,16 +494,17 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
         <button className="button button-primary" disabled={busy || !personnelOptions.length || Boolean(personnelOptionsError)}><Plus size={15}/> Guardar como pendiente</button>
       </form>
       <section className="panel op-finance-ledger-register">
-        <div className="panel-heading op-finance-deductions-heading"><div><span className="eyebrow">SEGUIMIENTO CONFIDENCIAL</span><h3>Deducciones registradas</h3><p className="muted">El CSV sirve de referencia para nómina y no registra una aplicación externa.</p></div><button className="button button-outline" onClick={downloadAuthorizedDeductionsCsv} disabled={!authorizedDeductions.length || busy}><Download size={15}/> Exportar autorizadas ({authorizedDeductions.length})</button></div>
+        <div className="panel-heading op-finance-deductions-heading"><div><span className="eyebrow">SEGUIMIENTO CONFIDENCIAL</span><h3>Deducciones registradas</h3><p className="muted">Descarga solo las autorizadas; después registra la referencia de entrega y, cuando corresponda, la aplicación externa.</p></div><button className="button button-outline" onClick={downloadAuthorizedDeductionsCsv} disabled={!authorizedDeductions.length || busy}><Download size={15}/> Exportar autorizadas ({authorizedDeductions.length})</button></div>
         <div className="op-finance-ledger-kpis op-finance-ledger-payroll-kpis">
           <article><span>Pendiente de autorización</span><b>{money(deductionStatusSummary.pending)}</b><small>{visibleDeductions.filter((item) => item.status === 'pending_authorization').length} solicitudes</small></article>
-          <article><span>Autorizado para entregar a nómina</span><b>{money(deductionStatusSummary.authorized)}</b><small>{authorizedDeductions.length} solicitudes · periodo seleccionado</small></article>
+          <article><span>Autorizado, pendiente de entrega</span><b>{money(deductionStatusSummary.authorized)}</b><small>{authorizedDeductions.length} solicitudes · periodo seleccionado</small></article>
+          <article><span>Entregado a nómina, pendiente de aplicación</span><b>{money(deductionStatusSummary.sent)}</b><small>{sentDeductions.length} solicitudes · periodo seleccionado</small></article>
           <article><span>Reportado como aplicado externamente</span><b>{money(deductionStatusSummary.applied)}</b><small>{visibleDeductions.filter((item) => item.status === 'applied_externally').length} registros</small></article>
         </div>
         {!visibleDeductions.length ? <div className="op-finance-ledger-empty"><ShieldCheck size={24}/><b>Sin solicitudes para este periodo</b><span>Las deducciones se filtran por el mes de nómina y nunca se aplican automáticamente.</span></div> : <div className="op-finance-ledger-list">{visibleDeductions.map((item) => {
           const refs = reviewRefs[item.id] || { authorization: item.authorization_reference || '', evidence: item.evidence_reference || '' };
           const personName = deductionPersonName(item);
-          const statusLabel = item.status === 'pending_authorization' ? 'Pendiente de autorización' : item.status === 'authorized' ? 'Autorizada' : item.status === 'applied_externally' ? 'Reportada como aplicada externamente' : item.status === 'cancelled' ? 'Cancelada' : item.status;
+          const statusLabel = item.status === 'pending_authorization' ? 'Pendiente de autorización' : item.status === 'authorized' ? 'Autorizada · pendiente de entrega' : item.status === 'sent_to_payroll' ? 'Entregada a nómina · pendiente de aplicación' : item.status === 'applied_externally' ? 'Reportada como aplicada externamente' : item.status === 'cancelled' ? 'Cancelada' : item.status;
           return <article key={item.id}>
             <div className="op-finance-ledger-record-top"><div><b>{personName}</b><span>{item.description}</span></div><span className="op-finance-ledger-status">{statusLabel}</span></div>
             <div className="op-finance-ledger-record-numbers"><span>Periodo {payrollMonthLabel(item.payroll_period)}</span><b>{money(item.amount)}</b></div>
@@ -497,8 +513,15 @@ export function OperationsFinanceControls({ month, branch }: { month: string; br
               <label>Evidencia / referencia<input value={refs.evidence} onChange={(event) => setReviewRefs({ ...reviewRefs, [item.id]: { ...refs, evidence: event.target.value } })}/></label>
               <button className="button button-outline" disabled={busy || !refs.authorization.trim() || !refs.evidence.trim()} onClick={() => void updateDeductionStatus(item, 'authorized')}><ShieldCheck size={14}/> Confirmar autorización</button>
             </>}
-            {item.status === 'authorized' && <button className="button button-outline" disabled={busy} onClick={() => void updateDeductionStatus(item, 'applied_externally')}><Check size={14}/> Registrar aplicación externa</button>}
-            {item.status === 'applied_externally' && <small>Referencia de autorización: {item.authorization_reference} · Evidencia: {item.evidence_reference}</small>}
+            {item.status === 'authorized' && <>
+              <label>Referencia de entrega a nómina<input maxLength={240} placeholder="Código de lote, comprobante o referencia externa" value={payrollDeliveryRefs[item.id] || ''} onChange={(event) => setPayrollDeliveryRefs({ ...payrollDeliveryRefs, [item.id]: event.target.value })}/></label>
+              <button className="button button-outline" disabled={busy || !(payrollDeliveryRefs[item.id] || '').trim()} onClick={() => void updateDeductionStatus(item, 'sent_to_payroll')}><Check size={14}/> Registrar entrega a nómina</button>
+            </>}
+            {item.status === 'sent_to_payroll' && <>
+              <small>Entregada {item.payroll_handed_at ? new Date(item.payroll_handed_at).toLocaleString('es-EC', { timeZone: 'America/Guayaquil', dateStyle: 'short', timeStyle: 'short' }) : ''} · Registró {teamNames.get(item.payroll_handed_by) || 'Finanzas'} · Referencia: {item.payroll_handoff_reference}</small>
+              <button className="button button-outline" disabled={busy} onClick={() => void updateDeductionStatus(item, 'applied_externally')}><Check size={14}/> Registrar aplicación externa</button>
+            </>}
+            {item.status === 'applied_externally' && <small>Referencia de autorización: {item.authorization_reference} · Evidencia: {item.evidence_reference}{item.payroll_handoff_reference ? ` · Entrega: ${item.payroll_handoff_reference}` : ''}</small>}
           </article>;
         })}</div>}
       </section>
