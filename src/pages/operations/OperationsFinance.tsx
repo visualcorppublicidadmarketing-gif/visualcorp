@@ -25,6 +25,14 @@ function monthInBusinessTimeZone(value) {
 }
 
 const currentMonth = () => monthInBusinessTimeZone(new Date());
+const businessMonthRange = (value) => {
+  if (!value) return null;
+  const [year, month] = value.split('-').map(Number);
+  return {
+    start: new Date(Date.UTC(year, month - 1, 1, 5)).toISOString(),
+    end: new Date(Date.UTC(year, month, 1, 5)).toISOString(),
+  };
+};
 const timestamp = (value) => value
   ? new Date(value).toLocaleString('es-EC', { timeZone: BUSINESS_TIME_ZONE, dateStyle: 'short', timeStyle: 'short' })
   : '—';
@@ -56,6 +64,9 @@ export function OperationsFinance() {
   const [cashRefreshKey, setCashRefreshKey] = useState(0);
   const [refundSettlements, setRefundSettlements] = useState([]);
   const [refundSettlementError, setRefundSettlementError] = useState('');
+  const [expensePayments, setExpensePayments] = useState([]);
+  const [expensePaymentsLoading, setExpensePaymentsLoading] = useState(false);
+  const [expensePaymentsError, setExpensePaymentsError] = useState('');
   const [advisors, setAdvisors] = useState([]);
   const [branches, setBranches] = useState([]);
   const [month, setMonth] = useState(currentMonth);
@@ -147,6 +158,38 @@ export function OperationsFinance() {
     void load();
     return () => { active = false; };
   }, [organizationId, hasPermission, canSeeInventoryCosts, canSeeCashReconciliation]);
+
+  useEffect(() => {
+    let active = true;
+    const range = businessMonthRange(month);
+    if (!canSeeInventoryCosts || !supabase || !organizationId || !range) {
+      setExpensePayments([]);
+      setExpensePaymentsError('');
+      setExpensePaymentsLoading(false);
+      return () => { active = false; };
+    }
+    setExpensePaymentsLoading(true);
+    setExpensePaymentsError('');
+    void readAllRows(() => supabase
+      .from('finance_expense_payments')
+      .select('id,amount,method,paid_at,finance_expenses!inner(description,category,branch_id)')
+      .eq('organization_id', organizationId)
+      .gte('paid_at', range.start)
+      .lt('paid_at', range.end)
+      .order('paid_at', { ascending: false })
+      .order('id'))
+      .then((rows) => {
+        if (!active) return;
+        setExpensePayments(rows);
+        setExpensePaymentsLoading(false);
+      }, (cause) => {
+        if (!active) return;
+        setExpensePayments([]);
+        setExpensePaymentsError(cause?.message || 'No se pudieron cargar los pagos de egresos.');
+        setExpensePaymentsLoading(false);
+      });
+    return () => { active = false; };
+  }, [organizationId, canSeeInventoryCosts, month]);
 
   useEffect(() => {
     let active = true;
@@ -364,6 +407,35 @@ export function OperationsFinance() {
   const posRefundOutflow = refundsSettledInPeriod.reduce((sum, refund) => sum + Number(refund.amount || 0), 0);
   const posCashInflow = posCashInflows.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const posNetCashFlow = posCashInflow - posRefundOutflow;
+  const operatingCashflow = useMemo(() => {
+    const paymentsInPeriod = payments.filter((payment) => (
+      (!month || monthInBusinessTimeZone(payment.created_at) === month)
+      && (branch === 'all' || salesById.get(payment.sale_id)?.branch_id === branch)
+    ));
+    const refundsInPeriod = refundSettlements.filter((refund) => (
+      (!month || monthInBusinessTimeZone(refund.settled_at) === month)
+      && (branch === 'all' || refund.branch_id === branch)
+    ));
+    const expensesInPeriod = expensePayments.filter((payment) => (
+      branch === 'all' || payment.finance_expenses?.branch_id === branch
+    ));
+    const collections = paymentsInPeriod.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    const refunds = refundsInPeriod.reduce((sum, refund) => sum + Number(refund.amount || 0), 0);
+    const branchExpenses = expensesInPeriod.filter((payment) => payment.finance_expenses?.branch_id)
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    const generalExpenses = expensesInPeriod.filter((payment) => !payment.finance_expenses?.branch_id)
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    return {
+      collections,
+      refunds,
+      branchExpenses,
+      generalExpenses,
+      net: collections - refunds - branchExpenses - (branch === 'all' ? generalExpenses : 0),
+      refundCount: refundsInPeriod.length,
+      paymentCount: paymentsInPeriod.length,
+      expenseCount: expensesInPeriod.length,
+    };
+  }, [payments, salesById, refundSettlements, expensePayments, month, branch]);
   const cashReconciliationRows = useMemo(() => cashSessions.map((session) => {
     const expected = session.status === 'closed'
       ? Number(session.expected_cash || 0)
@@ -519,6 +591,22 @@ export function OperationsFinance() {
         <div className="op-finance-table-wrap"><table className="op-finance-table"><thead><tr><th>Liquidado</th><th>Devolución</th><th>Venta</th><th>Asesora</th><th>Sucursal</th><th>Medio</th><th>Referencia / caja</th><th>Monto</th></tr></thead><tbody>{[...refundsSettledInPeriod].sort((a, b) => new Date(b.settled_at).getTime() - new Date(a.settled_at).getTime()).slice(0, 100).map((refund) => { const sale = salesById.get(refund.sale_id); return <tr key={refund.id}><td>{timestamp(refund.settled_at)}</td><td>{refund.return_code}</td><td>{sale?.sale_code || refund.sale_id.slice(0, 8)}</td><td>{personName(sale?.advisor_id)}</td><td>{branchName(refund.branch_id)}</td><td>{refund.method}</td><td>{refund.reference || (refund.cash_session_id ? `Caja ${refund.cash_session_id.slice(0, 8)}` : '—')}</td><td>{money(refund.amount)}</td></tr>; })}{!refundsSettledInPeriod.length && <tr><td colSpan={8}>No hay reembolsos liquidados en el periodo seleccionado.</td></tr>}</tbody></table></div>
         <p className="op-finance-cost-note">El flujo neto POS incluye cobros y reembolsos liquidados; no descuenta compras, nómina ni otros egresos. Los reembolsos en efectivo se registran también como salida en el cierre de su caja. La tabla muestra hasta 100 liquidaciones; los indicadores incluyen todo el periodo.</p>
       </>}
+    </section>}
+    {canSeeInventoryCosts && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-operating-title">
+      <div className="panel-heading"><div><span className="eyebrow">POS + DEVOLUCIONES + EGRESOS → FINANZAS</span><h2 id="op-finance-operating-title">Flujo de efectivo operativo registrado</h2><p className="op-finance-cost-note">Solo considera cobros POS y pagos efectivos de egresos o devoluciones en el mes y sucursal seleccionados. No usa filtros de asesora ni medio de pago.</p></div><a className="button button-outline" href="/operaciones/flujos">Gestionar egresos <ArrowUpRight size={15}/></a></div>
+      {refundSettlementError && <p className="op-finance-cost-error" role="alert">{refundSettlementError}</p>}
+      {expensePaymentsError && <p className="op-finance-cost-error" role="alert">{expensePaymentsError}</p>}
+      {!refundSettlementError && !expensePaymentsError && expensePaymentsLoading && <p className="muted">Cargando cobros, liquidaciones y pagos efectivos de egresos…</p>}
+      {!refundSettlementError && !expensePaymentsError && !expensePaymentsLoading && <>
+        <div className="op-finance-refund-metrics">
+          <article><span>Cobros recibidos</span><b>{money(operatingCashflow.collections)}</b><small>{operatingCashflow.paymentCount} pagos registrados en POS</small></article>
+          <article><span>Devoluciones liquidadas</span><b>{money(operatingCashflow.refunds)}</b><small>{operatingCashflow.refundCount} salidas efectivas</small></article>
+          <article><span>Egresos pagados de la sucursal</span><b>{money(operatingCashflow.branchExpenses)}</b><small>{operatingCashflow.expenseCount} pagos de egreso con este alcance</small></article>
+          <article><span>Egresos generales</span><b>{money(operatingCashflow.generalExpenses)}</b><small>{branch === 'all' ? 'Incluidos en el flujo neto de toda la empresa' : 'Visibles aparte; excluidos del neto de esta sucursal'}</small></article>
+          <article className={operatingCashflow.net < 0 ? 'is-negative' : ''}><span>Flujo neto registrado</span><b>{money(operatingCashflow.net)}</b><small>{branch === 'all' ? 'Cobros menos devoluciones y todos los egresos pagados' : 'Cobros menos devoluciones y egresos de la sucursal'}</small></article>
+        </div>
+      </>}
+      <p className="op-finance-cost-note">La cifra es un flujo de efectivo basado en registros, no utilidad contable. No incluye obligaciones pendientes, descuentos de nómina ni movimientos entre cajas. Los gastos generales no se distribuyen entre sucursales.</p>
     </section>}
     {canSeeCashReconciliation && <section className="panel op-finance-cash-panel" aria-labelledby="op-finance-cash-title">
       <div className="panel-heading">
