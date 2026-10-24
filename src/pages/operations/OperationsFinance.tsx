@@ -47,6 +47,8 @@ export function OperationsFinance() {
   const canSeeInventoryCosts = roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
   const [sales, setSales] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [refundSettlements, setRefundSettlements] = useState([]);
+  const [refundSettlementError, setRefundSettlementError] = useState('');
   const [advisors, setAdvisors] = useState([]);
   const [branches, setBranches] = useState([]);
   const [month, setMonth] = useState(currentMonth);
@@ -78,6 +80,7 @@ export function OperationsFinance() {
 
       setLoading(true);
       setError('');
+      setRefundSettlementError('');
       try {
         const [salesRows, paymentRows, teamResult, branchResult] = await Promise.all([
           readAllRows(() => supabase
@@ -108,6 +111,23 @@ export function OperationsFinance() {
           setAdvisors(teamResult.error ? [] : teamResult.data || []);
           setBranches(branchResult.data || []);
         }
+        if (canSeeInventoryCosts) {
+          try {
+            const refundRows = await readAllRows(() => supabase
+              .from('sale_refund_settlements')
+              .select('id,return_id,return_code,sale_id,branch_id,amount,method,reference,cash_session_id,settled_at,settled_by')
+              .eq('organization_id', organizationId)
+              .order('settled_at', { ascending: false }));
+            if (active) setRefundSettlements(refundRows);
+          } catch (refundLoadError) {
+            if (active) {
+              setRefundSettlements([]);
+              setRefundSettlementError(refundLoadError?.message || 'No se pudieron cargar los reembolsos liquidados.');
+            }
+          }
+        } else if (active) {
+          setRefundSettlements([]);
+        }
       } catch (loadError) {
         if (active) setError(loadError?.message || 'No se pudieron cargar las ventas y los pagos.');
       } finally {
@@ -117,7 +137,7 @@ export function OperationsFinance() {
 
     void load();
     return () => { active = false; };
-  }, [organizationId, hasPermission]);
+  }, [organizationId, hasPermission, canSeeInventoryCosts]);
 
   useEffect(() => {
     let active = true;
@@ -232,6 +252,11 @@ export function OperationsFinance() {
     && (branch === 'all' || sale.branch_id === branch)
   )), [sales, advisor, branch]);
   const paymentSaleIds = useMemo(() => new Set(salesMatchingTeamAndBranch.map((sale) => sale.id)), [salesMatchingTeamAndBranch]);
+  const salesInScope = useMemo(() => sales.filter((sale) => (
+    (advisor === 'all' || sale.advisor_id === advisor)
+    && (branch === 'all' || sale.branch_id === branch)
+  )), [sales, advisor, branch]);
+  const salesInScopeIds = useMemo(() => new Set(salesInScope.map((sale) => sale.id)), [salesInScope]);
   const paymentsInPeriod = useMemo(() => payments.filter((payment) => (
     paymentSaleIds.has(payment.sale_id)
     && (!month || monthInBusinessTimeZone(payment.created_at) === month)
@@ -244,6 +269,19 @@ export function OperationsFinance() {
     sum + Math.max(0, Number(sale.total || 0) - (paymentsBySale.get(sale.id) || 0))
   ), 0);
   const allHistoricalPayments = salesInPeriod.reduce((sum, sale) => sum + (paymentsBySale.get(sale.id) || 0), 0);
+  const posCashInflows = payments.filter((payment) => (
+    salesInScopeIds.has(payment.sale_id)
+    && (!month || monthInBusinessTimeZone(payment.created_at) === month)
+    && (method === 'all' || payment.method === method)
+  ));
+  const refundsSettledInPeriod = refundSettlements.filter((refund) => (
+    salesInScopeIds.has(refund.sale_id)
+    && (!month || monthInBusinessTimeZone(refund.settled_at) === month)
+    && (method === 'all' || refund.method === method)
+  ));
+  const posRefundOutflow = refundsSettledInPeriod.reduce((sum, refund) => sum + Number(refund.amount || 0), 0);
+  const posCashInflow = posCashInflows.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const posNetCashFlow = posCashInflow - posRefundOutflow;
 
   const grouped = new Map();
   salesInPeriod.forEach((sale) => {
@@ -262,7 +300,7 @@ export function OperationsFinance() {
   });
   const advisorSummary = [...grouped.values()].sort((a, b) => b.sold - a.sold);
   const maxSold = Math.max(1, ...advisorSummary.map((item) => item.sold));
-  const paymentMethods = [...new Set(payments.map((payment) => payment.method).filter(Boolean))].sort();
+  const paymentMethods = [...new Set([...payments, ...refundSettlements].map((movement) => movement.method).filter(Boolean))].sort();
   const branchName = (id) => branchNames.get(id) || 'Sucursal';
   const personName = (id) => advisorNames.get(id) || `Usuario ${String(id || '').slice(0, 8) || 'sin asignar'}`;
 
@@ -289,6 +327,24 @@ export function OperationsFinance() {
     const link = document.createElement('a');
     link.href = url;
     link.download = `finanzas-${month || 'historico'}.csv`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
+  const downloadRefundsCsv = () => {
+    const rows = [
+      ['Fecha de liquidación', 'Devolución', 'Venta', 'Asesora', 'Sucursal', 'Medio', 'Referencia', 'Caja', 'Monto de salida USD'],
+      ...refundsSettledInPeriod.map((refund) => {
+        const sale = salesById.get(refund.sale_id);
+        return [timestamp(refund.settled_at), refund.return_code, sale?.sale_code || refund.sale_id, personName(sale?.advisor_id), branchName(refund.branch_id), refund.method, refund.reference, refund.cash_session_id || '', Number(refund.amount || 0).toFixed(2)];
+      }),
+    ];
+    const escape = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+    const blob = new Blob(['\ufeff', rows.map((row) => row.map(escape).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `reembolsos-liquidados-${month || 'historico'}.csv`;
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
@@ -329,6 +385,14 @@ export function OperationsFinance() {
       <article><span>Saldo por cobrar</span><b>{money(outstanding)}</b><small>Saldo vigente de las ventas filtradas</small></article>
       <article><span>Valor promedio por venta</span><b>{money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b><small>Solo ventas confirmadas</small></article>
     </section>
+    {canSeeInventoryCosts && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-refund-title">
+      <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → CAJA → FINANZAS</span><h2 id="op-finance-refund-title">Cobros y reembolsos liquidados</h2><p className="op-finance-cost-note">Filtra por la fecha real del cobro o de la liquidación, además de asesora, sucursal y medio.</p></div><button className="button button-outline" onClick={downloadRefundsCsv} disabled={!refundsSettledInPeriod.length}><Download size={15}/> Exportar reembolsos</button></div>
+      {refundSettlementError ? <p className="op-finance-cost-error" role="alert">{refundSettlementError}</p> : <>
+        <div className="op-finance-refund-metrics"><article><span>Cobros POS del periodo</span><b>{money(posCashInflow)}</b><small>Incluye ventas anuladas si hubo cobro efectivo registrado</small></article><article><span>Reembolsos liquidados</span><b>{money(posRefundOutflow)}</b><small>{refundsSettledInPeriod.length} liquidaciones con fecha efectiva</small></article><article className={posNetCashFlow < 0 ? 'is-negative' : ''}><span>Flujo neto POS</span><b>{money(posNetCashFlow)}</b><small>Cobros menos reembolsos liquidados</small></article></div>
+        <div className="op-finance-table-wrap"><table className="op-finance-table"><thead><tr><th>Liquidado</th><th>Devolución</th><th>Venta</th><th>Asesora</th><th>Sucursal</th><th>Medio</th><th>Referencia / caja</th><th>Monto</th></tr></thead><tbody>{[...refundsSettledInPeriod].sort((a, b) => new Date(b.settled_at).getTime() - new Date(a.settled_at).getTime()).slice(0, 100).map((refund) => { const sale = salesById.get(refund.sale_id); return <tr key={refund.id}><td>{timestamp(refund.settled_at)}</td><td>{refund.return_code}</td><td>{sale?.sale_code || refund.sale_id.slice(0, 8)}</td><td>{personName(sale?.advisor_id)}</td><td>{branchName(refund.branch_id)}</td><td>{refund.method}</td><td>{refund.reference || (refund.cash_session_id ? `Caja ${refund.cash_session_id.slice(0, 8)}` : '—')}</td><td>{money(refund.amount)}</td></tr>; })}{!refundsSettledInPeriod.length && <tr><td colSpan={8}>No hay reembolsos liquidados en el periodo seleccionado.</td></tr>}</tbody></table></div>
+        <p className="op-finance-cost-note">El flujo neto POS incluye cobros y reembolsos liquidados; no descuenta compras, nómina ni otros egresos. Los reembolsos en efectivo se registran también como salida en el cierre de su caja. La tabla muestra hasta 100 liquidaciones; los indicadores incluyen todo el periodo.</p>
+      </>}
+    </section>}
     {canSeeInventoryCosts && <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-cost-title">
       <div className="panel-heading"><div><span className="eyebrow">INVENTARIO → POS → FINANZAS</span><h2 id="op-finance-cost-title">Costo de inventario capturado en ventas</h2></div></div>
       {inventoryCostError ? <p className="op-finance-cost-error" role="alert">{inventoryCostError}</p> : inventoryCostLoading ? <p className="muted">Calculando referencia de costos para este periodo…</p> : inventoryCostSummary ? <div className="op-finance-cost-metrics">
