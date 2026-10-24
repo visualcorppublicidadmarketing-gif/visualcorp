@@ -95,10 +95,10 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 
 ### Fase 4 — Escaneo, ubicaciones y preparación de pedidos
 
-**Estado:** iniciada. El buscador del POS reconoce por Enter el SKU de una variante de inventario enlazada al producto vendible en la sucursal activa. El lector USB funciona como teclado; no se asignan códigos supuestos, el producto sigue requiriendo confirmación de cantidad y precio, y el escaneo no modifica stock. El uso de cámara/QR, ubicaciones y preparación guiada quedan para el siguiente tramo.
+**Estado:** parcial. El buscador del POS reconoce por Enter el SKU de una variante de inventario enlazada al producto vendible en la sucursal activa; el lector USB funciona como teclado y el escaneo no cambia stock. El mapa de ubicaciones por sucursal ya está registrado. Los formularios de traslado y consumo productivo ahora exigen escoger una ubicación activa de la sucursal correspondiente; no aceptan códigos libres ni envían `MAIN` automáticamente. Siguen pendientes cámara/QR y preparación guiada.
 
 - Añadir SKU/código de barras o QR; priorizar lector USB como teclado y habilitar cámara solo con permiso y compatibilidad confirmada.
-- Registrar ubicaciones de bodega y guiar recepción, traslado, conteo, picking, empaque y entrega.
+- Completar los flujos de recepción, conteo, picking, empaque y entrega. Traslados y consumo productivo ya usan ubicaciones registradas por sucursal.
 - Añadir lotes o series únicamente a los artículos que realmente los requieran, con reglas de captura por tipo.
 - Permitir preparación individual, por varias órdenes o por lotes; reservar cantidades y registrar sustituciones/faltantes con autorización.
 
@@ -161,6 +161,7 @@ El orden prioriza primero la confiabilidad de los datos y luego automatiza los m
 1. Completar Fase 0 con revisión real en teléfono, tableta y escritorio.
 2. Continuar Fase 1: revisar las filas importadas, confirmar variantes y completar conteos físicos aprobados. En la base siguen pendientes las 749 filas fuente y las existencias activas no tienen saldo contado.
 3. Revisar esta Fase 2 con una cuenta autorizada y verificar el flujo completo de borrador, envío y recepción parcial/final sin crear compras reales.
-4. Continuar con el POS de mostrador de la Fase 3: cajero, ventas en espera y recuperación, usando la compra/inventario conectados.
+4. Continuar Fase 4 con cámara/QR y preparación guiada de pedidos, evitando volver a descontar existencias ya atendidas en POS.
+5. Validar fases 2–3 con cuentas autorizadas y recorridos de aceptación controlados; luego revisar fases 5–9 en orden, sin activar reglas de negocio no confirmadas.
 
 La duración y las fechas de cada fase quedan sin fijar hasta definir quién aprobará conteos, compras, reglas de caja y criterios contables; el alcance técnico y los cierres sí quedan establecidos aquí.
