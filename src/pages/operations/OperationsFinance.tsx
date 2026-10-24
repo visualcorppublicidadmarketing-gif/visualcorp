@@ -596,6 +596,47 @@ export function OperationsFinance() {
   const customerCredits = useMemo(() => openReceivables.filter(({ customerCredit }) => customerCredit > 0.005), [openReceivables]);
   const receivablesWithoutCrm = useMemo(() => receivablesWithBalance.filter(({ sale }) => !sale.customer_id), [receivablesWithBalance]);
   const receivablesWithoutCrmAmount = receivablesWithoutCrm.reduce((sum, item) => sum + item.balance, 0);
+  const customerRevenueAnalysis = useMemo(() => {
+    const byCustomer = new Map();
+    let unlinkedSales = 0;
+    let unlinkedRevenue = 0;
+    let linkedRevenue = 0;
+    salesInPeriod.forEach((sale) => {
+      const returns = returnsBySale.get(sale.id) || { returnedValue: 0, settledRefund: 0 };
+      const adjustedTotal = Math.max(0, Number(sale.total || 0) - returns.returnedValue);
+      const collected = Number(paymentsBySale.get(sale.id) || 0) - returns.settledRefund;
+      const openBalance = Math.max(0, adjustedTotal - collected);
+      if (!sale.customer_id) {
+        unlinkedSales += 1;
+        unlinkedRevenue += adjustedTotal;
+        return;
+      }
+      const customer = byCustomer.get(sale.customer_id) || {
+        id: sale.customer_id,
+        name: sale.customers?.full_name || 'Cliente sin nombre',
+        sales: 0,
+        revenue: 0,
+        openBalance: 0,
+      };
+      customer.sales += 1;
+      customer.revenue += adjustedTotal;
+      customer.openBalance += openBalance;
+      byCustomer.set(sale.customer_id, customer);
+      linkedRevenue += adjustedTotal;
+    });
+    const rankedCustomers = [...byCustomer.values()].sort((a, b) => b.revenue - a.revenue || a.name.localeCompare(b.name, 'es'));
+    const topCustomers = rankedCustomers.slice(0, 5);
+    const topFiveRevenue = topCustomers.reduce((sum, customer) => sum + customer.revenue, 0);
+    return {
+      customers: rankedCustomers.length,
+      repeatCustomers: rankedCustomers.filter((customer) => customer.sales > 1).length,
+      linkedRevenue,
+      unlinkedRevenue,
+      unlinkedSales,
+      topCustomers,
+      topFiveShare: linkedRevenue > 0 ? topFiveRevenue / linkedRevenue : 0,
+    };
+  }, [salesInPeriod, returnsBySale, paymentsBySale]);
   const paymentSaleIds = useMemo(() => new Set(salesMatchingTeamAndBranch.map((sale) => sale.id)), [salesMatchingTeamAndBranch]);
   const salesInScope = useMemo(() => sales.filter((sale) => (
     (advisor === 'all' || sale.advisor_id === advisor)
@@ -1110,6 +1151,23 @@ export function OperationsFinance() {
         <p className="op-finance-note">Ventas {money(totalSold)} · Pagos históricos asociados {money(allHistoricalPayments)} · Recaudo del periodo {money(totalCollected)}.</p>
       </section>
     </div>
+    {canSeeCrm && <section className="panel op-finance-customer-analysis" aria-labelledby="op-finance-customer-analysis-title">
+      <div className="panel-heading"><div><span className="eyebrow">FINANZAS → CRM · CLIENTES</span><h2 id="op-finance-customer-analysis-title">Concentración de ventas por cliente</h2><p className="op-finance-cost-note">Ventas confirmadas del periodo, asesora y sucursal seleccionados; los retornos registrados reducen el valor. El filtro de medio de pago no aplica.</p></div><a className="button button-outline" href="/operaciones/clientes">Abrir CRM <ArrowUpRight size={15}/></a></div>
+      {saleReturnsError ? <p className="op-finance-cost-error" role="alert">No se calcula el valor ajustado por cliente porque no se pudieron cargar las devoluciones.</p> : <>
+        <div className="op-finance-customer-metrics">
+          <article><span>Clientes con compras</span><b>{customerRevenueAnalysis.customers}</b><small>En el periodo seleccionado</small></article>
+          <article><span>Clientes recurrentes</span><b>{customerRevenueAnalysis.repeatCustomers}</b><small>Más de una venta en el periodo</small></article>
+          <article><span>Ventas de los 5 principales</span><b>{customerRevenueAnalysis.customers ? `${Math.round(customerRevenueAnalysis.topFiveShare * 100)}%` : '—'}</b><small>Porción de ventas vinculadas al CRM</small></article>
+          <article className={customerRevenueAnalysis.unlinkedSales ? 'is-unlinked' : ''}><span>Ventas sin ficha CRM</span><b>{money(customerRevenueAnalysis.unlinkedRevenue)}</b><small>{customerRevenueAnalysis.unlinkedSales} ventas sin cliente asociado</small></article>
+        </div>
+        {customerRevenueAnalysis.topCustomers.length ? <div className="op-finance-customer-list">{customerRevenueAnalysis.topCustomers.map((customer, index) => <article key={customer.id}>
+          <div className="op-finance-customer-rank"><span>{index + 1}</span><div><b>{customer.name}</b><small>{customer.sales} {customer.sales === 1 ? 'venta' : 'ventas'} · saldo abierto {money(customer.openBalance)}</small></div></div>
+          <div className="op-finance-customer-value"><b>{money(customer.revenue)}</b><a href={`/operaciones/clientes?cliente=${encodeURIComponent(customer.id)}`}>Ver ficha CRM <ArrowUpRight size={13}/></a></div>
+          <div className="op-finance-customer-track" role="progressbar" aria-label={`${customer.name}: ${money(customer.revenue)} de ventas`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(customer.revenue / Math.max(1, customerRevenueAnalysis.linkedRevenue) * 100)}><i style={{ width: `${Math.max(2, customer.revenue / Math.max(1, customerRevenueAnalysis.linkedRevenue) * 100)}%` }}/></div>
+        </article>)}</div> : <div className="op-finance-ledger-empty"><Banknote size={22}/><b>Sin ventas vinculadas al CRM en este alcance</b><span>Las ventas sin ficha se cuentan aparte y pueden asociarse al registrar un ingreso manual.</span></div>}
+        <p className="op-finance-cost-note">El porcentaje de concentración compara los 5 clientes principales con todas las ventas que sí tienen ficha CRM. El valor no es utilidad y no incluye costos ni gastos.</p>
+      </>}
+    </section>}
     <section className="panel">
       <div className="panel-heading"><div><span className="eyebrow">MOVIMIENTOS REGISTRADOS</span><h2>Abonos recibidos</h2></div><button className="button button-outline" onClick={downloadCsv} disabled={!paymentsInPeriod.length}><Download size={15} /> Exportar CSV</button></div>
       <div className="op-finance-table-wrap"><table className="op-finance-table">
