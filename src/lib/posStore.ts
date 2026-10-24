@@ -56,7 +56,7 @@ export function getISOWeekCode(d = new Date()) {
   if (target.getDay() !== 4) {
     target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7));
   }
-  const weekNum = 1 + Math.ceil((firstThursday - target) / 604800000);
+  const weekNum = 1 + Math.ceil((firstThursday - target.getTime()) / 604800000);
   return `${target.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
 }
 
@@ -251,12 +251,12 @@ export const DEFAULT_PRODUCTS = estebanCatalogProducts.map((p, idx) => ({
   category: p.category || 'Gran Formato',
   calcType: p.calcType || (p.pricingMode === 'area' || p.pricingMode === 'm2' || p.type === 'm2' || p.unit === 'm2' || p.category === 'Lonas y banners' || p.category === 'Viniles' || p.category === 'Gran Formato' ? 'area' : 'unit'),
   basePrice: Number(p.price || p.priceScales?.[0]?.price || 7.50),
-  minPrice: Number(p.minPrice || p.priceScales?.[p.priceScales?.length - 1]?.price || 5.00),
+  minPrice: Number((p as any).minPrice || p.priceScales?.[p.priceScales?.length - 1]?.price || 5.00),
   unit: p.unit || (p.pricingMode === 'area' || p.pricingMode === 'm2' || p.type === 'm2' ? 'm2' : 'unidad'),
   priceTiers: p.priceScales || [],
   isActive: true,
   image: p.image || null,
-  leadTimeDays: p.leadTimeDays || 2,
+  leadTimeDays: (p as any).leadTimeDays || 2,
   description: p.description || `${p.name} con acabados profesionales Gigaprint.`
 }));
 
@@ -286,7 +286,7 @@ export const DEFAULT_SUPPLIERS = [
 ];
 
 // Helper to generate Next Order Number (e.g., 61930)
-export function generateOrderNumber(existingOrders = []) {
+export function generateOrderNumber(existingOrders: any[] = []) {
   const now = new Date();
   const date = now.toISOString().slice(2, 10).replaceAll('-', '');
   const time = now.toTimeString().slice(0, 8).replaceAll(':', '');
@@ -296,9 +296,9 @@ export function generateOrderNumber(existingOrders = []) {
 
 // Global Sync Status State & Listeners
 let currentSyncStatus = hasSupabase ? 'synced' : 'offline';
-const syncListeners = new Set();
+const syncListeners = new Set<(status: string) => void>();
 
-export function setSyncStatus(status) {
+export function setSyncStatus(status: string) {
   currentSyncStatus = status;
   syncListeners.forEach((fn) => {
     try { fn(status); } catch (e) { console.error('Sync listener err:', e); }
@@ -1035,7 +1035,7 @@ export function getSyncHealth() {
   };
 }
 
-export function createAdminPOSSession(adminUser = {}) {
+export function createAdminPOSSession(adminUser: any = {}) {
   return setPOSSession({
     id: 'adv-admin',
     authUserId: adminUser.id || null,
@@ -1055,7 +1055,7 @@ export function logoutPOSSession() {
   if (typeof window === 'undefined') return;
   const accessToken = getPOSAccessToken();
   if (accessToken && hasSupabase && supabase) {
-    supabase.rpc('pos_logout', { p_token: accessToken }).catch(() => {});
+    void supabase.rpc('pos_logout', { p_token: accessToken }).then(() => undefined, () => undefined);
   }
   sessionStorage.removeItem(POS_ACCESS_TOKEN_KEY);
   localStorage.removeItem(POS_SESSION_KEY);
@@ -1341,7 +1341,7 @@ export function createPOSOrder(store, orderData) {
   return { ok: true, updatedStore, order: newOrder, items: newItems, payments: newPayments, operations: plan.operations };
 }
 
-export function updateProductionOperation(store, operationId, updates = {}, advisorId = '') {
+export function updateProductionOperation(store: any, operationId: string, updates: any = {}, advisorId = '') {
   const operation = (store.productionOperations || []).find((item) => item.id === operationId);
   if (!operation) return { ok: false, error: 'Operación no encontrada.' };
 
@@ -1963,7 +1963,7 @@ export function deleteCustomer(store, customerId) {
 }
 
 // CRM Activity Logs
-export function logCustomerActivity(store, { customerId, advisorId, activityType, title = '', description, metadata = {} }) {
+export function logCustomerActivity(store, { customerId, advisorId = null, activityType, title = '', description, metadata = {} }) {
   const logId = `clog-${Date.now()}`;
   const newLog = {
     id: logId,
@@ -2232,6 +2232,7 @@ export function getOrderPublicTracking(store, trackingTokenOrOrderNumber) {
     stageHistory: order.stageHistory || [],
     artUrl: order.artUrl,
     artApproved: order.artApproved,
+    artApprovedBy: order.artApprovedBy || null,
     pickupLocation: order.pickupLocation,
     pickupPin: order.pickupPin,
     paymentStatus: order.paymentStatus,
@@ -2767,7 +2768,7 @@ export function calculatePrintItemPrice({
 }
 
 // Export Full Comprehensive Financial Report to CSV
-export function exportFullFinancialReportToCSV(metrics, orders = [], advisors = [], agingData = {}) {
+export function exportFullFinancialReportToCSV(metrics: any, orders: any[] = [], advisors: any[] = [], agingData: any = {}) {
   const lines = [];
   lines.push('=== GIGAPRINT — REPORTE FINANCIERO Y EJECUTIVO DE VENTAS ===');
   lines.push(`Fecha de Emisión:,${new Date().toLocaleString()}`);

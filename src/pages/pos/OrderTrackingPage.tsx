@@ -312,7 +312,7 @@ export function OrderTrackingPage() {
                   </h3>
                   {orderData.artApproved ? (
                     <span style={{ padding: '4px 10px', borderRadius: '999px', background: '#dcfce7', color: '#166534', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <FileCheck size={14} /> Arte Aprobado por {orderData.artApprovedBy || 'Cliente'}
+                    <FileCheck size={14} /> Arte Aprobado por {orderData.artApprovedBy || 'Cliente'}
                     </span>
                   ) : (
                     <span style={{ padding: '4px 10px', borderRadius: '999px', background: '#fef3c7', color: '#b45309', fontSize: '12px', fontWeight: 800 }}>

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, BookOpen, BriefcaseBusiness, Newspaper, Search, ShoppingBag, Sparkles } from 'lucide-react';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
+import { catalogImagesForProduct } from '../data/catalogProductImages';
+import { AnimatedList, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
 
 type ContentKind = 'blog' | 'publicaciones' | 'portafolio';
 type SiteArticle = {
@@ -78,7 +80,8 @@ function ShowcaseHero({ kind, description }: { kind: ShowcaseKind; description: 
 function ContentCard({ article, kind }: { article: SiteArticle; kind: ContentKind }) {
   const date = article.published_at ? new Date(article.published_at).toLocaleDateString('es-EC', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
   const to = kind === 'publicaciones' ? `/publicaciones/${article.slug}` : kind === 'portafolio' ? `/portafolio/${article.slug}` : `/blog/${article.slug}`;
-  return <article className="showcase-card glass-card">
+  return <article className="showcase-card glass-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
+    <SpotlightLayer/>
     <Link className="showcase-card-image" to={to} aria-label={`Leer ${article.title}`}>
       {article.cover_image ? <img src={article.cover_image} alt="" loading="lazy"/> : <span className="showcase-card-placeholder"><KindIcon kind={kind} size={30}/><i/></span>}
     </Link>
@@ -106,7 +109,7 @@ function ArticleIndex({ kind }: { kind: ContentKind }) {
       : 'Una galería de proyectos confirmados, con contexto sobre el reto y el trabajo realizado.';
   return <><ShowcaseHero kind={kind} description={description}/><section className="showcase-section">
     <div className="showcase-toolbar"><div><span className="site-eyebrow"><i/>VISUAL CORP</span><h2>{kind === 'portafolio' ? 'Trabajo seleccionado' : kind === 'publicaciones' ? 'Últimas publicaciones' : 'Lecturas recientes'}</h2></div><label className="showcase-search"><Search size={16}/><span className="sr-only">Buscar contenido</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar contenido"/></label></div>
-    {loading ? <div className="showcase-empty glass-card" role="status">Cargando contenido…</div> : error ? <div className="showcase-empty glass-card" role="alert">{error}</div> : matches.length ? <div className="showcase-grid">{matches.map((article) => <ContentCard key={article.id} article={article} kind={kind}/>)}</div> : <EmptyContent kind={kind}/>}
+    {loading ? <div className="showcase-empty glass-card" role="status">Cargando contenido…</div> : error ? <div className="showcase-empty glass-card" role="alert">{error}</div> : matches.length ? <AnimatedList className="showcase-grid" stagger={0.045}>{matches.map((article) => <ContentCard key={article.id} article={article} kind={kind}/>)}</AnimatedList> : <EmptyContent kind={kind}/>}
   </section></>;
 }
 
@@ -125,7 +128,7 @@ export function HomeContentHighlights() {
   const { articles } = usePublishedArticles();
   const picks = articles.filter((article) => articleMatches(article, 'portafolio') || articleMatches(article, 'publicaciones') || articleMatches(article, 'blog')).slice(0, 3);
   if (!picks.length) return null;
-  return <section className="site-content-highlights"><div className="showcase-toolbar"><div><span className="site-eyebrow light"><i/>IDEAS, TRABAJO Y NOVEDADES</span><h2>Un poco más de Visual Corp.</h2></div><Link className="site-secondary-button" to="/portafolio">Explorar <ArrowUpRight size={15}/></Link></div><div className="showcase-grid">{picks.map((article) => { const kind: ContentKind = articleMatches(article, 'portafolio') ? 'portafolio' : articleMatches(article, 'publicaciones') ? 'publicaciones' : 'blog'; return <ContentCard key={article.id} article={article} kind={kind}/>; })}</div></section>;
+  return <section className="site-content-highlights"><div className="showcase-toolbar"><div><span className="site-eyebrow light"><i/>IDEAS, TRABAJO Y NOVEDADES</span><h2>Un poco más de Visual Corp.</h2></div><Link className="site-secondary-button" to="/portafolio">Explorar <ArrowUpRight size={15}/></Link></div><AnimatedList className="showcase-grid" stagger={0.07}>{picks.map((article) => { const kind: ContentKind = articleMatches(article, 'portafolio') ? 'portafolio' : articleMatches(article, 'publicaciones') ? 'publicaciones' : 'blog'; return <ContentCard key={article.id} article={article} kind={kind}/>; })}</AnimatedList></section>;
 }
 
 export function ArticleDetailPage({ kind = 'blog' }: { kind?: ContentKind }) {
@@ -153,7 +156,10 @@ export function StorefrontPage() {
         .eq('is_published', true).order('sort_order', { ascending: true });
       if (!current) return;
       if (productError) { setError('No se pudo cargar el catálogo. Escríbenos y te orientamos.'); setLoading(false); return; }
-      setProducts((rows || []) as CatalogProduct[]);
+      setProducts(((rows || []) as CatalogProduct[]).map((product) => {
+        const images = catalogImagesForProduct({ id: product.id, name: product.name, family: product.category || '', image: product.image, images: [] });
+        return { ...product, image: images[0] || product.image };
+      }));
       setLoading(false);
     };
     void load();

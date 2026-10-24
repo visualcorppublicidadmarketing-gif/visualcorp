@@ -120,7 +120,8 @@ export const initialData = {
     { id: 'placa-qr', name: 'Placa QR para negocios', category: 'Personalizados', type: 'scale', calcType: 'scale', pricingMode: 'unit', price: 18.0, unit: 'unidad', image: media.placa, description: 'Placa de mesa o pared con código QR verificado para menús, pagos o redes.', featured: false, specs: ['Acrílico y base madera', 'QR grabado o impreso', 'Diseño personalizado'] },
     { id: 'neon', name: 'Neón LED personalizado', category: 'Personalizados', type: 'unit', calcType: 'unit', pricingMode: 'unit', price: 95.0, unit: 'desde', image: media.neon, description: 'Tu frase o logo convertido en una pieza luminosa de neón flexible de última generación.', featured: false, specs: ['Base acrílica transparente', 'Fuente de alimentación 12V', 'Diseño a medida'] },
     { id: 'stickers', name: 'Stickers personalizados', category: 'Imprenta', type: 'unit', calcType: 'unit', pricingMode: 'unit', price: 0.35, unit: 'unidad', image: media.stickers, description: 'Vinil adhesivo troquelado en cualquier silueta para promociones y empaques.', featured: false, specs: ['Vinil adhesivo', 'Corte personalizado', 'Resistente al agua'] },
-  ].concat(estebanCatalogProducts),
+    ...estebanCatalogProducts,
+  ],
   promotions: [
     { id: 'promo-1', title: 'Kit apertura', eyebrow: 'Para nuevos negocios', description: 'Rótulo + tarjetas + stickers para abrir con una imagen que se sienta tuya.', price: 189, oldPrice: 245, badge: 'Ahorra 23%', active: true },
     { id: 'promo-2', title: 'Tu vitrina habla', eyebrow: 'Este mes', description: 'Diseño e instalación de vinil para vitrina hasta 4 m².', price: 79, oldPrice: 105, badge: 'Cupo limitado', active: true },

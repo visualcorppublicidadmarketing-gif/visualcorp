@@ -23,3 +23,12 @@ La tabla tiene políticas RLS por organización, audiencia y rol. Usuarios inter
 - POS: cobro dividido entre efectivo, transferencia, tarjeta u otro; saldo pendiente visible y posibilidad explícita de dejar la orden a crédito. Cobros en efectivo requieren turno de caja abierto (`Fase 3 parcial`, 2026-10-23).
 
 Las futuras publicaciones las redacta el equipo desde el panel; la lista no se rellena automáticamente a partir de commits para evitar publicar cambios sin revisar su alcance o impacto.
+
+## 2026-10-24 — Imágenes de referencia de catálogo e inventario
+
+- Se asignaron referencias visuales a los 70 SKU activos del inventario, combinando muestras reales de materiales de Visual Corp con referencias generadas etiquetadas claramente.
+- La biblioteca de inventario pasó a 114 familias y 158 imágenes, y las altas/ediciones de ficha requieren una imagen.
+- La app prioriza fotos internas en 18 familias del catálogo de productos y usa la biblioteca local cuando reconoce un mockup de producto.
+- Auditoría remota de solo lectura: 247 productos del cotizador y 247 del catálogo web ya tenían una imagen cada uno; actualmente el inventario conserva 70 imágenes vacías en Supabase.
+- La migración de datos está preparada y no aplicada. No se publicó esta versión.
+- Detalle y procedencia: `docs/REFERENCIAS_VISUALES_CATALOGO_E_INVENTARIO_2026-10-24.md`.

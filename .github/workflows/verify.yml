@@ -20,12 +20,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Ensure Vercel Git deployments stay enabled
+        run: node -e "const c=require('./vercel.json'); if (c.git?.deploymentEnabled !== true) { console.error('Vercel Git deployments must stay enabled.'); process.exit(1); }"
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
+      - name: Check TypeScript types
+        run: npm run typecheck
       - name: Build production assets
         run: npm run build

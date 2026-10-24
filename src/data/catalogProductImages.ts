@@ -1,15 +1,21 @@
+import realProductImages from './catalog-real-product-images.json';
+
+const realPhotos = realProductImages.products as Array<{ keywords: string[]; name: string; image: string }>;
+
 const examples = [
   ['roll up', '01_Roll_Up_Tia', 'roll_up_base', ['banner x']],
   ['banner araña', '02_Banner_Arana_Aki', 'banner_arana_base', ['banner arana', 'tension']],
   ['stand publicitario', '03_Stand_Coca_Cola', 'stand_publicitario_base', ['pop up']],
   ['jarro', '04_Taza_Cafe_Sol', 'taza_base', ['taza']],
   ['gorra', '05_Gorra_Nike', 'gorra_base', []],
+  ['lápiz ecológico', '18_Boligrafo_BIC', 'boligrafo_base', ['lapiz ecologico', 'lápices ecológicos']],
   ['banner en a', '06_Banner_A_McDonalds', 'banner_en_a_base', []],
   ['totem', '07_Totem_Netlife', 'totem_publicitario_base', []],
   ['exhibidor de mesa', '08_Exhibidor_Oreo', 'exhibidor_de_mesa_base', ['menudero']],
   ['credencial', '09_Credencial_Evento', 'credencial_base', ['porta credencial']],
   ['camiseta', '10_Camiseta_Sublimada_Milagro', 'camiseta_base', []],
   ['rotulo', '11_Rotulo_Adidas', 'rotulo_base', ['rótulo']],
+  ['círculo led', '12_Letrero_Netflix', 'letrero_luminoso_base', ['círculo luminoso']],
   ['letrero luminoso', '12_Letrero_Netflix', 'letrero_luminoso_base', ['lightbox']],
   ['neon', '13_Neon_Barbie', 'neon_base', ['neón']],
   ['senal pvc', '14_Senaletica_IKEA', 'senal_pvc_base', ['señaletica']],
@@ -48,10 +54,17 @@ const examples = [
 export function catalogImagesForProduct(product) {
   const normalize = (value) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const search = normalize(`${product.id} ${product.name} ${product.family}`);
+  const realPhoto = realPhotos.find(({ keywords }) => keywords.some((keyword) => search.includes(normalize(keyword))));
+  if (realPhoto) return [realPhoto.image];
   const [base, brand, corporate] = examples.find(([key, , , aliases]) =>
     [key, ...aliases].some((term) => search.includes(normalize(term)))
   ) || [];
-  if (!brand) return (product.images || []).filter(Boolean).slice(0, 2);
+  if (!brand) {
+    const images = (product.images || []).filter(Boolean);
+    const primaryImage = product.image || product.image_url;
+    if (primaryImage && !images.includes(primaryImage)) images.unshift(primaryImage);
+    return images.slice(0, 2);
+  }
   const paths = [`/images/catalog-products/${corporate}.webp`, `/images/catalog-products/${brand}.webp`];
   return paths;
 }

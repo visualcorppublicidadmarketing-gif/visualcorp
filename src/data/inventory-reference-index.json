@@ -1,12 +1,14 @@
 {
   "title": "Biblioteca de referencias visuales de inventario",
-  "generatedAt": "2026-10-23T14:09:35.902Z",
+  "generatedAt": "2026-10-24",
   "provenance": [
     "PNG_transparentes_2026-10",
-    "Variantes_Marcas_2026-10"
+    "Variantes_Marcas_2026-10",
+    "05_Produccion_y_materiales/Medidas_y_cortes",
+    "Generación de referencias visuales 2026-10-24"
   ],
-  "note": "Mockups visuales para identificar productos relacionados. No representan fotografías ni cantidades de stock.",
-  "count": 88,
+  "note": "Biblioteca para identificar productos: combina muestras y fotografías internas con referencias generadas. Las referencias visuales no confirman marca, especificación ni stock físico.",
+  "count": 158,
   "products": [
     {
       "id": "01",
@@ -1237,6 +1239,1406 @@
           "path": "/inventory-reference-library/images/44-marcas.webp",
           "width": 720,
           "height": 480
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-BOD-001",
+      "name": "Cinta de embalaje",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-BOD-001.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-BOD-002",
+      "name": "Cartón para empaque",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-BOD-002.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-BOD-003",
+      "name": "Fundas para despacho",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-BOD-003.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-BOD-004",
+      "name": "Etiquetas de identificación",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-BOD-004.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-BOD-005",
+      "name": "Guantes de protección",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-BOD-005.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-BOD-006",
+      "name": "Mascarillas de protección",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-BOD-006.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-BOD-007",
+      "name": "Alcohol de limpieza",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-BOD-007.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-BOD-008",
+      "name": "Paños de limpieza",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-BOD-008.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-BOD-009",
+      "name": "Marcadores permanentes",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-BOD-009.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-BOD-010",
+      "name": "Bolsas resellables",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-BOD-010.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-IMP-001",
+      "name": "Papel bond",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-IMP-001.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-IMP-002",
+      "name": "Papel couché",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-IMP-002.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-IMP-003",
+      "name": "Papel adhesivo",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-IMP-003.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-IMP-004",
+      "name": "Cartulina",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-IMP-004.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-IMP-005",
+      "name": "Vinil adhesivo",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "muestra visual corp"
+      ],
+      "images": [
+        {
+          "series": "Muestra Visual Corp",
+          "label": "Muestra Visual Corp",
+          "source": "../../05_Produccion_y_materiales/Medidas_y_cortes/VINIL NORMAL 21X30 (4V).tif",
+          "path": "/inventory/VC-INV-IMP-005.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-IMP-006",
+      "name": "Vinil transparente",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "muestra visual corp"
+      ],
+      "images": [
+        {
+          "series": "Muestra Visual Corp",
+          "label": "Muestra Visual Corp",
+          "source": "../../05_Produccion_y_materiales/Medidas_y_cortes/VINIL TRANSPARENTE 21X30 (4V).tif",
+          "path": "/inventory/VC-INV-IMP-006.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-IMP-007",
+      "name": "Lona estándar",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "muestra visual corp"
+      ],
+      "images": [
+        {
+          "series": "Muestra Visual Corp",
+          "label": "Muestra Visual Corp",
+          "source": "../../05_Produccion_y_materiales/Medidas_y_cortes/LONA STANDARD 21X30 (4V).tif",
+          "path": "/inventory/VC-INV-IMP-007.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-IMP-008",
+      "name": "Lona translúcida",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "muestra visual corp"
+      ],
+      "images": [
+        {
+          "series": "Muestra Visual Corp",
+          "label": "Muestra Visual Corp",
+          "source": "../../05_Produccion_y_materiales/Medidas_y_cortes/LONA TRASLUCIDA 21X30 (4V).tif",
+          "path": "/inventory/VC-INV-IMP-008.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-IMP-009",
+      "name": "Tinta de impresión",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-IMP-009.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-IMP-010",
+      "name": "Laminado protector",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-IMP-010.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-LAS-001",
+      "name": "MDF para corte láser",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-LAS-001.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-LAS-002",
+      "name": "Acrílico para corte láser",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-LAS-002.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-LAS-003",
+      "name": "Triplay para corte láser",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-LAS-003.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-LAS-004",
+      "name": "Cartón para corte láser",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-LAS-004.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-LAS-005",
+      "name": "Cuero sintético para grabado",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-LAS-005.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-LAS-006",
+      "name": "Papel para corte láser",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-LAS-006.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-LAS-007",
+      "name": "Repuesto de lente láser",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-LAS-007.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-LAS-008",
+      "name": "Repuesto de espejo láser",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-LAS-008.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-LAS-009",
+      "name": "Material de prueba para grabado",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-LAS-009.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-LAS-010",
+      "name": "Material de enmascarado",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-LAS-010.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-NEO-001",
+      "name": "Manguera neón LED",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-NEO-001.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-NEO-002",
+      "name": "Tira LED",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-NEO-002.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-NEO-003",
+      "name": "Fuente de alimentación LED",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-NEO-003.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-NEO-004",
+      "name": "Cable para neón",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-NEO-004.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-NEO-005",
+      "name": "Conector para iluminación LED",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-NEO-005.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-NEO-006",
+      "name": "Controlador LED",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-NEO-006.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-NEO-007",
+      "name": "Acrílico para letrero luminoso",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "foto visual corp"
+      ],
+      "images": [
+        {
+          "series": "Foto Visual Corp",
+          "label": "Foto Visual Corp",
+          "source": "../../05_Produccion_y_materiales/Medidas_y_cortes/ACRILICO CON LUZ LED.jpg",
+          "path": "/inventory/VC-INV-NEO-007.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-NEO-008",
+      "name": "Perfil para letrero luminoso",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-NEO-008.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-NEO-009",
+      "name": "Cinta aislante",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-NEO-009.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-NEO-010",
+      "name": "Terminal eléctrico",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-NEO-010.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-SUB-001",
+      "name": "Taza blanca para sublimación",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-SUB-001.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-SUB-002",
+      "name": "Taza metalizada",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-SUB-002.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-SUB-003",
+      "name": "Taza mágica",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-SUB-003.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-SUB-004",
+      "name": "Papel para sublimación",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-SUB-004.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-SUB-005",
+      "name": "Tinta para sublimación",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-SUB-005.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-SUB-006",
+      "name": "Camiseta para sublimación",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-SUB-006.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-SUB-007",
+      "name": "Mouse pad sublimable",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-SUB-007.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-SUB-008",
+      "name": "Llavero sublimable",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-SUB-008.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-SUB-009",
+      "name": "Botella sublimable",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-SUB-009.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-SUB-010",
+      "name": "Placa sublimable",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-SUB-010.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TAL-001",
+      "name": "Silicona transparente",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TAL-001.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TAL-002",
+      "name": "Silicona blanca",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TAL-002.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TAL-003",
+      "name": "Silicona negra",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TAL-003.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TAL-004",
+      "name": "Pegamento de contacto",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TAL-004.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TAL-005",
+      "name": "Tornillos",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TAL-005.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TAL-006",
+      "name": "Pernos",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TAL-006.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TAL-007",
+      "name": "Cable eléctrico",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TAL-007.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TAL-008",
+      "name": "Pintura",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TAL-008.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TAL-009",
+      "name": "Discos de corte",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TAL-009.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TAL-010",
+      "name": "Brocas",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TAL-010.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TRO-001",
+      "name": "Vinil adhesivo",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "muestra visual corp"
+      ],
+      "images": [
+        {
+          "series": "Muestra Visual Corp",
+          "label": "Muestra Visual Corp",
+          "source": "../../05_Produccion_y_materiales/Medidas_y_cortes/VINIL NORMAL 21X30 (4V).tif",
+          "path": "/inventory/VC-INV-TRO-001.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TRO-002",
+      "name": "Vinil textil",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TRO-002.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TRO-003",
+      "name": "Vinil reflectivo",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "muestra visual corp"
+      ],
+      "images": [
+        {
+          "series": "Muestra Visual Corp",
+          "label": "Muestra Visual Corp",
+          "source": "../../05_Produccion_y_materiales/Medidas_y_cortes/VINIL REFLECTIVO 21X30 (4V).tif",
+          "path": "/inventory/VC-INV-TRO-003.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TRO-004",
+      "name": "Vinil esmerilado",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "muestra visual corp"
+      ],
+      "images": [
+        {
+          "series": "Muestra Visual Corp",
+          "label": "Muestra Visual Corp",
+          "source": "../../05_Produccion_y_materiales/Medidas_y_cortes/VINIL ARENADO 21X30 (4V).tif",
+          "path": "/inventory/VC-INV-TRO-004.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TRO-005",
+      "name": "Vinil microperforado",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "muestra visual corp"
+      ],
+      "images": [
+        {
+          "series": "Muestra Visual Corp",
+          "label": "Muestra Visual Corp",
+          "source": "../../05_Produccion_y_materiales/Medidas_y_cortes/MICROPERFORADO 21X30 (4V).tif",
+          "path": "/inventory/VC-INV-TRO-005.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TRO-006",
+      "name": "Vinil transparente",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "muestra visual corp"
+      ],
+      "images": [
+        {
+          "series": "Muestra Visual Corp",
+          "label": "Muestra Visual Corp",
+          "source": "../../05_Produccion_y_materiales/Medidas_y_cortes/VINIL TRANSPARENTE 21X30 (4V).tif",
+          "path": "/inventory/VC-INV-TRO-006.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TRO-007",
+      "name": "Cinta de transferencia",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TRO-007.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TRO-008",
+      "name": "Laminado para vinil",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TRO-008.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TRO-009",
+      "name": "Máscara de transferencia",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TRO-009.webp",
+          "width": 480,
+          "height": 420
+        }
+      ]
+    },
+    {
+      "id": "VC-INV-TRO-010",
+      "name": "Papel transportador",
+      "category": "Referencia de inventario",
+      "tags": [
+        "inventario",
+        "referencia visual",
+        "referencia generada"
+      ],
+      "images": [
+        {
+          "series": "Referencia generada",
+          "label": "Referencia generada",
+          "source": "Imagen generada para identificar el tipo de artículo",
+          "path": "/inventory/VC-INV-TRO-010.webp",
+          "width": 480,
+          "height": 420
         }
       ]
     }

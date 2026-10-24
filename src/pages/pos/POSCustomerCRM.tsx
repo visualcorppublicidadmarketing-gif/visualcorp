@@ -42,7 +42,7 @@ export function POSCustomerCRM({ store, onStoreUpdate, onReorder }) {
   // Modal Edit/Create Customer
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
-  const [customerForm, setCustomerForm] = useState({
+  const [customerForm, setCustomerForm] = useState<any>({
     name: '',
     identification: '',
     phone: '',
@@ -79,7 +79,7 @@ export function POSCustomerCRM({ store, onStoreUpdate, onReorder }) {
       const totalSpent = orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
       const totalBalanceDue = orders.reduce((sum, o) => sum + Number(o.balanceDue || 0), 0);
       const lastOrder = orders.sort((a, b) => b.orderDate.localeCompare(a.orderDate))[0];
-      const isInactive = lastOrder ? (new Date() - new Date(lastOrder.orderDate)) / (1000 * 60 * 60 * 24) > 30 : false;
+      const isInactive = lastOrder ? (Date.now() - new Date(lastOrder.orderDate).getTime()) / (1000 * 60 * 60 * 24) > 30 : false;
 
       stats[cust.id] = {
         orderCount,
@@ -120,8 +120,8 @@ export function POSCustomerCRM({ store, onStoreUpdate, onReorder }) {
   }, [store.customerLogs, selectedCustomer]);
 
   // Unique Tags for Filter Bar
-  const allTags = useMemo(() => {
-    const set = new Set();
+  const allTags = useMemo<string[]>(() => {
+    const set = new Set<string>();
     (store.customers || []).forEach((c) => {
       if (Array.isArray(c.tags)) c.tags.forEach((t) => set.add(t));
     });

@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import sourceCatalog from '../data/estebanicoSupabaseCatalog.snapshot.json';
 import { catalogImagesForProduct } from '../data/catalogProductImages';
+import { inventoryImageForSku } from '../data/inventoryProductImages';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
 import { useAuth } from '../auth/AuthProvider';
 
@@ -51,7 +52,7 @@ const starterInventory = inventoryStarterRows.map(([areaCode, name, category, va
   const serial = String(inventoryStarterRows.slice(0, index + 1).filter((row) => row[0] === areaCode).length).padStart(3, '0');
   const sku = `VC-INV-${areaCode}-${serial}`;
   return {
-    id: sku, sku, name, category, variant, unit, area: ({ IMP: 'Impresión', SUB: 'Sublimación', TRO: 'Troquelado', LAS: 'Láser', TAL: 'Taller', NEO: 'Neones', BOD: 'Bodega general' })[areaCode],
+    id: sku, sku, name, category, variant, unit, referenceImageUrl: inventoryImageForSku(sku), area: ({ IMP: 'Impresión', SUB: 'Sublimación', TRO: 'Troquelado', LAS: 'Láser', TAL: 'Taller', NEO: 'Neones', BOD: 'Bodega general' })[areaCode],
     branch: 'Visual Corp', location: 'Pendiente de ubicar', quantity: 0, minimum: 0,
     sourceStatus: 'Catálogo sugerido · existencia por verificar',
     notes: `Registro sugerido para completar el catálogo. Confirmar especificación, unidad y existencia física. ${variant || 'Verificar presentación y variante antes de comprar.'}`,
@@ -89,7 +90,8 @@ const catalog = (sourceCatalog.products || []).map((product, index) => {
   source: 'Supabase · estebanico.com',
   updatedAt: product.updatedAt,
   };
-  return { ...normalized, images: catalogImagesForProduct(normalized) };
+  const images = catalogImagesForProduct(normalized);
+  return { ...normalized, image: images[0] || normalized.image, images: images.length ? images : [normalized.image].filter(Boolean) };
 });
 
 function createInitialState() {
@@ -123,7 +125,7 @@ function readState() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved || saved.schemaVersion !== 1) return initial;
     const seedById = new Map(initial.catalog.map((item)=>[item.id,item]));
-    const storedById = new Map((Array.isArray(saved.catalog) ? saved.catalog : []).map((item) => [item.id, item]));
+    const storedById = new Map<string, any>((Array.isArray(saved.catalog) ? saved.catalog : []).map((item) => [String(item.id), item]));
     const catalogWithEdits = initial.catalog.map((seed) => {
       const item = storedById.get(seed.id);
       return item ? { ...seed, ...item, tiers: seed.tiers, optionPrices: seed.optionPrices, installPrice: seed.installPrice, corporatePrice: seed.corporatePrice, image: seed.image } : seed;
@@ -168,9 +170,12 @@ export function WorkspaceProvider({ children }) {
         priceBasis: 'unit', tiers: (row.price_scales || []).filter((scale) => scale.qty != null && (scale.pvp != null || scale.price != null)).map((scale) => ({ min_qty: Number(scale.qty), unit_price: Number(scale.pvp ?? scale.price) })),
         optionPrices: (row.price_scales || []).filter((scale) => scale.option != null && scale.price != null).map((scale) => ({ label: String(scale.option), price: Number(scale.price) })),
         unit: row.calc_type === 'm2' ? 'm²' : 'unidad', price: Number(row.price) || 0, installPrice: row.price_inst == null ? null : Number(row.price_inst),
-        corporatePrice: row.price_corp == null ? null : Number(row.price_corp), image: row.image || '', images: catalogImagesForProduct({ id: row.id, name: row.name, family: row.category, image: row.image, images: row.images || [] }),
+        corporatePrice: row.price_corp == null ? null : Number(row.price_corp), image: row.image || '', images: row.images || [],
         confirmed: Number(row.price) > 0, published: true, description: row.description || '', source: 'Supabase · Visual Corp',
-      }));
+      })).map((product) => {
+        const images = catalogImagesForProduct(product);
+        return { ...product, image: images[0] || product.image, images: images.length ? images : [product.image].filter(Boolean) };
+      });
       setData((current) => ({ ...current,
         settings: settings ? { ...current.settings, name: settings.brand, location: settings.address, heroEyebrow: settings.hero_kicker, heroTitle: settings.hero_title, heroText: settings.hero_text, contactPhone: settings.phone, email: settings.email } : current.settings,
         services: servicesResult.data ? services : current.services,
@@ -182,7 +187,7 @@ export function WorkspaceProvider({ children }) {
   }, [user]);
   const refreshRemote = useCallback(async () => {
     if (!supabase || !organizationId || !user) return;
-    const read = (query, module, action = 'view') => {
+    const read = (query: any, module: string, action = 'view'): Promise<any> => {
       const costActionAllowed = !['view_costs','edit_costs'].includes(action) || hasPermission('inventory_costs', action === 'view_costs' ? 'view' : 'edit');
       return hasPermission(module, action) && costActionAllowed ? query : Promise.resolve({ data: [], error: null });
     };
@@ -202,33 +207,35 @@ export function WorkspaceProvider({ children }) {
     ]);
     const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult].find((result) => result.error);
     if (failed) { setNotice(`No se pudieron sincronizar todos los datos operativos: ${failed.error.message}`); return; }
-    const itemById = new Map((itemsResult.data || []).map((row) => [row.id, row]));
-    const areaById = new Map((areasResult.data || []).map((row) => [row.id, row]));
-    const categoryById = new Map((categoriesResult.data || []).map((row) => [row.id, row]));
-    const branchById = new Map((branchesResult.data || []).map((row) => [row.id, row]));
+    const itemById = new Map<string, any>((itemsResult.data || []).map((row: any) => [row.id, row]));
+    const areaById = new Map<string, any>((areasResult.data || []).map((row: any) => [row.id, row]));
+    const categoryById = new Map<string, any>((categoriesResult.data || []).map((row: any) => [row.id, row]));
+    const branchById = new Map<string, any>((branchesResult.data || []).map((row: any) => [row.id, row]));
     const inventoryLocations = (locationsResult.data || []).map((row) => ({
       id: row.id, branchId: row.branch_id, branch: branchById.get(row.branch_id)?.name || '',
       parentId: row.parent_id, code: row.code, name: row.name, type: row.location_type,
       active: row.active, isSystem: row.is_system,
     }));
-    const variantById = new Map((variantsResult.data || []).map((row) => [row.id, row]));
-    const costByVariant = new Map((costsResult.data || []).map((row) => [row.variant_id, row]));
-    const metricsByKey = new Map((metricsResult.data || []).map((row) => [`${row.variant_id}|${row.branch_id}|${row.location_code}`, row]));
+    const variantById = new Map<string, any>((variantsResult.data || []).map((row: any) => [row.id, row]));
+    const costByVariant = new Map<string, any>((costsResult.data || []).map((row: any) => [row.variant_id, row]));
+    const metricsByKey = new Map<string, any>((metricsResult.data || []).map((row: any) => [`${row.variant_id}|${row.branch_id}|${row.location_code}`, row]));
     const remoteInventory = [];
     for (const variant of variantsResult.data || []) {
       const item = itemById.get(variant.item_id);
       if (!item) continue;
-      for (const branch of branchesResult.data || []) {
-        const branchStocks = (stockResult.data || []).filter((row) => row.variant_id === variant.id && row.branch_id === branch.id);
-        if (!branchStocks.length && item.custom_fields?.initial_branch_id && item.custom_fields.initial_branch_id !== branch.id) continue;
-        for (const stock of branchStocks.length ? branchStocks : [null]) {
+      const branchStocks = (stockResult.data || []).filter((row) => row.variant_id === variant.id);
+      const initialBranch = (branchesResult.data || []).find((row) => row.id === item.custom_fields?.initial_branch_id);
+      const inventoryRows = branchStocks.length
+        ? branchStocks.map((stock) => ({ stock, branch: branchById.get(stock.branch_id) || { id: stock.branch_id, name: 'Sucursal desconocida' } }))
+        : [{ stock: null, branch: initialBranch || null }];
+      for (const { stock, branch } of inventoryRows) {
         const location = stock?.location_code || item.custom_fields?.default_location_code || 'MAIN';
-        const metrics = metricsByKey.get(`${variant.id}|${branch.id}|${location}`);
+        const metrics = branch ? metricsByKey.get(`${variant.id}|${branch.id}|${location}`) : null;
         remoteInventory.push({
-          id: `${variant.id}:${branch.id}:${location}`, remoteItemId: item.id, variantId: variant.id, sku: item.sku, variantSku: variant.sku,
-          name: item.name, category: categoryById.get(item.category_id)?.name || '', variant: variant.label || item.description,
-          itemType: item.item_type || '', tags: item.tags || [], referenceImageUrl: item.reference_image_url || '', customFields: item.custom_fields || {},
-          area: areaById.get(item.area_id)?.name || 'Sin área', branch: branch.name, branchId: branch.id,
+          id: `${variant.id}:${branch?.id || 'unassigned'}:${location}`, remoteItemId: item.id, variantId: variant.id, sku: item.sku, variantSku: variant.sku,
+          name: item.name, category: categoryById.get(item.category_id)?.name || '', variant: variant.label || item.description, variantAttributes: variant.attributes || {},
+          itemType: item.item_type || '', tags: item.tags || [], referenceImageUrl: item.reference_image_url || inventoryImageForSku(item.sku), customFields: item.custom_fields || {},
+          area: areaById.get(item.area_id)?.name || 'Sin área', branch: branch?.name || 'Sucursal por asignar', branchId: branch?.id || null,
           location, unit: item.base_unit, quantity: stock ? Number(stock.quantity) : 0,
           reservedQuantity: Number(metrics?.reserved_quantity || 0), availableQuantity: metrics ? Number(metrics.available_quantity) : null,
           reservedPercent: metrics?.reserved_percent == null ? null : Number(metrics.reserved_percent), lastRestockAt: metrics?.last_restock_at || null,
@@ -237,7 +244,6 @@ export function WorkspaceProvider({ children }) {
           minimum: Number(item.minimum_quantity || 0), unitCost: costByVariant.has(variant.id) ? Number(costByVariant.get(variant.id).unit_cost) : null, supplierName: costByVariant.get(variant.id)?.supplier_name || '', sourceStatus: stock ? '' : 'Sin conteo físico', archived: !item.active || !variant.active,
           createdAt: item.created_at, updatedAt: stock?.updated_at || item.updated_at,
         });
-        }
       }
     }
     const movementLabel = { receipt: 'entrada', consumption: 'consumo', return: 'devolución', waste: 'merma', sale: 'venta', adjustment: 'ajuste', transfer_out: 'transferencia_salida', transfer_in: 'recepcion_transferencia' };
@@ -246,7 +252,7 @@ export function WorkspaceProvider({ children }) {
       return { id: row.id, itemId: row.variant_id, itemName: item?.name || variant?.sku || 'Artículo', unit: item?.base_unit || '', quantity: Math.abs(Number(row.quantity_delta)), quantityDelta: Number(row.quantity_delta), type: movementLabel[row.movement_type] || row.movement_type, actor: row.created_by === user.id ? user.email : `Usuario ${row.created_by}`, reason: row.reason, referenceType: row.reference_type || '', reference: row.reference_id || '', branch: branch?.name || '', location: row.location_code || 'MAIN', createdAt: row.created_at, shortage: 0 };
     });
     const remoteCustomers = (customersResult.data || []).map((row) => ({ id: row.id, name: row.full_name, phone: row.phone, email: row.email, notes: row.notes, createdAt: row.created_at }));
-    const customerById = new Map(remoteCustomers.map((row) => [row.id, row]));
+    const customerById = new Map<string, any>(remoteCustomers.map((row) => [row.id, row]));
     const paymentLabels = { cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', other: 'Otro' };
     const remoteSales = (salesResult.data || []).map((row) => { const paid = (row.sale_payments || []).reduce((sum, payment) => sum + Number(payment.amount), 0); const methods = [...new Set((row.sale_payments || []).map((payment) => payment.method))]; return { id: row.id, code: row.sale_code || row.id.slice(0, 8), total: Number(row.total), paid, balance: Math.max(0, Number(row.total) - paid), date: row.created_at, method: methods.length > 1 ? 'Pago dividido' : paymentLabels[methods[0] || row.payment_method] || 'Otro', customer: customerById.get(row.customer_id)?.name || '', description: (row.sale_lines || []).map((line) => line.description_snapshot).join(', '), quantity: (row.sale_lines || []).reduce((sum, line) => sum + Number(line.quantity), 0), urgent: row.urgent_backorder, status: row.status, note: row.note }; });
     setData((current) => ({ ...current, branches: branchesResult.data || [], inventoryLocations, inventory: remoteInventory, inventoryMovements: remoteMovements, customers: remoteCustomers, sales: remoteSales }));

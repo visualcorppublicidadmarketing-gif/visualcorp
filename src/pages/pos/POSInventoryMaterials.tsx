@@ -145,7 +145,7 @@ export function POSInventoryMaterials({ store, setStore }) {
             }}
           >
             <option value="all">Todas las Categorías</option>
-            {categories.filter((c) => c !== 'all').map((c) => (
+            {(categories as string[]).filter((c) => c !== 'all').map((c) => (
               <option key={c} value={c}>{c.toUpperCase()}</option>
             ))}
           </select>
