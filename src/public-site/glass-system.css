@@ -145,6 +145,7 @@
 .public-site .article-markdown{max-width:700px;margin:0 auto;font-size:16px;line-height:1.85}
 .public-site .article-markdown h2{margin:2em 0 .7em;color:#fff;font-family:VisualCorpDisplay,VisualCorpPublicDMSans,sans-serif;font-size:35px;font-weight:400}
 .public-site .article-markdown p{margin:0 0 1.15em;color:#c4c7d2;white-space:pre-wrap}
+.public-site .article-markdown figure{margin:1.6em 0}.public-site .article-markdown figure img{display:block;max-width:100%;max-height:620px;margin:auto;border-radius:14px;object-fit:contain}.public-site .article-markdown figcaption{margin-top:8px;color:#a9adbc;font-size:12px;text-align:center}.public-site .article-markdown blockquote{margin:1.5em 0;padding:5px 0 5px 18px;border-left:3px solid #df319a;color:#e8d8e5;font-size:1.08em}.public-site .article-markdown blockquote span{display:block}.public-site .article-markdown hr{margin:2em 0;border:0;border-top:1px solid rgba(228,233,255,.16)}
 .public-site .article-tags{display:flex;flex-wrap:wrap;gap:8px;max-width:700px;margin:32px auto 0}
 .public-site .article-tags span{padding:6px 10px;border:1px solid var(--site-line);border-radius:999px;color:#d3d5df;font-size:10px}
 .public-site .site-mobile-primary{display:grid;grid-template-columns:1fr 1fr;gap:7px}

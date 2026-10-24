@@ -136,7 +136,13 @@ export function OperationsFinance() {
       } else {
         setInventoryCostSummary(data);
       }
-    }).finally(() => { if (active) setInventoryCostLoading(false); });
+      setInventoryCostLoading(false);
+    }, (cause) => {
+      if (!active) return;
+      setInventoryCostError(cause instanceof Error ? cause.message : 'No se pudo consultar el costo capturado de inventario.');
+      setInventoryCostSummary(null);
+      setInventoryCostLoading(false);
+    });
     return () => { active = false; };
   }, [organizationId, canSeeInventoryCosts, month, branch, advisor]);
 
