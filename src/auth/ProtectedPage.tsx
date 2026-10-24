@@ -79,7 +79,7 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
   const moduleByPath: Record<string, string> = {
     '/admin': 'dashboard', '/admin/sitio': 'website', '/admin/contenido': 'website', '/admin/solicitudes': 'crm',
     '/admin/marketing': 'marketing', '/admin/cambios': 'team', '/admin/respaldo': 'backup',
-    '/operaciones': 'dashboard', '/operaciones/pos': 'sales', '/operaciones/flujos': 'workshop',
+    '/operaciones': 'dashboard', '/operaciones/pos': 'sales', '/operaciones/finanzas': 'sales', '/operaciones/flujos': 'workshop',
     '/operaciones/cambios': 'team', '/operaciones/cotizador': 'quotes', '/operaciones/inventario': 'inventory',
     '/operaciones/compras': 'purchases', '/operaciones/clientes': 'crm', '/operaciones/crm': 'crm',
     '/operaciones/marketing': 'marketing', '/operaciones/equipo': 'team', '/operaciones/catalogo': 'catalog_admin',

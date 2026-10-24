@@ -24,6 +24,7 @@ export const adminLinks: AppNavLink[] = [
 export const operationsLinks: AppNavLink[] = [
   { to: '/operaciones', label: 'Resumen', icon: LayoutDashboard, end: true, module: 'dashboard' },
   { to: '/operaciones/pos', label: 'Punto de venta', icon: ShoppingCart, module: 'sales' },
+  { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'sales' },
   { to: '/operaciones/flujos', label: 'Caja y producción', icon: ClipboardList, module: 'workshop' },
   { to: '/operaciones/cambios', label: 'Novedades', icon: History, module: 'team' },
   { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText, module: 'quotes' },
@@ -42,7 +43,7 @@ const adminNavGroups: AppNavGroup[] = [
   { id: 'system', label: 'Administración', icon: Settings2, paths: ['/admin/cambios', '/admin/respaldo'] },
 ];
 const operationsNavGroups: AppNavGroup[] = [
-  { id: 'sales', label: 'Ventas', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/cotizador'] },
+  { id: 'sales', label: 'Ventas', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/finanzas', '/operaciones/cotizador'] },
   { id: 'customers', label: 'Clientes y CRM', icon: Users, paths: ['/operaciones/crm', '/operaciones/clientes'] },
   { id: 'operations', label: 'Producción e inventario', icon: Boxes, paths: ['/operaciones/flujos', '/operaciones/inventario', '/operaciones/compras', '/operaciones/catalogo'] },
   { id: 'team', label: 'Equipo', icon: Settings2, paths: ['/operaciones/cambios', '/operaciones/equipo'] },
