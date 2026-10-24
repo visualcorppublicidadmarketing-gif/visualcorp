@@ -160,11 +160,11 @@ export function OperationsFinance() {
     }
     setMaterialCostLoading(true);
     setMaterialCostError('');
-    void supabase.rpc('get_finance_material_cost_summary', {
+    void Promise.resolve(supabase.rpc('get_finance_material_cost_summary', {
       p_month: `${month}-01`,
       p_branch_id: branch === 'all' ? null : branch,
       p_advisor_id: advisor === 'all' ? null : advisor,
-    }).then(({ data, error: summaryError }) => {
+    })).then(({ data, error: summaryError }) => {
       if (!active) return;
       if (summaryError) {
         setMaterialCostError(summaryError.message || 'No se pudo consultar el costo capturado de materiales.');
@@ -186,11 +186,11 @@ export function OperationsFinance() {
     }
     setMaterialCostLoading(true);
     setMaterialCostError('');
-    void supabase.rpc('get_finance_material_cost_summary', {
+    void Promise.resolve(supabase.rpc('get_finance_material_cost_summary', {
       p_month: `${month}-01`,
       p_branch_id: branch === 'all' ? null : branch,
       p_advisor_id: advisor === 'all' ? null : advisor,
-    }).then(({ data, error: summaryError }) => {
+    })).then(({ data, error: summaryError }) => {
       if (!active) return;
       if (summaryError) {
         setMaterialCostError(summaryError.message || 'No se pudo consultar el costo capturado de materiales.');
