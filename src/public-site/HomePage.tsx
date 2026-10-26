@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, useInView, useReducedMotion, useSpring } from 'motion/react';
 import { ArrowDown, ArrowRight, ArrowUpRight, Check, Lightbulb, MapPin, MessageCircle, PanelsTopLeft, Printer, ScanLine, Scissors, Shirt, Sparkles, Store } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
+import { Marquee, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
 import './home-page.css';
 
 const Highlights = lazy(() => import('./ShowcasePages').then((module) => ({ default: module.HomeContentHighlights })));
@@ -72,7 +73,7 @@ export function PublicHomePage() {
         <div className="home-hero-copy">
           <Reveal><span className="home-kicker"><span className="home-status-dot"/>{data.settings.heroEyebrow}</span></Reveal>
           <Reveal delay={0.08}><h1 id="home-title">{words.join(' ')} <span>{lastWord}</span></h1></Reveal>
-          <Reveal delay={0.16}><p className="home-hero-description">{data.settings.heroText}</p><div className="home-actions"><Link className="home-button home-button-primary" to="/cotizador">Cuéntanos tu idea <ArrowUpRight size={19}/></Link><a className="home-button home-button-secondary" href="#servicios">Explorar servicios <ArrowDown size={18}/></a></div></Reveal>
+          <Reveal delay={0.16}><p className="home-hero-description">{data.settings.heroText}</p><div className="home-actions"><Link className="home-button home-button-primary vc-shimmer-button" to="/cotizador">Cuéntanos tu idea <ArrowUpRight size={19}/></Link><a className="home-button home-button-secondary" href="#servicios">Explorar servicios <ArrowDown size={18}/></a></div></Reveal>
           <Reveal delay={0.24}><div className="home-hero-proof"><span><Check size={15}/>Atención directa</span><span><Check size={15}/>Diseño y producción</span></div></Reveal>
         </div>
         <VisualitoStage/>
@@ -80,11 +81,13 @@ export function PublicHomePage() {
       <div className="home-hero-footer"><span><MapPin size={14}/> MILAGRO, ECUADOR</span><a href="#servicios">UNA IDEA. MUCHAS POSIBILIDADES. <ArrowDown size={15}/></a><span className="home-footer-index" aria-hidden="true">01 — 03</span></div>
     </section>
 
+    {services.length > 0 && <Marquee items={services.map((service: { name: string }) => service.name)} label="Familias de trabajo disponibles" className="home-service-marquee" duration={38}/>}
+
     <section className="home-services home-section" id="servicios" aria-labelledby="home-services-title">
       <Reveal className="home-section-heading"><div><span className="home-kicker">01 / LO QUE PODEMOS CREAR</span><h2 id="home-services-title">Tu marca.<br/><span>En todas sus formas.</span></h2></div><div><p>Del papel a los espacios. Encuentra la familia de trabajo que conecta con tu idea.</p><Link className="home-text-link" to="/servicios">Todos los servicios <ArrowUpRight size={17}/></Link></div></Reveal>
       <div className="home-services-grid">{services.map((service: { id: string; name: string; description: string }, index: number) => {
         const Icon = serviceIcons[service.id] || Sparkles;
-        return <Reveal key={service.id} delay={(index % 3) * 0.06}><Link to={`/servicios/${encodeURIComponent(service.id)}`} className={`home-service home-service-${service.id}`}><div className="home-service-top"><span className="home-service-number">{String(index + 1).padStart(2, '0')}</span><span className="home-service-arrow"><ArrowUpRight size={21}/></span></div><div className="home-service-art" aria-hidden="true"><i/><Icon size={66} strokeWidth={1.1}/><span/></div><div className="home-service-copy"><h3>{service.name}</h3><p>{service.description}</p></div><span className="home-service-link">Explorar posibilidades <ArrowRight size={16}/></span></Link></Reveal>;
+        return <Reveal key={service.id} delay={(index % 3) * 0.06}><Link to={`/servicios/${encodeURIComponent(service.id)}`} className={`home-service home-service-${service.id} vc-magic-card`} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}><SpotlightLayer/><div className="home-service-top"><span className="home-service-number">{String(index + 1).padStart(2, '0')}</span><span className="home-service-arrow"><ArrowUpRight size={21}/></span></div><div className="home-service-art" aria-hidden="true"><i/><Icon size={66} strokeWidth={1.1}/><span/></div><div className="home-service-copy"><h3>{service.name}</h3><p>{service.description}</p></div><span className="home-service-link">Explorar posibilidades <ArrowRight size={16}/></span></Link></Reveal>;
       })}</div>
       {services.length === 0 && <p className="home-service-empty">Estamos actualizando nuestros servicios. <Link to="/contacto">Cuéntanos qué necesitas.</Link></p>}
       <div className="home-services-note"><span><Sparkles size={17}/> ¿Tienes una idea diferente?</span><Link to="/contacto">La conversamos contigo <ArrowUpRight size={17}/></Link></div>
@@ -96,6 +99,6 @@ export function PublicHomePage() {
 
     <div ref={contentRef} className="home-published-content">{showContent && <Suspense fallback={null}><Highlights/></Suspense>}</div>
 
-    <section className="home-contact home-section" aria-labelledby="home-contact-title"><Reveal><span className="home-kicker">03 / HAGAMOS QUE SUCEDA</span><h2 id="home-contact-title">Lo próximo que se vea<br/>puede ser <span>tu marca.</span></h2><p>Una idea, una pregunta o un proyecto por empezar.<br/>Estamos aquí para escucharte.</p><div className="home-actions"><Link className="home-button home-button-primary" to="/cotizador">Empezar mi proyecto <ArrowUpRight size={20}/></Link><Link className="home-button home-button-secondary" to="/contacto">Hablar con el equipo <MessageCircle size={18}/></Link></div><span className="home-contact-signature">VISUAL CORP · CREATIVIDAD QUE TOMA FORMA</span></Reveal></section>
+    <section className="home-contact home-section" aria-labelledby="home-contact-title"><Reveal><span className="home-kicker">03 / HAGAMOS QUE SUCEDA</span><h2 id="home-contact-title">Lo próximo que se vea<br/>puede ser <span>tu marca.</span></h2><p>Una idea, una pregunta o un proyecto por empezar.<br/>Estamos aquí para escucharte.</p><div className="home-actions"><Link className="home-button home-button-primary vc-shimmer-button" to="/cotizador">Empezar mi proyecto <ArrowUpRight size={20}/></Link><Link className="home-button home-button-secondary" to="/contacto">Hablar con el equipo <MessageCircle size={18}/></Link></div><span className="home-contact-signature">VISUAL CORP · CREATIVIDAD QUE TOMA FORMA</span></Reveal></section>
   </div>;
 }

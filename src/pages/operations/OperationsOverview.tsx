@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ArrowUpRight, Search } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { NumberTicker } from '../../components/magicui/NumberTicker';
+import { SpotlightLayer, clearSpotlight, updateSpotlight } from '../../components/ui/MagicComponents';
 import './operations-overview.css';
 
 export type OperationsFlowTab = 'cash' | 'returns' | 'transfers' | 'production' | 'quotes';
@@ -87,7 +88,8 @@ export function OperationsOverview({ metrics, items, branches, onOpenFlow }: Pro
       <div className="op-overview-metrics" aria-label="Resumen de flujos operativos">
         {metrics.map((metric) => {
           const Icon = metric.icon;
-          return <button className={`op-overview-metric ${metric.tone}`} key={metric.tab} type="button" onClick={() => onOpenFlow(metric.tab)}>
+          return <button className={`op-overview-metric ${metric.tone} vc-magic-card`} key={metric.tab} type="button" onClick={() => onOpenFlow(metric.tab)} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
+            <SpotlightLayer/>
             <span className="op-overview-metric-icon"><Icon size={17}/></span>
             <span className="op-overview-metric-copy"><span>{metric.label}</span><b><NumberTicker value={metric.value}/></b><small>{metric.description}</small></span>
             <ArrowUpRight className="op-overview-metric-arrow" size={15}/>
