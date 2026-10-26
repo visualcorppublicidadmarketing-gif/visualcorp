@@ -99,3 +99,9 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - **Caja:** arqueo ciego en la pantalla del cajero: ya no consulta ni muestra importes de pagos y movimientos para construir el esperado antes del conteo. El servidor revela esperado y diferencia al cerrar. El historial de cierres y las vistas de Finanzas conservan sus permisos actuales.
 - **Verificación local:** `npm run build:checked` (TypeScript y Vite) y `git diff --check` correctos. Las migraciones `20261026140932_production_handoffs.sql` y `20261026140939_cash_payment_close_lock.sql` están aplicadas y verificadas en Supabase. No se ejecutaron RPC, escrituras de caja/producción ni conteos reales.
 - **Pendiente operativo:** aceptar el nuevo recorrido con el equipo y validar permisos con una sesión real; los registros de demostración no representarían ventas ni producción reales.
+
+### Caja: señales de estado y arqueo — 2026-10-26
+
+- Rediseño de Flujos → Caja con estado de turno, secuencia Abrir → Contar → Conciliar, importe contado destacado, ayuda para el cierre e historial con etiquetas de cuadre. Mantiene el arqueo ciego y la interfaz responsive.
+- POS incorpora acceso directo a abrir o cerrar el turno desde la pantalla de caja. La sucursal y el usuario siguen asociados al turno.
+- `npm run build:checked` y `git diff --check` correctos. No se ejecutaron pagos ni cierres reales durante la verificación.

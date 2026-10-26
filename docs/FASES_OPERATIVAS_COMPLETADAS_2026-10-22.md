@@ -63,3 +63,13 @@ La migración `20261026140932_production_handoffs.sql` incorpora `next_step`, au
 ## Concurrencia de pago y cierre de caja — 26 de octubre de 2026
 
 Se actualizó `app_private.attach_open_cash_session()` para bloquear la fila de la caja abierta al asociar un pago en efectivo. `close_cash_session` ya bloquea esa misma fila antes de calcular el esperado: si el pago obtiene el bloqueo primero, queda incluido en el cierre; si el cierre lo obtiene primero, el pago espera y luego se rechaza con una indicación para actualizar y abrir otro turno. Los pagos no efectivos limpian cualquier asociación a caja. La migración `20261026140939_cash_payment_close_lock.sql` quedó aplicada y verificada; no se modificaron ventas, cierres ni saldos reales.
+
+## Acceso y guía de cierre de caja en Flujos y POS — 26 de octubre de 2026
+
+Flujos → Caja incorpora una guía desplegable en tres pasos, un enlace al campo de recuento y validación de montos no negativos para apertura y cierre. POS presenta un acceso directo a Caja para abrir el turno o cerrarlo cuando ya está abierto. La guía toma como referencia Collapsible y Alert de shadcn/ui; la entrada breve se inspira en Blur Fade de Magic UI, implementada con CSS y respeto a `prefers-reduced-motion`. `npm run build:checked` y `git diff --check` pasan. El enlace productivo solicitado pidió acceso con Google, así que la vista autenticada no se pudo comprobar; el cambio permanece local y no se publicó.
+
+### Caja: señales de estado y arqueo — 2026-10-26
+
+- La vista de Caja ahora comunica el estado del turno con texto, icono y distintivo; presenta el recorrido Abrir → Contar → Conciliar; da prioridad al importe contado y al control de cierre; y separa la apertura, los movimientos de gestión y el historial. El historial diferencia un cuadre exacto de una diferencia con etiquetas legibles. Se conserva la guía desplegable y el arqueo ciego.
+- Interfaz responsive con animación breve existente y soporte para `prefers-reduced-motion`. Los cambios son locales en `src/pages/operations/OperationsLifecycle.tsx` y `src/pages/operations/operations-lifecycle.css`.
+- Verificación local: `npm run build:checked` y `git diff --check` correctos. La vista autenticada no quedó disponible en el servidor local durante esta revisión. No se ejecutaron pagos ni cierres reales.
