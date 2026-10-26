@@ -2,29 +2,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Ban, Check, RotateCcw, Save, Search, ShieldCheck, UserPlus, UserRoundX, Users } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
+import { legacyRoleNames, permissionModules, specialPermissionActions } from '../auth/accessCatalog';
 import './team-access.css';
 
-const modules = [
-  ['dashboard','Panel principal'],['website','Página web'],['crm','CRM y clientes'],['sales','Ventas y POS'],['quotes','Cotizaciones'],
-  ['inventory','Inventario'],['inventory_costs','Costos de inventario'],['purchases','Compras'],['workshop','Taller y producción'],
-  ['marketing','Marketing'],['team','Equipo'],['catalog_admin','Catálogo y tarifas'],['backup','Respaldo'],['cash','Caja'],['personnel','Personal'],
-] as const;
-const specialActions = [
-  { module: 'team', action: 'manage_members', label: 'Asignar perfiles y activar o pausar accesos' },
-  { module: 'team', action: 'manage_profiles', label: 'Crear y configurar perfiles' },
-  { module: 'inventory_costs', action: 'view_costs', label: 'Ver costos y márgenes' },
-  { module: 'inventory_costs', action: 'edit_costs', label: 'Editar costos' },
-  { module: 'catalog_admin', action: 'edit_prices', label: 'Cambiar precios y tarifas' },
-  { module: 'purchases', action: 'approve_purchase', label: 'Aprobar órdenes de compra' },
-  { module: 'purchases', action: 'cancel_purchase', label: 'Cancelar órdenes de compra' },
-  { module: 'purchases', action: 'receive_purchase', label: 'Registrar recepción de compras' },
-  { module: 'sales', action: 'settle_refund', label: 'Completar reembolsos' },
-  { module: 'website', action: 'publish_content', label: 'Publicar cambios en la web' },
-  { module: 'cash', action: 'manage_cash', label: 'Registrar movimientos y gestionar caja' },
-  { module: 'personnel', action: 'view_compensation', label: 'Consultar remuneración e historial de pagos del personal' },
-  { module: 'personnel', action: 'edit_compensation', label: 'Registrar cambios de remuneración del personal' },
-];
-const roleNames: Record<string, string> = { owner: 'Propietario', admin: 'Admin', manager: 'Gerencia', advisor: 'Asesoras', warehouse: 'Inventario', production: 'Taller', marketing: 'Marketing', website_admin: 'Admin página web' };
+const modules = permissionModules;
+const specialActions = specialPermissionActions;
+const roleNames = legacyRoleNames;
 
 export function TeamAccess() {
   const { organizationId, roles, hasPermission, refreshAccess } = useAuth();
@@ -226,13 +209,14 @@ export function TeamAccess() {
   };
 
   return <div className="team-access">
-    <div className="page-heading"><div><div className="eyebrow">USUARIOS Y PERMISOS</div><h1>Equipo Visual Corp</h1><p>Administra perfiles de trabajo, permisos por módulo y accesos de cada persona.</p></div><span className="local-badge"><Users size={14}/> {activeMembers} accesos activos</span></div>
+    <div className="page-heading"><div><div className="eyebrow">EQUIPO Y ACCESOS</div><h1>Usuarios, perfiles y permisos</h1><p>Administra los accesos a un único panel de trabajo y a sus módulos autorizados.</p></div><span className="local-badge"><Users size={14}/> {activeMembers} accesos activos</span></div>
     {error&&<p className="access-error" role="alert">{error}</p>}{message&&<p className="team-access-message" role="status">{message}</p>}
     {loading ? <section className="panel"><p>Cargando perfiles y accesos…</p></section> : <div className="team-access-grid">
       <section className="panel team-profiles-panel"><div className="panel-heading"><div><span className="eyebrow">PERFILES CONFIGURABLES</span><h2>Perfiles y permisos</h2></div><ShieldCheck size={19}/></div>
         <div className="team-profile-toolbar"><label>Perfil<select value={selectedId} onChange={(event)=>selectProfile(event.target.value)}><option value="">Nuevo perfil…</option>{profiles.filter((profile)=>profile.profile_key!=='owner').map((profile)=><option key={profile.id} value={profile.id}>{profile.name}{profile.active?'':' · Desactivado'}</option>)}</select></label>{canManageProfiles&&<button className="button button-outline" type="button" onClick={createProfile}>Crear perfil</button>}</div>
         {selectedId===''&&<p className="team-access-help">Configura un perfil nuevo. Empieza con todos los permisos desactivados y habilita solo lo que necesita el puesto.</p>}
         <form className="team-profile-form" onSubmit={saveProfile}>
+          <p className="team-access-help team-index-note">Este índice comparte los mismos módulos que la navegación. Las claves internas y los accesos ya asignados se conservan; aquí solo se ajusta la matriz del perfil seleccionado.</p>
           <div className="team-profile-fields"><label>Nombre<input value={profileName} onChange={(event)=>setProfileName(event.target.value)} required minLength={2} maxLength={80} disabled={!canManageProfiles}/></label><label>Identificador<input value={profileKey} onChange={(event)=>setProfileKey(event.target.value)} required pattern="[a-z0-9_]{2,48}" disabled={!canManageProfiles||Boolean(selectedId)}/></label><label className="team-profile-description">Descripción<input value={profileDescription} onChange={(event)=>setProfileDescription(event.target.value)} maxLength={300} disabled={!canManageProfiles}/></label></div>
           <div className="team-matrix-wrap"><table className="team-permission-matrix"><thead><tr><th>Módulo</th><th>Ver</th><th>Editar</th><th>Borrar</th></tr></thead><tbody>{modules.map(([key,label])=><tr key={key}><th scope="row">{label}</th>{(['view','edit','delete_records'] as const).map((action)=><td key={action}><input aria-label={`${label}: ${action==='view'?'ver':action==='edit'?'editar':'borrar registros'}`} type="checkbox" checked={Boolean(matrix[`${key}.${action}`])} disabled={!canManageProfiles||key==='personnel'&&action==='delete_records'||action==='delete_records'&&selectedProfile?.profile_key==='admin'} onChange={(event)=>setPermission(`${key}.${action}`,event.target.checked)}/></td>)}</tr>)}</tbody></table></div>
           <details className="team-advanced-permissions"><summary>Acciones especiales</summary><div className="team-special-grid">{specialActions.map(({module,action,label})=><label key={`${module}.${action}`}><input type="checkbox" checked={Boolean(matrix[`${module}.${action}`])} disabled={!canManageProfiles} onChange={(event)=>setPermission(`${module}.${action}`,event.target.checked)}/><span>{label}</span></label>)}</div></details>

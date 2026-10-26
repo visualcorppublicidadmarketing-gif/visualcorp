@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CornerDownLeft, Search, X } from 'lucide-react';
-import type { AppArea, AppNavLink } from '../app/layout';
+import type { AppNavLink } from '../app/navigation';
 
-type Props = { area: AppArea; items: AppNavLink[] };
+type Props = { items: AppNavLink[] };
 
-export function AdminCommandPalette({ area, items }: Props) {
+export function AdminCommandPalette({ items }: Props) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -80,7 +80,7 @@ export function AdminCommandPalette({ area, items }: Props) {
     </button>
     {open && <div className="admin-command-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
       <section className="admin-command-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-command-title">
-        <h2 id="admin-command-title" className="admin-command-title">Buscar en {area === 'admin' ? 'administración web' : 'operaciones'}</h2>
+        <h2 id="admin-command-title" className="admin-command-title">Buscar en Visual Corp Suite</h2>
         <div className="admin-command-search"><Search size={18}/><input ref={inputRef} value={query} onChange={(event) => { setQuery(event.target.value); setActiveIndex(0); }} onKeyDown={handleInputKeyDown} placeholder="Busca una sección…" role="combobox" aria-expanded="true" aria-controls="admin-command-results" aria-activedescendant={results[activeIndex] ? `admin-command-option-${activeIndex}` : undefined}/><button type="button" aria-label="Cerrar búsqueda" onClick={close}><X size={17}/></button></div>
         <div className="admin-command-results" id="admin-command-results" role="listbox" aria-label="Páginas disponibles">
           {results.length ? results.map(({ to, label, icon: Icon }, index) => <button id={`admin-command-option-${index}`} key={to} type="button" role="option" aria-selected={index === activeIndex} className={`admin-command-option${index === activeIndex ? ' active' : ''}`} onMouseEnter={() => setActiveIndex(index)} onClick={() => { navigate(to); close(); }}>
