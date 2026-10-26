@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing · Manual VisualCorp</title>
+    <meta name="description"
+        content="Manual del departamento de Marketing de VisualCorp: redes sociales, fotografía de productos, identidad visual, atención al cliente online y métricas.">
+    <link rel="stylesheet" href="css/manual.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--sp-5);
+            margin: var(--sp-6) 0;
+        }
+
+        .content-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--sp-6);
+            text-align: center;
+            transition: all var(--duration) var(--ease-out);
+        }
+
+        .content-card:hover {
+            border-color: var(--color-border-hover);
+            transform: translateY(-3px);
+        }
+
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: var(--sp-5);
+            margin: var(--sp-6) 0;
+        }
+
+        .platform-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            transition: all var(--duration) var(--ease-out);
+        }
+
+        .platform-card:hover {
+            border-color: var(--color-border-hover);
+            transform: translateY(-3px);
+        }
+
+        .platform-card__header {
+            padding: var(--sp-6);
+            text-align: center;
+        }
+
+        .platform-card__body {
+            padding: 0 var(--sp-6) var(--sp-6);
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: var(--sp-4);
+            margin: var(--sp-6) 0;
+        }
+
+        .photo-tip {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--sp-5);
+            text-align: center;
+            transition: all var(--duration) var(--ease-out);
+        }
+
+        .photo-tip:hover {
+            border-color: rgba(236, 72, 153, .4);
+            transform: translateY(-2px);
+        }
+
+        .brand-colors {
+            display: flex;
+            gap: var(--sp-3);
+            flex-wrap: wrap;
+            margin: var(--sp-5) 0;
+        }
+
+        .brand-swatch {
+            width: 70px;
+            height: 70px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: var(--sp-2);
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, .5);
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--sp-5);
+            margin: var(--sp-6) 0;
+        }
+
+        @media(max-width:600px) {
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .metric-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--sp-6);
+            text-align: center;
+            transition: all var(--duration) var(--ease-out);
+        }
+
+        .metric-card:hover {
+            border-color: rgba(236, 72, 153, .4);
+            transform: translateY(-2px);
+        }
+
+        .sched-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--sp-5);
+            margin: var(--sp-6) 0;
+        }
+
+        @media(max-width:600px) {
+            .sched-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="readProgress"></div>
+    <script src="js/nav.js"></script>
+
+    <main id="swup" class="transition-fade">
+        <section class="hero" style="padding:8rem 0 3rem;">
+            <div class="container" style="position:relative;z-index:2;">
+                <nav class="breadcrumb reveal reveal--fade"><a href="index.html">Inicio</a><span>/</span><strong
+                        style="color:#ec4899">Marketing</strong></nav>
+                <span class="hero__eyebrow reveal reveal--fade" data-delay="50"
+                    style="background:rgba(236,72,153,.15);border-color:rgba(236,72,153,.25);color:#f472b6;">📢
+                    Marketing
+                    Digital</span>
+                <h1 class="hero__title reveal reveal--slide-up" data-delay="100"
+                    style="font-size:clamp(1.8rem,4vw,3rem);">
+                    Manual de <span
+                        style="background:linear-gradient(135deg,#ec4899,#f2b705);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Marketing</span>
+                </h1>
+                <p class="hero__sub reveal reveal--slide-up" data-delay="180">Redes sociales, fotografía de productos,
+                    identidad visual, atención al cliente online y métricas de rendimiento en VisualCorp.</p>
+                <div class="search-wrap reveal reveal--fade" data-delay="260" style="max-width:520px;margin-left:0;">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    <input type="text" id="manualSearch" placeholder="Buscar en el manual...">
+                </div>
+            </div>
+        </section>
+
+        <div class="container">
+            <div class="manual-layout">
+                <aside class="manual-sidebar">
+                    <p class="toc-title">Contenido</p>
+                    <ul class="toc-list">
+                        <li class="toc-item"><a href="#rol"><span class="toc-dot"></span>Rol del Marketing</a></li>
+                        <li class="toc-item"><a href="#redes"><span class="toc-dot"></span>Redes Sociales</a></li>
+                        <li class="toc-item"><a href="#fotografia"><span class="toc-dot"></span>Fotografía de
+                                Productos</a>
+                        </li>
+                        <li class="toc-item"><a href="#identidad"><span class="toc-dot"></span>Identidad Visual</a></li>
+                        <li class="toc-item"><a href="#atencion"><span class="toc-dot"></span>Atención al Cliente
+                                Online</a>
+                        </li>
+                        <li class="toc-item"><a href="#metricas"><span class="toc-dot"></span>Métricas Básicas</a></li>
+                        <li class="toc-item"><a href="#horarios"><span class="toc-dot"></span>Horarios</a></li>
+                    </ul>
+                </aside>
+
+                <div class="manual-content">
+
+                    <!-- 1. ROL DEL MARKETING -->
+                    <section class="manual-section reveal reveal--slide-up" id="rol">
+                        <span class="section-eyebrow">📢 Sección 1</span>
+                        <h2 class="section-title">Rol del Marketing en VisualCorp</h2>
+                        <p class="section-sub">El marketing no es solo publicar fotos en redes. Es la conexión directa
+                            entre
+                            el trabajo que hacemos y los clientes que nos buscan. Sin marketing, el mejor trabajo del
+                            mundo
+                            queda invisible.</p>
+
+                        <div class="content-grid">
+                            <div class="content-card" style="border-color:rgba(236,72,153,.2);">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">📱</div>
+                                <div style="font-weight:700;color:var(--color-heading);">Redes Sociales</div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                    Publicar contenido constante y de calidad que atraiga nuevos clientes.</p>
+                            </div>
+                            <div class="content-card" style="border-color:rgba(236,72,153,.2);">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">📸</div>
+                                <div style="font-weight:700;color:var(--color-heading);">Portafolio Visual</div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                    Cada trabajo terminado es una oportunidad de mostrar lo que VisualCorp puede hacer.
+                                </p>
+                            </div>
+                            <div class="content-card" style="border-color:rgba(236,72,153,.2);">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">🤝</div>
+                                <div style="font-weight:700;color:var(--color-heading);">Fidelización</div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                    Mantener la relación con clientes existentes y convertirlos en embajadores de la
+                                    marca.
+                                </p>
+                            </div>
+                            <div class="content-card" style="border-color:rgba(236,72,153,.2);">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">💡</div>
+                                <div style="font-weight:700;color:var(--color-heading);">Posicionamiento</div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                    Ser
+                                    la primera opción cuando alguien en Milagro necesite publicidad visual o impresión.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="callout callout--tip">
+                            <span class="callout__icon">💡</span>
+                            <div class="callout__body">
+                                <p class="callout__title">Todo el equipo contribuye al marketing</p>
+                                <p class="callout__text">El personal de taller toma fotos de las instalaciones, los
+                                    diseñadores crean contenido gráfico, los asesores recopilan testimonios de clientes.
+                                    <strong>El marketing es responsabilidad de todos.</strong>
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <hr class="section-divider">
+
+                    <!-- 2. REDES SOCIALES -->
+                    <section class="manual-section reveal reveal--slide-up" id="redes">
+                        <span class="section-eyebrow">📱 Sección 2</span>
+                        <h2 class="section-title">Redes Sociales</h2>
+                        <p class="section-sub">Las redes sociales son nuestra vitrina digital. Publicar con constancia,
+                            calidad y estrategia es clave para atraer clientes nuevos.</p>
+
+                        <div class="platform-grid">
+                            <!-- Facebook -->
+                            <div class="platform-card">
+                                <div class="platform-card__header"
+                                    style="background:linear-gradient(135deg,rgba(59,130,246,.15),rgba(59,130,246,.05));">
+                                    <div style="font-size:2.5rem;margin-bottom:var(--sp-2);">📘</div>
+                                    <div style="font-weight:800;color:var(--color-heading);font-size:var(--fs-lg);">
+                                        Facebook
+                                    </div>
+                                    <div style="font-size:var(--fs-xs);color:#60a5fa;">Plataforma principal</div>
+                                </div>
+                                <div class="platform-card__body">
+                                    <div class="tip-list">
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">📅 Publicar <strong>mínimo
+                                                3
+                                                veces por semana</strong></div>
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">📸 Fotos de trabajos
+                                            terminados con descripción del proyecto</div>
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">🎥 Videos cortos de
+                                            proceso
+                                            (impresión, corte láser, instalación)</div>
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">⭐ Compartir testimonios de
+                                            clientes satisfechos</div>
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">💬 Responder TODOS los
+                                            comentarios y mensajes</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Instagram -->
+                            <div class="platform-card">
+                                <div class="platform-card__header"
+                                    style="background:linear-gradient(135deg,rgba(236,72,153,.12),rgba(168,85,247,.08));">
+                                    <div style="font-size:2.5rem;margin-bottom:var(--sp-2);">📸</div>
+                                    <div style="font-weight:800;color:var(--color-heading);font-size:var(--fs-lg);">
+                                        Instagram</div>
+                                    <div style="font-size:var(--fs-xs);color:#f472b6;">Visual · Portafolio</div>
+                                </div>
+                                <div class="platform-card__body">
+                                    <div class="tip-list">
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">🖼️ Feed limpio y visual —
+                                            fotos de alta calidad</div>
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">📱 Stories diarias
+                                            mostrando
+                                            el día a día del taller</div>
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">🎬 Reels de antes/después
+                                            de
+                                            instalaciones</div>
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">📌 Highlights organizados:
+                                            Letras, Lonas, Láser, Instalaciones</div>
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">#️⃣ Hashtags locales:
+                                            <strong>#VisualCorp #PublicidadMilagro #ImprentaMilagro</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- TikTok -->
+                            <div class="platform-card">
+                                <div class="platform-card__header"
+                                    style="background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(6,182,212,.08));">
+                                    <div style="font-size:2.5rem;margin-bottom:var(--sp-2);">🎵</div>
+                                    <div style="font-weight:800;color:var(--color-heading);font-size:var(--fs-lg);">
+                                        TikTok
+                                    </div>
+                                    <div style="font-size:var(--fs-xs);color:#4ade80;">Videos virales</div>
+                                </div>
+                                <div class="platform-card__body">
+                                    <div class="tip-list">
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">⚡ Videos cortos (15–60
+                                            seg)
+                                            de procesos satisfactorios</div>
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">🔥 El corte láser y la
+                                            impresión son contenido muy viral</div>
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">🎶 Usar música trending y
+                                            hashtags populares</div>
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">📐 Mostrar
+                                            transformaciones:
+                                            local vacío → local con rótulo</div>
+                                        <div class="tip-item" style="font-size:var(--fs-xs);">🗣️ Narrar el proceso con
+                                            voz en off o texto superpuesto</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="callout callout--warning">
+                            <span class="callout__icon">⚠️</span>
+                            <div class="callout__body">
+                                <p class="callout__title">Regla de oro: NUNCA publicar sin permiso del cliente</p>
+                                <p class="callout__text">Antes de publicar fotos o videos del trabajo de un cliente,
+                                    pide su
+                                    autorización verbal o escrita. Algunos negocios no quieren que se revele su
+                                    proveedor o
+                                    prefieren privacidad. <strong>Respetar esto es profesionalismo.</strong></p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <hr class="section-divider">
+
+                    <!-- 3. FOTOGRAFÍA DE PRODUCTOS -->
+                    <section class="manual-section reveal reveal--slide-up" id="fotografia">
+                        <span class="section-eyebrow">📸 Sección 3</span>
+                        <h2 class="section-title">Fotografía de Productos y Trabajos</h2>
+                        <p class="section-sub">Una buena foto puede vender más que mil palabras. Cada trabajo terminado
+                            es
+                            una oportunidad de crear contenido que atraiga nuevos clientes.</p>
+
+                        <div class="photo-grid">
+                            <div class="photo-tip">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">☀️</div>
+                                <div style="font-weight:700;color:var(--color-heading);margin-bottom:var(--sp-2);">Luz
+                                    Natural</div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);">Siempre que sea
+                                    posible,
+                                    toma fotos con luz natural. Evita flash directo. La mejor hora: mañana o tarde con
+                                    sol
+                                    suave.</p>
+                            </div>
+                            <div class="photo-tip">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">📐</div>
+                                <div style="font-weight:700;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                    Ángulos
+                                    Correctos</div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);">Toma la foto de frente
+                                    (vista principal) + un ángulo lateral + un detalle de cerca. Mínimo 3 fotos por
+                                    trabajo.
+                                </p>
+                            </div>
+                            <div class="photo-tip">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">🧹</div>
+                                <div style="font-weight:700;color:var(--color-heading);margin-bottom:var(--sp-2);">Fondo
+                                    Limpio</div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);">Asegura que no haya
+                                    basura,
+                                    cables visibles o desorden en el fondo. Un fondo limpio = foto profesional.</p>
+                            </div>
+                            <div class="photo-tip">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">🏪</div>
+                                <div style="font-weight:700;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                    Contexto
+                                </div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);">Muestra el producto
+                                    instalado en su entorno real. Un rótulo en la fachada del negocio vale más que el
+                                    rótulo
+                                    solo en el taller.</p>
+                            </div>
+                            <div class="photo-tip">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">🌙</div>
+                                <div style="font-weight:700;color:var(--color-heading);margin-bottom:var(--sp-2);">Fotos
+                                    Nocturnas</div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);">Para letras corpóreas
+                                    con
+                                    LED o cajas de luz, toma fotos de noche para mostrar la iluminación encendida. ¡Son
+                                    las
+                                    más impactantes!</p>
+                            </div>
+                            <div class="photo-tip">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">🔄</div>
+                                <div style="font-weight:700;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                    Antes/Después</div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);">El contenido más
+                                    poderoso:
+                                    toma una foto del local ANTES de instalar y otra DESPUÉS. La transformación vende
+                                    sola.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="callout callout--success">
+                            <span class="callout__icon">📱</span>
+                            <div class="callout__body">
+                                <p class="callout__title">No necesitas cámara profesional</p>
+                                <p class="callout__text">Un celular moderno con buena cámara es más que suficiente. Lo
+                                    importante es la <strong>composición, la luz y la limpieza</strong> de la foto.
+                                    Limpia
+                                    el
+                                    lente del celular antes de tomar la foto (sí, eso importa).</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <hr class="section-divider">
+
+                    <!-- 4. IDENTIDAD VISUAL -->
+                    <section class="manual-section reveal reveal--slide-up" id="identidad">
+                        <span class="section-eyebrow">🎨 Sección 4</span>
+                        <h2 class="section-title">Identidad Visual de VisualCorp</h2>
+                        <p class="section-sub">La imagen de VisualCorp debe ser consistente en todo: redes sociales,
+                            tarjetas
+                            de presentación, cotizaciones, facturas y cualquier comunicación visual.</p>
+
+                        <h3
+                            style="font-size:var(--fs-md);font-weight:700;color:var(--color-heading);margin:var(--sp-6) 0 var(--sp-4);">
+                            🎨 Colores Corporativos</h3>
+                        <div class="brand-colors">
+                            <div class="brand-swatch" style="background:#f2b705;">#F2B705</div>
+                            <div class="brand-swatch"
+                                style="background:#0a0f1e;border:1px solid rgba(255,255,255,.15);">
+                                #0A0F1E</div>
+                            <div class="brand-swatch"
+                                style="background:linear-gradient(135deg,#f2b705,#06b6d4);font-size:.6rem;">Gradiente
+                            </div>
+                            <div class="brand-swatch" style="background:#06b6d4;">#06B6D4</div>
+                            <div class="brand-swatch" style="background:rgba(255,255,255,.9);color:#0a0f1e;">#FFFFFF
+                            </div>
+                        </div>
+
+                        <div class="tip-list">
+                            <div class="tip-item">🖼️ <strong>Logo:</strong> Siempre usar la versión oficial del logo.
+                                Nunca distorsionarlo, cambiar sus colores ni recortarlo.</div>
+                            <div class="tip-item">📝 <strong>Tipografía:</strong> Usar fuentes limpias y profesionales.
+                                En redes sociales: evitar más de 2 fuentes por publicación.</div>
+                            <div class="tip-item">🎨 <strong>Colores:</strong> El amarillo dorado (#F2B705) es el color
+                                principal de VisualCorp. Usarlo como acento en las publicaciones.</div>
+                            <div class="tip-item">📐 <strong>Plantillas:</strong> Usar las plantillas de Canva o
+                                Illustrator creadas para las publicaciones de redes. Mantener la consistencia visual.
+                            </div>
+                            <div class="tip-item">🚫 <strong>Prohibido:</strong> No usar imágenes pixeladas, colores
+                                aleatorios, fuentes ilegibles o diseños desorganizados. Si no se ve profesional, no se
+                                publica.</div>
+                        </div>
+
+                        <div class="callout callout--danger" style="margin-top:var(--sp-5);">
+                            <span class="callout__icon">⚠️</span>
+                            <div class="callout__body">
+                                <p class="callout__title">La imagen de VisualCorp es lo que el cliente ve primero</p>
+                                <p class="callout__text">Una publicación con mala ortografía, foto borrosa o diseño
+                                    desorganizado le dice al cliente potencial: <em>"Si así se cuidan a ellos mismos,
+                                        ¿cómo
+                                        cuidarán mi trabajo?"</em> <strong>La calidad visual es no negociable.</strong>
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <hr class="section-divider">
+
+                    <!-- 5. ATENCIÓN AL CLIENTE ONLINE -->
+                    <section class="manual-section reveal reveal--slide-up" id="atencion">
+                        <span class="section-eyebrow">💬 Sección 5</span>
+                        <h2 class="section-title">Atención al Cliente Online</h2>
+                        <p class="section-sub">Cada mensaje en redes sociales, WhatsApp o correo es una venta potencial.
+                            La
+                            velocidad y calidad de la respuesta definen si el cliente nos elige o va a la competencia.
+                        </p>
+
+                        <div class="template-grid">
+                            <div class="callout callout--success" style="margin:0;">
+                                <span class="callout__icon">✅</span>
+                                <div class="callout__body">
+                                    <p class="callout__title">Ejemplo de BUENA respuesta</p>
+                                    <p class="callout__text"><em>"¡Hola! 👋 Gracias por escribirnos. Claro, hacemos
+                                            letras
+                                            corpóreas con iluminación LED. ¿Me podrías indicar las medidas aproximadas y
+                                            el
+                                            texto que necesitas? Con esa info te preparo una cotización
+                                            rápida."</em><br><br>⏱️ Tiempo de respuesta: <strong>menos de 30
+                                            minutos</strong></p>
+                                </div>
+                            </div>
+                            <div class="callout callout--danger" style="margin:0;">
+                                <span class="callout__icon">🚫</span>
+                                <div class="callout__body">
+                                    <p class="callout__title">Ejemplo de MALA respuesta</p>
+                                    <p class="callout__text"><em>"si hacemos"</em><br><br>❌ Sin saludo, sin emojis, sin
+                                        preguntas de seguimiento, sin profesionalismo. El cliente siente que no nos
+                                        importa.<br><br>⏱️ Tiempo de respuesta: <strong>6 horas después</strong></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3
+                            style="font-size:var(--fs-md);font-weight:700;color:var(--color-heading);margin:var(--sp-8) 0 var(--sp-4);">
+                            📋 Reglas de Atención Online</h3>
+                        <div class="tip-list">
+                            <div class="tip-item">⏱️ <strong>Responder en menos de 30 minutos</strong> durante horario
+                                laboral. Si no es posible, al menos dar un acuse de recibido: "¡Hola! Ya te contestamos
+                                en
+                                un momento."</div>
+                            <div class="tip-item">👋 <strong>Siempre saludar</strong> y usar el nombre del cliente si
+                                está
+                                disponible.</div>
+                            <div class="tip-item">📋 <strong>Hacer preguntas concretas:</strong> ¿Qué necesita?
+                                ¿Medidas?
+                                ¿Para cuándo? ¿Tiene el diseño o necesita que lo hagamos?</div>
+                            <div class="tip-item">💰 <strong>Cotizar rápido:</strong> Si puedes dar un precio aproximado
+                                en
+                                el primer mensaje, hazlo. Los clientes valoran la rapidez.</div>
+                            <div class="tip-item">📸 <strong>Enviar referencias visuales:</strong> Manda fotos de
+                                trabajos
+                                similares que hayamos hecho. Esto genera confianza inmediata.</div>
+                            <div class="tip-item">🙏 <strong>Agradecer siempre:</strong> Aunque el cliente no compre,
+                                agradece su interés. Puede volver en el futuro o recomendarnos.</div>
+                        </div>
+                    </section>
+
+                    <hr class="section-divider">
+
+                    <!-- 6. MÉTRICAS -->
+                    <section class="manual-section reveal reveal--slide-up" id="metricas">
+                        <span class="section-eyebrow">📊 Sección 6</span>
+                        <h2 class="section-title">Métricas Básicas de Rendimiento</h2>
+                        <p class="section-sub">Lo que no se mide, no se mejora. Estas son las métricas fundamentales que
+                            debemos monitorear cada semana para saber si nuestro marketing está funcionando.</p>
+
+                        <div class="content-grid">
+                            <div class="metric-card">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">👁️</div>
+                                <div style="font-weight:800;color:var(--color-heading);font-size:var(--fs-lg);">Alcance
+                                </div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                    ¿Cuántas personas vieron la publicación? Más alcance = más personas conocen
+                                    VisualCorp.</p>
+                                <div style="margin-top:var(--sp-3);"><span class="skill-badge skill-badge--cyan"
+                                        style="font-size:.65rem;">Meta: crecimiento semanal</span></div>
+                            </div>
+                            <div class="metric-card">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">❤️</div>
+                                <div style="font-weight:800;color:var(--color-heading);font-size:var(--fs-lg);">
+                                    Interacción
+                                </div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                    Likes + comentarios + compartidos + guardados. Indica qué contenido le gusta a la
+                                    audiencia.</p>
+                                <div style="margin-top:var(--sp-3);"><span class="skill-badge skill-badge--gold"
+                                        style="font-size:.65rem;">Meta: >3% de engagement</span></div>
+                            </div>
+                            <div class="metric-card">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">💬</div>
+                                <div style="font-weight:800;color:var(--color-heading);font-size:var(--fs-lg);">Mensajes
+                                </div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                    Cuántas consultas llegan por DM, WhatsApp o Messenger. Cada mensaje es una venta
+                                    potencial.</p>
+                                <div style="margin-top:var(--sp-3);"><span class="skill-badge skill-badge--green"
+                                        style="font-size:.65rem;">Meta: respuesta <30 min</span>
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div style="font-size:2rem;margin-bottom:var(--sp-3);">🔄</div>
+                                <div style="font-weight:800;color:var(--color-heading);font-size:var(--fs-lg);">
+                                    Conversión
+                                </div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                    De
+                                    las consultas que llegan, ¿cuántas se convierten en ventas reales? Este es el número
+                                    más
+                                    importante.</p>
+                                <div style="margin-top:var(--sp-3);"><span class="skill-badge skill-badge--red"
+                                        style="font-size:.65rem;">Meta: >20% conversión</span></div>
+                            </div>
+                        </div>
+
+                        <div class="callout callout--tip">
+                            <span class="callout__icon">💡</span>
+                            <div class="callout__body">
+                                <p class="callout__title">Registra las métricas cada lunes</p>
+                                <p class="callout__text">Cada lunes antes de la reunión de equipo, anota las métricas de
+                                    la
+                                    semana anterior. Compara con la semana anterior y con el mes anterior.
+                                    <strong>¿Estamos
+                                        creciendo o estancados?</strong> Los números no mienten.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <hr class="section-divider">
+
+                    <!-- 7. HORARIOS -->
+                    <section class="manual-section reveal reveal--slide-up" id="horarios">
+                        <span class="section-eyebrow">🕐 Sección 7</span>
+                        <h2 class="section-title">Horarios de Trabajo</h2>
+                        <p class="section-sub">Horarios oficiales de VisualCorp para todos los departamentos.</p>
+                        <div class="sched-grid">
+                            <div
+                                style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                                <p style="font-size:1.5rem;margin-bottom:var(--sp-3);">💼</p>
+                                <div
+                                    style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                    Lunes a Viernes</div>
+                                <div
+                                    style="font-size:var(--fs-2xl);font-weight:900;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                                    8:20 — 18:00</div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-3);">
+                                    📋
+                                    <strong style="color:var(--color-accent-hover);">Lunes = Reunión de equipo</strong>
+                                    puntual a las 8:20am.
+                                </p>
+                            </div>
+                            <div
+                                style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                                <p style="font-size:1.5rem;margin-bottom:var(--sp-3);">🎉</p>
+                                <div
+                                    style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                    Sábados</div>
+                                <div
+                                    style="font-size:var(--fs-2xl);font-weight:900;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                                    8:20 — 13:00</div>
+                                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-3);">
+                                    💰
+                                    <strong style="color:var(--color-accent-hover);">Quincena los sábados</strong>
+                                    correspondientes.
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            style="text-align:center;margin-top:var(--sp-10);padding:var(--sp-8);background:var(--color-surface);border-radius:var(--radius-xl);border:1px solid var(--color-border);">
+                            <p style="font-size:2rem;margin-bottom:var(--sp-4);">📢</p>
+                            <h3
+                                style="font-size:var(--fs-xl);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-3);">
+                                Haz que VisualCorp brille</h3>
+                            <p style="color:var(--color-text-muted);max-width:480px;margin:0 auto var(--sp-6);">Cada
+                                publicación, cada foto, cada respuesta a un cliente es una oportunidad de mostrar lo
+                                mejor
+                                de
+                                VisualCorp. El marketing no es un departamento — es una actitud.</p>
+                            <a href="index.html" class="btn btn--primary">← Volver al inicio</a>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 <strong>VisualCorp</strong> · Manual Interno creado por <strong>Esteban Nicola</strong> · Milagro,
+                Ecuador</p>
+        </div>
+    </footer>
+    <button class="back-top" id="backTop" aria-label="Volver arriba">↑</button>
+
+    <!-- Phase 3 Advanced Visuals CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/engine@3.3.0/tsparticles.engine.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.3.0/tsparticles.slim.min.js"></script>
+
+    <script src="js/manual.js"></script>
+
+    <!-- SPOTLIGHT SEARCH (Phase 4) -->
+    <div class="cmd-palette-backdrop" id="cmdBackdrop">
+        <div class="cmd-palette">
+            <div class="cmd-header">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="cmdInput" placeholder="Buscar en el manual... (ej: corte, cmky)"
+                    autocomplete="off">
+                <span class="cmd-esc">ESC</span>
+            </div>
+            <div class="cmd-results" id="cmdResults">
+                <div class="cmd-empty">Escribe para buscar...</div>
+            </div>
+            <div class="cmd-footer">
+                <span><kbd>↑</kbd><kbd>↓</kbd> Navegar</span>
+                <span><kbd>Enter</kbd> Abrir</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/swup@4"></script>
+</body>
+
+</html>

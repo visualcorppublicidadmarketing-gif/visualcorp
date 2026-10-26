@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo Pantone — VisualCorp</title>
+    <meta name="description" content="Buscador interactivo de colores Pantone Solid Coated para diseño e impresión.">
+    <link rel="icon"
+        href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmSKnD00M-kkEpOeoGxEL9UP7_Zfgf8Ug33Q&s">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/manual.css">
+</head>
+
+<body>
+
+    <script src="js/nav.js"></script>
+
+    <main id="swup" class="transition-fade">
+        <section class="hero hero--app" style="padding-top:8rem;">
+            <div class="container text-center" style="position:relative;z-index:2;">
+                <nav class="breadcrumb reveal reveal--fade" style="justify-content:center;">
+                    <a href="index.html">Inicio</a>
+                    <span>/</span>
+                    <a href="#">Mini Apps</a>
+                    <span>/</span>
+                    <strong style="color:var(--color-accent-hover)">Pantone</strong>
+                </nav>
+                <span class="hero__eyebrow reveal reveal--fade" data-delay="50">🎨 Herramienta de Color</span>
+                <h1 class="hero__title reveal reveal--slide-up" data-delay="100">
+                    Catálogo <span class="accent">Pantone</span>
+                </h1>
+                <p class="hero__sub reveal reveal--slide-up" data-delay="180" style="max-width:600px;margin:0 auto;">
+                    Busca rápidamente referencias de color Pantone Solid Coated. Haz clic en cualquier tarjeta para
+                    copiar su código HEX.
+                </p>
+
+                <!-- Buscador tipo Spotlight -->
+                <div class="pantone-search reveal reveal--slide-up" data-delay="250"
+                    style="margin-top:var(--sp-8);max-width:600px;margin-left:auto;margin-right:auto;position:relative;">
+                    <i class="fa-solid fa-search"
+                        style="position:absolute;left:var(--sp-4);top:50%;transform:translateY(-50%);color:var(--color-text-muted);font-size:1.2rem;"></i>
+                    <input type="text" id="pantoneSearch" placeholder="Busca por número (ej. 185), nombre o Hex..."
+                        autocomplete="off">
+                    <span id="searchResultCount"
+                        style="position:absolute;right:var(--sp-4);top:50%;transform:translateY(-50%);font-size:var(--fs-xs);color:var(--color-text-dim);font-weight:700;"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contenedor del Catálogo -->
+        <section style="padding:var(--sp-8) 0 var(--sp-16);">
+            <div class="container">
+                <div id="pantoneGrid" class="pantone-grid">
+                    <!-- Las tarjetas se generan por JS -->
+                    <div style="text-align:center;grid-column:1/-1;color:var(--color-text-muted);padding:var(--sp-10);">
+                        <i class="fa-solid fa-spinner fa-spin"
+                            style="font-size:2rem;margin-bottom:1rem;color:var(--color-accent);"></i>
+                        <p>Cargando colores...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Elemento para Notificación de Copiado -->
+        <div id="toastNotification" class="toast-notification">¡HEX Copiado!</div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container text-center">
+            <p style="color:var(--color-text-muted);font-size:var(--fs-sm);">
+                © 2024 VisualCorp. Herramienta de uso interno.
+                <span style="color:var(--color-accent);font-weight:600;">Pantone® Catálogo</span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts Esenciales -->
+    <script src="https://unpkg.com/swup@4"></script>
+    <script src="js/manual.js"></script>
+
+    <!-- Base de datos de Colores -->
+    <script src="js/pantone-data.js"></script>
+
+    <!-- Lógica de Mini-Apps (Contiene el initPantone) -->
+    <script src="js/apps.js"></script>
+
+</body>
+
+</html>

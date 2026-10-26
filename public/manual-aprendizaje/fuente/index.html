@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual Interno — VisualCorp</title>
+  <meta name="description"
+    content="Portal de instrucciones, procesos y trucos para los trabajadores de VisualCorp. Creado por Esteban Nicola.">
+  <link rel="icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmSKnD00M-kkEpOeoGxEL9UP7_Zfgf8Ug33Q&s">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/manual.css">
+</head>
+
+<body>
+
+  <!-- ── NAV ── -->
+  <script src="js/nav.js"></script>
+  <main id="swup" class="transition-fade">
+
+    <!-- ── HERO ── -->
+    <section class="hero" id="hero-section">
+      <!-- tsParticles -->
+      <div id="tsparticles" style="position:absolute;inset:0;z-index:1;pointer-events:none;"></div>
+
+      <!-- Floating decorative blobs -->
+      <div class="hero-blob hero-blob--1"></div>
+      <div class="hero-blob hero-blob--2"></div>
+      <div class="hero-blob hero-blob--3"></div>
+
+      <div class="container" style="position:relative;z-index:2;">
+
+        <!-- Glass card -->
+        <div class="hero-glass-card reveal reveal--fade">
+          <!-- Shimmer border accent -->
+          <div class="hero-glass-border"></div>
+
+          <!-- Top label -->
+          <span class="hero__eyebrow">📚 Recurso Interno · VisualCorp</span>
+
+          <h1 class="hero__title reveal reveal--slide-up" data-delay="80">
+            Todo lo que necesitas saber<br>para hacer las cosas <span class="accent">increíblemente bien</span>
+          </h1>
+
+          <p class="hero__sub reveal reveal--slide-up" data-delay="160">
+            Este manual fue creado por <strong style="color:var(--color-accent-hover)">Esteban Nicola</strong> para que cada miembro del equipo tenga siempre donde consultar.
+          </p>
+
+          <!-- CTA buttons -->
+          <div style="display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center;margin-top:var(--sp-8);">
+            <a href="asesores.html" class="btn btn--primary btn--lg">
+              🟡 Ver Manual de Asesores
+            </a>
+            <a href="https://drive.google.com/drive/folders/1wsT642Czgnwo-LhnsCBtXNsn3yEqf4mT?usp=sharing" target="_blank"
+              class="btn btn--secondary btn--lg">
+              <i class="fa-brands fa-google-drive"></i> Carpeta del Drive
+            </a>
+          </div>
+
+          <!-- Stat chips -->
+          <div class="hero-stats reveal reveal--fade" data-delay="400">
+            <div class="hero-stat">
+              <span class="hero-stat__num">9</span>
+              <span class="hero-stat__label">Secciones</span>
+            </div>
+            <div class="hero-stat-divider"></div>
+            <div class="hero-stat">
+              <span class="hero-stat__num">5</span>
+              <span class="hero-stat__label">Departamentos</span>
+            </div>
+            <div class="hero-stat-divider"></div>
+            <div class="hero-stat">
+              <span class="hero-stat__num">100%</span>
+              <span class="hero-stat__label">Gratis para el equipo</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── DEPARTAMENTOS ── -->
+    <section style="padding:var(--sp-12) 0;">
+      <div class="container">
+        <div style="text-align:center;margin-bottom:var(--sp-10);" class="reveal reveal--fade">
+          <p
+            style="font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--color-accent-hover);margin-bottom:var(--sp-3);">
+            Selecciona tu Departamento</p>
+          <h2 style="font-size:var(--fs-2xl);font-weight:900;color:var(--color-heading);letter-spacing:-.02em;">¿En qué
+            área trabajas?</h2>
+          <p style="color:var(--color-text-muted);font-size:var(--fs-sm);margin-top:var(--sp-2);">Cada sección tiene
+            instrucciones específicas para tu rol. Úsalas como referencia diaria.</p>
+        </div>
+
+        <div class="dept-grid">
+
+          <!-- ASESORES -->
+          <a href="asesores.html" class="dept-card reveal reveal--slide-up" data-delay="0">
+            <span class="dept-card__icon">🟡</span>
+            <div class="dept-card__title">Asesores de Ventas</div>
+            <p class="dept-card__desc">Atención al cliente, sistema de ventas en Excel, cotizaciones, seguimiento de
+              trabajos y más.</p>
+            <div class="dept-card__skills">
+              <span class="skill-badge skill-badge--gold">Excel</span>
+              <span class="skill-badge skill-badge--cyan">Cotizaciones</span>
+              <span class="skill-badge skill-badge--green">Atención al cliente</span>
+              <span class="skill-badge skill-badge--purple">Seguimiento</span>
+            </div>
+            <div class="dept-card__arrow">Abrir manual <i class="fa-solid fa-arrow-right"></i></div>
+          </a>
+
+          <!-- DISEÑADORES -->
+          <a href="disenadores.html" class="dept-card reveal reveal--slide-up" data-delay="80">
+            <span class="dept-card__icon">🎨</span>
+            <div class="dept-card__title">Diseñadores Gráficos</div>
+            <p class="dept-card__desc">Procesos de diseño, formatos de entrega, software, trucos y estándares de
+              calidad.
+            </p>
+            <div class="dept-card__skills">
+              <span class="skill-badge skill-badge--purple">Illustrator</span>
+              <span class="skill-badge skill-badge--cyan">Photoshop</span>
+              <span class="skill-badge skill-badge--gold">Formatos de impresión</span>
+            </div>
+            <div class="dept-card__arrow">Abrir manual <i class="fa-solid fa-arrow-right"></i></div>
+          </a>
+
+          <!-- IMPRESORES -->
+          <a href="impresores.html" class="dept-card reveal reveal--slide-up" data-delay="160">
+            <span class="dept-card__icon">🖨️</span>
+            <div class="dept-card__title">Operadores de Impresión</div>
+            <p class="dept-card__desc">Máquinas Galaxy, cabezales Epson i3200-E1, FlexiPRINT, Hosonsoft, mantenimiento y
+              flujo de trabajo diario.</p>
+            <div class="dept-card__skills">
+              <span class="skill-badge skill-badge--cyan">Galaxy 3.2m / 2.5m</span>
+              <span class="skill-badge skill-badge--gold">FlexiPRINT</span>
+              <span class="skill-badge skill-badge--green">Mantenimiento</span>
+              <span class="skill-badge skill-badge--red">Ecosolvente</span>
+            </div>
+            <div class="dept-card__arrow">Abrir manual <i class="fa-solid fa-arrow-right"></i></div>
+          </a>
+
+          <!-- TALLER -->
+          <a href="taller.html" class="dept-card reveal reveal--slide-up" data-delay="240">
+            <span class="dept-card__icon">🔧</span>
+            <div class="dept-card__title">Personal de Taller</div>
+            <p class="dept-card__desc">Instalación de rótulos, letras corpóreas, acabados de calidad, atención al
+              cliente
+              en sitio y cultura de trabajo.
+            </p>
+            <div class="dept-card__skills">
+              <span class="skill-badge skill-badge--red">Instalación</span>
+              <span class="skill-badge skill-badge--gold">Letras Corpóreas</span>
+              <span class="skill-badge skill-badge--cyan">Acabados</span>
+              <span class="skill-badge skill-badge--green">Atención al cliente</span>
+            </div>
+            <div class="dept-card__arrow">Abrir manual <i class="fa-solid fa-arrow-right"></i></div>
+          </a>
+
+          <!-- CORTE LÁSER -->
+          <a href="corte-laser.html" class="dept-card reveal reveal--slide-up" data-delay="320">
+            <span class="dept-card__icon">⚡</span>
+            <div class="dept-card__title">Corte Láser</div>
+            <p class="dept-card__desc">Máquina Galaxy CO₂ 60W, RDWorks, sistema de colores, calibración del foco 7mm,
+              materiales y mantenimiento óptico.</p>
+            <div class="dept-card__skills">
+              <span class="skill-badge skill-badge--red">Galaxy 60W CO₂</span>
+              <span class="skill-badge skill-badge--gold">RDWorks</span>
+              <span class="skill-badge skill-badge--cyan">Acrílico / MDF</span>
+            </div>
+            <div class="dept-card__arrow">Abrir manual <i class="fa-solid fa-arrow-right"></i></div>
+          </a>
+
+          <!-- FUNDAMENTOS -->
+          <a href="fundamentos.html" class="dept-card reveal reveal--slide-up" data-delay="400"
+            style="background:var(--color-bg-alt);border-color:var(--color-accent-hover);">
+            <span class="dept-card__icon">📚</span>
+            <div class="dept-card__title">Fundamentos del Diseño</div>
+            <p class="dept-card__desc">Bases esenciales para todos: Teoría del color, RGB vs CMYK, composición y
+              tipografía. Lectura obligada para entender nuestro trabajo.</p>
+            <div class="dept-card__skills">
+              <span class="skill-badge skill-badge--purple">Color</span>
+              <span class="skill-badge skill-badge--gold">CMYK</span>
+              <span class="skill-badge skill-badge--cyan">Tipografía</span>
+            </div>
+            <div class="dept-card__arrow">Abrir biblioteca <i class="fa-solid fa-arrow-right"></i></div>
+          </a>
+
+          <!-- MARKETING -->
+          <a href="marketing.html" class="dept-card reveal reveal--slide-up" data-delay="480"
+            style="background:var(--color-bg-alt);border-color:rgba(236,72,153,.3);">
+            <span class="dept-card__icon">📢</span>
+            <div class="dept-card__title">Marketing</div>
+            <p class="dept-card__desc">Redes sociales, fotografía de productos, identidad visual, atención al cliente
+              online y métricas de rendimiento.</p>
+            <div class="dept-card__skills">
+              <span class="skill-badge skill-badge--red">Redes Sociales</span>
+              <span class="skill-badge skill-badge--gold">Fotografía</span>
+              <span class="skill-badge skill-badge--cyan">Identidad Visual</span>
+            </div>
+            <div class="dept-card__arrow">Abrir manual <i class="fa-solid fa-arrow-right"></i></div>
+          </a>
+
+          <!-- INDUCCIÓN -->
+          <a href="induccion.html" class="dept-card reveal reveal--slide-up" data-delay="560"
+            style="background:var(--color-bg-alt);border-color:rgba(34,197,94,.3);">
+            <span class="dept-card__icon">👋</span>
+            <div class="dept-card__title">Tu Primer Día</div>
+            <p class="dept-card__desc">Lectura obligatoria para nuevos ingresos. Cultura VisualCorp, reglas básicas,
+              pausas activas y ubicaciones clave del taller.</p>
+            <div class="dept-card__skills">
+              <span class="skill-badge skill-badge--green">Cultura</span>
+              <span class="skill-badge skill-badge--cyan">Reglas</span>
+            </div>
+            <div class="dept-card__arrow">Abrir inducción <i class="fa-solid fa-arrow-right"></i></div>
+          </a>
+
+          <!-- SEGURIDAD -->
+          <a href="seguridad.html" class="dept-card reveal reveal--slide-up" data-delay="640"
+            style="background:var(--color-bg-alt);border-color:rgba(239,68,68,.3);">
+            <span class="dept-card__icon">🛡️</span>
+            <div class="dept-card__title">Seguridad Industrial</div>
+            <p class="dept-card__desc">Uso correcto de EPP, manejo de solventes peligrosos, riesgos eléctricos y qué
+              hacer
+              en caso de emergencia.</p>
+            <div class="dept-card__skills">
+              <span class="skill-badge skill-badge--red">Extintores</span>
+              <span class="skill-badge skill-badge--gold">Solventes</span>
+              <span class="skill-badge skill-badge--cyan">EPP</span>
+            </div>
+            <div class="dept-card__arrow">Abrir manual <i class="fa-solid fa-arrow-right"></i></div>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── NUESTRO EQUIPO ── -->
+    <section style="padding:var(--sp-12) 0; background:var(--color-bg-base);">
+      <div class="container">
+        <div style="text-align:center;margin-bottom:var(--sp-10);" class="reveal reveal--fade">
+          <p
+            style="font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--color-accent-hover);margin-bottom:var(--sp-3);">
+            El Motor de VisualCorp</p>
+          <h2 style="font-size:var(--fs-2xl);font-weight:900;color:var(--color-heading);letter-spacing:-.02em;">Nuestro
+            Equipo Actual</h2>
+          <p style="color:var(--color-text-muted);font-size:var(--fs-sm);margin-top:var(--sp-2);">Grandes personas
+            haciendo trabajos increíbles todos los días.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:var(--sp-6);">
+          <!-- Gerencia -->
+          <div
+            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+            <div style="font-size:2.5rem;margin-bottom:var(--sp-3);">👑</div>
+            <h3 style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-4);">
+              Gerencia</h3>
+            <ul
+              style="list-style:none;padding:0;color:var(--color-text-muted);font-size:var(--fs-sm);display:flex;flex-direction:column;gap:var(--sp-2);">
+              <li><strong style="color:var(--color-accent-hover);">Edison</strong> — Jefe</li>
+              <li><strong style="color:var(--color-accent-hover);">Vicky</strong> — Jefa</li>
+              <li><strong style="color:var(--color-accent-hover);">Viviana</strong> — Sub-jefa</li>
+            </ul>
+          </div>
+
+          <!-- Asesores -->
+          <div
+            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+            <div style="font-size:2.5rem;margin-bottom:var(--sp-3);">🟡</div>
+            <h3 style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-4);">
+              Asesores de Ventas</h3>
+            <ul
+              style="list-style:none;padding:0;color:var(--color-text-muted);font-size:var(--fs-sm);display:flex;flex-direction:column;gap:var(--sp-2);">
+              <li><strong style="color:#f2b705;">Vicky</strong></li>
+              <li><strong style="color:#f2b705;">Jessy</strong></li>
+              <li><strong style="color:#f2b705;">Mariela</strong></li>
+              <li><strong style="color:#f2b705;">Vivi</strong></li>
+            </ul>
+          </div>
+
+          <!-- Diseñadores -->
+          <div
+            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+            <div style="font-size:2.5rem;margin-bottom:var(--sp-3);">🎨</div>
+            <h3 style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-4);">
+              Diseñadores Gráficos</h3>
+            <ul
+              style="list-style:none;padding:0;color:var(--color-text-muted);font-size:var(--fs-sm);display:flex;flex-direction:column;gap:var(--sp-2);">
+              <li><strong style="color:#c084fc;">Esteban</strong> (Autor del manual)</li>
+              <li><strong style="color:#c084fc;">Jonathan</strong></li>
+              <li><strong style="color:#c084fc;">Diana</strong></li>
+            </ul>
+          </div>
+
+          <!-- Producción -->
+          <div style="display:flex;flex-direction:column;gap:var(--sp-6);">
+            <div
+              style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;flex:1;">
+              <div style="font-size:2.5rem;margin-bottom:var(--sp-3);">🖨️</div>
+              <h3 style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-4);">
+                Impresión y Láser</h3>
+              <ul
+                style="list-style:none;padding:0;color:var(--color-text-muted);font-size:var(--fs-sm);display:flex;flex-direction:column;gap:var(--sp-2);">
+                <li><strong style="color:#22d3ee;">Kevin</strong></li>
+                <li><strong style="color:#22d3ee;">Alan</strong></li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Taller -->
+          <div
+            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+            <div style="font-size:2.5rem;margin-bottom:var(--sp-3);">🔧</div>
+            <h3 style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-4);">
+              Taller e Instalación</h3>
+            <ul
+              style="list-style:none;padding:0;color:var(--color-text-muted);font-size:var(--fs-sm);display:flex;flex-direction:column;gap:var(--sp-2);">
+              <li><strong style="color:#4ade80;">Misael</strong> (Encargado)</li>
+              <li><strong style="color:#4ade80;">Geovanny</strong></li>
+              <li><strong style="color:#4ade80;">Omar</strong></li>
+              <li><strong style="color:#4ade80;">Pablo</strong></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── REGISTRO DE NOVEDADES (FEED) ── -->
+    <section style="padding:var(--sp-12) 0; background:var(--color-bg-base);">
+      <div class="container">
+        <div style="text-align:center;margin-bottom:var(--sp-10);" class="reveal reveal--fade">
+          <p
+            style="font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--color-accent-hover);margin-bottom:var(--sp-3);">
+            Changelog & Actualizaciones</p>
+          <h2 style="font-size:var(--fs-2xl);font-weight:900;color:var(--color-heading);letter-spacing:-.02em;">
+            Novedades en el Taller</h2>
+          <p style="color:var(--color-text-muted);font-size:var(--fs-sm);margin-top:var(--sp-2);">Últimos agregados al
+            manual y actualizaciones institucionales.</p>
+        </div>
+
+        <div style="max-width:800px; margin:0 auto;" class="reveal reveal--slide-up">
+          <div class="feed-item">
+            <div class="feed-date">08 Mar 2026</div>
+            <div class="feed-content">
+              <h4 style="font-size:var(--fs-lg);color:var(--color-heading);margin-bottom:var(--sp-2);">Nuevas Mini
+                Aplicaciones Integradas</h4>
+              <p style="color:var(--color-text-muted);font-size:var(--fs-sm);">✨ Se integraron calculadoras rápidas de
+                metraje cuadrado para el equipo de ventas y un checklist pre-impresión vital para diseñadores.</p>
+            </div>
+          </div>
+
+          <div class="feed-item">
+            <div class="feed-date">01 Mar 2026</div>
+            <div class="feed-content">
+              <h4 style="font-size:var(--fs-lg);color:var(--color-heading);margin-bottom:var(--sp-2);">Menú de Spotlight
+                Global</h4>
+              <p style="color:var(--color-text-muted);font-size:var(--fs-sm);">🔍 Implementación del atajo (Cmd/Ctrl +
+                K) para realizar búsquedas globales al instante en todo el abanico técnico de VisualCorp.</p>
+            </div>
+          </div>
+
+          <div class="feed-item">
+            <div class="feed-date">25 Feb 2026</div>
+            <div class="feed-content">
+              <h4 style="font-size:var(--fs-lg);color:var(--color-heading);margin-bottom:var(--sp-2);">Reglas Activas en
+                Corte Láser</h4>
+              <p style="color:var(--color-text-muted);font-size:var(--fs-sm);">⚡ Actualizada la distancia focal
+                estandarizada de la boquilla a 7 milímetros; además ahora se prohíbe cortar PVC para evitar gases
+                corrosivos al espejo focal de la Galaxy 60W.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CTA FINAL ── -->
+    <section style="padding:var(--sp-16) 0; background:var(--color-bg-alt);">
+      <div class="container" style="text-align:center;">
+        <div class="reveal reveal--fade">
+          <h2 style="font-size:var(--fs-2xl);font-weight:900;color:var(--color-heading);margin-bottom:var(--sp-4);">
+            ¿Tienes una duda?<br><span
+              style="background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">La
+              respuesta está aquí.</span>
+          </h2>
+          <p style="color:var(--color-text-muted);font-size:var(--fs-sm);margin-bottom:var(--sp-8);">
+            Este manual crece con el tiempo. Si algo no está aquí todavía, pronto lo estará.
+          </p>
+          <a href="asesores.html" class="btn btn--primary btn--lg">
+            Comenzar →
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FOOTER ── -->
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2026 <strong>VisualCorp</strong> · Manual Interno creado por <strong>Esteban Nicola</strong> · Milagro,
+        Ecuador</p>
+    </div>
+  </footer>
+
+  <!-- Back to top -->
+  <button class="back-top" id="backTop" aria-label="Volver arriba">↑</button>
+
+
+  <!-- Phase 3 Advanced Visuals CDNs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tsparticles/engine@3.3.0/tsparticles.engine.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.3.0/tsparticles.slim.min.js"></script>
+
+  <script src="js/manual.js"></script>
+
+  <!-- SPOTLIGHT SEARCH (Phase 4) -->
+  <div class="cmd-palette-backdrop" id="cmdBackdrop">
+    <div class="cmd-palette">
+      <div class="cmd-header">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="cmdInput" placeholder="Buscar en el manual... (ej: corte, cmky)" autocomplete="off">
+        <span class="cmd-esc">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmdResults">
+        <div class="cmd-empty">Escribe para buscar...</div>
+      </div>
+      <div class="cmd-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> Navegar</span>
+        <span><kbd>Enter</kbd> Abrir</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/swup@4"></script>
+</body>
+
+</html>

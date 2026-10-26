@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distancia Visual — VisualCorp</title>
+    <meta name="description" content="Calculadora técnica de legibilidad de letreros para los Asesores de VisualCorp.">
+    <link rel="icon"
+        href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmSKnD00M-kkEpOeoGxEL9UP7_Zfgf8Ug33Q&s">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/manual.css">
+
+</head>
+
+<body>
+
+    <script src="js/nav.js"></script>
+
+    <main id="swup" class="transition-fade">
+        <section class="hero" style="padding:8rem 0 3rem;">
+            <div class="container" style="position:relative;z-index:2;text-align:center;">
+                <span class="hero__eyebrow reveal reveal--fade" data-delay="50">📏 Mini App</span>
+                <h1 class="hero__title reveal reveal--slide-up" data-delay="100"
+                    style="font-size:clamp(1.8rem,4vw,3rem);">
+                    Distancia <span class="accent">Visual</span>
+                </h1>
+                <p class="hero__sub reveal reveal--slide-up" data-delay="180"
+                    style="font-size:var(--fs-base);max-width:600px;margin:1rem auto;">
+                    Herramienta para Asesores: Calcula la altura ideal que debe tener la letra de un letrero para que se
+                    lea correctamente desde la calle.
+                </p>
+            </div>
+        </section>
+
+        <div class="container" style="margin-bottom: var(--sp-12);">
+            <div class="dist-app reveal reveal--slide-up">
+
+                <div class="dist-group">
+                    <label class="dist-label">Altura de la Letra Principal</label>
+                    <div class="dist-input-wrap">
+                        <input type="number" id="heightInput" class="dist-input" value="10" min="1">
+                        <span class="dist-unit">CMS</span>
+                    </div>
+                    <p
+                        style="font-size:var(--fs-xs); color:var(--color-text-muted); margin-top:8px; text-align:center;">
+                        Cambia este valor para ver los resultados abajo.</p>
+                </div>
+
+                <div class="dist-result-box">
+                    <div class="dist-card optimal">
+                        <div class="dist-card-title">Impacto Óptimo</div>
+                        <div class="dist-card-val" id="optVal">30<span style="font-size:1rem;">m</span></div>
+                        <div style="font-size:var(--fs-xs); color:var(--color-text-muted);">Lectura perfecta</div>
+                    </div>
+                    <div class="dist-card max">
+                        <div class="dist-card-title">Legibilidad Máxima</div>
+                        <div class="dist-card-val" id="maxVal">40<span style="font-size:1rem;">m</span></div>
+                        <div style="font-size:var(--fs-xs); color:var(--color-text-muted);">Límite visual</div>
+                    </div>
+                </div>
+
+                <hr style="border-color:var(--color-border); margin: var(--sp-8) 0;">
+
+                <div class="dist-slider-container">
+                    <label class="dist-label" style="text-align:center; font-size:var(--fs-sm);"><strong>Simulador de
+                            Alejamiento</strong></label>
+                    <input type="range" class="dist-slider" id="distanceSlider" min="1" max="100" value="1">
+                    <div
+                        style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--color-text-muted); font-weight:800;">
+                        <span>Cerca</span>
+                        <span id="sliderMeters">1m</span>
+                        <span>Lejos</span>
+                    </div>
+                </div>
+
+                <div class="visual-preview">
+                    <div id="previewText">LETRERO</div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 <strong>VisualCorp</strong> · Manual Interno creado por <strong>Esteban Nicola</strong> · Milagro,
+                Ecuador</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="js/apps.js"></script>
+    <script src="js/manual.js"></script>
+    <script src="https://unpkg.com/swup@4"></script>
+</body>
+
+</html>

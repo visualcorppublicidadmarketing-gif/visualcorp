@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Diseñadores — VisualCorp</title>
+    <meta name="description"
+        content="Guía completa para diseñadores de VisualCorp: Illustrator, Photoshop, nomenclatura de archivos, preparación para láser y vinilo, flujo de exportación.">
+    <link rel="icon"
+        href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmSKnD00M-kkEpOeoGxEL9UP7_Zfgf8Ug33Q&s">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/manual.css">
+    <style>
+        #readProgress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #a855f7, #3b82f6);
+            z-index: 9999;
+            width: 0;
+            transition: width .1s;
+        }
+
+        .naming-breakdown {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--sp-8);
+            margin: var(--sp-6) 0;
+            overflow-x: auto;
+        }
+
+        .naming-file {
+            font-family: 'Courier New', monospace;
+            font-size: clamp(.85rem, 2.2vw, 1.3rem);
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: .05em;
+            margin-bottom: var(--sp-8);
+            text-align: center;
+            background: rgba(255, 255, 255, .04);
+            border-radius: var(--radius);
+            padding: var(--sp-4);
+        }
+
+        .naming-parts {
+            display: flex;
+            gap: var(--sp-3);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .naming-part {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--sp-2);
+        }
+
+        .naming-token {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            padding: .4rem .8rem;
+            border-radius: var(--radius);
+            font-size: var(--fs-sm);
+        }
+
+        .naming-label {
+            font-size: var(--fs-xs);
+            color: var(--color-text-muted);
+            text-align: center;
+            max-width: 90px;
+            line-height: 1.3;
+        }
+
+        .naming-sep {
+            font-size: var(--fs-xl);
+            color: var(--color-text-dim);
+            align-self: flex-start;
+            padding-top: .6rem;
+        }
+
+        .color-layer {
+            display: flex;
+            align-items: center;
+            gap: var(--sp-5);
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-4) var(--sp-6);
+            margin-bottom: var(--sp-3);
+        }
+
+        .color-swatch {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius);
+            flex-shrink: 0;
+        }
+
+        .workflow-steps {
+            counter-reset: ws;
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-4);
+        }
+
+        .ws-step {
+            display: flex;
+            gap: var(--sp-5);
+            align-items: flex-start;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-5);
+        }
+
+        .ws-step::before {
+            counter-increment: ws;
+            content: counter(ws);
+            min-width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--gradient-brand);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: var(--fs-sm);
+            color: #0a0f1e;
+            flex-shrink: 0;
+        }
+
+        .ws-code {
+            font-family: 'Courier New', monospace;
+            font-size: var(--fs-xs);
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            padding: .2rem .6rem;
+            color: var(--color-accent-hover);
+            margin-top: var(--sp-2);
+            display: inline-block;
+        }
+
+        .sw-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+            gap: var(--sp-4);
+        }
+
+        .sw-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--sp-5);
+            text-align: center;
+            transition: all var(--duration) var(--ease-out);
+        }
+
+        .sw-card:hover {
+            border-color: var(--color-border-hover);
+            transform: translateY(-3px);
+        }
+
+        .section-img {
+            width: 100%;
+            border-radius: var(--radius-xl);
+            margin: var(--sp-6) 0;
+            object-fit: cover;
+            max-height: 340px;
+            border: 1px solid var(--color-border);
+        }
+
+        .sched-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--sp-5);
+            margin: var(--sp-6) 0;
+        }
+
+        @media(max-width:600px) {
+            .sched-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="readProgress"></div>
+    <script src="js/nav.js"></script>
+
+  <main id="swup" class="transition-fade">
+<section class="hero" style="padding:8rem 0 3rem;">
+        <div class="container" style="position:relative;z-index:2;">
+            <nav class="breadcrumb reveal reveal--fade"><a href="index.html">Inicio</a><span>/</span><strong
+                    style="color:#a855f7">Diseñadores</strong></nav>
+            <span class="hero__eyebrow reveal reveal--fade" data-delay="50"
+                style="background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.25);color:#c084fc;">🎨 Diseño
+                Gráfico</span>
+            <h1 class="hero__title reveal reveal--slide-up" data-delay="100" style="font-size:clamp(1.8rem,4vw,3rem);">
+                Manual del <span
+                    style="background:linear-gradient(135deg,#a855f7,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Diseñador</span>
+            </h1>
+            <p class="hero__sub reveal reveal--slide-up" data-delay="180">Programas, nomenclatura de archivos,
+                preparación para corte láser y cuchilla, flujo de exportación y mejores prácticas.</p>
+            <div class="search-wrap reveal reveal--fade" data-delay="260" style="max-width:520px;margin-left:0;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="text" id="manualSearch" placeholder="Buscar en el manual...">
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="manual-layout">
+            <aside class="manual-sidebar">
+                <p class="toc-title">Contenido</p>
+                <ul class="toc-list">
+                    <li class="toc-item"><a href="#programas"><span class="toc-dot"></span>Programas</a></li>
+                    <li class="toc-item"><a href="#nomenclatura"><span class="toc-dot"></span>Nomenclatura de
+                            Archivos</a></li>
+                    <li class="toc-item"><a href="#laser"><span class="toc-dot"></span>Preparar para Láser</a></li>
+                    <li class="toc-item"><a href="#cuchilla"><span class="toc-dot"></span>Preparar para Cuchilla</a>
+                    </li>
+                    <li class="toc-item"><a href="#exportacion"><span class="toc-dot"></span>Exportar a Artes
+                            Finales</a></li>
+                    <li class="toc-item"><a href="#practicas"><span class="toc-dot"></span>Buenas Prácticas</a></li>
+                    <li class="toc-item"><a href="#horarios"><span class="toc-dot"></span>Horarios</a></li>
+                </ul>
+            </aside>
+
+            <div class="manual-content">
+
+                <!-- 1. PROGRAMAS -->
+                <section class="manual-section reveal reveal--slide-up" id="programas">
+                    <span class="section-eyebrow">🛠️ Sección 1</span>
+                    <h2 class="section-title">Programas que Usamos</h2>
+                    <p class="section-sub">El equipo de diseño trabaja con las herramientas más reconocidas de la
+                        industria gráfica.</p>
+                    <img src="img/disenador_workspace.png" alt="Estación de trabajo del diseñador" class="section-img">
+                    <div class="sw-grid">
+                        <div class="sw-card">
+                            <div style="font-size:2.5rem;margin-bottom:var(--sp-3);">🖊️</div>
+                            <div style="font-weight:700;color:var(--color-heading);">Adobe Illustrator</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Diseño vectorial. Imprescindible para láser, cuchilla y artes finales profesionales.</p>
+                            <div style="margin-top:var(--sp-3);"><span
+                                    class="skill-badge skill-badge--gold">Principal</span></div>
+                        </div>
+                        <div class="sw-card">
+                            <div style="font-size:2.5rem;margin-bottom:var(--sp-3);">🖼️</div>
+                            <div style="font-weight:700;color:var(--color-heading);">Adobe Photoshop</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Retoque fotográfico y exportar el TIFF final a la carpeta Artes Finales.</p>
+                            <div style="margin-top:var(--sp-3);"><span
+                                    class="skill-badge skill-badge--cyan">Principal</span></div>
+                        </div>
+                        <div class="sw-card">
+                            <div style="font-size:2.5rem;margin-bottom:var(--sp-3);">✏️</div>
+                            <div style="font-weight:700;color:var(--color-heading);">Affinity Designer</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Alternativa profesional a Illustrator con funciones similares.</p>
+                            <div style="margin-top:var(--sp-3);"><span
+                                    class="skill-badge skill-badge--green">Alternativo</span></div>
+                        </div>
+                        <div class="sw-card">
+                            <div style="font-size:2.5rem;margin-bottom:var(--sp-3);">🎨</div>
+                            <div style="font-weight:700;color:var(--color-heading);">Canva</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">Para
+                                diseños rápidos y redes sociales, no apto para producción en máquinas.</p>
+                            <div style="margin-top:var(--sp-3);"><span class="skill-badge">Complementario</span></div>
+                        </div>
+                    </div>
+                    <div class="callout callout--tip">
+                        <span class="callout__icon">💡</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Illustrator es el corazón del workflow de producción</p>
+                            <p class="callout__text">Todo trabajo para corte láser o cuchilla <strong>debe pasar por
+                                    Illustrator</strong>. Canva y Photoshop producen imágenes rasterizadas que las
+                                máquinas de corte no pueden interpretar como rutas de corte precisas.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 2. NOMENCLATURA -->
+                <section class="manual-section reveal reveal--slide-up" id="nomenclatura">
+                    <span class="section-eyebrow">📝 Sección 2</span>
+                    <h2 class="section-title">Nomenclatura de Archivos</h2>
+                    <p class="section-sub">Todos los archivos siguen una convención estricta. El impresor lee el nombre
+                        del archivo y sabe exactamente qué tiene que hacer, sin preguntar.</p>
+
+                    <div class="naming-breakdown">
+                        <div class="naming-file">vn foto recuerdo 40x50 jessy (3V)</div>
+                        <div class="naming-parts">
+                            <div class="naming-part">
+                                <div class="naming-token"
+                                    style="background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);color:#c084fc;">
+                                    vn</div>
+                                <svg width="2" height="20" style="margin:0 auto;display:block;">
+                                    <line x1="1" y1="0" x2="1" y2="20" stroke="rgba(168,85,247,.5)" stroke-width="2" />
+                                </svg>
+                                <div class="naming-label" style="color:#c084fc;font-weight:700;">Material</div>
+                                <div class="naming-label">vn=vinil ec=econ. lc=campaña bl=backlight tl=traslúcida</div>
+                            </div>
+                            <div class="naming-sep">·</div>
+                            <div class="naming-part">
+                                <div class="naming-token"
+                                    style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;">
+                                    foto recuerdo</div>
+                                <svg width="2" height="20" style="margin:0 auto;display:block;">
+                                    <line x1="1" y1="0" x2="1" y2="20" stroke="rgba(59,130,246,.5)" stroke-width="2" />
+                                </svg>
+                                <div class="naming-label" style="color:#60a5fa;font-weight:700;">Nombre</div>
+                                <div class="naming-label">Descripción corta del trabajo</div>
+                            </div>
+                            <div class="naming-sep">·</div>
+                            <div class="naming-part">
+                                <div class="naming-token"
+                                    style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#4ade80;">
+                                    40x50</div>
+                                <svg width="2" height="20" style="margin:0 auto;display:block;">
+                                    <line x1="1" y1="0" x2="1" y2="20" stroke="rgba(34,197,94,.5)" stroke-width="2" />
+                                </svg>
+                                <div class="naming-label" style="color:#4ade80;font-weight:700;">Medidas</div>
+                                <div class="naming-label">ANCHO × ALTO en cm. Siempre en ese orden</div>
+                            </div>
+                            <div class="naming-sep">·</div>
+                            <div class="naming-part">
+                                <div class="naming-token"
+                                    style="background:rgba(242,183,5,.1);border:1px solid rgba(242,183,5,.25);color:#f2b705;">
+                                    jessy</div>
+                                <svg width="2" height="20" style="margin:0 auto;display:block;">
+                                    <line x1="1" y1="0" x2="1" y2="20" stroke="rgba(242,183,5,.5)" stroke-width="2" />
+                                </svg>
+                                <div class="naming-label" style="color:#f2b705;font-weight:700;">Asesor</div>
+                                <div class="naming-label">Quien tomó el pedido</div>
+                            </div>
+                            <div class="naming-sep">·</div>
+                            <div class="naming-part">
+                                <div class="naming-token"
+                                    style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171;">
+                                    (3V)</div>
+                                <svg width="2" height="20" style="margin:0 auto;display:block;">
+                                    <line x1="1" y1="0" x2="1" y2="20" stroke="rgba(239,68,68,.5)" stroke-width="2" />
+                                </svg>
+                                <div class="naming-label" style="color:#f87171;font-weight:700;">Cantidad</div>
+                                <div class="naming-label">Copies a imprimir</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3
+                        style="font-size:var(--fs-md);font-weight:700;color:var(--color-heading);margin:var(--sp-6) 0 var(--sp-4);">
+                        📌 Más ejemplos de nomenclatura</h3>
+                    <div
+                        style="overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--radius-xl);overflow:hidden;">
+                        <table class="passes-table" style="font-size:var(--fs-sm);">
+                            <thead>
+                                <tr>
+                                    <th>Nombre del archivo</th>
+                                    <th>Interpretación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-family:monospace;color:#c084fc;">ec se alquila 100x100 vicky (10V)
+                                    </td>
+                                    <td style="font-size:var(--fs-xs);">Lona económica, "Se Alquila", 100cm × 100cm,
+                                        asesora Vicky, 10 copias</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:monospace;color:#c084fc;">vn logo empresa 30x30 jessy (1V)
+                                    </td>
+                                    <td style="font-size:var(--fs-xs);">Vinil, logo de empresa, 30cm × 30cm, asesora
+                                        Jessy, 1 copia</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:monospace;color:#c084fc;">bl farmacia menu 60x90 pedro (2V)
+                                    </td>
+                                    <td style="font-size:var(--fs-xs);">Backlight, menú de farmacia, 60cm × 90cm, asesor
+                                        Pedro, 2 copias</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:monospace;color:#c084fc;">lc candidato 150x100 vicky (5V)
+                                    </td>
+                                    <td style="font-size:var(--fs-xs);">Lona campaña, candidato político, 150cm × 100cm,
+                                        asesora Vicky, 5 copias</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="callout callout--danger" style="margin-top:var(--sp-5);">
+                        <span class="callout__icon">⚠️</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Medidas: siempre ANCHO × ALTO</p>
+                            <p class="callout__text">Esta es una convención universal en impresión. Nunca inviertas el
+                                orden. <strong>40x50 = 40cm de ancho por 50cm de alto</strong>. Si el impresor configura
+                                al revés, el trabajo sale girado y se desperdicia material y tiempo.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 3. PREPARAR LÁSER -->
+                <section class="manual-section reveal reveal--slide-up" id="laser">
+                    <span class="section-eyebrow">⚡ Sección 3</span>
+                    <h2 class="section-title">Preparar Archivos para Corte Láser</h2>
+                    <p class="section-sub">Los archivos para la plóter láser se preparan en Illustrator siguiendo una
+                        convención de colores exacta. El operador de láser depende de que esto esté correcto para hacer
+                        su trabajo.</p>
+
+                    <!-- Color layer visual -->
+                    <div class="color-layer" style="border-color:rgba(255,255,255,.15);margin-top:var(--sp-6);">
+                        <div class="color-swatch" style="background:#111;border:2px solid rgba(255,255,255,.4);"></div>
+                        <div style="flex:1;">
+                            <div style="font-weight:800;font-size:var(--fs-sm);color:var(--color-heading);">⚫ NEGRO —
+                                Trazo negro, sin relleno</div>
+                            <div
+                                style="font-size:var(--fs-xs);font-family:monospace;color:var(--color-text-dim);margin:.2rem 0;">
+                                Stroke: #000000 · Fill: none</div>
+                            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);">El láser <strong>corta
+                                    completamente</strong> el material. Úsalo para el contorno y todo lo que debe
+                                desprenderse.</div>
+                        </div>
+                        <div><span class="skill-badge skill-badge--gold" style="font-size:var(--fs-xs);">CORTE
+                                TOTAL</span></div>
+                    </div>
+                    <div class="color-layer" style="border-color:rgba(59,130,246,.3);">
+                        <div class="color-swatch" style="background:#0000ff;border:2px solid rgba(59,130,246,.5);">
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-weight:800;font-size:var(--fs-sm);color:var(--color-heading);">🔵 AZUL —
+                                Trazo azul, sin relleno</div>
+                            <div
+                                style="font-size:var(--fs-xs);font-family:monospace;color:var(--color-text-dim);margin:.2rem 0;">
+                                Stroke: #0000FF · Fill: none</div>
+                            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);"><strong>Delineado
+                                    superficial</strong>: marca sin cortar de lado a lado. Para líneas de doblez o
+                                guías.</div>
+                        </div>
+                        <div><span class="skill-badge skill-badge--cyan"
+                                style="font-size:var(--fs-xs);">DELINEADO</span></div>
+                    </div>
+                    <div class="color-layer" style="border-color:rgba(239,68,68,.3);">
+                        <div class="color-swatch" style="background:#ff0000;border:2px solid rgba(239,68,68,.5);"></div>
+                        <div style="flex:1;">
+                            <div style="font-weight:800;font-size:var(--fs-sm);color:var(--color-heading);">🔴 ROJO —
+                                Relleno rojo (sin trazo necesario)</div>
+                            <div
+                                style="font-size:var(--fs-xs);font-family:monospace;color:var(--color-text-dim);margin:.2rem 0;">
+                                Fill: #FF0000 · En RDWorks aparece como "Escaneo"</div>
+                            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);"><strong>Grabado por
+                                    barrido</strong>: el láser barre el área superficialmente. Para textos y texturas
+                                grabadas.</div>
+                        </div>
+                        <div><span class="skill-badge skill-badge--red" style="font-size:var(--fs-xs);">GRABADO</span>
+                        </div>
+                    </div>
+
+                    <!-- SVG technical diagram for Illustrator file -->
+                    <div
+                        style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);margin:var(--sp-6) 0;">
+                        <p
+                            style="font-size:var(--fs-xs);font-weight:700;color:var(--color-text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp-5);">
+                            🎨 Visual — Archivo correcto para láser en Illustrator</p>
+                        <svg viewBox="0 0 500 210" xmlns="http://www.w3.org/2000/svg"
+                            style="width:100%;max-height:210px;">
+                            <defs>
+                                <pattern id="dots" width="16" height="16" patternUnits="userSpaceOnUse">
+                                    <circle cx="8" cy="8" r="1" fill="rgba(255,255,255,.06)" />
+                                </pattern>
+                                <marker id="arro" markerWidth="7" markerHeight="7" refX="4" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 7 3.5, 0 7" fill="#f2b705" />
+                                </marker>
+                            </defs>
+                            <rect width="500" height="210" fill="rgba(255,255,255,.02)" rx="8" />
+                            <rect width="500" height="210" fill="url(#dots)" rx="8" />
+                            <!-- Material sheet -->
+                            <rect x="30" y="20" width="200" height="150" rx="4" fill="rgba(255,255,255,.04)"
+                                stroke="rgba(255,255,255,.15)" stroke-width="1" />
+                            <text x="130" y="14" text-anchor="middle" fill="rgba(255,255,255,.3)" font-size="8"
+                                font-family="sans-serif">Archivo .ai</text>
+                            <!-- Red fill region (grabado) -->
+                            <rect x="60" y="50" width="140" height="90" rx="5" fill="rgba(255,0,0,.18)" stroke="none" />
+                            <!-- Blue outline (delineado) around inner rect -->
+                            <rect x="80" y="65" width="100" height="60" rx="3" fill="none" stroke="#3b82f6"
+                                stroke-width="1.8" />
+                            <!-- Black outer cut path -->
+                            <rect x="55" y="45" width="150" height="100" rx="8" fill="none"
+                                stroke="rgba(255,255,255,.9)" stroke-width="2.5" />
+                            <!-- Labels with arrows -->
+                            <line x1="130" y1="95" x2="130" y2="135" stroke="rgba(255,0,0,.5)" stroke-width="1"
+                                stroke-dasharray="3,2" />
+                            <text x="130" y="148" text-anchor="middle" fill="#f87171" font-size="9"
+                                font-family="sans-serif" font-weight="700">🔴 Relleno rojo</text>
+                            <text x="130" y="160" text-anchor="middle" fill="#f87171" font-size="8"
+                                font-family="sans-serif">= Grabado</text>
+                            <!-- Right side annotations -->
+                            <line x1="238" y1="58" x2="290" y2="58" stroke="rgba(255,255,255,.12)" stroke-width="1" />
+                            <text x="295" y="52" fill="rgba(255,255,255,.9)" font-size="10" font-family="sans-serif"
+                                font-weight="700">⚫ Trazo negro</text>
+                            <text x="295" y="65" fill="rgba(255,255,255,.4)" font-size="8.5"
+                                font-family="sans-serif">Corte total del material</text>
+                            <line x1="238" y1="95" x2="290" y2="95" stroke="rgba(255,255,255,.12)" stroke-width="1" />
+                            <text x="295" y="89" fill="#60a5fa" font-size="10" font-family="sans-serif"
+                                font-weight="700">🔵 Trazo azul</text>
+                            <text x="295" y="102" fill="rgba(255,255,255,.4)" font-size="8.5"
+                                font-family="sans-serif">Delineado superficial</text>
+                            <line x1="238" y1="130" x2="290" y2="130" stroke="rgba(255,255,255,.12)" stroke-width="1" />
+                            <text x="295" y="124" fill="#f87171" font-size="10" font-family="sans-serif"
+                                font-weight="700">🔴 Relleno rojo</text>
+                            <text x="295" y="137" fill="rgba(255,255,255,.4)" font-size="8.5"
+                                font-family="sans-serif">Grabado por barrido</text>
+                            <!-- Checklist bottom -->
+                            <text x="295" y="165" fill="#4ade80" font-size="9" font-family="sans-serif"
+                                font-weight="700">✓ Texto en curva (Ctrl+Shift+O)</text>
+                            <text x="295" y="180" fill="#4ade80" font-size="9" font-family="sans-serif"
+                                font-weight="700">✓ Formas unidas (Pathfinder)</text>
+                            <text x="295" y="195" fill="#4ade80" font-size="9" font-family="sans-serif"
+                                font-weight="700">✓ Guardar como .ai versión 8</text>
+                        </svg>
+                    </div>
+
+                    <h3
+                        style="font-size:var(--fs-md);font-weight:700;color:var(--color-heading);margin:var(--sp-6) 0 var(--sp-4);">
+                        ✅ Lista de verificación antes de exportar para láser</h3>
+                    <div class="tip-list">
+                        <div class="tip-item">☑️ <strong>Texto en curvas (Ctrl+Shift+O):</strong> Convierte todo el
+                            texto a vectores. El operador de láser no tiene las mismas fuentes instaladas.</div>
+                        <div class="tip-item">☑️ <strong>Unir formas (Pathfinder → Unir):</strong> Formas superpuestas
+                            unidas hacen un recorrido más limpio y eficiente.</div>
+                        <div class="tip-item">☑️ <strong>Colores exactos:</strong> Negro puro (#000000), azul puro
+                            (#0000FF), rojo puro (#FF0000). Un color "casi negro" puede no detectarse.</div>
+                        <div class="tip-item">☑️ <strong>Sin relleno en trazos de corte:</strong> Negro y azul deben ser
+                            solo stroke, sin fill.</div>
+                        <div class="tip-item">☑️ <strong>Guardar como AI versión 8:</strong> Máxima compatibilidad con
+                            RDWorks. Archivo → Guardar como → Versión Illustrator 8.</div>
+                        <div class="tip-item">☑️ <strong>Enviar a /Láser en PC de Vicky</strong> con el nombre correcto
+                            del trabajo.</div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 4. CUCHILLA -->
+                <section class="manual-section reveal reveal--slide-up" id="cuchilla">
+                    <span class="section-eyebrow">✂️ Sección 4</span>
+                    <h2 class="section-title">Preparar para Corte con Cuchilla (Vinil)</h2>
+                    <p class="section-sub">Para cortar logos y letras en vinil autoadhesivo usamos la plóter de cuchilla
+                        con SignMaster. El proceso de preparación es diferente al láser.</p>
+                    <img src="img/vinyl_cutter.png" alt="Plóter de corte con cuchilla" class="section-img"
+                        style="max-height:280px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5);margin:var(--sp-6) 0;">
+                        <div
+                            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);">
+                            <p
+                                style="font-size:var(--fs-xs);font-weight:700;color:#a855f7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp-3);">
+                                ⚙️ La Máquina</p>
+                            <div class="tip-list">
+                                <div class="tip-item" style="font-size:var(--fs-xs);">🔪 Cuchilla de precisión sobre
+                                    cabezal móvil</div>
+                                <div class="tip-item" style="font-size:var(--fs-xs);">📏 Ancho: <strong>1.20
+                                        metros</strong></div>
+                                <div class="tip-item" style="font-size:var(--fs-xs);">🎯 Marcas automáticas
+                                    <strong>ARMS</strong> para print+cut
+                                </div>
+                                <div class="tip-item" style="font-size:var(--fs-xs);">💻 Software:
+                                    <strong>SignMaster</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <p
+                                style="font-size:var(--fs-xs);font-weight:700;color:#a855f7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp-3);">
+                                📄 Formato requerido</p>
+                            <div style="font-size:3rem;margin:var(--sp-3) 0;">🖼️</div>
+                            <div style="font-size:var(--fs-2xl);font-weight:900;color:var(--color-heading);">PNG</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">Con
+                                fondo <strong>transparente</strong>. SignMaster detecta la silueta automáticamente por
+                                la transparencia del PNG.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-steps">
+                        <div class="ws-step">
+                            <div>
+                                <div style="font-weight:700;color:var(--color-heading);">Diseño finalizado en
+                                    Illustrator</div>
+                                <div
+                                    style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                    El logo o diseño completo con sus colores correctos.</div>
+                            </div>
+                        </div>
+                        <div class="ws-step">
+                            <div>
+                                <div style="font-weight:700;color:var(--color-heading);">Eliminar el fondo — dejarlo
+                                    transparente</div>
+                                <div
+                                    style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                    Borra el rectángulo de fondo. La transparencia es lo que SignMaster usa para
+                                    detectar el contorno de corte.</div>
+                            </div>
+                        </div>
+                        <div class="ws-step">
+                            <div>
+                                <div style="font-weight:700;color:var(--color-heading);">Exportar como PNG con fondo
+                                    transparente</div>
+                                <div
+                                    style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                    Archivo → Exportar → PNG → marcar ✓ Fondo transparente. Resolución: mínimo 300dpi.
+                                </div>
+                                <div class="ws-code">Archivo → Exportar como → PNG → ✓ Fondo transparente</div>
+                            </div>
+                        </div>
+                        <div class="ws-step">
+                            <div>
+                                <div style="font-weight:700;color:var(--color-heading);">Importar el PNG en SignMaster
+                                </div>
+                                <div
+                                    style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                    SignMaster detectará automáticamente la silueta y generará el path de corte.
+                                    Verificar y ajustar si es necesario.</div>
+                            </div>
+                        </div>
+                        <div class="ws-step">
+                            <div>
+                                <div style="font-weight:700;color:var(--color-heading);">Verificar ARMS y enviar a corte
+                                </div>
+                                <div
+                                    style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                    Para print+cut con marcas ARMS, la plóter lee las marcas de registro automáticamente
+                                    para alinear el corte con la impresión ya existente.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 5. EXPORTACIÓN -->
+                <section class="manual-section reveal reveal--slide-up" id="exportacion">
+                    <span class="section-eyebrow">📤 Sección 5</span>
+                    <h2 class="section-title">Exportar a la Carpeta Artes Finales</h2>
+                    <p class="section-sub">Todo archivo que va a impresión (no a láser ni cuchilla) sigue este flujo. El
+                        formato es TIFF porque no tiene pérdida de calidad.</p>
+
+                    <!-- Export workflow SVG diagram -->
+                    <div
+                        style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-8);margin:var(--sp-6) 0;">
+                        <p
+                            style="font-size:var(--fs-xs);font-weight:700;color:var(--color-text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp-5);">
+                            📋 Flujo de exportación</p>
+                        <svg viewBox="0 0 540 80" xmlns="http://www.w3.org/2000/svg"
+                            style="width:100%;max-height:80px;margin-bottom:var(--sp-6);">
+                            <defs>
+                                <marker id="ar2" markerWidth="7" markerHeight="7" refX="4" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 7 3.5, 0 7" fill="#f2b705" />
+                                </marker>
+                            </defs>
+                            <rect x="5" y="10" width="90" height="50" rx="7" fill="rgba(168,85,247,.1)"
+                                stroke="rgba(168,85,247,.3)" stroke-width="1.5" />
+                            <text x="50" y="30" text-anchor="middle" fill="#c084fc" font-size="8.5"
+                                font-family="sans-serif" font-weight="700">Illustrator</text>
+                            <text x="50" y="43" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="8"
+                                font-family="sans-serif">Diseño listo</text>
+                            <text x="50" y="55" text-anchor="middle" fill="rgba(255,255,255,.3)" font-size="7"
+                                font-family="sans-serif">Copiar todo</text>
+                            <line x1="97" y1="35" x2="113" y2="35" stroke="#f2b705" stroke-width="1.5"
+                                marker-end="url(#ar2)" />
+                            <rect x="115" y="10" width="100" height="50" rx="7" fill="rgba(59,130,246,.1)"
+                                stroke="rgba(59,130,246,.3)" stroke-width="1.5" />
+                            <text x="165" y="30" text-anchor="middle" fill="#60a5fa" font-size="8.5"
+                                font-family="sans-serif" font-weight="700">Photoshop</text>
+                            <text x="165" y="43" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="8"
+                                font-family="sans-serif">Pegar · Ajustar</text>
+                            <text x="165" y="55" text-anchor="middle" fill="rgba(255,255,255,.3)" font-size="7"
+                                font-family="sans-serif">DPI y tamaño real</text>
+                            <line x1="217" y1="35" x2="233" y2="35" stroke="#f2b705" stroke-width="1.5"
+                                marker-end="url(#ar2)" />
+                            <rect x="235" y="10" width="105" height="50" rx="7" fill="rgba(34,197,94,.08)"
+                                stroke="rgba(34,197,94,.3)" stroke-width="1.5" />
+                            <text x="287" y="30" text-anchor="middle" fill="#4ade80" font-size="8.5"
+                                font-family="sans-serif" font-weight="700">Guardar como</text>
+                            <text x="287" y="43" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="8"
+                                font-family="sans-serif">/Artes Finales/</text>
+                            <text x="287" y="55" text-anchor="middle" fill="rgba(255,255,255,.3)" font-size="7"
+                                font-family="sans-serif">nombre.tiff</text>
+                            <line x1="342" y1="35" x2="358" y2="35" stroke="#f2b705" stroke-width="1.5"
+                                marker-end="url(#ar2)" />
+                            <rect x="360" y="10" width="85" height="50" rx="7" fill="rgba(242,183,5,.08)"
+                                stroke="rgba(242,183,5,.3)" stroke-width="1.5" />
+                            <text x="402" y="30" text-anchor="middle" fill="#f2b705" font-size="8.5"
+                                font-family="sans-serif" font-weight="700">Impresor</text>
+                            <text x="402" y="43" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="8"
+                                font-family="sans-serif">FlexiPRINT</text>
+                            <text x="402" y="55" text-anchor="middle" fill="rgba(255,255,255,.3)" font-size="7"
+                                font-family="sans-serif">Lee el TIFF</text>
+                            <line x1="447" y1="35" x2="463" y2="35" stroke="#f2b705" stroke-width="1.5"
+                                marker-end="url(#ar2)" />
+                            <rect x="465" y="10" width="70" height="50" rx="7" fill="rgba(239,68,68,.07)"
+                                stroke="rgba(239,68,68,.25)" stroke-width="1.5" />
+                            <text x="500" y="30" text-anchor="middle" fill="#f87171" font-size="8.5"
+                                font-family="sans-serif" font-weight="700">Impresión</text>
+                            <text x="500" y="43" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="8"
+                                font-family="sans-serif">Galaxy</text>
+                        </svg>
+                        <div class="workflow-steps">
+                            <div class="ws-step">
+                                <div>
+                                    <div style="font-weight:700;color:var(--color-heading);">Diseño listo en Illustrator
+                                        — copiar todo (Ctrl+A → Ctrl+C)</div>
+                                    <div
+                                        style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                        Diseño aprobado con medidas reales. Seleccionar todo y copiar.</div>
+                                </div>
+                            </div>
+                            <div class="ws-step">
+                                <div>
+                                    <div style="font-weight:700;color:var(--color-heading);">Abrir Photoshop → Nuevo
+                                        documento → Pegar</div>
+                                    <div
+                                        style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                        Crear nuevo doc con medidas en cm y resolución correcta (72-150 dpi gran
+                                        formato). Pegar (Ctrl+V).</div>
+                                </div>
+                            </div>
+                            <div class="ws-step">
+                                <div>
+                                    <div style="font-weight:700;color:var(--color-heading);">Guardar como TIFF en Artes
+                                        Finales</div>
+                                    <div
+                                        style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                        Archivo → Guardar como → navegar a la carpeta /Artes Finales en PC de Vicky →
+                                        nombre del archivo con la nomenclatura correcta → formato <strong>TIFF</strong>
+                                        → Guardar → Aceptar.</div>
+                                    <div class="ws-code">vn foto recuerdo 40x50 jessy (3V).tiff</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="callout callout--success">
+                        <span class="callout__icon">✅</span>
+                        <div class="callout__body">
+                            <p class="callout__title">¿Por qué TIFF y no JPG?</p>
+                            <p class="callout__text">El TIFF no tiene compresión con pérdida. Cada guardado de JPG
+                                deteriora la calidad. El impresor abre el TIFF directamente en FlexiPRINT sin ningún
+                                problema de compatibilidad. Es el estándar de la industria para impresión de gran
+                                formato.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 6. BUENAS PRÁCTICAS -->
+                <section class="manual-section reveal reveal--slide-up" id="practicas">
+                    <span class="section-eyebrow">⭐ Sección 6</span>
+                    <h2 class="section-title">Buenas Prácticas del Diseñador</h2>
+                    <p class="section-sub">El diseñador es el primer punto del proceso productivo. Un buen diseño evita
+                        reprocesos y clientes insatisfechos.</p>
+                    <div class="tip-list">
+                        <div class="tip-item">🎯 <strong>Escucha al asesor antes de diseñar:</strong> Entiende para qué
+                            es el trabajo, dónde va a estar y cuánto tiempo durará. Eso define el material ideal.</div>
+                        <div class="tip-item">📐 <strong>Verifica las medidas exactas</strong> antes de empezar. Un arte
+                            a 100x80 cuando pedían 80x100 es un reproceso completo.</div>
+                        <div class="tip-item">🎨 <strong>Trabaja siempre en modo CMYK</strong> en Illustrator y
+                            Photoshop. Los colores RGB en pantalla no coinciden con lo que imprime la máquina
+                            ecosolvente.</div>
+                        <div class="tip-item">📁 <strong>Guarda siempre el .ai original con capas</strong> sin aplanar.
+                            Si el cliente pide cambios, necesitarás el archivo editable.</div>
+                        <div class="tip-item">🔍 <strong>Revisa antes de exportar:</strong> ortografía, medidas,
+                            colores, márgenes de sangría. Un error no visto en pantalla puede aparecer impreso en 2
+                            metros de lona.</div>
+                        <div class="tip-item">⚡ <strong>Comunica los tiempos realistamente.</strong> Si un diseño
+                            complejo toma 2 horas, dilo. La calidad requiere tiempo y el equipo debe planificar.</div>
+                        <div class="tip-item">🤝 <strong>Comparte conocimiento con el equipo:</strong> Una plantilla
+                            útil, un shortcut, un truco de Illustrator compartido hace que todo el equipo sea más
+                            eficiente.</div>
+                        <div class="tip-item">🏆 <strong>Cada arte que sale es la imagen de VisualCorp.</strong> Un
+                            diseño cuidado y profesional dice más que cualquier publicidad.</div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 7. HORARIOS -->
+                <section class="manual-section reveal reveal--slide-up" id="horarios">
+                    <span class="section-eyebrow">🕐 Sección 7</span>
+                    <h2 class="section-title">Horarios de Trabajo</h2>
+                    <p class="section-sub">Horarios oficiales para todos en VisualCorp.</p>
+                    <div class="sched-grid">
+                        <div
+                            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <p style="font-size:1.5rem;margin-bottom:var(--sp-3);">💼</p>
+                            <div
+                                style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                Lunes a Viernes</div>
+                            <div
+                                style="font-size:var(--fs-2xl);font-weight:900;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                                8:20 — 18:00</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-3);">📋
+                                <strong style="color:var(--color-accent-hover);">Lunes = Reunión de equipo</strong>
+                                puntual a las 8:20am.
+                            </p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <p style="font-size:1.5rem;margin-bottom:var(--sp-3);">🎉</p>
+                            <div
+                                style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                Sábados</div>
+                            <div
+                                style="font-size:var(--fs-2xl);font-weight:900;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                                8:20 — 13:00</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-3);">💰
+                                <strong style="color:var(--color-accent-hover);">Quincena los sábados</strong>
+                                correspondientes al período.
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        style="text-align:center;margin-top:var(--sp-10);padding:var(--sp-8);background:var(--color-surface);border-radius:var(--radius-xl);border:1px solid var(--color-border);">
+                        <p style="font-size:2rem;margin-bottom:var(--sp-4);">🎨</p>
+                        <h3
+                            style="font-size:var(--fs-xl);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-3);">
+                            Diseña con propósito</h3>
+                        <p style="color:var(--color-text-muted);max-width:480px;margin:0 auto var(--sp-6);">Cada píxel
+                            tiene impacto en el negocio del cliente y en la imagen de VisualCorp. Diseña con intención,
+                            cuidado y orgullo profesional.</p>
+                        <a href="index.html" class="btn btn--primary">← Volver al inicio</a>
+                    </div>
+                </section>
+
+            
+                <!-- QUIZ DE PASE -->
+                <section class="manual-section reveal reveal--slide-up" style="margin-top:var(--sp-8);">
+                    <div class="quiz-container">
+                        <div class="quiz-header">
+                            <span class="quiz-icon">🧠</span>
+                            <div class="quiz-title">Pase de Pruebas</div>
+                        </div>
+                        <div class="quiz-question">En el sistema de colores de la máquina láser, ¿el color ROJO del contorno de una pieza significa...?</div>
+                        <div class="quiz-options">
+                            <div class="quiz-option" data-correct="false">Grabado Superficial (Engrave)</div><div class="quiz-option" data-correct="true">Corte Pasante (Cut)</div><div class="quiz-option" data-correct="false">Ignorar capa (Output No)</div>
+                        </div>
+                        <div class="quiz-nav">
+                            <span class="quiz-progress">Pregunta interactiva - ¡Pon a prueba lo que leíste!</span>
+                        </div>
+                    </div>
+                </section>
+        
+            </div>
+        </div>
+    </div>
+
+      </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 <strong>VisualCorp</strong> · Manual Interno creado por <strong>Esteban Nicola</strong> · Milagro,
+                Ecuador</p>
+        </div>
+    </footer>
+    <button class="back-top" id="backTop" aria-label="Volver arriba">↑</button>
+    
+    <!-- Confetti JS -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Phase 3 Advanced Visuals CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/engine@3.3.0/tsparticles.engine.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.3.0/tsparticles.slim.min.js"></script>
+
+    <script src="js/manual.js"></script>
+
+  <!-- SPOTLIGHT SEARCH (Phase 4) -->
+  <div class="cmd-palette-backdrop" id="cmdBackdrop">
+    <div class="cmd-palette">
+      <div class="cmd-header">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="cmdInput" placeholder="Buscar en el manual... (ej: corte, cmky)" autocomplete="off">
+        <span class="cmd-esc">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmdResults">
+        <div class="cmd-empty">Escribe para buscar...</div>
+      </div>
+      <div class="cmd-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> Navegar</span>
+        <span><kbd>Enter</kbd> Abrir</span>
+      </div>
+    </div>
+  </div>
+
+<script src="https://unpkg.com/swup@4"></script>
+</body>
+
+</html>

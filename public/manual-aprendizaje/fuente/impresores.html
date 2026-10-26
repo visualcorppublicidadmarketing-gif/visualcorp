@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Impresores — VisualCorp</title>
+    <meta name="description"
+        content="Guía completa para operadores de impresión de VisualCorp: máquinas Galaxy, cabezales Epson i3200, FlexiPRINT, Hosonsoft, mantenimiento y materiales.">
+    <link rel="icon"
+        href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmSKnD00M-kkEpOeoGxEL9UP7_Zfgf8Ug33Q&s">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/manual.css">
+    <style>
+        #readProgress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #f2b705, #06b6d4);
+            z-index: 9999;
+            width: 0;
+            transition: width .1s;
+        }
+
+        .machine-card {
+            background: var(--gradient-card), var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            transition: all var(--duration) var(--ease-out);
+        }
+
+        .machine-card:hover {
+            border-color: var(--color-border-hover);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .machine-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+        }
+
+        .machine-card__body {
+            padding: var(--sp-6);
+        }
+
+        .machine-card__title {
+            font-size: var(--fs-lg);
+            font-weight: 800;
+            color: var(--color-heading);
+            margin-bottom: var(--sp-2);
+        }
+
+        .machine-card__spec {
+            font-size: var(--fs-xs);
+            color: var(--color-text-muted);
+            margin-bottom: var(--sp-1);
+        }
+
+        .machine-card__spec strong {
+            color: var(--color-accent-hover);
+        }
+
+        .machines-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--sp-6);
+            margin-bottom: var(--sp-8);
+        }
+
+        .passes-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--fs-sm);
+        }
+
+        .passes-table th {
+            text-align: left;
+            padding: var(--sp-3) var(--sp-4);
+            background: rgba(242, 183, 5, .08);
+            color: var(--color-accent-hover);
+            font-weight: 700;
+            font-size: var(--fs-xs);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            border-bottom: 2px solid rgba(242, 183, 5, .2);
+        }
+
+        .passes-table td {
+            padding: var(--sp-3) var(--sp-4);
+            border-bottom: 1px solid var(--color-border);
+            vertical-align: middle;
+        }
+
+        .passes-table tr:hover td {
+            background: rgba(255, 255, 255, .02);
+        }
+
+        .passes-table td:first-child {
+            font-weight: 700;
+            color: var(--color-heading);
+        }
+
+        .pass-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            padding: .2rem .7rem;
+            border-radius: var(--radius-full);
+        }
+
+        .pass-4 {
+            background: rgba(34, 197, 94, .12);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, .25);
+        }
+
+        .pass-6 {
+            background: rgba(6, 182, 212, .12);
+            color: #22d3ee;
+            border: 1px solid rgba(6, 182, 212, .25);
+        }
+
+        .maintenance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: var(--sp-4);
+        }
+
+        .maint-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-5);
+            transition: all var(--duration) var(--ease-out);
+        }
+
+        .maint-card:hover {
+            border-color: var(--color-border-hover);
+            transform: translateY(-2px);
+        }
+
+        .maint-card__icon {
+            font-size: 2rem;
+            margin-bottom: var(--sp-3);
+        }
+
+        .maint-card__freq {
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--color-accent-hover);
+            margin-bottom: var(--sp-2);
+        }
+
+        .maint-card__title {
+            font-weight: 700;
+            color: var(--color-heading);
+            margin-bottom: var(--sp-2);
+            font-size: var(--fs-sm);
+        }
+
+        .maint-card__desc {
+            font-size: var(--fs-xs);
+            color: var(--color-text-muted);
+            line-height: 1.6;
+        }
+
+        .section-img {
+            width: 100%;
+            border-radius: var(--radius-xl);
+            margin: var(--sp-6) 0;
+            object-fit: cover;
+            max-height: 380px;
+            border: 1px solid var(--color-border);
+        }
+
+        .software-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--sp-6);
+        }
+
+        @media(max-width:640px) {
+            .software-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .software-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+        }
+
+        .software-card__header {
+            padding: var(--sp-5) var(--sp-6);
+            background: rgba(242, 183, 5, .07);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .software-card__name {
+            font-weight: 800;
+            font-size: var(--fs-lg);
+            color: var(--color-heading);
+        }
+
+        .software-card__role {
+            font-size: var(--fs-xs);
+            color: var(--color-accent-hover);
+            font-weight: 600;
+            margin-top: .2rem;
+        }
+
+        .software-card__body {
+            padding: var(--sp-6);
+        }
+
+        .nav__link {
+            color: var(--color-text-muted);
+            padding: var(--sp-2) 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="readProgress"></div>
+
+    <script src="js/nav.js"></script>
+
+  <main id="swup" class="transition-fade">
+<!-- HERO -->
+    <section class="hero" style="padding:8rem 0 3rem;">
+        <div class="container" style="position:relative;z-index:2;">
+            <nav class="breadcrumb reveal reveal--fade"><a href="index.html">Inicio</a><span>/</span><strong
+                    style="color:var(--color-accent-hover)">Impresores</strong></nav>
+            <span class="hero__eyebrow reveal reveal--fade" data-delay="50">🖨️ Operadores de Impresión</span>
+            <h1 class="hero__title reveal reveal--slide-up" data-delay="100" style="font-size:clamp(1.8rem,4vw,3rem);">
+                Manual del <span class="accent">Operador de Impresión</span>
+            </h1>
+            <p class="hero__sub reveal reveal--slide-up" data-delay="180" style="font-size:var(--fs-base);">
+                Todo sobre las máquinas Galaxy, cabezales Epson i3200-E1, tintas ecosolventes, software de impresión,
+                mantenimiento y flujo de trabajo diario en VisualCorp.
+            </p>
+            <div class="search-wrap reveal reveal--fade" data-delay="260" style="max-width:520px;margin-left:0;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="text" id="manualSearch" placeholder="Buscar en el manual...">
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="manual-layout">
+
+            <!-- SIDEBAR -->
+            <aside class="manual-sidebar">
+                <p class="toc-title">Contenido</p>
+                <ul class="toc-list">
+                    <li class="toc-item"><a href="#habilidades"><span class="toc-dot"></span>Habilidades Esenciales</a>
+                    </li>
+                    <li class="toc-item"><a href="#maquinas"><span class="toc-dot"></span>Nuestras Máquinas</a></li>
+                    <li class="toc-item"><a href="#software"><span class="toc-dot"></span>Software: FlexiPRINT &
+                            Hosonsoft</a></li>
+                    <li class="toc-item"><a href="#archivos"><span class="toc-dot"></span>Archivos y Red</a></li>
+                    <li class="toc-item"><a href="#materiales"><span class="toc-dot"></span>Materiales y Pasadas</a>
+                    </li>
+                    <li class="toc-item"><a href="#mantenimiento"><span class="toc-dot"></span>Mantenimiento de
+                            Máquinas</a></li>
+                    <li class="toc-item"><a href="#proceso"><span class="toc-dot"></span>Proceso Post-Impresión</a></li>
+                    <li class="toc-item"><a href="#cultura"><span class="toc-dot"></span>Cultura de Trabajo</a></li>
+                    <li class="toc-item"><a href="#horarios"><span class="toc-dot"></span>Horarios de Trabajo</a></li>
+                </ul>
+            </aside>
+
+            <!-- CONTENT -->
+            <div class="manual-content">
+
+                <!-- ── 1. HABILIDADES ── -->
+                <section class="manual-section reveal reveal--slide-up" id="habilidades">
+                    <span class="section-eyebrow">💡 Sección 1</span>
+                    <h2 class="section-title">Habilidades Esenciales del Impresor</h2>
+                    <p class="section-sub">Para operar correctamente las máquinas en VisualCorp necesitas dominar estas
+                        áreas:</p>
+                    <div class="skills-grid">
+                        <div class="skill-card"><span class="skill-card__icon">🖥️</span>
+                            <div class="skill-card__name">FlexiPRINT (RIP)</div><span
+                                class="skill-badge skill-badge--gold">Avanzado</span>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Rasterizar archivos y preparar trabajos para envío.</p>
+                        </div>
+                        <div class="skill-card"><span class="skill-card__icon">🖨️</span>
+                            <div class="skill-card__name">Hosonsoft</div><span
+                                class="skill-badge skill-badge--cyan">Avanzado</span>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Enviar trabajos a impresión, configurar pasadas y parámetros.</p>
+                        </div>
+                        <div class="skill-card"><span class="skill-card__icon">🔧</span>
+                            <div class="skill-card__name">Mantenimiento de Cabezal</div><span
+                                class="skill-badge skill-badge--gold">Avanzado</span>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">Ink
+                                injection, Clean Strong, limpieza manual con ecosolvente.</p>
+                        </div>
+                        <div class="skill-card"><span class="skill-card__icon">🎨</span>
+                            <div class="skill-card__name">Gestión de Color</div><span
+                                class="skill-badge skill-badge--cyan">Intermedio</span>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Perfiles de color, calibración y verificación de calidad en cada print.</p>
+                        </div>
+                        <div class="skill-card"><span class="skill-card__icon">📐</span>
+                            <div class="skill-card__name">Carga de Materiales</div><span
+                                class="skill-badge skill-badge--green">Básico</span>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Cargar rollos de lona, vinil y otros materiales sin dañar los cabezales.</p>
+                        </div>
+                        <div class="skill-card"><span class="skill-card__icon">✂️</span>
+                            <div class="skill-card__name">Corte y Acabado</div><span
+                                class="skill-badge skill-badge--green">Básico</span>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Cortar, enrollar, etiquetar y almacenar correctamente el trabajo terminado.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 2. MÁQUINAS ── -->
+                <section class="manual-section reveal reveal--slide-up" id="maquinas">
+                    <span class="section-eyebrow">⚙️ Sección 2</span>
+                    <h2 class="section-title">Nuestras Máquinas Galaxy</h2>
+                    <p class="section-sub">VisualCorp cuenta con dos impresoras de gran formato Galaxy de tintas
+                        ecosolventes. Aquí las specs de cada una.</p>
+
+                    <img src="img/galaxy_printer.png" alt="Impresora Galaxy VisualCorp" class="section-img">
+
+                    <div class="machines-grid">
+                        <!-- Máquina 1 -->
+                        <div class="machine-card">
+                            <div
+                                style="background:linear-gradient(135deg,rgba(242,183,5,.15),rgba(6,182,212,.08));padding:var(--sp-8);text-align:center;font-size:3rem;">
+                                🖨️</div>
+                            <div class="machine-card__body">
+                                <div class="machine-card__title">Galaxy 3.2m <span class="skill-badge skill-badge--gold"
+                                        style="font-size:.65rem;vertical-align:middle;">PRINCIPAL</span></div>
+                                <p class="machine-card__spec">📏 <strong>Ancho de impresión:</strong> hasta 3.2 metros
+                                </p>
+                                <p class="machine-card__spec">🔩 <strong>Cabezales instalados:</strong> 2 (posiciones 3
+                                    y 4)</p>
+                                <p class="machine-card__spec">🔩 <strong>Capacidad máxima:</strong> 4 cabezales</p>
+                                <p class="machine-card__spec">💧 <strong>Tipo de cabezal:</strong> Epson i3200-E1</p>
+                                <p class="machine-card__spec">🎨 <strong>Tinta:</strong> Ecosolvente CMYK</p>
+                                <p class="machine-card__spec">💻 <strong>Software:</strong> FlexiPRINT + Hosonsoft</p>
+                            </div>
+                        </div>
+                        <!-- Máquina 2 -->
+                        <div class="machine-card">
+                            <div
+                                style="background:linear-gradient(135deg,rgba(6,182,212,.12),rgba(242,183,5,.06));padding:var(--sp-8);text-align:center;font-size:3rem;">
+                                🖨️</div>
+                            <div class="machine-card__body">
+                                <div class="machine-card__title">Galaxy 2.5m <span class="skill-badge skill-badge--cyan"
+                                        style="font-size:.65rem;vertical-align:middle;">SECUNDARIA</span></div>
+                                <p class="machine-card__spec">📏 <strong>Ancho de impresión:</strong> hasta 2.5 metros
+                                </p>
+                                <p class="machine-card__spec">🔩 <strong>Cabezales instalados:</strong> 1</p>
+                                <p class="machine-card__spec">🔩 <strong>Capacidad máxima:</strong> 4 cabezales</p>
+                                <p class="machine-card__spec">💧 <strong>Tipo de cabezal:</strong> Epson i3200-E1</p>
+                                <p class="machine-card__spec">🎨 <strong>Tinta:</strong> Ecosolvente CMYK</p>
+                                <p class="machine-card__spec">💻 <strong>Software:</strong> FlexiPRINT + Hosonsoft</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--tip">
+                        <span class="callout__icon">💡</span>
+                        <div class="callout__body">
+                            <p class="callout__title">¿Qué es el cabezal Epson i3200-E1?</p>
+                            <p class="callout__text">El <strong>Epson i3200-E1</strong> es un cabezal piezoeléctrico de
+                                alta resolución (hasta 720×1440 dpi) diseñado para tintas ecosolventes. Tiene 3200
+                                boquillas (800 por color: C, M, Y, K) lo que permite una impresión rápida y de alta
+                                calidad. Es más rápido y duradero que su predecesor DX5. Un cabezal en buen estado es la
+                                diferencia entre un trabajo perfecto y uno arruinado.</p>
+                        </div>
+                    </div>
+
+                    <!-- Tintas ecosolventes -->
+                    <h3
+                        style="font-size:var(--fs-lg);font-weight:700;color:var(--color-heading);margin:var(--sp-8) 0 var(--sp-4);">
+                        🎨 Tintas Ecosolventes</h3>
+                    <img src="img/tintas_ecosolventes.png" alt="Tintas ecosolventes CMYK" class="section-img"
+                        style="max-height:260px;">
+                    <div class="tip-list">
+                        <div class="tip-item">Las tintas ecosolventes son resistentes al agua y a los rayos UV, ideales
+                            para impresión exterior.</div>
+                        <div class="tip-item">No son aptas para sublimación. <strong
+                                style="color:var(--color-danger);">Nunca imprimas materiales de sublimación en estas
+                                máquinas.</strong></div>
+                        <div class="tip-item">El orden de colores es CMYK: Cian, Magenta, Amarillo y Negro. Cada
+                            cartucho debe estar lleno y sin burbujas.</div>
+                        <div class="tip-item">Si el nivel de tinta está bajo, relléname antes de imprimir un trabajo
+                            grande para evitar cortes de tinta a mitad de impresión.</div>
+                        <div class="tip-item">Usa siempre tinta de la misma marca/lote para evitar variaciones de color.
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 3. SOFTWARE ── -->
+                <section class="manual-section reveal reveal--slide-up" id="software">
+                    <span class="section-eyebrow">💻 Sección 3</span>
+                    <h2 class="section-title">Software: FlexiPRINT y Hosonsoft</h2>
+                    <p class="section-sub">Usamos dos programas: uno para procesar (RIP) el archivo y otro para enviarlo
+                        a imprimir.</p>
+                    <div class="software-grid">
+                        <div class="software-card">
+                            <div class="software-card__header">
+                                <div style="font-size:1.5rem;margin-bottom:var(--sp-2);">🖥️</div>
+                                <div class="software-card__name">FlexiPRINT</div>
+                                <div class="software-card__role">Paso 1 — Software de RIP</div>
+                            </div>
+                            <div class="software-card__body">
+                                <div class="tip-list">
+                                    <div class="tip-item">Importa el archivo (TIFF, PDF, JPG) al FlexiPRINT.</div>
+                                    <div class="tip-item">Configura las dimensiones reales del trabajo.</div>
+                                    <div class="tip-item">Selecciona el perfil de color correcto según el material.
+                                    </div>
+                                    <div class="tip-item">Ajusta la resolución de salida y el número de pasadas.</div>
+                                    <div class="tip-item">El programa convierte el archivo en datos que entiende la
+                                        impresora (RIP = Raster Image Processor).</div>
+                                    <div class="tip-item">Una vez procesado, el archivo aparece en la cola de impresión.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="software-card">
+                            <div class="software-card__header">
+                                <div style="font-size:1.5rem;margin-bottom:var(--sp-2);">🖨️</div>
+                                <div class="software-card__name">Hosonsoft</div>
+                                <div class="software-card__role">Paso 2 — Control de Impresión</div>
+                            </div>
+                            <div class="software-card__body">
+                                <div class="tip-list">
+                                    <div class="tip-item">Hosonsoft es el software que controla directamente la
+                                        impresora.</div>
+                                    <div class="tip-item">Desde aquí seleccionas el trabajo ya procesado en FlexiPRINT.
+                                    </div>
+                                    <div class="tip-item">Para Lona Traslúcida de color usa la opción <strong
+                                            style="color:var(--color-accent-hover);">"color 2"</strong> en Hosonsoft.
+                                    </div>
+                                    <div class="tip-item">Puedes configurar: número de copias, márgenes, velocidad y
+                                        dirección de impresión.</div>
+                                    <div class="tip-item">Monitorea el progreso en tiempo real. Si hay un error de tinta
+                                        o cabezal, aparece aquí.</div>
+                                    <div class="tip-item">No cierres Hosonsoft mientras la impresora esté trabajando.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--warning" style="margin-top:var(--sp-6);">
+                        <span class="callout__icon">⚠️</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Flujo correcto: siempre FlexiPRINT PRIMERO, luego Hosonsoft</p>
+                            <p class="callout__text">El archivo primero debe pasar por FlexiPRINT (RIP) antes de
+                                enviarse a Hosonsoft. No se puede enviar un archivo crudo directamente a la impresora.
+                                Si algo sale mal en el RIP, corrígelo en FlexiPRINT antes de imprimir.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 4. ARCHIVOS Y RED ── -->
+                <section class="manual-section reveal reveal--slide-up" id="archivos">
+                    <span class="section-eyebrow">📁 Sección 4</span>
+                    <h2 class="section-title">Archivos y Red de Trabajo</h2>
+                    <p class="section-sub">Así funciona el flujo de archivos desde el diseñador hasta la impresora.</p>
+
+                    <!-- Flow diagram simple -->
+                    <div
+                        style="display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);margin:var(--sp-6) 0;">
+                        <div style="text-align:center;flex:1;min-width:100px;">
+                            <div style="font-size:2rem;">🎨</div>
+                            <div
+                                style="font-size:var(--fs-xs);font-weight:700;color:var(--color-heading);margin-top:var(--sp-2);">
+                                Diseñador</div>
+                            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);">Crea el archivo</div>
+                        </div>
+                        <div style="font-size:1.5rem;color:var(--color-accent);">→</div>
+                        <div style="text-align:center;flex:1;min-width:100px;">
+                            <div style="font-size:2rem;">💻</div>
+                            <div
+                                style="font-size:var(--fs-xs);font-weight:700;color:var(--color-heading);margin-top:var(--sp-2);">
+                                PC de Vicky</div>
+                            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);">Carpeta "Artes Finales"
+                            </div>
+                        </div>
+                        <div style="font-size:1.5rem;color:var(--color-accent);">→</div>
+                        <div style="text-align:center;flex:1;min-width:100px;">
+                            <div style="font-size:2rem;">🌐</div>
+                            <div
+                                style="font-size:var(--fs-xs);font-weight:700;color:var(--color-heading);margin-top:var(--sp-2);">
+                                Red Interna</div>
+                            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);">Acceso compartido</div>
+                        </div>
+                        <div style="font-size:1.5rem;color:var(--color-accent);">→</div>
+                        <div style="text-align:center;flex:1;min-width:100px;">
+                            <div style="font-size:2rem;">🖥️</div>
+                            <div
+                                style="font-size:var(--fs-xs);font-weight:700;color:var(--color-heading);margin-top:var(--sp-2);">
+                                PC Impresora</div>
+                            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);">FlexiPRINT → Hosonsoft
+                            </div>
+                        </div>
+                        <div style="font-size:1.5rem;color:var(--color-accent);">→</div>
+                        <div style="text-align:center;flex:1;min-width:100px;">
+                            <div style="font-size:2rem;">🖨️</div>
+                            <div
+                                style="font-size:var(--fs-xs);font-weight:700;color:var(--color-heading);margin-top:var(--sp-2);">
+                                Máquina Galaxy</div>
+                            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);">Impresión final</div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--success">
+                        <span class="callout__icon">📂</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Carpeta "Artes Finales" en la red</p>
+                            <p class="callout__text">La computadora de <strong>Vicky</strong> tiene la carpeta principal
+                                "Artes Finales". Esta carpeta está compartida en la red local de VisualCorp. Desde la PC
+                                de impresión puedes acceder a ella directamente sin necesidad de USB ni correos. Siempre
+                                abre el archivo desde ahí, nunca lo muevas ni elimines.</p>
+                        </div>
+                    </div>
+
+                    <h3
+                        style="font-size:var(--fs-md);font-weight:700;color:var(--color-heading);margin:var(--sp-8) 0 var(--sp-4);">
+                        📄 Formatos de Archivo</h3>
+                    <div
+                        style="overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;">
+                        <table class="excel-table">
+                            <thead>
+                                <tr>
+                                    <th>Formato</th>
+                                    <th>Calidad</th>
+                                    <th>¿Cuándo usarlo?</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-weight:700;color:#4ade80;">TIFF</td>
+                                    <td><span class="skill-badge skill-badge--green">⭐ Máxima</span></td>
+                                    <td>Formato preferido. Sin pérdida de calidad. Ideal para lonas grandes e
+                                        impresiones de alta definición.</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:700;color:var(--color-accent-hover);">PDF</td>
+                                    <td><span class="skill-badge skill-badge--gold">Alta</span></td>
+                                    <td>Aceptable si viene de Illustrator/Photoshop en alta resolución. Verificar que no
+                                        esté comprimido.</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:700;color:var(--color-text-muted);">JPG</td>
+                                    <td><span class="skill-badge skill-badge--cyan">Media</span></td>
+                                    <td>Solo si no hay otra opción. Tiene compresión con pérdida. Pedir siempre el mayor
+                                        quality disponible (JPG 100%).</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="callout callout--warning" style="margin-top:var(--sp-5);">
+                        <span class="callout__icon">⚠️</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Resolución mínima recomendada</p>
+                            <p class="callout__text">Para impresión de gran formato se trabaja a <strong>72–150 DPI a
+                                    tamaño real</strong> (no confundir con monitor donde 72dpi es baja resolución). Si
+                                el archivo viene a 300 dpi puede estar al 25% del tamaño final. Siempre verifica las
+                                dimensiones reales en centímetros/metros antes de imprimir.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 5. MATERIALES Y PASADAS ── -->
+                <section class="manual-section reveal reveal--slide-up" id="materiales">
+                    <span class="section-eyebrow">🧵 Sección 5</span>
+                    <h2 class="section-title">Materiales y Número de Pasadas</h2>
+                    <p class="section-sub">Las "pasadas" (passes) indican cuántas veces pasa el cabezal sobre el mismo
+                        punto. Más pasadas = más calidad y tiempo de secado, pero más lento. Menos pasadas = más rápido
+                        pero potencialmente menos calidad.</p>
+
+                    <img src="img/materiales.png" alt="Muestras de materiales de impresión" class="section-img">
+
+                    <div class="callout callout--danger">
+                        <span class="callout__icon">🚫</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Prohibido: No imprimir materiales de sublimación en estas máquinas
+                            </p>
+                            <p class="callout__text">Las tintas ecosolventes y las tintas de sublimación son
+                                incompatibles. Nunca pases tela para sublimación en las Galaxy. Contaminas los cabezales
+                                y dañas la impresión. La sublimación se hace en equipos específicos.</p>
+                        </div>
+                    </div>
+
+                    <div
+                        style="overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--radius-xl);overflow:hidden;margin-top:var(--sp-6);">
+                        <table class="passes-table">
+                            <thead>
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Pasadas</th>
+                                    <th>Descripción / Uso típico</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="3"
+                                        style="background:rgba(34,197,94,.06);color:#4ade80;font-weight:700;font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.06em;padding:var(--sp-3) var(--sp-4);">
+                                        ⚡ 4 Pasadas — Lonas y materiales porosos
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>🟢 Lona Económica</td>
+                                    <td><span class="pass-badge pass-4">4 📌</span></td>
+                                    <td>Lona estándar de bajo costo. Para banners, gigantografías generales.</td>
+                                </tr>
+                                <tr>
+                                    <td>🟢 Lona de Campaña</td>
+                                    <td><span class="pass-badge pass-4">4 📌</span></td>
+                                    <td>Mayor resistencia. Para campañas electorales, exterior prolongado.</td>
+                                </tr>
+                                <tr>
+                                    <td>🟢 Lona Op Mate</td>
+                                    <td><span class="pass-badge pass-4">4 📌</span></td>
+                                    <td>Acabado mate, sin reflejo. Ideal para ambientes con mucha luz.</td>
+                                </tr>
+                                <tr>
+                                    <td>🔵 Microperforado</td>
+                                    <td><span class="pass-badge pass-4">4 📌</span></td>
+                                    <td>Con orificios para ventilación. Se usa en vidrieras de locales commerciales.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>🟤 Tela Sintética</td>
+                                    <td><span class="pass-badge pass-4">4 📌</span></td>
+                                    <td>Tela poliéster con recubrimiento. Para banderas, telas de eventos.</td>
+                                </tr>
+                                <tr>
+                                    <td>💡 Backlight</td>
+                                    <td><span class="pass-badge pass-4">4 📌</span></td>
+                                    <td>Material para cajas de luz retroiluminadas. Deja pasar la luz uniformemente.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3"
+                                        style="background:rgba(6,182,212,.06);color:#22d3ee;font-weight:700;font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.06em;padding:var(--sp-3) var(--sp-4);margin-top:8px;">
+                                        🔷 6 Pasadas — Viniles y materiales lisos
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>✨ Vinil Brillante</td>
+                                    <td><span class="pass-badge pass-6">6 🔷</span></td>
+                                    <td>Alta saturación de colores, acabado espejo. Para adhesivos, rótulos y
+                                        decoración.</td>
+                                </tr>
+                                <tr>
+                                    <td>🔲 Vinil Mate</td>
+                                    <td><span class="pass-badge pass-6">6 🔷</span></td>
+                                    <td>Sin brillo, premium. Para autos, decoración interior, señalética de lujo.</td>
+                                </tr>
+                                <tr>
+                                    <td>💎 Lona Traslúcida</td>
+                                    <td><span class="pass-badge pass-6">6 🔷</span></td>
+                                    <td>Semitransparente. Para cajas de luz. <strong
+                                            style="color:var(--color-accent-hover);">Usar "color 2" en
+                                            Hosonsoft.</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="callout callout--tip" style="margin-top:var(--sp-5);">
+                        <span class="callout__icon">💡</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Regla general de pasadas</p>
+                            <p class="callout__text">Lonas y materiales con textura absorben más tinta → menos pasadas
+                                son suficientes (4). Los viniles y materiales lisos requieren más pasadas para que la
+                                tinta se adhiera uniformemente sin correrse (6). En caso de duda, siempre haz una prueba
+                                en un trozo pequeño del material antes de imprimir el trabajo completo.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 6. MANTENIMIENTO ── -->
+                <section class="manual-section reveal reveal--slide-up" id="mantenimiento">
+                    <span class="section-eyebrow">🔧 Sección 6</span>
+                    <h2 class="section-title">Mantenimiento de las Máquinas</h2>
+                    <p class="section-sub">El cabezal Epson i3200-E1 es el componente más delicado y valioso de la
+                        impresora. Cuidarlo bien es la diferencia entre años de vida útil o gastos innecesarios de
+                        reemplazo.</p>
+
+                    <img src="img/mantenimiento_cabezal.png" alt="Mantenimiento del cabezal de impresión"
+                        class="section-img">
+
+                    <div class="callout callout--danger">
+                        <span class="callout__icon">💀</span>
+                        <div class="callout__body">
+                            <p class="callout__title">El cabezal obstruido = trabajo arruinado + pérdida de dinero</p>
+                            <p class="callout__text">Un cabezal con boquillas tapadas produce líneas blancas en la
+                                impresión, colores incorrectos y trabajos rechazados. El mantenimiento preventivo diario
+                                evita problemas mayores. Un cabezal nuevo puede costar cientos de dólares.</p>
+                        </div>
+                    </div>
+
+                    <h3
+                        style="font-size:var(--fs-md);font-weight:700;color:var(--color-heading);margin:var(--sp-8) 0 var(--sp-4);">
+                        📅 Rutina de Mantenimiento</h3>
+                    <div class="maintenance-grid">
+                        <div class="maint-card">
+                            <div class="maint-card__icon">🌅</div>
+                            <div class="maint-card__freq">Cada día — Al encender</div>
+                            <div class="maint-card__title">Ink Injection (15–20 seg)</div>
+                            <div class="maint-card__desc">Antes de imprimir, realiza un ink injection de 15 a 20
+                                segundos para cargar tinta fresca en los cabezales y asegurarte de que no haya aire en
+                                los canales.</div>
+                        </div>
+                        <div class="maint-card">
+                            <div class="maint-card__icon">🧹</div>
+                            <div class="maint-card__freq">Cada día — Al encender</div>
+                            <div class="maint-card__title">Clean Strong</div>
+                            <div class="maint-card__desc">Después del ink injection, realiza un "Clean Strong" para
+                                limpiar los cabezales a fondo. Esto desbloquea boquillas parcialmente obstruidas con
+                                tinta seca.</div>
+                        </div>
+                        <div class="maint-card">
+                            <div class="maint-card__icon">🔍</div>
+                            <div class="maint-card__freq">Cada día — Antes de imprimir</div>
+                            <div class="maint-card__title">Revisar Boquillas (Nozzle Check)</div>
+                            <div class="maint-card__desc">Imprime un test de boquillas (nozzle check). Verifica que no
+                                haya líneas faltantes. Si hay fallas, repite el clean o realiza una limpieza manual.
+                            </div>
+                        </div>
+                        <div class="maint-card">
+                            <div class="maint-card__icon">🛢️</div>
+                            <div class="maint-card__freq">Cada día o cuando sea necesario</div>
+                            <div class="maint-card__title">Revisar Grasa en los Rieles</div>
+                            <div class="maint-card__desc">Los rieles del carro deben tener lubricante suficiente. Si
+                                escuchas ruidos o el carro se mueve con resistencia, aplica grasa específica para
+                                impresoras de gran formato.</div>
+                        </div>
+                        <div class="maint-card">
+                            <div class="maint-card__icon">🧽</div>
+                            <div class="maint-card__freq">Cuando haya acumulación</div>
+                            <div class="maint-card__title">Limpiar Basura en Cabezales</div>
+                            <div class="maint-card__desc">Con una varilla de limpieza y ecosolvente, retira cualquier
+                                hilo, polvo o partícula que se haya acumulado debajo de los cabezales. Hazlo con la
+                                máquina apagada y con guantes.</div>
+                        </div>
+                        <div class="maint-card">
+                            <div class="maint-card__icon">🧪</div>
+                            <div class="maint-card__freq">Fines de semana (viernes al apagar)</div>
+                            <div class="maint-card__title">Aplicar Ecosolvente de Conservación</div>
+                            <div class="maint-card__desc">Al finalizar la semana, humedece las almohadillas de
+                                mantenimiento con líquido ecosolvente. Esto evita que la tinta se seque y endurezca en
+                                las boquillas durante el fin de semana.</div>
+                        </div>
+                        <div class="maint-card">
+                            <div class="maint-card__icon">🧼</div>
+                            <div class="maint-card__freq">Frecuentemente</div>
+                            <div class="maint-card__title">Limpiar la Plataforma</div>
+                            <div class="maint-card__desc">Limpia la plataforma de impresión (donde pasa el material) de
+                                residuos de tinta. La suciedad puede manchar la parte trasera de futuras impresiones.
+                            </div>
+                        </div>
+                        <div class="maint-card">
+                            <div class="maint-card__icon">🌡️</div>
+                            <div class="maint-card__freq">Siempre</div>
+                            <div class="maint-card__title">Temperatura y Ventilación</div>
+                            <div class="maint-card__desc">Mantén el área de impresión ventilada. Las tintas ecosolventes
+                                emiten vapores que son dañinos en espacios cerrados. Temperatura ideal: 20–28°C para
+                                mejor adhesión de la tinta.</div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--warning" style="margin-top:var(--sp-6);">
+                        <span class="callout__icon">⚠️</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Si ves líneas blancas o colores incorrectos en la impresión</p>
+                            <p class="callout__text">1) Para la impresión de inmediato. 2) Realiza un Nozzle Check para
+                                identificar qué boquillas fallaron. 3) Haz Clean Strong 2–3 veces. 4) Si continúa el
+                                problema, realiza limpieza manual con ecosolvente. 5) Informa al encargado si el
+                                problema persiste. <strong>No pierdas material imprimiendo con el cabezal
+                                    dañado.</strong></p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 7. POST-IMPRESIÓN ── -->
+                <section class="manual-section reveal reveal--slide-up" id="proceso">
+                    <span class="section-eyebrow">✅ Sección 7</span>
+                    <h2 class="section-title">Proceso Post-Impresión</h2>
+                    <p class="section-sub">El trabajo no termina cuando la máquina para. El acabado y la organización
+                        son igual de importantes.</p>
+
+                    <img src="img/corte_lona.png" alt="Corte de lona impresa" class="section-img">
+
+                    <div class="step-list">
+                        <div class="step-card">
+                            <div class="step-number">1</div>
+                            <div class="step-body">
+                                <div class="step-title">Espera que la tinta seque</div>
+                                <p class="step-desc">Las tintas ecosolventes necesitan unos minutos para adherirse
+                                    completamente al material. No enrolles ni toques la superficie recién impresa. El
+                                    tiempo de secado varía según el material y la temperatura del ambiente.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">2</div>
+                            <div class="step-body">
+                                <div class="step-title">Corta con estilete correctamente</div>
+                                <p class="step-desc">Usa un estilete afilado y una regla metálica para cortar recto.
+                                    Cambia la cuchilla regularmente — una cuchilla sin filo desgarra el material en
+                                    lugar de cortarlo limpiamente. Siempre corta sobre una superficie adecuada.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">3</div>
+                            <div class="step-body">
+                                <div class="step-title">Enrolla ordenadamente</div>
+                                <p class="step-desc">Enrolla la lona o vinil con la cara impresa hacia afuera (para
+                                    lonas) o hacia adentro según el tipo de material. Hazlo de forma uniforme para
+                                    evitar arrugas o marcas en la superficie impresa.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">4</div>
+                            <div class="step-body">
+                                <div class="step-title">Coloca el nombre del cliente / trabajo</div>
+                                <p class="step-desc">Escribe en un papel o etiqueta el nombre del cliente y descripción
+                                    del trabajo. Pega o inserta la etiqueta en el rollo. Nunca dejes un trabajo sin
+                                    identificar — luego es imposible saber de quién es.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">5</div>
+                            <div class="step-body">
+                                <div class="step-title">Almacena en el área designada</div>
+                                <p class="step-desc">Coloca el trabajo terminado en el área específica para impresiones
+                                    listas. Mantén los rollos de pie o apoyados correctamente para que no se deformen.
+                                    Avisa al asesor que el trabajo está listo para que notifique al cliente.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--success" style="margin-top:var(--sp-6);">
+                        <span class="callout__icon">🌟</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Proactividad: la clave del buen impresor</p>
+                            <p class="callout__text">Cuando termines un trabajo, no esperes que te digan qué sigue.
+                                Revisa la cola de trabajos pendientes, prepara el próximo material, revisa los niveles
+                                de tinta. Un impresor proactivo mantiene el flujo constante y evita cuellos de botella.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 8. CULTURA ── -->
+                <section class="manual-section reveal reveal--slide-up" id="cultura">
+                    <span class="section-eyebrow">🤝 Sección 8</span>
+                    <h2 class="section-title">Cultura de Trabajo en VisualCorp</h2>
+                    <p class="section-sub">Más allá de las máquinas, lo que hace grande a VisualCorp es su gente y cómo
+                        trabaja en equipo.</p>
+
+                    <div class="quote-card">
+                        <p>"La limpieza del lugar de trabajo es un reflejo de la calidad del trabajo que produces. Un
+                            taller ordenado es un taller productivo."</p>
+                        <span class="quote-author">— Esteban Nicola</span>
+                    </div>
+
+                    <div style="margin-top:var(--sp-8);">
+                        <h3
+                            style="font-size:var(--fs-md);font-weight:700;color:var(--color-heading);margin-bottom:var(--sp-5);">
+                            Principios del equipo VisualCorp</h3>
+                        <div class="tip-list">
+                            <div class="tip-item"><strong>Limpieza constante:</strong> Mantén tu área de trabajo limpia.
+                                Residuos de tinta, retazos de material y herramientas fuera de lugar crean accidentes y
+                                retrasos.</div>
+                            <div class="tip-item"><strong>Ayuda a los demás:</strong> Si ves a un compañero cargando
+                                material pesado, un trabajo urgente o con dificultades, ofrece ayuda sin que te lo
+                                pidan. El equipo gana o pierde junto.</div>
+                            <div class="tip-item"><strong>No vivas cómodo:</strong> Si no tienes trabajo en tu área,
+                                busca qué más puedes hacer. Hay siempre algo que mejorar, limpiar u organizar.</div>
+                            <div class="tip-item"><strong>Reporta problemas a tiempo:</strong> Si la máquina está
+                                fallando o el material está defectuoso, dilo de inmediato. Callar el problema cuesta más
+                                caro que reportarlo.</div>
+                            <div class="tip-item"><strong>Cuida las herramientas:</strong> Los estiletes, reglas, rieles
+                                y accesorios son de todos. Cuídalos, devuélvelos a su lugar y repórtalo si algo se
+                                rompe.</div>
+                            <div class="tip-item"><strong>Respeta los tiempos de entrega:</strong> El asesor le prometió
+                                al cliente una fecha. Tú eres quien hace posible cumplirla. La reputación de VisualCorp
+                                depende de todos.</div>
+                        </div>
+                    </div>
+
+                    <div
+                        style="text-align:center;margin-top:var(--sp-10);padding:var(--sp-8);background:var(--color-surface);border-radius:var(--radius-xl);border:1px solid var(--color-border);">
+                        <p style="font-size:2rem;margin-bottom:var(--sp-4);">🖨️</p>
+                        <h3
+                            style="font-size:var(--fs-xl);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-3);">
+                            ¡Eres el corazón de la producción!</h3>
+                        <p style="color:var(--color-text-muted);max-width:480px;margin:0 auto var(--sp-6);">Sin el
+                            impresor, no hay producto. Sin producto, no hay cliente. Sin cliente, no hay empresa. Tu
+                            trabajo es la base de todo lo que VisualCorp entrega al mundo.</p>
+                        <a href="index.html" class="btn btn--primary">← Volver al inicio</a>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 9. HORARIOS ── -->
+                <section class="manual-section reveal reveal--slide-up" id="horarios">
+                    <span class="section-eyebrow">🕐 Sección 9</span>
+                    <h2 class="section-title">Horarios de Trabajo</h2>
+                    <p class="section-sub">Estos son los horarios oficiales de VisualCorp. La puntualidad es parte del
+                        respeto hacia el equipo y los clientes.</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5);margin:var(--sp-6) 0;">
+                        <div
+                            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <p style="font-size:1.5rem;margin-bottom:var(--sp-3);">💼</p>
+                            <div
+                                style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                Lunes a Viernes</div>
+                            <div
+                                style="font-size:var(--fs-2xl);font-weight:900;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                                8:20 — 18:00</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-3);">📋
+                                <strong style="color:var(--color-accent-hover);">Los lunes hay reunión de
+                                    equipo</strong> al inicio del día. Llega puntual.
+                            </p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <p style="font-size:1.5rem;margin-bottom:var(--sp-3);">🎉</p>
+                            <div
+                                style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                Sábados</div>
+                            <div
+                                style="font-size:var(--fs-2xl);font-weight:900;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                                8:20 — 13:00</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-3);">💰
+                                <strong style="color:var(--color-accent-hover);">La quincena se paga los
+                                    sábados</strong> correspondientes.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="callout callout--tip">
+                        <span class="callout__icon">📋</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Reunión obligatoria los lunes</p>
+                            <p class="callout__text">Todos los lunes se hace reunión de equipo para revisar la semana,
+                                pendientes, metas y cualquier novedad. Es obligatoria y puntual: 8:20am. Ven preparado.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+            
+                <!-- QUIZ DE PASE -->
+                <section class="manual-section reveal reveal--slide-up" style="margin-top:var(--sp-8);">
+                    <div class="quiz-container">
+                        <div class="quiz-header">
+                            <span class="quiz-icon">🧠</span>
+                            <div class="quiz-title">Pase de Pruebas</div>
+                        </div>
+                        <div class="quiz-question">Si notas que los inyectores empiezan a fallar durante una impresión larga (banding), ¿qué debes hacer inmediantamente?</div>
+                        <div class="quiz-options">
+                            <div class="quiz-option" data-correct="true">Pausar y hacer un Test Print / Limpieza Normal</div><div class="quiz-option" data-correct="false">Dejar que termine y rogar que no se note</div><div class="quiz-option" data-correct="false">Subir la temperatura de los calentadores</div>
+                        </div>
+                        <div class="quiz-nav">
+                            <span class="quiz-progress">Pregunta interactiva - ¡Pon a prueba lo que leíste!</span>
+                        </div>
+                    </div>
+                </section>
+        
+            </div>
+        </div>
+    </div>
+
+      </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 <strong>VisualCorp</strong> · Manual Interno creado por <strong>Esteban Nicola</strong> · Milagro,
+                Ecuador</p>
+        </div>
+    </footer>
+
+    <button class="back-top" id="backTop" aria-label="Volver arriba">↑</button>
+    
+    <!-- Confetti JS -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Phase 3 Advanced Visuals CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/engine@3.3.0/tsparticles.engine.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.3.0/tsparticles.slim.min.js"></script>
+
+    <script src="js/manual.js"></script>
+
+  <!-- SPOTLIGHT SEARCH (Phase 4) -->
+  <div class="cmd-palette-backdrop" id="cmdBackdrop">
+    <div class="cmd-palette">
+      <div class="cmd-header">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="cmdInput" placeholder="Buscar en el manual... (ej: corte, cmky)" autocomplete="off">
+        <span class="cmd-esc">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmdResults">
+        <div class="cmd-empty">Escribe para buscar...</div>
+      </div>
+      <div class="cmd-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> Navegar</span>
+        <span><kbd>Enter</kbd> Abrir</span>
+      </div>
+    </div>
+  </div>
+
+<script src="https://unpkg.com/swup@4"></script>
+</body>
+
+</html>

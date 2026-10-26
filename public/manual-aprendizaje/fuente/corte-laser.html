@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Corte Láser — VisualCorp</title>
+    <meta name="description"
+        content="Guía completa para operadores de corte láser de VisualCorp: máquina Galaxy 60W, RDWorks, mantenimiento, materiales y archivos.">
+    <link rel="icon"
+        href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmSKnD00M-kkEpOeoGxEL9UP7_Zfgf8Ug33Q&s">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/manual.css">
+    <style>
+        #readProgress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ef4444, #f2b705);
+            z-index: 9999;
+            width: 0;
+            transition: width .1s;
+        }
+
+        .color-system {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: var(--sp-5);
+            margin: var(--sp-6) 0;
+        }
+
+        .color-card {
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            border: 1px solid var(--color-border);
+        }
+
+        .color-card__header {
+            padding: var(--sp-5) var(--sp-6);
+            display: flex;
+            align-items: center;
+            gap: var(--sp-4);
+        }
+
+        .color-card__dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 3px solid rgba(255, 255, 255, .2);
+        }
+
+        .color-card__name {
+            font-size: var(--fs-lg);
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .color-card__sub {
+            font-size: var(--fs-xs);
+            opacity: .8;
+            color: #fff;
+        }
+
+        .color-card--negro .color-card__header {
+            background: linear-gradient(135deg, #1a1a1a, #333);
+        }
+
+        .color-card--negro .color-card__dot {
+            background: #000;
+            border-color: rgba(255, 255, 255, .4);
+        }
+
+        .color-card--azul .color-card__header {
+            background: linear-gradient(135deg, #1e3a8a, #2563eb);
+        }
+
+        .color-card--azul .color-card__dot {
+            background: #3b82f6;
+        }
+
+        .color-card--rojo .color-card__header {
+            background: linear-gradient(135deg, #7f1d1d, #dc2626);
+        }
+
+        .color-card--rojo .color-card__dot {
+            background: #ef4444;
+        }
+
+        .color-card__body {
+            padding: var(--sp-5) var(--sp-6);
+            background: var(--color-surface);
+        }
+
+        .color-card__desc {
+            font-size: var(--fs-sm);
+            color: var(--color-text-muted);
+            margin-bottom: var(--sp-3);
+        }
+
+        .color-card__tag {
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            color: var(--color-text-dim);
+        }
+
+        .materials-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--fs-sm);
+        }
+
+        .materials-table th {
+            text-align: left;
+            padding: var(--sp-3) var(--sp-4);
+            background: rgba(239, 68, 68, .08);
+            color: #f87171;
+            font-weight: 700;
+            font-size: var(--fs-xs);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            border-bottom: 2px solid rgba(239, 68, 68, .2);
+        }
+
+        .materials-table td {
+            padding: var(--sp-3) var(--sp-4);
+            border-bottom: 1px solid var(--color-border);
+            vertical-align: middle;
+        }
+
+        .materials-table tr:hover td {
+            background: rgba(255, 255, 255, .02);
+        }
+
+        .materials-table .mat-name {
+            font-weight: 700;
+            color: var(--color-heading);
+        }
+
+        .materials-table .mat-section td {
+            background: rgba(239, 68, 68, .05);
+            color: #f87171;
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            padding: var(--sp-2) var(--sp-4);
+        }
+
+        .focus-visual {
+            display: flex;
+            gap: var(--sp-6);
+            align-items: center;
+            flex-wrap: wrap;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--sp-8);
+            margin: var(--sp-6) 0;
+        }
+
+        .focus-diagram {
+            flex: 0 0 200px;
+            text-align: center;
+        }
+
+        .focus-diagram svg {
+            max-width: 100%;
+        }
+
+        .focus-info {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .maintenance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: var(--sp-4);
+        }
+
+        .maint-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-5);
+        }
+
+        .maint-card__icon {
+            font-size: 2rem;
+            margin-bottom: var(--sp-3);
+        }
+
+        .maint-card__freq {
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: #f87171;
+            margin-bottom: var(--sp-2);
+        }
+
+        .maint-card__title {
+            font-weight: 700;
+            color: var(--color-heading);
+            margin-bottom: var(--sp-2);
+            font-size: var(--fs-sm);
+        }
+
+        .maint-card__desc {
+            font-size: var(--fs-xs);
+            color: var(--color-text-muted);
+            line-height: 1.6;
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--sp-5);
+            margin: var(--sp-6) 0;
+        }
+
+        @media(max-width:480px) {
+            .schedule-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .schedule-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--sp-6);
+            text-align: center;
+        }
+
+        .schedule-card__days {
+            font-size: var(--fs-lg);
+            font-weight: 800;
+            color: var(--color-heading);
+            margin-bottom: var(--sp-2);
+        }
+
+        .schedule-card__time {
+            font-size: var(--fs-2xl);
+            font-weight: 900;
+            background: var(--gradient-brand);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .schedule-card__note {
+            font-size: var(--fs-xs);
+            color: var(--color-text-muted);
+            margin-top: var(--sp-3);
+        }
+
+        .section-img {
+            width: 100%;
+            border-radius: var(--radius-xl);
+            margin: var(--sp-6) 0;
+            object-fit: cover;
+            max-height: 360px;
+            border: 1px solid var(--color-border);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="readProgress"></div>
+
+    <script src="js/nav.js"></script>
+
+  <main id="swup" class="transition-fade">
+<!-- HERO -->
+    <section class="hero" style="padding:8rem 0 3rem;">
+        <div class="container" style="position:relative;z-index:2;">
+            <nav class="breadcrumb reveal reveal--fade"><a href="index.html">Inicio</a><span>/</span><strong
+                    style="color:#f87171">Corte Láser</strong></nav>
+            <span class="hero__eyebrow reveal reveal--fade" data-delay="50"
+                style="background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.25);color:#f87171;">⚡ Operador de
+                Corte Láser</span>
+            <h1 class="hero__title reveal reveal--slide-up" data-delay="100" style="font-size:clamp(1.8rem,4vw,3rem);">
+                Manual de <span
+                    style="background:linear-gradient(135deg,#ef4444,#f2b705);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Corte
+                    Láser</span>
+            </h1>
+            <p class="hero__sub reveal reveal--slide-up" data-delay="180" style="font-size:var(--fs-base);">
+                Todo sobre nuestra máquina Galaxy CO₂ de 60W, el programa RDWorks, la calibración del foco, el
+                mantenimiento de óptica y el flujo de archivos en VisualCorp.
+            </p>
+            <div class="search-wrap reveal reveal--fade" data-delay="260" style="max-width:520px;margin-left:0;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="text" id="manualSearch" placeholder="Buscar en el manual...">
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="manual-layout">
+            <!-- SIDEBAR -->
+            <aside class="manual-sidebar">
+                <p class="toc-title">Contenido</p>
+                <ul class="toc-list">
+                    <li class="toc-item"><a href="#maquina"><span class="toc-dot"></span>La Máquina Galaxy 60W</a></li>
+                    <li class="toc-item"><a href="#rdworks"><span class="toc-dot"></span>Software RDWorks</a></li>
+                    <li class="toc-item"><a href="#colores"><span class="toc-dot"></span>Sistema de Colores</a></li>
+                    <li class="toc-item"><a href="#foco"><span class="toc-dot"></span>Calibración del Foco (7mm)</a>
+                    </li>
+                    <li class="toc-item"><a href="#materiales"><span class="toc-dot"></span>Materiales y Parámetros</a>
+                    </li>
+                    <li class="toc-item"><a href="#mantenimiento"><span class="toc-dot"></span>Mantenimiento</a></li>
+                    <li class="toc-item"><a href="#archivos"><span class="toc-dot"></span>Archivos y Organización</a>
+                    </li>
+                    <li class="toc-item"><a href="#horarios"><span class="toc-dot"></span>Horarios de Trabajo</a></li>
+                </ul>
+            </aside>
+
+            <div class="manual-content">
+
+                <!-- ── 1. MÁQUINA ── -->
+                <section class="manual-section reveal reveal--slide-up" id="maquina">
+                    <span class="section-eyebrow">⚡ Sección 1</span>
+                    <h2 class="section-title">La Máquina Galaxy CO₂ 60W</h2>
+                    <p class="section-sub">Nuestra plóter de corte láser es una máquina de CO₂ de 60 vatios. El rayo
+                        láser es invisible para el ojo humano pero extremadamente peligroso. Trabaja siempre con
+                        precaución.</p>
+                    <img src="img/laser_maquina.png" alt="Máquina de corte láser Galaxy 60W" class="section-img">
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5);margin-bottom:var(--sp-6);">
+                        <div
+                            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);">
+                            <p
+                                style="font-size:var(--fs-xs);font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp-4);">
+                                Especificaciones Técnicas</p>
+                            <p class="machine-card__spec"
+                                style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-bottom:var(--sp-2);">
+                                ⚡ <strong style="color:var(--color-heading);">Potencia del tubo:</strong> 60W CO₂</p>
+                            <p class="machine-card__spec"
+                                style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-bottom:var(--sp-2);">
+                                🎯 <strong style="color:var(--color-heading);">Distancia focal:</strong> 7mm
+                                (boquilla–superficie)</p>
+                            <p class="machine-card__spec"
+                                style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-bottom:var(--sp-2);">
+                                💻 <strong style="color:var(--color-heading);">Software:</strong> RDWorks (Ruida
+                                Controller)</p>
+                            <p class="machine-card__spec"
+                                style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-bottom:var(--sp-2);">
+                                🌡️ <strong style="color:var(--color-heading);">Refrigeración:</strong> Chiller de agua
+                                destilada</p>
+                            <p class="machine-card__spec"
+                                style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-bottom:var(--sp-2);">
+                                💨 <strong style="color:var(--color-heading);">Extracción:</strong> Blower (extractor de
+                                humos)</p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);">
+                            <p
+                                style="font-size:var(--fs-xs);font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp-4);">
+                                Materiales que trabaja</p>
+                            <div class="tip-list" style="gap:var(--sp-2);">
+                                <div class="tip-item" style="padding:var(--sp-2) var(--sp-3);font-size:var(--fs-xs);">✅
+                                    Acrílico (corte y grabado)</div>
+                                <div class="tip-item" style="padding:var(--sp-2) var(--sp-3);font-size:var(--fs-xs);">✅
+                                    MDF y madera</div>
+                                <div class="tip-item" style="padding:var(--sp-2) var(--sp-3);font-size:var(--fs-xs);">✅
+                                    Cuero y corcho</div>
+                                <div class="tip-item" style="padding:var(--sp-2) var(--sp-3);font-size:var(--fs-xs);">✅
+                                    Papel y cartón</div>
+                                <div class="tip-item" style="padding:var(--sp-2) var(--sp-3);font-size:var(--fs-xs);">🚫
+                                    Metal (sin revestimiento especial)</div>
+                                <div class="tip-item" style="padding:var(--sp-2) var(--sp-3);font-size:var(--fs-xs);">🚫
+                                    PVC (gases tóxicos de cloro)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--danger">
+                        <span class="callout__icon">☢️</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Seguridad: el rayo láser es INVISIBLE y peligroso</p>
+                            <p class="callout__text">El láser de CO₂ de 60W puede causar quemaduras graves en la piel y
+                                daño permanente en los ojos en fracción de segundos. Nunca apuntes el rayo hacia
+                                personas. Mantén la tapa cerrada durante el corte. Si el extractor no está encendido, no
+                                uses la máquina — los humos son tóxicos.</p>
+                        </div>
+                    </div>
+
+                    <img src="img/laser_acrilico.png" alt="Piezas de acrílico y MDF cortadas con láser"
+                        class="section-img">
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 2. RDWORKS ── -->
+                <section class="manual-section reveal reveal--slide-up" id="rdworks">
+                    <span class="section-eyebrow">💻 Sección 2</span>
+                    <h2 class="section-title">Software RDWorks</h2>
+                    <p class="section-sub">RDWorks es el programa oficial para controlar la plóter láser con controlador
+                        Ruida. Desde aquí importas los diseños, configuras velocidades, potencias y envías el trabajo a
+                        la máquina.</p>
+
+                    <!-- Interface screenshot provided by user -->
+                    <div
+                        style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);overflow:hidden;margin:var(--sp-6) 0;">
+                        <div
+                            style="padding:var(--sp-3) var(--sp-5);border-bottom:1px solid var(--color-border);display:flex;align-items:center;gap:var(--sp-3);">
+                            <div style="width:12px;height:12px;border-radius:50%;background:#ef4444;"></div>
+                            <div style="width:12px;height:12px;border-radius:50%;background:#f2b705;"></div>
+                            <div style="width:12px;height:12px;border-radius:50%;background:#22c55e;"></div>
+                            <span
+                                style="font-size:var(--fs-xs);color:var(--color-text-dim);margin-left:var(--sp-3);">RDWorks
+                                — Interfaz de trabajo</span>
+                        </div>
+                        <div style="padding:var(--sp-6);">
+                            <div style="display:grid;grid-template-columns:1fr auto;gap:var(--sp-6);align-items:start;">
+                                <div>
+                                    <p
+                                        style="font-size:var(--fs-xs);font-weight:700;color:var(--color-text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp-4);">
+                                        Áreas principales de la interfaz</p>
+                                    <div class="tip-list">
+                                        <div class="tip-item"><strong style="color:var(--color-accent-hover);">Área de
+                                                diseño (centro):</strong> Canvas blanco donde se ve el diseño tal como
+                                            quedará en el material.</div>
+                                        <div class="tip-item"><strong style="color:var(--color-accent-hover);">Panel
+                                                derecho "Work":</strong> Aquí configuras los parámetros de cada capa de
+                                            color (velocidad, potencia mín. y máx.).</div>
+                                        <div class="tip-item"><strong style="color:var(--color-accent-hover);">Barra de
+                                                colores (abajo):</strong> Paleta de colores. Cada color que uses en el
+                                            diseño define cómo la máquina procesa esa capa.</div>
+                                        <div class="tip-item"><strong style="color:var(--color-accent-hover);">Botones
+                                                "Start / Pause / Stop":</strong> Controlan la ejecución del trabajo
+                                            desde el PC.</div>
+                                        <div class="tip-item"><strong
+                                                style="color:var(--color-accent-hover);">Download:</strong> Transfiere
+                                            el trabajo a la memoria de la máquina. Puedes iniciar el corte desde el
+                                            panel de la máquina.</div>
+                                    </div>
+                                </div>
+                                <div
+                                    style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius-lg);padding:var(--sp-4);min-width:160px;text-align:center;">
+                                    <p style="font-size:1.5rem;margin-bottom:var(--sp-2);">💡</p>
+                                    <p style="font-size:var(--fs-xs);color:var(--color-text-muted);">Puedes guardar los
+                                        archivos como <strong style="color:var(--color-heading);">.RD</strong> para
+                                        reutilizar trabajos frecuentes sin necesidad de reimportar.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--tip">
+                        <span class="callout__icon">📂</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Formatos de archivo aceptados por RDWorks</p>
+                            <p class="callout__text">RDWorks acepta <strong>AI (Illustrator)</strong>,
+                                <strong>DXF</strong>, <strong>PLT</strong> y opcionalmente <strong>SVG</strong>. Los
+                                diseñadores deben entregar los archivos vectorizados. Los JPG/PNG no son útiles para
+                                corte láser (no tienen rutas vectoriales). Para grabado/escaneo sí se usan imágenes
+                                rasterizadas.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 3. SISTEMA DE COLORES ── -->
+                <section class="manual-section reveal reveal--slide-up" id="colores">
+                    <span class="section-eyebrow">🎨 Sección 3</span>
+                    <h2 class="section-title">Sistema de Colores en RDWorks</h2>
+                    <p class="section-sub">En RDWorks cada color del diseño corresponde a una acción diferente de la
+                        máquina. Este sistema es fundamental — si el color está mal, el láser hará lo que no debe.
+                        Apréndetelo de memoria.</p>
+
+                    <div class="color-system">
+                        <div class="color-card">
+                            <div class="color-card__header color-card--negro">
+                                <div class="color-card__dot" style="background:#111;border-color:rgba(255,255,255,.5);">
+                                </div>
+                                <div>
+                                    <div class="color-card__name">NEGRO</div>
+                                    <div class="color-card__sub">Aparece como "Corte" en RDWorks</div>
+                                </div>
+                            </div>
+                            <div class="color-card__body">
+                                <p class="color-card__desc">El láser <strong>corta completamente</strong> el material de
+                                    lado a lado. Usa alta potencia y baja velocidad. Para siluetas, contornos y piezas
+                                    que deben desprenderse del material.</p>
+                                <p class="color-card__tag">⚙️ Velocidad baja · Potencia alta · Corte total</p>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-card__header color-card--azul">
+                                <div class="color-card__dot" style="background:#3b82f6;"></div>
+                                <div>
+                                    <div class="color-card__name">AZUL</div>
+                                    <div class="color-card__sub">Aparece como "Corte" en RDWorks</div>
+                                </div>
+                            </div>
+                            <div class="color-card__body">
+                                <p class="color-card__desc"><strong>Delineado</strong>: corte superficial o línea de
+                                    doblez. No atraviesa completamente el material. Marca el contorno sin cortar de lado
+                                    a lado. Potencia más baja que el corte total.</p>
+                                <p class="color-card__tag">⚙️ Velocidad alta · Potencia baja · Marca superficial</p>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-card__header color-card--rojo">
+                                <div class="color-card__dot" style="background:#ef4444;"></div>
+                                <div>
+                                    <div class="color-card__name">ROJO</div>
+                                    <div class="color-card__sub">Aparece como "Escaneo" en RDWorks</div>
+                                </div>
+                            </div>
+                            <div class="color-card__body">
+                                <p class="color-card__desc"><strong>Grabado / Escaneo</strong>: el láser barre el área
+                                    línea por línea (como una impresora) para grabar texto, imágenes o texturas en la
+                                    superficie. No corta, solo marca.</p>
+                                <p class="color-card__tag">⚙️ Velocidad muy alta · Potencia baja · Relleno por barrido
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--warning">
+                        <span class="callout__icon">⚠️</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Orden de procesamiento recomendado</p>
+                            <p class="callout__text">Configura el orden de capas así: <strong>1° Rojo (grabado)</strong>
+                                → <strong>2° Azul (delineado)</strong> → <strong>3° Negro (corte)</strong>. Si cortas
+                                primero la pieza se mueve y el grabado queda desalineado. El orden correcto garantiza
+                                que la pieza esté quieta mientras se graba.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 4. FOCO 7mm ── -->
+                <section class="manual-section reveal reveal--slide-up" id="foco">
+                    <span class="section-eyebrow">🎯 Sección 4</span>
+                    <h2 class="section-title">Calibración del Foco — 7mm</h2>
+                    <p class="section-sub">Esta es una de las configuraciones más importantes. Si el foco está mal, el
+                        corte es impreciso, quema de más o no penetra el material correctamente.</p>
+
+                    <div class="focus-visual">
+                        <!-- Simple SVG Focus diagram -->
+                        <div class="focus-diagram" style="flex:0 0 180px;">
+                            <svg viewBox="0 0 180 260" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Nozzle body -->
+                                <rect x="65" y="10" width="50" height="80" rx="5" fill="#374151" stroke="#6b7280"
+                                    stroke-width="1.5" />
+                                <!-- Nozzle tip cone -->
+                                <polygon points="65,90 115,90 95,150 85,150" fill="#4b5563" stroke="#6b7280"
+                                    stroke-width="1.5" />
+                                <!-- Laser beam -->
+                                <line x1="90" y1="90" x2="90" y2="217" stroke="#ef4444" stroke-width="2"
+                                    stroke-dasharray="4,3" opacity="0.8" />
+                                <!-- Focus point -->
+                                <circle cx="90" cy="217" r="5" fill="#ef4444" opacity="0.9" />
+                                <!-- 7mm arrow -->
+                                <line x1="110" y1="150" x2="110" y2="217" stroke="#f2b705" stroke-width="1.5"
+                                    marker-start="url(#arr)" marker-end="url(#arr2)" />
+                                <text x="115" y="188" fill="#f2b705" font-size="12" font-family="sans-serif"
+                                    font-weight="bold">7mm</text>
+                                <!-- Material surface -->
+                                <rect x="20" y="217" width="140" height="18" rx="3" fill="#6b7280" opacity="0.7" />
+                                <text x="90" y="250" fill="#9ca3af" font-size="10" font-family="sans-serif"
+                                    text-anchor="middle">Material</text>
+                                <!-- Arrows -->
+                                <defs>
+                                    <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                                        <path d="M0,0 L0,6 L6,3 z" fill="#f2b705" />
+                                    </marker>
+                                    <marker id="arr2" markerWidth="6" markerHeight="6" refX="3" refY="3"
+                                        orient="auto-start-reverse">
+                                        <path d="M0,0 L0,6 L6,3 z" fill="#f2b705" />
+                                    </marker>
+                                </defs>
+                            </svg>
+                        </div>
+                        <div class="focus-info">
+                            <p
+                                style="font-size:var(--fs-xs);font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp-3);">
+                                Distancia focal correcta</p>
+                            <p
+                                style="font-size:var(--fs-2xl);font-weight:900;color:var(--color-heading);margin-bottom:var(--sp-4);">
+                                7 mm exactos</p>
+                            <p style="font-size:var(--fs-sm);color:var(--color-text-muted);margin-bottom:var(--sp-4);">
+                                Desde la <strong style="color:var(--color-heading);">punta de la boquilla</strong> hasta
+                                la <strong style="color:var(--color-heading);">superficie del material</strong> debe
+                                haber exactamente <strong style="color:#f2b705;">7 milímetros</strong>. A esta distancia
+                                el rayo láser está perfectamente enfocado y produce el corte más limpio y eficiente.</p>
+                            <div class="tip-list">
+                                <div class="tip-item">Usa la galga o el calibrador de 7mm incluido con la máquina para
+                                    medir la distancia.</div>
+                                <div class="tip-item">Ajusta la altura de la cama (mesa de corte) subiendo o bajando
+                                    hasta que la galga entre justa.</div>
+                                <div class="tip-item"><strong style="color:var(--color-danger);">Recalibrar el foco CADA
+                                        VEZ que cambies de material</strong>, ya que los espesores son diferentes.</div>
+                                <div class="tip-item">Si el foco está muy lejos: el corte es más ancho y menos potente.
+                                    Si está muy cerca: puede dañar la boquilla.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 5. MATERIALES ── -->
+                <section class="manual-section reveal reveal--slide-up" id="materiales">
+                    <span class="section-eyebrow">🧪 Sección 5</span>
+                    <h2 class="section-title">Materiales y Parámetros de Corte</h2>
+                    <p class="section-sub">Estos son los valores de velocidad y potencia para cada material. Guardarlos
+                        bien y consultarlos siempre antes de iniciar un trabajo nuevo.</p>
+
+                    <div class="callout callout--danger">
+                        <span class="callout__icon">🔋</span>
+                        <div class="callout__body">
+                            <p class="callout__title">REGLA DE ORO: Nunca superes el 80% de potencia</p>
+                            <p class="callout__text">Operar el tubo láser al 100% de potencia de forma constante lo
+                                degrada y acorta su vida útil drásticamente. <strong>El límite máximo es 80%.</strong>
+                                Si un material necesita más potencia para cortarse, la solución es <strong>reducir la
+                                    velocidad</strong>, no aumentar la potencia. Menos velocidad = el láser pasa más
+                                tiempo en cada punto = más energía = corte más profundo.</p>
+                        </div>
+                    </div>
+
+                    <h3
+                        style="font-size:var(--fs-md);font-weight:700;color:var(--color-heading);margin:var(--sp-8) 0 var(--sp-4);">
+                        Tabla de Parámetros</h3>
+                    <p style="font-size:var(--fs-xs);color:var(--color-text-dim);margin-bottom:var(--sp-4);">⚠️ Estos
+                        valores son puntos de partida. Siempre haz una prueba en un recorte del material antes de cortar
+                        el trabajo completo. Los parámetros pueden variar con la temperatura, humedad y estado de los
+                        espejos.</p>
+
+                    <div
+                        style="overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--radius-xl);overflow:hidden;">
+                        <table class="materials-table">
+                            <thead>
+                                <tr>
+                                    <th>Tipo de Trabajo</th>
+                                    <th>Velocidad (mm/s)</th>
+                                    <th>Potencia Min.</th>
+                                    <th>Potencia Máx.</th>
+                                    <th>Notas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="mat-section">
+                                    <td colspan="5">🟡 Acrílico Dorado — 2mm de espesor</td>
+                                </tr>
+                                <tr>
+                                    <td class="mat-name">🔴 Escaneo / Grabado</td>
+                                    <td>750 mm/s</td>
+                                    <td>12%</td>
+                                    <td>14%</td>
+                                    <td><span class="skill-badge skill-badge--cyan" style="font-size:.65rem">Gap 0.06mm
+                                            horizontal</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="mat-name">🔵 Delineado</td>
+                                    <td>900 mm/s</td>
+                                    <td>12%</td>
+                                    <td>14%</td>
+                                    <td>Marca superficial suave</td>
+                                </tr>
+                                <tr>
+                                    <td class="mat-name">⚫ Corte</td>
+                                    <td>25 mm/s</td>
+                                    <td>60%</td>
+                                    <td>70%</td>
+                                    <td>Corte limpio y frío</td>
+                                </tr>
+                                <tr class="mat-section">
+                                    <td colspan="5">🪵 MDF — 3mm de espesor</td>
+                                </tr>
+                                <tr>
+                                    <td class="mat-name">🔴 Escaneo / Grabado</td>
+                                    <td>750 mm/s</td>
+                                    <td>12%</td>
+                                    <td>14%</td>
+                                    <td><span class="skill-badge skill-badge--cyan" style="font-size:.65rem">Gap 0.06mm
+                                            horizontal</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="mat-name">🔵 Delineado</td>
+                                    <td>900 mm/s</td>
+                                    <td>12%</td>
+                                    <td>14%</td>
+                                    <td>Marca para doblez o guía</td>
+                                </tr>
+                                <tr>
+                                    <td class="mat-name">⚫ Corte</td>
+                                    <td>21 mm/s</td>
+                                    <td>70%</td>
+                                    <td>80%</td>
+                                    <td>⚠️ Máximo 80% de potencia</td>
+                                </tr>
+                                <tr class="mat-section">
+                                    <td colspan="5">📋 Más materiales próximamente</td>
+                                </tr>
+                                <tr>
+                                    <td class="mat-name" style="color:var(--color-text-dim);">Papel / Cartón</td>
+                                    <td style="color:var(--color-text-dim);">— por definir —</td>
+                                    <td>—</td>
+                                    <td>—</td>
+                                    <td style="color:var(--color-text-dim);">Se añadirá pronto</td>
+                                </tr>
+                                <tr>
+                                    <td class="mat-name" style="color:var(--color-text-dim);">Cuero</td>
+                                    <td style="color:var(--color-text-dim);">— por definir —</td>
+                                    <td>—</td>
+                                    <td>—</td>
+                                    <td style="color:var(--color-text-dim);">Se añadirá pronto</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="callout callout--tip" style="margin-top:var(--sp-6);">
+                        <span class="callout__icon">💡</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Si el corte no es completo… baja la velocidad</p>
+                            <p class="callout__text">Por ejemplo si el acrílico no se corta bien a 25mm/s al 70%, prueba
+                                a <strong>20mm/s al 70%</strong> en lugar de subir a 80% de potencia. El tubo te lo
+                                agradecerá con más años de vida.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 6. MANTENIMIENTO ── -->
+                <section class="manual-section reveal reveal--slide-up" id="mantenimiento">
+                    <span class="section-eyebrow">🔧 Sección 6</span>
+                    <h2 class="section-title">Mantenimiento de la Máquina Láser</h2>
+                    <p class="section-sub">El sistema óptico del láser (lente y espejos) es extremadamente delicado. Un
+                        poco de polvo o grasa en el lente puede degradar el corte o incluso dañarlo permanentemente.</p>
+
+                    <img src="img/laser_limpieza.png" alt="Limpieza del lente láser" class="section-img"
+                        style="max-height:280px;">
+
+                    <div class="maintenance-grid">
+                        <div class="maint-card" style="border-color:rgba(239,68,68,.3);">
+                            <div class="maint-card__icon">🧽</div>
+                            <div class="maint-card__freq" style="color:#f87171;">Cada día — Al iniciar</div>
+                            <div class="maint-card__title">Limpieza del Lente de Enfoque</div>
+                            <div class="maint-card__desc">Con un cotonete (hisopo) limpio humedecido en alcohol
+                                isopropílico al 90%+ limpia suavemente el lente de enfoque circular ubicado en la
+                                boquilla. Hazlo con movimiento circular sin presionar. Un lente sucio reduce
+                                drásticamente la potencia efectiva del corte.</div>
+                        </div>
+                        <div class="maint-card" style="border-color:rgba(242,183,5,.3);">
+                            <div class="maint-card__icon">🪞</div>
+                            <div class="maint-card__freq">Semanal — Cada semana</div>
+                            <div class="maint-card__title">Limpieza de los 3 Espejos</div>
+                            <div class="maint-card__desc">La máquina tiene 3 espejos que redirigen el rayo láser desde
+                                el tubo hasta la boquilla. Limpia los 3 con cotonete y alcohol isopropílico. Si hay
+                                marcas oscuras de quemado en el espejo, informa al encargado pues puede necesitar
+                                reemplazo.</div>
+                        </div>
+                        <div class="maint-card" style="border-color:rgba(6,182,212,.3);">
+                            <div class="maint-card__icon">💨</div>
+                            <div class="maint-card__freq">Mensual</div>
+                            <div class="maint-card__title">Limpieza del Tubo y Blower</div>
+                            <div class="maint-card__desc">Limpia el área alrededor del tubo de CO₂ acumulada con
+                                polvillo. Además, <strong>desarma el blower (extractor)</strong> y limpia sus aspas de
+                                residuos de combustión y polvo. Un blower sucio no extrae correctamente y los humos
+                                pueden dañar los componentes internos.</div>
+                        </div>
+                        <div class="maint-card" style="border-color:rgba(34,197,94,.3);">
+                            <div class="maint-card__icon">💧</div>
+                            <div class="maint-card__freq">Cada 2 meses</div>
+                            <div class="maint-card__title">Cambiar Agua del Chiller</div>
+                            <div class="maint-card__desc">El chiller refrigera el tubo de CO₂ con agua destilada. Cada 2
+                                meses cambia el agua completamente. Usa <strong>agua destilada pura</strong> — nunca
+                                agua del grifo (los minerales obstruyen las mangueras). El sobrecalentamiento del tubo
+                                es la causa #1 de daño prematuro.</div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--warning" style="margin-top:var(--sp-6);">
+                        <span class="callout__icon">⚠️</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Señales de alerta — Detén la máquina y avisa</p>
+                            <p class="callout__text">🔴 El corte es menos potente que antes (lente o espejos sucios). 🔴
+                                El agua del chiller está turbia o con color. 🔴 Hay ruido extraño en el movimiento del
+                                carro. 🔴 El chiller registra temperatura superior a 25°C. 🔴 El extractor no succiona
+                                bien o hay olor excesivo a humo.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 7. ARCHIVOS Y RED ── -->
+                <section class="manual-section reveal reveal--slide-up" id="archivos">
+                    <span class="section-eyebrow">📁 Sección 7</span>
+                    <h2 class="section-title">Archivos y Organización</h2>
+                    <p class="section-sub">Un buen sistema de archivos ahorra tiempo en el futuro. Aprovechar y
+                        reutilizar archivos es ser eficiente.</p>
+
+                    <!-- Flow -->
+                    <div
+                        style="display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);margin:var(--sp-6) 0;">
+                        <div style="text-align:center;flex:1;min-width:90px;">
+                            <div style="font-size:1.8rem;">🎨</div>
+                            <div
+                                style="font-size:var(--fs-xs);font-weight:700;color:var(--color-heading);margin-top:var(--sp-2);">
+                                Diseñador</div>
+                            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);">Crea el archivo</div>
+                        </div>
+                        <div style="color:var(--color-accent);font-size:1.4rem;">→</div>
+                        <div style="text-align:center;flex:1;min-width:90px;">
+                            <div style="font-size:1.8rem;">💻</div>
+                            <div
+                                style="font-size:var(--fs-xs);font-weight:700;color:var(--color-heading);margin-top:var(--sp-2);">
+                                PC de Vicky</div>
+                            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);">Carpeta <code
+                                    style="font-size:.65rem;background:rgba(255,255,255,.08);padding:.1rem .3rem;border-radius:4px;">/Láser</code>
+                            </div>
+                        </div>
+                        <div style="color:var(--color-accent);font-size:1.4rem;">→</div>
+                        <div style="text-align:center;flex:1;min-width:90px;">
+                            <div style="font-size:1.8rem;">📅</div>
+                            <div
+                                style="font-size:var(--fs-xs);font-weight:700;color:var(--color-heading);margin-top:var(--sp-2);">
+                                PC Láser</div>
+                            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);">Carpeta de hoy</div>
+                        </div>
+                        <div style="color:var(--color-accent);font-size:1.4rem;">→</div>
+                        <div style="text-align:center;flex:1;min-width:90px;">
+                            <div style="font-size:1.8rem;">⚡</div>
+                            <div
+                                style="font-size:var(--fs-xs);font-weight:700;color:var(--color-heading);margin-top:var(--sp-2);">
+                                Máquina Láser</div>
+                            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);">RDWorks → Corte</div>
+                        </div>
+                    </div>
+
+                    <h3
+                        style="font-size:var(--fs-md);font-weight:700;color:var(--color-heading);margin:var(--sp-6) 0 var(--sp-4);">
+                        📂 Reutilización inteligente de archivos</h3>
+                    <p style="font-size:var(--fs-sm);color:var(--color-text-muted);margin-bottom:var(--sp-5);">Cuando
+                        recibas un archivo de corte, pregúntate: <strong style="color:var(--color-heading);">¿Este
+                            diseño se podría volver a pedir en el futuro?</strong> Si la respuesta es sí, guárdalo en la
+                        carpeta de categorías.</p>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5);">
+                        <div class="callout callout--danger" style="margin:0;">
+                            <span class="callout__icon">🚫</span>
+                            <div class="callout__body">
+                                <p class="callout__title">NO guardar en categorías</p>
+                                <p class="callout__text">Recuerdos personalizados con nombre de persona, fechas
+                                    específicas o diseños únicos irrepetibles. Ej: <em>"Trofeo para Juan Pérez, bodas de
+                                        plata 2026"</em></p>
+                            </div>
+                        </div>
+                        <div class="callout callout--success" style="margin:0;">
+                            <span class="callout__icon">✅</span>
+                            <div class="callout__body">
+                                <p class="callout__title">SÍ guardar en categorías</p>
+                                <p class="callout__text">Cajas, lámparas, porta-retratos, figuras decorativas, letras
+                                    estándar, porta-celulares, etc. Ej: <code
+                                        style="font-size:.7rem">categorias/cajas/caja_lampara.rld</code></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);margin-top:var(--sp-6);">
+                        <p
+                            style="font-size:var(--fs-xs);font-weight:700;color:var(--color-text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp-4);">
+                            Ejemplo de estructura de carpetas</p>
+                        <pre
+                            style="font-size:var(--fs-xs);color:var(--color-text-muted);line-height:1.8;overflow-x:auto;"><code>📁 PC_Laser/
+├── 📅 2026-03-08/ (fecha de hoy - trabajos del día)
+│   ├── trofeo_juan_perez.rld
+│   └── caja_lampara_v2.rld
+└── 📂 categorias/
+    ├── 📂 cajas/
+    │   ├── caja_lampara.rld
+    │   └── caja_regalo_pequena.rld
+    ├── 📂 letras/
+    ├── 📂 porta_retratos/
+    ├── 📂 decoracion/
+    └── 📂 recuerdos_genericos/</code></pre>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ── 8. HORARIOS ── -->
+                <section class="manual-section reveal reveal--slide-up" id="horarios">
+                    <span class="section-eyebrow">🕐 Sección 8</span>
+                    <h2 class="section-title">Horarios de Trabajo</h2>
+                    <p class="section-sub">Estos son los horarios oficiales de VisualCorp para todos los departamentos.
+                    </p>
+
+                    <div class="schedule-grid">
+                        <div class="schedule-card">
+                            <p style="font-size:1.5rem;margin-bottom:var(--sp-3);">💼</p>
+                            <div class="schedule-card__days">Lunes a Viernes</div>
+                            <div class="schedule-card__time">8:20 — 18:00</div>
+                            <div class="schedule-card__note">
+                                📋 <strong style="color:var(--color-accent-hover);">Los lunes hay reunión de
+                                    equipo</strong> al inicio del día.<br>Llega puntual.
+                            </div>
+                        </div>
+                        <div class="schedule-card">
+                            <p style="font-size:1.5rem;margin-bottom:var(--sp-3);">🎉</p>
+                            <div class="schedule-card__days">Sábados</div>
+                            <div class="schedule-card__time">8:20 — 13:00</div>
+                            <div class="schedule-card__note">
+                                💰 <strong style="color:var(--color-accent-hover);">La quincena se paga los
+                                    sábados</strong> correspondientes al período.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--tip" style="margin-top:var(--sp-6);">
+                        <span class="callout__icon">📋</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Reunión de los lunes</p>
+                            <p class="callout__text">Los lunes se realiza una reunión de equipo para revisar trabajos
+                                pendientes, novedades, metas de la semana y cualquier tema importante. Es obligatoria la
+                                asistencia puntual. Llega a las 8:20 sin falta.</p>
+                        </div>
+                    </div>
+
+                    <div
+                        style="text-align:center;margin-top:var(--sp-10);padding:var(--sp-8);background:var(--color-surface);border-radius:var(--radius-xl);border:1px solid var(--color-border);">
+                        <p style="font-size:2rem;margin-bottom:var(--sp-4);">⚡</p>
+                        <h3
+                            style="font-size:var(--fs-xl);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-3);">
+                            La precisión es tu oficio</h3>
+                        <p style="color:var(--color-text-muted);max-width:480px;margin:0 auto var(--sp-6);">El corte
+                            láser requiere paciencia, cuidado y atención al detalle. Cada milímetro cuenta. Tu trabajo
+                            transforma materiales ordinarios en piezas extraordinarias.</p>
+                        <a href="index.html" class="btn btn--primary">← Volver al inicio</a>
+                    </div>
+                </section>
+
+            
+                <!-- QUIZ DE PASE -->
+                <section class="manual-section reveal reveal--slide-up" style="margin-top:var(--sp-8);">
+                    <div class="quiz-container">
+                        <div class="quiz-header">
+                            <span class="quiz-icon">🧠</span>
+                            <div class="quiz-title">Pase de Pruebas</div>
+                        </div>
+                        <div class="quiz-question">¿Cuál es la distancia focal exacta a la que debe calibrarse la boquilla del láser respecto al material?</div>
+                        <div class="quiz-options">
+                            <div class="quiz-option" data-correct="false">3 milímetros</div><div class="quiz-option" data-correct="true">7 milímetros (usando la pieza guía acrílica)</div><div class="quiz-option" data-correct="false">12 milímetros</div>
+                        </div>
+                        <div class="quiz-nav">
+                            <span class="quiz-progress">Pregunta interactiva - ¡Pon a prueba lo que leíste!</span>
+                        </div>
+                    </div>
+                </section>
+        
+            </div>
+        </div>
+    </div>
+
+      </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 <strong>VisualCorp</strong> · Manual Interno creado por <strong>Esteban Nicola</strong> · Milagro,
+                Ecuador</p>
+        </div>
+    </footer>
+
+    <button class="back-top" id="backTop" aria-label="Volver arriba">↑</button>
+    
+    <!-- Confetti JS -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Phase 3 Advanced Visuals CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/engine@3.3.0/tsparticles.engine.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.3.0/tsparticles.slim.min.js"></script>
+
+    <script src="js/manual.js"></script>
+
+  <!-- SPOTLIGHT SEARCH (Phase 4) -->
+  <div class="cmd-palette-backdrop" id="cmdBackdrop">
+    <div class="cmd-palette">
+      <div class="cmd-header">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="cmdInput" placeholder="Buscar en el manual... (ej: corte, cmky)" autocomplete="off">
+        <span class="cmd-esc">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmdResults">
+        <div class="cmd-empty">Escribe para buscar...</div>
+      </div>
+      <div class="cmd-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> Navegar</span>
+        <span><kbd>Enter</kbd> Abrir</span>
+      </div>
+    </div>
+  </div>
+
+<script src="https://unpkg.com/swup@4"></script>
+</body>
+
+</html>

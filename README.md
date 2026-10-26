@@ -67,6 +67,8 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ## Continuidad del trabajo
 
+- **Inicio y componentes (26 de octubre de 2026):** en la rama local `codex/home-components-20261026`, los seis servicios activos adoptan una composición tipo Bento adaptable. El bloque de contenido de Inicio prioriza casos de portafolio ya publicados con portada; actualmente Supabase no tiene artículos publicados, por lo que no muestra fotografías ni casos inventados. Typecheck, build, revisión responsive y navegación de una tarjeta correctos. Detalle y siguiente paso en [docs/home-components-20261026/README.md](docs/home-components-20261026/README.md). Sin publicación.
+
 - **Caja y POS (26 de octubre de 2026):** el trigger que vincula pagos en efectivo bloquea el mismo turno que usa el cierre para calcular el esperado. Así, el pago confirma antes del arqueo o se rechaza si el turno ya se cerró; no puede quedar aplicado después con un cierre incompleto. La migración `20261026140939_cash_payment_close_lock.sql` ya está aplicada y verificada en Supabase.
 
 - **Objetivo vigente:** mantener el sitio público, la administración y las herramientas POS en TypeScript, con componentes `.tsx` reutilizables y un sistema visual compartido. El cotizador debe mostrar precios en tiempo real para las opciones normal, con instalación y corporativo, y admitir cálculos por medidas o por cantidad.
