@@ -15,6 +15,7 @@ type AppNavGroup = { id: string; label: string; icon: LucideIcon; paths: string[
 
 export const adminLinks: AppNavLink[] = [
   { to: '/admin', label: 'Resumen', icon: LayoutDashboard, end: true, module: 'dashboard' },
+  { to: '/admin/manual-aprendizaje', label: 'Manual/aprendizaje', icon: BookOpen, module: 'dashboard' },
   { to: '/admin/sitio', label: 'Inicio', icon: Globe2, module: 'website' },
   { to: '/admin/servicios', label: 'Servicios', icon: BriefcaseBusiness, module: 'website' },
   { to: '/admin/tienda', label: 'Tienda', icon: ShoppingBag, module: 'website' },
@@ -29,6 +30,7 @@ export const adminLinks: AppNavLink[] = [
 ];
 export const operationsLinks: AppNavLink[] = [
   { to: '/operaciones', label: 'Resumen', icon: LayoutDashboard, end: true, module: 'dashboard' },
+  { to: '/operaciones/manual-aprendizaje', label: 'Manual/aprendizaje', icon: BookOpen, module: 'dashboard' },
   { to: '/operaciones/pos', label: 'Punto de venta', icon: ShoppingCart, module: 'sales' },
   { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'sales' },
   { to: '/operaciones/flujos', label: 'Caja y producción', icon: ClipboardList, module: 'workshop' },
@@ -48,13 +50,14 @@ const adminNavGroups: AppNavGroup[] = [
   { id: 'content', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
   { id: 'customers', label: 'Clientes', icon: Users, paths: ['/admin/solicitudes'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/admin/marketing'] },
-  { id: 'system', label: 'Administración', icon: Settings2, paths: ['/admin/cambios', '/admin/respaldo'] },
+  { id: 'system', label: 'Administración', icon: Settings2, paths: ['/admin/cambios', '/admin/respaldo', '/admin/manual-aprendizaje'] },
 ];
 const operationsNavGroups: AppNavGroup[] = [
   { id: 'sales', label: 'Ventas', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/finanzas', '/operaciones/cotizador'] },
   { id: 'customers', label: 'Clientes y CRM', icon: Users, paths: ['/operaciones/crm', '/operaciones/clientes'] },
   { id: 'operations', label: 'Producción e inventario', icon: Boxes, paths: ['/operaciones/flujos', '/operaciones/inventario', '/operaciones/equipos', '/operaciones/compras', '/operaciones/catalogo'] },
   { id: 'team', label: 'Equipo', icon: Settings2, paths: ['/operaciones/cambios', '/operaciones/personal', '/operaciones/equipo'] },
+  { id: 'learning', label: 'Aprendizaje', icon: BookOpen, paths: ['/operaciones/manual-aprendizaje'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing'] },
 ];
 export interface BrandProps { dark?: boolean }

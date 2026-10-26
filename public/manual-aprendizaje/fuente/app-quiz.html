@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz VisualCorp — Pon a prueba tus conocimientos</title>
+    <meta name="description"
+        content="Mini aplicación interactiva para aprender y repasar estándares de producción de VisualCorp.">
+    <link rel="icon"
+        href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmSKnD00M-kkEpOeoGxEL9UP7_Zfgf8Ug33Q&s">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/manual.css">
+
+</head>
+
+<body>
+
+    <script src="js/nav.js"></script>
+
+    <main id="swup" class="transition-fade">
+        <section class="hero" style="padding:8rem 0 3rem;">
+            <div class="container" style="position:relative;z-index:2;text-align:center;">
+                <span class="hero__eyebrow reveal reveal--fade" data-delay="50">🎮 Mini App Interactiva</span>
+                <h1 class="hero__title reveal reveal--slide-up" data-delay="100"
+                    style="font-size:clamp(1.8rem,4vw,3rem);">
+                    VisualCorp <span
+                        style="background:linear-gradient(135deg,#c084fc,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Trivia</span>
+                </h1>
+                <p class="hero__sub reveal reveal--slide-up" data-delay="180"
+                    style="font-size:var(--fs-base);max-width:600px;margin:1rem auto;">
+                    Pon a prueba tus conocimientos sobre procesos de imprenta, materiales, corte láser y ventas.
+                    ¡Aprende jugando!
+                </p>
+            </div>
+        </section>
+
+        <div class="container" style="margin-bottom: var(--sp-16);">
+            <div class="quiz-app reveal reveal--slide-up" id="appContainer">
+
+                <div class="loading-spinner" id="loader">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; margin-bottom:1rem;"></i>
+                    <p>Cargando banco de preguntas...</p>
+                </div>
+
+                <div id="quizContainer" style="display: none;">
+                    <div class="quiz-header">
+                        <div style="font-weight:700; color:var(--color-text-muted);">Pregunta <span
+                                id="qCurrent">1</span> de <span id="qTotal">10</span></div>
+                        <div class="quiz-score-badge"><i class="fa-solid fa-star"></i> <span id="scoreDisplay">0</span>
+                            pts</div>
+                    </div>
+
+                    <div class="quiz-progress-wrap">
+                        <div class="quiz-progress-bar" id="progressBar"></div>
+                    </div>
+
+                    <div id="questionArea">
+                        <div class="question-meta" id="qCategory">Categoría</div>
+                        <div class="question-text" id="qText">¿Pregunta?</div>
+                        <div class="options-grid" id="optionsGrid">
+                            <!-- Options injected via JS -->
+                        </div>
+                    </div>
+
+                    <div class="feedback-box" id="feedbackBox">
+                        <div class="feedback-title" id="fbTitle"><i class="fa-solid fa-circle-check"></i> ¡Correcto!
+                        </div>
+                        <div class="feedback-text" id="fbText">Explicación.</div>
+                    </div>
+
+                    <button class="next-btn" id="nextBtn">Siguiente Pregunta <i
+                            class="fa-solid fa-arrow-right"></i></button>
+                </div>
+
+                <!-- END SCREEN -->
+                <div class="end-screen" id="endScreen">
+                    <div style="font-size:4rem; margin-bottom:1rem;" id="endEmoji">🏆</div>
+                    <h2 style="font-size:var(--fs-2xl); color:var(--color-heading);">¡Trivia Completada!</h2>
+                    <div class="end-score" id="endScoreDisplay">10/10</div>
+                    <p class="end-msg" id="endMsg">¡Nivel Maestro Impresor!</p>
+                    <button class="reset-quiz-btn"><i class="fa-solid fa-rotate-right"></i> Volver a Intentar</button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 <strong>VisualCorp</strong> · Manual Interno creado por <strong>Esteban Nicola</strong> · Milagro,
+                Ecuador</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="js/db_preguntas.js"></script>
+    <script src="js/apps.js"></script>
+    <script src="js/manual.js"></script>
+    <script src="https://unpkg.com/swup@4"></script>
+</body>
+
+</html>

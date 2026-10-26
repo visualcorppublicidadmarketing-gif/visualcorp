@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Asesores — VisualCorp</title>
+    <meta name="description"
+        content="Guía completa para asesores de ventas de VisualCorp: precios, Excel, atención al cliente, seguimiento y más.">
+    <link rel="icon"
+        href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmSKnD00M-kkEpOeoGxEL9UP7_Zfgf8Ug33Q&s">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/manual.css">
+    <!-- Progress bar -->
+    <style>
+        #readProgress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #f2b705, #ffc929);
+            z-index: 9999;
+            width: 0;
+            transition: width .1s;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Reading progress bar -->
+    <div id="readProgress"></div>
+
+    <!-- ── NAV ── -->
+    <script src="js/nav.js"></script>
+
+  <main id="swup" class="transition-fade">
+<!-- ── HERO MINI ── -->
+    <section class="hero" style="padding:8rem 0 3rem;">
+        <div class="container" style="position:relative;z-index:2;">
+            <!-- Breadcrumb -->
+            <nav class="breadcrumb reveal reveal--fade">
+                <a href="index.html">Inicio</a>
+                <span>/</span>
+                <strong style="color:var(--color-accent-hover)">Asesores</strong>
+            </nav>
+            <span class="hero__eyebrow reveal reveal--fade" data-delay="50">🟡 Departamento de Ventas</span>
+            <h1 class="hero__title reveal reveal--slide-up" data-delay="100" style="font-size:clamp(1.8rem,4vw,3rem);">
+                Manual del <span class="accent">Asesor de Ventas</span>
+            </h1>
+            <p class="hero__sub reveal reveal--slide-up" data-delay="180" style="font-size:var(--fs-base);">
+                Todo lo que necesitas saber para atender al cliente, manejar el sistema, cumplir tus metas y crecer como
+                profesional en VisualCorp.
+            </p>
+            <!-- Search -->
+            <div class="search-wrap reveal reveal--fade" data-delay="260" style="max-width:520px;margin-left:0;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="text" id="manualSearch" placeholder="Buscar en el manual...">
+            </div>
+        </div>
+    </section>
+
+    <!-- ── MAIN LAYOUT ── -->
+    <div class="container">
+        <div class="manual-layout">
+
+            <!-- ── SIDEBAR TOC ── -->
+            <aside class="manual-sidebar">
+                <p class="toc-title">Contenido</p>
+                <ul class="toc-list">
+                    <li class="toc-item"><a href="#habilidades"><span class="toc-dot"></span>Habilidades Esenciales</a>
+                    </li>
+                    <li class="toc-item"><a href="#precios"><span class="toc-dot"></span>Lista de Precios</a></li>
+                    <li class="toc-item"><a href="#atencion"><span class="toc-dot"></span>Atención al Cliente</a></li>
+                    <li class="toc-item"><a href="#excel"><span class="toc-dot"></span>Sistema Excel de Ventas</a></li>
+                    <li class="toc-item"><a href="#seguimiento"><span class="toc-dot"></span>Seguimiento de Trabajos</a>
+                    </li>
+                    <li class="toc-item"><a href="#metas"><span class="toc-dot"></span>Metas y Mentalidad</a></li>
+                    <li class="toc-item"><a href="#cotizaciones"><span class="toc-dot"></span>Cotizaciones y
+                            Matemáticas</a></li>
+                    <li class="toc-item"><a href="#horarios"><span class="toc-dot"></span>Horarios de Trabajo</a></li>
+                </ul>
+            </aside>
+
+            <!-- ── CONTENT ── -->
+            <div class="manual-content">
+
+                <!-- ═══════════════════════════════════
+             1. HABILIDADES ESENCIALES
+        ═══════════════════════════════════ -->
+                <section class="manual-section reveal reveal--slide-up" id="habilidades">
+                    <span class="section-eyebrow">💡 Sección 1</span>
+                    <h2 class="section-title">Habilidades Esenciales</h2>
+                    <p class="section-sub">Para ser un gran asesor en VisualCorp, necesitas dominar estas competencias:
+                    </p>
+
+                    <div class="skills-grid">
+                        <div class="skill-card">
+                            <span class="skill-card__icon">📊</span>
+                            <div class="skill-card__name">Excel / Google Sheets</div>
+                            <span class="skill-badge skill-badge--gold">Avanzado</span>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Registro de ventas, fórmulas básicas, no tocar celdas automáticas.</p>
+                        </div>
+                        <div class="skill-card">
+                            <span class="skill-card__icon">🧮</span>
+                            <div class="skill-card__name">Matemáticas de Cotización</div>
+                            <span class="skill-badge skill-badge--cyan">Intermedio</span>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Calcular m², precios por escala, redondeos y márgenes.</p>
+                        </div>
+                        <div class="skill-card">
+                            <span class="skill-card__icon">😊</span>
+                            <div class="skill-card__name">Atención al Cliente</div>
+                            <span class="skill-badge skill-badge--gold">Avanzado</span>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Escuchar, sonreír, dar seguimiento y superar expectativas.</p>
+                        </div>
+                        <div class="skill-card">
+                            <span class="skill-card__icon">🏷️</span>
+                            <div class="skill-card__name">Lista de Precios</div>
+                            <span class="skill-badge skill-badge--gold">Avanzado</span>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Conocer de memoria los precios principales. Impresiones, souvenirs, rótulos.</p>
+                        </div>
+                        <div class="skill-card">
+                            <span class="skill-card__icon">📋</span>
+                            <div class="skill-card__name">Seguimiento de Pedidos</div>
+                            <span class="skill-badge skill-badge--cyan">Intermedio</span>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Saber en qué estado está cada trabajo y comunicárselo al cliente.</p>
+                        </div>
+                        <div class="skill-card">
+                            <span class="skill-card__icon">💬</span>
+                            <div class="skill-card__name">Comunicación Efectiva</div>
+                            <span class="skill-badge skill-badge--green">Básico</span>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                WhatsApp, llamadas y presencial. Ser claro, amable y rápido.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ═══════════════════════════════════
+             2. PRECIOS
+        ═══════════════════════════════════ -->
+                <section class="manual-section reveal reveal--slide-up" id="precios">
+                    <span class="section-eyebrow">🏷️ Sección 2</span>
+                    <h2 class="section-title">Lista de Precios</h2>
+                    <p class="section-sub">Los precios son la herramienta más importante del asesor. Debes conocerlos de
+                        memoria y tenerlos siempre a la mano.</p>
+
+                    <div class="callout callout--warning">
+                        <span class="callout__icon">⚠️</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Nunca cotices de memoria sin verificar</p>
+                            <p class="callout__text">Los precios cambian. Siempre consulta la lista oficial antes de dar
+                                un precio definitivo al cliente. Una cotización incorrecta genera pérdidas o clientes
+                                insatisfechos.</p>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--tip" style="margin-top:var(--sp-4);">
+                        <span class="callout__icon">💡</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Accede a la lista de precios actualizada</p>
+                            <p class="callout__text">En la web de Visual Corp encontrarás la calculadora y el catálogo
+                                de precios actualizado. También en el Drive de administración.</p>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4);margin-top:var(--sp-6);">
+                        <a href="https://visualcorp-ec.github.io/VisualCorp-Web/tienda.html" target="_blank"
+                            class="link-card">
+                            <span class="link-card__icon">🛒</span>
+                            <div class="link-card__body">
+                                <div class="link-card__title">Catálogo / Tienda</div>
+                                <div class="link-card__url">Productos y precios por escala</div>
+                            </div>
+                            <span class="link-card__arrow">→</span>
+                        </a>
+                        <a href="https://visualcorp-ec.github.io/VisualCorp-Web/calculadora.html" target="_blank"
+                            class="link-card">
+                            <span class="link-card__icon">📏</span>
+                            <div class="link-card__body">
+                                <div class="link-card__title">Calculadora de Impresión</div>
+                                <div class="link-card__url">Calcula precios por m² al instante</div>
+                            </div>
+                            <span class="link-card__arrow">→</span>
+                        </a>
+                    </div>
+
+                    <div class="callout callout--success" style="margin-top:var(--sp-6);">
+                        <span class="callout__icon">✅</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Propina de Esteban: No subas los precios demasiado</p>
+                            <p class="callout__text">Queremos ser competitivos. Un precio justo mantiene al cliente
+                                feliz y nos da más volumen. El negocio perdurable viene del servicio, no del precio
+                                alto.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ═══════════════════════════════════
+             3. ATENCIÓN AL CLIENTE
+        ═══════════════════════════════════ -->
+                <section class="manual-section reveal reveal--slide-up" id="atencion">
+                    <span class="section-eyebrow">😊 Sección 3</span>
+                    <h2 class="section-title">Atención al Cliente</h2>
+                    <p class="section-sub">La primera impresión lo es todo. Una sonrisa genuina y una buena actitud
+                        valen más que cualquier descuento.</p>
+
+                    <div class="step-list">
+                        <div class="step-card">
+                            <div class="step-number">1</div>
+                            <div class="step-body">
+                                <div class="step-title">Saluda con energía y una sonrisa</div>
+                                <p class="step-desc">El cliente debe sentir que es bienvenido desde el primer segundo.
+                                    No importa qué tan ocupado estés. Un "¡Buen día, con mucho gusto!" marca la
+                                    diferencia.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">2</div>
+                            <div class="step-body">
+                                <div class="step-title">Escucha primero, habla después</div>
+                                <p class="step-desc">Deja que el cliente explique lo que necesita sin interrumpirlo.
+                                    Toma nota si es necesario. Luego haz preguntas clave para entender bien el pedido.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">3</div>
+                            <div class="step-body">
+                                <div class="step-title">Sé honesto con los tiempos</div>
+                                <p class="step-desc">Nunca prometas una fecha de entrega que no puedes cumplir. Es mejor
+                                    decir "lo tengo para mañana" y cumplir, que decir "en dos horas" y fallar.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">4</div>
+                            <div class="step-body">
+                                <div class="step-title">Preocúpate por el trabajo del cliente</div>
+                                <p class="step-desc">No es solo tomar el pedido y listo. Asegúrate de que el trabajo
+                                    quedó bien antes de entregarlo. Revisa que el diseño, medidas y material sean los
+                                    correctos.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">5</div>
+                            <div class="step-body">
+                                <div class="step-title">Da seguimiento activo</div>
+                                <p class="step-desc">Si el trabajo está en impresión o taller, estate pendiente para
+                                    saber cuándo está listo. Avísale al cliente antes de que él pregunte. Eso genera
+                                    confianza.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:var(--sp-8);">
+                        <div class="quote-card">
+                            <p>"Recuerda que debemos <strong>servir al prójimo</strong> con un buen servicio y un buen
+                                producto al mejor precio. La satisfacción del cliente es nuestra mejor publicidad."</p>
+                            <span class="quote-author">— Esteban Nicola</span>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--warning" style="margin-top:var(--sp-6);">
+                        <span class="callout__icon">🚫</span>
+                        <div class="callout__body">
+                            <p class="callout__title">No te fijes en los demás asesores</p>
+                            <p class="callout__text">Compite contigo mismo. Una vez que logres tu meta semanal,
+                                ¡supérala! No se trata de saber cuánto hicieron los demás, sino de dar tu mejor
+                                esfuerzo.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ═══════════════════════════════════
+             4. SISTEMA EXCEL DE VENTAS
+        ═══════════════════════════════════ -->
+                <section class="manual-section reveal reveal--slide-up" id="excel">
+                    <span class="section-eyebrow">📊 Sección 4</span>
+                    <h2 class="section-title">Sistema de Ventas en Excel</h2>
+                    <p class="section-sub">Cada asesor tiene su propia pestaña en el Google Sheets semanal. Aquí
+                        aprendes a usarlo correctamente.</p>
+
+                    <div class="callout callout--danger">
+                        <span class="callout__icon">🔴</span>
+                        <div class="callout__body">
+                            <p class="callout__title">¡CRÍTICO! No tocar las columnas G, H, L y M</p>
+                            <p class="callout__text">Esas columnas tienen fórmulas automáticas. Si las tocas o eliminas,
+                                se descuadra todo el sistema y los totales dejarán de funcionar. Solo ingresas datos en
+                                las columnas que se indican abajo.</p>
+                        </div>
+                    </div>
+
+                    <h3
+                        style="font-size:var(--fs-lg);font-weight:700;color:var(--color-heading);margin:var(--sp-8) 0 var(--sp-4);">
+                        Columnas del Registro de Ventas</h3>
+
+                    <div
+                        style="overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;">
+                        <table class="excel-table">
+                            <thead>
+                                <tr>
+                                    <th>Col.</th>
+                                    <th>Campo</th>
+                                    <th>Descripción</th>
+                                    <th>¿Lo ingresa el asesor?</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="col-name">A</td>
+                                    <td class="col-name">N° Proforma</td>
+                                    <td>Número de la proforma del trabajo (o nombre del cliente si no hay número
+                                        asignado).</td>
+                                    <td><span class="skill-badge skill-badge--green">✅ SÍ</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="col-name">B</td>
+                                    <td class="col-name">Descripción</td>
+                                    <td>¿Qué se va a hacer? Ej: "Lona EC 2x1m", "Vinilo impreso letras".</td>
+                                    <td><span class="skill-badge skill-badge--green">✅ SÍ</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="col-name">C</td>
+                                    <td class="col-name">Medidas</td>
+                                    <td>Dimensiones del trabajo. Ej: 2x1, 60x90, etc.</td>
+                                    <td><span class="skill-badge skill-badge--green">✅ SÍ</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="col-name">D</td>
+                                    <td class="col-name">Material</td>
+                                    <td>Tipo de material: Lona EC, PVC 3mm, Vinil impreso, Microperforado, Traslúcido,
+                                        etc.</td>
+                                    <td><span class="skill-badge skill-badge--green">✅ SÍ</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="col-name">E</td>
+                                    <td class="col-name">Forma de Pago</td>
+                                    <td>Efectivo, Transferencia o Cheque.</td>
+                                    <td><span class="skill-badge skill-badge--green">✅ SÍ</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="col-name">F</td>
+                                    <td class="col-name">Fecha</td>
+                                    <td>Fecha en que se hizo la venta / se tomó el pedido.</td>
+                                    <td><span class="skill-badge skill-badge--green">✅ SÍ</span></td>
+                                </tr>
+                                <tr class="col-locked">
+                                    <td class="col-auto">G</td>
+                                    <td class="col-auto">DÍA (Número)</td>
+                                    <td>Se calcula automáticamente. Asigna el número de día de la semana.</td>
+                                    <td><span class="skill-badge skill-badge--red">🔴 NO TOCAR</span></td>
+                                </tr>
+                                <tr class="col-locked">
+                                    <td class="col-auto">H</td>
+                                    <td class="col-auto">DÍA (Nombre)</td>
+                                    <td>Se calcula automáticamente. Muestra el nombre del día (lunes, martes, etc.).
+                                    </td>
+                                    <td><span class="skill-badge skill-badge--red">🔴 NO TOCAR</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="col-name">I</td>
+                                    <td class="col-name">Fecha de Entrega</td>
+                                    <td>Fecha prometida al cliente para entregar el trabajo.</td>
+                                    <td><span class="skill-badge skill-badge--green">✅ SÍ</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="col-name">J</td>
+                                    <td class="col-name">Venta Realizada</td>
+                                    <td>Monto total de la venta.</td>
+                                    <td><span class="skill-badge skill-badge--green">✅ SÍ</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="col-name">K</td>
+                                    <td class="col-name">Abonado / Entrada</td>
+                                    <td>Cuánto abonó el cliente al momento de tomar el pedido.</td>
+                                    <td><span class="skill-badge skill-badge--green">✅ SÍ</span></td>
+                                </tr>
+                                <tr class="col-locked">
+                                    <td class="col-auto">L</td>
+                                    <td class="col-auto">Por Cobrar</td>
+                                    <td>Se calcula automáticamente: Venta - Abonado.</td>
+                                    <td><span class="skill-badge skill-badge--red">🔴 NO TOCAR</span></td>
+                                </tr>
+                                <tr class="col-locked">
+                                    <td class="col-auto">M</td>
+                                    <td class="col-auto">Totales / Resumen</td>
+                                    <td>Columna de totales automáticos. No manipular.</td>
+                                    <td><span class="skill-badge skill-badge--red">🔴 NO TOCAR</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3
+                        style="font-size:var(--fs-lg);font-weight:700;color:var(--color-heading);margin:var(--sp-8) 0 var(--sp-4);">
+                        ¿Cómo está organizado el archivo?</h3>
+
+                    <div class="step-list">
+                        <div class="step-card">
+                            <div class="step-number" style="font-size:.85rem;">📁</div>
+                            <div class="step-body">
+                                <div class="step-title">Cada asesor tiene su pestaña</div>
+                                <p class="step-desc">En la parte inferior del archivo verás pestañas con los nombres:
+                                    VICKY, JESSY, KRISTEL, MARIELA, Ventas_Externas, etc. Cada asesor trabaja solo en su
+                                    propia pestaña.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number" style="font-size:.85rem;">📆</div>
+                            <div class="step-body">
+                                <div class="step-title">Resumen Semanal por Día</div>
+                                <p class="step-desc">Más a la derecha en tu pestaña hay una tabla de "Ventas Diarias"
+                                    que muestra cuánto vendiste cada día (Lunes a Sábado), los totales y cuánto está por
+                                    cobrar. No la edites directamente, es automática.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number" style="font-size:.85rem;">💰</div>
+                            <div class="step-body">
+                                <div class="step-title">Métodos de Pago</div>
+                                <p class="step-desc">También hay una tabla que separa lo cobrado por Efectivo,
+                                    Transferencia y Cheque. Se llena automáticamente según lo que ingresaste en la
+                                    columna de "Forma de Pago".</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number" style="font-size:.85rem;">🏆</div>
+                            <div class="step-body">
+                                <div class="step-title">Hoja PRO — Resumen General</div>
+                                <p class="step-desc">La pestaña final "PRO" recopila los totales de todos los asesores.
+                                    Muestra: ingresos totales, efectivo, transferencia, cheque y egresos de la semana.
+                                    Esta hoja es para administración, no la edites.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:var(--sp-8);">
+                        <a href="https://drive.google.com/drive/folders/1wsT642Czgnwo-LhnsCBtXNsn3yEqf4mT?usp=sharing"
+                            target="_blank" class="link-card">
+                            <span class="link-card__icon">📁</span>
+                            <div class="link-card__body">
+                                <div class="link-card__title">Carpeta de Asesores en Google Drive</div>
+                                <div class="link-card__url">Visual Corp / Administración / Asesores / 2026 / [Mes] /
+                                    SEMANA 1 — etc.</div>
+                            </div>
+                            <span class="link-card__arrow">→</span>
+                        </a>
+                    </div>
+
+                    <div class="callout callout--tip" style="margin-top:var(--sp-6);">
+                        <span class="callout__icon">💡</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Truco: Verifica tu total cada día antes de salir</p>
+                            <p class="callout__text">Al final de cada jornada revisa que tu total de venta cuadre con lo
+                                que tienes en caja (efectivo + transferencias). Si hay diferencia, corrígela ese mismo
+                                día, no al siguiente.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ═══════════════════════════════════
+             5. SEGUIMIENTO
+        ═══════════════════════════════════ -->
+                <section class="manual-section reveal reveal--slide-up" id="seguimiento">
+                    <span class="section-eyebrow">🔄 Sección 5</span>
+                    <h2 class="section-title">Seguimiento de Trabajos</h2>
+                    <p class="section-sub">Tu responsabilidad no termina cuando tomas el pedido. Un buen asesor
+                        acompañar el trabajo hasta que llegue a las manos del cliente.</p>
+
+                    <div class="step-list">
+                        <div class="step-card">
+                            <div class="step-number">1</div>
+                            <div class="step-body">
+                                <div class="step-title">Toma el pedido con todos los datos</div>
+                                <p class="step-desc">Dimensiones, material, cantidad, fecha de entrega, nombre del
+                                    cliente y forma de pago. Si falta algún dato, regresa a preguntar antes de enviarlo
+                                    a producción.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">2</div>
+                            <div class="step-body">
+                                <div class="step-title">Envia a diseño o impresión</div>
+                                <p class="step-desc">Comunica el pedido al área correspondiente. Si es diseño, asegúrate
+                                    de pasar el arte o el brief. Si es impresión directa, pasa el archivo finalizado.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">3</div>
+                            <div class="step-body">
+                                <div class="step-title">Monitorea el estado del trabajo</div>
+                                <p class="step-desc">Estate pendiente. Pregunta al impresor o al taller si el trabajo va
+                                    en tiempo. No esperes a que el cliente llame primero.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">4</div>
+                            <div class="step-body">
+                                <div class="step-title">Avisa al cliente cuando esté listo</div>
+                                <p class="step-desc">Un mensaje de WhatsApp o llamada proactiva diciendo "¡Su pedido ya
+                                    está listo!" genera una excelente impresión y diferencia a VisualCorp de la
+                                    competencia.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">5</div>
+                            <div class="step-body">
+                                <div class="step-title">Cobra el saldo pendiente en la entrega</div>
+                                <p class="step-desc">Si el cliente tiene un saldo "Por Cobrar", recuérdalo amablemente
+                                    al momento de entregar. Registra el pago final en la hoja de Excel.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ═══════════════════════════════════
+             6. METAS Y MENTALIDAD
+        ═══════════════════════════════════ -->
+                <section class="manual-section reveal reveal--slide-up" id="metas">
+                    <span class="section-eyebrow">🏆 Sección 6</span>
+                    <h2 class="section-title">Metas y Mentalidad</h2>
+                    <p class="section-sub">Las ventas son un juego mental. Tu actitud determina tus resultados.</p>
+
+                    <div class="quote-card">
+                        <p>"Tenemos que ser <strong>competitivos</strong>. Hay que saber matemáticas para hacer
+                            cotizaciones, hay que cumplir una meta pero una vez lograda <strong>hay que
+                                superarse</strong>."</p>
+                        <span class="quote-author">— Esteban Nicola</span>
+                    </div>
+
+                    <div style="margin-top:var(--sp-8);">
+                        <h3
+                            style="font-size:var(--fs-lg);font-weight:700;color:var(--color-heading);margin-bottom:var(--sp-5);">
+                            Principios del Asesor VisualCorp</h3>
+                        <div class="tip-list">
+                            <div class="tip-item">Cumple tu meta semanal. Luego, supérala.</div>
+                            <div class="tip-item">No elevas los precios demasiado. Ser competitivos nos da más clientes.
+                            </div>
+                            <div class="tip-item">No te comparas con otros asesores. Te comparas con la versión de ti de
+                                la semana pasada.</div>
+                            <div class="tip-item">Recuerda que estás sirviendo al cliente. Ponle pasión y orgullo a lo
+                                que haces.</div>
+                            <div class="tip-item">El producto que vendemos no es solo una impresión. Es la imagen del
+                                negocio de tu cliente.</div>
+                            <div class="tip-item">Un cliente satisfecho vuelve. Un cliente decepcionado no regresa
+                                jamás.</div>
+                            <div class="tip-item">Si no sabes algo, pregunta. Es mejor preguntar que cotizar mal.</div>
+                            <div class="tip-item">Llega temprano, sonríe siempre y da lo mejor de ti todos los días.
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- ═══════════════════════════════════
+             7. COTIZACIONES Y MATEMÁTICAS
+        ═══════════════════════════════════ -->
+                <section class="manual-section reveal reveal--slide-up" id="cotizaciones">
+                    <span class="section-eyebrow">🧮 Sección 7</span>
+                    <h2 class="section-title">Cotizaciones y Matemáticas</h2>
+                    <p class="section-sub">Saber calcular bien una cotización es indispensable. Aquí van los casos más
+                        comunes.</p>
+
+                    <h3
+                        style="font-size:var(--fs-md);font-weight:700;color:var(--color-heading);margin-bottom:var(--sp-4);">
+                        Cálculo de Impresión por m²</h3>
+
+                    <div
+                        style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--sp-6);margin-bottom:var(--sp-6);">
+                        <p style="font-size:var(--fs-sm);color:var(--color-text-muted);margin-bottom:var(--sp-3);">
+                            Fórmula base:</p>
+                        <p
+                            style="font-size:var(--fs-xl);font-weight:800;color:var(--color-accent-hover);font-family:monospace;">
+                            Precio = Ancho × Alto × Precio por m²
+                        </p>
+                        <p style="font-size:var(--fs-xs);color:var(--color-text-dim);margin-top:var(--sp-2);">Ejemplo:
+                            Lona de 2m × 1.5m a $6 el m² = 2 × 1.5 × 6 = <strong
+                                style="color:var(--color-success);">$18.00</strong></p>
+                    </div>
+
+                    <div class="step-list">
+                        <div class="step-card">
+                            <div class="step-number" style="font-size:.8rem;">📏</div>
+                            <div class="step-body">
+                                <div class="step-title">Siempre pregunta las medidas exactas</div>
+                                <p class="step-desc">Ancho × Alto en metros. Si el cliente da medidas en centímetros,
+                                    conviértelas. Ej: 200cm = 2m.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number" style="font-size:.8rem;">💯</div>
+                            <div class="step-body">
+                                <div class="step-title">Redondeo hacia arriba</div>
+                                <p class="step-desc">Si la impresora arroja un precio con decimales muy pequeños
+                                    (centavos), redondea a un número limpio que sea fácil para el cliente. Ej: $17.85 →
+                                    puedes cotizar $18.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number" style="font-size:.8rem;">📦</div>
+                            <div class="step-body">
+                                <div class="step-title">Precio por escala (souvenirs y tarjetas)</div>
+                                <p class="step-desc">Para productos como jarros, llaveros y tarjetas el precio varía
+                                    según la cantidad. A más unidades, menor precio por unidad. Siempre cotiza usando la
+                                    tabla de precios correcta.</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number" style="font-size:.8rem;">💵</div>
+                            <div class="step-body">
+                                <div class="step-title">Confirma si incluye diseño</div>
+                                <p class="step-desc">Si el cliente no tiene el arte listo, el diseño tiene un costo
+                                    adicional. Siempre aclararlo antes de que lleguen las sorpresas a la hora del cobro.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout--tip" style="margin-top:var(--sp-6);">
+                        <span class="callout__icon">🧰</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Usa la Calculadora Online</p>
+                            <p class="callout__text">Para impresiones grandes puedes usar la calculadora de la web de
+                                VisualCorp. Ingresa el material, medidas y te da el precio automáticamente.</p>
+                        </div>
+                    </div>
+
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- HORARIOS -->
+                <section class="manual-section reveal reveal--slide-up" id="horarios">
+                    <span class="section-eyebrow">🕐 Sección 8</span>
+                    <h2 class="section-title">Horarios de Trabajo</h2>
+                    <p class="section-sub">Estos son los horarios oficiales de VisualCorp para todos los departamentos.
+                        La puntualidad es parte del respeto hacia el equipo y los clientes.</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5);margin:var(--sp-6) 0;">
+                        <div
+                            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <p style="font-size:1.5rem;margin-bottom:var(--sp-3);">💼</p>
+                            <div
+                                style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                Lunes a Viernes</div>
+                            <div
+                                style="font-size:var(--fs-2xl);font-weight:900;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                                8:20 — 18:00</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-3);">📋
+                                <strong style="color:var(--color-accent-hover);">Los lunes hay reunión de
+                                    equipo</strong> al inicio. Llega puntual a las 8:20am.
+                            </p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <p style="font-size:1.5rem;margin-bottom:var(--sp-3);">🎉</p>
+                            <div
+                                style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                Sábados</div>
+                            <div
+                                style="font-size:var(--fs-2xl);font-weight:900;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                                8:20 — 13:00</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-3);">💰
+                                <strong style="color:var(--color-accent-hover);">La quincena se paga los
+                                    sábados</strong> correspondientes al período.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="callout callout--tip">
+                        <span class="callout__icon">📋</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Reunión obligatoria los lunes</p>
+                            <p class="callout__text">Los lunes se realiza una reunión de equipo para revisar trabajos
+                                pendientes, novedades, metas de la semana y cualquier tema importante. Es obligatoria la
+                                asistencia puntual. Llega a las 8:20 sin falta.</p>
+                        </div>
+                    </div>
+                    <div
+                        style="text-align:center;margin-top:var(--sp-10);padding:var(--sp-8);background:var(--color-surface);border-radius:var(--radius-xl);border:1px solid var(--color-border);">
+                        <p style="font-size:2rem;margin-bottom:var(--sp-4);">🎯</p>
+                        <h3
+                            style="font-size:var(--fs-xl);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-3);">
+                            ¡Eres parte de algo grande!</h3>
+                        <p style="color:var(--color-text-muted);max-width:480px;margin:0 auto var(--sp-6);">Este manual
+                            fue creado para que cuentes con todas las herramientas para brillar. VisualCorp es un equipo
+                            y tú eres una pieza fundamental.</p>
+                        <a href="index.html" class="btn btn--primary">← Volver al inicio</a>
+                    </div>
+                </section>
+
+            
+                <!-- QUIZ DE PASE -->
+                <section class="manual-section reveal reveal--slide-up" style="margin-top:var(--sp-8);">
+                    <div class="quiz-container">
+                        <div class="quiz-header">
+                            <span class="quiz-icon">🧠</span>
+                            <div class="quiz-title">Pase de Pruebas</div>
+                        </div>
+                        <div class="quiz-question">En nuestro archivo de ventas en Excel, ¿qué celda NO debes tocar jamás bajo ninguna circunstancia?</div>
+                        <div class="quiz-options">
+                            <div class="quiz-option" data-correct="false">La celda del Nombre del Cliente</div><div class="quiz-option" data-correct="true">Las celdas grises con fórmulas automáticas</div><div class="quiz-option" data-correct="false">La celda de Fecha de Entrega</div>
+                        </div>
+                        <div class="quiz-nav">
+                            <span class="quiz-progress">Pregunta interactiva - ¡Pon a prueba lo que leíste!</span>
+                        </div>
+                    </div>
+                </section>
+        
+            </div>
+        </div>
+    </div>
+
+    <!-- ── FOOTER ── -->
+      </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 <strong>VisualCorp</strong> · Manual Interno creado por <strong>Esteban Nicola</strong> · Milagro,
+                Ecuador</p>
+        </div>
+    </footer>
+
+    <!-- Back to top -->
+    <button class="back-top" id="backTop" aria-label="Volver arriba">↑</button>
+
+    
+    <!-- Confetti JS -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Phase 3 Advanced Visuals CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/engine@3.3.0/tsparticles.engine.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.3.0/tsparticles.slim.min.js"></script>
+
+    <script src="js/manual.js"></script>
+
+  <!-- SPOTLIGHT SEARCH (Phase 4) -->
+  <div class="cmd-palette-backdrop" id="cmdBackdrop">
+    <div class="cmd-palette">
+      <div class="cmd-header">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="cmdInput" placeholder="Buscar en el manual... (ej: corte, cmky)" autocomplete="off">
+        <span class="cmd-esc">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmdResults">
+        <div class="cmd-empty">Escribe para buscar...</div>
+      </div>
+      <div class="cmd-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> Navegar</span>
+        <span><kbd>Enter</kbd> Abrir</span>
+      </div>
+    </div>
+  </div>
+
+<script src="https://unpkg.com/swup@4"></script>
+</body>
+
+</html>

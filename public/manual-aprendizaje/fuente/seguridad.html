@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguridad Industrial — VisualCorp</title>
+    <meta name="description"
+        content="Reglas obligatorias de seguridad industrial, uso de EPP, manejo de solventes y mantenimiento en VisualCorp.">
+    <link rel="icon"
+        href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmSKnD00M-kkEpOeoGxEL9UP7_Zfgf8Ug33Q&s">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/manual.css">
+    <!-- Progress bar -->
+    <style>
+        #readProgress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ef4444, #f87171);
+            /* Red/Danger theme */
+            z-index: 9999;
+            width: 0;
+            transition: width .1s;
+        }
+
+        .hero {
+            /* Red hero gradient */
+            background: linear-gradient(135deg, rgba(239, 68, 68, .10) 0%, transparent 50%, rgba(245, 158, 11, .06) 100%);
+        }
+
+        .hero::before {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Reading progress bar -->
+    <div id="readProgress"></div>
+
+    <!-- ── NAV ── -->
+    <script src="js/nav.js"></script>
+
+  <main id="swup" class="transition-fade">
+<!-- ── HERO MINI ── -->
+    <section class="hero" style="padding:8rem 0 3rem;">
+        <div class="container" style="position:relative;z-index:2;">
+            <!-- Breadcrumb -->
+            <nav class="breadcrumb reveal reveal--fade">
+                <a href="index.html">Inicio</a>
+                <span>/</span>
+                <strong style="color:#ef4444">Seguridad</strong>
+            </nav>
+            <span class="hero__eyebrow reveal reveal--fade" data-delay="50"
+                style="color:#f87171;background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);">🛡️ Operación
+                Segura</span>
+            <h1 class="hero__title reveal reveal--slide-up" data-delay="100" style="font-size:clamp(1.8rem,4vw,3rem);">
+                <span
+                    style="background: linear-gradient(135deg, #ef4444, #f87171);-webkit-background-clip: text;-webkit-text-fill-color: transparent;">Seguridad</span>
+                Industrial
+            </h1>
+            <p class="hero__sub reveal reveal--slide-up" data-delay="180" style="font-size:var(--fs-base);">
+                Reglas innegociables para proteger tu integridad física, el equipo de VisualCorp y nuestras
+                instalaciones.
+            </p>
+            <!-- Search -->
+            <div class="search-wrap reveal reveal--fade" data-delay="260" style="max-width:520px;margin-left:0;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="text" id="manualSearch" placeholder="Buscar en el manual (ej: extintor, EPP)...">
+            </div>
+        </div>
+    </section>
+
+    <!-- ── MAIN LAYOUT ── -->
+    <div class="container">
+        <div class="manual-layout">
+
+            <!-- ── SIDEBAR TOC ── -->
+            <aside class="manual-sidebar">
+                <p class="toc-title">Contenido</p>
+                <ul class="toc-list">
+                    <li class="toc-item"><a href="#epp"><span class="toc-dot"></span>Equipos de Protección (EPP)</a>
+                    </li>
+                    <li class="toc-item"><a href="#quimicos"><span class="toc-dot"></span>Manejo de Químicos</a></li>
+                    <li class="toc-item"><a href="#riesgos"><span class="toc-dot"></span>Riesgos y Electricidad</a></li>
+                    <li class="toc-item"><a href="#emergencias"><span class="toc-dot"></span>Emergencias</a></li>
+                </ul>
+            </aside>
+
+            <!-- ── CONTENT ── -->
+            <div class="manual-content">
+
+                <div class="callout callout--warning reveal reveal--slide-up"
+                    style="border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.1);">
+                    <span class="callout__icon">⚠️</span>
+                    <div class="callout__body">
+                        <h3 class="callout__title" style="color:#ef4444;">TOLERANCIA CERO</h3>
+                        <p class="callout__text">Ignorar intencionalmente las reglas de seguridad industrial expone tu
+                            vida y la de tus compañeros. Es considerado motivo de sanción inmediata.</p>
+                    </div>
+                </div>
+
+                <!-- 1. EPP -->
+                <section class="manual-section reveal reveal--slide-up" id="epp" style="margin-top:var(--sp-8);">
+                    <span class="section-eyebrow"
+                        style="color:#ef4444;background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);">🦺 Sección
+                        1</span>
+                    <h2 class="section-title">Equipos de Protección Personal (EPP)</h2>
+                    <p class="section-sub">El uso del equipo adecuado no es opcional, es parte de tu uniforme de trabajo
+                        en el taller.</p>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4);margin-bottom:var(--sp-6);">
+                        <div
+                            style="background:var(--color-surface-alt);padding:var(--sp-5);border-radius:var(--radius-lg);border-left:4px solid #ef4444;">
+                            <h4 style="color:var(--color-heading);margin-bottom:10px;">🥽 Gafas de Seguridad</h4>
+                            <p style="font-size:var(--fs-sm);color:var(--color-text-muted);">Obligatorias al usar el
+                                <strong>Corte Láser</strong> (protección UV), amoladoras, soldadoras, cortadoras de
+                                disco y al usar taladros en altura.</p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface-alt);padding:var(--sp-5);border-radius:var(--radius-lg);border-left:4px solid #ef4444;">
+                            <h4 style="color:var(--color-heading);margin-bottom:10px;">🧤 Guantes de Trabajo</h4>
+                            <p style="font-size:var(--fs-sm);color:var(--color-text-muted);">Obligatorios al manipular
+                                planchas metálicas, vidrios, filos vivos de acrílico o tubos estructurales. <em>Nota: NO
+                                    usar guantes holgados al operar taladros de banco.</em></p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface-alt);padding:var(--sp-5);border-radius:var(--radius-lg);border-left:4px solid #ef4444;">
+                            <h4 style="color:var(--color-heading);margin-bottom:10px;">🥾 Calzado Cerrado</h4>
+                            <p style="font-size:var(--fs-sm);color:var(--color-text-muted);">Prohibido ingresar al área
+                                de taller o impresión con sandalias, crocs o zapatos descubiertos. Recomendable usar
+                                calzado con punta reforzada en área de estructuras.</p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface-alt);padding:var(--sp-5);border-radius:var(--radius-lg);border-left:4px solid #ef4444;">
+                            <h4 style="color:var(--color-heading);margin-bottom:10px;">😷 Mascarillas</h4>
+                            <p style="font-size:var(--fs-sm);color:var(--color-text-muted);">Obligatorio usar mascarilla
+                                de carbón activado durante la limpieza de inyectores con solvente fuerte, pintura a
+                                soplete o lijado en seco.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 2. QUÍMICOS -->
+                <section class="manual-section reveal reveal--slide-up" id="quimicos">
+                    <span class="section-eyebrow"
+                        style="color:#ef4444;background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);">🧪 Sección
+                        2</span>
+                    <h2 class="section-title">Manejo de Químicos y Solventes</h2>
+                    <p class="section-sub">En nuestra industria usamos líquidos altamente inflamables. Su manejo
+                        requiere extrema precaución.</p>
+
+                    <ul
+                        style="padding-left:var(--sp-5);line-height:1.8;color:var(--color-text-muted);margin-bottom:var(--sp-6);">
+                        <li><strong>Tintas Eco-Solventes y UV:</strong> Evitar el contacto con la piel. Si entra tinta a
+                            los ojos, lavar en el lavadero inmediatamente por 15 minutos continuos.</li>
+                        <li><strong>Thinner y Cloroformo:</strong> El cloroformo (usado para fusionar acrílico) emite
+                            gases tóxicos pesados. Usar estrictamente en áreas ventiladas o con el extractor encendido.
+                            Cierre herméticamente los envases apenas termine de usar.</li>
+                        <li><strong>Prohibido Fumar:</strong> Está terminantemente prohibido fumar en TODO el perímetro
+                            de VisualCorp, incluyendo parqueaderos y zonas de carga.</li>
+                        <li><strong>Derrames:</strong> Los grandes derrames de tintas o aceites mecánicos no se limpian
+                            con agua; se deben absorber con aserrín o arena y luego recogerse.</li>
+                    </ul>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 3. ELECTRICIDAD -->
+                <section class="manual-section reveal reveal--slide-up" id="riesgos">
+                    <span class="section-eyebrow"
+                        style="color:#ef4444;background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);">⚡ Sección
+                        3</span>
+                    <h2 class="section-title">Riesgos y Electricidad</h2>
+                    <p class="section-sub">Convivimos con máquinas de alto voltaje, láseres CO2 y resistencias de calor.
+                    </p>
+
+                    <p style="margin-bottom:var(--sp-4);">
+                        <strong>Máquina Láser (Tubo CO2 de Alto Voltaje):</strong> Nunca abras la tapa trasera del tubo
+                        láser mientras la máquina esté encendida. La descarga puede ser letal.<br><br>
+                        <strong>Plotters de Impresión:</strong> Los calentadores frontales y traseros corren largas
+                        corrientes. Nunca desenchufes equipos tirando del cable, siempre del enchufe plástico.<br><br>
+                        <strong>Líquidos y Electrónica:</strong> Ningún envase con agua, café ni gaseosa debe acercarse
+                        a menos de 2 metros de las consolas de operación, teclados de plotter, o computadoras de diseño.
+                    </p>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 4. EMERGENCIAS -->
+                <section class="manual-section reveal reveal--slide-up" id="emergencias">
+                    <span class="section-eyebrow"
+                        style="color:#ef4444;background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);">🚨 Sección
+                        4</span>
+                    <h2 class="section-title">Emergencias</h2>
+
+                    <div
+                        style="background:rgba(239,68,68,.05);padding:var(--sp-6);border-radius:var(--radius-xl);border:1px solid rgba(239,68,68,.2);">
+                        <h3 style="color:#ef4444;margin-bottom:1rem;">Protocolos de Acción Rápida</h3>
+
+                        <h4 style="color:var(--color-heading);margin-top:1rem;">🔥 En caso de Conato de Incendio</h4>
+                        <p style="font-size:var(--fs-sm);color:var(--color-text-muted);">Especialmente durante cortes
+                            láser de MDF o acrílico grueso.
+                        <ol style="margin-left:1.5rem;font-size:var(--fs-sm);color:var(--color-text-muted);">
+                            <li>Pausar la máquina inmediatamente desde el panel.</li>
+                            <li>Levantar la tapa frontal. Las llamas suelen apagarse por falta de extracción forzada o
+                                al enfriar el material.</li>
+                            <li>Si las llamas persisten, usar el <strong>Extintor de CO2 local</strong> dirigido a la
+                                base del material. NUNCA usar agua comercial sobre el láser.</li>
+                        </ol>
+                        </p>
+
+                        <h4 style="color:var(--color-heading);margin-top:1.5rem;">🩹 En caso de Corteduras Graves</h4>
+                        <p style="font-size:var(--fs-sm);color:var(--color-text-muted);">Con cuchillas exacto(estiletes)
+                            o lata/lámina galvanizada.
+                        <ol style="margin-left:1.5rem;font-size:var(--fs-sm);color:var(--color-text-muted);">
+                            <li>Detener el trabajo.</li>
+                            <li>Lavar rápidamente y aplicar presión fuerte con gasas del botiquín.</li>
+                            <li>Elevar el miembro afectado por encima de la altura del corazón.</li>
+                            <li>Notificar al Gerente o Asesor para traslado médico si el sangrado no se detiene en 3
+                                minutos.</li>
+                        </ol>
+                        </p>
+
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ── FOOTER ── -->
+    <footer style="text-align:center;padding:var(--sp-8) 0;color:var(--color-text-dim);font-size:var(--fs-xs);">
+        <p>© 2026 VisualCorp. Manual de Seguridad Industrial.<br>Creado por Esteban Coello.</p>
+    </footer>
+
+    <!-- Back to top -->
+    <button class="back-top" aria-label="Volver arriba">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+
+    
+    <!-- Phase 3 Advanced Visuals CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/engine@3.3.0/tsparticles.engine.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.3.0/tsparticles.slim.min.js"></script>
+
+    <script src="js/manual.js"></script>
+
+  <!-- SPOTLIGHT SEARCH (Phase 4) -->
+  <div class="cmd-palette-backdrop" id="cmdBackdrop">
+    <div class="cmd-palette">
+      <div class="cmd-header">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="cmdInput" placeholder="Buscar en el manual... (ej: corte, cmky)" autocomplete="off">
+        <span class="cmd-esc">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmdResults">
+        <div class="cmd-empty">Escribe para buscar...</div>
+      </div>
+      <div class="cmd-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> Navegar</span>
+        <span><kbd>Enter</kbd> Abrir</span>
+      </div>
+    </div>
+  </div>
+
+<script src="https://unpkg.com/swup@4"></script>
+</body>
+
+</html>

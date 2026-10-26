@@ -12,15 +12,15 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
-    "@tiptap/extension-color": "^3.30.2",
-    "@tiptap/extension-highlight": "^3.30.2",
-    "@tiptap/extension-image": "^3.30.2",
-    "@tiptap/extension-link": "^3.30.2",
-    "@tiptap/extension-text-align": "^3.30.2",
-    "@tiptap/extension-text-style": "^3.30.2",
-    "@tiptap/extension-underline": "^3.30.2",
-    "@tiptap/react": "^3.30.2",
-    "@tiptap/starter-kit": "^3.30.2",
+    "@tiptap/extension-color": "^3.32.0",
+    "@tiptap/extension-highlight": "^3.32.0",
+    "@tiptap/extension-image": "^3.32.0",
+    "@tiptap/extension-link": "^3.32.0",
+    "@tiptap/extension-text-align": "^3.32.0",
+    "@tiptap/extension-text-style": "^3.32.0",
+    "@tiptap/extension-underline": "^3.32.0",
+    "@tiptap/react": "^3.32.0",
+    "@tiptap/starter-kit": "^3.32.0",
     "@vitejs/plugin-react": "^6.1.2",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.61.0",
@@ -31,10 +31,12 @@
     "vite": "^8.3.5"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "sharp": "^0.35.3",
     "supabase": "^2.121.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "~5.9.3"
   }
 }

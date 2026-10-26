@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tu Primer Día — VisualCorp</title>
+    <meta name="description"
+        content="Guía de inducción para nuevos miembros del equipo VisualCorp: cultura, reglas de convivencia y ubicaciones clave.">
+    <link rel="icon"
+        href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmSKnD00M-kkEpOeoGxEL9UP7_Zfgf8Ug33Q&s">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/manual.css">
+    <!-- Progress bar -->
+    <style>
+        #readProgress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #22c55e, #4ade80);
+            /* Green theme */
+            z-index: 9999;
+            width: 0;
+            transition: width .1s;
+        }
+
+        .hero {
+            /* Green hero gradient */
+            background: linear-gradient(135deg, rgba(34, 197, 94, .10) 0%, transparent 50%, rgba(6, 182, 212, .06) 100%);
+        }
+
+        .hero::before {
+            display: none;
+        }
+
+        /* hide default yellow gradient */
+    </style>
+</head>
+
+<body>
+
+    <!-- Reading progress bar -->
+    <div id="readProgress"></div>
+
+    <!-- ── NAV ── -->
+    <script src="js/nav.js"></script>
+
+  <main id="swup" class="transition-fade">
+<!-- ── HERO MINI ── -->
+    <section class="hero" style="padding:8rem 0 3rem;">
+        <div class="container" style="position:relative;z-index:2;">
+            <!-- Breadcrumb -->
+            <nav class="breadcrumb reveal reveal--fade">
+                <a href="index.html">Inicio</a>
+                <span>/</span>
+                <strong style="color:#22c55e">Inducción</strong>
+            </nav>
+            <span class="hero__eyebrow reveal reveal--fade" data-delay="50"
+                style="color:#4ade80;background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.25);">👋 Inducción al
+                Taller</span>
+            <h1 class="hero__title reveal reveal--slide-up" data-delay="100" style="font-size:clamp(1.8rem,4vw,3rem);">
+                Tu <span
+                    style="background: linear-gradient(135deg, #22c55e, #10b981);-webkit-background-clip: text;-webkit-text-fill-color: transparent;">Primer
+                    Día</span>
+            </h1>
+            <p class="hero__sub reveal reveal--slide-up" data-delay="180" style="font-size:var(--fs-base);">
+                ¡Bienvenido al equipo! Todo lo que necesitas saber sobre nuestras reglas, cultura, y ubicaciones clave
+                para que te sientas en casa desde el inicio.
+            </p>
+            <!-- Search -->
+            <div class="search-wrap reveal reveal--fade" data-delay="260" style="max-width:520px;margin-left:0;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="text" id="manualSearch" placeholder="Buscar en el manual (ej: acrílico, extintor)...">
+            </div>
+        </div>
+    </section>
+
+    <!-- ── MAIN LAYOUT ── -->
+    <div class="container">
+        <div class="manual-layout">
+
+            <!-- ── SIDEBAR TOC ── -->
+            <aside class="manual-sidebar">
+                <p class="toc-title">Contenido</p>
+                <ul class="toc-list">
+                    <li class="toc-item"><a href="#cultura"><span class="toc-dot"></span>Cultura VisualCorp</a></li>
+                    <li class="toc-item"><a href="#reglas"><span class="toc-dot"></span>Reglas Básicas</a></li>
+                    <li class="toc-item"><a href="#ubicaciones"><span class="toc-dot"></span>Ubicaciones Clave</a></li>
+                    <li class="toc-item"><a href="#convivencia"><span class="toc-dot"></span>Convivencia y Limpieza</a>
+                    </li>
+                </ul>
+            </aside>
+
+            <!-- ── CONTENT ── -->
+            <div class="manual-content">
+
+                <!-- 1. CULTURA -->
+                <section class="manual-section reveal reveal--slide-up" id="cultura">
+                    <span class="section-eyebrow"
+                        style="color:#22c55e;background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.25);">⭐ Sección
+                        1</span>
+                    <h2 class="section-title">Cultura VisualCorp</h2>
+                    <p class="section-sub">Esto es lo que nos define y nos hace diferentes en la industria publicitaria.
+                    </p>
+
+                    <p style="margin-bottom:var(--sp-4);">En VisualCorp no solo hacemos letreros e impresiones; ayudamos
+                        a otros negocios a verse profesionales y crecer. Cada banner, cada corte láser y cada
+                        instalación es la cara de la marca de uno de nuestros clientes.</p>
+
+                    <div class="callout"
+                        style="background: rgba(34, 197, 94, .08); border: 1px solid rgba(34, 197, 94, .25);">
+                        <span class="callout__icon">🤝</span>
+                        <div class="callout__body">
+                            <h3 style="color:#4ade80;font-weight:700;margin-bottom:.5rem;">Nuestra Misión</h3>
+                            <p style="font-size:var(--fs-sm);">"Hacer que nuestros clientes destaquen mediante
+                                soluciones gráficas de alta calidad, entregadas a tiempo y con un servicio excepcional."
+                            </p>
+                        </div>
+                    </div>
+
+                    <h3 style="margin:var(--sp-6) 0 var(--sp-3);">Tus Aportes son Escuchados</h3>
+                    <p>Si ves una manera de hacer las cosas más rápido, un desperdicio de material que se puede evitar,
+                        o tienes una idea para un nuevo producto, <strong>¡dilo!</strong> Valoramos la proactividad por
+                        encima de todo.</p>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 2. REGLAS -->
+                <section class="manual-section reveal reveal--slide-up" id="reglas">
+                    <span class="section-eyebrow"
+                        style="color:#22c55e;background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.25);">📜 Sección
+                        2</span>
+                    <h2 class="section-title">Reglas Básicas</h2>
+                    <p class="section-sub">Normas fundamentales para mantener el orden y la eficiencia.</p>
+
+                    <div class="step-list">
+                        <div class="step-card">
+                            <div class="step-number"
+                                style="background:linear-gradient(135deg, #22c55e, #10b981);box-shadow:0 0 15px rgba(34,197,94,.3);">
+                                1</div>
+                            <div class="step-body">
+                                <h3 class="step-title">Puntualidad Absoluta</h3>
+                                <p class="step-desc">El trabajo empieza a la hora exacta marcada en tu horario. Quince
+                                    minutos antes es llegar a tiempo; llegar a la hora exacta es llegar tarde.
+                                    Especialmente los Lunes a las 8:30am para la reunión de equipo.</p>
+                            </div>
+                        </div>
+
+                        <div class="step-card">
+                            <div class="step-number"
+                                style="background:linear-gradient(135deg, #22c55e, #10b981);box-shadow:0 0 15px rgba(34,197,94,.3);">
+                                2</div>
+                            <div class="step-body">
+                                <h3 class="step-title">Pausas Activas</h3>
+                                <p class="step-desc">A mitad de mañana y mitad de tarde, toma 5 minutos para estirarte,
+                                    caminar o tomar agua. Esto es obligatorio para evitar lesiones por repetición,
+                                    especialmente para diseñadores y operadores de máquinas.</p>
+                            </div>
+                        </div>
+
+                        <div class="step-card">
+                            <div class="step-number"
+                                style="background:linear-gradient(135deg, #22c55e, #10b981);box-shadow:0 0 15px rgba(34,197,94,.3);">
+                                3</div>
+                            <div class="step-body">
+                                <h3 class="step-title">Reporte de Problemas</h3>
+                                <p class="step-desc">Si una máquina hace un ruido extraño, si falta material o si
+                                    cometiste un error en un archivo: <strong>reportalo de inmediato al Gerente de
+                                        Producción</strong>. Ocultar un error cuesta 10 veces más que arreglarlo en el
+                                    momento.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 3. UBICACIONES -->
+                <section class="manual-section reveal reveal--slide-up" id="ubicaciones">
+                    <span class="section-eyebrow"
+                        style="color:#22c55e;background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.25);">📍 Sección
+                        3</span>
+                    <h2 class="section-title">Ubicaciones Clave</h2>
+                    <p class="section-sub">No te pierdas en tu primer día. Aquí encontrarás lo esencial.</p>
+
+                    <div
+                        style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:var(--sp-4);">
+                        <div
+                            style="background:var(--color-surface-alt);padding:var(--sp-5);border-radius:var(--radius-lg);border:1px solid var(--color-border);">
+                            <h4 style="color:var(--color-heading);margin-bottom:5px;">🩹 Botiquín de Primeros Auxilios
+                            </h4>
+                            <p style="font-size:var(--fs-sm);color:var(--color-text-muted);">Ubicado en la pared
+                                principal del taller de armados, junto a la puerta de la oficina.</p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface-alt);padding:var(--sp-5);border-radius:var(--radius-lg);border:1px solid var(--color-border);">
+                            <h4 style="color:var(--color-heading);margin-bottom:5px;">🧯 Extintores</h4>
+                            <p style="font-size:var(--fs-sm);color:var(--color-text-muted);">Hay uno junto a la máquina
+                                láser y otro en la entrada principal. <strong>No los tapes nunca.</strong></p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface-alt);padding:var(--sp-5);border-radius:var(--radius-lg);border:1px solid var(--color-border);">
+                            <h4 style="color:var(--color-heading);margin-bottom:5px;">🗑️ Reciclaje y Sobrantes</h4>
+                            <p style="font-size:var(--fs-sm);color:var(--color-text-muted);">Los retazos de acrílico >
+                                10cm van a la caja azul; los sobrantes de lona > 50cm van al estante posterior.</p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface-alt);padding:var(--sp-5);border-radius:var(--radius-lg);border:1px solid var(--color-border);">
+                            <h4 style="color:var(--color-heading);margin-bottom:5px;">🧰 Herramientas Comunes</h4>
+                            <p style="font-size:var(--fs-sm);color:var(--color-text-muted);">El tablero perforado tiene
+                                las herramientas básicas. <strong>Úsalas y devuélvelas a su mismo lugar.</strong></p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 4. CONVIVENCIA -->
+                <section class="manual-section reveal reveal--slide-up" id="convivencia">
+                    <span class="section-eyebrow"
+                        style="color:#22c55e;background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.25);">🫂 Sección
+                        4</span>
+                    <h2 class="section-title">Convivencia y Limpieza</h2>
+                    <p class="section-sub">Un espacio limpio refleja una mente clara y un equipo profesional.</p>
+
+                    <p style="margin-bottom:var(--sp-4);">Pasamos gran parte de nuestro día en el taller, por lo que
+                        mantener el ambiente agradable es responsabilidad de todos.</p>
+
+                    <ul
+                        style="padding-left:var(--sp-5);line-height:1.8;color:var(--color-text-muted);margin-bottom:var(--sp-6);">
+                        <li><strong>Tu Espacio:</strong> Al final del día, tu estación de trabajo (escritorio o mesa de
+                            armado) debe quedar completamente limpia y sin basura.</li>
+                        <li><strong>Almuerzos:</strong> Utilizar exclusivamente el área designada para comer.
+                            <strong>Prohibido</strong> comer cerca del plotter o la máquina láser, una gota de líquido
+                            puede dañar tarjetas electrónicas.</li>
+                        <li><strong>Música:</strong> Tenemos equipo de sonido general. Se mantiene un volumen moderado
+                            para poder escuchar instrucciones. Si eres diseñador, puedes usar audífonos, retirando uno
+                            de ellos por seguridad.</li>
+                        <li><strong>Respeto:</strong> Cero tolerancia a faltas de respeto, bromas pesadas con
+                            herramientas, o acoso de cualquier tipo.</li>
+                    </ul>
+
+                    <div
+                        style="text-align:center;padding:var(--sp-8);background:rgba(34,197,94,.05);border-radius:var(--radius-xl);border:1px solid rgba(34,197,94,.2);">
+                        <h3 style="font-size:var(--fs-2xl);color:var(--color-heading);margin-bottom:var(--sp-2);">¡Estás
+                            listo para empezar!</h3>
+                        <p style="color:var(--color-text-muted);margin-bottom:var(--sp-6);">Revisa el área a la que
+                            perteneces (Asesores, Diseñadores, Taller, etc.) para ver tus responsabilidades específicas.
+                        </p>
+                        <a href="index.html" class="btn btn--primary"
+                            style="background:linear-gradient(135deg, #22c55e, #10b981);color:#0f172a;box-shadow:0 0 20px rgba(34,197,94,.3);">Volver
+                            al Inicio</a>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ── FOOTER ── -->
+    <footer style="text-align:center;padding:var(--sp-8) 0;color:var(--color-text-dim);font-size:var(--fs-xs);">
+        <p>© 2026 VisualCorp. Manual de Inducción Interno.<br>Creado por Esteban Coello.</p>
+    </footer>
+
+    <!-- Back to top -->
+    <button class="back-top" aria-label="Volver arriba">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+
+    
+    <!-- Phase 3 Advanced Visuals CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/engine@3.3.0/tsparticles.engine.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.3.0/tsparticles.slim.min.js"></script>
+
+    <script src="js/manual.js"></script>
+
+  <!-- SPOTLIGHT SEARCH (Phase 4) -->
+  <div class="cmd-palette-backdrop" id="cmdBackdrop">
+    <div class="cmd-palette">
+      <div class="cmd-header">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="cmdInput" placeholder="Buscar en el manual... (ej: corte, cmky)" autocomplete="off">
+        <span class="cmd-esc">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmdResults">
+        <div class="cmd-empty">Escribe para buscar...</div>
+      </div>
+      <div class="cmd-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> Navegar</span>
+        <span><kbd>Enter</kbd> Abrir</span>
+      </div>
+    </div>
+  </div>
+
+<script src="https://unpkg.com/swup@4"></script>
+</body>
+
+</html>

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -15,7 +16,7 @@ function githubPagesFallback() {
 }
 
 export default defineConfig({
-  plugins: [react(), githubPagesFallback()],
+  plugins: [react(), tailwindcss(), githubPagesFallback()],
   build: {
     rolldownOptions: {
       output: {

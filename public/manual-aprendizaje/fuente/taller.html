@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual del Personal de Taller — VisualCorp</title>
+    <meta name="description"
+        content="Guía completa para el personal de taller de VisualCorp: instalación de rótulos, letras corpóreas, acabados, atención al cliente y cultura de trabajo.">
+    <link rel="icon"
+        href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmSKnD00M-kkEpOeoGxEL9UP7_Zfgf8Ug33Q&s">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/manual.css">
+    <style>
+        #readProgress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #22c55e, #06b6d4);
+            z-index: 9999;
+            width: 0;
+            transition: width .1s;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--sp-5);
+            margin: var(--sp-6) 0;
+        }
+
+        .product-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--sp-5);
+            text-align: center;
+            transition: all var(--duration) var(--ease-out);
+        }
+
+        .product-card:hover {
+            border-color: rgba(34, 197, 94, .3);
+            transform: translateY(-3px);
+        }
+
+        .product-card__icon {
+            font-size: 2.2rem;
+            margin-bottom: var(--sp-3);
+        }
+
+        .product-card__name {
+            font-weight: 700;
+            font-size: var(--fs-sm);
+            color: var(--color-heading);
+            margin-bottom: var(--sp-2);
+        }
+
+        .product-card__desc {
+            font-size: var(--fs-xs);
+            color: var(--color-text-muted);
+            line-height: 1.5;
+        }
+
+        .tool-checklist {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--sp-3);
+            margin: var(--sp-6) 0;
+        }
+
+        @media(max-width:500px) {
+            .tool-checklist {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .tool-item {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-4);
+            display: flex;
+            align-items: center;
+            gap: var(--sp-3);
+        }
+
+        .tool-item__icon {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .tool-item__name {
+            font-size: var(--fs-xs);
+            font-weight: 600;
+            color: var(--color-heading);
+        }
+
+        .workflow-steps {
+            counter-reset: ws;
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-4);
+        }
+
+        .ws-step {
+            display: flex;
+            gap: var(--sp-5);
+            align-items: flex-start;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-5);
+        }
+
+        .ws-step::before {
+            counter-increment: ws;
+            content: counter(ws);
+            min-width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #22c55e, #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: var(--fs-sm);
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .section-img {
+            width: 100%;
+            border-radius: var(--radius-xl);
+            margin: var(--sp-6) 0;
+            object-fit: cover;
+            max-height: 340px;
+            border: 1px solid var(--color-border);
+        }
+
+        .sched-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--sp-5);
+            margin: var(--sp-6) 0;
+        }
+
+        @media(max-width:600px) {
+            .sched-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Install steps visual */
+        .install-phases {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .install-phase {
+            display: flex;
+            gap: var(--sp-5);
+            padding: var(--sp-5) 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .install-phase:last-child {
+            border-bottom: none;
+        }
+
+        .install-phase__num {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(34, 197, 94, .12);
+            border: 1px solid rgba(34, 197, 94, .3);
+            color: #4ade80;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: var(--fs-sm);
+            flex-shrink: 0;
+        }
+
+        .install-phase__title {
+            font-weight: 700;
+            color: var(--color-heading);
+            margin-bottom: var(--sp-1);
+        }
+
+        .install-phase__desc {
+            font-size: var(--fs-xs);
+            color: var(--color-text-muted);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="readProgress"></div>
+    <script src="js/nav.js"></script>
+
+  <main id="swup" class="transition-fade">
+<section class="hero" style="padding:8rem 0 3rem;">
+        <div class="container" style="position:relative;z-index:2;">
+            <nav class="breadcrumb reveal reveal--fade"><a href="index.html">Inicio</a><span>/</span><strong
+                    style="color:#22c55e">Taller</strong></nav>
+            <span class="hero__eyebrow reveal reveal--fade" data-delay="50"
+                style="background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.25);color:#4ade80;">🔧 Personal de
+                Taller</span>
+            <h1 class="hero__title reveal reveal--slide-up" data-delay="100" style="font-size:clamp(1.8rem,4vw,3rem);">
+                Manual del <span
+                    style="background:linear-gradient(135deg,#22c55e,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Personal
+                    de Taller</span>
+            </h1>
+            <p class="hero__sub reveal reveal--slide-up" data-delay="180">Ensamblaje, instalación, acabados de calidad,
+                atención al cliente en sitio y cultura de trabajo del equipo de producción de VisualCorp.</p>
+            <div class="search-wrap reveal reveal--fade" data-delay="260" style="max-width:520px;margin-left:0;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="text" id="manualSearch" placeholder="Buscar en el manual...">
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="manual-layout">
+            <aside class="manual-sidebar">
+                <p class="toc-title">Contenido</p>
+                <ul class="toc-list">
+                    <li class="toc-item"><a href="#rol"><span class="toc-dot"></span>Tu Rol en VisualCorp</a></li>
+                    <li class="toc-item"><a href="#productos"><span class="toc-dot"></span>Productos que Fabricamos</a>
+                    </li>
+                    <li class="toc-item"><a href="#herramientas"><span class="toc-dot"></span>Herramientas
+                            Esenciales</a></li>
+                    <li class="toc-item"><a href="#antes"><span class="toc-dot"></span>Antes de la Instalación</a></li>
+                    <li class="toc-item"><a href="#instalacion"><span class="toc-dot"></span>Durante la Instalación</a>
+                    </li>
+                    <li class="toc-item"><a href="#cliente"><span class="toc-dot"></span>Atención al Cliente en
+                            Sitio</a></li>
+                    <li class="toc-item"><a href="#acabados"><span class="toc-dot"></span>Acabados de Calidad</a></li>
+                    <li class="toc-item"><a href="#cultura"><span class="toc-dot"></span>Cultura de Trabajo</a></li>
+                    <li class="toc-item"><a href="#horarios"><span class="toc-dot"></span>Horarios</a></li>
+                </ul>
+            </aside>
+
+            <div class="manual-content">
+
+                <!-- 1. ROL -->
+                <section class="manual-section reveal reveal--slide-up" id="rol">
+                    <span class="section-eyebrow">🔧 Sección 1</span>
+                    <h2 class="section-title">Tu Rol en VisualCorp</h2>
+                    <p class="section-sub">El personal de taller da vida a los diseños — toma los archivos digitales y
+                        los convierte en productos físicos terminados que llegan a las manos del cliente.</p>
+                    <img src="img/instalacion_equipo.png" alt="Equipo de instalación montando letras corpóreas"
+                        class="section-img">
+                    <div
+                        style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--sp-5);margin:var(--sp-6) 0;">
+                        <div
+                            style="background:var(--color-surface);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <div style="font-size:2rem;margin-bottom:var(--sp-3);">🏭</div>
+                            <div style="font-weight:700;color:var(--color-heading);">Ensamblaje</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Armar los productos en el taller antes de la entrega o instalación.</p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <div style="font-size:2rem;margin-bottom:var(--sp-3);">🔧</div>
+                            <div style="font-weight:700;color:var(--color-heading);">Instalación</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">Ir
+                                al sitio del cliente a instalar el producto con precisión y profesionalismo.</p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <div style="font-size:2rem;margin-bottom:var(--sp-3);">✨</div>
+                            <div style="font-weight:700;color:var(--color-heading);">Acabados</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">
+                                Garantizar que el producto final tenga calidad superior en cada detalle.</p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <div style="font-size:2rem;margin-bottom:var(--sp-3);">🤝</div>
+                            <div style="font-weight:700;color:var(--color-heading);">Cara de la empresa</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-2);">En
+                                instalaciones, el cliente te ve a ti. Representas a VisualCorp en cada visita.</p>
+                        </div>
+                    </div>
+                    <div class="callout callout--tip">
+                        <span class="callout__icon">🏆</span>
+                        <div class="callout__body">
+                            <p class="callout__title">El taller es donde el trabajo cobra vida</p>
+                            <p class="callout__text">El diseñador lo imagina, el impresor lo imprime, pero el personal
+                                de taller es quien lo hace real y lo entrega al cliente. Un excelente trabajo de
+                                instalación puede fidelizar a un cliente para siempre. Un trabajo descuidado puede
+                                perderlo.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 2. PRODUCTOS -->
+                <section class="manual-section reveal reveal--slide-up" id="productos">
+                    <span class="section-eyebrow">📦 Sección 2</span>
+                    <h2 class="section-title">Productos que Fabricamos e Instalamos</h2>
+                    <p class="section-sub">VisualCorp produce una variedad de productos físicos que requieren
+                        fabricación en taller y/o instalación en el sitio del cliente.</p>
+                    <img src="img/letras_corporeas.png" alt="Letras corpóreas con iluminación LED" class="section-img">
+                    <div class="product-grid">
+                        <div class="product-card">
+                            <div class="product-card__icon">🔤</div>
+                            <div class="product-card__name">Letras Corpóreas</div>
+                            <div class="product-card__desc">Letras tridimensionales en acrílico o espuma de PVC. Pueden
+                                tener iluminación LED interna. Se pegan o atornillan a la pared.</div>
+                        </div>
+                        <div class="product-card">
+                            <div class="product-card__icon">🪧</div>
+                            <div class="product-card__name">Rótulos Sencillos</div>
+                            <div class="product-card__desc">Señales impresas en vinil o lona montadas en materiales
+                                rígidos como forex, PVC o aluminio.</div>
+                        </div>
+                        <div class="product-card">
+                            <div class="product-card__icon">🎪</div>
+                            <div class="product-card__name">Roll Up / Banner</div>
+                            <div class="product-card__desc">Estructuras retráctiles portátiles con la imagen impresa. Se
+                                montan y desmontan fácilmente.</div>
+                        </div>
+                        <div class="product-card">
+                            <div class="product-card__icon">🖼️</div>
+                            <div class="product-card__name">Cuadros de Madera</div>
+                            <div class="product-card__desc">Fotografías o diseños impresos montados sobre bastidor de
+                                madera o MDF. Acabado decorativo de alta calidad.</div>
+                        </div>
+                        <div class="product-card">
+                            <div class="product-card__icon">💡</div>
+                            <div class="product-card__name">Cajas de Luz</div>
+                            <div class="product-card__desc">Estructura iluminada internamente con tiras LED. La imagen
+                                va en material backlight translúcido.</div>
+                        </div>
+                        <div class="product-card">
+                            <div class="product-card__icon">🏪</div>
+                            <div class="product-card__name">Fachadas Comerciales</div>
+                            <div class="product-card__desc">Instalación completa del frente de un local: letras,
+                                iluminación, viniles y acabados integrales.</div>
+                        </div>
+                        <div class="product-card">
+                            <div class="product-card__icon">🚗</div>
+                            <div class="product-card__name">Rotulación Vehicular</div>
+                            <div class="product-card__desc">Aplicación de vinil adhesivo en autos, camiones o furgones
+                                para branding corporativo.</div>
+                        </div>
+                        <div class="product-card">
+                            <div class="product-card__icon">📋</div>
+                            <div class="product-card__name">Señalética</div>
+                            <div class="product-card__desc">Señales de seguridad, dirección, identificación de áreas.
+                                Materiales variados según la necesidad.</div>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 3. HERRAMIENTAS -->
+                <section class="manual-section reveal reveal--slide-up" id="herramientas">
+                    <span class="section-eyebrow">🧰 Sección 3</span>
+                    <h2 class="section-title">Herramientas Esenciales del Taller</h2>
+                    <p class="section-sub">Conoce, mantén y respeta tus herramientas. Son la extensión de tus manos y
+                        definen la calidad de tu trabajo.</p>
+
+                    <!-- Tool SVG diagram -->
+                    <div
+                        style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);margin:var(--sp-6) 0;">
+                        <p
+                            style="font-size:var(--fs-xs);font-weight:700;color:var(--color-text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp-5);">
+                            🧰 Lista de herramientas para llevar a instalaciones</p>
+                        <svg viewBox="0 0 520 160" xmlns="http://www.w3.org/2000/svg"
+                            style="width:100%;max-height:160px;">
+                            <defs>
+                                <marker id="chk" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+                                    <circle cx="5" cy="5" r="4" fill="rgba(34,197,94,.2)" stroke="#4ade80"
+                                        stroke-width="1" /><text x="5" y="9" text-anchor="middle" fill="#4ade80"
+                                        font-size="7" font-family="sans-serif">✓</text>
+                                </marker>
+                            </defs>
+                            <!-- Column 1 -->
+                            <text x="20" y="25" fill="#4ade80" font-size="10" font-family="sans-serif"
+                                font-weight="700">🔩 Instalación</text>
+                            <circle cx="27" cy="42" r="5" fill="rgba(34,197,94,.15)" stroke="#4ade80"
+                                stroke-width="1" /><text x="27" y="46" text-anchor="middle" fill="#4ade80"
+                                font-size="8">✓</text>
+                            <text x="38" y="46" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Taladro + brocas</text>
+                            <circle cx="27" cy="62" r="5" fill="rgba(34,197,94,.15)" stroke="#4ade80"
+                                stroke-width="1" /><text x="27" y="66" text-anchor="middle" fill="#4ade80"
+                                font-size="8">✓</text>
+                            <text x="38" y="66" fill="rgba(255,255,255,.7)" font-size="9" font-family="sans-serif">Nivel
+                                de burbuja</text>
+                            <circle cx="27" cy="82" r="5" fill="rgba(34,197,94,.15)" stroke="#4ade80"
+                                stroke-width="1" /><text x="27" y="86" text-anchor="middle" fill="#4ade80"
+                                font-size="8">✓</text>
+                            <text x="38" y="86" fill="rgba(255,255,255,.7)" font-size="9" font-family="sans-serif">Cinta
+                                métrica</text>
+                            <circle cx="27" cy="102" r="5" fill="rgba(34,197,94,.15)" stroke="#4ade80"
+                                stroke-width="1" /><text x="27" y="106" text-anchor="middle" fill="#4ade80"
+                                font-size="8">✓</text>
+                            <text x="38" y="106" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Destornilladores</text>
+                            <circle cx="27" cy="122" r="5" fill="rgba(34,197,94,.15)" stroke="#4ade80"
+                                stroke-width="1" /><text x="27" y="126" text-anchor="middle" fill="#4ade80"
+                                font-size="8">✓</text>
+                            <text x="38" y="126" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Llave inglesa y llaves</text>
+                            <circle cx="27" cy="142" r="5" fill="rgba(34,197,94,.15)" stroke="#4ade80"
+                                stroke-width="1" /><text x="27" y="146" text-anchor="middle" fill="#4ade80"
+                                font-size="8">✓</text>
+                            <text x="38" y="146" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Martillo</text>
+                            <!-- Column 2 -->
+                            <text x="175" y="25" fill="#f2b705" font-size="10" font-family="sans-serif"
+                                font-weight="700">📦 Adhesivos</text>
+                            <circle cx="182" cy="42" r="5" fill="rgba(242,183,5,.12)" stroke="#f2b705"
+                                stroke-width="1" /><text x="182" y="46" text-anchor="middle" fill="#f2b705"
+                                font-size="8">✓</text>
+                            <text x="193" y="46" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Silicón estructural</text>
+                            <circle cx="182" cy="62" r="5" fill="rgba(242,183,5,.12)" stroke="#f2b705"
+                                stroke-width="1" /><text x="182" y="66" text-anchor="middle" fill="#f2b705"
+                                font-size="8">✓</text>
+                            <text x="193" y="66" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Cinta doble cara</text>
+                            <circle cx="182" cy="82" r="5" fill="rgba(242,183,5,.12)" stroke="#f2b705"
+                                stroke-width="1" /><text x="182" y="86" text-anchor="middle" fill="#f2b705"
+                                font-size="8">✓</text>
+                            <text x="193" y="86" fill="rgba(255,255,255,.7)" font-size="9" font-family="sans-serif">Pega
+                                de contacto</text>
+                            <circle cx="182" cy="102" r="5" fill="rgba(242,183,5,.12)" stroke="#f2b705"
+                                stroke-width="1" /><text x="182" y="106" text-anchor="middle" fill="#f2b705"
+                                font-size="8">✓</text>
+                            <text x="193" y="106" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Espátula de goma</text>
+                            <circle cx="182" cy="122" r="5" fill="rgba(242,183,5,.12)" stroke="#f2b705"
+                                stroke-width="1" /><text x="182" y="126" text-anchor="middle" fill="#f2b705"
+                                font-size="8">✓</text>
+                            <text x="193" y="126" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Estilete / cutter</text>
+                            <!-- Column 3 -->
+                            <text x="335" y="25" fill="#60a5fa" font-size="10" font-family="sans-serif"
+                                font-weight="700">📋 Logística</text>
+                            <circle cx="342" cy="42" r="5" fill="rgba(59,130,246,.12)" stroke="#60a5fa"
+                                stroke-width="1" /><text x="342" y="46" text-anchor="middle" fill="#60a5fa"
+                                font-size="8">✓</text>
+                            <text x="353" y="46" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Orden de trabajo impresa</text>
+                            <circle cx="342" cy="62" r="5" fill="rgba(59,130,246,.12)" stroke="#60a5fa"
+                                stroke-width="1" /><text x="342" y="66" text-anchor="middle" fill="#60a5fa"
+                                font-size="8">✓</text>
+                            <text x="353" y="66" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Teléfono cargado</text>
+                            <circle cx="342" cy="82" r="5" fill="rgba(59,130,246,.12)" stroke="#60a5fa"
+                                stroke-width="1" /><text x="342" y="86" text-anchor="middle" fill="#60a5fa"
+                                font-size="8">✓</text>
+                            <text x="353" y="86" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Dirección del cliente</text>
+                            <circle cx="342" cy="102" r="5" fill="rgba(59,130,246,.12)" stroke="#60a5fa"
+                                stroke-width="1" /><text x="342" y="106" text-anchor="middle" fill="#60a5fa"
+                                font-size="8">✓</text>
+                            <text x="353" y="106" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Paños limpios</text>
+                            <circle cx="342" cy="122" r="5" fill="rgba(59,130,246,.12)" stroke="#60a5fa"
+                                stroke-width="1" /><text x="342" y="126" text-anchor="middle" fill="#60a5fa"
+                                font-size="8">✓</text>
+                            <text x="353" y="126" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Extensión eléctrica</text>
+                            <circle cx="342" cy="142" r="5" fill="rgba(59,130,246,.12)" stroke="#60a5fa"
+                                stroke-width="1" /><text x="342" y="146" text-anchor="middle" fill="#60a5fa"
+                                font-size="8">✓</text>
+                            <text x="353" y="146" fill="rgba(255,255,255,.7)" font-size="9"
+                                font-family="sans-serif">Uniforme y presentación</text>
+                        </svg>
+                    </div>
+                    <div class="callout callout--danger">
+                        <span class="callout__icon">⚠️</span>
+                        <div class="callout__body">
+                            <p class="callout__title">Nunca salir a una instalación sin revisar las herramientas</p>
+                            <p class="callout__text">Llegar al cliente y darse cuenta de que falta el taladro o los
+                                tornillos correctos genera retrasos, mala imagen y posible reprogramación.
+                                <strong>Revisa siempre tu kit antes de salir del taller.</strong> Usa la lista de
+                                chequeo como guía.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 4. ANTES DE LA INSTALACIÓN -->
+                <section class="manual-section reveal reveal--slide-up" id="antes">
+                    <span class="section-eyebrow">📋 Sección 4</span>
+                    <h2 class="section-title">Antes de la Instalación</h2>
+                    <p class="section-sub">La preparación evita el 90% de los problemas. Un trabajo bien preparado en el
+                        taller = una instalación limpia y rápida en el sitio.</p>
+                    <div class="workflow-steps">
+                        <div class="ws-step">
+                            <div>
+                                <div style="font-weight:700;color:var(--color-heading);">Lee la Orden de Trabajo
+                                    completa</div>
+                                <div
+                                    style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                    Antes de hacer cualquier cosa, lee la orden de trabajo del asesor. Confirma: el
+                                    nombre del cliente, la dirección, los productos, las medidas, y cualquier
+                                    instrucción especial.</div>
+                            </div>
+                        </div>
+                        <div class="ws-step">
+                            <div>
+                                <div style="font-weight:700;color:var(--color-heading);">Verifica que el producto esté
+                                    completo y en buen estado</div>
+                                <div
+                                    style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                    Revisa que esté todo impreso, cortado y ensamblado correctamente. Detectar un error
+                                    en el taller es <strong>100 veces mejor</strong> que descubrirlo frente al cliente.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ws-step">
+                            <div>
+                                <div style="font-weight:700;color:var(--color-heading);">Prepara y revisa todas las
+                                    herramientas</div>
+                                <div
+                                    style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                    Carga el taladro, cuenta los tornillos, verifica que el silicón no esté seco, lleva
+                                    repuestos de lo que puedas necesitar. Es mejor llevar de más que quedarse sin algo.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ws-step">
+                            <div>
+                                <div style="font-weight:700;color:var(--color-heading);">Confirma con el cliente (si
+                                    aplica)</div>
+                                <div
+                                    style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                    Si la instalación requiere que el cliente esté presente o que prepare el espacio,
+                                    confirma por teléfono antes de salir. No pierdas tiempo llegando a un lugar donde no
+                                    te esperan.</div>
+                            </div>
+                        </div>
+                        <div class="ws-step">
+                            <div>
+                                <div style="font-weight:700;color:var(--color-heading);">Lleva el producto protegido y
+                                    asegurado</div>
+                                <div
+                                    style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-1);">
+                                    Envuelve el trabajo terminado con plástico o cartón para evitar rayones durante el
+                                    transporte. Un producto rayado puede significar rehacer todo el trabajo.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 5. DURANTE LA INSTALACIÓN -->
+                <section class="manual-section reveal reveal--slide-up" id="instalacion">
+                    <span class="section-eyebrow">🔧 Sección 5</span>
+                    <h2 class="section-title">Durante la Instalación</h2>
+                    <p class="section-sub">Una instalación profesional requiere precisión, cuidado y método. No se
+                        improvisa.</p>
+                    <div class="install-phases">
+                        <div class="install-phase">
+                            <div class="install-phase__num">1</div>
+                            <div>
+                                <div class="install-phase__title">Inspecciona el espacio antes de perforar</div>
+                                <div class="install-phase__desc">Evalúa la superficie: ¿es concreto, drywall, madera,
+                                    vidrio? Cada material requiere un tipo de anclaje diferente. Identifica posibles
+                                    tuberías o cables eléctricos antes de taladrar. Un perforado en mal lugar puede ser
+                                    peligroso y costoso.</div>
+                            </div>
+                        </div>
+                        <div class="install-phase">
+                            <div class="install-phase__num">2</div>
+                            <div>
+                                <div class="install-phase__title">Marca y mide antes de fijar</div>
+                                <div class="install-phase__desc">Usa el nivel para marcar la posición exacta. Mide dos
+                                    veces, perfora una. Las letras corpóreas o rótulos instalados chuecas son imposibles
+                                    de justificar. Tómate el tiempo necesario para marcar correctamente.</div>
+                            </div>
+                        </div>
+                        <div class="install-phase">
+                            <div class="install-phase__num">3</div>
+                            <div>
+                                <div class="install-phase__title">Trabaja limpiamente</div>
+                                <div class="install-phase__desc">Protege el piso del cliente con plástico o cartón.
+                                    Limpia el polvo de los perforados antes de instalar. No dejes huellas de silicón,
+                                    pegamento o polvo en la pared o en el producto. El cliente nota cada detalle.</div>
+                            </div>
+                        </div>
+                        <div class="install-phase">
+                            <div class="install-phase__num">4</div>
+                            <div>
+                                <div class="install-phase__title">Verifica la nivelación constantemente</div>
+                                <div class="install-phase__desc">Usa el nivel durante todo el proceso, no solo al
+                                    inicio. Las estructuras pueden desviarse ligeramente mientras trabajas. Una
+                                    instalación perfectamente nivelada proyecta profesionalismo.</div>
+                            </div>
+                        </div>
+                        <div class="install-phase">
+                            <div class="install-phase__num">5</div>
+                            <div>
+                                <div class="install-phase__title">Verifica la solidez antes de presentar</div>
+                                <div class="install-phase__desc">Antes de llamar al cliente, prueba que todo está
+                                    sólido, correctamente pegado o atornillado. Para letras con LED: verifica que el
+                                    cableado funcione y que no queden cables visibles. Para roll up: que el mecanismo
+                                    suba y baje correctamente.</div>
+                            </div>
+                        </div>
+                        <div class="install-phase">
+                            <div class="install-phase__num">6</div>
+                            <div>
+                                <div class="install-phase__title">Limpieza final</div>
+                                <div class="install-phase__desc">Limpia toda el área de trabajo. Recoge todas las
+                                    herramientas, tornillos sobrantes, plásticos y empaques. Limpia el producto
+                                    instalado con un paño limpio. Deja el espacio <strong>mejor de como lo
+                                        encontraste</strong>.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 6. ATENCIÓN AL CLIENTE EN SITIO -->
+                <section class="manual-section reveal reveal--slide-up" id="cliente">
+                    <span class="section-eyebrow">🤝 Sección 6</span>
+                    <h2 class="section-title">Atención al Cliente en Sitio</h2>
+                    <p class="section-sub">Durante una instalación, el personal de taller es la cara visible de
+                        VisualCorp. Lo que el cliente vea y sienta durante esa visita definirá su percepción de toda la
+                        empresa.</p>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5);margin:var(--sp-6) 0;">
+                        <div class="callout callout--success" style="margin:0;">
+                            <span class="callout__icon">✅</span>
+                            <div class="callout__body">
+                                <p class="callout__title">Lo que SÍ hacer siempre</p>
+                                <p class="callout__text">Saludar amablemente al llegar. Presentarse: <em>"Buenos días,
+                                        venimos de parte de VisualCorp a instalar el rótulo."</em> Hablar con respeto y
+                                    profesionalismo. Pedir permiso antes de mover muebles u objetos. Explicar qué estás
+                                    haciendo si el cliente pregunta. Agradecer al despedirse.</p>
+                            </div>
+                        </div>
+                        <div class="callout callout--danger" style="margin:0;">
+                            <span class="callout__icon">🚫</span>
+                            <div class="callout__body">
+                                <p class="callout__title">Lo que NO hacer nunca</p>
+                                <p class="callout__text">No cantes en voz alta ni pongas música en altavoz. No hables de
+                                    temas inapropiados, chistes vulgares ni palabras soeces frente al cliente. No
+                                    discutas con compañeros delante del cliente. No uses el celular innecesariamente. No
+                                    dejes el espacio sucio.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tip-list">
+                        <div class="tip-item">👔 <strong>Presentación personal:</strong> Ve con ropa limpia y ordenada.
+                            Si la empresa tiene uniforme, úsalo. La primera impresión es importante y se forma en
+                            segundos.</div>
+                        <div class="tip-item">⏰ <strong>Puntualidad:</strong> Si dijiste que llegas a las 10am, llega a
+                            las 10am. Si habrá retraso, avisa con anticipación. El tiempo del cliente es valioso.</div>
+                        <div class="tip-item">🙋 <strong>Si el cliente pide algo adicional:</strong> No se improvisa ni
+                            se cobra de forma no autorizada. Di: "Permítame verificar con el equipo y le confirmamos."
+                            No hagas compromisos que no puedes cumplir.</div>
+                        <div class="tip-item">📸 <strong>Toma fotos del resultado final:</strong> Antes de irte, toma
+                            fotografías del trabajo instalado. Sirven como evidencia de entrega y como portafolio de
+                            VisualCorp.</div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 7. ACABADOS DE CALIDAD -->
+                <section class="manual-section reveal reveal--slide-up" id="acabados">
+                    <span class="section-eyebrow">✨ Sección 7</span>
+                    <h2 class="section-title">Acabados de Calidad</h2>
+                    <p class="section-sub">Un produto impecable diferencia a VisualCorp de la competencia. Los acabados
+                        son los detalles que el cliente recuerda.</p>
+
+                    <!-- Quality standards SVG visual -->
+                    <div
+                        style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);margin:var(--sp-6) 0;">
+                        <p
+                            style="font-size:var(--fs-xs);font-weight:700;color:var(--color-text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp-5);">
+                            ✨ Estándares de calidad por producto</p>
+                        <svg viewBox="0 0 520 140" xmlns="http://www.w3.org/2000/svg"
+                            style="width:100%;max-height:140px;">
+                            <!-- Letra corpórea card -->
+                            <rect x="5" y="5" width="150" height="125" rx="8" fill="rgba(34,197,94,.05)"
+                                stroke="rgba(34,197,94,.2)" stroke-width="1" />
+                            <text x="80" y="25" text-anchor="middle" fill="#4ade80" font-size="9"
+                                font-family="sans-serif" font-weight="700">LETRAS CORPÓREAS</text>
+                            <line x1="15" y1="32" x2="145" y2="32" stroke="rgba(34,197,94,.2)" stroke-width="1" />
+                            <text x="20" y="48" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Lija los bordes antes de pegar</text>
+                            <text x="20" y="62" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓ Sin
+                                silicón visible exterior</text>
+                            <text x="20" y="76" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓ LED
+                                uniforme sin puntos fríos</text>
+                            <text x="20" y="90" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Cables ocultos o pintados</text>
+                            <text x="20" y="104" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Nivelación perfecta</text>
+                            <text x="20" y="118" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Limpia antes de presentar</text>
+                            <!-- Vinil / rotulo card -->
+                            <rect x="185" y="5" width="150" height="125" rx="8" fill="rgba(242,183,5,.05)"
+                                stroke="rgba(242,183,5,.2)" stroke-width="1" />
+                            <text x="260" y="25" text-anchor="middle" fill="#f2b705" font-size="9"
+                                font-family="sans-serif" font-weight="700">VINIL / RÓTULOS</text>
+                            <line x1="195" y1="32" x2="325" y2="32" stroke="rgba(242,183,5,.2)" stroke-width="1" />
+                            <text x="200" y="48" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Superficie limpia y seca</text>
+                            <text x="200" y="62" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Sin burbujas de aire</text>
+                            <text x="200" y="76" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Bordes bien adheridos</text>
+                            <text x="200" y="90" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Cortes limpios sin rebabas</text>
+                            <text x="200" y="104" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Sin arrugas ni ondulaciones</text>
+                            <text x="200" y="118" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Protective film retirado</text>
+                            <!-- Banner / Roll Up card -->
+                            <rect x="365" y="5" width="150" height="125" rx="8" fill="rgba(59,130,246,.05)"
+                                stroke="rgba(59,130,246,.2)" stroke-width="1" />
+                            <text x="440" y="25" text-anchor="middle" fill="#60a5fa" font-size="9"
+                                font-family="sans-serif" font-weight="700">ROLL UP / BANNER</text>
+                            <line x1="375" y1="32" x2="505" y2="32" stroke="rgba(59,130,246,.2)" stroke-width="1" />
+                            <text x="380" y="48" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Bien centrado en estructura</text>
+                            <text x="380" y="62" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Sin tensión excesiva</text>
+                            <text x="380" y="76" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Mecanismo funciona suave</text>
+                            <text x="380" y="90" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Base estable y nivelada</text>
+                            <text x="380" y="104" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Sin dobleces ni arrugas</text>
+                            <text x="380" y="118" fill="rgba(255,255,255,.6)" font-size="8" font-family="sans-serif">✓
+                                Demo al cliente antes de irte</text>
+                        </svg>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 8. CULTURA -->
+                <section class="manual-section reveal reveal--slide-up" id="cultura">
+                    <span class="section-eyebrow">💪 Sección 8</span>
+                    <h2 class="section-title">Cultura de Trabajo del Taller</h2>
+                    <p class="section-sub">El equipo de taller trabaja con las manos pero piensa con la cabeza. Actitud
+                        proactiva, trabajo en equipo y orgullo por el trabajo bien hecho.</p>
+                    <div class="tip-list">
+                        <div class="tip-item">⚡ <strong>Proactividad:</strong> Si terminaste tu trabajo, pregunta qué
+                            más puedes hacer. Siempre hay algo que preparar, limpiar u organizar. No esperes
+                            instrucciones para lo obvio.</div>
+                        <div class="tip-item">🤝 <strong>Trabajo en equipo:</strong> Si un compañero está luchando con
+                            una pieza pesada o compleja, ofrece ayuda sin que te lo pidan. Los trabajos de instalación
+                            son más seguros y rápidos con colaboración.</div>
+                        <div class="tip-item">🔧 <strong>Cuida las herramientas:</strong> Luego de usarlas, límpialas y
+                            devuélvelas a su lugar. Una herramienta dañada por descuido puede costar más que el trabajo
+                            donde se usó.</div>
+                        <div class="tip-item">📢 <strong>Reporta problemas de inmediato:</strong> Si encuentras un
+                            defecto en el producto antes de la instalación, repórtalo en ese momento. Es mucho mejor
+                            retrasar que instalar algo defectuoso.</div>
+                        <div class="tip-item">📐 <strong>Perfección en los detalles:</strong> Los clientes no ven el
+                            esfuerzo, ven el resultado. Un centímetro chueco, una burbuja de aire, una mancha de silicón
+                            — esos detalles son los que se recuerdan.</div>
+                        <div class="tip-item">🧹 <strong>Orden y limpieza en el taller:</strong> Un taller ordenado es
+                            un taller productivo. Guarda los materiales en su lugar, bota los desperdicios, mantén las
+                            superficies de trabajo limpias.</div>
+                        <div class="tip-item">📅 <strong>Respeta los tiempos de entrega:</strong> Cuando el asesor le
+                            promete al cliente una fecha, tú eres parte de hacerla posible. Comunica a tiempo si hay
+                            problemas que puedan retrasar.</div>
+                    </div>
+                    <div class="callout callout--tip" style="margin-top:var(--sp-5);">
+                        <span class="callout__icon">🏆</span>
+                        <div class="callout__body">
+                            <p class="callout__title">El orgullo del trabajo bien hecho</p>
+                            <p class="callout__text">Cuando instalas un rótulo y ves el local del cliente transformado,
+                                o cuando montas las letras corpóreas y el negocio cobra identidad — ese es el resultado
+                                de tu trabajo. Hazlo con orgullo. Que cada instalación sea un testimonio de la calidad
+                                de VisualCorp.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="section-divider">
+
+                <!-- 9. HORARIOS -->
+                <section class="manual-section reveal reveal--slide-up" id="horarios">
+                    <span class="section-eyebrow">🕐 Sección 9</span>
+                    <h2 class="section-title">Horarios de Trabajo</h2>
+                    <p class="section-sub">Horarios oficiales de VisualCorp para todos los departamentos.</p>
+                    <div class="sched-grid">
+                        <div
+                            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <p style="font-size:1.5rem;margin-bottom:var(--sp-3);">💼</p>
+                            <div
+                                style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                Lunes a Viernes</div>
+                            <div
+                                style="font-size:var(--fs-2xl);font-weight:900;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                                8:20 — 18:00</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-3);">📋
+                                <strong style="color:var(--color-accent-hover);">Lunes = Reunión de equipo</strong>
+                                puntual a las 8:20am.
+                            </p>
+                        </div>
+                        <div
+                            style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-6);text-align:center;">
+                            <p style="font-size:1.5rem;margin-bottom:var(--sp-3);">🎉</p>
+                            <div
+                                style="font-size:var(--fs-lg);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-2);">
+                                Sábados</div>
+                            <div
+                                style="font-size:var(--fs-2xl);font-weight:900;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                                8:20 — 13:00</div>
+                            <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--sp-3);">💰
+                                <strong style="color:var(--color-accent-hover);">Quincena los sábados</strong>
+                                correspondientes.
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        style="text-align:center;margin-top:var(--sp-10);padding:var(--sp-8);background:var(--color-surface);border-radius:var(--radius-xl);border:1px solid var(--color-border);">
+                        <p style="font-size:2rem;margin-bottom:var(--sp-4);">🔧</p>
+                        <h3
+                            style="font-size:var(--fs-xl);font-weight:800;color:var(--color-heading);margin-bottom:var(--sp-3);">
+                            Construye con orgullo</h3>
+                        <p style="color:var(--color-text-muted);max-width:480px;margin:0 auto var(--sp-6);">Tu trabajo
+                            no es solo instalar un rótulo — es darle identidad a un negocio, ayudar a crecer a un
+                            emprendedor y proyectar la calidad de VisualCorp al mundo.</p>
+                        <a href="index.html" class="btn btn--primary">← Volver al inicio</a>
+                    </div>
+                </section>
+
+            
+                <!-- QUIZ DE PASE -->
+                <section class="manual-section reveal reveal--slide-up" style="margin-top:var(--sp-8);">
+                    <div class="quiz-container">
+                        <div class="quiz-header">
+                            <span class="quiz-icon">🧠</span>
+                            <div class="quiz-title">Pase de Pruebas</div>
+                        </div>
+                        <div class="quiz-question">Al instalar letreros con espaciadores metálicos a la pared, ¿qué herramienta es indispensable para trazar la plantilla de huecos exactos?</div>
+                        <div class="quiz-options">
+                            <div class="quiz-option" data-correct="true">Un nivel de burbuja</div><div class="quiz-option" data-correct="false">Una pistola de calor</div><div class="quiz-option" data-correct="false">Cinta doble faz</div>
+                        </div>
+                        <div class="quiz-nav">
+                            <span class="quiz-progress">Pregunta interactiva - ¡Pon a prueba lo que leíste!</span>
+                        </div>
+                    </div>
+                </section>
+        
+            </div>
+        </div>
+    </div>
+
+      </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 <strong>VisualCorp</strong> · Manual Interno creado por <strong>Esteban Nicola</strong> · Milagro,
+                Ecuador</p>
+        </div>
+    </footer>
+    <button class="back-top" id="backTop" aria-label="Volver arriba">↑</button>
+    
+    <!-- Confetti JS -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Phase 3 Advanced Visuals CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/engine@3.3.0/tsparticles.engine.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.3.0/tsparticles.slim.min.js"></script>
+
+    <script src="js/manual.js"></script>
+
+  <!-- SPOTLIGHT SEARCH (Phase 4) -->
+  <div class="cmd-palette-backdrop" id="cmdBackdrop">
+    <div class="cmd-palette">
+      <div class="cmd-header">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="cmdInput" placeholder="Buscar en el manual... (ej: corte, cmky)" autocomplete="off">
+        <span class="cmd-esc">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmdResults">
+        <div class="cmd-empty">Escribe para buscar...</div>
+      </div>
+      <div class="cmd-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> Navegar</span>
+        <span><kbd>Enter</kbd> Abrir</span>
+      </div>
+    </div>
+  </div>
+
+<script src="https://unpkg.com/swup@4"></script>
+</body>
+
+</html>
