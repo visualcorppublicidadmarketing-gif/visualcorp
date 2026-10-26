@@ -191,19 +191,31 @@ export function WorkspaceProvider({ children }) {
       const costActionAllowed = !['view_costs','edit_costs'].includes(action) || hasPermission('inventory_costs', action === 'view_costs' ? 'view' : 'edit');
       return hasPermission(module, action) && costActionAllowed ? query : Promise.resolve({ data: [], error: null });
     };
+    const readAllPages = async (queryFactory: () => any, module: string, action = 'view'): Promise<any> => {
+      const costActionAllowed = !['view_costs','edit_costs'].includes(action) || hasPermission('inventory_costs', action === 'view_costs' ? 'view' : 'edit');
+      if (!hasPermission(module, action) || !costActionAllowed) return { data: [], error: null };
+      const pageSize = 500;
+      const rows: any[] = [];
+      for (let from = 0; ; from += pageSize) {
+        const { data: page, error } = await queryFactory().range(from, from + pageSize - 1);
+        if (error) return { data: null, error };
+        rows.push(...(page || []));
+        if ((page || []).length < pageSize) return { data: rows, error: null };
+      }
+    };
     const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult] = await Promise.all([
-      read(supabase.from('inventory_items').select('id,category_id,area_id,sku,name,description,item_type,tags,reference_image_url,custom_fields,base_unit,minimum_quantity,active,created_at,updated_at').eq('organization_id', organizationId),'inventory'),
-      read(supabase.from('inventory_variants').select('id,item_id,sku,label,attributes,active').eq('organization_id', organizationId),'inventory'),
-      read(supabase.from('inventory_stock').select('variant_id,branch_id,location_code,quantity,updated_at').eq('organization_id', organizationId),'inventory'),
-      read(supabase.from('areas').select('id,code,name').eq('organization_id', organizationId),'workshop'),
-      read(supabase.from('inventory_categories').select('id,code,name').eq('organization_id', organizationId),'inventory'),
+      readAllPages(() => supabase.from('inventory_items').select('id,category_id,area_id,sku,name,description,item_type,tags,reference_image_url,custom_fields,base_unit,minimum_quantity,active,created_at,updated_at').eq('organization_id', organizationId).order('id'),'inventory'),
+      readAllPages(() => supabase.from('inventory_variants').select('id,item_id,sku,label,attributes,active').eq('organization_id', organizationId).order('id'),'inventory'),
+      readAllPages(() => supabase.from('inventory_stock').select('variant_id,branch_id,location_code,quantity,updated_at').eq('organization_id', organizationId).order('variant_id').order('branch_id').order('location_code'),'inventory'),
+      readAllPages(() => supabase.from('areas').select('id,code,name').eq('organization_id', organizationId).order('name').order('id'),'workshop'),
+      readAllPages(() => supabase.from('inventory_categories').select('id,code,name').eq('organization_id', organizationId).order('name').order('id'),'inventory'),
       supabase.from('branches').select('id,code,name').eq('organization_id', organizationId),
-      read(supabase.from('inventory_locations').select('id,branch_id,parent_id,code,name,location_type,active,is_system').eq('organization_id', organizationId).order('name'),'inventory'),
+      readAllPages(() => supabase.from('inventory_locations').select('id,branch_id,parent_id,code,name,location_type,active,is_system').eq('organization_id', organizationId).order('branch_id').order('code').order('id'),'inventory'),
       read(supabase.from('inventory_movements').select('id,variant_id,branch_id,location_code,movement_type,quantity_delta,reason,reference_type,reference_id,created_by,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(500),'inventory'),
       read(supabase.from('customers').select('id,full_name,phone,email,document_reference,notes,preferences,tags,created_at').eq('organization_id', organizationId).order('created_at', { ascending: false }), 'crm'),
       read(supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity,backordered_quantity),sale_payments(method,amount)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(500),'sales'),
-      read(supabase.from('inventory_item_costs').select('variant_id,unit_cost,supplier_name,updated_at').eq('organization_id', organizationId),'inventory_costs','view_costs'),
-      read(supabase.from('inventory_stock_metrics').select('variant_id,branch_id,location_code,quantity,reserved_quantity,available_quantity,reserved_percent,last_restock_at,lifetime_consumed,consumed_last_30_days,movement_count,last_movement_at').eq('organization_id', organizationId),'inventory'),
+      readAllPages(() => supabase.from('inventory_item_costs').select('variant_id,unit_cost,supplier_name,updated_at').eq('organization_id', organizationId).order('variant_id'),'inventory_costs','view_costs'),
+      readAllPages(() => supabase.from('inventory_stock_metrics').select('variant_id,branch_id,location_code,quantity,reserved_quantity,available_quantity,reserved_percent,last_restock_at,lifetime_consumed,consumed_last_30_days,movement_count,last_movement_at').eq('organization_id', organizationId).order('variant_id').order('branch_id').order('location_code'),'inventory'),
     ]);
     const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult].find((result) => result.error);
     if (failed) { setNotice(`No se pudieron sincronizar todos los datos operativos: ${failed.error.message}`); return; }
@@ -230,7 +242,9 @@ export function WorkspaceProvider({ children }) {
       const item = itemById.get(variant.item_id);
       if (!item) continue;
       const branchStocks = stockRowsByVariant.get(variant.id) || [];
-      const initialBranch = branchById.get(item.custom_fields?.initial_branch_id);
+      // A variant can be assigned to a different branch from its siblings.
+      // Keep the legacy item-level value as a fallback for older catalog rows.
+      const initialBranch = branchById.get(variant.attributes?.initial_branch_id || item.custom_fields?.initial_branch_id);
       const inventoryRows = branchStocks.length
         ? branchStocks.map((stock) => ({ stock, branch: branchById.get(stock.branch_id) || { id: stock.branch_id, name: 'Sucursal desconocida' } }))
         : [{ stock: null, branch: initialBranch || null }];
@@ -239,7 +253,7 @@ export function WorkspaceProvider({ children }) {
         const metrics = branch ? metricsByKey.get(`${variant.id}|${branch.id}|${location}`) : null;
         remoteInventory.push({
           id: `${variant.id}:${branch?.id || 'unassigned'}:${location}`, remoteItemId: item.id, variantId: variant.id, sku: item.sku, variantSku: variant.sku,
-          name: item.name, category: categoryById.get(item.category_id)?.name || '', variant: variant.label || item.description, variantAttributes: variant.attributes || {},
+          name: item.name, description: item.description || '', category: categoryById.get(item.category_id)?.name || '', variant: variant.label || '', variantAttributes: variant.attributes || {},
           itemType: item.item_type || '', tags: item.tags || [], referenceImageUrl: item.reference_image_url || inventoryImageForSku(item.sku), customFields: item.custom_fields || {},
           area: areaById.get(item.area_id)?.name || 'Sin área', branch: branch?.name || 'Sucursal por asignar', branchId: branch?.id || null,
           location, unit: item.base_unit, quantity: stock ? Number(stock.quantity) : 0,

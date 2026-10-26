@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { BriefcaseBusiness, Camera, CircleAlert, Computer, Pencil, Plus, Printer, Search, Wrench, X } from 'lucide-react';
+import { BriefcaseBusiness, Camera, CircleAlert, Computer, Copy, Pencil, Plus, Printer, Search, Wrench, X } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import { Badge } from '../../components/ui/OperationalKit';
+import { ContextMenu, type ContextMenuAction } from '../../components/ui/ContextMenu';
 import './equipment-inventory.css';
 
 type Area = { id: string; name: string; code: string };
@@ -48,6 +49,15 @@ export function EquipmentInventory() {
     return matches && (!areaFilter || asset.area_id === areaFilter);
   }), [assets, term, areaFilter]);
   const areaName = (id: string | null) => areas.find(area => area.id === id)?.name || 'Área pendiente';
+
+  const assetActions = (asset: Asset): ContextMenuAction[] => [
+    { kind: 'label', label: asset.asset_code, onSelect: () => {} },
+    { label: 'Copiar código de activo', icon: <Copy size={14}/>, onSelect: () => {
+      if (!navigator.clipboard?.writeText) { setInkMessage('El navegador no permitió copiar el código del equipo.'); return; }
+      void navigator.clipboard.writeText(asset.asset_code).then(() => setInkMessage(`Código ${asset.asset_code} copiado.`)).catch(() => setInkMessage('No se pudo copiar el código del equipo.'));
+    } },
+    { label: 'Editar ficha del equipo', icon: <Pencil size={14}/>, onSelect: () => openEdit(asset), disabled: !canManage },
+  ];
 
   const openNew = () => { setEditing(null); setDraft(fresh); setShowForm(true); setError(''); };
   const openEdit = (asset: Asset) => {
@@ -102,11 +112,11 @@ export function EquipmentInventory() {
     <section className="equipment-ink-callout"><div><span className="eyebrow">CONSUMIBLES · TINTAS Y TÓNER</span><h3>Separar por tecnología, familia y color</h3><p>Prepara fichas para Galaxy TEE y DX-Eco, FUSION sublimación, Epson T544/T664 y tóner Ricoh MP C3503. El conteo escrito en la foto queda como referencia y no se convierte en saldo hasta confirmar sucursal y ubicación.</p>{inkMessage&&<small role="status">{inkMessage}</small>}</div><div className="equipment-ink-actions">{canManage&&<button className="button button-outline" onClick={prepareInkCatalog} disabled={inkBusy}>{inkBusy?'Preparando…':'Preparar catálogo de consumibles'}</button>}<a className="button button-dark" href="/operaciones/inventario">Abrir materiales y conteo</a></div></section>
     <section className="equipment-stats" aria-label="Resumen de equipos"><article><BriefcaseBusiness/><span>Activos registrados</span><b>{stats.total}</b></article><article><CircleAlert/><span>Por verificar</span><b>{stats.pending}</b></article><article><Wrench/><span>Requieren atención</span><b>{stats.maintenance}</b></article></section>
     <section className="equipment-list panel"><div className="equipment-toolbar"><label className="equipment-search"><Search size={16}/><input value={term} onChange={event=>setTerm(event.target.value)} placeholder="Buscar nombre, marca, modelo o serie" aria-label="Buscar equipos"/></label><select value={areaFilter} onChange={event=>setAreaFilter(event.target.value)} aria-label="Filtrar por área"><option value="">Todas las áreas</option>{areas.map(area=><option key={area.id} value={area.id}>{area.name}</option>)}</select></div>
-      {filtered.length===0?<div className="equipment-empty"><Computer size={28}/><h3>{assets.length?'Sin coincidencias':'Empieza el inventario de equipos'}</h3><p>{assets.length?'Prueba otro término o área.':'Añade las impresoras y máquinas identificadas, luego continúa con computadoras, mobiliario y herramientas.'}</p>{canManage&&<button className="button button-outline" onClick={openNew}><Plus size={15}/> Registrar primer equipo</button>}</div>:<div className="equipment-grid">{filtered.map(asset=><article className="equipment-card" key={asset.id}>
+      {filtered.length===0?<div className="equipment-empty"><Computer size={28}/><h3>{assets.length?'Sin coincidencias':'Empieza el inventario de equipos'}</h3><p>{assets.length?'Prueba otro término o área.':'Añade las impresoras y máquinas identificadas, luego continúa con computadoras, mobiliario y herramientas.'}</p>{canManage&&<button className="button button-outline" onClick={openNew}><Plus size={15}/> Registrar primer equipo</button>}</div>:<div className="equipment-grid">{filtered.map(asset=><ContextMenu className="equipment-card-context" key={asset.id} label={`Acciones para ${asset.name}`} actions={assetActions(asset)}><article className="equipment-card">
         {asset.reference_image_url?<img className="equipment-photo" src={asset.reference_image_url} alt={`Referencia visual: ${asset.name}`} loading="lazy"/>:<div className="equipment-photo equipment-photo-empty"><Printer size={26}/><span>Foto pendiente</span></div>}
         <div className="equipment-card-body"><div className="equipment-card-top"><span className="equipment-code">{asset.asset_code}</span><Badge className={`equipment-state ${asset.status==='Operativo'?'ready':''}`} tone={asset.status==='Operativo'?'success':asset.status==='Fuera de servicio'?'danger':'warning'}>{asset.status}</Badge></div><h3>{asset.name}</h3><p>{[asset.manufacturer,asset.model].filter(Boolean).join(' · ')||'Marca y modelo por identificar'}</p><div className="equipment-facts"><span>{areaName(asset.area_id)}</span><span>{branches.find(branch=>branch.id===asset.branch_id)?.name||'Sucursal pendiente'}</span></div><small>Condición: {asset.condition}{asset.location?` · ${asset.location}`:''}</small>{asset.serial_number&&<small>Serie: {asset.serial_number}</small>}{asset.notes&&<p className="equipment-notes">{asset.notes}</p>}</div>
         {canManage&&<button className="equipment-edit" onClick={()=>openEdit(asset)} aria-label={`Editar ${asset.name}`}><Pencil size={15}/> Editar ficha</button>}
-      </article>)}</div>}
+      </article></ContextMenu>)}</div>}
     </section>
     <aside className="equipment-area-key"><strong>Áreas listas para organizar</strong><span>Impresión gran formato</span><span>Impresión digital</span><span>Sublimación</span><span>Cómputo</span><span>Láser</span><span>Equipos de taller</span><span>Acabados</span><small>Las áreas de equipos se administran por separado y pueden ampliarse con nombres propios.</small></aside>
     {showForm&&<div className="equipment-modal-backdrop" role="presentation"><form className="equipment-modal" onSubmit={save} aria-labelledby="equipment-form-title"><header><div><span className="eyebrow">FICHA DE ACTIVO</span><h2 id="equipment-form-title">{editing?'Editar equipo':'Registrar equipo'}</h2></div><button className="icon-button" type="button" onClick={()=>setShowForm(false)} aria-label="Cerrar"><X size={18}/></button></header><div className="equipment-fields">

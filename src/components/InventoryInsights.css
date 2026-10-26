@@ -26,3 +26,28 @@
 .inventory-image-lightbox>section>img{width:100%;height:100%;min-height:0;object-fit:contain;background:#f8f7f9;border-radius:10px}
 @media(max-width:540px){.inventory-image-lightbox{padding:10px}.inventory-image-lightbox section{height:90vh;padding:10px}.inventory-image-lightbox header small{max-width:260px;line-height:1.4}}
 .inventory-bulk-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:10px 0;padding:9px 11px;border:1px solid #ebe6ee;border-radius:10px;background:#fcfafc;color:#675f6d;font-size:10px}.inventory-bulk-bar label{display:flex;align-items:center;gap:7px}.inventory-bulk-bar input,.inventory-card-select input,.inventory-table-select input{accent-color:#744792}.inventory-bulk-bar>span{font-weight:750}.inventory-bulk-bar>small{color:#8a828d;font-size:9px}.inventory-card-select{position:absolute;z-index:1;top:10px;left:10px;display:grid;width:23px;height:23px;place-items:center;border:1px solid #e6e1e9;border-radius:6px;background:#fff;box-shadow:0 1px 4px #21132b15}.inventory-card-select input,.inventory-table-select input{width:14px;height:14px}.inventory-product-card{position:relative}.inventory-delete-small{font-size:9px!important}.inventory-delete-icon{color:#b82735!important;border-color:#f0c7ca!important;background:#fff6f6!important}.inventory-delete-icon:hover{background:#ffe9ea!important}.inventory-insights-actions .inventory-table-select{display:grid;place-items:center;margin-right:2px}.inventory-insights-actions .inventory-delete-icon{color:#b82735}
+
+.inventory-card-context{min-width:0}.inventory-card-context>.vc-context-trigger{top:8px;right:8px}.inventory-row-context{width:100%;min-height:42px}.inventory-row-context>.vc-context-trigger{top:50%;right:4px;transform:translateY(-50%)}.inventory-row-context:hover>.vc-context-trigger,.inventory-row-context>.vc-context-trigger:focus-visible{opacity:1}
+/* Inventory cards: keep identity first, reserve long descriptions for the article sheet. */
+.inventory-insights-cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));align-items:stretch}
+.inventory-product-card{grid-template-columns:82px minmax(0,1fr);grid-template-areas:"image main" "image tags" "facts facts" "actions actions";align-content:start;min-width:0}
+.inventory-product-image{grid-area:image;align-self:start}
+.inventory-product-main{grid-area:main;min-width:0;align-items:flex-start}
+.inventory-product-main>div{min-width:0;flex:1}
+.inventory-product-main b,.inventory-product-main small{overflow-wrap:anywhere}
+.inventory-product-main .inventory-status{flex:none;margin-top:1px}
+.inventory-product-variant{color:#625572!important;font-weight:650}
+.inventory-product-tags{grid-area:tags;align-self:start;min-width:0;min-height:22px}
+.inventory-product-facts{grid-area:facts;min-width:0}
+.inventory-product-actions{grid-area:actions;justify-content:flex-start;flex-wrap:wrap;align-items:center;padding-top:3px}
+.inventory-product-actions button{min-height:36px;padding:0 10px;border-radius:9px;font-size:10px;font-weight:650;transition:transform .16s,border-color .16s,background .16s,box-shadow .16s}
+.inventory-product-actions button:hover{transform:translateY(-1px)}
+.inventory-product-actions button:focus-visible,.inventory-insights-modes button:focus-visible,.inventory-quick-status button:focus-visible,.inventory-clear-filters:focus-visible{outline:3px solid #873bd04a;outline-offset:2px}
+.inventory-product-actions button.inventory-action-primary{position:relative;overflow:hidden;border-color:transparent;background:linear-gradient(100deg,#873bd0 0%,#b3148c 50%,#2198cc 100%);box-shadow:0 4px 12px #873bd033;color:#fff}
+.inventory-product-actions button.inventory-action-primary:hover{background:linear-gradient(100deg,#7732bb 0%,#9d107b 50%,#187da9 100%);box-shadow:0 6px 16px #873bd044}
+.inventory-product-actions button.inventory-delete-icon{border-color:#f0c7ca;background:#fff6f6;color:#ae2d38}
+.inventory-product-actions button.inventory-delete-icon:hover{border-color:#d98990;background:#ffeded;color:#94212c}
+.inventory-insights-modes button.active{background:linear-gradient(100deg,#873bd0,#b3148c 52%,#2198cc);box-shadow:0 3px 10px #873bd02a}
+.inventory-product-card.vc-magic-card:before{background:radial-gradient(230px circle at var(--vc-spot-x) var(--vc-spot-y),rgb(135 59 208 / 8%),transparent 72%)}
+@media(max-width:540px){.inventory-product-card{grid-template-columns:64px minmax(0,1fr);padding:12px}.inventory-product-image{width:64px;height:64px}.inventory-product-main{flex-direction:row}.inventory-product-actions{display:flex}.inventory-product-actions button{min-height:38px}.inventory-product-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.inventory-product-actions button{transition:none}.inventory-product-actions button:hover{transform:none}}
