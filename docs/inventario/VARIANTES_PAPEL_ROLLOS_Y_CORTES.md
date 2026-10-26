@@ -1,6 +1,6 @@
 # Variantes de papel, vinil y lona
 
-Estado: catálogo y flujo de corte preparados el 26 de octubre de 2026. Las cantidades físicas siguen pendientes de conteo; esta configuración no registra compras, costos ni existencias.
+Estado: catálogo cargado y flujo de corte preparado el 26 de octubre de 2026. Hay 8 artículos maestros y 43 variantes visibles (38 variantes nuevas y 5 sugerencias previas conservadas). Las cantidades físicas siguen pendientes de conteo; esta configuración no registra compras, costos ni existencias.
 
 ## Especificaciones confirmadas por Visual Corp
 

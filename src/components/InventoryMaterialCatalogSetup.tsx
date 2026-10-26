@@ -11,7 +11,7 @@ export function InventoryMaterialCatalogSetup({ canEdit, onDone, onMessage }: { 
     setBusy(false);
     if (error) { onMessage(`No se pudo cargar el catálogo de materiales: ${error.message}`); return; }
     await onDone();
-    onMessage(`Catálogo listo: ${data?.items ?? 8} artículos maestros y ${data?.variants ?? 36} variantes. No se crearon existencias físicas.`);
+    onMessage(`Catálogo listo: ${data?.items ?? 8} artículos maestros, con sus variantes y referencias visuales. No se crearon existencias físicas.`);
   };
 
   return <div className="inventory-material-catalog panel">
