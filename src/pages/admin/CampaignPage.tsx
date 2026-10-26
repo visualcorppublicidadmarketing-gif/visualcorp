@@ -9,6 +9,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { AnimatedList } from '../../components/ui/MagicComponents';
 import { EmptyState, StageBadge } from '../../components/feedback';
 import { supabase } from '../../lib/supabaseClient';
+import { MarketingCalendar } from './marketing/MarketingCalendar';
 
 type Post = Record<string, any> & { id: string; title: string; status: string; scheduled_date: string; platform: string };
 type Asset = Record<string, any> & { id: string; filename: string; rel_path: string; section: string; is_available: boolean };
@@ -36,7 +37,7 @@ const checklistFields = [
   ['cover_status', 'Portada'], ['art_status', 'Arte'], ['caption_status', 'Copy'],
   ['video_status', 'Video'], ['voiceover_status', 'Voz'], ['tiktok_status', 'TikTok'],
 ] as const;
-const defaultDraft = () => ({ title: '', content_line: '', platform: 'Instagram', format: 'Post', scheduled_date: '', scheduled_time: '', owner: '', status: 'Por iniciar', caption: '', next_action: '', due_date: '' });
+const defaultDraft = (scheduledDate = '') => ({ title: '', content_line: '', platform: 'Instagram', format: 'Post', scheduled_date: scheduledDate, scheduled_time: '', owner: '', status: 'Por iniciar', caption: '', next_action: '', due_date: '' });
 
 async function readAll(table: string, organizationId: string, orderBy?: string) {
   if (!supabase) return [];
@@ -144,7 +145,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const metricPosts = data.posts.filter((post) => Number(post.reach) || Number(post.interactions) || Number(post.clicks) || Number(post.leads));
   const selectedEvents = selectedPost ? data.events.filter((event) => event.post_id === selectedPost.id).slice(-8).reverse() : [];
 
-  const openPost = (post?: Post) => {
+  const openPost = (post?: Post, scheduledDate = '') => {
     setModalOpen(true);
     setIsNew(!post);
     setSelectedPost(post || null);
@@ -153,7 +154,20 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       format: post.format || 'Post', scheduled_date: post.scheduled_date || '', scheduled_time: post.scheduled_time || '',
       owner: post.owner || '', status: post.status || 'Por iniciar', caption: post.caption || '',
       next_action: post.next_action || '', due_date: post.due_date || '',
-    } : defaultDraft());
+    } : defaultDraft(scheduledDate));
+  };
+  const reschedulePost = async (post: Post, date: string) => {
+    if (!supabase || !organizationId || !canEdit || !date || date === post.scheduled_date?.slice(0, 10)) return;
+    setSaving(true);
+    try {
+      const { data: updated, error } = await supabase.from('marketing_posts').update({ scheduled_date: date, updated_at: new Date().toISOString() }).eq('organization_id', organizationId).eq('id', post.id).select('id').maybeSingle();
+      if (error) throw error;
+      if (!updated) throw new Error('No encontramos la publicación o tu perfil no puede editarla.');
+      setNotice(`“${post.title}” se movió al ${formatDate(date)}.`);
+      await refresh();
+    } catch (error: any) {
+      setLoadError(error?.message || 'No se pudo cambiar la fecha de la publicación.');
+    } finally { setSaving(false); }
   };
   const savePost = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -208,7 +222,9 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
 
       {(activeSection === 'overview' || activeSection === 'calendar' || activeSection === 'library') && <div className="vc-content-toolbar"><div><span className="vc-content-section-icon"><FolderOpen size={16}/></span><div><b>{activeSection === 'overview' ? 'Flujo editorial' : sectionTitle}</b><small>{activeSection === 'library' ? `${data.assets.length} recursos catalogados · ${linkedAssets} vinculados` : `${filteredPosts.length} de ${data.posts.length} publicaciones`}</small></div></div><label className="vc-content-search"><Search size={15}/><input aria-label="Buscar" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder}/></label><label className="vc-content-filter"><Filter size={14}/><select aria-label="Filtrar resultados" value={activeSection === 'library' ? assetFilter : statusFilter} onChange={(event) => activeSection === 'library' ? setAssetFilter(event.target.value) : setStatusFilter(event.target.value)}>{activeSection === 'library' ? <><option>Todos los archivos</option><option>Disponibles en el equipo</option><option>Solo referencia de ruta</option></> : statuses.map((status) => <option key={status}>{status}</option>)}</select></label></div>}
 
-      {(activeSection === 'overview' || activeSection === 'calendar') && <>
+      {activeSection === 'calendar' && <MarketingCalendar posts={filteredPosts} canEdit={canEdit} onSelect={(post) => openPost(post as Post)} onCreate={(date) => openPost(undefined, date)} onReschedule={(post, date) => void reschedulePost(post as Post, date)}/>}
+
+      {activeSection === 'overview' && <>
         {loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando publicaciones, piezas y tareas…</div>
           : data.posts.length === 0 ? <EmptyState icon={CalendarDays} title="El calendario está listo para comenzar" text="Aún no hay publicaciones en la base central. Crea la primera ficha para iniciar el flujo editorial." action={canEdit && <button className="button button-dark" onClick={() => openPost()}><Plus size={15}/>Nueva publicación</button>}/>
             : filteredPosts.length === 0 ? <EmptyState icon={Search} title="No encontramos coincidencias" text="Prueba con otro título, canal, responsable o estado." action={<button className="button button-outline" onClick={() => { setQuery(''); setStatusFilter('Todos los estados'); }}>Limpiar búsqueda</button>}/>
