@@ -3,6 +3,11 @@
 .public-site .site-brand.home-brand{height:47px;overflow:hidden}
 .public-site .site-brand.home-brand img{height:100%;max-height:none;object-fit:cover}
 .public-site .site-footer .site-brand.home-brand{padding:0;border:0;background:transparent;box-shadow:none;border-radius:0}
+.vc-home .home-service-marquee{max-width:1500px;margin:0 auto;padding:18px clamp(20px,5vw,72px);border-block:1px solid #ffffff13;color:#d5d0dd;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.vc-home .home-service-marquee .vc-marquee-separator{color:#f27ac7}
+.vc-home .home-service.vc-magic-card{overflow:hidden;isolation:isolate}
+.vc-home .home-service.vc-magic-card>:not(.vc-magic-spotlight){position:relative;z-index:1}
+.vc-home .home-service.vc-magic-card:focus-visible{outline:3px solid #f27ac7;outline-offset:4px}
 .vc-home{--home-bg:#0b0c12;--home-text:#f6f5f8;--home-muted:#b6b5c2;--home-line:#ffffff24;--home-display:BebasKai,VisualCorpDisplay,'Arial Narrow',sans-serif;background:var(--home-bg);color:var(--home-text);font-family:VisualCorpPublicDMSans,sans-serif;overflow:clip}
 .vc-home h1,.vc-home h2,.vc-home h3,.vc-home p{margin:0}
 .vc-home a{text-decoration:none}

@@ -19,6 +19,31 @@ export function SpotlightLayer() {
   return <span className="vc-magic-spotlight" aria-hidden="true" />;
 }
 
+type MarqueeProps = {
+  items: string[];
+  className?: string;
+  label: string;
+  duration?: number;
+};
+
+/** Continuous, pausable strip for short non-interactive labels or logos. */
+export function Marquee({ items, className = '', label, duration = 32 }: MarqueeProps) {
+  const reduceMotion = useReducedMotion();
+  if (!items.length) return null;
+
+  const content = (copy: boolean) => <span className="vc-marquee-group" aria-hidden={copy || undefined}>
+    {items.map((item, index) => <React.Fragment key={`${copy ? 'copy-' : ''}${index}`}>
+      <span className="vc-marquee-item">{item}</span>
+      <span className="vc-marquee-separator" aria-hidden="true">✳</span>
+    </React.Fragment>)}
+  </span>;
+
+  return <div className={`vc-marquee ${reduceMotion ? 'is-static' : ''} ${className}`} role="group" aria-label={label} style={{ '--marquee-duration': `${Math.max(12, duration)}s` } as React.CSSProperties}>
+    <span className="vc-sr-only">{label}: {items.join(', ')}</span>
+    <div className="vc-marquee-track" aria-hidden="true">{content(false)}{!reduceMotion && content(true)}</div>
+  </div>;
+}
+
 type AnimatedListProps = {
   children: React.ReactNode;
   className?: string;
