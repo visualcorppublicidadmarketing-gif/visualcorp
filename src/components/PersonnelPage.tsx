@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Banknote, BriefcaseBusiness, CalendarDays, Check, ChevronRight, CircleUserRound, Clock3, ContactRound, Edit3, History, Link2, Mail, Phone, Plus, Search, ShieldAlert, Unlink, UserRound, Users, X } from 'lucide-react';
+import { Banknote, BriefcaseBusiness, CalendarDays, Check, ChevronRight, CircleUserRound, Clock3, ContactRound, Edit3, History, Link2, Mail, Phone, Plus, Search, ShieldAlert, Unlink, UserRound, Users, X, RefreshCw } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
 import './personnel.css';
@@ -49,6 +49,9 @@ export function PersonnelPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [accountSaving, setAccountSaving] = useState(false);
+  const [accountListLoading, setAccountListLoading] = useState(false);
+  const [newGoogleAccountId, setNewGoogleAccountId] = useState('');
+  const [newGoogleProfileId, setNewGoogleProfileId] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -76,6 +79,8 @@ export function PersonnelPage() {
 
   const loadGoogleAccounts = useCallback(async () => {
     if (!supabase || !canLinkAccount) { setGoogleAccounts([]); setAccessProfiles([]); return; }
+    setAccountListLoading(true);
+    try {
     const [accountsResult, profilesResult] = await Promise.all([
       supabase.rpc('list_visualcorp_personnel_google_accounts'),
       supabase.rpc('list_visualcorp_personnel_access_profiles'),
@@ -84,6 +89,7 @@ export function PersonnelPage() {
     if (profilesResult.error) { setError(profilesResult.error.message); return; }
     setGoogleAccounts((accountsResult.data || []) as GoogleAccount[]);
     setAccessProfiles(profilesResult.data || []);
+    } finally { setAccountListLoading(false); }
   }, [canLinkAccount]);
   useEffect(() => { void loadGoogleAccounts(); }, [loadGoogleAccounts]);
 
@@ -124,7 +130,7 @@ export function PersonnelPage() {
   const linkedAccount = googleAccounts.find((account) => account.linked_personnel_id === selected?.id) || null;
   const chosenAccount = googleAccounts.find((account) => account.user_id === accountUserId) || null;
 
-  const openNew = () => { setEditingRecord(null); setDraft(emptyDraft); setError(''); setMessage(''); setModalOpen(true); };
+  const openNew = () => { setEditingRecord(null); setDraft(emptyDraft); setNewGoogleAccountId(''); setNewGoogleProfileId(''); setError(''); setMessage(''); setModalOpen(true); void loadGoogleAccounts(); };
   const openEdit = (record: PersonnelRecord) => {
     setEditingRecord(record);
     setDraft({ full_name:record.full_name,email:record.email,phone:record.phone,department:record.department,job_title:record.job_title,status:record.status,start_date:record.start_date||'',end_date:record.end_date||'' });
@@ -141,7 +147,26 @@ export function PersonnelPage() {
         ? await supabase.from('personnel_records').update(payload).eq('id',editingRecord.id).eq('organization_id',organizationId).select('id').single()
         : await supabase.from('personnel_records').insert(payload).select('id').single();
       if (result.error) throw result.error;
-      setModalOpen(false); await loadRecords(result.data.id); setMessage(editingRecord?'Ficha actualizada.':'Ficha creada.');
+      if (!editingRecord && newGoogleAccountId) {
+        try {
+          const { error: linkError } = await supabase.rpc('link_visualcorp_personnel_google_account', { p_personnel_id: result.data.id, p_user_id: newGoogleAccountId });
+          if (linkError) throw linkError;
+          if (newGoogleProfileId) {
+            const linked = googleAccounts.find((account) => account.user_id === newGoogleAccountId);
+            if (!linked) throw new Error('La cuenta se vinculó, pero no se pudo identificar su correo para asignar el perfil.');
+            const { error: profileError } = await supabase.rpc('assign_visualcorp_profile', { p_email: linked.email, p_profile_id: newGoogleProfileId });
+            if (profileError) throw profileError;
+          }
+          await loadGoogleAccounts();
+          setModalOpen(false); await loadRecords(result.data.id); setMessage(newGoogleProfileId ? 'Ficha creada, cuenta Google vinculada y perfil de acceso asignado.' : 'Ficha creada y cuenta Google vinculada.');
+        } catch (followupError) {
+          setModalOpen(false); await loadRecords(result.data.id);
+          setError(`La ficha se creó, pero no se completó la vinculación o el permiso: ${errorText(followupError)}. Puedes terminarlo desde la ficha del personal.`);
+          await loadGoogleAccounts();
+        }
+      } else {
+        setModalOpen(false); await loadRecords(result.data.id); setMessage(editingRecord?'Ficha actualizada.':'Ficha creada.');
+      }
     } catch (saveError) { setError(errorText(saveError)); }
     finally { setSaving(false); }
   };
@@ -241,6 +266,6 @@ export function PersonnelPage() {
         <p className="personnel-footnote"><UserRound size={14}/> La ficha laboral y el acceso Google están vinculados. Cambiar o quitar el vínculo no pausa ni elimina los permisos; eso se gestiona desde Equipo y permisos.</p>
       </>}</section>
     </div> : <section className="panel personnel-first-record" aria-labelledby="personnel-first-record-title"><span className="personnel-first-record-icon"><CircleUserRound size={24}/></span><span className="eyebrow">DIRECTORIO DE PERSONAL</span><h2 id="personnel-first-record-title">Aún no hay fichas de personal</h2><p>Crea una ficha para reunir los datos laborales, el acceso Google vinculado y el historial de cada persona en un solo lugar.</p>{canEdit&&<button className="button button-outline" type="button" onClick={openNew}><Plus size={15}/> Crear primera ficha</button>}</section>}
-    {modalOpen&&<div className="personnel-modal-backdrop" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setModalOpen(false);}}><section className="personnel-modal panel" role="dialog" aria-modal="true" aria-labelledby="personnel-modal-title"><div className="panel-heading"><div><span className="eyebrow">FICHA LABORAL</span><h2 id="personnel-modal-title">{editingRecord?'Editar ficha':'Nueva ficha de personal'}</h2></div><button type="button" className="icon-button" aria-label="Cerrar formulario" onClick={()=>setModalOpen(false)}><X size={18}/></button></div><form onSubmit={saveRecord}><div className="personnel-form-grid"><label className="personnel-field-wide">Nombre completo<input required maxLength={160} autoComplete="name" value={draft.full_name} onChange={(event)=>setDraft((current)=>({...current,full_name:event.target.value}))}/></label><label>Correo de contacto<input type="email" maxLength={254} autoComplete="email" value={draft.email} onChange={(event)=>setDraft((current)=>({...current,email:event.target.value}))}/></label><label>Teléfono<input type="tel" maxLength={40} autoComplete="tel" inputMode="tel" value={draft.phone} onChange={(event)=>setDraft((current)=>({...current,phone:event.target.value}))}/></label><label>Área<input maxLength={100} value={draft.department} onChange={(event)=>setDraft((current)=>({...current,department:event.target.value}))} placeholder="Escribe el área confirmada"/></label><label>Cargo<input maxLength={120} value={draft.job_title} onChange={(event)=>setDraft((current)=>({...current,job_title:event.target.value}))}/></label><label>Estado<select value={draft.status} onChange={(event)=>setDraft((current)=>({...current,status:event.target.value as RecordDraft['status']}))}><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label><label>Fecha de ingreso<input type="date" value={draft.start_date||''} onChange={(event)=>setDraft((current)=>({...current,start_date:event.target.value}))}/></label><label>Fecha de salida<input type="date" value={draft.end_date||''} onChange={(event)=>setDraft((current)=>({...current,end_date:event.target.value}))}/></label></div><p className="personnel-privacy-hint"><ShieldAlert size={15}/> Registra solo los datos necesarios para identificar y organizar la relación laboral. Esta ficha no almacena documentos de identidad, dirección domiciliaria ni datos de salud.</p>{error&&<p className="personnel-alert" role="alert">{error}</p>}<div className="personnel-modal-actions"><button type="button" className="button button-outline" onClick={()=>setModalOpen(false)}>Cancelar</button><button type="submit" className="button button-dark" disabled={saving}><Check size={15}/>{saving?'Guardando…':'Guardar ficha'}</button></div></form></section></div>}
+    {modalOpen&&<div className="personnel-modal-backdrop" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setModalOpen(false);}}><section className="personnel-modal panel" role="dialog" aria-modal="true" aria-labelledby="personnel-modal-title"><div className="panel-heading"><div><span className="eyebrow">FICHA LABORAL</span><h2 id="personnel-modal-title">{editingRecord?'Editar ficha':'Nueva ficha de personal'}</h2></div><button type="button" className="icon-button" aria-label="Cerrar formulario" onClick={()=>setModalOpen(false)}><X size={18}/></button></div><form onSubmit={saveRecord}><div className="personnel-form-grid"><label className="personnel-field-wide">Nombre completo<input required maxLength={160} autoComplete="name" value={draft.full_name} onChange={(event)=>setDraft((current)=>({...current,full_name:event.target.value}))}/></label><label>Correo de contacto<input type="email" maxLength={254} autoComplete="email" value={draft.email} onChange={(event)=>setDraft((current)=>({...current,email:event.target.value}))}/></label><label>Teléfono<input type="tel" maxLength={40} autoComplete="tel" inputMode="tel" value={draft.phone} onChange={(event)=>setDraft((current)=>({...current,phone:event.target.value}))}/></label><label>Área<input maxLength={100} value={draft.department} onChange={(event)=>setDraft((current)=>({...current,department:event.target.value}))} placeholder="Escribe el área confirmada"/></label><label>Cargo<input maxLength={120} value={draft.job_title} onChange={(event)=>setDraft((current)=>({...current,job_title:event.target.value}))}/></label><label>Estado<select value={draft.status} onChange={(event)=>setDraft((current)=>({...current,status:event.target.value as RecordDraft['status']}))}><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label><label>Fecha de ingreso<input type="date" value={draft.start_date||''} onChange={(event)=>setDraft((current)=>({...current,start_date:event.target.value}))}/></label><label>Fecha de salida<input type="date" value={draft.end_date||''} onChange={(event)=>setDraft((current)=>({...current,end_date:event.target.value}))}/></label></div>{!editingRecord&&canLinkAccount&&<section className="personnel-new-account"><div className="personnel-new-account-heading"><div><b>Cuenta del sistema</b><small>Vincula una cuenta de Google registrada y, si corresponde, define sus permisos.</small></div><button type="button" className="button button-outline" onClick={()=>void loadGoogleAccounts()} disabled={accountListLoading}><RefreshCw size={14}/>Actualizar lista</button></div><label>Perfil de Google<select value={newGoogleAccountId} onChange={(event)=>{const id=event.target.value;const account=googleAccounts.find((row)=>row.user_id===id);setNewGoogleAccountId(id);setNewGoogleProfileId('');if(account)setDraft((current)=>({...current,full_name:account.full_name,email:account.email}));}}><option value="">Crear ficha sin vincular por ahora</option>{googleAccounts.map((account)=><option key={account.user_id} value={account.user_id} disabled={Boolean(account.linked_personnel_id)}>{account.full_name} · {account.email}{account.linked_personnel_id?` · Vinculada a ${account.linked_personnel_name}`:''}{account.access_profiles.length?` · ${account.access_profiles.join(', ')}`:' · Sin perfil de acceso'}{account.last_sign_in_at?` · ${dateTimeLabel(account.last_sign_in_at)}`:''}</option>)}</select></label>{newGoogleAccountId&&<label>Permisos del sistema<select value={newGoogleProfileId} onChange={(event)=>setNewGoogleProfileId(event.target.value)}><option value="">Conservar permisos actuales</option>{accessProfiles.map((profile)=><option key={profile.id} value={profile.id}>{profile.name}</option>)}</select></label>}<p className="personnel-privacy-hint"><ShieldAlert size={15}/> Solo aparecen cuentas que ya iniciaron sesión con Google. Área y cargo describen el trabajo; los permisos se asignan por separado y se agregan a los accesos existentes. {accountListLoading?'Sincronizando…':`${googleAccounts.length} cuentas disponibles.`}</p></section>}<p className="personnel-privacy-hint"><ShieldAlert size={15}/> Registra solo los datos necesarios para identificar y organizar la relación laboral. Esta ficha no almacena documentos de identidad, dirección domiciliaria ni datos de salud.</p>{error&&<p className="personnel-alert" role="alert">{error}</p>}<div className="personnel-modal-actions"><button type="button" className="button button-outline" onClick={()=>setModalOpen(false)}>Cancelar</button><button type="submit" className="button button-dark" disabled={saving||accountListLoading}><Check size={15}/>{saving?'Guardando…':'Guardar ficha'}</button></div></form></section></div>}
   </div>;
 }
