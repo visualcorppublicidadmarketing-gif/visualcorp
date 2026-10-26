@@ -8,6 +8,7 @@ import { multiProductQuoteService, publicAddress, publicServiceFamilies, service
 import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
 import { AnimatedList, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
 import { AnimatedThemeToggler } from '../components/ui/AnimatedThemeToggler';
+import { PublicSiteContextMenu } from './PublicSiteContextMenu';
 import './public-site-v2.css';
 import './glass-system.css';
 import './public-navigation.css';
@@ -173,7 +174,7 @@ export function PublicSiteLayout() {
     document.documentElement.dataset.publicTheme = nextTheme;
   };
   useEffect(() => { document.documentElement.dataset.publicTheme = theme; }, [theme]);
-  return <div className="public-site"><ScrollProgress/><SiteHeader theme={theme} onThemeChange={changeTheme}/><main className="site-main"><motion.div key={location.pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.28 }}><Outlet/></motion.div></main><SiteFooter/></div>;
+  return <div className="public-site"><ScrollProgress/><PublicSiteContextMenu/><SiteHeader theme={theme} onThemeChange={changeTheme}/><main className="site-main"><motion.div key={location.pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.28 }}><Outlet/></motion.div></main><SiteFooter/></div>;
 }
 
 function Eyebrow({ children, light = false }) { return <span className={`site-eyebrow${light ? ' light' : ''}`}><i/>{children}</span>; }
