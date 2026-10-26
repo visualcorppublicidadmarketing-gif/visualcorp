@@ -73,6 +73,7 @@ export function OperationsOverview({ metrics, items, branches, onOpenFlow }: Pro
     };
   }, [items, branchId]);
   const visibleItems = showAll ? filteredItems : filteredItems.slice(0, 10);
+  const hasActiveFilters = Boolean(query.trim() || filter !== 'all' || branchId);
 
   return <section className="op-overview" aria-labelledby="op-overview-title">
     <div className="op-overview-heading">
@@ -100,10 +101,11 @@ export function OperationsOverview({ metrics, items, branches, onOpenFlow }: Pro
       <section className="op-overview-queue panel" aria-labelledby="op-overview-queue-title">
         <div className="op-overview-queue-heading">
           <div><span className="eyebrow">BANDEJA OPERATIVA</span><h3 id="op-overview-queue-title">Pendientes recientes</h3></div>
-          <span className="op-overview-count">{filteredItems.length}</span>
+          <span className="op-overview-count" aria-label={`${filteredItems.length} pendientes visibles`}>{filteredItems.length}</span>
         </div>
         <label className="op-overview-search"><Search size={16}/><span className="sr-only">Buscar en pendientes recientes</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar orden, venta o traslado"/></label>
         <div className="op-overview-controls"><div className="op-overview-filters" role="group" aria-label="Filtrar pendientes"><button type="button" aria-pressed={filter === 'all'} onClick={() => { setFilter('all'); setShowAll(false); }}>Todos <b>{counts.all}</b></button><button type="button" aria-pressed={filter === 'today'} onClick={() => { setFilter('today'); setShowAll(false); }}>Hoy <b>{counts.today}</b></button><button type="button" aria-pressed={filter === 'overdue'} onClick={() => { setFilter('overdue'); setShowAll(false); }}>Atrasados <b>{counts.overdue}</b></button><button type="button" aria-pressed={filter === 'blocked'} onClick={() => { setFilter('blocked'); setShowAll(false); }}>Bloqueados <b>{counts.blocked}</b></button></div><label className="op-overview-branch"><span className="sr-only">Filtrar por sucursal</span><select value={branchId} onChange={(event) => { setBranchId(event.target.value); setShowAll(false); }}><option value="">Todas las sucursales</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label></div>
+        <div className="op-overview-results" aria-live="polite" aria-atomic="true"><span>{filteredItems.length} de {items.length} pendientes{hasActiveFilters ? ' con los filtros actuales' : ' disponibles'}</span>{hasActiveFilters&&<button type="button" onClick={()=>{setQuery('');setFilter('all');setBranchId('');setShowAll(false);}}>Limpiar filtros</button>}</div>
         {visibleItems.length ? <div className="op-overview-list" role="list">
           {visibleItems.map((item) => <button className="op-overview-item" key={`${item.tab}:${item.id}`} type="button" role="listitem" onClick={() => onOpenFlow(item.tab, item.id)}>
             <span className={`op-overview-item-mark ${isOverdue(item) ? 'overdue' : ''}`} aria-hidden="true"/>
@@ -117,3 +119,4 @@ export function OperationsOverview({ metrics, items, branches, onOpenFlow }: Pro
     </div>
   </section>;
 }
+
