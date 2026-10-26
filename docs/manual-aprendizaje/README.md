@@ -6,7 +6,7 @@ Biblioteca interna añadida a la Suite para consultar formación y practicar her
 
 La biblioteca reúne nueve guías (Inducción, Seguridad Industrial, Fundamentos gráficos, Asesores, Diseñadores, Impresores, Corte Láser, Taller y Marketing), seis mini aplicaciones (Calculadora de áreas, Distancia Visual, Catálogo Pantone, Color Match, Trivia y Checklist Preimpresión) y el folleto PDF. La búsqueda considera título, descripción, área y términos relacionados; los filtros permiten explorar por tema.
 
-Las guías y herramientas se abren dentro del espacio de trabajo para conservar su contenido, recursos e interacciones originales. El botón **Abrir aparte** permite consultar la versión fuente completa. El catálogo no altera precios ni convierte las referencias del manual en datos comerciales confirmados. Las guías de seguridad se presentan como material de consulta del equipo.
+Las guías y herramientas se abren dentro del espacio de trabajo para conservar su contenido, recursos e interacciones originales. El botón **Abrir aparte** permite consultar la versión fuente completa. Las solicitudes a `/manual-aprendizaje/fuente/*` pasan por el middleware de Vercel, que comprueba una sesión vigente y un rol interno mediante `get_my_visualcorp_access`; las respuestas usan `Cache-Control: private, no-store`. El catálogo no altera precios ni convierte las referencias del manual en datos comerciales confirmados. Las guías de seguridad se presentan como material de consulta del equipo.
 
 ## Copia de referencia
 
@@ -21,4 +21,5 @@ Para refrescar la biblioteca tras cambios del manual, vuelve a copiar sus págin
 
 - Página React/Vite en `src/pages/learning/ManualLearningPage.tsx`, estilos responsive en `manual-learning.css` y dos rutas protegidas del área correspondiente.
 - Usa `motion`, Lucide y utilidades Tailwind con prefijo `mltw:`. Tailwind se limita a utilidades de la sección; no carga Preflight ni modifica los estilos globales existentes. Reduce animaciones con `prefers-reduced-motion`.
-- Los archivos están listos para revisión en la vista previa de la rama; la integración en producción depende de completar el flujo de pull request.
+- El middleware niega solicitudes anónimas y perfiles sin rol interno. La cookie de sesión se limita al directorio del manual, se renueva durante una sesión activa y caduca en un máximo de dos minutos. Para validar acceso tras cada cambio, probar rutas sin cookie, con rol autorizado y con rol sin acceso en el preview de Vercel.
+- **Límite de procedencia:** el repositorio `visualcorppublicidadmarketing-gif/visualcorp` es público y el manual también está en `estebanico10/VisualCorp-Manual`, público. La copia quedó en el historial público al integrar PR #96; este middleware protege el sitio desplegado, pero no elimina ese historial ni las copias públicas ya existentes. La exposición por GitHub requiere una acción de saneamiento independiente.

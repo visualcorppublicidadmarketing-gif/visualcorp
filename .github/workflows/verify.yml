@@ -31,5 +31,7 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Check TypeScript types
         run: npm run typecheck
+      - name: Verify protected manual access
+        run: npm run test:manual-access
       - name: Build production assets
         run: npm run build

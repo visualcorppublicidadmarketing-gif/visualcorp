@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { syncManualAccessCookie } from './manualAccessCookie';
 
 type AccessProfile = { key: string; name: string; role: string };
 type PermissionMap = Record<string, Record<string, boolean>>;
@@ -29,6 +30,7 @@ export function AuthProvider({ children }) {
       : nextSession);
 
     if (!nextSession?.user) {
+      syncManualAccessCookie(null, []);
       setRoles([]); setProfiles([]); setPermissions({}); setOrganizationId(null); setAccessError(''); setLoading(false); return;
     }
     if (userChanged) {
@@ -39,12 +41,14 @@ export function AuthProvider({ children }) {
       const { data, error } = await supabase.rpc('get_my_visualcorp_access');
       if (requestId !== accessRequestRef.current) return;
       if (error) {
+        syncManualAccessCookie(null, []);
         setAccessError('No pudimos comprobar tus permisos. Revisa tu conexión e inténtalo de nuevo.');
         return;
       }
       const access = data || {};
       const assigned = Array.isArray(access.roles) ? access.roles : [];
       const nextRoles = [...new Set<string>(assigned.map((profile: AccessProfile) => profile.role).filter(Boolean))];
+      syncManualAccessCookie(nextSession, nextRoles);
       const nextPermissions = access.permissions || {};
       setProfiles((previous) => JSON.stringify(previous) === JSON.stringify(assigned) ? previous : assigned);
       setRoles((previous) => JSON.stringify(previous) === JSON.stringify(nextRoles) ? previous : nextRoles);
@@ -53,6 +57,7 @@ export function AuthProvider({ children }) {
       setAccessError('');
     } catch {
       if (requestId === accessRequestRef.current) {
+        syncManualAccessCookie(null, []);
         setAccessError('No pudimos comprobar tus permisos. Revisa tu conexión e inténtalo de nuevo.');
       }
     } finally {
