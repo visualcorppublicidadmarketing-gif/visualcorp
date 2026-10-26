@@ -17,6 +17,8 @@ export type OperationsQueueItem = {
   updatedAt: string;
   severity: number;
   overdue?: boolean;
+  dueAt?: string;
+  branchId?: string;
 };
 
 export type OperationsMetric = {
@@ -31,6 +33,7 @@ export type OperationsMetric = {
 type Props = {
   metrics: OperationsMetric[];
   items: OperationsQueueItem[];
+  branches: { id: string; name: string }[];
   onOpenFlow: (tab: OperationsFlowTab, itemId?: string) => void;
 };
 
@@ -40,20 +43,42 @@ const dateTime = (value: string) => {
   return Number.isNaN(parsed.valueOf()) ? 'Fecha pendiente' : parsed.toLocaleString('es-EC', { dateStyle: 'medium', timeStyle: 'short' });
 };
 
-export function OperationsOverview({ metrics, items, onOpenFlow }: Props) {
+const isToday = (value?: string) => Boolean(value && new Date(value).toDateString() === new Date().toDateString());
+const isOverdue = (item: OperationsQueueItem) => Boolean(item.overdue || (item.dueAt && new Date(item.dueAt).getTime() < new Date(new Date().setHours(0, 0, 0, 0)).getTime()));
+
+export function OperationsOverview({ metrics, items, branches, onOpenFlow }: Props) {
   const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'today' | 'overdue' | 'blocked'>('all');
+  const [branchId, setBranchId] = useState('');
+  const [showAll, setShowAll] = useState(false);
   const filteredItems = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase('es');
-    if (!normalized) return items;
-    return items.filter((item) => `${item.title} ${item.detail} ${item.statusLabel} ${item.action}`.toLocaleLowerCase('es').includes(normalized));
-  }, [items, query]);
+    const terms = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').trim().split(/\s+/).filter(Boolean);
+    return items.filter((item) => {
+      if (branchId && item.branchId !== branchId) return false;
+      if (filter === 'today' && !isToday(item.dueAt)) return false;
+      if (filter === 'overdue' && !isOverdue(item)) return false;
+      if (filter === 'blocked' && item.status !== 'blocked') return false;
+      const haystack = `${item.title} ${item.detail} ${item.statusLabel} ${item.action}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+      return terms.every((term) => haystack.includes(term));
+    });
+  }, [items, query, filter, branchId]);
+  const counts = useMemo(() => {
+    const scoped = branchId ? items.filter((item) => item.branchId === branchId) : items;
+    return {
+      all: scoped.length,
+      today: scoped.filter((item) => isToday(item.dueAt)).length,
+      overdue: scoped.filter(isOverdue).length,
+      blocked: scoped.filter((item) => item.status === 'blocked').length,
+    };
+  }, [items, branchId]);
+  const visibleItems = showAll ? filteredItems : filteredItems.slice(0, 10);
 
   return <section className="op-overview" aria-labelledby="op-overview-title">
     <div className="op-overview-heading">
       <div>
         <span className="eyebrow">CENTRO DE OPERACIONES</span>
         <h2 id="op-overview-title">Lo que necesita atención</h2>
-        <p>Un resumen de caja, devoluciones, traslados y órdenes activas. Cada elemento conserva sus controles y permisos en su flujo.</p>
+        <p>Prioriza caja, devoluciones, traslados y órdenes según atraso, fecha o bloqueo. Cada acción conserva sus permisos.</p>
       </div>
       <span className="op-overview-live"><i aria-hidden="true"/> Datos recientes disponibles</span>
     </div>
@@ -76,14 +101,15 @@ export function OperationsOverview({ metrics, items, onOpenFlow }: Props) {
           <span className="op-overview-count">{filteredItems.length}</span>
         </div>
         <label className="op-overview-search"><Search size={16}/><span className="sr-only">Buscar en pendientes recientes</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar orden, venta o traslado"/></label>
-        {filteredItems.length ? <div className="op-overview-list" role="list">
-          {filteredItems.slice(0, 7).map((item) => <button className="op-overview-item" key={`${item.tab}:${item.id}`} type="button" role="listitem" onClick={() => onOpenFlow(item.tab, item.id)}>
+        <div className="op-overview-controls"><div className="op-overview-filters" role="group" aria-label="Filtrar pendientes"><button type="button" aria-pressed={filter === 'all'} onClick={() => { setFilter('all'); setShowAll(false); }}>Todos <b>{counts.all}</b></button><button type="button" aria-pressed={filter === 'today'} onClick={() => { setFilter('today'); setShowAll(false); }}>Hoy <b>{counts.today}</b></button><button type="button" aria-pressed={filter === 'overdue'} onClick={() => { setFilter('overdue'); setShowAll(false); }}>Atrasados <b>{counts.overdue}</b></button><button type="button" aria-pressed={filter === 'blocked'} onClick={() => { setFilter('blocked'); setShowAll(false); }}>Bloqueados <b>{counts.blocked}</b></button></div><label className="op-overview-branch"><span className="sr-only">Filtrar por sucursal</span><select value={branchId} onChange={(event) => { setBranchId(event.target.value); setShowAll(false); }}><option value="">Todas las sucursales</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label></div>
+        {visibleItems.length ? <div className="op-overview-list" role="list">
+          {visibleItems.map((item) => <button className="op-overview-item" key={`${item.tab}:${item.id}`} type="button" role="listitem" onClick={() => onOpenFlow(item.tab, item.id)}>
             <span className={`op-overview-item-mark ${item.overdue ? 'overdue' : ''}`} aria-hidden="true"/>
             <span className="op-overview-item-copy"><b>{item.title}</b><small>{item.detail} · {dateTime(item.updatedAt)}</small><span className={`op-flow-status status-${item.status}`}>{item.overdue ? 'Atrasada · ' : ''}{item.statusLabel}</span></span>
             <span className="op-overview-item-action">{item.action}<ArrowUpRight size={14}/></span>
           </button>)}
-          {filteredItems.length > 7 && <p className="op-overview-more">Mostrando 7 de {filteredItems.length} pendientes recientes.</p>}
-        </div> : <div className="op-overview-empty"><b>{query ? 'No encontramos coincidencias.' : 'No hay pendientes en los registros recientes.'}</b><span>{query ? 'Prueba con otro código o nombre.' : 'Los elementos activos aparecerán aquí cuando requieran seguimiento.'}</span></div>}
+          {filteredItems.length > visibleItems.length && <button type="button" className="op-overview-more" onClick={() => setShowAll(true)}>Mostrar los {filteredItems.length - visibleItems.length} pendientes restantes</button>}
+        </div> : <div className="op-overview-empty"><b>{query ? 'No encontramos coincidencias.' : 'No hay pendientes para este filtro.'}</b><span>{query ? 'Prueba con otro código o nombre.' : 'Cambia el estado o la sucursal para revisar otros pendientes.'}</span></div>}
         <p className="op-overview-footnote">El resumen usa los registros recientes cargados por cada flujo; las acciones se confirman en el servidor.</p>
       </section>
     </div>

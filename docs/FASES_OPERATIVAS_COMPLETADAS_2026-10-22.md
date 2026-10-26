@@ -53,3 +53,13 @@ Se completó la primera implementación integrada de los cinco flujos que estaba
 - Compilación de producción de Vite: correcta. Tamaño del JS principal: 618 kB minificado, con advertencia de paquete mayor a 500 kB.
 - No se generaron ventas, cierres, devoluciones, transferencias, órdenes ni cotizaciones ficticias en producción. Las pruebas de aceptación con cuentas reales y cantidades verificadas quedan para el equipo.
 - No emite comprobantes tributarios ni ejecuta reembolsos externos. Las reglas contables, tolerancias de caja y consumos estándar de materiales necesitan confirmación de la empresa.
+
+## Seguimiento de producción y arqueo ciego — 26 de octubre de 2026
+
+Estado: mejora implementada en `codex/operations-flows-next-20261024`; sus migraciones quedaron aplicadas en Supabase el 26 de octubre de 2026. Las órdenes ahora aceptan instrucciones, asignación, fecha, prioridad y próximo paso; la edición del traspaso registra un evento atómico, controla membresía activa de la sucursal y conserva actor/nota. La venta vinculada expone el acceso a la ficha CRM. El tablero filtra por estado operativo, fecha y sucursal; el estado crítico requiere nota. La pantalla de caja oculta el efectivo esperado antes del recuento y deja que el servidor calcule el cierre. El código queda listo para publicación tras integrar la rama actualizada.
+
+La migración `20261026140932_production_handoffs.sql` incorpora `next_step`, auditoría y validación de responsables; se verificó en el historial de Supabase. POS y Finanzas ya cuentan con recorridos y reportes conectados; en este hito se protegió el conteo ciego y se añadió su priorización de operaciones, sin alterar políticas contables, ventas o datos.
+
+## Concurrencia de pago y cierre de caja — 26 de octubre de 2026
+
+Se actualizó `app_private.attach_open_cash_session()` para bloquear la fila de la caja abierta al asociar un pago en efectivo. `close_cash_session` ya bloquea esa misma fila antes de calcular el esperado: si el pago obtiene el bloqueo primero, queda incluido en el cierre; si el cierre lo obtiene primero, el pago espera y luego se rechaza con una indicación para actualizar y abrir otro turno. Los pagos no efectivos limpian cualquier asociación a caja. La migración `20261026140939_cash_payment_close_lock.sql` quedó aplicada y verificada; no se modificaron ventas, cierres ni saldos reales.
