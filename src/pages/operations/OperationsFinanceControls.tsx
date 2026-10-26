@@ -18,6 +18,12 @@ const businessMonth = (value: string) => {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit' }).formatToParts(new Date(value));
   return `${parts.find((part) => part.type === 'year')?.value}-${parts.find((part) => part.type === 'month')?.value}`;
 };
+const previousCalendarMonth = (value: string) => {
+  if (!/^\d{4}-\d{2}$/.test(value)) return '';
+  const [year, month] = value.split('-').map(Number);
+  const previous = new Date(Date.UTC(year, month - 2, 1));
+  return `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, '0')}`;
+};
 const categories = ['Compras e insumos', 'Arriendo', 'Internet y telefonía', 'Servicios básicos', 'Transporte', 'Mantenimiento', 'Marketing', 'Honorarios', 'Otros'];
 const methods = [['cash', 'Efectivo'], ['transfer', 'Transferencia'], ['card', 'Tarjeta'], ['cheque', 'Cheque'], ['other', 'Otro']];
 const FINANCE_PAGE_SIZE = 500;
@@ -334,6 +340,16 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
       && expense.status !== 'void'
       && expense.document_date.slice(0, 7) === month
       && (branch === 'all' || expense.branch_id === branch));
+    const previousMonth = previousCalendarMonth(month);
+    const previousExpenses = expenses.filter((expense) => Boolean(previousMonth)
+      && expense.status !== 'void'
+      && expense.document_date.slice(0, 7) === previousMonth
+      && (branch === 'all' || expense.branch_id === branch));
+    const previousTotalBySupplier = new Map<string, number>();
+    previousExpenses.forEach((expense) => {
+      if (!expense.supplier_id) return;
+      previousTotalBySupplier.set(expense.supplier_id, (previousTotalBySupplier.get(expense.supplier_id) || 0) + Number(expense.total || 0));
+    });
     const bySupplier = new Map<string, {
       id: string;
       name: string;
@@ -370,12 +386,25 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
     });
     const rows = [...bySupplier.values()]
       .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'es-EC'))
-      .map(({ orderIds, ...row }) => ({ ...row, purchaseOrders: orderIds.size }));
+      .map(({ orderIds, ...row }) => {
+        const previousTotal = previousTotalBySupplier.get(row.id) || 0;
+        return {
+          ...row,
+          purchaseOrders: orderIds.size,
+          previousTotal,
+          periodChange: row.total - previousTotal,
+          periodChangePercent: previousTotal > 0 ? (row.total - previousTotal) / previousTotal * 100 : null,
+        };
+      });
     const totalDocumented = reportExpenses.reduce((sum, expense) => sum + Number(expense.total || 0), 0);
+    const previousTotalDocumented = previousExpenses.reduce((sum, expense) => sum + Number(expense.total || 0), 0);
     const totalLinked = reportExpenses.filter((expense) => expense.supplier_id).reduce((sum, expense) => sum + Number(expense.total || 0), 0);
     return {
       rows,
       totalDocumented,
+      previousTotalDocumented,
+      totalPeriodChange: totalDocumented - previousTotalDocumented,
+      totalPeriodChangePercent: previousTotalDocumented > 0 ? (totalDocumented - previousTotalDocumented) / previousTotalDocumented * 100 : null,
       unlinkedTotal: totalDocumented - totalLinked,
       balance: rows.reduce((sum, row) => sum + row.balance, 0),
       overdue: rows.reduce((sum, row) => sum + row.overdueBalance, 0),
@@ -724,16 +753,17 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
       <div className="panel-heading"><div><span className="eyebrow">COMPRAS → FINANZAS · {month || 'SIN PERIODO'}</span><h3 id="op-finance-supplier-title">Egresos documentados por proveedor</h3><p className="muted">Documentos emitidos en el mes y sucursal elegidos arriba. Los abonos son el acumulado actual de esas cuentas.</p></div><a className="button button-outline" href="/operaciones/compras">Abrir Compras <ArrowUpRight size={15}/></a></div>
       <div className="op-finance-supplier-metrics">
         <article><span>Egresos documentados</span><b>{money(supplierReport.totalDocumented)}</b><small>{supplierReport.documentCount} documentos del periodo</small></article>
+        <article><span>Variación vs. mes anterior</span><b>{supplierReport.totalPeriodChange > 0 ? '+' : ''}{money(supplierReport.totalPeriodChange)}</b><small>{supplierReport.previousTotalDocumented > 0 ? `${supplierReport.totalPeriodChangePercent > 0 ? '+' : ''}${supplierReport.totalPeriodChangePercent.toFixed(1)}% frente a ${money(supplierReport.previousTotalDocumented)}` : 'Sin egresos del mes anterior para comparar'}</small></article>
         <article><span>Saldo abierto vinculado</span><b>{money(supplierReport.balance)}</b><small>De documentos con proveedor asociado</small></article>
         <article className={supplierReport.overdue ? 'is-overdue' : ''}><span>Vencido vinculado</span><b>{money(supplierReport.overdue)}</b><small>Saldos asociados con vencimiento pasado</small></article>
         <article className={supplierReport.unlinkedTotal ? 'is-unlinked' : ''}><span>Sin proveedor vinculado</span><b>{money(supplierReport.unlinkedTotal)}</b><small>Importe pendiente de clasificar en el periodo</small></article>
       </div>
       {supplierReport.rows.length ? <div className="op-finance-supplier-list">{supplierReport.rows.slice(0, 8).map((supplier, index) => <article key={supplier.id}>
         <div className="op-finance-supplier-rank"><span>{index + 1}</span><div><b>{supplier.name}</b><small>{supplier.documents} {supplier.documents === 1 ? 'documento' : 'documentos'} · {supplier.purchaseOrders} órdenes de compra vinculadas</small></div></div>
-        <div className="op-finance-supplier-values"><b>{money(supplier.total)}</b><span>Abonado a la fecha {money(supplier.paidToDate)}</span><span className={supplier.overdueBalance ? 'is-overdue' : ''}>Saldo abierto {money(supplier.balance)}{supplier.overdueBalance ? ` · vencido ${money(supplier.overdueBalance)}` : ''}</span></div>
+        <div className="op-finance-supplier-values"><b>{money(supplier.total)}</b><span>vs. mes anterior {supplier.periodChange > 0 ? '+' : ''}{money(supplier.periodChange)}{supplier.periodChangePercent !== null ? ` · ${supplier.periodChangePercent > 0 ? '+' : ''}${supplier.periodChangePercent.toFixed(1)}%` : ' · sin base'}</span><span>Abonado a la fecha {money(supplier.paidToDate)}</span><span className={supplier.overdueBalance ? 'is-overdue' : ''}>Saldo abierto {money(supplier.balance)}{supplier.overdueBalance ? ` · vencido ${money(supplier.overdueBalance)}` : ''}</span></div>
         <div className="op-finance-supplier-track" role="progressbar" aria-label={`${supplier.name}: ${money(supplier.total)} de egresos documentados`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(supplier.total / Math.max(1, supplierReport.totalDocumented) * 100)}><i style={{ width: `${Math.max(2, supplier.total / Math.max(1, supplierReport.totalDocumented) * 100)}%` }}/></div>
       </article>)}</div> : <div className="op-finance-ledger-empty"><Truck size={24}/><b>Sin egresos asociados a proveedores</b><span>Registra o vincula facturas con proveedores para ver concentración, órdenes y saldos.</span></div>}
-      <p className="op-finance-cost-note">El total corresponde al valor de los documentos emitidos este mes; «abonado a la fecha» y «saldo abierto» reflejan el estado acumulado de esos documentos, no solo pagos del mes. Las órdenes sin factura no forman parte de estos importes.</p>
+      <p className="op-finance-cost-note">La variación compara el total de documentos emitidos en el mes seleccionado con el mes calendario anterior, en la misma sucursal; no corrige diferencias de días laborables ni cambios de precios. «Abonado a la fecha» y «saldo abierto» reflejan el estado acumulado de los documentos del periodo, no solo pagos del mes. Las órdenes sin factura no forman parte de estos importes.</p>
     </section>}
     {section === 'recurring' && <div className="op-finance-ledger-columns">
       <form className="panel op-finance-ledger-form" onSubmit={saveTemplate}><div className="panel-heading"><div><span className="eyebrow">PREVISIÓN Y RECORDATORIOS</span><h3>Programar pago periódico</h3></div><CalendarClock size={18}/></div><p className="muted">Cada vencimiento crea una cuenta por pagar solo cuando lo confirmes. No se ejecutan cargos ni pagos automáticos.</p>
