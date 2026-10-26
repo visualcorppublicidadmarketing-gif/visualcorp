@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Globe2, MapPin, Menu, MessageCircle, Phone, Printer, ScanLine, Scissors, Shirt, Sparkles, Store, PanelsTopLeft, X, Sun, Moon } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
-import { multiProductQuoteService, publicAddress, publicServiceFamilies, serviceProjectPrompts } from './content.ts';
+import { multiProductQuoteService, publicAddress, publicServiceFamilies, serviceDetailContent, serviceProjectPrompts } from './content.ts';
 import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
 import { AnimatedList, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
 import { AnimatedThemeToggler } from '../components/ui/AnimatedThemeToggler';
@@ -15,8 +15,7 @@ import './public-footer.css';
 import './contact-page.css';
 import './home-hero.css';
 import './public-theme.css';
-
-const HomeContentHighlights = React.lazy(() => import('./ShowcasePages').then((module) => ({ default: module.HomeContentHighlights })));
+import './service-detail.css';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 const familyInfo = (id) => publicServiceFamilies.find((family) => family.id === id);
@@ -33,7 +32,8 @@ function SiteTitle({ children }) {
 }
 
 function BrandLink({ onClick = undefined, footer = false, theme = 'dark' }) {
-  return <Link className={`site-brand${footer ? ' site-brand-footer' : ''}`} to="/" onClick={onClick} aria-label="Visual Corp, inicio"><img src={footer || theme === 'light' ? wordmark : '/brand/visualcorp-wordmark-dark.png'} alt="Visual Corp — Agencia Creativa" /></Link>;
+  const isHome = useLocation().pathname === '/';
+  return <Link className={`site-brand${footer ? ' site-brand-footer' : ''}${isHome ? ' home-brand' : ''}`} to="/" onClick={onClick} aria-label="Visual Corp, inicio"><img src={isHome ? '/brand/visualcorp-wordmark-white-original.png' : footer || theme === 'light' ? wordmark : '/brand/visualcorp-wordmark-dark.png'} alt="Visual Corp — Agencia Creativa" /></Link>;
 }
 
 function SiteHeader({ theme, onThemeChange }) {
@@ -242,34 +242,7 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
   </form>;
 }
 
-export function PublicHomePage() {
-  const { data } = useWorkspace();
-  const services = data.services.filter((service) => service.enabled);
-  return <><SiteTitle>Inicio</SiteTitle>
-    <section className="site-hero">
-      <div className="site-hero-glow glow-pink"/><div className="site-hero-glow glow-blue"/>
-      <div className="site-hero-content"><Eyebrow light>{data.settings.heroEyebrow}</Eyebrow><h1>{data.settings.heroTitle}</h1><p>{data.settings.heroText}</p><div className="site-hero-actions"><Link className="site-primary-button" to="/cotizador">Cuéntanos tu idea <ArrowUpRight size={17}/></Link><Link className="site-secondary-button" to="/servicios">Explorar servicios <ArrowRight size={16}/></Link></div><div className="site-hero-proof"><span><Check size={14}/>Atención directa</span><span><Check size={14}/>Ideas y producción</span><span><Check size={14}/>{data.settings.location}</span></div></div>
-      <div className="site-hero-art">
-        <div className="hero-stage-grid" aria-hidden="true"/>
-        <div className="hero-stage-word" aria-hidden="true">IDEAS</div>
-        <div className="site-mascot-halo" aria-hidden="true"/>
-        <div className="site-mascot-floor" aria-hidden="true"/>
-        <div className="hero-orbit orbit-a" aria-hidden="true"/>
-        <div className="hero-orbit orbit-b" aria-hidden="true"/>
-        <div className="hero-stage-index" aria-hidden="true"><span>VC</span><i/>MILAGRO · ECUADOR</div>
-        <img className="site-mascot-image" src="/public-site/visualito-hero.webp" alt="Visualito, mascota de Visual Corp" width={720} height={1080} fetchPriority="high"/>
-        <div className="hero-float-card hero-float-card-top"><span>01 / IDEA</span><b>Todo empieza<br/>con una visión.</b><i/></div>
-        <div className="hero-float-card hero-float-card-bottom"><span className="hero-spectrum"><i/><i/><i/></span><b>DISEÑO</b><b>PRODUCCIÓN</b><b>MARCA</b><ArrowUpRight size={15} aria-hidden="true"/></div>
-        <div className="site-art-label label-top">IDEAS EN MOVIMIENTO</div>
-      </div>
-      <a className="site-scroll-cue" href="#servicios">Descubre Visual Corp <ArrowDownRight size={15}/></a>
-    </section>
-    <section className="site-services-section" id="servicios"><SectionTitle eyebrow="SERVICIOS CONECTADOS" title={<>Una idea puede tomar<br/>muchas formas.</>} description="Elige una familia de trabajo para conocerla mejor. Si no sabes por dónde empezar, cuéntanos tu idea y te orientamos."/><AnimatedList className="site-services-grid" stagger={0.075}>{services.map((service, index) => <ServiceCard service={service} index={index} key={service.id}/>)}</AnimatedList><Link className="site-text-link" to="/servicios">Ver todas las familias de servicio <ArrowRight size={16}/></Link></section>
-    <section className="site-bridge"><div className="bridge-copy"><Eyebrow>DEL CONCEPTO A LA REALIDAD</Eyebrow><h2>Diseño, producción<br/>y una idea en común.</h2><p>Visual Corp es una agencia de publicidad y marketing en Milagro. Conversamos sobre lo que necesitas y te ayudamos a definir un siguiente paso.</p><Link className="site-primary-button" to="/como-trabajamos">Conoce cómo trabajamos <ArrowUpRight size={16}/></Link></div><AnimatedList className="bridge-steps"><article key="01"><b>01</b><div><h3>Cuéntanos</h3><p>Comparte tu idea y el objetivo que buscas.</p></div><ArrowUpRight size={15}/></article><article key="02"><b>02</b><div><h3>Lo revisamos</h3><p>Aterrizamos juntos los detalles del proyecto.</p></div><ArrowUpRight size={15}/></article><article key="03"><b>03</b><div><h3>Avanzamos</h3><p>Definimos el camino adecuado para tu solicitud.</p></div><ArrowUpRight size={15}/></article></AnimatedList></section>
-     <React.Suspense fallback={null}><HomeContentHighlights/></React.Suspense>
-     <Callout data={data}/>
-  </>;
-}
+export { PublicHomePage } from './HomePage';
 
 export function ServicesIndexPage() {
   const { data } = useWorkspace();
@@ -284,7 +257,26 @@ export function ServiceDetailPage() {
   const details = familyInfo(slug);
   if (!service?.enabled) return <PageNotFound title="Este servicio no está disponible"/>;
   const Icon = serviceIcons[service.id] || Sparkles;
-  return <><SiteTitle>{service.name}</SiteTitle><PageHero eyebrow={`SERVICIOS · ${details?.mark || ''}`} title={service.name} description={service.description} compact primary={{ label: 'Solicitar cotización', to: `/cotizador?servicio=${encodeURIComponent(service.name)}` }} secondary={{ label: 'Todos los servicios', to: '/servicios' }}/><section className="site-detail-section"><div className="site-detail-copy"><Eyebrow>PARA EMPEZAR</Eyebrow><h2>Háblanos de<br/>tu proyecto.</h2><p>{serviceProjectPrompts[service.id] || 'Cuéntanos el objetivo y comparte una referencia si la tienes.'} Revisaremos contigo el alcance antes de confirmar valores o tiempos.</p><Link className="site-primary-button" to={`/cotizador?servicio=${encodeURIComponent(service.name)}`}>Describir mi proyecto <ArrowUpRight size={16}/></Link></div><div className="site-detail-card"><span className="site-detail-number">{details?.mark || 'VC'}</span><Icon size={25} aria-hidden="true"/><h3>{service.name}</h3><p>{service.description}</p><div className="detail-card-divider"/><span>Alcance sujeto a revisión con el equipo</span></div></section><Callout data={data} title="¿No sabes si esta es la familia adecuada?"/></>;
+  const page = details ? serviceDetailContent[details.id] : undefined;
+  const quoteUrl = `/cotizador?servicio=${encodeURIComponent(service.name)}`;
+  const relatedIds: string[] = page?.relatedServices || [];
+  const relatedServices = data.services.filter((item) => item.enabled && relatedIds.includes(item.id)).sort((a, b) => relatedIds.indexOf(a.id) - relatedIds.indexOf(b.id));
+  return <><SiteTitle>{service.name}</SiteTitle>
+    <article className={`service-detail-page service-detail-${service.id}`}>
+      <header className="service-detail-hero">
+        <nav className="service-detail-breadcrumbs" aria-label="Ruta de navegación"><Link to="/">Inicio</Link><ChevronRight size={14} aria-hidden="true"/><Link to="/servicios">Servicios</Link><ChevronRight size={14} aria-hidden="true"/><span aria-current="page">{service.name}</span></nav>
+        <div className="service-detail-hero-grid"><div className="service-detail-hero-copy"><Eyebrow light>{`SERVICIOS · ${details?.mark || ''}`}</Eyebrow><h1>{service.name}</h1><p className="service-detail-hero-description">{page?.headline || service.description}</p><p className="service-detail-hero-intro">{page?.introduction || serviceProjectPrompts[service.id] || 'Cuéntanos qué necesitas y revisaremos contigo los detalles del proyecto.'}</p><div className="service-detail-actions"><Link className="site-primary-button" to={quoteUrl}>Preparar mi cotización <ArrowUpRight size={16}/></Link><a className="site-secondary-button" href="#orientar-proyecto">¿Qué información compartir? <ArrowDownRight size={16}/></a></div><span className="service-detail-hero-footnote"><Check size={14}/> Revisaremos contigo los detalles antes de confirmar tu solicitud.</span></div>
+          <div className="service-detail-visual" aria-hidden="true"><div className="service-detail-visual-orbit"/><span className="service-detail-visual-number">{details?.mark || 'VC'}</span><div className="service-detail-visual-icon"><Icon size={76} strokeWidth={1.2}/></div><span className="service-detail-visual-label"><i/> IDEAS QUE TOMAN FORMA</span></div>
+        </div>
+      </header>
+      <section className="service-detail-intro service-detail-section" aria-labelledby="service-detail-intro-title"><div><Eyebrow light>UNA FAMILIA, MUCHAS POSIBILIDADES</Eyebrow><h2 id="service-detail-intro-title">¿Para qué lo tienes<br/>en mente?</h2></div><p>Estas situaciones pueden ayudarte a ubicar tu idea. Cuéntanos qué resultado quieres conseguir; juntas revisaremos la pieza y los detalles que apliquen a tu proyecto.</p></section>
+      <section className="service-detail-situations service-detail-section" aria-label="Situaciones que esta familia puede ayudar a comunicar">{(page?.situations || [service.description, 'Comparte el objetivo que quieres alcanzar', 'Cuéntanos dónde se usará tu proyecto']).map((situation, index) => <article key={situation}><span>{String(index + 1).padStart(2, '0')}</span><Sparkles size={20} aria-hidden="true"/><h3>{situation}</h3><i aria-hidden="true"/></article>)}</section>
+      <section className="service-detail-brief service-detail-section" id="orientar-proyecto" aria-labelledby="service-detail-brief-title"><div className="service-detail-brief-heading"><Eyebrow>PARA EMPEZAR</Eyebrow><h2 id="service-detail-brief-title">Cuéntanos un poco<br/>sobre tu idea.</h2><p>{serviceProjectPrompts[service.id] || 'Comparte el objetivo, el espacio o la necesidad que quieres resolver.'}</p><span>{page?.preparation}</span></div><div className="service-detail-checklist">{(page?.checklist || ['El objetivo que quieres conseguir', 'Las medidas o cantidad aproximadas, si las conoces', 'Una foto, diseño o referencia, si la tienes']).map((item, index) => <div key={item}><span>{String(index + 1).padStart(2, '0')}</span><p>{item}</p><Check size={17} aria-hidden="true"/></div>)}<Link className="site-primary-button" to={quoteUrl}>Compartir estos detalles <ArrowUpRight size={16}/></Link></div></section>
+      <section className="service-detail-process service-detail-section" aria-label="Cómo se revisa una solicitud"><div><span>01</span><h3>Nos compartes tu idea</h3><p>Cuéntanos qué necesitas y qué objetivo quieres lograr.</p></div><ArrowRight size={18} aria-hidden="true"/><div><span>02</span><h3>Revisamos el proyecto</h3><p>Conversamos sobre el formato y los detalles pertinentes.</p></div><ArrowRight size={18} aria-hidden="true"/><div><span>03</span><h3>Confirmamos contigo</h3><p>Materiales, disponibilidad, valores y tiempos se revisan para cada solicitud.</p></div></section>
+      {relatedServices.length > 0 && <section className="service-detail-related service-detail-section" aria-labelledby="service-detail-related-title"><div className="service-detail-related-heading"><div><span className="service-detail-kicker">SIGUE EXPLORANDO</span><h2 id="service-detail-related-title">Tu proyecto puede<br/>tomar otra forma.</h2></div><Link to="/servicios">Ver todas las familias <ArrowRight size={16}/></Link></div><div className="service-detail-related-grid">{relatedServices.map((item, index) => { const RelatedIcon = serviceIcons[item.id] || Sparkles; return <Link to={`/servicios/${item.id}`} key={item.id}><span>{String(index + 1).padStart(2, '0')}</span><RelatedIcon size={22} aria-hidden="true"/><h3>{item.name}</h3><p>{item.description}</p><ArrowUpRight size={17} aria-hidden="true"/></Link>; })}</div></section>}
+      <section className="service-detail-cta service-detail-section"><div><span className="service-detail-kicker">{`VISUAL CORP · ${data.settings.location}`}</span><h2>Toda gran pieza<br/>empieza <em>con una idea.</em></h2><p>Cuéntanos qué imaginas y revisaremos contigo los detalles de tu solicitud.</p></div><Link className="site-primary-button" to={quoteUrl}>Empezar mi cotización <ArrowUpRight size={18}/></Link></section>
+    </article>
+  </>;
 }
 
 export function AboutPage() {
