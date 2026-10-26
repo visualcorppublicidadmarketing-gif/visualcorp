@@ -33,3 +33,4 @@ docs/inventario/borrador_migracion_local.json
 
 # Vínculo local del proyecto Vercel; se mantiene en el disco de trabajo.
 .vercel/
+.env*.local

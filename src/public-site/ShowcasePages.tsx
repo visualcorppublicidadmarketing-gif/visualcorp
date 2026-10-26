@@ -198,12 +198,13 @@ export function ArticleDetailPage({ kind = 'blog' }: { kind?: ContentKind }) {
 }
 
 export function StorefrontPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const searchInput = useRef<HTMLInputElement>(null);
-  const [category, setCategory] = useState('Todos');
+  const [category, setCategory] = useState(() => searchParams.get('familia') || 'Todos');
   const [sort, setSort] = useState('relevance');
   const [visibleLimit, setVisibleLimit] = useState(24);
   const [reloadKey, setReloadKey] = useState(0);
@@ -215,7 +216,6 @@ export function StorefrontPage() {
     try { const saved = JSON.parse(localStorage.getItem('visualcorp-store-quantity-tiers-v1') || '{}'); return saved && typeof saved === 'object' && !Array.isArray(saved) ? Object.fromEntries(Object.entries(saved).filter((entry): entry is [string,string] => typeof entry[1] === 'string')) : {}; }
     catch { return {}; }
   });
-  const [searchParams, setSearchParams] = useSearchParams();
   const productDialog = useRef<HTMLDialogElement>(null);
   const [selectedQuantityTier, setSelectedQuantityTier] = useState('');
   const queryProduct = searchParams.get('producto');
@@ -278,6 +278,26 @@ export function StorefrontPage() {
     products.forEach((product) => { const group = groupFor(product); counts.set(group, (counts.get(group) || 0) + 1); });
     return [...counts.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'));
   }, [products]);
+  const queryFamily = searchParams.get('familia');
+  useEffect(() => {
+    if (!categories.length) return;
+    if (!queryFamily) { setCategory('Todos'); return; }
+    const matchingCategory = categories.find(([name]) => normalized(name) === normalized(queryFamily))?.[0];
+    setCategory(matchingCategory || 'Todos');
+    if (matchingCategory) {
+      window.requestAnimationFrame(() => document.getElementById('catalogo-productos')?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start',
+      }));
+    }
+  }, [queryFamily, categories]);
+  const selectCategory = (nextCategory: string) => {
+    setCategory(nextCategory);
+    const next = new URLSearchParams(searchParams);
+    if (nextCategory === 'Todos') next.delete('familia');
+    else next.set('familia', nextCategory);
+    setSearchParams(next, { replace: true });
+  };
   const matches = useMemo(() => {
     const query = normalized(search.trim());
     const result = products.filter((product) => (category === 'Todos' || groupFor(product) === category)
@@ -341,7 +361,7 @@ export function StorefrontPage() {
   const selectedProducts = products.filter((product) => selection.includes(product.id));
   const featuredProducts = products.filter((product) => product.featured).slice(0, 4);
   const featuredPreview = [...products].sort((a,b) => Number(b.featured)-Number(a.featured) || a.sort_order-b.sort_order).slice(0, 3);
-  const categoryModules = categories.slice(0, 6).map(([name,count]) => ({name,count,product:products.find((product)=>groupFor(product)===name)}));
+  const categoryModules = categories.map(([name,count]) => ({name,count,product:products.find((product)=>groupFor(product)===name)}));
   const renderProductCard = (product: CatalogProduct, index: number) => {
     const productGroup=groupFor(product); const isSelected=selection.includes(product.id); const productImage=product.image;
     return <article className="store-product-card vc-magic-card" key={product.id} style={{'--store-card-index':Math.min(index%12,11)} as CSSProperties} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}><SpotlightLayer/>
@@ -365,15 +385,15 @@ export function StorefrontPage() {
     </section>
     <section className="storefront-catalog" id="catalogo" aria-labelledby="store-catalog-title">
       <div className="storefront-heading"><div><span className="site-eyebrow"><i/>DESCUBRE LO QUE PODEMOS CREAR</span><h2 id="store-catalog-title">Explora por<br/><em>lo que necesitas.</em></h2><p>Encuentra opciones, añade las que te interesan y define cantidades, materiales y acabados al cotizar.</p></div><div className="storefront-promise"><span><Check size={15}/></span><div><b>Una lista. Una solicitud.</b><small>Tu selección se conserva en este dispositivo.</small></div></div></div>
-      {!loading&&!error&&categoryModules.length>0&&<section className="store-category-discovery" aria-labelledby="store-category-title"><div className="store-module-heading"><div><span className="site-eyebrow"><i/>ENCUENTRA TU CATEGORÍA</span><h3 id="store-category-title">¿Qué tienes en mente?</h3></div><span>{categories.length} familias</span></div><div className="store-category-grid">{categoryModules.map(({name,count,product},index)=><button type="button" className={`store-category-card store-category-card-${index+1}`} key={name} onClick={()=>{setCategory(name);document.getElementById('catalogo-productos')?.scrollIntoView({behavior:'smooth'});}}><span className="store-category-photo">{product?.image?<img src={product.image} alt="" loading="lazy"/>:<ShoppingBag size={25}/>}</span><span className="store-category-label"><b>{name}</b><small>{count} {count===1?'producto':'productos'}</small></span><ArrowUpRight size={16}/></button>)}</div></section>}
-      {!loading&&!error&&featuredProducts.length>0&&<section className="store-featured-module" aria-labelledby="store-featured-title"><div className="store-module-heading"><div><span className="site-eyebrow"><i/>SELECCIÓN VISUAL CORP</span><h3 id="store-featured-title">Productos destacados</h3></div><button type="button" onClick={()=>{setCategory('Todos');document.getElementById('catalogo-productos')?.scrollIntoView({behavior:'smooth'});}}>Ver catálogo completo <ArrowRight size={15}/></button></div><div className="store-featured-grid">{featuredProducts.map(renderProductCard)}</div></section>}
+      {!loading&&!error&&categoryModules.length>0&&<section className="store-category-discovery" aria-labelledby="store-category-title"><div className="store-module-heading"><div><span className="site-eyebrow"><i/>ENCUENTRA TU CATEGORÍA</span><h3 id="store-category-title">¿Qué tienes en mente?</h3></div><span>{categories.length} familias</span></div><div className="store-category-grid">{categoryModules.map(({name,count,product},index)=><button type="button" className={`store-category-card store-category-card-${index+1}`} key={name} onClick={()=>selectCategory(name)}><span className="store-category-photo">{product?.image?<img src={product.image} alt="" loading="lazy"/>:<ShoppingBag size={25}/>}</span><span className="store-category-label"><b>{name}</b><small>{count} {count===1?'producto':'productos'}</small></span><ArrowUpRight size={16}/></button>)}</div></section>}
+      {!loading&&!error&&featuredProducts.length>0&&<section className="store-featured-module" aria-labelledby="store-featured-title"><div className="store-module-heading"><div><span className="site-eyebrow"><i/>SELECCIÓN VISUAL CORP</span><h3 id="store-featured-title">Productos destacados</h3></div><button type="button" onClick={()=>selectCategory('Todos')}>Ver catálogo completo <ArrowRight size={15}/></button></div><div className="store-featured-grid">{featuredProducts.map(renderProductCard)}</div></section>}
       <div id="catalogo-productos" className="store-product-browser-heading"><div><span className="site-eyebrow"><i/>CATÁLOGO COMPLETO</span><h3>Encuentra tu producto</h3><p>Filtra por familia o busca por nombre, material y uso.</p></div></div>
-      <div className="store-category-rail" role="group" aria-label="Filtrar por familia"><button className={category==='Todos'?'active':''} type="button" aria-pressed={category==='Todos'} onClick={()=>setCategory('Todos')}>Todo el catálogo <span>{products.length}</span></button>{categories.map(([name,count])=><button key={name} className={category===name?'active':''} type="button" aria-pressed={category===name} onClick={()=>setCategory(name)}>{name}<span>{count}</span></button>)}</div>
-      <div className="store-results-toolbar"><div className="store-results-copy" aria-live="polite" aria-atomic="true"><b>{loading ? 'Cargando productos…' : `${matches.length} ${matches.length===1?'producto':'productos'}`}</b><span>{category==='Todos'?'en el catálogo':`en ${category}`}{search.trim()?` para “${search.trim()}”`:''}</span></div><div className="store-results-controls"><label className="store-inline-search"><Search size={15}/><input type="search" aria-label="Buscar en el catálogo" value={search} onChange={(event)=>setSearch(event.target.value)} placeholder="Buscar productos" autoComplete="off"/>{search&&<button type="button" aria-label="Borrar búsqueda" onClick={()=>setSearch('')}><X size={14}/></button>}</label><label className="store-results-sort">Ordenar por<select value={sort} onChange={(event)=>setSort(event.target.value)}><option value="relevance">Más relevantes</option><option value="az">Nombre: A a Z</option><option value="za">Nombre: Z a A</option></select></label>{(category!=='Todos'||search.trim())&&<button type="button" className="store-clear-filters" onClick={()=>{setSearch('');setCategory('Todos');}}>Limpiar filtros <X size={13}/></button>}</div></div>
+      <div className="store-category-rail" role="group" aria-label="Filtrar por familia"><button className={category==='Todos'?'active':''} type="button" aria-pressed={category==='Todos'} onClick={()=>selectCategory('Todos')}>Todo el catálogo <span>{products.length}</span></button>{categories.map(([name,count])=><button key={name} className={category===name?'active':''} type="button" aria-pressed={category===name} onClick={()=>selectCategory(name)}>{name}<span>{count}</span></button>)}</div>
+      <div className="store-results-toolbar"><div className="store-results-copy" aria-live="polite" aria-atomic="true"><b>{loading ? 'Cargando productos…' : `${matches.length} ${matches.length===1?'producto':'productos'}`}</b><span>{category==='Todos'?'en el catálogo':`en ${category}`}{search.trim()?` para “${search.trim()}”`:''}</span></div><div className="store-results-controls"><label className="store-inline-search"><Search size={15}/><input type="search" aria-label="Buscar en el catálogo" value={search} onChange={(event)=>setSearch(event.target.value)} placeholder="Buscar productos" autoComplete="off"/>{search&&<button type="button" aria-label="Borrar búsqueda" onClick={()=>setSearch('')}><X size={14}/></button>}</label><label className="store-results-sort">Ordenar por<select value={sort} onChange={(event)=>setSort(event.target.value)}><option value="relevance">Más relevantes</option><option value="az">Nombre: A a Z</option><option value="za">Nombre: Z a A</option></select></label>{(category!=='Todos'||search.trim())&&<button type="button" className="store-clear-filters" onClick={()=>{setSearch('');selectCategory('Todos');}}>Limpiar filtros <X size={13}/></button>}</div></div>
       {loading ? <div className="store-product-grid" role="status" aria-label="Cargando catálogo">{Array.from({length:8},(_,index)=><div className="store-product-skeleton" key={index}><i/><span/><b/></div>)}</div>
         : error ? <div className="store-state-card" role="alert"><span><ShoppingBag size={22}/></span><h3>No pudimos mostrar la tienda</h3><p>{error}</p><button type="button" className="site-primary-button" onClick={()=>{setLoading(true);setReloadKey((key)=>key+1);}}>Intentar de nuevo <ArrowRight size={16}/></button></div>
         : matches.length ? <><div className="store-product-grid">{matches.slice(0,visibleLimit).map(renderProductCard)}</div>{visibleLimit<matches.length&&<div className="store-load-more"><span>Viendo {Math.min(visibleLimit,matches.length)} de {matches.length}</span><button className="site-secondary-button" type="button" onClick={()=>setVisibleLimit((limit)=>Math.min(limit+24,matches.length))}>Cargar más productos <ArrowRight size={16}/></button></div>}</>
-        : <div className="store-state-card"><span><Search size={22}/></span><h3>{search||category!=='Todos'?'No encontramos coincidencias':'El catálogo se está preparando'}</h3><p>{search||category!=='Todos'?'Cambia la búsqueda o prueba otra familia para encontrar productos.':'Cuando haya productos publicados, aparecerán aquí.'}</p>{(search||category!=='Todos')&&<button type="button" className="store-reset-button" onClick={()=>{setSearch('');setCategory('Todos');}}>Limpiar búsqueda y filtros <X size={15}/></button>}</div>}
+        : <div className="store-state-card"><span><Search size={22}/></span><h3>{search||category!=='Todos'?'No encontramos coincidencias':'El catálogo se está preparando'}</h3><p>{search||category!=='Todos'?'Cambia la búsqueda o prueba otra familia para encontrar productos.':'Cuando haya productos publicados, aparecerán aquí.'}</p>{(search||category!=='Todos')&&<button type="button" className="store-reset-button" onClick={()=>{setSearch('');selectCategory('Todos');}}>Limpiar búsqueda y filtros <X size={15}/></button>}</div>}
     </section>
     <section className="store-help-band"><div><span className="site-eyebrow light"><i/>¿NO SABES POR DÓNDE EMPEZAR?</span><h2>Tu idea no tiene que<br/>llegar resuelta.</h2><p>Comparte el objetivo y te ayudamos a decidir qué pieza, medidas y acabados revisar.</p></div><Link className="site-primary-button" to="/contacto">Conversemos sobre tu idea <ArrowUpRight size={16}/></Link></section>
     {selectedProducts.length>0&&<aside className="store-selection-bar" aria-live="polite"><span className="store-selection-count">{selectedProducts.length}</span><span className="store-selection-copy"><b>Tu lista de cotización</b><small>{selectedProducts.slice(0,2).map((item)=>`${item.name}${selectionTiers[item.id]?` · ${selectionTiers[item.id]} uds.`:''}`).join(' · ')}{selectedProducts.length>2?` · +${selectedProducts.length-2}`:''}</small></span><Link className="site-primary-button" to={quoteUrl(selectedProducts)}>Continuar <ArrowRight size={16}/></Link><button type="button" className="store-selection-clear" onClick={()=>{setSelection([]);setSelectionTiers({});}} aria-label="Vaciar lista">Vaciar</button></aside>}

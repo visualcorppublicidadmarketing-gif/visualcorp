@@ -14,6 +14,23 @@ const process = [
   { title: 'Un siguiente paso claro.', short: 'Lo coordinamos', text: 'Confirmamos contigo el alcance, los valores y los tiempos de tu solicitud. Así puedes decidir cómo continuar con tu proyecto.', detail: 'Alcance · Cotización · Coordinación', Icon: Check },
 ];
 
+const homeCatalogCategories = [
+  { name: 'Imprenta', eyebrow: 'PAPEL Y PRESENTACIÓN', text: 'Folletos, tarjetas y piezas impresas para compartir tu mensaje.', imageClass: 'home-category-art-print' },
+  { name: 'Gran formato', eyebrow: 'ESPACIOS Y FORMATOS AMPLIOS', text: 'Explora opciones visuales para comunicar en espacios y puntos de atención.', imageClass: 'home-category-art-format' },
+  { name: 'Promocionales', eyebrow: 'OBJETOS DE MARCA', text: 'Artículos que pueden acompañar tu marca, campaña o evento.', imageClass: 'home-category-art-promo' },
+  { name: 'Textil', eyebrow: 'PRENDAS Y ACCESORIOS', text: 'Opciones textiles para equipos, actividades y presencia de marca.', imageClass: 'home-category-art-textile' },
+];
+
+function HomeCatalogExplore() {
+  return <section className="home-catalog home-section" aria-labelledby="home-catalog-title">
+    <Reveal className="home-section-heading home-catalog-heading"><div><span className="home-kicker">IDEAS DEL CATÁLOGO</span><h2 id="home-catalog-title">Empieza por<br/><span>lo que necesitas.</span></h2></div><div className="home-catalog-guide"><img src="/public-site/visualito-catalog-guide.webp" alt="" aria-hidden="true" width={1024} height={1536} loading="lazy" decoding="async"/><div><span>VISUALITO TE ACOMPAÑA</span><p>Explora estas familias y continúa en la tienda para revisar las opciones publicadas.</p></div></div></Reveal>
+    <div className="home-catalog-grid">{homeCatalogCategories.map((item, index) => <Reveal key={item.name} delay={index * 0.05}><Link className="home-catalog-card" to={`/tienda?familia=${encodeURIComponent(item.name)}#catalogo-productos`}>
+      <span className={`home-catalog-art ${item.imageClass}`} aria-hidden="true"/><span className="home-catalog-card-copy"><span>{item.eyebrow}</span><b>{item.name}</b><small>{item.text}</small></span><span className="home-catalog-arrow"><ArrowUpRight size={19}/></span>
+    </Link></Reveal>)}</div>
+    <p className="home-catalog-note">Imágenes ilustrativas de categorías. La tienda muestra las fichas publicadas y los detalles se revisan al cotizar.</p>
+  </section>;
+}
+
 function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const reduceMotion = useReducedMotion();
   return <motion.div className={className} initial={reduceMotion ? false : { opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: reduceMotion ? 0 : 0.65, delay: reduceMotion ? 0 : delay, ease: [0.22, 1, 0.36, 1] }}>{children}</motion.div>;
@@ -92,6 +109,8 @@ export function PublicHomePage() {
       {services.length === 0 && <p className="home-service-empty">Estamos actualizando nuestros servicios. <Link to="/contacto">Cuéntanos qué necesitas.</Link></p>}
       <div className="home-services-note"><span><Sparkles size={17}/> ¿Tienes una idea diferente?</span><Link to="/contacto">La conversamos contigo <ArrowUpRight size={17}/></Link></div>
     </section>
+
+    <HomeCatalogExplore/>
 
     <ProcessSection/>
 
