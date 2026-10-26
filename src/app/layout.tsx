@@ -34,6 +34,7 @@ export const operationsLinks: AppNavLink[] = [
   { to: '/operaciones/cambios', label: 'Novedades', icon: History, module: 'team' },
   { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText, module: 'quotes' },
   { to: '/operaciones/inventario', label: 'Inventario', icon: Boxes, module: 'inventory' },
+  { to: '/operaciones/equipos', label: 'Equipos', icon: BriefcaseBusiness, module: 'inventory' },
   { to: '/operaciones/compras', label: 'Compras', icon: Truck, module: 'purchases' },
   { to: '/operaciones/crm', label: 'CRM', icon: Users, module: 'crm' },
   { to: '/operaciones/clientes', label: 'Clientes', icon: Users, module: 'crm' },
@@ -51,7 +52,7 @@ const adminNavGroups: AppNavGroup[] = [
 const operationsNavGroups: AppNavGroup[] = [
   { id: 'sales', label: 'Ventas', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/finanzas', '/operaciones/cotizador'] },
   { id: 'customers', label: 'Clientes y CRM', icon: Users, paths: ['/operaciones/crm', '/operaciones/clientes'] },
-  { id: 'operations', label: 'Producción e inventario', icon: Boxes, paths: ['/operaciones/flujos', '/operaciones/inventario', '/operaciones/compras', '/operaciones/catalogo'] },
+  { id: 'operations', label: 'Producción e inventario', icon: Boxes, paths: ['/operaciones/flujos', '/operaciones/inventario', '/operaciones/equipos', '/operaciones/compras', '/operaciones/catalogo'] },
   { id: 'team', label: 'Equipo', icon: Settings2, paths: ['/operaciones/cambios', '/operaciones/personal', '/operaciones/equipo'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing'] },
 ];

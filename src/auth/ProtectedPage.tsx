@@ -80,7 +80,7 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
     '/admin': 'dashboard', '/admin/sitio': 'website', '/admin/servicios': 'website', '/admin/tienda': 'website', '/admin/contacto': 'website', '/admin/contenido': 'website', '/admin/blog': 'website', '/admin/publicaciones': 'website', '/admin/portafolio': 'website', '/admin/solicitudes': 'crm',
     '/admin/marketing': 'marketing', '/admin/cambios': 'team', '/admin/respaldo': 'backup',
     '/operaciones': 'dashboard', '/operaciones/pos': 'sales', '/operaciones/finanzas': 'sales', '/operaciones/flujos': 'workshop',
-    '/operaciones/cambios': 'team', '/operaciones/cotizador': 'quotes', '/operaciones/inventario': 'inventory',
+    '/operaciones/cambios': 'team', '/operaciones/cotizador': 'quotes', '/operaciones/inventario': 'inventory', '/operaciones/equipos': 'inventory',
     '/operaciones/compras': 'purchases', '/operaciones/clientes': 'crm', '/operaciones/crm': 'crm',
     '/operaciones/marketing': 'marketing', '/operaciones/personal': 'personnel', '/operaciones/equipo': 'team', '/operaciones/catalogo': 'catalog_admin',
   };
