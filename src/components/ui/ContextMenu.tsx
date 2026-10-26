@@ -212,7 +212,7 @@ export function ContextMenu({ actions, label = 'Más opciones', children, classN
     setPosition((current) => ({ x: Math.max(8, Math.min(current.x, window.innerWidth - rect.width - 8)), y: Math.max(8, Math.min(current.y, window.innerHeight - rect.height - 8)) }));
   }, [open, revision]);
 
-  const menu = open && <div ref={menuRef} className="vc-context-menu" role="menu" aria-label={label} aria-orientation="vertical" style={{ left: position.x, top: position.y }} onContextMenu={(event) => event.preventDefault()}>{renderActions(actions)}</div>;
+  const menu = open && <div ref={menuRef} className={`vc-context-menu ${className}`.trim()} role="menu" aria-label={label} aria-orientation="vertical" style={{ left: position.x, top: position.y }} onContextMenu={(event) => event.preventDefault()}>{renderActions(actions)}</div>;
   const floatingMenu = menu && typeof document !== 'undefined' ? createPortal(menu, document.body) : menu;
   if (scope === 'document') return <>{floatingMenu}</>;
 
