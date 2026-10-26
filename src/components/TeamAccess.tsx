@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, RotateCcw, Save, ShieldCheck, UserPlus, Users } from 'lucide-react';
+import { Ban, Check, RotateCcw, Save, Search, ShieldCheck, UserPlus, UserRoundX, Users } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
 import './team-access.css';
@@ -34,6 +34,7 @@ export function TeamAccess() {
   const [permissionRows, setPermissionRows] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
   const [pendingAccounts, setPendingAccounts] = useState<any[]>([]);
+  const [googleAccounts, setGoogleAccounts] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const selectedIdRef = useRef('');
   selectedIdRef.current = selectedId;
@@ -47,19 +48,22 @@ export function TeamAccess() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [accountQuery, setAccountQuery] = useState('');
+  const [accountState, setAccountState] = useState<'all'|'active'|'blocked'|'unassigned'>('all');
 
   const load = useCallback(async (preferredId?: string) => {
     if (!organizationId || !supabase) { setLoading(false); return; }
     setLoading(true); setError('');
-    const [profileResult, permissionResult, memberResult, pendingResult] = await Promise.all([
+    const [profileResult, permissionResult, memberResult, pendingResult, googleResult] = await Promise.all([
       supabase.from('access_profiles').select('id,profile_key,name,description,base_role,is_system,active').eq('organization_id', organizationId).order('name'),
       supabase.from('access_profile_permissions').select('profile_id,module_key,action_key,enabled'),
       supabase.rpc('list_visualcorp_team_members'),
       supabase.rpc('list_visualcorp_login_candidates'),
+      supabase.rpc('list_visualcorp_google_accounts_for_team'),
     ]);
     const profileRows = profileResult.data || [];
     const membershipRows = memberResult.data || [];
-    const firstError = profileResult.error || permissionResult.error || memberResult.error || pendingResult.error;
+    const firstError = profileResult.error || permissionResult.error || memberResult.error || pendingResult.error || googleResult.error;
     if (firstError) {
       setError(firstError.message);
       setLoading(false);
@@ -69,6 +73,7 @@ export function TeamAccess() {
     setPermissionRows(permissionResult.data || []);
     setMembers(membershipRows.map((member) => ({ ...member, profiles: { full_name: member.full_name, email: member.email }, access_profiles: { name: member.access_profile_name, profile_key: member.access_profile_key } })));
     setPendingAccounts(pendingResult.data || []);
+    setGoogleAccounts(googleResult.data || []);
     const permissionRows = permissionResult.data || [];
     const chosen = preferredId || selectedIdRef.current || profileResult.data?.find((profile) => profile.profile_key !== 'owner')?.id || '';
     setSelectedId(chosen);
@@ -91,7 +96,33 @@ export function TeamAccess() {
     }
     return [...grouped.values()].sort((a, b) => (a.full_name || a.email).localeCompare(b.full_name || b.email, 'es'));
   }, [members]);
+  const accountDirectory = useMemo(() => {
+    const accounts = new Map(memberAccounts.map((account) => [account.user_id, { ...account, googleAccount: null as any }]));
+    for (const googleAccount of googleAccounts) {
+      const existing = accounts.get(googleAccount.user_id);
+      accounts.set(googleAccount.user_id, existing ? { ...existing, googleAccount } : {
+        user_id: googleAccount.user_id,
+        full_name: googleAccount.full_name,
+        email: googleAccount.email,
+        last_sign_in_at: googleAccount.last_sign_in_at,
+        memberships: [],
+        googleAccount,
+      });
+    }
+    return [...accounts.values()].sort((a,b)=>(a.full_name||a.email).localeCompare(b.full_name||b.email,'es'));
+  }, [memberAccounts, googleAccounts]);
   const activeMembers = useMemo(() => memberAccounts.filter((account) => account.memberships.some((membership) => membership.active)).length, [memberAccounts]);
+  const filteredAccounts = useMemo(() => {
+    const query = accountQuery.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').trim();
+    return accountDirectory.filter((account) => {
+      const active = account.memberships.some((membership) => membership.active);
+      if (accountState === 'active' && !active) return false;
+      if (accountState === 'blocked' && (active || !account.memberships.length)) return false;
+      if (accountState === 'unassigned' && account.memberships.length) return false;
+      const haystack = `${account.full_name} ${account.email} ${account.memberships.map((membership) => membership.access_profiles?.name || roleNames[membership.role] || membership.role).join(' ')}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+      return !query || haystack.includes(query);
+    });
+  }, [accountDirectory, accountQuery, accountState]);
   const selectProfile = (id: string) => {
     setSelectedId(id);
     setMessage(''); setError('');
@@ -156,6 +187,32 @@ export function TeamAccess() {
     } catch (stateError) { setError(stateError.message || 'No se pudo actualizar el acceso.'); }
     finally { setSaving(false); }
   };
+  const setAccountAccessActive = async (account, active: boolean) => {
+    if (!canManageMembers || saving || account.memberships.some((membership) => membership.role === 'owner')) return;
+    if (!active && !window.confirm(`¿Bloquear a ${account.full_name || account.email} en Visual Corp?\n\nSe pausarán todos sus perfiles de acceso. Su cuenta Google y su historial se conservarán, y un administrador podrá reactivar el acceso.`)) return;
+    setSaving(true); setMessage(''); setError('');
+    try {
+      const { data, error: stateError } = await supabase.rpc('set_visualcorp_user_access_active', { p_user_id: account.user_id, p_active: active });
+      if (stateError) throw stateError;
+      await load();
+      setMessage(data ? (active ? `Acceso reactivado en ${data} perfil${data === 1 ? '' : 'es'}.` : `Acceso bloqueado en ${data} perfil${data === 1 ? '' : 'es'}.`) : 'La cuenta ya estaba en ese estado.');
+      await refreshAccess();
+    } catch (stateError) { setError(stateError.message || 'No se pudo actualizar el acceso de la cuenta.'); }
+    finally { setSaving(false); }
+  };
+  const removeAccountAccess = async (account) => {
+    if (!canManageMembers || saving || !account.memberships.length || account.memberships.some((membership) => membership.role === 'owner')) return;
+    if (!window.confirm(`¿Quitar a ${account.full_name || account.email} de Visual Corp?\n\nSe eliminarán sus perfiles asignados y perderá el acceso al espacio. La cuenta Google seguirá existiendo y el historial de ventas, producción y otras operaciones se conservará. Luego podrás volver a asignarle un perfil.`)) return;
+    setSaving(true); setMessage(''); setError('');
+    try {
+      const { data, error: removeError } = await supabase.rpc('remove_visualcorp_user_access', { p_user_id: account.user_id });
+      if (removeError) throw removeError;
+      await load();
+      setMessage(`Cuenta retirada de Visual Corp. Se conservaron sus registros históricos; se quitaron ${data} perfil${data === 1 ? '' : 'es'}.`);
+      await refreshAccess();
+    } catch (removeError) { setError(removeError.message || 'No se pudo retirar la cuenta del equipo.'); }
+    finally { setSaving(false); }
+  };
   const setProfileActive = async () => {
     if (!selectedProfile || !canManageProfiles || saving || selectedProfile.profile_key === 'owner') return;
     setSaving(true); setMessage(''); setError('');
@@ -188,8 +245,10 @@ export function TeamAccess() {
           {canManageMembers?<form onSubmit={assign} className="team-access-form"><label>Correo de la cuenta<input required type="email" autoComplete="email" value={email} onChange={(event)=>setEmail(event.target.value)} placeholder="persona@visualcorp.com"/></label><label>Perfil<select required value={assignProfileId} onChange={(event)=>setAssignProfileId(event.target.value)}><option value="">Selecciona un perfil</option>{profiles.filter((profile)=>profile.active&&profile.profile_key!=='owner'&&(roles.includes('owner')||!['admin','website_admin'].includes(profile.profile_key))).map((profile)=><option key={profile.id} value={profile.id}>{profile.name}</option>)}</select></label><p className="team-access-help">Asigna un perfil a una cuenta ya registrada. Si la persona aún no aparece en la lista, debe iniciar sesión una vez con Google o correo. Puedes escribir su correo directamente o elegir una cuenta pendiente.</p><button className="button button-dark" type="submit" disabled={saving||!assignProfileId}><UserPlus size={15}/>{saving?'Guardando…':'Asignar acceso'}</button></form>:<p className="team-access-help">Puedes consultar los accesos del equipo.</p>}
           {canManageMembers&&<div className="pending-login-list"><div className="panel-heading"><div><span className="eyebrow">REGISTRO DE INGRESOS</span><h3>Cuentas sin perfil</h3></div><span className="muted-count">{pendingAccounts.length}</span></div>{pendingAccounts.length?pendingAccounts.map((account)=><button key={account.user_id} className="pending-login-row" type="button" onClick={()=>setEmail(account.email)}><span><b>{account.full_name||account.email}</b><small>{account.email} · Último ingreso {account.last_sign_in_at?new Date(account.last_sign_in_at).toLocaleString():'sin fecha'}</small></span><span>Asignar</span></button>):<p className="team-access-help">No hay cuentas pendientes de perfil.</p>}</div>}
         </section>
-        <section className="panel"><div className="panel-heading"><div><span className="eyebrow">CUENTAS REGISTRADAS</span><h2>Accesos</h2></div><span className="muted-count">{memberAccounts.length} cuentas · {members.length} asignaciones</span></div>
-          {memberAccounts.length===0?<p className="team-access-help">No hay accesos visibles.</p>:<div className="team-access-list">{memberAccounts.map((account)=><article className="team-account-row" key={account.user_id}><div className="team-account-header"><span className="activity-avatar">{account.full_name?.slice(0,1)||'V'}</span><span className="team-access-person"><b>{account.full_name||account.email||'Cuenta de equipo'}</b><small>{account.email||account.user_id} · Último ingreso {account.last_sign_in_at?new Date(account.last_sign_in_at).toLocaleString():'sin fecha'}</small></span><span className={'team-access-role '+(account.memberships.some((membership)=>membership.active)?'':'inactive')}>{account.memberships.some((membership)=>membership.active)?'Acceso activo':'Sin acceso activo'}<small>{account.memberships.filter((membership)=>membership.active).length} de {account.memberships.length} perfiles activos</small></span></div><div className="team-account-profiles" aria-label={`Perfiles de ${account.full_name||account.email||'la cuenta'}`}>{account.memberships.map((member)=><div className={'team-account-profile '+(member.active?'':'inactive')} key={member.id}><span>{member.access_profiles?.name||roleNames[member.role]||member.role}<small>{member.active?'Activo':'Pausado'}</small></span>{canManageMembers&&member.role!=='owner'&&<button type="button" className="button button-outline team-member-toggle" disabled={saving} onClick={()=>void setMemberActive(member)} aria-label={`${member.active?'Pausar':'Reactivar'} perfil ${member.access_profiles?.name||roleNames[member.role]||member.role} para ${account.full_name||account.email}`}>{member.active?'Pausar':'Reactivar'}</button>}</div>)}</div></article>)}</div>}
+        <section className="panel"><div className="panel-heading"><div><span className="eyebrow">CUENTAS REGISTRADAS</span><h2>Usuarios y accesos</h2></div><span className="muted-count">{accountDirectory.length} cuentas · {googleAccounts.length} Google · {members.length} perfiles</span></div>
+          <p className="team-access-help team-account-guidance">Bloquear suspende los accesos y permite reactivarlos. “Quitar de Visual Corp” elimina sus perfiles asignados, pero conserva su cuenta Google y el historial del negocio. Eliminar la identidad Google solo se gestiona desde Google.</p>
+          <div className="team-account-filters"><label className="team-account-search"><Search size={15}/><span className="sr-only">Buscar cuentas y perfiles</span><input type="search" value={accountQuery} onChange={(event)=>setAccountQuery(event.target.value)} placeholder="Buscar persona, correo o perfil"/></label><label className="team-account-state"><span className="sr-only">Filtrar estado del acceso</span><select value={accountState} onChange={(event)=>setAccountState(event.target.value as typeof accountState)}><option value="all">Todas las cuentas</option><option value="active">Con acceso activo</option><option value="blocked">Bloqueadas o pausadas</option><option value="unassigned">Sin perfil asignado</option></select></label><span className="team-account-result-count">{filteredAccounts.length} de {accountDirectory.length}</span></div>
+          {accountDirectory.length===0?<p className="team-access-help">No hay cuentas Google ni accesos visibles.</p>:filteredAccounts.length===0?<div className="team-account-empty"><b>No hay cuentas con estos filtros.</b><span>Prueba otro nombre, correo, perfil o estado.</span></div>:<div className="team-access-list">{filteredAccounts.map((account)=>{const accountActive=account.memberships.some((membership)=>membership.active);const protectedOwner=account.memberships.some((membership)=>membership.role==='owner');return <article className="team-account-row" key={account.user_id}><div className="team-account-header"><span className="activity-avatar">{account.full_name?.slice(0,1)||'V'}</span><span className="team-access-person"><b>{account.full_name||account.email||'Cuenta de equipo'}</b><small>{account.email||account.user_id} · Último ingreso {account.last_sign_in_at?new Date(account.last_sign_in_at).toLocaleString():'sin fecha'}</small>{account.googleAccount&&<small className="team-account-google">Google verificado{account.googleAccount.linked_personnel_name?` · Ficha: ${account.googleAccount.linked_personnel_name}`:' · Sin ficha vinculada'}</small>}</span><span className={'team-access-role '+(accountActive?'':'inactive')}>{account.memberships.length?(accountActive?'Acceso activo':'Acceso bloqueado'):'Sin perfil asignado'}<small>{account.memberships.filter((membership)=>membership.active).length} de {account.memberships.length} perfiles habilitados</small></span></div>{account.memberships.length>0?<div className="team-account-profiles" aria-label={`Perfiles de ${account.full_name||account.email||'la cuenta'}`}>{account.memberships.map((member)=><div className={'team-account-profile '+(member.active?'':'inactive')} key={member.id}><span>{member.access_profiles?.name||roleNames[member.role]||member.role}<small>{member.active?'Activo':'Pausado'}</small></span>{canManageMembers&&member.role!=='owner'&&<button type="button" className="button button-outline team-member-toggle" disabled={saving} onClick={()=>void setMemberActive(member)} aria-label={`${member.active?'Pausar':'Reactivar'} perfil ${member.access_profiles?.name||roleNames[member.role]||member.role} para ${account.full_name||account.email}`}>{member.active?'Pausar':'Reactivar'}</button>}</div>)}</div>:<p className="team-account-unassigned">Esta cuenta ya inició sesión con Google, pero todavía no tiene perfiles en Visual Corp.</p>}<div className="team-account-actions">{canManageMembers&&!protectedOwner&&account.memberships.length>0&&<><button type="button" className={accountActive?'team-account-block':'team-account-reactivate'} disabled={saving} onClick={()=>void setAccountAccessActive(account,!accountActive)}>{accountActive?<><Ban size={14}/>Bloquear acceso</>:<><RotateCcw size={14}/>Reactivar acceso</>}</button><button type="button" className="team-account-remove" disabled={saving} onClick={()=>void removeAccountAccess(account)}><UserRoundX size={14}/>Quitar de Visual Corp</button></>}{protectedOwner&&<span className="team-account-protected"><ShieldCheck size={14}/> Acceso protegido</span>}</div></article>})}</div>}
         </section>
       </div>
     </div>}
