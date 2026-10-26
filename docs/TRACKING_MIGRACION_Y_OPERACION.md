@@ -35,6 +35,12 @@ La sección Marketing (`/operaciones/marketing` o `/admin/marketing`) presenta R
 
 La planificación general de campañas se conserva como concepto de campaña; cada publicación sigue siendo una ficha independiente. Preparar o cambiar una ficha no publica contenido en redes.
 
+### Añadir recursos a la biblioteca
+
+En Marketing → Biblioteca, los perfiles con permiso de edición pueden pegar imágenes con `Ctrl+V`, arrastrar o seleccionar archivos. Cada archivo se guarda en el bucket privado `marketing-assets`, bajo la carpeta de su organización, y se indexa en `marketing_assets` con nombre, sección, carpeta, extensión, tamaño y dimensiones disponibles. Las vistas previas crean un enlace temporal privado de cinco minutos. El límite del bucket es 50 MB por archivo; sus políticas reutilizan los permisos de Marketing para ver, editar y eliminar.
+
+Si el original ya vive dentro de `E:\VISUAL CORP`, pega o registra su ruta relativa (por ejemplo `06_Marketing_digital/Campanas_y_publicaciones/2026/...`). Esto solo registra la referencia para búsqueda; no mueve, duplica ni verifica el archivo, porque el navegador no puede inspeccionar carpetas del equipo. La migración `20261026145402_marketing_assets_private_storage.sql` crea el bucket y sus políticas; debe aplicarse al proyecto Supabase antes de habilitar cargas en producción.
+
 ## Reimportación
 
 La migración de esquema está en `supabase/migrations/20261024055010_tracking_content_workspace.sql`. Los datos iniciales se importaron con una exportación local en bloques mediante el conector Supabase, sin instalar credenciales en el código. `source_system` y `source_id` sirven para identificar registros de origen. La importación inserta registros nuevos y omite las claves existentes para respetar cambios posteriores realizados en la suite.
