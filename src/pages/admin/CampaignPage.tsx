@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { MarketingCalendar } from './marketing/MarketingCalendar';
 import { MarketingAssetIntake } from './marketing/MarketingAssetIntake';
 import { MarketingAssetPreview } from './marketing/MarketingAssetPreview';
+import { PublicationEditorSections, type PublicationDraft, type PublicationEditorTab } from './marketing/PublicationEditorSections';
 
 type Post = Record<string, any> & { id: string; title: string; status: string; scheduled_date: string; platform: string };
 type Asset = Record<string, any> & { id: string; filename: string; rel_path: string; section: string; is_available: boolean; storage_status?: string; retention_enabled?: boolean; retention_months?: number };
@@ -39,7 +40,7 @@ const checklistFields = [
   ['cover_status', 'Portada'], ['art_status', 'Arte'], ['caption_status', 'Copy'],
   ['video_status', 'Video'], ['voiceover_status', 'Voz'], ['tiktok_status', 'TikTok'],
 ] as const;
-const defaultDraft = (scheduledDate = '') => ({ title: '', content_line: '', platform: 'Instagram', format: 'Post', scheduled_date: scheduledDate, scheduled_time: '', owner: '', status: 'Por iniciar', caption: '', next_action: '', due_date: '' });
+const defaultDraft = (scheduledDate = ''): PublicationDraft => ({ title: '', content_line: '', platform: 'Instagram', format: 'Post', scheduled_date: scheduledDate, scheduled_time: '', owner: '', status: 'Por iniciar', caption: '', next_action: '', due_date: '', objective: '', audience: '', offer: '', call_in: '', callout: '', cta: '', cta_destination: '', external_url: '', hashtags: '', visual_direction: '' });
 
 async function readAll(table: string, organizationId: string, orderBy?: string) {
   if (!supabase) return [];
@@ -72,6 +73,8 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const [modalOpen, setModalOpen] = useState(false);
   const [draft, setDraft] = useState(defaultDraft);
   const [isNew, setIsNew] = useState(false);
+  const [draftTabKey, setDraftTabKey] = useState(0);
+  const [editorTab, setEditorTab] = useState<PublicationEditorTab>('plan');
 
   const refresh = useCallback(async () => {
     if (!supabase || !organizationId || !canView) {
@@ -152,6 +155,8 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
 
   const openPost = (post?: Post, scheduledDate = '') => {
     setModalOpen(true);
+    setDraftTabKey((current) => current + 1);
+    setEditorTab('plan');
     setIsNew(!post);
     setSelectedPost(post || null);
     setDraft(post ? {
@@ -159,6 +164,10 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       format: post.format || 'Post', scheduled_date: post.scheduled_date || '', scheduled_time: post.scheduled_time || '',
       owner: post.owner || '', status: post.status || 'Por iniciar', caption: post.caption || '',
       next_action: post.next_action || '', due_date: post.due_date || '',
+      objective: post.objective || '', audience: post.audience || '', offer: post.offer || '',
+      call_in: post.call_in || '', callout: post.callout || '', cta: post.cta || '',
+      cta_destination: post.cta_destination || '', external_url: post.external_url || '',
+      hashtags: post.hashtags || '', visual_direction: post.visual_direction || '',
     } : defaultDraft(scheduledDate));
   };
   const reschedulePost = async (post: Post, date: string) => {
@@ -180,7 +189,12 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   };
   const savePost = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!supabase || !organizationId || !canEdit || !draft.title.trim()) return;
+    if (!supabase || !organizationId || !canEdit) return;
+    if (!draft.title.trim()) {
+      setEditorTab('plan');
+      setNotice('Completa el título en la sección Plan antes de guardar.');
+      return;
+    }
     setSaving(true);
     try {
       const fields = { ...draft, title: draft.title.trim(), updated_at: new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Guayaquil', dateStyle: 'short', timeStyle: 'medium', hour12: false }).format(new Date()) };
@@ -266,6 +280,6 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     </main>
 
     {notice&&<div className="vc-content-toast" role="status"><CheckCircle2 size={16}/>{notice}</div>}
-    {modalOpen&&<div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget){setSelectedPost(null);setModalOpen(false)}}}><section className="vc-content-modal" role="dialog" aria-modal="true" aria-labelledby="vc-post-modal-title"><header><div><span className="eyebrow">{isNew?'NUEVA FICHA':'FICHA DE PUBLICACIÓN'}</span><h2 id="vc-post-modal-title">{isNew?'Planifica una publicación':'Edita el contenido'}</h2></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={()=>{setSelectedPost(null);setModalOpen(false)}}><X size={18}/></button></header><form onSubmit={savePost}><fieldset className="vc-post-form-fieldset" disabled={!canEdit}><div className="vc-post-form-grid"><label className="is-wide">Título<input required autoFocus value={draft.title} onChange={(event)=>setDraft({...draft,title:event.target.value})} placeholder="Tema de la publicación"/></label><label>Canal<select value={draft.platform} onChange={(event)=>setDraft({...draft,platform:event.target.value})}><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>WhatsApp</option><option>LinkedIn</option><option>Multicanal</option><option>Por definir</option></select></label><label>Formato<select value={draft.format} onChange={(event)=>setDraft({...draft,format:event.target.value})}><option>Post</option><option>Historia</option><option>Carrusel</option><option>Reel</option><option>Video</option><option>Diseño</option><option>Por definir</option></select></label><label>Fecha de publicación<input type="date" value={draft.scheduled_date} onChange={(event)=>setDraft({...draft,scheduled_date:event.target.value})}/></label><label>Hora<input type="time" value={draft.scheduled_time} onChange={(event)=>setDraft({...draft,scheduled_time:event.target.value})}/></label><label>Responsable<input value={draft.owner} onChange={(event)=>setDraft({...draft,owner:event.target.value})} placeholder="Por asignar"/></label><label>Estado<select value={draft.status} onChange={(event)=>setDraft({...draft,status:event.target.value})}>{[...new Set(['Por iniciar','En diseño','En revisión','Aprobada','Programada','Publicada','Bloqueada',draft.status])].map((status)=><option key={status}>{status}</option>)}</select></label><label className="is-wide">Idea o línea de contenido<input value={draft.content_line} onChange={(event)=>setDraft({...draft,content_line:event.target.value})} placeholder="Qué queremos comunicar"/></label><label className="is-wide">Caption<textarea rows={3} value={draft.caption} onChange={(event)=>setDraft({...draft,caption:event.target.value})} placeholder="Borrador de copy y llamado a la acción"/></label><label>Próximo paso<input value={draft.next_action} onChange={(event)=>setDraft({...draft,next_action:event.target.value})} placeholder="Acción concreta pendiente"/></label><label>Fecha límite<input type="date" value={draft.due_date} onChange={(event)=>setDraft({...draft,due_date:event.target.value})}/></label></div></fieldset>{!isNew&&<div className="vc-post-checklist"><span className="eyebrow">CHECKLIST IMPORTADO</span><div>{checklistFields.map(([field,label])=><span key={field}><i className={/complet|aprob|listo|hecho/i.test(selectedPost[field]||'')?'is-done':''}/>{label}<small>{selectedPost[field]||'Por confirmar'}</small></span>)}</div>{selectedEvents.length>0&&<p>{selectedEvents.slice(0,3).map((entry)=><span key={entry.id}>{entry.field_name}: {entry.previous_value||'vacío'} → {entry.new_value} · {formatDate(String(entry.created_at).slice(0,10))}</span>)}</p>}</div>}<div className="vc-content-modal-actions"><span>{canEdit?'Solo los perfiles autorizados pueden guardar cambios.':'Tu perfil tiene acceso de solo lectura.'}</span><button type="button" className="button button-outline" onClick={()=>{setSelectedPost(null);setModalOpen(false)}}>Cerrar</button>{canEdit&&<button type="submit" className="button button-dark" disabled={saving}>{saving?<LoaderCircle className="vc-content-spin" size={15}/>:<Save size={15}/>} {saving?'Guardando…':'Guardar cambios'}</button>}</div></form></section></div>}
+    {modalOpen&&<div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget){setSelectedPost(null);setModalOpen(false)}}}><section className="vc-content-modal vc-content-modal-editor" role="dialog" aria-modal="true" aria-labelledby="vc-post-modal-title"><header><div><span className="eyebrow">{isNew?'NUEVA FICHA':'FICHA DE PUBLICACIÓN'}</span><h2 id="vc-post-modal-title">{isNew?'Planifica una publicación':'Edita la publicación'}</h2><p>{draft.title || 'Organiza el mensaje, el calendario y la producción desde una sola ficha.'}</p></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={()=>{setSelectedPost(null);setModalOpen(false)}}><X size={18}/></button></header><form onSubmit={savePost}><PublicationEditorSections key={draftTabKey} draft={draft} onChange={(field,value)=>setDraft((current)=>({...current,[field]:value}))} canEdit={canEdit} isNew={isNew} activeTab={editorTab} onTabChange={setEditorTab} selectedPost={selectedPost} checklistFields={checklistFields} events={selectedEvents} formatDate={formatDate}/><div className="vc-content-modal-actions"><span>{canEdit?'La ficha se guarda en el calendario central.':'Tu perfil tiene acceso de solo lectura.'}</span><button type="button" className="button button-outline" onClick={()=>{setSelectedPost(null);setModalOpen(false)}}>Cerrar</button>{canEdit&&<button type="submit" className="button button-dark" disabled={saving}>{saving?<LoaderCircle className="vc-content-spin" size={15}/>:<Save size={15}/>} {saving?'Guardando…':'Guardar ficha'}</button>}</div></form></section></div>}
   </AppFrame>;
 }

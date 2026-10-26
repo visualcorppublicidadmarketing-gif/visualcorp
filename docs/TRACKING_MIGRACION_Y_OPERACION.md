@@ -31,7 +31,7 @@ La verificación en Supabase confirmó los mismos conteos, un lote de importaci�
 
 ## Operación en la suite
 
-La sección Marketing (`/operaciones/marketing` o `/admin/marketing`) presenta Resumen, Calendario, Biblioteca, Estrategia, Operación y Resultados. Los perfiles con permiso de edición pueden crear publicaciones y ajustar título, canal, formato, fecha, responsable, estado, copy y siguiente paso. Los cambios de estado, calendario y responsable se anotan en `marketing_post_events`.
+La sección Marketing (`/operaciones/marketing` o `/admin/marketing`) presenta Resumen, Calendario, Biblioteca, Estrategia, Operación y Resultados. Los perfiles con permiso de edición pueden crear publicaciones desde una ficha organizada en Plan, Mensaje y Producción. El brief conserva objetivo, audiencia, oferta/tema, frase de entrada (`call_in`), beneficio o respaldo (`callout`), caption, CTA, destino del CTA, enlace confirmado, hashtags y notas visuales, además de canal, formato, fecha, responsable, estado y siguiente paso. Los datos estructurados de copy se guardan en columnas propias de `marketing_posts`; los registros anteriores reciben campos vacíos y no pierden contenido. La migración `20261026154428_marketing_publication_copy_fields.sql` está aplicada a Supabase. `external_url` sigue siendo el enlace de destino. La ficha muestra una vista de estructura Entrada → Beneficio/Respaldo → Acción, que no publica ni genera copy automáticamente. Los cambios de estado, calendario y responsable se anotan en `marketing_post_events`.
 
 La planificación general de campañas se conserva como concepto de campaña; cada publicación sigue siendo una ficha independiente. Preparar o cambiar una ficha no publica contenido en redes.
 
