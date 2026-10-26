@@ -6,7 +6,8 @@ import './marketing-asset-intake.css';
 const BUCKET = 'marketing-assets';
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
-type Props = { organizationId: string; canEdit: boolean; onSaved: () => void };
+type MarketingPost = { id: string; title: string; scheduled_date?: string; source_id?: string };
+type Props = { organizationId: string; canEdit: boolean; posts: MarketingPost[]; onSaved: () => void };
 
 function cleanRelativePath(value: string) {
   return value.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').replace(/\/+/g, '/');
@@ -40,17 +41,22 @@ function relativeVisualCorpPath(value: string) {
   return null;
 }
 
-export function MarketingAssetIntake({ organizationId, canEdit, onSaved }: Props) {
+export function MarketingAssetIntake({ organizationId, canEdit, posts, onSaved }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<'upload' | 'reference'>('upload');
   const [files, setFiles] = useState<File[]>([]);
   const [section, setSection] = useState('06_Marketing_digital');
   const [folder, setFolder] = useState('');
+  const [postId, setPostId] = useState('');
+  const [retentionEnabled, setRetentionEnabled] = useState(true);
+  const [retentionPreset, setRetentionPreset] = useState<'1' | '2' | 'custom'>('2');
+  const [customRetentionMonths, setCustomRetentionMonths] = useState(3);
   const [relativePath, setRelativePath] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const retentionMonths = retentionPreset === 'custom' ? customRetentionMonths : Number(retentionPreset);
 
   const addFiles = (incoming: File[]) => {
     setError(''); setNotice('');
@@ -106,6 +112,8 @@ export function MarketingAssetIntake({ organizationId, canEdit, onSaved }: Props
           extension, size_bytes: file.size, modified_ns: Math.round(file.lastModified * 1_000_000), width, height,
           preview_status: 'pending', preview_error: '', is_available: false,
           scanned_at: new Date().toISOString(), updated_at: new Date().toISOString(), storage_status: 'uploading',
+          retention_enabled: retentionEnabled && Boolean(postId) && file.type.startsWith('image/'),
+          retention_months: retentionMonths,
         }).select('id').single();
         if (indexError || !indexedAsset) { failures.push(`${file.name}: no se pudo crear su ficha de índice: ${indexError?.message || 'sin identificador devuelto'}`); continue; }
 
@@ -119,6 +127,15 @@ export function MarketingAssetIntake({ organizationId, canEdit, onSaved }: Props
         }
         const { error: statusError } = await supabase.from('marketing_assets').update({ storage_status: 'supabase_storage', is_available: true, preview_status: width ? 'ready' : 'pending', updated_at: new Date().toISOString() }).eq('organization_id', organizationId).eq('id', indexedAsset.id);
         if (statusError) { failures.push(`${file.name}: el archivo se subió y quedó indexado; no se pudo actualizar su estado: ${statusError.message}`); continue; }
+        if (postId) {
+          const linkedPost = posts.find((post) => post.id === postId);
+          const { error: linkError } = await supabase.from('marketing_post_assets').insert({
+            organization_id: organizationId, source_system: 'visualcorp-suite',
+            source_id: `upload-link-${crypto.randomUUID()}`, source_post_id: linkedPost?.source_id || postId,
+            source_asset_id: sourceId, post_id: postId, asset_id: indexedAsset.id, role: 'Arte final',
+          });
+          if (linkError) { failures.push(`${file.name}: se subió, pero no se pudo asociar a la publicación: ${linkError.message}`); continue; }
+        }
       }
       const successful = files.length - failures.length;
       if (successful) { setNotice(`${successful} archivo${successful === 1 ? '' : 's'} guardado${successful === 1 ? '' : 's'} e indexado${successful === 1 ? '' : 's'} en la biblioteca.`); setFiles([]); onSaved(); }
@@ -175,7 +192,8 @@ export function MarketingAssetIntake({ organizationId, canEdit, onSaved }: Props
         <span className="vc-marketing-paste-icon"><ClipboardPaste size={21}/></span><strong>Pega aquí con Ctrl+V</strong><span>También puedes arrastrar archivos o hacer clic para seleccionarlos · Máximo 50 MB por archivo</span>
       </div>
       <div className="vc-marketing-intake-meta"><label>Sección<input value={section} onChange={(event) => setSection(event.target.value)} placeholder="06_Marketing_digital" disabled={!canEdit}/></label><label>Carpeta o campaña<input value={folder} onChange={(event) => setFolder(event.target.value)} placeholder="Campanas_y_publicaciones/2026/..." disabled={!canEdit}/></label></div>
-      {files.length > 0 && <div className="vc-marketing-file-queue"><div><b>{files.length} archivo{files.length === 1 ? '' : 's'} listo{files.length === 1 ? '' : 's'} para subir</b><span>Se guardarán en almacenamiento privado y se añadirán al índice.</span></div><ul>{files.map((file, index) => <li key={`${file.name}-${index}`}><FileImage size={14}/><span>{file.name}</span><small>{Math.max(1, Math.ceil(file.size / 1024))} KB</small><button type="button" aria-label={`Quitar ${file.name}`} onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))}><X size={14}/></button></li>)}</ul><button className="button button-dark" type="button" onClick={() => void saveUploads()} disabled={!canEdit || saving || !section.trim()}>{saving ? <LoaderCircle size={15} className="vc-content-spin"/> : <UploadCloud size={15}/>} {saving ? 'Subiendo e indexando…' : 'Guardar en biblioteca'}</button></div>}
+      <div className="vc-marketing-retention"><label>Publicación asociada<select value={postId} onChange={(event) => setPostId(event.target.value)} disabled={!canEdit}><option value="">Sin asociar</option>{posts.map((post) => <option key={post.id} value={post.id}>{post.scheduled_date ? `${post.scheduled_date.slice(0, 10)} · ` : ''}{post.title || 'Publicación sin título'}</option>)}</select></label><div className="vc-marketing-retention-policy"><label className="vc-marketing-retention-toggle"><input type="checkbox" checked={retentionEnabled} onChange={(event) => setRetentionEnabled(event.target.checked)} disabled={!canEdit || !postId}/><span>Eliminar imagen automáticamente</span></label><label className="vc-marketing-retention-duration"><span>Después de</span><select value={retentionPreset} onChange={(event) => setRetentionPreset(event.target.value as '1' | '2' | 'custom')} disabled={!canEdit || !postId || !retentionEnabled}><option value="1">1 mes</option><option value="2">2 meses</option><option value="custom">Personalizado</option></select>{retentionPreset === 'custom' && <><input aria-label="Meses de conservación" type="number" min="1" max="120" value={customRetentionMonths} onChange={(event) => setCustomRetentionMonths(Math.min(120, Math.max(1, Number(event.target.value) || 1)))} disabled={!canEdit || !postId || !retentionEnabled}/><span>meses</span></>}</label></div><small>Solo imágenes subidas y asociadas a una publicación. El plazo cuenta desde su fecha; el índice se conserva y los originales locales no se borran.</small></div>
+      {files.length > 0 && <div className="vc-marketing-file-queue"><div><b>{files.length} archivo{files.length === 1 ? '' : 's'} listo{files.length === 1 ? '' : 's'} para subir</b><span>Se guardarán en almacenamiento privado y se añadirán al índice.{retentionEnabled && postId ? ` Se eliminarán ${retentionMonths} ${retentionMonths === 1 ? 'mes' : 'meses'} después de la fecha de publicación.` : ' Sin asociación, se conservarán hasta que se eliminen manualmente.'}</span></div><ul>{files.map((file, index) => <li key={`${file.name}-${index}`}><FileImage size={14}/><span>{file.name}</span><small>{Math.max(1, Math.ceil(file.size / 1024))} KB</small><button type="button" aria-label={`Quitar ${file.name}`} onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))}><X size={14}/></button></li>)}</ul><button className="button button-dark" type="button" onClick={() => void saveUploads()} disabled={!canEdit || saving || !section.trim() || (retentionPreset === 'custom' && (customRetentionMonths < 1 || customRetentionMonths > 120))}>{saving ? <LoaderCircle size={15} className="vc-content-spin"/> : <UploadCloud size={15}/>} {saving ? 'Subiendo e indexando…' : 'Guardar en biblioteca'}</button></div>}
       {files.length === 0 && <div className="vc-marketing-intake-footer"><span>La carga guarda una copia central; agrega sección y carpeta para encontrarla luego.</span>{canEdit && <button type="button" className="vc-content-text-link" onClick={() => inputRef.current?.click()}><Plus size={14}/> Elegir archivo</button>}</div>}
     </div> : <form className="vc-marketing-reference-panel" onSubmit={saveReference}>
       <label>Ruta relativa dentro de E:\\VISUAL CORP<input autoComplete="off" value={relativePath} onChange={(event) => setRelativePath(event.target.value)} placeholder="06_Marketing_digital/Campanas_y_publicaciones/2026/2026-10/archivo.png" disabled={!canEdit}/></label>
