@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity, AlertCircle, ArrowDownRight, ArrowUpRight, BarChart3, CalendarDays, Check,
-  CheckCircle2, Clock3, FileImage, FileText, Filter, FolderOpen, Images, Lightbulb,
+  CheckCircle2, Clock3, Copy, FileImage, FileText, Filter, FolderOpen, Images, Lightbulb,
   LoaderCircle, Megaphone, Plus, RefreshCw, Search, Save, Sparkles, Target, TrendingUp, X,
 } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
@@ -9,9 +9,12 @@ import { useAuth } from '../../auth/AuthProvider';
 import { AnimatedList } from '../../components/ui/MagicComponents';
 import { EmptyState, StageBadge } from '../../components/feedback';
 import { supabase } from '../../lib/supabaseClient';
+import { MarketingCalendar } from './marketing/MarketingCalendar';
+import { MarketingAssetIntake } from './marketing/MarketingAssetIntake';
+import { MarketingAssetPreview } from './marketing/MarketingAssetPreview';
 
 type Post = Record<string, any> & { id: string; title: string; status: string; scheduled_date: string; platform: string };
-type Asset = Record<string, any> & { id: string; filename: string; rel_path: string; section: string; is_available: boolean };
+type Asset = Record<string, any> & { id: string; filename: string; rel_path: string; section: string; is_available: boolean; storage_status?: string; retention_enabled?: boolean; retention_months?: number };
 type Section = 'overview' | 'calendar' | 'library' | 'strategy' | 'operations' | 'results';
 type WorkspaceData = { posts: Post[]; assets: Asset[]; postAssets: any[]; strategy: any[]; work: any[]; history: any[]; leads: any[]; sales: any[]; events: any[] };
 
@@ -36,7 +39,7 @@ const checklistFields = [
   ['cover_status', 'Portada'], ['art_status', 'Arte'], ['caption_status', 'Copy'],
   ['video_status', 'Video'], ['voiceover_status', 'Voz'], ['tiktok_status', 'TikTok'],
 ] as const;
-const defaultDraft = () => ({ title: '', content_line: '', platform: 'Instagram', format: 'Post', scheduled_date: '', scheduled_time: '', owner: '', status: 'Por iniciar', caption: '', next_action: '', due_date: '' });
+const defaultDraft = (scheduledDate = '') => ({ title: '', content_line: '', platform: 'Instagram', format: 'Post', scheduled_date: scheduledDate, scheduled_time: '', owner: '', status: 'Por iniciar', caption: '', next_action: '', due_date: '' });
 
 async function readAll(table: string, organizationId: string, orderBy?: string) {
   if (!supabase) return [];
@@ -129,7 +132,10 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     const search = query.trim().toLocaleLowerCase('es');
     return data.assets.filter((asset) => {
       const matchesSearch = !search || [asset.filename, asset.rel_path, asset.section, asset.folder].some((field) => String(field || '').toLocaleLowerCase('es').includes(search));
-      const matchesAvailability = assetFilter === 'Todos los archivos' || (assetFilter === 'Disponibles en el equipo' ? asset.is_available : !asset.is_available);
+      const matchesAvailability = assetFilter === 'Todos los archivos'
+        || (assetFilter === 'Disponibles en el equipo' && asset.is_available)
+        || (assetFilter === 'Solo referencia de ruta' && ['local_reference', 'local_only'].includes(asset.storage_status || ''))
+        || (assetFilter === 'Eliminados por plazo' && asset.storage_status === 'retention_deleted');
       return matchesSearch && matchesAvailability;
     }).slice(0, 150);
   }, [data.assets, query, assetFilter]);
@@ -144,7 +150,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const metricPosts = data.posts.filter((post) => Number(post.reach) || Number(post.interactions) || Number(post.clicks) || Number(post.leads));
   const selectedEvents = selectedPost ? data.events.filter((event) => event.post_id === selectedPost.id).slice(-8).reverse() : [];
 
-  const openPost = (post?: Post) => {
+  const openPost = (post?: Post, scheduledDate = '') => {
     setModalOpen(true);
     setIsNew(!post);
     setSelectedPost(post || null);
@@ -153,7 +159,24 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       format: post.format || 'Post', scheduled_date: post.scheduled_date || '', scheduled_time: post.scheduled_time || '',
       owner: post.owner || '', status: post.status || 'Por iniciar', caption: post.caption || '',
       next_action: post.next_action || '', due_date: post.due_date || '',
-    } : defaultDraft());
+    } : defaultDraft(scheduledDate));
+  };
+  const reschedulePost = async (post: Post, date: string) => {
+    if (!supabase || !organizationId || !canEdit || !date || date === post.scheduled_date?.slice(0, 10)) return;
+    setSaving(true);
+    try {
+      const { data: updated, error } = await supabase.from('marketing_posts').update({ scheduled_date: date, updated_at: new Date().toISOString() }).eq('organization_id', organizationId).eq('id', post.id).select('id').maybeSingle();
+      if (error) throw error;
+      if (!updated) throw new Error('No encontramos la publicación o tu perfil no puede editarla.');
+      setNotice(`“${post.title}” se movió al ${formatDate(date)}.`);
+      await refresh();
+    } catch (error: any) {
+      setLoadError(error?.message || 'No se pudo cambiar la fecha de la publicación.');
+    } finally { setSaving(false); }
+  };
+  const copyAssetPath = async (path: string) => {
+    try { await navigator.clipboard.writeText(path); setNotice('Ruta del recurso copiada.'); }
+    catch { setLoadError('El navegador no permitió copiar la ruta. Puedes seleccionarla manualmente en la biblioteca.'); }
   };
   const savePost = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -206,9 +229,11 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
         {sections.map(({ id, label, icon: Icon }) => <button key={id} type="button" className={activeSection === id ? 'is-active' : ''} onClick={() => { setActiveSection(id); setQuery(''); }} aria-current={activeSection === id ? 'page' : undefined}><Icon size={16}/>{label}{id === 'calendar' && <span>{data.posts.length}</span>}{id === 'library' && <span>{data.assets.length}</span>}</button>)}
       </nav>
 
-      {(activeSection === 'overview' || activeSection === 'calendar' || activeSection === 'library') && <div className="vc-content-toolbar"><div><span className="vc-content-section-icon"><FolderOpen size={16}/></span><div><b>{activeSection === 'overview' ? 'Flujo editorial' : sectionTitle}</b><small>{activeSection === 'library' ? `${data.assets.length} recursos catalogados · ${linkedAssets} vinculados` : `${filteredPosts.length} de ${data.posts.length} publicaciones`}</small></div></div><label className="vc-content-search"><Search size={15}/><input aria-label="Buscar" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder}/></label><label className="vc-content-filter"><Filter size={14}/><select aria-label="Filtrar resultados" value={activeSection === 'library' ? assetFilter : statusFilter} onChange={(event) => activeSection === 'library' ? setAssetFilter(event.target.value) : setStatusFilter(event.target.value)}>{activeSection === 'library' ? <><option>Todos los archivos</option><option>Disponibles en el equipo</option><option>Solo referencia de ruta</option></> : statuses.map((status) => <option key={status}>{status}</option>)}</select></label></div>}
+      {(activeSection === 'overview' || activeSection === 'calendar' || activeSection === 'library') && <div className="vc-content-toolbar"><div><span className="vc-content-section-icon"><FolderOpen size={16}/></span><div><b>{activeSection === 'overview' ? 'Flujo editorial' : sectionTitle}</b><small>{activeSection === 'library' ? `${data.assets.length} recursos catalogados · ${linkedAssets} vinculados` : `${filteredPosts.length} de ${data.posts.length} publicaciones`}</small></div></div><label className="vc-content-search"><Search size={15}/><input aria-label="Buscar" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder}/></label><label className="vc-content-filter"><Filter size={14}/><select aria-label="Filtrar resultados" value={activeSection === 'library' ? assetFilter : statusFilter} onChange={(event) => activeSection === 'library' ? setAssetFilter(event.target.value) : setStatusFilter(event.target.value)}>{activeSection === 'library' ? <><option>Todos los archivos</option><option>Disponibles en el equipo</option><option>Solo referencia de ruta</option><option>Eliminados por plazo</option></> : statuses.map((status) => <option key={status}>{status}</option>)}</select></label></div>}
 
-      {(activeSection === 'overview' || activeSection === 'calendar') && <>
+      {activeSection === 'calendar' && <MarketingCalendar posts={filteredPosts} canEdit={canEdit} onSelect={(post) => openPost(post as Post)} onCreate={(date) => openPost(undefined, date)} onReschedule={(post, date) => void reschedulePost(post as Post, date)}/>}
+
+      {activeSection === 'overview' && <>
         {loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando publicaciones, piezas y tareas…</div>
           : data.posts.length === 0 ? <EmptyState icon={CalendarDays} title="El calendario está listo para comenzar" text="Aún no hay publicaciones en la base central. Crea la primera ficha para iniciar el flujo editorial." action={canEdit && <button className="button button-dark" onClick={() => openPost()}><Plus size={15}/>Nueva publicación</button>}/>
             : filteredPosts.length === 0 ? <EmptyState icon={Search} title="No encontramos coincidencias" text="Prueba con otro título, canal, responsable o estado." action={<button className="button button-outline" onClick={() => { setQuery(''); setStatusFilter('Todos los estados'); }}>Limpiar búsqueda</button>}/>
@@ -227,7 +252,8 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       </>}
 
       {activeSection === 'library' && <>
-        {loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando biblioteca…</div> : visibleAssets.length === 0 ? <EmptyState icon={Images} title="Sin recursos con este filtro" text="Prueba con otra búsqueda o cambia el filtro de disponibilidad."/> : <><div className="vc-library-grid">{visibleAssets.map((asset) => <article className="vc-library-card" key={asset.id}><div className="vc-library-icon"><FileImage size={19}/><span>{asset.extension?.replace('.','').toUpperCase() || 'FILE'}</span></div><div className="vc-library-info"><b title={asset.filename}>{asset.filename}</b><span>{asset.section || 'Sección pendiente'}{asset.folder ? ` · ${asset.folder}` : ''}</span><small>{Math.max(1,Math.round((asset.size_bytes || 0)/1024))} KB · {asset.width && asset.height ? `${asset.width} × ${asset.height}` : 'Dimensiones pendientes'}</small></div><span className={`vc-library-availability ${asset.is_available ? 'is-available' : ''}`} title={asset.is_available ? 'Disponible en el equipo de Tracking' : 'La ruta se conserva como referencia'}><i/>{asset.is_available ? 'Local' : 'Referencia'}</span><code title={asset.rel_path}>{asset.rel_path}</code></article>)}</div><p className="vc-content-footnote">Se muestran hasta 150 resultados a la vez. La base central guarda metadatos y relaciones; los archivos originales siguen en las carpetas de Visual Corp.</p></>}
+        {organizationId && <MarketingAssetIntake organizationId={organizationId} canEdit={canEdit} posts={data.posts} onSaved={() => void refresh()}/>}
+        {loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando biblioteca…</div> : visibleAssets.length === 0 ? <EmptyState icon={Images} title="Sin recursos con este filtro" text="Prueba con otra búsqueda o cambia el filtro de disponibilidad."/> : <><div className="vc-library-grid">{visibleAssets.map((asset) => {const stored=asset.storage_status==='supabase_storage';const deleted=asset.storage_status==='retention_deleted';const sourceLabel=stored?'Central':deleted?'Eliminado por plazo':asset.storage_status==='local_reference'?'Ruta local':asset.storage_status==='upload_failed'?'Carga fallida':asset.storage_status==='uploading'?'Cargando':asset.is_available?'Local':'Referencia';const pathLabel=stored?`Almacenamiento privado · ${asset.folder || asset.section}`:asset.rel_path;return <article className="vc-library-card" key={asset.id}><MarketingAssetPreview asset={asset}/><div className="vc-library-info"><b title={asset.filename}>{asset.filename}</b><span>{asset.section || 'Sección pendiente'}{asset.folder ? ` · ${asset.folder}` : ''}</span><small>{Math.max(1,Math.round((asset.size_bytes || 0)/1024))} KB · {asset.width && asset.height ? `${asset.width} × ${asset.height}` : 'Dimensiones pendientes'}{asset.retention_enabled && asset.retention_months ? ` · Retención ${asset.retention_months} ${asset.retention_months===1?'mes':'meses'}` : ''}</small></div><span className={`vc-library-availability ${asset.is_available ? 'is-available' : ''}`} title={deleted?'El archivo central se eliminó por el plazo configurado; la ficha y la ruta se conservan':stored?'Guardado en el almacenamiento privado de la suite':asset.storage_status==='local_reference'?'Referencia a ruta de Visual Corp':asset.storage_status==='upload_failed'?'La ruta está indexada, pero falta completar la carga':asset.is_available?'Disponible en la biblioteca local':'La ruta se conserva como referencia'}><i/>{sourceLabel}</span><div className="vc-library-path"><code title={asset.rel_path}>{pathLabel}</code><button type="button" aria-label={`Copiar ruta de ${asset.filename}`} onClick={() => void copyAssetPath(asset.rel_path)}><Copy size={13}/></button></div></article>})}</div><p className="vc-content-footnote">Las imágenes vinculadas se eliminan del almacenamiento central al vencer su retención; sus fichas de índice quedan visibles. Las rutas locales conservan intactos los originales de Visual Corp.</p></>}
       </>}
 
       {activeSection === 'strategy' && <section className="vc-strategy-section"><div className="vc-content-toolbar vc-content-toolbar-inline"><div><span className="vc-content-section-icon"><Target size={16}/></span><div><b>FODA y decisiones estratégicas</b><small>{data.strategy.length} observaciones con su evidencia y estado</small></div></div></div>{loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando estrategia…</div> : <div className="vc-strategy-grid">{['fortaleza','debilidad','oportunidad','amenaza'].map((category) => {const items=data.strategy.filter((item)=>item.category.toLocaleLowerCase('es')===category);return <section className={`vc-strategy-column is-${category}`} key={category}><header><span>{category==='fortaleza'?'F':category==='debilidad'?'D':category==='oportunidad'?'O':'A'}</span><div><b>{category[0].toLocaleUpperCase('es')+category.slice(1)}</b><small>{items.length} registros</small></div></header>{items.map((item)=><article key={item.id}><b>{item.title}</b><p>{item.detail}</p><div><span>{item.evidence}</span><StageBadge stage={item.status}/></div>{item.owner&&<small>Responsable histórico: {item.owner}</small>}</article>)}</section>})}</div>}</section>}
