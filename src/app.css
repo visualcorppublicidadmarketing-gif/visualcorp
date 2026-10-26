@@ -70,3 +70,5 @@
 .admin-command-footer{display:flex;justify-content:flex-end;gap:14px;padding:10px 14px;border-top:1px solid #eeeef2;color:#878892;font-size:9px}
 .admin-command-footer span{display:flex;align-items:center;gap:4px}
 @media(max-width:520px){.admin-command-trigger{width:35px;justify-content:center;padding:0}.admin-command-trigger>span,.admin-command-trigger>kbd{display:none}.admin-command-footer{justify-content:center;gap:9px}.admin-command-overlay{padding-top:10vh}}
+
+.unified-launcher-panel{margin-bottom:16px}.unified-launcher-panel .operations-launcher{margin:0}.unified-launcher-panel .panel-heading{margin-bottom:10px}.unified-launcher-panel .operation-card{min-height:88px}.unified-launcher-panel .operation-card>svg{color:#a00a8e}.unified-empty{margin:0;padding:22px 12px;border-top:1px solid var(--line);color:#747681;font-size:12px;line-height:1.6}.unified-recent-panel{margin-top:16px}.unified-stat-grid{margin-bottom:16px}

@@ -1,65 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowUpRight, BookOpen, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Database, FileText, Globe2, History, Image, LayoutDashboard, LogOut, Megaphone, Menu, Newspaper, Settings2, ShoppingBag, ShoppingCart, Truck, Users, Wallet, X, type LucideIcon } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, ChevronRight, CircleHelp, LayoutDashboard, LogOut, Menu, X, type LucideIcon } from 'lucide-react';
 import { useWorkspace } from './workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { AdminCommandPalette } from '../components/AdminCommandPalette';
 import { NumberTicker, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
 import { ContextMenu, type ContextMenuAction } from '../components/ui/ContextMenu';
 import { motion, useReducedMotion } from 'motion/react';
+import { canViewNavigationItem, workspaceNavigation, workspaceNavGroups, type AppNavLink } from './navigation';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 export type AppArea = 'admin' | 'operations';
-export type AppNavLink = { to: string; label: string; icon: LucideIcon; end?: boolean; module: string };
-type AppNavGroup = { id: string; label: string; icon: LucideIcon; paths: string[] };
-
-export const adminLinks: AppNavLink[] = [
-  { to: '/admin', label: 'Resumen', icon: LayoutDashboard, end: true, module: 'dashboard' },
-  { to: '/admin/manual-aprendizaje', label: 'Manual/aprendizaje', icon: BookOpen, module: 'dashboard' },
-  { to: '/admin/sitio', label: 'Inicio', icon: Globe2, module: 'website' },
-  { to: '/admin/servicios', label: 'Servicios', icon: BriefcaseBusiness, module: 'website' },
-  { to: '/admin/tienda', label: 'Tienda', icon: ShoppingBag, module: 'website' },
-  { to: '/admin/blog', label: 'Blog', icon: BookOpen, module: 'website' },
-  { to: '/admin/publicaciones', label: 'Publicaciones', icon: Newspaper, module: 'website' },
-  { to: '/admin/portafolio', label: 'Portafolio', icon: Image, module: 'website' },
-  { to: '/admin/contacto', label: 'Contacto', icon: Users, module: 'website' },
-  { to: '/admin/solicitudes', label: 'Solicitudes CRM', icon: Users, module: 'crm' },
-  { to: '/admin/marketing', label: 'Marketing', icon: Megaphone, module: 'marketing' },
-  { to: '/admin/cambios', label: 'Novedades', icon: History, module: 'team' },
-  { to: '/admin/respaldo', label: 'Respaldo y migración', icon: Database, module: 'backup' },
-];
-export const operationsLinks: AppNavLink[] = [
-  { to: '/operaciones', label: 'Resumen', icon: LayoutDashboard, end: true, module: 'dashboard' },
-  { to: '/operaciones/manual-aprendizaje', label: 'Manual/aprendizaje', icon: BookOpen, module: 'dashboard' },
-  { to: '/operaciones/pos', label: 'Punto de venta', icon: ShoppingCart, module: 'sales' },
-  { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'sales' },
-  { to: '/operaciones/flujos', label: 'Caja y producción', icon: ClipboardList, module: 'workshop' },
-  { to: '/operaciones/cambios', label: 'Novedades', icon: History, module: 'team' },
-  { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText, module: 'quotes' },
-  { to: '/operaciones/inventario', label: 'Inventario', icon: Boxes, module: 'inventory' },
-  { to: '/operaciones/equipos', label: 'Equipos', icon: BriefcaseBusiness, module: 'inventory' },
-  { to: '/operaciones/compras', label: 'Compras', icon: Truck, module: 'purchases' },
-  { to: '/operaciones/crm', label: 'CRM', icon: Users, module: 'crm' },
-  { to: '/operaciones/clientes', label: 'Clientes', icon: Users, module: 'crm' },
-  { to: '/operaciones/marketing', label: 'Marketing', icon: CalendarDays, module: 'marketing' },
-  { to: '/operaciones/personal', label: 'Personal', icon: Users, module: 'personnel' },
-  { to: '/operaciones/equipo', label: 'Equipo y permisos', icon: Users, module: 'team' },
-  { to: '/operaciones/catalogo', label: 'Catálogo y tarifas', icon: ShoppingBag, module: 'catalog_admin' },
-];
-const adminNavGroups: AppNavGroup[] = [
-  { id: 'content', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
-  { id: 'customers', label: 'Clientes', icon: Users, paths: ['/admin/solicitudes'] },
-  { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/admin/marketing'] },
-  { id: 'system', label: 'Administración', icon: Settings2, paths: ['/admin/cambios', '/admin/respaldo', '/admin/manual-aprendizaje'] },
-];
-const operationsNavGroups: AppNavGroup[] = [
-  { id: 'sales', label: 'Ventas', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/finanzas', '/operaciones/cotizador'] },
-  { id: 'customers', label: 'Clientes y CRM', icon: Users, paths: ['/operaciones/crm', '/operaciones/clientes'] },
-  { id: 'operations', label: 'Producción e inventario', icon: Boxes, paths: ['/operaciones/flujos', '/operaciones/inventario', '/operaciones/equipos', '/operaciones/compras', '/operaciones/catalogo'] },
-  { id: 'team', label: 'Equipo', icon: Settings2, paths: ['/operaciones/cambios', '/operaciones/personal', '/operaciones/equipo'] },
-  { id: 'learning', label: 'Aprendizaje', icon: BookOpen, paths: ['/operaciones/manual-aprendizaje'] },
-  { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing'] },
-];
+export type { AppNavLink } from './navigation';
 export interface BrandProps { dark?: boolean }
 export function Brand({ dark = false }: BrandProps) {
   return <Link className={`brand ${dark ? 'brand-dark' : ''}`} to="/" aria-label="Visual Corp, página pública"><img src={wordmark} alt="Visual Corp — Agencia Creativa" /></Link>;
@@ -78,26 +30,25 @@ export function AppFrame({ area, children }: AppFrameProps) {
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [mobileNavOpen]);
-  const nav = (area === 'admin' ? adminLinks : operationsLinks).filter((link) => hasPermission(link.module, 'view'));
-  const navGroupDefinitions = area === 'admin' ? adminNavGroups : operationsNavGroups;
+  const nav = workspaceNavigation.filter((link) => canViewNavigationItem(link, hasPermission));
+  const navGroupDefinitions = workspaceNavGroups;
   const navGroups = navGroupDefinitions.map((group) => ({ ...group, items: nav.filter((link) => group.paths.includes(link.to)) })).filter((group) => group.items.length > 0);
   const activeNavGroup = navGroups.find((group) => group.items.some((link) => link.end ? pathname === link.to : pathname === link.to || pathname.startsWith(`${link.to}/`)));
   const [expandedNavGroups, setExpandedNavGroups] = useState<Record<string, boolean>>(() => activeNavGroup ? { [activeNavGroup.id]: true } : {});
   useEffect(() => {
     if (activeNavGroup) setExpandedNavGroups((current) => ({ ...current, [activeNavGroup.id]: true }));
   }, [activeNavGroup?.id]);
-  const areaTitle = area === 'admin' ? 'Administración web' : 'Operaciones';
+  const areaTitle = 'Visual Corp Suite';
   const profileLabel = profiles.map((profile) => profile.name).join(' · ') || roles.join(' · ');
-  const canSwitch = area === 'admin' ? operationsLinks.some((link) => hasPermission(link.module, 'view')) : adminLinks.some((link) => hasPermission(link.module, 'view'));
   const directNavLinks = nav.filter((link) => !navGroupDefinitions.some((group) => group.paths.includes(link.to)));
   const contextActions: ContextMenuAction[] = [
-    { label: `Ir al resumen de ${areaTitle}`, icon: <LayoutDashboard size={14}/>, onSelect: () => navigate(area === 'admin' ? '/admin' : '/operaciones') },
+    { label: 'Ir al inicio del panel', icon: <LayoutDashboard size={14}/>, onSelect: () => navigate('/panel') },
     ...navGroups.map((group) => {
       const GroupIcon = group.icon;
       return {
         label: group.label,
         icon: <GroupIcon size={14}/>,
-        onSelect: () => navigate(group.items[0]?.to || (area === 'admin' ? '/admin' : '/operaciones')),
+        onSelect: () => navigate(group.items[0]?.to || '/panel'),
         children: group.items.map((link) => {
           const Icon = link.icon;
           return { label: link.label, icon: <Icon size={13}/>, onSelect: () => navigate(link.to) };
@@ -111,14 +62,14 @@ export function AppFrame({ area, children }: AppFrameProps) {
     { kind: 'separator', label: '', onSelect: () => {} },
     { label: 'Volver arriba', icon: <ArrowUpRight size={14}/>, shortcut: '↑', onSelect: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
   ];
-  const renderNavLink = ({ to, label, icon: Icon, end }: AppNavLink) => <NavLink key={to} end={end} to={to} title={label} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><Icon size={18}/><span>{label}</span>{label === 'Solicitudes CRM' && data.leads.length > 0 && <b className="sidebar-count">{data.leads.length}</b>}</NavLink>;
+  const renderNavLink = ({ to, label, icon: Icon, end }: AppNavLink) => <NavLink key={to} end={end} to={to} title={label} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><Icon size={18}/><span>{label}</span>{to === '/operaciones/crm' && data.leads.length > 0 && <b className="sidebar-count">{data.leads.length}</b>}</NavLink>;
   return <div className={`work-app area-${area}`}>
     <ContextMenu scope="document" trigger={false} label="Acciones de navegación" actions={contextActions}/>
-    <aside id={`sidebar-${area}`} className={`sidebar ${mobileNavOpen ? 'sidebar-open' : ''}`}>
+    <aside id="sidebar-workspace" className={`sidebar ${mobileNavOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-brand"><Brand/><button title="Ayuda" aria-label="Ayuda"><CircleHelp size={18}/></button></div>
       <div className="workspace-pill"><span className="status-dot"/> SESIÓN SEGURA <span>· {profileLabel}</span></div>
-      <nav className="sidebar-navigation" aria-label={`Navegación de ${areaTitle}`}>
-        <small className="sidebar-caption">{areaTitle.toUpperCase()}</small>
+      <nav className="sidebar-navigation" aria-label="Navegación de Visual Corp Suite">
+        <small className="sidebar-caption">ESPACIO DE TRABAJO</small>
         {directNavLinks.map(renderNavLink)}
         {navGroups.map((group) => {
           const GroupIcon = group.icon;
@@ -133,10 +84,10 @@ export function AppFrame({ area, children }: AppFrameProps) {
           </section>;
         })}
       </nav>
-      <div className="sidebar-bottom">{canSwitch && <Link to={area === 'admin' ? '/operaciones' : '/admin'} onClick={() => setMobileNavOpen(false)} className="switch-app"><span className="switch-icon"><ArrowUpRight size={16}/></span><span><b>{area === 'admin' ? 'Abrir Operaciones' : 'Abrir Admin web'}</b><small>Cambiar de espacio</small></span><ChevronRight size={15}/></Link>}<div className="sidebar-profile"><div className="profile-avatar">VC</div><span><b>{user?.email || 'Visual Corp'}</b><small>{profileLabel}</small></span><button className="icon-button" aria-label="Cerrar sesión" onClick={signOut}><LogOut size={16}/></button></div></div>
+      <div className="sidebar-bottom"><div className="sidebar-profile"><div className="profile-avatar">VC</div><span><b>{user?.email || 'Visual Corp'}</b><small>{profileLabel}</small></span><button className="icon-button" aria-label="Cerrar sesión" onClick={signOut}><LogOut size={16}/></button></div></div>
     </aside>
     {mobileNavOpen && <button className="mobile-nav-backdrop" aria-label="Cerrar menú" onClick={() => setMobileNavOpen(false)}/>}
-    <div className="main-shell"><header className="topbar"><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'} aria-expanded={mobileNavOpen} aria-controls={`sidebar-${area}`} onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}</button><div className="breadcrumbs"><span>{areaTitle}</span><ChevronRight size={14}/><b>{data.settings.name}</b></div><div className="topbar-right"><AdminCommandPalette area={area} items={nav}/><span className="local-badge"><span className="status-dot"/> Supabase conectado</span><button className="top-avatar" aria-label="Perfil" onClick={signOut}>VC</button></div></header><main className="main-content"><motion.div key={pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.24 }}>{children}</motion.div><footer className="local-footer">Acceso basado en el perfil autenticado; los datos se protegen con permisos en Supabase.</footer></main></div>
+    <div className="main-shell"><header className="topbar"><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'} aria-expanded={mobileNavOpen} aria-controls="sidebar-workspace" onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}</button><div className="breadcrumbs"><span>{areaTitle}</span><ChevronRight size={14}/><b>{data.settings.name}</b></div><div className="topbar-right"><AdminCommandPalette items={nav}/><span className="local-badge"><span className="status-dot"/> Supabase conectado</span><button className="top-avatar" aria-label="Perfil" onClick={signOut}>VC</button></div></header><main className="main-content"><motion.div key={pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.24 }}>{children}</motion.div><footer className="local-footer">Acceso autenticado y permisos comprobados en Supabase.</footer></main></div>
   </div>;
 }
 

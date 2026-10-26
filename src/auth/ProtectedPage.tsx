@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ArrowUpRight, LogOut } from 'lucide-react';
 import { useAuth } from './AuthProvider';
+import { legacyPanelPaths, permissionByPath } from '../app/navigation';
 
 type AccessArea = 'website' | 'catalog' | 'team' | 'operations';
 
@@ -54,8 +55,8 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
     return <main className="access-screen"><form className="access-card" onSubmit={sendLink}>
       <img src={wordmark} alt="Visual Corp" />
       <span className="site-eyebrow"><i /> ACCESO INTERNO</span>
-      <h1>{area === 'website' ? 'Administración de la página web' : 'Administración POS y gestión interna'}</h1>
-      <p>Inicia sesión con tu cuenta de Google autorizada o solicita un enlace seguro por correo.</p>
+      <h1>Visual Corp Suite</h1>
+      <p>Inicia sesión para abrir el panel y acceder a los módulos habilitados para tu perfil.</p>
       <button className="site-primary-button" type="button" disabled={oauthLoading} onClick={signInWithGoogle}>
         {oauthLoading ? 'Conectando con Google…' : 'Continuar con Google'} <ArrowUpRight size={16} />
       </button>
@@ -76,26 +77,20 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
     <button className="site-secondary-button" type="button" onClick={() => void auth.signOut()}>Cerrar sesión <LogOut size={16} /></button>
   </section></main>;
 
-  const moduleByPath: Record<string, string> = {
-    '/admin': 'dashboard', '/admin/sitio': 'website', '/admin/servicios': 'website', '/admin/tienda': 'website', '/admin/contacto': 'website', '/admin/contenido': 'website', '/admin/blog': 'website', '/admin/publicaciones': 'website', '/admin/portafolio': 'website', '/admin/solicitudes': 'crm',
-    '/admin/marketing': 'marketing', '/admin/cambios': 'team', '/admin/respaldo': 'backup',
-    '/operaciones': 'dashboard', '/operaciones/pos': 'sales', '/operaciones/finanzas': 'sales', '/operaciones/flujos': 'workshop',
-    '/operaciones/cambios': 'team', '/operaciones/cotizador': 'quotes', '/operaciones/inventario': 'inventory', '/operaciones/equipos': 'inventory',
-    '/operaciones/compras': 'purchases', '/operaciones/clientes': 'crm', '/operaciones/crm': 'crm',
-    '/operaciones/marketing': 'marketing', '/operaciones/personal': 'personnel', '/operaciones/equipo': 'team', '/operaciones/catalogo': 'catalog_admin',
-  };
-  const requiredModule = moduleByPath[location.pathname] || ({ website: 'website', catalog: 'catalog_admin', team: 'team', operations: 'dashboard' }[area]);
+  const requiredModule = permissionByPath[location.pathname] || ({ website: 'website', catalog: 'catalog_admin', team: 'team', operations: 'dashboard' }[area]);
   // The lifecycle page combines several independently permissioned flows.
   // Let users enter when they can see at least one flow; the page then filters
   // its tabs and data by each flow's own permission.
-  const canAccessPage = location.pathname === '/operaciones/flujos'
+  const canAccessPage = legacyPanelPaths.has(location.pathname)
+    ? auth.hasPermission('dashboard', 'view')
+    : location.pathname === '/operaciones/flujos'
     ? ['sales', 'inventory', 'workshop', 'quotes'].some((module) => auth.hasPermission(module, 'view'))
     : auth.hasPermission(requiredModule, 'view');
   if (!canAccessPage) return <main className="access-screen"><section className="access-card">
     <img src={wordmark} alt="Visual Corp" />
     <span className="site-eyebrow"><i /> PERMISOS</span>
     <h1>Tu perfil no tiene acceso a este panel.</h1>
-    <p>La página web y las operaciones internas usan permisos separados. Solicita al propietario que asigne el rol correspondiente.</p>
+    <p>El acceso al panel se configura por módulos y acciones. Solicita al propietario que revise tu perfil si necesitas esta sección.</p>
     <button className="site-primary-button" onClick={auth.signOut}>Cerrar sesión <LogOut size={16} /></button>
   </section></main>;
 
