@@ -3,16 +3,18 @@ import {
   Activity, AlertCircle, ArrowDownRight, ArrowUpRight, BarChart3, CalendarDays, Check,
   CheckCircle2, Clock3, Copy, FileImage, FileText, Filter, FolderOpen, Images, Lightbulb,
   LoaderCircle, Megaphone, Plus, RefreshCw, Search, Save, Sparkles, Target, TrendingUp, X,
+  Trash2, LayoutGrid, List, Pencil, CopyPlus,
 } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
 import { AnimatedList } from '../../components/ui/MagicComponents';
+import { ContextMenu, type ContextMenuAction } from '../../components/ui/ContextMenu';
 import { EmptyState, StageBadge } from '../../components/feedback';
 import { supabase } from '../../lib/supabaseClient';
 import { MarketingCalendar } from './marketing/MarketingCalendar';
 import { MarketingAssetIntake } from './marketing/MarketingAssetIntake';
 import { MarketingAssetPreview } from './marketing/MarketingAssetPreview';
-import { PublicationEditorSections, type PublicationDraft, type PublicationEditorTab } from './marketing/PublicationEditorSections';
+import { DEFAULT_MARKETING_TAGS, MARKETING_COLORS, PublicationEditorSections, type PublicationDraft, type PublicationEditorTab } from './marketing/PublicationEditorSections';
 
 type Post = Record<string, any> & { id: string; title: string; status: string; scheduled_date: string; platform: string };
 type Asset = Record<string, any> & { id: string; filename: string; rel_path: string; section: string; is_available: boolean; storage_status?: string; retention_enabled?: boolean; retention_months?: number };
@@ -40,7 +42,7 @@ const checklistFields = [
   ['cover_status', 'Portada'], ['art_status', 'Arte'], ['caption_status', 'Copy'],
   ['video_status', 'Video'], ['voiceover_status', 'Voz'], ['tiktok_status', 'TikTok'],
 ] as const;
-const defaultDraft = (scheduledDate = ''): PublicationDraft => ({ title: '', content_line: '', platform: 'Instagram', format: 'Post', scheduled_date: scheduledDate, scheduled_time: '', owner: '', status: 'Por iniciar', caption: '', next_action: '', due_date: '', objective: '', audience: '', offer: '', call_in: '', callout: '', cta: '', cta_destination: '', external_url: '', hashtags: '', visual_direction: '' });
+const defaultDraft = (scheduledDate = ''): PublicationDraft => ({ title: '', content_line: '', platform: 'Instagram', format: 'Post', scheduled_date: scheduledDate, scheduled_time: '', owner: '', status: 'Por iniciar', caption: '', next_action: '', due_date: '', objective: '', audience: '', offer: '', call_in: '', callout: '', cta: '', cta_destination: '', external_url: '', hashtags: '', visual_direction: '', tags: '', calendar_color: '' });
 
 async function readAll(table: string, organizationId: string, orderBy?: string) {
   if (!supabase) return [];
@@ -60,6 +62,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const { organizationId, hasPermission } = useAuth();
   const canView = hasPermission('marketing', 'view');
   const canEdit = hasPermission('marketing', 'edit');
+  const canDelete = hasPermission('marketing', 'delete_records');
   const [data, setData] = useState<WorkspaceData>(emptyData);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -68,6 +71,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const [activeSection, setActiveSection] = useState<Section>('overview');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos los estados');
+  const [tagFilter, setTagFilter] = useState('Todas las etiquetas');
   const [assetFilter, setAssetFilter] = useState('Todos los archivos');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -75,6 +79,8 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const [isNew, setIsNew] = useState(false);
   const [draftTabKey, setDraftTabKey] = useState(0);
   const [editorTab, setEditorTab] = useState<PublicationEditorTab>('plan');
+  const [postView, setPostView] = useState<'cards' | 'table'>('cards');
+  const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(() => new Set());
 
   const refresh = useCallback(async () => {
     if (!supabase || !organizationId || !canView) {
@@ -119,18 +125,20 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   }, [modalOpen]);
 
   const statuses = useMemo(() => ['Todos los estados', ...new Set(data.posts.map((post) => post.status).filter(Boolean).sort())], [data.posts]);
+  const knownTags = useMemo(() => [...new Set([...DEFAULT_MARKETING_TAGS, ...data.posts.flatMap((post) => Array.isArray(post.tags) ? post.tags : [])])].sort(), [data.posts]);
   const filteredPosts = useMemo(() => {
     const search = query.trim().toLocaleLowerCase('es');
     return data.posts.filter((post) => {
       const matchesSearch = !search || [post.title, post.content_line, post.platform, post.owner, post.caption, post.status].some((field) => String(field || '').toLocaleLowerCase('es').includes(search));
-      return matchesSearch && (statusFilter === 'Todos los estados' || post.status === statusFilter);
+      return matchesSearch && (statusFilter === 'Todos los estados' || post.status === statusFilter)
+        && (tagFilter === 'Todas las etiquetas' || (Array.isArray(post.tags) && post.tags.includes(tagFilter)));
     }).sort((a, b) => {
       const aOpen = !/publicad|complet|cancelad/i.test(a.status || '');
       const bOpen = !/publicad|complet|cancelad/i.test(b.status || '');
       if (aOpen !== bOpen) return aOpen ? -1 : 1;
       return (a.due_date || a.scheduled_date || '9999-12-31').localeCompare(b.due_date || b.scheduled_date || '9999-12-31');
     });
-  }, [data.posts, query, statusFilter]);
+  }, [data.posts, query, statusFilter, tagFilter]);
   const visibleAssets = useMemo(() => {
     const search = query.trim().toLocaleLowerCase('es');
     return data.assets.filter((asset) => {
@@ -168,6 +176,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       call_in: post.call_in || '', callout: post.callout || '', cta: post.cta || '',
       cta_destination: post.cta_destination || '', external_url: post.external_url || '',
       hashtags: post.hashtags || '', visual_direction: post.visual_direction || '',
+      tags: Array.isArray(post.tags) ? post.tags.join(', ') : '', calendar_color: post.calendar_color || '',
     } : defaultDraft(scheduledDate));
   };
   const reschedulePost = async (post: Post, date: string) => {
@@ -197,7 +206,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     }
     setSaving(true);
     try {
-      const fields = { ...draft, title: draft.title.trim(), updated_at: new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Guayaquil', dateStyle: 'short', timeStyle: 'medium', hour12: false }).format(new Date()) };
+      const fields = { ...draft, title: draft.title.trim(), tags: [...new Set(draft.tags.split(',').map((tag) => tag.trim()).filter(Boolean))], updated_at: new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Guayaquil', dateStyle: 'short', timeStyle: 'medium', hour12: false }).format(new Date()) };
       const result = isNew
         ? await supabase.from('marketing_posts').insert({ ...fields, organization_id: organizationId, source_system: 'visualcorp-suite', source_id: `suite-${globalThis.crypto.randomUUID()}` }).select('id').single()
         : await supabase.from('marketing_posts').update(fields).eq('organization_id', organizationId).eq('id', selectedPost?.id).select('id').maybeSingle();
@@ -213,6 +222,39 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       setSaving(false);
     }
   };
+
+  const togglePost = (postId: string) => setSelectedPostIds((current) => { const next = new Set(current); next.has(postId) ? next.delete(postId) : next.add(postId); return next; });
+  const selectVisiblePosts = () => setSelectedPostIds((current) => { const allVisible = filteredPosts.every((post) => current.has(post.id)); const next = new Set(current); filteredPosts.forEach((post) => allVisible ? next.delete(post.id) : next.add(post.id)); return next; });
+  const deletePosts = async (posts: Post[]) => {
+    if (!canDelete || !supabase || !organizationId || !posts.length) return;
+    const noun = posts.length === 1 ? `“${posts[0].title}”` : `${posts.length} publicaciones seleccionadas`;
+    if (!window.confirm(`¿Eliminar ${noun} permanentemente? Se quitarán del calendario y sus piezas vinculadas. Los leads conservan su registro y se desvinculan de la publicación.`)) return;
+    setSaving(true);
+    try {
+      const { data: deleted, error } = await supabase.from('marketing_posts').delete().eq('organization_id', organizationId).in('id', posts.map((post) => post.id)).select('id');
+      if (error) throw error;
+      const deletedIds = new Set((deleted || []).map((row) => row.id));
+      if (!deletedIds.size) throw new Error('No se eliminó ninguna publicación. Revisa el permiso Eliminar en Marketing.');
+      setSelectedPostIds((current) => new Set([...current].filter((id) => !deletedIds.has(id))));
+      if (selectedPost && deletedIds.has(selectedPost.id)) { setSelectedPost(null); setModalOpen(false); }
+      setNotice(`${deletedIds.size} publicación${deletedIds.size === 1 ? '' : 'es'} eliminada${deletedIds.size === 1 ? '' : 's'}.`);
+      await refresh();
+    } catch (error: any) { setLoadError(error?.message || 'No se pudieron eliminar las publicaciones.'); }
+    finally { setSaving(false); }
+  };
+  const duplicatePost = async (post: Post) => {
+    if (!canEdit || !supabase || !organizationId) return;
+    const { id, created_at, updated_at, imported_at, source_id, source_row, ...copy } = post;
+    const { error } = await supabase.from('marketing_posts').insert({ ...copy, title: `${post.title || 'Publicación'} (copia)`.slice(0, 180), status: 'Por iniciar', scheduled_date: '', scheduled_time: '', reach: 0, interactions: 0, clicks: 0, leads: 0, organization_id: organizationId, source_system: 'visualcorp-suite', source_id: `suite-${globalThis.crypto.randomUUID()}` });
+    if (error) { setLoadError(error.message || 'No se pudo duplicar la publicación.'); return; }
+    setNotice('Copia creada como borrador sin fecha ni métricas.');
+    await refresh();
+  };
+  const postActions = (post: Post): ContextMenuAction[] => [
+    { label: 'Editar ficha', icon: <Pencil size={14}/>, onSelect: () => openPost(post), disabled: !canEdit },
+    { label: 'Duplicar como borrador', icon: <CopyPlus size={14}/>, onSelect: () => void duplicatePost(post), disabled: !canEdit },
+    { label: 'Eliminar publicación', icon: <Trash2 size={14}/>, onSelect: () => void deletePosts([post]), destructive: true, disabled: !canDelete },
+  ];
 
   const sectionTitle = sections.find((section) => section.id === activeSection)?.label || 'Resumen';
   const searchPlaceholder = activeSection === 'library' ? 'Buscar por archivo, carpeta o sección…' : 'Buscar publicaciones por tema, canal o responsable…';
@@ -243,24 +285,29 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
         {sections.map(({ id, label, icon: Icon }) => <button key={id} type="button" className={activeSection === id ? 'is-active' : ''} onClick={() => { setActiveSection(id); setQuery(''); }} aria-current={activeSection === id ? 'page' : undefined}><Icon size={16}/>{label}{id === 'calendar' && <span>{data.posts.length}</span>}{id === 'library' && <span>{data.assets.length}</span>}</button>)}
       </nav>
 
-      {(activeSection === 'overview' || activeSection === 'calendar' || activeSection === 'library') && <div className="vc-content-toolbar"><div><span className="vc-content-section-icon"><FolderOpen size={16}/></span><div><b>{activeSection === 'overview' ? 'Flujo editorial' : sectionTitle}</b><small>{activeSection === 'library' ? `${data.assets.length} recursos catalogados · ${linkedAssets} vinculados` : `${filteredPosts.length} de ${data.posts.length} publicaciones`}</small></div></div><label className="vc-content-search"><Search size={15}/><input aria-label="Buscar" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder}/></label><label className="vc-content-filter"><Filter size={14}/><select aria-label="Filtrar resultados" value={activeSection === 'library' ? assetFilter : statusFilter} onChange={(event) => activeSection === 'library' ? setAssetFilter(event.target.value) : setStatusFilter(event.target.value)}>{activeSection === 'library' ? <><option>Todos los archivos</option><option>Disponibles en el equipo</option><option>Solo referencia de ruta</option><option>Eliminados por plazo</option></> : statuses.map((status) => <option key={status}>{status}</option>)}</select></label></div>}
+      {(activeSection === 'overview' || activeSection === 'calendar' || activeSection === 'library') && <div className="vc-content-toolbar"><div><span className="vc-content-section-icon"><FolderOpen size={16}/></span><div><b>{activeSection === 'overview' ? 'Flujo editorial' : sectionTitle}</b><small>{activeSection === 'library' ? `${data.assets.length} recursos catalogados · ${linkedAssets} vinculados` : `${filteredPosts.length} de ${data.posts.length} publicaciones`}</small></div></div><label className="vc-content-search"><Search size={15}/><input aria-label="Buscar" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder}/></label><label className="vc-content-filter"><Filter size={14}/><select aria-label="Filtrar resultados" value={activeSection === 'library' ? assetFilter : statusFilter} onChange={(event) => activeSection === 'library' ? setAssetFilter(event.target.value) : setStatusFilter(event.target.value)}>{activeSection === 'library' ? <><option>Todos los archivos</option><option>Disponibles en el equipo</option><option>Solo referencia de ruta</option><option>Eliminados por plazo</option></> : statuses.map((status) => <option key={status}>{status}</option>)}</select></label>{activeSection !== 'library' && <label className="vc-content-filter vc-marketing-tag-filter"><Filter size={14}/><select aria-label="Filtrar por etiqueta" value={tagFilter} onChange={(event)=>setTagFilter(event.target.value)}><option>Todas las etiquetas</option>{knownTags.map((tag)=><option key={tag}>{tag}</option>)}</select></label>}{activeSection === 'overview' && <div className="vc-marketing-view-toggle" aria-label="Modo de publicaciones"><button type="button" aria-pressed={postView==='cards'} className={postView==='cards'?'active':''} onClick={()=>setPostView('cards')}><LayoutGrid size={14}/>Tarjetas</button><button type="button" aria-pressed={postView==='table'} className={postView==='table'?'active':''} onClick={()=>setPostView('table')}><List size={14}/>Tabla</button></div>}</div>}
 
-      {activeSection === 'calendar' && <MarketingCalendar posts={filteredPosts} canEdit={canEdit} onSelect={(post) => openPost(post as Post)} onCreate={(date) => openPost(undefined, date)} onReschedule={(post, date) => void reschedulePost(post as Post, date)}/>}
+      {(activeSection === 'overview' || activeSection === 'calendar') && (canEdit||canDelete) && <div className="vc-marketing-bulk-bar"><label><input type="checkbox" checked={filteredPosts.length > 0 && filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/> Seleccionar publicaciones visibles</label>{selectedPostIds.size > 0 && <><span>{selectedPostIds.size} seleccionadas</span><button type="button" className="vc-small-danger" disabled={!canDelete||saving} title={!canDelete?"El perfil requiere permiso para eliminar publicaciones":undefined} onClick={()=>void deletePosts(data.posts.filter((post)=>selectedPostIds.has(post.id)))}><Trash2 size={13}/>Eliminar seleccionadas</button><button type="button" onClick={()=>setSelectedPostIds(new Set())}>Quitar selección</button></>}</div>}
+
+      {activeSection === 'calendar' && <MarketingCalendar posts={filteredPosts} canEdit={canEdit} canDelete={canDelete} selectedIds={selectedPostIds} onToggle={togglePost} onSelect={(post) => openPost(post as Post)} onCreate={(date) => openPost(undefined, date)} onReschedule={(post, date) => void reschedulePost(post as Post, date)} onDuplicate={(post)=>void duplicatePost(post as Post)} onDelete={(post)=>void deletePosts([post as Post])}/>}
 
       {activeSection === 'overview' && <>
         {loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando publicaciones, piezas y tareas…</div>
           : data.posts.length === 0 ? <EmptyState icon={CalendarDays} title="El calendario está listo para comenzar" text="Aún no hay publicaciones en la base central. Crea la primera ficha para iniciar el flujo editorial." action={canEdit && <button className="button button-dark" onClick={() => openPost()}><Plus size={15}/>Nueva publicación</button>}/>
             : filteredPosts.length === 0 ? <EmptyState icon={Search} title="No encontramos coincidencias" text="Prueba con otro título, canal, responsable o estado." action={<button className="button button-outline" onClick={() => { setQuery(''); setStatusFilter('Todos los estados'); }}>Limpiar búsqueda</button>}/>
               : <div className={`vc-content-post-grid ${activeSection === 'overview' ? 'is-overview' : ''}`}>
-                <AnimatedList className="vc-content-post-list" itemClassName="vc-content-post-entry">{filteredPosts.slice(0, activeSection === 'overview' ? 8 : undefined).map((post) => {
+                <div className="vc-content-post-list">
+                  {postView === 'table' ? <div className="vc-marketing-post-table-wrap"><table className="vc-marketing-post-table"><thead><tr><th><input type="checkbox" aria-label="Seleccionar todas las publicaciones visibles" checked={filteredPosts.length>0&&filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/></th><th>Publicación</th><th>Fecha y canal</th><th>Etapa</th><th>Tags</th><th>Acciones</th></tr></thead><tbody>{filteredPosts.map((post)=> <tr key={post.id}><td><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></td><td><button type="button" className="vc-marketing-table-title" onClick={()=>openPost(post)}>{post.title||'Sin título'}</button><small>{post.content_line||'Tema pendiente'}</small></td><td>{post.scheduled_date?formatDate(post.scheduled_date):'Fecha pendiente'}<small>{post.platform||'Canal pendiente'}{post.scheduled_time?` · ${post.scheduled_time}`:''}</small></td><td><StageBadge stage={post.status||'Por iniciar'}/></td><td><div className="vc-marketing-table-tags">{(Array.isArray(post.tags)?post.tags:[]).map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div></td><td><ContextMenu label={`Acciones para ${post.title}`} actions={postActions(post)}><span className="vc-marketing-menu-anchor" aria-hidden="true"/></ContextMenu></td></tr>)}</tbody></table></div> : <AnimatedList className="vc-marketing-card-grid" itemClassName="vc-content-post-entry">{filteredPosts.map((post) => {
                   const linked = data.postAssets.filter((link) => link.post_id === post.id).length;
                   const complete = checklistFields.filter(([field]) => /complet|aprob|listo|hecho/i.test(post[field] || '')).length;
-                  return <article className="vc-content-post" key={post.id}>
-                    <div className="vc-content-date"><strong>{post.scheduled_date ? post.scheduled_date.slice(8,10) : '—'}</strong><span>{post.scheduled_date ? new Intl.DateTimeFormat('es-EC',{month:'short'}).format(new Date(`${post.scheduled_date.slice(0,10)}T12:00:00`)) : 'PEND.'}</span></div>
+                  return <ContextMenu key={post.id} className="vc-marketing-post-context" label={`Acciones para ${post.title}`} actions={postActions(post)}><article className="vc-content-post">
+                    <label className="vc-marketing-select-post"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></label><div className="vc-content-date" style={post.calendar_color?{borderColor:post.calendar_color,color:post.calendar_color}:undefined}><strong>{post.scheduled_date ? post.scheduled_date.slice(8,10) : '—'}</strong><span>{post.scheduled_date ? new Intl.DateTimeFormat('es-EC',{month:'short'}).format(new Date(`${post.scheduled_date.slice(0,10)}T12:00:00`)) : 'PEND.'}</span></div>
                     <button className="vc-content-post-main" type="button" onClick={() => openPost(post)}><span className="vc-content-post-eyebrow">{post.content_line || post.platform || 'Contenido'} <i>·</i> {post.format || 'Formato pendiente'}</span><strong>{post.title || 'Sin título'}</strong><span className="vc-content-post-caption">{post.caption || post.next_action || 'Copy y siguiente paso por completar.'}</span><span className="vc-content-post-meta"><span><Megaphone size={13}/>{post.platform || 'Canal pendiente'}</span><span><Images size={13}/>{linked} piezas</span><span><Check size={13}/>{complete}/{checklistFields.length} checklist</span>{post.owner && <span>{post.owner}</span>}</span></button>
                     <div className="vc-content-post-end"><StageBadge stage={post.status || 'Por iniciar'}/><span className={`vc-content-dot is-${statusTone(post.status)}`}/></div>
-                  </article>;
-                })}</AnimatedList>
+                    {Array.isArray(post.tags)&&post.tags.length>0&&<div className="vc-marketing-post-tags">{post.tags.map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div>}
+                  </article></ContextMenu>;
+                })}</AnimatedList>}
+                </div>
                 {activeSection === 'overview' && <aside className="vc-content-side-panel"><div className="vc-content-side-heading"><div><span className="eyebrow">PULSO EDITORIAL</span><h3>Lo que sigue</h3></div><Activity size={17}/></div><div className="vc-content-next-list">{data.posts.filter((post) => post.scheduled_date && post.scheduled_date >= today && !/publicad/i.test(post.status || '')).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)).slice(0,4).map((post) => <button type="button" key={post.id} onClick={() => openPost(post)}><span className="vc-content-next-date">{formatDate(post.scheduled_date)}</span><b>{post.title}</b><small>{post.platform || 'Canal pendiente'}{post.owner ? ` · ${post.owner}` : ''}</small></button>)}{!data.posts.some((post) => post.scheduled_date && post.scheduled_date >= today && !/publicad/i.test(post.status || '')) && <p className="vc-content-side-empty">No hay publicaciones futuras con fecha asignada.</p>}</div><button className="vc-content-text-link" type="button" onClick={() => setActiveSection('calendar')}>Ver calendario completo <ArrowUpRight size={14}/></button><div className="vc-content-side-callout"><span><Lightbulb size={15}/></span><p><b>{overdue ? `${overdue} fichas necesitan atención` : 'El flujo está al día'}</b><br/>Define responsable, fecha límite y próximo paso para que las alertas tengan contexto.</p></div></aside>}
               </div>}
       </>}
@@ -280,6 +327,6 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     </main>
 
     {notice&&<div className="vc-content-toast" role="status"><CheckCircle2 size={16}/>{notice}</div>}
-    {modalOpen&&<div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget){setSelectedPost(null);setModalOpen(false)}}}><section className="vc-content-modal vc-content-modal-editor" role="dialog" aria-modal="true" aria-labelledby="vc-post-modal-title"><header><div><span className="eyebrow">{isNew?'NUEVA FICHA':'FICHA DE PUBLICACIÓN'}</span><h2 id="vc-post-modal-title">{isNew?'Planifica una publicación':'Edita la publicación'}</h2><p>{draft.title || 'Organiza el mensaje, el calendario y la producción desde una sola ficha.'}</p></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={()=>{setSelectedPost(null);setModalOpen(false)}}><X size={18}/></button></header><form onSubmit={savePost}><PublicationEditorSections key={draftTabKey} draft={draft} onChange={(field,value)=>setDraft((current)=>({...current,[field]:value}))} canEdit={canEdit} isNew={isNew} activeTab={editorTab} onTabChange={setEditorTab} selectedPost={selectedPost} checklistFields={checklistFields} events={selectedEvents} formatDate={formatDate}/><div className="vc-content-modal-actions"><span>{canEdit?'La ficha se guarda en el calendario central.':'Tu perfil tiene acceso de solo lectura.'}</span><button type="button" className="button button-outline" onClick={()=>{setSelectedPost(null);setModalOpen(false)}}>Cerrar</button>{canEdit&&<button type="submit" className="button button-dark" disabled={saving}>{saving?<LoaderCircle className="vc-content-spin" size={15}/>:<Save size={15}/>} {saving?'Guardando…':'Guardar ficha'}</button>}</div></form></section></div>}
+    {modalOpen&&<div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget){setSelectedPost(null);setModalOpen(false)}}}><section className="vc-content-modal vc-content-modal-editor" role="dialog" aria-modal="true" aria-labelledby="vc-post-modal-title"><header><div><span className="eyebrow">{isNew?'NUEVA FICHA':'FICHA DE PUBLICACIÓN'}</span><h2 id="vc-post-modal-title">{isNew?'Planifica una publicación':'Edita la publicación'}</h2><p>{draft.title || 'Organiza el mensaje, el calendario y la producción desde una sola ficha.'}</p></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={()=>{setSelectedPost(null);setModalOpen(false)}}><X size={18}/></button></header><form onSubmit={savePost}><PublicationEditorSections key={draftTabKey} draft={draft} onChange={(field,value)=>setDraft((current)=>({...current,[field]:value}))} canEdit={canEdit} isNew={isNew} activeTab={editorTab} onTabChange={setEditorTab} selectedPost={selectedPost} checklistFields={checklistFields} events={selectedEvents} formatDate={formatDate} knownTags={knownTags}/><div className="vc-content-modal-actions"><span>{canEdit?'La ficha se guarda en el calendario central.':'Tu perfil tiene acceso de solo lectura.'}</span>{canDelete&&selectedPost&&<button type="button" className="vc-small-danger" disabled={saving} onClick={()=>void deletePosts([selectedPost])}><Trash2 size={13}/>Eliminar publicación</button>}<button type="button" className="button button-outline" onClick={()=>{setSelectedPost(null);setModalOpen(false)}}>Cerrar</button>{canEdit&&<button type="submit" className="button button-dark" disabled={saving}>{saving?<LoaderCircle className="vc-content-spin" size={15}/>:<Save size={15}/>} {saving?'Guardando…':'Guardar ficha'}</button>}</div></form></section></div>}
   </AppFrame>;
 }
