@@ -251,8 +251,12 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     await refresh();
   };
   const postActions = (post: Post): ContextMenuAction[] => [
+    { kind: 'label', label: 'Publicación', onSelect: () => {} },
     { label: 'Editar ficha', icon: <Pencil size={14}/>, onSelect: () => openPost(post), disabled: !canEdit },
     { label: 'Duplicar como borrador', icon: <CopyPlus size={14}/>, onSelect: () => void duplicatePost(post), disabled: !canEdit },
+    { label: selectedPostIds.has(post.id) ? 'Quitar de seleccionadas' : 'Seleccionar publicación', icon: <Check size={14}/>, kind: 'checkbox', checked: selectedPostIds.has(post.id), onSelect: () => {}, onCheckedChange: () => togglePost(post.id), disabled: !(canEdit || canDelete) },
+    { label: 'Abrir calendario editorial', icon: <CalendarDays size={14}/>, onSelect: () => setActiveSection('calendar') },
+    { kind: 'separator', label: '', onSelect: () => {} },
     { label: 'Eliminar publicación', icon: <Trash2 size={14}/>, onSelect: () => void deletePosts([post]), destructive: true, disabled: !canDelete },
   ];
 

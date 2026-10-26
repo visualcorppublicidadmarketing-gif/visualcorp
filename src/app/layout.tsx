@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowUpRight, BookOpen, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Database, FileText, Globe2, History, Image, LayoutDashboard, LogOut, Megaphone, Menu, Newspaper, Settings2, ShoppingBag, ShoppingCart, Truck, Users, Wallet, X, type LucideIcon } from 'lucide-react';
 import { useWorkspace } from './workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { AdminCommandPalette } from '../components/AdminCommandPalette';
 import { NumberTicker, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
+import { ContextMenu, type ContextMenuAction } from '../components/ui/ContextMenu';
 import { motion, useReducedMotion } from 'motion/react';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
@@ -65,6 +66,7 @@ export function AppFrame({ area, children }: AppFrameProps) {
   const { data } = useWorkspace();
   const { user, roles, profiles, hasPermission, signOut } = useAuth();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   useEffect(() => {
@@ -84,9 +86,31 @@ export function AppFrame({ area, children }: AppFrameProps) {
   const areaTitle = area === 'admin' ? 'Administración web' : 'Operaciones';
   const profileLabel = profiles.map((profile) => profile.name).join(' · ') || roles.join(' · ');
   const canSwitch = area === 'admin' ? operationsLinks.some((link) => hasPermission(link.module, 'view')) : adminLinks.some((link) => hasPermission(link.module, 'view'));
-  const renderNavLink = ({ to, label, icon: Icon, end }: AppNavLink) => <NavLink key={to} end={end} to={to} title={label} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><Icon size={18}/><span>{label}</span>{label === 'Solicitudes CRM' && data.leads.length > 0 && <b className="sidebar-count">{data.leads.length}</b>}</NavLink>;
   const directNavLinks = nav.filter((link) => !navGroupDefinitions.some((group) => group.paths.includes(link.to)));
+  const contextActions: ContextMenuAction[] = [
+    { label: `Ir al resumen de ${areaTitle}`, icon: <LayoutDashboard size={14}/>, onSelect: () => navigate(area === 'admin' ? '/admin' : '/operaciones') },
+    ...navGroups.map((group) => {
+      const GroupIcon = group.icon;
+      return {
+        label: group.label,
+        icon: <GroupIcon size={14}/>,
+        onSelect: () => navigate(group.items[0]?.to || (area === 'admin' ? '/admin' : '/operaciones')),
+        children: group.items.map((link) => {
+          const Icon = link.icon;
+          return { label: link.label, icon: <Icon size={13}/>, onSelect: () => navigate(link.to) };
+        }),
+      };
+    }),
+    ...directNavLinks.map((link) => {
+      const Icon = link.icon;
+      return { label: link.label, icon: <Icon size={14}/>, onSelect: () => navigate(link.to) };
+    }),
+    { kind: 'separator', label: '', onSelect: () => {} },
+    { label: 'Volver arriba', icon: <ArrowUpRight size={14}/>, shortcut: '↑', onSelect: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
+  ];
+  const renderNavLink = ({ to, label, icon: Icon, end }: AppNavLink) => <NavLink key={to} end={end} to={to} title={label} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><Icon size={18}/><span>{label}</span>{label === 'Solicitudes CRM' && data.leads.length > 0 && <b className="sidebar-count">{data.leads.length}</b>}</NavLink>;
   return <div className={`work-app area-${area}`}>
+    <ContextMenu scope="document" trigger={false} label="Acciones de navegación" actions={contextActions}/>
     <aside id={`sidebar-${area}`} className={`sidebar ${mobileNavOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-brand"><Brand/><button title="Ayuda" aria-label="Ayuda"><CircleHelp size={18}/></button></div>
       <div className="workspace-pill"><span className="status-dot"/> SESIÓN SEGURA <span>· {profileLabel}</span></div>
