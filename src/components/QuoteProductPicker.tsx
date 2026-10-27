@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, Search, Shapes, X } from 'lucide-react';
 import './quote-product-picker.css';
 
@@ -17,11 +17,14 @@ type Props = {
   products: Product[];
   selected: Product | undefined;
   onSelect: (product: Product | null) => void;
+  idPrefix?: string;
 };
 
 const normalize = (value: unknown) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').trim();
 
-export function QuoteProductPicker({ products, selected, onSelect }: Props) {
+export function QuoteProductPicker({ products, selected, onSelect, idPrefix }: Props) {
+  const generatedId = useId().replace(/:/g, '');
+  const pickerId = idPrefix || `quote-product-${generatedId}`;
   const [query, setQuery] = useState('');
   const [family, setFamily] = useState('');
   const [open, setOpen] = useState(false);
@@ -53,8 +56,8 @@ export function QuoteProductPicker({ products, selected, onSelect }: Props) {
   const activeProductId = visible[activeIndex]?.id;
 
   useEffect(() => {
-    if (open && activeProductId) document.getElementById(`quote-product-option-${activeProductId}`)?.scrollIntoView({ block: 'nearest' });
-  }, [activeProductId, open]);
+    if (open && activeProductId) document.getElementById(`${pickerId}-option-${activeProductId}`)?.scrollIntoView({ block: 'nearest' });
+  }, [activeProductId, open, pickerId]);
 
   const choose = (product: Product | null) => {
     onSelect(product);
@@ -84,7 +87,7 @@ export function QuoteProductPicker({ products, selected, onSelect }: Props) {
   };
 
   return <div className="quote-product-picker">
-    <label htmlFor="quote-product-search">Busca un producto</label>
+    <label htmlFor={`${pickerId}-search`}>Busca un producto</label>
     {selected ? <div className="quote-product-chosen">
       {selected.image && <img src={selected.image} alt="" loading="lazy"/>}
       <span><b>{selected.name}</b><small>{selected.family} · {selected.mode === 'area' ? 'Se calcula por área' : selected.unit || 'unidad'} · {selected.confirmed ? 'Tarifa confirmada' : 'Tarifa por validar'}</small></span>
@@ -92,7 +95,7 @@ export function QuoteProductPicker({ products, selected, onSelect }: Props) {
     </div> : <div className="quote-product-search-shell">
       <div className="quote-product-search-box">
         <Search size={17} aria-hidden="true"/>
-        <input ref={inputRef} id="quote-product-search" role="combobox" aria-expanded={open} aria-controls="quote-product-results" aria-activedescendant={open && activeIndex >= 0 && visible[activeIndex] ? `quote-product-option-${visible[activeIndex].id}` : undefined} aria-autocomplete="list" autoComplete="off" value={query} onFocus={() => setOpen(true)} onChange={(event) => { setQuery(event.target.value); setActiveIndex(-1); setShowAll(false); setOpen(true); }} onKeyDown={handleKeyDown} onBlur={(event) => { if (!event.currentTarget.parentElement?.parentElement?.contains(event.relatedTarget as Node | null)) setOpen(false); }} placeholder="Ej. lona premium, camiseta, impresión…"/>
+        <input ref={inputRef} id={`${pickerId}-search`} role="combobox" aria-expanded={open} aria-controls={`${pickerId}-results`} aria-activedescendant={open && activeIndex >= 0 && visible[activeIndex] ? `${pickerId}-option-${visible[activeIndex].id}` : undefined} aria-autocomplete="list" autoComplete="off" value={query} onFocus={() => setOpen(true)} onChange={(event) => { setQuery(event.target.value); setActiveIndex(-1); setShowAll(false); setOpen(true); }} onKeyDown={handleKeyDown} onBlur={(event) => { if (!event.currentTarget.parentElement?.parentElement?.contains(event.relatedTarget as Node | null)) setOpen(false); }} placeholder="Ej. lona premium, camiseta, impresión…"/>
         {query && <button type="button" aria-label="Limpiar búsqueda" onClick={() => { setQuery(''); setActiveIndex(-1); setShowAll(false); inputRef.current?.focus(); }}><X size={15}/></button>}
         <ChevronDown size={15} aria-hidden="true"/>
       </div>
@@ -104,8 +107,8 @@ export function QuoteProductPicker({ products, selected, onSelect }: Props) {
           {families.slice(0, 5).map(([name]) => <button type="button" key={name} className={family === name ? 'active' : ''} onPointerDown={(event) => event.preventDefault()} onClick={() => { setFamily(family === name ? '' : name); setActiveIndex(-1); }}>{name}</button>)}
           {families.length > 5 && <details className="quote-more-families"><summary aria-label="Ver más familias"><Shapes size={14}/></summary><div>{families.slice(5).map(([name, count]) => <button type="button" key={name} className={family === name ? 'active' : ''} onPointerDown={(event) => event.preventDefault()} onClick={() => { setFamily(family === name ? '' : name); setActiveIndex(-1); }}>{name}<small>{count}</small></button>)}</div></details>}
         </div>
-        <div className="quote-product-options" id="quote-product-results" role="listbox" aria-label="Productos del catálogo">
-          {visible.map((product, index) => <button id={`quote-product-option-${product.id}`} type="button" role="option" aria-selected={index === activeIndex} className={index === activeIndex ? 'active' : ''} key={product.id} onPointerDown={(event) => event.preventDefault()} onClick={() => choose(product)}>
+        <div className="quote-product-options" id={`${pickerId}-results`} role="listbox" aria-label="Productos del catálogo">
+          {visible.map((product, index) => <button id={`${pickerId}-option-${product.id}`} type="button" role="option" aria-selected={index === activeIndex} className={index === activeIndex ? 'active' : ''} key={product.id} onPointerDown={(event) => event.preventDefault()} onClick={() => choose(product)}>
             {product.image ? <img src={product.image} alt="" loading="lazy"/> : <span className="quote-product-placeholder"><Shapes size={17}/></span>}
             <span className="quote-product-option-copy"><b>{product.name}</b><small>{product.family} · {product.mode === 'area' ? 'Por área' : product.unit || 'unidad'}</small></span>
             <span className={`quote-product-status ${product.confirmed ? 'confirmed' : ''}`}>{product.confirmed ? <><Check size={12}/> Tarifa lista</> : 'Por validar'}</span>
