@@ -19,7 +19,8 @@ export type AppNavGroup = { id: string; label: string; icon: LucideIcon; paths: 
 export const workspaceNavigation: AppNavLink[] = [
   { to: '/panel', label: 'Inicio', icon: LayoutDashboard, module: 'dashboard', end: true },
   { to: '/operaciones/pos', label: 'Punto de venta', icon: ShoppingCart, module: 'sales' },
-  { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'sales' },
+  { to: '/operaciones/mi-semana', label: 'Mi semana', icon: ChartNoAxesCombined, module: 'sales' },
+  { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'finance' },
   { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText, module: 'quotes' },
   { to: '/operaciones/crm', label: 'Solicitudes', icon: Users, module: 'crm' },
   { to: '/operaciones/clientes', label: 'Directorio de clientes', icon: Users, module: 'crm' },
@@ -43,7 +44,7 @@ export const workspaceNavigation: AppNavLink[] = [
 ];
 
 export const workspaceNavGroups: AppNavGroup[] = [
-  { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/finanzas', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes'] },
+  { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/mi-semana', '/operaciones/finanzas', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes'] },
   { id: 'production', label: 'Producción y abastecimiento', icon: Boxes, paths: ['/operaciones/flujos', '/operaciones/inventario', '/operaciones/compras', '/operaciones/equipos'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing'] },
   { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
