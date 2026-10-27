@@ -312,6 +312,15 @@
 .work-app .workspace-pill { font-size: 10px; }
 .work-app .sidebar-profile b,
 .work-app .switch-app b { font-size: 11px; overflow-wrap: anywhere; }
+.work-app .sidebar-profile > .profile-avatar {
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  aspect-ratio: 1;
+  align-self: center;
+}
+.work-app .sidebar-profile > span:not(.profile-avatar) { flex: 1; min-width: 0; }
 .work-app .breadcrumbs,
 .work-app .breadcrumbs b,
 .work-app .local-badge { font-size: 12px; }
