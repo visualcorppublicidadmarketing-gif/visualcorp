@@ -6,6 +6,7 @@ import { useWorkspace } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
 import { Avatar, getGoogleAvatarUrl } from '../components/ui/Avatar';
+import { isGoogleMapsUrl } from '../lib/maps';
 import { multiProductQuoteService, publicAddress, publicServiceFamilies, serviceDetailContent, serviceProjectPrompts } from './content.ts';
 import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
 import { AnimatedList, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
@@ -207,11 +208,41 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
   const submit = async (event) => {
     event.preventDefault();
     if (!form.name.trim() || !form.phone.trim() || sending) return;
-    if (variant === 'quote' && (!quoteData?.service || !quoteData?.project?.trim())) {
-      setError('Selecciona una familia de servicio y describe tu proyecto para continuar.');
-      const missingField = !quoteData?.service ? 'quote-service-family' : 'quote-project-name';
-      document.getElementById(missingField)?.focus();
-      return;
+    if (variant === 'quote') {
+      const items = quoteData?.items || [];
+      const missingService = items.find((item) => !item.service.trim());
+      const missingProject = items.find((item) => !item.project.trim());
+      if (!quoteData?.service || !items.length || missingService || missingProject) {
+        setError('Completa la familia de servicio y el nombre de cada artículo antes de continuar.');
+        const missingItem = missingService || missingProject || items[0];
+        const fieldId = missingService ? `quote-item-service-${missingService.id}`
+          : missingProject ? `quote-item-project-${missingProject.id}`
+            : `quote-item-service-${missingItem.id}`;
+        document.getElementById(fieldId)?.focus();
+        return;
+      }
+      const itemMissingGrommetSize = items.find((item) => item.grommets && !item.grommetSize);
+      if (itemMissingGrommetSize) {
+        setError('Selecciona el tamaño de los ojales o desactiva esa opción en el artículo correspondiente.');
+        document.getElementById(`quote-item-grommet-${itemMissingGrommetSize.id}`)?.focus();
+        return;
+      }
+      if (quoteData.installation && !quoteData.installationLocation?.locationUnknown && !quoteData.installationLocation?.address.trim()) {
+        setError('Indica el lugar de instalación o marca que aún no lo conoces.');
+        document.getElementById('quote-installation-address')?.focus();
+        return;
+      }
+      const mapsUrl = quoteData.installationLocation?.mapsUrl.trim() || '';
+      if (mapsUrl && !isGoogleMapsUrl(mapsUrl)) {
+        setError('El enlace del pin debe ser un enlace HTTPS válido de Google Maps.');
+        document.getElementById('quote-installation-maps-url')?.focus();
+        return;
+      }
+      const requestBytes = new TextEncoder().encode(JSON.stringify({ details: form.details.trim(), service: quoteData.service, request: quoteData })).length;
+      if (requestBytes > 19000) {
+        setError('La solicitud es demasiado extensa para guardarse. Reduce texto o artículos y vuelve a intentar.');
+        return;
+      }
     }
     const requestService = variant === 'quote' && quoteData?.service ? quoteData.service : selectedService ?? form.service;
     setSending(true);
@@ -245,10 +276,10 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
     {error && <div className="site-form-error" role="alert">{error} <a href={whatsappHref(data.settings.contactPhone)} target="_blank" rel="noreferrer">Abrir WhatsApp <ArrowUpRight size={13}/></a></div>}
     <div className="site-form-row"><label>Nombre *<input required autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Tu nombre"/></label><label>Teléfono o WhatsApp *<input required type="tel" autoComplete="tel" inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="09…"/></label></div>
     <label>Negocio <span>(opcional)</span><input value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} placeholder="Nombre de tu negocio"/></label>
-    <label className={variant === 'quote' ? 'quote-form-service' : undefined}>¿Qué necesitas?<select value={selectedService ?? form.service} onChange={(event) => { setForm({ ...form, service: event.target.value }); onServiceChange?.(event.target.value); }}><option value="">Selecciona una familia de trabajo</option>{(selectedService ?? form.service) === multiProductQuoteService && <option value={multiProductQuoteService}>{multiProductQuoteService}</option>}{services.map((service) => <option value={service.name} key={service.id}>{service.name}</option>)}</select></label>
+    {variant !== 'quote' && <label>¿Qué necesitas?<select value={selectedService ?? form.service} onChange={(event) => { setForm({ ...form, service: event.target.value }); onServiceChange?.(event.target.value); }}><option value="">Selecciona una familia de trabajo</option>{(selectedService ?? form.service) === multiProductQuoteService && <option value={multiProductQuoteService}>{multiProductQuoteService}</option>}{services.map((service) => <option value={service.name} key={service.id}>{service.name}</option>)}</select></label>}
     <label>{variant === 'quote' ? (quoteData ? 'Detalles adicionales (opcional)' : 'Describe tu proyecto *') : 'Cuéntanos un poco más'}<textarea required={variant === 'quote' && !quoteData} rows={variant === 'quote' ? 4 : 3} value={form.details} onChange={(event) => setForm({ ...form, details: event.target.value })} placeholder={variant === 'quote' ? 'Agrega cualquier contexto que ayude a entender tu proyecto' : 'Objetivo, referencia o plazo que tienes en mente'}/></label>
     <button className="site-primary-button form-submit" type="submit" disabled={sending}>{sending ? 'Enviando…' : variant === 'quote' ? 'Enviar solicitud' : 'Enviar a Visual Corp'}<ArrowUpRight size={17}/></button>
-    <small className="site-form-note">Usaremos estos datos para responder tu solicitud. No incluyas información sensible.</small>
+    <small className="site-form-note">{variant === 'quote' ? 'La dirección y el pin se comparten con Visual Corp para revisar la instalación. No incluyas claves ni datos sensibles.' : 'Usaremos estos datos para responder tu solicitud. No incluyas información sensible.'}</small>
   </form>;
 }
 
