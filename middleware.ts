@@ -1,6 +1,10 @@
 import { next } from '@vercel/functions';
 import { checkManualAccess } from './src/auth/manualAccessGuard.js';
 
+declare const process: {
+  env: Record<string, string | undefined>;
+};
+
 export const config = {
   matcher: ['/manual-aprendizaje/fuente/:path*'],
 };
