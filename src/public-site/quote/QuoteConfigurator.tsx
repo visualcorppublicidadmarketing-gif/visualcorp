@@ -1,20 +1,56 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, CircleHelp, Printer, Ruler, Sparkles, Wrench } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, CircleHelp, MapPin, Plus, Printer, Ruler, Sparkles, Trash2, Wrench } from 'lucide-react';
+import { getGoogleMapsOpenUrl, isGoogleMapsUrl } from '../../lib/maps';
 import './quote-calculator.css';
 import { calculateScenario, loadQuoteProducts, type PricingMode, type QuoteProduct } from './pricing';
 import { multiProductQuoteService } from '../content';
 
 export type QuoteService = { id: string; name: string };
-export type QuoteDraft = {
+export type QuoteCalculationMode = 'unknown' | 'area' | 'units';
+export type QuoteDesignSupport = 'ready' | 'adapt' | 'create' | 'unknown';
+export type QuoteLineItemDraft = {
+  id: string;
   service: string;
   project: string;
-  calculationMode: 'unknown' | 'area' | 'units';
+  calculationMode: QuoteCalculationMode;
   measurementUnit: 'cm' | 'm';
   width: number;
   height: number;
   area: number;
   quantity: number;
-  designSupport: 'ready' | 'adapt' | 'create' | 'unknown';
+  designSupport: QuoteDesignSupport;
+  finishing: string;
+  productId?: string;
+  productName?: string;
+  grommets: boolean;
+  grommetSize: 'small' | 'large' | '';
+  grommetCount: number | null;
+  installation: boolean;
+  pricingMode?: PricingMode;
+  pricePreview?: { normal: number | null; installation: number | null; corporate: number | null };
+  priceStatus?: 'pending-validation';
+};
+
+export type QuoteInstallationLocation = {
+  address: string;
+  mapsUrl: string;
+  locationUnknown: boolean;
+  floor: string;
+  workHeight: string;
+  accessNotes: string;
+};
+
+export type QuoteDraft = {
+  /** Legacy summary fields are retained for current CRM and request reporting. */
+  service: string;
+  project: string;
+  calculationMode: QuoteCalculationMode;
+  measurementUnit: 'cm' | 'm';
+  width: number;
+  height: number;
+  area: number;
+  quantity: number;
+  designSupport: QuoteDesignSupport;
   installation: boolean;
   finishing: string;
   productId?: string;
@@ -24,6 +60,8 @@ export type QuoteDraft = {
   pricingMode?: PricingMode;
   pricePreview?: { normal: number | null; installation: number | null; corporate: number | null };
   priceStatus?: 'pending-validation';
+  items: QuoteLineItemDraft[];
+  installationLocation?: QuoteInstallationLocation;
 };
 
 type Props = {
@@ -34,61 +72,231 @@ type Props = {
   onChange: (quote: QuoteDraft) => void;
 };
 
-const quantityFromRange = (range: string) => {
-  const first = range.match(/[\d]+(?:[.,][\d]+)?/)?.[0];
-  return first ? Math.max(1, Math.floor(Number(first.replace(',', '.')) || 1)) : 1;
-};
-
-const quantityRangesSummary = (products: string[], ranges: string[]) => products.map((product, index) => {
-  const range = ranges[index]?.trim();
-  if (!range) return '';
-  const cleanRange = range.replace(/(\d+)\.0\b/g, '$1');
-  return `${product}: ${cleanRange} ${cleanRange === '1' ? 'unidad' : 'unidades'}`;
-}).filter(Boolean).join(' · ');
-
-const initialDraft = (service = '', products: string[] = [], quantityRanges: string[] = []): QuoteDraft => ({
-  service,
-  project: products.length === 1 ? products[0] : products.length > 1 ? 'Cotización de varios productos' : '',
-  calculationMode: 'unknown',
-  measurementUnit: 'cm',
-  width: 100,
-  height: 100,
-  area: 0,
-  quantity: quantityRanges.find(Boolean) ? quantityFromRange(quantityRanges.find(Boolean) || '') : 1,
-  designSupport: 'unknown',
-  installation: false,
-  finishing: '',
-  requestedProducts: products,
-  requestedQuantityRanges: quantityRanges,
-});
-
-const designLabels: Record<QuoteDraft['designSupport'], string> = {
+const MAX_QUOTE_ITEMS = 12;
+const designLabels: Record<QuoteDesignSupport, string> = {
   ready: 'Ya tengo el arte listo',
   adapt: 'Necesito adaptar un diseño',
   create: 'Necesito crear el diseño',
   unknown: 'Aún no lo sé',
 };
 
-function areaBasis(draft: QuoteDraft) {
-  const area = draft.measurementUnit === 'cm'
-    ? draft.width * draft.height / 10000
-    : draft.width * draft.height;
-  return area * draft.quantity;
+const quantityFromRange = (range: string) => {
+  const first = range.match(/[\d]+(?:[.,][\d]+)?/)?.[0];
+  return first ? Math.max(1, Math.floor(Number(first.replace(',', '.')) || 1)) : 1;
+};
+
+const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleLowerCase('es');
+
+function makeId() {
+  return globalThis.crypto?.randomUUID?.() || `quote-item-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function makeItem(service = '', project = '', quantity = 1): QuoteLineItemDraft {
+  return {
+    id: makeId(), service, project, calculationMode: 'unknown', measurementUnit: 'cm',
+    width: 100, height: 100, area: 0, quantity, designSupport: 'unknown', finishing: '',
+    grommets: false, grommetSize: '', grommetCount: null, installation: false,
+  };
+}
+
+function areaOf(item: QuoteLineItemDraft) {
+  return item.measurementUnit === 'cm' ? item.width * item.height / 10000 : item.width * item.height;
+}
+
+function basisOf(item: QuoteLineItemDraft) {
+  return item.calculationMode === 'area' ? areaOf(item) * item.quantity : item.quantity;
 }
 
 function formatPrice(value: number) {
   return new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(value);
 }
 
+function hasLona(item: QuoteLineItemDraft) {
+  return /\blonas?\b/i.test(`${item.project} ${item.productName || ''}`);
+}
+
+function itemSummary(item: QuoteLineItemDraft) {
+  const measurements = item.calculationMode === 'area'
+    ? `${item.width} × ${item.height} ${item.measurementUnit} · ${areaOf(item).toFixed(2)} m² por pieza · ${item.quantity} ${item.quantity === 1 ? 'pieza' : 'piezas'}`
+    : item.calculationMode === 'units'
+      ? `${item.quantity} ${item.quantity === 1 ? 'pieza' : 'piezas'}`
+      : 'Medidas y cantidad por definir';
+  const details = [measurements, `Diseño: ${designLabels[item.designSupport]}`];
+  if (item.finishing.trim()) details.push(`Acabados: ${item.finishing.trim()}`);
+  if (item.grommets) details.push(`Ojales ${item.grommetSize === 'small' ? 'pequeños' : item.grommetSize === 'large' ? 'grandes' : 'por definir'}${item.grommetCount ? ` · ${item.grommetCount}` : ''}`);
+  if (item.installation) details.push('Instalación solicitada');
+  return details.join(' · ');
+}
+
+function quoteLocationUrl(location: QuoteInstallationLocation) {
+  return getGoogleMapsOpenUrl(location.mapsUrl.trim(), location.address.trim());
+}
+
+type ItemEditorProps = {
+  item: QuoteLineItemDraft;
+  index: number;
+  services: QuoteService[];
+  products: QuoteProduct[];
+  canRemove: boolean;
+  onUpdate: (id: string, patch: Partial<QuoteLineItemDraft>) => void;
+  onRemove: (id: string) => void;
+};
+
+function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate, onRemove }: ItemEditorProps) {
+  const [productSearch, setProductSearch] = useState('');
+  const availableProducts = useMemo(() => {
+    const compatible = item.calculationMode === 'area'
+      ? products.filter((product) => product.mode === 'area')
+      : item.calculationMode === 'units'
+        ? products.filter((product) => product.mode === 'quantity' || product.mode === 'fixed')
+        : products;
+    const query = normalize(productSearch);
+    const filtered = query
+      ? compatible.filter((product) => normalize(`${product.name} ${product.family}`).includes(query))
+      : compatible;
+    const selected = compatible.find((product) => product.source_key === item.productId);
+    return selected && !filtered.some((product) => product.source_key === selected.source_key) ? [selected, ...filtered] : filtered;
+  }, [item.calculationMode, item.productId, productSearch, products]);
+  const selectedProduct = products.find((product) => product.source_key === item.productId);
+  const update = (patch: Partial<QuoteLineItemDraft>) => onUpdate(item.id, patch);
+  const chooseMode = (calculationMode: QuoteCalculationMode) => {
+    const product = products.find((row) => row.source_key === item.productId);
+    const compatible = !product || calculationMode === 'unknown'
+      || (calculationMode === 'area' && product.mode === 'area')
+      || (calculationMode === 'units' && (product.mode === 'quantity' || product.mode === 'fixed'));
+    update({ calculationMode, ...(!compatible ? { productId: undefined, productName: undefined } : {}) });
+  };
+  const chooseProduct = (sourceKey: string) => {
+    const product = products.find((row) => row.source_key === sourceKey);
+    if (!product) {
+      update({ productId: undefined, productName: undefined });
+      return;
+    }
+    update({
+      productId: product.source_key,
+      productName: product.name,
+      calculationMode: product.mode === 'area' ? 'area' : 'units',
+      project: item.project.trim() ? item.project : product.name,
+    });
+    setProductSearch('');
+  };
+  const pricePreview = selectedProduct && item.calculationMode !== 'unknown' ? {
+    normal: calculateScenario(selectedProduct, 'normal', basisOf(item)),
+    installation: calculateScenario(selectedProduct, 'installation', basisOf(item)),
+    corporate: calculateScenario(selectedProduct, 'corporate', basisOf(item)),
+  } : null;
+
+  return <article className="quote-item-card" aria-labelledby={`quote-item-title-${item.id}`}>
+    <header className="quote-item-heading">
+      <div><span>ARTÍCULO {String(index + 1).padStart(2, '0')}</span><h4 id={`quote-item-title-${item.id}`}>{item.project.trim() || `Artículo ${index + 1}`}</h4></div>
+      {canRemove && <button type="button" className="quote-remove-item" onClick={() => onRemove(item.id)} aria-label={`Quitar artículo ${index + 1}`}><Trash2 size={15}/><span>Quitar</span></button>}
+    </header>
+    <div className="quote-step-fields quote-item-fields">
+      <label>Familia de servicio
+          <select id={`quote-item-service-${item.id}`} value={item.service} onChange={(event) => update({ service: event.target.value })}>
+          <option value="">Selecciona una familia</option>
+          {services.map((service) => <option key={service.id} value={service.name}>{service.name}</option>)}
+        </select>
+      </label>
+      <label>¿Qué artículo o trabajo necesitas? <span>(requerido)</span>
+        <input id={`quote-item-project-${item.id}`} required value={item.project} onChange={(event) => update({ project: event.target.value })} placeholder="Ej. lona para fachada" maxLength={120}/>
+      </label>
+    </div>
+
+    <fieldset className="quote-builder-mode quote-item-mode" aria-describedby={`quote-item-mode-help-${item.id}`}>
+      <legend>¿Qué datos tienes de este artículo?</legend>
+      <p id={`quote-item-mode-help-${item.id}`}>La cantidad, medida, acabado y diseño se configuran por separado para cada artículo.</p>
+      <div className="quote-mode-options">
+        <label className={`quote-mode-option${item.calculationMode === 'area' ? ' active' : ''}`}>
+          <input type="radio" name={`quote-mode-${item.id}`} value="area" checked={item.calculationMode === 'area'} onChange={() => chooseMode('area')}/><Ruler size={17} aria-hidden="true"/><span><b>Medidas</b><small>Tengo ancho y alto</small></span>
+        </label>
+        <label className={`quote-mode-option${item.calculationMode === 'units' ? ' active' : ''}`}>
+          <input type="radio" name={`quote-mode-${item.id}`} value="units" checked={item.calculationMode === 'units'} onChange={() => chooseMode('units')}/><span className="quote-unit-icon" aria-hidden="true">×</span><span><b>Cantidad</b><small>Sé cuántas piezas necesito</small></span>
+        </label>
+        <label className={`quote-mode-option${item.calculationMode === 'unknown' ? ' active' : ''}`}>
+          <input type="radio" name={`quote-mode-${item.id}`} value="unknown" checked={item.calculationMode === 'unknown'} onChange={() => chooseMode('unknown')}/><CircleHelp size={17} aria-hidden="true"/><span><b>Aún no sé</b><small>Necesito orientación</small></span>
+        </label>
+      </div>
+    </fieldset>
+
+    {item.calculationMode === 'area' && <div className="quote-dimension-block quote-item-dimensions">
+      <div className="quote-unit-toggle" role="group" aria-label={`Unidad de medida del artículo ${index + 1}`}>
+        <button type="button" aria-pressed={item.measurementUnit === 'cm'} className={item.measurementUnit === 'cm' ? 'active' : ''} onClick={() => update({ measurementUnit: 'cm' })}>cm</button>
+        <button type="button" aria-pressed={item.measurementUnit === 'm'} className={item.measurementUnit === 'm' ? 'active' : ''} onClick={() => update({ measurementUnit: 'm' })}>m</button>
+      </div>
+      <div className="quote-field-pair">
+        <label>Ancho ({item.measurementUnit})<input type="number" inputMode="decimal" min={0.01} step="any" value={item.width} onChange={(event) => update({ width: Math.max(0.01, Number(event.target.value) || 0.01) })}/></label>
+        <label>Alto ({item.measurementUnit})<input type="number" inputMode="decimal" min={0.01} step="any" value={item.height} onChange={(event) => update({ height: Math.max(0.01, Number(event.target.value) || 0.01) })}/></label>
+      </div>
+      <p className="quote-area-readout">Área referencial por pieza <b>{areaOf(item).toFixed(2)} m²</b></p>
+    </div>}
+
+    {item.calculationMode !== 'unknown' && <div className="quote-step-fields quote-production-fields quote-item-production">
+      <label>Buscar en el catálogo de tarifas
+        <input type="search" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder="Nombre o familia del producto" aria-label={`Buscar producto para artículo ${index + 1}`}/>
+      </label>
+      <label>Producto o material <span>(opcional)</span>
+        <select value={item.productId || ''} onChange={(event) => chooseProduct(event.target.value)} disabled={!availableProducts.length}>
+          <option value="">Solicitar revisión del equipo</option>
+          {availableProducts.map((product) => <option key={product.source_key} value={product.source_key}>{product.name}</option>)}
+        </select>
+      </label>
+      <label>Cantidad de piezas
+        <input type="number" inputMode="numeric" min={1} step={1} value={item.quantity} onChange={(event) => update({ quantity: Math.max(1, Math.floor(Number(event.target.value) || 1)) })}/>
+      </label>
+    </div>}
+
+    <div className="quote-step-fields quote-item-finishing">
+      <label>Estado del diseño
+        <select value={item.designSupport} onChange={(event) => update({ designSupport: event.target.value as QuoteDesignSupport })}>
+          {Object.entries(designLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}
+        </select>
+      </label>
+      <label>Acabados o detalles <span>(opcional)</span>
+        <input value={item.finishing} onChange={(event) => update({ finishing: event.target.value })} placeholder="Laminado, color, material…" maxLength={180}/>
+      </label>
+    </div>
+
+    {hasLona(item) && <div className="quote-grommet-card">
+      <label className="quote-check-option"><input type="checkbox" checked={item.grommets} onChange={(event) => update({ grommets: event.target.checked, grommetSize: event.target.checked ? item.grommetSize : '', grommetCount: event.target.checked ? item.grommetCount : null })}/><span><b>Agregar ojales a esta lona</b><small>La cantidad y el tamaño se revisan con el equipo; no se suman al estimado automático.</small></span></label>
+      {item.grommets && <div className="quote-step-fields quote-grommet-fields">
+        <label>Tamaño del ojal
+          <select id={`quote-item-grommet-${item.id}`} required value={item.grommetSize} onChange={(event) => update({ grommetSize: event.target.value as QuoteLineItemDraft['grommetSize'] })}>
+            <option value="">Selecciona un tamaño</option><option value="small">Pequeño</option><option value="large">Grande</option>
+          </select>
+        </label>
+        <label>Cantidad de ojales <span>(si la conoces)</span>
+          <input type="number" inputMode="numeric" min={1} step={1} value={item.grommetCount ?? ''} onChange={(event) => update({ grommetCount: event.target.value ? Math.max(1, Math.floor(Number(event.target.value) || 1)) : null })} placeholder="Por definir"/>
+        </label>
+      </div>}
+    </div>}
+
+    <label className="quote-installation-option"><input type="checkbox" checked={item.installation} onChange={(event) => update({ installation: event.target.checked })}/><span><Wrench size={17}/><span><b>Quiero consultar instalación para este artículo</b><small>El valor se confirma según el lugar, altura y condiciones del trabajo.</small></span></span></label>
+
+    {selectedProduct && item.calculationMode !== 'unknown' && <div className="quote-item-price" aria-live="polite">
+      <span className="site-eyebrow"><i/> REFERENCIA PARA ESTE ARTÍCULO</span>
+      <div><span>Normal</span><b>{pricePreview?.normal == null ? 'Tarifa pendiente' : `${formatPrice(pricePreview.normal)} · estimado`}</b></div>
+      {item.installation && <div><span>Con instalación</span><b>{pricePreview?.installation == null ? 'Tarifa pendiente' : `${formatPrice(pricePreview.installation)} · estimado`}</b></div>}
+      <small>{selectedProduct.confirmed ? 'Tarifa del catálogo; Visual Corp confirma disponibilidad y alcance.' : 'Tarifa referencial pendiente de validación por Visual Corp.'}</small>
+    </div>}
+  </article>;
+}
+
 export function QuoteConfigurator({ services, initialService = '', initialProducts = [], initialQuantityRanges = [], onChange }: Props) {
   const initialProductsKey = initialProducts.join('\u001f');
   const initialQuantityRangesKey = initialQuantityRanges.join('\u001f');
+  const requestedProducts = initialProductsKey ? initialProductsKey.split('\u001f') : [];
   const requestedRanges = initialQuantityRangesKey ? initialQuantityRangesKey.split('\u001f') : [];
-  const [draft, setDraft] = useState<QuoteDraft>(() => initialDraft(initialService, initialProducts, requestedRanges));
-  const [productId, setProductId] = useState('');
+  const [items, setItems] = useState<QuoteLineItemDraft[]>(() => {
+    if (requestedProducts.length) return requestedProducts.map((product, index) => makeItem(initialService, product, requestedRanges[index] ? quantityFromRange(requestedRanges[index]) : 1));
+    return [makeItem(initialService)];
+  });
+  const [location, setLocation] = useState<QuoteInstallationLocation>({ address: '', mapsUrl: '', locationUnknown: false, floor: '', workHeight: '', accessNotes: '' });
   const [products, setProducts] = useState<QuoteProduct[]>([]);
   const [productLoadError, setProductLoadError] = useState(false);
   const [productLoadAttempt, setProductLoadAttempt] = useState(0);
+  const [quoteDataLoadError, setQuoteDataLoadError] = useState(false);
+
   useEffect(() => {
     let active = true;
     setProductLoadError(false);
@@ -97,62 +305,87 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
     });
     return () => { active = false; };
   }, [productLoadAttempt]);
-  const pricingMode: PricingMode = draft.calculationMode === 'area' ? 'area' : 'quantity';
-  const modeProducts = products.filter((product) => product.mode === pricingMode || (pricingMode === 'quantity' && product.mode === 'fixed'));
-  const selectedProduct = modeProducts.find((product) => product.source_key === productId) || modeProducts[0];
-  const activeProduct = draft.calculationMode === 'unknown' ? undefined : selectedProduct;
-  const selectedService = services.find((service) => service.name === draft.service || service.id === draft.service);
-  const serviceSummary = selectedService?.name || (draft.service === multiProductQuoteService ? multiProductQuoteService : 'Por seleccionar');
-  const quantitySummary = quantityRangesSummary(draft.requestedProducts || [], draft.requestedQuantityRanges || []);
-  const productBasis = draft.calculationMode === 'area' ? areaBasis(draft) : draft.quantity;
-  const prices = selectedProduct ? {
-    normal: calculateScenario(selectedProduct, 'normal', productBasis),
-    installation: calculateScenario(selectedProduct, 'installation', productBasis),
-    corporate: calculateScenario(selectedProduct, 'corporate', productBasis),
-  } : { normal: null, installation: null, corporate: null };
-  const normalizedDraft = useMemo(() => ({
-    ...draft,
-    service: selectedService?.name || draft.service,
-    productId: activeProduct?.source_key,
-    productName: activeProduct?.name,
-    requestedProducts: initialProductsKey ? initialProductsKey.split('\u001f') : draft.requestedProducts,
-    requestedQuantityRanges: initialQuantityRangesKey ? requestedRanges : draft.requestedQuantityRanges,
-    pricingMode: activeProduct?.mode === 'area' ? 'area' as const : activeProduct ? 'quantity' as const : undefined,
-    pricePreview: activeProduct ? prices : undefined,
-    priceStatus: activeProduct ? 'pending-validation' as const : undefined,
-    width: draft.calculationMode === 'area' ? draft.width : 0,
-    height: draft.calculationMode === 'area' ? draft.height : 0,
-    area: draft.calculationMode === 'area' ? (draft.measurementUnit === 'cm' ? draft.width * draft.height / 10000 : draft.width * draft.height) : 0,
-    quantity: draft.calculationMode === 'unknown' ? 0 : draft.quantity,
-  }), [draft, selectedService, activeProduct, initialProductsKey, initialQuantityRangesKey]);
-  const area = draft.calculationMode === 'area'
-    ? (draft.measurementUnit === 'cm' ? draft.width * draft.height / 10000 : draft.width * draft.height)
-    : 0;
 
-  useEffect(() => onChange(normalizedDraft), [normalizedDraft, onChange]);
   useEffect(() => {
-    if (!initialService) return;
-    const match = services.find((service) => service.name === initialService || service.id === initialService);
-    if (match) setDraft((current) => ({ ...current, service: match.name }));
-  }, [initialService, services]);
-  useEffect(() => {
-    const requested = initialProductsKey ? initialProductsKey.split('\u001f') : [];
-    if (!requested.length || !products.length) return;
-    const ranges = initialQuantityRangesKey ? requestedRanges : [];
-    const firstRange = ranges.find(Boolean) || '';
-    setDraft((current) => ({ ...current, project: current.project || (requested.length === 1 ? requested[0] : 'Cotización de varios productos'), requestedProducts: requested, requestedQuantityRanges: ranges, quantity: firstRange ? quantityFromRange(firstRange) : current.quantity }));
-    if (requested.length !== 1) return;
-    const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleLowerCase('es');
-    const target = normalize(requested[0]);
-    const match = products.find((product) => normalize(product.name) === target || normalize(product.source_key) === target);
-    if (!match || match.mode === 'fixed') return;
-    setProductId(match.source_key);
-    setDraft((current) => ({ ...current, calculationMode: match.mode === 'area' ? 'area' : 'units', requestedProducts: requested }));
-  }, [products, initialProductsKey, initialQuantityRangesKey]);
+    if (!requestedProducts.length || !products.length) return;
+    setItems((current) => current.map((item, index) => {
+      const target = normalize(requestedProducts[index] || '');
+      const match = products.find((product) => normalize(product.name) === target || normalize(product.source_key) === target);
+      if (!match) return item;
+      return {
+        ...item,
+        project: item.project || match.name,
+        productId: match.source_key,
+        productName: match.name,
+        calculationMode: match.mode === 'area' ? 'area' : 'units',
+        quantity: requestedRanges[index] ? quantityFromRange(requestedRanges[index]) : item.quantity,
+      };
+    }));
+  }, [initialProductsKey, initialQuantityRangesKey, products]);
 
-  const update = <K extends keyof QuoteDraft>(key: K, value: QuoteDraft[K]) => {
-    setDraft((current) => ({ ...current, [key]: value }));
+  const updateItem = (id: string, patch: Partial<QuoteLineItemDraft>) => setItems((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item));
+  const removeItem = (id: string) => setItems((current) => current.length > 1 ? current.filter((item) => item.id !== id) : current);
+  const addItem = () => {
+    if (items.length >= MAX_QUOTE_ITEMS) return;
+    setItems((current) => [...current, makeItem(initialService)]);
   };
+
+  const normalizedDraft = useMemo<QuoteDraft>(() => {
+    const itemsWithPrice = items.map((item) => {
+      const selectedProduct = products.find((product) => product.source_key === item.productId);
+      const area = item.calculationMode === 'area' ? areaOf(item) : 0;
+      const pricePreview = selectedProduct && item.calculationMode !== 'unknown' ? {
+        normal: calculateScenario(selectedProduct, 'normal', basisOf(item)),
+        installation: calculateScenario(selectedProduct, 'installation', basisOf(item)),
+        corporate: calculateScenario(selectedProduct, 'corporate', basisOf(item)),
+      } : undefined;
+      return {
+        ...item,
+        productId: selectedProduct?.source_key,
+        productName: selectedProduct?.name || item.productName,
+        area,
+        pricingMode: selectedProduct?.mode === 'area' ? 'area' as const : selectedProduct ? 'quantity' as const : undefined,
+        pricePreview,
+        priceStatus: selectedProduct ? 'pending-validation' as const : undefined,
+      };
+    });
+    const distinctServices = [...new Set(itemsWithPrice.map((item) => item.service.trim()).filter(Boolean))];
+    const first = itemsWithPrice[0] || makeItem();
+    const installRequested = itemsWithPrice.some((item) => item.installation);
+    const projectNames = itemsWithPrice.map((item) => item.project.trim()).filter(Boolean);
+    return {
+      service: distinctServices.length > 1 ? multiProductQuoteService : distinctServices[0] || '',
+      project: projectNames.slice(0, 4).join(' · ').slice(0, 160),
+      calculationMode: first.calculationMode,
+      measurementUnit: first.measurementUnit,
+      width: first.calculationMode === 'area' ? first.width : 0,
+      height: first.calculationMode === 'area' ? first.height : 0,
+      area: first.area,
+      quantity: first.calculationMode === 'unknown' ? 0 : first.quantity,
+      designSupport: first.designSupport,
+      installation: installRequested,
+      finishing: first.finishing,
+      productId: first.productId,
+      productName: first.productName,
+      requestedProducts: requestedProducts.length ? requestedProducts : undefined,
+      requestedQuantityRanges: requestedRanges.length ? requestedRanges : undefined,
+      pricingMode: first.pricingMode,
+      pricePreview: first.pricePreview,
+      priceStatus: first.priceStatus,
+      items: itemsWithPrice,
+      installationLocation: installRequested ? location : undefined,
+    };
+  }, [items, location, products, initialProductsKey, initialQuantityRangesKey]);
+
+  useEffect(() => {
+    const payloadBytes = new TextEncoder().encode(JSON.stringify({ request: normalizedDraft })).length;
+    setQuoteDataLoadError(payloadBytes > 17000);
+    onChange(normalizedDraft);
+  }, [normalizedDraft, onChange]);
+
+  const installItems = items.filter((item) => item.installation);
+  const mapLink = quoteLocationUrl(location);
+  const mapsUrlInvalid = location.mapsUrl.trim().length > 0 && !isGoogleMapsUrl(location.mapsUrl.trim());
 
   const printSummary = () => {
     const cleanup = () => document.body.classList.remove('print-quote-summary');
@@ -166,115 +399,59 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
       <div className="quote-builder-heading">
         <span className="site-eyebrow"><i/> COTIZADOR GUIADO</span>
         <h2 id="quote-builder-title">Arma tu solicitud</h2>
-        <p>Cuéntanos qué necesitas y qué información tienes. Si aún no conoces las medidas o la cantidad, el equipo te ayudará a definirlas.</p>
+        <p>Añade cada artículo por separado. Puedes indicar medidas, cantidad, diseño, acabados y si requiere instalación.</p>
       </div>
-      {productLoadError && <div className="quote-data-warning" role="alert"><span>No se cargó la matriz de tarifas. Puedes enviar tu solicitud, pero los estimados no aparecerán hasta que la calculadora esté disponible.</span><button type="button" onClick={() => setProductLoadAttempt((attempt) => attempt + 1)}>Reintentar</button></div>}
+      {productLoadError && <div className="quote-data-warning" role="alert"><span>No se cargó la matriz de tarifas. Puedes solicitar una revisión sin seleccionar tarifas.</span><button type="button" onClick={() => setProductLoadAttempt((attempt) => attempt + 1)}>Reintentar</button></div>}
+      {quoteDataLoadError && <div className="quote-data-warning" role="alert"><span>La solicitud supera el límite de datos. Reduce texto o artículos antes de enviarla.</span></div>}
 
-      <div className="quote-builder-fields">
-        <section className="quote-step" aria-labelledby="quote-step-project">
-          <div className="quote-step-heading"><span aria-hidden="true">01</span><div><h3 id="quote-step-project">El proyecto</h3><p>Una descripción breve ayuda a orientar la conversación.</p></div></div>
-          <div className="quote-step-fields quote-project-fields">
-            <label>Familia de servicio
-              <select id="quote-service-family" required value={draft.service} onChange={(event) => update('service', event.target.value)}>
-                <option value="">Selecciona una familia</option>
-                {(draft.requestedProducts?.length || 0) > 1 && <option value={multiProductQuoteService}>{multiProductQuoteService}</option>}
-                {services.map((service) => <option key={service.id} value={service.name}>{service.name}</option>)}
-              </select>
+      <section className="quote-step quote-items-step" aria-labelledby="quote-items-title">
+        <div className="quote-step-heading"><span aria-hidden="true">01</span><div><h3 id="quote-items-title">Artículos de la cotización</h3><p>{items.length} {items.length === 1 ? 'artículo' : 'artículos'} · cada uno conserva sus propias opciones.</p></div></div>
+        <div className="quote-items-list">
+          {items.map((item, index) => <QuoteItemEditor key={item.id} item={item} index={index} services={services} products={products} canRemove={items.length > 1} onUpdate={updateItem} onRemove={removeItem}/>) }
+        </div>
+        <button type="button" className="quote-add-item" onClick={addItem} disabled={items.length >= MAX_QUOTE_ITEMS}><Plus size={16}/>{items.length >= MAX_QUOTE_ITEMS ? `Límite de ${MAX_QUOTE_ITEMS} artículos` : 'Añadir otro artículo'}</button>
+      </section>
+
+      {installItems.length > 0 && <section className="quote-step quote-location-step" aria-labelledby="quote-location-title">
+        <div className="quote-step-heading"><span aria-hidden="true">02</span><div><h3 id="quote-location-title">Lugar de instalación</h3><p>Indica el mismo lugar para los {installItems.length} {installItems.length === 1 ? 'artículo con instalación solicitada' : 'artículos con instalación solicitada'}.</p></div></div>
+        <label className="quote-check-option quote-location-unknown"><input type="checkbox" checked={location.locationUnknown} onChange={(event) => setLocation((current) => ({ ...current, locationUnknown: event.target.checked }))}/><span><b>Aún no conozco el lugar exacto</b><small>El equipo me ayudará a precisarlo antes de confirmar el valor.</small></span></label>
+        {!location.locationUnknown && <>
+          <div className="quote-step-fields quote-location-fields">
+            <label>Dirección o referencia del lugar <span>(necesaria para estimar instalación)</span>
+            <input id="quote-installation-address" required value={location.address} onChange={(event) => setLocation((current) => ({ ...current, address: event.target.value }))} placeholder="Ciudad, calle, local o referencia" maxLength={240}/>
             </label>
-            <label>¿Qué pieza o proyecto necesitas?<span> (requerido)</span>
-              <input id="quote-project-name" required value={draft.project} onChange={(event) => update('project', event.target.value)} placeholder="Ej. letrero para la fachada" maxLength={120}/>
+            <label>Enlace del pin de Google Maps <span>(opcional)</span>
+              <input id="quote-installation-maps-url" value={location.mapsUrl} onChange={(event) => setLocation((current) => ({ ...current, mapsUrl: event.target.value }))} placeholder="Pega el enlace compartido desde Google Maps" maxLength={1000} aria-invalid={mapsUrlInvalid} aria-describedby="quote-maps-help"/>
             </label>
           </div>
-        </section>
-
-        <section className="quote-step" aria-labelledby="quote-step-production">
-          <div className="quote-step-heading"><span aria-hidden="true">02</span><div><h3 id="quote-step-production">Medidas y cantidad</h3><p>Puedes cambiar esta opción en cualquier momento.</p></div></div>
-          <fieldset className="quote-builder-mode" aria-describedby="quote-mode-help">
-            <legend>¿Qué información tienes?</legend>
-            <p id="quote-mode-help">Elige una opción; si no tienes los datos, continúa y los revisaremos contigo.</p>
-            <div className="quote-mode-options">
-              <label className={`quote-mode-option${draft.calculationMode === 'area' ? ' active' : ''}`}>
-                <input type="radio" name="quote-calculation-mode" value="area" checked={draft.calculationMode === 'area'} onChange={() => update('calculationMode', 'area')}/>
-                <Ruler size={17} aria-hidden="true"/><span><b>Medidas</b><small>Tengo ancho y alto</small></span>
-              </label>
-              <label className={`quote-mode-option${draft.calculationMode === 'units' ? ' active' : ''}`}>
-                <input type="radio" name="quote-calculation-mode" value="units" checked={draft.calculationMode === 'units'} onChange={() => update('calculationMode', 'units')}/>
-                <span className="quote-unit-icon" aria-hidden="true">×</span><span><b>Cantidad</b><small>Sé cuántas piezas necesito</small></span>
-              </label>
-              <label className={`quote-mode-option${draft.calculationMode === 'unknown' ? ' active' : ''}`}>
-                <input type="radio" name="quote-calculation-mode" value="unknown" checked={draft.calculationMode === 'unknown'} onChange={() => update('calculationMode', 'unknown')}/>
-                <CircleHelp size={17} aria-hidden="true"/><span><b>Aún no sé</b><small>Necesito orientación</small></span>
-              </label>
-            </div>
-          </fieldset>
-
-          {draft.calculationMode === 'area' && <div className="quote-dimension-block">
-            <div className="quote-unit-toggle" role="group" aria-label="Unidad de medida">
-              <button type="button" aria-pressed={draft.measurementUnit === 'cm'} className={draft.measurementUnit === 'cm' ? 'active' : ''} onClick={() => update('measurementUnit', 'cm')}>cm</button>
-              <button type="button" aria-pressed={draft.measurementUnit === 'm'} className={draft.measurementUnit === 'm' ? 'active' : ''} onClick={() => update('measurementUnit', 'm')}>m</button>
-            </div>
-            <div className="quote-field-pair">
-              <label>Ancho ({draft.measurementUnit})<input type="number" inputMode="decimal" min={0.01} step="any" value={draft.width} onChange={(event) => update('width', Math.max(0.01, Number(event.target.value) || 0.01))}/></label>
-              <label>Alto ({draft.measurementUnit})<input type="number" inputMode="decimal" min={0.01} step="any" value={draft.height} onChange={(event) => update('height', Math.max(0.01, Number(event.target.value) || 0.01))}/></label>
-            </div>
-            <p className="quote-area-readout">Área referencial por pieza <b>{area.toFixed(2)} m²</b></p>
-          </div>}
-
-          {draft.calculationMode !== 'unknown' && <div className="quote-step-fields quote-production-fields">
-            <label>Producto o material
-              <select value={selectedProduct?.source_key || ''} onChange={(event) => setProductId(event.target.value)} disabled={!modeProducts.length}>
-                {modeProducts.map((product) => <option key={product.source_key} value={product.source_key}>{product.name}</option>)}
-              </select>
-              {!modeProducts.length && products.length > 0 && <small className="quote-field-note">No hay un producto cargado para esta modalidad. Puedes solicitar que el equipo revise tu caso.</small>}
-            </label>
-            <label>Cantidad de piezas
-              <input type="number" inputMode="numeric" min={1} step={1} value={draft.quantity} onChange={(event) => update('quantity', Math.max(1, Math.floor(Number(event.target.value) || 1)))}/>
-            </label>
-          </div>}
-        </section>
-
-        <section className="quote-step" aria-labelledby="quote-step-preparation">
-          <div className="quote-step-heading"><span aria-hidden="true">03</span><div><h3 id="quote-step-preparation">Diseño y acabados</h3><p>Cuéntanos qué está listo y qué apoyo deseas consultar.</p></div></div>
-          <div className="quote-step-fields quote-preparation-fields">
-            <label>Estado del diseño
-              <select value={draft.designSupport} onChange={(event) => update('designSupport', event.target.value as QuoteDraft['designSupport'])}>
-                {Object.entries(designLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}
-              </select>
-            </label>
-            <label>Acabados o detalles<span> (opcional)</span>
-              <input value={draft.finishing} onChange={(event) => update('finishing', event.target.value)} placeholder="Ojales, laminado, color, material…" maxLength={180}/>
-            </label>
-            <label className="quote-installation-option"><input type="checkbox" checked={draft.installation} onChange={(event) => update('installation', event.target.checked)}/><span><Wrench size={17}/><span><b>Quiero consultar instalación</b><small>La disponibilidad y el valor se confirman según el proyecto.</small></span></span></label>
+          <div className="quote-maps-actions">
+            {mapLink && <a href={mapLink} target="_blank" rel="noopener noreferrer"><MapPin size={16}/>{isGoogleMapsUrl(location.mapsUrl) ? 'Abrir pin en Google Maps' : 'Buscar lugar en Google Maps'}<ArrowUpRight size={14}/></a>}
+            <p id="quote-maps-help">Busca la dirección en Google Maps. Para compartir un pin exacto, copia el enlace de Google Maps y pégalo aquí.</p>
           </div>
-        </section>
-      </div>
+          {mapsUrlInvalid && <small className="quote-location-error" role="alert">Pega un enlace HTTPS válido de Google Maps.</small>}
+          {location.mapsUrl.trim() && !mapsUrlInvalid && <p className="quote-pin-confirmation"><MapPin size={14}/> Enlace de ubicación listo para incluir en la solicitud.</p>}
+        </>}
+        <div className="quote-step-fields quote-install-details">
+          <label>Piso o nivel <span>(si aplica)</span><input value={location.floor} onChange={(event) => setLocation((current) => ({ ...current, floor: event.target.value }))} placeholder="Ej. planta baja, piso 2" maxLength={80}/></label>
+          <label>Altura aproximada de trabajo <span>(opcional)</span><div className="quote-number-unit"><input type="number" inputMode="decimal" min={0} step="0.1" value={location.workHeight} onChange={(event) => setLocation((current) => ({ ...current, workHeight: event.target.value }))} placeholder="Por definir"/><span>m</span></div></label>
+          <label className="quote-location-wide">Acceso, horario o detalle del sitio <span>(opcional)</span><input value={location.accessNotes} onChange={(event) => setLocation((current) => ({ ...current, accessNotes: event.target.value }))} placeholder="Describe cualquier condición que debamos considerar" maxLength={240}/></label>
+        </div>
+      </section>}
     </div>
 
     <aside className="quote-builder-summary">
       <div className="quote-summary-icon"><Sparkles size={20}/></div>
       <span className="site-eyebrow"><i/> RESUMEN DE TU PROYECTO</span>
-      <h3>{draft.project.trim() || 'Tu proyecto'}</h3>
-      <dl>
-        <div><dt>Servicio</dt><dd>{serviceSummary}</dd></div>
-        {draft.calculationMode !== 'unknown' && <div><dt>Producto</dt><dd>{selectedProduct?.name || 'Por seleccionar'}</dd></div>}
-        {(draft.requestedProducts?.length || 0) > 0 && (draft.requestedProducts?.length || 0) > 1 || (draft.requestedProducts?.length || 0) > 0 && draft.calculationMode === 'unknown' ? <div><dt>Productos de la tienda</dt><dd>{draft.requestedProducts?.join(' · ')}</dd></div> : null}
-        {quantitySummary && <div><dt>Cantidades elegidas</dt><dd>{quantitySummary}</dd></div>}
-        <div><dt>Producción</dt><dd>{draft.calculationMode === 'area' ? `${draft.width} × ${draft.height} ${draft.measurementUnit} · ${area.toFixed(2)} m² por pieza` : draft.calculationMode === 'units' ? 'Por unidades' : 'Por definir con el equipo'}</dd></div>
-        {draft.calculationMode !== 'unknown' && <div><dt>Cantidad</dt><dd>{draft.quantity} {draft.quantity === 1 ? 'pieza' : 'piezas'}</dd></div>}
-        <div><dt>Diseño</dt><dd>{designLabels[draft.designSupport]}</dd></div>
-        {draft.installation && <div><dt>Instalación</dt><dd>Solicitada para revisión</dd></div>}
-        {draft.finishing.trim() && <div><dt>Acabados</dt><dd>{draft.finishing}</dd></div>}
-      </dl>
-      {draft.calculationMode !== 'unknown' && <div className="quote-price-comparison" aria-live="polite">
-        <div className="quote-price-comparison-heading"><span className="site-eyebrow"><i/> REFERENCIAS DE TARIFA</span><small>Base: {draft.calculationMode === 'area' ? `${productBasis.toFixed(2)} m²` : `${draft.quantity} ${draft.quantity === 1 ? 'unidad' : 'unidades'}`}</small></div>
-        {([
-          ['normal', 'Normal', prices.normal],
-          ['installation', 'Con instalación', prices.installation],
-          ['corporate', 'Corporativo', prices.corporate],
-        ] as const).map(([key, label, price]) => <div className="quote-price-option" key={key}><span>{label}</span><b>{price == null ? 'Tarifa pendiente' : <>{formatPrice(price)}<small>* estimado</small></>}</b></div>)}
-        <p>* Valores referenciales calculados con la matriz cargada; Visual Corp debe confirmar su vigencia antes de aceptar el pedido. Los escenarios sin tarifa específica quedan pendientes.</p>
-      </div>}
-      <div className="quote-summary-price"><CircleHelp size={17}/><span><b>Estimado sujeto a validación</b><small>Estos valores son referenciales y no constituyen una oferta final ni confirman disponibilidad.</small></span></div>
+      <h3>{items.length > 1 ? `Tu cotización · ${items.length} artículos` : items[0]?.project.trim() || 'Tu proyecto'}</h3>
+      <div className="quote-summary-items">
+        {items.map((item, index) => <section key={item.id} className="quote-summary-item">
+          <b>{String(index + 1).padStart(2, '0')} · {item.project.trim() || 'Artículo por definir'}</b>
+          <small>{item.service || 'Familia por seleccionar'} · {item.productName || 'Producto por definir'}</small>
+          <small>{itemSummary(item)}</small>
+        </section>)}
+      </div>
+      {installItems.length > 0 && <div className="quote-summary-location"><MapPin size={15}/><span><b>Instalación solicitada</b><small>{location.locationUnknown ? 'Lugar por definir con el equipo' : location.address || 'Añade la dirección del sitio'}</small>{location.floor && <small>Piso/nivel: {location.floor}</small>}{location.workHeight && <small>Altura: {location.workHeight} m</small>}{mapLink && !mapsUrlInvalid && <a href={mapLink} target="_blank" rel="noopener noreferrer">Ver ubicación en Google Maps <ArrowUpRight size={12}/></a>}</span></div>}
+      <div className="quote-summary-price"><CircleHelp size={17}/><span><b>Estimado sujeto a validación</b><small>Los valores por artículo son referenciales. La instalación y los acabados se confirman según el lugar y el alcance.</small></span></div>
       <a className="quote-continue-button" href="#formulario-cotizacion"><span><b>Continuar con mis datos</b><small>El equipo revisará tu solicitud y te responderá.</small></span><ArrowRight size={17} aria-hidden="true"/></a>
       <button type="button" className="quote-print-button" onClick={printSummary}><Printer size={16}/> Imprimir resumen</button>
     </aside>
@@ -282,21 +459,11 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
     <article className="quote-print-sheet" aria-hidden="true">
       <img src="/brand/visualcorp-wordmark.png" alt="Visual Corp"/>
       <p className="quote-print-kicker">SOLICITUD DE COTIZACIÓN</p>
-      <h1>{draft.project.trim() || 'Proyecto por definir'}</h1>
+      <h1>{items.length > 1 ? `Cotización de ${items.length} artículos` : items[0]?.project.trim() || 'Proyecto por definir'}</h1>
       <p>Resumen para revisar con el equipo de Visual Corp · {new Date().toLocaleDateString('es-EC')}</p>
-      <dl>
-        <div><dt>Servicio</dt><dd>{serviceSummary}</dd></div>
-        {draft.calculationMode !== 'unknown' && <div><dt>Producto</dt><dd>{selectedProduct?.name || 'Por seleccionar'}</dd></div>}
-        {(draft.requestedProducts?.length || 0) > 0 && (draft.requestedProducts?.length || 0) > 1 || (draft.requestedProducts?.length || 0) > 0 && draft.calculationMode === 'unknown' ? <div><dt>Productos de la tienda</dt><dd>{draft.requestedProducts?.join(' · ')}</dd></div> : null}
-        {quantitySummary && <div><dt>Cantidades elegidas</dt><dd>{quantitySummary}</dd></div>}
-        <div><dt>Producción</dt><dd>{draft.calculationMode === 'area' ? `${draft.width} × ${draft.height} ${draft.measurementUnit} · ${area.toFixed(2)} m² por pieza` : draft.calculationMode === 'units' ? 'Por unidades' : 'Por definir con el equipo'}</dd></div>
-        {draft.calculationMode !== 'unknown' && <div><dt>Cantidad</dt><dd>{draft.quantity} {draft.quantity === 1 ? 'pieza' : 'piezas'}</dd></div>}
-        <div><dt>Diseño</dt><dd>{designLabels[draft.designSupport]}</dd></div>
-        {draft.installation && <div><dt>Instalación</dt><dd>Solicitada para revisión</dd></div>}
-        {draft.finishing.trim() && <div><dt>Acabados o detalles</dt><dd>{draft.finishing}</dd></div>}
-        {draft.calculationMode !== 'unknown' && <div><dt>Estimados*</dt><dd>Normal: {prices.normal == null ? 'pendiente' : formatPrice(prices.normal)} · Instalación: {prices.installation == null ? 'pendiente' : formatPrice(prices.installation)} · Corporativo: {prices.corporate == null ? 'pendiente' : formatPrice(prices.corporate)}</dd></div>}
-      </dl>
-      <p className="quote-print-disclaimer">* Estimados calculados con tarifas importadas pendientes de validación. Este documento resume una solicitud, no es una proforma y no confirma precio final, disponibilidad, especificaciones ni plazos.</p>
+      <ol>{items.map((item, index) => <li key={item.id}><b>{String(index + 1).padStart(2, '0')} · {item.project || 'Artículo por definir'}</b><p>{item.service || 'Familia por seleccionar'} · {item.productName || 'Producto por definir'}</p><p>{itemSummary(item)}</p></li>)}</ol>
+      {installItems.length > 0 && <div><b>Instalación</b><p>{location.locationUnknown ? 'Lugar por definir con el equipo' : location.address || 'Lugar pendiente'}{location.floor ? ` · ${location.floor}` : ''}{location.workHeight ? ` · altura ${location.workHeight} m` : ''}</p>{location.mapsUrl && isGoogleMapsUrl(location.mapsUrl) && <p>{location.mapsUrl}</p>}{location.accessNotes && <p>{location.accessNotes}</p>}</div>}
+      <p className="quote-print-disclaimer">Los estimados son referenciales y no constituyen una oferta final ni confirman disponibilidad. Visual Corp confirma precio, materiales, ojales, instalación y tiempos según cada artículo y el lugar del trabajo.</p>
     </article>
   </section>;
 }
