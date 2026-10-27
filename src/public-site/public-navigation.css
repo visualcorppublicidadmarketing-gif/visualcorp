@@ -172,6 +172,7 @@
 }
 .public-site .site-menu-toggle:hover { border-color: rgba(255, 255, 255, .36); background: rgba(255, 255, 255, .12); }
 .public-site .site-menu-toggle:active { transform: scale(.94); }
+.public-site .site-session-avatar{display:inline-grid;flex:none;place-items:center;width:34px;height:34px;margin-left:2px}.public-site .site-session-avatar .vc-avatar{box-shadow:0 0 0 2px #ffffff30}
 
 .public-site .site-mobile-backdrop {
   background: rgba(3, 4, 11, .78);

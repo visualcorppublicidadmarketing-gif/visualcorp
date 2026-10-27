@@ -4,10 +4,11 @@ import { useSearchParams } from 'react-router-dom';
 import { useWorkspace, formatDate, formatMoney } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
+import { Avatar } from './ui/Avatar';
 import './customer-book.css';
 
 type Customer = {
-  id: string; name: string; phone: string; email: string; documentReference?: string; notes: string; createdAt: string;
+  id: string; name: string; phone: string; email: string; avatarUrl?: string; documentReference?: string; notes: string; createdAt: string;
   preferences?: Record<string, any>; tags?: string[];
 };
 
@@ -41,10 +42,17 @@ export function CustomerBook() {
   React.useEffect(() => {
     if (!supabase || !organizationId) { setLoading(false); return; }
     let active = true;
-    supabase.from('customers').select('id,full_name,phone,email,document_reference,notes,created_at,preferences,tags').eq('organization_id', organizationId).order('created_at', { ascending: false }).then(({ data: rows, error }) => {
+    Promise.all([
+      supabase.from('customers').select('id,full_name,phone,email,document_reference,notes,created_at,preferences,tags').eq('organization_id', organizationId).order('created_at', { ascending: false }),
+      supabase.rpc('list_visualcorp_customer_google_avatars'),
+    ]).then(([{ data: rows, error }, avatarResult]) => {
       if (!active) return;
       if (error) flash(`No se pudo cargar la base de clientes: ${error.message}`);
-      else setRemoteCustomers((rows || []).map((row) => ({ id: row.id, name: row.full_name, phone: row.phone, email: row.email, documentReference: row.document_reference, notes: row.notes, createdAt: row.created_at, preferences: row.preferences || {}, tags: row.tags || [] })));
+      else {
+        const avatarRows = (avatarResult.data || []) as Array<{ customer_id: string; avatar_url: string | null }>;
+        const avatars = new Map<string, string>(avatarRows.map((row): [string, string] => [row.customer_id, row.avatar_url || '']));
+        setRemoteCustomers((rows || []).map((row) => ({ id: row.id, name: row.full_name, phone: row.phone, email: row.email, avatarUrl: avatars.get(row.id) || '', documentReference: row.document_reference, notes: row.notes, createdAt: row.created_at, preferences: row.preferences || {}, tags: row.tags || [] })));
+      }
       setLoading(false);
     });
     return () => { active = false; };
@@ -172,7 +180,7 @@ export function CustomerBook() {
         <div className="customer-contact-filters" role="group" aria-label="Filtrar clientes por contacto">
           {[['all','Todos',customers.length],['phone','Con teléfono',customersWithPhone],['email','Con correo',customersWithEmail]].map(([key,label,count])=><button type="button" key={key} className={contactFilter===key?'active':''} aria-pressed={contactFilter===key} onClick={()=>setContactFilter(key as 'all'|'phone'|'email')}>{label}<span>{loading?'…':count}</span></button>)}
         </div>
-        {loading?<div className="customer-directory-empty"><span className="customer-empty-icon"><Users size={20}/></span><b>Cargando clientes</b><p>Estamos consultando el directorio compartido.</p></div>:visible.length ? <div className="customer-list">{visible.map((customer) => <button type="button" className="customer-row customer-row-button" key={customer.id} onClick={() => selectCustomer(customer.id)}><span className="customer-avatar">{customer.name?.slice(0, 1)?.toUpperCase() || 'C'}</span><span className="customer-row-details"><b>{customer.name||'Cliente sin nombre'}</b><small>{[customer.preferences?.company, customer.phone, customer.email, customer.preferences?.city].filter(Boolean).join(' · ') || 'Agrega un teléfono o correo a la ficha'}</small>{customer.tags?.length>0&&<span className="customer-tag-list">{customer.tags.slice(0,3).map((tag)=><em key={tag}>{tag}</em>)}{customer.tags.length>3&&<em>+{customer.tags.length-3}</em>}</span>}</span><span className="customer-row-open"><small>Agregado {formatDate(customer.createdAt)}</small><b>Ver ficha <span aria-hidden="true">→</span></b></span></button>)}</div> : <div className="customer-directory-empty"><span className="customer-empty-icon"><Search size={20}/></span><b>{customers.length?'No encontramos clientes':'Aún no hay clientes'}</b><p>{customers.length?'Prueba con otro término o cambia el filtro.':'Puedes agregar una ficha aquí o registrar al cliente desde el POS.'}</p>{(term||contactFilter!=='all')&&<button type="button" className="button button-outline" onClick={()=>{setTerm('');setContactFilter('all')}}>Limpiar búsqueda y filtros</button>}{!customers.length&&canEdit&&<button type="button" className="button button-dark" onClick={()=>setShowAddForm(true)}><Plus size={15}/> Agregar primer cliente</button>}</div>}
+        {loading?<div className="customer-directory-empty"><span className="customer-empty-icon"><Users size={20}/></span><b>Cargando clientes</b><p>Estamos consultando el directorio compartido.</p></div>:visible.length ? <div className="customer-list">{visible.map((customer) => <button type="button" className="customer-row customer-row-button" key={customer.id} onClick={() => selectCustomer(customer.id)}><Avatar name={customer.name||'Cliente'} src={customer.avatarUrl} size="md" badge={customer.avatarUrl?<span className="vc-google-avatar-mark">G</span>:undefined}/><span className="customer-row-details"><b>{customer.name||'Cliente sin nombre'}</b><small>{[customer.preferences?.company, customer.phone, customer.email, customer.preferences?.city].filter(Boolean).join(' · ') || 'Agrega un teléfono o correo a la ficha'}</small>{customer.tags?.length>0&&<span className="customer-tag-list">{customer.tags.slice(0,3).map((tag)=><em key={tag}>{tag}</em>)}{customer.tags.length>3&&<em>+{customer.tags.length-3}</em>}</span>}</span><span className="customer-row-open"><small>Agregado {formatDate(customer.createdAt)}</small><b>Ver ficha <span aria-hidden="true">→</span></b></span></button>)}</div> : <div className="customer-directory-empty"><span className="customer-empty-icon"><Search size={20}/></span><b>{customers.length?'No encontramos clientes':'Aún no hay clientes'}</b><p>{customers.length?'Prueba con otro término o cambia el filtro.':'Puedes agregar una ficha aquí o registrar al cliente desde el POS.'}</p>{(term||contactFilter!=='all')&&<button type="button" className="button button-outline" onClick={()=>{setTerm('');setContactFilter('all')}}>Limpiar búsqueda y filtros</button>}{!customers.length&&canEdit&&<button type="button" className="button button-dark" onClick={()=>setShowAddForm(true)}><Plus size={15}/> Agregar primer cliente</button>}</div>}
       </section>
     </>}
     {!selectedCustomer&&<div className="notice-box"><span><Users size={17}/></span><div><b>Historial basado en registros reales</b><p>Las compras y cotizaciones aparecen cuando están vinculadas a una ficha de cliente. Las preferencias y seguimientos se guardan en la base compartida; no se estiman gustos ni montos.</p></div></div>}

@@ -2,12 +2,14 @@ import React, { useMemo, useState } from 'react';
 import { ArrowUpRight, BadgeCheck, Building2, Clock3, Mail, MessageCircle, Phone, Search, UserRound, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatDate, formatMoney } from '../../../app/workspace';
+import { Avatar } from '../../../components/ui/Avatar';
 
 type Customer = {
   id: string;
   name: string;
   phone?: string;
   email?: string;
+  avatarUrl?: string;
   documentReference?: string;
   notes?: string;
   preferences?: Record<string, unknown>;
@@ -123,7 +125,7 @@ export function POSCustomerPicker({ customers, remoteMatches, searchingCustomers
       {query && <button type="button" className="pos-customer-clear" aria-label="Limpiar búsqueda de cliente" onClick={() => { changeQuery(''); onSelect(null); }}><X size={15}/></button>}
       {open && <div className="pos-customer-results" id="pos-customer-results" role="listbox" aria-label="Clientes encontrados" aria-live="polite">
         {matched.map((customer, index) => <button id={`pos-customer-option-${customer.id}`} type="button" role="option" tabIndex={-1} aria-selected={index === activeIndex} className={`pos-customer-result${index === activeIndex ? ' active' : ''}`} key={customer.id} onPointerDown={(event) => event.preventDefault()} onMouseDown={(event) => event.preventDefault()} onClick={() => choose(customer)}>
-          <span className="pos-customer-avatar">{customer.name?.trim()?.slice(0, 1)?.toLocaleUpperCase('es') || 'C'}</span>
+          <Avatar name={customer.name || 'Cliente'} src={customer.avatarUrl} size="sm" badge={customer.avatarUrl ? <span className="vc-google-avatar-mark">G</span> : undefined} />
           <span className="pos-customer-result-copy"><b>{customer.name}</b><small>{[customer.phone, customer.email, customer.documentReference].filter(Boolean).join(' · ') || 'Sin datos de contacto'}</small></span>
           {customer.tags?.length ? <span className="pos-customer-result-tag">{customer.tags[0]}</span> : null}
         </button>)}
@@ -138,7 +140,7 @@ export function POSCustomerPicker({ customers, remoteMatches, searchingCustomers
 
     {duplicateCustomer && !selectedCustomer && <div className="pos-customer-duplicate" role="alert"><b>Posible cliente duplicado: {duplicateCustomer.name}</b><span>Coincide el teléfono, correo o identificación. Asocia la venta al registro existente para conservar su historial.</span><button type="button" onClick={() => choose(duplicateCustomer)}>Usar este cliente</button></div>}
     {selectedCustomer ? <div className="pos-customer-selected">
-      <div className="pos-customer-selected-top"><span className="pos-customer-selected-icon"><BadgeCheck size={18}/></span><span className="pos-customer-selected-name"><b>{selectedCustomer.name}</b><small>Cliente asociado a esta venta</small></span><button type="button" className="pos-customer-change" onClick={() => { onSelect(null); setOpen(true); }}>Cambiar</button></div>
+      <div className="pos-customer-selected-top"><Avatar name={selectedCustomer.name || 'Cliente'} src={selectedCustomer.avatarUrl} size="md" badge={selectedCustomer.avatarUrl ? <span className="vc-google-avatar-mark">G</span> : undefined}/><span className="pos-customer-selected-icon"><BadgeCheck size={18}/></span><span className="pos-customer-selected-name"><b>{selectedCustomer.name}</b><small>Cliente asociado a esta venta</small></span><button type="button" className="pos-customer-change" onClick={() => { onSelect(null); setOpen(true); }}>Cambiar</button></div>
       <div className="pos-customer-contact-row">{selectedCustomer.phone && <a href={`tel:${selectedCustomer.phone}`}><Phone size={13}/>{selectedCustomer.phone}</a>}{selectedCustomer.email && <a href={`mailto:${selectedCustomer.email}`}><Mail size={13}/>{selectedCustomer.email}</a>}{selectedCustomer.documentReference && <span><Building2 size={13}/>CI/RUC {selectedCustomer.documentReference}</span>}</div>
       {selectedCustomer.phone && <div className="pos-customer-actions"><a className="pos-customer-whatsapp" href={whatsappHref(selectedCustomer)} target="_blank" rel="noreferrer"><MessageCircle size={14}/> Abrir WhatsApp</a></div>}
       {selectedCustomer.tags?.length ? <div className="pos-customer-tags">{selectedCustomer.tags.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}</div> : null}

@@ -4,6 +4,9 @@ import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import { AdvisorIncomeEntry } from './AdvisorIncomeEntry';
 import { OperationsFinanceControls } from './OperationsFinanceControls';
+import { FinanceSalesInsights } from './FinanceSalesInsights';
+import { FinanceCashRegisters } from './FinanceCashRegisters';
+import { netSaleAmount } from './financeSales';
 import './operations-lifecycle.css';
 
 const BUSINESS_TIME_ZONE = 'America/Guayaquil';
@@ -13,6 +16,8 @@ type InventoryCostSummary = { inventory_lines: number; missing_inventory_cost_li
 type MaterialCostSummary = { consumption_movements: number; costed_movements: number; missing_cost_movements: number; material_cost_total: number };
 type InventoryCatalogCostSummary = { active_variants: number; configured_variants: number; missing_variants: any[] };
 const money = (value) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(Number(value) || 0);
+const PAYMENT_METHOD_LABELS: Record<string, string> = { cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', cheque: 'Cheque', check: 'Cheque', other: 'Otro medio' };
+const paymentMethodLabel = (value: string) => PAYMENT_METHOD_LABELS[value] || value || 'Sin medio';
 
 function monthInBusinessTimeZone(value) {
   if (!value) return '';
@@ -57,6 +62,11 @@ const businessDate = (value) => {
   }).formatToParts(new Date(value));
   return `${parts.find((part) => part.type === 'year')?.value}-${parts.find((part) => part.type === 'month')?.value}-${parts.find((part) => part.type === 'day')?.value}`;
 };
+const businessWeekStart = (date) => {
+  const parsed = new Date(`${date}T12:00:00Z`);
+  parsed.setUTCDate(parsed.getUTCDate() - ((parsed.getUTCDay() + 6) % 7));
+  return parsed.toISOString().slice(0, 10);
+};
 const daysSinceBusinessDate = (value, todayValue = businessDate(new Date())) => {
   const [year, month, day] = value.split('-').map(Number);
   const [todayYear, todayMonth, todayDay] = todayValue.split('-').map(Number);
@@ -79,6 +89,7 @@ async function readAllRows(createQuery) {
 export function OperationsFinance() {
   const { organizationId, hasPermission, user } = useAuth();
   const canManageFinance = hasPermission('finance', 'manage_finance');
+  const canManageTeam = hasPermission('team', 'manage_members');
   const canSeePayrollDeductions = hasPermission('personnel', 'view_compensation');
   const canSeeInventoryCosts = hasPermission('inventory_costs', 'view') && hasPermission('inventory_costs', 'view_costs');
   const canSeeRefundSettlements = hasPermission('sales', 'view');
@@ -90,6 +101,7 @@ export function OperationsFinance() {
   const realtimePending = useRef(new Set<string>());
   const realtimeFlushTimer = useRef<number | null>(null);
   const [sales, setSales] = useState([]);
+  const [saleLinesError, setSaleLinesError] = useState('');
   const [payments, setPayments] = useState([]);
   const [saleReturns, setSaleReturns] = useState([]);
   const [saleReturnsError, setSaleReturnsError] = useState('');
@@ -108,6 +120,7 @@ export function OperationsFinance() {
   const [customers, setCustomers] = useState([]);
   const [customersError, setCustomersError] = useState('');
   const [branches, setBranches] = useState([]);
+  const [businessToday, setBusinessToday] = useState(() => businessDate(new Date()));
   const [month, setMonth] = useState(currentMonth);
   const [advisor, setAdvisor] = useState('all');
   const [branch, setBranch] = useState('all');
@@ -128,6 +141,14 @@ export function OperationsFinance() {
   const [materialCostError, setMaterialCostError] = useState('');
 
   useEffect(() => {
+    const timer = window.setInterval(() => {
+      const nextDate = businessDate(new Date());
+      setBusinessToday((current) => current === nextDate ? current : nextDate);
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     if (!supabase || !organizationId) {
       setRealtimeStatus('offline');
       return undefined;
@@ -142,6 +163,7 @@ export function OperationsFinance() {
       { table: 'personnel_records', areas: ['expenses'], enabled: canSeePayrollDeductions },
       { table: 'personnel_account_links', areas: ['expenses'], enabled: canSeePayrollDeductions },
       { table: 'sales', areas: ['sales', 'inventoryCosts'] },
+      { table: 'sale_lines', areas: ['sales'] },
       { table: 'sale_payments', areas: ['sales', 'cash'] },
       { table: 'sale_returns', areas: ['sales'] },
       { table: 'sale_refund_settlements', areas: ['sales', 'cash'], enabled: canSeeRefundSettlements },
@@ -157,6 +179,8 @@ export function OperationsFinance() {
       { table: 'purchase_receipt_lines', areas: ['expenses'], enabled: canManageFinance },
       { table: 'cash_sessions', areas: ['cash'], enabled: canSeeCashReconciliation },
       { table: 'cash_session_movements', areas: ['cash'], enabled: canSeeCashReconciliation },
+      { table: 'cash_registers', areas: ['cash'] },
+      { table: 'cash_register_weekly_goals', areas: ['cash'] },
       { table: 'inventory_variants', areas: ['catalogCosts'], enabled: canSeeInventoryCosts },
       { table: 'inventory_items', areas: ['catalogCosts'], enabled: canSeeInventoryCosts },
       { table: 'inventory_item_costs', areas: ['catalogCosts'], enabled: canSeeInventoryCosts },
@@ -201,6 +225,7 @@ export function OperationsFinance() {
       setLoading(true);
       setHasLoaded(false);
       setError('');
+      setSaleLinesError('');
       if (!supabase) {
         setError('La conexión con la base de datos no está disponible.');
         setLoading(false);
@@ -218,7 +243,7 @@ export function OperationsFinance() {
         const [salesRows, paymentRows, teamResult, branchResult, customersResult] = await Promise.all([
           readAllRows(() => supabase
             .from('sales')
-            .select(`id,sale_code,status,total,created_at,branch_id,advisor_id,created_by,customer_id${canSeeQuotes ? ',central_quote_id' : ''},customers(${canSeeCrm ? 'full_name,preferences' : 'full_name'})`)
+            .select(`id,sale_code,status,subtotal,discount_total,total,created_at,branch_id,advisor_id,created_by,customer_id${canSeeQuotes ? ',central_quote_id' : ''},customers(${canSeeCrm ? 'full_name,preferences' : 'full_name'})`)
             .eq('organization_id', organizationId)
             .order('created_at', { ascending: false })),
           readAllRows(() => supabase
@@ -245,8 +270,41 @@ export function OperationsFinance() {
         ]);
 
         if (branchResult.error) throw branchResult.error;
+        let enrichedSales = salesRows;
+        let productLineError = '';
+        try {
+          const today = businessDate(new Date());
+          const weekStart = businessWeekStart(today);
+          const weekEnd = new Date(`${weekStart}T12:00:00Z`);
+          weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+          const weekEndDate = weekEnd.toISOString().slice(0, 10);
+          const insightSales = salesRows.filter((sale) => sale.status === 'confirmed' && (
+            (!month || monthInBusinessTimeZone(sale.created_at) === month)
+            || (businessDate(sale.created_at) >= weekStart && businessDate(sale.created_at) <= weekEndDate)
+          ));
+          const insightSaleIds = insightSales.map((sale) => sale.id);
+          const lineBatches = [];
+          for (let index = 0; index < insightSaleIds.length; index += 250) lineBatches.push(insightSaleIds.slice(index, index + 250));
+          const lineRowsByBatch = await Promise.all(lineBatches.map((saleIds) => readAllRows(() => supabase
+            .from('sale_lines')
+            .select('id,sale_id,variant_id,catalog_product_id,sku_snapshot,description_snapshot,quantity,unit_price,line_total')
+            .eq('organization_id', organizationId)
+            .in('sale_id', saleIds)
+            .order('sale_id')
+            .order('id'))));
+          const linesBySale = new Map<string, any[]>();
+          lineRowsByBatch.flat().forEach((line) => {
+            const lines = linesBySale.get(line.sale_id) || [];
+            lines.push(line);
+            linesBySale.set(line.sale_id, lines);
+          });
+          enrichedSales = salesRows.map((sale) => ({ ...sale, sale_lines: linesBySale.get(sale.id) || [] }));
+        } catch (lineLoadError) {
+          productLineError = lineLoadError?.message || 'No se pudieron cargar las líneas de producto.';
+        }
         if (active) {
-          setSales(salesRows);
+          setSales(enrichedSales);
+          setSaleLinesError(productLineError);
           setPayments(paymentRows);
           setAdvisors(teamResult.error ? [] : teamResult.data || []);
           setBranches(branchResult.data || []);
@@ -256,7 +314,7 @@ export function OperationsFinance() {
         try {
           const returnRows = await readAllRows(() => supabase
             .from('sale_returns')
-            .select('id,sale_id,kind,refund_amount,refund_status,sale_return_lines(quantity,sale_lines(unit_price))')
+            .select('id,sale_id,kind,refund_amount,refund_status,sale_return_lines(quantity,sale_lines(id,unit_price))')
             .eq('organization_id', organizationId)
             .order('created_at', { ascending: false }));
           if (active) setSaleReturns(returnRows);
@@ -293,7 +351,7 @@ export function OperationsFinance() {
 
     void load();
     return () => { active = false; };
-  }, [organizationId, hasPermission, canSeeCrm, canSeeInventoryCosts, canSeeRefundSettlements, canSeeCashReconciliation, realtimeRevision.sales, realtimeRevision.inventoryCosts, loadAttempt]);
+  }, [organizationId, hasPermission, canSeeCrm, canSeeInventoryCosts, canSeeRefundSettlements, canSeeCashReconciliation, realtimeRevision.sales, realtimeRevision.inventoryCosts, loadAttempt, month]);
 
   useEffect(() => {
     let active = true;
@@ -383,9 +441,16 @@ export function OperationsFinance() {
           readAllRows(closedQuery),
         ]);
         if (!active) return;
-        const sessions = [...openRows, ...closedRows];
+        // Separate PostgREST requests can observe a session on both sides of a
+        // concurrent close. Keep one row per session and prefer its closed state.
+        const sessionsById = new Map<string, any>();
+        [...openRows, ...closedRows].forEach((session) => {
+          const current = sessionsById.get(session.id);
+          if (!current || session.status === 'closed') sessionsById.set(session.id, session);
+        });
+        const sessions = [...sessionsById.values()];
         setCashSessions(sessions);
-        const openSessionIds = openRows.map((session) => session.id);
+        const openSessionIds = sessions.filter((session) => session.status === 'open').map((session) => session.id);
         if (!openSessionIds.length) {
           setCashSessionMovements([]);
           return;
@@ -530,6 +595,11 @@ export function OperationsFinance() {
     person.user_id,
     person.full_name || person.email || `Usuario ${String(person.user_id).slice(0, 8)}`,
   ])), [advisors]);
+  const financeAdvisorOptions = [...new Map(
+    advisors
+      .filter((person) => person.active && FINANCE_ROLES.includes(person.role))
+      .map((person) => [person.user_id, person]),
+  ).values()];
   const salesById = useMemo(() => new Map(sales.map((sale) => [sale.id, sale])), [sales]);
   const paymentsBySale = useMemo(() => payments.reduce((totals, payment) => {
     totals.set(payment.sale_id, (totals.get(payment.sale_id) || 0) + Number(payment.amount || 0));
@@ -537,10 +607,13 @@ export function OperationsFinance() {
   }, new Map()), [payments]);
   const returnsBySale = useMemo(() => saleReturns.reduce((totals, saleReturn) => {
     const current = totals.get(saleReturn.sale_id) || { returnedValue: 0, settledRefund: 0, pendingRefund: 0, count: 0 };
+    const sale = salesById.get(saleReturn.sale_id);
+    const subtotal = Number(sale?.subtotal || 0);
+    const discountRate = subtotal > 0 ? Math.min(1, Number(sale?.discount_total || 0) / subtotal) : 0;
     const lines = Array.isArray(saleReturn.sale_return_lines) ? saleReturn.sale_return_lines : [];
     const returnedValue = saleReturn.kind === 'cancellation' ? 0 : lines.reduce((sum, line) => {
       const saleLine = Array.isArray(line.sale_lines) ? line.sale_lines[0] : line.sale_lines;
-      return sum + Number(line.quantity || 0) * Number(saleLine?.unit_price || 0);
+      return sum + Number(line.quantity || 0) * Number(saleLine?.unit_price || 0) * (1 - discountRate);
     }, 0);
     current.returnedValue += returnedValue;
     current.settledRefund += saleReturn.refund_status === 'refunded' ? Number(saleReturn.refund_amount || 0) : 0;
@@ -548,7 +621,7 @@ export function OperationsFinance() {
     current.count += 1;
     totals.set(saleReturn.sale_id, current);
     return totals;
-  }, new Map()), [saleReturns]);
+  }, new Map()), [saleReturns, salesById]);
   const branchNames = useMemo(() => new Map(branches.map((item) => [item.id, item.name])), [branches]);
   const branchName = (id) => branchNames.get(id) || 'Sucursal';
   const cashMovementTotals = useMemo(() => cashSessionMovements.reduce((totals, movement) => {
@@ -607,6 +680,15 @@ export function OperationsFinance() {
   const receivablesWithoutCrmAmount = receivablesWithoutCrm.reduce((sum, item) => sum + item.balance, 0);
   const customerRevenueAnalysis = useMemo(() => {
     const byCustomer = new Map();
+    const returnedUnitsBySaleLine = new Map<string, number>();
+    saleReturns.forEach((saleReturn) => {
+      if (saleReturn.kind === 'cancellation') return;
+      (saleReturn.sale_return_lines || []).forEach((returnLine) => {
+        const saleLine = Array.isArray(returnLine.sale_lines) ? returnLine.sale_lines[0] : returnLine.sale_lines;
+        if (!saleLine?.id) return;
+        returnedUnitsBySaleLine.set(saleLine.id, (returnedUnitsBySaleLine.get(saleLine.id) || 0) + Number(returnLine.quantity || 0));
+      });
+    });
     let unlinkedSales = 0;
     let unlinkedRevenue = 0;
     let linkedRevenue = 0;
@@ -629,10 +711,20 @@ export function OperationsFinance() {
         sales: 0,
         revenue: 0,
         openBalance: 0,
+        productUnits: new Map<string, { label: string; units: number; saleIds: Set<string> }>(),
       };
       customer.sales += 1;
       customer.revenue += adjustedTotal;
       customer.openBalance += openBalance;
+      (sale.sale_lines || []).forEach((line) => {
+        if (!line.catalog_product_id && !line.variant_id && !line.sku_snapshot) return;
+        const productKey = line.catalog_product_id || line.variant_id || line.sku_snapshot;
+        const product = customer.productUnits.get(productKey) || { label: line.description_snapshot || 'Producto sin descripción', units: 0, saleIds: new Set<string>() };
+        const netUnits = Math.max(0, Number(line.quantity || 0) - (line.id ? returnedUnitsBySaleLine.get(line.id) || 0 : 0));
+        product.units += netUnits;
+        if (netUnits > 0) product.saleIds.add(sale.id);
+        customer.productUnits.set(productKey, product);
+      });
       byCustomer.set(sale.customer_id, customer);
       linkedRevenue += adjustedTotal;
       if (sale.customers?.preferences?.source === 'solicitud web') {
@@ -642,7 +734,14 @@ export function OperationsFinance() {
       }
     });
     const rankedCustomers = [...byCustomer.values()].sort((a, b) => b.revenue - a.revenue || a.name.localeCompare(b.name, 'es'));
-    const topCustomers = rankedCustomers.slice(0, 5);
+    const topCustomers = rankedCustomers.slice(0, 5).map((customer) => {
+      const topProduct = [...customer.productUnits.values()].sort((a, b) => b.saleIds.size - a.saleIds.size || b.units - a.units || a.label.localeCompare(b.label, 'es'))[0];
+      return {
+        ...customer,
+        topProduct: topProduct?.label || '',
+        topProductSales: topProduct?.saleIds.size || 0,
+      };
+    });
     const topFiveRevenue = topCustomers.reduce((sum, customer) => sum + customer.revenue, 0);
     return {
       customers: rankedCustomers.length,
@@ -656,7 +755,7 @@ export function OperationsFinance() {
       topCustomers,
       topFiveShare: linkedRevenue > 0 ? topFiveRevenue / linkedRevenue : 0,
     };
-  }, [salesInPeriod, returnsBySale, paymentsBySale]);
+  }, [salesInPeriod, returnsBySale, paymentsBySale, saleReturns]);
   const quoteSalesAnalysis = useMemo(() => {
     const linkedSales = salesInPeriod.filter((sale) => Boolean(sale.central_quote_id));
     const quoteIds = new Set(linkedSales.map((sale) => sale.central_quote_id));
@@ -683,7 +782,7 @@ export function OperationsFinance() {
     && (method === 'all' || payment.method === method)
   )), [payments, paymentSaleIds, month, method]);
 
-  const totalSold = salesInPeriod.reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+  const totalSold = salesInPeriod.reduce((sum, sale) => sum + netSaleAmount(sale, returnsBySale), 0);
   const totalCollected = paymentsInPeriod.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const outstanding = salesInPeriod.reduce((sum, sale) => (
     sum + Math.max(0,
@@ -845,7 +944,7 @@ export function OperationsFinance() {
   salesInPeriod.forEach((sale) => {
     const id = sale.advisor_id || 'unassigned';
     const item = grouped.get(id) || { id, sold: 0, collected: 0, count: 0 };
-    item.sold += Number(sale.total || 0);
+    item.sold += netSaleAmount(sale, returnsBySale);
     item.count += 1;
     grouped.set(id, item);
   });
@@ -1002,7 +1101,6 @@ export function OperationsFinance() {
   </section>;
 
   return <div className="op-finance-page">
-    <OperationsFinanceControls month={month} branch={branch} realtimeRefreshKey={realtimeRevision.expenses} />
     <section className="panel op-finance-intro">
       <div>
         <span className="eyebrow">INGRESOS Y RECAUDACIÓN</span>
@@ -1014,13 +1112,12 @@ export function OperationsFinance() {
       </div>
       <a className="button button-outline" href="/operaciones/pos">Registrar venta o abono en POS <ArrowUpRight size={15} /></a>
     </section>
-    <AdvisorIncomeEntry branches={branches} advisors={advisors} customers={canSeeCrm ? customers : null} customersError={customersError} currentUserId={user?.id || ''} canChooseAdvisor={hasPermission('team', 'view')} selectedBranch={branch} onRecorded={() => setRealtimeRevision((current) => ({ ...current, sales: current.sales + 1, cash: current.cash + 1 }))} />
     {error && <div className="op-flow-alert error" role="alert"><ShieldAlert size={16} />{error}</div>}
     <section className="panel op-finance-filters">
       <label>Mes<input type="month" value={month} onChange={(event) => setMonth(event.target.value)} /></label>
       <label>Asesora<select value={advisor} onChange={(event) => setAdvisor(event.target.value)}>
         <option value="all">Todas las asesoras</option>
-        {advisors.filter((person) => person.active && FINANCE_ROLES.includes(person.role)).map((person) => (
+        {financeAdvisorOptions.map((person) => (
           <option key={person.user_id} value={person.user_id}>{person.full_name || person.email || person.user_id.slice(0, 8)}</option>
         ))}
       </select></label>
@@ -1030,15 +1127,43 @@ export function OperationsFinance() {
       </select></label>
       <label>Medio de pago<select value={method} onChange={(event) => setMethod(event.target.value)}>
         <option value="all">Todos los medios</option>
-        {paymentMethods.map((item) => <option key={item} value={item}>{item}</option>)}
+        {paymentMethods.map((item) => <option key={item} value={item}>{paymentMethodLabel(item)}</option>)}
       </select></label>
     </section>
     <section className="op-finance-kpis" role="group" aria-label="Resumen financiero del periodo filtrado">
-      <article className="is-sales"><span>Ventas confirmadas</span><b>{money(totalSold)}</b><small>{salesInPeriod.length} ventas registradas</small></article>
+      <article className="is-sales"><span>Ventas netas confirmadas</span><b>{saleReturnsError ? '—' : money(totalSold)}</b><small>{saleReturnsError ? 'No disponible: error al cargar devoluciones' : `${salesInPeriod.length} ventas · menos artículos devueltos`}</small></article>
       <article className="is-collected"><span>Pagos recibidos en el periodo</span><b>{money(totalCollected)}</b><small>Abonos asociados a las ventas filtradas</small></article>
       <article className={saleReturnsError ? '' : outstanding > 0 ? 'is-outstanding' : 'is-settled'}><span>Saldo por cobrar</span><b>{saleReturnsError ? '—' : money(outstanding)}</b><small>{saleReturnsError ? 'No disponible: error al cargar devoluciones' : 'Ajustado por devoluciones de ventas filtradas'}</small></article>
-      <article className="is-average"><span>Valor promedio por venta</span><b>{money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b><small>Solo ventas confirmadas</small></article>
+      <article className="is-average"><span>Promedio neto por venta</span><b>{saleReturnsError ? '—' : money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b><small>{saleReturnsError ? 'No disponible: error al cargar devoluciones' : 'Ventas confirmadas menos artículos devueltos'}</small></article>
     </section>
+    <FinanceSalesInsights today={businessToday} month={month} monthSales={salesInPeriod} currentWeekSales={salesMatchingTeamAndBranch} returnsBySale={returnsBySale} saleReturns={saleReturns} saleReturnsError={saleReturnsError} saleLinesError={saleLinesError} />
+    <FinanceCashRegisters today={businessToday} organizationId={organizationId || ''} branches={branches} advisors={advisors} sales={sales} returnsBySale={returnsBySale} saleReturnsError={saleReturnsError} canManage={canManageFinance} canManageTeam={canManageTeam} refreshKey={realtimeRevision.cash} onChanged={() => setRealtimeRevision((current) => ({ ...current, cash: current.cash + 1 }))} />
+    <div className="op-finance-grid">
+      <section className="panel">
+        <div className="panel-heading"><div><span className="eyebrow">COMPARATIVO DEL PERIODO</span><h2>Desempeño por asesora</h2></div><ChartNoAxesCombined size={19} /></div>
+        <div className="op-finance-advisors">{advisorSummary.map((item) => (
+          <article key={item.id}>
+            <div className="op-finance-advisor-line"><b>{personName(item.id)}</b><span>{money(item.sold)} · {item.count} ventas</span></div>
+            <div className="op-finance-bar"><i style={{ width: `${Math.max(2, item.sold / maxSold * 100)}%` }} /></div>
+            <small>Recaudado en el periodo: {money(item.collected)}</small>
+          </article>
+        ))}{!advisorSummary.length && <p className="muted">No hay ventas confirmadas para estos filtros.</p>}</div>
+        <p className="op-finance-note">{saleReturnsError ? 'No se pudieron cargar las devoluciones; los importes por asesora son brutos provisionales.' : 'Las ventas descuentan artículos devueltos.'} La atribución usa la asesora responsable guardada en la venta; el recaudo se agrupa por fecha del abono, incluso si la venta fue registrada en un mes anterior.</p>
+      </section>
+      <section className="panel">
+        <div className="panel-heading"><div><span className="eyebrow">COMPOSICIÓN DE RECAUDACIÓN</span><h2>Por medio de pago</h2></div></div>
+        <div className="op-finance-methods">{Object.entries(paymentsInPeriod.reduce<Record<string, number>>((totals, payment) => {
+          const name = payment.method || 'Sin medio';
+          totals[name] = (totals[name] || 0) + Number(payment.amount || 0);
+          return totals;
+        }, {})).sort((a, b) => b[1] - a[1]).map(([name, amount]) => (
+          <div key={name}><span>{paymentMethodLabel(name)}</span><b>{money(amount)}</b></div>
+        ))}{!paymentsInPeriod.length && <p className="muted">Sin pagos en el periodo seleccionado.</p>}</div>
+        <p className="op-finance-note">Ventas {saleReturnsError ? '—' : money(totalSold)} · Pagos históricos asociados {money(allHistoricalPayments)} · Recaudo del periodo {money(totalCollected)}.</p>
+      </section>
+    </div>
+    <AdvisorIncomeEntry branches={branches} advisors={advisors} customers={canSeeCrm ? customers : null} customersError={customersError} currentUserId={user?.id || ''} canChooseAdvisor={hasPermission('team', 'view')} selectedBranch={branch} onRecorded={() => setRealtimeRevision((current) => ({ ...current, sales: current.sales + 1, cash: current.cash + 1 }))} />
+    <OperationsFinanceControls month={month} branch={branch} realtimeRefreshKey={realtimeRevision.expenses} />
     <section className="panel op-finance-receivables" aria-labelledby="op-finance-receivables-title">
       <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → FINANZAS → CRM · SALDOS ABIERTOS</span><h2 id="op-finance-receivables-title">Antigüedad de saldos por cobrar</h2><p className="op-finance-cost-note">La venta se ajusta por el valor de artículos devueltos. Solo los reembolsos liquidados reducen el cobro neto. El filtro de mes y medio de pago no aplica; se usan asesora y sucursal.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadReceivablesCsv} disabled={!openReceivables.length || !!saleReturnsError}><Download size={15}/> Exportar saldos CSV</button><a className="button button-outline" href="/operaciones/pos">Abrir POS <ArrowUpRight size={15}/></a>{canSeeCrm && <a className="button button-outline" href="/operaciones/clientes">Abrir CRM <ArrowUpRight size={15}/></a>}</div></div>
       {saleReturnsError && <p className="op-finance-cost-error" role="alert">{saleReturnsError}</p>}
@@ -1165,30 +1290,6 @@ export function OperationsFinance() {
       <div className="op-finance-material-links"><a className="button button-outline" href="/operaciones/flujos">Ver producción</a><a className="button button-outline" href="/operaciones/inventario">Ver inventario</a></div>
       <p className="op-finance-cost-note">Incluye salidas registradas por recetas de venta y consumos de órdenes de producción. Se captura desde la activación del control; no estima costos históricos sin snapshot ni representa utilidad contable.</p>
     </section>}
-    <div className="op-finance-grid">
-      <section className="panel">
-        <div className="panel-heading"><div><span className="eyebrow">COMPARATIVO DEL PERIODO</span><h2>Desempeño por asesora</h2></div><ChartNoAxesCombined size={19} /></div>
-        <div className="op-finance-advisors">{advisorSummary.map((item) => (
-          <article key={item.id}>
-            <div className="op-finance-advisor-line"><b>{personName(item.id)}</b><span>{money(item.sold)} · {item.count} ventas</span></div>
-            <div className="op-finance-bar"><i style={{ width: `${Math.max(2, item.sold / maxSold * 100)}%` }} /></div>
-            <small>Recaudado en el periodo: {money(item.collected)}</small>
-          </article>
-        ))}{!advisorSummary.length && <p className="muted">No hay ventas confirmadas para estos filtros.</p>}</div>
-        <p className="op-finance-note">La atribución usa la asesora responsable guardada en la venta; quien registra un pago aparece por separado.</p>
-      </section>
-      <section className="panel">
-        <div className="panel-heading"><div><span className="eyebrow">COMPOSICIÓN DE RECAUDACIÓN</span><h2>Por medio de pago</h2></div></div>
-        <div className="op-finance-methods">{Object.entries(paymentsInPeriod.reduce<Record<string, number>>((totals, payment) => {
-          const name = payment.method || 'Sin medio';
-          totals[name] = (totals[name] || 0) + Number(payment.amount || 0);
-          return totals;
-        }, {})).sort((a, b) => b[1] - a[1]).map(([name, amount]) => (
-          <div key={name}><span>{name}</span><b>{money(amount)}</b></div>
-        ))}{!paymentsInPeriod.length && <p className="muted">Sin pagos en el periodo seleccionado.</p>}</div>
-        <p className="op-finance-note">Ventas {money(totalSold)} · Pagos históricos asociados {money(allHistoricalPayments)} · Recaudo del periodo {money(totalCollected)}.</p>
-      </section>
-    </div>
     {canSeeCrm && <section className="panel op-finance-customer-analysis" aria-labelledby="op-finance-customer-analysis-title">
       <div className="panel-heading"><div><span className="eyebrow">FINANZAS → CRM · CLIENTES</span><h2 id="op-finance-customer-analysis-title">Concentración de ventas por cliente</h2><p className="op-finance-cost-note">Ventas confirmadas del periodo, asesora y sucursal seleccionados; los retornos registrados reducen el valor. El filtro de medio de pago no aplica.</p></div><a className="button button-outline" href="/operaciones/clientes">Abrir CRM <ArrowUpRight size={15}/></a></div>
       {saleReturnsError ? <p className="op-finance-cost-error" role="alert">No se calcula el valor ajustado por cliente porque no se pudieron cargar las devoluciones.</p> : <>
@@ -1204,7 +1305,7 @@ export function OperationsFinance() {
           <small>Conecta solicitudes públicas, CRM y POS; no mide retorno ni atribuye ventas a una campaña específica.</small>
         </div>
         {customerRevenueAnalysis.topCustomers.length ? <div className="op-finance-customer-list">{customerRevenueAnalysis.topCustomers.map((customer, index) => <article key={customer.id}>
-          <div className="op-finance-customer-rank"><span>{index + 1}</span><div><b>{customer.name}</b><small>{customer.sales} {customer.sales === 1 ? 'venta' : 'ventas'} · saldo abierto {money(customer.openBalance)}</small></div></div>
+          <div className="op-finance-customer-rank"><span>{index + 1}</span><div><b>{customer.name}</b><small>{customer.sales} {customer.sales === 1 ? 'venta' : 'ventas'} · saldo abierto {money(customer.openBalance)}</small><small>{saleLinesError ? 'Producto frecuente no disponible: falló la carga de líneas.' : customer.topProduct ? `Producto más frecuente: ${customer.topProduct} · ${customer.topProductSales} ${customer.topProductSales === 1 ? 'venta' : 'ventas'}` : 'Sin líneas de producto vinculadas en este periodo'}</small><small>{customer.openBalance > 0.005 ? 'Seguimiento sugerido: revisar el saldo abierto antes de cerrar otra venta.' : customer.sales > 1 && customer.topProductSales > 1 ? `Seguimiento sugerido: consultar si necesita reponer ${customer.topProduct}.` : customer.sales > 1 ? 'Seguimiento sugerido: revisar compras recientes y registrar preferencias en CRM.' : 'Seguimiento sugerido: registrar preferencias y próxima fecha de contacto en CRM.'}</small></div></div>
           <div className="op-finance-customer-value"><b>{money(customer.revenue)}</b><a href={`/operaciones/clientes?cliente=${encodeURIComponent(customer.id)}`}>Ver ficha CRM <ArrowUpRight size={13}/></a></div>
           <div className="op-finance-customer-track" role="progressbar" aria-label={`${customer.name}: ${money(customer.revenue)} de ventas`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(customer.revenue / Math.max(1, customerRevenueAnalysis.linkedRevenue) * 100)}><i style={{ width: `${Math.max(2, customer.revenue / Math.max(1, customerRevenueAnalysis.linkedRevenue) * 100)}%` }}/></div>
         </article>)}</div> : <div className="op-finance-ledger-empty"><Banknote size={22}/><b>Sin ventas vinculadas al CRM en este alcance</b><span>Las ventas sin ficha se cuentan aparte y pueden asociarse al registrar un ingreso manual.</span></div>}
@@ -1231,7 +1332,7 @@ export function OperationsFinance() {
           return <tr key={payment.id}>
             <td>{timestamp(payment.created_at)}</td><td>{personName(sale?.advisor_id)}</td>
             <td>{sale?.sale_code || payment.sale_id.slice(0, 8)} · {sale?.customers?.full_name || 'Cliente sin nombre'}</td>
-            <td>{branchName(sale?.branch_id)}</td><td>{payment.method || '—'}</td>
+            <td>{branchName(sale?.branch_id)}</td><td>{paymentMethodLabel(payment.method)}</td>
             <td>{personName(payment.created_by)}</td><td>{money(payment.amount)}</td>
           </tr>;
         })}{!paymentsInPeriod.length && <tr><td colSpan={7}>No hay abonos para mostrar con los filtros elegidos.</td></tr>}</tbody>

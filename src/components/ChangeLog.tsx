@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ArrowUpRight, Check, Clock3, FileText, History, Plus, Send, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ArrowUpRight, Clock3, FileText, Filter, History, Plus, Search, Send, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
@@ -12,6 +12,7 @@ const categories = [
 const audiences = [['both','Admin y operaciones'],['admin','Solo admin'],['operations','Solo operaciones']];
 const emptyForm = { title:'', summary:'', details:'', category:'operations', audience:'both', version_tag:'' };
 const dateLabel = (value) => value ? new Date(value).toLocaleDateString('es-EC',{year:'numeric',month:'short',day:'numeric'}) : 'Borrador';
+const timelineDate = (value) => value ? new Date(value).toLocaleDateString('es-EC',{day:'2-digit',month:'short'}).replace('.', '').toLocaleUpperCase('es') : 'BORRADOR';
 
 export function ChangeLogPanel({ area='operations', compact=false }) {
   const { organizationId, user, hasPermission } = useAuth();
@@ -22,8 +23,18 @@ export function ChangeLogPanel({ area='operations', compact=false }) {
   const [form,setForm]=useState<any>(emptyForm);
   const [editing,setEditing]=useState(null);
   const [saving,setSaving]=useState(false);
+  const [search,setSearch]=useState('');
+  const [categoryFilter,setCategoryFilter]=useState('all');
   const canManage=hasPermission('dashboard','edit');
   const audiencesForArea=area==='admin'?['both','admin']:['both','operations'];
+  const visibleEntries=useMemo(()=>{
+    const normalized=search.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').trim();
+    return entries.filter(entry=>{
+      const categoryMatches=categoryFilter==='all'||entry.category===categoryFilter;
+      const content=[entry.title,entry.summary,entry.details,entry.version_tag].filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es');
+      return categoryMatches&&(!normalized||content.includes(normalized));
+    });
+  },[entries,search,categoryFilter]);
 
   const refresh=useCallback(async()=>{
     if(!supabase||!organizationId){setLoading(false);return;}
@@ -75,7 +86,7 @@ export function ChangeLogPanel({ area='operations', compact=false }) {
   const fullPath=area==='admin'?'/admin/cambios':'/operaciones/cambios';
   const heading=area==='admin'?'Novedades del sistema':'Cambios recientes';
   return <section className={`changelog ${compact?'changelog-compact':''}`}>
-    <div className="changelog-heading"><div><span className="eyebrow">REGISTRO COMPARTIDO</span><h2>{heading}</h2>{!compact&&<p>Publicaciones internas sincronizadas entre administración y operaciones.</p>}</div>{compact?<Link className="text-link" to={fullPath}>Ver todas <ArrowUpRight size={14}/></Link>:canManage&&<button className="button button-dark" type="button" onClick={resetForm}><Plus size={16}/> Nueva novedad</button>}</div>
+    <div className="changelog-heading"><div><span className="eyebrow">REGISTRO COMPARTIDO</span><h2>{heading}</h2>{!compact&&<p>Actualizaciones del equipo, ordenadas por fecha y categoría.</p>}</div>{compact?<Link className="text-link" to={fullPath}>Ver todas <ArrowUpRight size={14}/></Link>:canManage&&<button className="button button-dark" type="button" onClick={resetForm}><Plus size={16}/> Nueva novedad</button>}</div>
     {error&&<div className="changelog-message error" role="alert">{error}</div>}{notice&&<div className="changelog-message success" role="status">{notice}</div>}
     {!compact&&canManage&&<form className="changelog-editor" onSubmit={e=>{e.preventDefault();save('draft');}}>
       <div className="changelog-editor-title"><h3>{editing?'Editar novedad':'Redactar novedad'}</h3>{editing&&<button className="icon-button" type="button" aria-label="Cancelar edición" onClick={resetForm}><X size={16}/></button>}</div>
@@ -84,6 +95,7 @@ export function ChangeLogPanel({ area='operations', compact=false }) {
       <label>Detalles<textarea rows={4} maxLength={10000} value={form.details} onChange={e=>setForm({...form,details:e.target.value})} placeholder="Describe mejoras, alcance o instrucciones internas"/></label>
       <div className="changelog-form-actions"><button className="button button-outline" type="submit" disabled={saving||!form.title.trim()||!form.summary.trim()}><FileText size={15}/>{saving?'Guardando…':'Guardar borrador'}</button><button className="button button-dark" type="button" disabled={saving||!form.title.trim()||!form.summary.trim()} onClick={()=>save('published')}><Send size={15}/> Publicar ahora</button></div>
     </form>}
-    {loading?<div className="changelog-empty"><Clock3 size={19}/> Cargando novedades…</div>:!entries.length?<div className="changelog-empty"><History size={20}/><b>Aún no hay novedades</b><span>{canManage?'Redacta la primera entrada para compartirla con el equipo.':'Las publicaciones aparecerán aquí cuando administración las comparta.'}</span></div>:<div className="changelog-list">{entries.map(entry=><article className="changelog-entry" key={entry.id}><div className="changelog-entry-top"><div className="changelog-tags"><span className="changelog-tag">{categories.find(([value])=>value===entry.category)?.[1]||'General'}</span>{entry.version_tag&&<span className="changelog-version">{entry.version_tag}</span>}{entry.status!=='published'&&<span className={`changelog-status status-${entry.status}`}>{entry.status==='draft'?'Borrador':'Archivada'}</span>}</div><time>{dateLabel(entry.published_at||entry.updated_at)}</time></div><h3>{entry.title}</h3><p className="changelog-summary">{entry.summary}</p>{entry.details&&<p className="changelog-details">{entry.details}</p>}{canManage&&!compact&&<div className="changelog-entry-actions">{entry.status!=='published'&&entry.status!=='archived'&&<button type="button" className="button button-outline" disabled={saving} onClick={()=>changeStatus(entry,'published')}><Send size={14}/> Publicar</button>}<button type="button" className="button button-outline" onClick={()=>startEdit(entry)}>Editar</button>{entry.status!=='archived'&&<button type="button" className="button button-outline changelog-archive" disabled={saving} onClick={()=>changeStatus(entry,'archived')}>Archivar</button>}</div>}</article>)}</div>}
+    {!compact&&!loading&&entries.length>0&&<div className="changelog-tools"><label className="changelog-search"><Search size={16}/><span className="sr-only">Buscar novedades</span><input type="search" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Buscar por título, detalle o versión"/></label><label className="changelog-filter"><Filter size={15}/><span className="sr-only">Filtrar por categoría</span><select value={categoryFilter} onChange={event=>setCategoryFilter(event.target.value)}><option value="all">Todas las categorías</option>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><span className="changelog-result-count">{visibleEntries.length} de {entries.length}</span></div>}
+    {loading?<div className="changelog-empty"><Clock3 size={19}/> Cargando novedades…</div>:!entries.length?<div className="changelog-empty"><History size={20}/><b>Aún no hay novedades</b><span>{canManage?'Redacta la primera entrada para compartirla con el equipo.':'Las publicaciones aparecerán aquí cuando administración las comparta.'}</span></div>:!visibleEntries.length?<div className="changelog-empty"><Search size={19}/><b>Sin coincidencias</b><span>Prueba con otra palabra o limpia los filtros.</span><button type="button" className="button button-outline" onClick={()=>{setSearch('');setCategoryFilter('all');}}>Limpiar filtros</button></div>:<div className="changelog-list" role="list">{visibleEntries.map(entry=><div className="changelog-event" key={entry.id} role="listitem"><div className="changelog-event-date" aria-hidden="true"><time>{timelineDate(entry.published_at||entry.updated_at)}</time><span/></div><article className="changelog-entry"><div className="changelog-entry-top"><div className="changelog-tags"><span className="changelog-tag">{categories.find(([value])=>value===entry.category)?.[1]||'General'}</span>{entry.version_tag&&<span className="changelog-version">{entry.version_tag}</span>}{entry.status!=='published'&&<span className={`changelog-status status-${entry.status}`}>{entry.status==='draft'?'Borrador':'Archivada'}</span>}</div><time>{dateLabel(entry.published_at||entry.updated_at)}</time></div><h3>{entry.title}</h3><p className="changelog-summary">{entry.summary}</p>{entry.details&&<details className="changelog-details"><summary>Ver detalles</summary><p>{entry.details}</p></details>}{canManage&&!compact&&<div className="changelog-entry-actions">{entry.status!=='published'&&entry.status!=='archived'&&<button type="button" className="button button-outline" disabled={saving} onClick={()=>changeStatus(entry,'published')}><Send size={14}/> Publicar</button>}<button type="button" className="button button-outline" onClick={()=>startEdit(entry)}>Editar</button>{entry.status!=='archived'&&<button type="button" className="button button-outline changelog-archive" disabled={saving} onClick={()=>changeStatus(entry,'archived')}>Archivar</button>}</div>}</article></div>)}</div>}
   </section>;
 }

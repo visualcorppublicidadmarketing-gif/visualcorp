@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, ClipboardCheck, MapPinned, Plus, RefreshCw
 import { AdminHeader, AdminShell } from '../../components';
 import { hasSupabase, supabase } from '../../lib/supabase';
 import { useToast } from '../../components/studio/Toast';
+import { DateTimePicker } from '../../components/ui/Calendar';
 
 const MODULES = {
   quality: {
@@ -127,7 +128,7 @@ export function POSBusinessOperations() {
         <label>Título<input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Describe la acción o incidente" /></label>
         {activeModule !== 'maintenance' && <label>Número o ID de orden<input value={draft.orderId} onChange={(event) => setDraft({ ...draft, orderId: event.target.value })} placeholder="Ej. 10452" /></label>}
         {activeModule === 'maintenance' && <label>Prioridad<select value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value })}><option value="normal">Normal</option><option value="high">Alta</option><option value="urgent">Urgente</option></select></label>}
-        {(activeModule === 'maintenance' || activeModule === 'field') && <label>Fecha y hora<input type="datetime-local" value={draft.scheduledAt} onChange={(event) => setDraft({ ...draft, scheduledAt: event.target.value })} /></label>}
+        {(activeModule === 'maintenance' || activeModule === 'field') && <label>Fecha y hora<DateTimePicker label="Fecha y hora" value={draft.scheduledAt} onChange={(scheduledAt) => setDraft({ ...draft, scheduledAt })} /></label>}
         {activeModule === 'field' && <><label>Tipo<select value={draft.visitType} onChange={(event) => setDraft({ ...draft, visitType: event.target.value })}><option value="measurement">Medición</option><option value="installation">Instalación</option><option value="repair">Garantía / reparación</option><option value="delivery">Entrega</option></select></label><label>Dirección<input value={draft.address} onChange={(event) => setDraft({ ...draft, address: event.target.value })} /></label><label>Google Maps<input value={draft.mapsUrl} onChange={(event) => setDraft({ ...draft, mapsUrl: event.target.value })} placeholder="https://maps.google.com/..." /></label></>}
       </div>
       <label>Notas<textarea rows={3} value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} /></label>
