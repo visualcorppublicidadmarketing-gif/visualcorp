@@ -200,8 +200,10 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
   const submit = async (event) => {
     event.preventDefault();
     if (!form.name.trim() || !form.phone.trim() || sending) return;
-    if (variant === 'quote' && quoteData && (!quoteData.service || !quoteData.project.trim())) {
+    if (variant === 'quote' && (!quoteData?.service || !quoteData?.project?.trim())) {
       setError('Selecciona una familia de servicio y describe tu proyecto para continuar.');
+      const missingField = !quoteData?.service ? 'quote-service-family' : 'quote-project-name';
+      document.getElementById(missingField)?.focus();
       return;
     }
     const requestService = variant === 'quote' && quoteData?.service ? quoteData.service : selectedService ?? form.service;
