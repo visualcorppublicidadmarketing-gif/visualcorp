@@ -38,12 +38,28 @@ export function OperationsLifecycle() {
   const canManageProduction=hasPermission('workshop','edit');
   const canManageTransfers=hasPermission('inventory','edit');
   const canCloseOtherCash=canManageCash&&roles.some(role=>['owner','admin','manager'].includes(role));
+  const readRelatedRows=async(table,select,foreignKey,ids:string[])=>{
+    if(!supabase||!organizationId||!ids.length)return[];
+    const client:any=supabase;const pageSize=500;const rows=[];
+    for(let from=0;;from+=pageSize){
+      const {data,error:e}=await client.from(table).select(select).eq('organization_id',organizationId).in(foreignKey,ids).order('id',{ascending:true}).range(from,from+pageSize-1);
+      if(e)throw e;
+      const page=data||[];rows.push(...page);
+      if(page.length<pageSize)break;
+    }
+    return rows;
+  };
+  const readTransferLines=(ids:string[])=>readRelatedRows('stock_transfer_lines','*','transfer_id',ids);
+  const readProductionEvents=async(ids:string[])=>{
+    const rows=await readRelatedRows('production_order_events','id,order_id,from_status,to_status,note,created_by,created_at','order_id',ids);
+    return rows.sort((a,b)=>new Date(b.created_at||0).getTime()-new Date(a.created_at||0).getTime());
+  };
   useEffect(()=>{const requested=searchParams.get('tab');if(!requested){if(tab!=='overview')setTab('overview');return;}if(visibleTabs.some(([id])=>id===requested)){if(tab!==requested)setTab(requested);return;}setTab(visibleTabs[0]?.[0]||'overview');},[tab,searchParams.toString(),visibleTabs.map(([id])=>id).join('|')]);
   const refresh=useCallback(async()=>{
     if(!organizationId||!supabase)return; setError('');setRefreshing(true);
     const read=async(table,query,allowed=true)=>{if(!allowed)return[];const {data,error:e}=await query;if(e)throw e;return data||[];};
     try{
-      const [b,a,v,c,s,sl,r,rs,t,tl,o,oe,q,loc,tm]=await Promise.all([
+      const [b,a,v,c,s,sl,r,rs,t,o,q,loc,tm]=await Promise.all([
         read('branches',supabase.from('branches').select('id,code,name').eq('organization_id',organizationId).eq('active',true).order('name')),
         read('areas',supabase.from('areas').select('id,code,name').eq('organization_id',organizationId).eq('active',true).order('name'),hasPermission('workshop','view')),
         read('inventory_variants',supabase.from('inventory_variants').select('id,sku,label,item_id,inventory_items(name,base_unit)').eq('organization_id',organizationId).eq('active',true).order('sku'),hasPermission('inventory','view')||hasPermission('workshop','view')),
@@ -53,13 +69,12 @@ export function OperationsLifecycle() {
         read('sale_returns',supabase.from('sale_returns').select('*').eq('organization_id',organizationId).order('created_at',{ascending:false}).limit(80),hasPermission('sales','view')),
         read('sale_refund_settlements',supabase.from('sale_refund_settlements').select('id,return_id,return_code,sale_id,amount,method,reference,cash_session_id,settled_at').eq('organization_id',organizationId).order('settled_at',{ascending:false}).limit(120),hasPermission('sales','view')),
         read('stock_transfers',supabase.from('stock_transfers').select('*').eq('organization_id',organizationId).order('requested_at',{ascending:false}).limit(80),hasPermission('inventory','view')),
-        read('stock_transfer_lines',supabase.from('stock_transfer_lines').select('*').eq('organization_id',organizationId),hasPermission('inventory','view')),
         read('production_orders',supabase.from('production_orders').select('*,branches(name),areas(name)').eq('organization_id',organizationId).order('created_at',{ascending:false}).limit(100),hasPermission('workshop','view')),
-        read('production_order_events',supabase.from('production_order_events').select('id,order_id,from_status,to_status,note,created_by,created_at').eq('organization_id',organizationId).order('created_at',{ascending:false}).limit(400),hasPermission('workshop','view')),
         read('central_quotes',supabase.from('central_quotes').select('*').eq('organization_id',organizationId).order('created_at',{ascending:false}).limit(100),hasPermission('quotes','view')),
         read('inventory_locations',supabase.from('inventory_locations').select('id,branch_id,code,name,active').eq('organization_id',organizationId).eq('active',true).order('name'),hasPermission('inventory','view')||hasPermission('workshop','view')),
         read('team_members',supabase.rpc('list_visualcorp_team_members'),hasPermission('team','view')),
       ]);
+      const [tl,oe]=await Promise.all([hasPermission('inventory','view')?readTransferLines(t.map(row=>row.id)):[],hasPermission('workshop','view')?readProductionEvents(o.map(row=>row.id)):[]]);
       setBranches(b);setAreas(a);setVariants(v);setLocations(loc);setCash(c);setTeamMembers(tm);setSales(s);setSaleLines(sl);setReturns(r);setRefundSettlements(rs);setTransfers(t);setTransferLines(tl);setOrders(o);setProductionEvents(oe);setQuotes(q);
       setBranchId(x=>x||b[0]?.id||'');setOrderForm(x=>({...x,branch:x.branch||b[0]?.id||'',area:x.area||a[0]?.id||''}));setTransferForm(x=>({...x,from:x.from||b[0]?.id||'',to:x.to||b.find(y=>y.id!==b[0]?.id)?.id||''}));
     }catch(e){setError(errText(e));}finally{setLoading(false);setRefreshing(false);}
