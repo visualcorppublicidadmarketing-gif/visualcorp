@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowUpRight, ChevronDown, ChevronRight, CircleHelp, LayoutDashboard, LogOut, Menu, X, type LucideIcon } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, ChevronRight, CircleHelp, LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, X, type LucideIcon } from 'lucide-react';
 import { useWorkspace } from './workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { AdminCommandPalette } from '../components/AdminCommandPalette';
@@ -8,13 +8,15 @@ import { NumberTicker, SpotlightLayer, clearSpotlight, updateSpotlight } from '.
 import { ContextMenu, type ContextMenuAction } from '../components/ui/ContextMenu';
 import { motion, useReducedMotion } from 'motion/react';
 import { canViewNavigationItem, workspaceNavigation, workspaceNavGroups, type AppNavLink } from './navigation';
+import { Avatar, getGoogleAvatarUrl } from '../components/ui/Avatar';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
+const brandSymbol = '/brand/visualcorp-symbol.png';
 export type AppArea = 'admin' | 'operations';
 export type { AppNavLink } from './navigation';
 export interface BrandProps { dark?: boolean }
 export function Brand({ dark = false }: BrandProps) {
-  return <Link className={`brand ${dark ? 'brand-dark' : ''}`} to="/" aria-label="Visual Corp, página pública"><img src={wordmark} alt="Visual Corp — Agencia Creativa" /></Link>;
+  return <Link className={`brand ${dark ? 'brand-dark' : ''}`} to="/" aria-label="Visual Corp, página pública"><img className="brand-wordmark" src={wordmark} alt="Visual Corp — Agencia Creativa"/><img className="brand-symbol" src={brandSymbol} alt="" aria-hidden="true"/></Link>;
 }
 export interface AppFrameProps { area: AppArea; children: React.ReactNode }
 export function AppFrame({ area, children }: AppFrameProps) {
@@ -24,6 +26,14 @@ export function AppFrame({ area, children }: AppFrameProps) {
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return window.localStorage.getItem('vc-suite-sidebar-collapsed') === 'true'; } catch { return false; }
+  });
+  const toggleSidebar = () => setSidebarCollapsed((collapsed) => {
+    const next = !collapsed;
+    try { window.localStorage.setItem('vc-suite-sidebar-collapsed', String(next)); } catch { /* Storage can be unavailable in private browsing. */ }
+    return next;
+  });
   useEffect(() => {
     if (!mobileNavOpen) return undefined;
     const closeOnEscape = (event) => { if (event.key === 'Escape') setMobileNavOpen(false); };
@@ -40,6 +50,8 @@ export function AppFrame({ area, children }: AppFrameProps) {
   }, [activeNavGroup?.id]);
   const areaTitle = 'Visual Corp Suite';
   const profileLabel = profiles.map((profile) => profile.name).join(' · ') || roles.join(' · ');
+  const userDisplayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || 'Visual Corp';
+  const googleAvatarUrl = getGoogleAvatarUrl(user);
   const directNavLinks = nav.filter((link) => !navGroupDefinitions.some((group) => group.paths.includes(link.to)));
   const contextActions: ContextMenuAction[] = [
     { label: 'Ir al inicio del panel', icon: <LayoutDashboard size={14}/>, onSelect: () => navigate('/panel') },
@@ -62,8 +74,8 @@ export function AppFrame({ area, children }: AppFrameProps) {
     { kind: 'separator', label: '', onSelect: () => {} },
     { label: 'Volver arriba', icon: <ArrowUpRight size={14}/>, shortcut: '↑', onSelect: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
   ];
-  const renderNavLink = ({ to, label, icon: Icon, end }: AppNavLink) => <NavLink key={to} end={end} to={to} title={label} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><Icon size={18}/><span>{label}</span>{to === '/operaciones/crm' && data.leads.length > 0 && <b className="sidebar-count">{data.leads.length}</b>}</NavLink>;
-  return <div className={`work-app area-${area}`}>
+  const renderNavLink = ({ to, label, icon: Icon, end }: AppNavLink) => <NavLink key={to} end={end} to={to} title={label} aria-label={label} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><Icon size={18}/><span>{label}</span>{to === '/operaciones/crm' && data.leads.length > 0 && <b className="sidebar-count">{data.leads.length}</b>}</NavLink>;
+  return <div className={`work-app area-${area}${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
     <ContextMenu scope="document" trigger={false} label="Acciones de navegación" actions={contextActions}/>
     <aside id="sidebar-workspace" className={`sidebar ${mobileNavOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-brand"><Brand/><button title="Ayuda" aria-label="Ayuda"><CircleHelp size={18}/></button></div>
@@ -77,17 +89,17 @@ export function AppFrame({ area, children }: AppFrameProps) {
           const containsCurrentPage = group.id === activeNavGroup?.id;
           const groupControlId = `nav-group-${area}-${group.id}`;
           return <section className={`sidebar-nav-group ${containsCurrentPage ? 'has-active-page' : ''}`} key={group.id}>
-            <button className="sidebar-group-toggle" type="button" aria-expanded={isExpanded} aria-controls={groupControlId} onClick={() => setExpandedNavGroups((current) => ({ ...current, [group.id]: !current[group.id] }))}>
+            <button className="sidebar-group-toggle" title={group.label} aria-label={group.label} type="button" aria-expanded={isExpanded} aria-controls={groupControlId} onClick={() => setExpandedNavGroups((current) => ({ ...current, [group.id]: !current[group.id] }))}>
               <GroupIcon size={17}/><span>{group.label}</span><small>{group.items.length}</small><ChevronDown className="sidebar-group-chevron" size={15}/>
             </button>
             <div className="sidebar-group-items" id={groupControlId} hidden={!isExpanded}>{group.items.map(renderNavLink)}</div>
           </section>;
         })}
       </nav>
-      <div className="sidebar-bottom"><div className="sidebar-profile"><div className="profile-avatar">VC</div><span><b>{user?.email || 'Visual Corp'}</b><small>{profileLabel}</small></span><button className="icon-button" aria-label="Cerrar sesión" onClick={signOut}><LogOut size={16}/></button></div></div>
+      <div className="sidebar-bottom"><div className="sidebar-profile"><Avatar name={userDisplayName} src={googleAvatarUrl} size="md" className="profile-avatar" badge={googleAvatarUrl ? <span className="vc-google-avatar-mark">G</span> : undefined}/><span><b>{user?.email || userDisplayName}</b><small>{profileLabel}</small></span><button className="icon-button" aria-label="Cerrar sesión" onClick={signOut}><LogOut size={16}/></button></div></div>
     </aside>
     {mobileNavOpen && <button className="mobile-nav-backdrop" aria-label="Cerrar menú" onClick={() => setMobileNavOpen(false)}/>}
-    <div className="main-shell"><header className="topbar"><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'} aria-expanded={mobileNavOpen} aria-controls="sidebar-workspace" onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}</button><div className="breadcrumbs"><span>{areaTitle}</span><ChevronRight size={14}/><b>{data.settings.name}</b></div><div className="topbar-right"><AdminCommandPalette items={nav}/><span className="local-badge"><span className="status-dot"/> Supabase conectado</span><button className="top-avatar" aria-label="Perfil" onClick={signOut}>VC</button></div></header><main className="main-content"><motion.div key={pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.24 }}>{children}</motion.div><footer className="local-footer">Acceso autenticado y permisos comprobados en Supabase.</footer></main></div>
+    <div className="main-shell"><header className="topbar"><button className="desktop-sidebar-toggle" type="button" aria-label={sidebarCollapsed ? 'Expandir navegación' : 'Contraer navegación'} aria-pressed={sidebarCollapsed} title={sidebarCollapsed ? 'Expandir navegación' : 'Contraer navegación'} onClick={toggleSidebar}>{sidebarCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}</button><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'} aria-expanded={mobileNavOpen} aria-controls="sidebar-workspace" onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}</button><div className="breadcrumbs"><span>{areaTitle}</span><ChevronRight size={14}/><b>{data.settings.name}</b></div><div className="topbar-right"><AdminCommandPalette items={nav}/><span className="local-badge"><span className="status-dot"/> Supabase conectado</span><button className="top-avatar" aria-label={`Cerrar sesión de ${userDisplayName}`} title={userDisplayName} onClick={signOut}><Avatar name={userDisplayName} src={googleAvatarUrl} size="sm" badge={googleAvatarUrl ? <span className="vc-google-avatar-mark">G</span> : undefined}/></button></div></header><main className="main-content"><motion.div key={pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.24 }}>{children}</motion.div><footer className="local-footer">Acceso autenticado y permisos comprobados en Supabase.</footer></main></div>
   </div>;
 }
 

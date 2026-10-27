@@ -2,20 +2,20 @@ import React from 'react';
 import { TrendingUp, PieChart as PieIcon } from 'lucide-react';
 
 export function POSFinancialCharts({ dailyBreakdown = [], paymentMethods = {} }: { dailyBreakdown?: Array<{ totalSales?: number; totalDeposits?: number; date?: string; label?: string; dayName?: string }>; paymentMethods?: Record<string, number> }) {
-  const money = (val) => `$${(Number(val) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const money = (val) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(Number(val) || 0);
 
   // Prepare Daily Trend Data
   const days = dailyBreakdown.slice(-7);
-  const maxSale = Math.max(1, ...days.map((d) => d.totalSales || 0));
+  const maxAmount = Math.max(1, ...days.flatMap((day) => [day.totalSales || 0, day.totalDeposits || 0]));
 
   // Prepare Payment Methods Donut Data
-  const methods = [
-    { label: 'Efectivo en Caja', value: paymentMethods.cash || 0, color: '#16a34a' },
-    { label: 'Banco Pichincha / Deuna', value: (paymentMethods.transfer || 0) * 0.7, color: '#0284c7' },
-    { label: 'Otros Bancos (Guayaquil/Produbanco)', value: (paymentMethods.transfer || 0) * 0.3, color: '#6366f1' },
-    { label: 'Tarjetas Datafast / Medianet', value: paymentMethods.card || 0, color: '#ea580c' },
-    { label: 'Cheques / Otros', value: paymentMethods.check || 0, color: '#64748b' }
-  ].filter((m) => m.value > 0);
+  const methodLabels: Record<string, string> = {
+    cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', check: 'Cheque', other: 'Otro medio',
+  };
+  const methodColors = ['#16a34a', '#0284c7', '#ea580c', '#64748b', '#6366f1'];
+  const methods = Object.entries(paymentMethods)
+    .map(([key, rawValue], index) => ({ label: methodLabels[key] || key, value: Number(rawValue) || 0, color: methodColors[index % methodColors.length] }))
+    .filter((method) => method.value > 0);
 
   const totalPayments = methods.reduce((sum, m) => sum + m.value, 0);
 
@@ -33,7 +33,7 @@ export function POSFinancialCharts({ dailyBreakdown = [], paymentMethods = {} }:
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
           <TrendingUp size={18} style={{ color: 'var(--orange)' }} />
           <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: 'var(--ink)' }}>
-            Tendencia de Ventas & Cobros Diarios
+            Tendencia de ventas y abonos
           </h4>
         </div>
 
@@ -44,8 +44,8 @@ export function POSFinancialCharts({ dailyBreakdown = [], paymentMethods = {} }:
         ) : (
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px', height: '140px', paddingTop: '20px' }}>
             {days.map((d, idx) => {
-              const salesHeight = Math.max(8, ((d.totalSales || 0) / maxSale) * 110);
-              const depositsHeight = Math.max(8, ((d.totalDeposits || 0) / maxSale) * 110);
+              const salesHeight = (d.totalSales || 0) > 0 ? Math.max(3, ((d.totalSales || 0) / maxAmount) * 110) : 2;
+              const depositsHeight = (d.totalDeposits || 0) > 0 ? Math.max(3, ((d.totalDeposits || 0) / maxAmount) * 110) : 2;
               return (
                 <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                   <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end', height: '110px' }}>
@@ -82,11 +82,11 @@ export function POSFinancialCharts({ dailyBreakdown = [], paymentMethods = {} }:
         <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--line)', fontSize: '11px', fontWeight: 800 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'var(--orange)' }} />
-            <span>Facturación</span>
+            <span>Ventas</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#22c55e' }} />
-            <span>Cobrado Líquido</span>
+            <span>Abonos</span>
           </div>
         </div>
       </div>
@@ -102,7 +102,7 @@ export function POSFinancialCharts({ dailyBreakdown = [], paymentMethods = {} }:
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
           <PieIcon size={18} style={{ color: '#0284c7' }} />
           <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: 'var(--ink)' }}>
-            Distribución de Recaudación por Canal
+            Recaudación por medio de pago
           </h4>
         </div>
 

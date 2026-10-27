@@ -3,12 +3,15 @@ import { Link, NavLink, Outlet, useLocation, useParams, useSearchParams } from '
 import { motion, useReducedMotion } from 'motion/react';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Globe2, MapPin, Menu, MessageCircle, Phone, Printer, ScanLine, Scissors, Shirt, Sparkles, Store, PanelsTopLeft, X, Sun, Moon } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
+import { useAuth } from '../auth/AuthProvider';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
+import { Avatar, getGoogleAvatarUrl } from '../components/ui/Avatar';
 import { multiProductQuoteService, publicAddress, publicServiceFamilies, serviceDetailContent, serviceProjectPrompts } from './content.ts';
 import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
 import { AnimatedList, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
 import { AnimatedThemeToggler } from '../components/ui/AnimatedThemeToggler';
 import { PublicSiteContextMenu } from './PublicSiteContextMenu';
+import { FooterParticles } from './FooterParticles';
 import './public-site-v2.css';
 import './glass-system.css';
 import './public-navigation.css';
@@ -39,6 +42,7 @@ function BrandLink({ onClick = undefined, footer = false, theme = 'dark' }) {
 
 function SiteHeader({ theme, onThemeChange }) {
   const { data } = useWorkspace();
+  const { user } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<'services' | 'company' | null>(null);
@@ -92,6 +96,8 @@ function SiteHeader({ theme, onThemeChange }) {
   const services = data.services.filter((service) => service.enabled);
   const serviceIsActive = location.pathname.startsWith('/servicios');
   const companyIsActive = ['/nosotros', '/como-trabajamos'].includes(location.pathname);
+  const userDisplayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'Tu cuenta';
+  const userAvatar = getGoogleAvatarUrl(user);
   return <header className="site-header" ref={headerRef}>
     <div className="site-header-inner"><BrandLink onClick={closeNavigation} theme={theme} />
       <nav className="site-nav" aria-label="Navegación principal">
@@ -104,7 +110,7 @@ function SiteHeader({ theme, onThemeChange }) {
         <NavLink to="/tienda" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Tienda</NavLink>
         <NavLink to="/contacto" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Contacto</NavLink>
       </nav>
-      <div className="site-header-actions"><AnimatedThemeToggler theme={theme} onThemeChange={onThemeChange} className="site-theme-toggle" aria-label={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}><span className="site-theme-toggle-icons" aria-hidden="true"><Sun className="theme-sun" size={17}/><Moon className="theme-moon" size={17}/></span></AnimatedThemeToggler><Link className="site-quote-button vc-shimmer-button" to="/cotizador" onClick={closeNavigation}><span className="quote-label-wide">Solicitar cotización</span><span className="quote-label-short">Cotizar</span><ArrowUpRight size={16} aria-hidden="true" /></Link><button ref={mobileButtonRef} type="button" className="site-menu-toggle" onClick={() => { setOpenMenu(null); setMobileOpen((open) => !open); }} aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={mobileOpen} aria-controls="site-mobile-navigation">{mobileOpen ? <X size={21}/> : <Menu size={21}/>}</button></div>
+      <div className="site-header-actions"><AnimatedThemeToggler theme={theme} onThemeChange={onThemeChange} className="site-theme-toggle" aria-label={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}><span className="site-theme-toggle-icons" aria-hidden="true"><Sun className="theme-sun" size={17}/><Moon className="theme-moon" size={17}/></span></AnimatedThemeToggler><Link className="site-quote-button vc-shimmer-button" to="/cotizador" onClick={closeNavigation}><span className="quote-label-wide">Solicitar cotización</span><span className="quote-label-short">Cotizar</span><ArrowUpRight size={16} aria-hidden="true" /></Link>{user&&<span className="site-session-avatar" title={`Sesión activa: ${userDisplayName}`}><Avatar name={userDisplayName} src={userAvatar} size="sm" badge={userAvatar?<span className="vc-google-avatar-mark">G</span>:undefined}/></span>}<button ref={mobileButtonRef} type="button" className="site-menu-toggle" onClick={() => { setOpenMenu(null); setMobileOpen((open) => !open); }} aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={mobileOpen} aria-controls="site-mobile-navigation">{mobileOpen ? <X size={21}/> : <Menu size={21}/>}</button></div>
       {openMenu === 'services' && <div className="site-mega-panel" id="site-services-panel">
         <div className="site-mega-intro"><span className="site-mega-kicker">LO QUE HACEMOS <i/></span><h2>De la idea<br/>a lo tangible<span>.</span></h2><p>Explora lo que podemos crear para tu marca, tu espacio o tu próximo proyecto.</p><Link to="/servicios" onClick={closeNavigation}>Explorar todos los servicios <ArrowUpRight size={16} aria-hidden="true" /></Link></div>
         <div className="site-mega-content"><span className="site-mega-label">ELIGE UNA ESPECIALIDAD</span><div className="site-mega-services">{services.map((service) => { const Icon = serviceIcons[service.id] || Sparkles; return <Link key={service.id} to={`/servicios/${service.id}`} onClick={closeNavigation} className={location.pathname === `/servicios/${service.id}` ? 'is-active' : ''}><span className="site-mega-icon"><Icon size={19} aria-hidden="true" /></span><span><strong>{service.name}</strong><small>{service.description}</small></span><ArrowUpRight className="site-mega-arrow" size={17} aria-hidden="true" /></Link>; })}</div></div>
@@ -120,6 +126,7 @@ function SiteFooter() {
   const services = data.services.filter((service) => service.enabled);
   return <footer className="site-footer" aria-label="Pie de página">
     <div className="footer-shell">
+      <FooterParticles />
       <div className="footer-topline">
         <span><i aria-hidden="true"/> VISUAL CORP <b>·</b> {data.settings.location.toUpperCase()}</span>
         <span className="footer-topline-promise">IDEAS QUE TOMAN FORMA <Sparkles size={13} aria-hidden="true"/></span>

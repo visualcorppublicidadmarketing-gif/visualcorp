@@ -1,0 +1,36 @@
+.finance-cash-registers { display: grid; gap: 16px; }
+.finance-cash-registers > .panel-heading { margin-bottom: 0; }
+.finance-cash-register-list { display: grid; gap: 12px; }
+.finance-cash-register-card { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.finance-cash-register-summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.finance-cash-register-summary > div:first-child { display: grid; gap: 4px; }
+.finance-cash-register-summary > div:first-child > span { color: var(--muted); font-size: .76rem; }
+.finance-cash-register-summary > div:first-child > b { font-size: .95rem; }
+.finance-cash-register-state { display: inline-flex; margin-left: 8px; padding: 3px 7px; border-radius: 999px; font-size: .66rem; font-weight: 700; vertical-align: middle; }
+.finance-cash-register-state.is-active { background: #e8f5ee; color: #236044; }
+.finance-cash-register-state.is-inactive { background: #f0f0f2; color: #696b74; }
+.finance-cash-register-numbers { display: grid; justify-items: end; gap: 3px; text-align: right; }
+.finance-cash-register-numbers strong { font-size: 1.12rem; font-variant-numeric: tabular-nums; }
+.finance-cash-register-numbers span { color: var(--muted); font-size: .76rem; }
+.finance-cash-register-progress { height: 9px; overflow: hidden; border-radius: 99px; background: color-mix(in srgb, var(--line) 65%, transparent); }
+.finance-cash-register-progress > i { display: block; height: 100%; border-radius: inherit; background: #168a74; }
+.finance-cash-register-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 10px; }
+.finance-cash-register-form label, .finance-cash-register-create > label { display: grid; gap: 5px; color: var(--muted); font-size: .78rem; }
+.finance-cash-register-active { display: flex !important; align-items: center; gap: 8px !important; min-height: 40px; }
+.finance-cash-register-active input { width: 16px; height: 16px; }
+.finance-cash-register-create { display: grid; grid-template-columns: 1fr; gap: 12px; padding-top: 15px; border-top: 1px solid var(--line); }
+.finance-cash-register-create h3 { margin: 4px 0 0; font-size: .98rem; }
+.finance-cash-register-create .finance-cash-register-form { margin-top: 2px; }
+.finance-cash-register-create > button, .finance-cash-register-card button { justify-self: start; }
+.finance-cash-register-empty { display: grid; gap: 5px; padding: 14px; border-radius: 10px; background: color-mix(in srgb, var(--line) 32%, var(--paper)); font-size: .84rem; line-height: 1.45; }
+.finance-cash-register-empty > span { color: var(--muted); }
+.finance-cash-register-empty > .button { justify-self: start; margin-top: 5px; }
+.finance-cash-register-alert, .finance-cash-register-notice { display: flex; align-items: start; gap: 8px; margin: 0; padding: 10px 12px; border-radius: 9px; font-size: .82rem; line-height: 1.4; }
+.finance-cash-register-alert { color: #9f2929; background: #fff0ef; }
+.finance-cash-register-notice { color: #16614f; background: #eaf7f2; }
+.finance-cash-register-note { margin: 0; color: var(--muted); font-size: .78rem; }
+@media (max-width: 600px) {
+  .finance-cash-register-summary { align-items: start; flex-direction: column; }
+  .finance-cash-register-numbers { justify-items: start; text-align: left; }
+  .finance-cash-register-form { grid-template-columns: 1fr; }
+}

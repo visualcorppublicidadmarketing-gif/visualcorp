@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye } from 'lucide-react';
 import { ContextMenu, type ContextMenuAction } from '../../../components/ui/ContextMenu';
-import { Badge, DatePicker } from '../../../components/ui/OperationalKit';
+import { Badge } from '../../../components/ui/OperationalKit';
+import { DatePicker } from '../../../components/ui/Calendar';
 import './marketing-calendar.css';
 
 export type MarketingCalendarPost = {
@@ -30,6 +31,13 @@ const shiftDate = (source: string, days: number) => {
   const [year, month, day] = source.slice(0, 10).split('-').map(Number);
   const shifted = new Date(year, month - 1, day + days, 12);
   return dateKey(shifted);
+};
+const weekOfMonth = (date: Date) => {
+  const first = new Date(date.getFullYear(), date.getMonth(), 1, 12);
+  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
+  return Math.floor((monday.getTime() - first.getTime()) / 604800000) + 1;
 };
 
 export function MarketingCalendar({ posts, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onDuplicate, onDelete }: Props) {
@@ -94,14 +102,17 @@ export function MarketingCalendar({ posts, canEdit, canDelete, selectedIds, onTo
       <div><span className="eyebrow">PLANIFICACIÓN EDITORIAL</span><h2>{view === 'month' ? monthLabel.format(anchor) : `Semana del ${new Intl.DateTimeFormat('es-EC',{day:'numeric',month:'short'}).format(cells[0])}`}</h2><p>Arrastra una ficha a otra fecha para reprogramarla. Usa clic derecho o ⋯ para sus acciones.</p></div>
       <div className="vc-marketing-calendar-toolbar"><div className="vc-marketing-calendar-view"><button type="button" className={view==='month'?'active':''} aria-pressed={view==='month'} onClick={()=>{setView('month');setExpandedDate(null);}}>Mes</button><button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{setView('week');setExpandedDate(null);}}>Semana</button></div><div className="vc-marketing-calendar-controls"><DatePicker label="Ir a fecha" value={dateKey(anchor)} onChange={(value)=>{if(!value)return;const [year,month,day]=value.split('-').map(Number);setAnchor(new Date(year,month-1,day,12));setExpandedDate(null);}}/><button className="button button-outline" type="button" onClick={()=>{setAnchor(new Date());setExpandedDate(null);}}>Hoy</button><button className="icon-button" type="button" aria-label="Anterior" onClick={()=>move(-1)}><ChevronLeft size={17}/></button><button className="icon-button" type="button" aria-label="Siguiente" onClick={()=>move(1)}><ChevronRight size={17}/></button><ContextMenu className="vc-calendar-toolbar-context" label="Acciones del calendario" actions={calendarActions}><span aria-hidden="true"/></ContextMenu></div></div>
     </header>
-    <div className="vc-marketing-calendar-grid" role="grid" aria-label={monthLabel.format(anchor)} style={{'--calendar-cols':view==='week'?7:7} as React.CSSProperties}>
-      {weekdays.map((day)=><div key={day} className="vc-marketing-calendar-weekday" role="columnheader">{day}</div>)}
+    <div className="vc-marketing-calendar-grid" role="grid" aria-label={monthLabel.format(anchor)} style={{'--calendar-cols':8} as React.CSSProperties}>
+      <div className="vc-marketing-calendar-weekday vc-marketing-calendar-week-number-heading" role="columnheader" aria-label="Semana del mes">Sem.</div>{weekdays.map((day)=><div key={day} className="vc-marketing-calendar-weekday" role="columnheader">{day}</div>)}
       {cells.map((date,cellIndex)=>{
         const key=dateKey(date), items=byDate.get(key)||[];
         const inMonth=view==='week'||date.getMonth()===anchor.getMonth();
+        const firstDateOfRow = cells.slice(cellIndex - (cellIndex % 7), cellIndex - (cellIndex % 7) + 7);
+        const monthRepresentative = firstDateOfRow.find((rowDate) => rowDate.getMonth() === anchor.getMonth() && rowDate.getFullYear() === anchor.getFullYear());
+        const weekLabel = weekOfMonth(view === 'month' ? monthRepresentative || date : date);
         const maxVisible=view==='week'?12:6;
         const visible=items.slice(0,maxVisible), remaining=items.length-visible.length;
-        return <ContextMenu key={key} displayContents trigger={false} className="vc-calendar-day-scope" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" aria-label={`${key}, ${items.length} publicaciones`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${dragging?' can-drop':''}${expandedDate===key?' is-expanded':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
+        return <React.Fragment key={key}>{cellIndex % 7 === 0 && <div className="vc-marketing-calendar-week-number" role="rowheader" aria-label={`Semana ${weekLabel}`}>{weekLabel}</div>}<ContextMenu displayContents trigger={false} className="vc-calendar-day-scope" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" aria-label={`${key}, ${items.length} publicaciones`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${dragging?' can-drop':''}${expandedDate===key?' is-expanded':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
           onDragOver={(event)=>{if(canEdit&&dragging)event.preventDefault();}}
           onDrop={(event)=>{event.preventDefault();const post=posts.find((item)=>item.id===(event.dataTransfer.getData('text/plain')||dragging));if(post&&post.scheduled_date.slice(0,10)!==key)onReschedule(post,key);setDragging(null);}}
           onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))event.currentTarget.classList.remove('is-drop-target');}}
@@ -118,7 +129,7 @@ export function MarketingCalendar({ posts, canEdit, canDelete, selectedIds, onTo
               </ContextMenu>
             </div>;
           })}{remaining>0&&<button type="button" className="vc-marketing-calendar-more" onClick={()=>setExpandedDate(expandedDate===key?null:key)}>+{remaining} más · ver agenda</button>}</div>
-        </div></ContextMenu>;
+        </div></ContextMenu></React.Fragment>;
       })}
     </div>
     {expandedDate&&<section className="vc-marketing-day-agenda" aria-label={`Agenda del ${expandedDate}`}><header><div><span className="eyebrow">AGENDA DEL DÍA</span><b>{new Intl.DateTimeFormat('es-EC',{dateStyle:'full'}).format(new Date(`${expandedDate}T12:00:00`))} · {(byDate.get(expandedDate)||[]).length} publicaciones</b></div><button type="button" className="icon-button" aria-label="Cerrar agenda" onClick={()=>setExpandedDate(null)}><X size={15}/></button></header>{(byDate.get(expandedDate)||[]).map((post)=><article key={post.id}><span className="vc-marketing-agenda-time">{post.scheduled_time||'Sin hora'}</span><button type="button" className="vc-marketing-agenda-title" onClick={()=>onSelect(post)}><b>{post.title}</b><small>{post.platform||'Canal pendiente'} · {post.status}{post.tags?.length?` · ${post.tags.join(', ')}`:''}</small></button><ContextMenu label={`Acciones para ${post.title}`} actions={contextualActions(post)}><span/></ContextMenu></article>)}{canEdit&&<button type="button" className="button button-outline" onClick={()=>onCreate(expandedDate)}><Plus size={14}/>Crear publicación</button>}</section>}
