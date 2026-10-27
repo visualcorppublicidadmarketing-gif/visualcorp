@@ -38,7 +38,8 @@ En la revisión del 27 de octubre también se corrigieron estos fallos locales:
 - La lectura remota actual confirma `sales.view` y `sales.edit` activos en `asesoras`, pero 0 integrantes activos con ese perfil; no hay una cuenta remota confirmada para asignar a Vicky. El perfil sigue sin `cash.view` ni `cash.manage_cash`; el flujo asignado se apoya en `sales.edit` sin otorgar esos permisos globales.
 - La lista remota `20261027150924`, `20261027151018`, `20261027151044` ahora tiene archivos locales con las mismas versiones. Las dos copias originales de este checkout se conservaron en `migration-source-archive/`; la versión `20261027151044` se reconstruyó desde la definición de la función que está aplicada actualmente en remoto, porque no apareció su SQL histórico original.
 - La migración de cajas se aplicó en Supabase como `20261027170748`; el nombre local quedó alineado con ese registro para que el historial local y remoto coincidan.
-- La producción sigue sirviendo el commit `4133d8f` y el bundle actual aún no incluye estos paneles locales. El código sigue pendiente de publicación.
+- En la revisión previa al PR #107, producción servía el commit `4133d8f`. El PR #107 quedó integrado en `da5a504`; el despliegue de producción Vercel `dpl_xXsbwb75pQW6V3mWR9H4bDMLnK65` está `READY` para ese commit.
+- La ruta `/operaciones/finanzas` respondió `200 OK` en el dominio de producción y el chunk publicado `OperationsFinance-CvqkIVTV.js` contiene las nuevas cadenas de cajas y metas semanales. Esto confirma la entrega estática; no sustituye una sesión autenticada para comprobar permisos y datos en pantalla.
 - La consulta agregada remota confirma 0 ventas confirmadas, 0 líneas, 0 pagos y 0 devoluciones; no hay datos remotos para validar patrones o metas reales.
 
 ## Pendientes
@@ -46,8 +47,8 @@ En la revisión del 27 de octubre también se corrigieron estos fallos locales:
 - La migración ya está aplicada y las dos tablas responden con RLS habilitada. La asignación real a una asesora y sus metas esperan que administración configure una caja para una cuenta activa.
 - Antes de asignar una caja, administración debe confirmar la cuenta y sucursal de la asesora; la revisión remota no mostró membresías activas con rol `advisor` ni una cuenta confirmada para Vicky.
 - Las capturas `01` a `04` son referencias del estado anterior, no evidencia visual de esta versión.
-- No se publicó un despliegue.
+- No se completó una revisión visual autenticada de la versión publicada. La revisión local autenticada anterior no confirma el comportamiento de producción.
 
 ## Siguiente revisión
 
-Después de publicar el código, abrir Finanzas con una cuenta de gestión, confirmar que se leen las cajas y las metas, y revisar una asignación y su avance semanal con una cuenta asesora activa.
+Abrir Finanzas en producción con una cuenta de gestión, confirmar que se leen las cajas y las metas, y revisar una asignación y su avance semanal con una cuenta asesora activa cuando administración confirme esa cuenta y sucursal.
