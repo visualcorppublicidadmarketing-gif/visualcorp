@@ -89,6 +89,8 @@ html[data-public-theme="light"] .public-site .site-page-hero .site-eyebrow.light
 html[data-public-theme="light"] .public-site .site-page-hero h1 { color: #211b2a; }
 html[data-public-theme="light"] .public-site .site-page-hero p { color: #5f5967; }
 html[data-public-theme="light"] .public-site .site-page-hero .site-primary-button { background: linear-gradient(110deg, #cb168e, #8e35bb); color: #fff; }
+html[data-public-theme="light"] .public-site .site-page-hero .site-secondary-button { border-color: #d9d1e0; background: rgba(255,255,255,.78); color: #322d3c; backdrop-filter: none; }
+html[data-public-theme="light"] .public-site .site-page-hero .site-secondary-button:hover { border-color: #b980b0; background: #fff; color: #211b2a; }
 
 html[data-public-theme="light"] .public-site .showcase-section,
 html[data-public-theme="light"] .public-site .site-content-highlights { background: #faf8fc; color: #211b2a; }
