@@ -19,6 +19,14 @@
   overflow: hidden;
 }
 
+.vc-magic-spotlight {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
 .vc-magic-card::before {
   position: absolute;
   z-index: 0;

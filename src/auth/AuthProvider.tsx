@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
   const [accessError, setAccessError] = useState('');
   const sessionRef = useRef<any>(null);
   const accessRequestRef = useRef(0);
+  const lastInvitationClaimAtRef = useRef(0);
 
   const refreshAccess = useCallback(async (currentSession?: any) => {
     if (!supabase) { setLoading(false); return; }
@@ -38,6 +39,12 @@ export function AuthProvider({ children }) {
     }
 
     try {
+      const now = Date.now();
+      if (userChanged || now - lastInvitationClaimAtRef.current >= 30_000) {
+        lastInvitationClaimAtRef.current = now;
+        try { await supabase.rpc('claim_organization_access_invitations'); } catch { /* Access loading still uses the existing permission check. */ }
+        if (requestId !== accessRequestRef.current) return;
+      }
       const { data, error } = await supabase.rpc('get_my_visualcorp_access');
       if (requestId !== accessRequestRef.current) return;
       if (error) {
@@ -101,7 +108,6 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => ({
     session, user: session?.user || null, roles, profiles, permissions, organizationId, loading, accessError, refreshAccess,
     hasPermission: (module: string, action: string) => roles.includes('owner') || permissions?.[module]?.[action] === true || (action === 'view' && permissions?.[module]?.edit === true),
-    canAccess: (allowed: string[]) => roles.includes('owner') || allowed.some((role) => roles.includes(role)),
     sendSignInLink: async (email: string) => {
       if (!supabase) throw new Error('La conexión con Supabase todavía no está configurada.');
       const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } });

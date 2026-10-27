@@ -2,7 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ArrowUpRight, LogOut } from 'lucide-react';
 import { useAuth } from './AuthProvider';
-import { legacyPanelPaths, permissionByPath } from '../app/navigation';
+import { canViewNavigationItem, legacyPanelPaths, permissionByPath, workspaceNavigation } from '../app/navigation';
 
 type AccessArea = 'website' | 'catalog' | 'team' | 'operations';
 
@@ -81,10 +81,11 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
   // The lifecycle page combines several independently permissioned flows.
   // Let users enter when they can see at least one flow; the page then filters
   // its tabs and data by each flow's own permission.
+  const navigationItem = workspaceNavigation.find((item) => item.to === location.pathname);
   const canAccessPage = legacyPanelPaths.has(location.pathname)
     ? auth.hasPermission('dashboard', 'view')
-    : location.pathname === '/operaciones/flujos'
-    ? ['sales', 'inventory', 'workshop', 'quotes'].some((module) => auth.hasPermission(module, 'view'))
+    : navigationItem
+    ? canViewNavigationItem(navigationItem, auth.hasPermission)
     : auth.hasPermission(requiredModule, 'view');
   if (!canAccessPage) return <main className="access-screen"><section className="access-card">
     <img src={wordmark} alt="Visual Corp" />

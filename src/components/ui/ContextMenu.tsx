@@ -134,9 +134,17 @@ export function ContextMenu({ actions, label = 'Más opciones', children, classN
   useEffect(() => {
     if (!open) return undefined;
     const closeOutside = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node) && !menuRef.current?.contains(event.target as Node)) close(false);
+      if (rootRef.current?.contains(event.target as Node)) return;
+      const menu = menuRef.current;
+      if (menu && (event.composedPath().includes(menu) || (event.target instanceof Node && menu.contains(event.target)))) return;
+      // Native scrollbar presses can be reported against the document instead of
+      // the scroll container. Keep the menu open when the pointer is still over it.
+      if (menu) {
+        const rect = menu.getBoundingClientRect();
+        if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) return;
+      }
+      close(false);
     };
-    const closeOnScroll = () => close(false);
     const keydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { event.preventDefault(); close(); return; }
       const items = [...(menuRef.current?.querySelectorAll<HTMLElement>(`${menuSelector}:not([aria-disabled="true"]):not(:disabled)`) || [])]
@@ -156,12 +164,10 @@ export function ContextMenu({ actions, label = 'Más opciones', children, classN
     };
     document.addEventListener('pointerdown', closeOutside);
     document.addEventListener('keydown', keydown);
-    window.addEventListener('scroll', closeOnScroll, { passive: true, capture: true });
     requestAnimationFrame(() => menuRef.current?.querySelector<HTMLElement>(menuSelector)?.focus());
     return () => {
       document.removeEventListener('pointerdown', closeOutside);
       document.removeEventListener('keydown', keydown);
-      window.removeEventListener('scroll', closeOnScroll, true);
     };
   }, [open]);
 

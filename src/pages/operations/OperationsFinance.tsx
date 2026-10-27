@@ -77,10 +77,11 @@ async function readAllRows(createQuery) {
 }
 
 export function OperationsFinance() {
-  const { organizationId, hasPermission, roles, user } = useAuth();
-  const canManageFinance = roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
-  const canSeePayrollDeductions = roles.some((role) => ['owner', 'admin'].includes(role));
-  const canSeeInventoryCosts = roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
+  const { organizationId, hasPermission, user } = useAuth();
+  const canManageFinance = hasPermission('finance', 'manage_finance');
+  const canSeePayrollDeductions = hasPermission('personnel', 'view_compensation');
+  const canSeeInventoryCosts = hasPermission('inventory_costs', 'view') && hasPermission('inventory_costs', 'view_costs');
+  const canSeeRefundSettlements = hasPermission('sales', 'view');
   const canSeeCrm = hasPermission('crm', 'view');
   const canSeeQuotes = hasPermission('quotes', 'view');
   const canSeeCashReconciliation = hasPermission('cash', 'view');
@@ -112,6 +113,8 @@ export function OperationsFinance() {
   const [branch, setBranch] = useState('all');
   const [method, setMethod] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [error, setError] = useState('');
   const [inventoryCostSummary, setInventoryCostSummary] = useState<InventoryCostSummary | null>(null);
   const [inventoryCostLoading, setInventoryCostLoading] = useState(false);
@@ -141,7 +144,7 @@ export function OperationsFinance() {
       { table: 'sales', areas: ['sales', 'inventoryCosts'] },
       { table: 'sale_payments', areas: ['sales', 'cash'] },
       { table: 'sale_returns', areas: ['sales'] },
-      { table: 'sale_refund_settlements', areas: ['sales', 'cash'], enabled: canSeeInventoryCosts },
+      { table: 'sale_refund_settlements', areas: ['sales', 'cash'], enabled: canSeeRefundSettlements },
       { table: 'finance_expenses', areas: ['expenses'], enabled: canManageFinance },
       { table: 'finance_expense_payments', areas: ['expenses', 'expensePayments'], enabled: canManageFinance },
       { table: 'finance_recurring_templates', areas: ['expenses'], enabled: canManageFinance },
@@ -195,6 +198,9 @@ export function OperationsFinance() {
   useEffect(() => {
     let active = true;
     const load = async () => {
+      setLoading(true);
+      setHasLoaded(false);
+      setError('');
       if (!supabase) {
         setError('La conexión con la base de datos no está disponible.');
         setLoading(false);
@@ -206,8 +212,6 @@ export function OperationsFinance() {
         return;
       }
 
-      setLoading(true);
-      setError('');
       setRefundSettlementError('');
       setSaleReturnsError('');
       try {
@@ -262,7 +266,7 @@ export function OperationsFinance() {
             setSaleReturnsError(returnLoadError?.message || 'No se pudieron cargar las devoluciones; los saldos ajustados no están disponibles.');
           }
         }
-        if (canSeeInventoryCosts) {
+        if (canSeeRefundSettlements) {
           try {
             const refundRows = await readAllRows(() => supabase
               .from('sale_refund_settlements')
@@ -279,6 +283,7 @@ export function OperationsFinance() {
         } else if (active) {
           setRefundSettlements([]);
         }
+        if (active) setHasLoaded(true);
       } catch (loadError) {
         if (active) setError(loadError?.message || 'No se pudieron cargar las ventas y los pagos.');
       } finally {
@@ -288,12 +293,12 @@ export function OperationsFinance() {
 
     void load();
     return () => { active = false; };
-  }, [organizationId, hasPermission, canSeeCrm, canSeeInventoryCosts, canSeeCashReconciliation, realtimeRevision.sales, realtimeRevision.inventoryCosts]);
+  }, [organizationId, hasPermission, canSeeCrm, canSeeInventoryCosts, canSeeRefundSettlements, canSeeCashReconciliation, realtimeRevision.sales, realtimeRevision.inventoryCosts, loadAttempt]);
 
   useEffect(() => {
     let active = true;
     const range = businessMonthRange(month);
-    if (!canSeeInventoryCosts || !supabase || !organizationId || !range) {
+    if (!canManageFinance || !supabase || !organizationId || !range) {
       setExpensePayments([]);
       setExpensePaymentsError('');
       setExpensePaymentsLoading(false);
@@ -321,7 +326,7 @@ export function OperationsFinance() {
         setExpensePaymentsLoading(false);
       });
     return () => { active = false; };
-  }, [organizationId, canSeeInventoryCosts, month, realtimeRevision.expensePayments]);
+  }, [organizationId, canManageFinance, month, realtimeRevision.expensePayments]);
 
   useEffect(() => {
     let active = true;
@@ -334,6 +339,9 @@ export function OperationsFinance() {
       return () => { active = false; };
     }
     if (!supabase || !organizationId) {
+      setCashSessions([]);
+      setCashSessionMovements([]);
+      setCashMovementError('');
       setCashSessionError(!supabase ? 'La conexión con la base de datos no está disponible.' : 'Esta cuenta no tiene una organización asignada.');
       setCashSessionLoading(false);
       return () => { active = false; };
@@ -988,6 +996,10 @@ export function OperationsFinance() {
   };
 
   if (loading) return <div className="op-flow-loading"><LoaderCircle className="spin" /> Cargando ventas y pagos registrados…</div>;
+  if (!hasLoaded) return <section className="panel op-finance-unavailable" role="alert">
+    <div><span className="eyebrow">RESUMEN FINANCIERO</span><h2>No pudimos confirmar los datos</h2><p>{error || 'El resumen aún no está disponible. Vuelve a intentarlo para consultar los registros actuales.'}</p></div>
+    <button className="button button-outline" type="button" onClick={() => setLoadAttempt((current) => current + 1)}>Reintentar carga</button>
+  </section>;
 
   return <div className="op-finance-page">
     <OperationsFinanceControls month={month} branch={branch} realtimeRefreshKey={realtimeRevision.expenses} />
@@ -1021,11 +1033,11 @@ export function OperationsFinance() {
         {paymentMethods.map((item) => <option key={item} value={item}>{item}</option>)}
       </select></label>
     </section>
-    <section className="op-finance-kpis">
-      <article><span>Ventas confirmadas</span><b>{money(totalSold)}</b><small>{salesInPeriod.length} ventas registradas</small></article>
+    <section className="op-finance-kpis" role="group" aria-label="Resumen financiero del periodo filtrado">
+      <article className="is-sales"><span>Ventas confirmadas</span><b>{money(totalSold)}</b><small>{salesInPeriod.length} ventas registradas</small></article>
       <article className="is-collected"><span>Pagos recibidos en el periodo</span><b>{money(totalCollected)}</b><small>Abonos asociados a las ventas filtradas</small></article>
-      <article><span>Saldo por cobrar</span><b>{saleReturnsError ? '—' : money(outstanding)}</b><small>{saleReturnsError ? 'No disponible: error al cargar devoluciones' : 'Ajustado por devoluciones de ventas filtradas'}</small></article>
-      <article><span>Valor promedio por venta</span><b>{money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b><small>Solo ventas confirmadas</small></article>
+      <article className={saleReturnsError ? '' : outstanding > 0 ? 'is-outstanding' : 'is-settled'}><span>Saldo por cobrar</span><b>{saleReturnsError ? '—' : money(outstanding)}</b><small>{saleReturnsError ? 'No disponible: error al cargar devoluciones' : 'Ajustado por devoluciones de ventas filtradas'}</small></article>
+      <article className="is-average"><span>Valor promedio por venta</span><b>{money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b><small>Solo ventas confirmadas</small></article>
     </section>
     <section className="panel op-finance-receivables" aria-labelledby="op-finance-receivables-title">
       <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → FINANZAS → CRM · SALDOS ABIERTOS</span><h2 id="op-finance-receivables-title">Antigüedad de saldos por cobrar</h2><p className="op-finance-cost-note">La venta se ajusta por el valor de artículos devueltos. Solo los reembolsos liquidados reducen el cobro neto. El filtro de mes y medio de pago no aplica; se usan asesora y sucursal.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadReceivablesCsv} disabled={!openReceivables.length || !!saleReturnsError}><Download size={15}/> Exportar saldos CSV</button><a className="button button-outline" href="/operaciones/pos">Abrir POS <ArrowUpRight size={15}/></a>{canSeeCrm && <a className="button button-outline" href="/operaciones/clientes">Abrir CRM <ArrowUpRight size={15}/></a>}</div></div>
@@ -1040,7 +1052,7 @@ export function OperationsFinance() {
       {openReceivables.length > 10 && <p className="op-finance-cost-note">Se muestran las 10 ventas con mayor antigüedad; el resumen y el CSV consideran {receivablesWithBalance.length} saldos abiertos y {customerCredits.length} saldos a favor.</p>}
       <p className="op-finance-cost-note">Los días son antigüedad desde la venta, no mora contractual. El valor devuelto usa cantidad por precio unitario guardado en POS; cobrado neto resta únicamente reembolsos liquidados. Los reembolsos pendientes se muestran aparte y el saldo a favor requiere revisión manual. No se crean pagos, créditos ni compensaciones automáticamente. Las fichas CRM permiten documentar el seguimiento.</p></>}
     </section>
-    {canSeeInventoryCosts && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-refund-title">
+    {canSeeRefundSettlements && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-refund-title">
       <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → CAJA → FINANZAS</span><h2 id="op-finance-refund-title">Cobros y reembolsos liquidados</h2><p className="op-finance-cost-note">Filtra por la fecha real del cobro o de la liquidación, además de asesora, sucursal y medio.</p></div><button className="button button-outline" onClick={downloadRefundsCsv} disabled={!refundsSettledInPeriod.length}><Download size={15}/> Exportar reembolsos</button></div>
       {refundSettlementError ? <p className="op-finance-cost-error" role="alert">{refundSettlementError}</p> : <>
         <div className="op-finance-refund-metrics"><article><span>Cobros POS del periodo</span><b>{money(posCashInflow)}</b><small>Incluye ventas anuladas si hubo cobro efectivo registrado</small></article><article><span>Reembolsos liquidados</span><b>{money(posRefundOutflow)}</b><small>{refundsSettledInPeriod.length} liquidaciones con fecha efectiva</small></article><article className={posNetCashFlow < 0 ? 'is-negative' : ''}><span>Flujo neto POS</span><b>{money(posNetCashFlow)}</b><small>Cobros menos reembolsos liquidados</small></article></div>
@@ -1048,7 +1060,7 @@ export function OperationsFinance() {
         <p className="op-finance-cost-note">El flujo neto POS incluye cobros y reembolsos liquidados; no descuenta compras, nómina ni otros egresos. Los reembolsos en efectivo se registran también como salida en el cierre de su caja. La tabla muestra hasta 100 liquidaciones; los indicadores incluyen todo el periodo.</p>
       </>}
     </section>}
-    {canSeeInventoryCosts && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-operating-title">
+    {canManageFinance && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-operating-title">
       <div className="panel-heading"><div><span className="eyebrow">POS + DEVOLUCIONES + EGRESOS → FINANZAS</span><h2 id="op-finance-operating-title">Flujo de efectivo operativo registrado</h2><p className="op-finance-cost-note">Solo considera cobros POS y pagos efectivos de egresos o devoluciones en el mes y sucursal seleccionados. No usa filtros de asesora ni medio de pago. Es un flujo de movimientos registrados, no una medida de utilidad.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadOperatingCashflowCsv} disabled={!operatingCashflowRows.length || expensePaymentsLoading || !!refundSettlementError || !!expensePaymentsError}><Download size={15}/> Exportar flujo CSV</button><a className="button button-outline" href="/operaciones/flujos">Gestionar egresos <ArrowUpRight size={15}/></a></div></div>
       {refundSettlementError && <p className="op-finance-cost-error" role="alert">{refundSettlementError}</p>}
       {expensePaymentsError && <p className="op-finance-cost-error" role="alert">{expensePaymentsError}</p>}
@@ -1110,10 +1122,10 @@ export function OperationsFinance() {
         <div className="op-finance-cash-actions"><button className="button button-outline" onClick={() => setCashRefreshKey((value) => value + 1)} disabled={cashSessionLoading}><RefreshCw size={15}/> Actualizar</button><button className="button button-outline" onClick={downloadCashReconciliationCsv} disabled={cashSessionLoading || !cashReconciliationRows.length}><Download size={15}/> Exportar CSV</button><a className="button button-outline" href="/operaciones/flujos"><Banknote size={15}/> Abrir Caja <ArrowUpRight size={14}/></a></div>
       </div>
       <div className="op-finance-cash-metrics">
-        <article><span>Efectivo esperado en cajas abiertas</span><b>{cashExpectedInOpenSessions === null ? '—' : money(cashExpectedInOpenSessions)}</b><small>{openCashRows.length} sesiones abiertas · fuera del efectivo ya cerrado</small></article>
-        <article><span>Cierres del periodo</span><b>{closedCashRows.length}</b><small>{cashSessionsWithDifference} con diferencia registrada</small></article>
-        <article className="is-shortfall"><span>Faltante registrado</span><b>{money(cashShortfall)}</b><small>Suma de diferencias negativas, sin compensarlas con sobrantes</small></article>
-        <article className="is-surplus"><span>Sobrante registrado</span><b>{money(cashSurplus)}</b><small>Suma de diferencias positivas del periodo</small></article>
+        <article><span>Efectivo esperado en cajas abiertas</span><b>{cashSessionError || cashExpectedInOpenSessions === null ? '—' : money(cashExpectedInOpenSessions)}</b><small>{cashSessionError ? 'No disponible por error de carga' : `${openCashRows.length} sesiones abiertas · fuera del efectivo ya cerrado`}</small></article>
+        <article><span>Cierres del periodo</span><b>{cashSessionError ? '—' : closedCashRows.length}</b><small>{cashSessionError ? 'No disponible por error de carga' : `${cashSessionsWithDifference} con diferencia registrada`}</small></article>
+        <article className="is-shortfall"><span>Faltante registrado</span><b>{cashSessionError ? '—' : money(cashShortfall)}</b><small>{cashSessionError ? 'No disponible por error de carga' : 'Suma de diferencias negativas, sin compensarlas con sobrantes'}</small></article>
+        <article className="is-surplus"><span>Sobrante registrado</span><b>{cashSessionError ? '—' : money(cashSurplus)}</b><small>{cashSessionError ? 'No disponible por error de carga' : 'Suma de diferencias positivas del periodo'}</small></article>
       </div>
       {cashSessionError ? <p className="op-finance-cost-error" role="alert">{cashSessionError}</p> : cashSessionLoading ? <p className="muted">Cargando cierres y turnos abiertos…</p> : !cashReconciliationRows.length ? <div className="op-finance-cash-empty"><Banknote size={22}/><b>Sin cierres ni cajas abiertas para este filtro</b><span>Prueba otro mes o sucursal, o revisa los turnos en Caja.</span></div> : <div className="op-finance-table-wrap"><table className="op-finance-table op-finance-cash-table"><thead><tr><th>Estado</th><th>Apertura / cierre</th><th>Sucursal</th><th>Responsable</th><th>Esperado</th><th>Contado</th><th>Diferencia</th></tr></thead><tbody>{cashReconciliationRows.map((session) => <tr key={session.id}><td><span className={`op-finance-cash-status ${session.status === 'open' ? 'is-open' : 'is-closed'}`}>{session.status === 'open' ? 'Abierta' : 'Cerrada'}</span></td><td>{session.status === 'open' ? `Abierta ${timestamp(session.opened_at)}` : `Cerrada ${timestamp(session.closed_at)}`}</td><td>{branchName(session.branch_id)}</td><td>{personName(session.opened_by)}</td><td>{session.expected === null ? 'No disponible' : money(session.expected)}</td><td>{session.counted === null ? 'Pendiente' : money(session.counted)}</td><td className={session.difference < 0 ? 'is-negative' : session.difference > 0 ? 'is-positive' : ''}>{session.difference === null ? 'Pendiente' : money(session.difference)}</td></tr>)}</tbody></table></div>}
       {cashMovementError && <p className="op-finance-cost-error" role="alert">No se pudieron cargar todos los movimientos de las cajas abiertas; se oculta su esperado para evitar mostrar un importe incompleto. {cashMovementError}</p>}

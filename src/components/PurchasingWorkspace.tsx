@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Archive, ArchiveRestore, ArrowRight, CalendarDays, Check, ChevronDown, CircleAlert, ClipboardList, Clock3, Mail, PackageCheck, Pencil, Plus, RefreshCw, Search, Send, ShoppingCart, Truck, Users, X } from 'lucide-react';
 import { useWorkspace, formatMoney } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
@@ -51,19 +52,21 @@ function VariantPicker({ itemId, variants, selectedId, excludedIds, onSelect }: 
 export function PurchasingWorkspace() {
   const { data, flash } = useWorkspace();
   const { organizationId, user, hasPermission } = useAuth();
+  const [routeParams, setRouteParams] = useSearchParams();
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [orderLines, setOrderLines] = useState<Record<string, any[]>>({});
   const [receipts, setReceipts] = useState<Record<string, any[]>>({});
   const [orderCounts, setOrderCounts] = useState({ total: 0, open: 0, partial: 0, drafts: 0, received: 0 });
+  const [orderCountsStatus, setOrderCountsStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const orderCountsRequestVersion = useRef(0);
   const [orderCount, setOrderCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [modalError, setModalError] = useState('');
-  const [orderSearch, setOrderSearch] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todas');
   const [activeView, setActiveView] = useState<'overview' | 'orders' | 'suppliers'>('overview');
@@ -84,6 +87,7 @@ export function PurchasingWorkspace() {
   const canApprove = hasPermission('purchases', 'approve_purchase');
   const canCancel = hasPermission('purchases', 'cancel_purchase');
   const canReceive = hasPermission('purchases', 'receive_purchase');
+  const canEditInventoryCosts = hasPermission('inventory_costs', 'edit_costs');
   const variants = useMemo(() => {
     const distinct = new Map<string, any>();
     (data.inventory || []).filter((row) => !row.archived && row.variantId).forEach((row) => {
@@ -113,7 +117,8 @@ export function PurchasingWorkspace() {
         .order('created_at', { ascending: false })
         .order('id', { ascending: false })
         .range(offset, offset + orderPageSize - 1);
-      if (statusFilter !== 'Todas') orderQuery = orderQuery.eq('status', statusFilter);
+      if (statusFilter === 'open') orderQuery = orderQuery.in('status', ['ordered', 'partially_received']);
+      else if (statusFilter !== 'Todas') orderQuery = orderQuery.eq('status', statusFilter);
       if (needle) {
         const supplierIds = nextSuppliers.filter((supplier) => normalize(`${supplier.name} ${supplier.contact_name} ${supplier.email} ${supplier.tax_id}`).includes(normalize(needle))).map((supplier) => supplier.id);
         const pattern = `%${needle}%`;
@@ -147,22 +152,40 @@ export function PurchasingWorkspace() {
   }, [organizationId, search, statusFilter]);
 
   const loadOrderCounts = useCallback(async () => {
-    if (!supabase || !organizationId) return;
+    const version = ++orderCountsRequestVersion.current;
+    if (!supabase || !organizationId) {
+      setOrderCountsStatus('error');
+      return;
+    }
+    setOrderCountsStatus('loading');
     const count = (statuses?: string[]) => {
       let query = supabase.from('purchase_orders').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId);
       query = statuses?.length === 1 ? query.eq('status', statuses[0]) : query.in('status', statuses || []);
       return query;
     };
-    const [all, open, partial, drafts, received] = await Promise.all([
-      supabase.from('purchase_orders').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId),
-      count(['ordered', 'partially_received']), count(['partially_received']), count(['draft']), count(['received']),
-    ]);
-    if ([all, open, partial, drafts, received].some((result) => result.error)) return;
-    setOrderCounts({ total: all.count || 0, open: open.count || 0, partial: partial.count || 0, drafts: drafts.count || 0, received: received.count || 0 });
+    try {
+      const [all, open, partial, drafts, received] = await Promise.all([
+        supabase.from('purchase_orders').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId),
+        count(['ordered', 'partially_received']), count(['partially_received']), count(['draft']), count(['received']),
+      ]);
+      if (version !== orderCountsRequestVersion.current) return;
+      if ([all, open, partial, drafts, received].some((result) => result.error || result.count === null)) throw new Error('count-query-failed');
+      setOrderCounts({ total: all.count || 0, open: open.count || 0, partial: partial.count || 0, drafts: drafts.count || 0, received: received.count || 0 });
+      setOrderCountsStatus('ready');
+    } catch {
+      if (version === orderCountsRequestVersion.current) setOrderCountsStatus('error');
+    }
   }, [organizationId]);
 
   useEffect(() => { const timer = window.setTimeout(() => { void refresh(); }, search ? 220 : 0); return () => window.clearTimeout(timer); }, [refresh]);
   useEffect(() => { void loadOrderCounts(); }, [loadOrderCounts]);
+  useEffect(() => {
+    const requestedOrder = routeParams.get('order')?.trim();
+    if (!requestedOrder) return;
+    setSearch(requestedOrder);
+    setStatusFilter('Todas');
+    setActiveView('orders');
+  }, [routeParams.toString()]);
 
   const refreshAfterChange = async () => { await Promise.all([refresh(), loadOrderCounts()]); };
   const openSupplierForm = (supplier: any = null) => {
@@ -272,7 +295,9 @@ export function PurchasingWorkspace() {
     try {
       const { error: saveError } = await supabase.rpc('receive_purchase_order', { p_order_id: receiveOrder.id, p_lines: lines, p_idempotency_key: receiveDraft.idempotencyKey, p_reference: receiveDraft.reference, p_note: receiveDraft.note });
       if (saveError) throw saveError;
-      const number = receiveOrder.order_number; setReceiveOrder(null); setModalError(''); await refreshAfterChange(); flash(`Recepción de ${number} guardada. Solo lo recibido se refleja en inventario.`);
+      const number = receiveOrder.order_number; setReceiveOrder(null); setModalError(''); await refreshAfterChange(); flash(canEditInventoryCosts
+        ? `Recepción de ${number} guardada. Solo lo recibido se refleja en inventario.`
+        : `Recepción de ${number} guardada. El costo vigente no se actualizó; solicita su revisión a un perfil autorizado para editar costos.`);
     } catch (saveError: any) { setModalError(`No se registró la recepción: ${saveError?.message || 'la clave de reintento se mantiene para evitar duplicados.'}`); }
     finally { setSaving(false); }
   };
@@ -282,6 +307,21 @@ export function PurchasingWorkspace() {
   const shortages = useMemo(() => variants.filter((item) => !item.sourceStatus && Number(item.quantity) <= Number(item.minimum) && Number(item.minimum) > 0), [variants]);
   const priorityOrders = orders.filter((order) => ['ordered', 'partially_received'].includes(order.status)).slice(0, 5);
   const hasMoreOrders = orders.length < orderCount;
+  const showOrders = (filter = 'Todas') => {
+    setSearch('');
+    setStatusFilter(filter);
+    setActiveView('orders');
+    if (routeParams.has('order')) {
+      const next = new URLSearchParams(routeParams);
+      next.delete('order');
+      setRouteParams(next);
+    }
+  };
+  const showSuppliers = () => {
+    setSupplierQuery('');
+    setShowArchivedSuppliers(false);
+    setActiveView('suppliers');
+  };
 
   return <div className="purchasing-workspace">
     <section className="purchasing-hero panel">
@@ -289,16 +329,16 @@ export function PurchasingWorkspace() {
       <div className="purchasing-hero-actions"><button className="button button-outline" type="button" onClick={() => { setError(''); void refresh(); void loadOrderCounts(); }} disabled={loading || loadingMore}><RefreshCw size={15}/> Actualizar</button>{canManage && <button className="button button-outline" type="button" onClick={() => { openSupplierForm(); setActiveView('suppliers'); }}><Plus size={15}/> Proveedor</button>}{canManage && <button className="button button-dark" type="button" onClick={() => startOrder()} disabled={!suppliers.some((supplier) => supplier.active) || !variants.length || !branches.length}><ShoppingCart size={15}/> Nueva orden</button>}</div>
     </section>
 
-    <section className="purchasing-summary" aria-label="Resumen de abastecimiento">
-      <article><span><Users size={16}/> Proveedores activos</span><b><NumberTicker value={suppliers.filter((supplier) => supplier.active).length}/></b><small>Contactos comerciales</small></article>
-      <article><span><Clock3 size={16}/> Órdenes abiertas</span><b><NumberTicker value={orderCounts.open}/></b><small>Enviadas o recepción parcial</small></article>
-      <article><span><PackageCheck size={16}/> Recepción parcial</span><b><NumberTicker value={orderCounts.partial}/></b><small>Con saldo por recibir</small></article>
-      <article><span><ClipboardList size={16}/> Bajo mínimo confirmado</span><b><NumberTicker value={shortages.length}/></b><small>Conteo físico y mínimo definidos</small></article>
+    <section className="purchasing-summary" aria-label="Accesos rápidos de abastecimiento">
+      <button type="button" className="purchasing-summary-card is-suppliers" aria-pressed={activeView === 'suppliers'} aria-label={`Ver ${suppliers.filter((supplier) => supplier.active).length} proveedores activos`} onClick={showSuppliers}><span><Users size={16}/> Proveedores activos</span><b><NumberTicker value={suppliers.filter((supplier) => supplier.active).length}/></b><small>Contactos comerciales</small><i>Ver proveedores <ArrowRight size={13}/></i></button>
+      <button type="button" className={`purchasing-summary-card is-open-orders${activeView === 'orders' && statusFilter === 'open' ? ' is-active' : ''}`} aria-pressed={activeView === 'orders' && statusFilter === 'open'} aria-label={orderCountsStatus === 'ready' ? `Ver ${orderCounts.open} órdenes abiertas` : 'Órdenes abiertas; conteo no disponible'} onClick={() => showOrders('open')}><span><Clock3 size={16}/> Órdenes abiertas</span><b>{orderCountsStatus === 'ready' ? <NumberTicker value={orderCounts.open}/> : '—'}</b><small>{orderCountsStatus === 'ready' ? 'Enviadas o recepción parcial' : orderCountsStatus === 'loading' ? 'Confirmando el conteo…' : 'Conteo no disponible · actualiza para reintentar'}</small><i>Ver órdenes <ArrowRight size={13}/></i></button>
+      <button type="button" className={`purchasing-summary-card is-partial-orders${activeView === 'orders' && statusFilter === 'partially_received' ? ' is-active' : ''}`} aria-pressed={activeView === 'orders' && statusFilter === 'partially_received'} aria-label={orderCountsStatus === 'ready' ? `Ver ${orderCounts.partial} órdenes con recepción parcial` : 'Órdenes con recepción parcial; conteo no disponible'} onClick={() => showOrders('partially_received')}><span><PackageCheck size={16}/> Recepción parcial</span><b>{orderCountsStatus === 'ready' ? <NumberTicker value={orderCounts.partial}/> : '—'}</b><small>{orderCountsStatus === 'ready' ? 'Con saldo por recibir' : orderCountsStatus === 'loading' ? 'Confirmando el conteo…' : 'Conteo no disponible · actualiza para reintentar'}</small><i>Revisar saldo <ArrowRight size={13}/></i></button>
+      <a className="purchasing-summary-card is-shortages" href="/operaciones/inventario" aria-label={`Abrir materiales y existencias; ${shortages.length} artículos bajo mínimo confirmado`}><span><ClipboardList size={16}/> Bajo mínimo confirmado</span><b><NumberTicker value={shortages.length}/></b><small>Conteo físico y mínimo definidos</small><i>Abrir inventario <ArrowRight size={13}/></i></a>
     </section>
 
     <nav className="purchasing-nav" aria-label="Secciones de compras">
       <button type="button" className={activeView === 'overview' ? 'active' : ''} aria-pressed={activeView === 'overview'} onClick={() => setActiveView('overview')}><ClipboardList size={16}/><span>Resumen</span></button>
-      <button type="button" className={activeView === 'orders' ? 'active' : ''} aria-pressed={activeView === 'orders'} onClick={() => setActiveView('orders')}><ShoppingCart size={16}/><span>Órdenes</span><i>{orderCounts.total}</i></button>
+      <button type="button" className={activeView === 'orders' ? 'active' : ''} aria-pressed={activeView === 'orders'} aria-label={orderCountsStatus === 'ready' ? `Órdenes, ${orderCounts.total} en total` : `Órdenes, conteo ${orderCountsStatus === 'loading' ? 'cargando' : 'no disponible'}`} onClick={() => setActiveView('orders')}><ShoppingCart size={16}/><span>Órdenes</span><i>{orderCountsStatus === 'ready' ? orderCounts.total : '—'}</i></button>
       <button type="button" className={activeView === 'suppliers' ? 'active' : ''} aria-pressed={activeView === 'suppliers'} onClick={() => setActiveView('suppliers')}><Users size={16}/><span>Proveedores</span><i>{suppliers.filter((supplier) => supplier.active).length}</i></button>
     </nav>
 
@@ -309,7 +349,7 @@ export function PurchasingWorkspace() {
         {loading ? <div className="purchasing-empty">Cargando órdenes…</div> : priorityOrders.length ? <div className="purchase-priority-list">{priorityOrders.map((order) => {
           const lines = orderLines[order.id] || [];
           const progress = lines.length ? Math.round(lines.reduce((sum, line) => sum + Math.min(1, Number(line.quantity_received) / Math.max(1, Number(line.quantity_ordered))), 0) / lines.length * 100) : 0;
-          return <button className="purchase-priority-row" type="button" key={order.id} onClick={() => { setOrderSearch(order.order_number); setStatusFilter('Todas'); setActiveView('orders'); }}><span className={`purchase-status status-${order.status}`}>{states[order.status]}</span><span className="purchase-priority-main"><b>{order.order_number}</b><small>{supplierById[order.supplier_id]?.name || 'Proveedor archivado'}{order.expected_date ? ` · Prevista ${new Date(`${order.expected_date}T12:00:00`).toLocaleDateString('es-EC')}` : ''}</small></span><span className="purchase-priority-progress"><b>{progress}%</b><small>{lines.length} {lines.length === 1 ? 'artículo' : 'artículos'}</small></span><ArrowRight size={15}/></button>;
+          return <button className="purchase-priority-row" type="button" key={order.id} onClick={() => { const next = new URLSearchParams(routeParams); next.set('order', order.order_number); setRouteParams(next); setSearch(order.order_number); setStatusFilter('Todas'); setActiveView('orders'); }}><span className={`purchase-status status-${order.status}`}>{states[order.status]}</span><span className="purchase-priority-main"><b>{order.order_number}</b><small>{supplierById[order.supplier_id]?.name || 'Proveedor archivado'}{order.expected_date ? ` · Prevista ${new Date(`${order.expected_date}T12:00:00`).toLocaleDateString('es-EC')}` : ''}</small></span><span className="purchase-priority-progress"><b>{progress}%</b><small>{lines.length} {lines.length === 1 ? 'artículo' : 'artículos'}</small></span><ArrowRight size={15}/></button>;
         })}</div> : <div className="purchasing-empty"><PackageCheck size={20}/><span>No hay órdenes enviadas con recepción pendiente.</span></div>}
       </section>
       <section className="panel purchase-overview-shortages"><div className="panel-heading"><div><span className="eyebrow">REPOSICIÓN MANUAL</span><h2>Artículos bajo mínimo</h2><p>Solo se muestran saldos físicos confirmados. Revisa cantidad y costo antes de guardar.</p></div><span className="purchase-count-pill">{shortages.length}</span></div>
@@ -321,8 +361,8 @@ export function PurchasingWorkspace() {
     {activeView === 'orders' && <section className="panel purchasing-orders">
       <div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO Y RECEPCIÓN</span><h2>Órdenes de compra</h2><p>Busca en órdenes, referencias y proveedores; abre cada pedido para revisar artículos, costos capturados y recepciones.</p></div>{canManage && <button className="button button-dark" type="button" onClick={() => startOrder()} disabled={!suppliers.some((supplier) => supplier.active) || !variants.length || !branches.length}><Plus size={15}/> Crear orden</button>}</div>
       {canManage && (!branches.length || !variants.length || !suppliers.some((supplier) => supplier.active)) && <div className="purchase-prerequisite" role="status"><CircleAlert size={16}/><span>{!suppliers.some((supplier) => supplier.active) ? 'Añade un proveedor activo' : !branches.length ? 'No hay sucursales activas disponibles para tu perfil' : 'No hay variantes de inventario activas disponibles'}. Al completar este dato podrás crear una orden.</span>{!suppliers.some((supplier) => supplier.active) && <button type="button" onClick={() => openSupplierForm()}>Añadir proveedor <ArrowRight size={14}/></button>}</div>}
-      <div className="purchasing-toolbar"><label className="search-box"><Search size={16}/><input aria-label="Buscar órdenes" value={orderSearch} onChange={(event) => setOrderSearch(event.target.value)} placeholder="N.º de orden, proveedor, contacto o referencia"/>{orderSearch && <button type="button" aria-label="Limpiar búsqueda" onClick={() => setOrderSearch('')}>×</button>}</label><label className="purchase-status-filter"><span>Estado</span><select aria-label="Filtrar órdenes por estado" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option>Todas</option>{Object.entries(states).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><span className="purchase-results-count">{loading ? 'Buscando…' : `${orders.length} de ${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`}</span></div>
-      {loading ? <div className="purchasing-empty"><RefreshCw size={18}/>Cargando órdenes…</div> : !orders.length ? <div className="purchasing-empty"><ClipboardList size={21}/><span>{orderCount ? 'No hay órdenes que coincidan con estos filtros.' : 'Aún no hay órdenes para mostrar.'}</span>{(search || statusFilter !== 'Todas') && <button className="button button-outline" type="button" onClick={() => { setOrderSearch(''); setStatusFilter('Todas'); }}>Quitar filtros</button>}</div> : <div className="purchase-order-list">{orders.map((order) => {
+      <div className="purchasing-toolbar"><label className="search-box"><Search size={16}/><input aria-label="Buscar órdenes" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="N.º de orden, proveedor, contacto o referencia"/>{search && <button type="button" aria-label="Limpiar búsqueda" onClick={() => { setSearch(''); const next = new URLSearchParams(routeParams); next.delete('order'); setRouteParams(next); }}>×</button>}</label><label className="purchase-status-filter"><span>Estado</span><select aria-label="Filtrar órdenes por estado" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option>Todas</option><option value="open">Abiertas</option>{Object.entries(states).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><span className="purchase-results-count">{loading ? 'Buscando…' : `${orders.length} de ${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`}</span></div>
+      {loading ? <div className="purchasing-empty"><RefreshCw size={18}/>Cargando órdenes…</div> : !orders.length ? <div className="purchasing-empty"><ClipboardList size={21}/><span>{orderCount ? 'No hay órdenes que coincidan con estos filtros.' : 'Aún no hay órdenes para mostrar.'}</span>{(search || statusFilter !== 'Todas') && <button className="button button-outline" type="button" onClick={() => { setSearch(''); setStatusFilter('Todas'); const next = new URLSearchParams(routeParams); next.delete('order'); setRouteParams(next); }}>Quitar filtros</button>}</div> : <div className="purchase-order-list">{orders.map((order) => {
         const lines = orderLines[order.id] || [];
         const value = lines.reduce((sum, line) => sum + Number(line.quantity_ordered) * Number(line.unit_cost), 0);
         const progress = lines.length ? Math.round(lines.reduce((sum, line) => sum + Math.min(1, Number(line.quantity_received) / Math.max(1, Number(line.quantity_ordered))), 0) / lines.length * 100) : 0;
@@ -348,7 +388,7 @@ export function PurchasingWorkspace() {
       {visibleSuppliers.length ? <div className="supplier-cards">{visibleSuppliers.map((supplier) => <article className={`supplier-card${supplier.active ? '' : ' is-archived'}`} key={supplier.id}>
         <span className="supplier-avatar">{supplier.name.slice(0, 1).toLocaleUpperCase('es')}</span><div className="supplier-card-main"><div className="supplier-card-heading"><b>{supplier.name}</b><span className={supplier.active ? 'supplier-state is-active' : 'supplier-state'}>{supplier.active ? 'Activo' : 'Archivado'}</span></div><small>{supplier.contact_name || 'Contacto pendiente'}</small><div className="supplier-contact-lines">{supplier.phone && <span>{supplier.phone}</span>}{supplier.email && <a href={`mailto:${supplier.email}`}><Mail size={12}/>{supplier.email}</a>}{supplier.tax_id && <span>RUC · {supplier.tax_id}</span>}</div>{supplier.address && <small>{supplier.address}</small>}</div>
         {canManage && <div className="supplier-card-actions"><button type="button" className="button button-outline" onClick={() => openSupplierForm(supplier)}><Pencil size={13}/> Editar</button>{supplier.active ? <button type="button" className="supplier-icon-action" aria-label={`Archivar ${supplier.name}`} title="Archivar proveedor" onClick={() => { setModalError(''); setArchiveSupplierTarget(supplier); }}><Archive size={15}/></button> : <button type="button" className="button button-outline" onClick={() => void setSupplierActive(supplier, true)} disabled={saving}><ArchiveRestore size={14}/> Reactivar</button>}</div>}
-        <button className="supplier-orders-link" type="button" onClick={() => { setStatusFilter('Todas'); setOrderSearch(supplier.name); setActiveView('orders'); }}>Ver órdenes del proveedor <ArrowRight size={13}/></button>
+        <button className="supplier-orders-link" type="button" onClick={() => { setStatusFilter('Todas'); setSearch(supplier.name); const next = new URLSearchParams(routeParams); next.delete('order'); setRouteParams(next); setActiveView('orders'); }}>Ver órdenes del proveedor <ArrowRight size={13}/></button>
       </article>)}</div> : <div className="purchasing-empty"><Users size={21}/><span>{suppliers.length ? 'No encontramos proveedores con esos filtros.' : 'Aún no hay proveedores registrados.'}</span>{canManage && !supplierQuery && !showArchivedSuppliers && <button className="button button-outline" type="button" onClick={() => openSupplierForm()}><Plus size={14}/> Añadir primer proveedor</button>}</div>}
     </section>}
 

@@ -22,33 +22,63 @@ export function EquipmentInventory() {
   const [editing, setEditing] = useState<string | null>(null);
   const [term, setTerm] = useState('');
   const [areaFilter, setAreaFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'operational' | 'pending' | 'attention'>('all');
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [inkBusy, setInkBusy] = useState(false);
   const [inkMessage, setInkMessage] = useState('');
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
-    if (!supabase || !organizationId) return;
-    const [assetResult, areaResult, branchResult] = await Promise.all([
-      supabase.from('equipment_assets').select('*').eq('organization_id', organizationId).neq('status', 'Retirado').order('name'),
-      supabase.from('equipment_areas').select('id,name,code').eq('organization_id', organizationId).eq('active', true).order('name'),
-      supabase.from('branches').select('id,name').eq('organization_id', organizationId).eq('active', true).order('name'),
-    ]);
-    if (assetResult.error) { setError(assetResult.error.message); return; }
-    setAssets((assetResult.data || []) as Asset[]);
-    setAreas((areaResult.data || []) as Area[]);
-    setBranches((branchResult.data || []) as {id:string;name:string}[]);
-    if (areaResult.error) setError(`No se pudieron cargar las áreas: ${areaResult.error.message}`);
+    setHasLoaded(false);
+    if (!supabase || !organizationId) {
+      setError(!supabase ? 'No hay una conexión activa para consultar los equipos.' : 'No se identificó una organización activa para consultar los equipos.');
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const [assetResult, areaResult, branchResult] = await Promise.all([
+        supabase.from('equipment_assets').select('*').eq('organization_id', organizationId).neq('status', 'Retirado').order('name'),
+        supabase.from('equipment_areas').select('id,name,code').eq('organization_id', organizationId).eq('active', true).order('name'),
+        supabase.from('branches').select('id,name').eq('organization_id', organizationId).eq('active', true).order('name'),
+      ]);
+      if (assetResult.error) throw assetResult.error;
+      setAssets((assetResult.data || []) as Asset[]);
+      setHasLoaded(true);
+      setAreas((areaResult.data || []) as Area[]);
+      setBranches((branchResult.data || []) as {id:string;name:string}[]);
+      if (areaResult.error) setError(`No se pudieron cargar las áreas: ${areaResult.error.message}`);
+      else if (branchResult.error) setError(`No se pudieron cargar las sucursales: ${branchResult.error.message}`);
+    } catch (loadError) {
+      const message = loadError && typeof loadError === 'object' && 'message' in loadError && typeof loadError.message === 'string'
+        ? loadError.message
+        : 'No se pudieron cargar los equipos.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   }, [organizationId]);
   useEffect(() => { void load(); }, [load]);
 
   const filtered = useMemo(() => assets.filter(asset => {
     const query = term.toLocaleLowerCase();
     const matches = [asset.asset_code, asset.name, asset.manufacturer, asset.model, asset.serial_number, asset.equipment_type].join(' ').toLocaleLowerCase().includes(query);
-    return matches && (!areaFilter || asset.area_id === areaFilter);
-  }), [assets, term, areaFilter]);
-  const areaName = (id: string | null) => areas.find(area => area.id === id)?.name || 'Área pendiente';
+    const matchesStatus = statusFilter === 'all'
+      || (statusFilter === 'operational' && asset.status === 'Operativo')
+      || (statusFilter === 'pending' && asset.status === 'Por verificar')
+      || (statusFilter === 'attention' && ['En mantenimiento', 'Fuera de servicio'].includes(asset.status));
+    return matches && (!areaFilter || asset.area_id === areaFilter) && matchesStatus;
+  }), [assets, term, areaFilter, statusFilter]);
+  const areaName = (id: string | null) => id
+    ? areas.find(area => area.id === id)?.name || 'Área asignada no disponible'
+    : 'Área pendiente';
+  const branchName = (id: string | null) => id
+    ? branches.find(branch => branch.id === id)?.name || 'Sucursal asignada no disponible'
+    : 'Sucursal pendiente';
 
   const assetActions = (asset: Asset): ContextMenuAction[] => [
     { kind: 'label', label: asset.asset_code, onSelect: () => {} },
@@ -62,7 +92,7 @@ export function EquipmentInventory() {
   const openNew = () => { setEditing(null); setDraft(fresh); setShowForm(true); setError(''); };
   const openEdit = (asset: Asset) => {
     setEditing(asset.id);
-    setDraft({ name: asset.name, equipment_type: asset.equipment_type, manufacturer: asset.manufacturer, model: asset.model, serial_number: asset.serial_number, status: asset.status, condition: asset.condition, area_id: asset.area_id || '', area_name: areaName(asset.area_id), branch_id: asset.branch_id || '', location: asset.location || '', notes: asset.notes || '', reference_image_url: asset.reference_image_url || '' });
+    setDraft({ name: asset.name, equipment_type: asset.equipment_type, manufacturer: asset.manufacturer, model: asset.model, serial_number: asset.serial_number, status: asset.status, condition: asset.condition, area_id: asset.area_id || '', area_name: '', branch_id: asset.branch_id || '', location: asset.location || '', notes: asset.notes || '', reference_image_url: asset.reference_image_url || '' });
     setShowForm(true); setError('');
   };
   const save = async (event: FormEvent) => {
@@ -93,7 +123,12 @@ export function EquipmentInventory() {
     finally { setBusy(false); }
   };
 
-  const stats = useMemo(() => ({ total: assets.length, pending: assets.filter(row => row.status === 'Por verificar').length, maintenance: assets.filter(row => row.status === 'En mantenimiento' || row.status === 'Fuera de servicio').length }), [assets]);
+  const stats = useMemo(() => ({
+    total: assets.length,
+    operational: assets.filter(row => row.status === 'Operativo').length,
+    pending: assets.filter(row => row.status === 'Por verificar').length,
+    maintenance: assets.filter(row => row.status === 'En mantenimiento' || row.status === 'Fuera de servicio').length,
+  }), [assets]);
   const prepareInkCatalog = async () => {
     if (!supabase || !canManage || inkBusy) return;
     setInkBusy(true); setInkMessage('');
@@ -110,11 +145,16 @@ export function EquipmentInventory() {
     <header className="equipment-intro"><div><span className="eyebrow">ACTIVOS DURADEROS · POR ÁREA</span><h2>Equipos de Visual Corp</h2><p>Registra máquinas, computadoras, mobiliario y herramientas por área, sucursal y estado. Las fichas nuevas quedan pendientes de verificación hasta completar placa, ubicación y condición.</p></div>{canManage&&<button className="button button-dark" onClick={openNew}><Plus size={16}/> Añadir equipo</button>}</header>
     {error&&<div className="equipment-error" role="alert"><CircleAlert size={16}/>{error}</div>}
     <section className="equipment-ink-callout"><div><span className="eyebrow">CONSUMIBLES · TINTAS Y TÓNER</span><h3>Separar por tecnología, familia y color</h3><p>Prepara fichas para Galaxy TEE y DX-Eco, FUSION sublimación, Epson T544/T664 y tóner Ricoh MP C3503. El conteo escrito en la foto queda como referencia y no se convierte en saldo hasta confirmar sucursal y ubicación.</p>{inkMessage&&<small role="status">{inkMessage}</small>}</div><div className="equipment-ink-actions">{canManage&&<button className="button button-outline" onClick={prepareInkCatalog} disabled={inkBusy}>{inkBusy?'Preparando…':'Preparar catálogo de consumibles'}</button>}<a className="button button-dark" href="/operaciones/inventario">Abrir materiales y conteo</a></div></section>
-    <section className="equipment-stats" aria-label="Resumen de equipos"><article><BriefcaseBusiness/><span>Activos registrados</span><b>{stats.total}</b></article><article><CircleAlert/><span>Por verificar</span><b>{stats.pending}</b></article><article><Wrench/><span>Requieren atención</span><b>{stats.maintenance}</b></article></section>
+    {hasLoaded && <section className="equipment-stats" aria-label="Filtros rápidos por estado">
+      <button type="button" className={`${statusFilter === 'all' ? 'is-active' : ''} ${stats.total === 0 ? 'is-clear' : ''}`} aria-label={`Activos registrados: ${stats.total}. Mostrar todos los equipos.`} aria-pressed={statusFilter === 'all'} onClick={() => setStatusFilter('all')}><BriefcaseBusiness aria-hidden="true"/><span>Activos registrados</span><b>{stats.total}</b></button>
+      <button type="button" className={`is-operational ${stats.operational === 0 ? 'is-clear' : ''} ${statusFilter === 'operational' ? 'is-active' : ''}`} aria-label={`Operativos: ${stats.operational}. ${stats.operational ? 'Mostrar equipos operativos.' : 'No hay equipos registrados como operativos.'}`} aria-pressed={statusFilter === 'operational'} onClick={() => setStatusFilter(current => current === 'operational' ? 'all' : 'operational')}><Computer aria-hidden="true"/><span>Operativos</span><b>{stats.operational}</b></button>
+      <button type="button" className={`is-pending ${stats.pending === 0 ? 'is-clear' : ''} ${statusFilter === 'pending' ? 'is-active' : ''}`} aria-label={`Por verificar: ${stats.pending}. ${stats.pending ? 'Mostrar equipos pendientes de verificación.' : 'No hay equipos pendientes de verificación.'}`} aria-pressed={statusFilter === 'pending'} onClick={() => setStatusFilter(current => current === 'pending' ? 'all' : 'pending')}><CircleAlert aria-hidden="true"/><span>Por verificar</span><b>{stats.pending}</b></button>
+      <button type="button" className={`is-attention ${stats.maintenance === 0 ? 'is-clear' : ''} ${statusFilter === 'attention' ? 'is-active' : ''}`} aria-label={`Requieren atención: ${stats.maintenance}. ${stats.maintenance ? 'Mostrar equipos en mantenimiento o fuera de servicio.' : 'No hay equipos en mantenimiento ni fuera de servicio.'}`} aria-pressed={statusFilter === 'attention'} onClick={() => setStatusFilter(current => current === 'attention' ? 'all' : 'attention')}><Wrench aria-hidden="true"/><span>Requieren atención</span><b>{stats.maintenance}</b></button>
+    </section>}
     <section className="equipment-list panel"><div className="equipment-toolbar"><label className="equipment-search"><Search size={16}/><input value={term} onChange={event=>setTerm(event.target.value)} placeholder="Buscar nombre, marca, modelo o serie" aria-label="Buscar equipos"/></label><select value={areaFilter} onChange={event=>setAreaFilter(event.target.value)} aria-label="Filtrar por área"><option value="">Todas las áreas</option>{areas.map(area=><option key={area.id} value={area.id}>{area.name}</option>)}</select></div>
-      {filtered.length===0?<div className="equipment-empty"><Computer size={28}/><h3>{assets.length?'Sin coincidencias':'Empieza el inventario de equipos'}</h3><p>{assets.length?'Prueba otro término o área.':'Añade las impresoras y máquinas identificadas, luego continúa con computadoras, mobiliario y herramientas.'}</p>{canManage&&<button className="button button-outline" onClick={openNew}><Plus size={15}/> Registrar primer equipo</button>}</div>:<div className="equipment-grid">{filtered.map(asset=><ContextMenu className="equipment-card-context" key={asset.id} label={`Acciones para ${asset.name}`} actions={assetActions(asset)}><article className="equipment-card">
+      {loading?<div className="equipment-empty" role="status"><Computer size={28}/><h3>Cargando equipos…</h3><p>Consultando las fichas de activos de la organización.</p></div>:filtered.length===0?<div className="equipment-empty"><Computer size={28}/><h3>{error&&!assets.length?'No se pudieron cargar los equipos':assets.length?'Sin coincidencias':'Empieza el inventario de equipos'}</h3><p>{error&&!assets.length?'Revisa el aviso anterior y vuelve a intentar.':assets.length?'Prueba otro término o área, o limpia los filtros de estado.':'Añade las impresoras y máquinas identificadas, luego continúa con computadoras, mobiliario y herramientas.'}</p>{error&&!assets.length?<button type="button" className="button button-outline" onClick={() => void load()}>Reintentar</button>:assets.length>0?<button type="button" className="button button-outline" onClick={() => { setTerm(''); setAreaFilter(''); setStatusFilter('all'); }}>Limpiar filtros</button>:canManage&&<button className="button button-outline" onClick={openNew}><Plus size={15}/> Registrar primer equipo</button>}</div>:<div className="equipment-grid">{filtered.map(asset=><ContextMenu className="equipment-card-context" key={asset.id} label={`Acciones para ${asset.name}`} actions={assetActions(asset)}><article className="equipment-card">
         {asset.reference_image_url?<img className="equipment-photo" src={asset.reference_image_url} alt={`Referencia visual: ${asset.name}`} loading="lazy"/>:<div className="equipment-photo equipment-photo-empty"><Printer size={26}/><span>Foto pendiente</span></div>}
-        <div className="equipment-card-body"><div className="equipment-card-top"><span className="equipment-code">{asset.asset_code}</span><Badge className={`equipment-state ${asset.status==='Operativo'?'ready':''}`} tone={asset.status==='Operativo'?'success':asset.status==='Fuera de servicio'?'danger':'warning'}>{asset.status}</Badge></div><h3>{asset.name}</h3><p>{[asset.manufacturer,asset.model].filter(Boolean).join(' · ')||'Marca y modelo por identificar'}</p><div className="equipment-facts"><span>{areaName(asset.area_id)}</span><span>{branches.find(branch=>branch.id===asset.branch_id)?.name||'Sucursal pendiente'}</span></div><small>Condición: {asset.condition}{asset.location?` · ${asset.location}`:''}</small>{asset.serial_number&&<small>Serie: {asset.serial_number}</small>}{asset.notes&&<p className="equipment-notes">{asset.notes}</p>}</div>
+        <div className="equipment-card-body"><div className="equipment-card-top"><span className="equipment-code">{asset.asset_code}</span><Badge className={`equipment-state is-${asset.status==='Operativo'?'operational':asset.status==='Por verificar'?'pending':asset.status==='En mantenimiento'?'maintenance':'offline'}`} tone={asset.status==='Operativo'?'success':asset.status==='Fuera de servicio'?'danger':asset.status==='En mantenimiento'?'warning':'info'}>{asset.status}</Badge></div><h3>{asset.name}</h3><p>{[asset.manufacturer,asset.model].filter(Boolean).join(' · ')||'Marca y modelo por identificar'}</p><div className="equipment-facts"><span>{areaName(asset.area_id)}</span><span>{branchName(asset.branch_id)}</span></div><small>Condición: {asset.condition}{asset.location?` · ${asset.location}`:''}</small>{asset.serial_number&&<small>Serie: {asset.serial_number}</small>}{asset.notes&&<p className="equipment-notes">{asset.notes}</p>}</div>
         {canManage&&<button className="equipment-edit" onClick={()=>openEdit(asset)} aria-label={`Editar ${asset.name}`}><Pencil size={15}/> Editar ficha</button>}
       </article></ContextMenu>)}</div>}
     </section>
@@ -122,8 +162,8 @@ export function EquipmentInventory() {
     {showForm&&<div className="equipment-modal-backdrop" role="presentation"><form className="equipment-modal" onSubmit={save} aria-labelledby="equipment-form-title"><header><div><span className="eyebrow">FICHA DE ACTIVO</span><h2 id="equipment-form-title">{editing?'Editar equipo':'Registrar equipo'}</h2></div><button className="icon-button" type="button" onClick={()=>setShowForm(false)} aria-label="Cerrar"><X size={18}/></button></header><div className="equipment-fields">
       <label>Nombre del equipo<input required maxLength={160} value={draft.name} onChange={event=>setDraft({...draft,name:event.target.value})} placeholder="Ej. Impresora de gran formato 01"/></label>
       <label>Tipo<select value={draft.equipment_type} onChange={event=>setDraft({...draft,equipment_type:event.target.value})}>{kinds.map(kind=><option key={kind}>{kind}</option>)}</select></label>
-      <label>Área<select value={draft.area_id} onChange={event=>{const selected=areas.find(area=>area.id===event.target.value);setDraft({...draft,area_id:event.target.value,area_name:selected?.name||''})}}><option value="">Nueva área o pendiente…</option>{areas.map(area=><option key={area.id} value={area.id}>{area.name}</option>)}</select>{!draft.area_id&&<input aria-label="Nombre de nueva área" maxLength={100} value={draft.area_name} onChange={event=>setDraft({...draft,area_name:event.target.value})} placeholder="Escribe el área o déjala pendiente"/>}</label>
-      <label>Sucursal<select value={draft.branch_id} onChange={event=>setDraft({...draft,branch_id:event.target.value})}><option value="">Pendiente de asignar</option>{branches.map(branch=><option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label>
+      <label>Área<select value={draft.area_id} onChange={event=>{const selected=areas.find(area=>area.id===event.target.value);setDraft({...draft,area_id:event.target.value,area_name:selected?.name||''})}}><option value="">Nueva área o pendiente…</option>{draft.area_id&&!areas.some(area=>area.id===draft.area_id)&&<option value={draft.area_id} disabled>Área asignada no disponible</option>}{areas.map(area=><option key={area.id} value={area.id}>{area.name}</option>)}</select>{!draft.area_id&&<input aria-label="Nombre de nueva área" maxLength={100} value={draft.area_name} onChange={event=>setDraft({...draft,area_name:event.target.value})} placeholder="Escribe el área o déjala pendiente"/>}</label>
+      <label>Sucursal<select value={draft.branch_id} onChange={event=>setDraft({...draft,branch_id:event.target.value})}><option value="">Pendiente de asignar</option>{draft.branch_id&&!branches.some(branch=>branch.id===draft.branch_id)&&<option value={draft.branch_id} disabled>Sucursal asignada no disponible</option>}{branches.map(branch=><option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label>
       <label>Marca<input maxLength={100} value={draft.manufacturer} onChange={event=>setDraft({...draft,manufacturer:event.target.value})} placeholder="Pendiente si no se lee la placa"/></label><label>Modelo<input maxLength={120} value={draft.model} onChange={event=>setDraft({...draft,model:event.target.value})} placeholder="Ej. MP C3503"/></label>
       <label>Número de serie<input maxLength={160} value={draft.serial_number} onChange={event=>setDraft({...draft,serial_number:event.target.value})} placeholder="Pendiente de revisar placa"/></label><label>Estado<select value={draft.status} onChange={event=>setDraft({...draft,status:event.target.value})}>{statuses.map(status=><option key={status}>{status}</option>)}</select></label>
       <label>Condición<input maxLength={100} value={draft.condition} onChange={event=>setDraft({...draft,condition:event.target.value})} placeholder="Sin revisar"/></label><label>Ubicación<input maxLength={160} value={draft.location} onChange={event=>setDraft({...draft,location:event.target.value})} placeholder="Área, puesto o referencia interna"/></label>

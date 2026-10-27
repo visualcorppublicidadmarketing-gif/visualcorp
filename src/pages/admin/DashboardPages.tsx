@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Boxes, FileText, Globe2, Users, Wallet } from 'lucide-react';
+import { ArrowUpRight, Boxes, CheckCircle2, ClipboardCheck, FileText, RefreshCw, Users, Wallet } from 'lucide-react';
 import { formatMoney } from '../../app/workspace';
 import { AppFrame, PageHeading, StatCard } from '../../app/layout';
 import { workspaceNavigation, canViewNavigationItem } from '../../app/navigation';
@@ -53,27 +53,70 @@ export function UnifiedHome() {
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
   const availableLinks = useMemo(
     () => workspaceNavigation.filter((item) => item.to !== '/panel' && canViewNavigationItem(item, hasPermission)),
     [hasPermission],
   );
   const visibleMetrics = metricCards.filter(({ module }) => hasPermission(module, 'view'));
+  const primaryAction = availableLinks.find((item) => item.to === '/operaciones/pos') || availableLinks[0];
+  const priorityDataComplete = (!hasPermission('crm', 'view') || typeof summary?.open_leads === 'number')
+    && (!hasPermission('inventory', 'view') || typeof summary?.inventory_low_stock === 'number');
+  const priorities = useMemo(() => {
+    const items: { key: string; to: string; icon: typeof Users; title: string; detail: string; count: number }[] = [];
+    const openLeads = summary?.open_leads;
+    const lowStock = summary?.inventory_low_stock;
+    if (hasPermission('crm', 'view') && typeof openLeads === 'number' && openLeads > 0) {
+      items.push({
+        key: 'crm',
+        to: '/operaciones/crm',
+        icon: Users,
+        title: `${openLeads} ${openLeads === 1 ? 'solicitud necesita' : 'solicitudes necesitan'} seguimiento`,
+        detail: 'Revisa su etapa y define el siguiente contacto.',
+        count: openLeads,
+      });
+    }
+    if (hasPermission('inventory', 'view') && typeof lowStock === 'number' && lowStock > 0) {
+      items.push({
+        key: 'inventory',
+        to: '/operaciones/inventario',
+        icon: ClipboardCheck,
+        title: `${lowStock} ${lowStock === 1 ? 'artículo requiere' : 'artículos requieren'} revisión de existencias`,
+        detail: 'Confirma el conteo físico antes de iniciar una reposición.',
+        count: lowStock,
+      });
+    }
+    return items;
+  }, [hasPermission, summary]);
 
   useEffect(() => {
     if (!supabase) { setLoading(false); setError('No hay conexión con la base compartida.'); return undefined; }
     let active = true;
-    supabase.rpc('get_visualcorp_operations_summary').then(({ data, error: queryError }) => {
-      if (!active) return;
-      if (queryError) setError(queryError.message);
-      else setSummary(data);
-      setLoading(false);
-    });
+    setLoading(true);
+    setError('');
+    void (async () => {
+      try {
+        const { data, error: queryError } = await supabase.rpc('get_visualcorp_operations_summary');
+        if (!active) return;
+        if (queryError) setError('No se pudo actualizar el resumen. Comprueba la conexión e inténtalo de nuevo.');
+        else setSummary(data);
+      } catch {
+        if (active) setError('No se pudo actualizar el resumen. Comprueba la conexión e inténtalo de nuevo.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
     return () => { active = false; };
-  }, []);
+  }, [refreshKey]);
+
+  const updatedAt = summary?.as_of && Number.isFinite(Date.parse(summary.as_of))
+    ? new Intl.DateTimeFormat('es-EC', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Guayaquil' }).format(new Date(summary.as_of))
+    : '';
 
   return <AppFrame area="operations">
-    <PageHeading eyebrow="PANEL DE TRABAJO" title="Todo el equipo, en un solo lugar." description="Accede a tus tareas y herramientas según los permisos de tu perfil." action={<Link className="button button-dark vc-shimmer-button" to="/">Ver sitio público <ArrowUpRight size={16}/></Link>}/>
-    {error && <p className="access-error" role="status">No se pudo actualizar el resumen compartido: {error}</p>}
+    <PageHeading eyebrow="PANEL DE TRABAJO" title="Todo el equipo, en un solo lugar." description="Revisa lo que requiere atención y abre tus herramientas de trabajo." action={primaryAction && <Link className="button button-dark vc-shimmer-button" to={primaryAction.to}>Abrir {primaryAction.label} <ArrowUpRight size={16}/></Link>}/>
+    {(loading || updatedAt) && <div className="unified-summary-meta" role="status" aria-live="polite"><span className={`status-dot${error ? ' is-warning' : ''}`}/>{loading ? 'Actualizando información…' : `Información actualizada a las ${updatedAt}`}</div>}
+    {error && <div className="unified-summary-error" role="alert"><span>{error}</span><button type="button" className="button button-outline" onClick={() => setRefreshKey((value) => value + 1)} disabled={loading}><RefreshCw size={14}/> {loading ? 'Actualizando…' : 'Reintentar'}</button></div>}
     {visibleMetrics.length > 0 && <div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, key, label, note, noteKey, icon, tone, money }) => {
       const value = metricValue(summary, key, loading, error);
       const displayValue = money && typeof value === 'number' ? formatMoney(value) : value;
@@ -82,8 +125,12 @@ export function UnifiedHome() {
         : note;
       return <StatCard key={module} label={label} value={displayValue} icon={icon} note={detail} tone={tone}/>;
     })}</div>}
+    {(hasPermission('crm', 'view') || hasPermission('inventory', 'view')) ? <section className="panel unified-priority-panel" aria-labelledby="unified-priority-heading">
+      <div className="panel-heading"><div><span className="eyebrow">SIGUIENTE PASO</span><h2 id="unified-priority-heading">Pendientes que puedes atender</h2></div>{loading ? <span className="unified-priority-state">Actualizando</span> : error ? <span className="unified-priority-state">Sin actualizar</span> : priorities.length ? <span className="unified-priority-state has-items">{priorities.length} {priorities.length === 1 ? 'pendiente' : 'pendientes'}</span> : priorityDataComplete ? <span className="unified-priority-state is-clear"><CheckCircle2 size={15}/> Sin alertas</span> : <span className="unified-priority-state">Sin datos</span>}</div>
+      {error ? <p className="unified-priority-empty">No se muestran pendientes hasta confirmar que la información está actualizada.</p> : loading ? <p className="unified-priority-empty">Consultando los registros autorizados para tu perfil…</p> : priorities.length ? <div className="unified-priority-list">{priorities.map(({ key, to, icon: Icon, title, detail, count }) => <Link className="unified-priority-item" to={to} key={key}><span className={`unified-priority-icon ${key}`}><Icon size={18}/></span><span className="unified-priority-copy"><b>{title}</b><small>{detail}</small></span><span className="unified-priority-count">{count}</span><ArrowUpRight size={16} aria-hidden="true"/></Link>)}</div> : priorityDataComplete ? <p className="unified-priority-empty">No se detectan pendientes en los módulos visibles para tu perfil.</p> : <p className="unified-priority-empty">No se recibieron datos suficientes para confirmar si hay pendientes.</p>}
+    </section> : null}
     <section className="panel unified-launcher-panel">
-      <div className="panel-heading"><div><span className="eyebrow">TUS HERRAMIENTAS</span><h2>¿Qué necesitas hacer?</h2></div><Globe2 size={19}/></div>
+      <div className="panel-heading"><div><span className="eyebrow">TUS HERRAMIENTAS</span><h2>¿Qué necesitas hacer?</h2></div><ClipboardCheck size={19}/></div>
       {availableLinks.length
         ? <AnimatedList className="operations-launcher vc-bento-grid">{availableLinks.map(({ to, label, icon: Icon }) => <Link to={to} key={to} className="operation-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}><SpotlightLayer/><span className="operation-icon"><Icon size={20}/></span><span><b>{label}</b><small>{descriptions[to] || 'Abre este módulo para consultar sus registros.'}</small></span><ArrowUpRight size={17}/></Link>)}</AnimatedList>
         : <p className="unified-empty">No hay módulos visibles para este perfil. Solicita al propietario revisar tus permisos.</p>}

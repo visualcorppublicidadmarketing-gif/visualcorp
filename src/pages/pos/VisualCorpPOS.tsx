@@ -23,7 +23,7 @@ function Field({ label, children, hint = undefined }) {
 
 export function VisualCorpPOS() {
   const { data, flash, refreshRemote } = useWorkspace();
-  const { organizationId, user, roles } = useAuth();
+  const { organizationId, user, hasPermission } = useAuth();
   const saleStorageKey = `${SALE_PENDING_KEY}-${user?.id || 'anonymous'}`;
   const paymentStorageKey = `${PAYMENT_PENDING_KEY}-${user?.id || 'anonymous'}`;
   const restoredSale = useRef(readPending(saleStorageKey));
@@ -61,7 +61,7 @@ export function VisualCorpPOS() {
     return () => { active = false; };
   }, [organizationId]);
 
-  const canSell = roles.some((role) => ['owner', 'admin', 'manager', 'advisor'].includes(role));
+  const canSell = hasPermission('sales', 'edit');
   const todaySales = data.sales.filter((sale) => localDateKey(sale.date) === localDateKey());
   const pendingCount = data.sales.filter((sale) => sale.balance > 0).length;
   const selectedProduct = data.catalog.find((product) => product.id === form.productId);
