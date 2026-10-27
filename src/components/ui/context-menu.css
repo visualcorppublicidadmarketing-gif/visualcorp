@@ -6,5 +6,7 @@
 .vc-context-menu.vc-context-public-site .vc-context-action-icon{color:#ee83d0}
 .vc-context-menu.vc-context-public-site .vc-context-group-label{color:#b8afc2}
 .vc-context-menu.vc-context-public-site .vc-context-separator{background:#ffffff20}
+.vc-context-menu{max-height:min(460px,calc(100vh - 16px));max-height:min(460px,calc(100dvh - 16px));overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable}
+.vc-context-submenu-panel{max-height:min(360px,calc(100vh - 16px));max-height:min(360px,calc(100dvh - 16px));overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
 .vc-public-context-status{position:fixed;z-index:10001;right:18px;bottom:18px;padding:0;border-radius:9px;background:#17131d;color:#fff;font-size:12px;pointer-events:none}
 .vc-public-context-status:not(:empty){padding:10px 14px;border:1px solid #ffffff24;box-shadow:0 12px 35px #0005}

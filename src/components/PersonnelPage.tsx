@@ -148,17 +148,22 @@ export function PersonnelPage() {
         : await supabase.from('personnel_records').insert(payload).select('id').single();
       if (result.error) throw result.error;
       if (!editingRecord && newGoogleAccountId) {
+        let profileAssignment: any = null;
         try {
           const { error: linkError } = await supabase.rpc('link_visualcorp_personnel_google_account', { p_personnel_id: result.data.id, p_user_id: newGoogleAccountId });
           if (linkError) throw linkError;
           if (newGoogleProfileId) {
             const linked = googleAccounts.find((account) => account.user_id === newGoogleAccountId);
             if (!linked) throw new Error('La cuenta se vinculó, pero no se pudo identificar su correo para asignar el perfil.');
-            const { error: profileError } = await supabase.rpc('assign_visualcorp_profile', { p_email: linked.email, p_profile_id: newGoogleProfileId });
+            const { data, error: profileError } = await supabase.rpc('create_organization_access_invitation', { p_organization_id: organizationId, p_email: linked.email, p_profile_id: newGoogleProfileId });
             if (profileError) throw profileError;
+            profileAssignment = data;
+            if (profileAssignment?.status === 'pending') setMessage(`Ficha y cuenta vinculadas. Invitación de acceso pendiente para ${profileAssignment.email}; vence en 7 días y debes comunicarla por un canal seguro.`);
           }
           await loadGoogleAccounts();
-          setModalOpen(false); await loadRecords(result.data.id); setMessage(newGoogleProfileId ? 'Ficha creada, cuenta Google vinculada y perfil de acceso asignado.' : 'Ficha creada y cuenta Google vinculada.');
+          setModalOpen(false); await loadRecords(result.data.id);
+          if (newGoogleProfileId && profileAssignment?.status !== 'pending') setMessage('Ficha creada, cuenta Google vinculada y perfil de acceso asignado.');
+          else if (!newGoogleProfileId) setMessage('Ficha creada y cuenta Google vinculada.');
         } catch (followupError) {
           setModalOpen(false); await loadRecords(result.data.id);
           setError(`La ficha se creó, pero no se completó la vinculación o el permiso: ${errorText(followupError)}. Puedes terminarlo desde la ficha del personal.`);
@@ -214,9 +219,9 @@ export function PersonnelPage() {
     if (!supabase || !linkedAccount || !accountProfileId || !canLinkAccount || accountSaving) return;
     setAccountSaving(true); setError(''); setMessage('');
     try {
-      const { error: assignError } = await supabase.rpc('assign_visualcorp_profile', { p_email: linkedAccount.email, p_profile_id: accountProfileId });
+      const { data, error: assignError } = await supabase.rpc('create_organization_access_invitation', { p_organization_id: organizationId, p_email: linkedAccount.email, p_profile_id: accountProfileId });
       if (assignError) throw assignError;
-      setAccountProfileId(''); await loadGoogleAccounts(); setMessage('Perfil de acceso asignado.');
+      setAccountProfileId(''); await loadGoogleAccounts(); setMessage(data?.status === 'assigned' ? 'Perfil de acceso asignado.' : `Invitación pendiente para ${data?.email || linkedAccount.email}. Comunícala por un canal seguro; la aplicación no envía correos.`);
     } catch (assignError) { setError(errorText(assignError)); }
     finally { setAccountSaving(false); }
   };

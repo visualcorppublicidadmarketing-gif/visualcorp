@@ -2,3 +2,31 @@
 .equipment-ink-callout{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:15px 17px;border:1px solid #ddd8e9;border-radius:12px;background:linear-gradient(110deg,#f8f6fc,#fff)}.equipment-ink-callout h3{margin:4px 0;color:#302e3a;font-size:14px}.equipment-ink-callout p{max-width:740px;margin:0;color:#73717d;font-size:10px;line-height:1.5}.equipment-ink-callout small{display:block;margin-top:7px;color:#68558a;font-size:10px}.equipment-ink-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px}.equipment-ink-actions a,.equipment-ink-actions button{white-space:nowrap}@media(max-width:720px){.equipment-ink-callout{align-items:stretch;flex-direction:column}.equipment-ink-actions{justify-content:stretch}.equipment-ink-actions>*{flex:1;justify-content:center}}
 
 .equipment-card-context{display:flex;min-width:0}.equipment-card-context>.equipment-card{width:100%}.equipment-card-context>.vc-context-trigger{top:10px;right:10px}
+
+/* Los indicadores de estado funcionan también como filtros rápidos. */
+.equipment-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+.equipment-stats>button{position:relative;display:grid;grid-template-columns:35px minmax(0,1fr);align-items:center;gap:2px 10px;min-width:0;padding:13px 15px;border:1px solid #ebeaf0;border-radius:12px;background:#fff;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:border-color .16s ease,background-color .16s ease,box-shadow .16s ease}
+.equipment-stats>button>svg{grid-row:span 2;width:34px;height:34px;padding:8px;border-radius:10px;background:#f0eef7;color:#6c5c8d}
+.equipment-stats>button>span{color:#777783;font-size:10px;line-height:1.35}
+.equipment-stats>button>b{color:#282733;font-size:21px;font-variant-numeric:tabular-nums}
+.equipment-stats>button.is-operational>svg{background:#eaf5ee;color:#34744d}
+.equipment-stats>button.is-pending>svg{background:#fff4df;color:#966619}
+.equipment-stats>button.is-attention>svg{background:#fff0ee;color:#a33c31}
+.equipment-stats>button.is-active{border-color:#8b6e9b;background:#faf7fc;box-shadow:inset 0 0 0 1px #8b6e9b}
+.equipment-stats>button.is-operational.is-active{border-color:#538267;background:#f4faf5;box-shadow:inset 0 0 0 1px #538267}
+.equipment-stats>button.is-pending.is-active{border-color:#bc8738;background:#fffaf1;box-shadow:inset 0 0 0 1px #bc8738}
+.equipment-stats>button.is-attention.is-active{border-color:#c85b50;background:#fff7f5;box-shadow:inset 0 0 0 1px #c85b50}
+.equipment-stats>button.is-clear>svg{background:#f1f1f3;color:#898792}
+.equipment-stats>button.is-clear>b{color:#777681}
+.equipment-stats>button.is-clear.is-active{border-color:#d1cfd7;background:#f8f7f9;box-shadow:inset 0 0 0 1px #d1cfd7}
+.equipment-stats>button.is-clear.is-active>svg{background:#ededf0;color:#777681}
+.equipment-stats>button:hover{border-color:#b4a1c0}
+.equipment-stats>button:focus-visible{outline:3px solid #8b6e9b66;outline-offset:3px}
+.equipment-state.is-operational{font-weight:750}
+.equipment-state.is-pending{border:1px solid #eddbb5}
+.equipment-state.is-maintenance{border:1px solid #eddbb5}
+.equipment-state.is-offline{border:1px solid #efcfcb}
+.equipment-empty[role="status"]{min-height:170px}
+@media(max-width:900px){.equipment-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.equipment-stats>button{grid-template-columns:28px minmax(0,1fr);padding:10px;gap:2px 7px}.equipment-stats>button>svg{width:28px;height:28px;padding:6px}.equipment-stats>button>span{font-size:9px}.equipment-stats>button>b{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.equipment-stats>button{transition:none}}

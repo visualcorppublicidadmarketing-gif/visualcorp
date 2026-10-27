@@ -1,5 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { ArrowUpRight, ClipboardList, Factory, Save } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowUpRight, ClipboardList, Factory, LoaderCircle, Save } from 'lucide-react';
+import { useAuth } from '../../auth/AuthProvider';
+import { supabase } from '../../lib/supabaseClient';
 import './production-order-workspace.css';
 
 type OrderDraft = {
@@ -34,6 +36,11 @@ type Props = {
   setOrderForm: React.Dispatch<React.SetStateAction<OrderDraft>>;
   busy: boolean;
   canManage: boolean;
+  hasData: boolean;
+  hasMoreOrders: boolean;
+  loadingMoreOrders: boolean;
+  onLoadMoreOrders: () => void;
+  onRetry: () => void;
   onCreate: () => void;
   onStatusChange: (order: any, status: string, note: string) => void;
   onSaveHandoff: (order: any, draft: HandoffDraft) => Promise<unknown>;
@@ -49,12 +56,15 @@ const priorityLabels: Record<string, string> = { low: 'Baja', normal: 'Normal', 
 const dayValue = (value?: string | null) => value ? new Date(value).toLocaleDateString('en-CA') : '';
 const stamp = (value?: string | null) => value ? new Date(value).toLocaleString('es-EC', { dateStyle: 'medium', timeStyle: 'short' }) : 'Fecha pendiente';
 
-export function ProductionOrderWorkspace({ branches, areas, sales, orders, events, teamMembers, orderForm, setOrderForm, busy, canManage, onCreate, onStatusChange, onSaveHandoff }: Props) {
+export function ProductionOrderWorkspace({ branches, areas, sales, orders, events, teamMembers, orderForm, setOrderForm, busy, canManage, hasData, hasMoreOrders, loadingMoreOrders, onLoadMoreOrders, onRetry, onCreate, onStatusChange, onSaveHandoff }: Props) {
+  const { organizationId } = useAuth();
   const [statusFilter, setStatusFilter] = useState('open');
   const [branchFilter, setBranchFilter] = useState('');
   const [ownerFilter, setOwnerFilter] = useState('');
   const [handoffs, setHandoffs] = useState<Record<string, HandoffDraft>>({});
   const [statusNotes, setStatusNotes] = useState<Record<string, string>>({});
+  const [exactOrderCounts, setExactOrderCounts] = useState({ open: null as number | null, overdue: null as number | null, blocked: null as number | null, ready: null as number | null });
+  const [orderCountStatus, setOrderCountStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const members = teamMembers.filter((member) => member.active);
   const visibleOrders = useMemo(() => {
     const now = new Date();
@@ -65,6 +75,7 @@ export function ProductionOrderWorkspace({ branches, areas, sales, orders, event
       if (statusLabels[statusFilter] && order.status !== statusFilter) return false;
       if (branchFilter && order.branch_id !== branchFilter) return false;
       if (ownerFilter === 'unassigned' && order.assigned_to) return false;
+      if (ownerFilter && ownerFilter !== 'unassigned' && order.assigned_to !== ownerFilter) return false;
       if (order.due_at && !closed) {
         const due = new Date(order.due_at);
         if (statusFilter === 'overdue' && due.getTime() >= today.getTime()) return false;
@@ -77,6 +88,37 @@ export function ProductionOrderWorkspace({ branches, areas, sales, orders, event
       return overdueB - overdueA || (b.priority === 'urgent' ? 1 : 0) - (a.priority === 'urgent' ? 1 : 0) || new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime();
     });
   }, [orders, statusFilter, branchFilter, ownerFilter]);
+
+  useEffect(() => {
+    if (!organizationId || !supabase) { setOrderCountStatus('error'); return undefined; }
+    let current = true;
+    setOrderCountStatus('loading');
+    const baseCountQuery = () => {
+      let query = supabase.from('production_orders').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId);
+      if (branchFilter) query = query.eq('branch_id', branchFilter);
+      if (ownerFilter === 'unassigned') query = query.is('assigned_to', null);
+      else if (ownerFilter) query = query.eq('assigned_to', ownerFilter);
+      return query;
+    };
+    const readCount = async (configure: (query: ReturnType<typeof baseCountQuery>) => ReturnType<typeof baseCountQuery>) => {
+      const { count, error } = await configure(baseCountQuery());
+      if (error) throw error;
+      return count ?? 0;
+    };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    void Promise.all([
+      readCount((query) => query.not('status', 'in', '("completed","cancelled")')),
+      readCount((query) => query.not('status', 'in', '("completed","cancelled")').lt('due_at', today.toISOString())),
+      readCount((query) => query.eq('status', 'blocked')),
+      readCount((query) => query.eq('status', 'ready')),
+    ]).then(([open, overdue, blocked, ready]) => {
+      if (current) { setExactOrderCounts({ open, overdue, blocked, ready }); setOrderCountStatus('ready'); }
+    }).catch(() => {
+      if (current) { setExactOrderCounts({ open: null, overdue: null, blocked: null, ready: null }); setOrderCountStatus('error'); }
+    });
+    return () => { current = false; };
+  }, [organizationId, branchFilter, ownerFilter, orders]);
 
   const draftFor = (order: any): HandoffDraft => handoffs[order.id] || {
     assignedTo: order.assigned_to || '', areaId: order.area_id || '', due: dayValue(order.due_at),
@@ -113,10 +155,25 @@ export function ProductionOrderWorkspace({ branches, areas, sales, orders, event
 
     <section className="panel production-board">
       <div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO Y TRASPASOS</span><h2>Órdenes de trabajo</h2><p>Los cambios de responsable y siguiente paso quedan en el historial de la orden.</p></div><ClipboardList size={19}/></div>
+      {!hasData ? <div className="production-empty production-load-error" role="status"><b>No pudimos confirmar las órdenes de trabajo.</b><span>La carga no terminó correctamente; vuelve a intentarlo para consultar los datos actuales.</span><button className="button button-outline" type="button" onClick={onRetry}>Reintentar carga</button></div> : <>
       <div className="production-filters">
         <label>Estado<select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="open">Abiertas</option><option value="overdue">Atrasadas</option><option value="today">Vencen hoy</option><option value="blocked">Bloqueadas</option><option value="quality_review">Control de calidad</option><option value="ready">Listas para entrega</option><option value="completed">Completadas</option><option value="all">Todas</option></select></label>
         <label>Sucursal<select value={branchFilter} onChange={(event) => setBranchFilter(event.target.value)}><option value="">Todas las sucursales</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label>
         <label>Responsable<select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}><option value="">Todos</option><option value="unassigned">Sin asignar</option>{members.map((member) => <option key={member.user_id} value={member.user_id}>{member.full_name || member.email}</option>)}</select></label>
+      </div>
+      <div className="production-summary" role="group" aria-label="Resumen y filtros rápidos de órdenes">
+        {([
+          { id: 'open', label: 'Abiertas', active: '', description: 'Por completar', zero: 'Sin órdenes activas' },
+          { id: 'overdue', label: 'Atrasadas', active: 'is-overdue', description: 'Plazo vencido', zero: 'Sin plazos vencidos' },
+          { id: 'blocked', label: 'Bloqueadas', active: 'is-blocked', description: 'Requieren atención', zero: 'Sin órdenes bloqueadas' },
+          { id: 'ready', label: 'Listas para entrega', active: 'is-ready', description: 'Control completado', zero: 'Ninguna lista para entrega' },
+        ] as const).map((metric) => {
+          const value = exactOrderCounts[metric.id];
+          const ready = orderCountStatus === 'ready' && value !== null;
+          const valueLabel = ready ? value.toLocaleString('es-EC') : 'conteo no disponible';
+          const helper = !ready ? orderCountStatus === 'loading' ? 'Confirmando el conteo…' : 'Conteo no disponible' : value ? metric.description : metric.zero;
+          return <button key={metric.id} type="button" className={`${ready && value ? metric.active : 'is-clear'} ${statusFilter === metric.id ? 'is-selected' : ''}`} aria-label={`${metric.label}: ${valueLabel}. ${helper}. Filtrar órdenes.`} aria-pressed={statusFilter === metric.id} onClick={() => setStatusFilter(metric.id)}><span>{metric.label}</span><b>{ready ? value.toLocaleString('es-EC') : '—'}</b><small>{helper}</small></button>;
+        })}
       </div>
       <div className="production-order-list">
         {visibleOrders.map((order) => {
@@ -126,7 +183,7 @@ export function ProductionOrderWorkspace({ branches, areas, sales, orders, event
           const late = order.due_at && new Date(order.due_at).getTime() < new Date(new Date().setHours(0, 0, 0, 0)).getTime() && !['completed', 'cancelled'].includes(order.status);
           return <article id={`op-production-${order.id}`} tabIndex={-1} key={order.id} className={`production-order ${late ? 'is-overdue' : ''}`}>
             <div className="production-order-heading"><div><span className="production-order-code">{order.order_code}</span><h3>{order.title}</h3></div><span className={`op-flow-status status-${order.status}`}>{statusLabels[order.status] || order.status}</span></div>
-            <div className="production-order-facts"><span>{order.branches?.name || branches.find((branch) => branch.id === order.branch_id)?.name || 'Sucursal'}</span><span>{order.areas?.name || areas.find((area) => area.id === order.area_id)?.name || 'Área por asignar'}</span><span className={late ? 'is-late' : ''}>{late ? 'Atrasada · ' : 'Fecha prevista · '}{stamp(order.due_at)}</span><span>Prioridad · {priorityLabels[order.priority] || order.priority}</span></div>
+            <div className="production-order-facts"><span>{order.branches?.name || branches.find((branch) => branch.id === order.branch_id)?.name || 'Sucursal'}</span><span>{order.areas?.name || areas.find((area) => area.id === order.area_id)?.name || 'Área por asignar'}</span><span className={late ? 'is-late' : ''}>{late ? 'Atrasada · ' : 'Fecha prevista · '}{stamp(order.due_at)}</span><span className={`production-order-priority priority-${order.priority}`}>Prioridad · {priorityLabels[order.priority] || order.priority}</span></div>
             {sale && <a className="production-order-sale" href={sale.customer_id ? `/operaciones/clientes?cliente=${encodeURIComponent(sale.customer_id)}` : '/operaciones/pos'}>{sale.sale_code} · {sale.customers?.full_name || 'Venta vinculada'} <ArrowUpRight size={13}/></a>}
             {order.description && <p className="production-order-description">{order.description}</p>}
             <div className="production-order-next"><span>Responsable</span><b>{ownerName(order.assigned_to)}</b><span>Siguiente paso</span><b>{order.next_step || 'Pendiente de definir'}</b></div>
@@ -141,7 +198,9 @@ export function ProductionOrderWorkspace({ branches, areas, sales, orders, event
           </article>;
         })}
         {!visibleOrders.length && <div className="production-empty"><b>No hay órdenes para este filtro.</b><span>Prueba con otro estado o sucursal.</span></div>}
+        {hasMoreOrders && <div className="production-order-more"><span>Hay más órdenes además de las {orders.length} recientes cargadas.</span><button className="button button-outline" type="button" onClick={onLoadMoreOrders} disabled={loadingMoreOrders}>{loadingMoreOrders ? <><LoaderCircle className="spin" size={15}/> Cargando…</> : 'Cargar otras 100 órdenes'}</button></div>}
       </div>
+      </>}
     </section>
   </div>;
 }

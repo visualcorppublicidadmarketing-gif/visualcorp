@@ -23,7 +23,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText, module: 'quotes' },
   { to: '/operaciones/crm', label: 'Solicitudes', icon: Users, module: 'crm' },
   { to: '/operaciones/clientes', label: 'Directorio de clientes', icon: Users, module: 'crm' },
-  { to: '/operaciones/flujos', label: 'Flujos y producción', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes'] },
+  { to: '/operaciones/flujos', label: 'Flujos y producción', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
   { to: '/operaciones/inventario', label: 'Inventario', icon: Boxes, module: 'inventory' },
   { to: '/operaciones/compras', label: 'Compras', icon: Truck, module: 'purchases' },
   { to: '/operaciones/equipos', label: 'Equipos', icon: BriefcaseBusiness, module: 'inventory' },

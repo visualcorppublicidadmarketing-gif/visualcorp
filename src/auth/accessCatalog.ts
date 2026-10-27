@@ -17,6 +17,7 @@ export const permissionModules = [
   ['catalog_admin', 'Catálogo y tarifas'],
   ['backup', 'Respaldo'],
   ['cash', 'Caja'],
+  ['finance', 'Finanzas'],
   ['personnel', 'Personal'],
 ] as const;
 
@@ -32,6 +33,7 @@ export const specialPermissionActions = [
   { module: 'sales', action: 'settle_refund', label: 'Completar reembolsos' },
   { module: 'website', action: 'publish_content', label: 'Publicar cambios en la web' },
   { module: 'cash', action: 'manage_cash', label: 'Registrar movimientos y gestionar caja' },
+  { module: 'finance', action: 'manage_finance', label: 'Administrar egresos, presupuestos y pagos' },
   { module: 'personnel', action: 'view_compensation', label: 'Consultar remuneración e historial de pagos del personal' },
   { module: 'personnel', action: 'edit_compensation', label: 'Registrar cambios de remuneración del personal' },
 ] as const;

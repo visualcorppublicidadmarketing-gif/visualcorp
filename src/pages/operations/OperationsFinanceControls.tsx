@@ -42,15 +42,26 @@ async function readAllFinanceRows(createQuery: () => any) {
 }
 
 type Expense = { id: string; description: string; category: string; status: string; document_date: string; due_date: string | null; total: number; paid_total: number; branch_id: string | null; supplier_id: string | null; purchase_order_id: string | null; receipt_id: string | null; reference: string };
+type ExpensePaymentState = 'void' | 'paid' | 'open' | 'overdue' | 'review';
+const expenseBalance = (expense: Expense) => Math.max(0, Number(expense.total || 0) - Number(expense.paid_total || 0));
+const expensePaymentState = (expense: Expense, todayValue = today()): ExpensePaymentState => {
+  if (expense.status === 'void') return 'void';
+  const balance = expenseBalance(expense);
+  if (expense.status === 'paid' && balance <= 0.005) return 'paid';
+  if (expense.status === 'payable' && balance > 0.005) {
+    return expense.due_date && expense.due_date < todayValue ? 'overdue' : 'open';
+  }
+  return 'review';
+};
 type FinanceBudget = { id: string; period_start: string; category: string; branch_id: string | null; budget_amount: number; note: string };
 type TeamMember = { user_id: string; full_name: string; email: string; role: string; active: boolean };
 type PersonnelOption = { personnel_id: string; full_name: string; department: string; job_title: string };
 const payrollMonthLabel = (value: string) => new Date(`${value.slice(0, 7)}-01T12:00:00`).toLocaleDateString('es-EC', { year: 'numeric', month: 'long' });
 
 export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 0 }: { month: string; branch: string; realtimeRefreshKey?: number }) {
-  const { organizationId, roles } = useAuth();
-  const canManage = roles.some((role: string) => ['owner', 'admin', 'manager'].includes(role));
-  const canSeeDeductions = roles.some((role: string) => ['owner', 'admin'].includes(role));
+  const { organizationId, hasPermission } = useAuth();
+  const canManage = hasPermission('finance', 'manage_finance');
+  const canSeeDeductions = hasPermission('personnel', 'view_compensation');
   const [section, setSection] = useState('egresos');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budgets, setBudgets] = useState<FinanceBudget[]>([]);
@@ -207,9 +218,9 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
   const personnelNames = useMemo(() => new Map(personnelOptions.map((person) => [person.personnel_id, person.full_name])), [personnelOptions]);
   const expensesById = useMemo(() => new Map(expenses.map((expense) => [expense.id, expense])), [expenses]);
   const isInSelectedBranch = (expense: Expense) => branch === 'all' || expense.branch_id === branch;
-  const openPayables = expenses.filter((expense) => expense.status === 'payable' && isInSelectedBranch(expense));
-  const dueNow = openPayables.filter((expense) => expense.due_date && expense.due_date < today()).reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
-  const payableTotal = openPayables.reduce((total, expense) => total + Number(expense.total) - Number(expense.paid_total), 0);
+  const openPayables = expenses.filter((expense) => expense.status === 'payable' && expenseBalance(expense) > 0.005 && isInSelectedBranch(expense));
+  const dueNow = openPayables.filter((expense) => expense.due_date && expense.due_date < today()).reduce((total, expense) => total + expenseBalance(expense), 0);
+  const payableTotal = openPayables.reduce((total, expense) => total + expenseBalance(expense), 0);
   const purchaseCommitments = useMemo(() => {
     const openOrders = new Map(orders
       .filter((order) => ['ordered', 'partially_received'].includes(order.status) && (branch === 'all' || order.branch_id === branch))
@@ -414,12 +425,9 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
   const visibleExpenses = useMemo(() => {
     const term = expenseSearch.trim().toLocaleLowerCase('es-EC');
     return expenses.filter((expense) => {
-      const balance = Number(expense.total) - Number(expense.paid_total);
-      const isOverdue = balance > 0 && Boolean(expense.due_date) && expense.due_date < today();
+      const state = expensePaymentState(expense);
       const matchesStatus = expenseStatusFilter === 'all'
-        || (expenseStatusFilter === 'open' && balance > 0)
-        || (expenseStatusFilter === 'overdue' && isOverdue)
-        || (expenseStatusFilter === 'paid' && balance <= 0);
+        || expenseStatusFilter === state;
       const searchable = [expense.description, expense.category, expense.reference, branchNames.get(expense.branch_id), supplierNames.get(expense.supplier_id), orderNames.get(expense.purchase_order_id)]
         .filter(Boolean).join(' ').toLocaleLowerCase('es-EC');
       return isInSelectedBranch(expense) && matchesStatus && (!term || searchable.includes(term));
@@ -698,11 +706,11 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
           <button className="button button-primary" disabled={busy}><Plus size={15}/> Guardar egreso</button>
         </form>
         <section className="panel op-finance-ledger-register" id="op-finance-expense-register"><div className="panel-heading"><div><span className="eyebrow">COMPROMISOS Y PAGOS</span><h3>Movimientos de egreso</h3></div><CircleDollarSign size={19}/></div>
-          {!expenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={24}/><b>Aún no hay egresos</b><span>Registra compras pagadas al instante o servicios que debas pagar después.</span></div> : <><div className="op-finance-ledger-filters"><label>Buscar egreso<input type="search" value={expenseSearch} onChange={(event) => setExpenseSearch(event.target.value)} placeholder="Descripción, proveedor, OC o documento"/></label><label>Estado<select value={expenseStatusFilter} onChange={(event) => setExpenseStatusFilter(event.target.value)}><option value="all">Todos los estados</option><option value="open">Por pagar</option><option value="overdue">Vencidos</option><option value="paid">Pagados</option></select></label><span className="op-finance-ledger-result-count">{visibleExpenses.length} de {expenses.length} egresos</span></div>{!visibleExpenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={22}/><b>Sin coincidencias</b><span>Prueba otro término o estado para encontrar el egreso.</span></div> : <div className="op-finance-ledger-list">{visibleExpenses.map((expense) => { const balance = Number(expense.total) - Number(expense.paid_total); const form = paymentForms[expense.id] || { amount: '', method: 'transfer' }; return <article key={expense.id}>
-            <div className="op-finance-ledger-record-top"><div><b>{expense.description}</b><span>{expense.category}{expense.branch_id ? ` · ${branchNames.get(expense.branch_id) || 'Sucursal'}` : ' · General'}{expense.supplier_id ? ` · ${supplierNames.get(expense.supplier_id) || 'Proveedor'}` : ''}{expense.purchase_order_id ? ` · OC ${orderNames.get(expense.purchase_order_id) || 'vinculada'}` : ''}{expense.reference ? ` · Doc. ${expense.reference}` : ''}</span></div><span className={`op-finance-ledger-status ${balance <= 0 ? 'is-paid' : ''}`}>{balance <= 0 ? 'Pagado' : expense.due_date && expense.due_date < today() ? 'Vencido' : 'Por pagar'}</span></div>
-            <div className="op-finance-ledger-record-numbers"><span>Registrado {new Date(`${expense.document_date}T12:00:00`).toLocaleDateString('es-EC')} {expense.due_date ? `· vence ${new Date(`${expense.due_date}T12:00:00`).toLocaleDateString('es-EC')}` : ''}</span><b>{money(balance)} <small>pendiente</small></b></div>
-            <div className="op-finance-ledger-progress"><i style={{ width: `${Math.min(100, Number(expense.paid_total) / Number(expense.total) * 100)}%` }}/></div><small>Pagado {money(Number(expense.paid_total))} de {money(Number(expense.total))}</small>
-            {balance > 0 && <form className="op-finance-ledger-pay" onSubmit={(event) => void registerPayment(event, expense)}><input aria-label="Monto de abono" required type="number" min="0.01" max={balance} step="0.01" placeholder="Abono USD" value={form.amount} onChange={(event) => setPaymentForms({ ...paymentForms, [expense.id]: { ...form, amount: event.target.value } })}/><select aria-label="Medio de pago" value={form.method} onChange={(event) => setPaymentForms({ ...paymentForms, [expense.id]: { ...form, method: event.target.value } })}>{methods.map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select><button className="button button-outline" disabled={busy}>Registrar pago</button></form>}
+          {!expenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={24}/><b>Aún no hay egresos</b><span>Registra compras pagadas al instante o servicios que debas pagar después.</span></div> : <><div className="op-finance-ledger-filters"><label>Buscar egreso<input type="search" value={expenseSearch} onChange={(event) => setExpenseSearch(event.target.value)} placeholder="Descripción, proveedor, OC o documento"/></label><label>Estado<select value={expenseStatusFilter} onChange={(event) => setExpenseStatusFilter(event.target.value)}><option value="all">Todos los estados</option><option value="open">Por pagar</option><option value="overdue">Vencidos</option><option value="paid">Pagados</option><option value="void">Anulados</option><option value="review">Revisar datos</option></select></label><span className="op-finance-ledger-result-count">{visibleExpenses.length} de {expenses.length} egresos</span></div>{!visibleExpenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={22}/><b>Sin coincidencias</b><span>Prueba otro término o estado para encontrar el egreso.</span></div> : <div className="op-finance-ledger-list">{visibleExpenses.map((expense) => { const balance = expenseBalance(expense); const state = expensePaymentState(expense); const form = paymentForms[expense.id] || { amount: '', method: 'transfer' }; const stateLabel = state === 'void' ? 'Anulado' : state === 'paid' ? 'Pagado' : state === 'overdue' ? 'Vencido' : state === 'open' ? 'Por pagar' : 'Revisar datos'; return <article key={expense.id}>
+            <div className="op-finance-ledger-record-top"><div><b>{expense.description}</b><span>{expense.category}{expense.branch_id ? ` · ${branchNames.get(expense.branch_id) || 'Sucursal'}` : ' · General'}{expense.supplier_id ? ` · ${supplierNames.get(expense.supplier_id) || 'Proveedor'}` : ''}{expense.purchase_order_id ? ` · OC ${orderNames.get(expense.purchase_order_id) || 'vinculada'}` : ''}{expense.reference ? ` · Doc. ${expense.reference}` : ''}</span></div><span className={`op-finance-ledger-status ${state === 'paid' ? 'is-paid' : state === 'void' ? 'is-void' : state === 'review' ? 'is-review' : ''}`}>{stateLabel}</span></div>
+            <div className="op-finance-ledger-record-numbers"><span>Registrado {new Date(`${expense.document_date}T12:00:00`).toLocaleDateString('es-EC')} {expense.due_date ? `· vence ${new Date(`${expense.due_date}T12:00:00`).toLocaleDateString('es-EC')}` : ''}</span><b>{state === 'void' ? '—' : money(balance)} <small>{state === 'void' ? 'no exigible' : state === 'review' ? 'verificar saldo' : 'pendiente'}</small></b></div>
+            <div className="op-finance-ledger-progress"><i style={{ width: `${Math.min(100, Number(expense.paid_total) / Number(expense.total) * 100)}%` }}/></div><small>{state === 'void' ? 'Compromiso anulado; excluido de obligaciones y saldos.' : state === 'review' ? 'El estado y el saldo no coinciden; revisa el registro antes de continuar.' : `Pagado ${money(Number(expense.paid_total))} de ${money(Number(expense.total))}`}</small>
+            {(state === 'open' || state === 'overdue') && balance > 0 && <form className="op-finance-ledger-pay" onSubmit={(event) => void registerPayment(event, expense)}><input aria-label="Monto de abono" required type="number" min="0.01" max={balance} step="0.01" placeholder="Abono USD" value={form.amount} onChange={(event) => setPaymentForms({ ...paymentForms, [expense.id]: { ...form, amount: event.target.value } })}/><select aria-label="Medio de pago" value={form.method} onChange={(event) => setPaymentForms({ ...paymentForms, [expense.id]: { ...form, method: event.target.value } })}>{methods.map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select><button className="button button-outline" disabled={busy}>Registrar pago</button></form>}
           </article>; })}</div>}</>}
           {!!expensePaymentsInScope.length && <><div className="panel-heading op-finance-ledger-history-heading"><div><span className="eyebrow">DINERO DESEMBOLSADO</span><h3>Pagos recientes del periodo</h3></div></div><div className="op-finance-ledger-list">{expensePaymentsInScope.slice(0, 15).map((payment) => { const linked = expensesById.get(payment.expense_id); return <article className="op-finance-ledger-history-row" key={payment.id}><div><b>{linked?.description || 'Egreso'}</b><span>{payment.method} · {new Date(payment.paid_at).toLocaleString('es-EC', { timeZone: 'America/Guayaquil', dateStyle: 'short', timeStyle: 'short' })}</span></div><b>{money(payment.amount)}</b></article>; })}</div></>}
         </section>
