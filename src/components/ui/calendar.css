@@ -57,16 +57,16 @@
 .ok-date-trigger:hover { border-color: #d9c4dd; background: #fcf9fc; }
 .ok-date-trigger>svg { flex: none; color: #8d2c86; }
 .ok-date-trigger>span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ok-date-popover { position: absolute; z-index: 80; top: calc(100% + 8px); left: 0; width: min(366px, calc(100vw - 28px)); padding: 8px; border: 1px solid #e4e0e8; border-radius: 16px; background: #fff; box-shadow: 0 20px 50px #1c152631; }
-.ok-date-popover>.ok-calendar { width: 100%; border: 0; box-shadow: none; }
+.ok-date-popover { position: fixed; z-index: 1001; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 8px; border: 1px solid #e4e0e8; border-radius: 16px; background: #fff; box-shadow: 0 20px 50px #1c152631; scrollbar-width: thin; }
+.ok-date-popover[data-layout="sheet"] { border-radius: 18px; }
+.ok-date-popover>.ok-calendar { width: min(100%, 366px); margin: 0 auto; border: 0; box-shadow: none; }
 .ok-time-field { display: grid; gap: 6px; margin: 0 8px 8px; padding-top: 10px; border-top: 1px solid #efedf1; color: #5c5663; font-size: 10px; font-weight: 650; }
 .ok-time-field>span { display: flex; align-items: center; gap: 6px; }
 .ok-time-field>span>svg { color: #8d2c86; }
 .ok-time-field input { width: 100%; min-height: 38px; padding: 6px 9px; border: 1px solid #e1dde5; border-radius: 8px; background: #fff; color: #34313b; font: inherit; font-size: 12px; }
 @media (max-width: 560px) {
-  .ok-calendar { padding: 10px; }
-  .ok-calendar[data-cell-size="large"] { --ok-calendar-cell-size: 42px; }
-  .ok-date-popover { position: fixed; top: auto; right: 10px; bottom: 10px; left: 10px; z-index: 1000; width: auto; max-height: calc(100dvh - 20px); overflow: auto; }
-  .ok-date-popover>.ok-calendar { max-width: 380px; margin: 0 auto; }
+  .ok-date-popover { max-height: calc(100dvh - 24px); }
+  .ok-date-popover .ok-calendar[data-cell-size="comfortable"] { --ok-calendar-cell-size: clamp(30px, calc((100vw - 110px) / 7), 42px); }
+  .ok-date-popover .ok-calendar[data-cell-size="large"] { --ok-calendar-cell-size: clamp(30px, calc((100vw - 110px) / 7), 42px); }
 }
 @media (prefers-reduced-motion: reduce) { .ok-calendar * { scroll-behavior: auto !important; } }
