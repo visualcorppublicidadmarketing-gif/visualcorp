@@ -10,9 +10,26 @@ const categories = [
   ['inventory','Inventario'],['operations','Operaciones'],['security','Seguridad'],
 ];
 const audiences = [['both','Admin y operaciones'],['admin','Solo admin'],['operations','Solo operaciones']];
-const emptyForm = { title:'', summary:'', details:'', category:'operations', audience:'both', version_tag:'' };
+const emptyForm = { title:'', summary:'', details:'', category:'operations', audience:'both', version_tag:'', tags:[] };
 const dateLabel = (value) => value ? new Date(value).toLocaleDateString('es-EC',{year:'numeric',month:'short',day:'numeric'}) : 'Borrador';
 const timelineDate = (value) => value ? new Date(value).toLocaleDateString('es-EC',{day:'2-digit',month:'short'}).replace('.', '').toLocaleUpperCase('es') : 'BORRADOR';
+
+function TagEditor({ tags, onChange }) {
+  const [draft, setDraft] = useState('');
+  const add = (raw) => {
+    const additions = raw.split(/[\n,]/).map((tag) => tag.trim().replace(/^#/, '').slice(0, 32)).filter(Boolean);
+    if (!additions.length) return;
+    const unique = new Map([...tags, ...additions].map((tag) => [tag.toLocaleLowerCase('es'), tag]));
+    onChange([...unique.values()].slice(0, 8));
+    setDraft([...unique.values()].slice(8).join(', '));
+  };
+  return <div className="changelog-tag-editor" role="group" aria-label="Etiquetas de la novedad">
+    <div className="changelog-tag-editor-chips">{tags.map((tag) => <button key={tag} type="button" className="changelog-tag changelog-tag-removable" onClick={() => onChange(tags.filter((current) => current !== tag))} aria-label={`Quitar etiqueta ${tag}`}>{tag}<X size={12}/></button>)}
+      <input value={draft} maxLength={32} disabled={tags.length >= 8} onChange={(event) => { if (/[\n,]/.test(event.target.value)) add(event.target.value); else setDraft(event.target.value); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ',') { event.preventDefault(); add(draft); } if (event.key === 'Backspace' && !draft && tags.length) onChange(tags.slice(0, -1)); }} onBlur={() => add(draft)} placeholder={tags.length >= 8 ? 'Límite alcanzado' : tags.length ? 'Añadir otra…' : 'Ej. móvil, catálogo, mejoras'} aria-label="Escribe una etiqueta y pulsa Enter" />
+    </div>
+    <small>{tags.length}/8 etiquetas. Pulsa Enter o separa con comas.</small>
+  </div>;
+}
 
 export function ChangeLogPanel({ area='operations', compact=false }) {
   const { organizationId, user, hasPermission } = useAuth();
@@ -25,16 +42,19 @@ export function ChangeLogPanel({ area='operations', compact=false }) {
   const [saving,setSaving]=useState(false);
   const [search,setSearch]=useState('');
   const [categoryFilter,setCategoryFilter]=useState('all');
+  const [tagFilter,setTagFilter]=useState('all');
   const canManage=hasPermission('dashboard','edit');
   const audiencesForArea=area==='admin'?['both','admin']:['both','operations'];
   const visibleEntries=useMemo(()=>{
     const normalized=search.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').trim();
     return entries.filter(entry=>{
       const categoryMatches=categoryFilter==='all'||entry.category===categoryFilter;
-      const content=[entry.title,entry.summary,entry.details,entry.version_tag].filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es');
-      return categoryMatches&&(!normalized||content.includes(normalized));
+      const content=[entry.title,entry.summary,entry.details,entry.version_tag,...(entry.tags||[])].filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es');
+      const tagMatches=tagFilter==='all'||(entry.tags||[]).includes(tagFilter);
+      return categoryMatches&&tagMatches&&(!normalized||content.includes(normalized));
     });
-  },[entries,search,categoryFilter]);
+  },[entries,search,categoryFilter,tagFilter]);
+  const allTags=useMemo(()=>Array.from(new Set(entries.flatMap((entry)=>entry.tags||[]))).sort((a,b)=>a.localeCompare(b,'es')),[entries]);
 
   const refresh=useCallback(async()=>{
     if(!supabase||!organizationId){setLoading(false);return;}
@@ -57,7 +77,7 @@ export function ChangeLogPanel({ area='operations', compact=false }) {
 
   const startEdit=(entry)=>{
     setEditing(entry);
-    setForm({title:entry.title,summary:entry.summary,details:entry.details||'',category:entry.category,audience:entry.audience,version_tag:entry.version_tag||''});
+    setForm({title:entry.title,summary:entry.summary,details:entry.details||'',category:entry.category,audience:entry.audience,version_tag:entry.version_tag||'',tags:Array.isArray(entry.tags)?entry.tags:[]});
     setNotice('');setError('');
   };
   const resetForm=()=>{setEditing(null);setForm(emptyForm);};
@@ -65,7 +85,7 @@ export function ChangeLogPanel({ area='operations', compact=false }) {
     if(!canManage||!organizationId||!user)return;
     setSaving(true);setError('');setNotice('');
     const publishedAt=status==='published'?(editing?.published_at||new Date().toISOString()):null;
-    const payload={...form,title:form.title.trim(),summary:form.summary.trim(),details:form.details.trim(),version_tag:form.version_tag.trim(),status,published_at:publishedAt,updated_at:new Date().toISOString(),updated_by:user.id};
+    const payload={...form,title:form.title.trim(),summary:form.summary.trim(),details:form.details.trim(),version_tag:form.version_tag.trim(),tags:form.tags.slice(0,8),status,published_at:publishedAt,updated_at:new Date().toISOString(),updated_by:user.id};
     if(!editing)Object.assign(payload,{organization_id:organizationId,created_by:user.id});
     const result=editing
       ? await supabase.from('internal_change_log').update(payload).eq('id',editing.id).eq('organization_id',organizationId)
@@ -91,11 +111,12 @@ export function ChangeLogPanel({ area='operations', compact=false }) {
     {!compact&&canManage&&<form className="changelog-editor" onSubmit={e=>{e.preventDefault();save('draft');}}>
       <div className="changelog-editor-title"><h3>{editing?'Editar novedad':'Redactar novedad'}</h3>{editing&&<button className="icon-button" type="button" aria-label="Cancelar edición" onClick={resetForm}><X size={16}/></button>}</div>
       <div className="changelog-form-grid"><label>Título<input required maxLength={160} value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="Ej. Nuevo flujo de recepción parcial"/></label><label>Versión o referencia<input maxLength={80} value={form.version_tag} onChange={e=>setForm({...form,version_tag:e.target.value})} placeholder="Opcional: 1.4.0, commit…"/></label><label>Categoría<select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label>Mostrar en<select value={form.audience} onChange={e=>setForm({...form,audience:e.target.value})}>{audiences.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></div>
+      <label>Etiquetas<TagEditor tags={form.tags} onChange={(tags)=>setForm({...form,tags})}/></label>
       <label>Resumen corto<input required maxLength={500} value={form.summary} onChange={e=>setForm({...form,summary:e.target.value})} placeholder="Qué cambió y para quién"/></label>
       <label>Detalles<textarea rows={4} maxLength={10000} value={form.details} onChange={e=>setForm({...form,details:e.target.value})} placeholder="Describe mejoras, alcance o instrucciones internas"/></label>
       <div className="changelog-form-actions"><button className="button button-outline" type="submit" disabled={saving||!form.title.trim()||!form.summary.trim()}><FileText size={15}/>{saving?'Guardando…':'Guardar borrador'}</button><button className="button button-dark" type="button" disabled={saving||!form.title.trim()||!form.summary.trim()} onClick={()=>save('published')}><Send size={15}/> Publicar ahora</button></div>
     </form>}
-    {!compact&&!loading&&entries.length>0&&<div className="changelog-tools"><label className="changelog-search"><Search size={16}/><span className="sr-only">Buscar novedades</span><input type="search" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Buscar por título, detalle o versión"/></label><label className="changelog-filter"><Filter size={15}/><span className="sr-only">Filtrar por categoría</span><select value={categoryFilter} onChange={event=>setCategoryFilter(event.target.value)}><option value="all">Todas las categorías</option>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><span className="changelog-result-count">{visibleEntries.length} de {entries.length}</span></div>}
-    {loading?<div className="changelog-empty"><Clock3 size={19}/> Cargando novedades…</div>:!entries.length?<div className="changelog-empty"><History size={20}/><b>Aún no hay novedades</b><span>{canManage?'Redacta la primera entrada para compartirla con el equipo.':'Las publicaciones aparecerán aquí cuando administración las comparta.'}</span></div>:!visibleEntries.length?<div className="changelog-empty"><Search size={19}/><b>Sin coincidencias</b><span>Prueba con otra palabra o limpia los filtros.</span><button type="button" className="button button-outline" onClick={()=>{setSearch('');setCategoryFilter('all');}}>Limpiar filtros</button></div>:<div className="changelog-list" role="list">{visibleEntries.map(entry=><div className="changelog-event" key={entry.id} role="listitem"><div className="changelog-event-date" aria-hidden="true"><time>{timelineDate(entry.published_at||entry.updated_at)}</time><span/></div><article className="changelog-entry"><div className="changelog-entry-top"><div className="changelog-tags"><span className="changelog-tag">{categories.find(([value])=>value===entry.category)?.[1]||'General'}</span>{entry.version_tag&&<span className="changelog-version">{entry.version_tag}</span>}{entry.status!=='published'&&<span className={`changelog-status status-${entry.status}`}>{entry.status==='draft'?'Borrador':'Archivada'}</span>}</div><time>{dateLabel(entry.published_at||entry.updated_at)}</time></div><h3>{entry.title}</h3><p className="changelog-summary">{entry.summary}</p>{entry.details&&<details className="changelog-details"><summary>Ver detalles</summary><p>{entry.details}</p></details>}{canManage&&!compact&&<div className="changelog-entry-actions">{entry.status!=='published'&&entry.status!=='archived'&&<button type="button" className="button button-outline" disabled={saving} onClick={()=>changeStatus(entry,'published')}><Send size={14}/> Publicar</button>}<button type="button" className="button button-outline" onClick={()=>startEdit(entry)}>Editar</button>{entry.status!=='archived'&&<button type="button" className="button button-outline changelog-archive" disabled={saving} onClick={()=>changeStatus(entry,'archived')}>Archivar</button>}</div>}</article></div>)}</div>}
+    {!compact&&!loading&&entries.length>0&&<div className="changelog-tools"><label className="changelog-search"><Search size={16}/><span className="sr-only">Buscar novedades</span><input type="search" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Buscar por título, detalle, versión o etiqueta"/></label><label className="changelog-filter"><Filter size={15}/><span className="sr-only">Filtrar por categoría</span><select value={categoryFilter} onChange={event=>setCategoryFilter(event.target.value)}><option value="all">Todas las categorías</option>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>{allTags.length>0&&<label className="changelog-filter"><span className="sr-only">Filtrar por etiqueta</span><select value={tagFilter} onChange={event=>setTagFilter(event.target.value)}><option value="all">Todas las etiquetas</option>{allTags.map((tag)=><option key={tag} value={tag}>{tag}</option>)}</select></label>}<span className="changelog-result-count">{visibleEntries.length} de {entries.length}</span></div>}
+    {loading?<div className="changelog-empty"><Clock3 size={19}/> Cargando novedades…</div>:!entries.length?<div className="changelog-empty"><History size={20}/><b>Aún no hay novedades</b><span>{canManage?'Redacta la primera entrada para compartirla con el equipo.':'Las publicaciones aparecerán aquí cuando administración las comparta.'}</span></div>:!visibleEntries.length?<div className="changelog-empty"><Search size={19}/><b>Sin coincidencias</b><span>Prueba con otra palabra o limpia los filtros.</span><button type="button" className="button button-outline" onClick={()=>{setSearch('');setCategoryFilter('all');setTagFilter('all');}}>Limpiar filtros</button></div>:<div className="changelog-list" role="list">{visibleEntries.map(entry=><div className="changelog-event" key={entry.id} role="listitem"><div className="changelog-event-date" aria-hidden="true"><time>{timelineDate(entry.published_at||entry.updated_at)}</time><span/></div><article className="changelog-entry"><div className="changelog-entry-top"><div className="changelog-tags"><span className="changelog-tag">{categories.find(([value])=>value===entry.category)?.[1]||'General'}</span>{(entry.tags||[]).map((tag)=><span className="changelog-tag changelog-tag-user" key={tag}>{tag}</span>)}{entry.version_tag&&<span className="changelog-version">{entry.version_tag}</span>}{entry.status!=='published'&&<span className={`changelog-status status-${entry.status}`}>{entry.status==='draft'?'Borrador':'Archivada'}</span>}</div><time>{dateLabel(entry.published_at||entry.updated_at)}</time></div><h3>{entry.title}</h3><p className="changelog-summary">{entry.summary}</p>{entry.details&&<details className="changelog-details"><summary>Ver detalles</summary><p>{entry.details}</p></details>}{canManage&&!compact&&<div className="changelog-entry-actions">{entry.status!=='published'&&entry.status!=='archived'&&<button type="button" className="button button-outline" disabled={saving} onClick={()=>changeStatus(entry,'published')}><Send size={14}/> Publicar</button>}<button type="button" className="button button-outline" onClick={()=>startEdit(entry)}>Editar</button>{entry.status!=='archived'&&<button type="button" className="button button-outline changelog-archive" disabled={saving} onClick={()=>changeStatus(entry,'archived')}>Archivar</button>}</div>}</article></div>)}</div>}
   </section>;
 }

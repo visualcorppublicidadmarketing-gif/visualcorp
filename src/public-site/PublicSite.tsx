@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Globe2, MapPin, Menu, MessageCircle, Phone, Printer, ScanLine, Scissors, Shirt, Sparkles, Store, PanelsTopLeft, X, Sun, Moon } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Globe2, MapPin, MessageCircle, Phone, Printer, ScanLine, Scissors, Shirt, Sparkles, Store, PanelsTopLeft, Sun, Moon } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
@@ -13,6 +13,7 @@ import { AnimatedList, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpo
 import { AnimatedThemeToggler } from '../components/ui/AnimatedThemeToggler';
 import { PublicSiteContextMenu } from './PublicSiteContextMenu';
 import { FooterParticles } from './FooterParticles';
+import { MobileBottomNavigation } from './MobileBottomNavigation';
 import './public-site-v2.css';
 import './glass-system.css';
 import './public-navigation.css';
@@ -21,6 +22,7 @@ import './contact-page.css';
 import './home-hero.css';
 import './public-theme.css';
 import './service-detail.css';
+import './mobile-bottom-navigation.css';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 const familyInfo = (id) => publicServiceFamilies.find((family) => family.id === id);
@@ -45,14 +47,11 @@ function SiteHeader({ theme, onThemeChange }) {
   const { data } = useWorkspace();
   const { user } = useAuth();
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<'services' | 'company' | null>(null);
   const headerRef = useRef(null);
   const servicesRef = useRef(null);
   const companyRef = useRef(null);
-  const mobileButtonRef = useRef(null);
-  const mobilePanelRef = useRef(null);
-  const closeNavigation = () => { setOpenMenu(null); setMobileOpen(false); };
+  const closeNavigation = () => setOpenMenu(null);
   useEffect(() => {
     closeNavigation();
   }, [location.pathname]);
@@ -67,15 +66,8 @@ function SiteHeader({ theme, onThemeChange }) {
       if (!headerRef.current?.contains(event.target)) closeNavigation();
     };
     const handleEscape = (event) => {
-      if (event.key === 'Tab' && mobileOpen) {
-        const focusable = [mobileButtonRef.current, ...mobilePanelRef.current.querySelectorAll('a[href]')];
-        if (event.shiftKey && document.activeElement === focusable[0]) { event.preventDefault(); focusable.at(-1)?.focus(); }
-        else if (!event.shiftKey && document.activeElement === focusable.at(-1)) { event.preventDefault(); focusable[0]?.focus(); }
-        return;
-      }
       if (event.key !== 'Escape') return;
-      if (mobileOpen) { setMobileOpen(false); mobileButtonRef.current?.focus(); }
-      else if (openMenu) {
+      if (openMenu) {
         const trigger = openMenu === 'services' ? servicesRef : companyRef;
         setOpenMenu(null);
         trigger.current?.focus();
@@ -87,19 +79,14 @@ function SiteHeader({ theme, onThemeChange }) {
       document.removeEventListener('pointerdown', handlePointer);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [mobileOpen, openMenu]);
-  useEffect(() => {
-    if (!mobileOpen) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = previousOverflow; };
-  }, [mobileOpen]);
+  }, [openMenu]);
   const services = data.services.filter((service) => service.enabled);
   const serviceIsActive = location.pathname.startsWith('/servicios');
   const companyIsActive = ['/nosotros', '/como-trabajamos'].includes(location.pathname);
   const userDisplayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'Tu cuenta';
   const userAvatar = getGoogleAvatarUrl(user);
-  return <header className="site-header" ref={headerRef}>
+  return <>
+  <header className="site-header" ref={headerRef}>
     <div className="site-header-inner"><BrandLink onClick={closeNavigation} theme={theme} />
       <nav className="site-nav" aria-label="Navegación principal">
         <NavLink to="/" end onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Inicio</NavLink>
@@ -111,23 +98,24 @@ function SiteHeader({ theme, onThemeChange }) {
         <NavLink to="/tienda" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Tienda</NavLink>
         <NavLink to="/contacto" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Contacto</NavLink>
       </nav>
-      <div className="site-header-actions"><AnimatedThemeToggler theme={theme} onThemeChange={onThemeChange} className="site-theme-toggle" aria-label={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}><span className="site-theme-toggle-icons" aria-hidden="true"><Sun className="theme-sun" size={17}/><Moon className="theme-moon" size={17}/></span></AnimatedThemeToggler><Link className="site-quote-button vc-shimmer-button" to="/cotizador" onClick={closeNavigation}><span className="quote-label-wide">Solicitar cotización</span><span className="quote-label-short">Cotizar</span><ArrowUpRight size={16} aria-hidden="true" /></Link>{user&&<span className="site-session-avatar" title={`Sesión activa: ${userDisplayName}`}><Avatar name={userDisplayName} src={userAvatar} size="sm" badge={userAvatar?<span className="vc-google-avatar-mark">G</span>:undefined}/></span>}<button ref={mobileButtonRef} type="button" className="site-menu-toggle" onClick={() => { setOpenMenu(null); setMobileOpen((open) => !open); }} aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={mobileOpen} aria-controls="site-mobile-navigation">{mobileOpen ? <X size={21}/> : <Menu size={21}/>}</button></div>
+      <div className="site-header-actions"><AnimatedThemeToggler theme={theme} onThemeChange={onThemeChange} className="site-theme-toggle" aria-label={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}><span className="site-theme-toggle-icons" aria-hidden="true"><Sun className="theme-sun" size={17}/><Moon className="theme-moon" size={17}/></span></AnimatedThemeToggler><Link className="site-quote-button vc-shimmer-button" to="/cotizador" onClick={closeNavigation}><span className="quote-label-wide">Solicitar cotización</span><span className="quote-label-short">Cotizar</span><ArrowUpRight size={16} aria-hidden="true" /></Link>{user&&<span className="site-session-avatar" title={`Sesión activa: ${userDisplayName}`}><Avatar name={userDisplayName} src={userAvatar} size="sm" badge={userAvatar?<span className="vc-google-avatar-mark">G</span>:undefined}/></span>}</div>
       {openMenu === 'services' && <div className="site-mega-panel" id="site-services-panel">
         <div className="site-mega-intro"><span className="site-mega-kicker">LO QUE HACEMOS <i/></span><h2>De la idea<br/>a lo tangible<span>.</span></h2><p>Explora lo que podemos crear para tu marca, tu espacio o tu próximo proyecto.</p><Link to="/servicios" onClick={closeNavigation}>Explorar todos los servicios <ArrowUpRight size={16} aria-hidden="true" /></Link></div>
         <div className="site-mega-content"><span className="site-mega-label">ELIGE UNA ESPECIALIDAD</span><div className="site-mega-services">{services.map((service) => { const Icon = serviceIcons[service.id] || Sparkles; return <Link key={service.id} to={`/servicios/${service.id}`} onClick={closeNavigation} className={location.pathname === `/servicios/${service.id}` ? 'is-active' : ''}><span className="site-mega-icon"><Icon size={19} aria-hidden="true" /></span><span><strong>{service.name}</strong><small>{service.description}</small></span><ArrowUpRight className="site-mega-arrow" size={17} aria-hidden="true" /></Link>; })}</div></div>
       </div>}
       {openMenu === 'company' && <div className="site-mega-panel site-company-panel" id="site-company-panel"><div className="site-mega-intro"><span className="site-mega-kicker">VISUAL CORP <i/></span><h2>Conoce<br/>nuestro mundo<span>.</span></h2><p>Una mirada a quiénes somos y cómo damos forma a cada proyecto.</p></div><div className="site-company-links"><Link to="/nosotros" onClick={closeNavigation}><span className="site-company-number">01</span><strong>Quiénes somos</strong><small>La marca, el equipo y lo que nos mueve.</small><ArrowUpRight size={20} aria-hidden="true" /></Link><Link to="/como-trabajamos" onClick={closeNavigation}><span className="site-company-number">02</span><strong>Cómo trabajamos</strong><small>Del primer contacto a la producción.</small><ArrowUpRight size={20} aria-hidden="true" /></Link></div></div>}
     </div>
-    {mobileOpen && <><button type="button" className="site-mobile-backdrop" tabIndex={-1} onClick={closeNavigation} aria-label="Cerrar navegación"/><nav ref={mobilePanelRef} className="site-mobile-panel" id="site-mobile-navigation" aria-label="Navegación móvil"><span className="site-mobile-kicker">EXPLORA VISUAL CORP</span><div className="site-mobile-primary"><NavLink to="/" end onClick={closeNavigation}>Inicio<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/servicios" onClick={closeNavigation}>Servicios<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/nosotros" onClick={closeNavigation}>La empresa<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/portafolio" onClick={closeNavigation}>Portafolio<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/publicaciones" onClick={closeNavigation}>Publicaciones<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/blog" onClick={closeNavigation}>Blog<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/tienda" onClick={closeNavigation}>Tienda<ArrowUpRight size={18} aria-hidden="true" /></NavLink><NavLink to="/contacto" onClick={closeNavigation}>Contacto<ArrowUpRight size={18} aria-hidden="true" /></NavLink></div><div className="site-mobile-services"><span>ESPECIALIDADES</span><div>{services.map((service) => { const Icon = serviceIcons[service.id] || Sparkles; return <Link key={service.id} to={`/servicios/${service.id}`} onClick={closeNavigation}><Icon size={17} aria-hidden="true" />{service.name}<ArrowUpRight size={15} aria-hidden="true" /></Link>; })}</div></div><Link className="site-mobile-process" to="/como-trabajamos" onClick={closeNavigation}>Cómo trabajamos <ArrowUpRight size={16} aria-hidden="true" /></Link><Link className="site-mobile-quote" to="/cotizador" onClick={closeNavigation}>Cuéntanos tu idea <ArrowUpRight size={19} aria-hidden="true" /></Link></nav></>}
-  </header>;
+  </header>
+  <MobileBottomNavigation services={services}/>
+  </>;
 }
 
-function SiteFooter() {
+function SiteFooter({ theme }: { theme: 'light' | 'dark' }) {
   const { data } = useWorkspace();
   const services = data.services.filter((service) => service.enabled);
   return <footer className="site-footer" aria-label="Pie de página">
     <div className="footer-shell">
-      <FooterParticles />
+      <FooterParticles theme={theme} />
       <div className="footer-topline">
         <span><i aria-hidden="true"/> VISUAL CORP <b>·</b> {data.settings.location.toUpperCase()}</span>
         <span className="footer-topline-promise">IDEAS QUE TOMAN FORMA <Sparkles size={13} aria-hidden="true"/></span>
@@ -173,7 +161,7 @@ function SiteFooter() {
 export function PublicSiteLayout() {
   const location = useLocation();
   const reduceMotion = useReducedMotion();
-  const [theme, setTheme] = useState(() => {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     try { return localStorage.getItem('visualcorp-public-theme-v1') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
   });
   const changeTheme = (nextTheme) => {
@@ -182,7 +170,7 @@ export function PublicSiteLayout() {
     document.documentElement.dataset.publicTheme = nextTheme;
   };
   useEffect(() => { document.documentElement.dataset.publicTheme = theme; }, [theme]);
-  return <div className="public-site"><ScrollProgress/><PublicSiteContextMenu/><SiteHeader theme={theme} onThemeChange={changeTheme}/><main className="site-main"><motion.div key={location.pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.28 }}><Outlet/></motion.div></main><SiteFooter/></div>;
+  return <div className="public-site"><ScrollProgress/><PublicSiteContextMenu/><SiteHeader theme={theme} onThemeChange={changeTheme}/><main className="site-main"><motion.div key={location.pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.28 }}><Outlet/></motion.div></main><SiteFooter theme={theme}/></div>;
 }
 
 function Eyebrow({ children, light = false }) { return <span className={`site-eyebrow${light ? ' light' : ''}`}><i/>{children}</span>; }

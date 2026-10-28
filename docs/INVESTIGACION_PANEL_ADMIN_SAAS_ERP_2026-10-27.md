@@ -87,3 +87,34 @@ No hay todavía datos de uso suficientes en este informe para fijar metas numér
 ## Límite de la investigación
 
 Este documento es una recomendación de producto/arquitectura a partir de patrones públicos y del estado inspeccionado del repositorio. No certifica controles, cumplimiento legal, factibilidad comercial, precios ni estado de producción. Los cambios de permisos enumerados en archivos de migración locales siguen sin aplicar; este informe no es autorización para publicar ni modificar Supabase.
+
+## Complemento: hacer accionable la portada — 2026-10-28
+
+### Hallazgos públicos
+
+- SAP Fiori separa el launchpad de la página de resumen: el primero da entrada por rol a aplicaciones; la segunda resume tareas/datos de un contexto laboral y permite reaccionar desde tarjetas. Sus guías de espacios recomiendan páginas ligeras, con secciones semánticas y accesos relevantes al perfil.
+- SAP distingue la worklist, enfocada en decidir y procesar pendientes, del list report, diseñado para localizar registros en conjuntos grandes con búsqueda, filtros y orden.
+- Carbon recomienda usar tablas para localizar y completar tareas con registros; la barra de tabla aloja acciones globales como búsqueda y filtros. No se deben convertir resúmenes visuales en sustitutos de esas listas.
+- WCAG 2.2 requiere un indicador de foco visible para la navegación por teclado.
+
+### Aplicación al panel
+
+El `/panel` ya presentaba prioridades CRM/inventario y accesos por grupos de navegación. Sus cuatro tarjetas KPI eran informativas pero no navegables. Se decidió que cada tarjeta abra el módulo que detalla el dato (Ventas → POS; solicitudes → CRM; cotizaciones → Cotizador; artículos → Inventario), mostrar el indicador de navegación y conservar el permiso de lectura del módulo y el acceso a la ruta. Si no está autorizado el destino, no se muestra la tarjeta. Esta es una aplicación del principio de overview accionable; no se añadieron cifras ni se alteró la consulta.
+
+### Catálogos de componentes revisados
+
+- Magic UI `Magic Card`: efecto de foco visual al pasar el puntero, con dependencias de `motion` y `next-themes`; es ornamental y no resuelve navegación de teclado por sí solo. No se incorporó. La biblioteca publica licencia MIT.
+- shadcn Card: composición flexible de contenido y acciones; el MCP indica que el proyecto no tiene registros configurados. La documentación oficial presenta Card como contenedor genérico; no hacía falta sustituir las tarjetas actuales. Repositorio oficial MIT.
+- HeroUI React Card: composición de cabecera, contenido y pie con variantes semánticas; MCP consultado en versión v3.2.6. No se incorporó un segundo sistema visual. La biblioteca oficial declara Apache-2.0.
+- Se conservaron React Router, StatCard, Lucide, CSS y tokens del proyecto; no hubo instalaciones.
+
+### Verificación y límites
+
+Build TypeScript/Vite y `git diff --check` pasan. La ruta de cada KPI coincide con un enlace existente del catálogo común, y la visibilidad consulta permisos actuales antes de renderizar la tarjeta. El indicador de foco es visible y se evita la animación nueva con `prefers-reduced-motion`. Sin sesión autenticada, no se afirma validación visual en producción; no se publicaron cambios ni se escribieron datos remotos.
+
+### Fuentes consultadas — 2026-10-28
+
+- SAP Fiori for Web, [Launchpad spaces](https://experience.sap.com/fiori-design-web/explore_category/launchpad/), [Overview Page](https://experience.sap.com/fiori-design-web/v1-78/overview-page/) y [Worklist](https://experience.sap.com/fiori-design-web/v1-50/work-list/).
+- Carbon Design System, [Data table](https://www.carbondesignsystem.com/building-blocks/core/components/data-table/guidelines) y [Filtering](https://www.carbondesignsystem.com/building-blocks/core/patterns/filtering).
+- W3C WAI, [WCAG 2.2 Focus Visible](https://www.w3.org/WAI/WCAG22/Understanding/focus-visible).
+- Catálogos y licencias oficiales: [Magic UI](https://magicui.design/docs/components/magic-card) / [Magic UI GitHub](https://github.com/magicuidesign/magicui), [shadcn Card](https://ui.shadcn.com/docs/components/card) / [shadcn MIT](https://github.com/shadcn-ui/ui/blob/main/LICENSE.md), [HeroUI Card](https://heroui.com/docs/react/components/card) / [HeroUI Apache-2.0](https://github.com/heroui-inc/heroui).

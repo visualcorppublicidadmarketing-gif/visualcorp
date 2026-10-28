@@ -44,7 +44,7 @@ export const workspaceNavigation: AppNavLink[] = [
 ];
 
 export const workspaceNavGroups: AppNavGroup[] = [
-  { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/mi-semana', '/operaciones/finanzas', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes'] },
+  { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/mi-semana', '/operaciones/finanzas', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes', '/operaciones/catalogo'] },
   { id: 'production', label: 'Producción y abastecimiento', icon: Boxes, paths: ['/operaciones/flujos', '/operaciones/inventario', '/operaciones/compras', '/operaciones/equipos'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing'] },
   { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },

@@ -190,7 +190,7 @@ export function CatalogPage() {
         </div>
       </section>
       {grouped.length ? grouped.map(([family, items]) => <section className={`panel catalog-family catalog-view-${view}`} key={family}>
-        {groupByFamily && <header><div><span className="catalog-family-icon"><Layers3 size={17}/></span><span><h2>{family}</h2><small>{items.length} {items.length === 1 ? 'producto' : 'productos'}</small></span></div><span className="catalog-rate-headings"><b>Normal / unidad</b><b>Con instalación</b><b>Corporativo</b></span></header>}
+        {groupByFamily && <header><div><span className="catalog-family-icon"><Layers3 size={17}/></span><span><h2>{family}</h2><small>{items.length} {items.length === 1 ? 'producto' : 'productos'}</small></span></div></header>}
         <div className="catalog-products">{items.map((item) => <article className="catalog-product-card" key={item.id}>
           <div className="catalog-product-identity"><img src={item.image} alt="" loading="lazy"/><span><b>{item.name}</b><small>{item.mode === 'area' ? 'Tarifa por m²' : `Tarifa por ${item.unit || 'unidad'}`}{item.description ? ` · ${item.description}` : ''}</small></span></div>
           <CatalogPricingEditor item={item} editable={canEditPrices} onSave={(draft) => savePricing(item, draft)}/>

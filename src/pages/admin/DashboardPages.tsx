@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight, Boxes, CheckCircle2, ClipboardCheck, FileText, RefreshCw, Users, Wallet } from 'lucide-react';
 import { formatMoney } from '../../app/workspace';
 import { AppFrame, PageHeading, StatCard } from '../../app/layout';
-import { workspaceNavigation, canViewNavigationItem } from '../../app/navigation';
+import { workspaceNavigation, workspaceNavGroups, canViewNavigationItem } from '../../app/navigation';
 import { ChangeLogPanel } from '../../components/ChangeLog';
 import { AnimatedList, SpotlightLayer, clearSpotlight, updateSpotlight } from '../../components/ui/MagicComponents';
 import { LeadsTable } from './CRMPage';
@@ -12,10 +12,10 @@ import { supabase } from '../../lib/supabaseClient';
 import { Skeleton } from '../../components/ui/Skeleton';
 
 const metricCards = [
-  { module: 'sales', key: 'sales_today_total', label: 'Ventas de hoy', note: 'Total confirmado hoy', icon: Wallet, tone: 'blue', money: true },
-  { module: 'crm', key: 'open_leads', label: 'Solicitudes abiertas', note: 'Seguimiento comercial', icon: Users, tone: 'violet' },
-  { module: 'quotes', key: 'quotes_this_month', label: 'Cotizaciones del mes', note: 'Propuestas compartidas', icon: FileText, tone: 'amber' },
-  { module: 'inventory', key: 'inventory_items', label: 'Artículos inventariados', noteKey: 'inventory_low_stock', icon: Boxes, tone: 'rose' },
+  { module: 'sales', to: '/operaciones/pos', key: 'sales_today_total', label: 'Ventas de hoy', note: 'Total confirmado hoy', icon: Wallet, tone: 'blue', money: true },
+  { module: 'crm', to: '/operaciones/crm', key: 'open_leads', label: 'Solicitudes abiertas', note: 'Seguimiento comercial', icon: Users, tone: 'violet' },
+  { module: 'quotes', to: '/operaciones/cotizador', key: 'quotes_this_month', label: 'Cotizaciones del mes', note: 'Propuestas compartidas', icon: FileText, tone: 'amber' },
+  { module: 'inventory', to: '/operaciones/inventario', key: 'inventory_items', label: 'Artículos inventariados', noteKey: 'inventory_low_stock', icon: Boxes, tone: 'rose' },
 ];
 
 const descriptions: Record<string, string> = {
@@ -60,7 +60,13 @@ export function UnifiedHome() {
     () => workspaceNavigation.filter((item) => item.to !== '/panel' && canViewNavigationItem(item, hasPermission)),
     [hasPermission],
   );
-  const visibleMetrics = canViewSummary ? metricCards.filter(({ module }) => hasPermission(module, 'view')) : [];
+  const visibleGroups = useMemo(() => workspaceNavGroups.flatMap((group) => {
+    const items = availableLinks.filter((item) => group.paths.includes(item.to));
+    return items.length ? [{ ...group, items }] : [];
+  }), [availableLinks]);
+  const visibleMetrics = canViewSummary
+    ? metricCards.filter(({ module, to }) => hasPermission(module, 'view') && availableLinks.some((item) => item.to === to))
+    : [];
   const primaryAction = availableLinks.find((item) => item.to === '/operaciones/pos') || availableLinks[0];
   const priorityDataComplete = (!hasPermission('crm', 'view') || typeof summary?.open_leads === 'number')
     && (!hasPermission('inventory', 'view') || typeof summary?.inventory_low_stock === 'number');
@@ -120,13 +126,13 @@ export function UnifiedHome() {
     <PageHeading eyebrow="PANEL DE TRABAJO" title="Todo el equipo, en un solo lugar." description="Revisa lo que requiere atención y abre tus herramientas de trabajo." action={primaryAction && <Link className="button button-dark vc-shimmer-button" to={primaryAction.to}>Abrir {primaryAction.label} <ArrowUpRight size={16}/></Link>}/>
     {(loading || updatedAt) && <div className="unified-summary-meta" role="status" aria-live="polite"><span className={`status-dot${error ? ' is-warning' : ''}`}/>{loading ? 'Actualizando información…' : `Información actualizada a las ${updatedAt}`}</div>}
     {error && <div className="unified-summary-error" role="alert"><span>{error}</span><button type="button" className="button button-outline" onClick={() => setRefreshKey((value) => value + 1)} disabled={loading}><RefreshCw size={14}/> {loading ? 'Actualizando…' : 'Reintentar'}</button></div>}
-    {visibleMetrics.length > 0 && <div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, key, label, note, noteKey, icon, tone, money }) => {
+    {visibleMetrics.length > 0 && <div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, to, key, label, note, noteKey, icon, tone, money }) => {
       const value = metricValue(summary, key, loading, error);
       const displayValue = loading ? <Skeleton className="dashboard-metric-skeleton"/> : money && typeof value === 'number' ? formatMoney(value) : value;
       const detail = noteKey && !loading && !error && summary?.[noteKey] != null
         ? `${summary[noteKey]} en nivel mínimo`
         : note;
-      return <StatCard key={module} label={label} value={displayValue} icon={icon} note={detail} tone={tone}/>;
+      return <Link key={module} className="unified-metric-link" to={to}><StatCard label={label} value={displayValue} icon={icon} note={detail} tone={tone}/><span className="unified-metric-open" aria-hidden="true"><ArrowUpRight size={16}/></span><span className="sr-only">Abrir módulo: {label}</span></Link>;
     })}</div>}
     {canViewSummary && (hasPermission('crm', 'view') || hasPermission('inventory', 'view')) ? <section className="panel unified-priority-panel" aria-labelledby="unified-priority-heading">
       <div className="panel-heading"><div><span className="eyebrow">SIGUIENTE PASO</span><h2 id="unified-priority-heading">Pendientes que puedes atender</h2></div>{loading ? <span className="unified-priority-state">Actualizando</span> : error ? <span className="unified-priority-state">Sin actualizar</span> : priorities.length ? <span className="unified-priority-state has-items">{priorities.length} {priorities.length === 1 ? 'pendiente' : 'pendientes'}</span> : priorityDataComplete ? <span className="unified-priority-state is-clear"><CheckCircle2 size={15}/> Sin alertas</span> : <span className="unified-priority-state">Sin datos</span>}</div>
@@ -134,8 +140,11 @@ export function UnifiedHome() {
     </section> : null}
     <section className="panel unified-launcher-panel">
       <div className="panel-heading"><div><span className="eyebrow">TUS HERRAMIENTAS</span><h2>¿Qué necesitas hacer?</h2></div><ClipboardCheck size={19}/></div>
-      {availableLinks.length
-        ? <AnimatedList className="operations-launcher vc-bento-grid">{availableLinks.map(({ to, label, icon: Icon }) => <Link to={to} key={to} className="operation-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}><SpotlightLayer/><span className="operation-icon"><Icon size={20}/></span><span><b>{label}</b><small>{descriptions[to] || 'Abre este módulo para consultar sus registros.'}</small></span><ArrowUpRight size={17}/></Link>)}</AnimatedList>
+      {visibleGroups.length
+        ? <div className="unified-module-groups">{visibleGroups.map(({ id, label, icon: GroupIcon, items }) => <section className="unified-module-group" key={id} aria-labelledby={`unified-module-group-${id}`}>
+          <header className="unified-module-group-heading"><span className="unified-module-group-icon"><GroupIcon size={16} aria-hidden="true"/></span><h3 id={`unified-module-group-${id}`}>{label}</h3><span className="unified-module-group-count"><span aria-hidden="true">{items.length}</span><span className="sr-only">{items.length} {items.length === 1 ? 'módulo visible' : 'módulos visibles'}</span></span></header>
+          <AnimatedList className="operations-launcher vc-bento-grid">{items.map(({ to, label: itemLabel, icon: Icon }) => <Link to={to} key={to} className="operation-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}><SpotlightLayer/><span className="operation-icon"><Icon size={20}/></span><span><b>{itemLabel}</b><small>{descriptions[to] || 'Abre este módulo para consultar sus registros.'}</small></span><ArrowUpRight size={17}/></Link>)}</AnimatedList>
+        </section>)}</div>
         : <p className="unified-empty">No hay módulos visibles para este perfil. Solicita al propietario revisar tus permisos.</p>}
     </section>
     {hasPermission('crm', 'view') && <section className="panel unified-recent-panel"><div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO COMERCIAL</span><h2>Solicitudes recientes</h2></div><Link className="text-link" to="/operaciones/crm">Abrir CRM <ArrowUpRight size={14}/></Link></div><LeadsTable/></section>}

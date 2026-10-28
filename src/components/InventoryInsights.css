@@ -53,3 +53,26 @@
 .inventory-product-card.vc-magic-card:before{background:radial-gradient(230px circle at var(--vc-spot-x) var(--vc-spot-y),rgb(135 59 208 / 8%),transparent 72%)}
 @media(max-width:540px){.inventory-product-card{grid-template-columns:64px minmax(0,1fr);padding:12px}.inventory-product-image{width:64px;height:64px}.inventory-product-main{flex-direction:row}.inventory-product-actions{display:flex}.inventory-product-actions button{min-height:38px}.inventory-product-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.inventory-product-actions button{transition:none}.inventory-product-actions button:hover{transform:none}}
+
+/* Product cards: stable information rows, compact selection, and a focused action set. */
+.inventory-product-card{grid-template-columns:92px minmax(0,1fr);grid-template-areas:"image main" "image tags" "image state" "facts facts" "actions actions";grid-template-rows:auto minmax(20px,auto) 32px 1fr auto;align-content:stretch;min-width:0;height:100%;}
+.inventory-product-main{min-width:0;padding-right:28px;}
+.inventory-product-main>div{min-width:0;}
+.inventory-product-main b{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
+.inventory-product-tags{display:flex;flex-wrap:wrap;align-items:center;align-content:flex-start;min-height:20px;gap:5px;overflow:hidden;}
+.inventory-product-tags em{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.inventory-product-state{grid-area:state;display:flex;align-items:center;gap:8px;min-width:0;}
+.inventory-product-state>.inventory-status{flex:none;max-width:calc(100% - 38px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.inventory-product-card .inventory-card-select{position:static;z-index:auto;display:grid;flex:none;width:28px;height:28px;margin-left:auto;place-items:center;border:1px solid #e5e1e9;border-radius:8px;background:#fff;box-shadow:none;}
+.inventory-product-card .inventory-card-select:focus-within{outline:3px solid #873bd04a;outline-offset:2px;}
+.inventory-product-card .inventory-card-select input{width:15px;height:15px;}
+.inventory-product-facts{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(48px,auto);align-content:start;gap:8px;padding-top:12px;}
+.inventory-product-facts>span{min-width:0;padding:7px 8px;border:1px solid #efedf2;border-radius:8px;background:#fbfafc;color:#716c79;font-size:9px;line-height:1.3;}
+.inventory-product-facts strong{overflow-wrap:anywhere;color:#302b38;font-size:10px;line-height:1.35;}
+.inventory-product-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding-top:10px;border-top:1px solid #f0edf3;}
+.inventory-product-actions button{width:100%;min-width:0;min-height:40px;padding:5px 7px;white-space:nowrap;}
+.inventory-product-actions button svg{flex:none;}
+.inventory-card-context>.vc-context-trigger{z-index:3;}
+@media(max-width:760px){.inventory-product-card{grid-template-columns:76px minmax(0,1fr);}.inventory-product-image{width:76px;height:76px;}.inventory-product-actions{grid-template-columns:repeat(3,minmax(0,1fr));}.inventory-product-actions button{min-height:42px;padding-inline:5px;font-size:9px;}}
+@media(max-width:540px){.inventory-product-card{grid-template-columns:64px minmax(0,1fr);grid-template-rows:auto minmax(44px,auto) 32px auto auto;padding:12px;}.inventory-product-image{width:64px;height:64px;}.inventory-product-main{flex-direction:row;padding-right:28px;}.inventory-product-main b{font-size:12px;}.inventory-product-tags{grid-column:2;flex-wrap:wrap;max-height:44px;overflow:hidden;}.inventory-product-state{grid-column:2;}.inventory-product-facts{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(48px,auto);}.inventory-product-actions{grid-template-columns:repeat(2,minmax(0,1fr));}.inventory-product-actions button{min-height:42px;padding-inline:8px;font-size:10px;}}
+@media(prefers-reduced-motion:reduce){.inventory-product-image img{transition:none}.inventory-product-image:not(:disabled):hover img{transform:none}}
