@@ -3,7 +3,7 @@
   isolation: isolate;
   overflow: hidden;
   min-height: 620px;
-  padding: 72px clamp(24px, 7vw, 110px) 84px;
+  padding: 104px clamp(24px, 7vw, 110px) 84px;
   background: radial-gradient(ellipse at 72% 35%, #24142a 0, #15121d 36%, #0d0e14 76%);
   color: #f7f6fb;
 }
@@ -139,7 +139,7 @@
 @keyframes contact-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
 @keyframes contact-dock-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @media(max-width:900px) {
-  .public-site .contact-hero { min-height: 0; padding: 65px 28px 74px; }
+  .public-site .contact-hero { min-height: 0; padding: 95px 28px 74px; }
   .contact-hero-inner { grid-template-columns: minmax(0,1.1fr) minmax(270px,.9fr); gap: 18px; min-height: 400px; }
   .contact-hero-copy h1 { font-size: clamp(64px,9vw,86px); }
   .contact-hero-art { min-height: 350px; }
@@ -149,7 +149,7 @@
   .public-site .contact-workspace { gap: 38px; }
 }
 @media(max-width:700px) {
-  .public-site .contact-hero { padding: 58px 22px 72px; }
+  .public-site .contact-hero { padding: 100px 22px 72px; }
   .contact-hero-inner { grid-template-columns: 1fr; gap: 0; }
   .contact-hero-copy h1 { margin: 20px 0 16px; font-size: clamp(62px,12.5vw,82px); }
   .contact-hero-copy>p { max-width: 42ch; font-size: 14px; }

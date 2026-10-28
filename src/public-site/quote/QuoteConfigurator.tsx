@@ -68,6 +68,7 @@ type Props = {
   services: QuoteService[];
   initialService?: string;
   initialProducts?: string[];
+  initialItemServices?: string[];
   initialQuantityRanges?: string[];
   onChange: (quote: QuoteDraft) => void;
 };
@@ -282,13 +283,15 @@ function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate,
   </article>;
 }
 
-export function QuoteConfigurator({ services, initialService = '', initialProducts = [], initialQuantityRanges = [], onChange }: Props) {
+export function QuoteConfigurator({ services, initialService = '', initialProducts = [], initialItemServices = [], initialQuantityRanges = [], onChange }: Props) {
   const initialProductsKey = initialProducts.join('\u001f');
+  const initialItemServicesKey = initialItemServices.join('\u001f');
   const initialQuantityRangesKey = initialQuantityRanges.join('\u001f');
   const requestedProducts = initialProductsKey ? initialProductsKey.split('\u001f') : [];
+  const requestedServices = initialItemServicesKey ? initialItemServicesKey.split('\u001f') : [];
   const requestedRanges = initialQuantityRangesKey ? initialQuantityRangesKey.split('\u001f') : [];
   const [items, setItems] = useState<QuoteLineItemDraft[]>(() => {
-    if (requestedProducts.length) return requestedProducts.map((product, index) => makeItem(initialService, product, requestedRanges[index] ? quantityFromRange(requestedRanges[index]) : 1));
+    if (requestedProducts.length) return requestedProducts.map((product, index) => makeItem(requestedServices[index] || initialService, product, requestedRanges[index] ? quantityFromRange(requestedRanges[index]) : 1));
     return [makeItem(initialService)];
   });
   const [location, setLocation] = useState<QuoteInstallationLocation>({ address: '', mapsUrl: '', locationUnknown: false, floor: '', workHeight: '', accessNotes: '' });

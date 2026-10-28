@@ -70,6 +70,10 @@ export function canViewNavigationItem(
   item: AppNavLink,
   hasPermission: (module: string, action: string) => boolean,
 ) {
+  if (item.to === '/panel') {
+    return hasPermission('dashboard', 'view')
+      || workspaceNavigation.some((link) => link.to !== '/panel' && canViewNavigationItem(link, hasPermission));
+  }
   return item.anyOf
     ? item.anyOf.some((module) => hasPermission(module, 'view'))
     : hasPermission(item.module, 'view');

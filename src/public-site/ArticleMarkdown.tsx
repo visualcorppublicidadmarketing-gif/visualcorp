@@ -22,7 +22,8 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
     else {
       const link = value.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
       const href = link ? safeHref(link[2]) : undefined;
-      nodes.push(href && link ? <a key={`${keyPrefix}-${index}`} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}>{link[1]}</a> : link?.[1] || value);
+      const external = href && new URL(href).origin !== window.location.origin && href.startsWith('http');
+      nodes.push(href && link ? <a key={`${keyPrefix}-${index}`} href={href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>{link[1]}</a> : link?.[1] || value);
     }
     cursor = index + value.length;
   }

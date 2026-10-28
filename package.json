@@ -41,5 +41,8 @@
     "supabase": "^2.121.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~5.9.3"
+  },
+  "overrides": {
+    "zod": "4.6.7"
   }
 }
