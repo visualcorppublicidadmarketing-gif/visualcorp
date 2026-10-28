@@ -35,9 +35,9 @@
 .ok-calendar-presets button { flex: none; min-height: 28px; padding: 0 9px; border: 1px solid #ebe7ee; border-radius: 999px; background: #fff; color: #716b78; font: inherit; font-size: 9px; font-weight: 650; cursor: pointer; }
 .ok-calendar-presets button:hover { border-color: #e3cbe2; background: #fbf5fb; color: #7a2675; }
 .ok-calendar .rdp-root { width: 100%; --rdp-weekday-opacity: 1; --rdp-weekday-padding: 5px 0; --rdp-weeknumber-opacity: 1; --rdp-day_button-border-radius: 10px; --rdp-week_number-border-radius: 7px; --rdp-week_number-border: 0; }
-.ok-calendar .rdp-months { width: 100%; }
+.ok-calendar .rdp-months { width: 100%; max-width: 100%; min-width: 0; }
 .ok-calendar .rdp-month { width: 100%; }
-.ok-calendar .rdp-month_grid { width: 100%; border-collapse: separate; border-spacing: 0 2px; }
+.ok-calendar .rdp-month_grid { width: 100%; max-width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0 2px; }
 .ok-calendar .rdp-weekday { color: #83808a; font: inherit; font-size: 9px; font-weight: 750; text-transform: uppercase; }
 .ok-calendar .rdp-week_number { color: #aaa4af; font: inherit; font-size: 9px; font-weight: 700; }
 .ok-calendar .rdp-day { height: var(--ok-calendar-cell-size, 43px); text-align: center; }
