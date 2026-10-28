@@ -193,6 +193,19 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       setLoadError(error?.message || 'No se pudo cambiar la fecha de la publicación.');
     } finally { setSaving(false); }
   };
+  const changePostStatus = async (post: Post, status: string) => {
+    if (!supabase || !organizationId || !canEdit || !status || status === post.status) return;
+    setSaving(true);
+    try {
+      const { data: updated, error } = await supabase.from('marketing_posts').update({ status, updated_at: new Date().toISOString() }).eq('organization_id', organizationId).eq('id', post.id).select('id').maybeSingle();
+      if (error) throw error;
+      if (!updated) throw new Error('No encontramos la publicación o tu perfil no puede editarla.');
+      setNotice(`Etapa de “${post.title}” actualizada a ${status}.`);
+      await refresh();
+    } catch (error: any) {
+      setLoadError(error?.message || 'No se pudo cambiar la etapa de la publicación.');
+    } finally { setSaving(false); }
+  };
   const copyAssetPath = async (path: string) => {
     try { await navigator.clipboard.writeText(path); setNotice('Ruta del recurso copiada.'); }
     catch { setLoadError('El navegador no permitió copiar la ruta. Puedes seleccionarla manualmente en la biblioteca.'); }
@@ -294,7 +307,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
 
       {(activeSection === 'overview' || activeSection === 'calendar') && (canEdit||canDelete) && <div className="vc-marketing-bulk-bar"><label><input type="checkbox" checked={filteredPosts.length > 0 && filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/> Seleccionar publicaciones visibles</label>{selectedPostIds.size > 0 && <><span>{selectedPostIds.size} seleccionadas</span><button type="button" className="vc-small-danger" disabled={!canDelete||saving} title={!canDelete?"El perfil requiere permiso para eliminar publicaciones":undefined} onClick={()=>void deletePosts(data.posts.filter((post)=>selectedPostIds.has(post.id)))}><Trash2 size={13}/>Eliminar seleccionadas</button><button type="button" onClick={()=>setSelectedPostIds(new Set())}>Quitar selección</button></>}</div>}
 
-      {activeSection === 'calendar' && <MarketingCalendar posts={filteredPosts} canEdit={canEdit} canDelete={canDelete} selectedIds={selectedPostIds} onToggle={togglePost} onSelect={(post) => openPost(post as Post)} onCreate={(date) => openPost(undefined, date)} onReschedule={(post, date) => void reschedulePost(post as Post, date)} onDuplicate={(post)=>void duplicatePost(post as Post)} onDelete={(post)=>void deletePosts([post as Post])}/>}
+      {activeSection === 'calendar' && <MarketingCalendar posts={filteredPosts} canEdit={canEdit} canDelete={canDelete} selectedIds={selectedPostIds} onToggle={togglePost} onSelect={(post) => openPost(post as Post)} onCreate={(date) => openPost(undefined, date)} onReschedule={(post, date) => void reschedulePost(post as Post, date)} onStatusChange={(post, status) => void changePostStatus(post as Post, status)} onDuplicate={(post)=>void duplicatePost(post as Post)} onDelete={(post)=>void deletePosts([post as Post])}/>}
 
       {activeSection === 'overview' && <>
         {loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando publicaciones, piezas y tareas…</div>

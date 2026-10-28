@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye, CircleDot } from 'lucide-react';
 import { ContextMenu, type ContextMenuAction } from '../../../components/ui/ContextMenu';
 import { Badge } from '../../../components/ui/OperationalKit';
 import { DatePicker } from '../../../components/ui/Calendar';
@@ -20,6 +20,7 @@ type Props = {
   onSelect: (post: MarketingCalendarPost) => void;
   onCreate: (date: string) => void;
   onReschedule: (post: MarketingCalendarPost, date: string) => void;
+  onStatusChange: (post: MarketingCalendarPost, status: string) => void;
   onDuplicate: (post: MarketingCalendarPost) => void;
   onDelete: (post: MarketingCalendarPost) => void;
 };
@@ -27,6 +28,7 @@ type Props = {
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const monthLabel = new Intl.DateTimeFormat('es-EC', { month: 'long', year: 'numeric' });
 const weekdays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const publicationStatuses = ['Planificada', 'En diseño', 'En revisión', 'Programada', 'Publicada', 'Bloqueada'];
 const statusClass = (post: MarketingCalendarPost) => /publicad/i.test(post.status) ? 'published' : /revisi/i.test(post.status) ? 'review' : /bloque/i.test(post.status) ? 'blocked' : 'active';
 const shiftDate = (source: string, days: number) => {
   const [year, month, day] = source.slice(0, 10).split('-').map(Number);
@@ -41,7 +43,7 @@ const weekOfMonth = (date: Date) => {
   return Math.floor((monday.getTime() - first.getTime()) / 604800000) + 1;
 };
 
-export function MarketingCalendar({ posts, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onDuplicate, onDelete }: Props) {
+export function MarketingCalendar({ posts, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onStatusChange, onDuplicate, onDelete }: Props) {
   const [anchor, setAnchor] = useState(() => new Date());
   const [view, setView] = useState<'month' | 'week'>('month');
   const [dragging, setDragging] = useState<string | null>(null);
@@ -68,6 +70,7 @@ export function MarketingCalendar({ posts, canEdit, canDelete, selectedIds, onTo
   const move = (amount: number) => setAnchor((current) => view === 'month' ? new Date(current.getFullYear(), current.getMonth() + amount, 1) : new Date(current.getFullYear(), current.getMonth(), current.getDate() + amount * 7));
   const contextualActions = (post: MarketingCalendarPost): ContextMenuAction[] => [
     { label: 'Editar ficha', group: 'Publicación', icon: <Pencil size={14}/>, onSelect: () => onSelect(post), disabled: !canEdit },
+    { label: 'Cambiar etapa', group: 'Publicación', icon: <CircleDot size={14}/>, disabled: !canEdit, onSelect: () => {}, children: [...new Set([...publicationStatuses, post.status].filter(Boolean))].map((status) => ({ label: status, kind: 'radio' as const, radioGroup: `marketing-status-${post.id}`, checked: status === post.status, onSelect: () => onStatusChange(post, status) })) },
     { label: 'Duplicar como borrador', group: 'Publicación', icon: <CopyPlus size={14}/>, onSelect: () => onDuplicate(post), disabled: !canEdit },
     ...(canEdit || canDelete ? [{ label: selectedIds.has(post.id) ? 'Quitar de seleccionadas' : 'Seleccionar publicación', group: 'Publicación', icon: <Check size={14}/>, kind: 'checkbox' as const, checked: selectedIds.has(post.id), onSelect: () => {}, onCheckedChange: () => onToggle(post.id), disabled: !(canEdit || canDelete) }] : []),
     { label: 'Ver agenda de esta fecha', group: 'Calendario', icon: <CalendarDays size={14}/>, onSelect: () => setExpandedDate(post.scheduled_date.slice(0, 10)) },
