@@ -46,5 +46,16 @@
 .changelog-compact .changelog-entry:first-child{border-top:0;padding-top:2px}.changelog-compact .changelog-entry:last-child{padding-bottom:0}
 .changelog-compact .changelog-entry h3{font-size:.93rem}.changelog-compact .changelog-summary{font-size:.84rem}.changelog-compact .changelog-details{display:none}
 .changelog-compact .changelog-entry-top{margin-bottom:7px}.changelog-compact .changelog-entry time{font-size:.72rem}.changelog-compact .changelog-tag{font-size:.68rem;padding:3px 7px}.changelog-compact .changelog-entry-actions{display:none}.changelog-compact .changelog-empty{min-height:86px}
+.changelog-tag-editor{display:grid;gap:6px}
+.changelog-tag-editor-chips{min-height:44px;padding:5px;display:flex;align-items:center;align-content:center;flex-wrap:wrap;gap:5px;border:1px solid var(--line,#dfe4eb);border-radius:10px;background:var(--surface,#fff)}
+.changelog-tag-editor-chips:focus-within{border-color:#6952a6;box-shadow:0 0 0 3px #6952a61c}
+.changelog-editor .changelog-tag-editor-chips input{width:auto;min-width:160px;flex:1 1 180px;padding:7px 8px;border:0;background:transparent;box-shadow:none;font-size:.82rem}
+.changelog-editor .changelog-tag-editor-chips input:focus-visible{border:0;box-shadow:none}
+.changelog-tag-editor>small{color:var(--muted,#778091);font-size:.73rem;font-weight:450}
+.changelog-tag-removable{min-height:30px;gap:5px;border:0;cursor:pointer}
+.changelog-tag-removable:hover{background:#e9e2f4;color:#3e286f}
+.changelog-tag-user{background:#f8eef7;color:#87336f}
+.changelog-filter:focus-within{border-color:#6952a6;box-shadow:0 0 0 3px #6952a61c}
+@media(max-width:680px){.changelog-editor .changelog-tag-editor-chips input{min-width:130px}}
 @media(max-width:680px){.changelog-form-grid{grid-template-columns:1fr}.changelog-compact{padding:16px}.changelog-tools{align-items:stretch}.changelog-filter{flex:1 1 100%}.changelog-result-count{margin-left:0}.changelog-event{grid-template-columns:58px minmax(0,1fr);gap:9px}.changelog-event-date{padding-right:6px;font-size:.64rem}.changelog-entry{padding:15px}.changelog-entry-top{align-items:flex-start;flex-direction:column;gap:7px}.changelog-entry-actions .changelog-archive{margin-left:0}}
 @media(prefers-reduced-motion:reduce){.changelog-entry{transition:none}}

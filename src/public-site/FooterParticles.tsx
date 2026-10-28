@@ -13,9 +13,10 @@ type Particle = {
 };
 
 const PARTICLE_COLORS = ['233, 61, 170', '56, 180, 218', '237, 184, 58'];
+const LIGHT_PARTICLE_COLORS = ['151, 30, 112', '0, 105, 139', '139, 91, 0'];
 
-/** A decorative, low-density particle field for the translucent public footer. */
-export function FooterParticles() {
+/** A decorative particle field for the translucent public footer. */
+export function FooterParticles({ theme }: { theme: 'light' | 'dark' }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const reducedMotion = useReducedMotion();
 
@@ -30,7 +31,7 @@ export function FooterParticles() {
     let height = 0;
     let animationFrame: number | null = null;
     let particles: Particle[] = [];
-    const colors = PARTICLE_COLORS;
+    const colors = theme === 'light' ? LIGHT_PARTICLE_COLORS : PARTICLE_COLORS;
 
     const paint = (time = 0) => {
       context.clearRect(0, 0, width, height);
@@ -78,12 +79,12 @@ export function FooterParticles() {
       canvas.height = Math.round(height * pixelRatio);
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-      const amount = Math.min(42, Math.max(20, Math.round((width * height) / 18000)));
+      const amount = Math.min(76, Math.max(28, Math.round((width * height) / 12000)));
       particles = Array.from({ length: amount }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
         radius: 0.75 + Math.random() * 0.9,
-        opacity: 0.17 + Math.random() * 0.19,
+        opacity: (theme === 'light' ? 0.24 : 0.18) + Math.random() * 0.18,
         phase: Math.random() * Math.PI * 2,
         vx: 0.015 + Math.random() * 0.035,
         vy: (Math.random() - 0.5) * 0.045,
@@ -118,7 +119,7 @@ export function FooterParticles() {
       intersectionObserver?.disconnect();
       window.removeEventListener('resize', resize);
     };
-  }, [reducedMotion]);
+  }, [reducedMotion, theme]);
 
   return <canvas ref={canvasRef} className="site-footer-particles" aria-hidden="true" />;
 }

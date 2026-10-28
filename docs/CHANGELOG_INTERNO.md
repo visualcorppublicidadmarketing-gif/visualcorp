@@ -37,3 +37,15 @@ Las futuras publicaciones las redacta el equipo desde el panel; la lista no se r
 
 - Los formularios de traslado y consumo de materiales muestran únicamente ubicaciones activas de la sucursal elegida y exigen una selección explícita antes de registrar movimientos.
 - No se agregó esquema ni se ejecutó una migración; se usa la tabla de ubicaciones ya desplegada.
+
+## 2026-10-28 — Navegación móvil, inventario y registro con etiquetas
+
+**Etiquetas:** `sitio público`, `móvil`, `inventario`, `catálogo`, `changelog`, `admin`
+
+- En celular, el sitio público usa una barra inferior con cinco accesos. Servicios, Empresa y Explorar agrupan las rutas relacionadas en hojas compactas; cada familia de servicio y página pública sigue disponible.
+- El catálogo de tarifas deja de repetir los nombres de las tres modalidades en el encabezado de cada familia. Cada precio conserva su propio rótulo junto al campo.
+- Las tarjetas de inventario ordenan estado, selección, métricas y acciones en una jerarquía uniforme; las acciones siguen disponibles según los permisos existentes.
+- El registro interno acepta hasta ocho etiquetas por novedad, las muestra en cada entrada, permite buscarlas y añade un filtro por etiqueta. La columna `tags` se añadió a `public.internal_change_log` con límite de ocho elementos y validación de valores no nulos.
+- Se mantiene el trabajo acumulado del panel administrativo y el footer: partículas visibles en ambos temas y contraste de texto reforzado en modo claro.
+- Migración `20261028122806_changelog_tags` aplicada en Supabase `iomdmclkimfmvlzcrkyz`; el esquema quedó verificado. La creación de una entrada compartida desde el conector fue bloqueada por `visualcorp_guard_write()` debido a los permisos del perfil conectado; no se cambió ni se intentó eludir esa protección.
+- Verificación local: `npm run build:checked`; navegación móvil revisada a 390 px, sin desbordamiento horizontal ni errores de consola. Publicación web pendiente de integrar esta rama.

@@ -67,6 +67,13 @@ html[data-public-theme="light"] .public-site .footer-cta-strip{border-color:#ded
 html[data-public-theme="light"] .public-site .footer-cta-copy>span{color:#765570}
 html[data-public-theme="light"] .public-site .footer-cta-copy>strong{color:#292231}
 html[data-public-theme="light"] .public-site .site-footer-bottom{border-top-color:#ded6e4}
+html[data-public-theme="light"] .public-site .site-footer .footer-social-links>a{border-color:#d9cfdf;background:linear-gradient(120deg,#fff,#f8f3fa);color:#292231;box-shadow:0 6px 18px rgb(48 34 60 / 5%)}
+html[data-public-theme="light"] .public-site .site-footer .footer-social-links>a:hover{border-color:#bd9fca;background:linear-gradient(120deg,#fff,#f4eaf6)}
+html[data-public-theme="light"] .public-site .site-footer .footer-social-links>a>svg:first-child{color:#8d236e}
+html[data-public-theme="light"] .public-site .site-footer .footer-social-links>a>svg:last-child{color:#6b6473}
+html[data-public-theme="light"] .public-site .site-footer .footer-social-links small,html[data-public-theme="light"] .public-site .site-footer-bottom>span{color:#5f5967}
+html[data-public-theme="light"] .public-site .site-footer .footer-topline span:first-child b{color:#716a79}
+html[data-public-theme="light"] .public-site .site-footer a:focus-visible{outline:3px solid #8c236e;outline-offset:4px}
 @media(max-width:760px){.site-header-actions{gap:7px}.site-theme-toggle{width:38px;height:38px}}
 
 /* Light surfaces for the routes that previously kept dark-only colors. */
@@ -234,3 +241,186 @@ html[data-public-theme="light"] .public-site .site-menu-toggle:hover { border-co
 html[data-public-theme="light"] .public-site .storefront-promise { border-color: #e4dce8; background: linear-gradient(115deg,#fff,#f8edf6); }
 html[data-public-theme="light"] .public-site .storefront-promise>div b { color: #292231; }
 html[data-public-theme="light"] .public-site .storefront-promise>div small { color: #5f5967; }
+
+/* Contact page: replace dark-only text and translucent surfaces in light mode. */
+html[data-public-theme="light"] .public-site .contact-channel-card {
+  border-color: #e2d9e6;
+  background: linear-gradient(125deg, #fff, #fbf8fc);
+  color: #292231;
+  box-shadow: 0 8px 24px rgb(48 34 60 / 6%);
+}
+html[data-public-theme="light"] .public-site .contact-channel-card:hover {
+  border-color: #d5a5ca;
+  background: linear-gradient(125deg, #fff, #f8edf6);
+  box-shadow: 0 12px 28px rgb(48 34 60 / 10%);
+}
+html[data-public-theme="light"] .public-site .contact-channel-card small,
+html[data-public-theme="light"] .public-site .contact-location-card small { color: #62586a; }
+html[data-public-theme="light"] .public-site .contact-channel-card em,
+html[data-public-theme="light"] .public-site .contact-section-heading>p,
+html[data-public-theme="light"] .public-site .contact-service-picker>div:first-child span,
+html[data-public-theme="light"] .public-site .contact-service-feedback,
+html[data-public-theme="light"] .public-site .contact-location-card span,
+html[data-public-theme="light"] .public-site .contact-next-heading>p,
+html[data-public-theme="light"] .public-site .contact-faq-list details p { color: #5f5967; }
+html[data-public-theme="light"] .public-site .contact-channel-icon {
+  border-color: #a6d9ca;
+  background: #eaf7f2;
+  color: #087a5b;
+}
+html[data-public-theme="light"] .public-site .contact-channel-icon.phone-icon {
+  border-color: #b7d9ea;
+  background: #edf6fb;
+  color: #09648f;
+}
+html[data-public-theme="light"] .public-site .contact-channel-icon.instagram-icon {
+  border-color: #e8c2dc;
+  background: #fbf0f7;
+  color: #a12470;
+}
+html[data-public-theme="light"] .public-site .contact-channel-card>svg { color: #6b6473; }
+html[data-public-theme="light"] .public-site .contact-service-picker {
+  border-color: #e2d9e6;
+  background: linear-gradient(135deg, #fff, #faf6fb);
+  box-shadow: 0 8px 24px rgb(48 34 60 / 5%);
+}
+html[data-public-theme="light"] .public-site .contact-service-picker>div:first-child small { color: #7c286d; }
+html[data-public-theme="light"] .public-site .contact-service-chips button {
+  border-color: #ded6e4;
+  background: #fff;
+  color: #514a5a;
+}
+html[data-public-theme="light"] .public-site .contact-service-chips button:hover {
+  border-color: #bd83b3;
+  background: #fbf2f9;
+  color: #70235f;
+}
+html[data-public-theme="light"] .public-site .contact-service-chips button.is-selected {
+  border-color: #a63d89;
+  background: #f6e8f3;
+  color: #70235f;
+  box-shadow: inset 0 0 0 1px rgb(140 35 110 / 8%);
+}
+html[data-public-theme="light"] .public-site .contact-service-chips button { min-height: 35px; font-size: 10px; }
+html[data-public-theme="light"] .public-site .contact-service-picker:has(.contact-service-chips button.is-selected) .contact-service-feedback { color: #70235f; }
+html[data-public-theme="light"] .public-site .contact-location-card { border-top-color: #e2d9e6; }
+html[data-public-theme="light"] .public-site .contact-location-mark {
+  border-color: #ead8ac;
+  background: #fcf6e8;
+  color: #805a08;
+}
+html[data-public-theme="light"] .public-site .contact-location-card b,
+html[data-public-theme="light"] .public-site .contact-step-list article b { color: #292231; }
+html[data-public-theme="light"] .public-site .contact-location-card a,
+html[data-public-theme="light"] .public-site .contact-service-link { color: #84246c; }
+html[data-public-theme="light"] .public-site .contact-location-card a:hover,
+html[data-public-theme="light"] .public-site .contact-service-link:hover { color: #5f194e; }
+
+html[data-public-theme="light"] .public-site .contact-next-steps,
+html[data-public-theme="light"] .public-site .contact-faq { border-top-color: #e4dce8; }
+html[data-public-theme="light"] .public-site .contact-next-heading h2,
+html[data-public-theme="light"] .public-site .contact-faq-heading h2 { color: #211b2a; }
+html[data-public-theme="light"] .public-site .contact-step-list article {
+  border-color: #e3dbe8;
+  background: linear-gradient(120deg, #fff, #faf7fb);
+  box-shadow: 0 7px 20px rgb(48 34 60 / 5%);
+}
+html[data-public-theme="light"] .public-site .contact-step-list article>span { color: #a12b80; }
+html[data-public-theme="light"] .public-site .contact-step-list article p { color: #5f5967; }
+html[data-public-theme="light"] .public-site .contact-step-list article>svg { color: #84246c; }
+html[data-public-theme="light"] .public-site .contact-faq-list details {
+  margin-bottom: 9px;
+  padding-inline: 14px;
+  border: 1px solid #e3dbe8;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgb(48 34 60 / 4%);
+}
+html[data-public-theme="light"] .public-site .contact-faq-list details:first-child { border-top: 1px solid #e3dbe8; }
+html[data-public-theme="light"] .public-site .contact-faq-list summary { color: #292231; }
+html[data-public-theme="light"] .public-site .contact-faq-list summary svg { color: #8c236e; }
+html[data-public-theme="light"] .public-site .contact-service-chips button:focus-visible,
+html[data-public-theme="light"] .public-site .contact-faq-list summary:focus-visible,
+html[data-public-theme="light"] .public-site .contact-channel-card:focus-visible,
+html[data-public-theme="light"] .public-site .contact-location-card a:focus-visible { outline: 3px solid #8c236e; outline-offset: 3px; }
+
+/* The dedicated process page shares these dark-only rows and location card. */
+html[data-public-theme="light"] .public-site .site-process-section .process-list article {
+  border-color: #e3dbe8;
+  background: linear-gradient(120deg, #fff, #faf7fb);
+  box-shadow: 0 7px 20px rgb(48 34 60 / 5%);
+}
+html[data-public-theme="light"] .public-site .site-process-section .process-list article>b { color: #a12b80; }
+html[data-public-theme="light"] .public-site .site-process-section .process-list article h3 { color: #292231; }
+html[data-public-theme="light"] .public-site .site-process-section .process-list article p { color: #5f5967; }
+html[data-public-theme="light"] .public-site .site-process-location {
+  border-color: #e3dbe8;
+  background: linear-gradient(125deg, #fff, #faf7fb);
+  color: #292231;
+  box-shadow: 0 8px 24px rgb(48 34 60 / 5%);
+}
+html[data-public-theme="light"] .public-site .site-process-location>svg { color: #8c236e; }
+html[data-public-theme="light"] .public-site .site-process-location small { color: #5f5967; }
+html[data-public-theme="light"] .public-site .site-process-location a,
+html[data-public-theme="light"] .public-site .site-process-location a:hover { color: #84246c; }
+
+@media(max-width:760px) {
+  html[data-public-theme="light"] .public-site .contact-service-chips button { min-height: 36px; font-size: 9px; }
+}
+
+/* Product catalog toolbar: use the light surface instead of its dark glass base. */
+html[data-public-theme="light"] .public-site .store-catalog-controls {
+  border-color: #e0d7e5;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 12px 32px rgb(48 34 60 / 10%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+html[data-public-theme="light"] .public-site .store-catalog-controls .store-category-rail { border-bottom-color: #e5deea; }
+html[data-public-theme="light"] .public-site .store-results-copy { color: #5f5967; }
+html[data-public-theme="light"] .public-site .store-results-copy b { color: #292231; }
+html[data-public-theme="light"] .public-site .store-catalog-controls .store-category-rail button {
+  border-color: #ded6e4;
+  background: #fff;
+  color: #4f4758;
+}
+html[data-public-theme="light"] .public-site .store-catalog-controls .store-category-rail button:hover {
+  border-color: #bd83b3;
+  background: #fbf2f9;
+  color: #70235f;
+}
+html[data-public-theme="light"] .public-site .store-catalog-controls .store-category-rail button.active {
+  border-color: #a63d89;
+  background: #f6e8f3;
+  color: #70235f;
+  box-shadow: inset 0 0 0 1px rgb(140 35 110 / 8%);
+}
+html[data-public-theme="light"] .public-site .store-catalog-controls .store-category-rail button span {
+  background: #f1ebf4;
+  color: #514a5a;
+}
+html[data-public-theme="light"] .public-site .store-catalog-controls .store-category-rail button.active span {
+  background: #ecd4e8;
+  color: #70235f;
+}
+html[data-public-theme="light"] .public-site .store-inline-search {
+  border-color: #d9d1e0;
+  background: #fff;
+  color: #625c69;
+  box-shadow: 0 3px 12px rgb(48 34 60 / 5%);
+}
+html[data-public-theme="light"] .public-site .store-inline-search input { color: #292231; }
+html[data-public-theme="light"] .public-site .store-inline-search input::placeholder { color: #716a79; }
+html[data-public-theme="light"] .public-site .store-inline-search button { background: #f4eef6; color: #554b60; }
+html[data-public-theme="light"] .public-site .store-results-sort { color: #5f5967; }
+html[data-public-theme="light"] .public-site .store-results-sort select {
+  border: 1px solid #d9d1e0;
+  border-radius: 8px;
+  background: #fff;
+  color: #292231;
+}
+html[data-public-theme="light"] .public-site .store-results-sort select option { background: #fff; color: #292231; }
+html[data-public-theme="light"] .public-site .store-clear-filters { border-color: #d9d1e0; background: #fff; color: #70235f; }
+html[data-public-theme="light"] .public-site .store-catalog-controls :is(.store-inline-search, .store-inline-search button, .store-clear-filters, .store-results-sort select):focus-visible,
+html[data-public-theme="light"] .public-site .store-catalog-controls .store-category-rail button:focus-visible { outline: 3px solid #8c236e; outline-offset: 2px; }
+html[data-public-theme="light"] .public-site .store-inline-search:focus-within { border-color: #8c236e; box-shadow: 0 0 0 3px rgb(140 35 110 / 14%); }
