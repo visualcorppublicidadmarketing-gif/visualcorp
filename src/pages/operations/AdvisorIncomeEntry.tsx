@@ -1,11 +1,12 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Banknote, CheckCircle2, LoaderCircle, Plus, X } from 'lucide-react';
+import { normalizePersonName } from '../../lib/personName';
 import { supabase } from '../../lib/supabaseClient';
 
 const METHODS = [['cash', 'Efectivo'], ['transfer', 'Transferencia'], ['card', 'Tarjeta'], ['cheque', 'Cheque'], ['other', 'Otro']];
 
 export function AdvisorIncomeEntry({ branches, advisors, customers, customersError, currentUserId, canChooseAdvisor, selectedBranch, onRecorded }) {
-  const eligibleAdvisors = useMemo(() => advisors.filter((person) => person.active && ['advisor', 'owner', 'admin', 'manager'].includes(person.role)), [advisors]);
+  const eligibleAdvisors = useMemo(() => advisors.filter((person) => person.active && (person.role === 'advisor' || person.access_profile_key === 'asesoras')), [advisors]);
   const [open, setOpen] = useState(false);
   const [branchId, setBranchId] = useState(selectedBranch !== 'all' ? selectedBranch : branches[0]?.id || '');
   const [advisorId, setAdvisorId] = useState(currentUserId || '');
@@ -51,7 +52,7 @@ export function AdvisorIncomeEntry({ branches, advisors, customers, customersErr
     {open && <form className="op-finance-entry-form" onSubmit={submit}>
       <div className="op-finance-form-grid">
         <label>Sucursal<select value={branchId} onChange={(event) => setBranchId(event.target.value)} required><option value="">Selecciona sucursal</option>{branches.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-        {canChooseAdvisor && <label>Asesora<select value={advisorId} onChange={(event) => setAdvisorId(event.target.value)} required><option value="">Selecciona asesora</option>{eligibleAdvisors.map((person) => <option key={person.user_id} value={person.user_id}>{person.full_name || person.email || person.user_id.slice(0, 8)}</option>)}</select></label>}
+        {canChooseAdvisor && <label>Asesora<select value={advisorId} onChange={(event) => setAdvisorId(event.target.value)} required><option value="">Selecciona asesora</option>{eligibleAdvisors.map((person) => <option key={person.user_id} value={person.user_id}>{normalizePersonName(person.full_name) || person.email || person.user_id.slice(0, 8)}</option>)}</select></label>}
         {customers && <label>Cliente CRM (opcional)<select value={customerId} onChange={(event) => setCustomerId(event.target.value)}><option value="">Sin ficha vinculada</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.full_name}{customer.phone ? ` · ${customer.phone}` : ''}</option>)}</select></label>}
         <label className="op-finance-description">Descripción<input maxLength={240} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Ej. servicio de diseño, instalación u otro ingreso" required /></label>
         <label>Total USD<input type="number" min="0.01" step="0.01" value={total} onChange={(event) => setTotal(event.target.value)} required /></label>

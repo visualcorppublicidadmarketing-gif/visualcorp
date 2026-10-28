@@ -7,11 +7,12 @@ import { OperationsFinanceControls } from './OperationsFinanceControls';
 import { FinanceSalesInsights } from './FinanceSalesInsights';
 import { FinanceCashRegisters } from './FinanceCashRegisters';
 import { netSaleAmount } from './financeSales';
+import { normalizePersonName } from '../../lib/personName';
 import './operations-lifecycle.css';
 
 const BUSINESS_TIME_ZONE = 'America/Guayaquil';
 const PAGE_SIZE = 500;
-const FINANCE_ROLES = ['advisor', 'owner', 'admin', 'manager'];
+const isSalesAdvisor = (person) => person.active && (person.role === 'advisor' || person.access_profile_key === 'asesoras');
 type InventoryCostSummary = { inventory_lines: number; missing_inventory_cost_lines: number; non_inventory_lines: number; cost_total: number; restocked_return_units: number; restocked_return_cost: number };
 type MaterialCostSummary = { consumption_movements: number; costed_movements: number; missing_cost_movements: number; material_cost_total: number };
 type InventoryCatalogCostSummary = { active_variants: number; configured_variants: number; missing_variants: any[] };
@@ -593,11 +594,11 @@ export function OperationsFinance() {
 
   const advisorNames = useMemo(() => new Map(advisors.map((person) => [
     person.user_id,
-    person.full_name || person.email || `Usuario ${String(person.user_id).slice(0, 8)}`,
+    normalizePersonName(person.full_name) || person.email || `Usuario ${String(person.user_id).slice(0, 8)}`,
   ])), [advisors]);
   const financeAdvisorOptions = [...new Map(
     advisors
-      .filter((person) => person.active && FINANCE_ROLES.includes(person.role))
+      .filter(isSalesAdvisor)
       .map((person) => [person.user_id, person]),
   ).values()];
   const salesById = useMemo(() => new Map(sales.map((sale) => [sale.id, sale])), [sales]);
@@ -955,7 +956,8 @@ export function OperationsFinance() {
     item.collected += Number(payment.amount || 0);
     grouped.set(id, item);
   });
-  const advisorSummary = [...grouped.values()].sort((a, b) => b.sold - a.sold);
+  const salesAdvisorIds = new Set(advisors.filter(isSalesAdvisor).map((person) => person.user_id));
+  const advisorSummary = [...grouped.values()].filter((item) => salesAdvisorIds.has(item.id)).sort((a, b) => b.sold - a.sold);
   const maxSold = Math.max(1, ...advisorSummary.map((item) => item.sold));
   const paymentMethods = [...new Set([...payments, ...refundSettlements].map((movement) => movement.method).filter(Boolean))].sort();
   const personName = (id) => advisorNames.get(id) || `Usuario ${String(id || '').slice(0, 8) || 'sin asignar'}`;
@@ -1118,7 +1120,7 @@ export function OperationsFinance() {
       <label>Asesora<select value={advisor} onChange={(event) => setAdvisor(event.target.value)}>
         <option value="all">Todas las asesoras</option>
         {financeAdvisorOptions.map((person) => (
-          <option key={person.user_id} value={person.user_id}>{person.full_name || person.email || person.user_id.slice(0, 8)}</option>
+          <option key={person.user_id} value={person.user_id}>{normalizePersonName(person.full_name) || person.email || person.user_id.slice(0, 8)}</option>
         ))}
       </select></label>
       <label>Sucursal<select value={branch} onChange={(event) => setBranch(event.target.value)}>
@@ -1140,7 +1142,7 @@ export function OperationsFinance() {
     <FinanceCashRegisters today={businessToday} organizationId={organizationId || ''} branches={branches} advisors={advisors} sales={sales} returnsBySale={returnsBySale} saleReturnsError={saleReturnsError} canManage={canManageFinance} canManageTeam={canManageTeam} refreshKey={realtimeRevision.cash} onChanged={() => setRealtimeRevision((current) => ({ ...current, cash: current.cash + 1 }))} />
     <div className="op-finance-grid">
       <section className="panel">
-        <div className="panel-heading"><div><span className="eyebrow">COMPARATIVO DEL PERIODO</span><h2>Desempeño por asesora</h2></div><ChartNoAxesCombined size={19} /></div>
+        <div className="panel-heading"><div><span className="eyebrow">COMPARATIVO DEL PERIODO</span><h2>Desempeño por Asesor</h2></div><ChartNoAxesCombined size={19} /></div>
         <div className="op-finance-advisors">{advisorSummary.map((item) => (
           <article key={item.id}>
             <div className="op-finance-advisor-line"><b>{personName(item.id)}</b><span>{money(item.sold)} · {item.count} ventas</span></div>

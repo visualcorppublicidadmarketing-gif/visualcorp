@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Banknote, CircleAlert, LoaderCircle, Save, Wallet } from 'lucide-react';
+import { normalizePersonName } from '../../lib/personName';
 import { supabase } from '../../lib/supabaseClient';
 import { netSaleAmount } from './financeSales';
 import './finance-cash-registers.css';
@@ -69,7 +70,9 @@ export function FinanceCashRegisters({ today, organizationId, branches, advisors
   const [notice, setNotice] = useState('');
   const weekStart = useMemo(() => mondayOf(today), [today]);
   const weekEnd = useMemo(() => currentWeekEnd(weekStart), [weekStart]);
-  const eligibleBranchAdvisors = branchAdvisorsBranchId === newRegister.branch_id ? branchAdvisors : [];
+  const eligibleBranchAdvisors = branchAdvisorsBranchId === newRegister.branch_id
+    ? branchAdvisors.filter((advisor) => advisor.role === 'advisor')
+    : [];
   const branchAdvisorsPending = branchAdvisorsLoading
     || Boolean(newRegister.branch_id && branchAdvisorsBranchId !== newRegister.branch_id && !branchAdvisorsError);
 
@@ -218,7 +221,7 @@ export function FinanceCashRegisters({ today, organizationId, branches, advisors
 
   const advisorName = (id: string) => {
     const advisor = advisors.find((person) => person.user_id === id);
-    return advisor?.full_name || advisor?.email || 'Asesora no disponible';
+    return normalizePersonName(advisor?.full_name) || advisor?.email || 'Asesora no disponible';
   };
   const branchName = (id: string) => branches.find((item) => item.id === id)?.name || 'Sucursal';
   const currentWeekSales = sales.filter((sale) => sale.status === 'confirmed' && (() => {
@@ -269,7 +272,7 @@ export function FinanceCashRegisters({ today, organizationId, branches, advisors
           <label>Nombre de caja<input placeholder="Ej. Caja 1" value={newRegister.name} onChange={(event) => setNewRegister((current) => ({ ...current, name: event.target.value }))}/></label>
           <div className="finance-cash-register-form">
             <label>Sucursal<select value={newRegister.branch_id} disabled={!branches.length} onChange={(event) => setNewRegister((current) => ({ ...current, branch_id: event.target.value, assigned_advisor_id: '' }))}>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label>
-            <label>Asesora asignada<select value={newRegister.assigned_advisor_id} disabled={branchAdvisorsPending || !eligibleBranchAdvisors.length} onChange={(event) => setNewRegister((current) => ({ ...current, assigned_advisor_id: event.target.value }))}><option value="">Selecciona asesora</option>{eligibleBranchAdvisors.map((advisor) => <option key={advisor.user_id} value={advisor.user_id}>{advisor.full_name || `Usuario ${advisor.user_id.slice(0, 8)}`}</option>)}</select></label>
+            <label>Asesora asignada<select value={newRegister.assigned_advisor_id} disabled={branchAdvisorsPending || !eligibleBranchAdvisors.length} onChange={(event) => setNewRegister((current) => ({ ...current, assigned_advisor_id: event.target.value }))}><option value="">Selecciona asesora</option>{eligibleBranchAdvisors.map((advisor) => <option key={advisor.user_id} value={advisor.user_id}>{normalizePersonName(advisor.full_name) || `Usuario ${advisor.user_id.slice(0, 8)}`}</option>)}</select></label>
             <label>Meta semanal · USD<input type="number" min="0.01" step="0.01" required placeholder="Obligatoria para esta semana" value={newRegister.goal_amount} onChange={(event) => setNewRegister((current) => ({ ...current, goal_amount: event.target.value }))}/></label>
           </div>
           <button className="button button-dark" type="button" disabled={busy || branchAdvisorsPending || !newRegister.name.trim() || !newRegister.branch_id || !eligibleBranchAdvisors.some((advisor) => advisor.user_id === newRegister.assigned_advisor_id) || !newRegister.goal_amount.trim()} onClick={() => void createRegister()}><Banknote size={15}/> Crear caja y meta</button>

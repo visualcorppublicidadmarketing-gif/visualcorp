@@ -4,3 +4,4 @@
 @media(max-width:650px){.advisor-team-week{padding:13px}.advisor-team-week .panel-heading{flex-direction:column}.advisor-team-count{white-space:normal}.advisor-week-toolbar{align-items:stretch;flex-direction:column}.advisor-week-toolbar>label{min-width:0}.advisor-week-segments{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.advisor-week-segments button{padding:7px 5px;font-size:.71rem}.advisor-team-card-grid{grid-template-columns:1fr 1fr}.advisor-team-card{padding:11px}.advisor-team-card>b{font-size:1.02rem}}
 @media(max-width:390px){.advisor-team-card-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.advisor-team-card{transition:none}.advisor-team-card:hover{transform:none}}
+.advisor-register-empty{margin:12px 0 0;padding:11px 13px;border:1px dashed #cbd8d5;border-radius:10px;background:#f8fbfa;color:var(--muted);font-size:.78rem;line-height:1.5}
