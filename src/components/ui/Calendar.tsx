@@ -1,4 +1,5 @@
-import { useContext, useEffect, useId, useMemo, useRef, useState, createContext } from 'react';
+import { useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, createContext } from 'react';
+import { createPortal } from 'react-dom';
 import { DayPicker, DayButton as DefaultDayButton, WeekNumber as DefaultWeekNumber, type DayButtonProps, type DateRange, type WeekNumberProps } from '@daypicker/react';
 import { es } from '@daypicker/react/locale';
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react';
@@ -138,17 +139,95 @@ export function Calendar(props: CalendarProps) {
 }
 
 type PickerProps = Omit<SharedProps, 'label'> & { value: string; onChange: (value: string) => void; label?: string };
-function usePicker(open: boolean, setOpen: (open: boolean) => void, id: string) {
-  const root = useRef<HTMLDivElement>(null);
+function usePicker(open: boolean, setOpen: (open: boolean) => void, root: { current: HTMLDivElement | null }, popover: { current: HTMLDivElement | null }) {
   useEffect(() => {
     if (!open) return undefined;
     const handleKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false); };
-    const handlePointer = (event: PointerEvent) => { if (root.current && !root.current.contains(event.target as Node)) setOpen(false); };
+    const handlePointer = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (!root.current?.contains(target) && !popover.current?.contains(target)) setOpen(false);
+    };
     window.addEventListener('keydown', handleKey);
     window.addEventListener('pointerdown', handlePointer);
     return () => { window.removeEventListener('keydown', handleKey); window.removeEventListener('pointerdown', handlePointer); };
-  }, [open, setOpen, id]);
-  return root;
+  }, [open, setOpen, root, popover]);
+}
+
+type CalendarPopoverPosition = { top: number; left: number; width: number; maxHeight: number; layout: 'anchored' | 'sheet' };
+function useCalendarPopoverPosition(open: boolean, trigger: { current: HTMLButtonElement | null }, popover: { current: HTMLDivElement | null }) {
+  const [position, setPosition] = useState<CalendarPopoverPosition | null>(null);
+  useLayoutEffect(() => {
+    if (!open) { setPosition(null); return undefined; }
+    const update = () => {
+      const anchor = trigger.current?.getBoundingClientRect();
+      const panel = popover.current;
+      if (!anchor || !panel) return;
+      const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      const margin = 12;
+      const gap = 8;
+      const layout: CalendarPopoverPosition['layout'] = viewportWidth <= 560 ? 'sheet' : 'anchored';
+      const width = Math.max(0, Math.min(layout === 'sheet' ? 430 : 390, viewportWidth - margin * 2));
+      const maxHeight = Math.max(180, viewportHeight - margin * 2);
+      panel.style.width = `${width}px`;
+      panel.style.maxHeight = `${maxHeight}px`;
+      const panelHeight = Math.min(panel.scrollHeight, maxHeight);
+      const maxTop = Math.max(margin, viewportHeight - panelHeight - margin);
+      const belowSpace = viewportHeight - anchor.bottom - gap - margin;
+      const aboveSpace = anchor.top - gap - margin;
+      const preferredTop = belowSpace >= panelHeight || belowSpace >= aboveSpace
+        ? anchor.bottom + gap
+        : anchor.top - panelHeight - gap;
+      const top = Math.min(Math.max(preferredTop, margin), maxTop);
+      const left = layout === 'sheet'
+        ? (viewportWidth - width) / 2
+        : Math.min(Math.max(anchor.left, margin), Math.max(margin, viewportWidth - width - margin));
+      const next = { top, left, width, maxHeight, layout };
+      setPosition(previous => previous && previous.top === next.top && previous.left === next.left && previous.width === next.width && previous.maxHeight === next.maxHeight && previous.layout === next.layout ? previous : next);
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+    if (trigger.current) observer?.observe(trigger.current);
+    if (popover.current) observer?.observe(popover.current);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+      observer?.disconnect();
+    };
+  }, [open, trigger, popover]);
+  return position;
+}
+
+function CalendarPopover({ open, id, label, trigger, popover, children }: {
+  open: boolean;
+  id: string;
+  label: string;
+  trigger: { current: HTMLButtonElement | null };
+  popover: { current: HTMLDivElement | null };
+  children: React.ReactNode;
+}) {
+  const position = useCalendarPopoverPosition(open, trigger, popover);
+  if (!open) return null;
+  return createPortal(<>
+    <div
+      ref={popover}
+      id={id}
+      className="ok-date-popover"
+      data-layout={position?.layout || 'anchored'}
+      role="dialog"
+      aria-label={label}
+      style={{
+        top: position?.top ?? 0,
+        left: position?.left ?? 0,
+        width: position?.width,
+        maxHeight: position?.maxHeight,
+        visibility: position ? 'visible' : 'hidden',
+      }}
+    >{children}</div>
+  </>, document.body);
 }
 const dateDisplay = (value: string) => {
   const date = dateFromKey(value);
@@ -157,23 +236,29 @@ const dateDisplay = (value: string) => {
 export function DatePicker({ value, onChange, label = 'Fecha', minDate, maxDate, className = '', presets, unavailableDates, isDateUnavailable, getDateMetadata, cellSize }: PickerProps) {
   const [open, setOpen] = useState(false);
   const id = useId();
-  const root = usePicker(open, setOpen, id);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const popover = useRef<HTMLDivElement>(null);
+  usePicker(open, setOpen, root, popover);
   return <div className={`ok-date-picker ${className}`} ref={root}>
-    <button type="button" className="ok-date-trigger" aria-label={`${label}: ${dateDisplay(value)}`} aria-expanded={open} aria-haspopup="dialog" aria-controls={id} onClick={() => setOpen(current => !current)}><CalendarDays size={15}/><span>{dateDisplay(value)}</span></button>
-    {open && <div id={id} className="ok-date-popover" role="dialog" aria-label={label}><Calendar value={value} onChange={next => { onChange(next); setOpen(false); }} label={label} minDate={minDate} maxDate={maxDate} presets={presets} unavailableDates={unavailableDates} isDateUnavailable={isDateUnavailable} getDateMetadata={getDateMetadata} cellSize={cellSize}/></div>}
+    <button ref={trigger} type="button" className="ok-date-trigger" aria-label={`${label}: ${dateDisplay(value)}`} aria-expanded={open} aria-haspopup="dialog" aria-controls={id} onClick={() => setOpen(current => !current)}><CalendarDays size={15}/><span>{dateDisplay(value)}</span></button>
+    <CalendarPopover open={open} id={id} label={label} trigger={trigger} popover={popover}><Calendar value={value} onChange={next => { onChange(next); setOpen(false); }} label={label} minDate={minDate} maxDate={maxDate} presets={presets} unavailableDates={unavailableDates} isDateUnavailable={isDateUnavailable} getDateMetadata={getDateMetadata} cellSize={cellSize}/></CalendarPopover>
   </div>;
 }
 
 export function DateTimePicker({ value, onChange, label = 'Fecha y hora', minDate, maxDate, className = '', unavailableDates, isDateUnavailable, getDateMetadata, cellSize }: PickerProps) {
   const [open, setOpen] = useState(false);
   const id = useId();
-  const root = usePicker(open, setOpen, id);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const popover = useRef<HTMLDivElement>(null);
+  usePicker(open, setOpen, root, popover);
   const dateValue = value?.slice(0, 10) || '';
   const timeValue = value?.slice(11, 16) || '09:00';
   const display = dateValue ? `${dateDisplay(dateValue)} · ${timeValue}` : 'Elegir fecha y hora';
   const update = (date: string, time: string) => onChange(date ? `${date}T${time || '09:00'}` : '');
   return <div className={`ok-date-picker ${className}`} ref={root}>
-    <button type="button" className="ok-date-trigger" aria-label={`${label}: ${display}`} aria-expanded={open} aria-haspopup="dialog" aria-controls={id} onClick={() => setOpen(current => !current)}><CalendarDays size={15}/><span>{display}</span></button>
-    {open && <div id={id} className="ok-date-popover" role="dialog" aria-label={label}><Calendar value={dateValue} onChange={date => update(date, timeValue)} label={label} minDate={minDate} maxDate={maxDate} unavailableDates={unavailableDates} isDateUnavailable={isDateUnavailable} getDateMetadata={getDateMetadata} cellSize={cellSize}/><label className="ok-time-field"><span><Clock3 size={14}/> Hora local</span><input type="time" value={timeValue} onChange={event => update(dateValue, event.target.value)} disabled={!dateValue} aria-label="Hora local"/></label></div>}
+    <button ref={trigger} type="button" className="ok-date-trigger" aria-label={`${label}: ${display}`} aria-expanded={open} aria-haspopup="dialog" aria-controls={id} onClick={() => setOpen(current => !current)}><CalendarDays size={15}/><span>{display}</span></button>
+    <CalendarPopover open={open} id={id} label={label} trigger={trigger} popover={popover}><Calendar value={dateValue} onChange={date => update(date, timeValue)} label={label} minDate={minDate} maxDate={maxDate} unavailableDates={unavailableDates} isDateUnavailable={isDateUnavailable} getDateMetadata={getDateMetadata} cellSize={cellSize}/><label className="ok-time-field"><span><Clock3 size={14}/> Hora local</span><input type="time" value={timeValue} onChange={event => update(dateValue, event.target.value)} disabled={!dateValue} aria-label="Hora local"/></label></CalendarPopover>
   </div>;
 }
