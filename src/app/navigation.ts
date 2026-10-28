@@ -21,7 +21,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/pos', label: 'Punto de venta', icon: ShoppingCart, module: 'sales' },
   { to: '/operaciones/mi-semana', label: 'Mi semana', icon: ChartNoAxesCombined, module: 'sales' },
   { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'finance' },
-  { to: '/operaciones/cajas-abiertas', label: 'Cajas abiertas', icon: Radio, module: 'cash' },
+  { to: '/operaciones/cajas-abiertas', label: 'Cajas abiertas', icon: Radio, module: 'sales', anyOf: ['sales', 'cash'] },
   { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText, module: 'quotes' },
   { to: '/operaciones/crm', label: 'Solicitudes', icon: Users, module: 'crm' },
   { to: '/operaciones/clientes', label: 'Directorio de clientes', icon: Users, module: 'crm' },
