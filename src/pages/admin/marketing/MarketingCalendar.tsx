@@ -3,6 +3,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil
 import { ContextMenu, type ContextMenuAction } from '../../../components/ui/ContextMenu';
 import { Badge } from '../../../components/ui/OperationalKit';
 import { DatePicker } from '../../../components/ui/Calendar';
+import { getMarketingCalendarColor, getMarketingTags } from './marketingColors';
 import './marketing-calendar.css';
 
 export type MarketingCalendarPost = {
@@ -118,12 +119,13 @@ export function MarketingCalendar({ posts, canEdit, canDelete, selectedIds, onTo
           onDragEnter={(event)=>{if(dragging)event.currentTarget.classList.add('is-drop-target');}}>
           <div className="vc-marketing-calendar-day-head"><span>{date.getDate()}</span>{items.length>0&&<button type="button" className="vc-marketing-calendar-day-agenda-toggle" aria-label={`Abrir agenda del ${key}`} onClick={()=>setExpandedDate(expandedDate===key?null:key)}>{items.length}</button>}{canEdit&&<button type="button" aria-label={`Crear publicación el ${key}`} onClick={()=>onCreate(key)}><Plus size={13}/></button>}</div>
           <div className="vc-marketing-calendar-events">{visible.map((post)=>{
-            const color=post.calendar_color||'';
+            const color=getMarketingCalendarColor(post.calendar_color,post.tags);
+            const tags=getMarketingTags(post.tags);
             return <div className="vc-marketing-event-row" key={post.id}>
               {(canEdit||canDelete)&&<input className="vc-marketing-event-select" type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={()=>onToggle(post.id)}/>}
               <ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}>
-                <button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className={`vc-marketing-calendar-event tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined} title={`${post.title} · ${post.status}${post.tags?.length?` · ${post.tags.join(', ')}`:''}`}>
-                  {post.scheduled_time&&<time>{post.scheduled_time}</time>}<span>{post.title||'Sin título'}</span>{post.tags?.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${post.tags.join(', ')}`}>{post.tags[0]}</Badge>}
+                <button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className={`vc-marketing-calendar-event tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined} title={`${post.title} · ${post.status}${tags.length?` · ${tags.join(', ')}`:''}`}>
+                  {post.scheduled_time&&<time>{post.scheduled_time}</time>}<span>{post.title||'Sin título'}</span>{tags.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${tags.join(', ')}`}>{tags[0]}</Badge>}
                 </button>
               </ContextMenu>
             </div>;
@@ -131,7 +133,7 @@ export function MarketingCalendar({ posts, canEdit, canDelete, selectedIds, onTo
         </div></ContextMenu></React.Fragment>;
       })}
     </div>
-    {expandedDate&&<section className="vc-marketing-day-agenda" aria-label={`Agenda del ${expandedDate}`}><header><div><span className="eyebrow">AGENDA DEL DÍA</span><b>{new Intl.DateTimeFormat('es-EC',{dateStyle:'full'}).format(new Date(`${expandedDate}T12:00:00`))} · {(byDate.get(expandedDate)||[]).length} publicaciones</b></div><button type="button" className="icon-button" aria-label="Cerrar agenda" onClick={()=>setExpandedDate(null)}><X size={15}/></button></header>{(byDate.get(expandedDate)||[]).map((post)=><article key={post.id}><span className="vc-marketing-agenda-time">{post.scheduled_time||'Sin hora'}</span><button type="button" className="vc-marketing-agenda-title" onClick={()=>onSelect(post)}><b>{post.title}</b><small>{post.platform||'Canal pendiente'} · {post.status}{post.tags?.length?` · ${post.tags.join(', ')}`:''}</small></button><ContextMenu className="vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><span/></ContextMenu></article>)}{canEdit&&<button type="button" className="button button-outline" onClick={()=>onCreate(expandedDate)}><Plus size={14}/>Crear publicación</button>}</section>}
+    {expandedDate&&<section className="vc-marketing-day-agenda" aria-label={`Agenda del ${expandedDate}`}><header><div><span className="eyebrow">AGENDA DEL DÍA</span><b>{new Intl.DateTimeFormat('es-EC',{dateStyle:'full'}).format(new Date(`${expandedDate}T12:00:00`))} · {(byDate.get(expandedDate)||[]).length} publicaciones</b></div><button type="button" className="icon-button" aria-label="Cerrar agenda" onClick={()=>setExpandedDate(null)}><X size={15}/></button></header>{(byDate.get(expandedDate)||[]).map((post)=><article key={post.id}><span className="vc-marketing-agenda-time">{post.scheduled_time||'Sin hora'}</span><button type="button" className="vc-marketing-agenda-title" onClick={()=>onSelect(post)}><b>{post.title}</b><small>{post.platform||'Canal pendiente'} · {post.status}{getMarketingTags(post.tags).length?` · ${getMarketingTags(post.tags).join(', ')}`:''}</small></button><ContextMenu className="vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><span/></ContextMenu></article>)}{canEdit&&<button type="button" className="button button-outline" onClick={()=>onCreate(expandedDate)}><Plus size={14}/>Crear publicación</button>}</section>}
     <footer className="vc-marketing-calendar-foot"><span><i className="tone-active"/>Planificada</span><span><i className="tone-review"/>En revisión</span><span><i className="tone-published"/>Publicada</span><span><i className="tone-blocked"/>Bloqueada</span>{undated.length>0&&<span className="vc-marketing-undated">{undated.length} sin fecha asignada</span>}</footer>
   </section>;
 }

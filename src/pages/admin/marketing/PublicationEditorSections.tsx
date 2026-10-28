@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { CalendarDays, CheckCircle2, ClipboardList, CopyCheck, MessageSquareText, Target } from 'lucide-react';
+import { MARKETING_COLORS } from './marketingColors';
 import './publication-editor-sections.css';
 
 export type PublicationDraft = {
@@ -75,10 +76,9 @@ const tabs = [
   { id: 'production', label: 'Producción', icon: ClipboardList, hint: 'Tareas y revisión' },
 ] as const;
 
-export const MARKETING_COLORS = ['#7141a6','#2477a8','#17846d','#c28a13','#d45a35','#bc3e68','#5966b3','#697582'];
 export const DEFAULT_MARKETING_TAGS = ['Campaña','Producto','Proceso','Educativo','Temporada','Promoción','Marca','Pendiente'];
 
-function TagPicker({ value, onChange, knownTags = [], disabled }: { value: string; onChange: (value: string) => void; knownTags?: string[]; disabled: boolean }) {
+function TagPicker({ value, onChange, calendarColor, onCalendarColorChange, knownTags = [], disabled }: { value: string; onChange: (value: string) => void; calendarColor: string; onCalendarColorChange: (value: string) => void; knownTags?: string[]; disabled: boolean }) {
   const [draft, setDraft] = useState('');
   const tags = value.split(',').map((tag) => tag.trim()).filter(Boolean);
   const add = (next: string) => {
@@ -92,7 +92,7 @@ function TagPicker({ value, onChange, knownTags = [], disabled }: { value: strin
     <div className="vc-marketing-tag-chips">{tags.map((tag, index) => <button type="button" key={tag} disabled={disabled} onClick={() => onChange(tags.filter((item) => item !== tag).join(', '))} title={`Quitar ${tag}`} style={{ '--tag-color': MARKETING_COLORS[index % MARKETING_COLORS.length] } as CSSProperties}>{tag}<span aria-hidden="true">×</span></button>)}</div>
     <div className="vc-marketing-tag-add"><input disabled={disabled} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); add(draft); } }} placeholder="Escribe un tag y pulsa Enter"/><button type="button" disabled={disabled || !draft.trim()} onClick={() => add(draft)}>Crear tag</button></div>
     {!!suggestions.length && <div className="vc-marketing-tag-suggestions">{suggestions.slice(0, 16).map((tag) => <button type="button" disabled={disabled} key={tag} onClick={() => add(tag)}>+ {tag}</button>)}</div>}
-    <div className="vc-marketing-color-picker"><b>Color en calendario</b><span>Color personalizado para localizarla de un vistazo.</span><div>{MARKETING_COLORS.map((color) => <button type="button" key={color} aria-label={`Usar color ${color}`} aria-pressed={value === color} disabled={disabled} style={{ '--tag-color': color } as CSSProperties} onClick={() => onChange(value === color ? '' : color)}/>)}</div></div>
+    <div className="vc-marketing-color-picker"><b>Color en calendario</b><span>Color personalizado para localizarla de un vistazo.</span><div>{MARKETING_COLORS.map((color) => <button type="button" key={color} aria-label={`Usar color ${color}`} aria-pressed={calendarColor === color} disabled={disabled} style={{ '--tag-color': color } as CSSProperties} onClick={() => onCalendarColorChange(calendarColor === color ? '' : color)}/>)}</div></div>
   </section>;
 }
 
@@ -114,7 +114,7 @@ export function PublicationEditorSections({ draft, onChange, canEdit, isNew, act
         <label className="vc-publication-field"><span>Responsable</span><input value={draft.owner} onChange={(event) => onChange('owner', event.target.value)} placeholder="Por asignar" maxLength={120}/></label>
         <label className="vc-publication-field"><span>Etapa</span><select value={draft.status} onChange={(event) => onChange('status', event.target.value)}>{[...new Set(['Por iniciar','En diseño','En revisión','Aprobada','Programada','Publicada','Bloqueada',draft.status])].map((status) => <option key={status}>{status}</option>)}</select></label>
         <PublicationField draft={draft} onChange={onChange} name="content_line" label="Tema o línea de contenido" hint="Resume de qué trata la pieza." placeholder="Qué queremos comunicar" wide/>
-        <TagPicker value={draft.tags} onChange={(value) => onChange('tags', value)} knownTags={knownTags} disabled={!canEdit}/>
+        <TagPicker value={draft.tags} onChange={(value) => onChange('tags', value)} calendarColor={draft.calendar_color} onCalendarColorChange={(value) => onChange('calendar_color', value)} knownTags={knownTags} disabled={!canEdit}/>
         <PublicationField draft={draft} onChange={onChange} name="objective" label="Objetivo" hint="¿Qué debería lograr esta publicación?" placeholder="Informar, atraer consultas, mostrar un proceso…"/>
         <PublicationField draft={draft} onChange={onChange} name="audience" label="Audiencia" hint="¿A quién queremos llegar?" placeholder="Audiencia o segmento por definir"/>
       </div>}
