@@ -84,3 +84,15 @@
 .inventory-movement-footer .button:disabled,.inventory-movement-close:disabled{opacity:.62;cursor:wait}
 @media(max-width:560px){.inventory-movement-backdrop{padding:8px}.inventory-movement-modal{max-height:calc(100dvh - 16px);gap:13px;padding:16px;border-radius:15px}.inventory-movement-header{grid-template-columns:36px minmax(0,1fr) 32px;gap:9px}.inventory-movement-icon{width:36px;height:36px;border-radius:10px}.inventory-movement-title-wrap h3{font-size:16px}.inventory-movement-current{flex-wrap:wrap;padding:9px}.inventory-movement-branch{width:100%;margin:0 0 0 42px}.inventory-movement-fields{grid-template-columns:minmax(0,1fr);gap:11px}.inventory-movement-type,.inventory-movement-quantity,.inventory-movement-reference{grid-column:auto}.inventory-movement-footer{bottom:-16px;gap:8px;margin:0 -16px -16px!important;padding:11px 16px 14px}.inventory-movement-footer .button{flex:1;padding:8px 10px}.inventory-movement-footer .button-dark{min-width:0}}
 @media(prefers-reduced-motion:reduce){.inventory-movement-field input,.inventory-movement-field select{transition:none}}
+
+/* La acción principal comparte encabezado con el título y elimina el bloque alto duplicado. */
+.inventory-workspace{gap:10px}
+.inventory-workspace>.page-heading{margin:0 0 2px}
+.ok-dialog:has(.inventory-create-form){width:min(100%,960px);max-height:min(94vh,920px);overflow:hidden}
+.ok-dialog:has(.inventory-create-form)>.ok-dialog-content{min-height:0;overflow:auto}
+.ok-dialog:has(.inventory-create-form) .inventory-create-form{display:grid;gap:16px;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.ok-dialog:has(.inventory-create-form) .inventory-form-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ok-dialog:has(.inventory-create-form) .inventory-form-grid label{font-size:11px}
+.ok-dialog:has(.inventory-create-form) .inventory-form-grid input,.ok-dialog:has(.inventory-create-form) .inventory-form-grid select,.ok-dialog:has(.inventory-create-form) .inventory-form-grid textarea{min-height:40px;font-size:12px}
+@media(max-width:900px){.ok-dialog:has(.inventory-create-form) .inventory-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.ok-dialog:has(.inventory-create-form){width:100%;max-height:95vh;border-radius:14px}.ok-dialog:has(.inventory-create-form) .inventory-form-grid{grid-template-columns:minmax(0,1fr)}.ok-dialog:has(.inventory-create-form) .inventory-notes{grid-column:auto}.ok-dialog:has(.inventory-create-form)>.ok-dialog-content{padding:14px}}
