@@ -9,6 +9,7 @@
 .open-cash-feedback.success { color: #176044; background: #eaf7f0; border: 1px solid #c8e8d5; }
 .open-cash-alert svg, .open-cash-feedback svg { flex: 0 0 auto; margin-top: 1px; }
 .open-cash-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.open-cash-overview.personal { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .open-cash-stat { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
 .open-cash-stat-icon { display: grid; flex: 0 0 40px; width: 40px; height: 40px; place-items: center; border-radius: 12px; background: #eef4ff; color: #2557a7; }
 .open-cash-stat:nth-child(2) .open-cash-stat-icon { background: #eef7f2; color: #28744f; }
@@ -68,6 +69,10 @@
 .open-cash-count-fields label { display: grid; align-content: start; gap: 5px; color: var(--muted); font-size: .72rem; }
 .open-cash-count-fields label > span { font-size: .67rem; }
 .open-cash-count-fields input { min-height: 38px; background: var(--surface); color: var(--ink); font-size: .82rem; }
+.open-cash-expected { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 3px 10px; padding: 11px 12px; border: 1px solid #cde8d8; border-radius: 9px; background: #f0faf4; }
+.open-cash-expected > span { color: #326a4e; font-size: .75rem; font-weight: 700; }
+.open-cash-expected > b { color: #165a3a; font-size: 1.04rem; font-variant-numeric: tabular-nums; }
+.open-cash-expected > small { grid-column: 1 / -1; color: #5e7769; font-size: .69rem; line-height: 1.4; }
 .open-cash-bulk-confirm { display: flex; align-items: flex-start; gap: 9px; padding: 13px 20px; color: var(--ink); font-size: .76rem; line-height: 1.45; }
 .open-cash-bulk-confirm input { flex: 0 0 16px; width: 16px; height: 16px; margin: 1px 0 0; accent-color: #2661ac; }
 .open-cash-dialog-footer { display: flex; justify-content: flex-end; gap: 9px; padding: 13px 20px 18px; border-top: 1px solid var(--line); }
@@ -83,7 +88,7 @@
   .open-cash-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 680px) {
-  .open-cash-overview { grid-template-columns: 1fr; }
+  .open-cash-overview, .open-cash-overview.personal { grid-template-columns: 1fr; }
   .open-cash-stat { padding: 13px; }
   .open-cash-stat b { font-size: 1.16rem; }
   .open-cash-panel-heading { flex-direction: column; }

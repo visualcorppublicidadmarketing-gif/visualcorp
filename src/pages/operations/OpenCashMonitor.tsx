@@ -18,6 +18,7 @@ type CashRegister = { id: string; branch_id: string; name: string; assigned_advi
 type TeamMember = { user_id: string; full_name?: string | null; email?: string | null };
 type CloseDraft = { counted: string; note: string };
 type CloseResult = { sessionId: string; label: string; success: boolean; message: string };
+type ExpectedAmount = { loading: boolean; amount: number | null; error: string };
 type DialogState = { mode: 'single' | 'all'; sessions: CashSession[] } | null;
 
 const TIME_ZONE = 'America/Guayaquil';
@@ -30,9 +31,11 @@ const countIsValid = (value: string) => value.trim() !== '' && Number.isFinite(N
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : 'No se pudo completar el cierre.';
 
 export function OpenCashMonitor() {
-  const { organizationId, hasPermission } = useAuth();
-  const canViewCash = hasPermission('cash', 'view') || hasPermission('cash', 'manage_cash');
+  const { organizationId, user, hasPermission } = useAuth();
   const canManageCash = hasPermission('cash', 'manage_cash');
+  const canViewAllCash = hasPermission('cash', 'view') || canManageCash;
+  const canCloseOwnCash = hasPermission('sales', 'edit');
+  const canViewCash = canViewAllCash || canCloseOwnCash;
   const canViewTeam = hasPermission('team', 'view');
   const [sessions, setSessions] = useState<CashSession[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -49,6 +52,7 @@ export function OpenCashMonitor() {
   const [lastUpdated, setLastUpdated] = useState('—');
   const [dialog, setDialog] = useState<DialogState>(null);
   const [drafts, setDrafts] = useState<Record<string, CloseDraft>>({});
+  const [expectedAmounts, setExpectedAmounts] = useState<Record<string, ExpectedAmount>>({});
   const [confirmedAll, setConfirmedAll] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const loadedOnce = useRef(false);
@@ -67,10 +71,11 @@ export function OpenCashMonitor() {
     else if (!loadedOnce.current) setLoading(true);
     setError('');
     try {
+      let sessionQuery = supabase.from('cash_sessions').select('id,branch_id,cash_register_id,opened_by,opened_at,opening_cash')
+        .eq('organization_id', organizationId).eq('status', 'open');
+      if (!canViewAllCash && user?.id) sessionQuery = sessionQuery.eq('opened_by', user.id);
       const [sessionResult, branchResult, registerResult] = await Promise.all([
-        supabase.from('cash_sessions').select('id,branch_id,cash_register_id,opened_by,opened_at,opening_cash')
-          .eq('organization_id', organizationId).eq('status', 'open')
-          .order('opened_at', { ascending: true }).order('id', { ascending: true }),
+        sessionQuery.order('opened_at', { ascending: true }).order('id', { ascending: true }),
         supabase.from('branches').select('id,name').eq('organization_id', organizationId).order('name'),
         supabase.from('cash_registers').select('id,branch_id,name,assigned_advisor_id')
           .eq('organization_id', organizationId).order('name'),
@@ -95,7 +100,7 @@ export function OpenCashMonitor() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [organizationId, canViewCash, canViewTeam]);
+  }, [organizationId, canViewCash, canViewAllCash, canViewTeam, user?.id]);
 
   useEffect(() => { void loadOpenSessions(); }, [loadOpenSessions]);
 
@@ -147,7 +152,9 @@ export function OpenCashMonitor() {
   const registerName = (session: CashSession) => session.cash_register_id
     ? registerById.get(session.cash_register_id)?.name || 'Caja asignada'
     : 'Turno sin caja asignada';
-  const openedBy = (session: CashSession) => people.get(session.opened_by) || `Usuario ${shortId(session.opened_by)}`;
+  const openedBy = (session: CashSession) => session.opened_by === user?.id
+    ? 'Tú'
+    : people.get(session.opened_by) || `Usuario ${shortId(session.opened_by)}`;
   const sessionLabel = (session: CashSession) => `${registerName(session)} · ${branchName(session.branch_id)}`;
   const editDraft = (sessionId: string, key: keyof CloseDraft, value: string) => {
     setDrafts((current) => ({ ...current, [sessionId]: { counted: '', note: '', ...current[sessionId], [key]: value } }));
@@ -156,6 +163,18 @@ export function OpenCashMonitor() {
     setCloseResults([]);
     setConfirmedAll(false);
     setDialog({ mode: 'single', sessions: [session] });
+    if (session.opened_by === user?.id && canCloseOwnCash && supabase) {
+      setExpectedAmounts((current) => ({ ...current, [session.id]: { loading: true, amount: null, error: '' } }));
+      void supabase.rpc('close_cash_session', { p_session: session.id, p_counted_cash: null, p_note: '' }).then(({ data, error: expectedError }) => {
+        const amount = Number(data?.expected_cash);
+        setExpectedAmounts((current) => ({
+          ...current,
+          [session.id]: expectedError || !Number.isFinite(amount)
+            ? { loading: false, amount: null, error: expectedError?.message || 'No se pudo calcular el esperado.' }
+            : { loading: false, amount, error: '' },
+        }));
+      });
+    }
   };
   const openAllClose = (items = sessions) => {
     setCloseResults([]);
@@ -165,7 +184,7 @@ export function OpenCashMonitor() {
 
   const submitClose = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!dialog || !canManageCash || !supabase) return;
+    if (!dialog || !supabase) return;
     const pendingSessions = dialog.sessions.filter((session) => sessions.some((row) => row.id === session.id));
     if (!pendingSessions.length) {
       setFeedback({ kind: 'error', message: 'Estas cajas ya no están abiertas. Actualicé la lista para confirmar su estado.' });
@@ -175,6 +194,11 @@ export function OpenCashMonitor() {
     }
     if (pendingSessions.some((session) => !countIsValid(drafts[session.id]?.counted || ''))) {
       setFeedback({ kind: 'error', message: 'Ingresa el efectivo físico contado en cada caja antes de continuar.' });
+      return;
+    }
+    if (pendingSessions.some((session) => !canManageCash && (session.opened_by !== user?.id || !canCloseOwnCash))) {
+      setFeedback({ kind: 'error', message: 'Solo puedes cerrar tu propia caja. Actualicé la lista para confirmar el turno.' });
+      void loadOpenSessions(true);
       return;
     }
     if (dialog.mode === 'all' && !confirmedAll) return;
@@ -214,25 +238,25 @@ export function OpenCashMonitor() {
     setDialog(null);
   };
 
-  if (!canViewCash) return <main className="access-screen"><section className="access-card"><span className="site-eyebrow"><i/> PERMISOS</span><h1>Tu perfil no tiene acceso a las cajas.</h1><p>Esta pantalla requiere permiso de consulta del módulo Caja.</p></section></main>;
+  if (!canViewCash) return <main className="access-screen"><section className="access-card"><span className="site-eyebrow"><i/> PERMISOS</span><h1>Tu perfil no tiene acceso a las cajas.</h1><p>Esta pantalla requiere permiso de consulta de Caja o permiso de edición de ventas para ver tu propio turno.</p></section></main>;
 
   return <AppFrame area="operations">
-    <PageHeading eyebrow="OPERACIONES · CONTROL DE CAJA" title="Cajas abiertas" description="Monitorea los turnos activos de todas las sucursales. Los cambios de apertura y cierre se reflejan automáticamente." action={<div className="open-cash-heading-actions"><span className={`open-cash-live ${liveStatus}`} role="status"><i aria-hidden="true"/>{liveStatus === 'live' ? 'En vivo' : liveStatus === 'connecting' ? 'Conectando' : 'Sin conexión en vivo'}</span><button className="button button-outline" type="button" onClick={() => void loadOpenSessions(true)} disabled={loading || refreshing}><RefreshCw size={15}/> Actualizar</button></div>}/>
+    <PageHeading eyebrow={canViewAllCash ? 'OPERACIONES · CONTROL DE CAJA' : 'OPERACIONES · TU TURNO'} title={canViewAllCash ? 'Cajas abiertas' : 'Mi caja'} description={canViewAllCash ? 'Monitorea los turnos activos de todas las sucursales. Los cambios de apertura y cierre se reflejan automáticamente.' : 'Consulta y cierra tu propio turno. El esperado se calcula automáticamente y se actualiza al confirmar el efectivo contado.'} action={<div className="open-cash-heading-actions"><span className={`open-cash-live ${liveStatus}`} role="status"><i aria-hidden="true"/>{liveStatus === 'live' ? 'En vivo' : liveStatus === 'connecting' ? 'Conectando' : 'Sin conexión en vivo'}</span><button className="button button-outline" type="button" onClick={() => void loadOpenSessions(true)} disabled={loading || refreshing}><RefreshCw size={15}/> Actualizar</button></div>}/>
     {error && <p className="open-cash-alert" role="alert"><AlertTriangle size={16}/>{error}</p>}
     {feedback && <div className={`open-cash-feedback ${feedback.kind}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>{feedback.kind === 'error' ? <AlertTriangle size={16}/> : <Check size={16}/>}<span>{feedback.message}</span></div>}
     {closeResults.length > 0 && <section className="open-cash-results" aria-label="Resultado de los cierres"><h2>Resultado de conciliación</h2><ul>{closeResults.map((result) => <li className={result.success ? 'success' : 'error'} key={result.sessionId}><b>{result.label}</b><span>{result.message}</span></li>)}</ul>{closeResults.some((result) => !result.success) && <button className="button button-outline" type="button" onClick={() => openAllClose(sessions.filter((session) => closeResults.some((result) => result.sessionId === session.id && !result.success)))}>Reintentar las cajas pendientes</button>}</section>}
 
-    <section className="open-cash-overview" aria-label="Resumen de cajas abiertas">
+    <section className={`open-cash-overview ${canViewAllCash ? '' : 'personal'}`} aria-label="Resumen de cajas abiertas">
       <article className="open-cash-stat"><span className="open-cash-stat-icon"><Wallet size={19}/></span><div><small>{branchFilter === 'all' ? 'Turnos abiertos' : 'Turnos abiertos en sucursal'}</small><b>{visibleSessions.length}</b><span>{branchFilter === 'all' ? 'en toda la organización' : branchName(branchFilter)}</span></div></article>
-      <article className="open-cash-stat"><span className="open-cash-stat-icon"><Banknote size={19}/></span><div><small>Fondo inicial visible</small><b>{money(visibleOpeningTotal)}</b><span>Capital de apertura, no saldo actual</span></div></article>
+      {canViewAllCash && <article className="open-cash-stat"><span className="open-cash-stat-icon"><Banknote size={19}/></span><div><small>Fondo inicial visible</small><b>{money(visibleOpeningTotal)}</b><span>Capital de apertura, no saldo actual</span></div></article>}
       <article className="open-cash-stat"><span className="open-cash-stat-icon"><Activity size={19}/></span><div><small>Última actualización</small><b>{lastUpdated}</b><span>{liveStatus === 'live' ? 'Sincronización automática activa' : 'Actualización automática de respaldo cada 30 s'}</span></div></article>
     </section>
 
     <section className="panel open-cash-panel">
-      <div className="open-cash-panel-heading"><div><span className="eyebrow">TURNOS ACTIVOS</span><h2>Cajas de todas las sucursales</h2><p>Los montos de efectivo contado y la diferencia quedan protegidos hasta confirmar cada arqueo.</p></div>{canManageCash && sessions.length > 0 && <button type="button" className="button button-dark open-cash-close-all" onClick={() => openAllClose()}><ShieldCheck size={16}/> Cerrar todas las cajas · Todas las sucursales <span>{sessions.length}</span></button>}</div>
-      <div className="open-cash-toolbar"><label htmlFor="open-cash-branch">Sucursal<select id="open-cash-branch" value={branchFilter} onChange={(event) => setBranchFilter(event.target.value)}><option value="all">Todas las sucursales</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label><span className="open-cash-refresh-note"><Clock3 size={14}/> Actualizado {lastUpdated}{refreshing ? ' · sincronizando' : ''}</span></div>
+      <div className="open-cash-panel-heading"><div><span className="eyebrow">{canViewAllCash ? 'TURNOS ACTIVOS' : 'TU TURNO'}</span><h2>{canViewAllCash ? 'Cajas de todas las sucursales' : 'Tu caja abierta'}</h2><p>{canViewAllCash ? 'Los montos de efectivo contado y la diferencia quedan protegidos hasta confirmar cada arqueo.' : 'El esperado se calcula con el fondo inicial, movimientos y pagos en efectivo registrados.'}</p></div>{canManageCash && sessions.length > 0 && <button type="button" className="button button-dark open-cash-close-all" onClick={() => openAllClose()}><ShieldCheck size={16}/> Cerrar todas las cajas · Todas las sucursales <span>{sessions.length}</span></button>}</div>
+      {canViewAllCash && <div className="open-cash-toolbar"><label htmlFor="open-cash-branch">Sucursal<select id="open-cash-branch" value={branchFilter} onChange={(event) => setBranchFilter(event.target.value)}><option value="all">Todas las sucursales</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label><span className="open-cash-refresh-note"><Clock3 size={14}/> Actualizado {lastUpdated}{refreshing ? ' · sincronizando' : ''}</span></div>}
       {loading ? <div className="open-cash-empty" role="status"><LoaderCircle size={22} className="open-cash-spin"/><b>Cargando turnos abiertos…</b></div>
-        : !visibleSessions.length ? <div className="open-cash-empty"><span className="open-cash-empty-icon"><Check size={22}/></span><b>{sessions.length ? 'No hay cajas abiertas en esta sucursal' : 'No hay cajas abiertas'}</b><span>{sessions.length ? 'Elige otra sucursal para ver sus turnos activos.' : 'Cuando alguien abra un turno desde POS, aparecerá aquí automáticamente.'}</span></div>
+        : !visibleSessions.length ? <div className="open-cash-empty"><span className="open-cash-empty-icon"><Check size={22}/></span><b>{sessions.length ? 'No hay cajas abiertas en esta sucursal' : 'No hay cajas abiertas'}</b><span>{sessions.length ? 'Elige otra sucursal para ver sus turnos activos.' : canViewAllCash ? 'Cuando alguien abra un turno desde POS, aparecerá aquí automáticamente.' : 'Tu turno aparecerá aquí cuando abras una caja asignada desde POS.'}</span></div>
         : <div className="open-cash-grid">{visibleSessions.map((session) => {
           const register = session.cash_register_id ? registerById.get(session.cash_register_id) : undefined;
           const isAssigned = Boolean(register?.assigned_advisor_id);
@@ -243,7 +267,7 @@ export function OpenCashMonitor() {
             <div className="open-cash-meta"><span>Responsable</span><b>{openedBy(session)}{isAssigned && register?.assigned_advisor_id !== session.opened_by ? <small>Caja asignada a otra persona</small> : null}</b></div>
             <div className="open-cash-meta"><span>Abierta desde</span><b>{dateTime(session.opened_at)}</b></div>
             <div className="open-cash-opening"><span>Fondo inicial</span><b>{money(session.opening_cash)}</b></div>
-            {canManageCash && <button type="button" className="button button-outline open-cash-close-one" onClick={() => openSingleClose(session)}><Wallet size={15}/> Conciliar y cerrar</button>}
+            {(canManageCash || (canCloseOwnCash && session.opened_by === user?.id)) && <button type="button" className="button button-outline open-cash-close-one" onClick={() => openSingleClose(session)}><Wallet size={15}/> {canManageCash ? 'Conciliar y cerrar' : 'Cerrar mi caja'}</button>}
           </article>;
         })}</div>}
     </section>
@@ -253,10 +277,13 @@ export function OpenCashMonitor() {
         <div className="open-cash-dialog-heading"><span className="open-cash-dialog-icon"><ShieldCheck size={19}/></span><button type="button" className="open-cash-dialog-dismiss" aria-label="Cerrar ventana" disabled={busy} onClick={() => setDialog(null)}><X size={18}/></button><div><span className="eyebrow">{dialog.mode === 'all' ? 'CIERRE MASIVO' : 'ARQUEO DE CAJA'}</span><h2 id="open-cash-dialog-title">{dialog.mode === 'all' ? 'Conciliar todas las cajas' : 'Cerrar turno de caja'}</h2></div></div>
         <p id="open-cash-dialog-description" className="open-cash-dialog-copy">{dialog.mode === 'all'
           ? `Se procesarán ${dialog.sessions.length} cajas en secuencia. Ingresa el efectivo físico contado para cada una; cada cierre guarda su propio arqueo y queda auditado.`
-          : 'Ingresa el efectivo físico contado. El servidor calculará el esperado y guardará cualquier diferencia en el cierre.'}</p>
+          : expectedAmounts[dialog.sessions[0]?.id]?.amount != null
+            ? 'Calculamos el esperado de tu turno. Cuenta el efectivo real y confírmalo; el servidor volverá a calcular el esperado al cerrar.'
+            : 'Ingresa el efectivo físico contado. El servidor calculará el esperado y guardará cualquier diferencia en el cierre.'}</p>
         <div className="open-cash-count-list">{dialog.sessions.map((session) => {
           const draft = drafts[session.id] || { counted: '', note: '' };
-          return <section className="open-cash-count-item" key={session.id}><header><div><b>{registerName(session)}</b><span>{branchName(session.branch_id)} · {openedBy(session)}</span></div><small>Fondo inicial {money(session.opening_cash)}</small></header><div className="open-cash-count-fields"><label htmlFor={`counted-${session.id}`}>Efectivo contado ($)<input id={`counted-${session.id}`} type="number" inputMode="decimal" min="0" step="0.01" required value={draft.counted} onChange={(event) => editDraft(session.id, 'counted', event.target.value)} placeholder="0,00"/></label><label htmlFor={`note-${session.id}`}>Nota de cierre <span>(opcional)</span><input id={`note-${session.id}`} type="text" maxLength={1000} value={draft.note} onChange={(event) => editDraft(session.id, 'note', event.target.value)} placeholder="Explica una diferencia o novedad"/></label></div></section>;
+          const expected = expectedAmounts[session.id];
+          return <section className="open-cash-count-item" key={session.id}><header><div><b>{registerName(session)}</b><span>{branchName(session.branch_id)} · {openedBy(session)}</span></div><small>Fondo inicial {money(session.opening_cash)}</small></header>{session.opened_by === user?.id && canCloseOwnCash && <div className="open-cash-expected"><span>Esperado calculado</span><b>{expected?.loading ? 'Calculando…' : expected?.amount != null ? money(expected.amount) : 'No disponible'}</b><small>{expected?.error ? 'Puedes continuar con el arqueo manual; se calculará durante el cierre.' : 'Se valida otra vez al confirmar el cierre.'}</small></div>}<div className="open-cash-count-fields"><label htmlFor={`counted-${session.id}`}>Efectivo contado físicamente ($)<input id={`counted-${session.id}`} type="number" inputMode="decimal" min="0" step="0.01" required value={draft.counted} onChange={(event) => editDraft(session.id, 'counted', event.target.value)} placeholder="Escribe el valor contado"/></label><label htmlFor={`note-${session.id}`}>Nota de cierre <span>(opcional)</span><input id={`note-${session.id}`} type="text" maxLength={1000} value={draft.note} onChange={(event) => editDraft(session.id, 'note', event.target.value)} placeholder="Explica una diferencia o novedad"/></label></div></section>;
         })}</div>
         {dialog.mode === 'all' && <label className="open-cash-bulk-confirm"><input type="checkbox" checked={confirmedAll} onChange={(event) => setConfirmedAll(event.target.checked)}/><span>Confirmo que estos montos corresponden al efectivo contado físicamente en cada caja.</span></label>}
         <div className="open-cash-dialog-footer"><button type="button" className="button button-outline" onClick={() => setDialog(null)} disabled={busy}>Cancelar</button><button type="submit" className="button button-dark" disabled={busy || (dialog.mode === 'all' && !confirmedAll) || dialog.sessions.some((session) => !countIsValid(drafts[session.id]?.counted || ''))}>{busy ? <><LoaderCircle size={15} className="open-cash-spin"/> Conciliando…</> : dialog.mode === 'all' ? `Cerrar ${dialog.sessions.length} cajas` : 'Conciliar y cerrar caja'}</button></div>
