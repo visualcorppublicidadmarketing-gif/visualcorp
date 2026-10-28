@@ -14,7 +14,8 @@ import { supabase } from '../../lib/supabaseClient';
 import { MarketingCalendar } from './marketing/MarketingCalendar';
 import { MarketingAssetIntake } from './marketing/MarketingAssetIntake';
 import { MarketingAssetPreview } from './marketing/MarketingAssetPreview';
-import { DEFAULT_MARKETING_TAGS, MARKETING_COLORS, PublicationEditorSections, type PublicationDraft, type PublicationEditorTab } from './marketing/PublicationEditorSections';
+import { DEFAULT_MARKETING_TAGS, PublicationEditorSections, type PublicationDraft, type PublicationEditorTab } from './marketing/PublicationEditorSections';
+import { getMarketingCalendarColor, getMarketingTags, MARKETING_COLORS } from './marketing/marketingColors';
 
 type Post = Record<string, any> & { id: string; title: string; status: string; scheduled_date: string; platform: string };
 type Asset = Record<string, any> & { id: string; filename: string; rel_path: string; section: string; is_available: boolean; storage_status?: string; retention_enabled?: boolean; retention_months?: number };
@@ -125,13 +126,13 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   }, [modalOpen]);
 
   const statuses = useMemo(() => ['Todos los estados', ...new Set(data.posts.map((post) => post.status).filter(Boolean).sort())], [data.posts]);
-  const knownTags = useMemo(() => [...new Set([...DEFAULT_MARKETING_TAGS, ...data.posts.flatMap((post) => Array.isArray(post.tags) ? post.tags : [])])].sort(), [data.posts]);
+  const knownTags = useMemo(() => [...new Set([...DEFAULT_MARKETING_TAGS, ...data.posts.flatMap((post) => getMarketingTags(post.tags))])].sort(), [data.posts]);
   const filteredPosts = useMemo(() => {
     const search = query.trim().toLocaleLowerCase('es');
     return data.posts.filter((post) => {
       const matchesSearch = !search || [post.title, post.content_line, post.platform, post.owner, post.caption, post.status].some((field) => String(field || '').toLocaleLowerCase('es').includes(search));
       return matchesSearch && (statusFilter === 'Todos los estados' || post.status === statusFilter)
-        && (tagFilter === 'Todas las etiquetas' || (Array.isArray(post.tags) && post.tags.includes(tagFilter)));
+        && (tagFilter === 'Todas las etiquetas' || getMarketingTags(post.tags).includes(tagFilter));
     }).sort((a, b) => {
       const aOpen = !/publicad|complet|cancelad/i.test(a.status || '');
       const bOpen = !/publicad|complet|cancelad/i.test(b.status || '');
@@ -176,7 +177,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       call_in: post.call_in || '', callout: post.callout || '', cta: post.cta || '',
       cta_destination: post.cta_destination || '', external_url: post.external_url || '',
       hashtags: post.hashtags || '', visual_direction: post.visual_direction || '',
-      tags: Array.isArray(post.tags) ? post.tags.join(', ') : '', calendar_color: post.calendar_color || '',
+      tags: getMarketingTags(post.tags).join(', '), calendar_color: getMarketingCalendarColor(post.calendar_color, post.tags),
     } : defaultDraft(scheduledDate));
   };
   const reschedulePost = async (post: Post, date: string) => {
@@ -206,7 +207,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     }
     setSaving(true);
     try {
-      const fields = { ...draft, title: draft.title.trim(), tags: [...new Set(draft.tags.split(',').map((tag) => tag.trim()).filter(Boolean))], updated_at: new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Guayaquil', dateStyle: 'short', timeStyle: 'medium', hour12: false }).format(new Date()) };
+      const fields = { ...draft, calendar_color: getMarketingCalendarColor(draft.calendar_color, []), title: draft.title.trim(), tags: [...new Set(getMarketingTags(draft.tags.split(',')))], updated_at: new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Guayaquil', dateStyle: 'short', timeStyle: 'medium', hour12: false }).format(new Date()) };
       const result = isNew
         ? await supabase.from('marketing_posts').insert({ ...fields, organization_id: organizationId, source_system: 'visualcorp-suite', source_id: `suite-${globalThis.crypto.randomUUID()}` }).select('id').single()
         : await supabase.from('marketing_posts').update(fields).eq('organization_id', organizationId).eq('id', selectedPost?.id).select('id').maybeSingle();
@@ -301,14 +302,14 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
             : filteredPosts.length === 0 ? <EmptyState icon={Search} title="No encontramos coincidencias" text="Prueba con otro título, canal, responsable o estado." action={<button className="button button-outline" onClick={() => { setQuery(''); setStatusFilter('Todos los estados'); }}>Limpiar búsqueda</button>}/>
               : <div className={`vc-content-post-grid ${activeSection === 'overview' ? 'is-overview' : ''}`}>
                 <div className="vc-content-post-list">
-                  {postView === 'table' ? <div className="vc-marketing-post-table-wrap"><table className="vc-marketing-post-table"><thead><tr><th><input type="checkbox" aria-label="Seleccionar todas las publicaciones visibles" checked={filteredPosts.length>0&&filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/></th><th>Publicación</th><th>Fecha y canal</th><th>Etapa</th><th>Tags</th><th>Acciones</th></tr></thead><tbody>{filteredPosts.map((post)=> <tr key={post.id}><td><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></td><td><button type="button" className="vc-marketing-table-title" onClick={()=>openPost(post)}>{post.title||'Sin título'}</button><small>{post.content_line||'Tema pendiente'}</small></td><td>{post.scheduled_date?formatDate(post.scheduled_date):'Fecha pendiente'}<small>{post.platform||'Canal pendiente'}{post.scheduled_time?` · ${post.scheduled_time}`:''}</small></td><td><StageBadge stage={post.status||'Por iniciar'}/></td><td><div className="vc-marketing-table-tags">{(Array.isArray(post.tags)?post.tags:[]).map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div></td><td><ContextMenu label={`Acciones para ${post.title}`} actions={postActions(post)}><span className="vc-marketing-menu-anchor" aria-hidden="true"/></ContextMenu></td></tr>)}</tbody></table></div> : <AnimatedList className="vc-marketing-card-grid" itemClassName="vc-content-post-entry">{filteredPosts.map((post) => {
+                  {postView === 'table' ? <div className="vc-marketing-post-table-wrap"><table className="vc-marketing-post-table"><thead><tr><th><input type="checkbox" aria-label="Seleccionar todas las publicaciones visibles" checked={filteredPosts.length>0&&filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/></th><th>Publicación</th><th>Fecha y canal</th><th>Etapa</th><th>Tags</th><th>Acciones</th></tr></thead><tbody>{filteredPosts.map((post)=> <tr key={post.id}><td><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></td><td><button type="button" className="vc-marketing-table-title" onClick={()=>openPost(post)}>{post.title||'Sin título'}</button><small>{post.content_line||'Tema pendiente'}</small></td><td>{post.scheduled_date?formatDate(post.scheduled_date):'Fecha pendiente'}<small>{post.platform||'Canal pendiente'}{post.scheduled_time?` · ${post.scheduled_time}`:''}</small></td><td><StageBadge stage={post.status||'Por iniciar'}/></td><td><div className="vc-marketing-table-tags">{getMarketingTags(post.tags).map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div></td><td><ContextMenu label={`Acciones para ${post.title}`} actions={postActions(post)}><span className="vc-marketing-menu-anchor" aria-hidden="true"/></ContextMenu></td></tr>)}</tbody></table></div> : <AnimatedList className="vc-marketing-card-grid" itemClassName="vc-content-post-entry">{filteredPosts.map((post) => {
                   const linked = data.postAssets.filter((link) => link.post_id === post.id).length;
                   const complete = checklistFields.filter(([field]) => /complet|aprob|listo|hecho/i.test(post[field] || '')).length;
                   return <ContextMenu key={post.id} className="vc-marketing-post-context" label={`Acciones para ${post.title}`} actions={postActions(post)}><article className="vc-content-post">
-                    <label className="vc-marketing-select-post"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></label><div className="vc-content-date" style={post.calendar_color?{borderColor:post.calendar_color,color:post.calendar_color}:undefined}><strong>{post.scheduled_date ? post.scheduled_date.slice(8,10) : '—'}</strong><span>{post.scheduled_date ? new Intl.DateTimeFormat('es-EC',{month:'short'}).format(new Date(`${post.scheduled_date.slice(0,10)}T12:00:00`)) : 'PEND.'}</span></div>
+                    <label className="vc-marketing-select-post"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></label><div className="vc-content-date" style={getMarketingCalendarColor(post.calendar_color, post.tags)?{borderColor:getMarketingCalendarColor(post.calendar_color, post.tags),color:getMarketingCalendarColor(post.calendar_color, post.tags)}:undefined}><strong>{post.scheduled_date ? post.scheduled_date.slice(8,10) : '—'}</strong><span>{post.scheduled_date ? new Intl.DateTimeFormat('es-EC',{month:'short'}).format(new Date(`${post.scheduled_date.slice(0,10)}T12:00:00`)) : 'PEND.'}</span></div>
                     <button className="vc-content-post-main" type="button" onClick={() => openPost(post)}><span className="vc-content-post-eyebrow">{post.content_line || post.platform || 'Contenido'} <i>·</i> {post.format || 'Formato pendiente'}</span><strong>{post.title || 'Sin título'}</strong><span className="vc-content-post-caption">{post.caption || post.next_action || 'Copy y siguiente paso por completar.'}</span><span className="vc-content-post-meta"><span><Megaphone size={13}/>{post.platform || 'Canal pendiente'}</span><span><Images size={13}/>{linked} piezas</span><span><Check size={13}/>{complete}/{checklistFields.length} checklist</span>{post.owner && <span>{post.owner}</span>}</span></button>
                     <div className="vc-content-post-end"><StageBadge stage={post.status || 'Por iniciar'}/><span className={`vc-content-dot is-${statusTone(post.status)}`}/></div>
-                    {Array.isArray(post.tags)&&post.tags.length>0&&<div className="vc-marketing-post-tags">{post.tags.map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div>}
+                    {getMarketingTags(post.tags).length>0&&<div className="vc-marketing-post-tags">{getMarketingTags(post.tags).map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div>}
                   </article></ContextMenu>;
                 })}</AnimatedList>}
                 </div>
