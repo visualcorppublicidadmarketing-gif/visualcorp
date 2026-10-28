@@ -1,0 +1,10 @@
+# The deployment only needs the app source and public assets.
+/dist/
+/context/
+/docs/
+/supabase/
+/backups/
+/src/legacy-reference/
+/.github/
+/tools/
+/.env.example

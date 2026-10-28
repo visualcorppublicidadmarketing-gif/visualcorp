@@ -9,6 +9,11 @@ import { ArticleMarkdown } from './ArticleMarkdown';
 import './storefront.css';
 
 type ContentKind = 'blog' | 'publicaciones' | 'portafolio';
+const normalizeSearch = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+const matchesSearch = (content: string, query: string) => {
+  const haystack = normalizeSearch(content);
+  return normalizeSearch(query.trim()).split(/\s+/).filter(Boolean).every((term) => haystack.includes(term));
+};
 type SiteArticle = {
   id: string;
   title: string;
@@ -123,16 +128,16 @@ function ContentLoadError({ message, onRetry }: { message: string; onRetry: () =
 function ArticleIndex({ kind }: { kind: ContentKind }) {
   const { articles, loading, error, retry } = usePublishedArticles();
   const [search, setSearch] = useState('');
-  const matches = useMemo(() => articles.filter((article) => articleMatches(article, kind)
-    && `${article.title} ${article.excerpt} ${(article.tags || []).join(' ')}`.toLocaleLowerCase('es').includes(search.trim().toLocaleLowerCase('es'))), [articles, kind, search]);
+  const sectionArticles = useMemo(() => articles.filter((article) => articleMatches(article, kind)), [articles, kind]);
+  const matches = useMemo(() => sectionArticles.filter((article) => matchesSearch(`${article.title} ${article.excerpt} ${(article.tags || []).join(' ')}`, search)), [sectionArticles, search]);
   const description = kind === 'blog'
     ? 'Consejos, ideas y novedades sobre comunicación visual, producción y presencia de marca.'
     : kind === 'publicaciones'
       ? 'Una selección de novedades y piezas compartidas por Visual Corp.'
       : 'Una galería de proyectos confirmados, con contexto sobre el reto y el trabajo realizado.';
   return <><ShowcaseHero kind={kind} description={description}/><section className="showcase-section">
-    <div className="showcase-toolbar"><div><span className="site-eyebrow"><i/>VISUAL CORP</span><h2>{kind === 'portafolio' ? 'Trabajo seleccionado' : kind === 'publicaciones' ? 'Últimas publicaciones' : 'Lecturas recientes'}</h2></div><label className="showcase-search"><Search size={16}/><span className="sr-only">Buscar contenido</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar contenido"/></label></div>
-    {loading ? <div className="showcase-empty glass-card" role="status">Cargando contenido…</div> : error ? <ContentLoadError message={error} onRetry={retry}/> : matches.length ? <AnimatedList className="showcase-grid" stagger={0.045}>{matches.map((article) => <ContentCard key={article.id} article={article} kind={kind}/>)}</AnimatedList> : <EmptyContent kind={kind}/>}
+    <div className="showcase-toolbar"><div><span className="site-eyebrow"><i/>VISUAL CORP</span><h2>{kind === 'portafolio' ? 'Trabajo seleccionado' : kind === 'publicaciones' ? 'Últimas publicaciones' : 'Lecturas recientes'}</h2></div><label className="showcase-search"><Search size={16}/><span className="sr-only">Buscar contenido</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar contenido"/></label></div>
+    {loading ? <div className="showcase-empty glass-card" role="status">Cargando contenido…</div> : error ? <ContentLoadError message={error} onRetry={retry}/> : matches.length ? <AnimatedList className="showcase-grid" stagger={0.045}>{matches.map((article) => <ContentCard key={article.id} article={article} kind={kind}/>)}</AnimatedList> : sectionArticles.length && search.trim() ? <div className="showcase-empty glass-card" role="status"><h2>No encontramos resultados para “{search.trim()}”.</h2><p>Prueba con otras palabras o vuelve a ver todo el contenido.</p><button type="button" className="site-secondary-button" onClick={() => setSearch('')}>Limpiar búsqueda <ArrowRight size={15}/></button></div> : <EmptyContent kind={kind}/>}
   </section></>;
 }
 
@@ -265,7 +270,7 @@ export function StorefrontPage() {
       return product ? [[product.id,tier]] : [];
     })));
   }, [products]);
-  const normalized = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+  const normalized = normalizeSearch;
   const groupFor = (product: CatalogProduct) => {
     const categoryText = normalized(`${product.category || ''} ${product.category_id || ''}`);
     const searchText = normalized(`${product.name} ${product.description || ''} ${categoryText}`);
@@ -283,9 +288,8 @@ export function StorefrontPage() {
     return [...counts.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'));
   }, [products]);
   const matches = useMemo(() => {
-    const query = normalized(search.trim());
     const result = products.filter((product) => (category === 'Todos' || groupFor(product) === category)
-      && (!query || normalized(`${product.name} ${product.description || ''} ${product.category || ''} ${product.category_id || ''} ${(product.features || []).join(' ')}`).includes(query)));
+      && matchesSearch(`${product.name} ${product.description || ''} ${product.category || ''} ${product.category_id || ''} ${(product.features || []).join(' ')}`, search));
     if (sort === 'az') result.sort((a,b) => a.name.localeCompare(b.name, 'es'));
     else if (sort === 'za') result.sort((a,b) => b.name.localeCompare(a.name, 'es'));
     else result.sort((a,b) => Number(b.featured) - Number(a.featured) || a.sort_order - b.sort_order || a.name.localeCompare(b.name, 'es'));
@@ -360,7 +364,10 @@ export function StorefrontPage() {
     const serviceIds = [...new Set(items.map((product) => serviceForGroup[groupFor(product)] || '').filter(Boolean))];
     if (serviceIds.length === 1) params.set('servicio', serviceIds[0]);
     else if (items.length > 1) params.set('servicio', multiProductQuoteService);
-    items.forEach((product) => params.append('producto', product.name));
+    items.forEach((product) => {
+      params.append('producto', product.name);
+      params.append('familia', serviceForGroup[groupFor(product)] || '');
+    });
     if (items.length === 1) {
       const tier = quantityTier || selectionTiers[items[0].id] || '';
       if (tier) params.set('cantidad', tier);
@@ -372,6 +379,9 @@ export function StorefrontPage() {
   const featuredProducts = products.filter((product) => product.featured).slice(0, 4);
   const featuredPreview = [...products].sort((a,b) => Number(b.featured)-Number(a.featured) || a.sort_order-b.sort_order).slice(0, 3);
   const categoryModules = categories.slice(0, 6).map(([name,count]) => ({name,count,product:products.find((product)=>groupFor(product)===name)}));
+  const scrollToCatalog = () => document.getElementById('catalogo-productos')?.scrollIntoView({
+    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+  });
   const renderProductCard = (product: CatalogProduct, index: number) => {
     const productGroup=groupFor(product); const isSelected=selection.includes(product.id); const isCompared=comparedIds.includes(product.id); const productImage=product.image;
     return <article className="store-product-card vc-magic-card" key={product.id} style={{'--store-card-index':Math.min(index%12,11)} as CSSProperties} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}><SpotlightLayer/>
@@ -395,8 +405,8 @@ export function StorefrontPage() {
     </section>
     <section className="storefront-catalog" id="catalogo" aria-labelledby="store-catalog-title">
       <div className="storefront-heading"><div><span className="site-eyebrow"><i/>DESCUBRE LO QUE PODEMOS CREAR</span><h2 id="store-catalog-title">Explora por<br/><em>lo que necesitas.</em></h2><p>Encuentra opciones, añade las que te interesan y define cantidades, materiales y acabados al cotizar.</p></div><div className="storefront-promise"><span><Check size={15}/></span><div><b>Una lista. Una solicitud.</b><small>Tu selección se conserva en este dispositivo.</small></div></div></div>
-      {!loading&&!error&&categoryModules.length>0&&<section className="store-category-discovery" aria-labelledby="store-category-title"><div className="store-module-heading"><div><span className="site-eyebrow"><i/>ENCUENTRA TU CATEGORÍA</span><h3 id="store-category-title">¿Qué tienes en mente?</h3></div><span>{categories.length} familias</span></div><div className="store-category-grid">{categoryModules.map(({name,count,product},index)=><button type="button" className={`store-category-card store-category-card-${index+1}${category===name?' is-active':''}`} key={name} aria-pressed={category===name} onClick={()=>{setCategory(name);document.getElementById('catalogo-productos')?.scrollIntoView({behavior:'smooth'});}}><span className="store-category-photo">{product?.image?<img src={product.image} alt="" loading="lazy"/>:<ShoppingBag size={25}/>}</span><span className="store-category-label"><b>{name}</b><small>{count} {count===1?'producto':'productos'}</small></span>{category===name?<Check size={17}/>:<ArrowUpRight size={16}/>}</button>)}</div></section>}
-      {!loading&&!error&&featuredProducts.length>0&&<section className="store-featured-module" aria-labelledby="store-featured-title"><div className="store-module-heading"><div><span className="site-eyebrow"><i/>SELECCIÓN VISUAL CORP</span><h3 id="store-featured-title">Productos destacados</h3></div><button type="button" onClick={()=>{setCategory('Todos');document.getElementById('catalogo-productos')?.scrollIntoView({behavior:'smooth'});}}>Ver catálogo completo <ArrowRight size={15}/></button></div><div className="store-featured-grid">{featuredProducts.map(renderProductCard)}</div></section>}
+      {!loading&&!error&&categoryModules.length>0&&<section className="store-category-discovery" aria-labelledby="store-category-title"><div className="store-module-heading"><div><span className="site-eyebrow"><i/>ENCUENTRA TU CATEGORÍA</span><h3 id="store-category-title">¿Qué tienes en mente?</h3></div><span>{categories.length} familias</span></div><div className="store-category-grid">{categoryModules.map(({name,count,product},index)=><button type="button" className={`store-category-card store-category-card-${index+1}${category===name?' is-active':''}`} key={name} aria-pressed={category===name} onClick={()=>{setCategory(name);scrollToCatalog();}}><span className="store-category-photo">{product?.image?<img src={product.image} alt="" loading="lazy"/>:<ShoppingBag size={25}/>}</span><span className="store-category-label"><b>{name}</b><small>{count} {count===1?'producto':'productos'}</small></span>{category===name?<Check size={17}/>:<ArrowUpRight size={16}/>}</button>)}</div></section>}
+      {!loading&&!error&&featuredProducts.length>0&&<section className="store-featured-module" aria-labelledby="store-featured-title"><div className="store-module-heading"><div><span className="site-eyebrow"><i/>SELECCIÓN VISUAL CORP</span><h3 id="store-featured-title">Productos destacados</h3></div><button type="button" onClick={()=>{setCategory('Todos');scrollToCatalog();}}>Ver catálogo completo <ArrowRight size={15}/></button></div><div className="store-featured-grid">{featuredProducts.map(renderProductCard)}</div></section>}
       <div id="catalogo-productos" className="store-product-browser-heading"><div><span className="site-eyebrow"><i/>CATÁLOGO COMPLETO</span><h3>Encuentra tu producto</h3><p>Filtra por familia o busca por nombre, material y uso.</p></div></div>
       <div className="store-catalog-controls" role="region" aria-label="Búsqueda y filtros del catálogo">
         <div className="store-category-rail" role="group" aria-label="Filtrar por familia"><button className={category==='Todos'?'active':''} type="button" aria-pressed={category==='Todos'} onClick={()=>setCategory('Todos')}>Todo el catálogo <span>{products.length}</span></button>{categories.map(([name,count])=><button key={name} className={category===name?'active':''} type="button" aria-pressed={category===name} onClick={()=>setCategory(name)}>{name}<span>{count}</span></button>)}</div>

@@ -171,14 +171,14 @@
   .store-selection-icon{display:none}
 }
 
-/* Lleva categorías y productos más cerca del primer pantallazo. */
-.store-hero-commerce{padding-top:54px;padding-bottom:30px}
+/* Keep the title clear of the sticky header while retaining the compact catalog intro. */
+.store-hero-commerce{padding-top:104px;padding-bottom:30px}
 .store-hero-commerce .store-hero-inner{min-height:340px}
 .store-hero-commerce .store-hero-copy h1{font-size:clamp(52px,5.4vw,72px)}
 .store-hero-commerce .store-hero-showcase{min-height:340px}
 .store-hero-commerce .store-hero-stats small{font-size:9px}
 @media(max-width:760px){
-  .store-hero-commerce{padding:30px 18px 24px}
+  .store-hero-commerce{padding:96px 18px 24px}
   .store-hero-commerce .store-hero-inner{min-height:0}
   .store-hero-commerce .store-hero-copy h1{font-size:clamp(35px,8vw,50px)}
   .store-hero-commerce .store-hero-copy>p{font-size:12px;line-height:1.55}

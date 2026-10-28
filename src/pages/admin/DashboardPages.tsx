@@ -51,15 +51,16 @@ function metricValue(summary: any, key: string, loading: boolean, error: string)
 
 export function UnifiedHome() {
   const { hasPermission } = useAuth();
+  const canViewSummary = hasPermission('dashboard', 'view');
   const [summary, setSummary] = useState<any>(null);
-  const [loading, setLoading] = useState(Boolean(supabase));
+  const [loading, setLoading] = useState(Boolean(supabase) && canViewSummary);
   const [error, setError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const availableLinks = useMemo(
     () => workspaceNavigation.filter((item) => item.to !== '/panel' && canViewNavigationItem(item, hasPermission)),
     [hasPermission],
   );
-  const visibleMetrics = metricCards.filter(({ module }) => hasPermission(module, 'view'));
+  const visibleMetrics = canViewSummary ? metricCards.filter(({ module }) => hasPermission(module, 'view')) : [];
   const primaryAction = availableLinks.find((item) => item.to === '/operaciones/pos') || availableLinks[0];
   const priorityDataComplete = (!hasPermission('crm', 'view') || typeof summary?.open_leads === 'number')
     && (!hasPermission('inventory', 'view') || typeof summary?.inventory_low_stock === 'number');
@@ -91,6 +92,7 @@ export function UnifiedHome() {
   }, [hasPermission, summary]);
 
   useEffect(() => {
+    if (!canViewSummary) { setLoading(false); setError(''); setSummary(null); return undefined; }
     if (!supabase) { setLoading(false); setError('No hay conexión con la base compartida.'); return undefined; }
     let active = true;
     setLoading(true);
@@ -108,7 +110,7 @@ export function UnifiedHome() {
       }
     })();
     return () => { active = false; };
-  }, [refreshKey]);
+  }, [canViewSummary, refreshKey]);
 
   const updatedAt = summary?.as_of && Number.isFinite(Date.parse(summary.as_of))
     ? new Intl.DateTimeFormat('es-EC', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Guayaquil' }).format(new Date(summary.as_of))
@@ -126,7 +128,7 @@ export function UnifiedHome() {
         : note;
       return <StatCard key={module} label={label} value={displayValue} icon={icon} note={detail} tone={tone}/>;
     })}</div>}
-    {(hasPermission('crm', 'view') || hasPermission('inventory', 'view')) ? <section className="panel unified-priority-panel" aria-labelledby="unified-priority-heading">
+    {canViewSummary && (hasPermission('crm', 'view') || hasPermission('inventory', 'view')) ? <section className="panel unified-priority-panel" aria-labelledby="unified-priority-heading">
       <div className="panel-heading"><div><span className="eyebrow">SIGUIENTE PASO</span><h2 id="unified-priority-heading">Pendientes que puedes atender</h2></div>{loading ? <span className="unified-priority-state">Actualizando</span> : error ? <span className="unified-priority-state">Sin actualizar</span> : priorities.length ? <span className="unified-priority-state has-items">{priorities.length} {priorities.length === 1 ? 'pendiente' : 'pendientes'}</span> : priorityDataComplete ? <span className="unified-priority-state is-clear"><CheckCircle2 size={15}/> Sin alertas</span> : <span className="unified-priority-state">Sin datos</span>}</div>
       {error ? <p className="unified-priority-empty">No se muestran pendientes hasta confirmar que la información está actualizada.</p> : loading ? <div className="unified-priority-loading" role="status"><span className="sr-only">Consultando los registros autorizados para tu perfil</span><Skeleton className="dashboard-priority-skeleton"/><Skeleton className="dashboard-priority-skeleton is-short"/></div> : priorities.length ? <div className="unified-priority-list">{priorities.map(({ key, to, icon: Icon, title, detail, count }) => <Link className="unified-priority-item" to={to} key={key}><span className={`unified-priority-icon ${key}`}><Icon size={18}/></span><span className="unified-priority-copy"><b>{title}</b><small>{detail}</small></span><span className="unified-priority-count">{count}</span><ArrowUpRight size={16} aria-hidden="true"/></Link>)}</div> : priorityDataComplete ? <p className="unified-priority-empty">No se detectan pendientes en los módulos visibles para tu perfil.</p> : <p className="unified-priority-empty">No se recibieron datos suficientes para confirmar si hay pendientes.</p>}
     </section> : null}
