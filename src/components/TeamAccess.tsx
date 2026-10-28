@@ -4,6 +4,7 @@ import { Ban, Check, IdCard, RotateCcw, Save, Search, ShieldCheck, UserPlus, Use
 import { useAuth } from '../auth/AuthProvider';
 import { Avatar } from './ui/Avatar';
 import { supabase } from '../lib/supabaseClient';
+import { normalizePersonName } from '../lib/personName';
 import { legacyRoleNames, permissionModules, specialPermissionActions } from '../auth/accessCatalog';
 import './team-access.css';
 
@@ -91,7 +92,7 @@ export function TeamAccess() {
   const memberAccounts = useMemo(() => {
     const grouped = new Map<string, { user_id: string; full_name: string; email: string; last_sign_in_at: string | null; memberships: any[]; avatar_url?: string | null }>();
     for (const member of members) {
-      const account = grouped.get(member.user_id) || { user_id: member.user_id, full_name: member.profiles?.full_name || '', email: member.profiles?.email || '', last_sign_in_at: member.last_sign_in_at, memberships: [] };
+      const account = grouped.get(member.user_id) || { user_id: member.user_id, full_name: normalizePersonName(member.profiles?.full_name), email: member.profiles?.email || '', last_sign_in_at: member.last_sign_in_at, memberships: [] };
       account.memberships.push(member);
       grouped.set(member.user_id, account);
     }
@@ -103,7 +104,7 @@ export function TeamAccess() {
       const existing = accounts.get(googleAccount.user_id);
       accounts.set(googleAccount.user_id, existing ? { ...existing, googleAccount } : {
         user_id: googleAccount.user_id,
-        full_name: googleAccount.full_name,
+        full_name: normalizePersonName(googleAccount.full_name),
         email: googleAccount.email,
         last_sign_in_at: googleAccount.last_sign_in_at,
         memberships: [],

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { ArrowUpRight, CalendarClock, ChartNoAxesCombined, Check, CircleDollarSign, Clock3, Download, Plus, ReceiptText, ShieldCheck, Truck } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
+import { normalizePersonName } from '../../lib/personName';
 import { supabase } from '../../lib/supabaseClient';
 
 const money = (value: number) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(Number(value) || 0);
@@ -214,8 +215,8 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
   const branchNames = useMemo(() => new Map(branches.map((branch) => [branch.id, branch.name])), [branches]);
   const supplierNames = useMemo(() => new Map(suppliers.map((supplier) => [supplier.id, supplier.name])), [suppliers]);
   const orderNames = useMemo(() => new Map(orders.map((order) => [order.id, order.order_number])), [orders]);
-  const teamNames = useMemo(() => new Map(team.map((person) => [person.user_id, person.full_name || person.email || person.user_id.slice(0, 8)])), [team]);
-  const personnelNames = useMemo(() => new Map(personnelOptions.map((person) => [person.personnel_id, person.full_name])), [personnelOptions]);
+  const teamNames = useMemo(() => new Map(team.map((person) => [person.user_id, normalizePersonName(person.full_name) || person.email || person.user_id.slice(0, 8)])), [team]);
+  const personnelNames = useMemo(() => new Map(personnelOptions.map((person) => [person.personnel_id, normalizePersonName(person.full_name)])), [personnelOptions]);
   const expensesById = useMemo(() => new Map(expenses.map((expense) => [expense.id, expense])), [expenses]);
   const isInSelectedBranch = (expense: Expense) => branch === 'all' || expense.branch_id === branch;
   const openPayables = expenses.filter((expense) => expense.status === 'payable' && expenseBalance(expense) > 0.005 && isInSelectedBranch(expense));

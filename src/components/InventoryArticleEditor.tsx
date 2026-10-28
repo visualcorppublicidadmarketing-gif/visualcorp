@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { ArrowLeftRight, Boxes, Check, ChevronDown, Image as ImageIcon, MapPin, Package, Trash2, X } from 'lucide-react';
 import type { InventorySpecificationDraft } from './InventorySpecificationFields';
 import { InventorySpecificationFields } from './InventorySpecificationFields';
+import { InventoryOptionPicker } from './InventoryOptionPicker';
 import { AnimatedList } from './ui/MagicComponents';
 import './InventoryArticleEditor.css';
 
@@ -46,11 +47,13 @@ type Props = {
   branches: string[];
   libraryProducts: ReferenceProduct[];
   libraryCount: number;
+  itemTypeOptions: string[];
+  tagOptions: string[];
 };
 
 const stringValue = (value: unknown) => typeof value === 'string' ? value : value == null ? '' : String(value);
 
-export function InventoryArticleEditor({ value, onChange, onClose, onSave, onDelete, onAssignBranch, onTransfer, branches, libraryProducts, libraryCount }: Props) {
+export function InventoryArticleEditor({ value, onChange, onClose, onSave, onDelete, onAssignBranch, onTransfer, branches, libraryProducts, libraryCount, itemTypeOptions, tagOptions }: Props) {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryTerm, setLibraryTerm] = useState('');
   const [branchSelection, setBranchSelection] = useState(value.sourceItem?.branch || '');
@@ -78,6 +81,7 @@ export function InventoryArticleEditor({ value, onChange, onClose, onSave, onDel
   const hasCountedStock = Boolean(sourceItem?.branchId && !sourceItem.sourceStatus);
   const filteredProducts = libraryProducts.filter((product) => `${product.name} ${product.images.map((image) => image.label).join(' ')}`.toLocaleLowerCase('es').includes(libraryTerm.trim().toLocaleLowerCase('es')));
   const currentImage = libraryProducts.flatMap((product) => product.images).find((image) => image.path === value.referenceImageUrl);
+  const selectedTags = value.tags.split(',').map((tag) => tag.trim()).filter(Boolean);
 
   return <div className="inventory-modal-backdrop inventory-editor-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !libraryOpen) onClose(); }}>
     <form className="inventory-article-editor" onSubmit={onSave} role="dialog" aria-modal="true" aria-labelledby="inventory-editor-title" aria-describedby="inventory-editor-description">
@@ -97,9 +101,9 @@ export function InventoryArticleEditor({ value, onChange, onClose, onSave, onDel
           <section className="inventory-editor-section">
             <div className="inventory-editor-section-title"><span className="inventory-editor-section-icon"><Package size={16}/></span><div><h3>Identificación</h3><p>Clasifica el artículo para encontrarlo con rapidez.</p></div></div>
             <div className="inventory-editor-grid">
-              <label>Tipo de artículo<input autoFocus value={value.itemType} onChange={(event) => update({ itemType: event.target.value })} placeholder="Ej. material, tinta, herramienta"/></label>
+              <InventoryOptionPicker autoFocus label="Tipo de artículo" mode="single" value={value.itemType} options={itemTypeOptions} placeholder="Selecciona un tipo" helpText="Busca un tipo existente o elige “Escribir” para agregar otro." onChange={(next) => update({ itemType: String(next) })}/>
               <label className="inventory-editor-wide">Descripción<textarea rows={3} value={value.description || ''} onChange={(event) => update({ description: event.target.value })} placeholder="Detalle del artículo, uso o notas para el equipo"/><small>Esta información se muestra dentro de la ficha, no en la tarjeta del catálogo.</small></label>
-              <label className="inventory-editor-wide">Etiquetas<input value={value.tags} onChange={(event) => update({ tags: event.target.value })} placeholder="Papel, impresión, A4"/><small>Separa cada etiqueta con una coma.</small></label>
+              <InventoryOptionPicker className="inventory-editor-wide" label="Etiquetas" mode="multiple" value={selectedTags} options={tagOptions} placeholder="Busca y selecciona etiquetas" helpText="Puedes combinar sugerencias o escribir hasta 40 etiquetas." onChange={(next) => update({ tags: (Array.isArray(next) ? next : [next]).join(', ') })}/>
             </div>
           </section>
 

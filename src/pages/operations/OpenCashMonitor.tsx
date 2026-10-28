@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { Activity, AlertTriangle, Banknote, Check, Clock3, LoaderCircle, RefreshCw, ShieldCheck, Wallet, X } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
+import { normalizePersonName } from '../../lib/personName';
 import { supabase } from '../../lib/supabaseClient';
 import './open-cash-monitor.css';
 
@@ -142,7 +143,7 @@ export function OpenCashMonitor() {
 
   const branchNames = useMemo(() => new Map(branches.map((branch) => [branch.id, branch.name])), [branches]);
   const registerById = useMemo(() => new Map(registers.map((register) => [register.id, register])), [registers]);
-  const people = useMemo(() => new Map(team.map((member) => [member.user_id, member.full_name || member.email || `Usuario ${member.user_id.slice(0, 8)}`])), [team]);
+  const people = useMemo(() => new Map(team.map((member) => [member.user_id, normalizePersonName(member.full_name) || member.email || `Usuario ${member.user_id.slice(0, 8)}`])), [team]);
   const visibleSessions = useMemo(() => branchFilter === 'all'
     ? sessions
     : sessions.filter((session) => session.branch_id === branchFilter), [sessions, branchFilter]);
