@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Columns3, LayoutGrid, List, X } from 'lucide-react';
+import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { CalendarCheck2, CalendarClock, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, CircleAlert, CircleDashed, Columns3, LayoutGrid, List, X } from 'lucide-react';
+import { ToggleGroup } from '../../components/ui/OperationalKit';
 import './production-queue-views.css';
 
 export type ProductionQueueViewItem<T> = {
@@ -80,6 +81,11 @@ const formatTime = (value: string) => new Intl.DateTimeFormat('es-EC', {
   timeZone: TIME_ZONE, hour: 'numeric', minute: '2-digit',
 }).format(new Date(value));
 const validMode = (value: string | null): value is ViewMode => MODES.some((mode) => mode.id === value);
+const moveSpotlight = (event: ReactPointerEvent<HTMLElement>) => {
+  const rect = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty('--spotlight-x', `${event.clientX - rect.left}px`);
+  event.currentTarget.style.setProperty('--spotlight-y', `${event.clientY - rect.top}px`);
+};
 
 export function ProductionQueueViews<T>({ areaSlug, areaName, items, today, renderCard, onOpen }: Props<T>) {
   const [mode, setMode] = useState<ViewMode>('cards');
@@ -115,6 +121,11 @@ export function ProductionQueueViews<T>({ areaSlug, areaName, items, today, rend
   }, [items]);
   const undatedItems = useMemo(() => items.filter((item) => !item.dueKey), [items]);
   const selectedItems = selectedDay ? itemsByDate.get(selectedDay) || [] : [];
+  const calendarDays = mode === 'month' ? monthDays.filter((key) => key.slice(0, 7) === anchorDay.slice(0, 7)) : weekDays;
+  const periodItems = useMemo(() => calendarDays.flatMap((key) => itemsByDate.get(key) || []), [calendarDays, itemsByDate]);
+  const scheduledCount = items.filter((item) => item.dueKey).length;
+  const overdueCount = items.filter((item) => item.overdue).length;
+  const blockedCount = items.filter((item) => item.status === 'blocked').length;
   const dateRangeLabel = mode === 'month'
     ? formatMonth(anchorDay)
     : `${formatDay(weekStart)} – ${formatDay(weekDays[6], { day: 'numeric', month: 'short', year: weekDays[6].slice(0, 4) !== weekStart.slice(0, 4) ? 'numeric' : undefined })}`;
@@ -137,9 +148,18 @@ export function ProductionQueueViews<T>({ areaSlug, areaName, items, today, rend
   };
 
   return <section className="pj-queue-views" aria-label={`Vistas de trabajo de ${areaName}`}>
+    <section className="pj-view-overview" aria-label="Resumen de la cola filtrada">
+      <div className="pj-view-overview-heading"><span>RESUMEN DE ESTA VISTA</span><b>{items.length} {items.length === 1 ? 'trabajo' : 'trabajos'}</b><small>Los indicadores responden al filtro actual.</small></div>
+      <div className="pj-view-stats">
+        <article className="pj-view-stat" onPointerMove={moveSpotlight}><span><CalendarCheck2 size={15}/>Programados</span><b>{scheduledCount}</b></article>
+        <article className="pj-view-stat" onPointerMove={moveSpotlight}><span><CircleDashed size={15}/>Sin fecha</span><b>{undatedItems.length}</b></article>
+        <article className="pj-view-stat is-overdue" onPointerMove={moveSpotlight}><span><CalendarClock size={15}/>Vencidos</span><b>{overdueCount}</b></article>
+        <article className="pj-view-stat is-blocked" onPointerMove={moveSpotlight}><span><CircleAlert size={15}/>Bloqueados</span><b>{blockedCount}</b></article>
+      </div>
+    </section>
     <div className="pj-view-toolbar">
-      <div className="pj-view-switcher" role="group" aria-label="Cambiar vista de trabajos">
-        {MODES.map(({ id, label, icon: ModeIcon }) => <button type="button" key={id} aria-pressed={mode === id} onClick={() => setView(id)}><ModeIcon size={14}/><span>{label}</span></button>)}
+      <div className="pj-view-switcher">
+        <ToggleGroup label="Cambiar vista de trabajos" value={mode} onValueChange={(value) => { if (validMode(value)) setView(value); }} options={MODES.map(({ id, label, icon: ModeIcon }) => ({ value: id, label: <><ModeIcon size={14}/><span>{label}</span></> }))}/>
       </div>
       {(mode === 'month' || mode === 'week') && <div className="pj-view-navigation" aria-label={`Navegación del calendario por ${mode === 'month' ? 'mes' : 'semana'}`}>
         <button type="button" className="pj-view-nav-button" aria-label={mode === 'month' ? 'Mes anterior' : 'Semana anterior'} onClick={() => moveAnchor(-1)}><ChevronLeft size={16}/></button>
@@ -150,7 +170,8 @@ export function ProductionQueueViews<T>({ areaSlug, areaName, items, today, rend
     </div>
 
     {(mode === 'month' || mode === 'week') && <>
-      <div className="pj-calendar-legend" aria-live="polite"><span>{items.filter((item) => item.dueKey).length} con fecha</span><span>{undatedItems.length} sin fecha</span><span>{items.filter((item) => item.overdue).length} vencidos</span></div>
+      <div className="pj-calendar-legend" aria-live="polite"><span>{periodItems.length} en este periodo</span><span>{undatedItems.length} sin fecha</span><span>{overdueCount} vencidos</span></div>
+      {periodItems.length === 0 && <p className="pj-period-empty">No hay trabajos programados para este {mode === 'month' ? 'mes' : 'semana'}. Los trabajos sin fecha siguen disponibles abajo.</p>}
       <div className="pj-calendar-scroll" tabIndex={0} aria-label={`Calendario de ${areaName}`}>
         <div className={`pj-calendar-grid pj-calendar-grid--${mode}`}>
           <div className="pj-calendar-weekdays">{WEEKDAYS.map((day) => <span key={day}>{day}</span>)}</div>
@@ -158,7 +179,7 @@ export function ProductionQueueViews<T>({ areaSlug, areaName, items, today, rend
             {(mode === 'month' ? monthDays : weekDays).map((key) => {
               const count = itemsByDate.get(key)?.length || 0;
               const isOutside = mode === 'month' && key.slice(0, 7) !== anchorDay.slice(0, 7);
-              return <article className={`pj-calendar-day${isOutside ? ' is-outside' : ''}${key === today ? ' is-today' : ''}${key === selectedDay ? ' is-selected' : ''}`} key={key}>
+              return <article className={`pj-calendar-day${isOutside ? ' is-outside' : ''}${key === today ? ' is-today' : ''}${key === selectedDay ? ' is-selected' : ''}`} key={key} onPointerMove={moveSpotlight}>
                 <div className="pj-calendar-day-head">
                   {mode === 'week' && <span className="pj-calendar-weekday">{WEEKDAYS[(dateFromKey(key).getUTCDay() + 6) % 7]}</span>}
                   <button type="button" className="pj-calendar-date" aria-pressed={selectedDay === key} aria-label={`Ver trabajos del ${formatLongDay(key)}`} onClick={() => setSelectedDay((current) => current === key ? '' : key)}>{Number(key.slice(-2))}</button>
@@ -169,6 +190,20 @@ export function ProductionQueueViews<T>({ areaSlug, areaName, items, today, rend
             })}
           </div>
         </div>
+      </div>
+      <div className="pj-calendar-agenda" aria-label={`Agenda móvil de ${areaName}`}>
+        {calendarDays.filter((key) => (itemsByDate.get(key)?.length || 0) > 0 || key === today).map((key) => {
+          const dayItems = itemsByDate.get(key) || [];
+          return <article className={`pj-agenda-day${key === today ? ' is-today' : ''}`} key={key}>
+            <button type="button" className="pj-agenda-day-heading" aria-pressed={selectedDay === key} onClick={() => setSelectedDay((current) => current === key ? '' : key)}>
+              <span><b>{formatDay(key, { weekday: 'long', day: 'numeric', month: 'long' })}</b>{key === today && <small>Hoy</small>}</span><span className="pj-agenda-day-count">{dayItems.length}</span>
+            </button>
+            {dayItems.length ? <div className="pj-agenda-items">{dayItems.map((item) => <button className="pj-agenda-item" data-state={item.status} data-overdue={item.overdue || undefined} key={item.id} type="button" onClick={() => onOpen(item)}>
+              <span className="pj-agenda-item-copy"><b>{item.title}</b><small>{item.code} · {item.customer}</small></span><span className="pj-agenda-item-meta">{item.dueAt ? formatTime(item.dueAt) : item.statusLabel}<ChevronRight size={14}/></span>
+            </button>)}</div> : <p className="pj-agenda-day-empty">No hay trabajos programados para este día.</p>}
+          </article>;
+        })}
+        {calendarDays.every((key) => (itemsByDate.get(key)?.length || 0) === 0) && <p className="pj-period-empty">No hay trabajos programados en este periodo.</p>}
       </div>
       {selectedDay && <section className="pj-calendar-selection" aria-live="polite">
         <div className="pj-calendar-selection-head"><div><span className="pj-calendar-eyebrow">DÍA SELECCIONADO</span><h3>{formatLongDay(selectedDay)}</h3></div><button type="button" aria-label="Cerrar trabajos del día" onClick={() => setSelectedDay('')}><X size={15}/></button></div>

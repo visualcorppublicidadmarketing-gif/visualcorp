@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, CalendarClock, Check, CircleCheck, ClipboardList, Clock3, Hammer, PenTool, Play, Printer, RefreshCw, ScanLine, Search, Shirt, UserRound } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
@@ -91,6 +91,11 @@ const dayKey = (value: string | null | undefined) => {
   return `${parts.year}-${parts.month}-${parts.day}`;
 };
 const todayKey = () => dayKey(new Date().toISOString());
+const moveCardSpotlight = (event: ReactPointerEvent<HTMLElement>) => {
+  const rect = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty('--spotlight-x', `${event.clientX - rect.left}px`);
+  event.currentTarget.style.setProperty('--spotlight-y', `${event.clientY - rect.top}px`);
+};
 const isOpen = (status: StepStatus) => !['completed', 'cancelled'].includes(status);
 const queueDueAt = (item: QueueItem) => item.step?.due_at || item.job.due_at;
 const isLate = (item: QueueItem) => Boolean((item.step || item.currentStep) && isOpen((item.step || item.currentStep)!.status) && queueDueAt(item) && dayKey(queueDueAt(item)) < todayKey());
@@ -385,7 +390,7 @@ export function ProductionJobsPage() {
     const status = shownStep?.status || 'waiting';
     const owner = area.code === 'ASE' ? item.job.advisor_id : item.step?.assigned_to;
     const progress = stageProgress.get(item.job.id);
-    return <article className={`pj-card${viewItem.overdue ? ' is-overdue' : ''}${compact ? ' pj-card--compact' : ''}`} data-state={status}>
+    return <article className={`pj-card${viewItem.overdue ? ' is-overdue' : ''}${compact ? ' pj-card--compact' : ''}`} data-state={status} onPointerMove={moveCardSpotlight}>
       <div className="pj-card-main"><div className="pj-card-top"><span className="pj-card-code">{viewItem.code}</span><span className="pj-status" data-state={status}>{status === 'blocked' ? <AlertTriangle size={12}/> : status === 'completed' ? <CircleCheck size={12}/> : <Clock3 size={12}/>} {viewItem.statusLabel}</span></div>
         <h2>{viewItem.title}</h2><div className="pj-card-meta"><span><UserRound size={13}/>{viewItem.customer}</span><span><CalendarClock size={13}/>{viewItem.overdue ? <b className="is-late">Atrasado · {stamp(viewItem.dueAt)}</b> : stamp(viewItem.dueAt)}</span><span>{owner === user?.id ? 'A mi cargo' : owner ? 'Asignado' : 'Sin responsable'}</span></div>
         {area.code === 'ASE' && shownStep && <p className="pj-card-next">Ahora: <b>{shownStep.title}</b> · {currentAreaName(shownStep.area_id)}</p>}{item.step?.notes && <p className="pj-card-next">Indicación: <b>{item.step.notes}</b></p>}
@@ -572,7 +577,7 @@ export function ProductionJobsPage() {
     {loadError && <div className="pj-error" role="alert">No pudimos consultar las órdenes actuales. {loadError} <button className="button button-outline" type="button" onClick={() => setRevision((value) => value + 1)}>Reintentar</button></div>}
     {!loading && !loadError && !visible.length && <div className="pj-empty"><Icon size={23}/><b>{rows.length ? 'No hay trabajos para este filtro' : 'No hay trabajos asignados a esta área'}</b><p>{rows.length ? 'Cambia el filtro o busca por cliente, venta o producto.' : 'Los nuevos trabajos aparecerán aquí al confirmar una venta con una ruta de producción configurada.'}</p>{rows.length > 0 && (filter !== 'all' || search) && <button className="button button-outline" type="button" onClick={() => { setFilter('all'); setSearch(''); }}>Mostrar todos</button>}</div>}
     {loading && !loadError && <ProductionQueueSkeleton/>}
-    {!loading && !loadError && <ProductionQueueViews areaSlug={area.slug} areaName={area.name} items={viewItems} today={todayKey()} renderCard={renderQueueCard} onOpen={(item) => openJob(item.original)}/>}
+    {!loading && !loadError && visible.length > 0 && <ProductionQueueViews areaSlug={area.slug} areaName={area.name} items={viewItems} today={todayKey()} renderCard={renderQueueCard} onOpen={(item) => openJob(item.original)}/>}
     {!loading && !loadError && rows.length >= queueLimit && <div className="pj-count"><span>Se muestran los {queueLimit} trabajos más recientes de esta área.</span> <button className="button button-outline" type="button" onClick={() => setQueueLimit((value) => value + 150)}>Cargar más</button></div>}
     <div className="pj-detail-modal"><Sheet open={Boolean(selectedJob)} onOpenChange={(open) => { if (!open) closeJob(); }} title={selectedJob?.sale_code ? `Trabajo ${selectedJob.sale_code}` : 'Ficha de trabajo'} description={selectedJob ? selectedJob.customer_name || 'Seguimiento de producción' : undefined}><div className="pj-detail">
       {selectedJob && <><div className="pj-detail-hero"><span className="pj-card-code">ORDEN DE TRABAJO · VERSIÓN {selectedJob.spec_version}</span><h3>{selectedJob.title}</h3><p>Las indicaciones se comparten entre asesoría y producción. Cada cambio queda asociado a la ficha.</p></div><dl className="pj-detail-facts"><div><dt>Cliente</dt><dd>{selectedJob.customer_name || 'Por consultar'}</dd></div><div><dt>Teléfono</dt><dd>{selectedJob.customer_phone || 'Por consultar'}</dd></div><div><dt>Venta</dt><dd>{selectedJob.sale_code || 'Sin código'}</dd></div><div><dt>Fecha prevista</dt><dd>{stamp(selectedJob.due_at)}</dd></div></dl>
