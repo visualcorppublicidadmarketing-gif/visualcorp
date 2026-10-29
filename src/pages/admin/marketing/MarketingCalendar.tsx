@@ -68,18 +68,90 @@ const weekOfMonth = (date: Date) => {
   return Math.floor((monday.getTime() - first.getTime()) / 604800000) + 1;
 };
 
+type MarketingCalendarView = 'month' | 'week' | 'kanban' | 'table';
+type MarketingCalendarPreferences = {
+  view: MarketingCalendarView;
+  anchor: string;
+  followCurrentWeek: boolean;
+  channelFilter: string;
+  ownerFilter: string;
+  kanbanStateFilter: 'all' | 'pending' | 'published' | 'finished';
+};
+
+const MARKETING_CALENDAR_VIEW_KEY = 'visualcorp:marketing-calendar:v1:';
+const isCalendarView = (value: unknown): value is MarketingCalendarView => value === 'month' || value === 'week' || value === 'kanban' || value === 'table';
+const isDateKey = (value: unknown): value is string => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+function readCalendarPreferences(organizationId: string): MarketingCalendarPreferences | null {
+  try {
+    const saved = window.localStorage.getItem(`${MARKETING_CALENDAR_VIEW_KEY}${organizationId}`);
+    if (!saved) return null;
+    const parsed = JSON.parse(saved) as Partial<MarketingCalendarPreferences>;
+    return {
+      view: isCalendarView(parsed.view) ? parsed.view : 'month',
+      anchor: isDateKey(parsed.anchor) ? parsed.anchor : marketingDateKey(),
+      followCurrentWeek: parsed.followCurrentWeek !== false,
+      channelFilter: typeof parsed.channelFilter === 'string' ? parsed.channelFilter : 'Todos los canales',
+      ownerFilter: typeof parsed.ownerFilter === 'string' ? parsed.ownerFilter : 'Todos los responsables',
+      kanbanStateFilter: parsed.kanbanStateFilter === 'pending' || parsed.kanbanStateFilter === 'published' || parsed.kanbanStateFilter === 'finished' ? parsed.kanbanStateFilter : 'all',
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtworkSaved, rulesReady, onRunOverdueRule, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onStatusChange, onDuplicate, onDelete }: Props) {
   const [anchor, setAnchor] = useState(() => new Date());
-  const [view, setView] = useState<'month' | 'week' | 'kanban' | 'table'>('month');
+  const [view, setView] = useState<MarketingCalendarView>('month');
   const [todayKey, setTodayKey] = useState(() => marketingDateKey());
   const [followCurrentWeek, setFollowCurrentWeek] = useState(true);
   const [channelFilter, setChannelFilter] = useState('Todos los canales');
   const [ownerFilter, setOwnerFilter] = useState('Todos los responsables');
   const [kanbanStateFilter, setKanbanStateFilter] = useState<'all' | 'pending' | 'published' | 'finished'>('all');
+  const [restoredPreferencesFor, setRestoredPreferencesFor] = useState('');
   const [dragging, setDragging] = useState<string | null>(null);
   const [draggingKanban, setDraggingKanban] = useState<string | null>(null);
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const lastRuleRun = useRef('');
+  useEffect(() => {
+    if (!organizationId) {
+      setRestoredPreferencesFor('');
+      return;
+    }
+    const preferences = readCalendarPreferences(organizationId);
+    if (preferences) {
+      setView(preferences.view);
+      setAnchor(dateFromKey(preferences.anchor));
+      setFollowCurrentWeek(preferences.followCurrentWeek);
+      setChannelFilter(preferences.channelFilter);
+      setOwnerFilter(preferences.ownerFilter);
+      setKanbanStateFilter(preferences.kanbanStateFilter);
+    } else {
+      setView('month');
+      setAnchor(dateFromKey(marketingDateKey()));
+      setFollowCurrentWeek(true);
+      setChannelFilter('Todos los canales');
+      setOwnerFilter('Todos los responsables');
+      setKanbanStateFilter('all');
+    }
+    setRestoredPreferencesFor(organizationId);
+  }, [organizationId]);
+  useEffect(() => {
+    if (!organizationId || restoredPreferencesFor !== organizationId) return;
+    try {
+      const preferences: MarketingCalendarPreferences = {
+        view,
+        anchor: dateKey(anchor),
+        followCurrentWeek,
+        channelFilter,
+        ownerFilter,
+        kanbanStateFilter,
+      };
+      window.localStorage.setItem(`${MARKETING_CALENDAR_VIEW_KEY}${organizationId}`, JSON.stringify(preferences));
+    } catch {
+      // Calendar preferences are optional when browser storage is unavailable.
+    }
+  }, [anchor, channelFilter, followCurrentWeek, kanbanStateFilter, organizationId, ownerFilter, restoredPreferencesFor, view]);
   useEffect(() => {
     const interval = window.setInterval(() => setTodayKey(marketingDateKey()), 30_000);
     return () => window.clearInterval(interval);
@@ -207,7 +279,7 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
       <span className="vc-marketing-kanban-result-count">{kanbanPosts.length} de {weekPosts.length} fichas · {weekStartKey} a {nextMondayKey}</span>
     </div>}
     {view === 'kanban' ? <>
-      <div className="vc-marketing-kanban-rule" role="note"><span><Check size={15}/></span><div><b>Regla de continuidad activa</b><small>Las fichas vencidas sin publicar pasan al siguiente día hábil. Si cae sábado o domingo, pasan al lunes. Publicadas, terminadas y canceladas se respetan.{canEdit ? ' Se aplica al abrir el Kanban actual y al cambiar el día mientras permanece abierto.' : ' Tu perfil puede consultar la regla; los cambios requieren permiso de edición.'}</small></div></div>
+      <div className="vc-marketing-kanban-rule" role="note"><span><Check size={15}/></span><div><b>Regla de continuidad activa</b><small>Las fichas vencidas sin publicar pasan automáticamente al siguiente día hábil. Si el vencimiento cae sábado o domingo, pasan al lunes. Publicadas, terminadas y canceladas se respetan.{canEdit ? ' También se revisan al abrir el Kanban mientras el proceso diario completa el traslado en segundo plano.' : ' Tu perfil puede consultar la regla; los cambios requieren permiso de edición.'}</small></div></div>
       <div className="vc-marketing-kanban-board" role="list" aria-label={`Kanban semanal · ${weekRange}`}>
         {kanbanColumns.map((lane) => {
           const lanePosts = kanbanPosts.filter((post) => laneForStatus(String(post.status || 'Por iniciar')) === lane.key)

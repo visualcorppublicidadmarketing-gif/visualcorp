@@ -7,7 +7,8 @@ import './marketing-post-artwork-paste.css';
 
 const BUCKET = 'marketing-assets';
 const BUCKET_PREFIX = `storage://${BUCKET}/`;
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
+const MAX_STORAGE_FILE_BYTES = 50 * 1024 * 1024;
+const MAX_SOURCE_FILE_BYTES = 80 * 1024 * 1024;
 
 type MarketingArtworkPost = { id: string; source_id?: string; title: string; scheduled_date?: string };
 export type MarketingArtworkAsset = {
@@ -121,17 +122,22 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
       setError('Este campo acepta imágenes. Para otros archivos usa la Biblioteca.');
       return;
     }
-    if (source.size > MAX_FILE_BYTES) {
-      setError('La imagen supera el límite de 50 MB antes de la optimización.');
+    if (source.size > MAX_SOURCE_FILE_BYTES) {
+      setError('El archivo supera el máximo de 80 MB que podemos procesar con seguridad en el navegador. Redúcelo antes de subirlo.');
       return;
     }
 
     uploadLock.current = true;
     setBusy(true);
     setMessage('Optimizando imagen…');
+    let indexedAssetId: string | null = null;
+    let pendingObjectPath: string | null = null;
     try {
       const prepared = await prepareMarketingImage(source);
       const file = prepared.file;
+      if (file.size > MAX_STORAGE_FILE_BYTES) {
+        throw new Error(`Después de optimizar, la imagen todavía pesa ${formatMarketingFileSize(file.size)} y supera el límite de 50 MB. Reduce su tamaño o resolución y vuelve a intentarlo.`);
+      }
       const extension = fileExtension(file.name);
       const objectName = `${organizationId}/${crypto.randomUUID()}${extension ? `.${extension}` : ''}`;
       const relPath = `storage://${BUCKET}/${objectName}`;
@@ -164,16 +170,17 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
           : indexError?.message || 'No se pudo crear la ficha de la imagen.';
         throw new Error(message);
       }
+      indexedAssetId = indexedAsset.id;
 
       setMessage('Subiendo a la biblioteca privada…');
+      pendingObjectPath = objectName;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(objectName, file, {
         cacheControl: '3600',
         upsert: false,
         contentType: file.type || 'application/octet-stream',
       });
       if (uploadError) {
-        await supabase.from('marketing_assets').update({ storage_status: 'upload_failed', preview_error: uploadError.message, updated_at: new Date().toISOString() }).eq('organization_id', organizationId).eq('id', indexedAsset.id);
-        throw new Error(`La imagen quedó indexada, pero la carga falló: ${uploadError.message}`);
+        throw new Error(`No se pudo subir la imagen: ${uploadError.message}`);
       }
 
       const { error: statusError } = await supabase.from('marketing_assets').update({ storage_status: 'supabase_storage', is_available: true, preview_status: prepared.width ? 'ready' : 'pending', updated_at: new Date().toISOString() }).eq('organization_id', organizationId).eq('id', indexedAsset.id);
@@ -195,7 +202,33 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
       setMessage(`Imagen guardada en esta publicación${ratio}.`);
       onSaved();
     } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : 'No se pudo guardar la imagen.');
+      let cleanupNote = '';
+      if (indexedAssetId) {
+        try {
+          const { data: existingLink, error: linkCheckError } = await supabase.from('marketing_post_assets')
+            .select('id').eq('organization_id', organizationId).eq('asset_id', indexedAssetId).limit(1).maybeSingle();
+          if (linkCheckError) {
+            cleanupNote = ' No pudimos confirmar si quedó vinculada; conserva su registro para evitar borrar una imagen que sí se haya guardado.';
+          } else if (existingLink) {
+            cleanupNote = ' La imagen quedó vinculada. Actualiza la vista para confirmar su estado.';
+          } else {
+            let storageClean = true;
+            if (pendingObjectPath) {
+              const { error: removeError } = await supabase.storage.from(BUCKET).remove([pendingObjectPath]);
+              storageClean = !removeError;
+              if (removeError) cleanupNote = ' No se pudo retirar el archivo incompleto de Storage.';
+            }
+            if (storageClean) {
+              const { error: removeIndexError } = await supabase.from('marketing_assets').delete()
+                .eq('organization_id', organizationId).eq('id', indexedAssetId);
+              if (removeIndexError) cleanupNote = ' No se pudo retirar la ficha incompleta de la biblioteca.';
+            }
+          }
+        } catch {
+          cleanupNote = ' No se pudo verificar ni retirar el recurso temporal incompleto; revisa la biblioteca antes de volver a intentarlo.';
+        }
+      }
+      setError(`${cause instanceof Error ? cause.message : 'No se pudo guardar la imagen.'}${cleanupNote}`);
     } finally {
       uploadLock.current = false;
       setBusy(false);
