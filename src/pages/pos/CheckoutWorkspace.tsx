@@ -11,6 +11,7 @@ import { calculateQuotePrice, getQuoteBasis } from '../../lib/quotePricing';
 import { calculatePOSLine, formatPOSLineDescription } from '../../lib/posPricing';
 import { calculatePOSPaymentBreakdown } from '../../lib/posPayments';
 import { POSCustomerPicker } from './components/POSCustomerPicker';
+import { getProductionDetails, isProductionWorkflowCode, POSProductionDetails, type ProductionDetailsValue, type ProductionLine, type ProductionWorkflowCode } from './POSProductionDetails';
 import './pos-fulfillment.css';
 import './checkout-workspace.css';
 
@@ -24,8 +25,12 @@ const sanitizePOSPayments = (rows: unknown) => {
   const sanitized = rows.slice(0,4).filter((row)=>row&&typeof row==='object').map((row,index)=>({id:String(row.id||`payment-${index+1}`),method:validMethods.has(String(row.method))?String(row.method):'Efectivo',amount:String(row.amount??''),reference:String(row.reference||''),note:String(row.note||'')}));
   return sanitized.length?sanitized:[{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}];
 };
-const sanitizePOSSaleLines = (lines: unknown) => Array.isArray(lines)?lines.slice(0,100).filter((line)=>line&&typeof line==='object'&&Number.isFinite(Number(line.quantity))&&Number(line.quantity)>0&&Number.isFinite(Number(line.unit_price))&&Number(line.unit_price)>=0).map((line)=>({catalog_product_id:line.catalog_product_id||null,sku:String(line.sku||''),description:String(line.description||'Artículo cotizado'),quantity:Number(line.quantity),unit_price:Number(line.unit_price)})):[];
-const getPOSQuoteSaleLines = (quote: any) => Array.isArray(quote?.items)?quote.items.map((item)=>({catalog_product_id:item.product_id||null,sku:item.sku||item.product_id||'',description:[item.name||item.product_name||'Artículo cotizado',item.width_cm&&item.height_cm?`${item.width_cm} × ${item.height_cm} cm`:null,item.unit||null].filter(Boolean).join(' · '),quantity:Number(item.quantity),unit_price:Number(item.total)/Number(item.quantity)})):[];
+const sanitizePOSSaleLines = (lines: unknown) => Array.isArray(lines)?lines.slice(0,100).filter((line)=>line&&typeof line==='object'&&Number.isFinite(Number(line.quantity))&&Number(line.quantity)>0&&Number.isFinite(Number(line.unit_price))&&Number(line.unit_price)>=0).map((line,index)=>({line_key:String(line.line_key||`legacy-${index}`),catalog_product_id:line.catalog_product_id||null,sku:String(line.sku||''),description:String(line.description||'Artículo cotizado'),quantity:Number(line.quantity),unit_price:Number(line.unit_price)})):[];
+const getPOSQuoteSaleLines = (quote: any) => Array.isArray(quote?.items)?quote.items.map((item,index)=>({line_key:`quote-${quote.id}-${index}`,catalog_product_id:item.product_id||null,sku:item.sku||item.product_id||'',description:[item.name||item.product_name||'Artículo cotizado',item.width_cm&&item.height_cm?`${item.width_cm} × ${item.height_cm} cm`:null,item.unit||null].filter(Boolean).join(' · '),quantity:Number(item.quantity),unit_price:Number(item.total)/Number(item.quantity),widthCm:item.width_cm||null,heightCm:item.height_cm||null,optionChoice:item.option_choice||''})):[];
+const sanitizeProductionDetails = (value: unknown): Record<string, ProductionDetailsValue> => {
+  if(!value||typeof value!=='object'||Array.isArray(value))return {};
+  return Object.fromEntries(Object.entries(value).slice(0,100).filter(([key,entry])=>key.length<=150&&entry&&typeof entry==='object').map(([key,entry]:[string,any])=>[key,{workflow_code:isProductionWorkflowCode(entry.workflow_code)?entry.workflow_code:'review',specifications:entry.specifications&&typeof entry.specifications==='object'&&!Array.isArray(entry.specifications)?entry.specifications:{}}]));
+};
 const posSaleLinesSignature = (lines: unknown) => JSON.stringify(sanitizePOSSaleLines(lines));
 const pendingSaleSignature = (snapshot: any) => JSON.stringify({
   form: {
@@ -33,7 +38,7 @@ const pendingSaleSignature = (snapshot: any) => JSON.stringify({
   },
   cart:sanitizePOSCart(snapshot?.cart).map(({key:_key,...line})=>line),saleLines:sanitizePOSSaleLines(snapshot?.saleLines),saleNote:String(snapshot?.saleNote||''),
   fulfillment:{installationRequired:Boolean(snapshot?.fulfillment?.installationRequired),installationAddress:String(snapshot?.fulfillment?.installationAddress||''),latitude:String(snapshot?.fulfillment?.latitude||''),longitude:String(snapshot?.fulfillment?.longitude||''),installationAt:String(snapshot?.fulfillment?.installationAt||''),deliveryAt:String(snapshot?.fulfillment?.deliveryAt||'')},
-  mapLink:String(snapshot?.mapLink||''),payments:sanitizePOSPayments(snapshot?.payments),chargeNow:snapshot?.chargeNow!==false,activeParkedOrderId:String(snapshot?.activeParkedOrderId||''),allowBackorder:typeof snapshot?.allowBackorder==='boolean'?snapshot.allowBackorder:null,
+    mapLink:String(snapshot?.mapLink||''),payments:sanitizePOSPayments(snapshot?.payments),chargeNow:snapshot?.chargeNow!==false,activeParkedOrderId:String(snapshot?.activeParkedOrderId||''),allowBackorder:typeof snapshot?.allowBackorder==='boolean'?snapshot.allowBackorder:null,productionByLine:sanitizeProductionDetails(snapshot?.productionByLine),
 });
 const findPOSStockShortages = (lines: any[], catalogLinks: any[], branchId: string, inventory: any[]) => lines.flatMap((line)=>{
   if(!line.catalog_product_id)return [];
@@ -120,6 +125,9 @@ export function PosPage() {
   const [selectedCustomerSnapshot,setSelectedCustomerSnapshot]=useState(null);
   const [customerHistory,setCustomerHistory]=useState({loading:false,count:0,rows:[],summary:null});
   const [cart,setCart]=useState([]);
+  const [productionByLine,setProductionByLine]=useState<Record<string, ProductionDetailsValue>>({});
+  const [productWorkflowRoutes,setProductWorkflowRoutes]=useState<Record<string, ProductionWorkflowCode>>({});
+  const [workflowRouteStatus,setWorkflowRouteStatus]=useState<'loading'|'ready'|'unavailable'>('loading');
   const [cartMode,setCartMode]=useState<'quantity'|'area'>('quantity');
   const [cartProductId,setCartProductId]=useState('');
   const [cartSearch,setCartSearch]=useState('');
@@ -157,7 +165,7 @@ export function PosPage() {
   const [draftLoadedKey,setDraftLoadedKey]=useState('');
   const pendingSaleKey=useRef('');
   const pendingSaleSnapshotRef=useRef<any>(null);
-  const pendingSaleSnapshot={form,cart,fulfillment,mapLink,payments,chargeNow,activeParkedOrderId,allowBackorder:pendingSaleSnapshotRef.current?.allowBackorder,saleLines:pendingSaleSnapshotRef.current?.saleLines,saleNote:pendingSaleSnapshotRef.current?.saleNote};
+  const pendingSaleSnapshot={form,cart,fulfillment,mapLink,payments,chargeNow,activeParkedOrderId,allowBackorder:pendingSaleSnapshotRef.current?.allowBackorder,saleLines:pendingSaleSnapshotRef.current?.saleLines,saleNote:pendingSaleSnapshotRef.current?.saleNote,productionByLine};
   const pendingSaleChanged=Boolean(pendingSaleRecoveryMode&&pendingSaleSnapshotRef.current&&pendingSaleSignature(pendingSaleSnapshot)!==pendingSaleSignature(pendingSaleSnapshotRef.current));
   useEffect(()=>{
     if(!supabase||!organizationId||!user)return;
@@ -170,10 +178,11 @@ export function PosPage() {
       const restoredForm={...snapshot.form,branchCode:String(snapshot.form.branchCode||form.branchCode)};
       const restoredCart=sanitizePOSCart(snapshot.cart);
       const restoredPayments=sanitizePOSPayments(snapshot.payments);
-      const restoredSnapshot={form:restoredForm,cart:restoredCart,fulfillment:snapshot.fulfillment,mapLink:snapshot.mapLink,payments:restoredPayments,chargeNow:snapshot.chargeNow,activeParkedOrderId:snapshot.activeParkedOrderId,allowBackorder:snapshot.allowBackorder,saleLines:Array.isArray(snapshot.saleLines)?sanitizePOSSaleLines(snapshot.saleLines):undefined,saleNote:String(snapshot.saleNote||'')};
+      const restoredProductionByLine=sanitizeProductionDetails(snapshot.productionByLine);
+      const restoredSnapshot={form:restoredForm,cart:restoredCart,fulfillment:snapshot.fulfillment,mapLink:snapshot.mapLink,payments:restoredPayments,chargeNow:snapshot.chargeNow,activeParkedOrderId:snapshot.activeParkedOrderId,allowBackorder:snapshot.allowBackorder,saleLines:Array.isArray(snapshot.saleLines)?sanitizePOSSaleLines(snapshot.saleLines):undefined,saleNote:String(snapshot.saleNote||''),productionByLine:restoredProductionByLine,productionJobs:Array.isArray(snapshot.productionJobs)?snapshot.productionJobs:undefined};
       pendingSaleSnapshotRef.current=restoredSnapshot;setPendingSaleRecoveryMode(true);
       setForm((current)=>({...current,...restoredForm}));
-      setCart(restoredCart);setFulfillment(snapshot.fulfillment||{installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});setMapLink(String(snapshot.mapLink||''));
+      setCart(restoredCart);setProductionByLine(restoredProductionByLine);setFulfillment(snapshot.fulfillment||{installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});setMapLink(String(snapshot.mapLink||''));
       setPayments(restoredPayments);
       setChargeNow(snapshot.chargeNow!==false);setActiveParkedOrderId(String(snapshot.activeParkedOrderId||''));setCustomerQuery(String(restoredForm.customer||''));setSelectedCustomerSnapshot(restoredForm.customerId?{id:String(restoredForm.customerId),name:String(restoredForm.customer||''),phone:String(restoredForm.customerPhone||''),email:String(restoredForm.customerEmail||''),documentReference:String(restoredForm.customerDocumentReference||'')}:null);setDraftLoadedKey(posDraftStorageKey);
       setPendingSaleRecoveryError('');
@@ -181,10 +190,22 @@ export function PosPage() {
    }catch{pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('No se pudo recuperar una venta pendiente. Revisa las ventas antes de volver a cobrar.');flash('Hay una operación pendiente que no se pudo restaurar. No vuelvas a cobrarla hasta revisar las ventas de hoy.');}
   },[organizationId,user?.id,pendingSaleStorageKey,pendingSaleSnapshotStorageKey,posDraftStorageKey]);
   useEffect(()=>{
+    if(!supabase||!organizationId){setProductWorkflowRoutes({});setWorkflowRouteStatus('unavailable');return;}
+    let active=true;
+    setWorkflowRouteStatus('loading');
+    supabase.from('catalog_product_workflow_routes').select('catalog_product_id,workflow_code').eq('organization_id',organizationId).eq('active',true).then(({data:rows,error})=>{
+      if(!active)return;
+      if(error){setProductWorkflowRoutes({});setWorkflowRouteStatus('unavailable');return;}
+      setProductWorkflowRoutes(Object.fromEntries((rows||[]).filter((row)=>isProductionWorkflowCode(row.workflow_code)).map((row)=>[row.catalog_product_id,row.workflow_code as ProductionWorkflowCode])));
+      setWorkflowRouteStatus('ready');
+    });
+    return()=>{active=false;};
+  },[organizationId]);
+  useEffect(()=>{
     if(!organizationId||!user)return;
     if(sessionStorage.getItem(pendingSaleSnapshotStorageKey)){setDraftLoadedKey(posDraftStorageKey);return;}
     setDraftLoadedKey('');
-    setCart([]);
+    setCart([]);setProductionByLine({});
     try{
       const raw=sessionStorage.getItem(posDraftStorageKey);
       if(raw){
@@ -192,7 +213,7 @@ export function PosPage() {
         const age=Date.now()-Number(saved.savedAt||0);
         if(age>=0&&age<24*60*60*1000&&Array.isArray(saved.cart)){
           const restored=sanitizePOSCart(saved.cart);
-          if(restored.length){setCart(restored);flash('Recuperé el carrito de esta sesión. Revisa sucursal, artículos y precios antes de cobrar.');}
+          if(restored.length){setCart(restored);setProductionByLine(sanitizeProductionDetails(saved.productionByLine));flash('Recuperé el carrito de esta sesión. Revisa sucursal, artículos y precios antes de cobrar.');}
           if(typeof saved.branchCode==='string'&&saved.branchCode)setForm((current)=>({...current,branchCode:saved.branchCode}));
         }else sessionStorage.removeItem(posDraftStorageKey);
       }
@@ -201,9 +222,9 @@ export function PosPage() {
   },[organizationId,user?.id,posDraftStorageKey,pendingSaleSnapshotStorageKey]);
   useEffect(()=>{
     if(!organizationId||!user||draftLoadedKey!==posDraftStorageKey)return;
-    if(cart.length)sessionStorage.setItem(posDraftStorageKey,JSON.stringify({version:1,savedAt:Date.now(),branchCode:form.branchCode,cart}));
+    if(cart.length)sessionStorage.setItem(posDraftStorageKey,JSON.stringify({version:1,savedAt:Date.now(),branchCode:form.branchCode,cart,productionByLine}));
     else sessionStorage.removeItem(posDraftStorageKey);
-  },[organizationId,user?.id,draftLoadedKey,posDraftStorageKey,cart,form.branchCode]);
+  },[organizationId,user?.id,draftLoadedKey,posDraftStorageKey,cart,form.branchCode,productionByLine]);
   useEffect(()=>{
     if(!data.branches.length)return;
     if(data.branches.some((branch)=>branch.code===form.branchCode))return;
@@ -211,7 +232,7 @@ export function PosPage() {
   },[data.branches,form.branchCode]);
   const resetCheckout=()=>{
     setForm((current)=>({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:current.branchCode,quantity:'1',quoteId:''}));
-    setCustomerQuery('');setSelectedCustomerSnapshot(null);setCart([]);setActiveParkedOrderId('');setChargeNow(true);setPayments([{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}]);
+    setCustomerQuery('');setSelectedCustomerSnapshot(null);setCart([]);setProductionByLine({});setActiveParkedOrderId('');setChargeNow(true);setPayments([{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}]);
     setCartProductId('');setCartItemName('');setCartQuantity('1');setCartUnitPrice('');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');
     setFulfillment({installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});setMapLink('');setMobileSummaryOpen(false);setPaymentTarget(null);
   };
@@ -285,6 +306,7 @@ export function PosPage() {
   const hasPendingBackorderAuthorization=Boolean(pendingSaleRecoveryMode&&pendingSaleSnapshotRef.current?.allowBackorder===true);
   const quotePreview=centralQuotes.find((quote)=>quote.id===form.quoteId);
   const currentQuoteLines=getPOSQuoteSaleLines(quotePreview);
+  const productionLines:ProductionLine[]=form.quoteId?currentQuoteLines.map((line)=>({line_key:line.line_key,name:line.description,productId:line.catalog_product_id,widthCm:line.widthCm,heightCm:line.heightCm,optionChoice:line.optionChoice})):cart.map((line)=>({line_key:line.key,name:line.name,productId:line.productId,widthCm:line.widthCm,heightCm:line.heightCm,optionChoice:line.optionChoice}));
   const pendingQuoteSnapshotChanged=Boolean(pendingSaleRecoveryMode&&form.quoteId&&Array.isArray(pendingSaleSnapshotRef.current?.saleLines)&&pendingSaleSnapshotRef.current.saleLines.length&&posSaleLinesSignature(pendingSaleSnapshotRef.current.saleLines)!==posSaleLinesSignature(currentQuoteLines));
   const pendingOperationChanged=pendingSaleChanged||pendingQuoteSnapshotChanged;
   const previewLines=form.quoteId?currentQuoteLines.map((line)=>({catalog_product_id:line.catalog_product_id,quantity:line.quantity})):cart.map((line)=>({catalog_product_id:line.productId||null,quantity:Number(line.billingQuantity)||Number(line.quantity)}));
@@ -320,7 +342,7 @@ export function PosPage() {
   const cashShiftPending=needsCashShift&&!pendingSaleRecoveryMode&&cashierSession.loading;
   const cashShiftUnavailable=needsCashShift&&!pendingSaleRecoveryMode&&!cashierSession.loading&&!cashierSession.session;
   const missingCartAccessoryLink=cart.some(line=>trackedAccessoryProductIds.has(line.productId)&&!catalogLinks.some(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.productId));
-  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&catalogLinkStatus==='ready'&&!missingCartAccessoryLink&&!backorderPermissionMissing&&!pendingSaleRecoveryError&&!pendingOperationChanged&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
+  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&catalogLinkStatus==='ready'&&workflowRouteStatus==='ready'&&!missingCartAccessoryLink&&!backorderPermissionMissing&&!pendingSaleRecoveryError&&!pendingOperationChanged&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
   const submitBlockReason=pendingSaleRecoveryError||(pendingOperationChanged?'Los datos de la operación o de la cotización cambiaron mientras la venta estaba pendiente. Recarga para restaurar la versión original antes de reintentar.':savingSale?'Guardando la venta…':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando los vínculos de inventario…':catalogLinkStatus==='error'?'No se pudieron consultar los vínculos de inventario. Recarga antes de confirmar.':missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':backorderPermissionMissing?'Hay artículos sin conteo o con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.':duplicateCustomer?`Ya existe ${duplicateCustomer.name} con ese teléfono, correo o identificación. Selecciónalo para evitar crear un duplicado.`:customerLookupFailed?'No se pudo verificar si el cliente ya existe. Reintenta la búsqueda antes de confirmar.':customerLookupPending?'Buscando coincidencias del cliente…':customerNameMissing?'Completa el nombre del cliente o limpia la búsqueda si será una venta de mostrador.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'');
   const cartQuantityNumber=Number(cartQuantity);
   const cartWidthNumber=Number(cartWidthCm);
@@ -373,7 +395,7 @@ export function PosPage() {
     setParking(true);
     try{
       const key=globalThis.crypto?.randomUUID?.()||`park-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const payload={form:{...form},cart:cart.map(({key:_key,...line})=>line),fulfillment,mapLink,payments,chargeNow};
+      const payload={form:{...form},cart,productionByLine,fulfillment,mapLink,payments,chargeNow};
       const {data:branch,error:branchError}=await supabase.from('branches').select('id').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();
       if(branchError)throw branchError;
       if(!branch?.id)throw new Error('No encontramos la sucursal seleccionada.');
@@ -396,11 +418,12 @@ export function PosPage() {
     const restoredCart=sanitizePOSCart(payload.cart).map((line,index)=>({...line,key:line.key||`${line.productId||`custom-${line.name?.toLowerCase?.()||'articulo'}`}::${line.widthCm||''}x${line.heightCm||''}::${index}`}));
     const restoredPayments=sanitizePOSPayments(payload.payments);
     const restoredChargeNow=payload.chargeNow!==false;
-    const recoveredSnapshot={form:savedForm,cart:restoredCart,fulfillment:restoredFulfillment,mapLink:restoredMapLink,payments:restoredPayments,chargeNow:restoredChargeNow,activeParkedOrderId:order.id};
+    const restoredProductionByLine=sanitizeProductionDetails(payload.productionByLine);
+    const recoveredSnapshot={form:savedForm,cart:restoredCart,productionByLine:restoredProductionByLine,fulfillment:restoredFulfillment,mapLink:restoredMapLink,payments:restoredPayments,chargeNow:restoredChargeNow,activeParkedOrderId:order.id};
     try{sessionStorage.setItem(pendingSaleStorageKey,order.idempotency_key);sessionStorage.setItem(pendingSaleSnapshotStorageKey,JSON.stringify({version:1,savedAt:Date.now(),...recoveredSnapshot}));}
     catch{if(!pendingSaleKey.current){sessionStorage.removeItem(pendingSaleStorageKey);sessionStorage.removeItem(pendingSaleSnapshotStorageKey);}flash('No se pudo guardar la recuperación de esta orden en esta sesión. No se envió la venta.');return;}
     setFulfillment(restoredFulfillment);setMapLink(restoredMapLink);setPayments(restoredPayments);setChargeNow(restoredChargeNow);setCustomerQuery(String(savedForm.customer||''));setSelectedCustomerSnapshot(savedForm.customerId?{id:String(savedForm.customerId),name:String(savedForm.customer||''),phone:String(savedForm.customerPhone||''),email:String(savedForm.customerEmail||''),documentReference:String(savedForm.customerDocumentReference||'')}:null);
-    setForm(savedForm);setCart(restoredCart);
+    setForm(savedForm);setCart(restoredCart);setProductionByLine(restoredProductionByLine);
     setCartProductId('');setCartItemName('');setCartUnitPrice('');setCartQuantity('1');setActiveParkedOrderId(order.id);
     pendingSaleKey.current=order.idempotency_key;pendingSaleSnapshotRef.current=recoveredSnapshot;setPendingSaleRecoveryMode(true);setPendingSaleRecoveryError('');
     flash('Orden recuperada. Revisa los datos y confirma la venta cuando esté lista.');
@@ -458,7 +481,7 @@ export function PosPage() {
     if(quoteLines.some(line=>line.catalog_product_id&&trackedAccessoryProductIds.has(line.catalog_product_id)&&!catalogLinks.some(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.catalog_product_id))){flash('La cotización incluye ojales sin vínculo de inventario en esta sucursal. Corrige el vínculo antes de confirmar para no registrar una venta sin descuento de stock.');return;}
     const quoteLinesTotal=Math.round(quoteLines.reduce((sum,line)=>sum+line.quantity*line.unit_price,0)*100)/100;
     if(form.quoteId&&quoteLinesTotal!==Math.round(total*100)/100){flash(`Los conceptos de la cotización suman ${formatMoney(quoteLinesTotal)} y no coinciden con el total aprobado de ${formatMoney(total)}. No se registró la venta.`);return;}
-    const lines=form.quoteId?quoteLines:cart.map(line=>({catalog_product_id:line.productId||null,sku:line.productId||'',description:line.description||line.name,quantity:Number(line.billingQuantity)||line.quantity,unit_price:line.unitPrice}));
+    const lines=form.quoteId?sanitizePOSSaleLines(quoteLines):cart.map(line=>({line_key:line.key,catalog_product_id:line.productId||null,sku:line.productId||'',description:line.description||line.name,quantity:Number(line.billingQuantity)||line.quantity,unit_price:line.unitPrice}));
     const saleNote=pendingSaleRecoveryMode&&pendingSaleKey.current&&typeof pendingSaleSnapshotRef.current?.saleNote==='string'?pendingSaleSnapshotRef.current.saleNote:[form.description,quote?`Cotización ${quote.quote_code}`:cart.map(line=>`${line.name} × ${line.quantity}`).join(' · ')].filter(Boolean).join(' · ');
     const shortages=findPOSStockShortages(lines,catalogLinks,selectedBranchId,data.inventory);
     if(shortages.length&&!canManageBackorders&&!hasPendingBackorderAuthorization){flash('Hay productos sin conteo o con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.');return;}
@@ -473,11 +496,18 @@ export function PosPage() {
       let quoteLinkError='';
       if(salePayments.some(payment=>payment.method==='cash')&&!(pendingSaleRecoveryMode&&pendingSaleKey.current)){const {data:branch}=await supabase.from('branches').select('id').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();const {data:shift,error:shiftError}=await supabase.from('cash_sessions').select('id').eq('organization_id',organizationId).eq('branch_id',branch?.id||'').eq('opened_by',user.id).eq('status','open').maybeSingle();if(shiftError)throw shiftError;if(!shift){flash('Abre primero tu turno de caja en Caja y producción para registrar cualquier parte en efectivo.');return;}}
       if(!pendingSaleKey.current){pendingSaleKey.current=globalThis.crypto?.randomUUID?.()||`sale-${Date.now()}-${Math.random().toString(36).slice(2)}`;sessionStorage.setItem(pendingSaleStorageKey,pendingSaleKey.current);}
-      const currentSnapshot={form,cart,fulfillment,mapLink,payments,chargeNow,activeParkedOrderId,allowBackorder:typeof pendingSaleSnapshotRef.current?.allowBackorder==='boolean'?pendingSaleSnapshotRef.current.allowBackorder:canManageBackorders,saleLines:lines,saleNote};
+      const productionJobs=Array.isArray(pendingSaleSnapshotRef.current?.productionJobs)?pendingSaleSnapshotRef.current.productionJobs:lines.map((line,index)=>{
+        const displayLine=productionLines[index]||{line_key:line.line_key,name:line.description,productId:line.catalog_product_id};
+        const defaultRoute=line.catalog_product_id?productWorkflowRoutes[line.catalog_product_id]||'review':'review';
+        const value=getProductionDetails(displayLine,productionByLine[line.line_key],defaultRoute);
+        return {line_index:index,workflow_code:value.workflow_code,specifications:{...value.specifications,installation_required:fulfillment.installationRequired,installation_address:fulfillment.installationAddress}};
+      });
+      const fulfillmentPayload={installation_required:fulfillment.installationRequired,installation_address:fulfillment.installationAddress,installation_maps_url:mapLink,installation_latitude:fulfillment.latitude,installation_longitude:fulfillment.longitude,installation_estimated_at:fulfillment.installationAt?new Date(fulfillment.installationAt).toISOString():null,delivery_due_at:fulfillment.deliveryAt?new Date(fulfillment.deliveryAt).toISOString():null};
+      const currentSnapshot={form,cart,productionByLine,productionJobs,fulfillment,mapLink,payments,chargeNow,activeParkedOrderId,allowBackorder:typeof pendingSaleSnapshotRef.current?.allowBackorder==='boolean'?pendingSaleSnapshotRef.current.allowBackorder:canManageBackorders,saleLines:lines,saleNote};
       sessionStorage.setItem(pendingSaleSnapshotStorageKey,JSON.stringify({version:1,savedAt:Date.now(),...currentSnapshot}));
       pendingSaleSnapshotRef.current=currentSnapshot;setPendingSaleRecoveryMode(true);
       saleRequestStarted=true;
-      const {data:sale,error}=await supabase.rpc('create_pos_sale_idempotent',{
+      const {data:sale,error}=await supabase.rpc('confirm_pos_sale_with_workflows',{
         p_idempotency_key:pendingSaleKey.current,
         p_branch_code:form.branchCode,
         p_customer_id:form.customerId||null,
@@ -486,12 +516,12 @@ export function PosPage() {
         p_note:saleNote,
         p_allow_backorder:Boolean(currentSnapshot.allowBackorder),
         p_lines:lines,
-       p_payments:salePayments,
+        p_payments:salePayments,
+        p_fulfillment:fulfillmentPayload,
+        p_production_jobs:productionJobs,
       });
       if(error)throw error;
-      const fulfillmentPayload={installation_required:fulfillment.installationRequired,installation_address:fulfillment.installationAddress,installation_maps_url:mapLink,installation_latitude:fulfillment.latitude,installation_longitude:fulfillment.longitude,installation_estimated_at:fulfillment.installationAt?new Date(fulfillment.installationAt).toISOString():null,delivery_due_at:fulfillment.deliveryAt?new Date(fulfillment.deliveryAt).toISOString():null};
-      const {error:fulfillmentError}=await supabase.rpc('save_sale_fulfillment',{p_sale_id:sale.sale_id,p_details:fulfillmentPayload});
-      if(fulfillmentError)throw new Error(`La venta ${sale.sale_code||''} quedó registrada. No se guardaron todavía la instalación ni la entrega: ${fulfillmentError.message}. Conservé los datos para reintentar.`);
+      window.dispatchEvent(new Event('visualcorp:production-changed'));
       let materialBackorder=false;
       try{const {data:materialRows}=await supabase.from('sale_material_consumptions').select('backordered_quantity').eq('sale_id',sale.sale_id).gt('backordered_quantity',0);materialBackorder=Boolean(materialRows?.length);}catch{}
       const completingParkedOrder=activeParkedOrderId;
@@ -567,6 +597,7 @@ export function PosPage() {
           <div className="pos-mobile-summary-bar"><span><small>ORDEN ACTUAL</small><b>{formatMoney(activeTotal)}</b></span><button className="button button-dark" type="button" aria-expanded={mobileSummaryOpen} onClick={()=>setMobileSummaryOpen((open)=>!open)}>{mobileSummaryOpen?'Cerrar pedido':'Ver pedido y cobrar'}</button></div>
           {form.quoteId?<section className="pos-cart pos-quote-cart" aria-label="Resumen de cotización"><div className="pos-cart-heading"><div><span className="eyebrow">COTIZACIÓN APROBADA</span><h3>{centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||'Pedido aprobado'}</h3></div><strong>{formatMoney(activeTotal)}</strong></div><p className="pos-cart-empty">{form.description||'Los conceptos y el total se conservarán como fueron aprobados.'}</p></section>: (
           <section className="pos-cart" aria-label="Carrito de venta"><div className="pos-cart-heading"><div><span className="eyebrow">ORDEN ACTUAL</span><h3>{cart.length} {cart.length===1?'artículo':'artículos'}</h3></div><strong>{formatMoney(cartTotal)}</strong></div>{cart.length===0?<p className="pos-cart-empty">Agrega productos del catálogo o registra un concepto libre con precio acordado.</p>:<div className="pos-cart-lines">{cart.map((line)=><POSCartLineEditor key={line.key} line={line} product={data.catalog.find((product)=>product.id===line.productId)} inventoryStatus={cartInventoryStatus(line)} onRemove={()=>setCart(current=>current.filter(item=>item.key!==line.key))} onSave={(nextLine)=>setCart(current=>current.map(item=>item.key===line.key?nextLine:item))}/>)}</div>}</section>)}
+        <POSProductionDetails lines={productionLines} values={productionByLine} routeByProduct={productWorkflowRoutes} routeStatus={workflowRouteStatus} onChange={(lineKey,value)=>setProductionByLine((current)=>({...current,[lineKey]:value}))}/>
         <section className="pos-payment-section">
           <div className="pos-payment-title"><div><span className="eyebrow">COBRO</span><h3>Forma de pago</h3></div><label className="pos-charge-toggle"><input type="checkbox" checked={chargeNow} onChange={(event)=>setChargeNow(event.target.checked)}/> Cobrar ahora</label></div>
           {chargeNow?<>
