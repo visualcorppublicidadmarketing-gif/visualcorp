@@ -5,6 +5,7 @@ import { formatMoney, useWorkspace } from '../../app/workspace';
 import { useAuth } from '../../auth/AuthProvider';
 import { NumberTicker } from '../../components/ui/MagicComponents';
 import { supabase } from '../../lib/supabaseClient';
+import { StandardCustomProducts } from './StandardCustomProducts';
 import './catalog-page.css';
 
 type PriceTierDraft = { min_qty: string; normal: string; installation: string; corporate: string };
@@ -116,6 +117,7 @@ export function CatalogPage() {
     catch { return 'table'; }
   });
   const canEditPrices = hasPermission('catalog_admin', 'edit_prices');
+  const canEditProducts = hasPermission('catalog_admin', 'edit');
   const families = useMemo(() => [...new Set<string>(data.catalog.map((item) => item.family?.trim() || 'General'))].sort((a, b) => a.localeCompare(b, 'es')), [data.catalog]);
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('es');
@@ -173,6 +175,7 @@ export function CatalogPage() {
   return <AppFrame area="operations">
     <div className="catalog-page">
       <PageHeading eyebrow="CATÁLOGO DE VISUAL CORP" title="Productos y tarifas" description="Edita las tres modalidades y sus escalas por cantidad o medida; los cambios alimentan el cotizador." action={<span className="rate-pending"><BadgeCheck size={15}/> {data.catalog.length} productos</span>} />
+      <StandardCustomProducts editable={canEditProducts} editablePrices={canEditPrices} />
       <section className="catalog-overview" aria-label="Resumen del catálogo">
         <article className="panel"><span><Layers3 size={17}/></span><div><small>FAMILIAS</small><b><NumberTicker value={families.length}/></b><small>Grupos del catálogo</small></div></article>
         <article className="panel"><span><Grid2X2 size={17}/></span><div><small>PRODUCTOS EN VISTA</small><b><NumberTicker value={filtered.length}/></b><small>{data.catalog.length} en total</small></div></article>

@@ -2,7 +2,7 @@ import React from 'react';
 import { ClipboardCheck, Route } from 'lucide-react';
 import './pos-production-details.css';
 
-export type ProductionWorkflowCode = 'none' | 'review' | 'print' | 'laser' | 'sign' | 'sign_measure' | 'neon' | 'sublimation';
+export type ProductionWorkflowCode = string;
 
 export type ProductionDetailsValue = {
   workflow_code: ProductionWorkflowCode;
@@ -30,7 +30,7 @@ const workflowOptions: { code: ProductionWorkflowCode; label: string; path: stri
 ];
 
 export const isProductionWorkflowCode = (value: unknown): value is ProductionWorkflowCode =>
-  workflowOptions.some((option) => option.code === value);
+  typeof value === 'string' && /^[a-z][a-z0-9_]{1,47}$/.test(value);
 
 export const getProductionDetails = (
   line: ProductionLine,
@@ -53,9 +53,10 @@ type Props = {
   routeByProduct: Record<string, ProductionWorkflowCode>;
   onChange: (lineKey: string, value: ProductionDetailsValue) => void;
   routeStatus: 'loading' | 'ready' | 'unavailable';
+  templates: Array<{ code: string; name: string }>;
 };
 
-export function POSProductionDetails({ lines, values, routeByProduct, onChange, routeStatus }: Props) {
+export function POSProductionDetails({ lines, values, routeByProduct, onChange, routeStatus, templates }: Props) {
   if (!lines.length) return null;
   const routesToDefine = lines.filter((line) => !values[line.line_key]?.workflow_code && (!line.productId || !routeByProduct[line.productId])).length;
 
@@ -77,11 +78,12 @@ export function POSProductionDetails({ lines, values, routeByProduct, onChange, 
       const showSite = ['sign', 'sign_measure', 'neon'].includes(value.workflow_code);
       const showColor = value.workflow_code === 'neon';
       const showThickness = ['laser', 'neon'].includes(value.workflow_code);
-      const option = workflowOptions.find((item) => item.code === value.workflow_code);
+      const option = templates.find((item) => item.code === value.workflow_code);
+      const fallbackPath = workflowOptions.find((item) => item.code === value.workflow_code)?.path;
       return <details className="pos-production-line" key={line.line_key}>
-        <summary><span className="pos-production-line-number">{String(index + 1).padStart(2, '0')}</span><span className="pos-production-line-title"><b>{line.name}</b><small>{option?.path}</small></span><span className="pos-production-line-toggle">Detalles</span></summary>
+        <summary><span className="pos-production-line-number">{String(index + 1).padStart(2, '0')}</span><span className="pos-production-line-title"><b>{line.name}</b><small>{option?.name || fallbackPath}</small></span><span className="pos-production-line-toggle">Detalles</span></summary>
         <div className="pos-production-line-fields">
-          <label className="pos-production-line-route">Ruta de trabajo<select value={value.workflow_code} onChange={(event) => onChange(line.line_key, { ...value, workflow_code: event.target.value as ProductionWorkflowCode })}>{workflowOptions.map((route) => <option key={route.code} value={route.code}>{route.label}</option>)}</select><small>{mappedRoute && !values[line.line_key]?.workflow_code ? 'Sugerida por la configuración del producto.' : 'Puedes ajustarla para este pedido.'}</small></label>
+          <label className="pos-production-line-route">Ruta de trabajo<select value={value.workflow_code} onChange={(event) => onChange(line.line_key, { ...value, workflow_code: event.target.value })}>{templates.map((route) => <option key={route.code} value={route.code}>{route.name}</option>)}</select><small>{mappedRoute && !values[line.line_key]?.workflow_code ? 'Sugerida por la configuración del producto.' : 'Puedes ajustarla para este pedido.'}</small></label>
           {value.workflow_code !== 'review' && value.workflow_code !== 'none' && <fieldset className="pos-production-fieldset"><legend>Datos que recibirá el equipo</legend>
             {line.widthCm && line.heightCm ? <p className="pos-production-measure-note">Medida vendida: <b>{line.widthCm} × {line.heightCm} cm</b>. Se toma del artículo para evitar diferencias con el precio.</p> : <div className="pos-production-field-grid"><label>Ancho (cm)<input type="number" min="0.01" step="0.01" inputMode="decimal" value={String(spec.width_cm ?? '')} onChange={(event) => patch('width_cm', event.target.value)} placeholder="Por confirmar"/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" inputMode="decimal" value={String(spec.height_cm ?? '')} onChange={(event) => patch('height_cm', event.target.value)} placeholder="Por confirmar"/></label></div>}
             {showMaterial && <label>Material o soporte<input maxLength={180} value={String(spec.material ?? '')} onChange={(event) => patch('material', event.target.value)} placeholder={value.workflow_code === 'laser' ? 'Ej. acrílico, MDF' : value.workflow_code === 'sublimation' ? 'Ej. camiseta, taza, almohada' : 'Ej. lona, vinil, acrílico'}/></label>}

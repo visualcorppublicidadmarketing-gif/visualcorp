@@ -54,6 +54,12 @@ const examples = [
 export function catalogImagesForProduct(product) {
   const normalize = (value) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const search = normalize(`${product.id} ${product.name} ${product.family}`);
+  if (String(product.id || '').startsWith('std-')) {
+    const images = (product.images || []).filter(Boolean);
+    const primaryImage = product.image || product.image_url;
+    if (primaryImage && !images.includes(primaryImage)) images.unshift(primaryImage);
+    return images.slice(0, 8);
+  }
   const realPhoto = realPhotos.find(({ keywords }) => keywords.some((keyword) => search.includes(normalize(keyword))));
   if (realPhoto) return [realPhoto.image];
   const [base, brand, corporate] = examples.find(([key, , , aliases]) =>

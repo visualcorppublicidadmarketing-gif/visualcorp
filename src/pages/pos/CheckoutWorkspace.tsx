@@ -127,6 +127,7 @@ export function PosPage() {
   const [cart,setCart]=useState([]);
   const [productionByLine,setProductionByLine]=useState<Record<string, ProductionDetailsValue>>({});
   const [productWorkflowRoutes,setProductWorkflowRoutes]=useState<Record<string, ProductionWorkflowCode>>({});
+  const [workflowTemplates,setWorkflowTemplates]=useState<Array<{code:string;name:string}>>([]);
   const [workflowRouteStatus,setWorkflowRouteStatus]=useState<'loading'|'ready'|'unavailable'>('loading');
   const [cartMode,setCartMode]=useState<'quantity'|'area'>('quantity');
   const [cartProductId,setCartProductId]=useState('');
@@ -190,13 +191,18 @@ export function PosPage() {
    }catch{pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('No se pudo recuperar una venta pendiente. Revisa las ventas antes de volver a cobrar.');flash('Hay una operación pendiente que no se pudo restaurar. No vuelvas a cobrarla hasta revisar las ventas de hoy.');}
   },[organizationId,user?.id,pendingSaleStorageKey,pendingSaleSnapshotStorageKey,posDraftStorageKey]);
   useEffect(()=>{
-    if(!supabase||!organizationId){setProductWorkflowRoutes({});setWorkflowRouteStatus('unavailable');return;}
+    if(!supabase||!organizationId){setProductWorkflowRoutes({});setWorkflowTemplates([]);setWorkflowRouteStatus('unavailable');return;}
     let active=true;
     setWorkflowRouteStatus('loading');
-    supabase.from('catalog_product_workflow_routes').select('catalog_product_id,workflow_code').eq('organization_id',organizationId).eq('active',true).then(({data:rows,error})=>{
+    Promise.all([
+      supabase.from('catalog_product_workflow_routes').select('catalog_product_id,workflow_code').eq('organization_id',organizationId).eq('active',true),
+      supabase.from('production_workflow_templates').select('code,name').eq('organization_id',organizationId).eq('active',true).order('name'),
+    ]).then(([routeResult,templateResult])=>{
       if(!active)return;
-      if(error){setProductWorkflowRoutes({});setWorkflowRouteStatus('unavailable');return;}
-      setProductWorkflowRoutes(Object.fromEntries((rows||[]).filter((row)=>isProductionWorkflowCode(row.workflow_code)).map((row)=>[row.catalog_product_id,row.workflow_code as ProductionWorkflowCode])));
+      if(routeResult.error||templateResult.error){setProductWorkflowRoutes({});setWorkflowTemplates([]);setWorkflowRouteStatus('unavailable');return;}
+      const rows=routeResult.data||[];
+      setWorkflowTemplates((templateResult.data||[]).filter((row)=>isProductionWorkflowCode(row.code)));
+      setProductWorkflowRoutes(Object.fromEntries(rows.filter((row)=>isProductionWorkflowCode(row.workflow_code)).map((row)=>[row.catalog_product_id,row.workflow_code as ProductionWorkflowCode])));
       setWorkflowRouteStatus('ready');
     });
     return()=>{active=false;};
@@ -597,7 +603,7 @@ export function PosPage() {
           <div className="pos-mobile-summary-bar"><span><small>ORDEN ACTUAL</small><b>{formatMoney(activeTotal)}</b></span><button className="button button-dark" type="button" aria-expanded={mobileSummaryOpen} onClick={()=>setMobileSummaryOpen((open)=>!open)}>{mobileSummaryOpen?'Cerrar pedido':'Ver pedido y cobrar'}</button></div>
           {form.quoteId?<section className="pos-cart pos-quote-cart" aria-label="Resumen de cotización"><div className="pos-cart-heading"><div><span className="eyebrow">COTIZACIÓN APROBADA</span><h3>{centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||'Pedido aprobado'}</h3></div><strong>{formatMoney(activeTotal)}</strong></div><p className="pos-cart-empty">{form.description||'Los conceptos y el total se conservarán como fueron aprobados.'}</p></section>: (
           <section className="pos-cart" aria-label="Carrito de venta"><div className="pos-cart-heading"><div><span className="eyebrow">ORDEN ACTUAL</span><h3>{cart.length} {cart.length===1?'artículo':'artículos'}</h3></div><strong>{formatMoney(cartTotal)}</strong></div>{cart.length===0?<p className="pos-cart-empty">Agrega productos del catálogo o registra un concepto libre con precio acordado.</p>:<div className="pos-cart-lines">{cart.map((line)=><POSCartLineEditor key={line.key} line={line} product={data.catalog.find((product)=>product.id===line.productId)} inventoryStatus={cartInventoryStatus(line)} onRemove={()=>setCart(current=>current.filter(item=>item.key!==line.key))} onSave={(nextLine)=>setCart(current=>current.map(item=>item.key===line.key?nextLine:item))}/>)}</div>}</section>)}
-        <POSProductionDetails lines={productionLines} values={productionByLine} routeByProduct={productWorkflowRoutes} routeStatus={workflowRouteStatus} onChange={(lineKey,value)=>setProductionByLine((current)=>({...current,[lineKey]:value}))}/>
+        <POSProductionDetails lines={productionLines} values={productionByLine} routeByProduct={productWorkflowRoutes} templates={workflowTemplates} routeStatus={workflowRouteStatus} onChange={(lineKey,value)=>setProductionByLine((current)=>({...current,[lineKey]:value}))}/>
         <section className="pos-payment-section">
           <div className="pos-payment-title"><div><span className="eyebrow">COBRO</span><h3>Forma de pago</h3></div><label className="pos-charge-toggle"><input type="checkbox" checked={chargeNow} onChange={(event)=>setChargeNow(event.target.checked)}/> Cobrar ahora</label></div>
           {chargeNow?<>
