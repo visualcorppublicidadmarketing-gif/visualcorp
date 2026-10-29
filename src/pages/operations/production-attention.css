@@ -1,0 +1,47 @@
+.production-attention{display:flex;align-items:center}
+.production-attention-trigger{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:0 10px;border:1px solid #e9e2ed;border-radius:10px;background:#fff;color:#514158;font:inherit;font-size:11px;font-weight:750;cursor:pointer}
+.production-attention-trigger:hover{border-color:#cba4d0;background:#fcf7fd}
+.production-attention-trigger:focus-visible,.production-attention-filters button:focus-visible,.production-attention-list a:focus-visible{outline:3px solid #a5109155;outline-offset:2px}
+.production-attention-trigger svg{color:#a01391}
+.production-attention-trigger b{display:grid;place-items:center;min-width:19px;height:19px;padding:0 4px;border-radius:99px;background:#a0148d;color:#fff;font-size:9px;line-height:1}
+.production-attention-sheet{display:grid;align-content:start;gap:15px}
+.production-attention-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid #e9ddea;border-radius:12px;background:#fcf8fd}
+.production-attention-summary>div{display:flex;align-items:baseline;gap:8px;color:#625467}
+.production-attention-summary strong{color:#9c1689;font-size:23px;line-height:1}
+.production-attention-summary span{font-size:11px;font-weight:700}
+.production-attention-summary button{min-height:34px;font-size:10px}
+.production-attention-explainer,.production-attention-limit{margin:0;color:#746d79;font-size:11px;line-height:1.5}
+.production-attention-filters{display:flex;gap:5px;padding:4px;border:1px solid #e8e2eb;border-radius:10px;background:#f8f6f9}
+.production-attention-filters button{display:flex;align-items:center;justify-content:center;gap:5px;flex:1;min-height:35px;padding:5px 9px;border:1px solid transparent;border-radius:7px;background:transparent;color:#695f6e;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.production-attention-filters button[aria-pressed=true]{border-color:#e5d0e8;background:#fff;color:#8d1b83;box-shadow:0 2px 6px #30113609}
+.production-attention-filters b{font-size:10px}
+.production-attention-list{display:grid;gap:9px;margin:0;padding:0;list-style:none}
+.production-attention-list li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;padding:13px;border:1px solid #e9e3eb;border-radius:11px;background:#fff}
+.production-attention-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:#f4eafa;color:#a0148d}
+.production-attention-list li[data-kind=blocked] .production-attention-icon,.production-attention-list li[data-kind=review] .production-attention-icon{background:#fff2e9;color:#a05a19}
+.production-attention-list li[data-kind=due] .production-attention-icon{background:#edf5ff;color:#286fb2}
+.production-attention-list li[data-kind=due][data-overdue=true] .production-attention-icon{background:#fff0f2;color:#b03748}
+.production-attention-copy{min-width:0}
+.production-attention-top,.production-attention-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.production-attention-top span{color:#9d258c;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+.production-attention-top small{color:#8b828f;font-size:9px}
+.production-attention-copy h3{margin:5px 0 3px;color:#342d39;font-size:13px;line-height:1.35}
+.production-attention-copy p{margin:0;color:#6c6471;font-size:11px;line-height:1.5}
+.production-attention-meta{justify-content:flex-start;margin-top:7px;color:#85808a;font-size:10px}
+.production-attention-meta span+span::before{content:'·';margin-right:7px}
+.production-attention-copy a{display:inline-flex;align-items:center;gap:5px;min-height:35px;margin-top:8px;color:#7d287e;font-size:11px;font-weight:750;text-decoration:none}
+.production-attention-copy a:hover{text-decoration:underline}
+.production-attention-empty{display:grid;justify-items:center;gap:5px;padding:36px 14px;border:1px dashed #e1d7e4;border-radius:11px;color:#766b7d;text-align:center;font-size:11px;line-height:1.5}
+.production-attention-empty svg{color:#37a47a}.production-attention-empty b{color:#39303e;font-size:13px}
+.production-attention-error{margin:0;padding:11px;border:1px solid #e7bfc4;border-radius:9px;background:#fff3f4;color:#89373f;font-size:11px;line-height:1.5}
+.production-attention-error button{border:0;background:none;color:inherit;font:inherit;font-weight:800;text-decoration:underline;cursor:pointer}
+@media(max-width:700px){.production-attention-trigger{width:38px;padding:0}.production-attention-trigger span{display:none}.production-attention-trigger b{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;font-size:8px}.production-attention{position:relative}.production-attention .ok-overlay{padding:0}.production-attention .ok-dialog.side-right{align-self:end;justify-self:stretch;width:100%;height:auto;max-height:92dvh;border-radius:16px 16px 0 0}}
+@media(max-width:430px){.topbar-right{gap:8px}}
+[data-theme="dark"] .production-attention-trigger,[data-theme="dark"] .production-attention-list li{background:var(--panel,#1d1b22);border-color:var(--line);color:var(--ink)}
+[data-theme="dark"] .production-attention-summary,[data-theme="dark"] .production-attention-filters{background:color-mix(in srgb,var(--ink) 5%,var(--panel,#1d1b22));border-color:var(--line)}
+[data-theme="dark"] .production-attention-filters button[aria-pressed=true]{background:color-mix(in srgb,#aa168f 18%,var(--panel,#1d1b22));border-color:#92588c;color:var(--ink)}
+[data-theme="dark"] .production-attention-copy h3,[data-theme="dark"] .production-attention-empty b{color:var(--ink)}
+[data-theme="dark"] .production-attention-copy p,[data-theme="dark"] .production-attention-meta,[data-theme="dark"] .production-attention-explainer,[data-theme="dark"] .production-attention-limit,[data-theme="dark"] .production-attention-summary span,[data-theme="dark"] .production-attention-top small{color:var(--muted)}
+[data-theme="dark"] .production-attention-empty{border-color:var(--line);color:var(--muted)}
+[data-theme="dark"] .production-attention-trigger svg,[data-theme="dark"] .production-attention-summary strong,[data-theme="dark"] .production-attention-top span,[data-theme="dark"] .production-attention-copy a{color:#f0afe7}
+[data-theme="dark"] .production-attention-filters button{color:var(--muted)}
