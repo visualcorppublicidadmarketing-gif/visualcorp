@@ -33,6 +33,12 @@ Los perfiles de Asesoras, Coordinador de Taller, Coordinador de Ventas, Diseñad
 
 Las medidas, la dirección de instalación y el material se exigen según la plantilla antes de avanzar desde Asesoría. Un cambio técnico después de iniciar producción marca la ficha para revisión de coordinación. Aceptar el cambio no aprueba automáticamente un arte invalidado: Diseño debe entregar otra versión si la revisión de arte está activada. La aprobación del arte es opcional por artículo y se activa en POS. El anticipo sigue siendo una puerta opcional prevista en la base de datos y no se activa por defecto.
 
+## Interfaz de las colas
+
+La cola de cada área muestra un resumen de trabajos, etapas sin responsable, vencidos y bloqueados. Los filtros indican sus cantidades y permiten separar los vencidos; una búsqueda sin resultados ofrece volver a mostrar todos. Cada tarjeta con etapas configuradas muestra el avance del recorrido y la carga inicial presenta tarjetas de espera. Estos componentes leen los datos ya autorizados para la página y no cambian permisos, asignaciones ni estados.
+
+Para esta interfaz se consultaron los catálogos oficiales de Magic UI, shadcn/ui y HeroUI. El patrón de selección única de [Toggle Group de shadcn/ui](https://ui.shadcn.com/docs/components/radix/toggle-group) orientó los filtros; el patrón de [ProgressBar de HeroUI](https://heroui.com/en/docs/react/components/progress-bar) orientó el avance, implementado con el elemento nativo `progress`. Se revisó [Number Ticker de Magic UI](https://magicui.design/docs/components/number-ticker), pero su animación no aporta información a esta cola operativa. Ningún paquete externo nuevo ni componente Pro se incorporó. Los MCP de esas tres plataformas y la guía compartida de Obsidian no estuvieron disponibles en esta sesión; se usaron las documentaciones públicas oficiales.
+
 ## Publicación y comprobaciones de esta fase
 
 1. La migración `20261029041516_production_job_workflows.sql` pasó un `supabase db reset --local --yes` sin costo de rama: se aplicaron 108 migraciones válidas y quedó como última la versión `20261029041516`. El `.deferred` se omite deliberadamente. Después se confirmó el historial remoto y se aplicó la migración a producción. La base contiene siete tablas nuevas, ocho plantillas y 25 sugerencias de rutas, sin crear trabajos ficticios.

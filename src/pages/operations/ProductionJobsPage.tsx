@@ -6,8 +6,10 @@ import { useAuth } from '../../auth/AuthProvider';
 import { Sheet } from '../../components/ui/OperationalKit';
 import { supabase } from '../../lib/supabaseClient';
 import { ProductionArtworkReference } from './ProductionArtworkReference';
+import { ProductionQueueSkeleton, ProductionQueueSummary, ProductionStageProgress } from './ProductionQueueComponents';
 import { ProductionSpecReview } from './ProductionSpecReview';
 import './production-jobs.css';
+import './production-queue-components.css';
 
 type AreaSlug = 'asesoria' | 'diseno' | 'impresion' | 'sublimacion' | 'laser' | 'taller';
 type StepStatus = 'waiting' | 'ready' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
@@ -32,7 +34,7 @@ type JobEvent = {
 type AreaRow = { id: string; code: string; name: string };
 type Assignee = { user_id: string; display_name: string };
 type QueueItem = { job: Job; step: Step | null; currentStep: Step | null };
-type Filter = 'all' | 'mine' | 'unassigned' | 'today' | 'blocked';
+type Filter = 'all' | 'mine' | 'unassigned' | 'today' | 'overdue' | 'blocked';
 const WORKFLOW_CHOICES = [
   { code: 'none', label: 'Entrega directa' },
   { code: 'print', label: 'Diseño → Impresión' },
@@ -59,7 +61,7 @@ const STATUS_LABELS: Record<StepStatus, string> = {
 const FILTERS: { id: Filter; label: string }[] = [
   { id: 'all', label: 'Todos' }, { id: 'mine', label: 'Para mí' },
   { id: 'unassigned', label: 'Sin asignar' }, { id: 'today', label: 'Hoy' },
-  { id: 'blocked', label: 'Bloqueados' },
+  { id: 'overdue', label: 'Vencidos' }, { id: 'blocked', label: 'Bloqueados' },
 ];
 const ARTWORK_FILE_TYPES: Record<string, string> = {
   'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'application/pdf': 'pdf',
@@ -88,6 +90,16 @@ const todayKey = () => dayKey(new Date().toISOString());
 const isOpen = (status: StepStatus) => !['completed', 'cancelled'].includes(status);
 const queueDueAt = (item: QueueItem) => item.step ? item.step.due_at : item.job.due_at;
 const isLate = (item: QueueItem) => Boolean((item.step || item.currentStep) && isOpen((item.step || item.currentStep)!.status) && queueDueAt(item) && dayKey(queueDueAt(item)) < todayKey());
+const matchesQueueFilter = (item: QueueItem, filter: Filter, areaCode: string | undefined, userId: string | undefined) => {
+  const step = item.step || item.currentStep;
+  const owner = areaCode === 'ASE' ? item.job.advisor_id : item.step?.assigned_to;
+  if (filter === 'mine') return owner === userId;
+  if (filter === 'unassigned') return Boolean(step && isOpen(step.status) && !(areaCode === 'ASE' ? step.assigned_to : owner));
+  if (filter === 'today') return dayKey(queueDueAt(item)) === todayKey();
+  if (filter === 'overdue') return isLate(item);
+  if (filter === 'blocked') return step?.status === 'blocked';
+  return true;
+};
 const presentValue = (value: unknown): string => {
   if (value == null || value === '') return 'Por definir';
   if (typeof value === 'boolean') return value ? 'Sí' : 'No';
@@ -269,13 +281,26 @@ export function ProductionJobsPage() {
       return job ? [{ job, step, currentStep: currentStage(byJob.get(job.id) || []) }] : [];
     });
   }, [area, jobs, steps, areas]);
+  const filterCounts = useMemo<Record<Filter, number>>(() => {
+    const counts: Record<Filter, number> = { all: 0, mine: 0, unassigned: 0, today: 0, overdue: 0, blocked: 0 };
+    for (const item of rows) for (const option of FILTERS) {
+      if (matchesQueueFilter(item, option.id, area?.code, user?.id)) counts[option.id] += 1;
+    }
+    return counts;
+  }, [rows, area?.code, user?.id]);
+  const stageProgress = useMemo(() => {
+    const progress = new Map<string, { completed: number; total: number }>();
+    for (const step of steps) {
+      if (step.status === 'cancelled') continue;
+      const current = progress.get(step.job_id) || { completed: 0, total: 0 };
+      current.total += 1;
+      if (step.status === 'completed') current.completed += 1;
+      progress.set(step.job_id, current);
+    }
+    return progress;
+  }, [steps]);
   const visible = useMemo(() => rows.filter((item) => {
-    const step = item.step || item.currentStep;
-    const owner = area?.code === 'ASE' ? item.job.advisor_id : item.step?.assigned_to;
-    if (filter === 'mine' && owner !== user?.id) return false;
-    if (filter === 'unassigned' && ((area?.code === 'ASE' ? step?.assigned_to : owner) || !step || ['completed', 'cancelled'].includes(step.status))) return false;
-    if (filter === 'today' && dayKey(queueDueAt(item)) !== todayKey()) return false;
-    if (filter === 'blocked' && step?.status !== 'blocked') return false;
+    if (!matchesQueueFilter(item, filter, area?.code, user?.id)) return false;
     const needle = search.trim().toLocaleLowerCase('es');
     return !needle || `${item.job.sale_code || ''} ${item.job.customer_name || ''} ${item.job.title} ${item.step?.title || ''}`.toLocaleLowerCase('es').includes(needle);
   }).sort((a, b) => {
@@ -504,11 +529,13 @@ export function ProductionJobsPage() {
     <PageHeading eyebrow="OPERACIONES · TRABAJOS" title={area.name} description={area.intro} action={<button className="button button-outline" type="button" onClick={() => setRevision((value) => value + 1)} disabled={loading}><RefreshCw size={15}/> Actualizar</button>}/>
     <nav className="pj-area-nav" aria-label="Áreas de trabajo">{AREA_CONFIG.filter((entry) => entry.code === 'ASE' ? canSeeAdvisory : canSeeWorkshop).map((entry) => { const AreaIcon = entry.icon; return <Link key={entry.slug} to={`/operaciones/trabajos/${entry.slug}`} aria-current={entry.slug === area.slug ? 'page' : undefined}><AreaIcon size={15}/>{entry.name}</Link>; })}</nav>
     <p className="pj-intro">Cada tarjeta representa un trabajo de esta área. Abre la ficha para ver la solicitud original, las etapas y los cambios registrados.</p>
-    <div className="pj-toolbar"><div className="pj-filter" role="group" aria-label="Filtrar trabajos">{FILTERS.map((entry) => <button type="button" key={entry.id} aria-pressed={filter === entry.id} onClick={() => setFilter(entry.id)}>{entry.label}</button>)}</div><label className="pj-search"><span>Buscar trabajo</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cliente, venta o producto"/></label></div>
+    <ProductionQueueSummary total={filterCounts.all} unassigned={filterCounts.unassigned} overdue={filterCounts.overdue} blocked={filterCounts.blocked} loading={loading}/>
+    <div className="pj-toolbar"><div className="pj-filter" role="group" aria-label="Filtrar trabajos">{FILTERS.map((entry) => <button type="button" key={entry.id} aria-pressed={filter === entry.id} onClick={() => setFilter(entry.id)}>{entry.label}{!loading && <span className="pj-filter-count" aria-label={`${filterCounts[entry.id]} trabajos`}>{filterCounts[entry.id]}</span>}</button>)}</div><label className="pj-search"><span>Buscar trabajo</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cliente, venta o producto"/></label></div>
     <div className="pj-count" role="status" aria-live="polite">{loading ? 'Cargando trabajos…' : `${visible.length} ${visible.length === 1 ? 'trabajo visible' : 'trabajos visibles'}`}</div>
     {loadError && <div className="pj-error" role="alert">No pudimos consultar las órdenes actuales. {loadError} <button className="button button-outline" type="button" onClick={() => setRevision((value) => value + 1)}>Reintentar</button></div>}
-    {!loading && !loadError && !visible.length && <div className="pj-empty"><Icon size={23}/><b>{rows.length ? 'No hay trabajos para este filtro' : 'No hay trabajos asignados a esta área'}</b><p>{rows.length ? 'Cambia el filtro o busca por cliente, venta o producto.' : 'Los nuevos trabajos aparecerán aquí al confirmar una venta con una ruta de producción configurada.'}</p></div>}
-    {!loadError && <section className="pj-list" aria-label={`Trabajos de ${area.name}`}>{visible.map((item) => { const shownStep = item.step || item.currentStep; const status = shownStep?.status || 'waiting'; const owner = area.code === 'ASE' ? item.job.advisor_id : item.step?.assigned_to; return <article className={`pj-card${isLate(item) ? ' is-overdue' : ''}`} data-state={status} key={`${item.job.id}-${item.step?.id || 'advisor'}`}><div className="pj-card-main"><div className="pj-card-top"><span className="pj-card-code">{item.job.sale_code || 'TRABAJO'}</span><span className="pj-status" data-state={status}>{status === 'blocked' ? <AlertTriangle size={12}/> : status === 'completed' ? <CircleCheck size={12}/> : <Clock3 size={12}/>} {STATUS_LABELS[status]}</span></div><h2>{item.step ? `${item.step.title} · ${item.job.title}` : item.job.title}</h2><div className="pj-card-meta"><span><UserRound size={13}/>{item.job.customer_name || 'Cliente por consultar'}</span><span><CalendarClock size={13}/>{isLate(item) ? <b className="is-late">Atrasado · {stamp(queueDueAt(item))}</b> : stamp(queueDueAt(item))}</span><span>{owner === user?.id ? 'A mi cargo' : owner ? 'Asignado' : 'Sin responsable'}</span></div>{area.code === 'ASE' && shownStep && <p className="pj-card-next">Ahora: <b>{shownStep.title}</b> · {currentAreaName(shownStep.area_id)}</p>}{item.step?.notes && <p className="pj-card-next">Indicación: <b>{item.step.notes}</b></p>}</div><button type="button" className="pj-card-action" onClick={() => openJob(item)} aria-label={`Abrir ficha de ${item.job.title}`}>Ver ficha <ArrowRight size={14}/></button></article>; })}</section>}
+    {!loading && !loadError && !visible.length && <div className="pj-empty"><Icon size={23}/><b>{rows.length ? 'No hay trabajos para este filtro' : 'No hay trabajos asignados a esta área'}</b><p>{rows.length ? 'Cambia el filtro o busca por cliente, venta o producto.' : 'Los nuevos trabajos aparecerán aquí al confirmar una venta con una ruta de producción configurada.'}</p>{rows.length > 0 && (filter !== 'all' || search) && <button className="button button-outline" type="button" onClick={() => { setFilter('all'); setSearch(''); }}>Mostrar todos</button>}</div>}
+    {loading && !loadError && <ProductionQueueSkeleton/>}
+    {!loading && !loadError && <section className="pj-list" aria-label={`Trabajos de ${area.name}`}>{visible.map((item) => { const shownStep = item.step || item.currentStep; const status = shownStep?.status || 'waiting'; const owner = area.code === 'ASE' ? item.job.advisor_id : item.step?.assigned_to; const progress = stageProgress.get(item.job.id); return <article className={`pj-card${isLate(item) ? ' is-overdue' : ''}`} data-state={status} key={`${item.job.id}-${item.step?.id || 'advisor'}`}><div className="pj-card-main"><div className="pj-card-top"><span className="pj-card-code">{item.job.sale_code || 'TRABAJO'}</span><span className="pj-status" data-state={status}>{status === 'blocked' ? <AlertTriangle size={12}/> : status === 'completed' ? <CircleCheck size={12}/> : <Clock3 size={12}/>} {STATUS_LABELS[status]}</span></div><h2>{item.step ? `${item.step.title} · ${item.job.title}` : item.job.title}</h2><div className="pj-card-meta"><span><UserRound size={13}/>{item.job.customer_name || 'Cliente por consultar'}</span><span><CalendarClock size={13}/>{isLate(item) ? <b className="is-late">Atrasado · {stamp(queueDueAt(item))}</b> : stamp(queueDueAt(item))}</span><span>{owner === user?.id ? 'A mi cargo' : owner ? 'Asignado' : 'Sin responsable'}</span></div>{area.code === 'ASE' && shownStep && <p className="pj-card-next">Ahora: <b>{shownStep.title}</b> · {currentAreaName(shownStep.area_id)}</p>}{item.step?.notes && <p className="pj-card-next">Indicación: <b>{item.step.notes}</b></p>}{progress && <ProductionStageProgress completed={progress.completed} total={progress.total} title={item.job.title}/>}</div><button type="button" className="pj-card-action" onClick={() => openJob(item)} aria-label={`Abrir ficha de ${item.job.title}`}>Ver ficha <ArrowRight size={14}/></button></article>; })}</section>}
     {!loading && !loadError && rows.length >= queueLimit && <div className="pj-count"><span>Se muestran los {queueLimit} trabajos más recientes de esta área.</span> <button className="button button-outline" type="button" onClick={() => setQueueLimit((value) => value + 150)}>Cargar más</button></div>}
     <div className="pj-detail-modal"><Sheet open={Boolean(selectedJob)} onOpenChange={(open) => { if (!open) closeJob(); }} title={selectedJob?.sale_code ? `Trabajo ${selectedJob.sale_code}` : 'Ficha de trabajo'} description={selectedJob ? selectedJob.customer_name || 'Seguimiento de producción' : undefined}><div className="pj-detail">
       {selectedJob && <><div className="pj-detail-hero"><span className="pj-card-code">ORDEN DE TRABAJO · VERSIÓN {selectedJob.spec_version}</span><h3>{selectedJob.title}</h3><p>Las indicaciones se comparten entre asesoría y producción. Cada cambio queda asociado a la ficha.</p></div><dl className="pj-detail-facts"><div><dt>Cliente</dt><dd>{selectedJob.customer_name || 'Por consultar'}</dd></div><div><dt>Teléfono</dt><dd>{selectedJob.customer_phone || 'Por consultar'}</dd></div><div><dt>Venta</dt><dd>{selectedJob.sale_code || 'Sin código'}</dd></div><div><dt>Fecha prevista</dt><dd>{stamp(selectedJob.due_at)}</dd></div></dl>
