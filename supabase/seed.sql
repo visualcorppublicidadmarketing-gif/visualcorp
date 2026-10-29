@@ -1,0 +1,1 @@
+-- Intentionally no sample rows: local resets must not create fake user or business data.
