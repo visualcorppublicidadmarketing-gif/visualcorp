@@ -1,6 +1,6 @@
 # Trabajos por áreas · fases 1 a 7
 
-Estado: implementación local en `E:\VISUAL CORP\apps\visualcorp-suite-worktrees\production-workflows-20261029`, rama `codex/production-workflows-e-drive-20261029`. La migración aún no se ha aplicado a Supabase ni se ha publicado la interfaz.
+Estado: implementación en el PR #130 (borrador), rama `codex/production-workflows-e-drive-20261029`. La vista previa del commit `7fe3f1c` está lista. La migración se aplicó en Supabase local con Podman; no se ha aplicado a la base de producción ni se ha habilitado el flujo.
 
 ## Recorrido implementado
 
@@ -33,12 +33,12 @@ Las medidas, la dirección de instalación y el material se exigen según la pla
 
 ## Despliegue seguro de esta fase
 
-1. Aplicar y comprobar la migración `20261029041516_production_job_workflows.sql` en una base de pruebas desde el historial de migraciones. Incluye los RPC de asignación y calendario de la fase 2.
+1. La migración `20261029041516_production_job_workflows.sql` pasó un `supabase db reset --local --yes` sin costo de rama: se aplicaron 108 migraciones válidas y quedó como última la versión `20261029041516`. El `.deferred` se omite deliberadamente. Antes de producción, confirmar el historial remoto y aplicar la migración mediante el proceso de release.
 2. Probar con perfiles reales de asesor, diseño, impresión, taller y coordinación: venta, reintento, visita, modificación de ficha, asignación, cambio de fecha, carga privada, entrega y aprobación del arte, devolución por correcciones, bloqueo y cierre de cada ruta. Confirmar que un perfil ajeno no pueda cargar ni abrir la prueba de otra orden, cambiar una etapa, aprobar un arte ni consultar candidatos de asignación.
-3. Revisar las rutas sugeridas por nombres de producto. Son sugerencias iniciales; no se consideran una clasificación comercial aprobada.
+3. Revisar las rutas sugeridas por nombres de producto. Se excluyeron de las sugerencias las tarifas de Sublimación A3/A4; las demás son sugerencias iniciales y no se consideran una clasificación comercial aprobada.
 4. Publicar el frontend después de la migración. Antes de ella, el POS detiene la confirmación porque no puede verificar las rutas.
 
-Verificaciones locales realizadas: compilación TypeScript/Vite, prueba existente del control de acceso manual, análisis sintáctico del SQL y revisión de espacios en el diff. No equivalen a una ejecución de la migración ni a una prueba con datos reales.
+Verificaciones locales realizadas: compilación TypeScript/Vite, prueba existente del control de acceso manual, análisis sintáctico del SQL, revisión de espacios en el diff y reset completo de Supabase local con Podman. No equivalen a una prueba del flujo con perfiles reales ni sustituyen la revisión visual autenticada.
 
 ## Siguientes partes
 
