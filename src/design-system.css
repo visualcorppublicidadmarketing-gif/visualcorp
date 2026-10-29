@@ -1,4 +1,17 @@
 /* Visual Corp Suite — shared product UI layer. */
+.work-app .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 .work-app {
   --surface: #fff;
   --surface-soft: #f8f8fb;
@@ -108,6 +121,8 @@
 .work-app .stat-meta > b { font-size: clamp(20px, 2vw, 25px); }
 .work-app .operation-card { min-height: 108px; transition: transform .2s ease, box-shadow .2s ease; }
 .work-app .operation-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px #25233a10; }
+.work-app .unified-launcher-panel .operation-card > .operation-icon { flex: none; }
+.work-app .unified-launcher-panel .operation-card > .operation-copy { flex: 1; min-width: 0; }
 .work-app .button { min-height: 44px; }
 .work-app .button-dark { background: linear-gradient(115deg, #20212b, #383044); }
 .work-app .button-dark:hover { background: linear-gradient(115deg, #363744, #54224e); }
@@ -233,6 +248,13 @@
   .work-app .sidebar-profile span,
   .work-app .sidebar-profile > svg { display: initial; }
   .work-app .sidebar-brand > button { display: grid; }
+  .work-app .sidebar-group-toggle { min-height: 48px; padding-top: 7px; padding-bottom: 7px; }
+  .work-app .sidebar-group-toggle > span {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    line-height: 1.3;
+  }
   .work-app .workspace-pill { display: flex; margin-bottom: 24px; }
   .work-app .sidebar-caption { display: block; }
   .work-app .sidebar-link { justify-content: flex-start; width: auto; height: 44px; margin: 0; padding: 0 11px; }
