@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeftRight, ArrowRight, ArrowUpRight, BookOpen, BriefcaseBusiness, Check, ClipboardList, Newspaper, Search, ShoppingBag, Sparkles, X } from 'lucide-react';
+import { ArrowLeftRight, ArrowRight, ArrowUpRight, BookOpen, BriefcaseBusiness, Check, ClipboardList, Gift, Newspaper, Search, ShoppingBag, Sparkles, X } from 'lucide-react';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
 import { catalogImagesForProduct } from '../data/catalogProductImages';
 import { AnimatedList, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
 import { multiProductQuoteService } from './content';
 import { ArticleMarkdown } from './ArticleMarkdown';
 import './storefront.css';
+import './store-promo-teaser.css';
 
 type ContentKind = 'blog' | 'publicaciones' | 'portafolio';
 const normalizeSearch = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
@@ -402,6 +403,11 @@ export function StorefrontPage() {
         <span className="store-hero-product-image">{product.image ? <img src={product.image} alt=""/> : <ShoppingBag size={24}/>}</span><span className="store-hero-product-name">{product.name}</span><span className="store-hero-product-mark">0{index+1}</span>
       </button>) : <div className="store-hero-art-placeholder"><Sparkles size={30}/><span>Ideas en movimiento</span></div>}<span className="store-hero-art-label">CATÁLOGO · {loading ? 'VISUAL CORP' : `${products.length} IDEAS`}</span></div></div>
       <a className="store-hero-scroll" href="#catalogo">Desliza para explorar <span>↓</span></a>
+    </section>
+    <section className="store-promo-teaser" aria-labelledby="store-promo-teaser-title">
+      <span className="store-promo-teaser-icon" aria-hidden="true"><Gift size={22}/></span>
+      <div className="store-promo-teaser-copy"><span className="site-eyebrow"><i/>NOVEDADES DE LA TIENDA</span><h2 id="store-promo-teaser-title">Promociones y sorteos</h2><p>Consulta las campañas que Visual Corp publique oficialmente, con sus fechas y condiciones.</p></div>
+      <Link className="store-promo-teaser-link" to="/tienda/promociones">Ver novedades <ArrowUpRight size={16}/></Link>
     </section>
     <section className="storefront-catalog" id="catalogo" aria-labelledby="store-catalog-title">
       <div className="storefront-heading"><div><span className="site-eyebrow"><i/>DESCUBRE LO QUE PODEMOS CREAR</span><h2 id="store-catalog-title">Explora por<br/><em>lo que necesitas.</em></h2><p>Encuentra opciones, añade las que te interesan y define cantidades, materiales y acabados al cotizar.</p></div><div className="storefront-promise"><span><Check size={15}/></span><div><b>Una lista. Una solicitud.</b><small>Tu selección se conserva en este dispositivo.</small></div></div></div>
