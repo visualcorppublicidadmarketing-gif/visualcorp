@@ -10,6 +10,7 @@ const exploreLinks = [
   { to: '/publicaciones', label: 'Publicaciones' },
   { to: '/blog', label: 'Blog' },
   { to: '/tienda', label: 'Tienda' },
+  { to: '/tienda/promociones', label: 'Promociones y sorteos' },
   { to: '/contacto', label: 'Contacto' },
 ];
 

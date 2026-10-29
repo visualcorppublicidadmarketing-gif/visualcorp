@@ -130,7 +130,7 @@ function SiteFooter({ theme }: { theme: 'light' | 'dark' }) {
           <b>Explorar</b>
           <Link to="/">Inicio</Link><Link to="/nosotros">La empresa</Link><Link to="/como-trabajamos">Cómo trabajamos</Link>
           <Link to="/portafolio">Portafolio</Link><Link to="/publicaciones">Publicaciones</Link><Link to="/blog">Blog</Link>
-          <Link to="/tienda">Tienda</Link><Link to="/contacto">Contacto</Link>
+          <Link to="/tienda">Tienda</Link><Link className="footer-sub-link" to="/tienda/promociones">Promociones y sorteos</Link><Link to="/contacto">Contacto</Link>
         </nav>
         <nav className="footer-link-column" aria-label="Servicios">
           <b>Servicios</b>

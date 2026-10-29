@@ -1,0 +1,16 @@
+.store-promo-teaser{display:flex;align-items:center;gap:17px;width:min(1190px,calc(100% - 48px));margin:0 auto 35px;padding:22px 24px;border:1px solid #ffffff1b;border-radius:16px;background:linear-gradient(105deg,#18151e,#11121a 60%,#16101b);box-shadow:0 15px 40px #0002}
+.store-promo-teaser-icon{display:grid;width:48px;height:48px;flex:none;place-items:center;border:1px solid #dc64bc4d;border-radius:14px;background:#d32aa01a;color:#ee7bcf}
+.store-promo-teaser-copy{flex:1}.store-promo-teaser-copy .site-eyebrow{font-size:9px;color:#e889ce}
+.store-promo-teaser-copy h2{margin:5px 0 3px;color:#f8f7fa;font-family:VisualCorpDisplay,VisualCorpPublicDMSans,sans-serif;font-size:28px;font-weight:400;line-height:1.05}
+.store-promo-teaser-copy p{margin:0;color:#b3afbd;font-size:11px;line-height:1.55}
+.store-promo-teaser-link{display:inline-flex;min-height:42px;align-items:center;gap:8px;flex:none;padding:0 13px;border:1px solid #ffffff25;border-radius:10px;color:#f0ddec;font-size:11px;font-weight:750;text-decoration:none;transition:border-color .2s ease,background .2s ease}
+.store-promo-teaser-link:hover{border-color:#d753b5;background:#d1179414}
+.store-promo-teaser-link:focus-visible{outline:3px solid #d41491;outline-offset:4px}
+html[data-public-theme="light"] .public-site .store-promo-teaser{border-color:#e6deea;background:linear-gradient(105deg,#fff,#f5eff8 60%,#f3eef9);box-shadow:0 14px 38px #2819340c}
+html[data-public-theme="light"] .public-site .store-promo-teaser-copy .site-eyebrow{color:#77366c}
+html[data-public-theme="light"] .public-site .store-promo-teaser-copy h2{color:#211b2a}
+html[data-public-theme="light"] .public-site .store-promo-teaser-copy p{color:#625c69}
+html[data-public-theme="light"] .public-site .store-promo-teaser-link{border-color:#ddd3e3;color:#3c3345}
+html[data-public-theme="light"] .public-site .store-promo-teaser-link:hover{border-color:#bd74ac;background:#fbf4fa}
+@media(max-width:680px){.store-promo-teaser{width:calc(100% - 36px);align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:27px;padding:17px}.store-promo-teaser-icon{width:40px;height:40px}.store-promo-teaser-copy{min-width:0}.store-promo-teaser-copy h2{font-size:24px}.store-promo-teaser-copy p{font-size:10px}.store-promo-teaser-link{margin-left:52px}}
+@media(max-width:390px){.store-promo-teaser{width:calc(100% - 28px)}.store-promo-teaser-link{margin-left:0}}
