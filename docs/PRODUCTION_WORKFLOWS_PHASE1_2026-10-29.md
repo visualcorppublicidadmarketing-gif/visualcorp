@@ -1,6 +1,8 @@
 # Trabajos por áreas · fases 1 a 7
 
-Estado: implementación en el PR #130 (borrador), rama `codex/production-workflows-e-drive-20261029`. La vista previa del commit `7fe3f1c` está lista. La migración se aplicó en Supabase local con Podman; no se ha aplicado a la base de producción ni se ha habilitado el flujo.
+Estado: publicado en producción mediante el PR #130, integrado en `main` como `748d2486b995dc8dfaa435a2f92483c07476b8a7`. La migración se validó localmente con Podman y se aplicó al proyecto Supabase de producción. El despliegue de Vercel para ese mismo commit quedó `READY` en `https://visualcorp-suite.vercel.app`.
+
+Los perfiles de Asesoras, Coordinador de Taller, Coordinador de Ventas, Diseñador Gráfico, Impresor y Sublimación ya están activos. Pueden asignarse a varias cuentas por área cuando se conozcan sus correos o inicien sesión. Actualmente esas áreas no tienen miembros asignados; cada etapa admite un responsable a la vez y puede permanecer sin responsable. Administración puede consultar y coordinar todas las colas. La prueba del recorrido con esos perfiles reales y la revisión visual autenticada de la pantalla de Asesoría siguen pendientes; no deben confundirse con el despliegue completado.
 
 ## Recorrido implementado
 
@@ -31,14 +33,14 @@ Estado: implementación en el PR #130 (borrador), rama `codex/production-workflo
 
 Las medidas, la dirección de instalación y el material se exigen según la plantilla antes de avanzar desde Asesoría. Un cambio técnico después de iniciar producción marca la ficha para revisión de coordinación. Aceptar el cambio no aprueba automáticamente un arte invalidado: Diseño debe entregar otra versión si la revisión de arte está activada. La aprobación del arte es opcional por artículo y se activa en POS. El anticipo sigue siendo una puerta opcional prevista en la base de datos y no se activa por defecto.
 
-## Despliegue seguro de esta fase
+## Publicación y comprobaciones de esta fase
 
-1. La migración `20261029041516_production_job_workflows.sql` pasó un `supabase db reset --local --yes` sin costo de rama: se aplicaron 108 migraciones válidas y quedó como última la versión `20261029041516`. El `.deferred` se omite deliberadamente. Antes de producción, confirmar el historial remoto y aplicar la migración mediante el proceso de release.
-2. Probar con perfiles reales de asesor, diseño, impresión, taller y coordinación: venta, reintento, visita, modificación de ficha, asignación, cambio de fecha, carga privada, entrega y aprobación del arte, devolución por correcciones, bloqueo y cierre de cada ruta. Confirmar que un perfil ajeno no pueda cargar ni abrir la prueba de otra orden, cambiar una etapa, aprobar un arte ni consultar candidatos de asignación.
-3. Revisar las rutas sugeridas por nombres de producto. Se excluyeron de las sugerencias las tarifas de Sublimación A3/A4; las demás son sugerencias iniciales y no se consideran una clasificación comercial aprobada.
-4. Publicar el frontend después de la migración. Antes de ella, el POS detiene la confirmación porque no puede verificar las rutas.
+1. La migración `20261029041516_production_job_workflows.sql` pasó un `supabase db reset --local --yes` sin costo de rama: se aplicaron 108 migraciones válidas y quedó como última la versión `20261029041516`. El `.deferred` se omite deliberadamente. Después se confirmó el historial remoto y se aplicó la migración a producción. La base contiene siete tablas nuevas, ocho plantillas y 25 sugerencias de rutas, sin crear trabajos ficticios.
+2. El frontend se publicó después de la migración. El despliegue de producción `dpl_7NFDu4y2VV8AvJzy3JGsMfnhK4ft` corresponde al commit integrado `748d2486b995dc8dfaa435a2f92483c07476b8a7`, con alias oficial activo.
+3. Las rutas sugeridas por nombre de producto fueron aprobadas para esta publicación. Se excluyeron las tarifas de Sublimación A3/A4. La ruta se puede ajustar por artículo al confirmar una venta.
+4. Queda probar con perfiles reales de asesor, diseño, impresión, taller y coordinación cuando se incorporen las personas: venta, reintento, visita, modificación de ficha, asignación, cambio de fecha, carga privada, entrega y aprobación del arte, devolución por correcciones, bloqueo y cierre de cada ruta. Confirmar que un perfil ajeno no pueda cargar ni abrir la prueba de otra orden, cambiar una etapa, aprobar un arte ni consultar candidatos de asignación.
 
-Verificaciones locales realizadas: compilación TypeScript/Vite, prueba existente del control de acceso manual, análisis sintáctico del SQL, revisión de espacios en el diff y reset completo de Supabase local con Podman. No equivalen a una prueba del flujo con perfiles reales ni sustituyen la revisión visual autenticada.
+Verificaciones locales realizadas: compilación TypeScript/Vite, prueba existente del control de acceso manual, análisis sintáctico del SQL, revisión de espacios en el diff y reset completo de Supabase local con Podman. La migración, el commit desplegado y el alias de producción se comprobaron por separado. Estas verificaciones no equivalen a una prueba del flujo con perfiles reales ni sustituyen la revisión visual autenticada.
 
 ## Siguientes partes
 
@@ -46,4 +48,4 @@ Verificaciones locales realizadas: compilación TypeScript/Vite, prueba existent
 - Evaluar la aprobación por el cliente si el equipo la necesita. La decisión actual es interna de Asesoría; los enlaces temporales de la prueba privada son para usuarios autorizados del sistema.
 - Definir limpieza de cargas huérfanas si una subida termina correctamente pero falla la entrega de la versión a la orden. El formulario conserva la referencia para reintentar mientras la página permanezca abierta.
 - Definir reglas comerciales de anticipo con el equipo.
-- Verificar flujos completos con datos de prueba, ajustar perfiles y preparar el lanzamiento gradual.
+- Incorporar responsables a los perfiles existentes cuando se confirmen sus cuentas y verificar los flujos completos con operaciones reales autorizadas.
