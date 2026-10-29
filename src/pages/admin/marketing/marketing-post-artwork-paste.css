@@ -1,0 +1,9 @@
+.vc-marketing-post-artwork-paste{position:absolute;left:7px;bottom:7px;z-index:1;display:inline-flex;min-height:29px;align-items:center;justify-content:center;gap:5px;padding:0 8px;border:1px solid #e5d8ec;border-radius:8px;background:#fff;color:#68427d;font:inherit;font-size:8px;font-weight:800;box-shadow:0 2px 8px #25143912;cursor:copy}
+.vc-marketing-post-artwork-paste:hover{border-color:#c5a4d4;background:#fcf8ff}
+.vc-marketing-post-artwork-paste:focus-visible{outline:2px solid #8550a0;outline-offset:2px}
+.vc-marketing-post-artwork-paste:disabled{opacity:.6;cursor:wait}
+.vc-marketing-post-artwork-paste svg{flex:none}
+.vc-marketing-post-artwork-paste kbd{padding:2px 4px;border:1px solid #e9e2ee;border-bottom-width:2px;border-radius:4px;background:#faf8fc;color:#867990;font:inherit;font-size:7px;white-space:nowrap}
+.vc-marketing-post-artwork.has-image .vc-marketing-post-artwork-paste{display:none}
+.vc-marketing-post-artwork:not(.has-image) .vc-marketing-post-artwork-browse{top:7px;right:7px;bottom:auto}
+@media(max-width:430px){.vc-marketing-post-artwork-paste{min-height:27px;font-size:7px}.vc-marketing-post-artwork-paste kbd{font-size:6px}}

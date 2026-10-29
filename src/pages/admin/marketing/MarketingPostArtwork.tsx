@@ -1,8 +1,9 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { FileImage, ImagePlus, LoaderCircle, Upload } from 'lucide-react';
+import { ClipboardPaste, FileImage, ImagePlus, LoaderCircle, Upload } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { formatMarketingFileSize, prepareMarketingImage } from './marketingImageUtils';
 import './marketing-post-artwork.css';
+import './marketing-post-artwork-paste.css';
 
 const BUCKET = 'marketing-assets';
 const BUCKET_PREFIX = `storage://${BUCKET}/`;
@@ -156,9 +157,13 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
         updated_at: now,
         storage_status: 'uploading',
         retention_enabled: false,
-        retention_months: null,
       }).select('id').single();
-      if (indexError || !indexedAsset) throw new Error(indexError?.message || 'No se pudo crear la ficha de la imagen.');
+      if (indexError || !indexedAsset) {
+        const message = /retention_months/i.test(indexError?.message || '')
+          ? 'No se pudo preparar el guardado de la imagen. Actualiza la página e inténtalo de nuevo; el archivo todavía no se ha subido.'
+          : indexError?.message || 'No se pudo crear la ficha de la imagen.';
+        throw new Error(message);
+      }
 
       setMessage('Subiendo a la biblioteca privada…');
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(objectName, file, {
@@ -211,10 +216,15 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
   };
 
   const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    if (!canUpload || busy) return;
     const files = imagesFromClipboard(event.clipboardData);
-    if (!files.length) return;
     event.preventDefault();
     event.stopPropagation();
+    if (!files.length) {
+      setMessage('');
+      setError('No se encontró una imagen en el portapapeles. Copia una imagen o captura y vuelve a pegarla aquí.');
+      return;
+    }
     handleFiles(files);
   };
 
@@ -233,8 +243,15 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
     className={`vc-marketing-post-artwork is-${variant}${dragOver ? ' is-drag-over' : ''}${preview ? ' has-image' : ''}${!canUpload ? ' is-readonly' : ''}`}
     role="group"
     aria-label={`Imagen de ${post.title || 'la publicación'}`}
+    aria-keyshortcuts="Control+V"
     tabIndex={canUpload ? 0 : -1}
     onPaste={handlePaste}
+    onClick={(event) => {
+      if (!canUpload || busy || (event.target as HTMLElement).closest('button')) return;
+      zoneRef.current?.focus();
+      setError('');
+      setMessage('Listo para pegar. Presiona Ctrl+V.');
+    }}
     onDragOver={(event) => { if (canUpload) { event.preventDefault(); setDragOver(true); } }}
     onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragOver(false); }}
     onDrop={handleDrop}
@@ -243,8 +260,25 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
     <input ref={inputRef} id={id} type="file" accept="image/*" hidden disabled={!canUpload || busy} onChange={(event) => { if (event.target.files) handleFiles(Array.from(event.target.files)); event.target.value = ''; }}/>
     {preview ? <img src={previewUrl} alt={`Imagen asociada: ${asset?.filename || post.title}`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)}/> : <div className="vc-marketing-post-artwork-empty">
       {busy ? <LoaderCircle size={variant === 'compact' ? 13 : 22} className="vc-content-spin"/> : previewFailed ? <FileImage size={variant === 'compact' ? 13 : 22}/> : <ImagePlus size={variant === 'compact' ? 13 : 22}/>}
-      {variant !== 'compact' && <><b>{busy ? 'Procesando y subiendo…' : previewFailed ? 'No se pudo abrir la imagen' : canUpload ? 'Añadir imagen de referencia' : 'Sin imagen asociada'}</b><span>{canUpload ? 'Pega con Ctrl+V o arrastra una imagen hasta aquí' : 'Las imágenes vinculadas aparecerán en esta tarjeta'}</span></>}
+      {variant !== 'compact' && <><b>{busy ? 'Procesando y subiendo…' : previewFailed ? 'No se pudo abrir la imagen' : canUpload ? 'Añade una imagen a esta publicación' : 'Sin imagen asociada'}</b><span>{canUpload ? 'Haz clic aquí y luego presiona Ctrl+V, o arrastra una imagen.' : 'Las imágenes vinculadas aparecerán en esta tarjeta'}</span></>}
     </div>}
+    {canUpload && !preview && variant !== 'compact' && <button
+      type="button"
+      className="vc-marketing-post-artwork-paste"
+      aria-label={`Preparar ${post.title} para pegar una imagen con Ctrl+V`}
+      title="Haz clic aquí y después presiona Ctrl+V"
+      disabled={busy}
+      onClick={(event) => {
+        event.stopPropagation();
+        zoneRef.current?.focus();
+        setError('');
+        setMessage('Listo para pegar. Presiona Ctrl+V.');
+      }}
+    >
+      <ClipboardPaste size={variant === 'overview' ? 17 : 15}/>
+      <span>Pegar imagen</span>
+      <kbd>Ctrl + V</kbd>
+    </button>}
     {canUpload && <button type="button" className="vc-marketing-post-artwork-browse" aria-label={compactLabel} title={compactLabel} disabled={busy} onClick={(event) => { event.stopPropagation(); inputRef.current?.click(); }}>
       {busy ? <LoaderCircle size={14} className="vc-content-spin"/> : variant === 'compact' ? <ImagePlus size={14}/> : <><Upload size={14}/><span>Elegir imagen</span></>}
     </button>}
