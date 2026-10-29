@@ -1,18 +1,28 @@
-import React, { useMemo, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye, CircleDot } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye, CircleDot, Filter, GripVertical, ListFilter, Megaphone } from 'lucide-react';
 import { ContextMenu, type ContextMenuAction } from '../../../components/ui/ContextMenu';
 import { Badge } from '../../../components/ui/OperationalKit';
 import { DatePicker } from '../../../components/ui/Calendar';
+import { MarketingPostArtwork, type MarketingArtworkAsset } from './MarketingPostArtwork';
 import { getMarketingCalendarColor, getMarketingTags } from './marketingColors';
+import { addMarketingDays, isTerminalMarketingStatus, marketingDateKey, marketingWeekStart } from './marketingScheduleRules';
 import './marketing-calendar.css';
+import './marketing-calendar-enhanced.css';
+import './marketing-kanban.css';
+import './marketing-table.css';
 
 export type MarketingCalendarPost = {
   id: string; title: string; status: string; scheduled_date: string; scheduled_time?: string;
-  platform?: string; format?: string; owner?: string; content_line?: string; tags?: string[]; calendar_color?: string;
+  source_id?: string; platform?: string; format?: string; owner?: string; content_line?: string; next_action?: string; tags?: string[]; calendar_color?: string;
 };
 
 type Props = {
   posts: MarketingCalendarPost[];
+  organizationId: string;
+  artworkByPost: ReadonlyMap<string, MarketingArtworkAsset>;
+  onArtworkSaved: () => void;
+  rulesReady: boolean;
+  onRunOverdueRule: (today: string) => Promise<void>;
   canEdit: boolean;
   canDelete: boolean;
   selectedIds: Set<string>;
@@ -28,8 +38,23 @@ type Props = {
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const monthLabel = new Intl.DateTimeFormat('es-EC', { month: 'long', year: 'numeric' });
 const weekdays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-const publicationStatuses = ['Planificada', 'En diseño', 'En revisión', 'Programada', 'Publicada', 'Bloqueada'];
-const statusClass = (post: MarketingCalendarPost) => /publicad/i.test(post.status) ? 'published' : /revisi/i.test(post.status) ? 'review' : /bloque/i.test(post.status) ? 'blocked' : 'active';
+const publicationStatuses = ['Por iniciar', 'Planificada', 'En diseño', 'En revisión', 'Aprobada', 'Programada', 'Publicada', 'Completada', 'Terminada', 'Bloqueada', 'Cancelada'];
+const statusClass = (post: MarketingCalendarPost) => /publicad|complet|terminad|finalizad/i.test(post.status) ? 'published' : /revisi/i.test(post.status) ? 'review' : /bloque|cancelad|anulad/i.test(post.status) ? 'blocked' : 'active';
+const kanbanLanes = [
+  { key: 'planned', label: 'Por iniciar', status: 'Por iniciar', matches: /por iniciar|planificad/i },
+  { key: 'design', label: 'En diseño', status: 'En diseño', matches: /diseñ|producci/i },
+  { key: 'review', label: 'En revisión', status: 'En revisión', matches: /revisi/i },
+  { key: 'scheduled', label: 'Aprobada / programada', status: 'Programada', matches: /aprob|programad/i },
+  { key: 'blocked', label: 'Bloqueada', status: 'Bloqueada', matches: /bloque/i },
+  { key: 'published', label: 'Publicada', status: 'Publicada', matches: /publicad/i },
+  { key: 'completed', label: 'Terminada', status: 'Completada', matches: /complet|terminad|finalizad/i },
+  { key: 'cancelled', label: 'Cancelada', status: 'Cancelada', matches: /cancelad|anulad|archivad/i },
+];
+const dateFromKey = (value: string) => {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day, 12);
+};
+const laneForStatus = (status: string) => kanbanLanes.find((lane) => lane.matches.test(status))?.key || `custom:${status || 'Por iniciar'}`;
 const shiftDate = (source: string, days: number) => {
   const [year, month, day] = source.slice(0, 10).split('-').map(Number);
   const shifted = new Date(year, month - 1, day + days, 12);
@@ -43,13 +68,29 @@ const weekOfMonth = (date: Date) => {
   return Math.floor((monday.getTime() - first.getTime()) / 604800000) + 1;
 };
 
-export function MarketingCalendar({ posts, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onStatusChange, onDuplicate, onDelete }: Props) {
+export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtworkSaved, rulesReady, onRunOverdueRule, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onStatusChange, onDuplicate, onDelete }: Props) {
   const [anchor, setAnchor] = useState(() => new Date());
-  const [view, setView] = useState<'month' | 'week'>('month');
+  const [view, setView] = useState<'month' | 'week' | 'kanban' | 'table'>('month');
+  const [todayKey, setTodayKey] = useState(() => marketingDateKey());
+  const [followCurrentWeek, setFollowCurrentWeek] = useState(true);
+  const [channelFilter, setChannelFilter] = useState('Todos los canales');
+  const [ownerFilter, setOwnerFilter] = useState('Todos los responsables');
+  const [kanbanStateFilter, setKanbanStateFilter] = useState<'all' | 'pending' | 'published' | 'finished'>('all');
   const [dragging, setDragging] = useState<string | null>(null);
+  const [draggingKanban, setDraggingKanban] = useState<string | null>(null);
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const lastRuleRun = useRef('');
+  useEffect(() => {
+    const interval = window.setInterval(() => setTodayKey(marketingDateKey()), 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    if ((view !== 'kanban' && view !== 'table') || !followCurrentWeek) return;
+    const currentWeek = marketingWeekStart(todayKey);
+    if (marketingWeekStart(dateKey(anchor)) !== currentWeek) setAnchor(dateFromKey(todayKey));
+  }, [anchor, followCurrentWeek, todayKey, view]);
   const cells = useMemo(() => {
-    if (view === 'week') {
+    if (view !== 'month') {
       const start = new Date(anchor); start.setDate(anchor.getDate() - ((anchor.getDay() + 6) % 7));
       return Array.from({ length: 7 }, (_, index) => { const date = new Date(start); date.setDate(start.getDate() + index); return date; });
     }
@@ -66,8 +107,60 @@ export function MarketingCalendar({ posts, canEdit, canDelete, selectedIds, onTo
     return result;
   }, [posts]);
   const undated = posts.filter((post) => !/^\d{4}-\d{2}-\d{2}/.test(post.scheduled_date || ''));
-  const today = dateKey(new Date());
-  const move = (amount: number) => setAnchor((current) => view === 'month' ? new Date(current.getFullYear(), current.getMonth() + amount, 1) : new Date(current.getFullYear(), current.getMonth(), current.getDate() + amount * 7));
+  const weekStartKey = dateKey(cells[0]);
+  const weekEndKey = dateKey(cells[6]);
+  const nextMondayKey = addMarketingDays(weekEndKey, 1);
+  const isCurrentWeek = weekStartKey === marketingWeekStart(todayKey);
+  useEffect(() => {
+    if (view !== 'kanban' || !canEdit || !rulesReady || !isCurrentWeek) return;
+    const runKey = `${organizationId}:${todayKey}`;
+    if (lastRuleRun.current === runKey) return;
+    lastRuleRun.current = runKey;
+    void onRunOverdueRule(todayKey);
+  }, [canEdit, isCurrentWeek, onRunOverdueRule, organizationId, rulesReady, todayKey, view]);
+
+  const weekPosts = posts.filter((post) => {
+    const scheduledDate = String(post.scheduled_date || '').slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(scheduledDate) && scheduledDate >= weekStartKey && scheduledDate <= nextMondayKey;
+  });
+  const kanbanChannels = [...new Set(weekPosts.map((post) => post.platform).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  const kanbanOwners = [...new Set(weekPosts.map((post) => post.owner).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  const kanbanPosts = weekPosts.filter((post) => {
+    const status = String(post.status || 'Por iniciar');
+    const published = /publicad/i.test(status);
+    const finished = /complet|terminad|finalizad|cancelad|anulad|archivad/i.test(status);
+    return (channelFilter === 'Todos los canales' || post.platform === channelFilter)
+      && (ownerFilter === 'Todos los responsables' || post.owner === ownerFilter)
+      && (kanbanStateFilter === 'all'
+        || (kanbanStateFilter === 'pending' && !isTerminalMarketingStatus(status))
+        || (kanbanStateFilter === 'published' && published)
+        || (kanbanStateFilter === 'finished' && finished && !published));
+  });
+  const tablePosts = [...kanbanPosts].sort((a, b) =>
+    String(a.scheduled_date || '').localeCompare(String(b.scheduled_date || ''))
+    || String(a.scheduled_time || '').localeCompare(String(b.scheduled_time || ''))
+    || String(a.title || '').localeCompare(String(b.title || ''), 'es'),
+  );
+  const customKanbanStatuses = [...new Set(kanbanPosts.map((post) => String(post.status || 'Por iniciar')))]
+    .filter((status) => !kanbanLanes.some((lane) => lane.matches.test(status)))
+    .sort((a, b) => a.localeCompare(b, 'es'));
+  const kanbanColumns = [
+    ...kanbanLanes,
+    ...customKanbanStatuses.map((status) => ({ key: `custom:${status}`, label: status, status, matches: new RegExp(`^${status.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') })),
+  ];
+  const today = todayKey;
+  const move = (amount: number) => {
+    setFollowCurrentWeek(false);
+    setAnchor((current) => view === 'month' ? new Date(current.getFullYear(), current.getMonth() + amount, 1, 12) : new Date(current.getFullYear(), current.getMonth(), current.getDate() + amount * 7, 12));
+  };
+  const openTableView = () => {
+    if (view === 'month') {
+      setAnchor(dateFromKey(todayKey));
+      setFollowCurrentWeek(true);
+    }
+    setView('table');
+    setExpandedDate(null);
+  };
   const contextualActions = (post: MarketingCalendarPost): ContextMenuAction[] => [
     { label: 'Editar ficha', group: 'Publicación', icon: <Pencil size={14}/>, onSelect: () => onSelect(post), disabled: !canEdit },
     { label: 'Cambiar etapa', group: 'Publicación', icon: <CircleDot size={14}/>, disabled: !canEdit, onSelect: () => {}, children: [...new Set([...publicationStatuses, post.status].filter(Boolean))].map((status) => ({ label: status, kind: 'radio' as const, radioGroup: `marketing-status-${post.id}`, checked: status === post.status, onSelect: () => onStatusChange(post, status) })) },
@@ -95,27 +188,84 @@ export function MarketingCalendar({ posts, canEdit, canDelete, selectedIds, onTo
     { label: 'Vista del calendario', icon: <CalendarDays size={14}/>, onSelect: () => {}, children: [
       { label: 'Mes', kind: 'radio', checked: view === 'month', onSelect: () => { setView('month'); setExpandedDate(null); } },
       { label: 'Semana', kind: 'radio', checked: view === 'week', onSelect: () => { setView('week'); setExpandedDate(null); } },
+      { label: 'Kanban semanal', kind: 'radio', checked: view === 'kanban', onSelect: () => { setAnchor(dateFromKey(todayKey)); setFollowCurrentWeek(true); setView('kanban'); setExpandedDate(null); } },
+      { label: 'Tabla semanal', kind: 'radio', checked: view === 'table', onSelect: openTableView },
     ] },
     { label: 'Anterior', onSelect: () => move(-1) },
     { label: 'Siguiente', onSelect: () => move(1) },
   ];
-
+  const weekRange = `${new Intl.DateTimeFormat('es-EC', { day: 'numeric', month: 'short' }).format(cells[0])} – ${new Intl.DateTimeFormat('es-EC', { day: 'numeric', month: 'short' }).format(cells[6])} ${cells[6].getFullYear()}`;
   return <section className={`vc-marketing-calendar is-${view}`} aria-label={`Calendario editorial en vista ${view}`}>
     <header className="vc-marketing-calendar-head">
-      <div><span className="eyebrow">PLANIFICACIÓN EDITORIAL</span><h2>{view === 'month' ? monthLabel.format(anchor) : `Semana del ${new Intl.DateTimeFormat('es-EC',{day:'numeric',month:'short'}).format(cells[0])}`}</h2><p>Arrastra una ficha a otra fecha para reprogramarla. Usa clic derecho o ⋯ para sus acciones.</p></div>
-      <div className="vc-marketing-calendar-toolbar"><div className="vc-marketing-calendar-view"><button type="button" className={view==='month'?'active':''} aria-pressed={view==='month'} onClick={()=>{setView('month');setExpandedDate(null);}}>Mes</button><button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{setView('week');setExpandedDate(null);}}>Semana</button></div><div className="vc-marketing-calendar-controls"><DatePicker label="Ir a fecha" value={dateKey(anchor)} onChange={(value)=>{if(!value)return;const [year,month,day]=value.split('-').map(Number);setAnchor(new Date(year,month-1,day,12));setExpandedDate(null);}}/><button className="button button-outline" type="button" onClick={()=>{setAnchor(new Date());setExpandedDate(null);}}>Hoy</button><button className="icon-button" type="button" aria-label="Anterior" onClick={()=>move(-1)}><ChevronLeft size={17}/></button><button className="icon-button" type="button" aria-label="Siguiente" onClick={()=>move(1)}><ChevronRight size={17}/></button><ContextMenu className="vc-calendar-toolbar-context vc-marketing-context-menu" label="Acciones del calendario" actions={calendarActions}><span aria-hidden="true"/></ContextMenu></div></div>
+      <div><span className="eyebrow">PLANIFICACIÓN EDITORIAL</span><h2>{view === 'month' ? monthLabel.format(anchor) : `${view === 'kanban' ? 'Kanban semanal' : view === 'table' ? 'Tabla semanal' : isCurrentWeek ? 'Semana actual' : 'Semana'} · ${weekRange}`}</h2><p>{view === 'kanban' ? 'Arrastra las fichas entre etapas. El tablero incluye la semana actual y el lunes siguiente para recibir los pendientes del fin de semana.' : view === 'table' ? 'Revisa en filas la semana seleccionada y el lunes siguiente. La tabla y Kanban comparten periodo y filtros.' : view === 'week' ? 'Cada día muestra sus fichas completas. Pega, arrastra o elige una imagen en la tarjeta; se optimiza antes de guardarse.' : 'Arrastra una ficha a otra fecha para reprogramarla. Usa clic derecho o ⋯ para sus acciones.'}</p></div>
+      <div className="vc-marketing-calendar-toolbar"><div className="vc-marketing-calendar-view"><button type="button" className={view==='month'?'active':''} aria-pressed={view==='month'} onClick={()=>{setView('month');setExpandedDate(null);}}>Mes</button><button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{setView('week');setExpandedDate(null);}}>Semana</button><button type="button" className={view==='kanban'?'active':''} aria-pressed={view==='kanban'} onClick={()=>{setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);setView('kanban');setExpandedDate(null);}}>Kanban</button><button type="button" className={view==='table'?'active':''} aria-pressed={view==='table'} onClick={openTableView}>Tabla</button></div><div className="vc-marketing-calendar-controls"><DatePicker label="Ir a fecha" value={dateKey(anchor)} onChange={(value)=>{if(!value)return;const [year,month,day]=value.split('-').map(Number);setFollowCurrentWeek(false);setAnchor(new Date(year,month-1,day,12));setExpandedDate(null);}}/><button className="button button-outline" type="button" onClick={()=>{setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);setExpandedDate(null);}}>Hoy</button><button className="icon-button" type="button" aria-label="Anterior" onClick={()=>move(-1)}><ChevronLeft size={17}/></button><button className="icon-button" type="button" aria-label="Siguiente" onClick={()=>move(1)}><ChevronRight size={17}/></button><ContextMenu className="vc-calendar-toolbar-context vc-marketing-context-menu" label="Acciones del calendario" actions={calendarActions}><span aria-hidden="true"/></ContextMenu></div></div>
     </header>
-    <div className="vc-marketing-calendar-grid" role="grid" aria-label={monthLabel.format(anchor)} style={{'--calendar-cols':8} as React.CSSProperties}>
-      <div className="vc-marketing-calendar-weekday vc-marketing-calendar-week-number-heading" role="columnheader" aria-label="Semana del mes">Sem.</div>{weekdays.map((day)=><div key={day} className="vc-marketing-calendar-weekday" role="columnheader">{day}</div>)}
+    {(view === 'kanban' || view === 'table') && <div className="vc-marketing-kanban-filters" aria-label="Filtros de la semana">
+      <label><Filter size={14}/><span>Canal</span><select aria-label="Filtrar por canal" value={channelFilter} onChange={(event) => setChannelFilter(event.target.value)}><option>Todos los canales</option>{kanbanChannels.map((channel) => <option key={channel}>{channel}</option>)}</select></label>
+      <label><span>Responsable</span><select aria-label="Filtrar por responsable" value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}><option>Todos los responsables</option>{kanbanOwners.map((owner) => <option key={owner}>{owner}</option>)}</select></label>
+      <label><ListFilter size={14}/><span>Estado</span><select aria-label="Filtrar por estado de entrega" value={kanbanStateFilter} onChange={(event) => setKanbanStateFilter(event.target.value as typeof kanbanStateFilter)}><option value="all">Todos</option><option value="pending">Pendientes</option><option value="published">Publicadas</option><option value="finished">Terminadas / canceladas</option></select></label>
+      <span className="vc-marketing-kanban-result-count">{kanbanPosts.length} de {weekPosts.length} fichas · {weekStartKey} a {nextMondayKey}</span>
+    </div>}
+    {view === 'kanban' ? <>
+      <div className="vc-marketing-kanban-rule" role="note"><span><Check size={15}/></span><div><b>Regla de continuidad activa</b><small>Las fichas vencidas sin publicar pasan al siguiente día hábil. Si cae sábado o domingo, pasan al lunes. Publicadas, terminadas y canceladas se respetan.{canEdit ? ' Se aplica al abrir el Kanban actual y al cambiar el día mientras permanece abierto.' : ' Tu perfil puede consultar la regla; los cambios requieren permiso de edición.'}</small></div></div>
+      <div className="vc-marketing-kanban-board" role="list" aria-label={`Kanban semanal · ${weekRange}`}>
+        {kanbanColumns.map((lane) => {
+          const lanePosts = kanbanPosts.filter((post) => laneForStatus(String(post.status || 'Por iniciar')) === lane.key)
+            .sort((a, b) => String(a.scheduled_time || '').localeCompare(String(b.scheduled_time || '')));
+          return <section key={lane.key} className={`vc-marketing-kanban-column lane-${lane.key.replace(/[^a-z0-9-]/gi, '-').toLowerCase()}${draggingKanban ? ' can-drop' : ''}`} role="listitem" aria-label={`${lane.label}: ${lanePosts.length} publicaciones`}
+            onDragOver={(event) => { if (canEdit && draggingKanban) event.preventDefault(); }}
+            onDrop={(event) => { event.preventDefault(); const post = weekPosts.find((item) => item.id === (event.dataTransfer.getData('text/plain') || draggingKanban)); if (post && laneForStatus(String(post.status || 'Por iniciar')) !== lane.key) onStatusChange(post, lane.status); setDraggingKanban(null); }}>
+            <header className="vc-marketing-kanban-column-head"><div><b>{lane.label}</b><span>{lanePosts.length}</span></div><small>{lane.status}</small></header>
+            <div className="vc-marketing-kanban-cards">{lanePosts.length === 0 && <span className="vc-marketing-kanban-empty">Sin fichas en esta etapa</span>}{lanePosts.map((post) => {
+              const color = getMarketingCalendarColor(post.calendar_color, post.tags);
+              const tags = getMarketingTags(post.tags);
+              const artworkProps = { organizationId, post, asset: artworkByPost.get(post.id), canEdit, onSaved: onArtworkSaved };
+              const formattedDate = new Intl.DateTimeFormat('es-EC', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${post.scheduled_date.slice(0, 10)}T12:00:00`));
+              return <ContextMenu key={post.id} className="vc-marketing-kanban-card-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}>
+                <article className={`vc-marketing-kanban-card tone-${statusClass(post)}`} style={color ? { '--event-color': color, '--event-tint': `${color}18` } as React.CSSProperties : undefined}>
+                  <div className="vc-marketing-kanban-card-top"><time>{formattedDate}{post.scheduled_time ? ` · ${post.scheduled_time}` : ''}</time>{(canEdit || canDelete) && <input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={() => onToggle(post.id)}/>}</div>
+                  <button type="button" className="vc-marketing-kanban-card-title" draggable={canEdit} onDragStart={(event) => { event.dataTransfer.setData('text/plain', post.id); event.dataTransfer.effectAllowed = 'move'; setDraggingKanban(post.id); }} onDragEnd={() => setDraggingKanban(null)} onClick={() => onSelect(post)} title="Arrastra entre columnas para cambiar la etapa"><GripVertical size={13}/><b>{post.title || 'Sin título'}</b></button>
+                  <span className="vc-marketing-kanban-card-topic">{post.content_line || post.next_action || 'Tema y siguiente paso por completar.'}</span>
+                  <MarketingPostArtwork {...artworkProps} variant="week"/>
+                  <div className="vc-marketing-kanban-card-meta"><span><Megaphone size={12}/>{post.platform || 'Canal pendiente'}</span><span>{post.owner || 'Responsable pendiente'}</span></div>
+                  <div className="vc-marketing-kanban-card-foot"><span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status || 'Por iniciar'}</span>{tags.length > 0 && <div>{tags.slice(0, 2).map((tag) => <Badge key={tag} color={color || undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>)}</div>}</div>
+                </article>
+              </ContextMenu>;
+            })}</div>
+          </section>;
+        })}
+      </div>
+    </> : view === 'table' ? <div className="vc-marketing-table-wrap">
+      <table className="vc-marketing-table" aria-label={`Publicaciones de la semana ${weekRange}`}>
+        <thead><tr>{(canEdit || canDelete) && <th className="vc-marketing-table-select" scope="col"><span className="vc-sr-only">Seleccionar</span></th>}<th scope="col">Fecha</th><th scope="col">Publicación</th><th scope="col">Canal y formato</th><th scope="col">Responsable</th><th scope="col">Etapa</th><th scope="col">Etiquetas</th><th className="vc-marketing-table-actions" scope="col"><span className="vc-sr-only">Acciones</span></th></tr></thead>
+        <tbody>{tablePosts.length === 0 ? <tr><td className="vc-marketing-table-empty" colSpan={(canEdit || canDelete) ? 8 : 7}>No hay publicaciones para este periodo y estos filtros.</td></tr> : tablePosts.map((post) => {
+          const color = getMarketingCalendarColor(post.calendar_color, post.tags);
+          const tags = getMarketingTags(post.tags);
+          const formattedDate = new Intl.DateTimeFormat('es-EC', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${post.scheduled_date.slice(0, 10)}T12:00:00`));
+          const artworkProps = { organizationId, post, asset: artworkByPost.get(post.id), canEdit, onSaved: onArtworkSaved };
+          return <tr key={post.id} className={selectedIds.has(post.id) ? 'is-selected' : ''}>
+            {(canEdit || canDelete) && <td className="vc-marketing-table-select"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={() => onToggle(post.id)}/></td>}
+            <td className="vc-marketing-table-date"><b>{formattedDate}</b><small>{post.scheduled_time || 'Hora pendiente'}</small></td>
+            <td className="vc-marketing-table-publication"><div className="vc-marketing-table-publication-main"><div className="vc-marketing-table-artwork"><MarketingPostArtwork {...artworkProps} variant="compact"/></div><button type="button" onClick={() => onSelect(post)}><b>{post.title || 'Sin título'}</b><small>{post.content_line || post.next_action || 'Tema y siguiente paso por completar.'}</small></button></div></td>
+            <td className="vc-marketing-table-channel"><b>{post.platform || 'Canal pendiente'}</b><small>{post.format || 'Formato pendiente'}</small></td>
+            <td className="vc-marketing-table-owner">{post.owner || 'Responsable pendiente'}</td>
+            <td><span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status || 'Por iniciar'}</span></td>
+            <td className="vc-marketing-table-tags">{tags.length ? tags.slice(0, 3).map((tag) => <Badge key={tag} color={color || undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>) : <span>—</span>}</td>
+            <td className="vc-marketing-table-actions"><ContextMenu className="vc-marketing-table-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><span aria-hidden="true"/></ContextMenu></td>
+          </tr>;
+        })}</tbody>
+      </table>
+    </div> : <div className="vc-marketing-calendar-grid" role="grid" aria-label={view === 'month' ? monthLabel.format(anchor) : `Semana ${weekRange}`} style={{'--calendar-cols':view === 'month' ? 8 : 7} as React.CSSProperties}>
+      {view === 'month' && <div className="vc-marketing-calendar-weekday vc-marketing-calendar-week-number-heading" role="columnheader" aria-label="Semana del mes">Sem.</div>}{weekdays.map((day)=><div key={day} className="vc-marketing-calendar-weekday" role="columnheader">{day}</div>)}
       {cells.map((date,cellIndex)=>{
         const key=dateKey(date), items=byDate.get(key)||[];
         const inMonth=view==='week'||date.getMonth()===anchor.getMonth();
         const firstDateOfRow = cells.slice(cellIndex - (cellIndex % 7), cellIndex - (cellIndex % 7) + 7);
         const monthRepresentative = firstDateOfRow.find((rowDate) => rowDate.getMonth() === anchor.getMonth() && rowDate.getFullYear() === anchor.getFullYear());
         const weekLabel = weekOfMonth(view === 'month' ? monthRepresentative || date : date);
-        const maxVisible=view==='week'?12:6;
+        const maxVisible=view==='week'?items.length:6;
         const visible=items.slice(0,maxVisible), remaining=items.length-visible.length;
-        return <React.Fragment key={key}>{cellIndex % 7 === 0 && <div className="vc-marketing-calendar-week-number" role="rowheader" aria-label={`Semana ${weekLabel}`}>{weekLabel}</div>}<ContextMenu displayContents trigger={false} className="vc-calendar-day-scope vc-marketing-context-menu" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" aria-label={`${key}, ${items.length} publicaciones`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${dragging?' can-drop':''}${expandedDate===key?' is-expanded':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
+        return <React.Fragment key={key}>{view === 'month' && cellIndex % 7 === 0 && <div className="vc-marketing-calendar-week-number" role="rowheader" aria-label={`Semana ${weekLabel}`}>{weekLabel}</div>}<ContextMenu displayContents trigger={false} className="vc-calendar-day-scope vc-marketing-context-menu" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" aria-label={`${key}, ${items.length} publicaciones`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${dragging?' can-drop':''}${expandedDate===key?' is-expanded':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
           onDragOver={(event)=>{if(canEdit&&dragging)event.preventDefault();}}
           onDrop={(event)=>{event.preventDefault();const post=posts.find((item)=>item.id===(event.dataTransfer.getData('text/plain')||dragging));if(post&&post.scheduled_date.slice(0,10)!==key)onReschedule(post,key);setDragging(null);}}
           onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))event.currentTarget.classList.remove('is-drop-target');}}
@@ -124,18 +274,22 @@ export function MarketingCalendar({ posts, canEdit, canDelete, selectedIds, onTo
           <div className="vc-marketing-calendar-events">{visible.map((post)=>{
             const color=getMarketingCalendarColor(post.calendar_color,post.tags);
             const tags=getMarketingTags(post.tags);
-            return <div className="vc-marketing-event-row" key={post.id}>
+            const artworkProps={organizationId,post,asset:artworkByPost.get(post.id),canEdit,onSaved:onArtworkSaved};
+            return <div className={`vc-marketing-event-row${canEdit||canDelete?' is-selectable':''}${view==='week'?' is-week-card':''}`} key={post.id}>
               {(canEdit||canDelete)&&<input className="vc-marketing-event-select" type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={()=>onToggle(post.id)}/>}
-              <ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}>
-                <button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className={`vc-marketing-calendar-event tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined} title={`${post.title} · ${post.status}${tags.length?` · ${tags.join(', ')}`:''}`}>
-                  {post.scheduled_time&&<time>{post.scheduled_time}</time>}<span>{post.title||'Sin título'}</span>{tags.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${tags.join(', ')}`}>{tags[0]}</Badge>}
-                </button>
-              </ContextMenu>
+              {view==='week' ? <ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><article className={`vc-marketing-week-card tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined}>
+                <div className="vc-marketing-week-card-head"><div>{post.scheduled_time?<time>{post.scheduled_time}</time>:<span>Hora pendiente</span>}<small>{post.platform||'Canal pendiente'}{post.format?` · ${post.format}`:''}</small></div><span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span></div>
+                <button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className="vc-marketing-week-card-title" title="Abrir ficha de publicación"><b>{post.title||'Sin título'}</b><span>{post.content_line||post.next_action||'Tema y siguiente paso por completar.'}</span></button>
+                <MarketingPostArtwork {...artworkProps} variant="week"/>
+                <div className="vc-marketing-week-card-foot"><span>{post.owner||'Responsable pendiente'}</span>{tags.length>0&&<div>{tags.slice(0,2).map((tag)=><Badge key={tag} color={color||undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>)}</div>}</div>
+              </article></ContextMenu> : <><MarketingPostArtwork {...artworkProps} variant="compact"/><ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className={`vc-marketing-calendar-event tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined} title={`${post.title} · ${post.status}${tags.length?` · ${tags.join(', ')}`:''}`}>
+                {post.scheduled_time&&<time>{post.scheduled_time}</time>}<span>{post.title||'Sin título'}</span>{tags.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${tags.join(', ')}`}>{tags[0]}</Badge>}
+              </button></ContextMenu></>}
             </div>;
           })}{remaining>0&&<button type="button" className="vc-marketing-calendar-more" onClick={()=>setExpandedDate(expandedDate===key?null:key)}>+{remaining} más · ver agenda</button>}</div>
         </div></ContextMenu></React.Fragment>;
       })}
-    </div>
+    </div>}
     {expandedDate&&<section className="vc-marketing-day-agenda" aria-label={`Agenda del ${expandedDate}`}><header><div><span className="eyebrow">AGENDA DEL DÍA</span><b>{new Intl.DateTimeFormat('es-EC',{dateStyle:'full'}).format(new Date(`${expandedDate}T12:00:00`))} · {(byDate.get(expandedDate)||[]).length} publicaciones</b></div><button type="button" className="icon-button" aria-label="Cerrar agenda" onClick={()=>setExpandedDate(null)}><X size={15}/></button></header>{(byDate.get(expandedDate)||[]).map((post)=><article key={post.id}><span className="vc-marketing-agenda-time">{post.scheduled_time||'Sin hora'}</span><button type="button" className="vc-marketing-agenda-title" onClick={()=>onSelect(post)}><b>{post.title}</b><small>{post.platform||'Canal pendiente'} · {post.status}{getMarketingTags(post.tags).length?` · ${getMarketingTags(post.tags).join(', ')}`:''}</small></button><ContextMenu className="vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><span/></ContextMenu></article>)}{canEdit&&<button type="button" className="button button-outline" onClick={()=>onCreate(expandedDate)}><Plus size={14}/>Crear publicación</button>}</section>}
     <footer className="vc-marketing-calendar-foot"><span><i className="tone-active"/>Planificada</span><span><i className="tone-review"/>En revisión</span><span><i className="tone-published"/>Publicada</span><span><i className="tone-blocked"/>Bloqueada</span>{undated.length>0&&<span className="vc-marketing-undated">{undated.length} sin fecha asignada</span>}</footer>
   </section>;

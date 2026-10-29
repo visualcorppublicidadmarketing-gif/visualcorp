@@ -1,0 +1,45 @@
+.vc-marketing-calendar-grid{grid-template-columns:36px repeat(7,minmax(0,1fr))}
+.vc-marketing-calendar.is-week .vc-marketing-calendar-grid{grid-template-columns:repeat(7,minmax(190px,1fr));grid-auto-rows:minmax(345px,auto);overflow-x:auto;align-items:stretch;overscroll-behavior-x:contain;scrollbar-width:thin}
+.vc-marketing-calendar.is-week .vc-marketing-calendar-weekday{position:sticky;top:0;z-index:2;border-right:1px solid #ebe7ef;text-align:left;font-size:10px}
+.vc-marketing-calendar.is-week .vc-marketing-calendar-day{min-height:345px;padding:9px;background:linear-gradient(180deg,#fdfcfe,#fff 125px)}
+.vc-marketing-calendar.is-week .vc-marketing-calendar-day.is-today{background:linear-gradient(180deg,#f7effb,#fff 160px)}
+.vc-marketing-calendar.is-week .vc-marketing-calendar-day-head{min-height:28px;padding-bottom:7px;border-bottom:1px solid #eeeaf1;font-size:12px}
+.vc-marketing-calendar.is-week .vc-marketing-calendar-day-head>button{width:27px;height:27px;opacity:1}
+.vc-marketing-calendar.is-week .vc-marketing-calendar-day-agenda-toggle{font-size:9px}
+.vc-marketing-calendar.is-week .vc-marketing-calendar-events{gap:9px;padding-top:2px}
+.vc-marketing-event-row{display:grid;grid-template-columns:23px minmax(0,1fr);align-items:start;gap:4px;min-width:0}
+.vc-marketing-event-row.is-selectable{grid-template-columns:13px 23px minmax(0,1fr)}
+.vc-marketing-event-select{width:13px;height:13px;margin:5px 0 0;accent-color:#744792;opacity:0}
+.vc-marketing-event-row:hover .vc-marketing-event-select,.vc-marketing-event-select:focus-visible,.vc-marketing-event-select:checked{opacity:1}
+.vc-marketing-calendar-event{min-height:24px;padding:4px 5px;font-size:8px}
+.vc-marketing-event-context{position:relative;display:block;min-width:0}
+.vc-marketing-week-card{position:relative;display:grid;min-width:0;gap:8px;padding:9px;border:1px solid color-mix(in srgb,var(--event-color,#8660ad) 24%,#fff);border-left:3px solid var(--event-color,#8660ad);border-radius:11px;background:linear-gradient(150deg,var(--event-tint,#f8f4fb),#fff 65%);color:#4a4050;box-shadow:0 2px 8px #29203308;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.vc-marketing-week-card:hover{transform:translateY(-1px);box-shadow:0 6px 15px #29203312}
+.vc-marketing-week-card.tone-review{border-left-color:var(--event-color,#c69a37);background:linear-gradient(150deg,var(--event-tint,#fff8e9),#fff 66%)}
+.vc-marketing-week-card.tone-published{border-left-color:var(--event-color,#3d9b73);background:linear-gradient(150deg,var(--event-tint,#edf8f2),#fff 66%)}
+.vc-marketing-week-card.tone-blocked{border-left-color:var(--event-color,#d07965);background:linear-gradient(150deg,var(--event-tint,#fff1ee),#fff 66%)}
+.vc-marketing-week-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:7px;padding-right:23px}
+.vc-marketing-week-card-head>div{display:grid;min-width:0;gap:3px}
+.vc-marketing-week-card-head time,.vc-marketing-week-card-head>div>span{color:#5e4c69;font-size:10px;font-weight:800}
+.vc-marketing-week-card-head small{overflow:hidden;color:#887c8f;font-size:8px;text-overflow:ellipsis;white-space:nowrap}
+.vc-marketing-week-card-status{max-width:88px;overflow:hidden;padding:3px 6px;border:1px solid #ddd2e6;border-radius:999px;background:#fff;color:#75617e;font-size:7px;font-weight:750;text-overflow:ellipsis;white-space:nowrap}
+.vc-marketing-week-card-status.tone-review{border-color:#ead9ac;background:#fffaf0;color:#866b2a}
+.vc-marketing-week-card-status.tone-published{border-color:#c5e3d3;background:#f3fcf6;color:#347653}
+.vc-marketing-week-card-status.tone-blocked{border-color:#ebc9c2;background:#fff5f2;color:#9a574b}
+.vc-marketing-week-card-title{display:grid;min-width:0;gap:4px;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.vc-marketing-week-card-title:focus-visible{outline:2px solid #8750a5;outline-offset:3px;border-radius:4px}
+.vc-marketing-week-card-title b{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;color:#302a35;font-size:11px;line-height:1.35}
+.vc-marketing-week-card-title>span{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;color:#817987;font-size:8px;line-height:1.4}
+.vc-marketing-week-card-foot{display:flex;min-width:0;align-items:center;justify-content:space-between;gap:6px}
+.vc-marketing-week-card-foot>span{overflow:hidden;color:#8b8390;font-size:8px;text-overflow:ellipsis;white-space:nowrap}
+.vc-marketing-week-card-foot>div{display:flex;gap:3px;min-width:0;overflow:hidden}
+.vc-marketing-week-card-foot .ok-badge{max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vc-marketing-calendar.is-week .vc-marketing-event-context>.vc-context-trigger{top:5px;right:5px;z-index:2;width:22px;height:22px;opacity:0}
+.vc-marketing-calendar.is-week .vc-marketing-event-context:hover>.vc-context-trigger,.vc-marketing-calendar.is-week .vc-marketing-event-context>.vc-context-trigger:focus-visible,.vc-marketing-calendar.is-week .vc-marketing-event-context>.vc-context-trigger[aria-expanded=true]{opacity:1}
+.vc-marketing-calendar.is-week .vc-marketing-event-row.is-selectable .vc-marketing-event-select{margin-top:13px}
+.vc-marketing-calendar.is-week .vc-marketing-post-artwork-message{position:static;grid-column:1/-1;border-radius:0 0 8px 8px;background:#fffc}
+@media(max-width:760px){.vc-marketing-calendar.is-week .vc-marketing-calendar-grid{grid-template-columns:repeat(7,minmax(225px,1fr));grid-auto-rows:minmax(320px,auto)}.vc-marketing-calendar.is-week .vc-marketing-calendar-day{min-height:320px}.vc-marketing-event-select{opacity:1}.vc-marketing-calendar.is-week .vc-marketing-event-context>.vc-context-trigger{opacity:1}}
+@media(max-width:520px){.vc-marketing-calendar.is-week .vc-marketing-calendar-grid{grid-template-columns:repeat(7,minmax(240px,1fr));grid-auto-rows:minmax(300px,auto)}.vc-marketing-calendar.is-week .vc-marketing-calendar-day{min-height:300px;padding:7px}.vc-marketing-week-card{padding:8px}.vc-marketing-week-card-title b{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.vc-marketing-week-card{transition:none}.vc-marketing-week-card:hover{transform:none}}
+
+@media(max-width:520px){.vc-marketing-calendar:not(.is-week) .vc-marketing-calendar-grid{grid-template-columns:36px repeat(7,minmax(76px,1fr));overflow-x:auto}}

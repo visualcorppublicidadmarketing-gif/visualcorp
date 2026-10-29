@@ -1,0 +1,35 @@
+.vc-marketing-calendar.is-table{min-width:0}
+.vc-marketing-table-wrap{max-width:100%;overflow:auto;border:1px solid #e9e4ec;border-radius:12px;background:#fff;overscroll-behavior-x:contain;scrollbar-width:thin}
+.vc-marketing-table{width:100%;min-width:910px;border-collapse:separate;border-spacing:0;text-align:left}
+.vc-marketing-table th{position:sticky;top:0;z-index:1;padding:10px 9px;border-bottom:1px solid #e9e4ec;background:#faf8fc;color:#827a89;font-size:9px;font-weight:800;letter-spacing:.03em;white-space:nowrap}
+.vc-marketing-table td{padding:9px;border-bottom:1px solid #f0edf2;color:#5c5361;font-size:10px;vertical-align:middle}
+.vc-marketing-table tbody tr:last-child td{border-bottom:0}
+.vc-marketing-table tbody tr:hover{background:#fcfafe}
+.vc-marketing-table tbody tr.is-selected{background:#f7f1fa}
+.vc-marketing-table-select{width:34px;text-align:center}
+.vc-marketing-table-select input{width:14px;height:14px;margin:0;accent-color:#744792}
+.vc-marketing-table-date{min-width:100px;white-space:nowrap}
+.vc-marketing-table-date b,.vc-marketing-table-date small,.vc-marketing-table-channel b,.vc-marketing-table-channel small{display:block}
+.vc-marketing-table-date b,.vc-marketing-table-channel b{color:#4b414f;font-size:10px;font-weight:750}
+.vc-marketing-table-date small,.vc-marketing-table-channel small{margin-top:3px;color:#928a98;font-size:9px}
+.vc-marketing-table-publication{min-width:260px}
+.vc-marketing-table-publication-main{display:flex;align-items:center;gap:9px;min-width:0}
+.vc-marketing-table-artwork{width:58px;height:46px;flex:none;overflow:hidden;border-radius:7px;background:#f8f5fa}
+.vc-marketing-table-artwork .vc-marketing-post-artwork.is-compact{width:100%;height:100%;border:0;border-radius:7px}
+.vc-marketing-table-artwork .vc-marketing-post-artwork.is-compact .vc-marketing-post-artwork-browse{border-radius:7px}
+.vc-marketing-table-publication-main>button{display:grid;min-width:0;gap:4px;padding:0;border:0;background:transparent;color:#403747;text-align:left;cursor:pointer}
+.vc-marketing-table-publication-main>button:focus-visible{outline:2px solid #8750a5;outline-offset:3px;border-radius:4px}
+.vc-marketing-table-publication-main>button b{overflow:hidden;font-size:10px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
+.vc-marketing-table-publication-main>button small{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;color:#89818e;font-size:9px;line-height:1.4}
+.vc-marketing-table-channel{min-width:116px}
+.vc-marketing-table-owner{min-width:125px}
+.vc-marketing-table .vc-marketing-week-card-status{display:inline-block;max-width:none;font-size:9px}
+.vc-marketing-table-tags{min-width:100px;white-space:nowrap}
+.vc-marketing-table-tags .ok-badge{margin:2px 3px 2px 0}
+.vc-marketing-table-tags>span{color:#aaa2ad}
+.vc-marketing-table td.vc-marketing-table-actions{position:relative;width:38px;padding:0!important;text-align:center}
+.vc-marketing-table-actions>.vc-marketing-table-context{position:static;display:grid;min-height:38px;place-items:center}
+.vc-marketing-table-actions>.vc-marketing-table-context>.vc-context-trigger{position:static;width:28px;height:28px;opacity:1}
+.vc-marketing-table-empty{height:130px;text-align:center!important;color:#968d9b!important}
+@media(max-width:760px){.vc-marketing-calendar.is-table .vc-marketing-calendar-toolbar{justify-content:space-between}.vc-marketing-table{min-width:850px}}
+@media(prefers-reduced-motion:reduce){.vc-marketing-table tbody tr{scroll-behavior:auto}}
