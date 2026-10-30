@@ -3,6 +3,27 @@ import { supabase } from './supabaseClient';
 export const COMMERCIAL_ASSET_BUCKET = 'commercial-document-assets';
 export type CommercialAssetDraft = { id: string; kind: 'image' | 'link'; title: string; description: string; file?: File; previewUrl?: string; url?: string };
 
+export function normalizeExternalWebUrl(value: string) {
+  const input = String(value || '').trim();
+  if (!input) throw new Error('Escribe una dirección web.');
+  const hostPort = /^[^/?#\s]+:\d+(?:[/?#]|$)/.test(input);
+  const candidate = input.startsWith('//')
+    ? `https:${input}`
+    : /^https?:\/\//i.test(input)
+      ? input
+      : /^[a-z][a-z\d+.-]*:/i.test(input) && !hostPort
+        ? input
+        : `https://${input}`;
+  let url: URL;
+  try { url = new URL(candidate); }
+  catch { throw new Error('Revisa la dirección; puedes pegar solo el dominio o la dirección completa.'); }
+  if (!['http:', 'https:'].includes(url.protocol) || !url.hostname) {
+    throw new Error('Usa un enlace web con http o https.');
+  }
+  url.protocol = 'https:';
+  return url.href;
+}
+
 export async function optimizeCommercialImage(file: File): Promise<File> {
   if (!file.type.startsWith('image/')) throw new Error('Elige un archivo de imagen.');
   if (file.size > 20 * 1024 * 1024) throw new Error('La imagen supera el límite de 20 MB.');
@@ -31,9 +52,8 @@ export async function persistCommercialAssets(args: { organizationId: string; do
     for (let index = 0; index < args.assets.length; index += 1) {
       const asset = args.assets[index];
       if (asset.kind === 'link') {
-        const url = new URL(asset.url || '');
-        if (url.protocol !== 'https:') throw new Error(`El enlace “${asset.title}” debe usar HTTPS.`);
-        rows.push({ organization_id: args.organizationId, document_kind: args.kind, document_id: args.documentId, asset_type: 'link', title: asset.title.trim(), description: asset.description.trim(), external_url: url.toString(), sort_order: index });
+        const url = normalizeExternalWebUrl(asset.url || '');
+        rows.push({ organization_id: args.organizationId, document_kind: args.kind, document_id: args.documentId, asset_type: 'link', title: asset.title.trim(), description: asset.description.trim(), external_url: url, sort_order: index });
         continue;
       }
       if (!asset.file) continue;
