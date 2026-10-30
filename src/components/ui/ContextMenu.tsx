@@ -381,7 +381,7 @@ export function ContextMenu({ actions, label = 'Más opciones', children, classN
     return () => window.removeEventListener('resize', updatePlacement);
   }, [open, revision]);
 
-  const menu = open && <div ref={menuRef} data-vc-context-menu={contextMenuId} className={`vc-context-menu ${className}`.trim()} role="menu" aria-label={label} aria-orientation="vertical" style={{ left: position.x, top: position.y }} onContextMenu={(event) => event.preventDefault()}>{renderActions(actions)}</div>;
+  const menu = open && <div ref={menuRef} data-vc-context-menu={contextMenuId} className={`vc-context-menu ${themeClassName}`.trim()} role="menu" aria-label={label} aria-orientation="vertical" style={{ left: position.x, top: position.y }} onContextMenu={(event) => event.preventDefault()}>{renderActions(actions)}</div>;
   const floatingMenu = menu && typeof document !== 'undefined' ? createPortal(menu, document.body) : menu;
   if (scope === 'document') return <>{floatingMenu}</>;
 
