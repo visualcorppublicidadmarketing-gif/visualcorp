@@ -135,6 +135,9 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
         const product = products.get(String(line.product_id));
         const lineTotal = numberOrNull(line.total) ?? numberOrNull(line[quoteTierKey(document.chosen_tier)]);
         const billedQuantity = numberOrNull(line.quantity);
+        const pieceQuantity = numberOrNull(line.piece_quantity);
+        const isMeasuredArea = Boolean(product?.mode === 'area' || (line.width_cm && line.height_cm));
+        const lineUnit = line.unit || (product?.mode === 'area' ? 'm²' : product?.unit || 'unidad');
         return {
           key: String(line.id || `${line.product_id || 'quote'}-${index}`),
           title: line.name || line.product_name || product?.name || `Artículo ${index + 1}`,
@@ -142,9 +145,11 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
           category: line.category || product?.family || (line.custom ? 'Concepto libre' : ''),
           image: (typeof line.image === 'string' && line.image) || imageFromProduct(product),
           sku: line.sku || '',
-          quantity: numberOrNull(line.piece_quantity) ?? billedQuantity,
+          quantity: pieceQuantity ?? billedQuantity,
           billedQuantity,
-          unit: line.unit || (product?.mode === 'area' ? 'm²' : product?.unit || 'unidad'),
+          unit: pieceQuantity !== null && isMeasuredArea ? 'piezas' : lineUnit,
+          billedUnit: lineUnit,
+          showBilledQuantity: pieceQuantity !== null && isMeasuredArea && billedQuantity !== null,
           unitPrice: numberOrNull(line.unit_price) ?? (lineTotal !== null && billedQuantity ? lineTotal / billedQuantity : null),
           lineTotal,
           discount: numberOrNull(line.discount_amount),
@@ -171,6 +176,8 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
           quantity,
           billedQuantity: quantity,
           unit: product?.unit || 'unidad',
+          billedUnit: product?.unit || 'unidad',
+          showBilledQuantity: false,
           unitPrice: numberOrNull(line.unit_price),
           lineTotal: numberOrNull(line.line_total),
           measurement: '',
@@ -264,7 +271,8 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
           </div>}
         </div>
         <div className="commercial-detail-line-values">
-          <span>{line.quantity ?? '—'} {line.unit}{line.billedQuantity !== null && line.billedQuantity !== line.quantity ? ` · ${line.billedQuantity} ${line.unit} facturados` : ''}</span>
+          <span className="commercial-detail-line-quantity"><b>Cantidad:</b> {line.quantity ?? '—'} {line.unit}</span>
+          {line.showBilledQuantity && <span className="commercial-detail-line-quantity"><b>Área facturada:</b> {line.billedQuantity} {line.billedUnit}</span>}
           <small>Unitario base: {line.unitPrice === null ? '—' : formatMoney(line.unitPrice)}</small>
           {isQuote && line.discount > 0 && <small>Descuento asignado: −{formatMoney(line.discount)}</small>}
           {isQuote && line.taxAmount > 0 && <small>IVA asignado: {formatMoney(line.taxAmount)}</small>}
