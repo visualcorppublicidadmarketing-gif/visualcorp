@@ -27,6 +27,10 @@ export type PublicationDraft = {
   visual_direction: string;
   tags: string;
   calendar_color: string;
+  design_ready: boolean;
+  video_ready: boolean;
+  canvas_width: string;
+  canvas_height: string;
 };
 
 type HistoryEvent = { id: string; field_name: string; previous_value: string; new_value: string; created_at: string };
@@ -35,7 +39,7 @@ export type PublicationEditorTab = 'plan' | 'copy' | 'production';
 
 type Props = {
   draft: PublicationDraft;
-  onChange: (field: keyof PublicationDraft, value: string) => void;
+  onChange: (field: keyof PublicationDraft, value: string | boolean) => void;
   canEdit: boolean;
   isNew: boolean;
   activeTab: PublicationEditorTab;
@@ -65,8 +69,8 @@ function PublicationField({ draft, onChange, name, label, hint, placeholder, mul
     <span>{label}</span>
     {hint && <small>{hint}</small>}
     {multiline
-      ? <textarea rows={rows} value={draft[name]} onChange={(event) => onChange(name, event.target.value)} placeholder={placeholder} maxLength={maxLength}/>
-      : <input type={name === 'due_date' ? 'date' : name === 'external_url' ? 'url' : 'text'} value={draft[name]} onChange={(event) => onChange(name, event.target.value)} placeholder={placeholder} maxLength={maxLength}/>}
+      ? <textarea rows={rows} value={String(draft[name] ?? '')} onChange={(event) => onChange(name, event.target.value)} placeholder={placeholder} maxLength={maxLength}/>
+      : <input type={name === 'due_date' ? 'date' : name === 'external_url' ? 'url' : 'text'} value={String(draft[name] ?? '')} onChange={(event) => onChange(name, event.target.value)} placeholder={placeholder} maxLength={maxLength}/>}
   </label>;
 }
 
@@ -77,6 +81,55 @@ const tabs = [
 ] as const;
 
 export const DEFAULT_MARKETING_TAGS = ['Campaña','Producto','Proceso','Educativo','Temporada','Promoción','Marca','Pendiente'];
+
+const canvasPresets = [
+  { label: 'Vertical · 9:16 · 1080 × 1920 px', width: '1080', height: '1920' },
+  { label: 'Retrato · 4:5 · 1080 × 1350 px', width: '1080', height: '1350' },
+  { label: 'Retrato · 3:4 · 1080 × 1440 px', width: '1080', height: '1440' },
+  { label: 'Cuadrado · 1:1 · 1080 × 1080 px', width: '1080', height: '1080' },
+  { label: 'Horizontal · 16:9 · 1920 × 1080 px', width: '1920', height: '1080' },
+  { label: 'Horizontal · 4:3 · 1200 × 900 px', width: '1200', height: '900' },
+  { label: 'Horizontal · 3:2 · 1200 × 800 px', width: '1200', height: '800' },
+  { label: 'Banner · 2:1 · 1200 × 600 px', width: '1200', height: '600' },
+];
+
+function simplifyRatio(width: number, height: number) {
+  let a = width, b = height;
+  while (b) [a, b] = [b, a % b];
+  return `${width / a}:${height / a}`;
+}
+
+function CanvasDimensions({ draft, onChange }: { draft: PublicationDraft; onChange: Props['onChange'] }) {
+  const width = Number(draft.canvas_width), height = Number(draft.canvas_height);
+  const hasWidth = draft.canvas_width !== '', hasHeight = draft.canvas_height !== '';
+  const valid = Number.isInteger(width) && Number.isInteger(height) && width > 0 && height > 0;
+  const preset = canvasPresets.find((item) => item.width === draft.canvas_width && item.height === draft.canvas_height);
+  const choosePreset = (value: string) => {
+    const selected = canvasPresets.find((item) => `${item.width}x${item.height}` === value);
+    onChange('canvas_width', selected?.width || '');
+    onChange('canvas_height', selected?.height || '');
+  };
+  return <section className="vc-marketing-canvas-size is-wide" aria-label="Tamaño de la pieza">
+    <div className="vc-publication-section-heading"><span className="vc-publication-heading-icon"><Target size={16}/></span><div><b>Medida de la pieza</b><small>Elige un tamaño habitual o escribe el ancho y el alto en píxeles.</small></div></div>
+    <label className="vc-publication-field vc-marketing-canvas-preset"><span>Medidas rápidas</span><select value={preset ? `${preset.width}x${preset.height}` : ''} onChange={(event) => choosePreset(event.target.value)}><option value="">Personalizada / sin medida</option>{canvasPresets.map((item) => <option key={`${item.width}x${item.height}`} value={`${item.width}x${item.height}`}>{item.label}</option>)}</select></label>
+    <div className="vc-marketing-canvas-dimensions">
+      <label className="vc-publication-field"><span>Ancho (px)</span><input type="number" min="1" max="20000" step="1" inputMode="numeric" value={draft.canvas_width} onChange={(event) => onChange('canvas_width', event.target.value)} placeholder="1080" aria-label="Ancho de la pieza en píxeles"/></label>
+      <span className="vc-marketing-canvas-times" aria-hidden="true">×</span>
+      <label className="vc-publication-field"><span>Alto (px)</span><input type="number" min="1" max="20000" step="1" inputMode="numeric" value={draft.canvas_height} onChange={(event) => onChange('canvas_height', event.target.value)} placeholder="1920" aria-label="Alto de la pieza en píxeles"/></label>
+      <output className={`vc-marketing-canvas-ratio${valid ? ' is-valid' : ''}`} aria-live="polite"><small>Proporción</small><b>{valid ? simplifyRatio(width, height) : hasWidth && hasHeight ? 'Usa enteros de 1 a 20 000' : hasWidth || hasHeight ? 'Completa ambas medidas' : 'Sin definir'}</b></output>
+    </div>
+  </section>;
+}
+
+function ReadinessChecklist({ draft, onChange }: { draft: PublicationDraft; onChange: Props['onChange'] }) {
+  return <section className="vc-marketing-readiness is-wide" aria-label="Avance de producción">
+    <div className="vc-publication-section-heading"><span className="vc-publication-heading-icon"><CheckCircle2 size={16}/></span><div><b>Avance de producción</b><small>Marca cada recurso cuando esté listo para revisión o publicación.</small></div></div>
+    <div className="vc-marketing-readiness-options">
+      <label><input type="checkbox" checked={draft.design_ready} onChange={(event) => onChange('design_ready', event.target.checked)}/><span><b>Diseño listo</b><small>Arte final preparado</small></span></label>
+      <label><input type="checkbox" checked={draft.video_ready} onChange={(event) => onChange('video_ready', event.target.checked)}/><span><b>Vídeo listo</b><small>Edición final preparada</small></span></label>
+    </div>
+  </section>;
+}
 
 function TagPicker({ value, onChange, calendarColor, onCalendarColorChange, knownTags = [], disabled }: { value: string; onChange: (value: string) => void; calendarColor: string; onCalendarColorChange: (value: string) => void; knownTags?: string[]; disabled: boolean }) {
   const [draft, setDraft] = useState('');
@@ -113,6 +166,7 @@ export function PublicationEditorSections({ draft, onChange, canEdit, isNew, act
         <label className="vc-publication-field"><span>Hora</span><input type="time" value={draft.scheduled_time} onChange={(event) => onChange('scheduled_time', event.target.value)}/></label>
         <label className="vc-publication-field"><span>Responsable</span><input value={draft.owner} onChange={(event) => onChange('owner', event.target.value)} placeholder="Por asignar" maxLength={120}/></label>
         <label className="vc-publication-field"><span>Etapa</span><select value={draft.status} onChange={(event) => onChange('status', event.target.value)}>{[...new Set(['Por iniciar','Planificada','En diseño','En revisión','Aprobada','Programada','Publicada','Completada','Terminada','Bloqueada','Cancelada',draft.status])].map((status) => <option key={status}>{status}</option>)}</select></label>
+        <CanvasDimensions draft={draft} onChange={onChange}/>
         <PublicationField draft={draft} onChange={onChange} name="content_line" label="Tema o línea de contenido" hint="Resume de qué trata la pieza." placeholder="Qué queremos comunicar" wide/>
         <TagPicker value={draft.tags} onChange={(value) => onChange('tags', value)} calendarColor={draft.calendar_color} onCalendarColorChange={(value) => onChange('calendar_color', value)} knownTags={knownTags} disabled={!canEdit}/>
         <PublicationField draft={draft} onChange={onChange} name="objective" label="Objetivo" hint="¿Qué debería lograr esta publicación?" placeholder="Informar, atraer consultas, mostrar un proceso…"/>
@@ -145,6 +199,7 @@ export function PublicationEditorSections({ draft, onChange, canEdit, isNew, act
       {activeTab === 'production' && <div className="vc-post-form-grid vc-publication-grid">
         <PublicationField draft={draft} onChange={onChange} name="next_action" label="Siguiente paso" hint="Una acción concreta que desbloquee el trabajo." placeholder="Acción pendiente"/>
         <PublicationField draft={draft} onChange={onChange} name="due_date" label="Fecha límite"/>
+        <ReadinessChecklist draft={draft} onChange={onChange}/>
         {!isNew && selectedPost && <div className="vc-post-checklist is-production-checklist is-wide"><div className="vc-publication-section-heading"><span className="vc-publication-heading-icon"><CheckCircle2 size={16}/></span><div><b>Revisión de entregables</b><small>Estado importado del checklist; “Por confirmar” requiere revisión del equipo.</small></div></div><div>{checklistFields.map(([field,label]) => <span key={field}><i className={/complet|aprob|listo|hecho/i.test(selectedPost[field] || '') ? 'is-done' : ''}/>{label}<small>{selectedPost[field] || 'Por confirmar'}</small></span>)}</div></div>}
         {events.length > 0 && <div className="vc-post-checklist is-wide"><span className="eyebrow">ACTIVIDAD RECIENTE</span><p>{events.slice(0, 5).map((entry) => <span key={entry.id}>{entry.field_name}: {entry.previous_value || 'vacío'} → {entry.new_value} · {formatDate(String(entry.created_at).slice(0,10))}</span>)}</p></div>}
         <div className="vc-publication-production-note is-wide"><CheckCircle2 size={16}/><p><b>El estado describe el flujo interno.</b><br/>Marcar una pieza como aprobada o publicada no la envía a redes; conserva esa etapa hasta que la persona responsable confirme el avance.</p></div>

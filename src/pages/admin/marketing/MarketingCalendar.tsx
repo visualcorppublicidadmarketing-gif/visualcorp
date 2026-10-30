@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye, CircleDot, Filter, GripVertical, ListFilter, Megaphone } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye, CircleDot, Filter, GripVertical, ListFilter, Megaphone, Film, Image as ImageIcon, CheckCircle2, Circle } from 'lucide-react';
 import { ContextMenu, type ContextMenuAction } from '../../../components/ui/ContextMenu';
 import { Badge } from '../../../components/ui/OperationalKit';
 import { DatePicker } from '../../../components/ui/Calendar';
@@ -15,6 +15,7 @@ import './marketing-interface-polish.css';
 export type MarketingCalendarPost = {
   id: string; title: string; status: string; scheduled_date: string; scheduled_time?: string;
   source_id?: string; platform?: string; format?: string; owner?: string; content_line?: string; next_action?: string; tags?: string[]; calendar_color?: string;
+  design_ready?: boolean; video_ready?: boolean; canvas_width?: number | null; canvas_height?: number | null;
 };
 
 type Props = {
@@ -32,6 +33,7 @@ type Props = {
   onCreate: (date: string) => void;
   onReschedule: (post: MarketingCalendarPost, date: string) => void;
   onStatusChange: (post: MarketingCalendarPost, status: string) => void;
+  onReadinessChange: (post: MarketingCalendarPost, field: 'design_ready' | 'video_ready', checked: boolean) => void;
   onDuplicate: (post: MarketingCalendarPost) => void;
   onDelete: (post: MarketingCalendarPost) => void;
 };
@@ -92,6 +94,18 @@ const weekOfMonth = (date: Date) => {
   return Math.floor((monday.getTime() - first.getTime()) / 604800000) + 1;
 };
 
+export function MarketingReadinessIndicators({ post, compact = false }: { post: MarketingCalendarPost; compact?: boolean }) {
+  const items = [
+    { label: 'Diseño', ready: post.design_ready === true, Icon: ImageIcon },
+    { label: 'Vídeo', ready: post.video_ready === true, Icon: Film },
+  ];
+  return <span className={`vc-marketing-readiness-indicators${compact ? ' is-compact' : ''}`} role="group" aria-label="Checklist de producción">
+    {items.map(({ label, ready, Icon }) => <span key={label} className={`vc-marketing-readiness-item${ready ? ' is-ready' : ''}`} title={`${label}: ${ready ? 'listo' : 'pendiente'}`} aria-label={`${label} ${ready ? 'listo' : 'pendiente'}`}>
+      {ready ? <CheckCircle2 size={compact ? 12 : 13}/> : <Circle size={compact ? 12 : 13}/>}<Icon size={compact ? 11 : 12}/><span>{compact ? label.slice(0, 1) : label}</span><b>{compact ? '' : ready ? 'Listo' : 'Pendiente'}</b>
+    </span>)}
+  </span>;
+}
+
 type MarketingCalendarView = 'month' | 'week' | 'kanban' | 'table';
 type MarketingStateFilter = 'all' | 'pending' | 'work' | 'review' | 'published' | 'finished' | 'blocked';
 type MarketingCalendarPreferences = {
@@ -125,7 +139,7 @@ function readCalendarPreferences(organizationId: string): MarketingCalendarPrefe
   }
 }
 
-export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtworkSaved, rulesReady, onRunOverdueRule, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onStatusChange, onDuplicate, onDelete }: Props) {
+export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtworkSaved, rulesReady, onRunOverdueRule, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onStatusChange, onReadinessChange, onDuplicate, onDelete }: Props) {
   const [anchor, setAnchor] = useState(() => new Date());
   const [view, setView] = useState<MarketingCalendarView>('month');
   const [todayKey, setTodayKey] = useState(() => marketingDateKey());
@@ -286,6 +300,8 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
   const contextualActions = (post: MarketingCalendarPost): ContextMenuAction[] => [
     { label: 'Editar ficha', group: 'Publicación', icon: <Pencil size={14}/>, onSelect: () => onSelect(post), disabled: !canEdit },
     { label: 'Cambiar etapa', group: 'Publicación', icon: <CircleDot size={14}/>, disabled: !canEdit, onSelect: () => {}, children: [...new Set([...publicationStatuses, post.status].filter(Boolean))].map((status) => ({ label: status, kind: 'radio' as const, radioGroup: `marketing-status-${post.id}`, checked: status === post.status, onSelect: () => onStatusChange(post, status) })) },
+    { label: post.design_ready ? 'Diseño listo' : 'Marcar diseño listo', group: 'Producción', icon: <ImageIcon size={14}/>, kind: 'checkbox', checked: post.design_ready === true, onSelect: () => {}, onCheckedChange: (checked) => onReadinessChange(post, 'design_ready', checked), disabled: !canEdit },
+    { label: post.video_ready ? 'Vídeo listo' : 'Marcar vídeo listo', group: 'Producción', icon: <Film size={14}/>, kind: 'checkbox', checked: post.video_ready === true, onSelect: () => {}, onCheckedChange: (checked) => onReadinessChange(post, 'video_ready', checked), disabled: !canEdit },
     { label: 'Duplicar como borrador', group: 'Publicación', icon: <CopyPlus size={14}/>, onSelect: () => onDuplicate(post), disabled: !canEdit },
     ...(canEdit || canDelete ? [{ label: selectedIds.has(post.id) ? 'Quitar de seleccionadas' : 'Seleccionar publicación', group: 'Publicación', icon: <Check size={14}/>, kind: 'checkbox' as const, checked: selectedIds.has(post.id), onSelect: () => {}, onCheckedChange: () => onToggle(post.id), disabled: !(canEdit || canDelete) }] : []),
     { label: 'Ver agenda de esta fecha', group: 'Calendario', icon: <CalendarDays size={14}/>, onSelect: () => setExpandedDate(post.scheduled_date.slice(0, 10)) },
@@ -381,6 +397,7 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
                   <button type="button" className="vc-marketing-kanban-card-title" draggable={canEdit} onDragStart={(event) => { event.dataTransfer.setData('text/plain', post.id); event.dataTransfer.effectAllowed = 'move'; setDraggingKanban(post.id); }} onDragEnd={() => setDraggingKanban(null)} onClick={() => onSelect(post)} title="Arrastra entre columnas para cambiar la etapa"><GripVertical size={13}/><b>{post.title || 'Sin título'}</b></button>
                   <span className="vc-marketing-kanban-card-topic">{post.content_line || post.next_action || 'Tema y siguiente paso por completar.'}</span>
                   <MarketingPostArtwork {...artworkProps} variant="week"/>
+                  <MarketingReadinessIndicators post={post}/>
                   <div className="vc-marketing-kanban-card-meta"><span><Megaphone size={12}/>{post.platform || 'Canal pendiente'}</span><span>{post.owner || 'Responsable pendiente'}</span></div>
                   <div className="vc-marketing-kanban-card-foot"><span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status || 'Por iniciar'}</span>{tags.length > 0 && <div>{tags.slice(0, 2).map((tag) => <Badge key={tag} color={color || undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>)}</div>}</div>
                 </article>
@@ -400,7 +417,7 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
           return <tr key={post.id} className={selectedIds.has(post.id) ? 'is-selected' : ''}>
             {(canEdit || canDelete) && <td className="vc-marketing-table-select"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={() => onToggle(post.id)}/></td>}
             <td className="vc-marketing-table-date"><b>{formattedDate}</b><small>{post.scheduled_time || 'Hora pendiente'}</small></td>
-            <td className="vc-marketing-table-publication"><div className="vc-marketing-table-publication-main"><div className="vc-marketing-table-artwork"><MarketingPostArtwork {...artworkProps} variant="compact"/></div><button type="button" onClick={() => onSelect(post)}><b>{post.title || 'Sin título'}</b><small>{post.content_line || post.next_action || 'Tema y siguiente paso por completar.'}</small></button></div></td>
+            <td className="vc-marketing-table-publication"><div className="vc-marketing-table-publication-main"><div className="vc-marketing-table-artwork"><MarketingPostArtwork {...artworkProps} variant="compact"/></div><div className="vc-marketing-table-publication-copy"><button type="button" onClick={() => onSelect(post)}><b>{post.title || 'Sin título'}</b><small>{post.content_line || post.next_action || 'Tema y siguiente paso por completar.'}</small></button><MarketingReadinessIndicators post={post}/></div></div></td>
             <td className="vc-marketing-table-channel"><b>{post.platform || 'Canal pendiente'}</b><small>{post.format || 'Formato pendiente'}</small></td>
             <td className="vc-marketing-table-owner">{post.owner || 'Responsable pendiente'}</td>
             <td><span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status || 'Por iniciar'}</span></td>
@@ -437,9 +454,10 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
                 <div className="vc-marketing-week-card-head"><div>{post.scheduled_time?<time>{post.scheduled_time}</time>:<span>Hora pendiente</span>}<small>{post.platform||'Canal pendiente'}{post.format?` · ${post.format}`:''}</small></div><span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span></div>
                 <button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className="vc-marketing-week-card-title" title="Abrir ficha de publicación"><b>{post.title||'Sin título'}</b><span>{post.content_line||post.next_action||'Tema y siguiente paso por completar.'}</span></button>
                 <MarketingPostArtwork {...artworkProps} variant="week"/>
+                <MarketingReadinessIndicators post={post}/>
                 <div className="vc-marketing-week-card-foot"><span>{post.owner||'Responsable pendiente'}</span>{tags.length>0&&<div>{tags.slice(0,2).map((tag)=><Badge key={tag} color={color||undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>)}</div>}</div>
               </article></ContextMenu> : <><MarketingPostArtwork {...artworkProps} variant="compact"/><ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className={`vc-marketing-calendar-event tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined} title={`${post.title} · ${post.status}${tags.length?` · ${tags.join(', ')}`:''}`}>
-                {post.scheduled_time&&<time>{post.scheduled_time}</time>}<span className="vc-marketing-event-label">{post.title||'Sin título'}</span><span className={`vc-marketing-event-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span>{tags.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${tags.join(', ')}`}>{tags[0]}</Badge>}
+                {post.scheduled_time&&<time>{post.scheduled_time}</time>}<span className="vc-marketing-event-label">{post.title||'Sin título'}</span><MarketingReadinessIndicators post={post} compact/><span className={`vc-marketing-event-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span>{tags.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${tags.join(', ')}`}>{tags[0]}</Badge>}
               </button></ContextMenu></>}
             </div>;
           })}{remaining>0&&<button type="button" className="vc-marketing-calendar-more" onClick={()=>setExpandedDate(expandedDate===key?null:key)}>+{remaining} más · ver agenda</button>}</div>
