@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Globe2, MapPin, MessageCircle, Phone, Printer, ScanLine, Scissors, Shirt, Sparkles, Store, PanelsTopLeft, Sun, Moon } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Globe2, LogIn, MapPin, MessageCircle, Phone, Printer, ScanLine, Scissors, Shirt, Sparkles, Store, PanelsTopLeft, Sun, Moon } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
@@ -85,6 +85,7 @@ function SiteHeader({ theme, onThemeChange }) {
   const companyIsActive = ['/nosotros', '/como-trabajamos'].includes(location.pathname);
   const userDisplayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'Tu cuenta';
   const userAvatar = getGoogleAvatarUrl(user);
+  const AdminAccessIcon = user ? PanelsTopLeft : LogIn;
   return <>
   <header className="site-header" ref={headerRef}>
     <div className="site-header-inner"><BrandLink onClick={closeNavigation} theme={theme} />
@@ -98,7 +99,16 @@ function SiteHeader({ theme, onThemeChange }) {
         <NavLink to="/tienda" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Tienda</NavLink>
         <NavLink to="/contacto" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Contacto</NavLink>
       </nav>
-      <div className="site-header-actions"><AnimatedThemeToggler theme={theme} onThemeChange={onThemeChange} className="site-theme-toggle" aria-label={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}><span className="site-theme-toggle-icons" aria-hidden="true"><Sun className="theme-sun" size={17}/><Moon className="theme-moon" size={17}/></span></AnimatedThemeToggler><Link className="site-quote-button vc-shimmer-button" to="/cotizador" onClick={closeNavigation}><span className="quote-label-wide">Solicitar cotización</span><span className="quote-label-short">Cotizar</span><ArrowUpRight size={16} aria-hidden="true" /></Link>{user&&<span className="site-session-avatar" title={`Sesión activa: ${userDisplayName}`}><Avatar name={userDisplayName} src={userAvatar} size="sm" badge={userAvatar?<span className="vc-google-avatar-mark">G</span>:undefined}/></span>}</div>
+      <div className="site-header-actions">
+        <AnimatedThemeToggler theme={theme} onThemeChange={onThemeChange} className="site-theme-toggle" aria-label={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}><span className="site-theme-toggle-icons" aria-hidden="true"><Sun className="theme-sun" size={17}/><Moon className="theme-moon" size={17}/></span></AnimatedThemeToggler>
+        <Link className="site-admin-access" to="/panel" onClick={closeNavigation} aria-label={user ? 'Abrir el panel de administración' : 'Iniciar sesión para ingresar al panel de administración'} title={user ? 'Abrir panel de administración' : 'Ingresar al panel de administración'}>
+          <AdminAccessIcon size={16} strokeWidth={2.1} aria-hidden="true" />
+          <span>{user ? 'Abrir panel' : 'Ingresar'}</span>
+          <ArrowUpRight className="site-admin-access-arrow" size={14} aria-hidden="true" />
+        </Link>
+        <Link className="site-quote-button vc-shimmer-button" to="/cotizador" onClick={closeNavigation}><span className="quote-label-wide">Solicitar cotización</span><span className="quote-label-short">Cotizar</span><ArrowUpRight size={16} aria-hidden="true" /></Link>
+        {user&&<span className="site-session-avatar" title={`Sesión activa: ${userDisplayName}`}><Avatar name={userDisplayName} src={userAvatar} size="sm" badge={userAvatar?<span className="vc-google-avatar-mark">G</span>:undefined}/></span>}
+      </div>
       {openMenu === 'services' && <div className="site-mega-panel" id="site-services-panel">
         <div className="site-mega-intro"><span className="site-mega-kicker">LO QUE HACEMOS <i/></span><h2>De la idea<br/>a lo tangible<span>.</span></h2><p>Explora lo que podemos crear para tu marca, tu espacio o tu próximo proyecto.</p><Link to="/servicios" onClick={closeNavigation}>Explorar todos los servicios <ArrowUpRight size={16} aria-hidden="true" /></Link></div>
         <div className="site-mega-content"><span className="site-mega-label">ELIGE UNA ESPECIALIDAD</span><div className="site-mega-services">{services.map((service) => { const Icon = serviceIcons[service.id] || Sparkles; return <Link key={service.id} to={`/servicios/${service.id}`} onClick={closeNavigation} className={location.pathname === `/servicios/${service.id}` ? 'is-active' : ''}><span className="site-mega-icon"><Icon size={19} aria-hidden="true" /></span><span><strong>{service.name}</strong><small>{service.description}</small></span><ArrowUpRight className="site-mega-arrow" size={17} aria-hidden="true" /></Link>; })}</div></div>

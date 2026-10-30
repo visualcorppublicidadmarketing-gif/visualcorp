@@ -110,7 +110,7 @@ export function AuthProvider({ children }) {
     hasPermission: (module: string, action: string) => roles.includes('owner') || permissions?.[module]?.[action] === true || (action === 'view' && permissions?.[module]?.edit === true),
     sendSignInLink: async (email: string) => {
       if (!supabase) throw new Error('La conexión con Supabase todavía no está configurada.');
-      const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } });
+      const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}${window.location.pathname}` } });
       if (error) throw error;
     },
     signInWithGoogle: async () => {
