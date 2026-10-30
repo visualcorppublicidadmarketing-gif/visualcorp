@@ -74,6 +74,7 @@ const defaultServices = [
 const catalog = (sourceCatalog.products || []).map((product, index) => {
   const normalized = {
   id: product.id || `vc-${index + 1}`,
+  sku: product.id || `vc-${index + 1}`,
   name: product.name,
   family: product.category || 'General',
   mode: product.calcType === 'm2' ? 'area' : 'quantity',
@@ -176,7 +177,7 @@ export function WorkspaceProvider({ children }) {
           standardDetails.personalization ? 'Personalización: ' + standardDetails.personalization : '',
         ].filter(Boolean);
         return {
-        id: row.id, name: row.name, slug: row.slug, family: row.category || 'General', mode: row.calc_type === 'm2' ? 'area' : 'quantity',
+        id: row.id, sku: row.sku || row.id, name: row.name, slug: row.slug, family: row.category || 'General', mode: row.calc_type === 'm2' ? 'area' : 'quantity',
         priceBasis: 'unit', priceScales: row.price_scales || [], tiers: (row.price_scales || []).filter((scale) => scale.option == null && scale.qty != null && (scale.pvp != null || scale.price != null || scale.price_inst != null || scale.price_corp != null)).map((scale) => ({ min_qty: Number(scale.qty), unit_price: scale.pvp == null && scale.price == null ? null : Number(scale.pvp ?? scale.price), install_unit_price: scale.price_inst == null ? null : Number(scale.price_inst), corporate_unit_price: scale.price_corp == null ? null : Number(scale.price_corp) })),
         optionPrices: (row.price_scales || []).filter((scale) => scale.option != null && scale.price != null).map((scale) => ({ label: String(scale.option), price: Number(scale.price) })),
         unit: row.calc_type === 'm2' ? 'm²' : 'unidad', price: Number(row.price) || 0, installPrice: row.price_inst == null ? null : Number(row.price_inst),
@@ -343,3 +344,4 @@ export const localDateKey = (value = new Date()) => {
   const date = value instanceof Date ? value : new Date(value);
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 };
+

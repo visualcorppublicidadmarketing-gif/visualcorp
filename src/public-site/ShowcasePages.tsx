@@ -8,6 +8,7 @@ import { multiProductQuoteService } from './content';
 import { ArticleMarkdown } from './ArticleMarkdown';
 import './storefront.css';
 import './store-promo-teaser.css';
+import './store-product-sku.css';
 
 type ContentKind = 'blog' | 'publicaciones' | 'portafolio';
 const normalizeSearch = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
@@ -27,6 +28,7 @@ type SiteArticle = {
 };
 type CatalogProduct = {
   id: string;
+  sku?: string;
   name: string;
   slug: string;
   description: string;
@@ -251,13 +253,13 @@ export function StorefrontPage() {
     const load = async () => {
       try {
         const { data: rows, error: productError } = await supabase.from('public_catalog_products')
-          .select('id,name,slug,description,type,category_id,category,calc_type,featured,sort_order,image,images,features')
+          .select('id,sku,name,slug,description,type,category_id,category,calc_type,featured,sort_order,image,images,features')
           .eq('is_published', true).order('sort_order', { ascending: true });
         if (!current) return;
         if (productError) { setError('No pudimos cargar el catálogo. Comprueba tu conexión e inténtalo de nuevo.'); return; }
         setProducts(consolidateQuantityTiers((rows || []) as CatalogProduct[]).map((product) => {
           const images = catalogImagesForProduct({ id: product.id, name: product.name, family: product.category || '', image: product.image, images: product.images || [] });
-          return { ...product, image: images[0] || product.image };
+          return { ...product, sku: product.sku || product.id, images: images.length ? images : product.images || [], image: images[0] || product.image };
         }));
       } catch {
         if (current) setError('No pudimos conectar con el catálogo. Comprueba tu conexión e inténtalo de nuevo.');
@@ -297,7 +299,7 @@ export function StorefrontPage() {
   }, [products]);
   const matches = useMemo(() => {
     const result = products.filter((product) => (category === 'Todos' || groupFor(product) === category)
-      && matchesSearch(`${product.name} ${product.description || ''} ${product.category || ''} ${product.category_id || ''} ${(product.features || []).join(' ')}`, search));
+      && matchesSearch(`${product.name} ${product.sku || product.id} ${product.description || ''} ${product.category || ''} ${product.category_id || ''} ${(product.features || []).join(' ')}`, search));
     if (sort === 'az') result.sort((a,b) => a.name.localeCompare(b.name, 'es'));
     else if (sort === 'za') result.sort((a,b) => b.name.localeCompare(a.name, 'es'));
     else result.sort((a,b) => Number(b.featured) - Number(a.featured) || a.sort_order - b.sort_order || a.name.localeCompare(b.name, 'es'));
@@ -453,9 +455,10 @@ export function StorefrontPage() {
       </section>
     </dialog>
     <dialog ref={productDialog} className="store-product-dialog" aria-labelledby="store-product-dialog-title" onClose={onDialogClose} onClick={(event)=>{if(event.target===productDialog.current) closeProduct();}}>
-      {selectedProduct&&<div className="store-product-detail"><button type="button" className="store-detail-close" onClick={closeProduct} aria-label="Cerrar ficha"><X size={19}/></button><StoreProductGallery product={selectedProduct}/><div className="store-detail-copy"><span className="site-eyebrow"><i/>{groupFor(selectedProduct)}</span><h2 id="store-product-dialog-title">{selectedProduct.name}</h2><p>{selectedProduct.description || 'Comparte las características que necesitas y revisaremos la mejor forma de realizarlo.'}</p>{selectedProduct.features?.length? <ul className="store-detail-features">{selectedProduct.features.filter((feature)=>typeof feature==='string'&&feature.trim()).slice(0,5).map((feature)=><li key={feature}><Check size={14}/>{feature}</li>)}</ul>:null}{selectedProduct.quantityTiers?.length ? <div className="store-detail-quantity"><b>Rangos de cantidad</b><div role="group" aria-label="Selecciona un rango de cantidad">{selectedProduct.quantityTiers.map((tier)=>{const cleanTier=tier.replace(/(\d+)\.0\b/g,'$1');return <button key={tier} type="button" className={selectedQuantityTier===tier?'is-selected':''} aria-pressed={selectedQuantityTier===tier} onClick={()=>setSelectedQuantityTier(tier)}>{cleanTier} {cleanTier.trim()==='1'?'unidad':'unidades'}</button>;})}</div><small>El valor final se confirma al revisar los detalles de tu solicitud.</small></div> : null}<div className="store-detail-note"><b>Precio y disponibilidad</b><span>Se confirman al revisar cantidades, medidas, material y acabados de tu proyecto.</span></div><div className="store-detail-actions"><button type="button" className={`store-product-add${selection.includes(selectedProduct.id)?' is-selected':''}`} aria-pressed={selection.includes(selectedProduct.id)} onClick={()=>selection.includes(selectedProduct.id)?setSelectionTiers((current)=>({...current,[selectedProduct.id]:selectedQuantityTier})):toggleSelection(selectedProduct.id,selectedQuantityTier)}>{selection.includes(selectedProduct.id)?<><Check size={15}/>{selectedProduct.quantityTiers?.length?'Actualizar mi lista':'Añadido a tu lista'}</>:<>+ Añadir a mi lista</>}</button><Link className="site-primary-button" to={quoteUrl([selectedProduct],selectedQuantityTier)}>Cotizar este producto <ArrowUpRight size={16}/></Link></div></div></div>}
+      {selectedProduct&&<div className="store-product-detail"><button type="button" className="store-detail-close" onClick={closeProduct} aria-label="Cerrar ficha"><X size={19}/></button><StoreProductGallery product={selectedProduct}/><div className="store-detail-copy"><span className="site-eyebrow"><i/>{groupFor(selectedProduct)}</span><h2 id="store-product-dialog-title">{selectedProduct.name}</h2><span className="store-detail-sku"><span>Código de producto</span><code>{selectedProduct.sku || selectedProduct.id}</code></span><p>{selectedProduct.description || 'Comparte las características que necesitas y revisaremos la mejor forma de realizarlo.'}</p>{selectedProduct.features?.length? <ul className="store-detail-features">{selectedProduct.features.filter((feature)=>typeof feature==='string'&&feature.trim()).slice(0,5).map((feature)=><li key={feature}><Check size={14}/>{feature}</li>)}</ul>:null}{selectedProduct.quantityTiers?.length ? <div className="store-detail-quantity"><b>Rangos de cantidad</b><div role="group" aria-label="Selecciona un rango de cantidad">{selectedProduct.quantityTiers.map((tier)=>{const cleanTier=tier.replace(/(\d+)\.0\b/g,'$1');return <button key={tier} type="button" className={selectedQuantityTier===tier?'is-selected':''} aria-pressed={selectedQuantityTier===tier} onClick={()=>setSelectedQuantityTier(tier)}>{cleanTier} {cleanTier.trim()==='1'?'unidad':'unidades'}</button>;})}</div><small>El valor final se confirma al revisar los detalles de tu solicitud.</small></div> : null}<div className="store-detail-note"><b>Precio y disponibilidad</b><span>Se confirman al revisar cantidades, medidas, material y acabados de tu proyecto.</span></div><div className="store-detail-actions"><button type="button" className={`store-product-add${selection.includes(selectedProduct.id)?' is-selected':''}`} aria-pressed={selection.includes(selectedProduct.id)} onClick={()=>selection.includes(selectedProduct.id)?setSelectionTiers((current)=>({...current,[selectedProduct.id]:selectedQuantityTier})):toggleSelection(selectedProduct.id,selectedQuantityTier)}>{selection.includes(selectedProduct.id)?<><Check size={15}/>{selectedProduct.quantityTiers?.length?'Actualizar mi lista':'Añadido a tu lista'}</>:<>+ Añadir a mi lista</>}</button><Link className="site-primary-button" to={quoteUrl([selectedProduct],selectedQuantityTier)}>Cotizar este producto <ArrowUpRight size={16}/></Link></div></div></div>}
     </dialog>
   </div></>;
 }
+
 
 

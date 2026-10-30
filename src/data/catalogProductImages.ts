@@ -54,11 +54,11 @@ const examples = [
 export function catalogImagesForProduct(product) {
   const normalize = (value) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const search = normalize(`${product.id} ${product.name} ${product.family}`);
-  if (String(product.id || '').startsWith('std-')) {
+  if (String(product.id || '').startsWith('std-') || String(product.id || '').toLowerCase().startsWith('vc-std-') || product.product_kind === 'standard_custom') {
     const images = (product.images || []).filter(Boolean);
     const primaryImage = product.image || product.image_url;
     if (primaryImage && !images.includes(primaryImage)) images.unshift(primaryImage);
-    return images.slice(0, 8);
+    return images.slice(0, 10);
   }
   const realPhoto = realPhotos.find(({ keywords }) => keywords.some((keyword) => search.includes(normalize(keyword))));
   if (realPhoto) return [realPhoto.image];
@@ -74,3 +74,4 @@ export function catalogImagesForProduct(product) {
   const paths = [`/images/catalog-products/${corporate}.webp`, `/images/catalog-products/${brand}.webp`];
   return paths;
 }
+
