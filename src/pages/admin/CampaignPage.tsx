@@ -80,6 +80,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [draft, setDraft] = useState(defaultDraft);
+  const [draftArtworkFile, setDraftArtworkFile] = useState<File | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [draftTabKey, setDraftTabKey] = useState(0);
   const [editorTab, setEditorTab] = useState<PublicationEditorTab>('plan');
@@ -179,7 +180,14 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const metricPosts = data.posts.filter((post) => Number(post.reach) || Number(post.interactions) || Number(post.clicks) || Number(post.leads));
   const selectedEvents = selectedPost ? data.events.filter((event) => event.post_id === selectedPost.id).slice(-8).reverse() : [];
 
+  const closePostEditor = () => {
+    setDraftArtworkFile(null);
+    setSelectedPost(null);
+    setModalOpen(false);
+  };
+
   const openPost = (post?: Post, scheduledDate = '') => {
+    setDraftArtworkFile(null);
     setModalOpen(true);
     setDraftTabKey((current) => current + 1);
     setEditorTab('plan');
@@ -275,15 +283,24 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     }
     setSaving(true);
     try {
+      const creating = isNew;
+      const sourceId = creating ? `suite-${globalThis.crypto.randomUUID()}` : selectedPost?.source_id;
       const fields = { ...draft, calendar_color: getMarketingCalendarColor(draft.calendar_color, []), title: draft.title.trim(), tags: [...new Set(getMarketingTags(draft.tags.split(',')))], updated_at: new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Guayaquil', dateStyle: 'short', timeStyle: 'medium', hour12: false }).format(new Date()) };
-      const result = isNew
-        ? await supabase.from('marketing_posts').insert({ ...fields, organization_id: organizationId, source_system: 'visualcorp-suite', source_id: `suite-${globalThis.crypto.randomUUID()}` }).select('id').single()
+      const result = creating
+        ? await supabase.from('marketing_posts').insert({ ...fields, organization_id: organizationId, source_system: 'visualcorp-suite', source_id: sourceId }).select('id').single()
         : await supabase.from('marketing_posts').update(fields).eq('organization_id', organizationId).eq('id', selectedPost?.id).select('id').maybeSingle();
       if (result.error) throw result.error;
       if (!result.data) throw new Error('No encontramos la publicación o tu perfil no puede editarla.');
+      if (draftArtworkFile) {
+        setSelectedPost({ ...fields, id: result.data.id, organization_id: organizationId, source_id: sourceId } as Post);
+        setIsNew(false);
+        setNotice(creating ? 'Ficha creada. La imagen está lista para subir y vincular.' : 'Ficha guardada. La imagen queda lista para subir y vincular.');
+        await refresh();
+        return;
+      }
       setSelectedPost(null);
       setModalOpen(false);
-      setNotice(isNew ? 'Publicación creada en el calendario central.' : 'Publicación actualizada y cambio registrado.');
+      setNotice(creating ? 'Publicación creada en el calendario central.' : 'Publicación actualizada y cambio registrado.');
       await refresh();
     } catch (error: any) {
       setLoadError(error?.message || 'No se pudo guardar la publicación.');
@@ -305,7 +322,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       const deletedIds = new Set((deleted || []).map((row) => row.id));
       if (!deletedIds.size) throw new Error('No se eliminó ninguna publicación. Revisa el permiso Eliminar en Marketing.');
       setSelectedPostIds((current) => new Set([...current].filter((id) => !deletedIds.has(id))));
-      if (selectedPost && deletedIds.has(selectedPost.id)) { setSelectedPost(null); setModalOpen(false); }
+      if (selectedPost && deletedIds.has(selectedPost.id)) closePostEditor();
       setNotice(`${deletedIds.size} publicación${deletedIds.size === 1 ? '' : 'es'} eliminada${deletedIds.size === 1 ? '' : 's'}.`);
       await refresh();
     } catch (error: any) { setLoadError(error?.message || 'No se pudieron eliminar las publicaciones.'); }
@@ -374,7 +391,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
                   const linked = data.postAssets.filter((link) => link.post_id === post.id).length;
                   const complete = checklistFields.filter(([field]) => /complet|aprob|listo|hecho/i.test(post[field] || '')).length;
                   return <ContextMenu key={post.id} className="vc-marketing-post-context" label={`Acciones para ${post.title}`} actions={postActions(post)}><article className="vc-content-post is-artwork-card">
-                    <header className="vc-marketing-post-card-top"><label className="vc-marketing-select-post"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></label><div className="vc-content-date" style={getMarketingCalendarColor(post.calendar_color, post.tags)?{borderColor:getMarketingCalendarColor(post.calendar_color, post.tags),color:getMarketingCalendarColor(post.calendar_color, post.tags)}:undefined}><strong>{post.scheduled_date ? post.scheduled_date.slice(8,10) : '—'}</strong><span>{post.scheduled_date ? new Intl.DateTimeFormat('es-EC',{month:'short'}).format(new Date(`${post.scheduled_date.slice(0,10)}T12:00:00`)) : 'PEND.'}</span></div><div className="vc-content-post-end"><StageBadge stage={post.status || 'Por iniciar'}/><span className={`vc-content-dot is-${statusTone(post.status)}`}/></div></header>
+                    <header className="vc-marketing-post-card-top">{(canEdit||canDelete)&&<label className="vc-marketing-select-post"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></label>}<div className="vc-content-date" style={getMarketingCalendarColor(post.calendar_color, post.tags)?{borderColor:getMarketingCalendarColor(post.calendar_color, post.tags),color:getMarketingCalendarColor(post.calendar_color, post.tags)}:undefined}><strong>{post.scheduled_date ? post.scheduled_date.slice(8,10) : '—'}</strong><span>{post.scheduled_date ? new Intl.DateTimeFormat('es-EC',{month:'short'}).format(new Date(`${post.scheduled_date.slice(0,10)}T12:00:00`)) : 'PEND.'}</span></div><div className="vc-content-post-end"><StageBadge stage={post.status || 'Por iniciar'}/><span className={`vc-content-dot is-${statusTone(post.status)}`}/></div></header>
                     <MarketingPostArtwork organizationId={organizationId || ''} post={post} asset={artworkByPost.get(post.id)} canEdit={canEdit} variant="overview" onSaved={() => void refresh()}/>
                     <button className="vc-content-post-main" type="button" onClick={() => openPost(post)}><span className="vc-content-post-eyebrow">{post.content_line || post.platform || 'Contenido'} <i>·</i> {post.format || 'Formato pendiente'}</span><strong>{post.title || 'Sin título'}</strong><span className="vc-content-post-caption">{post.caption || post.next_action || 'Copy y siguiente paso por completar.'}</span><span className="vc-content-post-meta"><span><Megaphone size={13}/>{post.platform || 'Canal pendiente'}</span><span><Images size={13}/>{linked} piezas</span><span><Check size={13}/>{complete}/{checklistFields.length} checklist</span>{post.owner && <span>{post.owner}</span>}</span></button>
                     {getMarketingTags(post.tags).length>0&&<div className="vc-marketing-post-tags">{getMarketingTags(post.tags).map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div>}
@@ -400,6 +417,38 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     </main>
 
     {notice&&<div className="vc-content-toast" role="status"><CheckCircle2 size={16}/>{notice}</div>}
-    {modalOpen&&<div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget){setSelectedPost(null);setModalOpen(false)}}}><section className="vc-content-modal vc-content-modal-editor" role="dialog" aria-modal="true" aria-labelledby="vc-post-modal-title"><header><div><span className="eyebrow">{isNew?'NUEVA FICHA':'FICHA DE PUBLICACIÓN'}</span><h2 id="vc-post-modal-title">{isNew?'Planifica una publicación':'Edita la publicación'}</h2><p>{draft.title || 'Organiza el mensaje, el calendario y la producción desde una sola ficha.'}</p></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={()=>{setSelectedPost(null);setModalOpen(false)}}><X size={18}/></button></header><form onSubmit={savePost}><PublicationEditorSections key={draftTabKey} draft={draft} onChange={(field,value)=>setDraft((current)=>({...current,[field]:value}))} canEdit={canEdit} isNew={isNew} activeTab={editorTab} onTabChange={setEditorTab} selectedPost={selectedPost} checklistFields={checklistFields} events={selectedEvents} formatDate={formatDate} knownTags={knownTags}/><div className="vc-content-modal-actions"><span>{canEdit?'La ficha se guarda en el calendario central.':'Tu perfil tiene acceso de solo lectura.'}</span>{canDelete&&selectedPost&&<button type="button" className="vc-small-danger" disabled={saving} onClick={()=>void deletePosts([selectedPost])}><Trash2 size={13}/>Eliminar publicación</button>}<button type="button" className="button button-outline" onClick={()=>{setSelectedPost(null);setModalOpen(false)}}>Cerrar</button>{canEdit&&<button type="submit" className="button button-dark" disabled={saving}>{saving?<LoaderCircle className="vc-content-spin" size={15}/>:<Save size={15}/>} {saving?'Guardando…':'Guardar ficha'}</button>}</div></form></section></div>}
+    {modalOpen && <div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePostEditor(); }}>
+      <section className="vc-content-modal vc-content-modal-editor" role="dialog" aria-modal="true" aria-labelledby="vc-post-modal-title">
+        <header>
+          <div className="vc-publication-editor-title">
+            <span className="eyebrow">{isNew ? 'NUEVA FICHA' : 'FICHA DE PUBLICACIÓN'}</span>
+            <h2 id="vc-post-modal-title">{isNew ? 'Planifica una publicación' : 'Edita la publicación'}</h2>
+            <p>{draft.title || 'Organiza el mensaje, el calendario y la producción desde una sola ficha.'}</p>
+          </div>
+          <MarketingPostArtwork
+            organizationId={organizationId || ''}
+            post={selectedPost || { id: '', source_id: '', title: draft.title || 'nueva publicación', scheduled_date: draft.scheduled_date }}
+            asset={selectedPost ? artworkByPost.get(selectedPost.id) : undefined}
+            canEdit={canEdit}
+            canDelete={canDelete}
+            variant="editor"
+            isDraft={isNew}
+            draftFile={draftArtworkFile}
+            onDraftFileChange={setDraftArtworkFile}
+            onSaved={async () => { await refresh(); setDraftArtworkFile(null); }}
+          />
+          <button type="button" className="icon-button" aria-label="Cerrar" onClick={closePostEditor}><X size={18}/></button>
+        </header>
+        <form onSubmit={savePost}>
+          <PublicationEditorSections key={draftTabKey} draft={draft} onChange={(field, value) => setDraft((current) => ({ ...current, [field]: value }))} canEdit={canEdit} isNew={isNew} activeTab={editorTab} onTabChange={setEditorTab} selectedPost={selectedPost} checklistFields={checklistFields} events={selectedEvents} formatDate={formatDate} knownTags={knownTags}/>
+          <div className="vc-content-modal-actions">
+            <span>{canEdit ? 'La ficha se guarda en el calendario central.' : 'Tu perfil tiene acceso de solo lectura.'}</span>
+            {canDelete && selectedPost && <button type="button" className="vc-small-danger" disabled={saving} onClick={() => void deletePosts([selectedPost])}><Trash2 size={13}/>Eliminar publicación</button>}
+            <button type="button" className="button button-outline" onClick={closePostEditor}>Cerrar</button>
+            {canEdit && <button type="submit" className="button button-dark" disabled={saving}>{saving ? <LoaderCircle className="vc-content-spin" size={15}/> : <Save size={15}/>} {saving ? 'Guardando…' : 'Guardar ficha'}</button>}
+          </div>
+        </form>
+      </section>
+    </div>}
   </AppFrame>;
 }
