@@ -55,3 +55,13 @@ Verificaciones locales realizadas: compilación TypeScript/Vite, prueba existent
 - Definir limpieza de cargas huérfanas si una subida termina correctamente pero falla la entrega de la versión a la orden. El formulario conserva la referencia para reintentar mientras la página permanezca abierta.
 - Definir reglas comerciales de anticipo con el equipo.
 - Incorporar responsables a los perfiles existentes cuando se confirmen sus cuentas y verificar los flujos completos con operaciones reales autorizadas.
+
+## Continuación local — coordinación compartida y cantidades parciales
+
+Implementación local sobre una rama nueva desde `origin/main`, con la automatización de pases, listas de control, recepción de etapa, retrabajo y calidad ya presente en el historial remoto de Supabase integrada sin aplicar cambios a producción.
+
+- `/operaciones/coordinacion-trabajos` reúne trabajos de venta por artículo y órdenes internas heredadas mediante consulta paginada de servidor. La tarjeta comparte referencia, artículo, área, responsable asignado, fecha, bloqueos, arte, calidad y estado de entrega; no devuelve teléfono ni ficha comercial. La apertura de una ficha sigue dependiendo del acceso al área o de ser responsable.
+- La ficha resume los datos que acompañan el pase a cada área y mantiene las señales de preparación de la etapa. Calidad y retrabajo por cantidades permiten registrar un tramo, dejando el saldo en su estado anterior; solo cantidades aprobadas pueden pasar a entrega. Cada movimiento guarda autor, hora, cantidad, unidad y motivo en el historial. La unidad física se ingresa manualmente y no se deduce del valor de facturación del POS.
+- El flujo de artículo completo conserva la ruta existente. Los lotes son opcionales y se activan indicando cantidad física total y unidad antes de empezar; no cambian la facturación ni el inventario.
+- Migración local: `20261030032812_production_coordination_and_quantity_lots.sql`. No está aplicada a Supabase de producción ni desplegada. La validación con `supabase db reset --local` quedó pendiente porque en este entorno no hay Docker ni Podman disponible. La revisión autenticada y el piloto por perfiles reales también siguen pendientes.
+- Para la interfaz se reutilizaron la ficha `Sheet` y controles del proyecto. Se consultaron los catálogos shadcn/ui y HeroUI, y la lista animada de Magic UI se descartó para avisos y estados porque introduce demora; no se añadieron dependencias. Se mantiene el comportamiento actual adaptable y compatible con movimiento reducido.

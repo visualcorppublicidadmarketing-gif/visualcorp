@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, CalendarClock, Check, CircleCheck, ClipboardList, Clock3, Hammer, PenTool, Play, Printer, RefreshCw, ScanLine, Search, Shirt, UserRound } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CalendarClock, Check, CircleCheck, ClipboardCheck, ClipboardList, Clock3, Hammer, PackageCheck, PenTool, Play, Printer, RefreshCw, RotateCcw, ScanLine, Search, ShieldCheck, Shirt, UserRound } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
 import { Sheet } from '../../components/ui/OperationalKit';
-import { CommercialDocumentDetails } from '../../components/CommercialDocumentDetails';
 import { supabase } from '../../lib/supabaseClient';
 import { ProductionArtworkReference } from './ProductionArtworkReference';
 import { ProductionQueueSkeleton, ProductionQueueSummary, ProductionStageProgress } from './ProductionQueueComponents';
@@ -16,19 +15,26 @@ import './production-queue-components.css';
 type AreaSlug = 'asesoria' | 'diseno' | 'impresion' | 'sublimacion' | 'laser' | 'taller';
 type StepStatus = 'waiting' | 'ready' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
 type Job = {
-  id: string; organization_id: string; branch_id: string; sale_id: string; advisor_id: string | null;
+  id: string; organization_id: string; branch_id: string; advisor_id: string | null;
   workflow_code: string;
   sale_code: string | null; customer_name: string | null; customer_phone: string | null;
   title: string; specifications: Record<string, unknown> | null; spec_version: number; review_from_version: number | null;
   approval_required: boolean; artwork_review_status: 'not_required' | 'awaiting_art' | 'awaiting_review' | 'changes_requested' | 'approved';
   artwork_revision: number; artwork_reference: string; artwork_submitted_at: string | null; artwork_reviewed_at: string | null;
-  status: string; due_at: string | null; created_at: string; updated_at: string;
+  status: string; due_at: string | null; fulfillment_status?: string; fulfillment_due_at?: string | null;
+  fulfillment_note?: string; created_at: string; updated_at: string;
 };
 type Step = {
   id: string; job_id: string; step_key: string; step_order: number; area_id: string;
   title: string; status: StepStatus; assigned_to: string | null; due_at: string | null;
-  notes: string | null; created_at: string; updated_at: string;
+  notes: string | null; created_at: string; updated_at: string; estimated_minutes?: number;
+  requirements?: { before_start?: string[]; before_complete?: string[] };
+  readiness_reasons?: Array<{ code: string; message: string }>;
+  handoff_status?: 'not_required' | 'pending' | 'accepted'; received_by?: string | null; received_at?: string | null;
+  due_at_is_manual?: boolean;
 };
+type StepCheck = { id: string; step_id: string; check_key: string; title: string; required: boolean; requires_evidence: boolean; completed_at: string | null; evidence_url: string; note: string };
+type ProductionLot = { id: string; parent_lot_id: string | null; label: string; quantity: number; unit: string; status: string; due_at: string | null; notes: string; produced_at: string | null; quality_at: string | null; delivered_at: string | null; installed_at: string | null };
 type JobEvent = {
   id: number; job_id: string; step_id: string | null; event_type: string;
   details: Record<string, unknown> | null; created_by: string | null; created_at: string;
@@ -117,9 +123,27 @@ const presentValue = (value: unknown): string => {
   if (typeof value === 'object') return Object.entries(value).map(([key, part]) => `${SPEC_LABELS[key] || key.replaceAll('_', ' ')}: ${presentValue(part)}`).join(' · ');
   return String(value);
 };
+const priorityDetails = (item: QueueItem, now = Date.now()) => {
+  const step = item.step || item.currentStep;
+  if (!step || !isOpen(step.status)) return { score: 0, reason: 'Sin acción pendiente' };
+  let score = ({ blocked: 64, in_progress: 52, ready: 42, waiting: 8 } as Record<string, number>)[step.status] || 0;
+  const due = safeDate(step.due_at || item.job.due_at)?.getTime();
+  let reason = step.status === 'blocked' ? 'Bloqueo requiere coordinación'
+    : step.status === 'ready' ? 'Lista para recibir o iniciar'
+      : step.status === 'in_progress' ? 'Trabajo en curso' : 'Espera una dependencia';
+  if (Number.isFinite(due)) {
+    const slack = due! - now; const estimate = Math.max(1, step.estimated_minutes || 60) * 60_000;
+    if (slack < 0) { score += Math.min(34, 18 + Math.floor(Math.abs(slack) / 86_400_000) * 4); reason = 'Plazo vencido'; }
+    else if (slack <= estimate) { score += 27; reason = 'Plazo menor que el tiempo estimado'; }
+    else if (slack <= 86_400_000) { score += 20; reason = 'Vence en menos de 24 horas'; }
+    else if (slack <= 259_200_000) { score += 12; reason = 'Vence en menos de 3 días'; }
+  }
+  if (step.status === 'ready' && !step.assigned_to) score += 5;
+  return { score: Math.min(100, score), reason };
+};
 const humanKey = (key: string) => SPEC_LABELS[key] || key.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 const eventTitle = (event: JobEvent) => ({
-  job_created: 'Trabajo creado', workflow_selected: 'Ruta definida', step_take: 'Tarea tomada',
+  job_created: 'Trabajo creado', workflow_selected: 'Ruta definida', step_take: 'Tarea tomada', step_ready: 'Etapa lista para el área', step_received: 'Etapa recibida', rework_requested: 'Retrabajo solicitado', quality_check_ready: 'Control de calidad pendiente',
   step_coordinated: 'Responsable o fecha actualizados',
   step_start: 'Trabajo iniciado', step_complete: 'Etapa terminada', step_block: 'Trabajo bloqueado',
   step_unblock: 'Trabajo reanudado', specifications_updated: 'Indicaciones actualizadas', note_added: 'Nota añadida',
@@ -151,6 +175,30 @@ function currentStage(steps: Step[]) {
     || steps.find((step) => step.status === 'waiting') || steps.at(-1) || null;
 }
 
+const HANDOFF_FIELDS: Record<string, Array<[string, string]>> = {
+  ASE: [['description', 'Descripción'], ['quantity', 'Cantidad física'], ['width_cm', 'Ancho'], ['height_cm', 'Alto'], ['material', 'Material'], ['finish', 'Acabado'], ['installation_address', 'Lugar de instalación'], ['notes', 'Indicaciones']],
+  DIS: [['description', 'Descripción'], ['width_cm', 'Ancho'], ['height_cm', 'Alto'], ['material', 'Material'], ['color', 'Color'], ['finish', 'Acabado'], ['notes', 'Indicaciones']],
+  IMP: [['width_cm', 'Ancho'], ['height_cm', 'Alto'], ['material', 'Material'], ['color', 'Color'], ['finish', 'Acabado'], ['installation_address', 'Lugar de instalación'], ['notes', 'Indicaciones']],
+  SUB: [['quantity', 'Cantidad física'], ['width_cm', 'Ancho'], ['height_cm', 'Alto'], ['material', 'Material'], ['color', 'Color'], ['notes', 'Indicaciones']],
+  LAS: [['quantity', 'Cantidad física'], ['width_cm', 'Ancho'], ['height_cm', 'Alto'], ['material', 'Material'], ['finish', 'Acabado'], ['notes', 'Indicaciones']],
+  TAL: [['width_cm', 'Ancho verificado'], ['height_cm', 'Alto verificado'], ['material', 'Material'], ['finish', 'Acabado o montaje'], ['installation_address', 'Lugar de instalación'], ['site_visit_notes', 'Observaciones de visita']],
+};
+function ProductionHandoff({ step, areas, specifications }: { step: Step; areas: AreaRow[]; specifications: Record<string, unknown> | null }) {
+  const code = areas.find((area) => area.id === step.area_id)?.code || '';
+  const fields = HANDOFF_FIELDS[code] || [];
+  const filled = fields.filter(([key]) => specifications?.[key] !== undefined && specifications?.[key] !== null && String(specifications[key]).trim() !== '');
+  if (!fields.length) return null;
+  return <section className="pj-handoff" aria-label={`Información para ${step.title}`}>
+    <div className="pj-handoff-heading"><div><span className="pj-artwork-eyebrow">PASE ENTRE ÁREAS</span><h4>Información para {step.title}</h4></div><span className="pj-handoff-count">{filled.length} de {fields.length} datos</span></div>
+    <p>Resumen de la ficha que acompaña este paso. Los requisitos que sí bloquean el avance aparecen en los motivos de preparación de la etapa.</p>
+    <ul className="pj-handoff-list">{fields.map(([key, label]) => {
+      const value = specifications?.[key];
+      const complete = value !== undefined && value !== null && String(value).trim() !== '';
+      return <li key={key} data-complete={complete}><span aria-hidden="true">{complete ? <Check size={13}/> : '•'}</span><b>{label}</b><small>{complete ? String(value) : 'Por confirmar en la ficha'}</small></li>;
+    })}</ul>
+  </section>;
+}
+
 export function ProductionJobsPage() {
   const { area: areaParam } = useParams<{ area: AreaSlug }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -175,6 +223,8 @@ export function ProductionJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [steps, setSteps] = useState<Step[]>([]);
   const [events, setEvents] = useState<JobEvent[]>([]);
+  const [stepChecks, setStepChecks] = useState<StepCheck[]>([]);
+  const [productionLots, setProductionLots] = useState<ProductionLot[]>([]);
   const [areas, setAreas] = useState<AreaRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -193,13 +243,26 @@ export function ProductionJobsPage() {
   const [draftAssignee, setDraftAssignee] = useState('');
   const [draftDueAt, setDraftDueAt] = useState('');
   const [coordinationNote, setCoordinationNote] = useState('');
+  const [evidenceDrafts, setEvidenceDrafts] = useState<Record<string, string>>({});
+  const [reworkTarget, setReworkTarget] = useState('');
+  const [fulfillmentDueAt, setFulfillmentDueAt] = useState('');
+  const [physicalQuantity, setPhysicalQuantity] = useState('');
+  const [physicalUnit, setPhysicalUnit] = useState('unidad');
+  const [lotQuantityDrafts, setLotQuantityDrafts] = useState<Record<string, string>>({});
+  const [lotNote, setLotNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [revision, setRevision] = useState(0);
   const [queueLimit, setQueueLimit] = useState(150);
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
-  const selectedJobId = searchParams.get('trabajo');
+  const selectedJobId = searchParams.get('trabajo') || searchParams.get('job');
   const selectedStepId = searchParams.get('paso');
+
+  useEffect(() => {
+    const refreshForProductionChange = () => setRevision((value) => value + 1);
+    window.addEventListener('visualcorp:production-changed', refreshForProductionChange);
+    return () => window.removeEventListener('visualcorp:production-changed', refreshForProductionChange);
+  }, []);
 
   useEffect(() => {
     if (!organizationId || !supabase || !area) return;
@@ -244,6 +307,7 @@ export function ProductionJobsPage() {
         const jobIds = [...new Set(jobRows.map((job) => job.id))];
         let allSteps: Step[] = [];
         let jobEvents: JobEvent[] = [];
+        let selectedChecks: StepCheck[] = [];
         if (jobIds.length) {
           const [stepResult, eventResult] = await Promise.all([
             client.from('production_job_steps').select('*').eq('organization_id', organizationId).in('job_id', jobIds).order('step_order', { ascending: true }).limit(900),
@@ -255,17 +319,26 @@ export function ProductionJobsPage() {
           jobEvents = (eventResult.data || []) as JobEvent[];
         }
         if (selectedJobId && jobIds.includes(selectedJobId)) {
-          const [selectedStepResult, selectedEventResult] = await Promise.all([
+          const [selectedStepResult, selectedEventResult, selectedCheckResult, lotResult] = await Promise.all([
             client.from('production_job_steps').select('*').eq('organization_id', organizationId).eq('job_id', selectedJobId).order('step_order', { ascending: true }),
             client.from('production_job_events').select('*').eq('organization_id', organizationId).eq('job_id', selectedJobId).order('created_at', { ascending: false }).limit(100),
+            client.from('production_job_step_checks').select('*').eq('organization_id', organizationId).eq('job_id', selectedJobId).order('created_at', { ascending: true }),
+            client.from('production_job_lots').select('*').eq('organization_id', organizationId).eq('job_id', selectedJobId).order('created_at', { ascending: true }),
           ]);
           if (selectedStepResult.error) throw selectedStepResult.error;
           if (selectedEventResult.error) throw selectedEventResult.error;
+          if (selectedCheckResult.error) throw selectedCheckResult.error;
+          if (lotResult.error) throw lotResult.error;
           allSteps = [...allSteps.filter((step) => step.job_id !== selectedJobId), ...((selectedStepResult.data || []) as Step[])];
           jobEvents = [...jobEvents.filter((event) => event.job_id !== selectedJobId), ...((selectedEventResult.data || []) as JobEvent[])];
+          selectedChecks = (selectedCheckResult.data || []) as StepCheck[];
+          if (active) setProductionLots((lotResult.data || []) as ProductionLot[]);
+        } else if (active) {
+          setProductionLots([]);
         }
+        if (!selectedJobId && active) setProductionLots([]);
         if (active) {
-          setAreas(availableAreas); setJobs(jobRows); setSteps(allSteps); setEvents(jobEvents);
+          setAreas(availableAreas); setJobs(jobRows); setSteps(allSteps); setEvents(jobEvents); setStepChecks(selectedChecks);
           setActionError(''); setLoading(false);
         }
       } catch (error) {
@@ -314,8 +387,8 @@ export function ProductionJobsPage() {
     const needle = search.trim().toLocaleLowerCase('es');
     return !needle || `${item.job.sale_code || ''} ${item.job.customer_name || ''} ${item.job.title} ${item.step?.title || ''}`.toLocaleLowerCase('es').includes(needle);
   }).sort((a, b) => {
-    const priority = (item: QueueItem) => ({ blocked: 0, in_progress: 1, ready: 2, waiting: 3, completed: 4, cancelled: 5 }[item.step?.status || item.currentStep?.status || 'waiting']);
-    return priority(a) - priority(b) || Number(isLate(b)) - Number(isLate(a)) || (safeDate(queueDueAt(a))?.getTime() || Infinity) - (safeDate(queueDueAt(b))?.getTime() || Infinity);
+    const aScore = priorityDetails(a); const bScore = priorityDetails(b);
+    return bScore.score - aScore.score || (safeDate(queueDueAt(a))?.getTime() || Infinity) - (safeDate(queueDueAt(b))?.getTime() || Infinity);
   }), [rows, filter, search, area?.code, user?.id]);
   const viewItems = useMemo<ProductionQueueViewItem<QueueItem>[]>(() => visible.map((item) => {
     const shownStep = item.step || item.currentStep;
@@ -340,6 +413,9 @@ export function ProductionJobsPage() {
   const selectedSteps = steps.filter((step) => step.job_id === selectedJob?.id).sort((a, b) => a.step_order - b.step_order);
   const selectedStep = selectedSteps.find((step) => step.id === selectedStepId) || (area?.code === 'ASE' ? currentStage(selectedSteps) : selectedSteps.find((step) => step.area_id === areas.find((entry) => entry.code === area?.code)?.id)) || null;
   const selectedEvents = events.filter((event) => event.job_id === selectedJob?.id).slice(0, 30);
+  const selectedStepChecks = stepChecks.filter((check) => check.step_id === selectedStep?.id);
+  const reworkCandidates = selectedStep ? selectedSteps.filter((step) => step.status === 'completed' && step.step_order <= selectedStep.step_order) : [];
+  const selectedReworkTarget = reworkCandidates.find((step) => step.id === reworkTarget) || reworkCandidates.at(-1) || null;
   const reviewRequest = selectedEvents.find((event) => event.event_type === 'specification_review_changes_requested'
     && event.details?.to_version === selectedJob?.spec_version
     && event.details?.from_version === selectedJob?.review_from_version);
@@ -379,6 +455,9 @@ export function ProductionJobsPage() {
     setDraftRoute('print');
   }, [selectedJob?.id, selectedJob?.spec_version]);
   useEffect(() => {
+    setFulfillmentDueAt(localDateTime(selectedJob?.fulfillment_due_at));
+  }, [selectedJob?.id, selectedJob?.fulfillment_due_at, selectedJob?.status]);
+  useEffect(() => {
     setArtworkReference(selectedJob?.artwork_reference || '');
     setArtworkNote('');
     setArtworkFile(null);
@@ -391,9 +470,11 @@ export function ProductionJobsPage() {
     const status = shownStep?.status || 'waiting';
     const owner = area.code === 'ASE' ? item.job.advisor_id : item.step?.assigned_to;
     const progress = stageProgress.get(item.job.id);
+    const priority = priorityDetails(item);
     return <article className={`pj-card${viewItem.overdue ? ' is-overdue' : ''}${compact ? ' pj-card--compact' : ''}`} data-state={status} onPointerMove={moveCardSpotlight}>
-      <div className="pj-card-main"><div className="pj-card-top"><span className="pj-card-code">{viewItem.code}</span><span className="pj-status" data-state={status}>{status === 'blocked' ? <AlertTriangle size={12}/> : status === 'completed' ? <CircleCheck size={12}/> : <Clock3 size={12}/>} {viewItem.statusLabel}</span></div>
+      <div className="pj-card-main"><div className="pj-card-top"><span className="pj-card-code">{viewItem.code}</span><span className="pj-status" data-state={status}>{status === 'blocked' ? <AlertTriangle size={12}/> : status === 'completed' ? <CircleCheck size={12}/> : <Clock3 size={12}/>} {viewItem.statusLabel}</span>{priority.score > 0 && <span className="pj-priority" title={priority.reason}>Prioridad {priority.score} · {priority.reason}</span>}</div>
         <h2>{viewItem.title}</h2><div className="pj-card-meta"><span><UserRound size={13}/>{viewItem.customer}</span><span><CalendarClock size={13}/>{viewItem.overdue ? <b className="is-late">Atrasado · {stamp(viewItem.dueAt)}</b> : stamp(viewItem.dueAt)}</span><span>{owner === user?.id ? 'A mi cargo' : owner ? 'Asignado' : 'Sin responsable'}</span></div>
+        {item.step?.status === 'waiting' && item.step.readiness_reasons?.length ? <p className="pj-card-next">Pendiente: <b>{item.step.readiness_reasons.map((reason) => reason.message).join(' · ')}</b></p> : null}
         {area.code === 'ASE' && shownStep && <p className="pj-card-next">Ahora: <b>{shownStep.title}</b> · {currentAreaName(shownStep.area_id)}</p>}{item.step?.notes && <p className="pj-card-next">Indicación: <b>{item.step.notes}</b></p>}
         {!compact && progress && <ProductionStageProgress completed={progress.completed} total={progress.total} title={item.job.title}/>}</div>
       <button type="button" className="pj-card-action" onClick={() => openJob(item)} aria-label={`Abrir ficha de ${item.job.title}`}>Ver ficha <ArrowRight size={14}/></button>
@@ -407,7 +488,7 @@ export function ProductionJobsPage() {
   };
   const closeJob = () => {
     const params = new URLSearchParams(searchParams);
-    params.delete('trabajo'); params.delete('paso'); setSearchParams(params);
+    params.delete('trabajo'); params.delete('job'); params.delete('paso'); setSearchParams(params);
     setActionError(''); setActionMessage(''); setActionNote('');
   };
   const chooseStep = (stepId: string) => {
@@ -416,7 +497,6 @@ export function ProductionJobsPage() {
     setActionError(''); setActionMessage(''); setSearchParams(params);
   };
   const refreshAfterChange = () => {
-    setRevision((value) => value + 1);
     window.dispatchEvent(new Event('visualcorp:production-changed'));
   };
   const saveCoordination = async () => {
@@ -459,6 +539,95 @@ export function ProductionJobsPage() {
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'No pudimos actualizar esta etapa.');
     } finally { setBusy(false); }
+  };
+  const receiveStep = async () => {
+    if (!supabase || !selectedStep || busy) return;
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('receive_production_job_step', { p_step_id: selectedStep.id, p_note: actionNote.trim() });
+      if (error) throw error;
+      setActionNote(''); setActionMessage('Recepción registrada. La etapa queda a cargo de esta área.'); refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos recibir la etapa.'); }
+    finally { setBusy(false); }
+  };
+  const updateStepCheck = async (check: StepCheck, completed: boolean) => {
+    if (!supabase || busy) return;
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('set_production_step_check', {
+        p_check_id: check.id, p_completed: completed, p_evidence_url: evidenceDrafts[check.id]?.trim() || '', p_note: '',
+      });
+      if (error) throw error;
+      refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos guardar el control.'); }
+    finally { setBusy(false); }
+  };
+  const requestRework = async () => {
+    const targetId = selectedReworkTarget?.id || reworkTarget;
+    if (!supabase || !selectedJob || !selectedStep || !targetId || busy || actionNote.trim().length < 3) {
+      setActionError('Selecciona la etapa que debe repetirse y explica el motivo.'); return;
+    }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('request_production_job_rework', {
+        p_report_step: selectedStep.id, p_target_step: targetId, p_note: actionNote.trim(),
+      });
+      if (error) throw error;
+      setActionNote(''); setActionMessage('Retrabajo registrado; las etapas afectadas se reabrieron y el equipo recibió el aviso.'); refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos solicitar el retrabajo.'); }
+    finally { setBusy(false); }
+  };
+  const updateFulfillment = async (action: 'quality_pass' | 'schedule_delivery' | 'deliver' | 'install') => {
+    if (!supabase || !selectedJob || busy) return;
+    const due = fulfillmentDueAt ? new Date(fulfillmentDueAt) : null;
+    if (action === 'schedule_delivery' && (!due || Number.isNaN(due.getTime()))) { setActionError('Elige la fecha y hora de entrega.'); return; }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('transition_production_job_fulfillment', {
+        p_job_id: selectedJob.id, p_action: action, p_due_at: action === 'schedule_delivery' ? due?.toISOString() : null,
+        p_note: actionNote.trim(),
+      });
+      if (error) throw error;
+      setActionNote(''); setActionMessage('Control de calidad o entrega registrado en el historial.'); refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos actualizar la entrega.'); }
+    finally { setBusy(false); }
+  };
+  const configurePhysicalQuantity = async () => {
+    const quantity = Number(physicalQuantity);
+    if (!supabase || !selectedJob || busy || !canManageFulfillment) return;
+    if (!Number.isFinite(quantity) || quantity <= 0 || !physicalUnit.trim()) { setActionError('Indica la cantidad física total y su unidad.'); return; }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('configure_production_job_quantity', {
+        p_job_id: selectedJob.id, p_quantity: quantity, p_unit: physicalUnit.trim(),
+      });
+      if (error) throw error;
+      setPhysicalQuantity(''); setLotNote('');
+      setActionMessage('Cantidad física configurada. El lote completo sigue en producción hasta registrar los tramos terminados.');
+      refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos configurar la cantidad física.'); }
+    finally { setBusy(false); }
+  };
+  const transitionLot = async (lot: ProductionLot, action: 'submit_quality' | 'approve_quality' | 'request_rework' | 'schedule_delivery' | 'deliver' | 'install') => {
+    if (!supabase || !selectedJob || busy) return;
+    const rawQuantity = lotQuantityDrafts[lot.id]?.trim() || '';
+    const quantity = rawQuantity ? Number(rawQuantity) : null;
+    const due = fulfillmentDueAt ? new Date(fulfillmentDueAt) : null;
+    if (quantity !== null && (!Number.isFinite(quantity) || quantity <= 0)) { setActionError('La cantidad del tramo debe ser mayor a cero.'); return; }
+    if (action === 'request_rework' && lotNote.trim().length < 3) { setActionError('Explica el motivo del retrabajo.'); return; }
+    if (action === 'schedule_delivery' && (!due || Number.isNaN(due.getTime()))) { setActionError('Elige una fecha y hora de entrega.'); return; }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('transition_production_job_lot', {
+        p_lot_id: lot.id, p_action: action, p_quantity: quantity,
+        p_due_at: action === 'schedule_delivery' ? due?.toISOString() : null, p_note: lotNote.trim(),
+      });
+      if (error) throw error;
+      setLotNote(''); setLotQuantityDrafts((current) => ({ ...current, [lot.id]: '' }));
+      setActionMessage('Movimiento del lote guardado con cantidad, responsable y fecha en el historial.');
+      refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos actualizar este lote.'); }
+    finally { setBusy(false); }
   };
   const saveSpecifications = async () => {
     if (!supabase || !selectedJob || !showSpecEditor || busy) return;
@@ -568,6 +737,11 @@ export function ProductionJobsPage() {
     && ['in_progress', 'completed'].includes(selectedStep.status);
   const canReviewArtwork = selectedJob?.approval_required && selectedJob.status === 'open'
     && selectedJob.artwork_review_status === 'awaiting_review' && (canCoordinate || canEditSelectedSpec);
+  const isAssignedAdvisor = Boolean(selectedJob && selectedSteps.some((step) => areas.find((entry) => entry.id === step.area_id)?.code === 'ASE' && step.assigned_to === user?.id));
+  const canManageFulfillment = Boolean(selectedJob && (canCoordinate || (canEditSales && (selectedJob.advisor_id === user?.id || isAssignedAdvisor))));
+  const canSubmitQuantity = Boolean(canManageFulfillment || selectedSteps.some((step) => step.assigned_to === user?.id && step.status === 'in_progress'));
+  const lotQuantityTotal = (statuses: string[]) => productionLots.filter((lot) => statuses.includes(lot.status)).reduce((sum, lot) => sum + Number(lot.quantity || 0), 0);
+  const lotStatusLabel: Record<string, string> = { in_production: 'En producción', quality_check: 'Control de calidad', ready_for_delivery: 'Calidad aprobada', scheduled: 'Entrega programada', delivered: 'Entregado', installed: 'Instalado' };
   return <AppFrame area="operations"><main className="production-jobs">
     <PageHeading eyebrow="OPERACIONES · TRABAJOS" title={area.name} description={area.intro} action={<button className="button button-outline" type="button" onClick={() => setRevision((value) => value + 1)} disabled={loading}><RefreshCw size={15}/> Actualizar</button>}/>
     <nav className="pj-area-nav" aria-label="Áreas de trabajo">{AREA_CONFIG.filter((entry) => entry.code === 'ASE' ? canSeeAdvisory : canSeeWorkshop).map((entry) => { const AreaIcon = entry.icon; return <Link key={entry.slug} to={`/operaciones/trabajos/${entry.slug}`} aria-current={entry.slug === area.slug ? 'page' : undefined}><AreaIcon size={15}/>{entry.name}</Link>; })}</nav>
@@ -581,7 +755,7 @@ export function ProductionJobsPage() {
     {!loading && !loadError && visible.length > 0 && <ProductionQueueViews areaSlug={area.slug} areaName={area.name} items={viewItems} today={todayKey()} renderCard={renderQueueCard} onOpen={(item) => openJob(item.original)}/>}
     {!loading && !loadError && rows.length >= queueLimit && <div className="pj-count"><span>Se muestran los {queueLimit} trabajos más recientes de esta área.</span> <button className="button button-outline" type="button" onClick={() => setQueueLimit((value) => value + 150)}>Cargar más</button></div>}
     <div className="pj-detail-modal"><Sheet open={Boolean(selectedJob)} onOpenChange={(open) => { if (!open) closeJob(); }} title={selectedJob?.sale_code ? `Trabajo ${selectedJob.sale_code}` : 'Ficha de trabajo'} description={selectedJob ? selectedJob.customer_name || 'Seguimiento de producción' : undefined}><div className="pj-detail">
-      {selectedJob && <><div className="pj-detail-hero"><span className="pj-card-code">ORDEN DE TRABAJO · VERSIÓN {selectedJob.spec_version}</span><h3>{selectedJob.title}</h3><p>Las indicaciones se comparten entre asesoría y producción. Cada cambio queda asociado a la ficha.</p></div><dl className="pj-detail-facts"><div><dt>Cliente</dt><dd>{selectedJob.customer_name || 'Por consultar'}</dd></div><div><dt>Teléfono</dt><dd>{selectedJob.customer_phone || 'Por consultar'}</dd></div><div><dt>Venta</dt><dd>{selectedJob.sale_code || 'Sin código'}</dd></div><div><dt>Fecha prevista</dt><dd>{stamp(selectedJob.due_at)}</dd></div></dl><section className="pj-commercial-detail" aria-label="Ficha comercial completa de la venta"><div className="pj-commercial-detail-heading"><span className="eyebrow">VENTA VINCULADA</span><p>Los detalles comerciales se cargan con los permisos de tu perfil.</p></div><CommercialDocumentDetails kind="sale" documentId={selectedJob.sale_id} compact/></section>
+      {selectedJob && <><div className="pj-detail-hero"><span className="pj-card-code">ORDEN DE TRABAJO · VERSIÓN {selectedJob.spec_version}</span><h3>{selectedJob.title}</h3><p>Las indicaciones se comparten entre asesoría y producción. Cada cambio queda asociado a la ficha.</p></div><dl className="pj-detail-facts"><div><dt>Cliente</dt><dd>{selectedJob.customer_name || 'Por consultar'}</dd></div><div><dt>Teléfono</dt><dd>{selectedJob.customer_phone || 'Por consultar'}</dd></div><div><dt>Venta</dt><dd>{selectedJob.sale_code || 'Sin código'}</dd></div><div><dt>Fecha prevista</dt><dd>{stamp(selectedJob.due_at)}</dd></div></dl>
       {selectedJob.status === 'needs_review' && <ProductionSpecReview
         key={`${selectedJob.id}:${selectedJob.spec_version}`}
         jobId={selectedJob.id}
@@ -598,13 +772,22 @@ export function ProductionJobsPage() {
         }}
       />}
       <section><h4>Detalles del trabajo</h4>{Object.keys(selectedJob.specifications || {}).length ? <dl className="pj-detail-facts">{Object.entries(selectedJob.specifications || {}).map(([key, value]) => <div key={key}><dt>{humanKey(key)}</dt><dd>{key === 'artwork_status' ? ({ pending: 'Por definir', design_needed: 'Hay que diseñarlo', provided: 'Archivo del cliente', approved: 'Archivo indicado como aprobado al vender' }[String(value)] || presentValue(value)) : presentValue(value)}</dd></div>)}</dl> : <p className="pj-note">Aún no hay especificaciones adicionales. Solicita al asesor los datos que faltan antes de empezar.</p>}</section>
+      {selectedStep && <ProductionHandoff step={selectedStep} areas={areas} specifications={selectedJob.specifications}/>}
       {selectedJob.approval_required && <section className="pj-artwork" aria-label="Revisión del arte"><div className="pj-artwork-top"><div><span className="pj-artwork-eyebrow">CONTROL DE ARTE</span><h4>Revisión antes de producir</h4></div><span className="pj-artwork-state" data-state={selectedJob.artwork_review_status}>{({ awaiting_art: 'Diseño pendiente', awaiting_review: 'Por aprobar', changes_requested: 'Correcciones', approved: 'Aprobado', not_required: 'Sin revisión' })[selectedJob.artwork_review_status]}</span></div><p>{({ awaiting_art: 'Diseño prepara el archivo y comparte un enlace para que Asesoría lo revise.', awaiting_review: 'Asesoría revisa la versión entregada. Producción espera su decisión.', changes_requested: 'Diseño debe atender las correcciones y entregar una nueva versión.', approved: 'El arte fue aprobado. Las siguientes etapas avanzan según sus demás requisitos.', not_required: 'Este trabajo no requiere una revisión de arte.' })[selectedJob.artwork_review_status]}</p>{selectedJob.artwork_revision > 0 && <div className="pj-artwork-meta"><span>Versión {selectedJob.artwork_revision}</span><span>Entregado: {stamp(selectedJob.artwork_submitted_at)}</span>{selectedJob.artwork_reviewed_at && <span>Revisado: {stamp(selectedJob.artwork_reviewed_at)}</span>}</div>}<ProductionArtworkReference key={selectedJob.artwork_reference} reference={selectedJob.artwork_reference}/>{canSubmitArtwork && <div className="pj-artwork-form"><label>Prueba privada (PNG, JPG, WebP o PDF · hasta 6 MB)<input key={artworkFileKey} type="file" accept=".png,.jpg,.jpeg,.webp,.pdf,image/png,image/jpeg,image/webp,application/pdf" onChange={(event) => { const file = event.target.files?.[0] || null; if (file && (!ARTWORK_FILE_TYPES[file.type] || file.size > ARTWORK_FILE_MAX_BYTES || file.size === 0)) { setActionError("Usa PNG, JPG, WebP o PDF de hasta 6 MB."); event.target.value = ""; setArtworkFile(null); } else { setActionError(""); setArtworkFile(file); } }}/></label><p className="pj-artwork-hint">La prueba queda privada. Para archivos de producción más grandes, usa un enlace HTTPS.</p>{artworkReference.startsWith("storage://production-artwork/") && !artworkFile && <p className="pj-artwork-hint">La prueba ya se subió. Pulsa entregar para registrarla en la orden.</p>}<label>O enlace HTTPS del arte<input type="url" inputMode="url" maxLength={1000} value={artworkReference.startsWith("storage://production-artwork/") ? "" : artworkReference} onChange={(event) => setArtworkReference(event.target.value)} placeholder="https://…"/></label><label>Nota de entrega <span className="pj-optional">opcional</span><textarea maxLength={1000} rows={2} value={artworkNote} onChange={(event) => setArtworkNote(event.target.value)} placeholder="Qué cambió en esta versión"/></label><button className="button button-dark" type="button" disabled={busy || (!artworkFile && !artworkReference.trim())} onClick={() => void submitArtwork()}>Entregar para aprobación <ArrowRight size={14}/></button></div>}{canReviewArtwork && <div className="pj-artwork-form"><label>Decisión para Diseño<textarea maxLength={1000} rows={2} value={artworkNote} onChange={(event) => setArtworkNote(event.target.value)} placeholder="Si pides correcciones, explica qué hay que cambiar"/></label><div className="pj-action-row"><button className="button button-dark" type="button" disabled={busy} onClick={() => void reviewArtwork('approved')}><Check size={14}/> Aprobar arte</button><button className="button button-outline" type="button" disabled={busy || artworkNote.trim().length < 3} onClick={() => void reviewArtwork('changes_requested')}>Pedir correcciones</button></div></div>}</section>}
       {selectedJob.workflow_code === 'review' && canEditSelectedSpec && <section className="pj-actions"><h4>Definir ruta de producción</h4><p className="pj-note">Elige el recorrido para activar las tareas de cada área. Revisa antes los detalles del pedido.</p><label>Recorrido<select value={draftRoute} onChange={(event) => setDraftRoute(event.target.value)}>{WORKFLOW_CHOICES.map((choice) => <option key={choice.code} value={choice.code}>{choice.label}</option>)}</select></label><button className="button button-dark" type="button" disabled={busy} onClick={() => void chooseWorkflow()}>Activar ruta <ArrowRight size={14}/></button></section>}
       {showSpecEditor && <section className="pj-actions"><h4>{isSiteVisitEditor && !canEditSelectedSpec ? 'Medidas de la visita' : 'Editar ficha del trabajo'}</h4><p className="pj-note">Los cambios se guardan con una nueva versión y quedan visibles para todas las áreas.</p><div className="pj-edit-grid"><label>Ancho (cm)<input type="number" min="0.01" step="0.01" inputMode="decimal" value={draftSpec.width_cm || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, width_cm: event.target.value }))}/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" inputMode="decimal" value={draftSpec.height_cm || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, height_cm: event.target.value }))}/></label></div>{(!isSiteVisitEditor || canEditSelectedSpec) && <><label>Descripción<textarea maxLength={4000} rows={3} value={draftSpec.description || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, description: event.target.value }))}/></label><label>Material<input maxLength={180} value={draftSpec.material || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, material: event.target.value }))}/></label><label>Acabado<input maxLength={220} value={draftSpec.finish || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, finish: event.target.value }))}/></label><label>Dirección de instalación<input maxLength={400} value={draftSpec.installation_address || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, installation_address: event.target.value }))}/></label></>}<label>Observaciones de la visita<textarea maxLength={1000} rows={2} value={draftSpec.site_visit_notes || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, site_visit_notes: event.target.value }))}/></label><label>Motivo del cambio<textarea maxLength={1000} rows={2} value={actionNote} onChange={(event) => setActionNote(event.target.value)} placeholder="Ej. Medidas verificadas en el local del cliente"/></label><button className="button button-dark" type="button" disabled={busy} onClick={() => void saveSpecifications()}>Guardar detalles <Check size={14}/></button></section>}
       {canCoordinate && selectedStep && <section className="pj-actions pj-coordination" aria-label="Coordinación de etapas"><div className="pj-coordination-heading"><div><h4>Coordinar etapa</h4><p>Asigna a una persona del área y fija una fecha para este paso.</p></div><CalendarClock size={19} aria-hidden="true"/></div><label>Etapa<select value={selectedStep.id} onChange={(event) => chooseStep(event.target.value)}>{selectedSteps.map((step, index) => <option value={step.id} key={step.id}>{String(index + 1).padStart(2, '0')} · {step.title} · {currentAreaName(step.area_id)}</option>)}</select></label><p className="pj-coordination-status"><span className="pj-status" data-state={selectedStep.status}>{STATUS_LABELS[selectedStep.status]}</span><span>{currentAreaName(selectedStep.area_id)}</span></p>{isOpen(selectedStep.status) && selectedJob.status !== 'completed' && selectedJob.status !== 'cancelled' ? <><div className="pj-edit-grid"><label>Responsable<select value={draftAssignee} onChange={(event) => setDraftAssignee(event.target.value)} disabled={staffLoading || Boolean(staffError)}><option value="">Sin responsable</option>{selectedStep.assigned_to && !staffLoading && !staffError && !eligibleStaff.some((person) => person.user_id === selectedStep.assigned_to) && <option value={selectedStep.assigned_to} disabled>Responsable anterior sin acceso</option>}{eligibleStaff.map((person) => <option value={person.user_id} key={person.user_id}>{person.display_name}{person.user_id === user?.id ? ' (yo)' : ''}</option>)}</select></label><label>Fecha y hora límite<input type="datetime-local" value={draftDueAt} onChange={(event) => setDraftDueAt(event.target.value)}/></label></div>{staffLoading && <p className="pj-note" role="status">Cargando personas habilitadas…</p>}{staffError && <p className="pj-error" role="alert">{staffError}</p>}{!staffLoading && !staffError && !eligibleStaff.length && <p className="pj-note">No hay personas activas para esta área. La etapa puede quedar sin responsable.</p>}<label>Motivo o indicación para el equipo <span className="pj-optional">opcional</span><textarea maxLength={1000} rows={2} value={coordinationNote} onChange={(event) => setCoordinationNote(event.target.value)} placeholder="Ej. Priorizar para entrega del viernes"/></label><div className="pj-coordination-footer"><p>Los cambios se registran en el historial del trabajo.</p><button className="button button-dark" type="button" disabled={busy || staffLoading || Boolean(staffError) || (Boolean(draftAssignee) && !eligibleStaff.some((person) => person.user_id === draftAssignee)) || (draftAssignee === (selectedStep.assigned_to || '') && draftDueAt === localDateTime(selectedStep.due_at))} onClick={() => void saveCoordination()}><Check size={14}/> Guardar cambios</button></div></> : <p className="pj-note">Esta etapa ya terminó y su asignación quedó cerrada.</p>}</section>}
-      <section><h4>Recorrido de producción</h4>{selectedSteps.length ? <ol className="pj-stages">{selectedSteps.map((step, index) => <li key={step.id} data-state={step.status}><span className="pj-stage-dot" aria-hidden="true">{step.status === 'completed' ? <Check size={12}/> : String(index + 1).padStart(2, '0')}</span><div className="pj-stage-copy"><b>{step.title} · {currentAreaName(step.area_id)}</b><small>{STATUS_LABELS[step.status]} · {step.assigned_to === user?.id ? 'A mi cargo' : step.assigned_to ? 'Asignado' : 'Sin responsable'} · {stamp(step.due_at)}</small>{step.notes && <small>{step.notes}</small>}</div></li>)}</ol> : <p className="pj-note">Todavía no hay etapas disponibles para esta ficha.</p>}</section>
+      <section><h4>Recorrido de producción</h4>{selectedSteps.length ? <ol className="pj-stages">{selectedSteps.map((step, index) => <li key={step.id} data-state={step.status}><span className="pj-stage-dot" aria-hidden="true">{step.status === 'completed' ? <Check size={12}/> : String(index + 1).padStart(2, '0')}</span><div className="pj-stage-copy"><b>{step.title} · {currentAreaName(step.area_id)}</b><small>{STATUS_LABELS[step.status]} · {step.assigned_to === user?.id ? 'A mi cargo' : step.assigned_to ? 'Asignado' : 'Sin responsable'} · {stamp(step.due_at)} · {step.due_at_is_manual ? 'Fecha manual' : `${step.estimated_minutes || 60} min estimados`}</small>{step.handoff_status === 'pending' && <small>Recepción pendiente del área</small>}{step.handoff_status === 'accepted' && step.received_at && <small>Recibida: {stamp(step.received_at)}</small>}{step.readiness_reasons?.map((reason) => <small key={reason.code}>Pendiente: {reason.message}</small>)}{step.notes && <small>{step.notes}</small>}</div></li>)}</ol> : <p className="pj-note">Todavía no hay etapas disponibles para esta ficha.</p>}</section>
       <section><h4>Historial de cambios</h4>{selectedEvents.length ? <ol className="pj-history">{selectedEvents.map((event) => <li key={event.id}><span className="pj-stage-dot" aria-hidden="true">·</span><div><b>{eventTitle(event)}</b><small> · {stamp(event.created_at)}</small>{eventNote(event) && <p>{eventNote(event)}</p>}</div></li>)}</ol> : <p className="pj-note">No hay cambios registrados todavía.</p>}</section>
-      {canChangeSelected && selectedStep && <section className="pj-actions"><h4>Actualizar mi etapa</h4>{selectedStep.status === 'waiting' ? <p className="pj-note">Esta etapa se habilitará al terminar las anteriores.</p> : <><label>Nota para el equipo<textarea maxLength={900} value={actionNote} onChange={(event) => setActionNote(event.target.value)} placeholder="Incluye una decisión, referencia o motivo de bloqueo"/></label><div className="pj-action-row">{selectedStep.status === 'ready' && !selectedStep.assigned_to && <button className="button button-dark" type="button" disabled={busy} onClick={() => void runStepAction('take')}><UserRound size={14}/> Tomar tarea</button>}{selectedStep.status === 'ready' && assignedToMe && <button className="button button-dark" type="button" disabled={busy} onClick={() => void runStepAction('start')}><Play size={14}/> Empezar</button>}{selectedStep.status === 'in_progress' && assignedToMe && !(selectedJob.approval_required && selectedStep.step_key === 'design') && <button className="button button-dark" type="button" disabled={busy} onClick={() => void runStepAction('complete')}><Check size={14}/> Marcar lista</button>}{selectedStep.status === 'blocked' && selectedJob.status !== 'needs_review' && (assignedToMe || canCoordinate) && <button className="button button-outline" type="button" disabled={busy} onClick={() => void runStepAction('unblock')}>Reanudar</button>}{['ready', 'in_progress'].includes(selectedStep.status) && assignedToMe && <button className="button button-outline" type="button" disabled={busy} onClick={() => void runStepAction('block')}><AlertTriangle size={14}/> Bloquear</button>}</div>{selectedStep.assigned_to && !assignedToMe && isOpen(selectedStep.status) && !canCoordinate && <p className="pj-note">Esta etapa está a cargo de otra persona.</p>}</>}</section>}
+      {canChangeSelected && selectedStep && <section className="pj-actions"><h4>Actualizar mi etapa</h4>{selectedStep.status === 'waiting' ? <div className="pj-decision-reasons"><p className="pj-note">Esta etapa está en espera:</p>{(selectedStep.readiness_reasons || []).map((reason) => <span key={reason.code}><Clock3 size={13}/>{reason.message}</span>)}</div> : <><label>Nota para el equipo<textarea maxLength={900} value={actionNote} onChange={(event) => setActionNote(event.target.value)} placeholder="Incluye una decisión, referencia o motivo de bloqueo"/></label>{selectedStepChecks.length > 0 && <div className="pj-checklist"><h5><ClipboardCheck size={15}/> Lista de control de esta etapa</h5>{selectedStepChecks.map((check) => <div className="pj-check" key={check.id}><label><input type="checkbox" checked={Boolean(check.completed_at)} disabled={busy || !['ready','in_progress'].includes(selectedStep.status) || !(assignedToMe || canCoordinate)} onChange={(event) => void updateStepCheck(check,event.target.checked)}/><span>{check.title}{!check.required && <small>Opcional</small>}{check.requires_evidence && <small>Requiere evidencia</small>}</span></label>{check.requires_evidence && !check.completed_at && <input className="pj-evidence-input" type="url" value={evidenceDrafts[check.id] || ''} onChange={(event) => setEvidenceDrafts((current) => ({...current,[check.id]:event.target.value}))} placeholder="Enlace HTTPS de evidencia"/>}{check.evidence_url && <a className="pj-check-evidence" href={check.evidence_url} target="_blank" rel="noreferrer">Ver evidencia registrada</a>}</div>)}</div>}<div className="pj-action-row">{selectedStep.status === 'ready' && selectedStep.handoff_status === 'pending' && (!selectedStep.assigned_to || assignedToMe || canCoordinate) && <button className="button button-dark" type="button" disabled={busy} onClick={() => void receiveStep()}><PackageCheck size={14}/> Recibir etapa</button>}{selectedStep.status === 'ready' && !selectedStep.assigned_to && <button className="button button-outline" type="button" disabled={busy} onClick={() => void runStepAction('take')}><UserRound size={14}/> Tomar tarea</button>}{selectedStep.status === 'ready' && assignedToMe && selectedStep.handoff_status !== 'pending' && <button className="button button-dark" type="button" disabled={busy} onClick={() => void runStepAction('start')}><Play size={14}/> Empezar</button>}{selectedStep.status === 'in_progress' && assignedToMe && !(selectedJob.approval_required && selectedStep.step_key === 'design') && <button className="button button-dark" type="button" disabled={busy} onClick={() => void runStepAction('complete')}><Check size={14}/> Marcar lista</button>}{selectedStep.status === 'blocked' && selectedJob.status !== 'needs_review' && (assignedToMe || canCoordinate) && <button className="button button-outline" type="button" disabled={busy} onClick={() => void runStepAction('unblock')}>Reanudar</button>}{['ready', 'in_progress'].includes(selectedStep.status) && assignedToMe && <button className="button button-outline" type="button" disabled={busy} onClick={() => void runStepAction('block')}><AlertTriangle size={14}/> Bloquear</button>}</div>{selectedStep.handoff_status === 'pending' && <p className="pj-note">El área anterior terminó. Recibe formalmente esta etapa antes de iniciarla.</p>}{selectedStep.assigned_to && !assignedToMe && isOpen(selectedStep.status) && !canCoordinate && <p className="pj-note">Esta etapa está a cargo de otra persona.</p>}</>}</section>}
+      {selectedJob && <section className="pj-lots" aria-label="Control de cantidades, calidad y entrega por lote"><div className="pj-lots-heading"><div><span className="pj-artwork-eyebrow">PRODUCCIÓN PARCIAL</span><h4><PackageCheck size={16}/> Lotes, calidad y entrega</h4><p>La cantidad física se registra por separado de la facturación. Puedes cerrar y entregar una parte mientras el saldo continúa en producción.</p></div>{productionLots.length > 0 && <span className="pj-lots-state">{productionLots.length} {productionLots.length === 1 ? 'lote' : 'lotes'}</span>}</div>
+        {productionLots.length ? <><div className="pj-lot-totals"><span>En producción <b>{lotQuantityTotal(['in_production']).toLocaleString('es-EC')} {productionLots[0]?.unit}</b></span><span>En calidad <b>{lotQuantityTotal(['quality_check']).toLocaleString('es-EC')} {productionLots[0]?.unit}</b></span><span>Aprobado <b>{lotQuantityTotal(['ready_for_delivery','scheduled']).toLocaleString('es-EC')} {productionLots[0]?.unit}</b></span><span>Entregado <b>{lotQuantityTotal(['delivered','installed']).toLocaleString('es-EC')} {productionLots[0]?.unit}</b></span></div>
+          <div className="pj-lot-list">{productionLots.map((lot) => <article className="pj-lot" key={lot.id}><div className="pj-lot-main"><div><b>{lot.label}</b><small>{Number(lot.quantity).toLocaleString('es-EC')} {lot.unit}{lot.due_at ? ` · ${stamp(lot.due_at)}` : ''}</small></div><span data-state={lot.status}>{lotStatusLabel[lot.status] || lot.status}</span></div>{lot.notes && <p>{lot.notes}</p>}{!['installed','cancelled'].includes(lot.status) && <div className="pj-lot-actions">{lot.status !== 'delivered' && <label>Tramo a mover <input type="number" min="0.0001" max={lot.quantity} step="any" value={lotQuantityDrafts[lot.id] || ''} onChange={(event) => setLotQuantityDrafts((current) => ({ ...current, [lot.id]: event.target.value }))} placeholder={`Todo el lote (${lot.quantity})`}/></label>}{lot.status === 'in_production' && canSubmitQuantity && <button className="button button-outline" type="button" disabled={busy} onClick={() => void transitionLot(lot,'submit_quality')}>Enviar a calidad</button>}{lot.status === 'quality_check' && <>{canManageFulfillment && <button className="button button-dark" type="button" disabled={busy} onClick={() => void transitionLot(lot,'approve_quality')}><Check size={14}/> Aprobar cantidad</button>}{canManageFulfillment && <button className="button button-outline" type="button" disabled={busy} onClick={() => void transitionLot(lot,'request_rework')}><RotateCcw size={14}/> Devolver a producción</button>}</>}{['ready_for_delivery','scheduled'].includes(lot.status) && <><label>Fecha y hora<input type="datetime-local" value={fulfillmentDueAt || localDateTime(lot.due_at)} onChange={(event) => setFulfillmentDueAt(event.target.value)}/></label>{canManageFulfillment && <button className="button button-outline" type="button" disabled={busy || !fulfillmentDueAt && !lot.due_at} onClick={() => void transitionLot(lot,'schedule_delivery')}><CalendarClock size={14}/> Programar</button>}{canManageFulfillment && <button className="button button-dark" type="button" disabled={busy} onClick={() => void transitionLot(lot,'deliver')}>Confirmar entrega</button>}{canManageFulfillment && <button className="button button-outline" type="button" disabled={busy} onClick={() => void transitionLot(lot,'request_rework')}>Pedir retrabajo</button>}</>}{lot.status === 'delivered' && canManageFulfillment && <button className="button button-dark" type="button" disabled={busy} onClick={() => void transitionLot(lot,'install')}><Check size={14}/> Confirmar instalación</button>}</div>}</article>)}</div>
+          {canManageFulfillment && productionLots.some((lot) => ['quality_check','ready_for_delivery','scheduled'].includes(lot.status)) && <label className="pj-lot-note">Observación de calidad o motivo del retrabajo<textarea maxLength={1000} rows={2} value={lotNote} onChange={(event) => setLotNote(event.target.value)} placeholder="Deja una razón breve y útil para el siguiente responsable"/></label>}
+        </> : <>{canManageFulfillment && ['open','needs_review'].includes(selectedJob.status) && <><p className="pj-note">Activa esta opción al trabajar con cantidades físicas o entregas parciales. La cantidad del POS puede representar m² u otra base de facturación; no se copiará automáticamente.</p><div className="pj-lot-config"><label>Cantidad física total<input type="number" min="0.0001" max="1000000" step="any" value={physicalQuantity} onChange={(event) => setPhysicalQuantity(event.target.value)} placeholder="Ej. 50"/></label><label>Unidad física<input maxLength={24} value={physicalUnit} onChange={(event) => setPhysicalUnit(event.target.value)} placeholder="unidades, m, piezas…"/></label><button className="button button-dark" type="button" disabled={busy || !physicalQuantity.trim() || !physicalUnit.trim()} onClick={() => void configurePhysicalQuantity()}>Iniciar control por cantidades</button></div></>}</>}
+        {canManageFulfillment && !productionLots.length && selectedJob.status === 'completed' && <section className="pj-fulfillment"><div><span className="pj-artwork-eyebrow">CIERRE Y ENTREGA</span><h4><ShieldCheck size={16}/> {selectedJob.workflow_code === 'none' ? 'Coordinar entrega' : 'Calidad y entrega'}</h4><p>{selectedJob.workflow_code === 'none' ? 'Esta ruta no requiere etapas de producción. Registra la fecha y confirma la entrega cuando corresponda.' : 'Al cerrar las etapas se abre el control de calidad; después podrás programar y registrar la entrega.'}</p></div><span className="pj-fulfillment-state">{selectedJob.fulfillment_status === 'ready_for_delivery' && selectedJob.workflow_code === 'none' ? 'Listo para entrega' : ({ quality_check: 'Control de calidad', ready_for_delivery: 'Calidad aprobada', scheduled: 'Entrega programada', delivered: 'Entregado', installed: 'Instalado', not_ready: 'No preparado' } as Record<string,string>)[selectedJob.fulfillment_status || 'quality_check'] || selectedJob.fulfillment_status}</span>{['ready_for_delivery','scheduled'].includes(selectedJob.fulfillment_status || '') && <label>Fecha y hora de entrega<input type="datetime-local" value={fulfillmentDueAt || localDateTime(selectedJob.fulfillment_due_at)} onChange={(event) => setFulfillmentDueAt(event.target.value)}/></label>}<label>{selectedJob.workflow_code === 'none' ? 'Nota de entrega' : 'Nota de calidad o entrega'}<textarea maxLength={1000} rows={2} value={actionNote} onChange={(event) => setActionNote(event.target.value)} placeholder={selectedJob.workflow_code === 'none' ? 'Horario, referencia o constancia de entrega' : 'Observación del acabado, horario o constancia de entrega'}/></label><div className="pj-action-row">{selectedJob.fulfillment_status === 'quality_check' && <button className="button button-dark" type="button" disabled={busy} onClick={() => void updateFulfillment('quality_pass')}><Check size={14}/> Aprobar calidad</button>}{['ready_for_delivery','scheduled'].includes(selectedJob.fulfillment_status || '') && <button className="button button-outline" type="button" disabled={busy || !fulfillmentDueAt && !selectedJob.fulfillment_due_at} onClick={() => void updateFulfillment('schedule_delivery')}><CalendarClock size={14}/> Programar entrega</button>}{['ready_for_delivery','scheduled'].includes(selectedJob.fulfillment_status || '') && <button className="button button-dark" type="button" disabled={busy} onClick={() => void updateFulfillment('deliver')}><PackageCheck size={14}/> Confirmar entrega</button>}{selectedJob.fulfillment_status === 'delivered' && <button className="button button-dark" type="button" disabled={busy} onClick={() => void updateFulfillment('install')}><Check size={14}/> Confirmar instalación</button>}</div>{selectedJob.fulfillment_note && <small>{selectedJob.fulfillment_note}</small>}</section>}
+      </section>}
+       {selectedStep?.status === 'completed' && selectedJob.status !== 'cancelled' && (canCoordinate || canActInArea(area.code)) && <section className="pj-actions pj-rework"><h4><RotateCcw size={15}/> Solicitar retrabajo</h4><p className="pj-note">Elige una etapa anterior terminada. Se reabrirán esa etapa y las dependientes que ya se completaron, con historial del motivo.</p><label>Etapa que debe repetirse<select value={selectedReworkTarget?.id || ''} onChange={(event) => setReworkTarget(event.target.value)}><option value="">Selecciona una etapa</option>{reworkCandidates.map((step) => <option value={step.id} key={step.id}>{step.title} · {currentAreaName(step.area_id)}</option>)}</select></label><label>Motivo del retrabajo<textarea maxLength={1000} rows={2} value={actionNote} onChange={(event) => setActionNote(event.target.value)} placeholder="Ej. La medida de la pieza final no coincide con la ficha"/></label><button className="button button-outline" type="button" disabled={busy || !selectedReworkTarget || actionNote.trim().length < 3} onClick={() => void requestRework()}><RotateCcw size={14}/> Reabrir etapa afectada</button></section>}
       {area.code === 'ASE' && <p className="pj-note">Para corregir las indicaciones del pedido, abre <Link to="/operaciones/mi-semana">Mi semana</Link>. Los cambios quedan visibles para cada área.</p>}
       {actionError && <p className="pj-error" role="alert">{actionError}</p>}{actionMessage && <p className="pj-note" role="status">{actionMessage}</p>}</>}
     </div></Sheet></div>
