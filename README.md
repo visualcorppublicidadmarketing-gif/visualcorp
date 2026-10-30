@@ -67,7 +67,7 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ## Continuidad del trabajo
 
-- **Diseño de Marketing (30 de octubre de 2026):** rama `codex/marketing-interface-20261030` sobre `origin/main`. Se pulieron filtros y navegación semanal, tarjetas, estados semánticos, tabla y ficha de publicación; se reorganizó el bloque de imagen y se añadió señalización accesible de datos faltantes al marcar una ficha como publicada. `npm run build:checked` y `git diff --check` pasan. Pendiente revisar en sesión autenticada e integrar mediante PR; sin publicación en producción.
+- **Diseño de Marketing (30 de octubre de 2026):** PR #147 integró los filtros, navegación semanal, estados semánticos, vistas, tarjeta de imagen y ficha accesible. La revisión autenticada detectó y corrigió que el filtro del mes consultaba solo la primera fila; la rama `codex/marketing-calendar-range-20261030` extiende el rango hasta el último día visible del calendario. Verificación y nuevo PR en curso.
 
 - **Acceso al manual (26 de octubre de 2026):** PR #96 integró la biblioteca y sus 43 recursos estáticos. Esta corrección valida en Vercel los roles internos antes de servir `/manual-aprendizaje/fuente/*` y marca la respuesta como privada, sin caché. El contenido quedó en el historial de dos repositorios públicos; bloquear el acceso web no sanea las copias de GitHub. Seguimiento en [docs/manual-aprendizaje/README.md](docs/manual-aprendizaje/README.md).
 
