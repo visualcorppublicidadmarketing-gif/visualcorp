@@ -1,0 +1,3 @@
+.store-detail-sku{display:flex;align-items:center;gap:8px;width:max-content;max-width:100%;margin:-5px 0 8px;padding:6px 9px;border:1px solid #ece5f0;border-radius:8px;background:#fbf8fc}.store-detail-sku>span{color:#807187;font-size:9px;font-weight:750;letter-spacing:.04em}.store-detail-sku code{overflow:hidden;color:#5b2873;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10px;text-overflow:ellipsis}
+@media(max-width:700px){.store-detail-sku{margin-top:-3px}}
+

@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BadgeCheck, Check, CircleHelp, Grid2X2, Layers3, List, Plus, Search, SlidersHorizontal, Table2, Trash2 } from 'lucide-react';
+import { BadgeCheck, Check, CircleHelp, FileText, Grid2X2, Layers3, List, Plus, Search, SlidersHorizontal, Table2, Trash2 } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { formatMoney, useWorkspace } from '../../app/workspace';
 import { useAuth } from '../../auth/AuthProvider';
 import { NumberTicker } from '../../components/ui/MagicComponents';
 import { supabase } from '../../lib/supabaseClient';
 import { StandardCustomProducts } from './StandardCustomProducts';
+import { CatalogProductCode, CatalogProductDetailDialog } from './CatalogProductDetailDialog';
 import './catalog-page.css';
 
 type PriceTierDraft = { min_qty: string; normal: string; installation: string; corporate: string };
@@ -112,6 +113,7 @@ export function CatalogPage() {
   const [familyFilter, setFamilyFilter] = useState('Todas');
   const [sortBy, setSortBy] = useState('name');
   const [groupByFamily, setGroupByFamily] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [view, setView] = useState<CatalogView>(() => {
     try { const saved = window.localStorage.getItem('visualcorp.catalog.view.v1'); return catalogViewOptions.some((option) => option.id === saved) ? saved as CatalogView : 'table'; }
     catch { return 'table'; }
@@ -121,7 +123,7 @@ export function CatalogPage() {
   const families = useMemo(() => [...new Set<string>(data.catalog.map((item) => item.family?.trim() || 'General'))].sort((a, b) => a.localeCompare(b, 'es')), [data.catalog]);
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('es');
-    const matches = data.catalog.filter((item) => `${item.name} ${item.family} ${item.description || ''} ${item.unit || ''} ${item.id || ''}`.toLocaleLowerCase('es').includes(query) && (familyFilter === 'Todas' || (item.family?.trim() || 'General') === familyFilter));
+    const matches = data.catalog.filter((item) => `${item.name} ${item.family} ${item.description || ''} ${item.unit || ''} ${item.sku || item.id || ''}`.toLocaleLowerCase('es').includes(query) && (familyFilter === 'Todas' || (item.family?.trim() || 'General') === familyFilter));
     return matches.sort((a, b) => {
       if (sortBy === 'family') return (a.family || 'General').localeCompare(b.family || 'General', 'es') || a.name.localeCompare(b.name, 'es');
       if (sortBy === 'price-low' || sortBy === 'price-high') {
@@ -182,7 +184,7 @@ export function CatalogPage() {
         <article className="panel"><span><BadgeCheck size={17}/></span><div><small>MODALIDADES DE PRECIO</small><b>3</b><small>Normal · Instalación · Corporativo</small></div></article>
       </section>
       <section className="catalog-browser panel" aria-label="Buscar y filtrar catálogo">
-        <div className="catalog-toolbar"><label className="search-box"><Search size={17}/><input aria-label="Buscar en el catálogo" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Busca por nombre, familia, unidad o descripción"/>{search && <button type="button" onClick={() => setSearch('')} aria-label="Limpiar búsqueda">×</button>}</label><span><SlidersHorizontal size={15}/>{filtered.length} de {data.catalog.length} productos</span></div>
+        <div className="catalog-toolbar"><label className="search-box"><Search size={17}/><input aria-label="Buscar en el catálogo" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Busca por nombre, SKU, familia o descripción"/>{search && <button type="button" onClick={() => setSearch('')} aria-label="Limpiar búsqueda">×</button>}</label><span><SlidersHorizontal size={15}/>{filtered.length} de {data.catalog.length} productos</span></div>
         <div className="catalog-controls">
           <div className="catalog-family-filters" role="group" aria-label="Filtrar por familia"><button type="button" className={familyFilter === 'Todas' ? 'active' : ''} aria-pressed={familyFilter === 'Todas'} onClick={() => setFamilyFilter('Todas')}>Todas <i>{data.catalog.length}</i></button>{families.map((family) => <button type="button" key={family} className={familyFilter === family ? 'active' : ''} aria-pressed={familyFilter === family} onClick={() => setFamilyFilter(family)}>{family}<i>{data.catalog.filter((item) => (item.family?.trim() || 'General') === family).length}</i></button>)}</div>
           <div className="catalog-view-tools">
@@ -195,11 +197,13 @@ export function CatalogPage() {
       {grouped.length ? grouped.map(([family, items]) => <section className={`panel catalog-family catalog-view-${view}`} key={family}>
         {groupByFamily && <header><div><span className="catalog-family-icon"><Layers3 size={17}/></span><span><h2>{family}</h2><small>{items.length} {items.length === 1 ? 'producto' : 'productos'}</small></span></div></header>}
         <div className="catalog-products">{items.map((item) => <article className="catalog-product-card" key={item.id}>
-          <div className="catalog-product-identity"><img src={item.image} alt="" loading="lazy"/><span><b>{item.name}</b><small>{item.mode === 'area' ? 'Tarifa por m²' : `Tarifa por ${item.unit || 'unidad'}`}{item.description ? ` · ${item.description}` : ''}</small></span></div>
+          <div className="catalog-product-identity"><img src={item.image} alt={`Referencia de ${item.name}`} loading="lazy"/><div className="catalog-product-title-block"><b>{item.name}</b><small>{item.mode === 'area' ? 'Tarifa por m²' : `Tarifa por ${item.unit || 'unidad'}`}{item.description ? ` · ${item.description}` : ''}</small><span className="catalog-product-row-actions"><CatalogProductCode value={item.sku || item.id}/><button className="catalog-product-details-button" type="button" onClick={() => setSelectedProduct(item)}><FileText size={13}/> Ver ficha</button></span></div></div>
           <CatalogPricingEditor item={item} editable={canEditPrices} onSave={(draft) => savePricing(item, draft)}/>
         </article>)}</div>
       </section>) : <section className="panel catalog-no-results"><Search size={23}/><b>{data.catalog.length ? 'No hay productos que coincidan' : 'El catálogo está vacío'}</b><span>{data.catalog.length ? 'Prueba otra búsqueda o selecciona otra familia.' : 'Los productos disponibles aparecerán aquí cuando cargue el catálogo.'}</span>{(search || familyFilter !== 'Todas') && <button className="button button-outline" type="button" onClick={() => { setSearch(''); setFamilyFilter('Todas'); }}>Quitar filtros</button>}</section>}
       <div className="notice-box"><span><CircleHelp size={17}/></span><div><b>Cómo editar tarifas</b><p>Escribe el precio base normal, con instalación o corporativo y pulsa Guardar tarifas. En “Editar escalas” añade umbrales de cantidad o m²; deja en blanco una modalidad de la escala para que herede el precio base. No se cambian precios hasta que guardes.</p></div></div>
+      <CatalogProductDetailDialog product={selectedProduct} onClose={() => setSelectedProduct(null)}/>
     </div>
   </AppFrame>;
 }
+

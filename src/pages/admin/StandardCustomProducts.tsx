@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ClipboardPaste, ImagePlus, PackagePlus, Pencil, Plus, Save, Trash2, Upload, X } from 'lucide-react';
+import { ClipboardPaste, FileText, ImagePlus, PackagePlus, Pencil, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { useWorkspace } from '../../app/workspace';
 import { supabase } from '../../lib/supabaseClient';
+import { CatalogProductCode, CatalogProductDetailDialog } from './CatalogProductDetailDialog';
 import './standard-custom-products.css';
 
 const BUCKET = 'catalog-product-images';
@@ -11,7 +12,7 @@ const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 type DraftImage = { id: string; src: string; file?: File };
 type PriceTierDraft = { qty: string; price: string };
 type ProductDraft = {
-  id: string; name: string; category: string; description: string; calcType: 'unit' | 'm2';
+  id: string; sku: string; name: string; category: string; description: string; calcType: 'unit' | 'm2';
   priceModel: 'fixed' | 'quantity'; price: string; priceTiers: PriceTierDraft[];
   materials: string; colors: string; dimensions: string; personalization: string;
   published: boolean; route: string; images: DraftImage[]; existingOptions: Record<string, any>; existingFeatures: string[];
@@ -57,7 +58,7 @@ async function readClipboardImage(): Promise<File | null> {
 }
 
 function emptyDraft(): ProductDraft {
-  return { id: '', name: '', category: 'Personalizados estándar', description: '', calcType: 'unit', priceModel: 'fixed', price: '', priceTiers: [{ qty: '1', price: '' }], materials: '', colors: '', dimensions: '', personalization: '', published: false, route: '', images: [], existingOptions: {}, existingFeatures: [] };
+  return { id: '', sku: '', name: '', category: 'Personalizados estándar', description: '', calcType: 'unit', priceModel: 'fixed', price: '', priceTiers: [{ qty: '1', price: '' }], materials: '', colors: '', dimensions: '', personalization: '', published: false, route: '', images: [], existingOptions: {}, existingFeatures: [] };
 }
 
 export function StandardCustomProducts({ editable, editablePrices }: { editable: boolean; editablePrices: boolean }) {
@@ -65,6 +66,7 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
   const { refreshRemote } = useWorkspace();
   const pendingImageUrls = useRef(new Set<string>());
   const [products, setProducts] = useState<any[]>([]); const [templates, setTemplates] = useState<any[]>([]); const [routes, setRoutes] = useState<Record<string, string>>({});
+  const [detailProduct, setDetailProduct] = useState<any | null>(null);
   const [draft, setDraft] = useState<ProductDraft | null>(null); const [busy, setBusy] = useState(false); const [draggingImages, setDraggingImages] = useState(false); const [error, setError] = useState(''); const [notice, setNotice] = useState(''); const [query, setQuery] = useState(''); const [imageMessage, setImageMessage] = useState('');
   const [templateName, setTemplateName] = useState(''); const [steps, setSteps] = useState<Array<{ area: string; title: string }>>([{ area: 'DIS', title: 'Preparar el arte' }, { area: 'IMP', title: 'Imprimir la imagen' }, { area: 'LAS', title: 'Grabar nombres y cortar el diseño' }, { area: 'TAL', title: 'Revisar y entregar' }]);
   const canEdit = editable;
@@ -73,7 +75,7 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
   const refresh = useCallback(async () => {
     if (!supabase || !organizationId) return;
     const [p, t, r] = await Promise.all([
-      supabase.from('catalog_products').select('id,name,slug,description,category_id,subcategory,calc_type,price,price_scales,is_published,image_url,images,custom_options,features,product_kind').eq('organization_id', organizationId).eq('product_kind', 'standard_custom').order('name'),
+      supabase.from('catalog_products').select('id,sku,name,slug,description,category_id,subcategory,calc_type,price,price_scales,is_published,image_url,images,custom_options,features,product_kind').eq('organization_id', organizationId).eq('product_kind', 'standard_custom').order('name'),
       supabase.from('production_workflow_templates').select('code,name,required_fields,steps').eq('organization_id', organizationId).eq('active', true).order('name'),
       supabase.from('catalog_product_workflow_routes').select('catalog_product_id,workflow_code').eq('organization_id', organizationId).eq('active', true),
     ]);
@@ -83,7 +85,7 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
     setProducts(p.data || []); setTemplates(t.data || []); setRoutes(Object.fromEntries((r.data || []).map((row) => [row.catalog_product_id, row.workflow_code])));
   }, [organizationId]);
   useEffect(() => { void refresh(); }, [refresh]);
-  const visible = useMemo(() => products.filter((p) => (p.name + ' ' + p.description + ' ' + (p.subcategory || p.category_id)).toLowerCase().includes(query.toLowerCase())), [products, query]);
+  const visible = useMemo(() => products.filter((p) => (p.name + ' ' + p.sku + ' ' + p.id + ' ' + p.description + ' ' + (p.subcategory || p.category_id)).toLowerCase().includes(query.toLowerCase())), [products, query]);
 
   const openEdit = (product?: any) => {
     setError(''); setNotice(''); setImageMessage('');
@@ -94,7 +96,7 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
     const priceTiers = scales.map((scale: any) => ({ qty: String(scale.qty), price: String(scale.pvp ?? scale.price) }));
     const priceModel = details.price_model === 'quantity' || priceTiers.length ? 'quantity' : 'fixed';
     setDraft({
-      id: product.id, name: product.name || '', category: product.subcategory || product.category_id || 'Personalizados estándar', description: product.description || '',
+      id: product.id, sku: product.sku || product.id, name: product.name || '', category: product.subcategory || product.category_id || 'Personalizados estándar', description: product.description || '',
       calcType: product.calc_type === 'm2' ? 'm2' : 'unit', priceModel, price: Number(product.price) > 0 ? String(product.price) : '',
       priceTiers: priceTiers.length ? priceTiers : [{ qty: '1', price: Number(product.price) > 0 ? String(product.price) : '' }],
       materials: details.materials || '', colors: details.colors || '', dimensions: details.dimensions || '', personalization: details.personalization || '',
@@ -106,9 +108,9 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
     if (busy || !draft) return;
     const incoming = Array.from(files).filter((file) => IMAGE_TYPES.has(file.type));
     if (!incoming.length) { setImageMessage('Elige una imagen PNG, JPG o WebP.'); return; }
-    const added = incoming.slice(0, Math.max(0, 8 - draft.images.length)).map((file) => ({ id: crypto.randomUUID(), src: URL.createObjectURL(file), file }));
+    const added = incoming.slice(0, Math.max(0, 10 - draft.images.length)).map((file) => ({ id: crypto.randomUUID(), src: URL.createObjectURL(file), file }));
     added.forEach((image) => pendingImageUrls.current.add(image.src));
-    setImageMessage(incoming.length > added.length ? 'La galería admite hasta 8 imágenes.' : added.length + (added.length === 1 ? ' imagen añadida.' : ' imágenes añadidas.'));
+    setImageMessage(incoming.length > added.length ? 'La galería admite hasta 10 imágenes.' : added.length + (added.length === 1 ? ' imagen añadida.' : ' imágenes añadidas.'));
     setDraft((current) => {
       if (!current) return current;
       return { ...current, images: [...current.images, ...added] };
@@ -155,11 +157,15 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
     }
     const basePrice = draft.priceModel === 'quantity' ? Number(tiers.find((tier) => tier.qty === 1)?.pvp || draft.price) : Number(draft.price);
     if (draft.published && !(basePrice > 0)) { setError('Configura una tarifa mayor que cero antes de publicar en la web y el cotizador.'); return; }
+    if (draft.published && !products.find((product) => product.id === draft.id)?.is_published && draft.images.length < 4) { setError('Agrega al menos 4 imágenes de referencia antes de publicar. Puedes guardar el borrador y completar la galería después.'); return; }
     if (draft.published && !hasPermission('website', 'publish_content')) { setError('Tu perfil necesita permiso de publicación web para mostrar este producto públicamente.'); return; }
     setBusy(true); setError(''); setNotice('');
     let uploadedPaths: string[] = [];
     try {
-      const images = await uploadImages(draft.images, (path) => uploadedPaths.push(path)); const id = draft.id || 'std-' + crypto.randomUUID(); const slug = (slugify(draft.name) || 'producto') + '-' + id.slice(-8);
+      const images = await uploadImages(draft.images, (path) => uploadedPaths.push(path));
+      const nameCode = slugify(draft.name).replace(/-/g, '').slice(0, 14).toUpperCase() || 'PRODUCTO';
+      const id = draft.id || `VC-STD-${nameCode}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+      const slug = (slugify(draft.name) || 'producto') + '-' + id.slice(-8).toLowerCase();
       const details = { materials: draft.materials.trim(), colors: draft.colors.trim(), dimensions: draft.dimensions.trim(), personalization: draft.personalization.trim(), price_model: draft.priceModel };
       const customOptions = { ...draft.existingOptions, standard_custom: true, configuration: draft.description.trim(), standard_details: details };
       const detailFeatures = [
@@ -216,13 +222,16 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
       const productUnit = product.calc_type === 'm2' ? ' / m²' : ' / unidad';
       const priceSummary = details.price_model === 'quantity' || scales.length ? 'Por cantidad · desde ' + formatPrice(Number(fromPrice)) + productUnit : 'Precio fijo · ' + formatPrice(Number(product.price)) + productUnit;
       const specSummary = [details.materials && 'Materiales: ' + details.materials, details.colors && 'Colores: ' + details.colors, details.dimensions && 'Medidas: ' + details.dimensions].filter(Boolean).join(' · ');
-      return <article key={product.id}><div className="standard-product-thumb">{(product.image_url || product.images?.[0]) ? <img src={product.image_url || product.images[0]} alt=""/> : <ImagePlus size={17}/>}</div><div className="standard-product-row-copy"><b>{product.name}</b><small>{product.subcategory || product.category_id} · {routes[product.id] ? templates.find((template) => template.code === routes[product.id])?.name || routes[product.id] : 'Ruta por definir'}</small><small className="standard-product-price-summary">{priceSummary}{specSummary ? ' · ' + specSummary : ''}</small></div><span className={product.is_published ? 'is-published' : ''}>{product.is_published ? 'Publicado' : 'Borrador'}</span>{canEdit && <button className="button button-outline" type="button" onClick={() => openEdit(product)}><Pencil size={14}/> Editar</button>}</article>;
+      const workflowRoute = routes[product.id] ? templates.find((template) => template.code === routes[product.id])?.name || routes[product.id] : '';
+      return <article key={product.id}><div className="standard-product-thumb">{(product.image_url || product.images?.[0]) ? <img src={product.image_url || product.images[0]} alt={`Referencia de ${product.name}`}/> : <ImagePlus size={17}/>}</div><div className="standard-product-row-copy"><b>{product.name}</b><small>{product.subcategory || product.category_id} · {workflowRoute || 'Ruta por definir'}</small><small className="standard-product-price-summary">{priceSummary}{specSummary ? ' · ' + specSummary : ''}</small><CatalogProductCode value={product.sku || product.id}/></div><span className={product.is_published ? 'is-published' : ''}>{product.is_published ? 'Publicado' : 'Borrador'}</span><button className="button button-outline" type="button" onClick={() => setDetailProduct({ ...product, family: product.subcategory || product.category_id, workflowRoute })}><FileText size={14}/> Ficha</button>{canEdit && <button className="button button-outline" type="button" onClick={() => openEdit(product)}><Pencil size={14}/> Editar</button>}</article>;
     })}{!visible.length && <p className="standard-products-empty">Crea aquí modelos de productos que puedas personalizar y vender más de una vez.</p>}</div>
     {canManageRoutes && <details className="standard-workflow-builder"><summary><Plus size={15}/> Crear ruta de producción por áreas</summary><p>Estas etapas se copian al trabajo que se genere desde cada venta; las tareas ya creadas conservan su secuencia.</p><form onSubmit={saveTemplate}><label>Nombre de la ruta<input required minLength={3} maxLength={100} value={templateName} onChange={(event) => setTemplateName(event.target.value)} placeholder="Recuerdo de acrílico personalizado"/></label><div className="standard-workflow-steps">{steps.map((step, index) => <div key={index}><select aria-label={'Área de etapa ' + (index + 1)} value={step.area} onChange={(event) => setSteps((old) => old.map((row, rowIndex) => rowIndex === index ? { ...row, area: event.target.value } : row))}>{AREAS.map((area) => <option key={area.code} value={area.code}>{area.name}</option>)}</select><input aria-label={'Nombre de etapa ' + (index + 1)} value={step.title} maxLength={140} onChange={(event) => setSteps((old) => old.map((row, rowIndex) => rowIndex === index ? { ...row, title: event.target.value } : row))}/><button type="button" aria-label={'Eliminar etapa ' + (index + 1)} disabled={steps.length === 1} onClick={() => setSteps((old) => old.filter((_, rowIndex) => rowIndex !== index))}><Trash2 size={14}/></button></div>)}</div><div className="standard-workflow-actions"><button className="button button-outline" type="button" disabled={steps.length >= 16} onClick={() => setSteps((old) => [...old, { area: 'TAL', title: '' }])}><Plus size={14}/> Añadir etapa</button><button className="button button-dark" type="submit" disabled={busy}><Save size={14}/> Guardar ruta</button></div></form></details>}
 
+    <CatalogProductDetailDialog product={detailProduct} onClose={() => setDetailProduct(null)}/>
     {draft && <div className="standard-product-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) closeDraft(); }}><form className="standard-product-editor" role="dialog" aria-modal="true" onSubmit={save} onPaste={paste} aria-labelledby="standard-product-editor-title">
       <header><div><span className="eyebrow">PRODUCTO REUTILIZABLE · SIN STOCK FÍSICO</span><h3 id="standard-product-editor-title">{draft.id ? 'Editar producto estándar' : 'Nuevo producto estándar'}</h3><p>Define el modelo base y los datos que podrán cambiar en cada pedido.</p></div><button type="button" aria-label="Cerrar" disabled={busy} onClick={closeDraft}><X size={18}/></button></header>
       <div className="standard-product-fields">
+        <label>SKU / código de identificación<input readOnly value={draft.sku} placeholder="Se asignará al guardar"/><small>El código queda fijo y sirve como ID en el catálogo, el sitio web, el cotizador y las operaciones.</small></label>
         <label>Nombre del modelo<input required maxLength={140} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Lámpara personalizada de acrílico"/></label>
         <label>Categoría<input maxLength={90} value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })}/></label>
         <label className="wide">Descripción<textarea rows={3} maxLength={1500} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Lámpara de acrílico cortada a láser con base iluminada…"/></label>
@@ -236,7 +245,7 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
         <label>Ruta predeterminada<select disabled={!canManageRoutes} value={draft.route} onChange={(event) => setDraft({ ...draft, route: event.target.value })}><option value="">Asesoría define la ruta</option>{templates.map((template) => <option key={template.code} value={template.code}>{template.name}</option>)}</select><small>Para asignar rutas necesitas permisos de Ventas y Taller.</small></label>
         <label className="standard-publish"><input type="checkbox" checked={draft.published} onChange={(event) => setDraft({ ...draft, published: event.target.checked })}/><span><b>Publicar en sitio web y cotizador</b><small>Al publicarlo, el precio y la descripción estarán disponibles en canales públicos.</small></span></label>
       </div>
-      <div className={`standard-image-drop${draggingImages ? ' is-dragging' : ''}`} tabIndex={0} onPaste={paste} onDragOver={(event) => { event.preventDefault(); if (!busy) setDraggingImages(true); }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDraggingImages(false); }} onDrop={(event) => { event.preventDefault(); setDraggingImages(false); if (!busy) addFiles(event.dataTransfer.files); }} onClick={() => { if (!busy) document.getElementById('standard-product-file-input')?.click(); }}><ImagePlus size={19}/><b>Portada y galería</b><span><ClipboardPaste size={13}/> Pega con Ctrl + V, arrastra o selecciona archivos</span><div className="standard-image-actions"><button type="button" className="button button-outline" disabled={busy} onClick={(event) => { event.stopPropagation(); void pasteFromSystemClipboard(); }}><ClipboardPaste size={14}/> Pegar imagen</button><button type="button" className="button button-outline" disabled={busy} onClick={(event) => { event.stopPropagation(); document.getElementById('standard-product-file-input')?.click(); }}><Upload size={14}/> Subir imagen</button></div><input id="standard-product-file-input" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden disabled={busy} onClick={(event) => event.stopPropagation()} onChange={(event) => { if (event.target.files) addFiles(event.target.files); event.currentTarget.value = ''; }}/></div>
+      <div className={`standard-image-drop${draggingImages ? ' is-dragging' : ''}`} tabIndex={0} onPaste={paste} onDragOver={(event) => { event.preventDefault(); if (!busy) setDraggingImages(true); }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDraggingImages(false); }} onDrop={(event) => { event.preventDefault(); setDraggingImages(false); if (!busy) addFiles(event.dataTransfer.files); }} onClick={() => { if (!busy) document.getElementById('standard-product-file-input')?.click(); }}><ImagePlus size={19}/><b>Portada y galería</b><span><ClipboardPaste size={13}/> Pega con Ctrl + V, arrastra o selecciona archivos</span><small className="standard-image-guidance">Usa entre 4 y 10 imágenes para mostrar el modelo y sus detalles.</small><div className="standard-image-actions"><button type="button" className="button button-outline" disabled={busy} onClick={(event) => { event.stopPropagation(); void pasteFromSystemClipboard(); }}><ClipboardPaste size={14}/> Pegar imagen</button><button type="button" className="button button-outline" disabled={busy} onClick={(event) => { event.stopPropagation(); document.getElementById('standard-product-file-input')?.click(); }}><Upload size={14}/> Subir imagen</button></div><input id="standard-product-file-input" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden disabled={busy} onClick={(event) => event.stopPropagation()} onChange={(event) => { if (event.target.files) addFiles(event.target.files); event.currentTarget.value = ''; }}/></div>
       {imageMessage && <p className="standard-products-notice" role="status">{imageMessage}</p>}
       <div className="standard-image-grid">{draft.images.map((image, index) => <figure key={image.id}><img src={image.src} alt={'Imagen ' + (index + 1)}/><figcaption><button type="button" disabled={busy} className={index === 0 ? 'cover' : ''} onClick={() => setDraft((current) => current ? { ...current, images: [image, ...current.images.filter((row) => row.id !== image.id)] } : current)}>{index === 0 ? 'Portada' : 'Usar de portada'}</button><button type="button" disabled={busy} aria-label={'Quitar imagen ' + (index + 1)} onClick={() => removeImage(image.id)}><Trash2 size={13}/></button></figcaption></figure>)}</div>
       {error && <p className="standard-products-error" role="alert">{error}</p>}
@@ -244,3 +253,4 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
     </form></div>}
   </section>;
 }
+
