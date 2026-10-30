@@ -208,7 +208,11 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
   }, [anchor, view]);
   const postsInPeriod = useMemo(() => {
     const start = dateKey(cells[0]);
-    const end = view === 'kanban' || view === 'table' ? addMarketingDays(dateKey(cells[6]), 1) : dateKey(cells[6]);
+    const end = view === 'month'
+      ? dateKey(cells[cells.length - 1])
+      : view === 'kanban' || view === 'table'
+        ? addMarketingDays(dateKey(cells[6]), 1)
+        : dateKey(cells[6]);
     return posts.filter((post) => {
       const scheduledDate = String(post.scheduled_date || '').slice(0, 10);
       return /^\d{4}-\d{2}-\d{2}$/.test(scheduledDate) && scheduledDate >= start && scheduledDate <= end;
