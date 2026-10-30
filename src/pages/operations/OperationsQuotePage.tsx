@@ -15,6 +15,7 @@ import { GoogleMapsPreview } from '../../components/commercial/GoogleMapsPreview
 import { RichTextEditor } from '../../components/studio/RichTextEditor';
 import { DatePicker } from '../../components/ui/Calendar';
 import { persistCommercialAssets, type CommercialAssetDraft } from '../../lib/commercialAssets';
+import { isGoogleMapsUrl, normalizeGoogleMapsUrl } from '../../lib/maps';
 import './operations-quote.css';
 
 const MAX_QUOTE_ITEMS = 40;
@@ -37,15 +38,6 @@ function distributeMoney(total: number, weights: number[]) {
 
 function mapsUrl(address: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-}
-
-function isMapsUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' && (url.hostname === 'maps.google.com' || url.hostname.endsWith('.google.com') || url.hostname === 'goo.gl' || url.hostname.endsWith('.goo.gl'));
-  } catch {
-    return false;
-  }
 }
 
 export function OperationsQuotePage() {
@@ -185,7 +177,7 @@ export function OperationsQuotePage() {
   const pricesConfirmed = configuredLines.every((line) => line.custom || line.product?.confirmed || line.product?.published === true);
   const selectedTotal = tierTotals[priceTier];
   const selectedFinancials = tierFinancials[priceTier];
-  const quoteCanSave = canEditQuotes && allItemsSelected && selectedTotal !== null && !saving && (!installMapUrl || isMapsUrl(installMapUrl)) && (priceTier !== 'instalacion' || installAddress.trim()) && proposalNotes.length <= 1200 && discountReason.length <= 300 && (discountRate === 0 || discountReason.trim());
+  const quoteCanSave = canEditQuotes && allItemsSelected && selectedTotal !== null && !saving && (!installMapUrl || isGoogleMapsUrl(installMapUrl)) && (priceTier !== 'instalacion' || installAddress.trim()) && proposalNotes.length <= 1200 && discountReason.length <= 300 && (discountRate === 0 || discountReason.trim());
 
   const moveLine = (lineId, direction) => setLines((current) => {
     const index = current.findIndex((line) => line.id === lineId);
@@ -248,7 +240,7 @@ export function OperationsQuotePage() {
         job_name: jobName.trim(),
         delivery_date: deliveryDate || null,
         financial: { chosen_tier: chosen, subtotal: chosenFinancials.subtotal, discount_percent: chosenFinancials.discountPercent, discount_amount: chosenFinancials.discount, discount_reason: discountReason.trim(), iva_applied: applyIVA, iva_rate: taxRate, iva_amount: chosenFinancials.tax, shipping_cost: chosenFinancials.shipping, total: chosenFinancials.total, tiers: tierFinancials },
-        installation: { required: priceTier === 'instalacion', address: installAddress.trim(), maps_url: installMapUrl.trim(), floor: installFloor.trim(), height: installHeight.trim(), access: installAccess.trim() },
+        installation: { required: priceTier === 'instalacion', address: installAddress.trim(), maps_url: normalizeGoogleMapsUrl(installMapUrl), floor: installFloor.trim(), height: installHeight.trim(), access: installAccess.trim() },
         notes: proposalNotes.trim(),
       };
       const itemsWithDocumentDetails = itemPayload.map((item, index) => index === 0 ? { ...item, document_details: documentDetails } : item);
@@ -315,7 +307,7 @@ export function OperationsQuotePage() {
 
         <details className="operations-quote-financial-editor"><summary>Descuento, IVA y otros cargos</summary><div className="operations-quote-fields"><label>Descuento (%)<input min="0" max="100" step="0.01" type="number" value={discountPercent} onChange={(event) => setDiscountPercent(event.target.value)}/></label><label>Otros cargos / envío<input min="0" step="0.01" type="number" value={shippingCost} onChange={(event) => setShippingCost(event.target.value)}/></label>{Number(discountPercent) > 0 && <label className="operations-quote-wide">Motivo del descuento<input required maxLength={300} value={discountReason} onChange={(event) => setDiscountReason(event.target.value)} placeholder="Motivo para dejarlo registrado"/></label>}<label className="operations-quote-iva-toggle"><input type="checkbox" checked={applyIVA} onChange={(event) => setApplyIVA(event.target.checked)}/><span>Aplicar IVA ({Number(data.calculatorSettings?.taxRate ?? 15)}%)</span></label></div><div className="operations-quote-financial-summary"><span>Subtotal <b>{selectedFinancials ? formatMoney(selectedFinancials.subtotal) : '—'}</b></span><span>Descuento <b>{selectedFinancials ? `−${formatMoney(selectedFinancials.discount)}` : '—'}</b></span><span>IVA ({taxRate}%) <b>{selectedFinancials ? formatMoney(selectedFinancials.tax) : '—'}</b></span><span>Envío / otros cargos <b>{selectedFinancials ? formatMoney(selectedFinancials.shipping) : '—'}</b></span></div></details>
 
-        {priceTier === 'instalacion' && <section className="operations-quote-install" aria-labelledby="operations-quote-install-title"><div className="operations-quote-section-heading"><div><span className="eyebrow"><MapPin size={13}/> DATOS PARA INSTALACIÓN</span><h3 id="operations-quote-install-title">Ubicación del trabajo</h3></div></div><label>Dirección o lugar de instalación<input required maxLength={300} value={installAddress} onChange={(event) => setInstallAddress(event.target.value)} placeholder="Sector, calle, edificio o referencia"/></label><div className="operations-quote-fields"><label>Enlace exacto de Google Maps (opcional)<input type="url" maxLength={800} value={installMapUrl} onChange={(event) => setInstallMapUrl(event.target.value)} placeholder="Pega el enlace para fijar el punto" aria-invalid={Boolean(installMapUrl && !isMapsUrl(installMapUrl))}/>{installMapUrl && !isMapsUrl(installMapUrl) && <small className="operations-quote-error-hint">Usa un enlace seguro de Google Maps.</small>}</label><label>Piso o nivel<input maxLength={60} value={installFloor} onChange={(event) => setInstallFloor(event.target.value)} placeholder="Ej. planta baja, piso 2"/></label><label>Altura aproximada<input maxLength={60} value={installHeight} onChange={(event) => setInstallHeight(event.target.value)} placeholder="Ej. 4 m"/></label><label>Acceso y condiciones<input maxLength={280} value={installAccess} onChange={(event) => setInstallAccess(event.target.value)} placeholder="Escalera, acceso, horario…"/></label></div><GoogleMapsPreview url={installMapUrl} address={installAddress}/>{installAddress.trim() && <a className="operations-quote-map-link" href={mapsUrl(installAddress.trim())} target="_blank" rel="noreferrer"><MapPin size={14}/> Buscar dirección en Google Maps <ArrowRight size={14}/></a>}</section>}
+        {priceTier === 'instalacion' && <section className="operations-quote-install" aria-labelledby="operations-quote-install-title"><div className="operations-quote-section-heading"><div><span className="eyebrow"><MapPin size={13}/> DATOS PARA INSTALACIÓN</span><h3 id="operations-quote-install-title">Ubicación del trabajo</h3></div></div><label>Dirección o lugar de instalación<input required maxLength={300} value={installAddress} onChange={(event) => setInstallAddress(event.target.value)} placeholder="Sector, calle, edificio o referencia"/></label><div className="operations-quote-fields"><label>Enlace exacto de Google Maps (opcional)<input type="text" inputMode="url" autoCapitalize="off" autoCorrect="off" maxLength={800} value={installMapUrl} onChange={(event) => setInstallMapUrl(event.target.value)} placeholder="maps.app.goo.gl/… o google.com/maps/…" aria-invalid={Boolean(installMapUrl && !isGoogleMapsUrl(installMapUrl))}/>{installMapUrl && !isGoogleMapsUrl(installMapUrl) ? <small className="operations-quote-error-hint">Pega un enlace válido de Google Maps.</small> : <small>Puedes pegarlo sin escribir https://.</small>}</label><label>Piso o nivel<input maxLength={60} value={installFloor} onChange={(event) => setInstallFloor(event.target.value)} placeholder="Ej. planta baja, piso 2"/></label><label>Altura aproximada<input maxLength={60} value={installHeight} onChange={(event) => setInstallHeight(event.target.value)} placeholder="Ej. 4 m"/></label><label>Acceso y condiciones<input maxLength={280} value={installAccess} onChange={(event) => setInstallAccess(event.target.value)} placeholder="Escalera, acceso, horario…"/></label></div><GoogleMapsPreview url={installMapUrl} address={installAddress}/>{installAddress.trim() && <a className="operations-quote-map-link" href={mapsUrl(installAddress.trim())} target="_blank" rel="noreferrer"><MapPin size={14}/> Buscar dirección en Google Maps <ArrowRight size={14}/></a>}</section>}
         <section className="operations-quote-install"><div className="operations-quote-section-heading"><div><span className="eyebrow">DESCRIPCIÓN DEL TRABAJO</span><h3>Indicaciones y objetivo para el cliente</h3></div></div><RichTextEditor label="Descripción enriquecida" value={clientBriefHtml} onChange={setClientBriefHtml} placeholder="Describe el trabajo, materiales, estilo o indicaciones…" minHeight={180}/></section>
         <CommercialAssetsEditor value={documentAssets} onChange={setDocumentAssets}/>
 
