@@ -124,7 +124,9 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
   }, [kind, documentId, organizationId, initialDocument]);
 
   const isQuote = kind === 'quote';
-  const quoteDetails = isQuote && document?.document_details && typeof document.document_details === 'object' ? document.document_details : {};
+  const firstQuoteItem = isQuote && Array.isArray(document?.items) ? document.items[0] : null;
+  const embeddedQuoteDetails = firstQuoteItem?.document_details && typeof firstQuoteItem.document_details === 'object' ? firstQuoteItem.document_details : {};
+  const quoteDetails = isQuote && document?.document_details && typeof document.document_details === 'object' ? document.document_details : embeddedQuoteDetails;
   const quoteFinancial = quoteDetails.financial && typeof quoteDetails.financial === 'object' ? quoteDetails.financial : {};
   const lineRows = useMemo(() => {
     if (!document) return [];

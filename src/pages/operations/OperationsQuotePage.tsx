@@ -243,15 +243,16 @@ export function OperationsQuotePage() {
         installation: { required: priceTier === 'instalacion', address: installAddress.trim(), maps_url: installMapUrl.trim(), floor: installFloor.trim(), height: installHeight.trim(), access: installAccess.trim() },
         notes: proposalNotes.trim(),
       };
+      const itemsWithDocumentDetails = itemPayload.map((item, index) => index === 0 ? { ...item, document_details: documentDetails } : item);
       const notes = proposalNotes.trim();
-      const payloadBytes = new TextEncoder().encode(JSON.stringify(itemPayload)).length;
+      const payloadBytes = new TextEncoder().encode(JSON.stringify(itemsWithDocumentDetails)).length;
       if (payloadBytes > 45000) throw new Error('La propuesta supera el tamaño permitido. Reduce la cantidad de artículos o acorta sus conceptos.');
       if (notes.length > 1200 || new TextEncoder().encode(JSON.stringify(documentDetails)).length > 16000) throw new Error('Los detalles de la propuesta superan el tamaño permitido. Acorta las notas o descripciones.');
       const { data: result, error } = await supabase.rpc('create_central_quote', {
         p_customer_id: customerId || null,
         p_customer_name: customer.trim(),
         p_customer_phone: phone.trim(),
-        p_items: itemPayload,
+        p_items: itemsWithDocumentDetails,
         p_normal: tierTotals.pvp,
         p_installation: tierTotals.instalacion,
         p_corporate: tierTotals.corporativo,
@@ -259,7 +260,6 @@ export function OperationsQuotePage() {
         p_selected: pricesConfirmed ? selectedTotal : null,
         p_confirmed: pricesConfirmed,
         p_notes: notes,
-        p_document_details: documentDetails,
       });
       if (error) throw error;
       const [{ data: rows, error: readError }, { data: exclusions, error: exclusionsError }] = await Promise.all([
