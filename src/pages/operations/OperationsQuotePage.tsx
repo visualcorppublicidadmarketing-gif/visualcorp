@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowRight, ArrowUp, Check, CircleHelp, ClipboardList, Copy, FileText, MapPin, Plus, Printer, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowRight, ArrowUp, Check, CircleHelp, ClipboardList, Copy, FileText, MapPin, Plus, Printer, ReceiptText, Trash2 } from 'lucide-react';
 import { useWorkspace, formatMoney } from '../../app/workspace';
 import { useAuth } from '../../auth/AuthProvider';
 import { AppFrame, PageHeading } from '../../app/layout';
@@ -36,6 +36,9 @@ export function OperationsQuotePage() {
   const canSearchCustomers = hasPermission('crm', 'view');
   const canViewQuotes = hasPermission('quotes', 'view');
   const canEditQuotes = hasPermission('quotes', 'edit');
+  const canDeleteQuotes = hasPermission('quotes', 'delete_records');
+  const canViewSales = hasPermission('sales', 'view');
+  const canDeleteSales = hasPermission('sales', 'delete_records');
   const [lines, setLines] = useState([createLine()]);
   const [priceTier, setPriceTier] = useState('pvp');
   const [customer, setCustomer] = useState('');
@@ -48,20 +51,75 @@ export function OperationsQuotePage() {
   const [installAccess, setInstallAccess] = useState('');
   const [proposalNotes, setProposalNotes] = useState('');
   const [centralQuotes, setCentralQuotes] = useState<any[]>([]);
-  const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
+  const [centralSales, setCentralSales] = useState<any[]>([]);
+  const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
+  const [removingDocumentId, setRemovingDocumentId] = useState('');
   const [saving, setSaving] = useState(false);
   const [quoteError, setQuoteError] = useState('');
 
   useEffect(() => {
-    if (!supabase || !organizationId || !canViewQuotes) return;
+    if (!supabase || !organizationId || (!canViewQuotes && !canViewSales)) {
+      setCentralQuotes([]);
+      setCentralSales([]);
+      return;
+    }
     let active = true;
-    supabase.from('central_quotes').select('*').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(100).then(({ data: rows, error }) => {
+    const quoteRequest = canViewQuotes
+      ? supabase.from('central_quotes').select('*').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(100)
+      : Promise.resolve({ data: [], error: null });
+    const saleRequest = canViewSales
+      ? supabase.from('sales').select('id,sale_code,status,total,created_at,branch_id,customer_id,customers(full_name),central_quote_id').eq('organization_id', organizationId).eq('status', 'confirmed').order('created_at', { ascending: false }).limit(100)
+      : Promise.resolve({ data: [], error: null });
+    Promise.all([
+      quoteRequest,
+      saleRequest,
+      supabase.from('commercial_history_exclusions').select('document_kind,document_id').eq('organization_id', organizationId),
+    ]).then(([quoteResult, saleResult, exclusionsResult]) => {
       if (!active) return;
-      if (error) setQuoteError(error.message);
-      else setCentralQuotes(rows || []);
+      const error = quoteResult.error || saleResult.error || exclusionsResult.error;
+      if (error) { setQuoteError(error.message); return; }
+      const excluded = new Set((exclusionsResult.data || []).map((entry) => `${entry.document_kind}:${entry.document_id}`));
+      setCentralQuotes((quoteResult.data || []).filter((entry) => !excluded.has(`quote:${entry.id}`)));
+      setCentralSales((saleResult.data || []).filter((entry) => !excluded.has(`sale:${entry.id}`)));
+      setQuoteError('');
     });
     return () => { active = false; };
-  }, [organizationId, canViewQuotes]);
+  }, [organizationId, canViewQuotes, canViewSales]);
+
+  const historyItems = useMemo(() => [
+    ...centralQuotes.map((document) => ({ ...document, documentKind: 'quote' as const, documentCode: document.quote_code, customerLabel: document.customer_name || 'Sin cliente', amount: document.selected_total, date: document.created_at })),
+    ...centralSales.map((document) => ({ ...document, documentKind: 'sale' as const, documentCode: document.sale_code, customerLabel: document.customers?.full_name || 'Sin cliente', amount: document.total, date: document.created_at })),
+  ].sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime()), [centralQuotes, centralSales]);
+
+  const removeFromHistory = async (document: any) => {
+    if (!supabase || !organizationId || removingDocumentId) return;
+    const isSale = document.documentKind === 'sale';
+    const allowed = isSale ? canDeleteSales : canDeleteQuotes;
+    if (!allowed) return;
+    const subject = isSale ? 'venta' : 'cotización';
+    const confirmed = window.confirm(
+      `¿Quitar ${subject} ${document.documentCode} del historial del Cotizador?\n\n` +
+      (isSale
+        ? 'La venta, pagos, devoluciones y movimientos de caja o inventario se conservarán para la auditoría.'
+        : 'La cotización y su desglose se conservarán en el sistema; solo dejará de aparecer aquí.')
+    );
+    if (!confirmed) return;
+    setRemovingDocumentId(document.id);
+    setQuoteError('');
+    try {
+      const { error } = await supabase.rpc('remove_commercial_history_entry', {
+        p_kind: document.documentKind,
+        p_document_id: document.id,
+      });
+      if (error) throw error;
+      if (isSale) setCentralSales((rows) => rows.filter((row) => row.id !== document.id));
+      else setCentralQuotes((rows) => rows.filter((row) => row.id !== document.id));
+      if (selectedDocument?.id === document.id && selectedDocument?.documentKind === document.documentKind) setSelectedDocument(null);
+      flash(`${isSale ? 'Venta' : 'Cotización'} ${document.documentCode} retirada del historial.`);
+    } catch (error: any) {
+      setQuoteError(error.message || `No se pudo retirar ${subject} del historial.`);
+    } finally { setRemovingDocumentId(''); }
+  };
 
   const configuredLines = useMemo(() => lines.map((line) => {
     const product = data.catalog.find((item) => item.id === line.productId);
@@ -149,9 +207,14 @@ export function OperationsQuotePage() {
         p_notes: notes,
       });
       if (error) throw error;
-      const { data: rows, error: readError } = await supabase.from('central_quotes').select('*').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(100);
+      const [{ data: rows, error: readError }, { data: exclusions, error: exclusionsError }] = await Promise.all([
+        supabase.from('central_quotes').select('*').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(100),
+        supabase.from('commercial_history_exclusions').select('document_kind,document_id').eq('organization_id', organizationId),
+      ]);
       if (readError) throw readError;
-      setCentralQuotes(rows || []);
+      if (exclusionsError) throw exclusionsError;
+      const excluded = new Set((exclusions || []).map((entry) => `${entry.document_kind}:${entry.document_id}`));
+      setCentralQuotes((rows || []).filter((entry) => !excluded.has(`quote:${entry.id}`)));
       resetForm();
       flash(`Cotización ${result.quote_code} guardada con ${itemPayload.length} ${itemPayload.length === 1 ? 'artículo' : 'artículos'}.`);
     } catch (error: any) {
@@ -193,8 +256,15 @@ export function OperationsQuotePage() {
 
       <aside className="operations-quote-summary"><section className="panel"><div className="panel-heading"><div><span className="eyebrow">VISTA PREVIA</span><h2>Resumen de la propuesta</h2></div><ClipboardList size={18}/></div><ol className="operations-quote-summary-lines">{configuredLines.map((line, index) => <li key={line.id}><span>{String(index + 1).padStart(2, '0')}</span><div><b>{line.concept.trim() || line.product?.name || 'Selecciona un producto'}</b><small>{line.product ? `${line.product.family} · ${line.product.mode === 'area' ? `${line.pieceQuantity} × ${line.width} × ${line.height} cm` : `${line.pieceQuantity} ${line.product.unit || 'unidades'}`}${line.option ? ` · ${line.option}` : ''}` : 'Elige una referencia del catálogo'}</small></div><strong>{line.product && line.totals[priceTier] !== null ? formatMoney(line.totals[priceTier]) : '—'}</strong></li>)}</ol><div className="operations-quote-summary-total"><span>{quoteTiers.find((tier) => tier.id === priceTier)?.label} · {lines.length} {lines.length === 1 ? 'artículo' : 'artículos'}</span><b>{selectedTotal === null ? '—' : formatMoney(selectedTotal)}</b></div>{priceTier === 'instalacion' && installAddress.trim() && <div className="operations-quote-summary-location"><MapPin size={15}/><span><b>{installAddress}</b><small>{[installFloor, installHeight && `Altura ${installHeight}`, installMapUrl && 'Pin de Maps añadido'].filter(Boolean).join(' · ')}</small></span></div>}<button className="button button-outline operations-quote-print-button" type="button" onClick={() => window.print()}><Printer size={16}/> Imprimir propuesta</button></section></aside>
     </div>
-    <section className="panel operations-quote-history"><div className="panel-heading"><div><span className="eyebrow">HISTORIAL COMPARTIDO</span><h2>Propuestas recientes</h2></div><span className="muted-count">{centralQuotes.length} registradas</span></div><div className="activity-list">{centralQuotes.slice(0, 30).map((quote) => <article className="sale-activity" key={quote.id}><button className="sale-row operations-quote-detail-trigger" type="button" onClick={() => setSelectedQuote(quote)} aria-label={`Abrir ficha completa de ${quote.quote_code}`}><span className="sale-icon"><FileText size={17}/></span><span><b>{quote.quote_code} · {quote.customer_name || 'Sin cliente'}</b><small>{Array.isArray(quote.items) ? quote.items.map((item) => item.name || item.product_name || 'Artículo').join(', ') : ''} · {new Date(quote.created_at).toLocaleDateString('es-EC')}</small></span><strong>{quote.selected_total === null ? 'Por validar' : formatMoney(quote.selected_total)}</strong></button><div className="sale-payment-summary"><span>Estado: <b>{quote.status}</b></span><span>Tarifa: <b>{quote.price_confirmed ? 'Confirmada' : 'Por confirmar'}</b></span><button className="operations-quote-detail-link" type="button" onClick={() => setSelectedQuote(quote)}>Ver desglose <span aria-hidden="true">↗</span></button></div></article>)}{!centralQuotes.length && <EmptyState icon={FileText} title="Aún no hay cotizaciones" text="Las propuestas guardadas se sincronizan con el equipo y el POS."/>}</div></section>
-    <Sheet open={Boolean(selectedQuote)} onOpenChange={(open) => { if (!open) setSelectedQuote(null); }} title={selectedQuote ? `Ficha · ${selectedQuote.quote_code}` : 'Ficha de cotización'} description="Productos, cantidades, imágenes y valores guardados en esta propuesta.">{selectedQuote && <CommercialDocumentDetails kind="quote" documentId={selectedQuote.id} initialDocument={selectedQuote}/>}</Sheet>
+    <section className="panel operations-quote-history"><div className="panel-heading"><div><span className="eyebrow">HISTORIAL COMPARTIDO</span><h2>Cotizaciones y ventas realizadas</h2></div><span className="muted-count">{historyItems.length} registradas</span></div>{quoteError && <div className="op-flow-alert error" role="alert">{quoteError}</div>}<div className="activity-list">{historyItems.slice(0, 60).map((document) => {
+      const isSale = document.documentKind === 'sale';
+      const canRemove = isSale ? canDeleteSales : canDeleteQuotes;
+      return <article className={`sale-activity operations-quote-history-item${isSale ? ' is-sale' : ''}`} key={`${document.documentKind}:${document.id}`}>
+        <button className="sale-row operations-quote-detail-trigger" type="button" onClick={() => setSelectedDocument(document)} aria-label={`Abrir desglose de ${isSale ? 'venta' : 'cotización'} ${document.documentCode}`}><span className="sale-icon">{isSale ? <ReceiptText size={17}/> : <FileText size={17}/>}</span><span><b>{document.documentCode} · {document.customerLabel}</b><small>{isSale ? (document.central_quote_id ? 'Venta realizada · vinculada a cotización' : 'Venta realizada') : Array.isArray(document.items) ? document.items.map((item) => item.name || item.product_name || 'Artículo').join(', ') : 'Cotización'} · {new Date(document.date).toLocaleDateString('es-EC')}</small></span><strong>{document.amount === null ? 'Por validar' : formatMoney(document.amount)}</strong></button>
+        <div className="sale-payment-summary"><span>Estado: <b>{isSale ? 'Realizada' : document.status}</b></span>{!isSale && <span>Tarifa: <b>{document.price_confirmed ? 'Confirmada' : 'Por confirmar'}</b></span>}<button className="operations-quote-detail-link" type="button" onClick={() => setSelectedDocument(document)}>Ver desglose <span aria-hidden="true">↗</span></button>{canRemove && <button className="operations-quote-delete-link" type="button" disabled={removingDocumentId === document.id} onClick={() => void removeFromHistory(document)} aria-label={`Quitar ${document.documentCode} del historial`}><Trash2 size={13}/>{removingDocumentId === document.id ? 'Quitando…' : 'Quitar del historial'}</button>}</div>
+      </article>;
+    })}{!historyItems.length && <EmptyState icon={FileText} title="Aún no hay cotizaciones o ventas" text="Las cotizaciones guardadas y las ventas confirmadas aparecerán en este historial."/>}</div></section>
+    <Sheet open={Boolean(selectedDocument)} onOpenChange={(open) => { if (!open) setSelectedDocument(null); }} title={selectedDocument ? `Ficha · ${selectedDocument.documentKind === 'sale' ? selectedDocument.sale_code : selectedDocument.quote_code}` : 'Ficha comercial'} description={selectedDocument?.documentKind === 'sale' ? 'Artículos vendidos, pagos registrados, entrega y valores de la venta.' : 'Productos, cantidades, imágenes y valores guardados en esta propuesta.'}>{selectedDocument && <CommercialDocumentDetails kind={selectedDocument.documentKind} documentId={selectedDocument.id} initialDocument={selectedDocument.documentKind === 'sale' ? null : selectedDocument}/>}</Sheet>
     <div className="notice-box"><span><CircleHelp size={17}/></span><div><b>Propuestas sincronizadas</b><p>Los artículos, sus opciones y las tres tarifas quedan guardados en la cotización central para que el POS y el equipo compartan la misma información.</p></div></div>
     <section className="operations-quote-print-sheet" aria-hidden="true"><header><h1>Visual Corp</h1><p>Propuesta de cotización</p></header><h2>{customer.trim() || 'Cliente'}</h2>{phone.trim() && <p>Contacto: {phone}</p>}<table><thead><tr><th>Artículo</th><th>Detalle</th><th>Cantidad</th><th>Valor referencial</th></tr></thead><tbody>{configuredLines.map((line, index) => <tr key={line.id}><td>{line.concept.trim() || line.product?.name || `Artículo ${index + 1}`}</td><td>{line.product ? `${line.product.family}${line.option ? ` · ${line.option}` : ''}` : 'Producto pendiente'}{line.product?.mode === 'area' ? ` · ${line.width} × ${line.height} cm` : ''}</td><td>{line.pieceQuantity} {line.product?.mode === 'area' ? 'piezas' : line.product?.unit || 'unidades'}</td><td>{line.totals[priceTier] === null ? 'Por cotizar' : formatMoney(line.totals[priceTier])}</td></tr>)}</tbody></table><h3>{quoteTiers.find((tier) => tier.id === priceTier)?.label}: {selectedTotal === null ? 'Por cotizar' : formatMoney(selectedTotal)}</h3>{priceTier === 'instalacion' && <section><h3>Datos de instalación</h3><p>{installAddress}</p><p>{installFloor && `Nivel: ${installFloor} · `}{installHeight && `Altura: ${installHeight}`}</p>{installMapUrl && <p>Google Maps: {installMapUrl}</p>}<p>{installAccess}</p></section>}<p className="operations-quote-print-disclaimer">Valores referenciales sujetos a confirmación de disponibilidad, especificaciones y condiciones con el equipo de Visual Corp.</p></section>
   </AppFrame>;

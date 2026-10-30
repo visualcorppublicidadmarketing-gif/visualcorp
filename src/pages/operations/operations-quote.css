@@ -104,3 +104,10 @@
   .operations-quote-print-disclaimer{margin-top:28px;padding-top:10px;border-top:1px solid #ddd;color:#666;font-size:8pt}
 }
 .operations-quote-history .operations-quote-detail-trigger{width:100%;padding:10px;border:0;border-radius:9px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:background .16s ease}.operations-quote-history .operations-quote-detail-trigger:hover{background:#faf7fc}.operations-quote-history .operations-quote-detail-trigger:focus-visible,.operations-quote-detail-link:focus-visible{outline:3px solid #8b42a7;outline-offset:2px}.operations-quote-history .operations-quote-detail-link{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border:0;border-radius:6px;background:transparent;color:#713989;font:inherit;font-size:10px;font-weight:750;cursor:pointer}.operations-quote-history .operations-quote-detail-link:hover{background:#f3eaf7}
+.operations-quote-history .operations-quote-history-item{padding-bottom:10px}
+.operations-quote-history .operations-quote-history-item.is-sale .sale-icon{background:#f0f7fa;color:#23819d}
+.operations-quote-history .operations-quote-delete-link{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid #f0d6d6;border-radius:6px;background:#fffafa;color:#a33c43;font:inherit;font-size:9px;font-weight:700;cursor:pointer}
+.operations-quote-history .operations-quote-delete-link:hover:not(:disabled){border-color:#d99498;background:#fff1f1}
+.operations-quote-history .operations-quote-delete-link:disabled{opacity:.55;cursor:wait}
+.operations-quote-history .operations-quote-delete-link:focus-visible{outline:3px solid #8b42a7;outline-offset:2px}
+@media(max-width:700px){.operations-quote-history .sale-payment-summary{flex-wrap:wrap;align-items:center;margin:0 0 5px 45px}.operations-quote-history .sale-payment-summary>span{margin-right:auto}}
