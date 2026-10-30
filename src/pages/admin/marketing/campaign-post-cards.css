@@ -3,3 +3,5 @@
 @media(max-width:560px){.vc-marketing-post-context .vc-content-post.is-artwork-card{gap:9px;padding:11px 35px 12px 11px}.vc-marketing-post-card-top{grid-template-columns:15px 40px minmax(0,1fr);gap:7px}.vc-marketing-post-context .is-artwork-card .vc-content-post-main>strong{font-size:14px}.vc-marketing-post-context .is-artwork-card .vc-content-post-meta{gap:6px 9px}}
 .vc-marketing-post-context .vc-content-post.is-artwork-card:not(.has-selection) .vc-marketing-post-card-top{grid-template-columns:48px minmax(0,1fr)}
 @media(max-width:560px){.vc-marketing-post-context .vc-content-post.is-artwork-card:not(.has-selection) .vc-marketing-post-card-top{grid-template-columns:40px minmax(0,1fr)}}
+.vc-marketing-post-context .is-artwork-card .vc-marketing-readiness-indicators{margin-top:3px}
+.vc-marketing-post-table .vc-marketing-readiness-indicators{margin-top:5px}
