@@ -10,6 +10,7 @@ import './marketing-calendar.css';
 import './marketing-calendar-enhanced.css';
 import './marketing-kanban.css';
 import './marketing-table.css';
+import './marketing-interface-polish.css';
 
 export type MarketingCalendarPost = {
   id: string; title: string; status: string; scheduled_date: string; scheduled_time?: string;
@@ -38,13 +39,36 @@ type Props = {
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const monthLabel = new Intl.DateTimeFormat('es-EC', { month: 'long', year: 'numeric' });
 const weekdays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-const publicationStatuses = ['Por iniciar', 'Planificada', 'En diseño', 'En revisión', 'Aprobada', 'Programada', 'Publicada', 'Completada', 'Terminada', 'Bloqueada', 'Cancelada'];
-const statusClass = (post: MarketingCalendarPost) => /publicad|complet|terminad|finalizad/i.test(post.status) ? 'published' : /revisi/i.test(post.status) ? 'review' : /bloque|cancelad|anulad/i.test(post.status) ? 'blocked' : 'active';
+const publicationStatuses = ['Por iniciar', 'Planificada', 'En diseño', 'En producción', 'En revisión', 'Aprobada', 'Programada', 'Publicada', 'Completada', 'Terminada', 'Bloqueada', 'Cancelada'];
+const statusClass = (post: MarketingCalendarPost) => {
+  const status = String(post.status || 'Por iniciar');
+  if (/publicad/i.test(status)) return 'published';
+  if (/complet|terminad|finalizad/i.test(status)) return 'completed';
+  if (/cancelad|anulad|archivad/i.test(status)) return 'cancelled';
+  if (/bloque/i.test(status)) return 'blocked';
+  if (/revisi/i.test(status)) return 'review';
+  if (/aprobad|programad/i.test(status)) return 'approved';
+  if (/diseñ|producc/i.test(status)) return 'working';
+  return 'active';
+};
+const matchesStateFilter = (post: MarketingCalendarPost, filter: string) => {
+  const status = String(post.status || 'Por iniciar');
+  if (filter === 'pending') return !isTerminalMarketingStatus(status);
+  if (filter === 'published') return /publicad/i.test(status);
+  if (filter === 'finished') return /complet|terminad|finalizad/i.test(status);
+  if (filter === 'work') return /diseñ|producc/i.test(status);
+  if (filter === 'review') return /revisi|aprobad|programad/i.test(status);
+  if (filter === 'blocked') return /bloque|cancelad|anulad|archivad/i.test(status);
+  return true;
+};
 const kanbanLanes = [
-  { key: 'planned', label: 'Por iniciar', status: 'Por iniciar', matches: /por iniciar|planificad/i },
-  { key: 'design', label: 'En diseño', status: 'En diseño', matches: /diseñ|producci/i },
+  { key: 'planned', label: 'Por iniciar', status: 'Por iniciar', matches: /^por iniciar$/i },
+  { key: 'planning', label: 'Planificada', status: 'Planificada', matches: /^planificada$/i },
+  { key: 'design', label: 'En diseño', status: 'En diseño', matches: /^en diseño$/i },
+  { key: 'production', label: 'En producción', status: 'En producción', matches: /^en producción$/i },
   { key: 'review', label: 'En revisión', status: 'En revisión', matches: /revisi/i },
-  { key: 'scheduled', label: 'Aprobada / programada', status: 'Programada', matches: /aprob|programad/i },
+  { key: 'approved', label: 'Aprobada', status: 'Aprobada', matches: /^aprobada?$/i },
+  { key: 'scheduled', label: 'Programada', status: 'Programada', matches: /^programada?$/i },
   { key: 'blocked', label: 'Bloqueada', status: 'Bloqueada', matches: /bloque/i },
   { key: 'published', label: 'Publicada', status: 'Publicada', matches: /publicad/i },
   { key: 'completed', label: 'Terminada', status: 'Completada', matches: /complet|terminad|finalizad/i },
@@ -69,13 +93,14 @@ const weekOfMonth = (date: Date) => {
 };
 
 type MarketingCalendarView = 'month' | 'week' | 'kanban' | 'table';
+type MarketingStateFilter = 'all' | 'pending' | 'work' | 'review' | 'published' | 'finished' | 'blocked';
 type MarketingCalendarPreferences = {
   view: MarketingCalendarView;
   anchor: string;
   followCurrentWeek: boolean;
   channelFilter: string;
   ownerFilter: string;
-  kanbanStateFilter: 'all' | 'pending' | 'published' | 'finished';
+  kanbanStateFilter: MarketingStateFilter;
 };
 
 const MARKETING_CALENDAR_VIEW_KEY = 'visualcorp:marketing-calendar:v1:';
@@ -93,7 +118,7 @@ function readCalendarPreferences(organizationId: string): MarketingCalendarPrefe
       followCurrentWeek: parsed.followCurrentWeek !== false,
       channelFilter: typeof parsed.channelFilter === 'string' ? parsed.channelFilter : 'Todos los canales',
       ownerFilter: typeof parsed.ownerFilter === 'string' ? parsed.ownerFilter : 'Todos los responsables',
-      kanbanStateFilter: parsed.kanbanStateFilter === 'pending' || parsed.kanbanStateFilter === 'published' || parsed.kanbanStateFilter === 'finished' ? parsed.kanbanStateFilter : 'all',
+      kanbanStateFilter: ['pending', 'work', 'review', 'published', 'finished', 'blocked'].includes(String(parsed.kanbanStateFilter)) ? parsed.kanbanStateFilter as MarketingStateFilter : 'all',
     };
   } catch {
     return null;
@@ -107,11 +132,14 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
   const [followCurrentWeek, setFollowCurrentWeek] = useState(true);
   const [channelFilter, setChannelFilter] = useState('Todos los canales');
   const [ownerFilter, setOwnerFilter] = useState('Todos los responsables');
-  const [kanbanStateFilter, setKanbanStateFilter] = useState<'all' | 'pending' | 'published' | 'finished'>('all');
+  const [kanbanStateFilter, setKanbanStateFilter] = useState<MarketingStateFilter>('all');
+  const [showEmptyKanbanLanes, setShowEmptyKanbanLanes] = useState(false);
   const [restoredPreferencesFor, setRestoredPreferencesFor] = useState('');
   const [dragging, setDragging] = useState<string | null>(null);
   const [draggingKanban, setDraggingKanban] = useState<string | null>(null);
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const weekGridRef = useRef<HTMLDivElement>(null);
+  const [weekScrollPosition, setWeekScrollPosition] = useState({ start: 1, end: 7 });
   const lastRuleRun = useRef('');
   useEffect(() => {
     if (!organizationId) {
@@ -136,6 +164,14 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
     }
     setRestoredPreferencesFor(organizationId);
   }, [organizationId]);
+  useEffect(() => {
+    if (channelFilter !== 'Todos los canales' && channelFilter !== 'Canal pendiente' && !posts.some((post) => post.platform === channelFilter)) {
+      setChannelFilter('Todos los canales');
+    }
+    if (ownerFilter !== 'Todos los responsables' && ownerFilter !== 'Sin asignar' && !posts.some((post) => post.owner === ownerFilter)) {
+      setOwnerFilter('Todos los responsables');
+    }
+  }, [channelFilter, ownerFilter, posts]);
   useEffect(() => {
     if (!organizationId || restoredPreferencesFor !== organizationId) return;
     try {
@@ -170,15 +206,31 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
     const start = new Date(first); start.setDate(first.getDate() - ((first.getDay() + 6) % 7));
     return Array.from({ length: 42 }, (_, index) => { const date = new Date(start); date.setDate(start.getDate() + index); return date; });
   }, [anchor, view]);
+  const postsInPeriod = useMemo(() => {
+    const start = dateKey(cells[0]);
+    const end = view === 'kanban' || view === 'table' ? addMarketingDays(dateKey(cells[6]), 1) : dateKey(cells[6]);
+    return posts.filter((post) => {
+      const scheduledDate = String(post.scheduled_date || '').slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(scheduledDate) && scheduledDate >= start && scheduledDate <= end;
+    });
+  }, [cells, posts, view]);
+  const filteredPeriodPosts = useMemo(() => postsInPeriod.filter((post) => {
+    const matchesChannel = channelFilter === 'Todos los canales' || (channelFilter === 'Canal pendiente' ? !post.platform : post.platform === channelFilter);
+    const matchesOwner = ownerFilter === 'Todos los responsables' || (ownerFilter === 'Sin asignar' ? !post.owner : post.owner === ownerFilter);
+    return matchesChannel && matchesOwner && matchesStateFilter(post, kanbanStateFilter);
+  }), [channelFilter, kanbanStateFilter, ownerFilter, postsInPeriod]);
   const byDate = useMemo(() => {
     const result = new Map<string, MarketingCalendarPost[]>();
-    posts.filter((post) => /^\d{4}-\d{2}-\d{2}/.test(post.scheduled_date || '')).forEach((post) => {
+    filteredPeriodPosts.forEach((post) => {
       const key = post.scheduled_date.slice(0, 10);
       result.set(key, [...(result.get(key) || []), post].sort((a, b) => (a.scheduled_time || '').localeCompare(b.scheduled_time || '')));
     });
     return result;
-  }, [posts]);
-  const undated = posts.filter((post) => !/^\d{4}-\d{2}-\d{2}/.test(post.scheduled_date || ''));
+  }, [filteredPeriodPosts]);
+  const undated = posts.filter((post) => !/^\d{4}-\d{2}-\d{2}/.test(post.scheduled_date || '')
+    && (channelFilter === 'Todos los canales' || (channelFilter === 'Canal pendiente' ? !post.platform : post.platform === channelFilter))
+    && (ownerFilter === 'Todos los responsables' || (ownerFilter === 'Sin asignar' ? !post.owner : post.owner === ownerFilter))
+    && matchesStateFilter(post, kanbanStateFilter));
   const weekStartKey = dateKey(cells[0]);
   const weekEndKey = dateKey(cells[6]);
   const nextMondayKey = addMarketingDays(weekEndKey, 1);
@@ -195,18 +247,12 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
     const scheduledDate = String(post.scheduled_date || '').slice(0, 10);
     return /^\d{4}-\d{2}-\d{2}$/.test(scheduledDate) && scheduledDate >= weekStartKey && scheduledDate <= nextMondayKey;
   });
-  const kanbanChannels = [...new Set(weekPosts.map((post) => post.platform).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
-  const kanbanOwners = [...new Set(weekPosts.map((post) => post.owner).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  const kanbanChannels = [...new Set(posts.map((post) => post.platform).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  const kanbanOwners = [...new Set(posts.map((post) => post.owner).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
   const kanbanPosts = weekPosts.filter((post) => {
-    const status = String(post.status || 'Por iniciar');
-    const published = /publicad/i.test(status);
-    const finished = /complet|terminad|finalizad|cancelad|anulad|archivad/i.test(status);
-    return (channelFilter === 'Todos los canales' || post.platform === channelFilter)
-      && (ownerFilter === 'Todos los responsables' || post.owner === ownerFilter)
-      && (kanbanStateFilter === 'all'
-        || (kanbanStateFilter === 'pending' && !isTerminalMarketingStatus(status))
-        || (kanbanStateFilter === 'published' && published)
-        || (kanbanStateFilter === 'finished' && finished && !published));
+    const matchesChannel = channelFilter === 'Todos los canales' || (channelFilter === 'Canal pendiente' ? !post.platform : post.platform === channelFilter);
+    const matchesOwner = ownerFilter === 'Todos los responsables' || (ownerFilter === 'Sin asignar' ? !post.owner : post.owner === ownerFilter);
+    return matchesChannel && matchesOwner && matchesStateFilter(post, kanbanStateFilter);
   });
   const tablePosts = [...kanbanPosts].sort((a, b) =>
     String(a.scheduled_date || '').localeCompare(String(b.scheduled_date || ''))
@@ -260,30 +306,62 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
     { label: 'Vista del calendario', icon: <CalendarDays size={14}/>, onSelect: () => {}, children: [
       { label: 'Mes', kind: 'radio', checked: view === 'month', onSelect: () => { setView('month'); setExpandedDate(null); } },
       { label: 'Semana', kind: 'radio', checked: view === 'week', onSelect: () => { setView('week'); setExpandedDate(null); } },
-      { label: 'Kanban semanal', kind: 'radio', checked: view === 'kanban', onSelect: () => { setAnchor(dateFromKey(todayKey)); setFollowCurrentWeek(true); setView('kanban'); setExpandedDate(null); } },
+      { label: 'Kanban semanal', kind: 'radio', checked: view === 'kanban', onSelect: () => { if (view === 'month') { setAnchor(dateFromKey(todayKey)); setFollowCurrentWeek(true); } setView('kanban'); setExpandedDate(null); } },
       { label: 'Tabla semanal', kind: 'radio', checked: view === 'table', onSelect: openTableView },
     ] },
     { label: 'Anterior', onSelect: () => move(-1) },
     { label: 'Siguiente', onSelect: () => move(1) },
   ];
   const weekRange = `${new Intl.DateTimeFormat('es-EC', { day: 'numeric', month: 'short' }).format(cells[0])} – ${new Intl.DateTimeFormat('es-EC', { day: 'numeric', month: 'short' }).format(cells[6])} ${cells[6].getFullYear()}`;
+  const monthHeading = monthLabel.format(anchor).replace(/^./, (letter) => letter.toLocaleUpperCase('es'));
+  const updateWeekScrollPosition = () => {
+    const grid = weekGridRef.current;
+    if (!grid) return;
+    const firstDay = grid.querySelector<HTMLElement>('.vc-marketing-calendar-day');
+    if (!firstDay) return;
+    const dayWidth = firstDay.getBoundingClientRect().width;
+    const start = Math.min(7, Math.max(1, Math.floor(grid.scrollLeft / dayWidth) + 1));
+    const end = Math.min(7, Math.max(start, Math.ceil((grid.scrollLeft + grid.clientWidth) / dayWidth)));
+    setWeekScrollPosition({ start, end });
+  };
+  const scrollWeekByDay = (direction: number) => {
+    const grid = weekGridRef.current;
+    const firstDay = grid?.querySelector<HTMLElement>('.vc-marketing-calendar-day');
+    if (!grid || !firstDay) return;
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+    grid.scrollBy({ left: direction * firstDay.getBoundingClientRect().width, behavior });
+  };
+  useEffect(() => {
+    if (view !== 'week' || !weekGridRef.current) return;
+    const grid = weekGridRef.current;
+    grid.scrollLeft = 0;
+    updateWeekScrollPosition();
+    const observer = new ResizeObserver(updateWeekScrollPosition);
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, [view, cells]);
   return <section className={`vc-marketing-calendar is-${view}`} aria-label={`Calendario editorial en vista ${view}`}>
     <header className="vc-marketing-calendar-head">
-      <div><span className="eyebrow">PLANIFICACIÓN EDITORIAL</span><h2>{view === 'month' ? monthLabel.format(anchor) : `${view === 'kanban' ? 'Kanban semanal' : view === 'table' ? 'Tabla semanal' : isCurrentWeek ? 'Semana actual' : 'Semana'} · ${weekRange}`}</h2><p>{view === 'kanban' ? 'Arrastra las fichas entre etapas. El tablero incluye la semana actual y el lunes siguiente para recibir los pendientes del fin de semana.' : view === 'table' ? 'Revisa en filas la semana seleccionada y el lunes siguiente. La tabla y Kanban comparten periodo y filtros.' : view === 'week' ? 'Cada día muestra sus fichas completas. Pega, arrastra o elige una imagen en la tarjeta; se optimiza antes de guardarse.' : 'Arrastra una ficha a otra fecha para reprogramarla. Usa clic derecho o ⋯ para sus acciones.'}</p></div>
-      <div className="vc-marketing-calendar-toolbar"><div className="vc-marketing-calendar-view"><button type="button" className={view==='month'?'active':''} aria-pressed={view==='month'} onClick={()=>{setView('month');setExpandedDate(null);}}>Mes</button><button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{setView('week');setExpandedDate(null);}}>Semana</button><button type="button" className={view==='kanban'?'active':''} aria-pressed={view==='kanban'} onClick={()=>{setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);setView('kanban');setExpandedDate(null);}}>Kanban</button><button type="button" className={view==='table'?'active':''} aria-pressed={view==='table'} onClick={openTableView}>Tabla</button></div><div className="vc-marketing-calendar-controls"><DatePicker label="Ir a fecha" value={dateKey(anchor)} onChange={(value)=>{if(!value)return;const [year,month,day]=value.split('-').map(Number);setFollowCurrentWeek(false);setAnchor(new Date(year,month-1,day,12));setExpandedDate(null);}}/><button className="button button-outline" type="button" onClick={()=>{setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);setExpandedDate(null);}}>Hoy</button><button className="icon-button" type="button" aria-label="Anterior" onClick={()=>move(-1)}><ChevronLeft size={17}/></button><button className="icon-button" type="button" aria-label="Siguiente" onClick={()=>move(1)}><ChevronRight size={17}/></button><ContextMenu className="vc-calendar-toolbar-context vc-marketing-context-menu" label="Acciones del calendario" actions={calendarActions}><span aria-hidden="true"/></ContextMenu></div></div>
+      <div><span className="eyebrow">PLANIFICACIÓN EDITORIAL</span><h2>{view === 'month' ? monthHeading : `${view === 'kanban' ? 'Kanban semanal' : view === 'table' ? 'Tabla semanal' : isCurrentWeek ? 'Semana actual' : 'Semana'} · ${weekRange}`}</h2><p>{view === 'kanban' ? 'Organiza las publicaciones por etapa. La semana incluye el lunes siguiente para recibir pendientes del fin de semana.' : view === 'table' ? 'Revisa en filas la semana seleccionada y el lunes siguiente. La tabla y Kanban comparten periodo y filtros.' : view === 'week' ? 'Cada día muestra sus publicaciones. Arrastra o elige una imagen, o pégala con Ctrl+V en la tarjeta.' : 'Arrastra una publicación a otra fecha para reprogramarla. Abre ⋯ para ver sus acciones.'}</p></div>
+      <div className="vc-marketing-calendar-toolbar"><div className="vc-marketing-calendar-view"><button type="button" className={view==='month'?'active':''} aria-pressed={view==='month'} onClick={()=>{setView('month');setExpandedDate(null);}}>Mes</button><button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{setView('week');setExpandedDate(null);}}>Semana</button><button type="button" className={view==='kanban'?'active':''} aria-pressed={view==='kanban'} onClick={()=>{if(view==='month'){setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);}setView('kanban');setExpandedDate(null);}}>Kanban</button><button type="button" className={view==='table'?'active':''} aria-pressed={view==='table'} onClick={openTableView}>Tabla</button></div><div className="vc-marketing-calendar-controls"><DatePicker label="Ir a fecha" value={dateKey(anchor)} onChange={(value)=>{if(!value)return;const [year,month,day]=value.split('-').map(Number);setFollowCurrentWeek(false);setAnchor(new Date(year,month-1,day,12));setExpandedDate(null);}}/><button className="button button-outline" type="button" onClick={()=>{setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);setExpandedDate(null);}}>Hoy</button><button className="icon-button" type="button" aria-label="Anterior" onClick={()=>move(-1)}><ChevronLeft size={17}/></button><button className="icon-button" type="button" aria-label="Siguiente" onClick={()=>move(1)}><ChevronRight size={17}/></button><ContextMenu className="vc-calendar-toolbar-context vc-marketing-context-menu" label="Acciones del calendario" actions={calendarActions}><span aria-hidden="true"/></ContextMenu></div></div>
     </header>
-    {(view === 'kanban' || view === 'table') && <div className="vc-marketing-kanban-filters" aria-label="Filtros de la semana">
-      <label><Filter size={14}/><span>Canal</span><select aria-label="Filtrar por canal" value={channelFilter} onChange={(event) => setChannelFilter(event.target.value)}><option>Todos los canales</option>{kanbanChannels.map((channel) => <option key={channel}>{channel}</option>)}</select></label>
-      <label><span>Responsable</span><select aria-label="Filtrar por responsable" value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}><option>Todos los responsables</option>{kanbanOwners.map((owner) => <option key={owner}>{owner}</option>)}</select></label>
-      <label><ListFilter size={14}/><span>Estado</span><select aria-label="Filtrar por estado de entrega" value={kanbanStateFilter} onChange={(event) => setKanbanStateFilter(event.target.value as typeof kanbanStateFilter)}><option value="all">Todos</option><option value="pending">Pendientes</option><option value="published">Publicadas</option><option value="finished">Terminadas / canceladas</option></select></label>
-      <span className="vc-marketing-kanban-result-count">{kanbanPosts.length} de {weekPosts.length} fichas · {weekStartKey} a {nextMondayKey}</span>
-    </div>}
+    <div className="vc-marketing-kanban-filters" aria-label={`Filtros de publicaciones · ${view === 'month' ? 'mes' : view === 'week' ? 'semana' : 'semana actual'}`}>
+      <label><Filter size={14}/><span>Canal</span><select aria-label="Filtrar por canal" value={channelFilter} onChange={(event) => setChannelFilter(event.target.value)}><option>Todos los canales</option>{kanbanChannels.map((channel) => <option key={channel}>{channel}</option>)}<option>Canal pendiente</option></select></label>
+      <label><span>Responsable</span><select aria-label="Filtrar por responsable" value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}><option>Todos los responsables</option>{kanbanOwners.map((owner) => <option key={owner}>{owner}</option>)}<option>Sin asignar</option></select></label>
+      <label><ListFilter size={14}/><span>Estado</span><select aria-label="Filtrar por estado de entrega" value={kanbanStateFilter} onChange={(event) => setKanbanStateFilter(event.target.value as MarketingStateFilter)}><option value="all">Todos los estados</option><option value="pending">Pendientes</option><option value="work">En diseño o producción</option><option value="review">En revisión o aprobadas</option><option value="published">Publicadas</option><option value="finished">Terminadas</option><option value="blocked">Bloqueadas o canceladas</option></select></label>
+      <span className="vc-marketing-kanban-result-count" aria-live="polite">{view === 'kanban' || view === 'table' ? kanbanPosts.length : filteredPeriodPosts.length} de {postsInPeriod.length} fichas{view === 'kanban' || view === 'table' ? ` · ${weekStartKey} a ${nextMondayKey}` : ''}</span>
+      {(channelFilter !== 'Todos los canales' || ownerFilter !== 'Todos los responsables' || kanbanStateFilter !== 'all') && <button type="button" className="vc-marketing-filter-clear" onClick={() => { setChannelFilter('Todos los canales'); setOwnerFilter('Todos los responsables'); setKanbanStateFilter('all'); }}>Limpiar filtros</button>}
+      {view === 'kanban' && <label className="vc-marketing-empty-lanes-toggle"><input type="checkbox" checked={showEmptyKanbanLanes} onChange={(event) => setShowEmptyKanbanLanes(event.target.checked)}/>Mostrar etapas vacías</label>}
+    </div>
+    {(view === 'month' || view === 'week') && filteredPeriodPosts.length === 0 && <div className="vc-marketing-calendar-empty" role="status">{postsInPeriod.length === 0 ? 'No hay publicaciones en este periodo.' : 'Ninguna publicación coincide con estos filtros. Ajusta los filtros o límpialos para ver resultados.'}</div>}
     {view === 'kanban' ? <>
       <div className="vc-marketing-kanban-rule" role="note"><span><Check size={15}/></span><div><b>Regla de continuidad activa</b><small>Las fichas vencidas sin publicar pasan automáticamente al siguiente día hábil. Si el vencimiento cae sábado o domingo, pasan al lunes. Publicadas, terminadas y canceladas se respetan.{canEdit ? ' También se revisan al abrir el Kanban mientras el proceso diario completa el traslado en segundo plano.' : ' Tu perfil puede consultar la regla; los cambios requieren permiso de edición.'}</small></div></div>
       <div className="vc-marketing-kanban-board" role="list" aria-label={`Kanban semanal · ${weekRange}`}>
+        {kanbanPosts.length === 0 && <div className="vc-marketing-calendar-empty" role="status">No hay publicaciones para esta semana con los filtros actuales. Prueba otros filtros o límpialos.</div>}
         {kanbanColumns.map((lane) => {
           const lanePosts = kanbanPosts.filter((post) => laneForStatus(String(post.status || 'Por iniciar')) === lane.key)
-            .sort((a, b) => String(a.scheduled_time || '').localeCompare(String(b.scheduled_time || '')));
+            .sort((a, b) => String(a.scheduled_date || '').localeCompare(String(b.scheduled_date || '')) || String(a.scheduled_time || '').localeCompare(String(b.scheduled_time || '')));
+          if (!showEmptyKanbanLanes && lanePosts.length === 0) return null;
           return <section key={lane.key} className={`vc-marketing-kanban-column lane-${lane.key.replace(/[^a-z0-9-]/gi, '-').toLowerCase()}${draggingKanban ? ' can-drop' : ''}`} role="listitem" aria-label={`${lane.label}: ${lanePosts.length} publicaciones`}
             onDragOver={(event) => { if (canEdit && draggingKanban) event.preventDefault(); }}
             onDrop={(event) => { event.preventDefault(); const post = weekPosts.find((item) => item.id === (event.dataTransfer.getData('text/plain') || draggingKanban)); if (post && laneForStatus(String(post.status || 'Por iniciar')) !== lane.key) onStatusChange(post, lane.status); setDraggingKanban(null); }}>
@@ -291,7 +369,7 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
             <div className="vc-marketing-kanban-cards">{lanePosts.length === 0 && <span className="vc-marketing-kanban-empty">Sin fichas en esta etapa</span>}{lanePosts.map((post) => {
               const color = getMarketingCalendarColor(post.calendar_color, post.tags);
               const tags = getMarketingTags(post.tags);
-              const artworkProps = { organizationId, post, asset: artworkByPost.get(post.id), canEdit, onSaved: onArtworkSaved };
+              const artworkProps = { organizationId, post, asset: artworkByPost.get(post.id), canEdit, canDelete, onSaved: onArtworkSaved };
               const formattedDate = new Intl.DateTimeFormat('es-EC', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${post.scheduled_date.slice(0, 10)}T12:00:00`));
               return <ContextMenu key={post.id} className="vc-marketing-kanban-card-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}>
                 <article className={`vc-marketing-kanban-card tone-${statusClass(post)}`} style={color ? { '--event-color': color, '--event-tint': `${color}18` } as React.CSSProperties : undefined}>
@@ -314,7 +392,7 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
           const color = getMarketingCalendarColor(post.calendar_color, post.tags);
           const tags = getMarketingTags(post.tags);
           const formattedDate = new Intl.DateTimeFormat('es-EC', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${post.scheduled_date.slice(0, 10)}T12:00:00`));
-          const artworkProps = { organizationId, post, asset: artworkByPost.get(post.id), canEdit, onSaved: onArtworkSaved };
+          const artworkProps = { organizationId, post, asset: artworkByPost.get(post.id), canEdit, canDelete, onSaved: onArtworkSaved };
           return <tr key={post.id} className={selectedIds.has(post.id) ? 'is-selected' : ''}>
             {(canEdit || canDelete) && <td className="vc-marketing-table-select"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={() => onToggle(post.id)}/></td>}
             <td className="vc-marketing-table-date"><b>{formattedDate}</b><small>{post.scheduled_time || 'Hora pendiente'}</small></td>
@@ -327,7 +405,9 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
           </tr>;
         })}</tbody>
       </table>
-    </div> : <div className="vc-marketing-calendar-grid" role="grid" aria-label={view === 'month' ? monthLabel.format(anchor) : `Semana ${weekRange}`} style={{'--calendar-cols':view === 'month' ? 8 : 7} as React.CSSProperties}>
+    </div> : <>
+      {view === 'week' && <div className="vc-marketing-week-scroll-controls"><span aria-live="polite">Días {weekScrollPosition.start}–{weekScrollPosition.end} de 7</span><button type="button" aria-label="Desplazar a los días anteriores" disabled={weekScrollPosition.start <= 1} onClick={() => scrollWeekByDay(-1)}><ChevronLeft size={16}/><span>Anterior</span></button><button type="button" aria-label="Desplazar a los días siguientes" disabled={weekScrollPosition.end >= 7} onClick={() => scrollWeekByDay(1)}><span>Siguiente</span><ChevronRight size={16}/></button></div>}
+      <div ref={view === 'week' ? weekGridRef : undefined} onScroll={view === 'week' ? updateWeekScrollPosition : undefined} tabIndex={view === 'week' ? 0 : undefined} className="vc-marketing-calendar-grid" role="grid" aria-label={view === 'month' ? monthHeading : `Semana ${weekRange}. Desplázate horizontalmente para recorrer los siete días.`} style={{'--calendar-cols':view === 'month' ? 8 : 7} as React.CSSProperties}>
       {view === 'month' && <div className="vc-marketing-calendar-weekday vc-marketing-calendar-week-number-heading" role="columnheader" aria-label="Semana del mes">Sem.</div>}{weekdays.map((day)=><div key={day} className="vc-marketing-calendar-weekday" role="columnheader">{day}</div>)}
       {cells.map((date,cellIndex)=>{
         const key=dateKey(date), items=byDate.get(key)||[];
@@ -346,7 +426,7 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
           <div className="vc-marketing-calendar-events">{visible.map((post)=>{
             const color=getMarketingCalendarColor(post.calendar_color,post.tags);
             const tags=getMarketingTags(post.tags);
-            const artworkProps={organizationId,post,asset:artworkByPost.get(post.id),canEdit,onSaved:onArtworkSaved};
+            const artworkProps={organizationId,post,asset:artworkByPost.get(post.id),canEdit,canDelete,onSaved:onArtworkSaved};
             return <div className={`vc-marketing-event-row${canEdit||canDelete?' is-selectable':''}${view==='week'?' is-week-card':''}`} key={post.id}>
               {(canEdit||canDelete)&&<input className="vc-marketing-event-select" type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={()=>onToggle(post.id)}/>}
               {view==='week' ? <ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><article className={`vc-marketing-week-card tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined}>
@@ -355,14 +435,15 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
                 <MarketingPostArtwork {...artworkProps} variant="week"/>
                 <div className="vc-marketing-week-card-foot"><span>{post.owner||'Responsable pendiente'}</span>{tags.length>0&&<div>{tags.slice(0,2).map((tag)=><Badge key={tag} color={color||undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>)}</div>}</div>
               </article></ContextMenu> : <><MarketingPostArtwork {...artworkProps} variant="compact"/><ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className={`vc-marketing-calendar-event tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined} title={`${post.title} · ${post.status}${tags.length?` · ${tags.join(', ')}`:''}`}>
-                {post.scheduled_time&&<time>{post.scheduled_time}</time>}<span>{post.title||'Sin título'}</span>{tags.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${tags.join(', ')}`}>{tags[0]}</Badge>}
+                {post.scheduled_time&&<time>{post.scheduled_time}</time>}<span className="vc-marketing-event-label">{post.title||'Sin título'}</span><span className={`vc-marketing-event-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span>{tags.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${tags.join(', ')}`}>{tags[0]}</Badge>}
               </button></ContextMenu></>}
             </div>;
           })}{remaining>0&&<button type="button" className="vc-marketing-calendar-more" onClick={()=>setExpandedDate(expandedDate===key?null:key)}>+{remaining} más · ver agenda</button>}</div>
         </div></ContextMenu></React.Fragment>;
       })}
-    </div>}
+      </div>
+    </>}
     {expandedDate&&<section className="vc-marketing-day-agenda" aria-label={`Agenda del ${expandedDate}`}><header><div><span className="eyebrow">AGENDA DEL DÍA</span><b>{new Intl.DateTimeFormat('es-EC',{dateStyle:'full'}).format(new Date(`${expandedDate}T12:00:00`))} · {(byDate.get(expandedDate)||[]).length} publicaciones</b></div><button type="button" className="icon-button" aria-label="Cerrar agenda" onClick={()=>setExpandedDate(null)}><X size={15}/></button></header>{(byDate.get(expandedDate)||[]).map((post)=><article key={post.id}><span className="vc-marketing-agenda-time">{post.scheduled_time||'Sin hora'}</span><button type="button" className="vc-marketing-agenda-title" onClick={()=>onSelect(post)}><b>{post.title}</b><small>{post.platform||'Canal pendiente'} · {post.status}{getMarketingTags(post.tags).length?` · ${getMarketingTags(post.tags).join(', ')}`:''}</small></button><ContextMenu className="vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><span/></ContextMenu></article>)}{canEdit&&<button type="button" className="button button-outline" onClick={()=>onCreate(expandedDate)}><Plus size={14}/>Crear publicación</button>}</section>}
-    <footer className="vc-marketing-calendar-foot"><span><i className="tone-active"/>Planificada</span><span><i className="tone-review"/>En revisión</span><span><i className="tone-published"/>Publicada</span><span><i className="tone-blocked"/>Bloqueada</span>{undated.length>0&&<span className="vc-marketing-undated">{undated.length} sin fecha asignada</span>}</footer>
+    <footer className="vc-marketing-calendar-foot" aria-label="Leyenda de etapas"><span><i className="tone-active"/>Pendiente o planificada</span><span><i className="tone-working"/>En trabajo</span><span><i className="tone-review"/>En revisión</span><span><i className="tone-approved"/>Aprobada o programada</span><span><i className="tone-published"/>Publicada</span><span><i className="tone-completed"/>Terminada</span><span><i className="tone-blocked"/>Bloqueada</span><span><i className="tone-cancelled"/>Cancelada</span>{undated.length>0&&<span className="vc-marketing-undated">{undated.length} sin fecha asignada</span>}</footer>
   </section>;
 }

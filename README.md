@@ -67,6 +67,8 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ## Continuidad del trabajo
 
+- **Diseño de Marketing (30 de octubre de 2026):** rama `codex/marketing-interface-20261030` sobre `origin/main`. Se pulieron filtros y navegación semanal, tarjetas, estados semánticos, tabla y ficha de publicación; se reorganizó el bloque de imagen y se añadió señalización accesible de datos faltantes al marcar una ficha como publicada. `npm run build:checked` y `git diff --check` pasan. Pendiente revisar en sesión autenticada e integrar mediante PR; sin publicación en producción.
+
 - **Acceso al manual (26 de octubre de 2026):** PR #96 integró la biblioteca y sus 43 recursos estáticos. Esta corrección valida en Vercel los roles internos antes de servir `/manual-aprendizaje/fuente/*` y marca la respuesta como privada, sin caché. El contenido quedó en el historial de dos repositorios públicos; bloquear el acceso web no sanea las copias de GitHub. Seguimiento en [docs/manual-aprendizaje/README.md](docs/manual-aprendizaje/README.md).
 
 - **Inicio y componentes (26 de octubre de 2026):** en la rama local `codex/home-components-20261026`, los seis servicios activos adoptan una composición tipo Bento adaptable. El bloque de contenido de Inicio prioriza casos de portafolio ya publicados con portada; actualmente Supabase no tiene artículos publicados, por lo que no muestra fotografías ni casos inventados. Typecheck, build, revisión responsive y navegación de una tarjeta correctos. Detalle y siguiente paso en [docs/home-components-20261026/README.md](docs/home-components-20261026/README.md). Sin publicación.

@@ -16,6 +16,7 @@ import { MarketingPostArtwork, type MarketingArtworkAsset } from './marketing/Ma
 import { MarketingAssetIntake } from './marketing/MarketingAssetIntake';
 import { MarketingAssetPreview } from './marketing/MarketingAssetPreview';
 import './marketing/campaign-post-cards.css';
+import './marketing/marketing-interface-polish.css';
 import { DEFAULT_MARKETING_TAGS, PublicationEditorSections, type PublicationDraft, type PublicationEditorTab } from './marketing/PublicationEditorSections';
 import { getMarketingCalendarColor, getMarketingTags, MARKETING_COLORS } from './marketing/marketingColors';
 import { isTerminalMarketingStatus, nextMarketingPublicationDate } from './marketing/marketingScheduleRules';
@@ -79,6 +80,8 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const [assetFilter, setAssetFilter] = useState('Todos los archivos');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const editorDialogRef = React.useRef<HTMLElement | null>(null);
+  const previousEditorFocusRef = React.useRef<HTMLElement | null>(null);
   const [draft, setDraft] = useState(defaultDraft);
   const [draftArtworkFile, setDraftArtworkFile] = useState<File | null>(null);
   const [isNew, setIsNew] = useState(false);
@@ -121,12 +124,26 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     return () => window.clearTimeout(timeout);
   }, [notice]);
   useEffect(() => {
-    if (!modalOpen) return undefined;
+    if (!modalOpen) {
+      if (previousEditorFocusRef.current?.isConnected) previousEditorFocusRef.current.focus();
+      return undefined;
+    }
+    const dialog = editorDialogRef.current;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setSelectedPost(null); setModalOpen(false); }
+      if (event.key === 'Escape') { setDraftArtworkFile(null); setSelectedPost(null); setModalOpen(false); return; }
+      if (event.key !== 'Tab' || !dialog) return;
+      const focusable = [...dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')].filter((element) => element.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     };
     window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
+    dialog?.querySelector<HTMLElement>('[autofocus]')?.focus();
+    return () => {
+      window.removeEventListener('keydown', closeOnEscape);
+      if (previousEditorFocusRef.current?.isConnected) previousEditorFocusRef.current.focus();
+    };
   }, [modalOpen]);
 
   const statuses = useMemo(() => ['Todos los estados', ...new Set(data.posts.map((post) => post.status).filter(Boolean).sort())], [data.posts]);
@@ -179,6 +196,8 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const currentSnapshot = data.sales[0]?.data_json;
   const metricPosts = data.posts.filter((post) => Number(post.reach) || Number(post.interactions) || Number(post.clicks) || Number(post.leads));
   const selectedEvents = selectedPost ? data.events.filter((event) => event.post_id === selectedPost.id).slice(-8).reverse() : [];
+  const hasEditorArtwork = isNew ? Boolean(draftArtworkFile) : Boolean(selectedPost && artworkByPost.get(selectedPost.id));
+  const publishedMissingItems = /publicad/i.test(draft.status) ? [!draft.scheduled_time ? 'hora' : '', !draft.owner ? 'responsable' : '', !hasEditorArtwork ? 'imagen' : ''].filter(Boolean) : [];
 
   const closePostEditor = () => {
     setDraftArtworkFile(null);
@@ -187,6 +206,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   };
 
   const openPost = (post?: Post, scheduledDate = '') => {
+    previousEditorFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setDraftArtworkFile(null);
     setModalOpen(true);
     setDraftTabKey((current) => current + 1);
@@ -418,14 +438,24 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
 
     {notice&&<div className="vc-content-toast" role="status"><CheckCircle2 size={16}/>{notice}</div>}
     {modalOpen && <div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePostEditor(); }}>
-      <section className="vc-content-modal vc-content-modal-editor" role="dialog" aria-modal="true" aria-labelledby="vc-post-modal-title">
-        <header>
+      <section ref={editorDialogRef} tabIndex={-1} className="vc-content-modal vc-content-modal-editor" role="dialog" aria-modal="true" aria-labelledby="vc-post-modal-title">
+        <header className="vc-publication-editor-header">
           <div className="vc-publication-editor-title">
             <span className="eyebrow">{isNew ? 'NUEVA FICHA' : 'FICHA DE PUBLICACIÓN'}</span>
             <h2 id="vc-post-modal-title">{isNew ? 'Planifica una publicación' : 'Edita la publicación'}</h2>
             <p>{draft.title || 'Organiza el mensaje, el calendario y la producción desde una sola ficha.'}</p>
           </div>
-          <MarketingPostArtwork
+          <button type="button" className="icon-button" aria-label="Cerrar" autoFocus onClick={closePostEditor}><X size={18}/></button>
+        </header>
+        <form onSubmit={savePost}>
+          <section className="vc-publication-editor-artwork" aria-label="Imagen de referencia">
+            <div className="vc-publication-editor-artwork-copy">
+              <span className="eyebrow">MATERIAL VISUAL</span>
+              <b>Imagen de referencia</b>
+              <small>{canEdit ? 'Pega con Ctrl+V, arrastra una imagen o elígela desde el dispositivo.' : 'Imagen asociada a esta publicación.'}</small>
+              {publishedMissingItems.length > 0 && <span className="vc-publication-editor-missing" role="note">Ficha marcada como publicada con datos pendientes: {publishedMissingItems.join(', ')}. Completa la información cuando esté disponible.</span>}
+            </div>
+            <MarketingPostArtwork
             organizationId={organizationId || ''}
             post={selectedPost || { id: '', source_id: '', title: draft.title || 'nueva publicación', scheduled_date: draft.scheduled_date }}
             asset={selectedPost ? artworkByPost.get(selectedPost.id) : undefined}
@@ -437,9 +467,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
             onDraftFileChange={setDraftArtworkFile}
             onSaved={async () => { await refresh(); setDraftArtworkFile(null); }}
           />
-          <button type="button" className="icon-button" aria-label="Cerrar" onClick={closePostEditor}><X size={18}/></button>
-        </header>
-        <form onSubmit={savePost}>
+          </section>
           <PublicationEditorSections key={draftTabKey} draft={draft} onChange={(field, value) => setDraft((current) => ({ ...current, [field]: value }))} canEdit={canEdit} isNew={isNew} activeTab={editorTab} onTabChange={setEditorTab} selectedPost={selectedPost} checklistFields={checklistFields} events={selectedEvents} formatDate={formatDate} knownTags={knownTags}/>
           <div className="vc-content-modal-actions">
             <span>{canEdit ? 'La ficha se guarda en el calendario central.' : 'Tu perfil tiene acceso de solo lectura.'}</span>
