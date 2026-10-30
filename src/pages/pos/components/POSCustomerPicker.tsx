@@ -43,7 +43,6 @@ type Props = {
   historyCount: number;
   historySummary: CustomerHistorySummary | null;
   recentPurchases: RecentPurchase[];
-  onOpenPurchase?: (purchase: RecentPurchase) => void;
 };
 
 const normalize = (value: unknown) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').trim();
@@ -59,7 +58,7 @@ const whatsappHref = (customer: Customer) => {
   return `https://wa.me/${number}?text=${encodeURIComponent(`Hola ${customer.name}, te saluda Visual Corp. Estamos dando seguimiento a tu pedido.`)}`;
 };
 
-export function POSCustomerPicker({ customers, remoteMatches, searchingCustomers, searchError, onRetrySearch, canShowMore, onShowMore, selectedCustomer, duplicateCustomer, customerName, onNewNameChange, query, onQueryChange, onSelect, phone, email, documentReference, onContactChange, canViewSales, historyLoading, historyCount, historySummary, recentPurchases, onOpenPurchase }: Props) {
+export function POSCustomerPicker({ customers, remoteMatches, searchingCustomers, searchError, onRetrySearch, canShowMore, onShowMore, selectedCustomer, duplicateCustomer, customerName, onNewNameChange, query, onQueryChange, onSelect, phone, email, documentReference, onContactChange, canViewSales, historyLoading, historyCount, historySummary, recentPurchases }: Props) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const normalizedQuery = normalize(query);
@@ -148,7 +147,7 @@ export function POSCustomerPicker({ customers, remoteMatches, searchingCustomers
       {String(selectedCustomer.preferences?.interests || '').trim() && <p className="pos-customer-interest">Preferencias: {String(selectedCustomer.preferences?.interests)}</p>}
       <div className="pos-customer-history">
         <div className="pos-customer-history-heading"><span><Clock3 size={14}/> Compras recientes</span>{canViewSales && <small>{historyLoading ? 'Consultando…' : `${historyCount} registrada${historyCount === 1 ? '' : 's'}`}</small>}</div>
-        {!canViewSales ? <small className="pos-customer-history-empty">Tu perfil no permite consultar el historial comercial.</small> : historyLoading ? <small className="pos-customer-history-empty">Cargando historial…</small> : recentPurchases.length ? recentPurchases.map((sale) => <button type="button" className="pos-customer-purchase" key={sale.id} onClick={() => onOpenPurchase?.(sale)} aria-label={`Abrir ficha completa de ${sale.code || 'la compra'}`}><span><b>{sale.description || sale.code || 'Compra'}</b><small>{formatDate(sale.date)}</small></span><strong>{formatMoney(sale.total)}</strong><em>Ver ficha</em></button>) : <small className="pos-customer-history-empty">Aún no tiene compras confirmadas.</small>}
+        {!canViewSales ? <small className="pos-customer-history-empty">Tu perfil no permite consultar el historial comercial.</small> : historyLoading ? <small className="pos-customer-history-empty">Cargando historial…</small> : recentPurchases.length ? recentPurchases.map((sale) => <div className="pos-customer-purchase" key={sale.id}><span><b>{sale.description || sale.code || 'Compra'}</b><small>{formatDate(sale.date)}</small></span><strong>{formatMoney(sale.total)}</strong></div>) : <small className="pos-customer-history-empty">Aún no tiene compras confirmadas.</small>}
         {canViewSales && !historyLoading && historySummary && <>
           <div className="pos-customer-lifetime" aria-label="Resumen de compras del cliente">
             <div><small>Acumulado neto</small><b>{formatMoney(historySummary.netSpent)}</b></div>

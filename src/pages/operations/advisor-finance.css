@@ -5,4 +5,3 @@
 @media(max-width:390px){.advisor-team-card-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.advisor-team-card{transition:none}.advisor-team-card:hover{transform:none}}
 .advisor-register-empty{margin:12px 0 0;padding:11px 13px;border:1px dashed #cbd8d5;border-radius:10px;background:#f8fbfa;color:var(--muted);font-size:.78rem;line-height:1.5}
-.advisor-finance-detail-trigger{display:grid;justify-items:start;gap:3px;padding:5px 7px;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}.advisor-finance-detail-trigger:hover{background:#f8f4fa}.advisor-finance-detail-trigger:focus-visible{outline:3px solid #8b42a7;outline-offset:2px}.advisor-finance-detail-trigger em{margin-top:2px;color:#713989;font-size:9px;font-style:normal;font-weight:750}

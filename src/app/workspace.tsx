@@ -6,8 +6,6 @@ import { supabase, supabaseConfigured } from '../lib/supabaseClient';
 import { useAuth } from '../auth/AuthProvider';
 
 const STORAGE_KEY = 'visualcorp-suite-local-v1';
-const INVENTORY_REFERENCE_PREFIX = 'inventory-reference-images://';
-const inventoryReferenceStoragePath = (value) => typeof value === 'string' && value.startsWith(INVENTORY_REFERENCE_PREFIX) ? value.slice(INVENTORY_REFERENCE_PREFIX.length) : null;
 const WorkspaceContext = createContext<any>(null);
 const uid = (prefix = 'item') => `${prefix}-${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}`;
 
@@ -167,22 +165,14 @@ export function WorkspaceProvider({ children }) {
       if (!active || settingsResult.error || servicesResult.error || catalogResult.error) return;
       const settings = settingsResult.data;
       const services = (servicesResult.data || []).map((row) => ({ id: row.id, name: row.name, description: row.short || row.detail || '', enabled: row.is_published }));
-      const remoteCatalog = (catalogResult.data || []).map((row) => {
-        const standardDetails = row.custom_options?.standard_details || {};
-        const standardDetailLines = [
-          standardDetails.materials ? 'Materiales: ' + standardDetails.materials : '',
-          standardDetails.colors ? 'Colores: ' + standardDetails.colors : '',
-          standardDetails.dimensions ? 'Medidas: ' + standardDetails.dimensions : '',
-          standardDetails.personalization ? 'Personalización: ' + standardDetails.personalization : '',
-        ].filter(Boolean);
-        return {
+      const remoteCatalog = (catalogResult.data || []).map((row) => ({
         id: row.id, name: row.name, slug: row.slug, family: row.category || 'General', mode: row.calc_type === 'm2' ? 'area' : 'quantity',
         priceBasis: 'unit', priceScales: row.price_scales || [], tiers: (row.price_scales || []).filter((scale) => scale.option == null && scale.qty != null && (scale.pvp != null || scale.price != null || scale.price_inst != null || scale.price_corp != null)).map((scale) => ({ min_qty: Number(scale.qty), unit_price: scale.pvp == null && scale.price == null ? null : Number(scale.pvp ?? scale.price), install_unit_price: scale.price_inst == null ? null : Number(scale.price_inst), corporate_unit_price: scale.price_corp == null ? null : Number(scale.price_corp) })),
         optionPrices: (row.price_scales || []).filter((scale) => scale.option != null && scale.price != null).map((scale) => ({ label: String(scale.option), price: Number(scale.price) })),
         unit: row.calc_type === 'm2' ? 'm²' : 'unidad', price: Number(row.price) || 0, installPrice: row.price_inst == null ? null : Number(row.price_inst),
         corporatePrice: row.price_corp == null ? null : Number(row.price_corp), image: row.image || '', images: row.images || [],
-        confirmed: Number(row.price) > 0, published: true, description: [row.description || '', ...standardDetailLines].filter(Boolean).join(' · '), features: row.features || [], customOptions: row.custom_options || {}, source: 'Supabase · Visual Corp',
-      }; }).map((product) => {
+        confirmed: Number(row.price) > 0, published: true, description: row.description || '', source: 'Supabase · Visual Corp',
+      })).map((product) => {
         const images = catalogImagesForProduct(product);
         return { ...product, image: images[0] || product.image, images: images.length ? images : [product.image].filter(Boolean) };
       });
@@ -231,12 +221,6 @@ export function WorkspaceProvider({ children }) {
     const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult].find((result) => result.error);
     if (failed) { setNotice(`No se pudieron sincronizar todos los datos operativos: ${failed.error.message}`); return; }
     const itemById = new Map<string, any>((itemsResult.data || []).map((row: any) => [row.id, row]));
-    const inventoryImagePaths: string[] = [...new Set<string>((itemsResult.data || []).map((row: any) => inventoryReferenceStoragePath(row.reference_image_url)).filter((path: string | null): path is string => Boolean(path)))];
-    const signedInventoryImages = new Map<string, string>();
-    if (inventoryImagePaths.length) {
-      const { data: signedImages } = await supabase.storage.from('inventory-reference-images').createSignedUrls(inventoryImagePaths, 86400);
-      for (const image of signedImages || []) if (image.path && image.signedUrl) signedInventoryImages.set(image.path, image.signedUrl);
-    }
     const areaById = new Map<string, any>((areasResult.data || []).map((row: any) => [row.id, row]));
     const categoryById = new Map<string, any>((categoriesResult.data || []).map((row: any) => [row.id, row]));
     const branchById = new Map<string, any>((branchesResult.data || []).map((row: any) => [row.id, row]));
@@ -258,7 +242,6 @@ export function WorkspaceProvider({ children }) {
     for (const variant of variantsResult.data || []) {
       const item = itemById.get(variant.item_id);
       if (!item) continue;
-      const referenceImageStoragePath = inventoryReferenceStoragePath(item.reference_image_url);
       const branchStocks = stockRowsByVariant.get(variant.id) || [];
       // A variant can be assigned to a different branch from its siblings.
       // Keep the legacy item-level value as a fallback for older catalog rows.
@@ -272,7 +255,7 @@ export function WorkspaceProvider({ children }) {
         remoteInventory.push({
           id: `${variant.id}:${branch?.id || 'unassigned'}:${location}`, remoteItemId: item.id, variantId: variant.id, sku: item.sku, variantSku: variant.sku,
           name: item.name, description: item.description || '', category: categoryById.get(item.category_id)?.name || '', variant: variant.label || '', variantAttributes: variant.attributes || {},
-          itemType: item.item_type || '', tags: item.tags || [], referenceImageUrl: referenceImageStoragePath ? signedInventoryImages.get(referenceImageStoragePath) || '' : item.reference_image_url || inventoryImageForSku(item.sku), referenceImageStoragePath, customFields: item.custom_fields || {},
+          itemType: item.item_type || '', tags: item.tags || [], referenceImageUrl: item.reference_image_url || inventoryImageForSku(item.sku), customFields: item.custom_fields || {},
           area: areaById.get(item.area_id)?.name || 'Sin área', branch: branch?.name || 'Sucursal por asignar', branchId: branch?.id || null,
           location, unit: item.base_unit, quantity: stock ? Number(stock.quantity) : 0,
           reservedQuantity: Number(metrics?.reserved_quantity || 0), availableQuantity: metrics ? Number(metrics.available_quantity) : null,
