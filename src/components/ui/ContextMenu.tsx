@@ -357,10 +357,24 @@ export function ContextMenu({ actions, label = 'Más opciones', children, classN
     const updatePlacement = () => {
       const rect = menuRef.current?.getBoundingClientRect();
       if (!rect) return;
-      setPosition((current) => ({
-        x: Math.max(8, Math.min(current.x, window.innerWidth - rect.width - 8)),
-        y: Math.max(8, Math.min(current.y, window.innerHeight - rect.height - 8)),
-      }));
+      const margin = 8;
+      const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+      const viewportHeight = document.documentElement.clientHeight || window.innerHeight;
+      setPosition((current) => {
+        const x = Math.max(margin, Math.min(current.x, viewportWidth - rect.width - margin));
+        const spaceBelow = viewportHeight - current.y - margin;
+        const spaceAbove = current.y - margin;
+        // Keep the menu next to its pointer/trigger. When it cannot fit below,
+        // flip it above instead of pinning it to the viewport's bottom edge.
+        const y = rect.height <= spaceBelow
+          ? current.y
+          : rect.height <= spaceAbove
+            ? current.y - rect.height
+            : spaceBelow >= spaceAbove
+              ? margin
+              : Math.max(margin, viewportHeight - rect.height - margin);
+        return { x, y };
+      });
     };
     updatePlacement();
     window.addEventListener('resize', updatePlacement);
