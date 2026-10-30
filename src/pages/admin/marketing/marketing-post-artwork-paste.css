@@ -56,16 +56,13 @@
   white-space: nowrap;
 }
 
-.vc-marketing-post-artwork.has-image .vc-marketing-post-artwork-paste {
-  display: none;
-}
-
 .vc-marketing-post-artwork.is-editor .vc-marketing-post-artwork-paste {
   display: inline-flex;
-  position: static;
-  grid-column: 1;
-  grid-row: 2;
-  width: auto;
+  position: absolute;
+  bottom: 9px;
+  left: 9px;
+  z-index: 4;
+  width: calc(33.333% - 9px);
   min-height: 34px;
   padding: 0 5px;
   font-size: 9px;
@@ -73,4 +70,26 @@
 
 .vc-marketing-post-artwork.is-editor .vc-marketing-post-artwork-paste kbd {
   font-size: 7px;
+}
+
+.vc-marketing-post-artwork.has-image:not(.is-editor):not(.is-compact) .vc-marketing-post-artwork-paste {
+  width: calc(33.333% - 9px);
+  left: 7px;
+}
+
+.vc-marketing-post-artwork.has-image:not(.is-editor):not(.is-compact) .vc-marketing-post-artwork-browse {
+  right: auto;
+  left: 33.333%;
+  width: calc(33.333% - 9px);
+}
+
+.vc-marketing-post-artwork.has-image:not(.is-editor):not(.is-compact) .vc-marketing-post-artwork-remove {
+  right: 7px;
+  width: calc(33.333% - 9px);
+}
+
+.vc-marketing-post-artwork.is-editor:not(.has-remove-control) .vc-marketing-post-artwork-browse {
+  right: 9px;
+  left: auto;
+  width: calc(50% - 12px);
 }
