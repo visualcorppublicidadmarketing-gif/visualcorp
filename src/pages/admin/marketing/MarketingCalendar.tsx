@@ -94,15 +94,19 @@ const weekOfMonth = (date: Date) => {
   return Math.floor((monday.getTime() - first.getTime()) / 604800000) + 1;
 };
 
-export function MarketingReadinessIndicators({ post, compact = false }: { post: MarketingCalendarPost; compact?: boolean }) {
+export function MarketingReadinessIndicators({ post, compact = false, onChange, disabled = false }: { post: MarketingCalendarPost; compact?: boolean; onChange?: (field: 'design_ready' | 'video_ready', checked: boolean) => void; disabled?: boolean }) {
   const items = [
-    { label: 'Diseño', ready: post.design_ready === true, Icon: ImageIcon },
-    { label: 'Vídeo', ready: post.video_ready === true, Icon: Film },
+    { label: 'Diseño', ready: post.design_ready === true, field: 'design_ready' as const, Icon: ImageIcon },
+    { label: 'Vídeo', ready: post.video_ready === true, field: 'video_ready' as const, Icon: Film },
   ];
   return <span className={`vc-marketing-readiness-indicators${compact ? ' is-compact' : ''}`} role="group" aria-label="Checklist de producción">
-    {items.map(({ label, ready, Icon }) => <span key={label} className={`vc-marketing-readiness-item${ready ? ' is-ready' : ''}`} title={`${label}: ${ready ? 'listo' : 'pendiente'}`} aria-label={`${label} ${ready ? 'listo' : 'pendiente'}`}>
-      {ready ? <CheckCircle2 size={compact ? 12 : 13}/> : <Circle size={compact ? 12 : 13}/>}<Icon size={compact ? 11 : 12}/><span>{compact ? label.slice(0, 1) : label}</span><b>{compact ? '' : ready ? 'Listo' : 'Pendiente'}</b>
-    </span>)}
+    {items.map(({ label, ready, field, Icon }) => {
+      const content = <>{ready ? <CheckCircle2 size={compact ? 12 : 13}/> : <Circle size={compact ? 12 : 13}/>}<Icon size={compact ? 11 : 12}/><span>{compact ? label.slice(0, 1) : label}</span><b>{compact ? '' : ready ? 'Listo' : 'Pendiente'}</b></>;
+      const accessibleLabel = `${label} ${ready ? 'listo' : 'pendiente'}`;
+      return onChange
+        ? <button key={label} type="button" className={`vc-marketing-readiness-item${ready ? ' is-ready' : ''}`} title={`${accessibleLabel}. Clic para ${ready ? 'marcar pendiente' : 'marcar listo'}.`} aria-label={accessibleLabel} aria-pressed={ready} disabled={disabled} onClick={() => onChange(field, !ready)}>{content}</button>
+        : <span key={label} className={`vc-marketing-readiness-item${ready ? ' is-ready' : ''}`} title={accessibleLabel} aria-label={accessibleLabel}>{content}</span>;
+    })}
   </span>;
 }
 
@@ -397,7 +401,7 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
                   <button type="button" className="vc-marketing-kanban-card-title" draggable={canEdit} onDragStart={(event) => { event.dataTransfer.setData('text/plain', post.id); event.dataTransfer.effectAllowed = 'move'; setDraggingKanban(post.id); }} onDragEnd={() => setDraggingKanban(null)} onClick={() => onSelect(post)} title="Arrastra entre columnas para cambiar la etapa"><GripVertical size={13}/><b>{post.title || 'Sin título'}</b></button>
                   <span className="vc-marketing-kanban-card-topic">{post.content_line || post.next_action || 'Tema y siguiente paso por completar.'}</span>
                   <MarketingPostArtwork {...artworkProps} variant="week"/>
-                  <MarketingReadinessIndicators post={post}/>
+                  <MarketingReadinessIndicators post={post} onChange={(field, checked) => onReadinessChange(post, field, checked)} disabled={!canEdit}/>
                   <div className="vc-marketing-kanban-card-meta"><span><Megaphone size={12}/>{post.platform || 'Canal pendiente'}</span><span>{post.owner || 'Responsable pendiente'}</span></div>
                   <div className="vc-marketing-kanban-card-foot"><span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status || 'Por iniciar'}</span>{tags.length > 0 && <div>{tags.slice(0, 2).map((tag) => <Badge key={tag} color={color || undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>)}</div>}</div>
                 </article>
@@ -417,7 +421,7 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
           return <tr key={post.id} className={selectedIds.has(post.id) ? 'is-selected' : ''}>
             {(canEdit || canDelete) && <td className="vc-marketing-table-select"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={() => onToggle(post.id)}/></td>}
             <td className="vc-marketing-table-date"><b>{formattedDate}</b><small>{post.scheduled_time || 'Hora pendiente'}</small></td>
-            <td className="vc-marketing-table-publication"><div className="vc-marketing-table-publication-main"><div className="vc-marketing-table-artwork"><MarketingPostArtwork {...artworkProps} variant="compact"/></div><div className="vc-marketing-table-publication-copy"><button type="button" onClick={() => onSelect(post)}><b>{post.title || 'Sin título'}</b><small>{post.content_line || post.next_action || 'Tema y siguiente paso por completar.'}</small></button><MarketingReadinessIndicators post={post}/></div></div></td>
+            <td className="vc-marketing-table-publication"><div className="vc-marketing-table-publication-main"><div className="vc-marketing-table-artwork"><MarketingPostArtwork {...artworkProps} variant="compact"/></div><div className="vc-marketing-table-publication-copy"><button type="button" onClick={() => onSelect(post)}><b>{post.title || 'Sin título'}</b><small>{post.content_line || post.next_action || 'Tema y siguiente paso por completar.'}</small></button><MarketingReadinessIndicators post={post} onChange={(field, checked) => onReadinessChange(post, field, checked)} disabled={!canEdit}/></div></div></td>
             <td className="vc-marketing-table-channel"><b>{post.platform || 'Canal pendiente'}</b><small>{post.format || 'Formato pendiente'}</small></td>
             <td className="vc-marketing-table-owner">{post.owner || 'Responsable pendiente'}</td>
             <td><span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status || 'Por iniciar'}</span></td>
@@ -454,11 +458,11 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
                 <div className="vc-marketing-week-card-head"><div>{post.scheduled_time?<time>{post.scheduled_time}</time>:<span>Hora pendiente</span>}<small>{post.platform||'Canal pendiente'}{post.format?` · ${post.format}`:''}</small></div><span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span></div>
                 <button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className="vc-marketing-week-card-title" title="Abrir ficha de publicación"><b>{post.title||'Sin título'}</b><span>{post.content_line||post.next_action||'Tema y siguiente paso por completar.'}</span></button>
                 <MarketingPostArtwork {...artworkProps} variant="week"/>
-                <MarketingReadinessIndicators post={post}/>
+                <MarketingReadinessIndicators post={post} onChange={(field, checked) => onReadinessChange(post, field, checked)} disabled={!canEdit}/>
                 <div className="vc-marketing-week-card-foot"><span>{post.owner||'Responsable pendiente'}</span>{tags.length>0&&<div>{tags.slice(0,2).map((tag)=><Badge key={tag} color={color||undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>)}</div>}</div>
-              </article></ContextMenu> : <><MarketingPostArtwork {...artworkProps} variant="compact"/><ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className={`vc-marketing-calendar-event tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined} title={`${post.title} · ${post.status}${tags.length?` · ${tags.join(', ')}`:''}`}>
-                {post.scheduled_time&&<time>{post.scheduled_time}</time>}<span className="vc-marketing-event-label">{post.title||'Sin título'}</span><MarketingReadinessIndicators post={post} compact/><span className={`vc-marketing-event-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span>{tags.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${tags.join(', ')}`}>{tags[0]}</Badge>}
-              </button></ContextMenu></>}
+              </article></ContextMenu> : <><MarketingPostArtwork {...artworkProps} variant="compact"/><ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><div className={`vc-marketing-calendar-event tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined} title={`${post.title} · ${post.status}${tags.length?` · ${tags.join(', ')}`:''}`}>
+                {post.scheduled_time&&<time>{post.scheduled_time}</time>}<button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className="vc-marketing-event-label" title="Abrir ficha de publicación">{post.title||'Sin título'}</button><MarketingReadinessIndicators post={post} compact onChange={(field, checked) => onReadinessChange(post, field, checked)} disabled={!canEdit}/><span className={`vc-marketing-event-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span>{tags.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${tags.join(', ')}`}>{tags[0]}</Badge>}
+              </div></ContextMenu></>}
             </div>;
           })}{remaining>0&&<button type="button" className="vc-marketing-calendar-more" onClick={()=>setExpandedDate(expandedDate===key?null:key)}>+{remaining} más · ver agenda</button>}</div>
         </div></ContextMenu></React.Fragment>;
