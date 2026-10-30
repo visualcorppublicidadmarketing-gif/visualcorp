@@ -435,7 +435,7 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, can
       {busy || previewLoading ? <LoaderCircle size={variant === 'compact' ? 13 : 22} className="vc-content-spin"/> : previewFailed ? <FileImage size={variant === 'compact' ? 13 : 22}/> : <ImagePlus size={variant === 'compact' ? 13 : 22}/>}
       {variant !== 'compact' && <><b>{busy ? 'Procesando y subiendo…' : previewLoading ? 'Cargando imagen…' : previewFailed ? 'No se pudo abrir la imagen' : canUpload ? 'Añade una imagen a esta publicación' : 'Sin imagen asociada'}</b><span>{previewLoading ? 'Preparando la vista previa de la biblioteca privada.' : canUpload ? 'Elige una imagen, arrástrala o pégala con Ctrl+V.' : 'Las imágenes vinculadas aparecerán en esta tarjeta'}</span></>}
     </div>}
-    {canUpload && !previewLoading && variant !== 'compact' && (variant === 'editor' || !preview) && <button
+    {canUpload && !previewLoading && variant !== 'compact' && <button
       type="button"
       className="vc-marketing-post-artwork-paste"
       aria-label={`Preparar ${post.title} para pegar una imagen con Ctrl+V`}

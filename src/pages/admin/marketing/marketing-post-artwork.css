@@ -20,8 +20,8 @@
 
 .vc-marketing-post-artwork.is-overview {
   width: 100%;
-  min-height: 148px;
-  aspect-ratio: 16 / 7;
+  min-height: 176px;
+  aspect-ratio: 16 / 9;
 }
 
 .vc-marketing-post-artwork.is-detail {
@@ -41,7 +41,7 @@
 
 .vc-marketing-post-artwork.is-week {
   width: 100%;
-  min-height: 180px;
+  min-height: 170px;
   aspect-ratio: auto;
   container-type: inline-size;
   border-radius: 9px;
@@ -79,6 +79,29 @@
 
 .vc-marketing-post-artwork.is-compact > img {
   object-fit: cover;
+}
+
+.vc-marketing-post-artwork.is-compact.has-image {
+  overflow: visible;
+  z-index: 0;
+}
+
+.vc-marketing-post-artwork.is-compact.has-image:hover,
+.vc-marketing-post-artwork.is-compact.has-image:focus-within {
+  z-index: 20;
+}
+
+.vc-marketing-post-artwork.is-compact.has-image:hover > img,
+.vc-marketing-post-artwork.is-compact.has-image:focus-within > img {
+  inset: 50% auto auto 50%;
+  width: 92px;
+  height: 120px;
+  max-width: min(92px, 22vw);
+  transform: translate(-50%, -50%);
+  border: 1px solid #e5d9eb;
+  border-radius: 8px;
+  object-fit: contain;
+  box-shadow: 0 8px 24px #21132d35;
 }
 
 .vc-marketing-post-artwork-empty {
@@ -293,11 +316,11 @@
 .vc-marketing-post-artwork.is-editor {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1fr) 34px;
+  grid-template-rows: minmax(0, 1fr);
   gap: 6px;
   width: 100%;
   max-width: 310px;
-  height: 148px;
+  height: 248px;
   min-height: 0;
   flex: none;
   aspect-ratio: auto;
@@ -348,9 +371,10 @@
 .vc-marketing-post-artwork.is-editor .vc-marketing-post-artwork-paste,
 .vc-marketing-post-artwork.is-editor .vc-marketing-post-artwork-browse,
 .vc-marketing-post-artwork.is-editor .vc-marketing-post-artwork-remove {
-  position: static;
-  grid-row: 2;
-  width: auto;
+  position: absolute;
+  bottom: 9px;
+  z-index: 4;
+  width: calc(33.333% - 9px);
   min-width: 0;
   min-height: 34px;
   padding: 0 5px;
@@ -360,15 +384,16 @@
 }
 
 .vc-marketing-post-artwork.is-editor .vc-marketing-post-artwork-paste {
-  grid-column: 1;
+  left: 9px;
 }
 
 .vc-marketing-post-artwork.is-editor .vc-marketing-post-artwork-browse {
-  grid-column: 2;
+  right: auto;
+  left: 33.333%;
 }
 
 .vc-marketing-post-artwork.is-editor .vc-marketing-post-artwork-remove {
-  grid-column: 3;
+  right: 9px;
 }
 
 .vc-marketing-post-artwork.is-editor .vc-marketing-post-artwork-message {
@@ -384,7 +409,63 @@
   .vc-marketing-post-artwork.is-editor {
     width: 100%;
     max-width: none;
-    height: 164px;
+    height: 248px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-marketing-post-artwork.has-image:not(.is-compact) .vc-marketing-post-artwork-paste,
+  .vc-marketing-post-artwork.has-image:not(.is-compact) .vc-marketing-post-artwork-browse,
+  .vc-marketing-post-artwork.has-image:not(.is-compact) .vc-marketing-post-artwork-remove,
+  .vc-marketing-post-artwork.is-compact.has-image > img {
+    transition: none;
+  }
+}
+
+/* Artwork tools stay out of the way while a saved image is being previewed. */
+.vc-marketing-post-artwork.has-image:not(.is-compact) .vc-marketing-post-artwork-paste,
+.vc-marketing-post-artwork.has-image:not(.is-compact) .vc-marketing-post-artwork-browse,
+.vc-marketing-post-artwork.has-image:not(.is-compact) .vc-marketing-post-artwork-remove {
+  opacity: 0;
+  transform: translateY(5px);
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease;
+}
+
+.vc-marketing-post-artwork.has-image:not(.is-compact):hover .vc-marketing-post-artwork-paste,
+.vc-marketing-post-artwork.has-image:not(.is-compact):hover .vc-marketing-post-artwork-browse,
+.vc-marketing-post-artwork.has-image:not(.is-compact):hover .vc-marketing-post-artwork-remove,
+.vc-marketing-post-artwork.has-image:not(.is-compact):focus-within .vc-marketing-post-artwork-paste,
+.vc-marketing-post-artwork.has-image:not(.is-compact):focus-within .vc-marketing-post-artwork-browse,
+.vc-marketing-post-artwork.has-image:not(.is-compact):focus-within .vc-marketing-post-artwork-remove {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* On compact month/table thumbnails, hover (or keyboard focus) opens a larger peek. */
+.vc-marketing-post-artwork.is-compact.has-image .vc-marketing-post-artwork-browse,
+.vc-marketing-post-artwork.is-compact.has-image .vc-marketing-post-artwork-remove {
+  opacity: 0;
+  transition: opacity .16s ease;
+}
+
+.vc-marketing-post-artwork.is-compact.has-image:hover .vc-marketing-post-artwork-browse,
+.vc-marketing-post-artwork.is-compact.has-image:hover .vc-marketing-post-artwork-remove,
+.vc-marketing-post-artwork.is-compact.has-image:focus-within .vc-marketing-post-artwork-browse,
+.vc-marketing-post-artwork.is-compact.has-image:focus-within .vc-marketing-post-artwork-remove {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .vc-marketing-post-artwork.has-image:not(.is-compact) .vc-marketing-post-artwork-paste,
+  .vc-marketing-post-artwork.has-image:not(.is-compact) .vc-marketing-post-artwork-browse,
+  .vc-marketing-post-artwork.has-image:not(.is-compact) .vc-marketing-post-artwork-remove,
+  .vc-marketing-post-artwork.is-compact.has-image .vc-marketing-post-artwork-browse,
+  .vc-marketing-post-artwork.is-compact.has-image .vc-marketing-post-artwork-remove {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
   }
 }
 
