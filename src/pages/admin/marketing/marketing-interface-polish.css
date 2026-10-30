@@ -226,6 +226,10 @@
 
 .vc-marketing-readiness-indicators{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0}
 .vc-marketing-readiness-item{display:inline-flex;align-items:center;gap:4px;min-width:0;padding:4px 7px;border:1px solid #e8e3eb;border-radius:999px;background:#faf9fb;color:#655d6a;font-size:9px;line-height:1.1;white-space:nowrap}
+.vc-marketing-readiness-item:is(button){appearance:none;border:1px solid #e8e3eb;padding:4px 7px;background:#faf9fb;font:inherit;cursor:pointer;transition:border-color .14s ease,background .14s ease,box-shadow .14s ease}
+.vc-marketing-readiness-item:is(button):hover:not(:disabled){border-color:#b69ac8;background:#f7f1fa;box-shadow:0 2px 7px #472d5c12}
+.vc-marketing-readiness-item:is(button):focus-visible{outline:2px solid #8750a5;outline-offset:2px}
+.vc-marketing-readiness-item:is(button):disabled{cursor:wait;opacity:.58}
 .vc-marketing-readiness-item>svg:first-child,.vc-marketing-readiness-item>svg:nth-child(2){flex:none;color:#a49ba9}
 .vc-marketing-readiness-item.is-ready{border-color:#b9dfc9;background:#eff9f3;color:#286744}
 .vc-marketing-readiness-item.is-ready>svg{color:#2f9364}
@@ -234,6 +238,10 @@
 .vc-marketing-readiness-indicators.is-compact .vc-marketing-readiness-item{gap:2px;padding:2px 4px;border-radius:6px;background:#ffffffd9;font-size:8px}
 .vc-marketing-readiness-indicators.is-compact .vc-marketing-readiness-item span,.vc-marketing-readiness-indicators.is-compact .vc-marketing-readiness-item b{display:none}
 .vc-marketing-calendar.is-week .vc-marketing-readiness-item,.vc-marketing-calendar.is-kanban .vc-marketing-readiness-item{font-size:10px}
+.vc-marketing-calendar .vc-marketing-calendar-event>.vc-marketing-event-label{display:block;min-width:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.vc-marketing-calendar .vc-marketing-calendar-event>.vc-marketing-event-label:focus-visible{outline:2px solid #8750a5;outline-offset:2px;border-radius:3px}
+.vc-marketing-calendar .vc-marketing-calendar-event>.vc-marketing-readiness-indicators{display:flex;width:100%;min-width:0;align-items:center;overflow:visible;white-space:normal}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event>.vc-marketing-event-status{overflow:visible;text-overflow:clip;white-space:normal}
 .vc-marketing-calendar.is-table .vc-marketing-table-publication-copy{display:grid;gap:5px;min-width:0}
 .vc-marketing-calendar.is-table .vc-marketing-table-publication-copy>button{display:grid;min-width:0;gap:4px;padding:0;border:0;background:transparent;color:#403747;text-align:left;cursor:pointer}
 .vc-marketing-calendar.is-table .vc-marketing-table-publication-copy>button:focus-visible{outline:2px solid #8750a5;outline-offset:3px;border-radius:4px}

@@ -48,6 +48,9 @@
 .vc-marketing-week-card-head time,.vc-marketing-week-card-head>div>span{font-size:11px}
 .vc-marketing-week-card-head small{font-size:9px}
 .vc-marketing-week-card-status{font-size:8px}
+.vc-marketing-week-card-head{flex-wrap:wrap}
+.vc-marketing-week-card-status{flex:none;max-width:100%;padding:3px 7px;overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:anywhere;line-height:1.25}
+.vc-marketing-calendar-event>span.vc-marketing-event-status{display:block;flex-basis:100%;max-width:100%;overflow:visible;color:var(--event-color,#70527f);font-size:7px;font-weight:750;line-height:1.2;text-overflow:clip;white-space:normal;overflow-wrap:anywhere}
 .vc-marketing-week-card-title b{font-size:12px}
 .vc-marketing-week-card-title>span{font-size:9px}
 .vc-marketing-week-card-foot>span{font-size:9px}
