@@ -98,13 +98,13 @@ function TagPicker({ value, onChange, calendarColor, onCalendarColorChange, know
 
 export function PublicationEditorSections({ draft, onChange, canEdit, isNew, activeTab, onTabChange, selectedPost, checklistFields, events, formatDate, knownTags }: Props) {
   return <>
-    <nav className="vc-publication-steps" aria-label="Secciones de la ficha de publicación">
-      {tabs.map(({ id, label, icon: Icon, hint }, index) => <button key={id} type="button" className={activeTab === id ? 'is-active' : ''} aria-current={activeTab === id ? 'step' : undefined} onClick={() => onTabChange(id)}>
+    <nav className="vc-publication-steps" role="tablist" aria-label="Secciones de la ficha de publicación">
+      {tabs.map(({ id, label, icon: Icon, hint }, index) => <button key={id} type="button" role="tab" id={`vc-publication-tab-${id}`} aria-controls="vc-publication-tabpanel" aria-selected={activeTab === id} tabIndex={activeTab === id ? 0 : -1} className={activeTab === id ? 'is-active' : ''} onKeyDown={(event) => { if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); const nextIndex = (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length; onTabChange(tabs[nextIndex].id); document.getElementById(`vc-publication-tab-${tabs[nextIndex].id}`)?.focus(); } }} onClick={() => onTabChange(id)}>
         <span className="vc-publication-step-number">{activeTab === id ? <Icon size={15}/> : index + 1}</span><span><b>{label}</b><small>{hint}</small></span>
       </button>)}
     </nav>
 
-    <fieldset className="vc-post-form-fieldset vc-publication-fieldset" disabled={!canEdit}>
+    <fieldset id="vc-publication-tabpanel" role="tabpanel" aria-labelledby={`vc-publication-tab-${activeTab}`} tabIndex={0} className="vc-post-form-fieldset vc-publication-fieldset" disabled={!canEdit}>
       {activeTab === 'plan' && <div className="vc-post-form-grid vc-publication-grid">
         <label className="vc-publication-field is-wide"><span>Título de la publicación</span><input required autoFocus value={draft.title} onChange={(event) => onChange('title', event.target.value)} placeholder="Ej.: Presentación del servicio de impresión" maxLength={180}/></label>
         <label className="vc-publication-field"><span>Canal</span><select value={draft.platform} onChange={(event) => onChange('platform', event.target.value)}><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>WhatsApp</option><option>LinkedIn</option><option>Multicanal</option><option>Por definir</option></select></label>
@@ -123,12 +123,12 @@ export function PublicationEditorSections({ draft, onChange, canEdit, isNew, act
         <section className="vc-publication-copy-fields" aria-label="Componentes del mensaje">
           <div className="vc-publication-section-heading"><span className="vc-publication-heading-icon"><Target size={16}/></span><div><b>Construye el mensaje por partes</b><small>Los campos son opcionales. Usa solo los que ayuden a comunicar la idea.</small></div></div>
           <div className="vc-post-form-grid vc-publication-grid">
-            <PublicationField draft={draft} onChange={onChange} name="call_in" label="Call-in · frase de entrada" hint="Abre con una pregunta, tensión o idea que detenga el scroll." placeholder="La primera frase que capta atención" wide/>
+            <PublicationField draft={draft} onChange={onChange} name="call_in" label="Frase de entrada" hint="Abre con una pregunta, tensión o idea que capte atención." placeholder="La primera frase que capta atención" wide/>
             <PublicationField draft={draft} onChange={onChange} name="offer" label="Oferta o tema central" hint="Beneficio, servicio o propuesta; deja pendiente lo que falte confirmar." placeholder="Qué ofrecemos o queremos destacar" wide/>
-            <PublicationField draft={draft} onChange={onChange} name="callout" label="Call-out · beneficio o respaldo" hint="La razón concreta que sostiene el mensaje: característica, prueba o detalle confirmado." placeholder="Qué valor debe recordar la audiencia" wide/>
-            <PublicationField draft={draft} onChange={onChange} name="caption" label="Caption · texto completo" hint="Versión corrida para revisar, copiar y adaptar al canal." placeholder="Desarrolla la idea en el tono y extensión adecuados." multiline wide rows={5}/>
+            <PublicationField draft={draft} onChange={onChange} name="callout" label="Beneficio o respaldo" hint="La razón concreta que sostiene el mensaje: característica, prueba o detalle confirmado." placeholder="Qué valor debe recordar la audiencia" wide/>
+            <PublicationField draft={draft} onChange={onChange} name="caption" label="Texto para la publicación" hint="Versión corrida para revisar, copiar y adaptar al canal." placeholder="Desarrolla la idea en el tono y extensión adecuados." multiline wide rows={5}/>
             <div className="vc-publication-cta-block">
-              <div className="vc-publication-section-heading"><span className="vc-publication-heading-icon is-cta"><CopyCheck size={16}/></span><div><b>Acción para la audiencia (CTA)</b><small>Indica qué hacer y a dónde dirigir esa acción.</small></div></div>
+              <div className="vc-publication-section-heading"><span className="vc-publication-heading-icon is-cta"><CopyCheck size={16}/></span><div><b>Acción para la audiencia</b><small>Indica qué hacer y a dónde dirigir esa acción.</small></div></div>
               <div className="vc-post-form-grid vc-publication-grid"><PublicationField draft={draft} onChange={onChange} name="cta" label="Texto del CTA" placeholder="Escríbenos, cotiza, agenda…"/><PublicationField draft={draft} onChange={onChange} name="cta_destination" label="Destino o canal de respuesta" placeholder="WhatsApp, DM, web, llamada…"/><PublicationField draft={draft} onChange={onChange} name="external_url" label="Enlace de destino" hint="Opcional. Solo agrega una URL confirmada." placeholder="https://…" wide/></div>
             </div>
             <PublicationField draft={draft} onChange={onChange} name="hashtags" label="Hashtags" hint="Sepáralos con espacios. No se agregan automáticamente al caption." placeholder="#VisualCorp #Impresión" wide/>

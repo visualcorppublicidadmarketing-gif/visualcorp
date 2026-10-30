@@ -42,4 +42,16 @@
 @media(max-width:520px){.vc-marketing-calendar.is-week .vc-marketing-calendar-grid{grid-template-columns:repeat(7,minmax(240px,1fr));grid-auto-rows:minmax(300px,auto)}.vc-marketing-calendar.is-week .vc-marketing-calendar-day{min-height:300px;padding:7px}.vc-marketing-week-card{padding:8px}.vc-marketing-week-card-title b{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.vc-marketing-week-card{transition:none}.vc-marketing-week-card:hover{transform:none}}
 
+.vc-marketing-calendar.is-week .vc-marketing-event-row.is-week-card{position:relative;display:block;min-width:0}
+.vc-marketing-calendar.is-week .vc-marketing-event-row.is-week-card>.vc-marketing-event-select{position:absolute;top:7px;right:7px;z-index:4;margin:0;opacity:0}
+.vc-marketing-calendar.is-week .vc-marketing-event-row.is-week-card:hover>.vc-marketing-event-select,.vc-marketing-calendar.is-week .vc-marketing-event-row.is-week-card>.vc-marketing-event-select:focus-visible,.vc-marketing-calendar.is-week .vc-marketing-event-row.is-week-card>.vc-marketing-event-select:checked{opacity:1}
+.vc-marketing-week-card-head time,.vc-marketing-week-card-head>div>span{font-size:11px}
+.vc-marketing-week-card-head small{font-size:9px}
+.vc-marketing-week-card-status{font-size:8px}
+.vc-marketing-week-card-title b{font-size:12px}
+.vc-marketing-week-card-title>span{font-size:9px}
+.vc-marketing-week-card-foot>span{font-size:9px}
+@media(min-width:521px) and (max-width:760px){.vc-marketing-calendar.is-week .vc-marketing-calendar-grid{grid-template-columns:repeat(7,minmax(160px,1fr));overflow-x:auto}}
+@media(max-width:520px){.vc-marketing-week-card-title b{font-size:11px}}
+
 @media(max-width:520px){.vc-marketing-calendar:not(.is-week) .vc-marketing-calendar-grid{grid-template-columns:36px repeat(7,minmax(76px,1fr));overflow-x:auto}}
