@@ -301,7 +301,10 @@ export function ContextMenu({ actions, label = 'Más opciones', children, classN
     };
     document.addEventListener('pointerdown', closeOutside);
     document.addEventListener('keydown', keydown);
-    requestAnimationFrame(() => menuRef.current?.querySelector<HTMLElement>(menuSelector)?.focus());
+    // The menu is portaled and positioned in viewport coordinates. Focusing its
+    // first item with the browser default can scroll the underlying calendar to
+    // the portal's document position in dense/scrollable views.
+    requestAnimationFrame(() => menuRef.current?.querySelector<HTMLElement>(menuSelector)?.focus({ preventScroll: true }));
     return () => {
       document.removeEventListener('pointerdown', closeOutside);
       document.removeEventListener('keydown', keydown);
