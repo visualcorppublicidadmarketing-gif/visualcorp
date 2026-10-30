@@ -10,11 +10,15 @@ import { calculateQuotePrice, getQuoteBasis, quoteTiers } from '../../lib/quoteP
 import { supabase } from '../../lib/supabaseClient';
 import { CommercialDocumentDetails } from '../../components/CommercialDocumentDetails';
 import { Sheet } from '../../components/ui/OperationalKit';
+import { CommercialAssetsEditor } from '../../components/commercial/CommercialAssetsEditor';
+import { GoogleMapsPreview } from '../../components/commercial/GoogleMapsPreview';
+import { RichTextEditor } from '../../components/studio/RichTextEditor';
+import { persistCommercialAssets, type CommercialAssetDraft } from '../../lib/commercialAssets';
 import './operations-quote.css';
 
 const MAX_QUOTE_ITEMS = 40;
 const newLineId = () => globalThis.crypto?.randomUUID?.() || `line-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-const createLine = (custom = false) => ({ id: newLineId(), productId: '', quantity: '1', widthCm: '100', heightCm: '100', option: '', concept: '', additionalDescription: '', custom, customUnit: 'unidad', customUnitPrice: '' });
+const createLine = (custom = false) => ({ id: newLineId(), productId: '', quantity: '1', widthCm: '100', heightCm: '100', option: '', concept: '', additionalDescription: '', additionalDescriptionHtml: '<p></p>', custom, customUnit: 'unidad', customUnitPrice: '' });
 const tierAliases = { pvp: 'normal', instalacion: 'installation', corporativo: 'corporate' };
 const roundMoney = (value: number) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
@@ -71,6 +75,8 @@ export function OperationsQuotePage() {
   const [installHeight, setInstallHeight] = useState('');
   const [installAccess, setInstallAccess] = useState('');
   const [proposalNotes, setProposalNotes] = useState('');
+  const [clientBriefHtml, setClientBriefHtml] = useState('<p></p>');
+  const [documentAssets, setDocumentAssets] = useState<CommercialAssetDraft[]>([]);
   const [centralQuotes, setCentralQuotes] = useState<any[]>([]);
   const [centralSales, setCentralSales] = useState<any[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
@@ -194,7 +200,7 @@ export function OperationsQuotePage() {
   const updateLine = (lineId, changes) => setLines((current) => current.map((line) => line.id === lineId ? { ...line, ...changes } : line));
   const resetForm = () => {
     setLines([createLine()]); setPriceTier('pvp'); setCustomer(''); setCustomerId(''); setPhone(''); setCustomerEmail(''); setCustomerDocument(''); setJobName(''); setDeliveryDate(''); setApplyIVA(false); setDiscountPercent('0'); setDiscountReason(''); setShippingCost('0');
-    setInstallAddress(''); setInstallMapUrl(''); setInstallFloor(''); setInstallHeight(''); setInstallAccess(''); setProposalNotes('');
+    setInstallAddress(''); setInstallMapUrl(''); setInstallFloor(''); setInstallHeight(''); setInstallAccess(''); setProposalNotes(''); setClientBriefHtml('<p></p>'); documentAssets.forEach((asset) => asset.previewUrl && URL.revokeObjectURL(asset.previewUrl)); setDocumentAssets([]);
   };
 
   const save = async (event) => {
@@ -212,6 +218,7 @@ export function OperationsQuotePage() {
         product_id: line.custom ? null : line.product.id,
         name: line.title,
         description: line.additionalDescription.trim(),
+        description_html: line.additionalDescriptionHtml || '<p></p>',
         category: line.custom ? 'Concepto libre' : line.product.family,
         quantity: line.basis,
         piece_quantity: line.pieceQuantity,
@@ -260,8 +267,10 @@ export function OperationsQuotePage() {
         p_selected: pricesConfirmed ? selectedTotal : null,
         p_confirmed: pricesConfirmed,
         p_notes: notes,
+        p_client_brief_html: clientBriefHtml,
       });
       if (error) throw error;
+      if (documentAssets.length) await persistCommercialAssets({ organizationId, documentId: result.id, kind: 'quote', assets: documentAssets });
       const [{ data: rows, error: readError }, { data: exclusions, error: exclusionsError }] = await Promise.all([
         supabase.from('central_quotes').select('*').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(100),
         supabase.from('commercial_history_exclusions').select('document_kind,document_id').eq('organization_id', organizationId),
@@ -305,7 +314,9 @@ export function OperationsQuotePage() {
 
         <details className="operations-quote-financial-editor"><summary>Descuento, IVA y otros cargos</summary><div className="operations-quote-fields"><label>Descuento (%)<input min="0" max="100" step="0.01" type="number" value={discountPercent} onChange={(event) => setDiscountPercent(event.target.value)}/></label><label>Otros cargos / envío<input min="0" step="0.01" type="number" value={shippingCost} onChange={(event) => setShippingCost(event.target.value)}/></label>{Number(discountPercent) > 0 && <label className="operations-quote-wide">Motivo del descuento<input required maxLength={300} value={discountReason} onChange={(event) => setDiscountReason(event.target.value)} placeholder="Motivo para dejarlo registrado"/></label>}<label className="operations-quote-iva-toggle"><input type="checkbox" checked={applyIVA} onChange={(event) => setApplyIVA(event.target.checked)}/><span>Aplicar IVA ({Number(data.calculatorSettings?.taxRate ?? 15)}%)</span></label></div><div className="operations-quote-financial-summary"><span>Subtotal <b>{selectedFinancials ? formatMoney(selectedFinancials.subtotal) : '—'}</b></span><span>Descuento <b>{selectedFinancials ? `−${formatMoney(selectedFinancials.discount)}` : '—'}</b></span><span>IVA ({taxRate}%) <b>{selectedFinancials ? formatMoney(selectedFinancials.tax) : '—'}</b></span><span>Envío / otros cargos <b>{selectedFinancials ? formatMoney(selectedFinancials.shipping) : '—'}</b></span></div></details>
 
-        {priceTier === 'instalacion' && <section className="operations-quote-install" aria-labelledby="operations-quote-install-title"><div className="operations-quote-section-heading"><div><span className="eyebrow"><MapPin size={13}/> DATOS PARA INSTALACIÓN</span><h3 id="operations-quote-install-title">Ubicación del trabajo</h3></div></div><label>Dirección o lugar de instalación<input required maxLength={300} value={installAddress} onChange={(event) => setInstallAddress(event.target.value)} placeholder="Sector, calle, edificio o referencia"/></label><div className="operations-quote-fields"><label>Enlace exacto de Google Maps (opcional)<input type="url" maxLength={800} value={installMapUrl} onChange={(event) => setInstallMapUrl(event.target.value)} placeholder="Pega el enlace para fijar el punto" aria-invalid={Boolean(installMapUrl && !isMapsUrl(installMapUrl))}/>{installMapUrl && !isMapsUrl(installMapUrl) && <small className="operations-quote-error-hint">Usa un enlace seguro de Google Maps.</small>}</label><label>Piso o nivel<input maxLength={60} value={installFloor} onChange={(event) => setInstallFloor(event.target.value)} placeholder="Ej. planta baja, piso 2"/></label><label>Altura aproximada<input maxLength={60} value={installHeight} onChange={(event) => setInstallHeight(event.target.value)} placeholder="Ej. 4 m"/></label><label>Acceso y condiciones<input maxLength={280} value={installAccess} onChange={(event) => setInstallAccess(event.target.value)} placeholder="Escalera, acceso, horario…"/></label></div>{installAddress.trim() && <a className="operations-quote-map-link" href={mapsUrl(installAddress.trim())} target="_blank" rel="noreferrer"><MapPin size={14}/> Buscar dirección en Google Maps <ArrowRight size={14}/></a>}</section>}
+        {priceTier === 'instalacion' && <section className="operations-quote-install" aria-labelledby="operations-quote-install-title"><div className="operations-quote-section-heading"><div><span className="eyebrow"><MapPin size={13}/> DATOS PARA INSTALACIÓN</span><h3 id="operations-quote-install-title">Ubicación del trabajo</h3></div></div><label>Dirección o lugar de instalación<input required maxLength={300} value={installAddress} onChange={(event) => setInstallAddress(event.target.value)} placeholder="Sector, calle, edificio o referencia"/></label><div className="operations-quote-fields"><label>Enlace exacto de Google Maps (opcional)<input type="url" maxLength={800} value={installMapUrl} onChange={(event) => setInstallMapUrl(event.target.value)} placeholder="Pega el enlace para fijar el punto" aria-invalid={Boolean(installMapUrl && !isMapsUrl(installMapUrl))}/>{installMapUrl && !isMapsUrl(installMapUrl) && <small className="operations-quote-error-hint">Usa un enlace seguro de Google Maps.</small>}</label><label>Piso o nivel<input maxLength={60} value={installFloor} onChange={(event) => setInstallFloor(event.target.value)} placeholder="Ej. planta baja, piso 2"/></label><label>Altura aproximada<input maxLength={60} value={installHeight} onChange={(event) => setInstallHeight(event.target.value)} placeholder="Ej. 4 m"/></label><label>Acceso y condiciones<input maxLength={280} value={installAccess} onChange={(event) => setInstallAccess(event.target.value)} placeholder="Escalera, acceso, horario…"/></label></div><GoogleMapsPreview url={installMapUrl} address={installAddress}/>{installAddress.trim() && <a className="operations-quote-map-link" href={mapsUrl(installAddress.trim())} target="_blank" rel="noreferrer"><MapPin size={14}/> Buscar dirección en Google Maps <ArrowRight size={14}/></a>}</section>}
+        <section className="operations-quote-install"><div className="operations-quote-section-heading"><div><span className="eyebrow">DESCRIPCIÓN DEL TRABAJO</span><h3>Indicaciones y objetivo para el cliente</h3></div></div><RichTextEditor label="Descripción enriquecida" value={clientBriefHtml} onChange={setClientBriefHtml} placeholder="Describe el trabajo, materiales, estilo o indicaciones…" minHeight={180}/></section>
+        <CommercialAssetsEditor value={documentAssets} onChange={setDocumentAssets}/>
 
         <section className="operations-quote-customer"><div className="divider-label">DATOS DEL CLIENTE Y DEL TRABAJO · OPCIONAL</div><div className="quote-customer-fields"><QuoteCustomerPicker customers={canSearchCustomers ? data.customers || [] : []} customerId={customerId} value={customer} onNameChange={(value) => { setCustomer(value); setCustomerId(''); setPhone(''); setCustomerEmail(''); setCustomerDocument(''); }} onSelect={(selectedCustomer) => { setCustomerId(selectedCustomer?.id || ''); if (selectedCustomer) { setCustomer(selectedCustomer.name); setPhone(selectedCustomer.phone || ''); setCustomerEmail(selectedCustomer.email || ''); setCustomerDocument(selectedCustomer.documentReference || ''); } }}/><label>Teléfono<input value={phone} readOnly={Boolean(customerId)} onChange={(event) => setPhone(event.target.value)} placeholder="09…"/></label><label>Correo electrónico<input type="email" value={customerEmail} readOnly={Boolean(customerId)} onChange={(event) => setCustomerEmail(event.target.value)} placeholder="correo@ejemplo.com"/></label><label>Cédula o RUC<input value={customerDocument} readOnly={Boolean(customerId)} onChange={(event) => setCustomerDocument(event.target.value)} placeholder="Documento del cliente"/></label><label>Nombre del trabajo<input maxLength={160} value={jobName} onChange={(event) => setJobName(event.target.value)} placeholder="Referencia para la producción"/></label><label>Fecha de entrega solicitada<input type="date" value={deliveryDate} onChange={(event) => setDeliveryDate(event.target.value)}/></label></div></section>
         <label className="operations-quote-notes">Notas internas para el equipo<textarea rows={3} maxLength={1200} value={proposalNotes} onChange={(event) => setProposalNotes(event.target.value)} placeholder="Acabados por confirmar, archivos pendientes, fecha solicitada…"/><small>{proposalNotes.length} / 1200 · Se guarda en la cotización central y no aparece al imprimir.</small></label>
