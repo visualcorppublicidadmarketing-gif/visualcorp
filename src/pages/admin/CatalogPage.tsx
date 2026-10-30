@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BadgeCheck, Check, CircleHelp, FileText, Grid2X2, Layers3, List, Plus, Search, SlidersHorizontal, Table2, Trash2 } from 'lucide-react';
+import { BadgeCheck, Check, CircleHelp, FileText, Grid2X2, Layers3, List, Plus, ScanLine, Search, SlidersHorizontal, Table2, Trash2 } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { formatMoney, useWorkspace } from '../../app/workspace';
 import { useAuth } from '../../auth/AuthProvider';
@@ -107,19 +107,42 @@ export function CatalogPricingEditor({ item, editable, onSave }: { item: any; ed
 }
 
 export function CatalogPage() {
-  const { data, update } = useWorkspace();
+  const { data, update, setData } = useWorkspace();
   const { organizationId, hasPermission } = useAuth();
   const [search, setSearch] = useState('');
   const [familyFilter, setFamilyFilter] = useState('Todas');
   const [sortBy, setSortBy] = useState('name');
   const [groupByFamily, setGroupByFamily] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [skuStatus, setSkuStatus] = useState<'hidden' | 'loading' | 'ready' | 'saving' | 'error'>('loading');
+  const [legacySkuCount, setLegacySkuCount] = useState(0);
+  const [skuStatusMessage, setSkuStatusMessage] = useState('');
+  const [standardProductsRevision, setStandardProductsRevision] = useState(0);
   const [view, setView] = useState<CatalogView>(() => {
     try { const saved = window.localStorage.getItem('visualcorp.catalog.view.v1'); return catalogViewOptions.some((option) => option.id === saved) ? saved as CatalogView : 'table'; }
     catch { return 'table'; }
   });
   const canEditPrices = hasPermission('catalog_admin', 'edit_prices');
   const canEditProducts = hasPermission('catalog_admin', 'edit');
+  useEffect(() => {
+    let active = true;
+    if (!supabase || !organizationId || !canEditProducts) {
+      setSkuStatus('hidden');
+      return () => { active = false; };
+    }
+    setSkuStatus('loading');
+    void supabase.from('catalog_products').select('id,sku').eq('organization_id', organizationId).then(({ data: rows, error }) => {
+      if (!active) return;
+      if (error) {
+        setSkuStatusMessage('No se pudo comprobar el estado de los códigos del catálogo.');
+        setSkuStatus('error');
+        return;
+      }
+      setLegacySkuCount((rows || []).filter((row) => !/^[A-Z]{2}\d{3,}$/.test(String(row.sku || ''))).length);
+      setSkuStatus('ready');
+    });
+    return () => { active = false; };
+  }, [organizationId, canEditProducts]);
   const families = useMemo(() => [...new Set<string>(data.catalog.map((item) => item.family?.trim() || 'General'))].sort((a, b) => a.localeCompare(b, 'es')), [data.catalog]);
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('es');
@@ -140,6 +163,27 @@ export function CatalogPage() {
     return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b, 'es'));
   }, [filtered, groupByFamily]);
   const setCatalogView = (next: CatalogView) => { setView(next); try { window.localStorage.setItem('visualcorp.catalog.view.v1', next); } catch { /* Storage can be unavailable in private browsing. */ } };
+
+  const assignShortProductCodes = async () => {
+    if (!supabase || !organizationId || !canEditProducts || skuStatus === 'saving') return;
+    setSkuStatus('saving');
+    setSkuStatusMessage('');
+    try {
+      const { data: changedCount, error: assignError } = await supabase.rpc('assign_catalog_product_skus');
+      if (assignError) throw assignError;
+      const { data: rows, error: readError } = await supabase.from('catalog_products').select('id,sku').eq('organization_id', organizationId);
+      if (readError) throw readError;
+      const skuById = new Map((rows || []).map((row) => [row.id, row.sku]));
+      setData((current) => ({ ...current, catalog: current.catalog.map((item) => ({ ...item, sku: skuById.get(item.id) || item.sku })) }));
+      setLegacySkuCount((rows || []).filter((row) => !/^[A-Z]{2}\d{3,}$/.test(String(row.sku || ''))).length);
+      setStandardProductsRevision((revision) => revision + 1);
+      setSkuStatusMessage(`${Number(changedCount) || 0} códigos asignados. El ID interno de cada producto se conservó.`);
+      setSkuStatus('ready');
+    } catch (error: any) {
+      setSkuStatusMessage(error?.message || 'No se pudieron asignar los códigos.');
+      setSkuStatus('error');
+    }
+  };
 
   const savePricing = async (item: any, draft: PricingDraft) => {
     if (!canEditPrices) throw new Error('Tu perfil no puede editar precios del catálogo.');
@@ -177,7 +221,16 @@ export function CatalogPage() {
   return <AppFrame area="operations">
     <div className="catalog-page">
       <PageHeading eyebrow="CATÁLOGO DE VISUAL CORP" title="Productos y tarifas" description="Edita las tres modalidades y sus escalas por cantidad o medida; los cambios alimentan el cotizador." action={<span className="rate-pending"><BadgeCheck size={15}/> {data.catalog.length} productos</span>} />
-      <StandardCustomProducts editable={canEditProducts} editablePrices={canEditPrices} />
+      {skuStatus !== 'hidden' && <section className={`catalog-sku-panel panel${legacySkuCount ? ' has-pending' : ''}`} aria-label="Códigos de identificación del catálogo">
+        <span className="catalog-sku-panel-icon"><ScanLine size={18}/></span>
+        <div className="catalog-sku-panel-copy">
+          <b>{skuStatus === 'loading' ? 'Comprobando códigos del catálogo…' : skuStatus === 'saving' ? 'Asignando códigos cortos…' : legacySkuCount ? `${legacySkuCount} productos necesitan un código corto` : 'Códigos de producto listos para buscar y escanear'}</b>
+          <span>PI = importados · PS = estándar · PF = físicos · SV = servicios. El Roll Up premium 80×200 queda como PI001; los IDs internos no cambian.</span>
+          {skuStatusMessage && <small className={skuStatus === 'error' ? 'is-error' : 'is-success'} role={skuStatus === 'error' ? 'alert' : 'status'}>{skuStatusMessage}</small>}
+        </div>
+        {legacySkuCount > 0 && <button className="button button-outline catalog-sku-assign" type="button" disabled={skuStatus === 'saving' || skuStatus === 'loading'} onClick={() => void assignShortProductCodes()}><ScanLine size={15}/> Asignar códigos a {legacySkuCount}</button>}
+      </section>}
+      <StandardCustomProducts key={standardProductsRevision} editable={canEditProducts} editablePrices={canEditPrices} />
       <section className="catalog-overview" aria-label="Resumen del catálogo">
         <article className="panel"><span><Layers3 size={17}/></span><div><small>FAMILIAS</small><b><NumberTicker value={families.length}/></b><small>Grupos del catálogo</small></div></article>
         <article className="panel"><span><Grid2X2 size={17}/></span><div><small>PRODUCTOS EN VISTA</small><b><NumberTicker value={filtered.length}/></b><small>{data.catalog.length} en total</small></div></article>
@@ -206,4 +259,5 @@ export function CatalogPage() {
     </div>
   </AppFrame>;
 }
+
 
