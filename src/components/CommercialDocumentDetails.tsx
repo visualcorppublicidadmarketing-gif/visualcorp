@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
 import { Spinner } from './ui/OperationalKit';
 import './commercial-document-details.css';
+import './commercial-quote-detail.css';
 
 export type CommercialDocumentKind = 'quote' | 'sale';
 
@@ -123,6 +124,10 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
   }, [kind, documentId, organizationId, initialDocument]);
 
   const isQuote = kind === 'quote';
+  const firstQuoteItem = isQuote && Array.isArray(document?.items) ? document.items[0] : null;
+  const embeddedQuoteDetails = firstQuoteItem?.document_details && typeof firstQuoteItem.document_details === 'object' ? firstQuoteItem.document_details : {};
+  const quoteDetails = isQuote && document?.document_details && typeof document.document_details === 'object' ? document.document_details : embeddedQuoteDetails;
+  const quoteFinancial = quoteDetails.financial && typeof quoteDetails.financial === 'object' ? quoteDetails.financial : {};
   const lineRows = useMemo(() => {
     if (!document) return [];
     const rows = isQuote
@@ -133,15 +138,18 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
         return {
           key: String(line.id || `${line.product_id || 'quote'}-${index}`),
           title: line.name || line.product_name || product?.name || `Artículo ${index + 1}`,
-          description: line.description || product?.description || '',
-          category: line.category || product?.family || '',
+          description: line.description || line.additional_description || product?.description || '',
+          category: line.category || product?.family || (line.custom ? 'Concepto libre' : ''),
           image: (typeof line.image === 'string' && line.image) || imageFromProduct(product),
           sku: line.sku || '',
           quantity: numberOrNull(line.piece_quantity) ?? billedQuantity,
           billedQuantity,
           unit: line.unit || (product?.mode === 'area' ? 'm²' : product?.unit || 'unidad'),
-          unitPrice: lineTotal !== null && billedQuantity ? lineTotal / billedQuantity : null,
+          unitPrice: numberOrNull(line.unit_price) ?? (lineTotal !== null && billedQuantity ? lineTotal / billedQuantity : null),
           lineTotal,
+          discount: numberOrNull(line.discount_amount),
+          taxAmount: numberOrNull(line.tax_amount),
+          shipping: numberOrNull(line.shipping_share),
           measurement: line.width_cm && line.height_cm ? `${line.width_cm} × ${line.height_cm} cm por pieza` : '',
           option: line.option || '',
           estimated: !document.price_confirmed,
@@ -179,12 +187,15 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
   const lineSubtotal = lineRows.length && lineRows.every((line: any) => line.lineTotal !== null)
     ? lineRows.reduce((sum: number, line: any) => sum + Number(line.lineTotal || 0), 0)
     : null;
-  const quoteTotal = isQuote ? numberOrNull(document?.selected_total) ?? lineSubtotal : null;
+  const quoteTotal = isQuote ? numberOrNull(document?.selected_total) ?? numberOrNull(quoteFinancial.total) ?? lineSubtotal : null;
+  const quoteSubtotal = isQuote ? numberOrNull(quoteFinancial.subtotal) ?? lineSubtotal : null;
+  const quoteDiscount = isQuote ? numberOrNull(quoteFinancial.discount_amount) : null;
+  const quoteShipping = isQuote ? numberOrNull(quoteFinancial.shipping_cost) : null;
   const saleTotal = !isQuote ? numberOrNull(document?.total) : null;
   const saleSubtotal = !isQuote ? numberOrNull(document?.subtotal) ?? lineSubtotal : null;
   const discount = !isQuote ? numberOrNull(document?.discount_total) : null;
-  const taxAmount = document ? optionalMoney(document, ['iva_amount', 'iva_total', 'vat_amount', 'vat_total', 'tax_amount', 'tax_total']) : null;
-  const taxRate = document ? optionalMoney(document, ['iva_rate', 'vat_rate', 'tax_rate']) : null;
+  const taxAmount = document ? optionalMoney(document, ['iva_amount', 'iva_total', 'vat_amount', 'vat_total', 'tax_amount', 'tax_total']) ?? (isQuote ? numberOrNull(quoteFinancial.iva_amount) : null) : null;
+  const taxRate = document ? optionalMoney(document, ['iva_rate', 'vat_rate', 'tax_rate']) ?? (isQuote ? numberOrNull(quoteFinancial.iva_rate) : null) : null;
   const payments = !isQuote && Array.isArray(document?.sale_payments) ? document.sale_payments : [];
   const paid = payments.reduce((sum: number, payment: any) => sum + (numberOrNull(payment.amount) || 0), 0);
   const balance = saleTotal === null ? null : Math.max(0, saleTotal - paid);
@@ -205,7 +216,9 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
   const code = isQuote ? document.quote_code : document.sale_code;
   const customerName = isQuote ? document.customer_name || 'Sin cliente' : customer?.full_name || 'Sin cliente';
   const createdAt = document.created_at;
-  const taxLabel = taxAmount === null ? 'No se guardó el desglose de IVA en este registro.' : `${taxRate !== null ? `IVA ${taxRate}%` : 'IVA registrado'} · ${formatMoney(taxAmount)}`;
+  const taxLabel = isQuote && quoteDetails.version && !quoteFinancial.iva_applied
+    ? 'No aplicado a esta cotización.'
+    : taxAmount === null ? 'No se guardó el desglose de IVA en este registro.' : `${taxRate !== null ? `IVA ${taxRate}%` : 'IVA registrado'} · ${formatMoney(taxAmount)}`;
 
   return <div className={`commercial-detail${compact ? ' is-compact' : ''}`}>
     <section className="commercial-detail-overview" aria-label="Resumen del documento">
@@ -220,8 +233,12 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
         {!isQuote && <Meta label="Contacto" value={customer?.phone || '—'}/>}
         {!isQuote && <Meta label="Sucursal" value={branch?.name || '—'}/>}
         {isQuote && <Meta label="Contacto" value={document.customer_phone || '—'}/>}
+        {isQuote && quoteDetails.customer?.email && <Meta label="Correo" value={quoteDetails.customer.email}/>}
+        {isQuote && quoteDetails.customer?.document_reference && <Meta label="Cédula / RUC" value={quoteDetails.customer.document_reference}/>}
         {!isQuote && <Meta label="Tipo de pago" value={paymentLabel(document.payment_method)}/>}
         {isQuote && <Meta label="Tarifa" value={quoteTier(document.chosen_tier)}/>}
+        {isQuote && quoteDetails.job_name && <Meta label="Trabajo" value={quoteDetails.job_name}/>}
+        {isQuote && quoteDetails.delivery_date && <Meta label="Entrega solicitada" value={formatDate(quoteDetails.delivery_date)}/>}
         {!isQuote && <Meta label="Referencia de cotización" value={document.central_quote_id ? 'Vinculada' : 'Venta directa'}/>}
       </dl>
     </section>
@@ -248,7 +265,10 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
         </div>
         <div className="commercial-detail-line-values">
           <span>{line.quantity ?? '—'} {line.unit}{line.billedQuantity !== null && line.billedQuantity !== line.quantity ? ` · ${line.billedQuantity} ${line.unit} facturados` : ''}</span>
-          <small>Unitario: {line.unitPrice === null ? '—' : formatMoney(line.unitPrice)}</small>
+          <small>Unitario base: {line.unitPrice === null ? '—' : formatMoney(line.unitPrice)}</small>
+          {isQuote && line.discount > 0 && <small>Descuento asignado: −{formatMoney(line.discount)}</small>}
+          {isQuote && line.taxAmount > 0 && <small>IVA asignado: {formatMoney(line.taxAmount)}</small>}
+          {isQuote && line.shipping > 0 && <small>Envío / cargo asignado: {formatMoney(line.shipping)}</small>}
           <strong>{line.lineTotal === null ? 'Por confirmar' : formatMoney(line.lineTotal)}</strong>
         </div>
       </article>)}</div> : <div className="commercial-detail-state"><Package size={17}/>Este registro no contiene líneas de productos.</div>}
@@ -259,7 +279,11 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
         <div className="commercial-detail-section-heading"><div><span className="eyebrow">VALORES</span><h4>Resumen económico</h4></div></div>
         {isQuote ? <>
           {tierTotals.map((tier) => <div className={`commercial-detail-total-row${tier.active ? ' is-selected' : ''}`} key={tier.label}><span>{tier.label}{tier.active && <em>Seleccionada</em>}</span><b>{tier.value === null ? 'Por confirmar' : formatMoney(tier.value)}</b></div>)}
+          {quoteSubtotal !== null && <div className="commercial-detail-total-row"><span>Subtotal de artículos</span><b>{formatMoney(quoteSubtotal)}</b></div>}
+          {quoteDiscount !== null && quoteDiscount > 0 && <div className="commercial-detail-total-row"><span>Descuento {quoteFinancial.discount_percent ? `(${quoteFinancial.discount_percent}%)` : ''}</span><b>−{formatMoney(quoteDiscount)}</b></div>}
+          {quoteDiscount !== null && quoteDiscount > 0 && quoteFinancial.discount_reason && <p className="commercial-detail-tax-reason">Motivo: {quoteFinancial.discount_reason}</p>}
           <div className="commercial-detail-tax-note"><span>Desglose de IVA</span><b>{taxLabel}</b></div>
+          {quoteShipping !== null && quoteShipping > 0 && <div className="commercial-detail-total-row"><span>Envío / otros cargos</span><b>{formatMoney(quoteShipping)}</b></div>}
           <div className="commercial-detail-total-row is-grand"><span>{document.price_confirmed ? 'Total cotizado' : 'Total estimado'}</span><b>{quoteTotal === null ? 'Por confirmar' : formatMoney(quoteTotal)}</b></div>
         </> : <>
           <div className="commercial-detail-total-row"><span>Subtotal de la venta</span><b>{saleSubtotal === null ? '—' : formatMoney(saleSubtotal)}</b></div>
@@ -275,6 +299,9 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
         {payments.length ? <ul>{payments.map((payment: any, index: number) => <li key={payment.id || index}><span><b>{paymentLabel(payment.method)}</b><small>{formatDateTime(payment.created_at)}{payment.reference ? ` · ${payment.reference}` : ''}{payment.note ? ` · ${payment.note}` : ''}</small></span><strong>{formatMoney(numberOrNull(payment.amount) || 0)}</strong></li>)}</ul> : <div className="commercial-detail-small-empty">No hay abonos registrados.</div>}
       </div>}
     </section>
+
+    {isQuote && quoteDetails.installation && (quoteDetails.installation.required || quoteDetails.installation.address || quoteDetails.installation.maps_url) && <section className="commercial-detail-section commercial-detail-delivery"><div className="commercial-detail-section-heading"><div><span className="eyebrow">INSTALACIÓN</span><h4>Ubicación y condiciones</h4></div><MapPin size={17}/></div><dl className="commercial-detail-meta-grid"><Meta label="Dirección" value={quoteDetails.installation.address}/><Meta label="Piso / nivel" value={quoteDetails.installation.floor}/><Meta label="Altura" value={quoteDetails.installation.height}/><Meta label="Acceso" value={quoteDetails.installation.access}/></dl>{quoteDetails.installation.maps_url && <a href={quoteDetails.installation.maps_url} target="_blank" rel="noreferrer">Abrir ubicación en Google Maps</a>}</section>}
+    {isQuote && quoteDetails.notes && !document.notes && <section className="commercial-detail-section commercial-detail-notes"><div className="commercial-detail-section-heading"><div><span className="eyebrow">NOTAS DE LA PROPUESTA</span><h4>Información adicional</h4></div></div><p>{quoteDetails.notes}</p></section>}
 
     {fulfillment && (fulfillment.installation_required || fulfillment.delivery_due_at) && <section className="commercial-detail-section commercial-detail-delivery">
       <div className="commercial-detail-section-heading"><div><span className="eyebrow">ENTREGA</span><h4>{fulfillment.installation_required ? 'Instalación y entrega' : 'Fecha de entrega'}</h4></div><CalendarDays size={17}/></div>

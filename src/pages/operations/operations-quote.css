@@ -23,6 +23,7 @@
 .operations-quote-area b{color:#6f2c79;font-size:13px}
 .operations-quote-area small{color:#92919d;font-size:8px}
 .operations-quote-item-details{grid-template-columns:minmax(130px,.65fr) minmax(0,1.35fr)}
+.operations-quote-line-description{display:grid;gap:6px;min-width:0;color:#55535f;font-size:10px;font-weight:650}.operations-quote-line-description textarea{width:100%;min-height:54px;resize:vertical}.operations-quote-line-description textarea::placeholder{color:#9a97a1;font-weight:400}
 .operations-quote-line-total{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:11px;border-top:1px solid #eeedf1;color:#7a7b85;font-size:9px}
 .operations-quote-line-total b{color:#282933;font-size:13px;white-space:nowrap}
 .operations-quote-pending{display:flex;align-items:center;gap:6px;margin:-6px 0 0;color:#9a6c1f;font-size:9px}
@@ -54,6 +55,7 @@
 .operations-quote-map-link:hover{text-decoration:underline}
 .operations-quote-customer{padding-top:2px;border-top:0}
 .operations-quote-customer .divider-label{margin:0 0 10px}
+.operations-quote-financial-editor{display:grid;gap:12px;padding:13px;border:1px solid #e8e2ec;border-radius:10px;background:#fcfbfd}.operations-quote-financial-editor>summary{color:#5f356d;font-size:11px;font-weight:750;cursor:pointer}.operations-quote-financial-editor .operations-quote-fields{padding-top:3px}.operations-quote-financial-editor .operations-quote-wide{grid-column:1/-1}.operations-quote-financial-editor .operations-quote-iva-toggle{display:flex;align-items:center;gap:8px;min-height:40px;padding:8px 10px;border:1px solid #e9e4ed;border-radius:8px;background:#fff;color:#4b4551;font-size:10px;font-weight:700}.operations-quote-financial-editor .operations-quote-iva-toggle input{width:16px;height:16px;accent-color:#891589}.operations-quote-financial-summary{display:grid;gap:6px;padding-top:10px;border-top:1px solid #ebe7ee}.operations-quote-financial-summary>span,.operations-quote-total-breakdown>span{display:flex;justify-content:space-between;gap:10px;color:#77717d;font-size:9px}.operations-quote-financial-summary b,.operations-quote-total-breakdown b{color:#393440;font-size:10px}.operations-quote-total-breakdown{display:grid;gap:4px;max-width:360px}
 .operations-quote-selected-total{display:grid;gap:6px;margin-top:1px;padding:14px;border:1px solid #e1d4ea;border-radius:10px;background:linear-gradient(105deg,#fbf7fc,#f8f7fc)}
 .operations-quote-selected-total>span{color:#8c4188;font-size:8px;font-weight:850;letter-spacing:.11em}
 .operations-quote-selected-total>b{color:#272832;font-size:20px;letter-spacing:-.04em}
@@ -83,6 +85,7 @@
 .operations-quote-history .sale-payment-summary{display:flex;justify-content:space-between;gap:12px;margin:0 0 4px 50px;color:#858691;font-size:8px}
 .operations-quote-history .sale-payment-summary b{color:#555661}
 .operations-quote-form input:focus-visible,.operations-quote-form select:focus-visible,.operations-quote-form button:focus-visible,.operations-quote-map-link:focus-visible{outline:3px solid #a00a8e55;outline-offset:2px}
+@media(max-width:560px){.operations-quote-financial-editor .operations-quote-fields{grid-template-columns:1fr}.operations-quote-financial-editor .operations-quote-wide{grid-column:auto}}
 @media(max-width:1100px){.operations-quote-layout{grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr)}.operations-quote-summary{top:10px}}
 @media(max-width:850px){.operations-quote-layout{grid-template-columns:1fr}.operations-quote-summary{position:static}.operations-quote-summary-lines{max-height:330px;overflow:auto}}
 @media(max-width:560px){.operations-quote-form{padding:13px}.operations-quote-line{padding:11px}.operations-quote-fields,.operations-quote-install .operations-quote-fields,.operations-quote-item-details{grid-template-columns:1fr}.operations-quote-tiers{grid-template-columns:1fr}.operations-quote-tier{min-height:76px;grid-template-columns:minmax(0,.75fr) minmax(0,1fr);align-items:center;gap:4px 10px}.operations-quote-tier>span{grid-column:1;grid-row:1}.operations-quote-tier>b{grid-column:2;grid-row:1 / span 2;text-align:right}.operations-quote-tier>small{grid-column:1;grid-row:2}.operations-quote-section-heading{align-items:flex-start;flex-direction:column;gap:5px}.operations-quote-section-heading>span:last-child{text-align:left}.operations-quote-selected-total>b{font-size:18px}.operations-quote-history .sale-row{align-items:flex-start;gap:8px}.operations-quote-history .sale-row>strong{font-size:10px}.operations-quote-history .sale-payment-summary{margin-left:45px}}
