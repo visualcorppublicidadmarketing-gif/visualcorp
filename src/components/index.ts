@@ -5,3 +5,5 @@ export { CommercialAssetsEditor } from './commercial/CommercialAssetsEditor';
 export { CommercialAssetsGallery } from './commercial/CommercialAssetsGallery';
 export { RichTextEditor } from './studio/RichTextEditor';
 export { RichTextContent } from './commercial/RichTextContent';
+export { Calendar, DatePicker, DateTimePicker, dateFromKey, dateToKey } from './ui/Calendar';
+export type { CalendarDayMetadata, CalendarMode, CalendarPreset, CalendarProps } from './ui/Calendar';
