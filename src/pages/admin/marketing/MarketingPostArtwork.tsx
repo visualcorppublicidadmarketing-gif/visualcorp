@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { ClipboardPaste, FileImage, ImagePlus, LoaderCircle, Upload } from 'lucide-react';
+import { ClipboardPaste, FileImage, ImagePlus, LoaderCircle, Trash2, Upload } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { formatMarketingFileSize, prepareMarketingImage } from './marketingImageUtils';
 import './marketing-post-artwork.css';
@@ -27,8 +27,12 @@ type Props = {
   post: MarketingArtworkPost;
   asset?: MarketingArtworkAsset;
   canEdit: boolean;
-  variant: 'overview' | 'week' | 'compact';
-  onSaved: () => void;
+  canDelete?: boolean;
+  variant: 'overview' | 'week' | 'compact' | 'detail' | 'editor';
+  draftFile?: File | null;
+  isDraft?: boolean;
+  onDraftFileChange?: (file: File | null) => void;
+  onSaved: () => void | Promise<void>;
 };
 
 function imagesFromClipboard(clipboardData: DataTransfer | null): File[] {
@@ -46,6 +50,24 @@ function imagesFromClipboard(clipboardData: DataTransfer | null): File[] {
     .filter((file): file is File => Boolean(file));
 }
 
+async function readClipboardImages(): Promise<File[] | null> {
+  if (!navigator.clipboard?.read) return null;
+  try {
+    const items = await navigator.clipboard.read();
+    const files: File[] = [];
+    for (const [index, item] of items.entries()) {
+      const type = item.types.find((candidate) => candidate.startsWith('image/'));
+      if (!type) continue;
+      const blob = await item.getType(type);
+      const extension = type.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
+      files.push(new File([blob], `portapapeles-${Date.now()}-${index + 1}.${extension}`, { type, lastModified: Date.now() }));
+    }
+    return files;
+  } catch {
+    return null;
+  }
+}
+
 function fileExtension(name: string) {
   const dot = name.lastIndexOf('.');
   return dot > -1 ? name.slice(dot + 1).toLowerCase() : '';
@@ -56,40 +78,67 @@ function imageFolder(date?: string) {
   return `Campanas_y_publicaciones/${month ? `${month.slice(0, 4)}/${month}` : 'Por_programar'}`;
 }
 
-export function MarketingPostArtwork({ organizationId, post, asset, canEdit, variant, onSaved }: Props) {
+export function MarketingPostArtwork({ organizationId, post, asset, canEdit, canDelete, variant, draftFile = null, isDraft = false, onDraftFileChange, onSaved }: Props) {
   const id = useId();
   const zoneRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const uploadLock = useRef(false);
   const [previewUrl, setPreviewUrl] = useState('');
+  const [draftPreviewUrl, setDraftPreviewUrl] = useState('');
   const [previewFailed, setPreviewFailed] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const canUpload = Boolean(supabase && canEdit && organizationId);
   const usableAsset = asset?.storage_status === 'supabase_storage' && asset.rel_path.startsWith(BUCKET_PREFIX);
+  const canRemoveAsset = Boolean(supabase && canDelete && usableAsset && asset);
+  const canRemoveImage = canRemoveAsset || Boolean(draftFile && onDraftFileChange);
+
+  useEffect(() => {
+    if (!draftFile) {
+      setDraftPreviewUrl('');
+      return undefined;
+    }
+    const url = URL.createObjectURL(draftFile);
+    setDraftPreviewUrl(url);
+    setPreviewFailed(false);
+    return () => URL.revokeObjectURL(url);
+  }, [draftFile]);
 
   useEffect(() => {
     if (!supabase || !asset || !usableAsset) {
       setPreviewUrl('');
       setPreviewFailed(false);
+      setPreviewLoading(false);
       return undefined;
     }
 
     let active = true;
     let interval = 0;
     let observer: IntersectionObserver | undefined;
+    setPreviewUrl('');
+    setPreviewFailed(false);
     const refreshUrl = async () => {
-      const objectPath = asset.rel_path.slice(BUCKET_PREFIX.length);
-      const { data, error: signedUrlError } = await supabase.storage.from(BUCKET).createSignedUrl(objectPath, 3600);
-      if (!active) return;
-      if (signedUrlError) {
+      setPreviewLoading(true);
+      try {
+        const objectPath = asset.rel_path.slice(BUCKET_PREFIX.length);
+        const { data, error: signedUrlError } = await supabase.storage.from(BUCKET).createSignedUrl(objectPath, 3600);
+        if (!active) return;
+        if (signedUrlError) {
+          setPreviewFailed(true);
+          setPreviewLoading(false);
+          return;
+        }
+        setPreviewUrl(data.signedUrl);
+        setPreviewFailed(false);
+      } catch {
+        if (!active) return;
         setPreviewFailed(true);
-        return;
+      } finally {
+        if (active) setPreviewLoading(false);
       }
-      setPreviewUrl(data.signedUrl);
-      setPreviewFailed(false);
     };
     const start = () => {
       void refreshUrl();
@@ -200,7 +249,8 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
 
       const ratio = source.size > file.size ? ` · ${formatMarketingFileSize(source.size)} → ${formatMarketingFileSize(file.size)} (${Math.round((1 - file.size / source.size) * 100)}% menos)` : ` · ${formatMarketingFileSize(file.size)}${prepared.optimized ? ' optimizada' : ' · formato original conservado'}`;
       setMessage(`Imagen guardada en esta publicación${ratio}.`);
-      onSaved();
+      await onSaved();
+      if (draftFile && onDraftFileChange) onDraftFileChange(null);
     } catch (cause: unknown) {
       let cleanupNote = '';
       if (indexedAssetId) {
@@ -235,7 +285,67 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
     }
   };
 
+  const removeImage = async () => {
+    if (draftFile && onDraftFileChange) {
+      onDraftFileChange(null);
+      setError('');
+      setMessage('Vista previa retirada. La imagen guardada, si existía, se conserva.');
+      return;
+    }
+    if (!canRemoveAsset || !supabase || !asset || !usableAsset || busy || uploadLock.current) return;
+    const accepted = window.confirm(
+      `¿Quitar la imagen de “${post.title || 'esta publicación'}”? Si no está vinculada a otras publicaciones, también se eliminará de la biblioteca privada. Esta acción no se puede deshacer.`,
+    );
+    if (!accepted) return;
+
+    uploadLock.current = true;
+    setBusy(true);
+    setError('');
+    setMessage('Quitando imagen…');
+    try {
+      const { data: linkedPosts, error: linksError } = await supabase
+        .from('marketing_post_assets')
+        .select('post_id')
+        .eq('organization_id', organizationId)
+        .eq('asset_id', asset.id);
+      if (linksError) throw new Error(`No se pudo comprobar dónde se usa la imagen: ${linksError.message}`);
+
+      const usedByOtherPosts = (linkedPosts || []).some((link) => link.post_id !== post.id);
+      if (!usedByOtherPosts) {
+        const objectPath = asset.rel_path.slice(BUCKET_PREFIX.length);
+        const { error: storageError } = await supabase.storage.from(BUCKET).remove([objectPath]);
+        if (storageError) throw new Error(`No se pudo eliminar la imagen del almacenamiento privado: ${storageError.message}`);
+      }
+
+      const { error: unlinkError } = await supabase.from('marketing_post_assets').delete()
+        .eq('organization_id', organizationId)
+        .eq('post_id', post.id)
+        .eq('asset_id', asset.id);
+      if (unlinkError) throw new Error(`No se pudo quitar la imagen de la publicación: ${unlinkError.message}`);
+
+      if (!usedByOtherPosts) {
+        const { error: indexError } = await supabase.from('marketing_assets').delete()
+          .eq('organization_id', organizationId)
+          .eq('id', asset.id)
+          .eq('storage_status', 'supabase_storage');
+        if (indexError) throw new Error(`La imagen salió del almacenamiento, pero no se pudo limpiar su ficha: ${indexError.message}`);
+      }
+
+      setMessage(usedByOtherPosts
+        ? 'Imagen quitada de esta publicación; se conserva porque está vinculada a otras.'
+        : 'Imagen eliminada de esta publicación y de la biblioteca.');
+      onSaved();
+    } catch (cause: unknown) {
+      setMessage('');
+      setError(cause instanceof Error ? cause.message : 'No se pudo quitar la imagen.');
+    } finally {
+      uploadLock.current = false;
+      setBusy(false);
+    }
+  };
+
   const handleFiles = (files: File[]) => {
+    if (!canUpload || busy) return;
     const image = files.find((file) => file.type.startsWith('image/'));
     if (!image) {
       setError('Suelta o pega una imagen para esta publicación.');
@@ -243,6 +353,16 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
     }
     if (files.filter((file) => file.type.startsWith('image/')).length > 1) {
       setError('Esta tarjeta guarda una imagen por vez. Selecciona o arrastra solo una imagen.');
+      return;
+    }
+    if (image.size > MAX_SOURCE_FILE_BYTES) {
+      setError('El archivo supera el máximo de 80 MB. Reduce su tamaño o resolución antes de continuar.');
+      return;
+    }
+    if (onDraftFileChange) {
+      onDraftFileChange(image);
+      setError('');
+      setMessage(isDraft ? 'Vista previa lista. Guarda la ficha y luego sube la imagen.' : 'Vista previa lista. Pulsa «Subir imagen» para vincularla.');
       return;
     }
     void saveImage(image);
@@ -261,6 +381,23 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
     handleFiles(files);
   };
 
+  const pasteFromSystemClipboard = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (!canUpload || busy) return;
+    zoneRef.current?.focus();
+    setError('');
+    const files = await readClipboardImages();
+    if (files === null) {
+      setMessage('Listo para pegar. Presiona Ctrl+V aquí si el navegador no permite leer el portapapeles.');
+      return;
+    }
+    if (!files.length) {
+      setMessage('No hay una imagen en el portapapeles. También puedes copiarla y presionar Ctrl+V aquí.');
+      return;
+    }
+    handleFiles(files);
+  };
+
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -268,12 +405,15 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
     handleFiles(Array.from(event.dataTransfer.files));
   };
 
-  const preview = previewUrl && !previewFailed;
-  const compactLabel = asset?.filename ? `Cambiar o añadir imagen a ${post.title}` : `Añadir imagen a ${post.title}`;
+  const preview = Boolean(draftPreviewUrl || (previewUrl && !previewFailed));
+  const imageUrl = draftPreviewUrl || previewUrl;
+  const pendingDraft = Boolean(draftFile && onDraftFileChange && !isDraft);
+  const compactLabel = pendingDraft ? `Subir imagen de ${post.title}` : preview ? `Cambiar imagen de ${post.title}` : `Añadir imagen a ${post.title}`;
+  const removeLabel = draftFile ? 'Descartar imagen pendiente' : `Quitar imagen de ${post.title || 'la publicación'}`;
 
   return <div
     ref={zoneRef}
-    className={`vc-marketing-post-artwork is-${variant}${dragOver ? ' is-drag-over' : ''}${preview ? ' has-image' : ''}${!canUpload ? ' is-readonly' : ''}`}
+    className={`vc-marketing-post-artwork is-${variant}${dragOver ? ' is-drag-over' : ''}${preview ? ' has-image' : ''}${pendingDraft ? ' has-pending-upload' : ''}${canRemoveImage ? ' has-remove-control' : ''}${!canUpload ? ' is-readonly' : ''}`}
     role="group"
     aria-label={`Imagen de ${post.title || 'la publicación'}`}
     aria-keyshortcuts="Control+V"
@@ -291,29 +431,35 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, var
     title={canUpload ? 'Enfoca este espacio y pega con Ctrl+V, arrastra una imagen o selecciónala' : asset?.filename || 'Sin imagen asociada'}
   >
     <input ref={inputRef} id={id} type="file" accept="image/*" hidden disabled={!canUpload || busy} onChange={(event) => { if (event.target.files) handleFiles(Array.from(event.target.files)); event.target.value = ''; }}/>
-    {preview ? <img src={previewUrl} alt={`Imagen asociada: ${asset?.filename || post.title}`} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)}/> : <div className="vc-marketing-post-artwork-empty">
-      {busy ? <LoaderCircle size={variant === 'compact' ? 13 : 22} className="vc-content-spin"/> : previewFailed ? <FileImage size={variant === 'compact' ? 13 : 22}/> : <ImagePlus size={variant === 'compact' ? 13 : 22}/>}
-      {variant !== 'compact' && <><b>{busy ? 'Procesando y subiendo…' : previewFailed ? 'No se pudo abrir la imagen' : canUpload ? 'Añade una imagen a esta publicación' : 'Sin imagen asociada'}</b><span>{canUpload ? 'Haz clic aquí y luego presiona Ctrl+V, o arrastra una imagen.' : 'Las imágenes vinculadas aparecerán en esta tarjeta'}</span></>}
+    {preview ? <img src={imageUrl} alt={draftFile ? `Vista previa pendiente: ${draftFile.name}` : `Imagen asociada: ${asset?.filename || post.title}`} loading="lazy" decoding="async" onError={() => { if (!draftPreviewUrl) setPreviewFailed(true); }}/> : <div className="vc-marketing-post-artwork-empty">
+      {busy || previewLoading ? <LoaderCircle size={variant === 'compact' ? 13 : 22} className="vc-content-spin"/> : previewFailed ? <FileImage size={variant === 'compact' ? 13 : 22}/> : <ImagePlus size={variant === 'compact' ? 13 : 22}/>}
+      {variant !== 'compact' && <><b>{busy ? 'Procesando y subiendo…' : previewLoading ? 'Cargando imagen…' : previewFailed ? 'No se pudo abrir la imagen' : canUpload ? 'Añade una imagen a esta publicación' : 'Sin imagen asociada'}</b><span>{previewLoading ? 'Preparando la vista previa de la biblioteca privada.' : canUpload ? 'Elige una imagen, arrástrala o pégala con Ctrl+V.' : 'Las imágenes vinculadas aparecerán en esta tarjeta'}</span></>}
     </div>}
-    {canUpload && !preview && variant !== 'compact' && <button
+    {canUpload && !previewLoading && variant !== 'compact' && (variant === 'editor' || !preview) && <button
       type="button"
       className="vc-marketing-post-artwork-paste"
       aria-label={`Preparar ${post.title} para pegar una imagen con Ctrl+V`}
       title="Haz clic aquí y después presiona Ctrl+V"
       disabled={busy}
-      onClick={(event) => {
-        event.stopPropagation();
-        zoneRef.current?.focus();
-        setError('');
-        setMessage('Listo para pegar. Presiona Ctrl+V.');
-      }}
+      onClick={(event) => { void pasteFromSystemClipboard(event); }}
     >
-      <ClipboardPaste size={variant === 'overview' ? 17 : 15}/>
-      <span>Pegar imagen</span>
+      <ClipboardPaste size={variant === 'overview' || variant === 'detail' ? 17 : 15}/>
+      <span>{draftFile ? 'Pegar otra' : variant === 'week' ? 'Pegar' : 'Pegar imagen'}</span>
       <kbd>Ctrl + V</kbd>
     </button>}
-    {canUpload && <button type="button" className="vc-marketing-post-artwork-browse" aria-label={compactLabel} title={compactLabel} disabled={busy} onClick={(event) => { event.stopPropagation(); inputRef.current?.click(); }}>
-      {busy ? <LoaderCircle size={14} className="vc-content-spin"/> : variant === 'compact' ? <ImagePlus size={14}/> : <><Upload size={14}/><span>Elegir imagen</span></>}
+    {canUpload && !previewLoading && <button type="button" className="vc-marketing-post-artwork-browse" aria-label={compactLabel} title={compactLabel} disabled={busy} onClick={(event) => { event.stopPropagation(); if (pendingDraft && draftFile) { void saveImage(draftFile); return; } inputRef.current?.click(); }}>
+      {busy ? <LoaderCircle size={14} className="vc-content-spin"/> : pendingDraft ? <><Upload size={14}/><span>Subir imagen</span></> : variant === 'compact' ? <ImagePlus size={14}/> : <><Upload size={14}/><span>{preview ? (variant === 'week' ? 'Cambiar' : 'Cambiar imagen') : (variant === 'week' ? 'Elegir' : 'Elegir imagen')}</span></>}
+    </button>}
+    {canRemoveImage && <button
+      type="button"
+      className="vc-marketing-post-artwork-remove"
+      aria-label={removeLabel}
+      title={draftFile ? 'Descartar la vista previa; la imagen guardada se conserva.' : 'Quitar imagen de esta publicación'}
+      disabled={busy}
+      onClick={(event) => { event.stopPropagation(); void removeImage(); }}
+    >
+      <Trash2 size={variant === 'compact' ? 12 : 14}/>
+      {variant !== 'compact' && <span>{draftFile ? 'Descartar' : variant === 'week' ? 'Quitar' : 'Quitar imagen'}</span>}
     </button>}
     {(message || error) && variant !== 'compact' && <small className={`vc-marketing-post-artwork-message${error ? ' is-error' : ''}`} role={error ? 'alert' : 'status'}>{error || message}</small>}
     {(message || error) && variant === 'compact' && <span className="vc-marketing-post-artwork-sr-only" role={error ? 'alert' : 'status'}>{error || message}</span>}
