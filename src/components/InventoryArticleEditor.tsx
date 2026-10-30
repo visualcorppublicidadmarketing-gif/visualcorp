@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { ArrowLeftRight, Boxes, Check, ChevronDown, Image as ImageIcon, MapPin, Package, Trash2, X } from 'lucide-react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { ArrowLeftRight, Boxes, Check, ChevronDown, ClipboardPaste, Image as ImageIcon, MapPin, Package, Trash2, Upload, X } from 'lucide-react';
 import type { InventorySpecificationDraft } from './InventorySpecificationFields';
 import { InventorySpecificationFields } from './InventorySpecificationFields';
 import { InventoryOptionPicker } from './InventoryOptionPicker';
@@ -30,6 +30,7 @@ type Draft = {
   itemType: string;
   tags: string;
   referenceImageUrl: string;
+  referenceImageFile?: File | null;
   customFields: Record<string, unknown>;
   brandScope: string;
   variantAttributes: InventorySpecificationDraft & Record<string, unknown>;
@@ -38,6 +39,7 @@ type Draft = {
 
 type Props = {
   value: Draft;
+  saving: boolean;
   onChange: (value: Draft) => void;
   onClose: () => void;
   onSave: (event: FormEvent<HTMLFormElement>) => void;
@@ -52,12 +54,40 @@ type Props = {
 };
 
 const stringValue = (value: unknown) => typeof value === 'string' ? value : value == null ? '' : String(value);
+const referenceImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
-export function InventoryArticleEditor({ value, onChange, onClose, onSave, onDelete, onAssignBranch, onTransfer, branches, libraryProducts, libraryCount, itemTypeOptions, tagOptions }: Props) {
+function imagesFromClipboard(clipboardData: DataTransfer): File[] {
+  const directFiles = Array.from(clipboardData.files || []).filter((file) => referenceImageTypes.has(file.type));
+  if (directFiles.length) return directFiles;
+  return Array.from(clipboardData.items || []).filter((item) => referenceImageTypes.has(item.type)).map((item, index) => {
+    const blob = item.getAsFile();
+    return blob ? new File([blob], `inventario-portapapeles-${Date.now()}-${index + 1}.${blob.type.split('/')[1] || 'png'}`, { type: blob.type, lastModified: Date.now() }) : null;
+  }).filter((file): file is File => Boolean(file));
+}
+
+async function readClipboardImage(): Promise<File | null> {
+  if (!navigator.clipboard?.read) return null;
+  try {
+    const items = await navigator.clipboard.read();
+    for (const [index, item] of items.entries()) {
+      const type = item.types.find((candidate) => referenceImageTypes.has(candidate));
+      if (!type) continue;
+      const blob = await item.getType(type);
+      return new File([blob], `inventario-portapapeles-${Date.now()}-${index + 1}.${type.split('/')[1]}`, { type, lastModified: Date.now() });
+    }
+  } catch { /* El navegador puede exigir pegar con Ctrl+V en la zona enfocada. */ }
+  return null;
+}
+
+export function InventoryArticleEditor({ value, saving, onChange, onClose, onSave, onDelete, onAssignBranch, onTransfer, branches, libraryProducts, libraryCount, itemTypeOptions, tagOptions }: Props) {
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryTerm, setLibraryTerm] = useState('');
   const [branchSelection, setBranchSelection] = useState(value.sourceItem?.branch || '');
   const [deleteRequested, setDeleteRequested] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [imageFeedback, setImageFeedback] = useState('');
+  const [draggingImage, setDraggingImage] = useState(false);
 
   useEffect(() => {
     setBranchSelection(value.sourceItem?.branch || '');
@@ -67,12 +97,19 @@ export function InventoryArticleEditor({ value, onChange, onClose, onSave, onDel
   }, [value.remoteItemId, value.variantId]);
 
   useEffect(() => {
+    if (!value.referenceImageFile) { setImagePreviewUrl(''); return; }
+    const previewUrl = URL.createObjectURL(value.referenceImageFile);
+    setImagePreviewUrl(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [value.referenceImageFile]);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { if (libraryOpen) setLibraryOpen(false); else onClose(); }
+      if (event.key === 'Escape' && !saving) { if (libraryOpen) setLibraryOpen(false); else onClose(); }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [libraryOpen, onClose]);
+  }, [libraryOpen, onClose, saving]);
 
   const update = (patch: Partial<Draft>) => onChange({ ...value, ...patch });
   const patchCustom = (key: string, next: string) => update({ customFields: { ...(value.customFields || {}), [key]: next } });
@@ -82,8 +119,30 @@ export function InventoryArticleEditor({ value, onChange, onClose, onSave, onDel
   const filteredProducts = libraryProducts.filter((product) => `${product.name} ${product.images.map((image) => image.label).join(' ')}`.toLocaleLowerCase('es').includes(libraryTerm.trim().toLocaleLowerCase('es')));
   const currentImage = libraryProducts.flatMap((product) => product.images).find((image) => image.path === value.referenceImageUrl);
   const selectedTags = value.tags.split(',').map((tag) => tag.trim()).filter(Boolean);
+  const imageSource = imagePreviewUrl || value.referenceImageUrl;
+  const addReferenceImage = (files: File[]) => {
+    if (saving) return;
+    const image = files.find((file) => referenceImageTypes.has(file.type));
+    if (!image) { setImageFeedback('Elige o copia una imagen PNG, JPG o WebP.'); return; }
+    if (image.size > 80 * 1024 * 1024) { setImageFeedback('La imagen supera 80 MB. Reduce su tamaño antes de añadirla.'); return; }
+    update({ referenceImageFile: image, referenceImageUrl: '' });
+    setImageFeedback('Vista previa lista. Guarda la ficha para subir la imagen.');
+  };
+  const handleImagePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    if (saving) return;
+    const files = imagesFromClipboard(event.clipboardData);
+    if (!files.length) return;
+    event.preventDefault(); event.stopPropagation(); addReferenceImage(files);
+  };
+  const pasteFromSystemClipboard = async () => {
+    if (saving) return;
+    setImageFeedback('');
+    const image = await readClipboardImage();
+    if (image) { addReferenceImage([image]); return; }
+    setImageFeedback(navigator.clipboard?.read ? 'No se encontró una imagen. Copia una captura o imagen y prueba Ctrl + V.' : 'Haz clic en esta zona y pega con Ctrl + V.');
+  };
 
-  return <div className="inventory-modal-backdrop inventory-editor-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !libraryOpen) onClose(); }}>
+  return <div className="inventory-modal-backdrop inventory-editor-backdrop" role="presentation" onMouseDown={(event) => { if (!saving && event.target === event.currentTarget && !libraryOpen) onClose(); }}>
     <form className="inventory-article-editor" onSubmit={onSave} role="dialog" aria-modal="true" aria-labelledby="inventory-editor-title" aria-describedby="inventory-editor-description">
       <header className="inventory-editor-header">
         <div className="inventory-editor-hero-icon"><Package size={19}/></div>
@@ -93,7 +152,7 @@ export function InventoryArticleEditor({ value, onChange, onClose, onSave, onDel
           <p id="inventory-editor-description">Organiza los datos del producto. El stock se controla por sucursal y conserva su historial.</p>
           <div className="inventory-editor-identifiers"><span>{sourceItem?.sku || 'Código pendiente'}</span>{sourceItem?.variant && <span>{sourceItem.variant}</span>}<span className={`inventory-editor-stock-state${sourceItem?.sourceStatus ? ' is-pending' : ''}`}>{sourceItem?.sourceStatus ? 'Conteo pendiente' : `${sourceItem?.quantity ?? 0} ${sourceItem?.unit || 'unidades'} contadas`}</span></div>
         </div>
-        <button className="icon-button inventory-editor-close" type="button" aria-label="Cerrar ficha" onClick={onClose}><X size={18}/></button>
+        <button className="icon-button inventory-editor-close" type="button" aria-label="Cerrar ficha" disabled={saving} onClick={onClose}><X size={18}/></button>
       </header>
 
       <div className="inventory-editor-content">
@@ -113,10 +172,15 @@ export function InventoryArticleEditor({ value, onChange, onClose, onSave, onDel
           </section>
 
           <section className="inventory-editor-section">
-            <div className="inventory-editor-section-title"><span className="inventory-editor-section-icon"><ImageIcon size={16}/></span><div><h3>Imagen de referencia</h3><p>Elige una imagen indexada para reconocer visualmente el artículo.</p></div><span className="inventory-editor-library-count">{libraryCount} imágenes · {libraryProducts.length} productos</span></div>
-            {value.referenceImageUrl ? <div className="inventory-editor-current-image"><img src={value.referenceImageUrl} alt={`Referencia de ${sourceItem?.name || 'artículo'}`}/><div><b>{currentImage?.label || 'Imagen seleccionada'}</b><small>{currentImage?.series || 'Referencia visual · no confirma marca ni existencias'}</small><button type="button" className="inventory-editor-clear-image" onClick={() => update({ referenceImageUrl: '' })}>Quitar imagen</button></div></div> : <div className="inventory-editor-image-empty"><ImageIcon size={19}/><span>Sin imagen seleccionada</span></div>}
+            <div className="inventory-editor-section-title"><span className="inventory-editor-section-icon"><ImageIcon size={16}/></span><div><h3>Imagen de referencia</h3><p>Elige una foto de la biblioteca o añade una desde tu equipo o portapapeles.</p></div><span className="inventory-editor-library-count">{libraryCount} imágenes · {libraryProducts.length} productos</span></div>
+            <div className={`inventory-editor-image-zone${draggingImage ? ' is-dragging' : ''}`} tabIndex={0} role="group" aria-label="Imagen de referencia" onPaste={handleImagePaste} onDragOver={(event) => { event.preventDefault(); setDraggingImage(true); }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDraggingImage(false); }} onDrop={(event) => { event.preventDefault(); setDraggingImage(false); addReferenceImage(Array.from(event.dataTransfer.files)); }}>
+              {imageSource ? <div className="inventory-editor-current-image"><img src={imageSource} alt={`Referencia de ${sourceItem?.name || 'artículo'}`}/><div><b>{value.referenceImageFile ? 'Imagen lista para subir' : currentImage?.label || 'Imagen seleccionada'}</b><small>{value.referenceImageFile ? value.referenceImageFile.name : currentImage?.series || 'Referencia visual · no confirma marca ni existencias'}</small></div></div> : <div className="inventory-editor-image-empty"><ImageIcon size={19}/><span>Sin imagen seleccionada</span></div>}
+            <div className="inventory-editor-image-actions"><input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden disabled={saving} onChange={(event) => { if (event.currentTarget.files) addReferenceImage(Array.from(event.currentTarget.files)); event.currentTarget.value = ''; }}/><button type="button" className="button button-outline" disabled={saving} onClick={() => imageInputRef.current?.click()}><Upload size={14}/>{imageSource ? 'Subir otra' : 'Subir imagen'}</button><button type="button" className="button button-outline" disabled={saving} onClick={() => { void pasteFromSystemClipboard(); }}><ClipboardPaste size={14}/>{imageSource ? 'Pegar otra' : 'Pegar imagen'}</button>{imageSource && <button type="button" className="inventory-editor-clear-image" disabled={saving} onClick={() => { update({ referenceImageUrl: '', referenceImageFile: null }); setImageFeedback('Imagen quitada de la ficha.'); }}>Quitar imagen</button>}</div>
+              {imageFeedback && <small className="inventory-editor-image-feedback" role="status">{imageFeedback}</small>}
+              <span className="inventory-editor-image-hint">También puedes pegar con Ctrl + V aquí o arrastrar una imagen. · PNG, JPG o WebP · Máximo 5 MB al guardar.</span>
+            </div>
             <button type="button" className="inventory-editor-library-toggle" aria-expanded={libraryOpen} onClick={() => { setLibraryOpen((current) => !current); setLibraryTerm(''); }}><ImageIcon size={15}/>{libraryOpen ? 'Cerrar biblioteca de imágenes' : 'Buscar en la biblioteca'}<ChevronDown size={14} className={libraryOpen ? 'is-open' : ''}/></button>
-            {libraryOpen && <div className="inventory-editor-library"><label className="inventory-editor-search"><ImageIcon size={15}/><input autoFocus value={libraryTerm} onChange={(event) => setLibraryTerm(event.target.value)} placeholder="Buscar papel, tinta, vinil…"/><span>{filteredProducts.length} productos</span></label><div className="inventory-editor-library-list">{filteredProducts.map((product) => <article key={product.id}><h4>{product.name}<small>{product.images.length} imágenes</small></h4><div className="inventory-editor-image-options">{product.images.map((image) => <button type="button" key={image.path} aria-label={`Usar imagen ${image.label} de ${product.name}`} className={value.referenceImageUrl === image.path ? 'is-selected' : ''} onClick={() => { update({ referenceImageUrl: image.path }); setLibraryOpen(false); }}><img src={image.path} alt="" loading="lazy"/><span>{image.label}</span>{value.referenceImageUrl === image.path && <i><Check size={13}/></i>}</button>)}</div></article>)}{!filteredProducts.length && <p className="inventory-editor-library-empty">No hay coincidencias. Prueba otra palabra.</p>}</div></div>}
+            {libraryOpen && <div className="inventory-editor-library"><label className="inventory-editor-search"><ImageIcon size={15}/><input autoFocus value={libraryTerm} onChange={(event) => setLibraryTerm(event.target.value)} placeholder="Buscar papel, tinta, vinil…"/><span>{filteredProducts.length} productos</span></label><div className="inventory-editor-library-list">{filteredProducts.map((product) => <article key={product.id}><h4>{product.name}<small>{product.images.length} imágenes</small></h4><div className="inventory-editor-image-options">{product.images.map((image) => <button type="button" key={image.path} aria-label={`Usar imagen ${image.label} de ${product.name}`} className={value.referenceImageUrl === image.path ? 'is-selected' : ''} onClick={() => { update({ referenceImageUrl: image.path, referenceImageFile: null }); setImageFeedback('Imagen de la biblioteca seleccionada.'); setLibraryOpen(false); }}><img src={image.path} alt="" loading="lazy"/><span>{image.label}</span>{value.referenceImageUrl === image.path && <i><Check size={13}/></i>}</button>)}</div></article>)}{!filteredProducts.length && <p className="inventory-editor-library-empty">No hay coincidencias. Prueba otra palabra.</p>}</div></div>}
           </section>
 
           <section className="inventory-editor-section">
@@ -134,13 +198,13 @@ export function InventoryArticleEditor({ value, onChange, onClose, onSave, onDel
         </AnimatedList>
 
         <details className="inventory-editor-help"><summary>¿Qué ocurre al guardar?</summary><p>Se actualizan la ficha y sus especificaciones. El conteo físico solo cambia cuando alguien registra un conteo o movimiento autorizado.</p></details>
-        {deleteRequested && <div className="inventory-editor-delete-confirm" role="alert"><Trash2 size={16}/><span><b>¿Retirar este artículo del catálogo activo?</b><small>Se conservarán conteos, movimientos y registros vinculados para auditoría.</small></span><button type="button" className="button button-danger" onClick={() => onDelete(sourceItem, true)}>Sí, eliminar</button><button type="button" className="button button-outline" onClick={() => setDeleteRequested(false)}>Cancelar</button></div>}
+        {deleteRequested && <div className="inventory-editor-delete-confirm" role="alert"><Trash2 size={16}/><span><b>¿Retirar este artículo del catálogo activo?</b><small>Se conservarán conteos, movimientos y registros vinculados para auditoría.</small></span><button type="button" className="button button-danger" disabled={saving} onClick={() => onDelete(sourceItem, true)}>Sí, eliminar</button><button type="button" className="button button-outline" disabled={saving} onClick={() => setDeleteRequested(false)}>Cancelar</button></div>}
       </div>
 
       <footer className="inventory-editor-footer">
         <button type="button" className="inventory-editor-delete-link" onClick={() => setDeleteRequested(true)}><Trash2 size={14}/>Eliminar del catálogo</button>
         <span>Las existencias y el historial se conservan.</span>
-        <div><button type="button" className="button button-outline" onClick={onClose}>Cancelar</button><button type="submit" className="button button-dark"><Check size={15}/>Guardar cambios</button></div>
+        <div><button type="button" className="button button-outline" disabled={saving} onClick={onClose}>Cancelar</button><button type="submit" className="button button-dark" disabled={saving}><Check size={15}/>{saving ? 'Guardando…' : 'Guardar cambios'}</button></div>
       </footer>
     </form>
   </div>;

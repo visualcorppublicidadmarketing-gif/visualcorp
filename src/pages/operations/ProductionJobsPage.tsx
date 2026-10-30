@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowRight, CalendarClock, Check, CircleCheck, Clipboard
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
 import { Sheet } from '../../components/ui/OperationalKit';
+import { CommercialDocumentDetails } from '../../components/CommercialDocumentDetails';
 import { supabase } from '../../lib/supabaseClient';
 import { ProductionArtworkReference } from './ProductionArtworkReference';
 import { ProductionQueueSkeleton, ProductionQueueSummary, ProductionStageProgress } from './ProductionQueueComponents';
@@ -15,7 +16,7 @@ import './production-queue-components.css';
 type AreaSlug = 'asesoria' | 'diseno' | 'impresion' | 'sublimacion' | 'laser' | 'taller';
 type StepStatus = 'waiting' | 'ready' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
 type Job = {
-  id: string; organization_id: string; branch_id: string; advisor_id: string | null;
+  id: string; organization_id: string; branch_id: string; sale_id: string; advisor_id: string | null;
   workflow_code: string;
   sale_code: string | null; customer_name: string | null; customer_phone: string | null;
   title: string; specifications: Record<string, unknown> | null; spec_version: number; review_from_version: number | null;
@@ -580,7 +581,7 @@ export function ProductionJobsPage() {
     {!loading && !loadError && visible.length > 0 && <ProductionQueueViews areaSlug={area.slug} areaName={area.name} items={viewItems} today={todayKey()} renderCard={renderQueueCard} onOpen={(item) => openJob(item.original)}/>}
     {!loading && !loadError && rows.length >= queueLimit && <div className="pj-count"><span>Se muestran los {queueLimit} trabajos más recientes de esta área.</span> <button className="button button-outline" type="button" onClick={() => setQueueLimit((value) => value + 150)}>Cargar más</button></div>}
     <div className="pj-detail-modal"><Sheet open={Boolean(selectedJob)} onOpenChange={(open) => { if (!open) closeJob(); }} title={selectedJob?.sale_code ? `Trabajo ${selectedJob.sale_code}` : 'Ficha de trabajo'} description={selectedJob ? selectedJob.customer_name || 'Seguimiento de producción' : undefined}><div className="pj-detail">
-      {selectedJob && <><div className="pj-detail-hero"><span className="pj-card-code">ORDEN DE TRABAJO · VERSIÓN {selectedJob.spec_version}</span><h3>{selectedJob.title}</h3><p>Las indicaciones se comparten entre asesoría y producción. Cada cambio queda asociado a la ficha.</p></div><dl className="pj-detail-facts"><div><dt>Cliente</dt><dd>{selectedJob.customer_name || 'Por consultar'}</dd></div><div><dt>Teléfono</dt><dd>{selectedJob.customer_phone || 'Por consultar'}</dd></div><div><dt>Venta</dt><dd>{selectedJob.sale_code || 'Sin código'}</dd></div><div><dt>Fecha prevista</dt><dd>{stamp(selectedJob.due_at)}</dd></div></dl>
+      {selectedJob && <><div className="pj-detail-hero"><span className="pj-card-code">ORDEN DE TRABAJO · VERSIÓN {selectedJob.spec_version}</span><h3>{selectedJob.title}</h3><p>Las indicaciones se comparten entre asesoría y producción. Cada cambio queda asociado a la ficha.</p></div><dl className="pj-detail-facts"><div><dt>Cliente</dt><dd>{selectedJob.customer_name || 'Por consultar'}</dd></div><div><dt>Teléfono</dt><dd>{selectedJob.customer_phone || 'Por consultar'}</dd></div><div><dt>Venta</dt><dd>{selectedJob.sale_code || 'Sin código'}</dd></div><div><dt>Fecha prevista</dt><dd>{stamp(selectedJob.due_at)}</dd></div></dl><section className="pj-commercial-detail" aria-label="Ficha comercial completa de la venta"><div className="pj-commercial-detail-heading"><span className="eyebrow">VENTA VINCULADA</span><p>Los detalles comerciales se cargan con los permisos de tu perfil.</p></div><CommercialDocumentDetails kind="sale" documentId={selectedJob.sale_id} compact/></section>
       {selectedJob.status === 'needs_review' && <ProductionSpecReview
         key={`${selectedJob.id}:${selectedJob.spec_version}`}
         jobId={selectedJob.id}
