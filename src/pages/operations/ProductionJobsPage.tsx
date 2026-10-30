@@ -1,5 +1,779 @@
-YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éíÛ®øõ:-jZ.¶›­–)Ş³V–×÷'B²W6TVffV7BÂW6TÖVÖòÂW6U7FFRÂG—Rö–çFW$WfVçB2&V7Eö–çFW$WfVçBÒg&öÒw&V7Bs°Ğ¦–×÷'B²Æ–æ²Âæf–vFRÂW6U&×2ÂW6U6V&6…&×2Òg&öÒw&V7B×&÷WFW"ÖFöÒs°Ğ¦–×÷'B²ÆW'EG&–ævÆRÂ'&÷u&–v‡BÂ6ÆVæF$6Æö6²Â6†V6²Â6—&6ÆT6†V6²Â6Æ—&ö&D6†V6²Â6Æ—&ö&DÆ—7BÂ6Æö6³2Â†ÖÖW"Â6¶vT6†V6²ÂVåFööÂÂÆ’Â&–çFW"Â&Vg&W6„7rÂ&÷FFT67rÂ66äÆ–æRÂ6V&6‚Â6†–VÆD6†V6²Â6†—'BÂW6W%&÷VæBÒg&öÒvÇV6–FR×&V7Bs°Ğ¦–×÷'B²g&ÖRÂvT†VF–ærÒg&öÒrââòââööÆ–÷WBs°Ğ¦–×÷'B²W6TWF‚Òg&öÒrââòââöWF‚ôWF…&÷f–FW"s°Ğ¦–×÷'B²6†VWBÒg&öÒrââòââö6ö×öæVçG2÷V’ô÷W&F–öæÄ¶—Bs°Ğ¦–×÷'B²7W&6RÒg&öÒrââòââöÆ–"÷7W&6T6Æ–VçBs°Ğ¦–×÷'B²&öGV7F–öä'Gv÷&µ&VfW&Væ6RÒg&öÒrâõ&öGV7F–öä'Gv÷&µ&VfW&Væ6Rs°Ğ¦–×÷'B²&öGV7F–öåVWVU6¶VÆWFöâÂ&öGV7F–öåVWVU7VÖÖ'’Â&öGV7F–öå7FvU&öw&W72Òg&öÒrâõ&öGV7F–öåVWVT6ö×öæVçG2s°Ğ¦–×÷'B²&öGV7F–öåVWVUf–Ww2ÂG—R&öGV7F–öåVWVUf–Wt—FVÒÒg&öÒrâõ&öGV7F–öåVWVUf–Ww2s°Ğ¦–×÷'B²&öGV7F–öå7V5&Wf–WrÒg&öÒrâõ&öGV7F–öå7V5&Wf–Wrs°Ğ¦–×÷'Brâ÷&öGV7F–öâÖ¦ö'2æ772s°Ğ¦–×÷'Brâ÷&öGV7F–öâ×VWVRÖ6ö×öæVçG2æ772s°Ğ Ğ§G—R&V6ÇVrÒv6W6÷&–rÂvF—6VæòrÂv–×&W6–öârÂw7V&Æ–Ö6–öârÂvÆ6W"rÂwFÆÆW"s°Ğ§G—R7FW7FGW2Òwv—F–ærrÂw&VG’rÂv–å÷&öw&W72rÂv&Æö6¶VBrÂv6ö×ÆWFVBrÂv6æ6VÆÆVBs°Ğ§G—R¦ö"Ò°Ğ¢–C¢7G&–æs²÷&væ—¦F–öåö–C¢7G&–æs²'&æ6…ö–C¢7G&–æs²Gf—6÷%ö–C¢7G&–ærÂçVÆÃ°Ğ¢v÷&¶fÆ÷uö6öFS¢7G&–æs°Ğ¢6ÆUö6öFS¢7G&–ærÂçVÆÃ²7W7FöÖW%öæÖS¢7G&–ærÂçVÆÃ²7W7FöÖW%÷†öæS¢7G&–ærÂçVÆÃ°Ğ¢F—FÆS¢7G&–æs²7V6–f–6F–öç3¢&V6÷&CÇ7G&–ærÂVæ¶æ÷vãâÂçVÆÃ²7V5÷fW'6–öã¢çVÖ&W#²&Wf–Wuög&öÕ÷fW'6–öã¢çVÖ&W"ÂçVÆÃ°Ğ¢&÷fÅ÷&WV—&VC¢&ööÆVã²'Gv÷&µ÷&Wf–Wu÷7FGW3¢væ÷E÷&WV—&VBrÂvv—F–æuö'BrÂvv—F–æu÷&Wf–WrrÂv6†ævW5÷&WVW7FVBrÂv&÷fVBs°Ğ¢'Gv÷&µ÷&Wf—6–öã¢çVÖ&W#²'Gv÷&µ÷&VfW&Væ6S¢7G&–æs²'Gv÷&µ÷7V&Ö—GFVEöC¢7G&–ærÂçVÆÃ²'Gv÷&µ÷&Wf–WvVEöC¢7G&–ærÂçVÆÃ°Ğ¢7FGW3¢7G&–æs²GVUöC¢7G&–ærÂçVÆÃ²gVÆf–ÆÆÖVçE÷7FGW3ó¢7G&–æs²gVÆf–ÆÆÖVçEöGVUöCó¢7G&–ærÂçVÆÃ°Ğ¢gVÆf–ÆÆÖVçEöæ÷FSó¢7G&–æs²7&VFVEöC¢7G&–æs²WFFVEöC¢7G&–æs°Ğ§Ó°Ğ§G—R7FWÒ°Ğ¢–C¢7G&–æs²¦ö%ö–C¢7G&–æs²7FWö¶W“¢7G&–æs²7FWö÷&FW#¢çVÖ&W#²&Vö–C¢7G&–æs°Ğ¢F—FÆS¢7G&–æs²7FGW3¢7FW7FGW3²76–væVE÷Fó¢7G&–ærÂçVÆÃ²GVUöC¢7G&–ærÂçVÆÃ°Ğ¢æ÷FW3¢7G&–ærÂçVÆÃ²7&VFVEöC¢7G&–æs²WFFVEöC¢7G&–æs²W7F–ÖFVEöÖ–çWFW3ó¢çVÖ&W#°Ğ¢&WV—&VÖVçG3ó¢²&Vf÷&U÷7F'Có¢7G&–æuµÓ²&Vf÷&Uö6ö×ÆWFSó¢7G&–æuµÒÓ°Ğ¢&VF–æW75÷&V6öç3ó¢'&“Ç²6öFS¢7G&–æs²ÖW76vS¢7G&–ærÓã°Ğ¢†æFöfe÷7FGW3ó¢væ÷E÷&WV—&VBrÂwVæF–ærrÂv66WFVBs²&V6V—fVEö'“ó¢7G&–ærÂçVÆÃ²&V6V—fVEöCó¢7G&–ærÂçVÆÃ°Ğ¢GVUöEö—5öÖçVÃó¢&ööÆVã°Ğ§Ó°Ğ§G—R7FW6†V6²Ò²–C¢7G&–æs²7FWö–C¢7G&–æs²6†V6µö¶W“¢7G&–æs²F—FÆS¢7G&–æs²&WV—&VC¢&ööÆVã²&WV—&W5öWf–FVæ6S¢&ööÆVã²6ö×ÆWFVEöC¢7G&–ærÂçVÆÃ²Wf–FVæ6U÷W&Ã¢7G&–æs²æ÷FS¢7G&–ærÓ°Ğ§G—R&öGV7F–öäÆ÷BÒ²–C¢7G&–æs²&VçEöÆ÷Eö–C¢7G&–ærÂçVÆÃ²Æ&VÃ¢7G&–æs²VçF—G“¢çVÖ&W#²Væ—C¢7G&–æs²7FGW3¢7G&–æs²GVUöC¢7G&–ærÂçVÆÃ²æ÷FW3¢7G&–æs²&öGV6VEöC¢7G&–ærÂçVÆÃ²VÆ—G•öC¢7G&–ærÂçVÆÃ²FVÆ—fW&VEöC¢7G&–ærÂçVÆÃ²–ç7FÆÆVEöC¢7G&–ærÂçVÆÂÓ°Ğ§G—R¦ö$WfVçBÒ°Ğ¢–C¢çVÖ&W#²¦ö%ö–C¢7G&–æs²7FWö–C¢7G&–ærÂçVÆÃ²WfVçE÷G—S¢7G&–æs°Ğ¢FWF–Ç3¢&V6÷&CÇ7G&–ærÂVæ¶æ÷vãâÂçVÆÃ²7&VFVEö'“¢7G&–ærÂçVÆÃ²7&VFVEöC¢7G&–æs°Ğ§Ó°Ğ§G—R&V&÷rÒ²–C¢7G&–æs²6öFS¢7G&–æs²æÖS¢7G&–ærÓ°Ğ§G—R76–væVRÒ²W6W%ö–C¢7G&–æs²F—7Æ•öæÖS¢7G&–ærÓ°Ğ§G—RVWVT—FVÒÒ²¦ö#¢¦ö#²7FW¢7FWÂçVÆÃ²7W'&VçE7FW¢7FWÂçVÆÂÓ°Ğ§G—Rf–ÇFW"ÒvÆÂrÂvÖ–æRrÂwVæ76–væVBrÂwFöF’rÂv÷fW&GVRrÂv&Æö6¶VBs°Ğ¦6öç7Btõ$´dÄõuô4„ô”4U2Ò°Ğ¢²6öFS¢væöæRrÂÆ&VÃ¢tVçG&VvF—&V7FrÒÀĞ¢²6öFS¢w&–çBrÂÆ&VÃ¢tF—6\;ò(i"–×&W6œ;6ârÒÀĞ¢²6öFS¢vÆ6W"rÂÆ&VÃ¢tF—6\;ò(i"6÷'FRÌ:6W"rÒÀĞ¢²6öFS¢w6–vârÂÆ&VÃ¢tF—6\;ò(i"–×&W6œ;6â(i"FÆÆW"rÒÀĞ¢²6öFS¢w6–våöÖV7W&RrÂÆ&VÃ¢uf—6—FFRÖVF–F2(i"F—6\;ò(i"–×&W6œ;6â(i"FÆÆW"rÒÀĞ¢²6öFS¢væVöârÂÆ&VÃ¢tF—6\;ò(i"6÷'FRÌ:6W"(i"FÆÆW"rÒÀĞ¢²6öFS¢w7V&Æ–ÖF–öârÂÆ&VÃ¢tF—6\;ò(i"7V&Æ–Ö6œ;6ârÒÀĞ¥Ò26öç7C°Ğ Ğ¦6öç7B$Tô4ôäd”rÒ°Ğ¢²6ÇVs¢v6W6÷&–rÂ6öFS¢t4RrÂæÖS¢t6W6÷,:ÖrÂ–6öã¢6Æ—&ö&DÆ—7BÂ–çG&ó¢u6–wVR6FG&&¦òfVæF–FòÂ7W26Ö&–÷2’VÂfæ6RFR&öGV66œ;6âârÒÀĞ¢²6ÇVs¢vF—6VæòrÂ6öFS¢tD•2rÂæÖS¢tF—6\;òrÂ–6öã¢VåFööÂÂ–çG&ó¢u&W&&6†—f÷2’VçG&VvF—6\;÷2Æ—7F÷2Æ6–wV–VçFR:&VârÒÀĞ¢²6ÇVs¢v–×&W6–öârÂ6öFS¢t”ÕrÂæÖS¢t–×&W6œ;6ârÂ–6öã¢&–çFW"Â–çG&ó¢t6öç7VÇF'FW2Æ—7F÷2ÂÖVF–F2’fV6†2çFW2FR&öGV6—"ârÒÀĞ¢²6ÇVs¢w7V&Æ–Ö6–öârÂ6öFS¢u5T"rÂæÖS¢u7V&Æ–Ö6œ;6ârÂ–6öã¢6†—'BÂ–çG&ó¢t÷&væ—¦Æ÷2G&&¦÷2W'6öæÆ—¦F÷2’7RVçG&VvârÒÀĞ¢²6ÇVs¢vÆ6W"rÂ6öFS¢tÄ2rÂæÖS¢t6÷'FRÌ:6W"rÂ–6öã¢66äÆ–æRÂ–çG&ó¢u&Wf—6ÖFW&–ÂÂ–W¦2’&VfW&Væ6–2FR6÷'FRârÒÀĞ¢²6ÇVs¢wFÆÆW"rÂ6öFS¢uDÂrÂæÖS¢uFÆÆW"rÂ–6öã¢†ÖÖW"Â–çG&ó¢t6ö÷&F–æf—6—F2Â&ÖFòR–ç7FÆ6œ;6â6V|;¦â6F÷&FVâârÒÀĞ¥Ò26öç7C°Ğ Ğ¦6öç7B5DEU5ôÄ$TÅ3¢&V6÷&CÅ7FW7FGW2Â7G&–æsâÒ°Ğ¢v—F–æs¢tW7W&WFçFW&–÷"rÂ&VG“¢tÆ—7F&FöÖ"rÂ–å÷&öw&W73¢tVâ&ö6W6òrÀĞ¢&Æö6¶VC¢t&Æ÷VVFrÂ6ö×ÆWFVC¢uFW&Ö–æFrÂ6æ6VÆÆVC¢t6æ6VÆFrÀĞ§Ó°Ğ¦6öç7Bd”ÅDU%3¢²–C¢f–ÇFW#²Æ&VÃ¢7G&–ærÕµÒÒ°Ğ¢²–C¢vÆÂrÂÆ&VÃ¢uFöF÷2rÒÂ²–C¢vÖ–æRrÂÆ&VÃ¢u&Ü:ÒrÒÀĞ¢²–C¢wVæ76–væVBrÂÆ&VÃ¢u6–â6–væ"rÒÂ²–C¢wFöF’rÂÆ&VÃ¢t†÷’rÒÀĞ¢²–C¢v÷fW&GVRrÂÆ&VÃ¢ufVæ6–F÷2rÒÂ²–C¢v&Æö6¶VBrÂÆ&VÃ¢t&Æ÷VVF÷2rÒÀĞ¥Ó°Ğ¦6öç7B%Etõ$µôd”ÄUõE•U3¢&V6÷&CÇ7G&–ærÂ7G&–æsâÒ°Ğ¢v–ÖvR÷ærs¢wærrÂv–ÖvRö§Vrs¢v§rrÂv–ÖvR÷vV's¢wvV'rÂvÆ–6F–öâ÷Fbs¢wFbrÀĞ§Ó°Ğ¦6öç7B%Etõ$µôd”ÄUôÔ…ô%•DU2Òb¢#B¢#C°Ğ¦6öç7B5T5ôÄ$TÅ3¢&V6÷&CÇ7G&–ærÂ7G&–æsâÒ°Ğ¢FW67&—F–öã¢tFW67&—6œ;6ârÂæ÷FW3¢t–æF–66–öæW2rÂv–GF…ö6Ó¢tæ6†òrÂ†V–v‡Eö6Ó¢tÇFòrÀĞ¢VçF—G“¢t6çF–FBrÂÖFW&–Ã¢tÖFW&–ÂrÂf–æ—6ƒ¢t6&FòrÂ6öÆ÷#¢t6öÆ÷"rÀĞ¢–ç7FÆÆF–öåöFG&W73¢tÇVv"FR–ç7FÆ6œ;6ârÂ–ç7FÆÆF–öå÷&WV—&VC¢t–ç7FÆ6œ;6ârÀĞ¢ÖV7W&VÖVçE÷&WV—&VC¢uf—6—F&ÖVF—"rÂ&VfW&Væ6S¢u&VfW&Væ6–rÀĞ¢'Gv÷&µ÷7FGW3¢t&6†—fòÂ&V6–&—"VÂVF–FòrÂ&÷fÅ÷&WV—&VC¢u&Wf—6œ;6âFR'FRrÀĞ§Ó°Ğ Ğ¦6öç7B6fTFFRÒ‡fÇVS¢7G&–ærÂçVÆÂÂVæFVf–æVB’ÓâfÇVRbbçVÖ&W"æ—4æâ†æWrFFR‡fÇVR’ævWEF–ÖR‚’’òæWrFFR‡fÇVR’¢çVÆÃ°Ğ¦6öç7B7F×Ò‡fÇVS¢7G&–ærÂçVÆÂÂVæFVf–æVB’Óâ6fTFFR‡fÇVR“òçFôÆö6ÆU7G&–ær‚vW2ÔT2rÂ²F–ÖU¦öæS¢tÖW&–6ôwV–V–ÂrÂFFU7G–ÆS¢vÖVF—VÒrÂF–ÖU7G–ÆS¢w6†÷'BrÒ’ÇÂu÷"FVf–æ—"s°Ğ¦6öç7BÆö6ÄFFUF–ÖRÒ‡fÇVS¢7G&–ærÂçVÆÂÂVæFVf–æVB’Óâ°Ğ¢6öç7BFFRÒ6fTFFR‡fÇVR“°Ğ¢–b‚FFR’&WGW&ârs°Ğ¢&WGW&âG¶FFRævWDgVÆÅ–V"‚—ÒÒGµ7G&–ær†FFRævWDÖöçF‚‚’²’çE7F'Bƒ"Âsr—ÒÒGµ7G&–ær†FFRævWDFFR‚’’çE7F'Bƒ"Âsr—ÕBGµ7G&–ær†FFRævWD†÷W'2‚’’çE7F'Bƒ"Âsr—Ó¢Gµ7G&–ær†FFRævWDÖ–çWFW2‚’’çE7F'Bƒ"Âsr—Ö°Ğ§Ó°Ğ¦6öç7BF”¶W’Ò‡fÇVS¢7G&–ærÂçVÆÂÂVæFVf–æVB’Óâ°Ğ¢6öç7BFFRÒ6fTFFR‡fÇVR“°Ğ¢–b‚FFR’&WGW&ârs°Ğ¢6öç7B'G2ÒæWr–çFÂäFFUF–ÖTf÷&ÖB‚vVâÔ4rÂ²F–ÖU¦öæS¢tÖW&–6ôwV–V–ÂrÂ–V#¢vçVÖW&–2rÂÖöçFƒ¢s"ÖF–v—BrÂF“¢s"ÖF–v—BrÒĞ¢æf÷&ÖEFõ'G2†FFR’ç&VGV6SÅ&V6÷&CÇ7G&–ærÂ7G&–æsãâ‚‡&W7VÇBÂ'B’Óâ²&W7VÇE·'BçG—UÒÒ'BçfÇVS²&WGW&â&W7VÇC²ÒÂ·Ò“°Ğ¢&WGW&âG·'G2ç–V'ÒÒG·'G2æÖöçF‡ÒÒG·'G2æF—Ö°Ğ§Ó°Ğ¦6öç7BFöF”¶W’Ò‚’ÓâF”¶W’†æWrFFR‚’çFô•4õ7G&–ær‚’“°Ğ¦6öç7BÖ÷fT6&E7÷FÆ–v‡BÒ†WfVçC¢&V7Eö–çFW$WfVçCÄ…DÔÄVÆVÖVçCâ’Óâ°Ğ¢6öç7B&V7BÒWfVçBæ7W'&VçEF&vWBævWD&÷VæF–æt6Æ–VçE&V7B‚“°Ğ¢WfVçBæ7W'&VçEF&vWBç7G–ÆRç6WE&÷W'G’‚rÒ×7÷FÆ–v‡B×‚rÂG¶WfVçBæ6Æ–VçE‚Ò&V7BæÆVgG×†“°Ğ¢WfVçBæ7W'&VçEF&vWBç7G–ÆRç6WE&÷W'G’‚rÒ×7÷FÆ–v‡B×’rÂG¶WfVçBæ6Æ–VçE’Ò&V7BçF÷×†“°Ğ§Ó°Ğ¦6öç7B—4÷VâÒ‡7FGW3¢7FW7FGW2’Óâ²v6ö×ÆWFVBrÂv6æ6VÆÆVBuÒæ–æ6ÇVFW2‡7FGW2“°Ğ¦6öç7BVWVTGVTBÒ†—FVÓ¢VWVT—FVÒ’Óâ—FVÒç7FWòæGVUöBÇÂ—FVÒæ¦ö"æGVUöC°Ğ¦6öç7B—4ÆFRÒ†—FVÓ¢VWVT—FVÒ’Óâ&ööÆVâ‚†—FVÒç7FWÇÂ—FVÒæ7W'&VçE7FW’bb—4÷Vâ‚†—FVÒç7FWÇÂ—FVÒæ7W'&VçE7FW’ç7FGW2’bbVWVTGVTB†—FVÒ’bbF”¶W’‡VWVTGVTB†—FVÒ’’ÂFöF”¶W’‚’“°Ğ¦6öç7BÖF6†W5VWVTf–ÇFW"Ò†—FVÓ¢VWVT—FVÒÂf–ÇFW#¢f–ÇFW"Â&V6öFS¢7G&–ærÂVæFVf–æVBÂW6W$–C¢7G&–ærÂVæFVf–æVB’Óâ°Ğ¢6öç7B7FWÒ—FVÒç7FWÇÂ—FVÒæ7W'&VçE7FW°Ğ¢6öç7B÷væW"Ò&V6öFRÓÓÒt4Rrò—FVÒæ¦ö"æGf—6÷%ö–B¢—FVÒç7FWòæ76–væVE÷Fó°Ğ¢–b†f–ÇFW"ÓÓÒvÖ–æRr’&WGW&â÷væW"ÓÓÒW6W$–C°Ğ¢–b†f–ÇFW"ÓÓÒwVæ76–væVBr’&WGW&â&ööÆVâ‡7FWbb—4÷Vâ‡7FWç7FGW2’bb†&V6öFRÓÓÒt4Rrò7FWæ76–væVE÷Fò¢÷væW"’“°Ğ¢–b†f–ÇFW"ÓÓÒwFöF’r’&WGW&âF”¶W’‡VWVTGVTB†—FVÒ’’ÓÓÒFöF”¶W’‚“°Ğ¢–b†f–ÇFW"ÓÓÒv÷fW&GVRr’&WGW&â—4ÆFR†—FVÒ“°Ğ¢–b†f–ÇFW"ÓÓÒv&Æö6¶VBr’&WGW&â7FWòç7FGW2ÓÓÒv&Æö6¶VBs°Ğ¢&WGW&âG'VS°Ğ§Ó°Ğ¦6öç7B&W6VçEfÇVRÒ‡fÇVS¢Væ¶æ÷vâ“¢7G&–ærÓâ°Ğ¢–b‡fÇVRÓÒçVÆÂÇÂfÇVRÓÓÒrr’&WGW&âu÷"FVf–æ—"s°Ğ¢–b‡G—VöbfÇVRÓÓÒv&ööÆVâr’&WGW&âfÇVRòu<:Òr¢tæòs°Ğ¢–b„'&’æ—4'&’‡fÇVR’’&WGW&âfÇVRæÖ‡&W6VçEfÇVR’æ¦ö–â‚r+rr“°Ğ¢–b‡G—VöbfÇVRÓÓÒvö&¦V7Br’&WGW&âö&¦V7BæVçG&–W2‡fÇVR’æÖ‚…¶¶W’Â'EÒ’ÓâGµ5T5ôÄ$TÅ5¶¶W•ÒÇÂ¶W’ç&WÆ6TÆÂ‚uòrÂrr—Ó¢G·&W6VçEfÇVR‡'B—Ö’æ¦ö–â‚r+rr“°Ğ¢&WGW&â7G&–ær‡fÇVR“°Ğ§Ó°Ğ¦6öç7B&–÷&—G”FWF–Ç2Ò†—FVÓ¢VWVT—FVÒÂæ÷rÒFFRææ÷r‚’’Óâ°Ğ¢6öç7B7FWÒ—FVÒç7FWÇÂ—FVÒæ7W'&VçE7FW°Ğ¢–b‚7FWÇÂ—4÷Vâ‡7FWç7FGW2’’&WGW&â²66÷&S¢Â&V6öã¢u6–â66œ;6âVæF–VçFRrÓ°Ğ¢ÆWB66÷&RÒ‡²&Æö6¶VC¢cBÂ–å÷&öw&W73¢S"Â&VG“¢C"Âv—F–æs¢‚Ò2&V6÷&CÇ7G&–ærÂçVÖ&W#â•·7FWç7FGW5ÒÇÂ°Ğ¢6öç7BGVRÒ6fTFFR‡7FWæGVUöBÇÂ—FVÒæ¦ö"æGVUöB“òævWEF–ÖR‚“°Ğ¢ÆWB&V6öâÒ7FWç7FGW2ÓÓÒv&Æö6¶VBròt&Æ÷VVò&WV–W&R6ö÷&F–æ6œ;6âpĞ¢¢7FWç7FGW2ÓÓÒw&VG’ròtÆ—7F&&V6–&—"ò–æ–6–"pĞ¢¢7FWç7FGW2ÓÓÒv–å÷&öw&W72ròuG&&¦òVâ7W'6òr¢tW7W&VæFWVæFVæ6–s°Ğ¢–b„çVÖ&W"æ—4f–æ—FR†GVR’’°Ğ¢6öç7B6Æ6²ÒGVRÒæ÷s²6öç7BW7F–ÖFRÒÖF‚æÖ‚ƒÂ7FWæW7F–ÖFVEöÖ–çWFW2ÇÂc’¢có°Ğ¢–b‡6Æ6²Â’²66÷&R³ÒÖF‚æÖ–âƒ3BÂ‚²ÖF‚æfÆö÷"„ÖF‚æ'2‡6Æ6²’òƒeóCó’¢B“²&V6öâÒuÆ¦òfVæ6–Fòs²ĞĞ¢VÇ6R–b‡6Æ6²ÃÒW7F–ÖFR’²66÷&R³Ò#s²&V6öâÒuÆ¦òÖVæ÷"VRVÂF–V×òW7F–ÖFòs²ĞĞ¢VÇ6R–b‡6Æ6²ÃÒƒeóCó’²66÷&R³Ò#²&V6öâÒufVæ6RVâÖVæ÷2FR#B†÷&2s²ĞĞ¢VÇ6R–b‡6Æ6²ÃÒ#S•ó#ó’²66÷&R³Ò#²&V6öâÒufVæ6RVâÖVæ÷2FR2L:Ö2s²ĞĞ¢ĞĞ¢–b‡7FWç7FGW2ÓÓÒw&VG’rbb7FWæ76–væVE÷Fò’66÷&R³ÒS°Ğ¢&WGW&â²66÷&S¢ÖF‚æÖ–âƒÂ66÷&R’Â&V6öâÓ°Ğ§Ó°Ğ¦6öç7B‡VÖä¶W’Ò†¶W“¢7G&–ær’Óâ5T5ôÄ$TÅ5¶¶W•ÒÇÂ¶W’ç&WÆ6TÆÂ‚uòrÂrr’ç&WÆ6R‚õÆ%ÇrörÂ†6†"’Óâ6†"çFõWW$66R‚’“°Ğ¦6öç7BWfVçEF—FÆRÒ†WfVçC¢¦ö$WfVçB’Óâ‡°Ğ¢¦ö%ö7&VFVC¢uG&&¦ò7&VFòrÂv÷&¶fÆ÷u÷6VÆV7FVC¢u'WFFVf–æ–FrÂ7FW÷F¶S¢uF&VFöÖFrÂ7FW÷&VG“¢tWFÆ—7F&VÂ:&VrÂ7FW÷&V6V—fVC¢tWF&V6–&–FrÂ&Wv÷&µ÷&WVW7FVC¢u&WG&&¦ò6öÆ–6—FFòrÂVÆ—G•ö6†V6µ÷&VG“¢t6öçG&öÂFR6Æ–FBVæF–VçFRrÀĞ¢7FWö6ö÷&F–æFVC¢u&W7öç6&ÆRòfV6†7GVÆ—¦F÷2rÀĞ¢7FW÷7F'C¢uG&&¦ò–æ–6–FòrÂ7FWö6ö×ÆWFS¢tWFFW&Ö–æFrÂ7FWö&Æö6³¢uG&&¦ò&Æ÷VVFòrÀĞ¢7FW÷Væ&Æö6³¢uG&&¦ò&VçVFFòrÂ7V6–f–6F–öç5÷WFFVC¢t–æF–66–öæW27GVÆ—¦F2rÂæ÷FUöFFVC¢tæ÷F;F–FrÀĞ¢7V6–f–6F–öå÷&Wf–Wuö66WFVC¢t6Ö&–òL:–6æ–6ò6WFFòrÀĞ¢7V6–f–6F–öå÷&Wf–Wuö6†ævW5÷&WVW7FVC¢t6÷'&V66œ;6âL:–6æ–66öÆ–6—FFrÀĞ¢'Gv÷&µ÷7V&Ö—GFVC¢t'FRVçG&VvFò&&Wf—6"rÂ'Gv÷&µö&÷fVC¢t'FR&ö&FòrÂ'Gv÷&µö6†ævW5÷&WVW7FVC¢t6÷'&V66–öæW26öÆ–6—FF2rÀĞ§Õ¶WfVçBæWfVçE÷G—UÒÇÂWfVçBæWfVçE÷G—Rç&WÆ6TÆÂ‚uòrÂrr’“°Ğ¦6öç7BWfVçDæ÷FRÒ†WfVçC¢¦ö$WfVçB’Óâ°Ğ¢–b†WfVçBæWfVçE÷G—RÓÓÒw7FWö6ö÷&F–æFVBr’°Ğ¢6öç7BFWF–Ç2ÒWfVçBæFWF–Ç2ÇÂ·Ó°Ğ¢6öç7B6†ævW3¢7G&–æuµÒÒµÓ°Ğ¢–b†FWF–Ç2ç&Wf–÷W5ö76–væVRÓÒFWF–Ç2æ76–væVE÷Fò’°Ğ¢6öç7BæÖRÒG—VöbFWF–Ç2æ76–væVE÷FõöæÖRÓÓÒw7G&–ærrbbFWF–Ç2æ76–væVE÷FõöæÖRçG&–Ò‚Ğ¢òFWF–Ç2æ76–væVE÷FõöæÖR¢v–çFVw&çFRFVÂWV—òs°Ğ¢6†ævW2çW6‚†FWF–Ç2æ76–væVE÷Fòò&W7öç6&ÆS¢G¶æÖWÖ¢u6–â&W7öç6&ÆRr“°Ğ¢ĞĞ¢–b†FWF–Ç2ç&Wf–÷W5öGVUöBÓÒFWF–Ç2æGVUöB’°Ğ¢6†ævW2çW6‚†fV6†Ì:ÖÖ—FS¢G·7F×‡G—VöbFWF–Ç2æGVUöBÓÓÒw7G&–ærròFWF–Ç2æGVUöB¢çVÆÂ—Ö“°Ğ¢ĞĞ¢–b‡G—VöbFWF–Ç2ææ÷FRÓÓÒw7G&–ærrbbFWF–Ç2ææ÷FRçG&–Ò‚’’6†ævW2çW6‚†FWF–Ç2ææ÷FR“°Ğ¢&WGW&â6†ævW2æ¦ö–â‚r+rr“°Ğ¢ĞĞ¢6öç7BfÇVRÒWfVçBæFWF–Ç3òææ÷FRÇÂWfVçBæFWF–Ç3òç&V6öâÇÂWfVçBæFWF–Ç3òæFW67&—F–öã°Ğ¢&WGW&âG—VöbfÇVRÓÓÒw7G&–ærròfÇVR¢rs°Ğ§Ó°Ğ Ğ¦gVæ7F–öâ7W'&VçE7FvR‡7FW3¢7FWµÒ’°Ğ¢&WGW&â7FW2æf–æB‚‡7FW’Óâ²v–å÷&öw&W72rÂv&Æö6¶VBrÂw&VG’uÒæ–æ6ÇVFW2‡7FWç7FGW2’Ğ¢ÇÂ7FW2æf–æB‚‡7FW’Óâ7FWç7FGW2ÓÓÒwv—F–ærr’ÇÂ7FW2æB‚Ó’ÇÂçVÆÃ°Ğ§ĞĞ Ğ¦6öç7B„äDôdeôd”TÄE3¢&V6÷&CÇ7G&–ærÂ'&“Å·7G&–ærÂ7G&–æuÓãâÒ°Ğ¢4S¢µ²vFW67&—F–öârÂtFW67&—6œ;6âuÒÂ²wVçF—G’rÂt6çF–FBl:×6–6uÒÂ²wv–GF…ö6ÒrÂtæ6†òuÒÂ²v†V–v‡Eö6ÒrÂtÇFòuÒÂ²vÖFW&–ÂrÂtÖFW&–ÂuÒÂ²vf–æ—6‚rÂt6&FòuÒÂ²v–ç7FÆÆF–öåöFG&W72rÂtÇVv"FR–ç7FÆ6œ;6âuÒÂ²væ÷FW2rÂt–æF–66–öæW2uÕÒÀĞ¢D•3¢µ²vFW67&—F–öârÂtFW67&—6œ;6âuÒÂ²wv–GF…ö6ÒrÂtæ6†òuÒÂ²v†V–v‡Eö6ÒrÂtÇFòuÒÂ²vÖFW&–ÂrÂtÖFW&–ÂuÒÂ²v6öÆ÷"rÂt6öÆ÷"uÒÂ²vf–æ—6‚rÂt6&FòuÒÂ²væ÷FW2rÂt–æF–66–öæW2uÕÒÀĞ¢”Õ¢µ²wv–GF…ö6ÒrÂtæ6†òuÒÂ²v†V–v‡Eö6ÒrÂtÇFòuÒÂ²vÖFW&–ÂrÂtÖFW&–ÂuÒÂ²v6öÆ÷"rÂt6öÆ÷"uÒÂ²vf–æ—6‚rÂt6&FòuÒÂ²v–ç7FÆÆF–öåöFG&W72rÂtÇVv"FR–ç7FÆ6œ;6âuÒÂ²væ÷FW2rÂt–æF–66–öæW2uÕÒÀĞ¢5T#¢µ²wVçF—G’rÂt6çF–FBl:×6–6uÒÂ²wv–GF…ö6ÒrÂtæ6†òuÒÂ²v†V–v‡Eö6ÒrÂtÇFòuÒÂ²vÖFW&–ÂrÂtÖFW&–ÂuÒÂ²v6öÆ÷"rÂt6öÆ÷"uÒÂ²væ÷FW2rÂt–æF–66–öæW2uÕÒÀĞ¢Ä3¢µ²wVçF—G’rÂt6çF–FBl:×6–6uÒÂ²wv–GF…ö6ÒrÂtæ6†òuÒÂ²v†V–v‡Eö6ÒrÂtÇFòuÒÂ²vÖFW&–ÂrÂtÖFW&–ÂuÒÂ²vf–æ—6‚rÂt6&FòuÒÂ²væ÷FW2rÂt–æF–66–öæW2uÕÒÀĞ¢DÃ¢µ²wv–GF…ö6ÒrÂtæ6†òfW&–f–6FòuÒÂ²v†V–v‡Eö6ÒrÂtÇFòfW&–f–6FòuÒÂ²vÖFW&–ÂrÂtÖFW&–ÂuÒÂ²vf–æ—6‚rÂt6&FòòÖöçF¦RuÒÂ²v–ç7FÆÆF–öåöFG&W72rÂtÇVv"FR–ç7FÆ6œ;6âuÒÂ²w6—FU÷f—6—Eöæ÷FW2rÂtö'6W'f6–öæW2FRf—6—FuÕÒÀĞ§Ó°Ğ¦gVæ7F–öâ&öGV7F–öä†æFöfb‡²7FWÂ&V2Â7V6–f–6F–öç2Ó¢²7FW¢7FW²&V3¢&V&÷uµÓ²7V6–f–6F–öç3¢&V6÷&CÇ7G&–ærÂVæ¶æ÷vãâÂçVÆÂÒ’°Ğ¢6öç7B6öFRÒ&V2æf–æB‚†&V’Óâ&Væ–BÓÓÒ7FWæ&Vö–B“òæ6öFRÇÂrs°Ğ¢6öç7Bf–VÆG2Ò„äDôdeôd”TÄE5¶6öFUÒÇÂµÓ°Ğ¢6öç7Bf–ÆÆVBÒf–VÆG2æf–ÇFW"‚…¶¶W•Ò’Óâ7V6–f–6F–öç3òå¶¶W•ÒÓÒVæFVf–æVBbb7V6–f–6F–öç3òå¶¶W•ÒÓÒçVÆÂbb7G&–ær‡7V6–f–6F–öç5¶¶W•Ò’çG&–Ò‚’ÓÒrr“°Ğ¢–b‚f–VÆG2æÆVæwF‚’&WGW&âçVÆÃ°Ğ¢&WGW&âÇ6V7F–öâ6Æ74æÖSÒ'¢Ö†æFöfb"&–ÖÆ&VÃ×¶–æf÷&Ö6œ;6â&G·7FWçF—FÆWÖÓàĞ¢ÆF—b6Æ74æÖSÒ'¢Ö†æFöfbÖ†VF–ær#ãÆF—cãÇ7â6Æ74æÖSÒ'¢Ö'Gv÷&²ÖW–V'&÷r#å4RTåE$R8$T3Â÷7ããÆƒCä–æf÷&Ö6œ;6â&·7FWçF—FÆWÓÂöƒCãÂöF—cãÇ7â6Æ74æÖSÒ'¢Ö†æFöfbÖ6÷VçB#ç¶f–ÆÆVBæÆVæwF‡ÒFR¶f–VÆG2æÆVæwF‡ÒFF÷3Â÷7ããÂöF—càĞ¢Çå&W7VÖVâFRÆf–6†VR6ö×;W7FR6òâÆ÷2&WV—6—F÷2VR<:Ò&Æ÷VVâVÂfæ6R&V6VâVâÆ÷2Ö÷F—f÷2FR&W&6œ;6âFRÆWFãÂ÷àĞ¢ÇVÂ6Æ74æÖSÒ'¢Ö†æFöfbÖÆ—7B#ç¶f–VÆG2æÖ‚…¶¶W’ÂÆ&VÅÒ’Óâ°Ğ¢6öç7BfÇVRÒ7V6–f–6F–öç3òå¶¶W•Ó°Ğ¢6öç7B6ö×ÆWFRÒfÇVRÓÒVæFVf–æVBbbfÇVRÓÒçVÆÂbb7G&–ær‡fÇVR’çG&–Ò‚’ÓÒrs°Ğ¢&WGW&âÆÆ’¶W“×¶¶W—ÒFFÖ6ö×ÆWFS×¶6ö×ÆWFWÓãÇ7â&–Ö†–FFVãÒ'G'VR#ç¶6ö×ÆWFRòÄ6†V6²6—¦S×³7Òóâ¢~(
-"wÓÂ÷7ããÆ#ç¶Æ&VÇÓÂö#ãÇ6ÖÆÃç¶6ö×ÆWFRò7G&–ær‡fÇVR’¢u÷"6öæf—&Ö"VâÆf–6†wÓÂ÷6ÖÆÃãÂöÆ“ã°Ğ¢Ò—ÓÂ÷VÃàĞ¢Â÷6V7F–öãã°Ğ§ĞĞ Ğ¦W‡÷'BgVæ7F–öâ&öGV7F–öä¦ö'5vR‚’°Ğ¢6öç7B²&V¢&V&ÒÒÒW6U&×3Ç²&V¢&V6ÇVrÓâ‚“°Ğ¢6öç7B·6V&6…&×2Â6WE6V&6…&×5ÒÒW6U6V&6…&×2‚“°Ğ¢6öç7B²÷&væ—¦F–öä–BÂW6W"Â†5W&Ö—76–öâÂ&öf–ÆW2Â&öÆW2ÒÒW6TWF‚‚“°Ğ¢6öç7B&VÒ$Tô4ôäd”ræf–æB‚†VçG'’’ÓâVçG'’ç6ÇVrÓÓÒ&V&Ò“°Ğ¢6öç7B6å6VUv÷&·6†÷Ò†5W&Ö—76–öâ‚wv÷&·6†÷rÂwf–Wrr“°Ğ¢6öç7B6äVF—Ev÷&·6†÷Ò†5W&Ö—76–öâ‚wv÷&·6†÷rÂvVF—Br“°Ğ¢6öç7B6äVF—E6ÆW2Ò†5W&Ö—76–öâ‚w6ÆW2rÂvVF—Br“°Ğ¢6öç7B6å6VTGf—6÷'’Ò†5W&Ö—76–öâ‚w6ÆW2rÂwf–Wrr’ÇÂ6å6VUv÷&·6†÷°Ğ¢6öç7B&öf–ÆT¶W—2ÒæWr6WCÇ7G&–æsâ‚‡&öf–ÆW2ÇÂµÒ’æÖ‚‡&öf–ÆS¢²¶W“¢7G&–ærÒ’Óâ&öf–ÆRæ¶W’’“°Ğ¢6öç7B6ä6ö÷&F–æFRÒ6äVF—Ev÷&·6†÷bb‚‡&öÆW2ÇÂµÒ’ç6öÖR‚‡&öÆS¢7G&–ær’Óâ&öÆRÓÓÒv÷væW"rÇÂ&öÆRÓÓÒvFÖ–ârĞ¢ÇÂ²vFÖ–ârÂvvW&Væ6–rÂv6ö÷&F–æF÷%÷FÆÆW"rÂvVæ6&vFõöÆö6ÂuÒç6öÖR‚†¶W’’Óâ&öf–ÆT¶W—2æ†2†¶W’’’“°Ğ¢6öç7B6ä7D–ä&VÒ†6öFS¢7G&–ær’Óâ°Ğ¢–b‚‡&öÆW2ÇÂµÒ’ç6öÖR‚‡&öÆS¢7G&–ær’Óâ&öÆRÓÓÒv÷væW"rÇÂ&öÆRÓÓÒvFÖ–ârĞ¢ÇÂ²vFÖ–ârÂvvW&Væ6–rÂv6ö÷&F–æF÷%÷FÆÆW"rÂvVæ6&vFõöÆö6ÂuÒç6öÖR‚†¶W’’Óâ&öf–ÆT¶W—2æ†2†¶W’’’’&WGW&âG'VS°Ğ¢6öç7B¶W—4'”&V¢&V6÷&CÇ7G&–ærÂ7G&–æuµÓâÒ°Ğ¢4S¢²v6W6÷&2rÂv6ö÷&F–æF÷%÷fVçF2uÒÂD•3¢²vF—6VæF÷%öw&f–6òuÒÀĞ¢”Õ¢²v–×&W6÷"uÒÂ5T#¢²w7V&Æ–Ö6–öâuÒÂÄ3¢²wW'6öæÅ÷FÆÆW"uÒÂDÃ¢²wW'6öæÅ÷FÆÆW"uÒÀĞ¢Ó°Ğ¢&WGW&â†¶W—4'”&V¶6öFUÒÇÂµÒ’ç6öÖR‚†¶W’’Óâ&öf–ÆT¶W—2æ†2†¶W’’“°Ğ¢Ó°Ğ¢6öç7B¶¦ö'2Â6WD¦ö'5ÒÒW6U7FFSÄ¦ö%µÓâ…µÒ“°Ğ¢6öç7B·7FW2Â6WE7FW5ÒÒW6U7FFSÅ7FWµÓâ…µÒ“°Ğ¢6öç7B¶WfVçG2Â6WDWfVçG5ÒÒW6U7FFSÄ¦ö$WfVçEµÓâ…µÒ“°Ğ¢6öç7B·7FW6†V6·2Â6WE7FW6†V6·5ÒÒW6U7FFSÅ7FW6†V6µµÓâ…µÒ“°Ğ¢6öç7B·&öGV7F–öäÆ÷G2Â6WE&öGV7F–öäÆ÷G5ÒÒW6U7FFSÅ&öGV7F–öäÆ÷EµÓâ…µÒ“°Ğ¢6öç7B¶&V2Â6WD&V5ÒÒW6U7FFSÄ&V&÷uµÓâ…µÒ“°Ğ¢6öç7B¶ÆöF–ærÂ6WDÆöF–æuÒÒW6U7FFR‡G'VR“°Ğ¢6öç7B¶ÆöDW'&÷"Â6WDÆöDW'&÷%ÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶7F–öäW'&÷"Â6WD7F–öäW'&÷%ÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶7F–öäÖW76vRÂ6WD7F–öäÖW76vUÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶7F–öäæ÷FRÂ6WD7F–öäæ÷FUÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶'Gv÷&µ&VfW&Væ6RÂ6WD'Gv÷&µ&VfW&Væ6UÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶'Gv÷&´æ÷FRÂ6WD'Gv÷&´æ÷FUÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶'Gv÷&´f–ÆRÂ6WD'Gv÷&´f–ÆUÒÒW6U7FFSÄf–ÆRÂçVÆÃâ†çVÆÂ“°Ğ¢6öç7B¶'Gv÷&´f–ÆT¶W’Â6WD'Gv÷&´f–ÆT¶W•ÒÒW6U7FFRƒ“°Ğ¢6öç7B¶G&gE7V2Â6WDG&gE7V5ÒÒW6U7FFSÅ&V6÷&CÇ7G&–ærÂ7G&–æsãâ‡·Ò“°Ğ¢6öç7B¶G&gE&÷WFRÂ6WDG&gE&÷WFUÒÒW6U7FFR‚w&–çBr“°Ğ¢6öç7B¶VÆ–v–&ÆU7FfbÂ6WDVÆ–v–&ÆU7FfeÒÒW6U7FFSÄ76–væVUµÓâ…µÒ“°Ğ¢6öç7B·7FfdÆöF–ærÂ6WE7FfdÆöF–æuÒÒW6U7FFR†fÇ6R“°Ğ¢6öç7B·7FfdW'&÷"Â6WE7FfdW'&÷%ÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶G&gD76–væVRÂ6WDG&gD76–væVUÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶G&gDGVTBÂ6WDG&gDGVTEÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶6ö÷&F–æF–öäæ÷FRÂ6WD6ö÷&F–æF–öäæ÷FUÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶Wf–FVæ6TG&gG2Â6WDWf–FVæ6TG&gG5ÒÒW6U7FFSÅ&V6÷&CÇ7G&–ærÂ7G&–æsãâ‡·Ò“°Ğ¢6öç7B·&Wv÷&µF&vWBÂ6WE&Wv÷&µF&vWEÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶gVÆf–ÆÆÖVçDGVTBÂ6WDgVÆf–ÆÆÖVçDGVTEÒÒW6U7FFR‚rr“°Ğ¢6öç7B·‡—6–6ÅVçF—G’Â6WE‡—6–6ÅVçF—G•ÒÒW6U7FFR‚rr“°Ğ¢6öç7B·‡—6–6ÅVæ—BÂ6WE‡—6–6ÅVæ—EÒÒW6U7FFR‚wVæ–FBr“°Ğ¢6öç7B¶Æ÷EVçF—G”G&gG2Â6WDÆ÷EVçF—G”G&gG5ÒÒW6U7FFSÅ&V6÷&CÇ7G&–ærÂ7G&–æsãâ‡·Ò“°Ğ¢6öç7B¶Æ÷Dæ÷FRÂ6WDÆ÷Dæ÷FUÒÒW6U7FFR‚rr“°Ğ¢6öç7B¶'W7’Â6WD'W7•ÒÒW6U7FFR†fÇ6R“°Ğ¢6öç7B·&Wf—6–öâÂ6WE&Wf—6–öåÒÒW6U7FFRƒ“°Ğ¢6öç7B·VWVTÆ–Ö—BÂ6WEVWVTÆ–Ö—EÒÒW6U7FFRƒS“°Ğ¢6öç7B¶f–ÇFW"Â6WDf–ÇFW%ÒÒW6U7FFSÄf–ÇFW#â‚vÆÂr“°Ğ¢6öç7B·6V&6‚Â6WE6V&6…ÒÒW6U7FFR‚rr“°Ğ¢6öç7B6VÆV7FVD¦ö$–BÒ6V&6…&×2ævWB‚wG&&¦òr’ÇÂ6V&6…&×2ævWB‚v¦ö"r“°Ğ¢6öç7B6VÆV7FVE7FW–BÒ6V&6…&×2ævWB‚w6òr“°Ğ Ğ¢W6TVffV7B‚‚’Óâ°Ğ¢6öç7B&Vg&W6„f÷%&öGV7F–öä6†ævRÒ‚’Óâ6WE&Wf—6–öâ‚‡fÇVR’ÓâfÇVR²“°Ğ¢v–æF÷ræFDWfVçDÆ—7FVæW"‚wf—7VÆ6÷'§&öGV7F–öâÖ6†ævVBrÂ&Vg&W6„f÷%&öGV7F–öä6†ævR“°Ğ¢&WGW&â‚’Óâv–æF÷rç&VÖ÷fTWfVçDÆ—7FVæW"‚wf—7VÆ6÷'§&öGV7F–öâÖ6†ævVBrÂ&Vg&W6„f÷%&öGV7F–öä6†ævR“°Ğ¢ÒÂµÒ“°Ğ Ğ¢W6TVffV7B‚‚’Óâ°Ğ¢–b‚÷&væ—¦F–öä–BÇÂ7W&6RÇÂ&V’&WGW&ã°Ğ¢ÆWB7F—fRÒG'VS°Ğ¢6öç7BÆöBÒ7–æ2‚’Óâ°Ğ¢6WDÆöF–ær‡G'VR“°Ğ¢6WDÆöDW'&÷"‚rr“°Ğ¢G'’°Ğ¢6öç7B6Æ–VçBÒ7W&6S°Ğ¢6öç7B&V&W7VÇBÒv—B6Æ–VçBæg&öÒ‚v&V2r’ç6VÆV7B‚v–BÆ6öFRÆæÖRr’æW‚v÷&væ—¦F–öåö–BrÂ÷&væ—¦F–öä–B’æ–â‚v6öFRrÂ$Tô4ôäd”ræÖ‚†VçG'’’ÓâVçG'’æ6öFR’“°Ğ¢–b†&V&W7VÇBæW'&÷"’F‡&÷r&V&W7VÇBæW'&÷#°Ğ¢6öç7Bf–Æ&ÆT&V2Ò†&V&W7VÇBæFFÇÂµÒ’2&V&÷uµÓ°Ğ¢ÆWB¦ö%&÷w3¢¦ö%µÒÒµÓ°Ğ¢ÆWBF&vWE7FW3¢7FWµÒÒµÓ°Ğ¢–b†&Væ6öFRÓÓÒt4Rr’°Ğ¢òòGf—6÷'’föÆÆ÷w2v†öÆR¦ö'2ââGf—6÷"v—F†÷WBv÷&·6†÷66W72öæÇ’&WVW7G2F†V—"÷vâ¦ö'2àĞ¢ÆWBVW'’Ò6Æ–VçBæg&öÒ‚w&öGV7F–öåö¦ö'2r’ç6VÆV7B‚r¢r’æW‚v÷&væ—¦F–öåö–BrÂ÷&væ—¦F–öä–B’æ÷&FW"‚wWFFVEöBrÂ²66VæF–æs¢fÇ6RÒ’æÆ–Ö—B‡VWVTÆ–Ö—B“°Ğ¢–b‚6å6VUv÷&·6†÷bbW6W#òæ–B’VW'’ÒVW'’æW‚vGf—6÷%ö–BrÂW6W"æ–B“°Ğ¢6öç7B&W7VÇBÒv—BVW'“°Ğ¢–b‡&W7VÇBæW'&÷"’F‡&÷r&W7VÇBæW'&÷#°Ğ¢¦ö%&÷w2Ò‡&W7VÇBæFFÇÂµÒ’2¦ö%µÓ°Ğ¢ÒVÇ6R°Ğ¢6öç7B&V–BÒf–Æ&ÆT&V2æf–æB‚‡&÷r’Óâ&÷ræ6öFRÓÓÒ&Væ6öFR“òæ–C°Ğ¢–b†&V–B’°Ğ¢6öç7B&W7VÇBÒv—B6Æ–VçBæg&öÒ‚w&öGV7F–öåö¦ö%÷7FW2r’ç6VÆV7B‚r¢r’æW‚v÷&væ—¦F–öåö–BrÂ÷&væ—¦F–öä–B’æW‚v&Vö–BrÂ&V–B’æ÷&FW"‚wWFFVEöBrÂ²66VæF–æs¢fÇ6RÒ’æÆ–Ö—B‡VWVTÆ–Ö—B“°Ğ¢–b‡&W7VÇBæW'&÷"’F‡&÷r&W7VÇBæW'&÷#°Ğ¢F&vWE7FW2Ò‡&W7VÇBæFFÇÂµÒ’27FWµÓ°Ğ¢6öç7B¦ö$–G2Ò²ââææWr6WB‡F&vWE7FW2æÖ‚‡7FW’Óâ7FWæ¦ö%ö–B’•Ó°Ğ¢–b†¦ö$–G2æÆVæwF‚’°Ğ¢6öç7B¦ö%&W7VÇBÒv—B6Æ–VçBæg&öÒ‚w&öMvïm¢G§²ÚîÆ­yÔArtwork()}>Entregar para aprobaciÃ³n <ArrowRight size={14}/></button></div>}{canReviewArtwork && <div className="pj-artwork-form"><label>DecisiÃ³n para DiseÃ±o<textarea maxLength={1000} rows={2} value={artworkNote} onChange={(event) => setArtworkNote(event.target.value)} placeholder="Si pides correcciones, explica quÃ© hay que cambiar"/></label><div className="pj-action-row"><button className="button button-dark" type="button" disabled={busy} onClick={() => void reviewArtwork('approved')}><Check size={14}/> Aprobar arte</button><button className="button button-outline" type="button" disabled={busy || artworkNote.trim().length < 3} onClick={() => void reviewArtwork('changes_requested')}>Pedir correcciones</button></div></div>}</section>}
+import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { AlertTriangle, ArrowRight, CalendarClock, Check, CircleCheck, ClipboardCheck, ClipboardList, Clock3, Hammer, PackageCheck, PenTool, Play, Printer, RefreshCw, RotateCcw, ScanLine, Search, ShieldCheck, Shirt, UserRound } from 'lucide-react';
+import { AppFrame, PageHeading } from '../../app/layout';
+import { useAuth } from '../../auth/AuthProvider';
+import { Sheet } from '../../components/ui/OperationalKit';
+import { supabase } from '../../lib/supabaseClient';
+import { ProductionArtworkReference } from './ProductionArtworkReference';
+import { ProductionQueueSkeleton, ProductionQueueSummary, ProductionStageProgress } from './ProductionQueueComponents';
+import { ProductionQueueViews, type ProductionQueueViewItem } from './ProductionQueueViews';
+import { ProductionSpecReview } from './ProductionSpecReview';
+import './production-jobs.css';
+import './production-queue-components.css';
+
+type AreaSlug = 'asesoria' | 'diseno' | 'impresion' | 'sublimacion' | 'laser' | 'taller';
+type StepStatus = 'waiting' | 'ready' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
+type Job = {
+  id: string; organization_id: string; branch_id: string; advisor_id: string | null;
+  workflow_code: string;
+  sale_code: string | null; customer_name: string | null; customer_phone: string | null;
+  title: string; specifications: Record<string, unknown> | null; spec_version: number; review_from_version: number | null;
+  approval_required: boolean; artwork_review_status: 'not_required' | 'awaiting_art' | 'awaiting_review' | 'changes_requested' | 'approved';
+  artwork_revision: number; artwork_reference: string; artwork_submitted_at: string | null; artwork_reviewed_at: string | null;
+  status: string; due_at: string | null; fulfillment_status?: string; fulfillment_due_at?: string | null;
+  fulfillment_note?: string; created_at: string; updated_at: string;
+};
+type Step = {
+  id: string; job_id: string; step_key: string; step_order: number; area_id: string;
+  title: string; status: StepStatus; assigned_to: string | null; due_at: string | null;
+  notes: string | null; created_at: string; updated_at: string; estimated_minutes?: number;
+  requirements?: { before_start?: string[]; before_complete?: string[] };
+  readiness_reasons?: Array<{ code: string; message: string }>;
+  handoff_status?: 'not_required' | 'pending' | 'accepted'; received_by?: string | null; received_at?: string | null;
+  due_at_is_manual?: boolean;
+};
+type StepCheck = { id: string; step_id: string; check_key: string; title: string; required: boolean; requires_evidence: boolean; completed_at: string | null; evidence_url: string; note: string };
+type ProductionLot = { id: string; parent_lot_id: string | null; label: string; quantity: number; unit: string; status: string; due_at: string | null; notes: string; produced_at: string | null; quality_at: string | null; delivered_at: string | null; installed_at: string | null };
+type JobEvent = {
+  id: number; job_id: string; step_id: string | null; event_type: string;
+  details: Record<string, unknown> | null; created_by: string | null; created_at: string;
+};
+type AreaRow = { id: string; code: string; name: string };
+type Assignee = { user_id: string; display_name: string };
+type QueueItem = { job: Job; step: Step | null; currentStep: Step | null };
+type Filter = 'all' | 'mine' | 'unassigned' | 'today' | 'overdue' | 'blocked';
+const WORKFLOW_CHOICES = [
+  { code: 'none', label: 'Entrega directa' },
+  { code: 'print', label: 'DiseÃ±o â†’ ImpresiÃ³n' },
+  { code: 'laser', label: 'DiseÃ±o â†’ Corte lÃ¡ser' },
+  { code: 'sign', label: 'DiseÃ±o â†’ ImpresiÃ³n â†’ Taller' },
+  { code: 'sign_measure', label: 'Visita de medidas â†’ DiseÃ±o â†’ ImpresiÃ³n â†’ Taller' },
+  { code: 'neon', label: 'DiseÃ±o â†’ Corte lÃ¡ser â†’ Taller' },
+  { code: 'sublimation', label: 'DiseÃ±o â†’ SublimaciÃ³n' },
+] as const;
+
+const AREA_CONFIG = [
+  { slug: 'asesoria', code: 'ASE', name: 'AsesorÃ­a', icon: ClipboardList, intro: 'Sigue cada trabajo vendido, sus cambios y el avance de producciÃ³n.' },
+  { slug: 'diseno', code: 'DIS', name: 'DiseÃ±o', icon: PenTool, intro: 'Prepara archivos y entrega diseÃ±os listos a la siguiente Ã¡rea.' },
+  { slug: 'impresion', code: 'IMP', name: 'ImpresiÃ³n', icon: Printer, intro: 'Consulta artes listos, medidas y fechas antes de producir.' },
+  { slug: 'sublimacion', code: 'SUB', name: 'SublimaciÃ³n', icon: Shirt, intro: 'Organiza los trabajos personalizados y su entrega.' },
+  { slug: 'laser', code: 'LAS', name: 'Corte lÃ¡ser', icon: ScanLine, intro: 'Revisa material, piezas y referencias de corte.' },
+  { slug: 'taller', code: 'TAL', name: 'Taller', icon: Hammer, intro: 'Coordina visitas, armado e instalaciÃ³n segÃºn cada orden.' },
+] as const;
+
+const STATUS_LABELS: Record<StepStatus, string> = {
+  waiting: 'Espera etapa anterior', ready: 'Lista para tomar', in_progress: 'En proceso',
+  blocked: 'Bloqueada', completed: 'Terminada', cancelled: 'Cancelada',
+};
+const FILTERS: { id: Filter; label: string }[] = [
+  { id: 'all', label: 'Todos' }, { id: 'mine', label: 'Para mÃ­' },
+  { id: 'unassigned', label: 'Sin asignar' }, { id: 'today', label: 'Hoy' },
+  { id: 'overdue', label: 'Vencidos' }, { id: 'blocked', label: 'Bloqueados' },
+];
+const ARTWORK_FILE_TYPES: Record<string, string> = {
+  'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'application/pdf': 'pdf',
+};
+const ARTWORK_FILE_MAX_BYTES = 6 * 1024 * 1024;
+const SPEC_LABELS: Record<string, string> = {
+  description: 'DescripciÃ³n', notes: 'Indicaciones', width_cm: 'Ancho', height_cm: 'Alto',
+  quantity: 'Cantidad', material: 'Material', finish: 'Acabado', color: 'Color',
+  installation_address: 'Lugar de instalaciÃ³n', installation_required: 'InstalaciÃ³n',
+  measurement_required: 'Visita para medir', reference: 'Referencia',
+  artwork_status: 'Archivo al recibir el pedido', approval_required: 'RevisiÃ³n de arte',
+};
+
+const safeDate = (value: string | null | undefined) => value && !Number.isNaN(new Date(value).getTime()) ? new Date(value) : null;
+const stamp = (value: string | null | undefined) => safeDate(value)?.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', dateStyle: 'medium', timeStyle: 'short' }) || 'Por definir';
+const localDateTime = (value: string | null | undefined) => {
+  const date = safeDate(value);
+  if (!date) return '';
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+};
+const dayKey = (value: string | null | undefined) => {
+  const date = safeDate(value);
+  if (!date) return '';
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .formatToParts(date).reduce<Record<string, string>>((result, part) => { result[part.type] = part.value; return result; }, {});
+  return `${parts.year}-${parts.month}-${parts.day}`;
+};
+const todayKey = () => dayKey(new Date().toISOString());
+const moveCardSpotlight = (event: ReactPointerEvent<HTMLElement>) => {
+  const rect = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty('--spotlight-x', `${event.clientX - rect.left}px`);
+  event.currentTarget.style.setProperty('--spotlight-y', `${event.clientY - rect.top}px`);
+};
+const isOpen = (status: StepStatus) => !['completed', 'cancelled'].includes(status);
+const queueDueAt = (item: QueueItem) => item.step?.due_at || item.job.due_at;
+const isLate = (item: QueueItem) => Boolean((item.step || item.currentStep) && isOpen((item.step || item.currentStep)!.status) && queueDueAt(item) && dayKey(queueDueAt(item)) < todayKey());
+const matchesQueueFilter = (item: QueueItem, filter: Filter, areaCode: string | undefined, userId: string | undefined) => {
+  const step = item.step || item.currentStep;
+  const owner = areaCode === 'ASE' ? item.job.advisor_id : item.step?.assigned_to;
+  if (filter === 'mine') return owner === userId;
+  if (filter === 'unassigned') return Boolean(step && isOpen(step.status) && !(areaCode === 'ASE' ? step.assigned_to : owner));
+  if (filter === 'today') return dayKey(queueDueAt(item)) === todayKey();
+  if (filter === 'overdue') return isLate(item);
+  if (filter === 'blocked') return step?.status === 'blocked';
+  return true;
+};
+const presentValue = (value: unknown): string => {
+  if (value == null || value === '') return 'Por definir';
+  if (typeof value === 'boolean') return value ? 'SÃ­' : 'No';
+  if (Array.isArray(value)) return value.map(presentValue).join(' Â· ');
+  if (typeof value === 'object') return Object.entries(value).map(([key, part]) => `${SPEC_LABELS[key] || key.replaceAll('_', ' ')}: ${presentValue(part)}`).join(' Â· ');
+  return String(value);
+};
+const priorityDetails = (item: QueueItem, now = Date.now()) => {
+  const step = item.step || item.currentStep;
+  if (!step || !isOpen(step.status)) return { score: 0, reason: 'Sin acciÃ³n pendiente' };
+  let score = ({ blocked: 64, in_progress: 52, ready: 42, waiting: 8 } as Record<string, number>)[step.status] || 0;
+  const due = safeDate(step.due_at || item.job.due_at)?.getTime();
+  let reason = step.status === 'blocked' ? 'Bloqueo requiere coordinaciÃ³n'
+    : step.status === 'ready' ? 'Lista para recibir o iniciar'
+      : step.status === 'in_progress' ? 'Trabajo en curso' : 'Espera una dependencia';
+  if (Number.isFinite(due)) {
+    const slack = due! - now; const estimate = Math.max(1, step.estimated_minutes || 60) * 60_000;
+    if (slack < 0) { score += Math.min(34, 18 + Math.floor(Math.abs(slack) / 86_400_000) * 4); reason = 'Plazo vencido'; }
+    else if (slack <= estimate) { score += 27; reason = 'Plazo menor que el tiempo estimado'; }
+    else if (slack <= 86_400_000) { score += 20; reason = 'Vence en menos de 24 horas'; }
+    else if (slack <= 259_200_000) { score += 12; reason = 'Vence en menos de 3 dÃ­as'; }
+  }
+  if (step.status === 'ready' && !step.assigned_to) score += 5;
+  return { score: Math.min(100, score), reason };
+};
+const humanKey = (key: string) => SPEC_LABELS[key] || key.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+const eventTitle = (event: JobEvent) => ({
+  job_created: 'Trabajo creado', workflow_selected: 'Ruta definida', step_take: 'Tarea tomada', step_ready: 'Etapa lista para el Ã¡rea', step_received: 'Etapa recibida', rework_requested: 'Retrabajo solicitado', quality_check_ready: 'Control de calidad pendiente',
+  step_coordinated: 'Responsable o fecha actualizados',
+  step_start: 'Trabajo iniciado', step_complete: 'Etapa terminada', step_block: 'Trabajo bloqueado',
+  step_unblock: 'Trabajo reanudado', specifications_updated: 'Indicaciones actualizadas', note_added: 'Nota aÃ±adida',
+  specification_review_accepted: 'Cambio tÃ©cnico aceptado',
+  specification_review_changes_requested: 'CorrecciÃ³n tÃ©cnica solicitada',
+  artwork_submitted: 'Arte entregado para revisar', artwork_approved: 'Arte aprobado', artwork_changes_requested: 'Correcciones solicitadas',
+}[event.event_type] || event.event_type.replaceAll('_', ' '));
+const eventNote = (event: JobEvent) => {
+  if (event.event_type === 'step_coordinated') {
+    const details = event.details || {};
+    const changes: string[] = [];
+    if (details.previous_assignee !== details.assigned_to) {
+      const name = typeof details.assigned_to_name === 'string' && details.assigned_to_name.trim()
+        ? details.assigned_to_name : 'integrante del equipo';
+      changes.push(details.assigned_to ? `Responsable: ${name}` : 'Sin responsable');
+    }
+    if (details.previous_due_at !== details.due_at) {
+      changes.push(`Fecha lÃ­mite: ${stamp(typeof details.due_at === 'string' ? details.due_at : null)}`);
+    }
+    if (typeof details.note === 'string' && details.note.trim()) changes.push(details.note);
+    return changes.join(' Â· ');
+  }
+  const value = event.details?.note || event.details?.reason || event.details?.description;
+  return typeof value === 'string' ? value : '';
+};
+
+function currentStage(steps: Step[]) {
+  return steps.find((step) => ['in_progress', 'blocked', 'ready'].includes(step.status))
+    || steps.find((step) => step.status === 'waiting') || steps.at(-1) || null;
+}
+
+const HANDOFF_FIELDS: Record<string, Array<[string, string]>> = {
+  ASE: [['description', 'DescripciÃ³n'], ['quantity', 'Cantidad fÃ­sica'], ['width_cm', 'Ancho'], ['height_cm', 'Alto'], ['material', 'Material'], ['finish', 'Acabado'], ['installation_address', 'Lugar de instalaciÃ³n'], ['notes', 'Indicaciones']],
+  DIS: [['description', 'DescripciÃ³n'], ['width_cm', 'Ancho'], ['height_cm', 'Alto'], ['material', 'Material'], ['color', 'Color'], ['finish', 'Acabado'], ['notes', 'Indicaciones']],
+  IMP: [['width_cm', 'Ancho'], ['height_cm', 'Alto'], ['material', 'Material'], ['color', 'Color'], ['finish', 'Acabado'], ['installation_address', 'Lugar de instalaciÃ³n'], ['notes', 'Indicaciones']],
+  SUB: [['quantity', 'Cantidad fÃ­sica'], ['width_cm', 'Ancho'], ['height_cm', 'Alto'], ['material', 'Material'], ['color', 'Color'], ['notes', 'Indicaciones']],
+  LAS: [['quantity', 'Cantidad fÃ­sica'], ['width_cm', 'Ancho'], ['height_cm', 'Alto'], ['material', 'Material'], ['finish', 'Acabado'], ['notes', 'Indicaciones']],
+  TAL: [['width_cm', 'Ancho verificado'], ['height_cm', 'Alto verificado'], ['material', 'Material'], ['finish', 'Acabado o montaje'], ['installation_address', 'Lugar de instalaciÃ³n'], ['site_visit_notes', 'Observaciones de visita']],
+};
+function ProductionHandoff({ step, areas, specifications }: { step: Step; areas: AreaRow[]; specifications: Record<string, unknown> | null }) {
+  const code = areas.find((area) => area.id === step.area_id)?.code || '';
+  const fields = HANDOFF_FIELDS[code] || [];
+  const filled = fields.filter(([key]) => specifications?.[key] !== undefined && specifications?.[key] !== null && String(specifications[key]).trim() !== '');
+  if (!fields.length) return null;
+  return <section className="pj-handoff" aria-label={`InformaciÃ³n para ${step.title}`}>
+    <div className="pj-handoff-heading"><div><span className="pj-artwork-eyebrow">PASE ENTRE ÃREAS</span><h4>InformaciÃ³n para {step.title}</h4></div><span className="pj-handoff-count">{filled.length} de {fields.length} datos</span></div>
+    <p>Resumen de la ficha que acompaÃ±a este paso. Los requisitos que sÃ­ bloquean el avance aparecen en los motivos de preparaciÃ³n de la etapa.</p>
+    <ul className="pj-handoff-list">{fields.map(([key, label]) => {
+      const value = specifications?.[key];
+      const complete = value !== undefined && value !== null && String(value).trim() !== '';
+      return <li key={key} data-complete={complete}><span aria-hidden="true">{complete ? <Check size={13}/> : 'â€¢'}</span><b>{label}</b><small>{complete ? String(value) : 'Por confirmar en la ficha'}</small></li>;
+    })}</ul>
+  </section>;
+}
+
+export function ProductionJobsPage() {
+  const { area: areaParam } = useParams<{ area: AreaSlug }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { organizationId, user, hasPermission, profiles, roles } = useAuth();
+  const area = AREA_CONFIG.find((entry) => entry.slug === areaParam);
+  const canSeeWorkshop = hasPermission('workshop', 'view');
+  const canEditWorkshop = hasPermission('workshop', 'edit');
+  const canEditSales = hasPermission('sales', 'edit');
+  const canSeeAdvisory = hasPermission('sales', 'view') || canSeeWorkshop;
+  const profileKeys = new Set<string>((profiles || []).map((profile: { key: string }) => profile.key));
+  const canCoordinate = canEditWorkshop && ((roles || []).some((role: string) => role === 'owner' || role === 'admin')
+    || ['admin', 'gerencia', 'coordinador_taller', 'encargado_local'].some((key) => profileKeys.has(key)));
+  const canActInArea = (code: string) => {
+    if ((roles || []).some((role: string) => role === 'owner' || role === 'admin')
+      || ['admin', 'gerencia', 'coordinador_taller', 'encargado_local'].some((key) => profileKeys.has(key))) return true;
+    const keysByArea: Record<string, string[]> = {
+      ASE: ['asesoras', 'coordinador_ventas'], DIS: ['disenador_grafico'],
+      IMP: ['impresor'], SUB: ['sublimacion'], LAS: ['personal_taller'], TAL: ['personal_taller'],
+    };
+    return (keysByArea[code] || []).some((key) => profileKeys.has(key));
+  };
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [steps, setSteps] = useState<Step[]>([]);
+  const [events, setEvents] = useState<JobEvent[]>([]);
+  const [stepChecks, setStepChecks] = useState<StepCheck[]>([]);
+  const [productionLots, setProductionLots] = useState<ProductionLot[]>([]);
+  const [areas, setAreas] = useState<AreaRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [actionMessage, setActionMessage] = useState('');
+  const [actionNote, setActionNote] = useState('');
+  const [artworkReference, setArtworkReference] = useState('');
+  const [artworkNote, setArtworkNote] = useState('');
+  const [artworkFile, setArtworkFile] = useState<File | null>(null);
+  const [artworkFileKey, setArtworkFileKey] = useState(0);
+  const [draftSpec, setDraftSpec] = useState<Record<string, string>>({});
+  const [draftRoute, setDraftRoute] = useState('print');
+  const [eligibleStaff, setEligibleStaff] = useState<Assignee[]>([]);
+  const [staffLoading, setStaffLoading] = useState(false);
+  const [staffError, setStaffError] = useState('');
+  const [draftAssignee, setDraftAssignee] = useState('');
+  const [draftDueAt, setDraftDueAt] = useState('');
+  const [coordinationNote, setCoordinationNote] = useState('');
+  const [evidenceDrafts, setEvidenceDrafts] = useState<Record<string, string>>({});
+  const [reworkTarget, setReworkTarget] = useState('');
+  const [fulfillmentDueAt, setFulfillmentDueAt] = useState('');
+  const [physicalQuantity, setPhysicalQuantity] = useState('');
+  const [physicalUnit, setPhysicalUnit] = useState('unidad');
+  const [lotQuantityDrafts, setLotQuantityDrafts] = useState<Record<string, string>>({});
+  const [lotNote, setLotNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [revision, setRevision] = useState(0);
+  const [queueLimit, setQueueLimit] = useState(150);
+  const [filter, setFilter] = useState<Filter>('all');
+  const [search, setSearch] = useState('');
+  const selectedJobId = searchParams.get('trabajo') || searchParams.get('job');
+  const selectedStepId = searchParams.get('paso');
+
+  useEffect(() => {
+    const refreshForProductionChange = () => setRevision((value) => value + 1);
+    window.addEventListener('visualcorp:production-changed', refreshForProductionChange);
+    return () => window.removeEventListener('visualcorp:production-changed', refreshForProductionChange);
+  }, []);
+
+  useEffect(() => {
+    if (!organizationId || !supabase || !area) return;
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      setLoadError('');
+      try {
+        const client = supabase;
+        const areaResult = await client.from('areas').select('id,code,name').eq('organization_id', organizationId).in('code', AREA_CONFIG.map((entry) => entry.code));
+        if (areaResult.error) throw areaResult.error;
+        const availableAreas = (areaResult.data || []) as AreaRow[];
+        let jobRows: Job[] = [];
+        let targetSteps: Step[] = [];
+        if (area.code === 'ASE') {
+          // Advisory follows whole jobs. An advisor without workshop access only requests their own jobs.
+          let query = client.from('production_jobs').select('*').eq('organization_id', organizationId).order('updated_at', { ascending: false }).limit(queueLimit);
+          if (!canSeeWorkshop && user?.id) query = query.eq('advisor_id', user.id);
+          const result = await query;
+          if (result.error) throw result.error;
+          jobRows = (result.data || []) as Job[];
+        } else {
+          const areaId = availableAreas.find((row) => row.code === area.code)?.id;
+          if (areaId) {
+            const result = await client.from('production_job_steps').select('*').eq('organization_id', organizationId).eq('area_id', areaId).order('updated_at', { ascending: false }).limit(queueLimit);
+            if (result.error) throw result.error;
+            targetSteps = (result.data || []) as Step[];
+            const jobIds = [...new Set(targetSteps.map((step) => step.job_id))];
+            if (jobIds.length) {
+              const jobResult = await client.from('production_jobs').select('*').eq('organization_id', organizationId).in('id', jobIds);
+              if (jobResult.error) throw jobResult.error;
+              jobRows = (jobResult.data || []) as Job[];
+            }
+          }
+        }
+        // Deep links from Mi semana remain usable when a job falls outside the recent queue.
+        if (selectedJobId && !jobRows.some((job) => job.id === selectedJobId)) {
+          const linked = await client.from('production_jobs').select('*').eq('organization_id', organizationId).eq('id', selectedJobId).maybeSingle();
+          if (linked.error) throw linked.error;
+          if (linked.data) jobRows.push(linked.data as Job);
+        }
+        const jobIds = [...new Set(jobRows.map((job) => job.id))];
+        let allSteps: Step[] = [];
+        let jobEvents: JobEvent[] = [];
+        let selectedChecks: StepCheck[] = [];
+        if (jobIds.length) {
+          const [stepResult, eventResult] = await Promise.all([
+            client.from('production_job_steps').select('*').eq('organization_id', organizationId).in('job_id', jobIds).order('step_order', { ascending: true }).limit(900),
+            client.from('production_job_events').select('*').eq('organization_id', organizationId).in('job_id', jobIds).order('created_at', { ascending: false }).limit(900),
+          ]);
+          if (stepResult.error) throw stepResult.error;
+          if (eventResult.error) throw eventResult.error;
+          allSteps = (stepResult.data || []) as Step[];
+          jobEvents = (eventResult.data || []) as JobEvent[];
+        }
+        if (selectedJobId && jobIds.includes(selectedJobId)) {
+          const [selectedStepResult, selectedEventResult, selectedCheckResult, lotResult] = await Promise.all([
+            client.from('production_job_steps').select('*').eq('organization_id', organizationId).eq('job_id', selectedJobId).order('step_order', { ascending: true }),
+            client.from('production_job_events').select('*').eq('organization_id', organizationId).eq('job_id', selectedJobId).order('created_at', { ascending: false }).limit(100),
+            client.from('production_job_step_checks').select('*').eq('organization_id', organizationId).eq('job_id', selectedJobId).order('created_at', { ascending: true }),
+            client.from('production_job_lots').select('*').eq('organization_id', organizationId).eq('job_id', selectedJobId).order('created_at', { ascending: true }),
+          ]);
+          if (selectedStepResult.error) throw selectedStepResult.error;
+          if (selectedEventResult.error) throw selectedEventResult.error;
+          if (selectedCheckResult.error) throw selectedCheckResult.error;
+          if (lotResult.error) throw lotResult.error;
+          allSteps = [...allSteps.filter((step) => step.job_id !== selectedJobId), ...((selectedStepResult.data || []) as Step[])];
+          jobEvents = [...jobEvents.filter((event) => event.job_id !== selectedJobId), ...((selectedEventResult.data || []) as JobEvent[])];
+          selectedChecks = (selectedCheckResult.data || []) as StepCheck[];
+          if (active) setProductionLots((lotResult.data || []) as ProductionLot[]);
+        } else if (active) {
+          setProductionLots([]);
+        }
+        if (!selectedJobId && active) setProductionLots([]);
+        if (active) {
+          setAreas(availableAreas); setJobs(jobRows); setSteps(allSteps); setEvents(jobEvents); setStepChecks(selectedChecks);
+          setActionError(''); setLoading(false);
+        }
+      } catch (error) {
+        if (active) {
+          setLoadError(error instanceof Error ? error.message : 'No pudimos cargar los trabajos.');
+          setLoading(false);
+        }
+      }
+    };
+    void load();
+    return () => { active = false; };
+  }, [organizationId, area?.code, canSeeWorkshop, user?.id, selectedJobId, queueLimit, revision]);
+
+  const rows = useMemo<QueueItem[]>(() => {
+    if (!area) return [];
+    const byJob = new Map<string, Step[]>();
+    for (const step of steps) byJob.set(step.job_id, [...(byJob.get(step.job_id) || []), step]);
+    if (area.code === 'ASE') return jobs.map((job) => ({ job, step: null, currentStep: currentStage(byJob.get(job.id) || []) }));
+    const areaId = areas.find((entry) => entry.code === area.code)?.id;
+    const jobById = new Map(jobs.map((job) => [job.id, job]));
+    return steps.filter((step) => step.area_id === areaId).flatMap((step) => {
+      const job = jobById.get(step.job_id);
+      return job ? [{ job, step, currentStep: currentStage(byJob.get(job.id) || []) }] : [];
+    });
+  }, [area, jobs, steps, areas]);
+  const filterCounts = useMemo<Record<Filter, number>>(() => {
+    const counts: Record<Filter, number> = { all: 0, mine: 0, unassigned: 0, today: 0, overdue: 0, blocked: 0 };
+    for (const item of rows) for (const option of FILTERS) {
+      if (matchesQueueFilter(item, option.id, area?.code, user?.id)) counts[option.id] += 1;
+    }
+    return counts;
+  }, [rows, area?.code, user?.id]);
+  const stageProgress = useMemo(() => {
+    const progress = new Map<string, { completed: number; total: number }>();
+    for (const step of steps) {
+      if (step.status === 'cancelled') continue;
+      const current = progress.get(step.job_id) || { completed: 0, total: 0 };
+      current.total += 1;
+      if (step.status === 'completed') current.completed += 1;
+      progress.set(step.job_id, current);
+    }
+    return progress;
+  }, [steps]);
+  const visible = useMemo(() => rows.filter((item) => {
+    if (!matchesQueueFilter(item, filter, area?.code, user?.id)) return false;
+    const needle = search.trim().toLocaleLowerCase('es');
+    return !needle || `${item.job.sale_code || ''} ${item.job.customer_name || ''} ${item.job.title} ${item.step?.title || ''}`.toLocaleLowerCase('es').includes(needle);
+  }).sort((a, b) => {
+    const aScore = priorityDetails(a); const bScore = priorityDetails(b);
+    return bScore.score - aScore.score || (safeDate(queueDueAt(a))?.getTime() || Infinity) - (safeDate(queueDueAt(b))?.getTime() || Infinity);
+  }), [rows, filter, search, area?.code, user?.id]);
+  const viewItems = useMemo<ProductionQueueViewItem<QueueItem>[]>(() => visible.map((item) => {
+    const shownStep = item.step || item.currentStep;
+    const status = shownStep?.status || 'waiting';
+    const owner = area?.code === 'ASE' ? item.job.advisor_id : item.step?.assigned_to;
+    const dueAt = queueDueAt(item);
+    return {
+      id: `${item.job.id}-${item.step?.id || 'advisor'}`,
+      title: item.step ? `${item.step.title} Â· ${item.job.title}` : item.job.title,
+      code: item.job.sale_code || 'TRABAJO',
+      customer: item.job.customer_name || 'Cliente por consultar',
+      dueAt,
+      dueKey: dayKey(dueAt),
+      status,
+      statusLabel: STATUS_LABELS[status] || status,
+      ownerLabel: owner === user?.id ? 'A mi cargo' : owner ? 'Asignado' : 'Sin responsable',
+      overdue: isLate(item),
+      original: item,
+    };
+  }), [visible, area?.code, user?.id]);
+  const selectedJob = jobs.find((job) => job.id === selectedJobId) || null;
+  const selectedSteps = steps.filter((step) => step.job_id === selectedJob?.id).sort((a, b) => a.step_order - b.step_order);
+  const selectedStep = selectedSteps.find((step) => step.id === selectedStepId) || (area?.code === 'ASE' ? currentStage(selectedSteps) : selectedSteps.find((step) => step.area_id === areas.find((entry) => entry.code === area?.code)?.id)) || null;
+  const selectedEvents = events.filter((event) => event.job_id === selectedJob?.id).slice(0, 30);
+  const selectedStepChecks = stepChecks.filter((check) => check.step_id === selectedStep?.id);
+  const reworkCandidates = selectedStep ? selectedSteps.filter((step) => step.status === 'completed' && step.step_order <= selectedStep.step_order) : [];
+  const selectedReworkTarget = reworkCandidates.find((step) => step.id === reworkTarget) || reworkCandidates.at(-1) || null;
+  const reviewRequest = selectedEvents.find((event) => event.event_type === 'specification_review_changes_requested'
+    && event.details?.to_version === selectedJob?.spec_version
+    && event.details?.from_version === selectedJob?.review_from_version);
+  const reviewRequestNote = typeof reviewRequest?.details?.note === 'string' ? reviewRequest.details.note : null;
+  useEffect(() => {
+    setDraftAssignee(selectedStep?.assigned_to || '');
+    setDraftDueAt(localDateTime(selectedStep?.due_at));
+    setCoordinationNote('');
+  }, [selectedStep?.id, selectedStep?.updated_at]);
+  useEffect(() => {
+    if (!selectedStep || !canCoordinate || !supabase) {
+      setEligibleStaff([]);
+      setStaffError('');
+      setStaffLoading(false);
+      return;
+    }
+    let active = true;
+    setStaffLoading(true);
+    setStaffError('');
+    void supabase.rpc('list_production_step_assignees', { p_step_id: selectedStep.id }).then(({ data, error }) => {
+      if (!active) return;
+      setEligibleStaff(error ? [] : (data || []) as Assignee[]);
+      setStaffError(error ? 'No pudimos consultar el personal habilitado. Actualiza la ficha e intÃ©ntalo de nuevo.' : '');
+      setStaffLoading(false);
+    });
+    return () => { active = false; };
+  }, [selectedStep?.id, canCoordinate, revision]);
+  const canEditSelectedSpec = Boolean(selectedJob && selectedJob.advisor_id === user?.id && canEditSales);
+  const isSiteVisitEditor = area?.code === 'TAL' && selectedStep?.step_key === 'site_visit'
+    && selectedStep.assigned_to === user?.id && canEditWorkshop && canActInArea('TAL');
+  const showSpecEditor = selectedJob && (canEditSelectedSpec || isSiteVisitEditor)
+    && ['open', 'needs_review'].includes(selectedJob.status);
+  useEffect(() => {
+    const spec = selectedJob?.specifications || {};
+    const fields = ['description', 'width_cm', 'height_cm', 'material', 'finish', 'installation_address', 'site_visit_notes'];
+    setDraftSpec(Object.fromEntries(fields.map((key) => [key, String(spec[key] ?? '')])));
+    setDraftRoute('print');
+  }, [selectedJob?.id, selectedJob?.spec_version]);
+  useEffect(() => {
+    setFulfillmentDueAt(localDateTime(selectedJob?.fulfillment_due_at));
+  }, [selectedJob?.id, selectedJob?.fulfillment_due_at, selectedJob?.status]);
+  useEffect(() => {
+    setArtworkReference(selectedJob?.artwork_reference || '');
+    setArtworkNote('');
+    setArtworkFile(null);
+    setArtworkFileKey((value) => value + 1);
+  }, [selectedJob?.id, selectedJob?.artwork_revision]);
+  const currentAreaName = (id: string) => areas.find((row) => row.id === id)?.name || 'Ãrea de trabajo';
+  const renderQueueCard = (viewItem: ProductionQueueViewItem<QueueItem>, compact = false) => {
+    const item = viewItem.original;
+    const shownStep = item.step || item.currentStep;
+    const status = shownStep?.status || 'waiting';
+    const owner = area.code === 'ASE' ? item.job.advisor_id : item.step?.assigned_to;
+    const progress = stageProgress.get(item.job.id);
+    const priority = priorityDetails(item);
+    return <article className={`pj-card${viewItem.overdue ? ' is-overdue' : ''}${compact ? ' pj-card--compact' : ''}`} data-state={status} onPointerMove={moveCardSpotlight}>
+      <div className="pj-card-main"><div className="pj-card-top"><span className="pj-card-code">{viewItem.code}</span><span className="pj-status" data-state={status}>{status === 'blocked' ? <AlertTriangle size={12}/> : status === 'completed' ? <CircleCheck size={12}/> : <Clock3 size={12}/>} {viewItem.statusLabel}</span>{priority.score > 0 && <span className="pj-priority" title={priority.reason}>Prioridad {priority.score} Â· {priority.reason}</span>}</div>
+        <h2>{viewItem.title}</h2><div className="pj-card-meta"><span><UserRound size={13}/>{viewItem.customer}</span><span><CalendarClock size={13}/>{viewItem.overdue ? <b className="is-late">Atrasado Â· {stamp(viewItem.dueAt)}</b> : stamp(viewItem.dueAt)}</span><span>{owner === user?.id ? 'A mi cargo' : owner ? 'Asignado' : 'Sin responsable'}</span></div>
+        {item.step?.status === 'waiting' && item.step.readiness_reasons?.length ? <p className="pj-card-next">Pendiente: <b>{item.step.readiness_reasons.map((reason) => reason.message).join(' Â· ')}</b></p> : null}
+        {area.code === 'ASE' && shownStep && <p className="pj-card-next">Ahora: <b>{shownStep.title}</b> Â· {currentAreaName(shownStep.area_id)}</p>}{item.step?.notes && <p className="pj-card-next">IndicaciÃ³n: <b>{item.step.notes}</b></p>}
+        {!compact && progress && <ProductionStageProgress completed={progress.completed} total={progress.total} title={item.job.title}/>}</div>
+      <button type="button" className="pj-card-action" onClick={() => openJob(item)} aria-label={`Abrir ficha de ${item.job.title}`}>Ver ficha <ArrowRight size={14}/></button>
+    </article>;
+  };
+  const openJob = (item: QueueItem) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('trabajo', item.job.id);
+    if (item.step) params.set('paso', item.step.id); else params.delete('paso');
+    setActionError(''); setActionMessage(''); setActionNote(''); setSearchParams(params);
+  };
+  const closeJob = () => {
+    const params = new URLSearchParams(searchParams);
+    params.delete('trabajo'); params.delete('job'); params.delete('paso'); setSearchParams(params);
+    setActionError(''); setActionMessage(''); setActionNote('');
+  };
+  const chooseStep = (stepId: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('paso', stepId);
+    setActionError(''); setActionMessage(''); setSearchParams(params);
+  };
+  const refreshAfterChange = () => {
+    window.dispatchEvent(new Event('visualcorp:production-changed'));
+  };
+  const saveCoordination = async () => {
+    if (!supabase || !selectedStep || !selectedJob || !canCoordinate || busy || staffLoading || staffError
+      || !isOpen(selectedStep.status) || selectedJob.status === 'completed' || selectedJob.status === 'cancelled') return;
+    const parsed = draftDueAt ? new Date(draftDueAt) : null;
+    if (draftDueAt && (!parsed || Number.isNaN(parsed.getTime()))) {
+      setActionError('Escribe una fecha y hora vÃ¡lidas.'); return;
+    }
+    const assignee = draftAssignee || null;
+    const dueAt = draftDueAt === localDateTime(selectedStep.due_at)
+      ? selectedStep.due_at : parsed?.toISOString() || null;
+    if (assignee === selectedStep.assigned_to && dueAt === selectedStep.due_at) {
+      setActionError('Cambia el responsable o la fecha antes de guardar.'); return;
+    }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('coordinate_production_job_step', {
+        p_step_id: selectedStep.id, p_expected_updated_at: selectedStep.updated_at,
+        p_assigned_to: assignee, p_due_at: dueAt, p_note: coordinationNote.trim(),
+      });
+      if (error) throw error;
+      setActionMessage('Responsable y fecha guardados. El cambio quedÃ³ registrado en el historial.');
+      refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos coordinar la etapa.'); }
+    finally { setBusy(false); }
+  };
+  const runStepAction = async (action: 'take' | 'start' | 'complete' | 'block' | 'unblock') => {
+    if (!supabase || !selectedStep || busy || !area || !canActInArea(area.code)
+      || !(canEditWorkshop || canEditSales && area.code === 'ASE')) return;
+    if (action === 'block' && actionNote.trim().length < 3) { setActionError('Explica por quÃ© se bloquea este trabajo.'); return; }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('transition_production_job_step', {
+        p_step_id: selectedStep.id, p_action: action, p_note: actionNote.trim(), p_assigned_to: null,
+      });
+      if (error) throw error;
+      setActionNote(''); setActionMessage('Cambio guardado. La siguiente etapa se actualiza automÃ¡ticamente cuando corresponde.');
+      refreshAfterChange();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'No pudimos actualizar esta etapa.');
+    } finally { setBusy(false); }
+  };
+  const receiveStep = async () => {
+    if (!supabase || !selectedStep || busy) return;
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('receive_production_job_step', { p_step_id: selectedStep.id, p_note: actionNote.trim() });
+      if (error) throw error;
+      setActionNote(''); setActionMessage('RecepciÃ³n registrada. La etapa queda a cargo de esta Ã¡rea.'); refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos recibir la etapa.'); }
+    finally { setBusy(false); }
+  };
+  const updateStepCheck = async (check: StepCheck, completed: boolean) => {
+    if (!supabase || busy) return;
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('set_production_step_check', {
+        p_check_id: check.id, p_completed: completed, p_evidence_url: evidenceDrafts[check.id]?.trim() || '', p_note: '',
+      });
+      if (error) throw error;
+      refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos guardar el control.'); }
+    finally { setBusy(false); }
+  };
+  const requestRework = async () => {
+    const targetId = selectedReworkTarget?.id || reworkTarget;
+    if (!supabase || !selectedJob || !selectedStep || !targetId || busy || actionNote.trim().length < 3) {
+      setActionError('Selecciona la etapa que debe repetirse y explica el motivo.'); return;
+    }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('request_production_job_rework', {
+        p_report_step: selectedStep.id, p_target_step: targetId, p_note: actionNote.trim(),
+      });
+      if (error) throw error;
+      setActionNote(''); setActionMessage('Retrabajo registrado; las etapas afectadas se reabrieron y el equipo recibiÃ³ el aviso.'); refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos solicitar el retrabajo.'); }
+    finally { setBusy(false); }
+  };
+  const updateFulfillment = async (action: 'quality_pass' | 'schedule_delivery' | 'deliver' | 'install') => {
+    if (!supabase || !selectedJob || busy) return;
+    const due = fulfillmentDueAt ? new Date(fulfillmentDueAt) : null;
+    if (action === 'schedule_delivery' && (!due || Number.isNaN(due.getTime()))) { setActionError('Elige la fecha y hora de entrega.'); return; }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('transition_production_job_fulfillment', {
+        p_job_id: selectedJob.id, p_action: action, p_due_at: action === 'schedule_delivery' ? due?.toISOString() : null,
+        p_note: actionNote.trim(),
+      });
+      if (error) throw error;
+      setActionNote(''); setActionMessage('Control de calidad o entrega registrado en el historial.'); refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos actualizar la entrega.'); }
+    finally { setBusy(false); }
+  };
+  const configurePhysicalQuantity = async () => {
+    const quantity = Number(physicalQuantity);
+    if (!supabase || !selectedJob || busy || !canManageFulfillment) return;
+    if (!Number.isFinite(quantity) || quantity <= 0 || !physicalUnit.trim()) { setActionError('Indica la cantidad fÃ­sica total y su unidad.'); return; }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('configure_production_job_quantity', {
+        p_job_id: selectedJob.id, p_quantity: quantity, p_unit: physicalUnit.trim(),
+      });
+      if (error) throw error;
+      setPhysicalQuantity(''); setLotNote('');
+      setActionMessage('Cantidad fÃ­sica configurada. El lote completo sigue en producciÃ³n hasta registrar los tramos terminados.');
+      refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos configurar la cantidad fÃ­sica.'); }
+    finally { setBusy(false); }
+  };
+  const transitionLot = async (lot: ProductionLot, action: 'submit_quality' | 'approve_quality' | 'request_rework' | 'schedule_delivery' | 'deliver' | 'install') => {
+    if (!supabase || !selectedJob || busy) return;
+    const rawQuantity = lotQuantityDrafts[lot.id]?.trim() || '';
+    const quantity = rawQuantity ? Number(rawQuantity) : null;
+    const due = fulfillmentDueAt ? new Date(fulfillmentDueAt) : null;
+    if (quantity !== null && (!Number.isFinite(quantity) || quantity <= 0)) { setActionError('La cantidad del tramo debe ser mayor a cero.'); return; }
+    if (action === 'request_rework' && lotNote.trim().length < 3) { setActionError('Explica el motivo del retrabajo.'); return; }
+    if (action === 'schedule_delivery' && (!due || Number.isNaN(due.getTime()))) { setActionError('Elige una fecha y hora de entrega.'); return; }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('transition_production_job_lot', {
+        p_lot_id: lot.id, p_action: action, p_quantity: quantity,
+        p_due_at: action === 'schedule_delivery' ? due?.toISOString() : null, p_note: lotNote.trim(),
+      });
+      if (error) throw error;
+      setLotNote(''); setLotQuantityDrafts((current) => ({ ...current, [lot.id]: '' }));
+      setActionMessage('Movimiento del lote guardado con cantidad, responsable y fecha en el historial.');
+      refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos actualizar este lote.'); }
+    finally { setBusy(false); }
+  };
+  const saveSpecifications = async () => {
+    if (!supabase || !selectedJob || !showSpecEditor || busy) return;
+    const current = selectedJob.specifications || {};
+    const keys = isSiteVisitEditor && !canEditSelectedSpec
+      ? ['width_cm', 'height_cm', 'site_visit_notes']
+      : ['description', 'width_cm', 'height_cm', 'material', 'finish', 'installation_address', 'site_visit_notes'];
+    const next = { ...current };
+    keys.forEach((key) => {
+      const value = draftSpec[key]?.trim() || '';
+      if (value !== String(current[key] ?? '')) next[key] = value;
+    });
+    if (JSON.stringify(next) === JSON.stringify(current) && !actionNote.trim()) {
+      setActionError('AÃ±ade un cambio o una nota antes de guardar.'); return;
+    }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('update_production_job', {
+        p_job_id: selectedJob.id, p_expected_version: selectedJob.spec_version,
+        p_specifications: next, p_note: actionNote.trim(),
+      });
+      if (error) throw error;
+      setActionNote(''); setActionMessage('Ficha actualizada y cambio registrado para todas las Ã¡reas.');
+      refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos guardar los detalles.'); }
+    finally { setBusy(false); }
+  };
+  const chooseWorkflow = async () => {
+    if (!supabase || !selectedJob || busy || !canEditSelectedSpec) return;
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('choose_production_job_workflow', {
+        p_job_id: selectedJob.id, p_workflow_code: draftRoute,
+        p_expected_version: selectedJob.spec_version, p_note: actionNote.trim(),
+      });
+      if (error) throw error;
+      setActionNote(''); setActionMessage('Ruta definida. Las etapas se asignaron automÃ¡ticamente.');
+      refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos definir la ruta.'); }
+    finally { setBusy(false); }
+  };
+  const submitArtwork = async () => {
+    if (!supabase || !selectedJob || !selectedStep || busy || selectedStep.step_key !== 'design'
+      || selectedStep.assigned_to !== user?.id || !canActInArea('DIS') || !canEditWorkshop) return;
+    if (artworkFile) {
+      if (!ARTWORK_FILE_TYPES[artworkFile.type] || artworkFile.size > ARTWORK_FILE_MAX_BYTES || artworkFile.size === 0) {
+        setActionError('Usa PNG, JPG, WebP o PDF de hasta 6 MB.'); return;
+      }
+    } else if (!artworkReference.startsWith('storage://production-artwork/')) {
+      try {
+        const url = new URL(artworkReference.trim());
+        if (url.protocol !== 'https:' || !url.hostname) throw new Error('Enlace invÃ¡lido');
+      } catch { setActionError('AÃ±ade un enlace HTTPS vÃ¡lido o selecciona un archivo.'); return; }
+    }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      let reference = artworkReference.trim();
+      if (artworkFile) {
+        const path = `${selectedJob.organization_id}/${selectedJob.id}/${crypto.randomUUID()}.${ARTWORK_FILE_TYPES[artworkFile.type]}`;
+        const { error: uploadError } = await supabase.storage.from('production-artwork').upload(path, artworkFile, {
+          contentType: artworkFile.type, cacheControl: '3600', upsert: false,
+        });
+        if (uploadError) throw new Error(`No pudimos subir la prueba privada: ${uploadError.message}`);
+        reference = `storage://production-artwork/${path}`;
+        setArtworkReference(reference);
+        setArtworkFile(null);
+        setArtworkFileKey((value) => value + 1);
+      }
+      const { error } = await supabase.rpc('submit_production_artwork', {
+        p_job_id: selectedJob.id, p_reference: reference, p_note: artworkNote.trim(),
+      });
+      if (error) throw error;
+      setArtworkNote(''); setActionMessage('Arte entregado. AsesorÃ­a recibirÃ¡ un aviso para aprobarlo o pedir correcciones.');
+      refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos entregar el arte.'); }
+    finally { setBusy(false); }
+  };
+  const reviewArtwork = async (decision: 'approved' | 'changes_requested') => {
+    if (!supabase || !selectedJob || busy || !(canCoordinate || canEditSelectedSpec)) return;
+    if (decision === 'changes_requested' && artworkNote.trim().length < 3) {
+      setActionError('Explica quÃ© debe corregir DiseÃ±o.'); return;
+    }
+    setBusy(true); setActionError(''); setActionMessage('');
+    try {
+      const { error } = await supabase.rpc('review_production_artwork', {
+        p_job_id: selectedJob.id, p_expected_revision: selectedJob.artwork_revision,
+        p_decision: decision, p_note: artworkNote.trim(),
+      });
+      if (error) throw error;
+      setArtworkNote('');
+      setActionMessage(decision === 'approved' ? 'Arte aprobado. La siguiente etapa se habilitÃ³ si cumple los demÃ¡s requisitos.' : 'Correcciones enviadas. DiseÃ±o puede retomar su etapa.');
+      refreshAfterChange();
+    } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos registrar la revisiÃ³n.'); }
+    finally { setBusy(false); }
+  };
+
+  if (!area) return <Navigate to="/operaciones/trabajos/asesoria" replace/>;
+  if ((area.code === 'ASE' ? !canSeeAdvisory : !canSeeWorkshop)) return <AppFrame area="operations"><PageHeading eyebrow="TRABAJOS" title="Sin acceso a esta Ã¡rea" description="Pide a un responsable que revise los permisos de tu perfil."/></AppFrame>;
+  const Icon = area.icon;
+  const canChangeSelected = selectedJob?.status !== 'needs_review' && canActInArea(area.code)
+    && (area.code === 'ASE' ? canEditSelectedSpec : canEditWorkshop)
+    && Boolean(selectedStep && selectedStep.area_id === areas.find((row) => row.code === area.code)?.id);
+  const assignedToMe = selectedStep?.assigned_to === user?.id;
+  const canSubmitArtwork = selectedJob?.approval_required && selectedJob.status === 'open'
+    && selectedStep?.step_key === 'design' && assignedToMe && canActInArea('DIS') && canEditWorkshop
+    && ['awaiting_art', 'changes_requested'].includes(selectedJob.artwork_review_status)
+    && ['in_progress', 'completed'].includes(selectedStep.status);
+  const canReviewArtwork = selectedJob?.approval_required && selectedJob.status === 'open'
+    && selectedJob.artwork_review_status === 'awaiting_review' && (canCoordinate || canEditSelectedSpec);
+  const isAssignedAdvisor = Boolean(selectedJob && selectedSteps.some((step) => areas.find((entry) => entry.id === step.area_id)?.code === 'ASE' && step.assigned_to === user?.id));
+  const canManageFulfillment = Boolean(selectedJob && (canCoordinate || (canEditSales && (selectedJob.advisor_id === user?.id || isAssignedAdvisor))));
+  const canSubmitQuantity = Boolean(canManageFulfillment || selectedSteps.some((step) => step.assigned_to === user?.id && step.status === 'in_progress'));
+  const lotQuantityTotal = (statuses: string[]) => productionLots.filter((lot) => statuses.includes(lot.status)).reduce((sum, lot) => sum + Number(lot.quantity || 0), 0);
+  const lotStatusLabel: Record<string, string> = { in_production: 'En producciÃ³n', quality_check: 'Control de calidad', ready_for_delivery: 'Calidad aprobada', scheduled: 'Entrega programada', delivered: 'Entregado', installed: 'Instalado' };
+  return <AppFrame area="operations"><main className="production-jobs">
+    <PageHeading eyebrow="OPERACIONES Â· TRABAJOS" title={area.name} description={area.intro} action={<button className="button button-outline" type="button" onClick={() => setRevision((value) => value + 1)} disabled={loading}><RefreshCw size={15}/> Actualizar</button>}/>
+    <nav className="pj-area-nav" aria-label="Ãreas de trabajo">{AREA_CONFIG.filter((entry) => entry.code === 'ASE' ? canSeeAdvisory : canSeeWorkshop).map((entry) => { const AreaIcon = entry.icon; return <Link key={entry.slug} to={`/operaciones/trabajos/${entry.slug}`} aria-current={entry.slug === area.slug ? 'page' : undefined}><AreaIcon size={15}/>{entry.name}</Link>; })}</nav>
+    <p className="pj-intro">Organiza la carga de esta Ã¡rea por fecha, etapa o formato. Abre cada trabajo para consultar la solicitud, sus pasos y los cambios registrados.</p>
+    <ProductionQueueSummary total={filterCounts.all} unassigned={filterCounts.unassigned} overdue={filterCounts.overdue} blocked={filterCounts.blocked} loading={loading}/>
+    <div className="pj-toolbar"><div className="pj-filter" role="group" aria-label="Filtrar trabajos">{FILTERS.map((entry) => <button type="button" key={entry.id} aria-pressed={filter === entry.id} onClick={() => setFilter(entry.id)}>{entry.label}{!loading && <span className="pj-filter-count" aria-label={`${filterCounts[entry.id]} trabajos`}>{filterCounts[entry.id]}</span>}</button>)}</div><label className="pj-search"><span>Buscar trabajo</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cliente, venta o producto"/></label></div>
+    <div className="pj-count" role="status" aria-live="polite">{loading ? 'Cargando trabajosâ€¦' : `${visible.length} ${visible.length === 1 ? 'trabajo visible' : 'trabajos visibles'}`}</div>
+    {loadError && <div className="pj-error" role="alert">No pudimos consultar las Ã³rdenes actuales. {loadError} <button className="button button-outline" type="button" onClick={() => setRevision((value) => value + 1)}>Reintentar</button></div>}
+    {!loading && !loadError && !visible.length && <div className="pj-empty"><Icon size={23}/><b>{rows.length ? 'No hay trabajos para este filtro' : 'No hay trabajos asignados a esta Ã¡rea'}</b><p>{rows.length ? 'Cambia el filtro o busca por cliente, venta o producto.' : 'Los nuevos trabajos aparecerÃ¡n aquÃ­ al confirmar una venta con una ruta de producciÃ³n configurada.'}</p>{rows.length > 0 && (filter !== 'all' || search) && <button className="button button-outline" type="button" onClick={() => { setFilter('all'); setSearch(''); }}>Mostrar todos</button>}</div>}
+    {loading && !loadError && <ProductionQueueSkeleton/>}
+    {!loading && !loadError && visible.length > 0 && <ProductionQueueViews areaSlug={area.slug} areaName={area.name} items={viewItems} today={todayKey()} renderCard={renderQueueCard} onOpen={(item) => openJob(item.original)}/>}
+    {!loading && !loadError && rows.length >= queueLimit && <div className="pj-count"><span>Se muestran los {queueLimit} trabajos mÃ¡s recientes de esta Ã¡rea.</span> <button className="button button-outline" type="button" onClick={() => setQueueLimit((value) => value + 150)}>Cargar mÃ¡s</button></div>}
+    <div className="pj-detail-modal"><Sheet open={Boolean(selectedJob)} onOpenChange={(open) => { if (!open) closeJob(); }} title={selectedJob?.sale_code ? `Trabajo ${selectedJob.sale_code}` : 'Ficha de trabajo'} description={selectedJob ? selectedJob.customer_name || 'Seguimiento de producciÃ³n' : undefined}><div className="pj-detail">
+      {selectedJob && <><div className="pj-detail-hero"><span className="pj-card-code">ORDEN DE TRABAJO Â· VERSIÃ“N {selectedJob.spec_version}</span><h3>{selectedJob.title}</h3><p>Las indicaciones se comparten entre asesorÃ­a y producciÃ³n. Cada cambio queda asociado a la ficha.</p></div><dl className="pj-detail-facts"><div><dt>Cliente</dt><dd>{selectedJob.customer_name || 'Por consultar'}</dd></div><div><dt>TelÃ©fono</dt><dd>{selectedJob.customer_phone || 'Por consultar'}</dd></div><div><dt>Venta</dt><dd>{selectedJob.sale_code || 'Sin cÃ³digo'}</dd></div><div><dt>Fecha prevista</dt><dd>{stamp(selectedJob.due_at)}</dd></div></dl>
+      {selectedJob.status === 'needs_review' && <ProductionSpecReview
+        key={`${selectedJob.id}:${selectedJob.spec_version}`}
+        jobId={selectedJob.id}
+        version={selectedJob.spec_version}
+        fromVersion={selectedJob.review_from_version}
+        current={selectedJob.specifications || {}}
+        canResolve={canCoordinate}
+        lastRequest={reviewRequestNote}
+        onDecided={(decision) => {
+          setActionMessage(decision === 'accepted'
+            ? 'Cambio tÃ©cnico aceptado. Las etapas correspondientes se actualizaron.'
+            : 'CorrecciÃ³n solicitada. El trabajo permanece detenido hasta la revisiÃ³n de la ficha.');
+          refreshAfterChange();
+        }}
+      />}
+      <section><h4>Detalles del trabajo</h4>{Object.keys(selectedJob.specifications || {}).length ? <dl className="pj-detail-facts">{Object.entries(selectedJob.specifications || {}).map(([key, value]) => <div key={key}><dt>{humanKey(key)}</dt><dd>{key === 'artwork_status' ? ({ pending: 'Por definir', design_needed: 'Hay que diseÃ±arlo', provided: 'Archivo del cliente', approved: 'Archivo indicado como aprobado al vender' }[String(value)] || presentValue(value)) : presentValue(value)}</dd></div>)}</dl> : <p className="pj-note">AÃºn no hay especificaciones adicionales. Solicita al asesor los datos que faltan antes de empezar.</p>}</section>
+      {selectedStep && <ProductionHandoff step={selectedStep} areas={areas} specifications={selectedJob.specifications}/>}
+      {selectedJob.approval_required && <section className="pj-artwork" aria-label="RevisiÃ³n del arte"><div className="pj-artwork-top"><div><span className="pj-artwork-eyebrow">CONTROL DE ARTE</span><h4>RevisiÃ³n antes de producir</h4></div><span className="pj-artwork-state" data-state={selectedJob.artwork_review_status}>{({ awaiting_art: 'DiseÃ±o pendiente', awaiting_review: 'Por aprobar', changes_requested: 'Correcciones', approved: 'Aprobado', not_required: 'Sin revisiÃ³n' })[selectedJob.artwork_review_status]}</span></div><p>{({ awaiting_art: 'DiseÃ±o prepara el archivo y comparte un enlace para que AsesorÃ­a lo revise.', awaiting_review: 'AsesorÃ­a revisa la versiÃ³n entregada. ProducciÃ³n espera su decisiÃ³n.', changes_requested: 'DiseÃ±o debe atender las correcciones y entregar una nueva versiÃ³n.', approved: 'El arte fue aprobado. Las siguientes etapas avanzan segÃºn sus demÃ¡s requisitos.', not_required: 'Este trabajo no requiere una revisiÃ³n de arte.' })[selectedJob.artwork_review_status]}</p>{selectedJob.artwork_revision > 0 && <div className="pj-artwork-meta"><span>VersiÃ³n {selectedJob.artwork_revision}</span><span>Entregado: {stamp(selectedJob.artwork_submitted_at)}</span>{selectedJob.artwork_reviewed_at && <span>Revisado: {stamp(selectedJob.artwork_reviewed_at)}</span>}</div>}<ProductionArtworkReference key={selectedJob.artwork_reference} reference={selectedJob.artwork_reference}/>{canSubmitArtwork && <div className="pj-artwork-form"><label>Prueba privada (PNG, JPG, WebP o PDF Â· hasta 6 MB)<input key={artworkFileKey} type="file" accept=".png,.jpg,.jpeg,.webp,.pdf,image/png,image/jpeg,image/webp,application/pdf" onChange={(event) => { const file = event.target.files?.[0] || null; if (file && (!ARTWORK_FILE_TYPES[file.type] || file.size > ARTWORK_FILE_MAX_BYTES || file.size === 0)) { setActionError("Usa PNG, JPG, WebP o PDF de hasta 6 MB."); event.target.value = ""; setArtworkFile(null); } else { setActionError(""); setArtworkFile(file); } }}/></label><p className="pj-artwork-hint">La prueba queda privada. Para archivos de producciÃ³n mÃ¡s grandes, usa un enlace HTTPS.</p>{artworkReference.startsWith("storage://production-artwork/") && !artworkFile && <p className="pj-artwork-hint">La prueba ya se subiÃ³. Pulsa entregar para registrarla en la orden.</p>}<label>O enlace HTTPS del arte<input type="url" inputMode="url" maxLength={1000} value={artworkReference.startsWith("storage://production-artwork/") ? "" : artworkReference} onChange={(event) => setArtworkReference(event.target.value)} placeholder="https://â€¦"/></label><label>Nota de entrega <span className="pj-optional">opcional</span><textarea maxLength={1000} rows={2} value={artworkNote} onChange={(event) => setArtworkNote(event.target.value)} placeholder="QuÃ© cambiÃ³ en esta versiÃ³n"/></label><button className="button button-dark" type="button" disabled={busy || (!artworkFile && !artworkReference.trim())} onClick={() => void submitArtwork()}>Entregar para aprobaciÃ³n <ArrowRight size={14}/></button></div>}{canReviewArtwork && <div className="pj-artwork-form"><label>DecisiÃ³n para DiseÃ±o<textarea maxLength={1000} rows={2} value={artworkNote} onChange={(event) => setArtworkNote(event.target.value)} placeholder="Si pides correcciones, explica quÃ© hay que cambiar"/></label><div className="pj-action-row"><button className="button button-dark" type="button" disabled={busy} onClick={() => void reviewArtwork('approved')}><Check size={14}/> Aprobar arte</button><button className="button button-outline" type="button" disabled={busy || artworkNote.trim().length < 3} onClick={() => void reviewArtwork('changes_requested')}>Pedir correcciones</button></div></div>}</section>}
       {selectedJob.workflow_code === 'review' && canEditSelectedSpec && <section className="pj-actions"><h4>Definir ruta de producciÃ³n</h4><p className="pj-note">Elige el recorrido para activar las tareas de cada Ã¡rea. Revisa antes los detalles del pedido.</p><label>Recorrido<select value={draftRoute} onChange={(event) => setDraftRoute(event.target.value)}>{WORKFLOW_CHOICES.map((choice) => <option key={choice.code} value={choice.code}>{choice.label}</option>)}</select></label><button className="button button-dark" type="button" disabled={busy} onClick={() => void chooseWorkflow()}>Activar ruta <ArrowRight size={14}/></button></section>}
       {showSpecEditor && <section className="pj-actions"><h4>{isSiteVisitEditor && !canEditSelectedSpec ? 'Medidas de la visita' : 'Editar ficha del trabajo'}</h4><p className="pj-note">Los cambios se guardan con una nueva versiÃ³n y quedan visibles para todas las Ã¡reas.</p><div className="pj-edit-grid"><label>Ancho (cm)<input type="number" min="0.01" step="0.01" inputMode="decimal" value={draftSpec.width_cm || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, width_cm: event.target.value }))}/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" inputMode="decimal" value={draftSpec.height_cm || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, height_cm: event.target.value }))}/></label></div>{(!isSiteVisitEditor || canEditSelectedSpec) && <><label>DescripciÃ³n<textarea maxLength={4000} rows={3} value={draftSpec.description || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, description: event.target.value }))}/></label><label>Material<input maxLength={180} value={draftSpec.material || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, material: event.target.value }))}/></label><label>Acabado<input maxLength={220} value={draftSpec.finish || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, finish: event.target.value }))}/></label><label>DirecciÃ³n de instalaciÃ³n<input maxLength={400} value={draftSpec.installation_address || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, installation_address: event.target.value }))}/></label></>}<label>Observaciones de la visita<textarea maxLength={1000} rows={2} value={draftSpec.site_visit_notes || ''} onChange={(event) => setDraftSpec((value) => ({ ...value, site_visit_notes: event.target.value }))}/></label><label>Motivo del cambio<textarea maxLength={1000} rows={2} value={actionNote} onChange={(event) => setActionNote(event.target.value)} placeholder="Ej. Medidas verificadas en el local del cliente"/></label><button className="button button-dark" type="button" disabled={busy} onClick={() => void saveSpecifications()}>Guardar detalles <Check size={14}/></button></section>}
       {canCoordinate && selectedStep && <section className="pj-actions pj-coordination" aria-label="CoordinaciÃ³n de etapas"><div className="pj-coordination-heading"><div><h4>Coordinar etapa</h4><p>Asigna a una persona del Ã¡rea y fija una fecha para este paso.</p></div><CalendarClock size={19} aria-hidden="true"/></div><label>Etapa<select value={selectedStep.id} onChange={(event) => chooseStep(event.target.value)}>{selectedSteps.map((step, index) => <option value={step.id} key={step.id}>{String(index + 1).padStart(2, '0')} Â· {step.title} Â· {currentAreaName(step.area_id)}</option>)}</select></label><p className="pj-coordination-status"><span className="pj-status" data-state={selectedStep.status}>{STATUS_LABELS[selectedStep.status]}</span><span>{currentAreaName(selectedStep.area_id)}</span></p>{isOpen(selectedStep.status) && selectedJob.status !== 'completed' && selectedJob.status !== 'cancelled' ? <><div className="pj-edit-grid"><label>Responsable<select value={draftAssignee} onChange={(event) => setDraftAssignee(event.target.value)} disabled={staffLoading || Boolean(staffError)}><option value="">Sin responsable</option>{selectedStep.assigned_to && !staffLoading && !staffError && !eligibleStaff.some((person) => person.user_id === selectedStep.assigned_to) && <option value={selectedStep.assigned_to} disabled>Responsable anterior sin acceso</option>}{eligibleStaff.map((person) => <option value={person.user_id} key={person.user_id}>{person.display_name}{person.user_id === user?.id ? ' (yo)' : ''}</option>)}</select></label><label>Fecha y hora lÃ­mite<input type="datetime-local" value={draftDueAt} onChange={(event) => setDraftDueAt(event.target.value)}/></label></div>{staffLoading && <p className="pj-note" role="status">Cargando personas habilitadasâ€¦</p>}{staffError && <p className="pj-error" role="alert">{staffError}</p>}{!staffLoading && !staffError && !eligibleStaff.length && <p className="pj-note">No hay personas activas para esta Ã¡rea. La etapa puede quedar sin responsable.</p>}<label>Motivo o indicaciÃ³n para el equipo <span className="pj-optional">opcional</span><textarea maxLength={1000} rows={2} value={coordinationNote} onChange={(event) => setCoordinationNote(event.target.value)} placeholder="Ej. Priorizar para entrega del viernes"/></label><div className="pj-coordination-footer"><p>Los cambios se registran en el historial del trabajo.</p><button className="button button-dark" type="button" disabled={busy || staffLoading || Boolean(staffError) || (Boolean(draftAssignee) && !eligibleStaff.some((person) => person.user_id === draftAssignee)) || (draftAssignee === (selectedStep.assigned_to || '') && draftDueAt === localDateTime(selectedStep.due_at))} onClick={() => void saveCoordination()}><Check size={14}/> Guardar cambios</button></div></> : <p className="pj-note">Esta etapa ya terminÃ³ y su asignaciÃ³n quedÃ³ cerrada.</p>}</section>}

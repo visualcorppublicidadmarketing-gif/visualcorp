@@ -1,4 +1,976 @@
-Y™Áäx-ÆÈ‹j◊ù¢Îi∫⁄+äßj[hëÈ‹¢ÈÌ€Õ{È:-jZ.∂õ≠ñ)ﬁ≥R““&ˆGV7Fñˆ‚v˜&∂f∆˜w2vVÊW&FVBg&ˆ“6ˆÊfó&÷VBı26∆R‡–¢““ˆÊR¶ˆ"W"&ˆGV7FófR6∆R∆ñÊS≤FV◊∆FW2÷ífó6óBFÜR6÷R&V÷˜&RFÜ‚ˆÊ6R‡–†–¶«FW"F&∆RV&∆ñ2Á6∆Uˆ∆ñÊW2FB6ˆ«V÷‚ñbÊ˜BWÜó7G26∆ñVÁEˆ∆ñÊUˆ∂WíFWáC∞–¶«FW"F&∆RV&∆ñ2Á6∆Uˆ∆ñÊW2FB6ˆÁ7G&ñÁB6∆Uˆ∆ñÊW5ˆ6∆ñVÁEˆ∆ñÊUˆ∂Wïˆ∆VÊwFÄ–¢6ÜV6≤Ü6∆ñVÁEˆ∆ñÊUˆ∂Wíó2ÁV∆¬˜"∆VÊwFÇÜ6∆ñVÁEˆ∆ñÊUˆ∂Wíí&WGvVV‚ÊBcì∞–¶7&VFRVÊóVRñÊFWÇñbÊ˜BWÜó7G26∆Uˆ∆ñÊW5˜6∆Uˆ6∆ñVÁEˆ∂Wï˜W–¢ˆ‚V&∆ñ2Á6∆Uˆ∆ñÊW2á6∆UˆñB¬6∆ñVÁEˆ∆ñÊUˆ∂WíívÜW&R6∆ñVÁEˆ∆ñÊUˆ∂Wíó2Ê˜BÁV∆√∞–¶«FW"F&∆RV&∆ñ2Á6∆W2FB6ˆ«V÷‚ñbÊ˜BWÜó7G2&ˆGV7FñˆÂˆ6ˆÊfó&÷FñˆÂˆfñÊvW'&ñÁBFWáC∞–†–¢““FÜW6R&6V∆ñÊR&V2&RñÁ7F∆∆VB'íG'W7FVB66ÜV÷÷ñw&Fñˆ‚‚FÜR6Ü&V@–¢““w&óFRwV&B6ÜV6∑2∆ñ6Fñˆ‚&ˆfñ∆W2¬vÜñ6Ç&RÊ˜B&W6VÁBˆ‚g&W6ÇFF&6R‡–¶FÚF÷ñw&Fñˆ‚@–¶&Vvñ‡–¢WÜV7WFRv«FW"F&∆RV&∆ñ2Ê&V2Fó6&∆RG&ñvvW"f5ˆ66W75˜w&óFUˆwV&Bs∞–¢ñÁ6W'BñÁFÚV&∆ñ2Ê&V2Ü˜&vÊó¶FñˆÂˆñB∆6ˆFR∆Ê÷R∆7FófRê–¢6V∆V7BÚÊñB«bÊ6ˆFR«bÊÊ÷R«G'VRg&ˆ“V&∆ñ2Ê˜&vÊó¶FñˆÁ2–¢7&˜72¶ˆñ‚áf«VW2Çt4Rr¬t6W6˜,:÷rí¬ÇtDï2r¬tFó6\;Úríí2bÜ6ˆFR∆Ê÷Rê–¢vÜW&RÚÁ6«Vs“wfó7V¬÷6˜'p–¢ˆ‚6ˆÊf∆ñ7BÜ˜&vÊó¶FñˆÂˆñB∆6ˆFRíFÚWFFR6WBÊ÷S÷WÜ6«VFVBÊÊ÷R∆7FófS◊G'VS∞–¢WÜV7WFRv«FW"F&∆RV&∆ñ2Ê&V2VÊ&∆RG&ñvvW"f5ˆ66W75˜w&óFUˆwV&Bs∞–¶VÊ@–¢F÷ñw&Fñˆ‚C∞–†–¶7&VFRF&∆RV&∆ñ2Á&ˆGV7FñˆÂ˜v˜&∂f∆˜u˜FV◊∆FW2Ä–¢ñBWVñB&ñ÷'í∂WíFVfV«BvVÂ˜&ÊFˆ’˜WVñBÇí¿–¢˜&vÊó¶FñˆÂˆñBWVñBÊ˜BÁV∆¬&VfW&VÊ6W2V&∆ñ2Ê˜&vÊó¶FñˆÁ2ÜñBíˆ‚FV∆WFR&W7G&ñ7B¿–¢6ˆFRFWáBÊ˜BÁV∆¬6ÜV6≤Ü6ˆFR‚uÂ∂◊•’∂◊£”ïı◊≥√Cw“Brí¿–¢Ê÷RFWáBÊ˜BÁV∆¬6ÜV6≤Ü∆VÊwFÇáG&ñ“ÜÊ÷Ríí&WGvVV‚2ÊBí¿–¢&WVó&VEˆfñV∆G2FWáEµ“Ê˜BÁV∆¬FVfV«Bw∑“r¿–¢FW˜6óE˜&WVó&VBÁV÷W&ñ2ÉB√"íÊ˜BÁV∆¬FVfV«B6ÜV6≤ÜFW˜6óE˜&WVó&VB„“í¿–¢7FW2ß6ˆÊ"Ê˜BÁV∆¬6ÜV6≤Üß6ˆÊ%˜GóVˆbá7FW2ì“v'&írÊBß6ˆÊ%ˆ'&ïˆ∆VÊwFÇá7FW2ì√”bÊBˆ7FWEˆ∆VÊwFÇá7FW3£ßFWáBì√”cí¿–¢7FófR&ˆˆ∆V‚Ê˜BÁV∆¬FVfV«BG'VR¿–¢7&VFVEˆBFñ÷W7F◊G¢Ê˜BÁV∆¬FVfV«BÊ˜rÇí¿–¢WFFVEˆBFñ÷W7F◊G¢Ê˜BÁV∆¬FVfV«BÊ˜rÇí¿–¢VÊóVRÜ˜&vÊó¶FñˆÂˆñB∆6ˆFRê–¢ì∞–†–¶7&VFRF&∆RV&∆ñ2Ê6F∆ˆu˜&ˆGV7E˜v˜&∂f∆˜u˜&˜WFW2Ä–¢ñBWVñB&ñ÷'í∂WíFVfV«BvVÂ˜&ÊFˆ’˜WVñBÇí¿–¢˜&vÊó¶FñˆÂˆñBWVñBÊ˜BÁV∆¬&VfW&VÊ6W2V&∆ñ2Ê˜&vÊó¶FñˆÁ2ÜñBíˆ‚FV∆WFR&W7G&ñ7B¿–¢6F∆ˆu˜&ˆGV7EˆñBFWáBÊ˜BÁV∆¬¿–¢v˜&∂f∆˜uˆ6ˆFRFWáBÊ˜BÁV∆¬¿–¢7FófR&ˆˆ∆V‚Ê˜BÁV∆¬FVfV«BG'VR¿–¢7&VFVEˆBFñ÷W7F◊G¢Ê˜BÁV∆¬FVfV«BÊ˜rÇí¿–¢WFFVEˆBFñ÷W7F◊G¢Ê˜BÁV∆¬FVfV«BÊ˜rÇí¿–¢VÊóVRÜ˜&vÊó¶FñˆÂˆñB∆6F∆ˆu˜&ˆGV7EˆñBí¿–¢f˜&Vñv‚∂WíÜ6F∆ˆu˜&ˆGV7EˆñB∆˜&vÊó¶FñˆÂˆñBí&VfW&VÊ6W2V&∆ñ2Ê6F∆ˆu˜&ˆGV7G2ÜñB∆˜&vÊó¶FñˆÂˆñBíˆ‚FV∆WFR666FR¿–¢f˜&Vñv‚∂WíÜ˜&vÊó¶FñˆÂˆñB«v˜&∂f∆˜uˆ6ˆFRí&VfW&VÊ6W2V&∆ñ2Á&ˆGV7FñˆÂ˜v˜&∂f∆˜u˜FV◊∆FW2Ü˜&vÊó¶FñˆÂˆñB∆6ˆFRíˆ‚FV∆WFR&W7G&ñ7@–¢ì∞–¶7&VFRñÊFWÇ6F∆ˆu˜&ˆGV7E˜v˜&∂f∆˜u˜&˜WFW5ˆ7FófUˆñGÄ–¢ˆ‚V&∆ñ2Ê6F∆ˆu˜&ˆGV7E˜v˜&∂f∆˜u˜&˜WFW2Ü˜&vÊó¶FñˆÂˆñB∆7FófR«v˜&∂f∆˜uˆ6ˆFRì∞–†–¶7&VFRF&∆RV&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2Ä–¢ñBWVñB&ñ÷'í∂WíFVfV«BvVÂ˜&ÊFˆ’˜WVñBÇí¿–¢˜&vÊó¶FñˆÂˆñBWVñBÊ˜BÁV∆¬&VfW&VÊ6W2V&∆ñ2Ê˜&vÊó¶FñˆÁ2ÜñBíˆ‚FV∆WFR&W7G&ñ7B¿–¢'&Ê6ÖˆñBWVñBÊ˜BÁV∆¬¿–¢6∆UˆñBWVñBÊ˜BÁV∆¬¿–¢6∆Uˆ∆ñÊUˆñBWVñBÊ˜BÁV∆¬¿–¢Gfó6˜%ˆñBWVñBÊ˜BÁV∆¬&VfW&VÊ6W2WFÇÁW6W'2ÜñBíˆ‚FV∆WFR&W7G&ñ7B¿–¢6F∆ˆu˜&ˆGV7EˆñBFWáB¿–¢v˜&∂f∆˜uˆ6ˆFRFWáBÊ˜BÁV∆¬¿–¢6∆Uˆ6ˆFRFWáBÊ˜BÁV∆¬FVfV«Brr¿–¢7W7Fˆ÷W%ˆÊ÷RFWáBÊ˜BÁV∆¬FVfV«Brr¿–¢7W7Fˆ÷W%˜ÜˆÊRFWáBÊ˜BÁV∆¬FVfV«Brr¿–¢FóF∆RFWáBÊ˜BÁV∆¬6ÜV6≤Ü∆VÊwFÇáG&ñ“áFóF∆Ríí&WGvVV‚"ÊB3í¿–¢7V6ñfñ6FñˆÁ2ß6ˆÊ"Ê˜BÁV∆¬FVfV«Bw∑“s£¶ß6ˆÊ –¢6ÜV6≤Üß6ˆÊ%˜GóVˆbá7V6ñfñ6FñˆÁ2ì“vˆ&¶V7BrÊBˆ7FWEˆ∆VÊwFÇá7V6ñfñ6FñˆÁ3£ßFWáBì√”cí¿–¢7V5˜fW'6ñˆ‚ñÁFVvW"Ê˜BÁV∆¬FVfV«B6ÜV6≤á7V5˜fW'6ñˆ„„í¿–¢&WfñWuˆg&ˆ’˜fW'6ñˆ‚ñÁFVvW"6ÜV6≤á&WfñWuˆg&ˆ’˜fW'6ñˆ„„ÊB&WfñWuˆg&ˆ’˜fW'6ñˆ„√◊7V5˜fW'6ñˆ‚í¿–¢FW˜6óE˜&WVó&VBÁV÷W&ñ2ÉB√"íÊ˜BÁV∆¬FVfV«B6ÜV6≤ÜFW˜6óE˜&WVó&VC„”í¿–¢&˜f≈˜&WVó&VB&ˆˆ∆V‚Ê˜BÁV∆¬FVfV«Bf«6R¿–¢'Gv˜&µ˜&WfñWu˜7FGW2FWáBÊ˜BÁV∆¬FVfV«BvÊ˜E˜&WVó&VBp–¢6ÜV6≤Ü'Gv˜&µ˜&WfñWu˜7FGW2ñ‚ÇvÊ˜E˜&WVó&VBr¬vvóFñÊuˆ'Br¬vvóFñÊu˜&WfñWrr¬v6ÜÊvW5˜&WVW7FVBr¬v&˜fVBríí¿–¢'Gv˜&µ˜&Wfó6ñˆ‚ñÁFVvW"Ê˜BÁV∆¬FVfV«B6ÜV6≤Ü'Gv˜&µ˜&Wfó6ñˆ„„”í¿–¢'Gv˜&µ˜&VfW&VÊ6RFWáBÊ˜BÁV∆¬FVfV«Brr6ÜV6≤Ü∆VÊwFÇÜ'Gv˜&µ˜&VfW&VÊ6Rì√”í¿–¢'Gv˜&µ˜7V&÷óGFVEˆ'íWVñB&VfW&VÊ6W2WFÇÁW6W'2ÜñBíˆ‚FV∆WFR6WBÁV∆¬¿–¢'Gv˜&µ˜7V&÷óGFVEˆBFñ÷W7F◊G¢¿–¢'Gv˜&µ˜&WfñWvVEˆ'íWVñB&VfW&VÊ6W2WFÇÁW6W'2ÜñBíˆ‚FV∆WFR6WBÁV∆¬¿–¢'Gv˜&µ˜&WfñWvVEˆBFñ÷W7F◊G¢¿–¢7FGW2FWáBÊ˜BÁV∆¬FVfV«Bv˜V‚r6ÜV6≤á7FGW2ñ‚Çv˜V‚r¬vÊVVG5˜&WfñWrr¬v6ˆ◊∆WFVBr¬v6Ê6V∆∆VBríí¿–¢GVUˆBFñ÷W7F◊G¢¿–¢7&VFVEˆ'íWVñBÊ˜BÁV∆¬&VfW&VÊ6W2WFÇÁW6W'2ÜñBíˆ‚FV∆WFR&W7G&ñ7B¿–¢7&VFVEˆBFñ÷W7F◊G¢Ê˜BÁV∆¬FVfV«BÊ˜rÇí¿–¢WFFVEˆBFñ÷W7F◊G¢Ê˜BÁV∆¬FVfV«BÊ˜rÇí¿–¢VÊóVRÜ˜&vÊó¶FñˆÂˆñB«6∆Uˆ∆ñÊUˆñBí¿–¢VÊóVRÜñB∆˜&vÊó¶FñˆÂˆñBí¿–¢f˜&Vñv‚∂WíÜ'&Ê6ÖˆñB∆˜&vÊó¶FñˆÂˆñBí&VfW&VÊ6W2V&∆ñ2Ê'&Ê6ÜW2ÜñB∆˜&vÊó¶FñˆÂˆñBí¿–¢f˜&Vñv‚∂Wíá6∆UˆñB∆˜&vÊó¶FñˆÂˆñBí&VfW&VÊ6W2V&∆ñ2Á6∆W2ÜñB∆˜&vÊó¶FñˆÂˆñBí¿–¢f˜&Vñv‚∂Wíá6∆Uˆ∆ñÊUˆñB∆˜&vÊó¶FñˆÂˆñBí&VfW&VÊ6W2V&∆ñ2Á6∆Uˆ∆ñÊW2ÜñB∆˜&vÊó¶FñˆÂˆñBí¿–¢f˜&Vñv‚∂WíÜ˜&vÊó¶FñˆÂˆñB«v˜&∂f∆˜uˆ6ˆFRí&VfW&VÊ6W2V&∆ñ2Á&ˆGV7FñˆÂ˜v˜&∂f∆˜u˜FV◊∆FW2Ü˜&vÊó¶FñˆÂˆñB∆6ˆFRê–¢ì∞–¶7&VFRñÊFWÇ&ˆGV7FñˆÂˆ¶ˆ'5ˆGfó6˜%˜VWVUˆñGÄ–¢ˆ‚V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2Ü˜&vÊó¶FñˆÂˆñB∆Gfó6˜%ˆñB«7FGW2∆GVUˆBì∞–¶7&VFRñÊFWÇ&ˆGV7FñˆÂˆ¶ˆ'5˜6∆UˆñGÇˆ‚V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2á6∆UˆñBì∞–†–¶7&VFRF&∆RV&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7V5˜fW'6ñˆÁ2Ä–¢ñB&ñvñÁBvVÊW&FVB«vó22ñFVÁFóGí&ñ÷'í∂Wí¿–¢˜&vÊó¶FñˆÂˆñBWVñBÊ˜BÁV∆¬&VfW&VÊ6W2V&∆ñ2Ê˜&vÊó¶FñˆÁ2ÜñBíˆ‚FV∆WFR&W7G&ñ7B¿–¢¶ˆ%ˆñBWVñBÊ˜BÁV∆¬¿–¢fW'6ñˆ‚ñÁFVvW"Ê˜BÁV∆¬6ÜV6≤áfW'6ñˆ„„í¿–¢7V6ñfñ6FñˆÁ2ß6ˆÊ"Ê˜BÁV∆¬6ÜV6≤Üß6ˆÊ%˜GóVˆbá7V6ñfñ6FñˆÁ2ì“vˆ&¶V7BrÊBˆ7FWEˆ∆VÊwFÇá7V6ñfñ6FñˆÁ3£ßFWáBì√”cí¿–¢Ê˜FRFWáBÊ˜BÁV∆¬FVfV«Brr6ÜV6≤Ü∆VÊwFÇÜÊ˜FRì√”í¿–¢7&VFVEˆ'íWVñBÊ˜BÁV∆¬&VfW&VÊ6W2WFÇÁW6W'2ÜñBíˆ‚FV∆WFR&W7G&ñ7B¿–¢7&VFVEˆBFñ÷W7F◊G¢Ê˜BÁV∆¬FVfV«BÊ˜rÇí¿–¢VÊóVRÜ¶ˆ%ˆñB«fW'6ñˆ‚í¿–¢f˜&Vñv‚∂WíÜ¶ˆ%ˆñB∆˜&vÊó¶FñˆÂˆñBí&VfW&VÊ6W2V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2ÜñB∆˜&vÊó¶FñˆÂˆñBíˆ‚FV∆WFR666FP–¢ì∞–¶7&VFRñÊFWÇ&ˆGV7FñˆÂˆ¶ˆ%˜7V5˜fW'6ñˆÁ5ˆ¶ˆ%ˆñGÇˆ‚V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7V5˜fW'6ñˆÁ2Ü¶ˆ%ˆñB«fW'6ñˆ‚FW62ì∞–†–¶7&VFRF&∆RV&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FW2Ä–¢ñBWVñB&ñ÷'í∂WíFVfV«BvVÂ˜&ÊFˆ’˜WVñBÇí¿–¢˜&vÊó¶FñˆÂˆñBWVñBÊ˜BÁV∆¬&VfW&VÊ6W2V&∆ñ2Ê˜&vÊó¶FñˆÁ2ÜñBíˆ‚FV∆WFR&W7G&ñ7B¿–¢¶ˆ%ˆñBWVñBÊ˜BÁV∆¬¿–¢7FWˆ∂WíFWáBÊ˜BÁV∆¬6ÜV6≤á7FWˆ∂Wí‚uÂ∂◊•’∂◊£”ïı◊≥√c7“Brí¿–¢7FWˆ˜&FW"ñÁFVvW"Ê˜BÁV∆¬6ÜV6≤á7FWˆ˜&FW"&WGvVV‚ÊBbí¿–¢&VˆñBWVñBÊ˜BÁV∆¬¿–¢FóF∆RFWáBÊ˜BÁV∆¬6ÜV6≤Ü∆VÊwFÇáG&ñ“áFóF∆Ríí&WGvVV‚2ÊB#í¿–¢7FGW2FWáBÊ˜BÁV∆¬FVfV«BwvóFñÊrr6ÜV6≤á7FGW2ñ‚ÇwvóFñÊrr¬w&VGír¬vñÂ˜&ˆw&W72r¬v&∆ˆ6∂VBr¬v6ˆ◊∆WFVBr¬v6Ê6V∆∆VBríí¿–¢&WfñWuˆÜˆ∆B&ˆˆ∆V‚Ê˜BÁV∆¬FVfV«Bf«6R6ÜV6≤ÜÊ˜B&WfñWuˆÜˆ∆B˜"7FGW3“v&∆ˆ6∂VBrí¿–¢76ñvÊVE˜FÚWVñB&VfW&VÊ6W2WFÇÁW6W'2ÜñBíˆ‚FV∆WFR6WBÁV∆¬¿–¢GVUˆBFñ÷W7F◊G¢¿–¢Ê˜FW2FWáBÊ˜BÁV∆¬FVfV«Brr6ÜV6≤Ü∆VÊwFÇÜÊ˜FW2ì√”Cí¿–¢7F'FVEˆBFñ÷W7F◊G¢¿–¢6ˆ◊∆WFVEˆBFñ÷W7F◊G¢¿–¢7&VFVEˆBFñ÷W7F◊G¢Ê˜BÁV∆¬FVfV«BÊ˜rÇí¿–¢WFFVEˆBFñ÷W7F◊G¢Ê˜BÁV∆¬FVfV«BÊ˜rÇí¿–¢VÊóVRÜ¶ˆ%ˆñB«7FWˆ∂Wíí¿–¢VÊóVRÜ¶ˆ%ˆñB«7FWˆ˜&FW"í¿–¢VÊóVRÜñB∆˜&vÊó¶FñˆÂˆñBí¿–¢VÊóVRÜñB∆¶ˆ%ˆñB∆˜&vÊó¶FñˆÂˆñBí¿–¢f˜&Vñv‚∂WíÜ¶ˆ%ˆñB∆˜&vÊó¶FñˆÂˆñBí&VfW&VÊ6W2V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2ÜñB∆˜&vÊó¶FñˆÂˆñBíˆ‚FV∆WFR666FR¿–¢f˜&Vñv‚∂WíÜ&VˆñB∆˜&vÊó¶FñˆÂˆñBí&VfW&VÊ6W2V&∆ñ2Ê&V2ÜñB∆˜&vÊó¶FñˆÂˆñBê–¢ì∞–¶7&VFRñÊFWÇ&ˆGV7FñˆÂˆ¶ˆ%˜7FW5ˆ&V˜VWVUˆñGÄ–¢ˆ‚V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FW2Ü˜&vÊó¶FñˆÂˆñB∆&VˆñB«7FGW2∆GVUˆBì∞–¶7&VFRñÊFWÇ&ˆGV7FñˆÂˆ¶ˆ%˜7FW5˜W'6ˆÂ˜VWVUˆñGÄ–¢ˆ‚V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FW2Ü˜&vÊó¶FñˆÂˆñB∆76ñvÊVE˜FÚ«7FGW2∆GVUˆBì∞–†–¶7&VFRF&∆RV&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FWˆFWVÊFVÊ6ñW2Ä–¢˜&vÊó¶FñˆÂˆñBWVñBÊ˜BÁV∆¬&VfW&VÊ6W2V&∆ñ2Ê˜&vÊó¶FñˆÁ2ÜñBíˆ‚FV∆WFR&W7G&ñ7B¿–¢¶ˆ%ˆñBWVñBÊ˜BÁV∆¬¿–¢7FWˆñBWVñBÊ˜BÁV∆¬¿–¢&W&WVó6óFU˜7FWˆñBWVñBÊ˜BÁV∆¬¿–¢&ñ÷'í∂Wíá7FWˆñB«&W&WVó6óFU˜7FWˆñBí¿–¢6ÜV6≤á7FWˆñB√‚&W&WVó6óFU˜7FWˆñBí¿–¢f˜&Vñv‚∂WíÜ¶ˆ%ˆñB∆˜&vÊó¶FñˆÂˆñBí&VfW&VÊ6W2V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2ÜñB∆˜&vÊó¶FñˆÂˆñBíˆ‚FV∆WFR666FR¿–¢f˜&Vñv‚∂Wíá7FWˆñB∆¶ˆ%ˆñB∆˜&vÊó¶FñˆÂˆñBí&VfW&VÊ6W2V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FW2ÜñB∆¶ˆ%ˆñB∆˜&vÊó¶FñˆÂˆñBíˆ‚FV∆WFR666FR¿–¢f˜&Vñv‚∂Wíá&W&WVó6óFU˜7FWˆñB∆¶ˆ%ˆñB∆˜&vÊó¶FñˆÂˆñBí&VfW&VÊ6W2V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FW2ÜñB∆¶ˆ%ˆñB∆˜&vÊó¶FñˆÂˆñBíˆ‚FV∆WFR666FP–¢ì∞–¶7&VFRñÊFWÇ&ˆGV7FñˆÂˆ¶ˆ%˜7FWˆFWVÊFVÊ6ñW5ˆ¶ˆ%ˆñGÇˆ‚V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FWˆFWVÊFVÊ6ñW2Ü¶ˆ%ˆñBì∞–†–¶7&VFRF&∆RV&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%ˆWfVÁG2Ä–¢ñB&ñvñÁBvVÊW&FVB«vó22ñFVÁFóGí&ñ÷'í∂Wí¿–¢˜&vÊó¶FñˆÂˆñBWVñBÊ˜BÁV∆¬&VfW&VÊ6W2V&∆ñ2Ê˜&vÊó¶FñˆÁ2ÜñBíˆ‚FV∆WFR&W7G&ñ7B¿–¢¶ˆ%ˆñBWVñBÊ˜BÁV∆¬¿–¢7FWˆñBWVñB¿–¢WfVÁE˜GóRFWáBÊ˜BÁV∆¬6ÜV6≤ÜWfVÁE˜GóR‚uÂ∂◊•’∂◊£”ïı◊≥√c7“Brí¿–¢FWFñ«2ß6ˆÊ"Ê˜BÁV∆¬FVfV«Bw∑“s£¶ß6ˆÊ"6ÜV6≤Üß6ˆÊ%˜GóVˆbÜFWFñ«2ì“vˆ&¶V7BrÊBˆ7FWEˆ∆VÊwFÇÜFWFñ«3£ßFWáBì√”cí¿–¢7&VFVEˆ'íWVñBÊ˜BÁV∆¬&VfW&VÊ6W2WFÇÁW6W'2ÜñBíˆ‚FV∆WFR&W7G&ñ7B¿–¢7&VFVEˆBFñ÷W7F◊G¢Ê˜BÁV∆¬FVfV«BÊ˜rÇí¿–¢f˜&Vñv‚∂WíÜ¶ˆ%ˆñB∆˜&vÊó¶FñˆÂˆñBí&VfW&VÊ6W2V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2ÜñB∆˜&vÊó¶FñˆÂˆñBíˆ‚FV∆WFR666FR¿–¢f˜&Vñv‚∂Wíá7FWˆñB∆˜&vÊó¶FñˆÂˆñBí&VfW&VÊ6W2V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FW2ÜñB∆˜&vÊó¶FñˆÂˆñBê–¢ì∞–¶7&VFRñÊFWÇ&ˆGV7FñˆÂˆ¶ˆ%ˆWfVÁG5ˆ¶ˆ%˜Fñ÷V∆ñÊUˆñGÄ–¢ˆ‚V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%ˆWfVÁG2Ü¶ˆ%ˆñB∆7&VFVEˆBFW62∆ñBFW62ì∞–†–¶«FW"F&∆RV&∆ñ2Á&ˆGV7FñˆÂ˜v˜&∂f∆˜u˜FV◊∆FW2VÊ&∆R&˜r∆WfV¬6V7W&óGì∞–¶«FW"F&∆RV&∆ñ2Ê6F∆ˆu˜&ˆGV7E˜v˜&∂f∆˜u˜&˜WFW2VÊ&∆R&˜r∆WfV¬6V7W&óGì∞–¶«FW"F&∆RV&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2VÊ&∆R&˜r∆WfV¬6V7W&óGì∞–¶«FW"F&∆RV&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7V5˜fW'6ñˆÁ2VÊ&∆R&˜r∆WfV¬6V7W&óGì∞–¶«FW"F&∆RV&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FW2VÊ&∆R&˜r∆WfV¬6V7W&óGì∞–¶«FW"F&∆RV&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FWˆFWVÊFVÊ6ñW2VÊ&∆R&˜r∆WfV¬6V7W&óGì∞–¶«FW"F&∆RV&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%ˆWfVÁG2VÊ&∆R&˜r∆WfV¬6V7W&óGì∞–†–ß&Wfˆ∂R∆¬ˆ‚V&∆ñ2Á&ˆGV7FñˆÂ˜v˜&∂f∆˜u˜FV◊∆FW2«V&∆ñ2Ê6F∆ˆu˜&ˆGV7E˜v˜&∂f∆˜u˜&˜WFW2¿–¢V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2«V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7V5˜fW'6ñˆÁ2«V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FW2«V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FWˆFWVÊFVÊ6ñW2¿–¢V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%ˆWfVÁG2g&ˆ“V&∆ñ2∆Êˆ‚∆WFÜVÁFñ6FVC∞–¶w&ÁB6V∆V7Bˆ‚V&∆ñ2Á&ˆGV7FñˆÂ˜v˜&∂f∆˜u˜FV◊∆FW2«V&∆ñ2Ê6F∆ˆu˜&ˆGV7E˜v˜&∂f∆˜u˜&˜WFW2¿–¢V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2«V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7V5˜fW'6ñˆÁ2«V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FW2«V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FWˆFWVÊFVÊ6ñW2¿–¢V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%ˆWfVÁG2FÚWFÜVÁFñ6FVC∞–†–¶7&VFRˆ∆ñ7í&ˆGV7FñˆÂ˜FV◊∆FW5˜&VBˆ‚V&∆ñ2Á&ˆGV7FñˆÂ˜v˜&∂f∆˜u˜FV◊∆FW2f˜"6V∆V7BFÚWFÜVÁFñ6FV@–ßW6ñÊrÜ˜&ófFRÊÜ5˜fó7V∆6˜'ˆ66W72Ü˜&vÊó¶FñˆÂˆñB¬w6∆W2r¬wfñWrrê–¢˜"˜&ófFRÊÜ5˜fó7V∆6˜'ˆ66W72Ü˜&vÊó¶FñˆÂˆñB¬wv˜&∑6Ü˜r¬wfñWrríì∞–¶7&VFRˆ∆ñ7í&ˆGV7FñˆÂ˜&ˆGV7E˜&˜WFW5˜&VBˆ‚V&∆ñ2Ê6F∆ˆu˜&ˆGV7E˜v˜&∂f∆˜u˜&˜WFW2f˜"6V∆V7BFÚWFÜVÁFñ6FV@–ßW6ñÊrÜ˜&ófFRÊÜ5˜fó7V∆6˜'ˆ66W72Ü˜&vÊó¶FñˆÂˆñB¬w6∆W2r¬wfñWrrê–¢˜"˜&ófFRÊÜ5˜fó7V∆6˜'ˆ66W72Ü˜&vÊó¶FñˆÂˆñB¬wv˜&∑6Ü˜r¬wfñWrríì∞–¶7&VFRˆ∆ñ7í&ˆGV7FñˆÂ˜&ˆGV7E˜&˜WFW5ˆ÷ÊvRˆ‚V&∆ñ2Ê6F∆ˆu˜&ˆGV7E˜v˜&∂f∆˜u˜&˜WFW2f˜"∆¬FÚWFÜVÁFñ6FV@–ßW6ñÊrÜ˜&ófFRÊÜ5˜fó7V∆6˜'ˆ66W72Ü˜&vÊó¶FñˆÂˆñB¬w6∆W2r¬vVFóBrê–¢ÊB˜&ófFRÊÜ5˜fó7V∆6˜'ˆ66W72Ü˜&vÊó¶FñˆÂˆñB¬wv˜&∑6Ü˜r¬vVFóBríê–ßvóFÇ6ÜV6≤Ü˜&ófFRÊÜ5˜fó7V∆6˜'ˆ66W72Ü˜&vÊó¶FñˆÂˆñB¬w6∆W2r¬vVFóBrê–¢ÊB˜&ófFRÊÜ5˜fó7V∆6˜'ˆ66W72Ü˜&vÊó¶FñˆÂˆñB¬wv˜&∑6Ü˜r¬vVFóBríì∞–¶w&ÁBñÁ6W'B«WFFRˆ‚V&∆ñ2Ê6F∆ˆu˜&ˆGV7E˜v˜&∂f∆˜u˜&˜WFW2FÚWFÜVÁFñ6FVC∞–¶7&VFRˆ∆ñ7í&ˆGV7FñˆÂˆ¶ˆ'5˜&VBˆ‚V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2f˜"6V∆V7BFÚWFÜVÁFñ6FV@–ßW6ñÊrÇÜGfó6˜%ˆñC“á6V∆V7BWFÇÁVñBÇííÊB˜&ófFRÊÜ5˜fó7V∆6˜'ˆ66W72Ü˜&vÊó¶FñˆÂˆñB¬w6∆W2r¬wfñWrr∆'&Ê6ÖˆñBíê–¢˜"˜&ófFRÊÜ5˜fó7V∆6˜'ˆ66W72Ü˜&vÊó¶FñˆÂˆñB¬wv˜&∑6Ü˜r¬wfñWrr∆'&Ê6ÖˆñBíì∞–¶7&VFRˆ∆ñ7í&ˆGV7FñˆÂ˜7FW5˜&VBˆ‚V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FW2f˜"6V∆V7BFÚWFÜVÁFñ6FV@–ßW6ñÊrÜWÜó7G2á6V∆V7Bg&ˆ“V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2¢vÜW&R¢ÊñC÷¶ˆ%ˆñBÊB¢Ê˜&vÊó¶FñˆÂˆñC÷˜&vÊó¶FñˆÂˆñBíì∞–¶7&VFRˆ∆ñ7í&ˆGV7FñˆÂˆ¶ˆ%˜fW'6ñˆÁ5˜&VBˆ‚V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7V5˜fW'6ñˆÁ2f˜"6V∆V7BFÚWFÜVÁFñ6FV@–ßW6ñÊrÜWÜó7G2á6V∆V7Bg&ˆ“V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2¢vÜW&R¢ÊñC÷¶ˆ%ˆñBÊB¢Ê˜&vÊó¶FñˆÂˆñC÷˜&vÊó¶FñˆÂˆñBíì∞–¶7&VFRˆ∆ñ7í&ˆGV7FñˆÂˆFWVÊFVÊ6ñW5˜&VBˆ‚V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%˜7FWˆFWVÊFVÊ6ñW2f˜"6V∆V7BFÚWFÜVÁFñ6FV@–ßW6ñÊrÜWÜó7G2á6V∆V7Bg&ˆ“V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2¢vÜW&R¢ÊñC÷¶ˆ%ˆñBÊB¢Ê˜&vÊó¶FñˆÂˆñC÷˜&vÊó¶FñˆÂˆñBíì∞–¶7&VFRˆ∆ñ7í&ˆGV7FñˆÂˆWfVÁG5˜&VBˆ‚V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ%ˆWfVÁG2f˜"6V∆V7BFÚWFÜVÁFñ6FV@–ßW6ñÊrÜWÜó7G2á6V∆V7Bg&ˆ“V&∆ñ2Á&ˆGV7FñˆÂˆ¶ˆ'2¢vÜW&R¢ÊñC÷¶ˆ%ˆñBÊB¢Ê˜&vÊó¶FñˆÂˆñC÷˜&vÊó¶FñˆÂˆñBíì∞–†–¶ñÁ6W'BñÁFÚV&∆ñ2Á&ˆGV7FñˆÂ˜v˜&∂f∆˜u˜FV◊∆FW0–¢Ü˜&vÊó¶FñˆÂˆñB∆6ˆFR∆Ê÷R«&WVó&VEˆfñV∆G2«7FW2ê–ß6V∆V7BÚÊñB«bÊ6ˆFR«bÊÊ÷R«bÁ&WVó&VEˆfñV∆G2«bÁ7FW3£¶ß6ˆÊ –¶g&ˆ“V&∆ñ2Ê˜&vÊó¶FñˆÁ2–¶7&˜72¶ˆñ‚áf«VW0–¢ÇvÊˆÊRr¬tVÁG&VvFó&V7Fr¬w∑“s£ßFWáEµ“¬uµ“rí¿–¢Çw&WfñWrr¬u&Wfó6ú;6‚FR&ˆGV66ú;6‚r¬w∑“s£ßFWáEµ“¿–¢u∑≤&∂Wí#¢'&WfñWr"¬&&V#¢$4R"¬'FóF∆R#¢$FVfñÊó"'WFFR&ˆGV66ú;6‚"¬&FWVÊG5ˆˆ‚#•µ◊’“rí¿–¢Çw&ñÁBr¬tñ◊&W6ú;6‚FR∆ˆÊÚfñÊñ¬r∆'&ï≤wvñGFÖˆ6“r¬vÜVñváEˆ6“u“¿–¢u∑≤&∂Wí#¢&ñÁF∂R"¬&&V#¢$4R"¬'FóF∆R#¢%fW&ñfñ6"fñ6Üí÷VFñF2"¬&FWVÊG5ˆˆ‚#•µ◊“«≤&∂Wí#¢&FW6ñv‚"¬&&V#¢$Dï2"¬'FóF∆R#¢$Fó6\;"í&W&"'FR"¬&FWVÊG5ˆˆ‚#•≤&ñÁF∂R%◊“«≤&∂Wí#¢'&ñÁB"¬&&V#¢$î’"¬'FóF∆R#¢$ñ◊&ñ÷ó"V¬G&&¶Ú"¬&FWVÊG5ˆˆ‚#•≤&FW6ñv‚%◊’“rí¿–¢Çv∆6W"r¬t6˜'FRÃ:6W"r∆'&ï≤wvñGFÖˆ6“r¬vÜVñváEˆ6“u“¿–¢u∑≤&∂Wí#¢&ñÁF∂R"¬&&V#¢$4R"¬'FóF∆R#¢%fW&ñfñ6"fñ6Üí÷VFñF2"¬&FWVÊG5ˆˆ‚#•µ◊“«≤&∂Wí#¢&FW6ñv‚"¬&&V#¢$Dï2"¬'FóF∆R#¢$Fó6\;"&6ÜófÚFR6˜'FR"¬&FWVÊG5ˆˆ‚#•≤&ñÁF∂R%◊“«≤&∂Wí#¢&∆6W""¬&&V#¢$ƒ2"¬'FóF∆R#¢%&V∆ó¶"6˜'FRÃ:6W""¬&FWVÊG5ˆˆ‚#•≤&FW6ñv‚%◊’“rí¿–¢Çw6ñv‚r¬u,;7GV∆Ú6ˆ‚f'&ñ66ú;6‚r∆'&ï≤wvñGFÖˆ6“r¬vÜVñváEˆ6“r¬vñÁ7F∆∆FñˆÂˆFG&W72u“¿–¢u∑≤&∂Wí#¢&ñÁF∂R"¬&&V#¢$4R"¬'FóF∆R#¢%fW&ñfñ6"fñ6ÜFV¬,;7GV∆Ú"¬&FWVÊG5ˆˆ‚#•µ◊“«≤&∂Wí#¢&FW6ñv‚"¬&&V#¢$Dï2"¬'FóF∆R#¢$Fó6\;",;7GV∆Ú"¬&FWVÊG5ˆˆ‚#•≤&ñÁF∂R%◊“«≤&∂Wí#¢'&ñÁB"¬&&V#¢$î’"¬'FóF∆R#¢$ñ◊&ñ÷ó"ñW¶2FV¬,;7GV∆Ú"¬&FWVÊG5ˆˆ‚#•≤&FW6ñv‚%◊“«≤&∂Wí#¢'v˜&∑6Ü˜"¬&&V#¢%D¬"¬'FóF∆R#¢$f'&ñ6"RñÁ7F∆",;7GV∆Ú"¬&FWVÊG5ˆˆ‚#•≤'&ñÁB%◊’“rí¿–¢Çw6ñvÂˆ÷V7W&Rr¬u,;7GV∆Ú6ˆ‚fó6óFFR÷VFñF2r∆'&ï≤vñÁ7F∆∆FñˆÂˆFG&W72u“¿–¢u∑≤&∂Wí#¢&ñÁF∂R"¬&&V#¢$4R"¬'FóF∆R#¢$6ˆ˜&FñÊ"fó6óFFR÷VFñF2"¬&FWVÊG5ˆˆ‚#•µ◊“«≤&∂Wí#¢'6óFU˜fó6óB"¬&&V#¢%D¬"¬'FóF∆R#¢%Fˆ÷"ífW&ñfñ6"÷VFñF2"¬&FWVÊG5ˆˆ‚#•≤&ñÁF∂R%◊“«≤&∂Wí#¢&FW6ñv‚"¬&&V#¢$Dï2"¬'FóF∆R#¢$Fó6\;"6ˆ‚÷VFñF2fW&ñfñ6F2"¬&FWVÊG5ˆˆ‚#•≤'6óFU˜fó6óB%◊“«≤&∂Wí#¢'&ñÁB"¬&&V#¢$î’"¬'FóF∆R#¢$ñ◊&ñ÷ó"ñW¶2FV¬,;7GV∆Ú"¬&FWVÊG5ˆˆ‚#•≤&FW6ñv‚%◊“«≤&∂Wí#¢'v˜&∑6Ü˜"¬&&V#¢%D¬"¬'FóF∆R#¢$f'&ñ6"RñÁ7F∆",;7GV∆Ú"¬&FWVÊG5ˆˆ‚#•≤'&ñÁB%◊’“rí¿–¢ÇvÊVˆ‚r¬tÊ\;6‚6ˆ‚6˜'FRí&÷FÚr∆'&ï≤wvñGFÖˆ6“r¬vÜVñváEˆ6“u“¿–¢u∑≤&∂Wí#¢&ñÁF∂R"¬&&V#¢$4R"¬'FóF∆R#¢%fW&ñfñ6"fñ6ÜFV¬Ê\;6‚"¬&FWVÊG5ˆˆ‚#•µ◊“«≤&∂Wí#¢&FW6ñv‚"¬&&V#¢$Dï2"¬'FóF∆R#¢$Fó6\;"ñW¶2í&V6˜'&ñFÚ"¬&FWVÊG5ˆˆ‚#•≤&ñÁF∂R%◊“«≤&∂Wí#¢&∆6W""¬&&V#¢$ƒ2"¬'FóF∆R#¢$6˜'F"ñW¶2FR7,:÷∆ñ6Ú"¬&FWVÊG5ˆˆ‚#•≤&FW6ñv‚%◊“«≤&∂Wí#¢'v˜&∑6Ü˜"¬&&V#¢%D¬"¬'FóF∆R#¢$&÷"Ê\;6‚RñÁ7F∆"6í6˜'&W7ˆÊFR"¬&FWVÊG5ˆˆ‚#•≤&∆6W"%◊’“rí¿–¢Çw7V&∆ñ÷Fñˆ‚r¬u7V&∆ñ÷6ú;6‚r∆'&ï≤v÷FW&ñ¬u“¿–¢u∑≤&∂Wí#¢&ñÁF∂R"¬&&V#¢$4R"¬'FóF∆R#¢%fW&ñfñ6"fñ6ÜFR7V&∆ñ÷6ú;6‚"¬&FWVÊG5ˆˆ‚#•µ◊“«≤&∂Wí#¢&FW6ñv‚"¬&&V#¢$Dï2"¬'FóF∆R#¢%&W&"Fó6\;Ú&7V&∆ñ÷""¬&FWVÊG5ˆˆ‚#•≤&ñÁF∂R%◊“«≤&∂Wí#¢'7V&∆ñ÷Fñˆ‚"¬&&V#¢%5T""¬'FóF∆R#¢%7V&∆ñ÷"V¬&ˆGV7FÚ"¬&FWVÊG5ˆˆ‚#•≤&FW6ñv‚%◊’“rê–¢í2bÜ6ˆFR∆Ê÷R«&WVó&VEˆfñV∆G2«7FW2ê–ßvÜW&RÚÁ6«Vs“wfó7V¬÷6˜'p–¶ˆ‚6ˆÊf∆ñ7BÜ˜&vÊó¶FñˆÂˆñB∆6ˆFRíFÚÊ˜FÜñÊs∞–†–¢““7VvvW7B&˜WFW2ˆÊ«íf˜"&ˆGV7BÊ÷W2vÜ˜6Rv˜&≤GóRó2Wá∆ñ6óB‚FÜRı0–¢““6Ü˜w2FÜR7VvvW7Fñˆ‚ÊBFÜRGfó6˜"6‚6ÜÊvRóBf˜"V6Ç6∆R∆ñÊR‡–¶ñÁ6W'BñÁFÚV&∆ñ2Ê6F∆ˆu˜&ˆGV7E˜v˜&∂f∆˜u˜&˜WFW0–¢Ü˜&vÊó¶FñˆÂˆñB∆6F∆ˆu˜&ˆGV7EˆñB«v˜&∂f∆˜uˆ6ˆFRê–ß6V∆V7B2Ê˜&vÊó¶FñˆÂˆñB∆2ÊñB¿–¢66P–¢vÜV‚2Á6«Vr‚rÖÁ¬“ñÊVˆ‚Ç◊¬BírFÜV‚vÊVˆ‚p–¢vÜV‚2Á6«Vr‚rÖÁ¬“íá&˜GV∆˜∆∆WG&W&ÚíÇ◊¬BírFÜV‚w6ñv‚p–¢vÜV‚2Á6«Vr‚rÖÁ¬“ñ∆6W"Ç◊¬BírFÜV‚v∆6W"p–¢vÜV‚2Á6«Vr‚rÖÁ¬“ó7V&∆ñ÷∂◊•“¢Ç◊¬BírFÜV‚w7V&∆ñ÷Fñˆ‚p–¢vÜV‚2Á6«Vr‚u‚Ü∆ˆÊ«fñÊñ¬í“rFÜV‚w&ñÁBp–¢VÊ@–¶g&ˆ“V&∆ñ2Ê6F∆ˆu˜&ˆGV7G20–¶¶ˆñ‚V&∆ñ2Ê˜&vÊó¶FñˆÁ2Úˆ‚ÚÊñC÷2Ê˜&vÊó¶FñˆÂˆñBÊBÚÁ6«Vs“wfó7V¬÷6˜'p–ßvÜW&R2Á6«Vr‚rÖÁ¬“ñÊVˆ‚Ç◊¬Bó¬ÖÁ¬“íá&˜GV∆˜∆∆WG&W&ÚíÇ◊¬Bó¬ÖÁ¬“ñ∆6W"Ç◊¬Bó¬ÖÁ¬“ó7V&∆ñ÷∂◊•“¢Ç◊¬Bó≈‚Ü∆ˆÊ«fñÊñ¬í“p–¢ÊB6ˆ∆W66RÜ2Á7V&6FVv˜'í¬rríÊ˜Bñ‚Çu7V&∆ñ÷6ñˆ‚2r¬u7V&∆ñ÷6ñˆ‚Brê–¶ˆ‚6ˆÊf∆ñ7BÜ˜&vÊó¶FñˆÂˆñB∆6F∆ˆu˜&ˆGV7EˆñBíFÚÊ˜FÜñÊs∞–†–¢““&W6W'fRFÜRWÜó7FñÊr6∆R&VÜfñ˜"vÜñ∆R&WFñÊñÊr‚WÜ7B∂Wíf˜"WfW'í∆ñÊR‡–§5$TDRı"$Uƒ4ReT‰5DîÙ‚V&∆ñ2Ê7&VFU˜˜5˜6∆UˆñFV◊˜FVÁBáˆñFV◊˜FVÊ7ïˆ∂WíFWáB¬ˆ'&Ê6Öˆ6ˆFRFWáB¬ˆ7W7Fˆ÷W%ˆñBWVñB¬ˆ7W7Fˆ÷W%ˆFFß6ˆÊ"¬ˆFó66˜VÁBÁV÷W&ñ2¬ˆÊ˜FRFWáB¬ˆ∆∆˜uˆ&6∂˜&FW"&ˆˆ∆V‚¬ˆ∆ñÊW2ß6ˆÊ"¬˜ñ÷VÁG2ß6ˆÊ"DTdT≈Buµ“s£¶ß6ˆÊ"ê–¢$UEU$Â2ß6ˆÊ –¢ƒ‰uTtR«w7¿–¢4T5U$ïEíDTdî‰U –¢4UB6V&6Ö˜FÇDÚrp–§2FgVÊ7Fñˆ‚@–¶FV6∆&P–¢eˆ˜&rWVñC∞–¢eˆ'&Ê6ÇWVñC∞–¢e˜W6W"WVñB£“á6V∆V7BWFÇÁVñBÇíì∞–¢e˜&ˆ∆RFWáC∞–¢eˆ7W7Fˆ÷W"WVñB£“ˆ7W7Fˆ÷W%ˆñC∞–¢e˜6∆RWVñC∞–¢e˜6∆Uˆ6ˆFRFWáC∞–¢eˆWÜó7FñÊuˆfñÊvW'&ñÁBFWáC∞–¢eˆ∆ñÊRß6ˆÊ#∞–¢e˜ñ÷VÁBß6ˆÊ#∞–¢e˜f&ñÁBWVñC∞–¢e˜&ˆGV7BFWáC∞–¢e˜VÁFóGíÁV÷W&ñ2ÉB√2ì∞–¢e˜&ñ6RÁV÷W&ñ2ÉB√"ì∞–¢eˆgV∆fñ∆∆VBÁV÷W&ñ2ÉB√2ì∞–¢eˆ&6∂˜&FW&VBÁV÷W&ñ2ÉB√2ì∞–¢eˆfñ∆&∆RÁV÷W&ñ2ÉB√2ì∞–¢e˜7V'F˜F¬ÁV÷W&ñ2ÉB√"í£“∞–¢eˆFó66˜VÁBÁV÷W&ñ2ÉB√"í£“6ˆ∆W66RáˆFó66˜VÁB√ì∞–¢e˜ñBÁV÷W&ñ2ÉB√"í£“∞–¢eˆ&6∂˜&FW%˜F˜F¬ÁV÷W&ñ2ÉB√2í£“∞–¢eˆfñÊvW'&ñÁBFWáC∞–¢eˆ∆ˆ6Fñˆ‚FWáC∞–¢eˆ÷WFÜˆBFWáC∞–¶&Vvñ‡–¢ñbe˜W6W"ó2ÁV∆¬FÜV‚&ó6RWÜ6WFñˆ‚tñÊñ6ñ6W6ú;6‚&&Vvó7G&"∆˜&FV‚‚s≤VÊBñc∞–¢ñbˆñFV◊˜FVÊ7ïˆ∂Wíó2ÁV∆¬˜"6Ü%ˆ∆VÊwFÇáG&ñ“áˆñFV◊˜FVÊ7ïˆ∂WíííÊ˜B&WGvVV‚"ÊBcFÜV‡–¢&ó6RWÜ6WFñˆ‚t∆6∆fRFR˜W&6ú;6‚ÊÚW2l:∆ñF‚s∞–¢VÊBñc∞–¢ñbˆ∆ñÊW2ó2ÁV∆¬˜"ß6ˆÊ%˜GóVˆbáˆ∆ñÊW2í√‚v'&ír˜"ß6ˆÊ%ˆ'&ïˆ∆VÊwFÇáˆ∆ñÊW2ì”FÜV‡–¢&ó6RWÜ6WFñˆ‚tw&Vv¬÷VÊ˜2V‚'L:÷7V∆ÚÚ6W'fñ6ñÚ‚s∞–¢VÊBñc∞–¢ñb˜ñ÷VÁG2ó2ÁV∆¬˜"ß6ˆÊ%˜GóVˆbá˜ñ÷VÁG2í√‚v'&írFÜV‚&ó6RWÜ6WFñˆ‚t∆˜2v˜2ÊÚFñVÊV‚V‚f˜&÷FÚl:∆ñFÚ‚s≤VÊBñc∞–¢ñbWÜó7G2á6V∆V7Bg&ˆ“ß6ˆÊ%ˆ'&ïˆV∆V÷VÁG2áˆ∆ñÊW2í¬vÜW&R¬Úv∆ñÊUˆ∂Wíp–¢ÊBÜÁV∆∆ñbáG&ñ“Ü¬”„‚v∆ñÊUˆ∂Wírí¬rríó2ÁV∆¬˜"∆VÊwFÇáG&ñ“Ü¬”„‚v∆ñÊUˆ∂Wíríì„cííFÜV‡–¢&ó6RWÜ6WFñˆ‚t∆6∆fRFRÃ:÷ÊVÊÚW2l:∆ñF‚s∞–¢VÊBñc∞–¢ñbá6V∆V7B6˜VÁBÇ¢íg&ˆ“ß6ˆÊ%ˆ'&ïˆV∆V÷VÁG2áˆ∆ñÊW2í¬vÜW&RÁV∆∆ñbáG&ñ“Ü¬”„‚v∆ñÊUˆ∂Wírí¬rríó2Ê˜BÁV∆¬ê–¢√‚á6V∆V7B6˜VÁBÜFó7FñÊ7BG&ñ“Ü¬”„‚v∆ñÊUˆ∂Wírííg&ˆ“ß6ˆÊ%ˆ'&ïˆV∆V÷VÁG2áˆ∆ñÊW2í¬vÜW&RÁV∆∆ñbáG&ñ“Ü¬”„‚v∆ñÊUˆ∂Wírí¬rríó2Ê˜BÁV∆¬íFÜV‡–¢&ó6RWÜ6WFñˆ‚t∆6∆fRFRÃ:÷ÊVW7L:GW∆ñ6F‚s∞–¢VÊBñc∞–†–¢6V∆V7BñBñÁFÚeˆ˜&rg&ˆ“V&∆ñ2Ê˜&vÊó¶FñˆÁ2vÜW&R6«Vs“wfó7V¬÷6˜'s∞–¢6V∆V7BñBñÁFÚeˆ'&Ê6Çg&ˆ“V&∆ñ2Ê'&Ê6ÜW2vÜW&R˜&vÊó¶FñˆÂˆñC◊eˆ˜&rÊB6ˆFS◊WW"áG&ñ“áˆ'&Ê6Öˆ6ˆFRííÊB7FófS∞–¢ñbeˆ'&Ê6Çó2ÁV∆¬FÜV‚&ó6RWÜ6WFñˆ‚t∆7V7W'6¬6V∆V66ñˆÊFÊÚW7L:7Fóf‚s≤VÊBñc∞–¢ñbÊ˜B˜&ófFRÊÜ5˜fó7V∆6˜'ˆ66W72áeˆ˜&r¬w6∆W2r¬vVFóBr«eˆ'&Ê6ÇíFÜV‡–¢&ó6RWÜ6WFñˆ‚tÊÚFñVÊW2W&÷ó6Ú&&Vvó7G&";7&FVÊW2V‚W7F7V7W'6¬‚s∞–¢VÊBñc∞–¢ñbeˆFó66˜VÁB¬FÜV‚&ó6RWÜ6WFñˆ‚tV¬FW67VVÁFÚÊÚVVFR6W"ÊVvFófÚ‚s≤VÊBñc∞–†–¢eˆfñÊvW'&ñÁB£“÷CRÜß6ˆÊ%ˆ'Vñ∆Eˆˆ&¶V7BÄ–¢v'&Ê6Çr«WW"áG&ñ“áˆ'&Ê6Öˆ6ˆFRíí¬v7W7Fˆ÷W"r«ˆ7W7Fˆ÷W%ˆñB¿–¢v7W7Fˆ÷W%ˆFFr∆6ˆ∆W66Ráˆ7W7Fˆ÷W%ˆFF¬w∑“s£¶ß6ˆÊ"í¬vFó66˜VÁBr«eˆFó66˜VÁB¿–¢vÊ˜FRr∆6ˆ∆W66RáˆÊ˜FR¬rrí¬v∆∆˜uˆ&6∂˜&FW"r∆6ˆ∆W66Ráˆ∆∆˜uˆ&6∂˜&FW"∆f«6Rí¿–¢v∆ñÊW2r«ˆ∆ñÊW2¬wñ÷VÁG2r«˜ñ÷VÁG0–¢ì£ßFWáBì∞–¢W&f˜&“uˆGfó6˜'ï˜Ü7Eˆ∆ˆ6≤ÜÜ6áFWáFWáFVÊFVBáeˆ˜&s£ßFWáB«¬s¢r«¬G&ñ“áˆñFV◊˜FVÊ7ïˆ∂Wíí√íì∞–¢6V∆V7BñB«6∆Uˆ6ˆFR∆ñFV◊˜FVÊ7ïˆfñÊvW'&ñÁBñÁFÚe˜6∆R«e˜6∆Uˆ6ˆFR«eˆWÜó7FñÊuˆfñÊvW'&ñÁ@–¢g&ˆ“V&∆ñ2Á6∆W2vÜW&R˜&vÊó¶FñˆÂˆñC◊eˆ˜&rÊBñFV◊˜FVÊ7ïˆ∂Wì◊G&ñ“áˆñFV◊˜FVÊ7ïˆ∂Wíì∞–¢ñbe˜6∆Ró2Ê˜BÁV∆¬FÜV‡–¢ñbeˆWÜó7FñÊuˆfñÊvW'&ñÁBó2Fó7FñÊ7Bg&ˆ“eˆfñÊvW'&ñÁBFÜV‚&ó6RWÜ6WFñˆ‚t∆6∆fRñgVRW6F6ˆ‚FF˜2FñfW&VÁFW2‚s≤VÊBñc∞–¢&WGW&‚ß6ˆÊ%ˆ'Vñ∆Eˆˆ&¶V7BÇw6∆UˆñBr«e˜6∆R¬w6∆Uˆ6ˆFRr«e˜6∆Uˆ6ˆFR¬w&W∆ñVBr«G'VRì∞–¢VÊBñc∞–†–¢ñbeˆ7W7Fˆ÷W"ó2Ê˜BÁV∆¬ÊBÊ˜BWÜó7G2á6V∆V7Bg&ˆ“V&∆ñ2Ê7W7Fˆ÷W'2vÜW&RñC◊eˆ7W7Fˆ÷W"ÊB˜&vÊó¶FñˆÂˆñC◊eˆ˜&ríFÜV‡–¢&ó6RWÜ6WFñˆ‚tV¬6∆ñVÁFR6V∆V66ñˆÊFÚÊÚW'FVÊV6Rfó7V¬6˜'‚s∞–¢VÊBñc∞–¢ñbeˆ7W7Fˆ÷W"ó2ÁV∆¬ÊB6ˆ∆W66RáG&ñ“áˆ7W7Fˆ÷W%ˆFF”„‚vgV∆≈ˆÊ÷Rrí¬rrí√‚rrFÜV‡–¢ñb6ˆ∆W66RáG&ñ“áˆ7W7Fˆ÷W%ˆFF”„‚wÜˆÊRrí¬rrí√‚rrFÜV‡–¢6V∆V7BñBñÁFÚeˆ7W7Fˆ÷W"g&ˆ“V&∆ñ2Ê7W7Fˆ÷W'2vÜW&R˜&vÊó¶FñˆÂˆñC›x◊æ≠¢Gß≤⁄Óù∆≠y– 'job_status',(select status from public.production_jobs where id=v_job.id));
+-- Production workflows generated from a confirmed POS sale.
+-- One job per productive sale line; templates may visit the same area more than once.
+
+alter table public.sale_lines add column if not exists client_line_key text;
+alter table public.sale_lines add constraint sale_lines_client_line_key_length
+  check (client_line_key is null or length(client_line_key) between 1 and 160);
+create unique index if not exists sale_lines_sale_client_key_uq
+  on public.sale_lines (sale_id, client_line_key) where client_line_key is not null;
+alter table public.sales add column if not exists production_confirmation_fingerprint text;
+
+-- These baseline areas are installed by a trusted schema migration. The shared
+-- write guard checks application profiles, which are not present on a fresh database.
+do $migration$
+begin
+  execute 'alter table public.areas disable trigger vc_access_write_guard';
+  insert into public.areas (organization_id,code,name,active)
+  select o.id,v.code,v.name,true from public.organizations o
+  cross join (values ('ASE','Asesor√≠a'),('DIS','Dise√±o')) as v(code,name)
+  where o.slug='visual-corp'
+  on conflict (organization_id,code) do update set name=excluded.name,active=true;
+  execute 'alter table public.areas enable trigger vc_access_write_guard';
+end
+$migration$;
+
+create table public.production_workflow_templates (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete restrict,
+  code text not null check (code ~ '^[a-z][a-z0-9_]{1,47}$'),
+  name text not null check (length(trim(name)) between 3 and 100),
+  required_fields text[] not null default '{}',
+  deposit_required numeric(14,2) not null default 0 check (deposit_required >= 0),
+  steps jsonb not null check (jsonb_typeof(steps)='array' and jsonb_array_length(steps)<=16 and octet_length(steps::text)<=16000),
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (organization_id,code)
+);
+
+create table public.catalog_product_workflow_routes (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete restrict,
+  catalog_product_id text not null,
+  workflow_code text not null,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (organization_id,catalog_product_id),
+  foreign key (catalog_product_id,organization_id) references public.catalog_products(id,organization_id) on delete cascade,
+  foreign key (organization_id,workflow_code) references public.production_workflow_templates(organization_id,code) on delete restrict
+);
+create index catalog_product_workflow_routes_active_idx
+  on public.catalog_product_workflow_routes(organization_id,active,workflow_code);
+
+create table public.production_jobs (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete restrict,
+  branch_id uuid not null,
+  sale_id uuid not null,
+  sale_line_id uuid not null,
+  advisor_id uuid not null references auth.users(id) on delete restrict,
+  catalog_product_id text,
+  workflow_code text not null,
+  sale_code text not null default '',
+  customer_name text not null default '',
+  customer_phone text not null default '',
+  title text not null check (length(trim(title)) between 2 and 300),
+  specifications jsonb not null default '{}'::jsonb
+    check (jsonb_typeof(specifications)='object' and octet_length(specifications::text)<=16000),
+  spec_version integer not null default 1 check (spec_version>0),
+  review_from_version integer check (review_from_version>0 and review_from_version<=spec_version),
+  deposit_required numeric(14,2) not null default 0 check (deposit_required>=0),
+  approval_required boolean not null default false,
+  artwork_review_status text not null default 'not_required'
+    check (artwork_review_status in ('not_required','awaiting_art','awaiting_review','changes_requested','approved')),
+  artwork_revision integer not null default 0 check (artwork_revision>=0),
+  artwork_reference text not null default '' check (length(artwork_reference)<=1000),
+  artwork_submitted_by uuid references auth.users(id) on delete set null,
+  artwork_submitted_at timestamptz,
+  artwork_reviewed_by uuid references auth.users(id) on delete set null,
+  artwork_reviewed_at timestamptz,
+  status text not null default 'open' check (status in ('open','needs_review','completed','cancelled')),
+  due_at timestamptz,
+  created_by uuid not null references auth.users(id) on delete restrict,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (organization_id,sale_line_id),
+  unique (id,organization_id),
+  foreign key (branch_id,organization_id) references public.branches(id,organization_id),
+  foreign key (sale_id,organization_id) references public.sales(id,organization_id),
+  foreign key (sale_line_id,organization_id) references public.sale_lines(id,organization_id),
+  foreign key (organization_id,workflow_code) references public.production_workflow_templates(organization_id,code)
+);
+create index production_jobs_advisor_queue_idx
+  on public.production_jobs(organization_id,advisor_id,status,due_at);
+create index production_jobs_sale_idx on public.production_jobs(sale_id);
+
+create table public.production_job_spec_versions (
+  id bigint generated always as identity primary key,
+  organization_id uuid not null references public.organizations(id) on delete restrict,
+  job_id uuid not null,
+  version integer not null check (version>0),
+  specifications jsonb not null check (jsonb_typeof(specifications)='object' and octet_length(specifications::text)<=16000),
+  note text not null default '' check (length(note)<=1000),
+  created_by uuid not null references auth.users(id) on delete restrict,
+  created_at timestamptz not null default now(),
+  unique (job_id,version),
+  foreign key (job_id,organization_id) references public.production_jobs(id,organization_id) on delete cascade
+);
+create index production_job_spec_versions_job_idx on public.production_job_spec_versions(job_id,version desc);
+
+create table public.production_job_steps (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete restrict,
+  job_id uuid not null,
+  step_key text not null check (step_key ~ '^[a-z][a-z0-9_]{1,63}$'),
+  step_order integer not null check (step_order between 1 and 16),
+  area_id uuid not null,
+  title text not null check (length(trim(title)) between 3 and 200),
+  status text not null default 'waiting' check (status in ('waiting','ready','in_progress','blocked','completed','cancelled')),
+  review_hold boolean not null default false check (not review_hold or status='blocked'),
+  assigned_to uuid references auth.users(id) on delete set null,
+  due_at timestamptz,
+  notes text not null default '' check (length(notes)<=4000),
+  started_at timestamptz,
+  completed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (job_id,step_key),
+  unique (job_id,step_order),
+  unique (id,organization_id),
+  unique (id,job_id,organization_id),
+  foreign key (job_id,organization_id) references public.production_jobs(id,organization_id) on delete cascade,
+  foreign key (area_id,organization_id) references public.areas(id,organization_id)
+);
+create index production_job_steps_area_queue_idx
+  on public.production_job_steps(organization_id,area_id,status,due_at);
+create index production_job_steps_person_queue_idx
+  on public.production_job_steps(organization_id,assigned_to,status,due_at);
+
+create table public.production_job_step_dependencies (
+  organization_id uuid not null references public.organizations(id) on delete restrict,
+  job_id uuid not null,
+  step_id uuid not null,
+  prerequisite_step_id uuid not null,
+  primary key (step_id,prerequisite_step_id),
+  check (step_id <> prerequisite_step_id),
+  foreign key (job_id,organization_id) references public.production_jobs(id,organization_id) on delete cascade,
+  foreign key (step_id,job_id,organization_id) references public.production_job_steps(id,job_id,organization_id) on delete cascade,
+  foreign key (prerequisite_step_id,job_id,organization_id) references public.production_job_steps(id,job_id,organization_id) on delete cascade
+);
+create index production_job_step_dependencies_job_idx on public.production_job_step_dependencies(job_id);
+
+create table public.production_job_events (
+  id bigint generated always as identity primary key,
+  organization_id uuid not null references public.organizations(id) on delete restrict,
+  job_id uuid not null,
+  step_id uuid,
+  event_type text not null check (event_type ~ '^[a-z][a-z0-9_]{1,63}$'),
+  details jsonb not null default '{}'::jsonb check (jsonb_typeof(details)='object' and octet_length(details::text)<=16000),
+  created_by uuid not null references auth.users(id) on delete restrict,
+  created_at timestamptz not null default now(),
+  foreign key (job_id,organization_id) references public.production_jobs(id,organization_id) on delete cascade,
+  foreign key (step_id,organization_id) references public.production_job_steps(id,organization_id)
+);
+create index production_job_events_job_timeline_idx
+  on public.production_job_events(job_id,created_at desc,id desc);
+
+alter table public.production_workflow_templates enable row level security;
+alter table public.catalog_product_workflow_routes enable row level security;
+alter table public.production_jobs enable row level security;
+alter table public.production_job_spec_versions enable row level security;
+alter table public.production_job_steps enable row level security;
+alter table public.production_job_step_dependencies enable row level security;
+alter table public.production_job_events enable row level security;
+
+revoke all on public.production_workflow_templates,public.catalog_product_workflow_routes,
+  public.production_jobs,public.production_job_spec_versions,public.production_job_steps,public.production_job_step_dependencies,
+  public.production_job_events from public,anon,authenticated;
+grant select on public.production_workflow_templates,public.catalog_product_workflow_routes,
+  public.production_jobs,public.production_job_spec_versions,public.production_job_steps,public.production_job_step_dependencies,
+  public.production_job_events to authenticated;
+
+create policy production_templates_read on public.production_workflow_templates for select to authenticated
+using (app_private.has_visualcorp_access(organization_id,'sales','view')
+  or app_private.has_visualcorp_access(organization_id,'workshop','view'));
+create policy production_product_routes_read on public.catalog_product_workflow_routes for select to authenticated
+using (app_private.has_visualcorp_access(organization_id,'sales','view')
+  or app_private.has_visualcorp_access(organization_id,'workshop','view'));
+create policy production_product_routes_manage on public.catalog_product_workflow_routes for all to authenticated
+using (app_private.has_visualcorp_access(organization_id,'sales','edit')
+  and app_private.has_visualcorp_access(organization_id,'workshop','edit'))
+with check (app_private.has_visualcorp_access(organization_id,'sales','edit')
+  and app_private.has_visualcorp_access(organization_id,'workshop','edit'));
+grant insert,update on public.catalog_product_workflow_routes to authenticated;
+create policy production_jobs_read on public.production_jobs for select to authenticated
+using ((advisor_id=(select auth.uid()) and app_private.has_visualcorp_access(organization_id,'sales','view',branch_id))
+  or app_private.has_visualcorp_access(organization_id,'workshop','view',branch_id));
+create policy production_steps_read on public.production_job_steps for select to authenticated
+using (exists(select 1 from public.production_jobs j where j.id=job_id and j.organization_id=organization_id));
+create policy production_job_versions_read on public.production_job_spec_versions for select to authenticated
+using (exists(select 1 from public.production_jobs j where j.id=job_id and j.organization_id=organization_id));
+create policy production_dependencies_read on public.production_job_step_dependencies for select to authenticated
+using (exists(select 1 from public.production_jobs j where j.id=job_id and j.organization_id=organization_id));
+create policy production_events_read on public.production_job_events for select to authenticated
+using (exists(select 1 from public.production_jobs j where j.id=job_id and j.organization_id=organization_id));
+
+insert into public.production_workflow_templates
+  (organization_id,code,name,required_fields,steps)
+select o.id,v.code,v.name,v.required_fields,v.steps::jsonb
+from public.organizations o
+cross join (values
+  ('none','Entrega directa','{}'::text[],'[]'),
+  ('review','Revisi√≥n de producci√≥n','{}'::text[],
+   '[{"key":"review","area":"ASE","title":"Definir ruta de producci√≥n","depends_on":[]}]'),
+  ('print','Impresi√≥n de lona o vinil',array['width_cm','height_cm'],
+   '[{"key":"intake","area":"ASE","title":"Verificar ficha y medidas","depends_on":[]},{"key":"design","area":"DIS","title":"Dise√±ar y preparar arte","depends_on":["intake"]},{"key":"print","area":"IMP","title":"Imprimir el trabajo","depends_on":["design"]}]'),
+  ('laser','Corte l√°ser',array['width_cm','height_cm'],
+   '[{"key":"intake","area":"ASE","title":"Verificar ficha y medidas","depends_on":[]},{"key":"design","area":"DIS","title":"Dise√±ar archivo de corte","depends_on":["intake"]},{"key":"laser","area":"LAS","title":"Realizar corte l√°ser","depends_on":["design"]}]'),
+  ('sign','R√≥tulo con fabricaci√≥n',array['width_cm','height_cm','installation_address'],
+   '[{"key":"intake","area":"ASE","title":"Verificar ficha del r√≥tulo","depends_on":[]},{"key":"design","area":"DIS","title":"Dise√±ar r√≥tulo","depends_on":["intake"]},{"key":"print","area":"IMP","title":"Imprimir piezas del r√≥tulo","depends_on":["design"]},{"key":"workshop","area":"TAL","title":"Fabricar e instalar r√≥tulo","depends_on":["print"]}]'),
+  ('sign_measure','R√≥tulo con visita de medidas',array['installation_address'],
+   '[{"key":"intake","area":"ASE","title":"Coordinar visita de medidas","depends_on":[]},{"key":"site_visit","area":"TAL","title":"Tomar y verificar medidas","depends_on":["intake"]},{"key":"design","area":"DIS","title":"Dise√±ar con medidas verificadas","depends_on":["site_visit"]},{"key":"print","area":"IMP","title":"Imprimir piezas del r√≥tulo","depends_on":["design"]},{"key":"workshop","area":"TAL","title":"Fabricar e instalar r√≥tulo","depends_on":["print"]}]'),
+  ('neon','Ne√≥n con corte y armado',array['width_cm','height_cm'],
+   '[{"key":"intake","area":"ASE","title":"Verificar ficha del ne√≥n","depends_on":[]},{"key":"design","area":"DIS","title":"Dise√±ar piezas y recorrido","depends_on":["intake"]},{"key":"laser","area":"LAS","title":"Cortar piezas de acr√≠lico","depends_on":["design"]},{"key":"workshop","area":"TAL","title":"Armar ne√≥n e instalar si corresponde","depends_on":["laser"]}]'),
+  ('sublimation','Sublimaci√≥n',array['material'],
+   '[{"key":"intake","area":"ASE","title":"Verificar ficha de sublimaci√≥n","depends_on":[]},{"key":"design","area":"DIS","title":"Preparar dise√±o para sublimar","depends_on":["intake"]},{"key":"sublimation","area":"SUB","title":"Sublimar el producto","depends_on":["design"]}]')
+) as v(code,name,required_fields,steps)
+where o.slug='visual-corp'
+on conflict (organization_id,code) do nothing;
+
+-- Suggest routes only for product names whose work type is explicit. The POS
+-- shows the suggestion and the advisor can change it for each sale line.
+insert into public.catalog_product_workflow_routes
+  (organization_id,catalog_product_id,workflow_code)
+select c.organization_id,c.id,
+  case
+    when c.slug ~ '(^|-)neon(-|$)' then 'neon'
+    when c.slug ~ '(^|-)(rotulo|letrero)(-|$)' then 'sign'
+    when c.slug ~ '(^|-)laser(-|$)' then 'laser'
+    when c.slug ~ '(^|-)sublima[a-z]*(-|$)' then 'sublimation'
+    when c.slug ~ '^(lona|vinil)-' then 'print'
+  end
+from public.catalog_products c
+join public.organizations o on o.id=c.organization_id and o.slug='visual-corp'
+where c.slug ~ '(^|-)neon(-|$)|(^|-)(rotulo|letrero)(-|$)|(^|-)laser(-|$)|(^|-)sublima[a-z]*(-|$)|^(lona|vinil)-'
+  and coalesce(c.subcategory,'') not in ('Sublimacion A3','Sublimacion A4')
+on conflict (organization_id,catalog_product_id) do nothing;
+
+-- Preserve the existing sale behavior while retaining an exact key for every line.
+CREATE OR REPLACE FUNCTION public.create_pos_sale_idempotent(p_idempotency_key text, p_branch_code text, p_customer_id uuid, p_customer_data jsonb, p_discount numeric, p_note text, p_allow_backorder boolean, p_lines jsonb, p_payments jsonb DEFAULT '[]'::jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_org uuid;
+  v_branch uuid;
+  v_user uuid := (select auth.uid());
+  v_role text;
+  v_customer uuid := p_customer_id;
+  v_sale uuid;
+  v_sale_code text;
+  v_existing_fingerprint text;
+  v_line jsonb;
+  v_payment jsonb;
+  v_variant uuid;
+  v_product text;
+  v_quantity numeric(14,3);
+  v_price numeric(14,2);
+  v_fulfilled numeric(14,3);
+  v_backordered numeric(14,3);
+  v_available numeric(14,3);
+  v_subtotal numeric(14,2) := 0;
+  v_discount numeric(14,2) := coalesce(p_discount,0);
+  v_paid numeric(14,2) := 0;
+  v_backorder_total numeric(14,3) := 0;
+  v_fingerprint text;
+  v_location text;
+  v_method text;
+begin
+  if v_user is null then raise exception 'Inicia sesi√≥n para registrar la orden.'; end if;
+  if p_idempotency_key is null or char_length(trim(p_idempotency_key)) not between 12 and 160 then
+    raise exception 'La clave de operaci√≥n no es v√°lida.';
+  end if;
+  if p_lines is null or jsonb_typeof(p_lines) <> 'array' or jsonb_array_length(p_lines)=0 then
+    raise exception 'Agrega al menos un art√≠culo o servicio.';
+  end if;
+  if p_payments is null or jsonb_typeof(p_payments) <> 'array' then raise exception 'Los pagos no tienen un formato v√°lido.'; end if;
+  if exists (select 1 from jsonb_array_elements(p_lines) l where l ? 'line_key'
+    and (nullif(trim(l->>'line_key'),'') is null or length(trim(l->>'line_key'))>160)) then
+    raise exception 'La clave de l√≠nea no es v√°lida.';
+  end if;
+  if (select count(*) from jsonb_array_elements(p_lines) l where nullif(trim(l->>'line_key'),'') is not null)
+     <> (select count(distinct trim(l->>'line_key')) from jsonb_array_elements(p_lines) l where nullif(trim(l->>'line_key'),'') is not null) then
+    raise exception 'La clave de l√≠nea est√° duplicada.';
+  end if;
+
+  select id into v_org from public.organizations where slug='visual-corp';
+  select id into v_branch from public.branches where organization_id=v_org and code=upper(trim(p_branch_code)) and active;
+  if v_branch is null then raise exception 'La sucursal seleccionada no est√° activa.'; end if;
+  if not app_private.has_visualcorp_access(v_org,'sales','edit',v_branch) then
+    raise exception 'No tienes permiso para registrar √≥rdenes en esta sucursal.';
+  end if;
+  if v_discount < 0 then raise exception 'El descuento no puede ser negativo.'; end if;
+
+  v_fingerprint := md5(jsonb_build_object(
+    'branch',upper(trim(p_branch_code)), 'customer',p_customer_id,
+    'customer_data',coalesce(p_customer_data,'{}'::jsonb), 'discount',v_discount,
+    'note',coalesce(p_note,''), 'allow_backorder',coalesce(p_allow_backorder,false),
+    'lines',p_lines, 'payments',p_payments
+  )::text);
+  perform pg_advisory_xact_lock(hashtextextended(v_org::text || ':' || trim(p_idempotency_key),0));
+  select id,sale_code,idempotency_fingerprint into v_sale,v_sale_code,v_existing_fingerprint
+    from public.sales where organization_id=v_org and idempotency_key=trim(p_idempotency_key);
+  if v_sale is not null then
+    if v_existing_fingerprint is distinct from v_fingerprint then raise exception 'La clave ya fue usada con datos diferentes.'; end if;
+    return jsonb_build_object('sale_id',v_sale,'sale_code',v_sale_code,'replayed',true);
+  end if;
+
+  if v_customer is not null and not exists(select 1 from public.customers where id=v_customer and organization_id=v_org) then
+    raise exception 'El cliente seleccionado no pertenece a Visual Corp.';
+  end if;
+  if v_customer is null and coalesce(trim(p_customer_data->>'full_name'),'') <> '' then
+    if coalesce(trim(p_customer_data->>'phone'),'') <> '' then
+      select id into v_customer from public.customers where organization_id=v_org and phone=trim(p_customer_data->>'phone') limit 1;
+    end if;
+    if v_customer is null then
+      insert into public.customers (organization_id,full_name,phone,email,document_reference,notes,created_by)
+      values (v_org,trim(p_customer_data->>'full_name'),coalesce(trim(p_customer_data->>'phone'),''),
+        coalesce(trim(p_customer_data->>'email'),''),coalesce(trim(p_customer_data->>'document_reference'),''),
+        coalesce(trim(p_customer_data->>'notes'),''),v_user) returning id into v_customer;
+    end if;
+  end if;
+
+  for v_line in select value from jsonb_array_elements(p_lines) loop
+    v_quantity := nullif(v_line->>'quantity','')::numeric;
+    v_price := nullif(v_line->>'unit_price','')::numeric;
+    if v_quantity is null or v_quantity<=0 or v_price is null or v_price<0 then raise exception 'Cantidad o precio inv√°lido.'; end if;
+    v_subtotal := v_subtotal + round(v_quantity*v_price,2);
+  end loop;
+  if v_discount>v_subtotal then raise exception 'El descuento supera el subtotal.'; end if;
+  for v_payment in select value from jsonb_array_elements(p_payments) loop
+    v_method := coalesce(v_payment->>'method','other');
+    if v_method not in ('cash','transfer','card','other') then raise exception 'M√©todo de pago no v√°lido.'; end if;
+    if coalesce(nullif(v_payment->>'amount','')::numeric,0)<0 then raise exception 'El valor de pago no puede ser negativo.'; end if;
+    v_paid := v_paid + round(coalesce(nullif(v_payment->>'amount','')::numeric,0),2);
+  end loop;
+  if v_paid > v_subtotal-v_discount then raise exception 'Los pagos superan el total de la orden.'; end if;
+
+  v_sale_code := 'VC-'||to_char(now() at time zone 'UTC','YYMMDD')||'-'||upper(substr(replace(gen_random_uuid()::text,'-',''),1,6));
+  insert into public.sales (organization_id,branch_id,customer_id,status,urgent_backorder,subtotal,discount_total,total,note,created_by,sale_code,payment_method,idempotency_key,idempotency_fingerprint)
+  values (v_org,v_branch,v_customer,'confirmed',false,v_subtotal,v_discount,v_subtotal-v_discount,coalesce(p_note,''),v_user,v_sale_code,'other',trim(p_idempotency_key),v_fingerprint)
+  returning id into v_sale;
+
+  for v_line in select value from jsonb_array_elements(p_lines) loop
+    v_quantity := nullif(v_line->>'quantity','')::numeric;
+    v_price := nullif(v_line->>'unit_price','')::numeric;
+    v_product := nullif(v_line->>'catalog_product_id','');
+    v_variant := null;
+    v_location := 'MAIN';
+    if v_product is not null then
+      select l.inventory_variant_id,l.location_code into v_variant,v_location
+        from public.catalog_inventory_links l
+        join public.catalog_products c on c.id=l.catalog_product_id and c.organization_id=l.organization_id
+        join public.inventory_variants iv on iv.id=l.inventory_variant_id and iv.organization_id=l.organization_id and iv.active
+        where l.organization_id=v_org and l.catalog_product_id=v_product and l.branch_id=v_branch and l.active and c.is_published;
+      if not found then v_variant:=null; v_location:='MAIN'; end if;
+    end if;
+    v_fulfilled:=v_quantity; v_backordered:=0;
+    if v_variant is not null then
+      -- Lock the variant row so concurrent sales cannot both consume the last units,
+      -- including when the branch has no inventory_stock row yet.
+      perform 1 from public.inventory_variants where id=v_variant and organization_id=v_org for update;
+      select coalesce(sum(quantity-reserved_quantity),0) into v_available from public.inventory_stock
+        where organization_id=v_org and variant_id=v_variant and branch_id=v_branch and location_code=v_location;
+      if v_available<v_quantity then
+        if not coalesce(p_allow_backorder,false) then raise exception 'Existencia disponible insuficiente para %.',coalesce(v_line->>'description','art√≠culo'); end if;
+        v_fulfilled:=greatest(v_available,0); v_backordered:=v_quantity-v_fulfilled;
+        v_backorder_total:=v_backorder_total+v_backordered;
+      end if;
+    end if;
+    insert into public.sale_lines (organization_id,sale_id,variant_id,catalog_product_id,client_line_key,sku_snapshot,description_snapshot,quantity,fulfilled_quantity,backordered_quantity,unit_price,line_total)
+    values (v_org,v_sale,v_variant,v_product,nullif(trim(v_line->>'line_key'),''),coalesce(v_line->>'sku',''),coalesce(v_line->>'description','Orden POS'),v_quantity,v_fulfilled,v_backordered,v_price,round(v_quantity*v_price,2));
+    if v_variant is not null and v_fulfilled>0 then
+      insert into public.inventory_movements (organization_id,variant_id,branch_id,location_code,movement_type,quantity_delta,reason,reference_type,reference_id,created_by)
+      values (v_org,v_variant,v_branch,v_location,'sale',-v_fulfilled,'Orden POS '||v_sale_code,'sale',v_sale,v_user);
+    end if;
+  end loop;
+  update public.sales set urgent_backorder=(v_backorder_total>0) where id=v_sale;
+  for v_payment in select value from jsonb_array_elements(p_payments) loop
+    if coalesce(nullif(v_payment->>'amount','')::numeric,0)>0 then
+      insert into public.sale_payments (organization_id,sale_id,method,amount,reference,note,created_by)
+      values (v_org,v_sale,v_payment->>'method',round((v_payment->>'amount')::numeric,2),coalesce(v_payment->>'reference',''),coalesce(v_payment->>'note',''),v_user);
+    end if;
+  end loop;
+  update public.sales set payment_method=coalesce((select min(method) from public.sale_payments where sale_id=v_sale),'other') where id=v_sale;
+  return jsonb_build_object('sale_id',v_sale,'sale_code',v_sale_code,'subtotal',v_subtotal,'discount',v_discount,
+    'total',v_subtotal-v_discount,'paid',v_paid,'balance',v_subtotal-v_discount-v_paid,'backordered_quantity',v_backorder_total,'replayed',false);
+end;
+$function$;
+
+revoke all on function public.create_pos_sale_idempotent(text,text,uuid,jsonb,numeric,text,boolean,jsonb,jsonb) from public,anon;
+grant execute on function public.create_pos_sale_idempotent(text,text,uuid,jsonb,numeric,text,boolean,jsonb,jsonb) to authenticated;
+
+create or replace function app_private.can_work_production_area(
+  p_organization_id uuid,p_branch_id uuid,p_area_code text,p_user_id uuid
+) returns boolean language sql stable security definer set search_path='' as $$
+  select p_user_id is not null and exists (
+    select 1 from public.organization_memberships m
+    join public.access_profiles p on p.id=m.profile_id and p.organization_id=m.organization_id and p.active
+    where m.organization_id=p_organization_id and m.user_id=p_user_id and m.active
+      and (m.branch_id is null or m.branch_id=p_branch_id)
+      and (
+        m.role in ('owner','admin')
+        or p.profile_key in ('admin','gerencia','coordinador_taller','encargado_local')
+        or (p_area_code='ASE' and p.profile_key in ('asesoras','coordinador_ventas'))
+        or (p_area_code='DIS' and p.profile_key='disenador_grafico')
+        or (p_area_code='IMP' and p.profile_key='impresor')
+        or (p_area_code='SUB' and p.profile_key='sublimacion')
+        or (p_area_code in ('LAS','TAL','NEO','TRO') and p.profile_key='personal_taller')
+      )
+  );
+$$;
+revoke all on function app_private.can_work_production_area(uuid,uuid,text,uuid) from public,anon,authenticated;
+
+create or replace function app_private.can_coordinate_production(
+  p_organization_id uuid,p_branch_id uuid,p_user_id uuid
+) returns boolean language sql stable security definer set search_path='' as $$
+  select p_user_id=(select auth.uid())
+    and app_private.has_visualcorp_access(p_organization_id,'workshop','edit',p_branch_id)
+    and exists (
+      select 1 from public.organization_memberships m
+      left join public.access_profiles p on p.id=m.profile_id and p.organization_id=m.organization_id and p.active
+      where m.organization_id=p_organization_id and m.user_id=p_user_id and m.active
+        and (m.branch_id is null or m.branch_id=p_branch_id)
+        and (m.role in ('owner','admin') or p.profile_key in ('admin','gerencia','coordinador_taller','encargado_local'))
+    );
+$$;
+revoke all on function app_private.can_coordinate_production(uuid,uuid,uuid) from public,anon,authenticated;
+
+create or replace function app_private.production_job_intake_complete(p_job uuid)
+returns boolean language plpgsql stable security definer set search_path='' as $$
+declare v_job public.production_jobs%rowtype; v_fields text[]; v_field text; v_value text;
+begin
+  select * into v_job from public.production_jobs where id=p_job;
+  if not found or v_job.workflow_code='review' then return false; end if;
+  select required_fields into v_fields from public.production_workflow_templates
+    where organization_id=v_job.organization_id and code=v_job.workflow_code;
+  foreach v_field in array coalesce(v_fields,'{}'::text[]) loop
+    v_value:=nullif(trim(v_job.specifications->>v_field),'');
+    if v_value is null then return false; end if;
+    if v_field in ('width_cm','height_cm') then
+      if v_value !~ '^[0-9]+([.][0-9]+)?$' or v_value::numeric<=0 then return false; end if;
+    end if;
+  end loop;
+  return true;
+end;
+$$;
+revoke all on function app_private.production_job_intake_complete(uuid) from public,anon,authenticated;
+
+create or replace function app_private.production_step_gate_open(p_step uuid)
+returns boolean language plpgsql stable security definer set search_path='' as $$
+declare v_step public.production_job_steps%rowtype; v_job public.production_jobs%rowtype; v_paid numeric;
+begin
+  select * into v_step from public.production_job_steps where id=p_step;
+  if not found then return false; end if;
+  select * into v_job from public.production_jobs where id=v_step.job_id;
+  if not found or v_job.status<>'open' then return false; end if;
+  if exists (
+    select 1 from public.production_job_step_dependencies d
+    join public.production_job_steps prerequisite on prerequisite.id=d.prerequisite_step_id
+    where d.step_id=p_step and prerequisite.status<>'completed'
+  ) then return false; end if;
+  if v_step.step_key in ('print','laser','sublimation','workshop') then
+    if v_job.approval_required and v_job.artwork_review_status<>'approved' then return false; end if;
+    if v_job.deposit_required>0 then
+      select coalesce(sum(amount),0) into v_paid from public.sale_payments where sale_id=v_job.sale_id;
+      if v_paid<v_job.deposit_required then return false; end if;
+    end if;
+  end if;
+  return true;
+end;
+$$;
+revoke all on function app_private.production_step_gate_open(uuid) from public,anon,authenticated;
+
+create or replace function app_private.refresh_production_job_readiness(p_job uuid)
+returns void language plpgsql security definer set search_path='' as $$
+declare v_step record;
+begin
+  for v_step in
+    select id,status from public.production_job_steps
+    where job_id=p_job and status in ('waiting','ready')
+    order by step_order
+  loop
+    if app_private.production_step_gate_open(v_step.id) and v_step.status='waiting' then
+      update public.production_job_steps set status='ready',updated_at=now() where id=v_step.id;
+    elsif not app_private.production_step_gate_open(v_step.id) and v_step.status='ready' then
+      update public.production_job_steps set status='waiting',updated_at=now() where id=v_step.id;
+    end if;
+  end loop;
+end;
+$$;
+revoke all on function app_private.refresh_production_job_readiness(uuid) from public,anon,authenticated;
+
+create or replace function app_private.create_production_job_steps(p_job uuid)
+returns void language plpgsql security definer set search_path='' as $$
+declare
+  v_job public.production_jobs%rowtype; v_template public.production_workflow_templates%rowtype;
+  v_step record; v_dependency text; v_step_id uuid; v_prerequisite_id uuid;
+  v_prerequisite_order integer; v_base integer; v_area_id uuid; v_key text;
+begin
+  select * into v_job from public.production_jobs where id=p_job for update;
+  if not found then raise exception 'Trabajo no encontrado.'; end if;
+  select * into v_template from public.production_workflow_templates
+    where organization_id=v_job.organization_id and code=v_job.workflow_code and active;
+  if not found then raise exception 'La plantilla de producci√≥n no est√° activa.'; end if;
+  select coalesce(max(step_order),0) into v_base from public.production_job_steps where job_id=p_job;
+  for v_step in select value,ordinality::integer as sequence
+    from jsonb_array_elements(v_template.steps) with ordinality
+  loop
+    if jsonb_typeof(v_step.value)<>'object'
+       or jsonb_typeof(v_step.value->'depends_on')<>'array' then
+      raise exception 'La plantilla % contiene un paso inv√°lido.',v_template.code;
+    end if;
+    v_key:=v_step.value->>'key';
+    select id into v_area_id from public.areas
+      where organization_id=v_job.organization_id and code=v_step.value->>'area' and active;
+    if v_area_id is null then raise exception '√Årea no disponible en la plantilla %.',v_template.code; end if;
+    insert into public.production_job_steps(
+      organization_id,job_id,step_key,step_order,area_id,title,status,assigned_to,due_at,completed_at
+    ) values (
+      v_job.organization_id,p_job,v_key,v_base+v_step.sequence,v_area_id,v_step.value->>'title',
+      case when v_key='intake' and app_private.production_job_intake_complete(p_job) then 'completed'
+           when v_key in ('intake','review') then 'ready' else 'waiting' end,
+      case when v_key in ('intake','review') then v_job.advisor_id else null end,
+      v_job.due_at,
+      case when v_key='intake' and app_private.production_job_intake_complete(p_job) then now() else null end
+    );
+  end loop;
+  for v_step in select value,ordinality::integer as sequence
+    from jsonb_array_elements(v_template.steps) with ordinality
+  loop
+    select id into v_step_id from public.production_job_steps
+      where job_id=p_job and step_key=v_step.value->>'key';
+    for v_dependency in select value from jsonb_array_elements_text(v_step.value->'depends_on')
+    loop
+      select id,step_order into v_prerequisite_id,v_prerequisite_order
+      from public.production_job_steps where job_id=p_job and step_key=v_dependency;
+      if v_prerequisite_id is null or v_prerequisite_order>=v_base+v_step.sequence then
+        raise exception 'Dependencia inv√°lida en la plantilla %.',v_template.code;
+      end if;
+      insert into public.production_job_step_dependencies(
+        organization_id,job_id,step_id,prerequisite_step_id
+      ) values(v_job.organization_id,p_job,v_step_id,v_prerequisite_id);
+    end loop;
+  end loop;
+  perform app_private.refresh_production_job_readiness(p_job);
+end;
+$$;
+revoke all on function app_private.create_production_job_steps(uuid) from public,anon,authenticated;
+
+create or replace function app_private.update_production_job(
+  p_job_id uuid,p_expected_version integer,p_specifications jsonb default null,p_note text default ''
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+  v_job public.production_jobs%rowtype; v_user uuid:=(select auth.uid());
+  v_changed boolean; v_material_change boolean; v_started boolean; v_needs_review boolean;
+  v_site_visit_editor boolean;
+begin
+  if v_user is null then raise exception 'Inicia sesi√≥n para editar el trabajo.' using errcode='42501'; end if;
+  select * into v_job from public.production_jobs where id=p_job_id for update;
+  if not found or v_job.status in ('completed','cancelled') then
+    raise exception 'Trabajo no encontrado o cerrado.' using errcode='55000';
+  end if;
+  v_site_visit_editor:=exists(
+    select 1 from public.production_job_steps s
+    join public.areas a on a.id=s.area_id and a.organization_id=s.organization_id
+    where s.job_id=v_job.id and s.step_key='site_visit' and a.code='TAL'
+      and s.status in ('ready','in_progress') and s.assigned_to=v_user
+  ) and app_private.can_work_production_area(v_job.organization_id,v_job.branch_id,'TAL',v_user);
+  if not (
+    (v_job.advisor_id=v_user and app_private.has_visualcorp_access(v_job.organization_id,'sales','edit',v_job.branch_id))
+    or app_private.can_coordinate_production(v_job.organization_id,v_job.branch_id,v_user)
+    or v_site_visit_editor
+  ) then raise exception 'No puedes editar esta ficha.' using errcode='42501'; end if;
+  if p_expected_version is distinct from v_job.spec_version then
+    raise exception 'La ficha cambi√≥. Rec√°rgala antes de guardar.' using errcode='40001';
+  end if;
+  if p_specifications is not null and (jsonb_typeof(p_specifications)<>'object' or octet_length(p_specifications::text)>16000) then
+    raise exception 'Las especificaciones deben ser un objeto v√°lido.' using errcode='22023';
+  end if;
+  if p_specifications is not null and (
+    p_specifications->'artwork_status' is distinct from v_job.specifications->'artwork_status'
+    or p_specifications->'approval_required' is distinct from v_job.specifications->'approval_required'
+  ) then
+    raise exception 'La revisi√≥n de arte se controla desde su panel, no desde la ficha.' using errcode='42501';
+  end if;
+  if length(coalesce(p_note,''))>1000 then raise exception 'La nota es demasiado larga.' using errcode='22001'; end if;
+  if v_site_visit_editor and v_job.advisor_id<>v_user
+    and not app_private.can_coordinate_production(v_job.organization_id,v_job.branch_id,v_user)
+    and p_specifications is not null
+    and (p_specifications - array['width_cm','height_cm','site_visit_notes'])
+       is distinct from (v_job.specifications - array['width_cm','height_cm','site_visit_notes']) then
+    raise exception 'En la visita solo puedes registrar medidas y observaciones.' using errcode='42501';
+  end if;
+  v_changed:=p_specifications is not null and p_specifications is distinct from v_job.specifications;
+  if not v_changed and nullif(trim(p_note),'') is null then
+    return jsonb_build_object('job_id',v_job.id,'spec_version',v_job.spec_version,'status',v_job.status,'changed',false);
+  end if;
+  if v_changed then
+    v_material_change:=(p_specifications - 'artwork_status') is distinct from (v_job.specifications - 'artwork_status');
+    select exists(select 1 from public.production_job_steps
+      where job_id=v_job.id and step_key not in ('intake','review')
+        and (status='completed' or (status='in_progress' and step_key<>'site_visit'))) into v_started;
+    v_needs_review:=v_material_change and v_started;
+    update public.production_jobs
+    set specifications=p_specifications,
+        spec_version=spec_version+1,
+        status=case when v_needs_review then 'needs_review' else status end,
+        review_from_version=case when v_needs_review and v_job.status<>'needs_review'
+          then v_job.spec_version else review_from_version end,
+        artwork_review_status=case when v_material_change and approval_required then 'awaiting_art' else artwork_review_status end,
+        artwork_reviewed_by=case when v_material_change and approval_required then null else artwork_reviewed_by end,
+        artwork_reviewed_at=case when v_material_change and approval_required then null else artwork_reviewed_at end,
+        updated_at=now()
+    where id=v_job.id;
+    insert into public.production_job_spec_versions(
+      organization_id,job_id,version,specifications,note,created_by
+    ) values (v_job.organization_id,v_job.id,v_job.spec_version+1,p_specifications,left(coalesce(p_note,''),1000),v_user);
+    if v_needs_review then
+      update public.production_job_steps set status='blocked',review_hold=true,updated_at=now()
+      where job_id=v_job.id and status in ('waiting','ready');
+    else
+      perform app_private.refresh_production_job_readiness(v_job.id);
+    end if;
+  end if;
+  insert into public.production_job_events(
+    organization_id,job_id,event_type,details,created_by
+  ) values (
+    v_job.organization_id,v_job.id,case when v_changed then 'specifications_updated' else 'note_added' end,
+    jsonb_build_object('note',left(coalesce(p_note,''),1000),'from_version',v_job.spec_version,
+      'to_version',v_job.spec_version+case when v_changed then 1 else 0 end,
+      'requires_review',coalesce(v_needs_review,false)),v_user
+  );
+  return jsonb_build_object('job_id',v_job.id,
+    'spec_version',v_job.spec_version+case when v_changed then 1 else 0 end,
+    'status',case when coalesce(v_needs_review,false) then 'needs_review' else v_job.status end,
+    'changed',v_changed);
+end;
+$$;
+revoke all on function app_private.update_production_job(uuid,integer,jsonb,text) from public,anon,authenticated;
+grant execute on function app_private.update_production_job(uuid,integer,jsonb,text) to authenticated;
+create or replace function public.update_production_job(
+  p_job_id uuid,p_expected_version integer,p_specifications jsonb default null,p_note text default ''
+) returns jsonb language sql security invoker set search_path='' as $$
+  select app_private.update_production_job($1,$2,$3,$4);
+$$;
+revoke all on function public.update_production_job(uuid,integer,jsonb,text) from public,anon;
+grant execute on function public.update_production_job(uuid,integer,jsonb,text) to authenticated;
+
+-- A specification review belongs to the whole job. It must remain resolvable
+-- even when the only active stage is in progress and no waiting stage was held.
+create or replace function app_private.resolve_production_job_review(
+  p_job_id uuid,p_expected_version integer,p_decision text,p_note text
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_job public.production_jobs%rowtype; v_user uuid:=(select auth.uid()); v_note text:=trim(coalesce(p_note,''));
+begin
+  if v_user is null then raise exception 'Inicia sesi√≥n para revisar el trabajo.' using errcode='42501'; end if;
+  select * into v_job from public.production_jobs where id=p_job_id for update;
+  if not found or v_job.status<>'needs_review' then
+    raise exception 'Este trabajo no tiene una revisi√≥n pendiente.' using errcode='55000';
+  end if;
+  if not app_private.can_coordinate_production(v_job.organization_id,v_job.branch_id,v_user) then
+    raise exception 'Solo coordinaci√≥n puede aceptar este cambio.' using errcode='42501';
+  end if;
+  if p_expected_version is distinct from v_job.spec_version then
+    raise exception 'La ficha cambi√≥. Rec√°rgala antes de decidir.' using errcode='40001';
+  end if;
+  if p_decision not in ('accepted','changes_requested') or p_decision is null then
+    raise exception 'La decisi√≥n de revisi√≥n no es v√°lida.' using errcode='22023';
+  end if;
+  if length(v_note)<3 or length(v_note)>1000 then
+    raise exception 'Explica la decisi√≥n en 3 a 1000 caracteres.' using errcode='22023';
+  end if;
+  if p_decision='accepted' then
+    update public.production_jobs set status='open',review_from_version=null,updated_at=now() where id=v_job.id;
+    update public.production_job_steps set status='waiting',review_hold=false,updated_at=now()
+      where job_id=v_job.id and status='blocked' and review_hold;
+    perform app_private.refresh_production_job_readiness(v_job.id);
+  else
+    update public.production_jobs set updated_at=now() where id=v_job.id;
+  end if;
+  insert into public.production_job_events(organization_id,job_id,event_type,details,created_by)
+    values (v_job.organization_id,v_job.id,case when p_decision='accepted'
+      then 'specification_review_accepted' else 'specification_review_changes_requested' end,
+      jsonb_build_object('note',v_note,'from_version',v_job.review_from_version,
+        'to_version',v_job.spec_version),v_user);
+  return jsonb_build_object('job_id',v_job.id,
+    'status',case when p_decision='accepted' then 'open' else 'needs_review' end,
+    'spec_version',v_job.spec_version);
+end;
+$$;
+revoke all on function app_private.resolve_production_job_review(uuid,integer,text,text) from public,anon,authenticated;
+grant execute on function app_private.resolve_production_job_review(uuid,integer,text,text) to authenticated;
+create or replace function public.resolve_production_job_review(
+  p_job_id uuid,p_expected_version integer,p_decision text,p_note text
+) returns jsonb language sql security invoker set search_path='' as $$
+  select app_private.resolve_production_job_review($1,$2,$3,$4);
+$$;
+revoke all on function public.resolve_production_job_review(uuid,integer,text,text) from public,anon;
+grant execute on function public.resolve_production_job_review(uuid,integer,text,text) to authenticated;
+
+-- The POS uses one database call. An error at any point rolls back the sale,
+-- fulfillment and every generated job together.
+create or replace function app_private.confirm_pos_sale_with_workflows(
+  p_idempotency_key text,p_branch_code text,p_customer_id uuid,p_customer_data jsonb,
+  p_discount numeric,p_note text,p_allow_backorder boolean,p_lines jsonb,p_payments jsonb,
+  p_fulfillment jsonb,p_production_jobs jsonb
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+  v_sale_result jsonb; v_sale public.sales%rowtype; v_line public.sale_lines%rowtype;
+  v_customer public.customers%rowtype; v_entry jsonb; v_spec jsonb; v_template public.production_workflow_templates%rowtype;
+  v_code text; v_index integer; v_line_key text; v_job_id uuid; v_fingerprint text;
+  v_created integer:=0; v_skipped integer:=0; v_user uuid:=(select auth.uid());
+  v_install boolean; v_address text; v_maps text;
+begin
+  if v_user is null then raise exception 'Inicia sesi√≥n para confirmar la venta.' using errcode='42501'; end if;
+  if p_fulfillment is null or jsonb_typeof(p_fulfillment)<>'object'
+     or octet_length(p_fulfillment::text)>8000 then
+    raise exception 'Los datos de entrega no son v√°lidos.' using errcode='22023';
+  end if;
+  if p_lines is null or jsonb_typeof(p_lines)<>'array' or jsonb_array_length(p_lines)=0
+     or jsonb_array_length(p_lines)>100 or octet_length(p_lines::text)>100000 then
+    raise exception 'La venta necesita de 1 a 100 art√≠culos.' using errcode='22023';
+  end if;
+  if p_production_jobs is null or jsonb_typeof(p_production_jobs)<>'array'
+     or jsonb_array_length(p_production_jobs)<>jsonb_array_length(p_lines)
+     or octet_length(p_production_jobs::text)>250000 then
+    raise exception 'Cada art√≠culo necesita una ruta de trabajo.' using errcode='22023';
+  end if;
+  if exists(select 1 from jsonb_array_elements(p_lines) l
+    where jsonb_typeof(l)<>'object' or nullif(trim(l->>'line_key'),'') is null
+      or length(l->>'line_key')>160) then
+    raise exception 'Cada art√≠culo necesita una clave √∫nica.' using errcode='22023';
+  end if;
+  if (select count(distinct l->>'line_key') from jsonb_array_elements(p_lines) l)
+     <>jsonb_array_length(p_lines) then
+    raise exception 'Hay claves de art√≠culo repetidas.' using errcode='22023';
+  end if;
+  if exists(select 1 from jsonb_array_elements(p_production_jobs) j
+    where jsonb_typeof(j)<>'object' or coalesce(j->>'line_index','') !~ '^(0|[1-9][0-9]?)$'
+      or case when coalesce(j->>'line_index','') ~ '^(0|[1-9][0-9]?)$'
+        then (j->>'line_index')::integer>=jsonb_array_length(p_lines) else true end
+      or jsonb_typeof(j->'specifications')<>'object'
+      or octet_length((j->'specifications')::text)>16000) then
+    raise exception 'Una ficha de producci√≥n es inv√°lida.' using errcode='22023';
+  end if;
+  if (select count(distinct (j->>'line_index')::integer) from jsonb_array_elements(p_production_jobs) j)
+     <>jsonb_array_length(p_lines) then
+    raise exception 'Cada art√≠culo debe tener una sola ficha de producci√≥n.' using errcode='22023';
+  end if;
+  v_install:=coalesce((p_fulfillment->>'installation_required')::boolean,false);
+  v_address:=nullif(trim(p_fulfillment->>'installation_address'),'');
+  v_maps:=nullif(trim(p_fulfillment->>'installation_maps_url'),'');
+  if v_install and v_address is null then
+    raise exception 'Agrega la ubicaci√≥n de instalaci√≥n.' using errcode='22023';
+  end if;
+  if v_maps is not null and v_maps !~* '^https://(www[.])?google[.]com/maps/|^https://maps[.]app[.]goo[.]gl/|^https://goo[.]gl/maps/' then
+    raise exception 'El enlace debe ser de Google Maps.' using errcode='22023';
+  end if;
+  -- The older sale RPC already locks the idempotency key, validates prices,
+  -- consumes inventory and records payments. Its call remains in this transaction.
+  v_sale_result:=public.create_pos_sale_idempotent(
+    p_idempotency_key,p_branch_code,p_customer_id,p_customer_data,p_discount,p_note,
+    p_allow_backorder,p_lines,p_payments
+  );
+  select * into v_sale from public.sales where id=(v_sale_result->>'sale_id')::uuid for update;
+  if not found or v_sale.status<>'confirmed' then
+    raise exception 'No se pudo confirmar la venta.' using errcode='55000';
+  end if;
+  if v_sale.advisor_id is distinct from v_user and not app_private.can_coordinate_production(
+    v_sale.organization_id,v_sale.branch_id,v_user
+  ) then raise exception 'No puedes confirmar el trabajo de otra asesora.' using errcode='42501'; end if;
+  v_fingerprint:=md5(jsonb_build_object('fulfillment',p_fulfillment,'jobs',p_production_jobs)::text);
+  if v_sale.production_confirmation_fingerprint is not null then
+    if v_sale.production_confirmation_fingerprint is distinct from v_fingerprint then
+      raise exception 'La clave de venta ya se us√≥ con otra ficha de producci√≥n.' using errcode='23505';
+    end if;
+    return v_sale_result || jsonb_build_object('workflows_created',0,'production_jobs_skipped',0,
+      'production_workflow_ids',coalesce((select jsonb_agg(id order by created_at,id)
+        from public.production_jobs where sale_id=v_sale.id),'[]'::jsonb));
+  end if;
+  if coalesce((v_sale_result->>'replayed')::boolean,false) then
+    raise exception 'La venta ya existe sin ficha de producci√≥n. Requiere revisi√≥n antes de reintentar.' using errcode='55000';
+  end if;
+  insert into public.sale_fulfillment_details(
+    sale_id,organization_id,installation_required,installation_address,installation_maps_url,
+    installation_latitude,installation_longitude,installation_estimated_at,delivery_due_at,updated_by
+  ) values (
+    v_sale.id,v_sale.organization_id,v_install,v_address,v_maps,
+    nullif(p_fulfillment->>'installation_latitude','')::numeric,
+    nullif(p_fulfillment->>'installation_longitude','')::numeric,
+    nullif(p_fulfillment->>'installation_estimated_at','')::timestamptz,
+    nullif(p_fulfillment->>'delivery_due_at','')::timestamptz,v_user
+  );
+  if v_sale.customer_id is not null then
+    select * into v_customer from public.customers where id=v_sale.customer_id;
+  end if;
+  for v_entry in select value from jsonb_array_elements(p_production_jobs) loop
+    v_index:=(v_entry->>'line_index')::integer;
+    v_line_key:=p_lines->v_index->>'line_key';
+    v_code:=v_entry->>'workflow_code';
+    v_spec:=v_entry->'specifications';
+    select * into v_template from public.production_workflow_templates
+      where organization_id=v_sale.organization_id and code=v_code and active;
+    if not found then raise exception 'La ruta % no est√° disponible.',coalesce(v_code,'sin nombre') using errcode='22023'; end if;
+    select * into v_line from public.sale_lines
+      where sale_id=v_sale.id and organization_id=v_sale.organization_id and client_line_key=v_line_key;
+    if not found then raise exception 'No se encontr√≥ el art√≠culo % de la venta.',v_line_key using errcode='55000'; end if;
+    if v_code='none' then v_skipped:=v_skipped+1; continue; end if;
+    insert into public.production_jobs(
+      organization_id,branch_id,sale_id,sale_line_id,advisor_id,catalog_product_id,
+      workflow_code,sale_code,customer_name,customer_phone,title,specifications,
+      deposit_required,approval_required,artwork_review_status,due_at,created_by
+    ) values (
+      v_sale.organization_id,v_sale.branch_id,v_sale.id,v_line.id,v_sale.advisor_id,
+      v_line.catalog_product_id,v_code,coalesce(v_sale.sale_code,''),
+      coalesce(v_customer.full_name,''),coalesce(v_customer.phone,''),v_line.description_snapshot,
+      v_spec,v_template.deposit_required,
+      coalesce((v_spec->>'approval_required')::boolean,false),
+      case when coalesce((v_spec->>'approval_required')::boolean,false) then 'awaiting_art' else 'not_required' end,
+      nullif(p_fulfillment->>'delivery_due_at','')::timestamptz,v_user
+    ) returning id into v_job_id;
+    insert into public.production_job_spec_versions(
+      organization_id,job_id,version,specifications,note,created_by
+    ) values (v_sale.organization_id,v_job_id,1,v_spec,'Ficha creada al confirmar la venta',v_user);
+    perform app_private.create_production_job_steps(v_job_id);
+    insert into public.production_job_events(organization_id,job_id,event_type,details,created_by)
+    values (v_sale.organization_id,v_job_id,'job_created',
+      jsonb_build_object('workflow_code',v_code,'sale_id',v_sale.id),v_user);
+    v_created:=v_created+1;
+  end loop;
+  update public.sales set production_confirmation_fingerprint=v_fingerprint where id=v_sale.id;
+  return v_sale_result || jsonb_build_object('workflows_created',v_created,
+    'production_jobs_skipped',v_skipped,
+    'production_workflow_ids',coalesce((select jsonb_agg(id order by created_at,id)
+      from public.production_jobs where sale_id=v_sale.id),'[]'::jsonb));
+end;
+$$;
+revoke all on function app_private.confirm_pos_sale_with_workflows(text,text,uuid,jsonb,numeric,text,boolean,jsonb,jsonb,jsonb,jsonb) from public,anon,authenticated;
+grant execute on function app_private.confirm_pos_sale_with_workflows(text,text,uuid,jsonb,numeric,text,boolean,jsonb,jsonb,jsonb,jsonb) to authenticated;
+create or replace function public.confirm_pos_sale_with_workflows(
+  p_idempotency_key text,p_branch_code text,p_customer_id uuid,p_customer_data jsonb,
+  p_discount numeric,p_note text,p_allow_backorder boolean,p_lines jsonb,p_payments jsonb,
+  p_fulfillment jsonb,p_production_jobs jsonb
+) returns jsonb language sql security invoker set search_path='' as $$
+  select app_private.confirm_pos_sale_with_workflows($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11);
+$$;
+revoke all on function public.confirm_pos_sale_with_workflows(text,text,uuid,jsonb,numeric,text,boolean,jsonb,jsonb,jsonb,jsonb) from public,anon;
+grant execute on function public.confirm_pos_sale_with_workflows(text,text,uuid,jsonb,numeric,text,boolean,jsonb,jsonb,jsonb,jsonb) to authenticated;
+
+create or replace function app_private.transition_production_job_step(
+  p_step_id uuid,p_action text,p_note text default '',p_assigned_to uuid default null
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+  v_step public.production_job_steps%rowtype; v_job public.production_jobs%rowtype;
+  v_area_code text; v_user uuid:=(select auth.uid()); v_coordinator boolean; v_area_access boolean;
+  v_new_status text; v_target uuid; v_job_id uuid;
+begin
+  if v_user is null then raise exception 'Inicia sesi√≥n para cambiar una tarea.' using errcode='42501'; end if;
+  if length(coalesce(p_note,''))>1000 then raise exception 'La nota es demasiado larga.' using errcode='22001'; end if;
+  select job_id into v_job_id from public.production_job_steps where id=p_step_id;
+  if not found then raise exception 'Tarea no encontrada.' using errcode='P0002'; end if;
+  select * into v_job from public.production_jobs where id=v_job_id for update;
+  if not found or v_job.status in ('completed','cancelled') then
+    raise exception 'El trabajo est√° cerrado.' using errcode='55000';
+  end if;
+  select * into v_step from public.production_job_steps where id=p_step_id for update;
+  if not found then raise exception 'Tarea no encontrada.' using errcode='P0002'; end if;
+  select code into v_area_code from public.areas where id=v_step.area_id and organization_id=v_job.organization_id;
+  v_coordinator:=app_private.can_coordinate_production(v_job.organization_id,v_job.branch_id,v_user);
+  v_area_access:=app_private.can_work_production_area(v_job.organization_id,v_job.branch_id,v_area_code,v_user);
+  if not v_coordinator and not v_area_access then
+    raise exception 'Esta tarea corresponde a otra √°rea.' using errcode='42501';
+  end if;
+  if p_action='assign' then
+    if not v_coordinator then raise exception 'Solo coordinaci√≥n puede asignar personas.' using errcode='42501'; end if;
+    if v_step.status in ('completed','cancelled') then raise exception 'No se puede reasignar una tarea cerrada.' using errcode='55000'; end if;
+    v_target:=p_assigned_to;
+    if v_target is not null and not app_private.can_work_production_area(
+      v_job.organization_id,v_job.branch_id,v_area_code,v_target
+    ) then raise exception 'La persona no tiene acceso activo a esta √°rea.' using errcode='42501'; end if;
+    update public.production_job_steps set assigned_to=v_target,updated_at=now() where id=p_step_id;
+    v_new_status:=v_step.status;
+  elsif p_action='take' then
+    if v_step.status not in ('ready','blocked') or v_step.assigned_to is not null then
+      raise exception 'Solo puedes tomar una tarea disponible y sin responsable.' using errcode='55000';
+    end if;
+    update public.production_job_steps set assigned_to=v_user,updated_at=now() where id=p_step_id;
+    v_new_status:=v_step.status;
+  elsif p_action='start' then
+    if v_step.status<>'ready' or not app_private.production_step_gate_open(p_step_id) then
+      raise exception 'La tarea a√∫n no est√° lista para empezar.' using errcode='55000';
+    end if;
+    if v_step.assigned_to is not null and v_step.assigned_to<>v_user and not v_coordinator then
+      raise exception 'La tarea est√° asignada a otra persona.' using errcode='42501';
+    end if;
+    update public.production_job_steps set status='in_progress',
+      assigned_to=coalesce(assigned_to,v_user),started_at=coalesce(started_at,now()),updated_at=now()
+    where id=p_step_id;
+    v_new_status:='in_progress';
+  elsif p_action='complete' then
+    if v_step.status not in ('ready','in_progress') or not app_private.production_step_gate_open(p_step_id) then
+      raise exception 'Completa primero los pasos y requisitos anteriores.' using errcode='55000';
+    end if;
+    if v_step.assigned_to is not null and v_step.assigned_to<>v_user and not v_coordinator then
+      raise exception 'La tarea est√° asignada a otra persona.' using errcode='42501';
+    end if;
+    if v_step.step_key='intake' and not app_private.production_job_intake_complete(v_job.id) then
+      raise exception 'Completa los datos t√©cnicos obligatorios antes de avanzar.' using errcode='55000';
+    end if;
+    if v_step.step_key='site_visit' and (
+      coalesce(v_job.specifications->>'width_cm','') !~ '^[0-9]+([.][0-9]+)?$'
+      or coalesce(v_job.specifications->>'height_cm','') !~ '^[0-9]+([.][0-9]+)?$'
+      or case when coalesce(v_job.specifications->>'width_cm','') ~ '^[0-9]+([.][0-9]+)?$'
+        then (v_job.specifications->>'width_cm')::numeric<=0 else true end
+      or case when coalesce(v_job.specifications->>'height_cm','') ~ '^[0-9]+([.][0-9]+)?$'
+        then (v_job.specifications->>'height_cm')::numeric<=0 else true end
+    ) then raise exception 'Registra medidas verificadas mayores a cero antes de cerrar la visita.' using errcode='55000'; end if;
+    if v_step.step_key='review' then
+      raise exception 'Selecciona primero una ruta de producci√≥n para este trabajo.' using errcode='55000';
+    end if;
+    if v_step.step_key='design' and v_job.approval_required then
+      raise exception 'Entrega el enlace del arte desde Dise√±o para solicitar su aprobaci√≥n.' using errcode='55000';
+    end if;
+    update public.production_job_steps set status='completed',assigned_to=coalesce(assigned_to,v_user),
+      started_at=coalesce(started_at,now()),completed_at=now(),updated_at=now() where id=p_step_id;
+    v_new_status:='completed';
+    perform app_private.refresh_production_job_readiness(v_job.id);
+    if not exists(select 1 from public.production_job_steps where job_id=v_job.id and status<>'completed') then
+      update public.production_jobs set status='completed',updated_at=now() where id=v_job.id;
+    end if;
+  elsif p_action='block' then
+    if v_step.status not in ('ready','in_progress') then raise exception 'Solo se puede bloquear una tarea activa.' using errcode='55000'; end if;
+    if nullif(trim(p_note),'') is null then raise exception 'Explica el motivo del bloqueo.' using errcode='22023'; end if;
+    if v_step.assigned_to is not null and v_step.assigned_to<>v_user and not v_coordinator then
+      raise exception 'La tarea est√° asignada a otra persona.' using errcode='42501';
+    end if;
+    update public.production_job_steps set status='blocked',assigned_to=coalesce(assigned_to,v_user),
+      notes=left(p_note,1000),updated_at=now() where id=p_step_id;
+    v_new_status:='blocked';
+  elsif p_action='unblock' then
+    if v_step.status<>'blocked' then raise exception 'La tarea no est√° bloqueada.' using errcode='55000'; end if;
+    if v_job.status='needs_review' or v_step.review_hold then
+      raise exception 'Coordinaci√≥n debe revisar primero el cambio en la ficha.' using errcode='55000';
+    end if;
+    if v_step.assigned_to is not null and v_step.assigned_to<>v_user and not v_coordinator then
+      raise exception 'La tarea est√° asignada a otra persona.' using errcode='42501';
+    end if;
+    update public.production_job_steps set status='waiting',updated_at=now() where id=p_step_id;
+    perform app_private.refresh_production_job_readiness(v_job.id);
+    select status into v_new_status from public.production_job_steps where id=p_step_id;
+  else
+    raise exception 'Acci√≥n de tarea no reconocida.' using errcode='22023';
+  end if;
+  insert into public.production_job_events(organization_id,job_id,step_id,event_type,details,created_by)
+  values (v_job.organization_id,v_job.id,v_step.id,'step_'||p_action,
+    jsonb_build_object('from_status',v_step.status,'to_status',v_new_status,
+      'note',left(coalesce(p_note,''),1000),'assigned_to',
+      (select assigned_to from public.production_job_steps where id=p_step_id)),v_user);
+  return jsonb_build_object('step_id',v_step.id,'job_id',v_job.id,'status',v_new_status,
+    'job_status',(select status from public.production_jobs where id=v_job.id));
 end;
 $$;
 revoke all on function app_private.transition_production_job_step(uuid,text,text,uuid) from public,anon,authenticated;
