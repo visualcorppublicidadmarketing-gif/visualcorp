@@ -6,6 +6,9 @@ import { supabase } from '../lib/supabaseClient';
 import { Spinner } from './ui/OperationalKit';
 import './commercial-document-details.css';
 import './commercial-quote-detail.css';
+import { CommercialAssetsGallery } from './commercial/CommercialAssetsGallery';
+import { GoogleMapsPreview } from './commercial/GoogleMapsPreview';
+import { RichTextContent } from './commercial/RichTextContent';
 
 export type CommercialDocumentKind = 'quote' | 'sale';
 
@@ -308,7 +311,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
       </div>}
     </section>
 
-    {isQuote && quoteDetails.installation && (quoteDetails.installation.required || quoteDetails.installation.address || quoteDetails.installation.maps_url) && <section className="commercial-detail-section commercial-detail-delivery"><div className="commercial-detail-section-heading"><div><span className="eyebrow">INSTALACIÓN</span><h4>Ubicación y condiciones</h4></div><MapPin size={17}/></div><dl className="commercial-detail-meta-grid"><Meta label="Dirección" value={quoteDetails.installation.address}/><Meta label="Piso / nivel" value={quoteDetails.installation.floor}/><Meta label="Altura" value={quoteDetails.installation.height}/><Meta label="Acceso" value={quoteDetails.installation.access}/></dl>{quoteDetails.installation.maps_url && <a href={quoteDetails.installation.maps_url} target="_blank" rel="noreferrer">Abrir ubicación en Google Maps</a>}</section>}
+    {isQuote && quoteDetails.installation && (quoteDetails.installation.required || quoteDetails.installation.address || quoteDetails.installation.maps_url) && <section className="commercial-detail-section commercial-detail-delivery"><div className="commercial-detail-section-heading"><div><span className="eyebrow">INSTALACIÓN</span><h4>Ubicación y condiciones</h4></div><MapPin size={17}/></div><dl className="commercial-detail-meta-grid"><Meta label="Dirección" value={quoteDetails.installation.address}/><Meta label="Piso / nivel" value={quoteDetails.installation.floor}/><Meta label="Altura" value={quoteDetails.installation.height}/><Meta label="Acceso" value={quoteDetails.installation.access}/></dl><GoogleMapsPreview url={quoteDetails.installation.maps_url || ''} address={quoteDetails.installation.address || ''}/></section>}
     {isQuote && quoteDetails.notes && !document.notes && <section className="commercial-detail-section commercial-detail-notes"><div className="commercial-detail-section-heading"><div><span className="eyebrow">NOTAS DE LA PROPUESTA</span><h4>Información adicional</h4></div></div><p>{quoteDetails.notes}</p></section>}
 
     {fulfillment && (fulfillment.installation_required || fulfillment.delivery_due_at) && <section className="commercial-detail-section commercial-detail-delivery">
@@ -316,11 +319,13 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
       {fulfillment.installation_required && <p><MapPin size={15}/>{fulfillment.installation_address || 'Dirección pendiente'}</p>}
       {fulfillment.delivery_due_at && <p>Entrega prevista: <b>{formatDate(fulfillment.delivery_due_at)}</b></p>}
       {fulfillment.installation_estimated_at && <p>Instalación prevista: <b>{formatDateTime(fulfillment.installation_estimated_at)}</b></p>}
-      {(fulfillment.installation_maps_url || (fulfillment.installation_latitude !== null && fulfillment.installation_longitude !== null)) && <a href={fulfillment.installation_maps_url || `https://www.google.com/maps/search/?api=1&query=${fulfillment.installation_latitude},${fulfillment.installation_longitude}`} target="_blank" rel="noreferrer">Abrir ubicación en Maps</a>}
+      {(fulfillment.installation_maps_url || (fulfillment.installation_latitude !== null && fulfillment.installation_longitude !== null)) && <GoogleMapsPreview url={fulfillment.installation_maps_url || ''} address={fulfillment.installation_address || ''} coordinates={fulfillment.installation_latitude !== null && fulfillment.installation_longitude !== null ? `${fulfillment.installation_latitude},${fulfillment.installation_longitude}` : ''}/>}
     </section>}
 
     {isQuote && document.notes && <section className="commercial-detail-section commercial-detail-notes"><div className="commercial-detail-section-heading"><div><span className="eyebrow">NOTAS DE LA PROPUESTA</span><h4>Condiciones y detalles</h4></div></div><p>{document.notes}</p></section>}
+    {document.client_brief_html && document.client_brief_html !== '<p></p>' && <section className="commercial-detail-section commercial-detail-notes"><div className="commercial-detail-section-heading"><div><span className="eyebrow">DESCRIPCIÓN DEL TRABAJO</span><h4>Indicaciones y objetivo</h4></div></div><RichTextContent html={document.client_brief_html}/></section>}
     {!isQuote && document.note && <section className="commercial-detail-section commercial-detail-notes"><div className="commercial-detail-section-heading"><div><span className="eyebrow">NOTA DE LA VENTA</span><h4>Observaciones</h4></div></div><p>{document.note}</p></section>}
+    <CommercialAssetsGallery kind={kind} documentId={documentId}/>
     {!isQuote && document.urgent_backorder && <div className="commercial-detail-warning" role="status"><AlertCircle size={16}/>La venta tiene un artículo marcado para compra urgente.</div>}
   </div>;
 }
