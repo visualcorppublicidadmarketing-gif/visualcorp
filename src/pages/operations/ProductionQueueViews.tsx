@@ -17,7 +17,7 @@ export type ProductionQueueViewItem<T> = {
   original: T;
 };
 
-type ViewMode = 'month' | 'week' | 'cards' | 'list' | 'kanban';
+type ViewMode = 'summary' | 'month' | 'week' | 'cards' | 'list' | 'kanban';
 type Props<T> = {
   areaSlug: string;
   areaName: string;
@@ -29,10 +29,11 @@ type Props<T> = {
 
 const TIME_ZONE = 'America/Guayaquil';
 const MODES: { id: ViewMode; label: string; icon: typeof CalendarDays }[] = [
+  { id: 'summary', label: 'Resumen', icon: CalendarCheck2 },
   { id: 'month', label: 'Mes', icon: CalendarDays },
   { id: 'week', label: 'Semana', icon: CalendarRange },
   { id: 'cards', label: 'Tarjetas', icon: LayoutGrid },
-  { id: 'list', label: 'Lista', icon: List },
+  { id: 'list', label: 'Tabla', icon: List },
   { id: 'kanban', label: 'Kanban', icon: Columns3 },
 ];
 const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -211,17 +212,24 @@ export function ProductionQueueViews<T>({ areaSlug, areaName, items, today, rend
       </section>}
     </>}
 
+    {mode === 'summary' && <section className="pj-list" aria-label={`Resumen de trabajos de ${areaName}`}>
+      {items.slice(0, 12).map((item) => <div key={item.id}>{renderCard(item, true)}</div>)}
+      {items.length > 12 && <p className="pj-period-empty">Mostrando los primeros 12 trabajos del filtro. Cambia a Tabla para recorrer el resto.</p>}
+      {!items.length && <p className="pj-period-empty">No hay trabajos que requieran seguimiento en esta selección.</p>}
+    </section>}
+
     {mode === 'cards' && <section className="pj-list" aria-label={`Trabajos de ${areaName} en tarjetas`}>{items.map((item) => <div key={item.id}>{renderCard(item)}</div>)}</section>}
 
     {mode === 'list' && <section className="pj-list-view" aria-label={`Trabajos de ${areaName} en lista`}>
-      <div className="pj-list-view-head" aria-hidden="true"><span>Trabajo</span><span>Estado</span><span>Responsable</span><span>Fecha límite</span><span/></div>
-      {items.map((item) => <button type="button" className="pj-list-view-row" key={item.id} onClick={() => onOpen(item)}>
-        <span className="pj-list-view-work"><b>{item.code}</b><strong>{item.title}</strong><small>{item.customer}</small></span>
-        <span><span className="pj-status" data-state={item.status}>{item.statusLabel}</span></span>
-        <span className="pj-list-view-owner">{item.ownerLabel}</span>
-        <span className={item.overdue ? 'is-late' : ''}>{item.dueKey ? <>{formatDay(item.dueKey, { weekday: 'short', day: 'numeric', month: 'short' })}{item.dueAt && <> · {formatTime(item.dueAt)}</>}</> : 'Sin fecha'}</span>
-        <span className="pj-list-view-arrow"><ChevronRight size={15}/></span>
-      </button>)}
+      <div className="pj-table-scroll"><table className="pj-jobs-table"><thead><tr><th>Trabajo</th><th>Estado</th><th>Responsable</th><th>Fecha límite</th><th><span className="sr-only">Abrir</span></th></tr></thead><tbody>
+      {items.map((item) => <tr key={item.id}>
+        <td><span className="pj-list-view-work"><b>{item.code}</b><strong>{item.title}</strong><small>{item.customer}</small></span></td>
+        <td><span className="pj-status" data-state={item.status}>{item.statusLabel}</span></td>
+        <td className="pj-list-view-owner">{item.ownerLabel}</td>
+        <td className={item.overdue ? 'is-late' : ''}>{item.dueKey ? <>{formatDay(item.dueKey, { weekday: 'short', day: 'numeric', month: 'short' })}{item.dueAt && <> · {formatTime(item.dueAt)}</>}</> : 'Sin fecha'}</td>
+        <td className="pj-list-view-arrow"><button type="button" className="pj-table-open" aria-label={`Abrir ${item.code}: ${item.title}`} onClick={() => onOpen(item)}><ChevronRight size={15}/></button></td>
+      </tr>)}
+      </tbody></table></div>
     </section>}
 
     {mode === 'kanban' && <div className="pj-kanban-scroll" tabIndex={0} aria-label={`Tablero kanban de ${areaName}`}>

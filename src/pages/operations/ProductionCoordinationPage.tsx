@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, ClipboardList, Clock3, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
 import { EmptyState } from '../../components/feedback';
 import { supabase } from '../../lib/supabaseClient';
+import { ProductionQueueViews, type ProductionQueueViewItem } from './ProductionQueueViews';
 import './production-coordination.css';
 
 type Job = {
@@ -13,6 +14,7 @@ type Job = {
   fulfillment_status: string | null; fulfillment_due_at: string | null; approval_required: boolean;
   artwork_review_status: string | null; can_open_detail: boolean;
   lot_summary: null | { unit: string; total: number; in_production: number; quality_check: number; ready_for_delivery: number; scheduled: number; delivered: number; installed: number };
+  balance_due?: boolean;
 };
 type Step = {
   id: string; job_id: string; step_order: number; title: string; status: string;
@@ -25,7 +27,7 @@ type LegacyOrder = {
   area_id: string | null; area_code: string | null; area_name: string | null; can_open_detail: boolean;
 };
 type JobItem = { job: Job; steps: Step[]; current: Step | null };
-type Filter = 'all' | 'attention' | 'blocked' | 'quality' | 'delivery';
+type Filter = 'all' | 'attention' | 'blocked' | 'quality' | 'delivery' | 'balance';
 const PAGE_SIZE = 50;
 const AREA_SLUG: Record<string, string> = { ASE: 'asesoria', DIS: 'diseno', IMP: 'impresion', SUB: 'sublimacion', LAS: 'laser', TAL: 'taller' };
 const AREA_NAMES: Record<string, string> = { ASE: 'Asesoría', DIS: 'Diseño', IMP: 'Impresión', SUB: 'Sublimación', LAS: 'Corte láser', TAL: 'Taller' };
@@ -44,10 +46,12 @@ const active = (step: Step) => ['ready', 'in_progress', 'blocked'].includes(step
 const FILTERS: Array<{ key: Filter; label: string }> = [
   { key: 'all', label: 'Todos los trabajos' }, { key: 'attention', label: 'Requieren atención' },
   { key: 'blocked', label: 'Bloqueados' }, { key: 'quality', label: 'Calidad' }, { key: 'delivery', label: 'Entrega' },
+  { key: 'balance', label: 'Saldo pendiente' },
 ];
 
 export function ProductionCoordinationPage() {
   const { organizationId, hasPermission } = useAuth();
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [steps, setSteps] = useState<Step[]>([]);
   const [legacyOrders, setLegacyOrders] = useState<LegacyOrder[]>([]);
@@ -59,6 +63,7 @@ export function ProductionCoordinationPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
+  const [balanceUnavailable, setBalanceUnavailable] = useState(false);
   const canView = hasPermission('sales', 'view') || hasPermission('workshop', 'view');
 
   const loadPage = useCallback(async (nextPage: number, replace: boolean) => {
@@ -73,7 +78,11 @@ export function ProductionCoordinationPage() {
       const pageJobs = board.items.filter((item) => item.source === 'job' && item.job).map((item) => item.job!) as Job[];
       const pageSteps = board.items.filter((item) => item.source === 'job').flatMap((item) => item.steps || []) as Step[];
       const pageLegacy = board.items.filter((item) => item.source === 'legacy' && item.order).map((item) => item.order!) as LegacyOrder[];
-      setJobs((current) => replace ? pageJobs : [...current, ...pageJobs]);
+      const balanceResult = pageJobs.length ? await supabase.rpc('list_production_job_balance_flags', { p_organization_id: organizationId, p_job_ids: pageJobs.map((job) => job.id) }) : { data: [], error: null };
+      setBalanceUnavailable(Boolean(balanceResult.error));
+      const balanceFlags = new Set<string>(((balanceResult.data || []) as Array<{ job_id: string; balance_due: boolean }>).filter((entry) => entry.balance_due).map((entry) => entry.job_id));
+      const enrichedJobs = pageJobs.map((job) => ({ ...job, balance_due: balanceFlags.has(job.id) }));
+      setJobs((current) => replace ? enrichedJobs : [...current, ...enrichedJobs]);
       setLegacyOrders((current) => replace ? pageLegacy : [...current, ...pageLegacy]);
       setSteps((current) => replace ? pageSteps : [...current, ...pageSteps]);
       setCount(board.total || 0);
@@ -101,6 +110,7 @@ export function ProductionCoordinationPage() {
       if (filter === 'blocked' && current?.status !== 'blocked') return false;
       if (filter === 'quality' && job.fulfillment_status !== 'quality_check' && !(Number(job.lot_summary?.quality_check) > 0)) return false;
       if (filter === 'delivery' && !['ready_for_delivery', 'scheduled'].includes(job.fulfillment_status || '') && !(Number(job.lot_summary?.ready_for_delivery) > 0 || Number(job.lot_summary?.scheduled) > 0)) return false;
+      if (filter === 'balance' && !job.balance_due) return false;
       if (needle && !`${job.sale_code || ''} ${job.title} ${current?.area_name || ''} ${current?.title || ''}`.toLocaleLowerCase('es').includes(needle)) return false;
       return true;
     });
@@ -114,11 +124,36 @@ export function ProductionCoordinationPage() {
     const needle = query.trim().toLocaleLowerCase('es');
     return !needle || `${order.order_code} ${order.title} ${order.next_step || ''} ${order.area_name || ''}`.toLocaleLowerCase('es').includes(needle);
   }), [areaFilter, filter, legacyOrders, query]);
+  type QueueOriginal = { kind: 'job'; job: Job; steps: Step[]; current: Step | null } | { kind: 'legacy'; order: LegacyOrder };
+  const viewItems = useMemo<ProductionQueueViewItem<QueueOriginal>[]>(() => [
+    ...visible.map(({ job, steps: jobSteps, current }) => {
+      const dueAt = current?.due_at || job.fulfillment_due_at || job.due_at;
+      const status = current?.status || (job.fulfillment_status === 'ready_for_delivery' || job.fulfillment_status === 'scheduled' ? 'completed' : job.status === 'completed' ? 'completed' : 'waiting');
+      const statusLabel = status === 'blocked' ? 'Bloqueado' : status === 'in_progress' ? 'En proceso' : status === 'ready' ? 'Lista para iniciar' : status === 'completed' ? 'Entrega / producción terminada' : status === 'waiting' ? 'En espera' : status;
+      return { id: job.id, title: job.title, code: job.sale_code || 'Pedido', customer: AREA_NAMES[current?.area_code || 'ASE'] || 'Producción', dueAt, dueKey: localDay(dueAt), status, statusLabel, ownerLabel: current?.assigned ? 'Asignado' : 'Sin asignar', overdue: isLate(dueAt), original: { kind: 'job' as const, job, steps: jobSteps, current } };
+    }),
+    ...visibleLegacy.map((order) => ({ id: `legacy-${order.id}`, title: order.title, code: order.order_code, customer: order.area_name || 'Orden interna', dueAt: order.due_at, dueKey: localDay(order.due_at), status: order.status === 'queued' ? 'ready' : order.status === 'quality_review' ? 'in_progress' : order.status, statusLabel: order.status === 'blocked' ? 'Bloqueada' : order.status === 'quality_review' ? 'Control de calidad' : order.status === 'ready' ? 'Lista para iniciar' : order.status === 'queued' ? 'En espera' : order.status, ownerLabel: order.assigned ? 'Asignado' : 'Sin asignar', overdue: isLate(order.due_at), original: { kind: 'legacy' as const, order } })),
+  ], [visible, visibleLegacy]);
+  const openQueueItem = (item: ProductionQueueViewItem<QueueOriginal>) => {
+    if (item.original.kind === 'legacy') { if (item.original.order.can_open_detail) navigate('/operaciones/flujos'); return; }
+    const { job, current } = item.original;
+    if (!job.can_open_detail) return;
+    const slug = AREA_SLUG[current?.area_code || 'ASE'] || 'asesoria';
+    navigate(`/operaciones/trabajos/${slug}?job=${encodeURIComponent(job.id)}`);
+  };
+  const renderQueueCard = (item: ProductionQueueViewItem<QueueOriginal>, compact = false) => {
+    if (item.original.kind === 'legacy') return <article className="pc-order pc-order-legacy"><div className="pc-order-main"><div className="pc-order-title"><span>Orden interna · {item.code}</span><h2>{item.title}</h2></div><span className="pc-status">{item.statusLabel}</span></div><div className="pc-order-bottom"><span>{item.ownerLabel} · {dateLabel(item.dueAt)}</span>{item.original.order.can_open_detail && <Link className="button button-outline" to="/operaciones/flujos">Abrir flujos <ArrowRight size={14}/></Link>}</div></article>;
+    const { job, steps: jobSteps, current } = item.original;
+    const canOpen = job.can_open_detail;
+    const statusClass = current?.status === 'blocked' ? ' is-blocked' : '';
+    return <article className={`pc-order${compact ? ' is-compact' : ''}`}><div className="pc-order-main"><div className="pc-order-title"><span>{job.sale_code || 'Pedido activo'}</span><h2>{job.title}</h2></div><span className={`pc-status${statusClass}`}>{item.statusLabel}</span></div><div className="pc-order-facts"><div><small>Área y siguiente paso</small><b>{current?.area_name || AREA_NAMES[current?.area_code || 'ASE']} · {current?.title || 'Revisar entrega'}</b>{current?.readiness_reasons?.[0] && <span>{current.readiness_reasons[0].message}</span>}</div><div><small>Responsable</small><b>{item.ownerLabel}</b></div><div className={item.overdue ? 'is-late' : ''}><small>Fecha límite</small><b><CalendarClock size={14}/>{dateLabel(item.dueAt)}</b></div><div><small>Avance</small><b><Clock3 size={14}/>{jobSteps.filter((step) => step.status === 'completed').length} de {jobSteps.length} etapas</b></div></div><div className="pc-order-bottom"><span>{job.fulfillment_status === 'quality_check' ? 'Calidad pendiente' : ['ready_for_delivery','scheduled'].includes(job.fulfillment_status || '') ? 'Pendiente de retiro / entrega' : job.approval_required && job.artwork_review_status !== 'approved' ? 'Arte pendiente de revisión' : 'Flujo activo'}{job.balance_due ? ' · ⚠ saldo pendiente' : ''}</span>{canOpen ? <Link className="button button-outline" to={`/operaciones/trabajos/${AREA_SLUG[current?.area_code || 'ASE'] || 'asesoria'}?job=${encodeURIComponent(job.id)}`}>Abrir ficha <ArrowRight size={14}/></Link> : <span>Ficha reservada</span>}</div></article>;
+  };
   const attentionCount = items.filter(({ job, current }) => current?.status === 'blocked' || isLate(current?.due_at || job.due_at) || current?.status === 'ready' && !current.assigned || job.approval_required && job.artwork_review_status !== 'approved').length + legacyOrders.filter((order) => order.status === 'blocked' || isLate(order.due_at) || order.status === 'queued' && !order.assigned).length;
   const blockedCount = items.filter(({ current }) => current?.status === 'blocked').length + legacyOrders.filter((order) => order.status === 'blocked').length;
   const qualityCount = items.filter(({ job }) => job.fulfillment_status === 'quality_check' || Number(job.lot_summary?.quality_check) > 0).length + legacyOrders.filter((order) => order.status === 'quality_review').length;
   const deliveryCount = items.filter(({ job }) => ['ready_for_delivery', 'scheduled'].includes(job.fulfillment_status || '') || Number(job.lot_summary?.ready_for_delivery) > 0 || Number(job.lot_summary?.scheduled) > 0).length + legacyOrders.filter((order) => order.status === 'ready').length;
-  const filterCount = (key: Filter) => key === 'attention' ? attentionCount : key === 'blocked' ? blockedCount : key === 'quality' ? qualityCount : key === 'delivery' ? deliveryCount : count;
+  const balanceCount = items.filter(({ job }) => job.balance_due).length;
+  const filterCount = (key: Filter) => key === 'attention' ? attentionCount : key === 'blocked' ? blockedCount : key === 'quality' ? qualityCount : key === 'delivery' ? deliveryCount : key === 'balance' ? balanceCount : count;
 
   if (!canView) return <AppFrame area="operations"><main className="pc-page"><EmptyState icon={ClipboardList} title="Acceso restringido" text="Tu perfil no tiene acceso a la coordinación de trabajos."/></main></AppFrame>;
 
@@ -137,25 +172,8 @@ export function ProductionCoordinationPage() {
     </section>
     <div className="pc-filter-row" role="group" aria-label="Estado de trabajos">{FILTERS.map((item) => <button type="button" key={item.key} className={filter === item.key ? 'is-active' : ''} aria-pressed={filter === item.key} onClick={() => setFilter(item.key)}>{item.label}<span>{filterCount(item.key)}</span></button>)}</div>
     {error && <div className="pc-error" role="alert">{error}<button type="button" className="button button-outline" onClick={() => void loadPage(0, true)}>Reintentar</button></div>}
-    {loading ? <div className="pc-empty" role="status">Cargando trabajos…</div> : visible.length || visibleLegacy.length ? <section className="pc-list" aria-label="Trabajos activos">
-      {visible.map(({ job, steps: jobSteps, current }) => {
-        const areaName = current?.area_name || AREA_NAMES[current?.area_code || 'ASE'] || 'Asesoría';
-        const areaSlug = AREA_SLUG[current?.area_code || 'ASE'];
-        const deadline = current?.due_at || job.due_at;
-        const owner = current?.assigned ? 'Responsable asignado' : null;
-        return <article className="pc-order" key={job.id}>
-          <div className="pc-order-main"><div className="pc-order-title"><span>{job.sale_code || 'Pedido activo'}</span><h2>{job.title}</h2></div><span className={`pc-status${current?.status === 'blocked' ? ' is-blocked' : ''}`}>{current?.status === 'blocked' ? 'Bloqueado' : current?.status === 'in_progress' ? 'En proceso' : current?.status === 'ready' ? 'Lista para iniciar' : current?.status === 'waiting' ? 'En espera' : 'Revisar ficha'}</span></div>
-          <div className="pc-order-facts"><div><small>Área y siguiente paso</small><b>{areaName} · {current?.title || 'Definir ruta'}</b>{current?.readiness_reasons?.length ? <span>{current.readiness_reasons[0].message}</span> : null}</div><div><small>Responsable</small><b>{owner || 'Sin asignar'}</b></div><div className={isLate(deadline) ? 'is-late' : ''}><small>Fecha límite</small><b><CalendarClock size={14}/>{dateLabel(deadline)}</b></div><div><small>Avance</small><b><Clock3 size={14}/>{jobSteps.filter((step) => step.status === 'completed').length} de {jobSteps.length} etapas</b></div></div>
-          <div className="pc-order-bottom"><span>{job.lot_summary ? `${Number(job.lot_summary.in_production || 0).toLocaleString('es-EC')} ${job.lot_summary.unit} en producción · ${Number(job.lot_summary.quality_check || 0).toLocaleString('es-EC')} ${job.lot_summary.unit} en calidad · ${Number(job.lot_summary.delivered || 0).toLocaleString('es-EC')} ${job.lot_summary.unit} entregados` : job.approval_required && job.artwork_review_status !== 'approved' ? 'Arte pendiente de revisión' : job.fulfillment_status === 'quality_check' ? 'Calidad pendiente' : job.fulfillment_status === 'ready_for_delivery' || job.fulfillment_status === 'scheduled' ? 'Entrega pendiente' : 'Flujo activo'}{job.fulfillment_due_at ? ` · ${dateLabel(job.fulfillment_due_at)}` : ''}</span>{job.can_open_detail && areaSlug ? <Link className="button button-outline" to={`/operaciones/trabajos/${areaSlug}?job=${encodeURIComponent(job.id)}`}>Abrir ficha <ArrowRight size={14}/></Link> : <span>Ficha reservada a su responsable o al área</span>}</div>
-        </article>;
-      })}
-      {visibleLegacy.map((order) => <article className="pc-order pc-order-legacy" key={`legacy-${order.id}`}>
-        <div className="pc-order-main"><div className="pc-order-title"><span>Orden interna · {order.order_code}</span><h2>{order.title}</h2></div><span className={`pc-status${order.status === 'blocked' ? ' is-blocked' : ''}`}>{order.status === 'blocked' ? 'Bloqueada' : order.status === 'in_progress' ? 'En proceso' : order.status === 'ready' ? 'Lista para iniciar' : 'En curso'}</span></div>
-        <div className="pc-order-facts"><div><small>Área y siguiente paso</small><b>{order.area_name || 'Sin área'} · {order.next_step || 'Continuar orden'}</b></div><div><small>Responsable</small><b>{order.assigned ? 'Responsable asignado' : 'Sin asignar'}</b></div><div className={isLate(order.due_at) ? 'is-late' : ''}><small>Fecha límite</small><b><CalendarClock size={14}/>{dateLabel(order.due_at)}</b></div><div><small>Prioridad</small><b>{order.priority || 'Normal'}</b></div></div>
-        <div className="pc-order-bottom"><span>Registro heredado de órdenes internas</span>{order.can_open_detail && <Link className="button button-outline" to="/operaciones/flujos">Abrir flujos <ArrowRight size={14}/></Link>}</div>
-      </article>)}
-      {!visible.length && !visibleLegacy.length && <div className="pc-empty">No hay coincidencias entre los trabajos cargados. Amplía la lista para buscar en más registros.</div>}
-    </section> : <div className="pc-empty">No hay trabajos activos para mostrar.</div>}
+    {balanceUnavailable && <div className="pc-balance-warning" role="status"><AlertTriangle size={15}/> Los trabajos están cargados, pero no se pudo verificar el saldo de algunos pedidos. Actualiza la vista para reintentar.</div>}
+    {loading ? <div className="pc-empty" role="status">Cargando trabajos…</div> : viewItems.length ? <ProductionQueueViews areaSlug="coordinacion" areaName="Coordinación de trabajos" items={viewItems} today={localDay(new Date().toISOString())} renderCard={renderQueueCard} onOpen={openQueueItem}/> : <div className="pc-empty">No hay coincidencias entre los trabajos cargados.</div>}
     {jobs.length + legacyOrders.length < count && <div className="pc-more"><button className="button button-outline" type="button" disabled={loadingMore} onClick={() => void loadPage(page + 1, false)}>{loadingMore ? 'Cargando…' : 'Cargar más trabajos'} <ArrowRight size={14}/></button><span>{jobs.length + legacyOrders.length} de {count}</span></div>}
   </main></AppFrame>;
 }
