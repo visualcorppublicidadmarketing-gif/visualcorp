@@ -58,7 +58,65 @@ const calendarDateKey = (date: Date) => `${date.getFullYear()}-${String(date.get
 export function Progress({ value, max = 100, label }: { value: number; max?: number; label?: string }) { const safe = Math.max(0, Math.min(100, value / max * 100)); return <div className="ok-progress" role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={max} aria-label={label}><span style={{ width: `${safe}%` }}/></div>; }
 
 // Overlays and feedback
-export function Dialog({ open, onOpenChange, title, description, children, footer, side = 'center' }: { open: boolean; onOpenChange: (open: boolean) => void; title: string; description?: string; children: React.ReactNode; footer?: React.ReactNode; side?: 'center' | 'right' | 'bottom' }) { const id = useId(); const dialogRef = useRef<HTMLElement>(null); useEffect(() => { if (!open) return; const previous = document.activeElement as HTMLElement | null; const focusFirst = () => dialogRef.current?.querySelector<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')?.focus(); focusFirst(); const handleKeys = (event: KeyboardEvent) => { if (event.key === 'Escape') { onOpenChange(false); return; } if (event.key !== 'Tab' || !dialogRef.current) return; const nodes = [...dialogRef.current.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]')].filter(node => node.offsetParent !== null); if (!nodes.length) { event.preventDefault(); return; } const first = nodes[0], last = nodes[nodes.length - 1]; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } }; document.addEventListener('keydown', handleKeys); return () => { document.removeEventListener('keydown', handleKeys); previous?.focus?.(); }; }, [open, onOpenChange]); if (!open) return null; return <div className="ok-overlay" onMouseDown={event => { if (event.target === event.currentTarget) onOpenChange(false); }}><section ref={dialogRef} className={`ok-dialog side-${side}`} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={description ? `${id}-description` : undefined} tabIndex={-1}><header><div><h2 id={`${id}-title`}>{title}</h2>{description && <p id={`${id}-description`}>{description}</p>}</div><Button variant="ghost" size="sm" aria-label="Cerrar" onClick={() => onOpenChange(false)}><X size={17}/></Button></header><div className="ok-dialog-content">{children}</div>{footer && <footer>{footer}</footer>}</section></div>; }
+export function Dialog({ open, onOpenChange, title, description, children, footer, side = 'center' }: { open: boolean; onOpenChange: (open: boolean) => void; title: string; description?: string; children: React.ReactNode; footer?: React.ReactNode; side?: 'center' | 'right' | 'bottom' }) {
+  const id = useId();
+  const dialogRef = useRef<HTMLElement>(null);
+  const onOpenChangeRef = useRef(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const focusFirst = () => dialogRef.current?.querySelector<HTMLElement>(
+      'input:not(:disabled), select:not(:disabled), textarea:not(:disabled), button:not(:disabled), [tabindex="0"]',
+    )?.focus();
+    focusFirst();
+
+    const handleKeys = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onOpenChangeRef.current(false);
+        return;
+      }
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+
+      const nodes = [...dialogRef.current.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]',
+      )].filter(node => node.offsetParent !== null);
+      if (!nodes.length) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeys);
+    return () => {
+      document.removeEventListener('keydown', handleKeys);
+      previous?.focus?.();
+    };
+  }, [open]);
+
+  if (!open) return null;
+  return <div className="ok-overlay" onMouseDown={event => { if (event.target === event.currentTarget) onOpenChange(false); }}>
+    <section ref={dialogRef} className={`ok-dialog side-${side}`} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={description ? `${id}-description` : undefined} tabIndex={-1}>
+      <header>
+        <div><h2 id={`${id}-title`}>{title}</h2>{description && <p id={`${id}-description`}>{description}</p>}</div>
+        <Button variant="ghost" size="sm" aria-label="Cerrar" onClick={() => onOpenChange(false)}><X size={17}/></Button>
+      </header>
+      <div className="ok-dialog-content">{children}</div>
+      {footer && <footer>{footer}</footer>}
+    </section>
+  </div>;
+}
 export function AlertDialog(props: React.ComponentProps<typeof Dialog> & { confirmLabel?: string; onConfirm?: () => void }) { const { confirmLabel = 'Confirmar', onConfirm, footer, ...dialog } = props; return <Dialog {...dialog} footer={footer || <Button variant="danger" onClick={() => { onConfirm?.(); dialog.onOpenChange(false); }}>{confirmLabel}</Button>}/>; }
 export function Sheet(props: React.ComponentProps<typeof Dialog>) { return <Dialog {...props} side="right"/>; }
 export function Drawer(props: React.ComponentProps<typeof Dialog>) { return <Dialog {...props} side="bottom"/>; }
