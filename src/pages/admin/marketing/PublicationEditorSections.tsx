@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from 'react';
 import { CalendarDays, CheckCircle2, ClipboardList, CopyCheck, MessageSquareText, Target } from 'lucide-react';
 import { MARKETING_COLORS } from './marketingColors';
 import './publication-editor-sections.css';
+import { CHECKLIST_STATES, DELIVERABLES, type Assignee, type ChecklistStatus } from './marketingWorkflow';
 
 export type PublicationDraft = {
   title: string;
@@ -11,6 +12,15 @@ export type PublicationDraft = {
   scheduled_date: string;
   scheduled_time: string;
   owner: string;
+  owner_user_id: string;
+  record_kind: string;
+  blocked_reason: string;
+  cover_status: ChecklistStatus;
+  art_status: ChecklistStatus;
+  caption_status: ChecklistStatus;
+  video_status: ChecklistStatus;
+  voiceover_status: ChecklistStatus;
+  tiktok_status: ChecklistStatus;
   status: string;
   caption: string;
   next_action: string;
@@ -49,6 +59,8 @@ type Props = {
   events: HistoryEvent[];
   formatDate: (value?: string) => string;
   knownTags?: string[];
+  assignees?: Assignee[];
+  canApprove?: boolean;
 };
 
 type PublicationFieldProps = {
@@ -149,7 +161,7 @@ function TagPicker({ value, onChange, calendarColor, onCalendarColorChange, know
   </section>;
 }
 
-export function PublicationEditorSections({ draft, onChange, canEdit, isNew, activeTab, onTabChange, selectedPost, checklistFields, events, formatDate, knownTags }: Props) {
+export function PublicationEditorSections({ draft, onChange, canEdit, isNew, activeTab, onTabChange, selectedPost, checklistFields, events, formatDate, knownTags, assignees = [] }: Props) {
   return <>
     <nav className="vc-publication-steps" role="tablist" aria-label="Secciones de la ficha de publicación">
       {tabs.map(({ id, label, icon: Icon, hint }, index) => <button key={id} type="button" role="tab" id={`vc-publication-tab-${id}`} aria-controls="vc-publication-tabpanel" aria-selected={activeTab === id} tabIndex={activeTab === id ? 0 : -1} className={activeTab === id ? 'is-active' : ''} onKeyDown={(event) => { if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); const nextIndex = (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length; onTabChange(tabs[nextIndex].id); document.getElementById(`vc-publication-tab-${tabs[nextIndex].id}`)?.focus(); } }} onClick={() => onTabChange(id)}>
@@ -164,8 +176,9 @@ export function PublicationEditorSections({ draft, onChange, canEdit, isNew, act
         <label className="vc-publication-field"><span>Formato</span><select value={draft.format} onChange={(event) => onChange('format', event.target.value)}><option>Post</option><option>Historia</option><option>Carrusel</option><option>Reel</option><option>Video</option><option>Diseño</option><option>Por definir</option></select></label>
         <label className="vc-publication-field"><span>Fecha de publicación</span><input type="date" value={draft.scheduled_date} onChange={(event) => onChange('scheduled_date', event.target.value)}/></label>
         <label className="vc-publication-field"><span>Hora</span><input type="time" value={draft.scheduled_time} onChange={(event) => onChange('scheduled_time', event.target.value)}/></label>
-        <label className="vc-publication-field"><span>Responsable</span><input value={draft.owner} onChange={(event) => onChange('owner', event.target.value)} placeholder="Por asignar" maxLength={120}/></label>
-        <label className="vc-publication-field"><span>Etapa</span><select value={draft.status} onChange={(event) => onChange('status', event.target.value)}>{[...new Set(['Por iniciar','Planificada','En diseño','En revisión','Aprobada','Programada','Publicada','Completada','Terminada','Bloqueada','Cancelada',draft.status])].map((status) => <option key={status}>{status}</option>)}</select></label>
+        <label className="vc-publication-field"><span>Responsable</span><select value={draft.owner_user_id} onChange={(event) => onChange('owner_user_id', event.target.value)}><option value="">{draft.owner && !draft.owner_user_id ? `${draft.owner} · nombre histórico sin vincular` : 'Por asignar'}</option>{draft.owner_user_id&&!assignees.some(a=>a.user_id===draft.owner_user_id)&&<option value={draft.owner_user_id}>{draft.owner||'Miembro inactivo'} · asignación anterior</option>}{assignees.map(person=><option key={person.user_id} value={person.user_id}>{person.display_name}</option>)}</select><small>Los nombres históricos se conservan hasta elegir una cuenta.</small></label>
+        <label className="vc-publication-field"><span>Etapa</span><select value={draft.status} onChange={(event) => onChange('status', event.target.value)}>{[...new Set(['Por iniciar','Planificada','En diseño','En producción','En revisión','Programada','Publicada','Completada','Terminada','Bloqueada','Cancelada',draft.status])].map((status) => <option key={status}>{status}</option>)}</select><small>La aprobación se registra desde Revisar pieza.</small></label>
+        <label className="vc-publication-field"><span>Tipo de registro</span><select value={draft.record_kind} onChange={e=>onChange('record_kind',e.target.value)}><option value="publication">Publicación</option><option value="monthly_plan">Plan mensual</option></select></label>
         <CanvasDimensions draft={draft} onChange={onChange}/>
         <PublicationField draft={draft} onChange={onChange} name="content_line" label="Tema o línea de contenido" hint="Resume de qué trata la pieza." placeholder="Qué queremos comunicar" wide/>
         <TagPicker value={draft.tags} onChange={(value) => onChange('tags', value)} calendarColor={draft.calendar_color} onCalendarColorChange={(value) => onChange('calendar_color', value)} knownTags={knownTags} disabled={!canEdit}/>
@@ -200,7 +213,8 @@ export function PublicationEditorSections({ draft, onChange, canEdit, isNew, act
         <PublicationField draft={draft} onChange={onChange} name="next_action" label="Siguiente paso" hint="Una acción concreta que desbloquee el trabajo." placeholder="Acción pendiente"/>
         <PublicationField draft={draft} onChange={onChange} name="due_date" label="Fecha límite"/>
         <ReadinessChecklist draft={draft} onChange={onChange}/>
-        {!isNew && selectedPost && <div className="vc-post-checklist is-production-checklist is-wide"><div className="vc-publication-section-heading"><span className="vc-publication-heading-icon"><CheckCircle2 size={16}/></span><div><b>Revisión de entregables</b><small>Estado importado del checklist; “Por confirmar” requiere revisión del equipo.</small></div></div><div>{checklistFields.map(([field,label]) => <span key={field}><i className={/complet|aprob|listo|hecho/i.test(selectedPost[field] || '') ? 'is-done' : ''}/>{label}<small>{selectedPost[field] || 'Por confirmar'}</small></span>)}</div></div>}
+        <div className="vc-post-checklist is-production-checklist is-wide"><div className="vc-publication-section-heading"><span className="vc-publication-heading-icon"><CheckCircle2 size={16}/></span><div><b>Entregables</b><small>Confirma cada elemento o indica que no aplica a esta pieza.</small></div></div><div>{DELIVERABLES.map(([field,label])=><label className="vc-publication-field" key={field}><span>{label}</span><select aria-label={label} value={draft[field]} onChange={e=>onChange(field,e.target.value)}>{CHECKLIST_STATES.map(value=><option key={value}>{value}</option>)}</select></label>)}</div></div>
+        {/bloque/i.test(draft.status)&&<PublicationField draft={draft} onChange={onChange} name="blocked_reason" label="Motivo de bloqueo" placeholder="Qué impide continuar y qué hace falta resolver" multiline wide/>}
         {events.length > 0 && <div className="vc-post-checklist is-wide"><span className="eyebrow">ACTIVIDAD RECIENTE</span><p>{events.slice(0, 5).map((entry) => <span key={entry.id}>{entry.field_name}: {entry.previous_value || 'vacío'} → {entry.new_value} · {formatDate(String(entry.created_at).slice(0,10))}</span>)}</p></div>}
         <div className="vc-publication-production-note is-wide"><CheckCircle2 size={16}/><p><b>El estado describe el flujo interno.</b><br/>Marcar una pieza como aprobada o publicada no la envía a redes; conserva esa etapa hasta que la persona responsable confirme el avance.</p></div>
       </div>}
