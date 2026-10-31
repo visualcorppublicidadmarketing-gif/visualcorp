@@ -47,7 +47,7 @@
 .pj-undated summary::before{content:'+';display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#f4edf7;color:#762981;font-size:14px}
 .pj-undated[open] summary::before{content:'−'}
 .pj-undated summary b{padding:3px 7px;border-radius:999px;background:#f2edf5;color:#624c67;font-size:10px}
-.pj-list-view{overflow:hidden;border:1px solid var(--line,#e7e3eb);border-radius:12px;background:var(--panel,#fff)}
+.pj-list-view,.pj-table-scroll{overflow:auto;border:1px solid var(--line,#e7e3eb);border-radius:12px;background:var(--panel,#fff)}
 .pj-list-view-head,.pj-list-view-row{display:grid;grid-template-columns:minmax(190px,2fr) minmax(130px,1.1fr) minmax(105px,.9fr) minmax(145px,1.1fr) 22px;align-items:center;gap:12px}
 .pj-list-view-head{padding:9px 13px;border-bottom:1px solid var(--line,#e7e3eb);background:color-mix(in srgb,var(--ink,#282430) 3%,var(--panel,#fff));color:var(--muted,#77717d);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
 .pj-list-view-row{width:100%;min-width:0;padding:10px 13px;border:0;border-bottom:1px solid var(--line,#eeeaf1);background:var(--panel,#fff);color:var(--ink,#282430);text-align:left;font:inherit;font-size:11px;cursor:pointer}
@@ -61,6 +61,14 @@
 .pj-list-view-owner{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pj-list-view-row .is-late{color:#a33737;font-weight:800}
 .pj-list-view-arrow{display:grid;place-items:center;color:var(--muted,#77717d)}
+.pj-jobs-table{width:100%;border-collapse:collapse;text-align:left;font-size:11px}
+.pj-jobs-table th{padding:10px 13px;border-bottom:1px solid var(--line,#e7e3eb);background:color-mix(in srgb,var(--ink,#282430) 3%,var(--panel,#fff));color:var(--muted,#77717d);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.pj-jobs-table td{padding:10px 13px;border-bottom:1px solid var(--line,#eeeaf1);color:var(--ink,#282430);vertical-align:middle}
+.pj-jobs-table tbody tr{cursor:pointer}
+.pj-jobs-table tbody tr:hover{background:color-mix(in srgb,#b10a89 3%,var(--panel,#fff))}
+.pj-table-open{display:grid;width:30px;height:30px;place-items:center;border:0;border-radius:7px;background:transparent;color:var(--muted,#716b78);cursor:pointer}
+.pj-table-open:focus-visible{outline:3px solid #a5109145;outline-offset:2px}
+.pj-jobs-table tr:last-child td{border-bottom:0}
 .pj-kanban{display:grid;grid-template-columns:repeat(6,minmax(220px,1fr));align-items:start;gap:9px;min-width:1410px;padding:10px}
 .pj-kanban-column{display:grid;align-content:start;gap:9px;min-height:210px;padding:9px;border:1px solid var(--line,#ebe7ee);border-radius:10px;background:color-mix(in srgb,var(--ink,#282430) 2%,var(--panel,#fff))}
 .pj-kanban-column>header{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:1px 2px}
@@ -75,10 +83,10 @@
 .pj-card--compact .pj-card-action{justify-self:start;min-height:32px;padding:6px 9px}
 .pj-card--compact .pj-card-next{font-size:10px}
 .pj-card--compact .pj-progress{display:none}
-@media(max-width:760px){.pj-view-toolbar{align-items:stretch}.pj-view-switcher{width:100%;justify-content:flex-start}.pj-view-switcher button{flex:1 0 auto}.pj-view-navigation{align-self:flex-start}.pj-list-view-head{display:none}.pj-list-view-row{grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;padding:11px}.pj-list-view-work{grid-column:1/-1}.pj-list-view-row>.pj-status{grid-column:1}.pj-list-view-owner{grid-column:1;grid-row:3}.pj-list-view-row>span:nth-last-child(2){grid-column:1;grid-row:4}.pj-list-view-arrow{grid-column:2;grid-row:2/5;align-self:center}.pj-list-view-row>.pj-status::before{content:'Estado · ';color:var(--muted,#77717d);font-size:9px}.pj-list-view-owner::before{content:'Responsable · ';color:var(--muted,#77717d);font-size:9px}.pj-list-view-row>span:nth-last-child(2)::before{content:'Fecha · ';color:var(--muted,#77717d);font-size:9px}}
+@media(max-width:760px){.pj-view-toolbar{align-items:stretch}.pj-view-switcher{width:100%;justify-content:flex-start}.pj-view-switcher button{flex:1 0 auto}.pj-view-navigation{align-self:flex-start}.pj-list-view-head{display:none}.pj-list-view-row{grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;padding:11px}.pj-list-view-work{grid-column:1/-1}.pj-list-view-row>.pj-status{grid-column:1}.pj-list-view-owner{grid-column:1;grid-row:3}.pj-list-view-row>span:nth-last-child(2){grid-column:1;grid-row:4}.pj-list-view-arrow{grid-column:2;grid-row:2/5;align-self:center}.pj-list-view-row>.pj-status::before{content:'Estado · ';color:var(--muted,#77717d);font-size:9px}.pj-list-view-owner::before{content:'Responsable · ';color:var(--muted,#77717d);font-size:9px}.pj-list-view-row>span:nth-last-child(2)::before{content:'Fecha · ';color:var(--muted,#77717d);font-size:9px}.pj-jobs-table th,.pj-jobs-table td{padding:8px;font-size:10px}}
 @media(max-width:460px){.pj-view-switcher button{gap:5px;padding-inline:8px;font-size:10px}.pj-view-switcher button svg{width:13px;height:13px}.pj-calendar-grid{min-width:735px;padding:7px}.pj-calendar-grid--week{min-width:920px}.pj-calendar-day{min-height:100px;padding:5px}.pj-calendar-event{font-size:8px}.pj-calendar-legend{gap:5px}.pj-calendar-legend span{padding:4px 6px;font-size:9px}}
-[data-theme="dark"] .pj-view-switcher,[data-theme="dark"] .pj-calendar-scroll,[data-theme="dark"] .pj-kanban-scroll,[data-theme="dark"] .pj-calendar-day,[data-theme="dark"] .pj-calendar-selection,[data-theme="dark"] .pj-undated,[data-theme="dark"] .pj-list-view,[data-theme="dark"] .pj-list-view-row,[data-theme="dark"] .pj-view-nav-button,[data-theme="dark"] .pj-view-today{background-color:var(--panel,#1d1b22);color:var(--ink)}
-[data-theme="dark"] .pj-calendar-day.is-outside,[data-theme="dark"] .pj-kanban-column,[data-theme="dark"] .pj-list-view-head{background:color-mix(in srgb,var(--ink) 4%,var(--panel,#1d1b22))}
+[data-theme="dark"] .pj-view-switcher,[data-theme="dark"] .pj-calendar-scroll,[data-theme="dark"] .pj-kanban-scroll,[data-theme="dark"] .pj-calendar-day,[data-theme="dark"] .pj-calendar-selection,[data-theme="dark"] .pj-undated,[data-theme="dark"] .pj-list-view,[data-theme="dark"] .pj-table-scroll,[data-theme="dark"] .pj-list-view-row,[data-theme="dark"] .pj-view-nav-button,[data-theme="dark"] .pj-view-today{background-color:var(--panel,#1d1b22);color:var(--ink)}
+[data-theme="dark"] .pj-calendar-day.is-outside,[data-theme="dark"] .pj-kanban-column,[data-theme="dark"] .pj-list-view-head,[data-theme="dark"] .pj-jobs-table th{background:color-mix(in srgb,var(--ink) 4%,var(--panel,#1d1b22))}
 [data-theme="dark"] .pj-calendar-event{background:#392c3d;color:#f2eaf3}[data-theme="dark"] .pj-calendar-event[data-state=in_progress]{background:#1e3645}[data-theme="dark"] .pj-calendar-event[data-state=blocked]{background:#43341f}[data-theme="dark"] .pj-calendar-event[data-state=completed]{background:#1f382d}[data-theme="dark"] .pj-calendar-event[data-state=cancelled]{background:#333137}
 [data-theme="dark"] .pj-calendar-day.is-today{background:color-mix(in srgb,#b10a89 13%,var(--panel,#1d1b22))}[data-theme="dark"] .pj-undated summary::before,[data-theme="dark"] .pj-undated summary b{background:#352a38;color:#efd7f0}
 @media(prefers-reduced-motion:reduce){.pj-view-switcher button,.pj-list-view-row{scroll-behavior:auto}}

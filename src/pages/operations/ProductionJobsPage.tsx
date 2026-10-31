@@ -577,12 +577,21 @@ export function ProductionJobsPage() {
     } catch (error) { setActionError(error instanceof Error ? error.message : 'No pudimos solicitar el retrabajo.'); }
     finally { setBusy(false); }
   };
+  const confirmDeliveryBalance = async (jobId: string) => {
+    if (!supabase || !organizationId) return false;
+    const { data, error } = await supabase.rpc('list_production_job_balance_flags', { p_organization_id: organizationId, p_job_ids: [jobId] });
+    if (error) throw error;
+    const due = ((data || []) as Array<{ job_id: string; balance_due: boolean }>).some((entry) => entry.job_id === jobId && entry.balance_due);
+    return !due || window.confirm('Este trabajo todavía tiene saldo pendiente. ¿Deseas registrar la entrega de todos modos? El saldo quedará pendiente para seguimiento.');
+  };
+
   const updateFulfillment = async (action: 'quality_pass' | 'schedule_delivery' | 'deliver' | 'install') => {
     if (!supabase || !selectedJob || busy) return;
     const due = fulfillmentDueAt ? new Date(fulfillmentDueAt) : null;
     if (action === 'schedule_delivery' && (!due || Number.isNaN(due.getTime()))) { setActionError('Elige la fecha y hora de entrega.'); return; }
     setBusy(true); setActionError(''); setActionMessage('');
     try {
+      if (action === 'deliver' && !await confirmDeliveryBalance(selectedJob.id)) return;
       const { error } = await supabase.rpc('transition_production_job_fulfillment', {
         p_job_id: selectedJob.id, p_action: action, p_due_at: action === 'schedule_delivery' ? due?.toISOString() : null,
         p_note: actionNote.trim(),
@@ -618,6 +627,7 @@ export function ProductionJobsPage() {
     if (action === 'schedule_delivery' && (!due || Number.isNaN(due.getTime()))) { setActionError('Elige una fecha y hora de entrega.'); return; }
     setBusy(true); setActionError(''); setActionMessage('');
     try {
+      if (action === 'deliver' && !await confirmDeliveryBalance(selectedJob.id)) return;
       const { error } = await supabase.rpc('transition_production_job_lot', {
         p_lot_id: lot.id, p_action: action, p_quantity: quantity,
         p_due_at: action === 'schedule_delivery' ? due?.toISOString() : null, p_note: lotNote.trim(),
