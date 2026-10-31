@@ -19,7 +19,7 @@ Implementación del plan confirmado el 31 de octubre de 2026. Rama `codex/market
 
 ## Cambios de base de datos y permisos
 
-Migración: `supabase/migrations/20261031154030_marketing_editorial_workflow.sql`.
+Migración: `supabase/migrations/20261031162423_marketing_editorial_workflow.sql`.
 
 Añade `record_kind`, `owner_user_id`, `blocked_reason`, `content_revision` y `row_version` a `marketing_posts`; crea `marketing_reviews` y `marketing_nonproduction_days` con RLS. Conserva IDs, textos, fechas, estados y enlaces anteriores. Clasifica las fichas `PLAN MENSUAL` como planes, sin marcarlas aprobadas o publicadas.
 

@@ -95,7 +95,7 @@ export async function createMarketingDatabase() {
   await db.exec(
     `insert into public.marketing_posts(organization_id,source_id,title,owner,scheduled_date) values('${ORG}','legacy','Legacy piece','ARIANNA','2026-10-20'),('${ORG}','monthly','PLAN MENSUAL — Noviembre 2026','','2026-11-13');`,
   );
-  await db.exec(read("20261031154030_marketing_editorial_workflow.sql"));
+  await db.exec(read("20261031162423_marketing_editorial_workflow.sql"));
   return db;
 }
 export async function asUser(db, user, fn) {
