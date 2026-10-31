@@ -232,7 +232,7 @@ export function WorkspaceProvider({ children }) {
     const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult].find((result) => result.error);
     if (failed) { setNotice(`No se pudieron sincronizar todos los datos operativos: ${failed.error.message}`); return; }
     const itemById = new Map<string, any>((itemsResult.data || []).map((row: any) => [row.id, row]));
-    const inventoryImagePaths: string[] = [...new Set<string>((itemsResult.data || []).map((row: any) => inventoryReferenceStoragePath(row.reference_image_url)).filter((path: string | null): path is string => Boolean(path)))];
+    const inventoryImagePaths: string[] = [...new Set<string>((itemsResult.data || []).flatMap((row: any) => [inventoryReferenceStoragePath(row.reference_image_url), ...(Array.isArray(row.custom_fields?.product_image_paths) ? row.custom_fields.product_image_paths.map((value: unknown) => inventoryReferenceStoragePath(typeof value === 'string' ? value : '')) : [])]).filter((path: string | null): path is string => Boolean(path)))];
     const signedInventoryImages = new Map<string, string>();
     if (inventoryImagePaths.length) {
       const { data: signedImages } = await supabase.storage.from('inventory-reference-images').createSignedUrls(inventoryImagePaths, 86400);
@@ -270,10 +270,15 @@ export function WorkspaceProvider({ children }) {
       for (const { stock, branch } of inventoryRows) {
         const location = stock?.location_code || item.custom_fields?.default_location_code || 'MAIN';
         const metrics = branch ? metricsByKey.get(`${variant.id}|${branch.id}|${location}`) : null;
+        const productImagePaths = Array.isArray(item.custom_fields?.product_image_paths) ? item.custom_fields.product_image_paths.filter((value: unknown): value is string => typeof value === 'string' && Boolean(value.trim())) : [];
+        const productImages = productImagePaths.map((path: string, index: number) => {
+          const storagePath = inventoryReferenceStoragePath(path);
+          return { path, storagePath, url: storagePath ? signedInventoryImages.get(storagePath) || '' : path, label: `Imagen ${index + 1}` };
+        }).filter((image: any) => image.url);
         remoteInventory.push({
           id: `${variant.id}:${branch?.id || 'unassigned'}:${location}`, remoteItemId: item.id, variantId: variant.id, sku: item.sku, variantSku: variant.sku,
           name: item.name, description: item.description || '', category: categoryById.get(item.category_id)?.name || '', variant: variant.label || '', variantAttributes: variant.attributes || {},
-          itemType: item.item_type || '', tags: item.tags || [], referenceImageUrl: referenceImageStoragePath ? signedInventoryImages.get(referenceImageStoragePath) || '' : item.reference_image_url || inventoryImageForSku(item.sku), referenceImageStoragePath, customFields: item.custom_fields || {},
+          itemType: item.item_type || '', tags: item.tags || [], referenceImageUrl: referenceImageStoragePath ? signedInventoryImages.get(referenceImageStoragePath) || '' : item.reference_image_url || inventoryImageForSku(item.sku), referenceImageStoragePath, productImages, customFields: item.custom_fields || {},
           area: areaById.get(item.area_id)?.name || 'Sin área', branch: branch?.name || 'Sucursal por asignar', branchId: branch?.id || null,
           location, unit: item.base_unit, quantity: stock ? Number(stock.quantity) : 0,
           reservedQuantity: Number(metrics?.reserved_quantity || 0), availableQuantity: metrics ? Number(metrics.available_quantity) : null,
