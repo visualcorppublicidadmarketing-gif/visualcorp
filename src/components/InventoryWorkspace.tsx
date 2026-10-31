@@ -17,6 +17,7 @@ import { StandardCustomProducts } from '../pages/admin/StandardCustomProducts';
 import { InventoryProductImageGallery } from './InventoryProductImageGallery';
 import { INVENTORY_REFERENCE_BUCKET, INVENTORY_REFERENCE_PREFIX, inventoryReferenceObjectPath, prepareInventoryReferenceImage, type InventoryGalleryImage } from './inventoryImageUtils';
 import { isInventoryItemSkuConflict, isRecoverableInventoryItem, isValidInventoryReference, nextInventorySku } from '../lib/inventorySku.mjs';
+import { normalizeInventoryImagePath } from '../lib/inventoryImageReference.mjs';
 
 const areas = ['Impresión', 'Sublimación', 'Troquelado', 'Láser', 'Taller', 'Neones', 'Bodega general'];
 const blankItem = { name:'', category:'', itemType:'', tags:'', referenceImageUrl:'', variant:'', area:'Taller', branch:'Visual Corp', location:'MAIN', unit:'unidad', quantity:'', minimum:'0', sku:'', notes:'' };
@@ -204,7 +205,7 @@ export function InventoryWorkspace() {
           savedImages.push({...entry,path});
         }
       }
-      const imagePaths=savedImages.map((image)=>image.path||image.src).filter(Boolean);
+      const imagePaths=savedImages.map((image)=>normalizeInventoryImagePath(image.path||image.src,organizationId,remoteItemId)).filter(Boolean);
       referenceImageUrl=imagePaths[0]||'';
       if(referenceImageUrl&&!isValidInventoryReference(referenceImageUrl))throw new Error('La imagen de portada no tiene una ruta válida.');
       customFields.product_image_paths=imagePaths;
