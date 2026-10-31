@@ -16,6 +16,7 @@ import { InventoryOptionPicker } from './InventoryOptionPicker';
 import { StandardCustomProducts } from '../pages/admin/StandardCustomProducts';
 import { InventoryProductImageGallery } from './InventoryProductImageGallery';
 import { INVENTORY_REFERENCE_BUCKET, INVENTORY_REFERENCE_PREFIX, inventoryReferenceObjectPath, prepareInventoryReferenceImage, type InventoryGalleryImage } from './inventoryImageUtils';
+import { isInventoryItemSkuConflict, isRecoverableInventoryItem, isValidInventoryReference, nextInventorySku } from '../lib/inventorySku.mjs';
 
 const areas = ['Impresión', 'Sublimación', 'Troquelado', 'Láser', 'Taller', 'Neones', 'Bodega general'];
 const blankItem = { name:'', category:'', itemType:'', tags:'', referenceImageUrl:'', variant:'', area:'Taller', branch:'Visual Corp', location:'MAIN', unit:'unidad', quantity:'', minimum:'0', sku:'', notes:'' };
@@ -44,7 +45,7 @@ export function InventoryWorkspace() {
   const [activeSection,setActiveSection]=useState('catalog');
   const [inventoryBrandScope,setInventoryBrandScope]=useState<'general'|'visual'|'giga'>('general');
   const [term,setTerm]=useState(''); const [area,setArea]=useState('Todas'); const [branch,setBranch]=useState('Todas'); const [category,setCategory]=useState('Todas');
-  const [showForm,setShowForm]=useState(false); const [savingItem,setSavingItem]=useState(false); const [metadataSaveBusy,setMetadataSaveBusy]=useState(false); const metadataSaveLock=useRef(false); const [movement,setMovement]=useState(null); const [transferBusy,setTransferBusy]=useState(false); const [draft,setDraft]=useState(blankItem); const [newProductImages,setNewProductImages]=useState<InventoryGalleryImage[]>([]); const [costEdit,setCostEdit]=useState(null); const [countSession,setCountSession]=useState(null); const [countBusy,setCountBusy]=useState(false); const [movementPageBusy,setMovementPageBusy]=useState(false); const [movementHistoryExhausted,setMovementHistoryExhausted]=useState(false); const [movementVisibleCount,setMovementVisibleCount]=useState(30);
+  const [showForm,setShowForm]=useState(false); const [savingItem,setSavingItem]=useState(false); const savingItemLock=useRef(false); const [metadataSaveBusy,setMetadataSaveBusy]=useState(false); const metadataSaveLock=useRef(false); const [movement,setMovement]=useState(null); const [transferBusy,setTransferBusy]=useState(false); const [draft,setDraft]=useState(blankItem); const [newProductImages,setNewProductImages]=useState<InventoryGalleryImage[]>([]); const [costEdit,setCostEdit]=useState(null); const [countSession,setCountSession]=useState(null); const [countBusy,setCountBusy]=useState(false); const [movementPageBusy,setMovementPageBusy]=useState(false); const [movementHistoryExhausted,setMovementHistoryExhausted]=useState(false); const [movementVisibleCount,setMovementVisibleCount]=useState(30);
   const [specificationDraft,setSpecificationDraft]=useState<InventorySpecificationDraft>({});
   const [typeFilter,setTypeFilter]=useState('Todos'); const [statusFilter,setStatusFilter]=useState('Todos'); const [tagFilter,setTagFilter]=useState('Todos'); const [viewMode,setViewMode]=useState('table'); const [metadataEdit,setMetadataEdit]=useState<any>(null); const [reservationEdit,setReservationEdit]=useState<any>(null);
   const canSeeCosts=hasPermission('inventory_costs','view')&&hasPermission('inventory_costs','view_costs');
@@ -224,17 +225,17 @@ export function InventoryWorkspace() {
   const saveReservation=async(e)=>{e.preventDefault();if(!reservationEdit||!supabase||!canManageLinks)return;const item=items.find(row=>row.id===reservationEdit.itemId);const amount=Number(reservationEdit.quantity);if(!item||!item.branchId||!Number.isFinite(amount)||amount<0){flash('Asigna una sucursal antes de reservar existencias.');return;}const {error}=await supabase.rpc('set_inventory_reservation',{p_variant_id:item.variantId,p_branch_id:item.branchId,p_reserved_quantity:amount,p_location_code:item.location||'MAIN',p_note:reservationEdit.note||''});if(error){flash(`No se pudo guardar la reserva: ${error.message}`);return;}await refreshRemote();setReservationEdit(null);flash('Reserva registrada y el POS ya descontará esas unidades de la disponibilidad.');};
   const saveItem=async(e)=>{
     e.preventDefault();
-    if(savingItem)return;
+    if(savingItemLock.current)return;
     if(!canManageInventory){flash('Tu perfil no tiene permiso para crear artículos.');return;}
     if(!draft.name.trim()){flash('Escribe el nombre del artículo antes de guardarlo.');return;}
     if(!supabase||!organizationId||!user){flash('La sesión no está lista para guardar. Recarga la página e inténtalo de nuevo.');return;}
-    if(draft.referenceImageUrl&&!/^(https?:\/\/|\/storage\/|\/inventory\/)/i.test(draft.referenceImageUrl.trim())){flash('La imagen debe ser una URL pública o una ruta válida de la biblioteca.');return;}
+    if(draft.referenceImageUrl&&!isValidInventoryReference(draft.referenceImageUrl)){flash('La imagen debe ser una URL pública o una ruta válida de la biblioteca.');return;}
     const prefix=`VC-INV-${areaCodes[draft.area]||'GEN'}-`;
-    const existing=(data.inventory||[]).reduce((max,item)=>{const match=String(item.sku||'').match(new RegExp(`^${prefix}(\\d+)$`));return match?Math.max(max,Number(match[1])):max;},0);
-    const sku=draft.sku.trim()||`${prefix}${String(existing+1).padStart(3,'0')}`;
+    const requestedSku=draft.sku.trim();
     const specificationEntries=Object.entries(specificationDraft).map(([key,value])=>[key,typeof value==='string'?value.trim():value]).filter(([,value])=>value!==''&&value!==undefined);
     const technicalSpecs={...Object.fromEntries(specificationEntries),brand_scope:inventoryBrandScope==='giga'?'giga':'visual'};
     const variantAttributes={...Object.fromEntries(specificationEntries),source_status:'count_pending',stock_count_required:true};
+    savingItemLock.current=true;
     setSavingItem(true);
     try{
       const [{data:areaRows,error:areaError},{data:branch,error:branchError}]=await Promise.all([
@@ -252,8 +253,69 @@ export function InventoryWorkspace() {
         if(categoryError)throw categoryError;
         categoryId=category.id;
       }
-      const {data:item,error:itemError}=await supabase.from('inventory_items').insert({organization_id:organizationId,area_id:areaRows?.[0]?.id||null,category_id:categoryId,sku,name:draft.name.trim(),description:draft.notes.trim(),item_type:draft.itemType.trim(),tags:[...new Set(draft.tags.split(',').map(tag=>tag.trim().slice(0,48)).filter(Boolean))].slice(0,40),reference_image_url:draft.referenceImageUrl.trim()||null,custom_fields:technicalSpecs,base_unit:draft.unit.trim()||'unidad',minimum_quantity:Number(draft.minimum)||0,created_by:user.id}).select('id').single();
-      if(itemError)throw itemError;
+      const targetAreaId=areaRows?.[0]?.id||null;
+      const scopedItemSkus=async()=>{
+        const rows:string[]=[];
+        for(let from=0;;from+=500){
+          const {data:page,error}=await supabase.from('inventory_items').select('sku').eq('organization_id',organizationId).like('sku',`${prefix}%`).order('sku').range(from,from+499);
+          if(error)throw error;
+          rows.push(...(page||[]).map((row:any)=>String(row.sku||'')));
+          if((page||[]).length<500)return rows;
+        }
+      };
+      const scopedVariantSkus=async()=>{
+        const rows:string[]=[];
+        for(let from=0;;from+=500){
+          const {data:page,error}=await supabase.from('inventory_variants').select('sku').eq('organization_id',organizationId).like('sku',`${prefix}%`).order('sku').range(from,from+499);
+          if(error)throw error;
+          rows.push(...(page||[]).map((row:any)=>String(row.sku||'')));
+          if((page||[]).length<500)return rows;
+        }
+      };
+      const recoverIncompleteItem=async()=>{
+        const query=supabase.from('inventory_items').select('id,sku,area_id,custom_fields,created_by,created_at').eq('organization_id',organizationId).eq('name',draft.name.trim()).like('sku',`${prefix}%`);
+        const {data:matches,error}=targetAreaId?await query.eq('area_id',targetAreaId):await query.is('area_id',null);
+        if(error)throw error;
+        const sameScope=(matches||[]).filter((row:any)=>isRecoverableInventoryItem(row,{userId:user.id,areaId:targetAreaId,brandScope:inventoryBrandScope==='giga'?'giga':'visual',requestedSku}));
+        if(!sameScope.length)return null;
+        const ids=sameScope.map((row:any)=>row.id);
+        const {data:existingVariants,error:variantsError}=await supabase.from('inventory_variants').select('item_id').eq('organization_id',organizationId).in('item_id',ids);
+        if(variantsError)throw variantsError;
+        const variantOwners=new Set((existingVariants||[]).map((row:any)=>row.item_id));
+        const recoverable=sameScope.filter((row:any)=>!variantOwners.has(row.id));
+        if(recoverable.length>1)throw new Error('Hay más de una ficha incompleta reciente con ese nombre. Abre el catálogo para revisar los registros antes de volver a crearla.');
+        return recoverable[0]||null;
+      };
+      let sku=requestedSku;
+      let item:any=null;
+      let recoveredItem:any=null;
+      for(let attempt=0;attempt<5&&!item;attempt++){
+        recoveredItem=await recoverIncompleteItem();
+        if(recoveredItem){
+          sku=recoveredItem.sku;
+          const {data:updated,error:updateError}=await supabase.from('inventory_items').update({area_id:targetAreaId,category_id:categoryId,description:draft.notes.trim(),item_type:draft.itemType.trim(),tags:[...new Set(draft.tags.split(',').map(tag=>tag.trim().slice(0,48)).filter(Boolean))].slice(0,40),custom_fields:{...(recoveredItem.custom_fields||{}),...technicalSpecs},base_unit:draft.unit.trim()||'unidad',minimum_quantity:Number(draft.minimum)||0,updated_at:new Date().toISOString()}).eq('id',recoveredItem.id).eq('organization_id',organizationId).select('id').single();
+          if(updateError)throw updateError;
+          item=updated;
+          break;
+        }
+        if(!sku){
+          const [itemSkus,variantSkus]=await Promise.all([scopedItemSkus(),scopedVariantSkus()]);
+          sku=nextInventorySku(prefix,itemSkus,variantSkus);
+        }else{
+          const [{data:existingItem,error:itemCheckError},{data:existingVariant,error:variantCheckError}]=await Promise.all([
+            supabase.from('inventory_items').select('id').eq('organization_id',organizationId).eq('sku',sku).maybeSingle(),
+            supabase.from('inventory_variants').select('id').eq('organization_id',organizationId).eq('sku',`${sku}-01`).maybeSingle(),
+          ]);
+          if(itemCheckError)throw itemCheckError;
+          if(variantCheckError)throw variantCheckError;
+          if(existingItem||existingVariant)throw new Error(`El código “${sku}” o su variante “${sku}-01” ya está en uso. Cambia el código o déjalo vacío para asignar uno disponible automáticamente.`);
+        }
+        const {data:created,error:createError}=await supabase.from('inventory_items').insert({organization_id:organizationId,area_id:targetAreaId,category_id:categoryId,sku,name:draft.name.trim(),description:draft.notes.trim(),item_type:draft.itemType.trim(),tags:[...new Set(draft.tags.split(',').map(tag=>tag.trim().slice(0,48)).filter(Boolean))].slice(0,40),reference_image_url:null,custom_fields:technicalSpecs,base_unit:draft.unit.trim()||'unidad',minimum_quantity:Number(draft.minimum)||0,created_by:user.id}).select('id').single();
+        if(!createError){item=created;break;}
+        if(requestedSku||!isInventoryItemSkuConflict(createError))throw createError;
+        sku='';
+      }
+      if(!item||!sku)throw new Error('No se pudo asignar un código libre después de varios intentos. Intenta guardar nuevamente.');
       const productImagePaths:string[]=[];const imageFailures:string[]=[];
       for(const entry of newProductImages){
         if(entry.file instanceof File){
@@ -265,9 +327,11 @@ export function InventoryWorkspace() {
           }catch(uploadFailure:any){imageFailures.push(`${entry.file.name}: ${uploadFailure?.message||'no se pudo cargar'}`);}
         }else productImagePaths.push(entry.path||entry.src);
       }
-      const coverPath=productImagePaths[0]||draft.referenceImageUrl.trim();
-      if(productImagePaths.length||draft.referenceImageUrl.trim()){
-        const {error:imageSaveError}=await supabase.from('inventory_items').update({reference_image_url:coverPath||null,custom_fields:{...technicalSpecs,product_image_paths:productImagePaths.length?productImagePaths:[coverPath]}}).eq('id',item.id).eq('organization_id',organizationId);
+      const previousImagePaths=Array.isArray(recoveredItem?.custom_fields?.product_image_paths)?recoveredItem.custom_fields.product_image_paths.filter((path:any)=>typeof path==='string'):[];
+      const coverPath=productImagePaths[0]||draft.referenceImageUrl.trim()||recoveredItem?.reference_image_url||previousImagePaths[0]||'';
+      const finalImagePaths=productImagePaths.length?productImagePaths:draft.referenceImageUrl.trim()?[draft.referenceImageUrl.trim()]:previousImagePaths;
+      if(finalImagePaths.length||coverPath){
+        const {error:imageSaveError}=await supabase.from('inventory_items').update({reference_image_url:coverPath||null,custom_fields:{...(recoveredItem?.custom_fields||{}),...technicalSpecs,product_image_paths:finalImagePaths.length?finalImagePaths:[coverPath]}}).eq('id',item.id).eq('organization_id',organizationId);
         if(imageSaveError)throw imageSaveError;
       }
       const {data:variant,error:variantError}=await supabase.from('inventory_variants').insert({organization_id:organizationId,item_id:item.id,sku:`${sku}-01`,label:draft.variant.trim(),attributes:variantAttributes}).select('id').single();
@@ -282,14 +346,14 @@ export function InventoryWorkspace() {
       setNewProductImages([]);
       setSpecificationDraft({});
       setShowForm(false);
-      flash(`${draft.quantity===''?`Artículo ${sku} guardado sin saldo físico confirmado.`:`Artículo ${sku} guardado con conteo físico auditado.`}${imageFailures.length?` Algunas imágenes no se guardaron; abre la ficha para reintentarlo: ${imageFailures.join(' · ')}`:''}`);
+      flash(`${recoveredItem?'Se recuperó la ficha incompleta. ':''}${draft.quantity===''?`Artículo ${sku} guardado sin saldo físico confirmado.`:`Artículo ${sku} guardado con conteo físico auditado.`}${imageFailures.length?` Algunas imágenes no se guardaron; abre la ficha para reintentarlo: ${imageFailures.join(' · ')}`:''}`);
     }catch(error){
       const details=error&&typeof error==='object'?error as {message?:unknown;hint?:unknown;code?:unknown}:undefined;
       const message=typeof details?.message==='string'?details.message:'Error inesperado al guardar.';
       const hint=typeof details?.hint==='string'?details.hint:'';
       const code=typeof details?.code==='string'?` (${details.code})`:'';
       flash(`No se pudo guardar el artículo: ${message}${hint?` · ${hint}`:''}${code}`);
-    }finally{setSavingItem(false);}
+    }finally{savingItemLock.current=false;setSavingItem(false);}
   };
   const closeNewItemForm=()=>{
     if(savingItem)return;

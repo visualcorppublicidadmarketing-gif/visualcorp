@@ -9,6 +9,7 @@
     "build:checked": "npm run typecheck && vite build",
     "preview": "vite preview",
     "test:manual-access": "node --test scripts/test-manual-access-guard.mjs",
+    "test:inventory-sku": "node --test scripts/test-inventory-sku.mjs",
     "test:marketing": "node --test scripts/test-marketing-workflow.mjs",
     "test:marketing:browser": "node scripts/test-marketing-browser.mjs",
     "typecheck": "tsc --noEmit"
