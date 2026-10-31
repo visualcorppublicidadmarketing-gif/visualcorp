@@ -1,7 +1,7 @@
 import {
   BookOpen, Boxes, BriefcaseBusiness, ChartNoAxesCombined,
   ClipboardList, Database, FileText, Globe2, History, Image, LayoutDashboard, Megaphone,
-  Newspaper, ShoppingBag, ShoppingCart, Truck, Users, Wallet, Radio, type LucideIcon,
+  Newspaper, ShoppingBag, ShoppingCart, Truck, Users, Wallet, Radio, Workflow, type LucideIcon,
 } from 'lucide-react';
 
 export type AppNavLink = {
@@ -20,6 +20,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/panel', label: 'Inicio', icon: LayoutDashboard, module: 'dashboard', end: true },
   { to: '/operaciones/pos', label: 'Punto de venta', icon: ShoppingCart, module: 'sales' },
   { to: '/operaciones/mi-semana', label: 'Mi semana', icon: ChartNoAxesCombined, module: 'sales' },
+  { to: '/operaciones/rutas-productos', label: 'Rutas por producto', icon: Workflow, module: 'workshop', anyOf: ['sales', 'workshop'] },
   { to: '/operaciones/trabajos/asesoria', label: 'Trabajos de asesoría', icon: ClipboardList, module: 'sales', anyOf: ['sales', 'workshop'] },
   { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'finance' },
   { to: '/operaciones/cajas-abiertas', label: 'Cajas abiertas', icon: Radio, module: 'sales', anyOf: ['sales', 'cash'] },
@@ -52,7 +53,7 @@ export const workspaceNavigation: AppNavLink[] = [
 ];
 
 export const workspaceNavGroups: AppNavGroup[] = [
-  { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/mi-semana', '/operaciones/trabajos/asesoria', '/operaciones/finanzas', '/operaciones/cajas-abiertas', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes', '/operaciones/catalogo'] },
+  { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/mi-semana', '/operaciones/rutas-productos', '/operaciones/trabajos/asesoria', '/operaciones/finanzas', '/operaciones/cajas-abiertas', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes', '/operaciones/catalogo'] },
   { id: 'production', label: 'Producción y abastecimiento', icon: Boxes, paths: ['/operaciones/flujos', '/operaciones/coordinacion-trabajos', '/operaciones/trabajos/diseno', '/operaciones/trabajos/impresion', '/operaciones/trabajos/sublimacion', '/operaciones/trabajos/laser', '/operaciones/trabajos/taller', '/operaciones/inventario', '/operaciones/compras', '/operaciones/equipos'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing'] },
   { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
