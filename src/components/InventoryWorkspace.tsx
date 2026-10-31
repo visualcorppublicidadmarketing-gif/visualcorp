@@ -175,7 +175,7 @@ export function InventoryWorkspace() {
     e.preventDefault();
     if(!metadataEdit||!supabase||!user||!canManageInventory||metadataSaveLock.current)return;
     const {remoteItemId,variantId,tags,sourceItem,...fields}=metadataEdit;
-    if(fields.referenceImageUrl&&!/^(https?:\/\/|\/storage\/|\/inventory\/)/i.test(String(fields.referenceImageUrl).trim())&&!String(fields.referenceImageUrl).startsWith(INVENTORY_REFERENCE_PREFIX)){flash('La imagen debe ser una URL pública o una ruta válida de la biblioteca.');return;}
+    if(fields.referenceImageUrl&&!isValidInventoryReference(fields.referenceImageUrl)){flash('La imagen debe ser una URL pública o una ruta válida de la biblioteca.');return;}
     const normalizedTags=[...new Set(String(tags||'').split(',').map(tag=>tag.trim().slice(0,48)).filter(Boolean))].slice(0,40);
     const suppliedCustomFields=fields.customFields&&typeof fields.customFields==='object'&&!Array.isArray(fields.customFields)?fields.customFields:{};
     const customFields={...suppliedCustomFields,brand_scope:metadataEdit.brandScope||brandOf(metadataEdit)};
@@ -206,7 +206,7 @@ export function InventoryWorkspace() {
       }
       const imagePaths=savedImages.map((image)=>image.path||image.src).filter(Boolean);
       referenceImageUrl=imagePaths[0]||'';
-      if(referenceImageUrl&&!inventoryReferenceObjectPath(referenceImageUrl)&&! /^(https?:\/\/|\/storage\/|\/inventory\/)/i.test(referenceImageUrl))throw new Error('La imagen de portada no tiene una ruta válida.');
+      if(referenceImageUrl&&!isValidInventoryReference(referenceImageUrl))throw new Error('La imagen de portada no tiene una ruta válida.');
       customFields.product_image_paths=imagePaths;
       const {error}=await supabase.from('inventory_items').update({item_type:String(fields.itemType||'').trim(),tags:normalizedTags,description:String(fields.description||'').trim(),reference_image_url:referenceImageUrl||null,custom_fields:customFields,updated_at:new Date().toISOString()}).eq('id',remoteItemId).eq('organization_id',organizationId);
       if(error)throw new Error(`No se pudo actualizar la ficha: ${error.message}`);
