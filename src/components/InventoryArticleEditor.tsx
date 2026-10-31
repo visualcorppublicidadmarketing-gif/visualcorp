@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowLeftRight, Boxes, Check, ChevronDown, ClipboardPaste, Image as ImageIcon, MapPin, Package, Trash2, Upload, X } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { ArrowLeftRight, Boxes, Check, ChevronDown, Image as ImageIcon, MapPin, Package, Trash2, X } from 'lucide-react';
 import type { InventorySpecificationDraft } from './InventorySpecificationFields';
 import { InventorySpecificationFields } from './InventorySpecificationFields';
 import { InventoryOptionPicker } from './InventoryOptionPicker';
+import { InventoryProductImageGallery } from './InventoryProductImageGallery';
+import type { InventoryGalleryImage } from './inventoryImageUtils';
 import { AnimatedList } from './ui/MagicComponents';
 import './InventoryArticleEditor.css';
 
@@ -20,6 +22,8 @@ type ArticleSource = {
   branch?: string;
   branchId?: string | null;
   sourceStatus?: string | null;
+  referenceImageStoragePath?: string | null;
+  productImages?: Array<{ path: string; storagePath?: string | null; url: string; label?: string }>;
   quantity?: number;
   unit?: string;
 };
@@ -30,7 +34,7 @@ type Draft = {
   itemType: string;
   tags: string;
   referenceImageUrl: string;
-  referenceImageFile?: File | null;
+  productImages: InventoryGalleryImage[];
   customFields: Record<string, unknown>;
   brandScope: string;
   variantAttributes: InventorySpecificationDraft & Record<string, unknown>;
@@ -54,40 +58,13 @@ type Props = {
 };
 
 const stringValue = (value: unknown) => typeof value === 'string' ? value : value == null ? '' : String(value);
-const referenceImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
-
-function imagesFromClipboard(clipboardData: DataTransfer): File[] {
-  const directFiles = Array.from(clipboardData.files || []).filter((file) => referenceImageTypes.has(file.type));
-  if (directFiles.length) return directFiles;
-  return Array.from(clipboardData.items || []).filter((item) => referenceImageTypes.has(item.type)).map((item, index) => {
-    const blob = item.getAsFile();
-    return blob ? new File([blob], `inventario-portapapeles-${Date.now()}-${index + 1}.${blob.type.split('/')[1] || 'png'}`, { type: blob.type, lastModified: Date.now() }) : null;
-  }).filter((file): file is File => Boolean(file));
-}
-
-async function readClipboardImage(): Promise<File | null> {
-  if (!navigator.clipboard?.read) return null;
-  try {
-    const items = await navigator.clipboard.read();
-    for (const [index, item] of items.entries()) {
-      const type = item.types.find((candidate) => referenceImageTypes.has(candidate));
-      if (!type) continue;
-      const blob = await item.getType(type);
-      return new File([blob], `inventario-portapapeles-${Date.now()}-${index + 1}.${type.split('/')[1]}`, { type, lastModified: Date.now() });
-    }
-  } catch { /* El navegador puede exigir pegar con Ctrl+V en la zona enfocada. */ }
-  return null;
-}
+const makeKey = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 export function InventoryArticleEditor({ value, saving, onChange, onClose, onSave, onDelete, onAssignBranch, onTransfer, branches, libraryProducts, libraryCount, itemTypeOptions, tagOptions }: Props) {
-  const imageInputRef = useRef<HTMLInputElement>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryTerm, setLibraryTerm] = useState('');
   const [branchSelection, setBranchSelection] = useState(value.sourceItem?.branch || '');
   const [deleteRequested, setDeleteRequested] = useState(false);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
-  const [imageFeedback, setImageFeedback] = useState('');
-  const [draggingImage, setDraggingImage] = useState(false);
 
   useEffect(() => {
     setBranchSelection(value.sourceItem?.branch || '');
@@ -95,13 +72,6 @@ export function InventoryArticleEditor({ value, saving, onChange, onClose, onSav
     setLibraryOpen(false);
     setLibraryTerm('');
   }, [value.remoteItemId, value.variantId]);
-
-  useEffect(() => {
-    if (!value.referenceImageFile) { setImagePreviewUrl(''); return; }
-    const previewUrl = URL.createObjectURL(value.referenceImageFile);
-    setImagePreviewUrl(previewUrl);
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [value.referenceImageFile]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -119,28 +89,7 @@ export function InventoryArticleEditor({ value, saving, onChange, onClose, onSav
   const filteredProducts = libraryProducts.filter((product) => `${product.name} ${product.images.map((image) => image.label).join(' ')}`.toLocaleLowerCase('es').includes(libraryTerm.trim().toLocaleLowerCase('es')));
   const currentImage = libraryProducts.flatMap((product) => product.images).find((image) => image.path === value.referenceImageUrl);
   const selectedTags = value.tags.split(',').map((tag) => tag.trim()).filter(Boolean);
-  const imageSource = imagePreviewUrl || value.referenceImageUrl;
-  const addReferenceImage = (files: File[]) => {
-    if (saving) return;
-    const image = files.find((file) => referenceImageTypes.has(file.type));
-    if (!image) { setImageFeedback('Elige o copia una imagen PNG, JPG o WebP.'); return; }
-    if (image.size > 80 * 1024 * 1024) { setImageFeedback('La imagen supera 80 MB. Reduce su tamaño antes de añadirla.'); return; }
-    update({ referenceImageFile: image, referenceImageUrl: '' });
-    setImageFeedback('Vista previa lista. Guarda la ficha para subir la imagen.');
-  };
-  const handleImagePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
-    if (saving) return;
-    const files = imagesFromClipboard(event.clipboardData);
-    if (!files.length) return;
-    event.preventDefault(); event.stopPropagation(); addReferenceImage(files);
-  };
-  const pasteFromSystemClipboard = async () => {
-    if (saving) return;
-    setImageFeedback('');
-    const image = await readClipboardImage();
-    if (image) { addReferenceImage([image]); return; }
-    setImageFeedback(navigator.clipboard?.read ? 'No se encontró una imagen. Copia una captura o imagen y prueba Ctrl + V.' : 'Haz clic en esta zona y pega con Ctrl + V.');
-  };
+  const galleryImages = value.productImages?.length ? value.productImages : value.referenceImageUrl ? [{ key: `legacy-${sourceItem?.remoteItemId || 'item'}`, src: value.referenceImageUrl, path: sourceItem?.referenceImageStoragePath || value.referenceImageUrl, label: currentImage?.label || 'Imagen de referencia' }] : [];
 
   return <div className="inventory-modal-backdrop inventory-editor-backdrop" role="presentation" onMouseDown={(event) => { if (!saving && event.target === event.currentTarget && !libraryOpen) onClose(); }}>
     <form className="inventory-article-editor" onSubmit={onSave} role="dialog" aria-modal="true" aria-labelledby="inventory-editor-title" aria-describedby="inventory-editor-description">
@@ -173,14 +122,9 @@ export function InventoryArticleEditor({ value, saving, onChange, onClose, onSav
 
           <section className="inventory-editor-section">
             <div className="inventory-editor-section-title"><span className="inventory-editor-section-icon"><ImageIcon size={16}/></span><div><h3>Imagen de referencia</h3><p>Elige una foto de la biblioteca o añade una desde tu equipo o portapapeles.</p></div><span className="inventory-editor-library-count">{libraryCount} imágenes · {libraryProducts.length} productos</span></div>
-            <div className={`inventory-editor-image-zone${draggingImage ? ' is-dragging' : ''}`} tabIndex={0} role="group" aria-label="Imagen de referencia" onPaste={handleImagePaste} onDragOver={(event) => { event.preventDefault(); setDraggingImage(true); }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDraggingImage(false); }} onDrop={(event) => { event.preventDefault(); setDraggingImage(false); addReferenceImage(Array.from(event.dataTransfer.files)); }}>
-              {imageSource ? <div className="inventory-editor-current-image"><img src={imageSource} alt={`Referencia de ${sourceItem?.name || 'artículo'}`}/><div><b>{value.referenceImageFile ? 'Imagen lista para subir' : currentImage?.label || 'Imagen seleccionada'}</b><small>{value.referenceImageFile ? value.referenceImageFile.name : currentImage?.series || 'Referencia visual · no confirma marca ni existencias'}</small></div></div> : <div className="inventory-editor-image-empty"><ImageIcon size={19}/><span>Sin imagen seleccionada</span></div>}
-            <div className="inventory-editor-image-actions"><input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden disabled={saving} onChange={(event) => { if (event.currentTarget.files) addReferenceImage(Array.from(event.currentTarget.files)); event.currentTarget.value = ''; }}/><button type="button" className="button button-outline" disabled={saving} onClick={() => imageInputRef.current?.click()}><Upload size={14}/>{imageSource ? 'Subir otra' : 'Subir imagen'}</button><button type="button" className="button button-outline" disabled={saving} onClick={() => { void pasteFromSystemClipboard(); }}><ClipboardPaste size={14}/>{imageSource ? 'Pegar otra' : 'Pegar imagen'}</button>{imageSource && <button type="button" className="inventory-editor-clear-image" disabled={saving} onClick={() => { update({ referenceImageUrl: '', referenceImageFile: null }); setImageFeedback('Imagen quitada de la ficha.'); }}>Quitar imagen</button>}</div>
-              {imageFeedback && <small className="inventory-editor-image-feedback" role="status">{imageFeedback}</small>}
-              <span className="inventory-editor-image-hint">También puedes pegar con Ctrl + V aquí o arrastrar una imagen. · PNG, JPG o WebP · Máximo 5 MB al guardar.</span>
-            </div>
+            <InventoryProductImageGallery images={galleryImages} disabled={saving} onChange={(productImages) => update({ productImages })}/>
             <button type="button" className="inventory-editor-library-toggle" aria-expanded={libraryOpen} onClick={() => { setLibraryOpen((current) => !current); setLibraryTerm(''); }}><ImageIcon size={15}/>{libraryOpen ? 'Cerrar biblioteca de imágenes' : 'Buscar en la biblioteca'}<ChevronDown size={14} className={libraryOpen ? 'is-open' : ''}/></button>
-            {libraryOpen && <div className="inventory-editor-library"><label className="inventory-editor-search"><ImageIcon size={15}/><input autoFocus value={libraryTerm} onChange={(event) => setLibraryTerm(event.target.value)} placeholder="Buscar papel, tinta, vinil…"/><span>{filteredProducts.length} productos</span></label><div className="inventory-editor-library-list">{filteredProducts.map((product) => <article key={product.id}><h4>{product.name}<small>{product.images.length} imágenes</small></h4><div className="inventory-editor-image-options">{product.images.map((image) => <button type="button" key={image.path} aria-label={`Usar imagen ${image.label} de ${product.name}`} className={value.referenceImageUrl === image.path ? 'is-selected' : ''} onClick={() => { update({ referenceImageUrl: image.path, referenceImageFile: null }); setImageFeedback('Imagen de la biblioteca seleccionada.'); setLibraryOpen(false); }}><img src={image.path} alt="" loading="lazy"/><span>{image.label}</span>{value.referenceImageUrl === image.path && <i><Check size={13}/></i>}</button>)}</div></article>)}{!filteredProducts.length && <p className="inventory-editor-library-empty">No hay coincidencias. Prueba otra palabra.</p>}</div></div>}
+            {libraryOpen && <div className="inventory-editor-library"><label className="inventory-editor-search"><ImageIcon size={15}/><input autoFocus value={libraryTerm} onChange={(event) => setLibraryTerm(event.target.value)} placeholder="Buscar papel, tinta, vinil…"/><span>{filteredProducts.length} productos</span></label><div className="inventory-editor-library-list">{filteredProducts.map((product) => <article key={product.id}><h4>{product.name}<small>{product.images.length} imágenes</small></h4><div className="inventory-editor-image-options">{product.images.map((image) => <button type="button" key={image.path} aria-label={`Añadir imagen ${image.label} de ${product.name}`} className={galleryImages.some((entry) => entry.path === image.path || entry.src === image.path) ? 'is-selected' : ''} onClick={() => { if (!galleryImages.some((entry) => entry.path === image.path || entry.src === image.path)) update({ productImages: [...galleryImages, { key: `library-${makeKey()}`, src: image.path, path: image.path, label: image.label }] }); setLibraryOpen(false); }}><img src={image.path} alt="" loading="lazy"/><span>Añadir · {image.label}</span>{galleryImages.some((entry) => entry.path === image.path || entry.src === image.path) && <i><Check size={13}/></i>}</button>)}</div></article>)}{!filteredProducts.length && <p className="inventory-editor-library-empty">No hay coincidencias. Prueba otra palabra.</p>}</div></div>}
           </section>
 
           <section className="inventory-editor-section">
