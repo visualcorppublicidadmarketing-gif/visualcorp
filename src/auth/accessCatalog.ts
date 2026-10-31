@@ -22,6 +22,7 @@ export const permissionModules = [
 ] as const;
 
 export const specialPermissionActions = [
+  { module: 'marketing', action: 'approve_content', label: 'Aprobar contenido y solicitar cambios (requiere ver y editar Marketing)' },
   { module: 'team', action: 'manage_members', label: 'Asignar perfiles y activar o pausar accesos' },
   { module: 'team', action: 'manage_profiles', label: 'Crear y configurar perfiles' },
   { module: 'inventory_costs', action: 'view_costs', label: 'Ver costos y márgenes' },

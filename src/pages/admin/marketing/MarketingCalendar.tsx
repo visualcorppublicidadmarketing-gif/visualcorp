@@ -6,6 +6,7 @@ import { DatePicker } from '../../../components/ui/Calendar';
 import { MarketingPostArtwork, type MarketingArtworkAsset } from './MarketingPostArtwork';
 import { getMarketingCalendarColor, getMarketingTags } from './marketingColors';
 import { addMarketingDays, isTerminalMarketingStatus, marketingDateKey, marketingWeekStart } from './marketingScheduleRules';
+import { isPublication } from './marketingWorkflow';
 import './marketing-calendar.css';
 import './marketing-calendar-enhanced.css';
 import './marketing-kanban.css';
@@ -16,6 +17,8 @@ export type MarketingCalendarPost = {
   id: string; title: string; status: string; scheduled_date: string; scheduled_time?: string;
   source_id?: string; platform?: string; format?: string; owner?: string; content_line?: string; next_action?: string; tags?: string[]; calendar_color?: string;
   design_ready?: boolean; video_ready?: boolean; canvas_width?: number | null; canvas_height?: number | null;
+  art_status?: string; video_status?: string;
+  record_kind?: string;
 };
 
 type Props = {
@@ -23,8 +26,6 @@ type Props = {
   organizationId: string;
   artworkByPost: ReadonlyMap<string, MarketingArtworkAsset>;
   onArtworkSaved: () => void;
-  rulesReady: boolean;
-  onRunOverdueRule: (today: string) => Promise<void>;
   canEdit: boolean;
   canDelete: boolean;
   selectedIds: Set<string>;
@@ -95,16 +96,17 @@ const weekOfMonth = (date: Date) => {
 };
 
 export function MarketingReadinessIndicators({ post, compact = false, onChange, disabled = false }: { post: MarketingCalendarPost; compact?: boolean; onChange?: (field: 'design_ready' | 'video_ready', checked: boolean) => void; disabled?: boolean }) {
+  if (!isPublication(post)) return null;
   const items = [
-    { label: 'Diseño', ready: post.design_ready === true, field: 'design_ready' as const, Icon: ImageIcon },
-    { label: 'Vídeo', ready: post.video_ready === true, field: 'video_ready' as const, Icon: Film },
+    { label: 'Diseño', ready: post.art_status==='Sí'||(!post.art_status&&post.design_ready===true), notApplicable:post.art_status==='No aplica', field: 'design_ready' as const, Icon: ImageIcon },
+    { label: 'Vídeo', ready: post.video_status==='Sí'||(!post.video_status&&post.video_ready===true), notApplicable:post.video_status==='No aplica', field: 'video_ready' as const, Icon: Film },
   ];
   return <span className={`vc-marketing-readiness-indicators${compact ? ' is-compact' : ''}`} role="group" aria-label="Checklist de producción">
-    {items.map(({ label, ready, field, Icon }) => {
-      const content = <>{ready ? <CheckCircle2 size={compact ? 12 : 13}/> : <Circle size={compact ? 12 : 13}/>}<Icon size={compact ? 11 : 12}/><span>{compact ? label.slice(0, 1) : label}</span><b>{compact ? '' : ready ? 'Listo' : 'Pendiente'}</b></>;
-      const accessibleLabel = `${label} ${ready ? 'listo' : 'pendiente'}`;
+    {items.map(({ label, ready, field, Icon, notApplicable }) => {
+      const content = <>{ready ? <CheckCircle2 size={compact ? 12 : 13}/> : <Circle size={compact ? 12 : 13}/>}<Icon size={compact ? 11 : 12}/><span>{compact ? label.slice(0, 1) : label}</span><b>{compact ? '' : notApplicable ? 'No aplica' : ready ? 'Listo' : 'Pendiente'}</b></>;
+      const accessibleLabel = `${label} ${notApplicable?'no aplica':ready ? 'listo' : 'pendiente'}`;
       return onChange
-        ? <button key={label} type="button" className={`vc-marketing-readiness-item${ready ? ' is-ready' : ''}`} title={`${accessibleLabel}. Clic para ${ready ? 'marcar pendiente' : 'marcar listo'}.`} aria-label={accessibleLabel} aria-pressed={ready} disabled={disabled} onClick={() => onChange(field, !ready)}>{content}</button>
+        ? <button key={label} type="button" className={`vc-marketing-readiness-item${ready ? ' is-ready' : ''}`} title={`${accessibleLabel}. ${notApplicable?'Cambia la aplicabilidad desde la ficha.':`Clic para ${ready ? 'marcar pendiente' : 'marcar listo'}.`}`} aria-label={accessibleLabel} aria-pressed={ready} disabled={disabled||notApplicable} onClick={() => onChange(field, !ready)}>{content}</button>
         : <span key={label} className={`vc-marketing-readiness-item${ready ? ' is-ready' : ''}`} title={accessibleLabel} aria-label={accessibleLabel}>{content}</span>;
     })}
   </span>;
@@ -143,7 +145,7 @@ function readCalendarPreferences(organizationId: string): MarketingCalendarPrefe
   }
 }
 
-export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtworkSaved, rulesReady, onRunOverdueRule, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onStatusChange, onReadinessChange, onDuplicate, onDelete }: Props) {
+export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtworkSaved, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onStatusChange, onReadinessChange, onDuplicate, onDelete }: Props) {
   const [anchor, setAnchor] = useState(() => new Date());
   const [view, setView] = useState<MarketingCalendarView>('month');
   const [todayKey, setTodayKey] = useState(() => marketingDateKey());
@@ -158,7 +160,7 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const weekGridRef = useRef<HTMLDivElement>(null);
   const [weekScrollPosition, setWeekScrollPosition] = useState({ start: 1, end: 7 });
-  const lastRuleRun = useRef('');
+
   useEffect(() => {
     if (!organizationId) {
       setRestoredPreferencesFor('');
@@ -257,13 +259,7 @@ export function MarketingCalendar({ posts, organizationId, artworkByPost, onArtw
   const weekEndKey = dateKey(cells[6]);
   const nextMondayKey = addMarketingDays(weekEndKey, 1);
   const isCurrentWeek = weekStartKey === marketingWeekStart(todayKey);
-  useEffect(() => {
-    if (view !== 'kanban' || !canEdit || !rulesReady || !isCurrentWeek) return;
-    const runKey = `${organizationId}:${todayKey}`;
-    if (lastRuleRun.current === runKey) return;
-    lastRuleRun.current = runKey;
-    void onRunOverdueRule(todayKey);
-  }, [canEdit, isCurrentWeek, onRunOverdueRule, organizationId, rulesReady, todayKey, view]);
+
 
   const weekPosts = posts.filter((post) => {
     const scheduledDate = String(post.scheduled_date || '').slice(0, 10);
