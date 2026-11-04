@@ -8,6 +8,7 @@ import { supabase } from './lib/supabaseClient';
 import { AppFrame, Brand, PageHeading, StatCard } from './app/layout';
 import { EmptyState, StageBadge } from './components/feedback';
 import { OperationsQuotePage as QuotePage } from './pages/operations/OperationsQuotePage';
+import { DialogProvider } from './components/ui/OperationalKit';
 import './app.css';
 import './public-site/deployment.css';
 import './design-system.css';
@@ -105,5 +106,5 @@ function AppRouter() {
 }
 
 export default function App() {
-  return <BrowserRouter><AuthProvider><WorkspaceProvider><AppRouter/></WorkspaceProvider></AuthProvider></BrowserRouter>;
+  return <BrowserRouter><AuthProvider><WorkspaceProvider><DialogProvider><AppRouter/></DialogProvider></WorkspaceProvider></AuthProvider></BrowserRouter>;
 }

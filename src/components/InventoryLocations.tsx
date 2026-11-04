@@ -3,6 +3,7 @@ import { Archive, Layers3, LockKeyhole, MapPin, Plus, RotateCcw } from 'lucide-r
 import { useWorkspace } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
+import { useConfirm } from './ui/OperationalKit';
 
 const locationTypes = [
   ['storage', 'Almacenamiento'],
@@ -18,6 +19,7 @@ const blankDraft = { branchId: '', parentId: '', code: '', name: '', type: 'stor
 export function InventoryLocations({ id, hidden, canManage, catalogLinks = [] }) {
   const { data, refreshRemote, flash } = useWorkspace();
   const { organizationId, user } = useAuth();
+  const confirm = useConfirm();
   const locations = data.inventoryLocations || [];
   const branches = data.branches || [];
   const [draft, setDraft] = useState<any>(blankDraft);
@@ -71,7 +73,24 @@ export function InventoryLocations({ id, hidden, canManage, catalogLinks = [] })
         flash(hasStock ? 'No se puede archivar: aún hay stock contado en esa ubicación.' : 'No se puede archivar: un producto de venta todavía usa esta ubicación.');
         return;
       }
-      if (!window.confirm(`¿Archivar la ubicación ${location.code} · ${location.name}? Se conserva el historial.`)) return;
+      const accepted = await confirm({
+        eyebrow: 'BODEGA Y UBICACIONES',
+        title: `¿Archivar la ubicación ${location.code} · ${location.name}?`,
+        description: 'La ubicación dejará de aparecer como opción en nuevos conteos, compras y movimientos.',
+        tone: 'warning',
+        confirmLabel: 'Archivar ubicación',
+        cancelLabel: 'Cancelar',
+        summaryItems: [
+          { label: 'Código', value: location.code },
+          { label: 'Nombre', value: location.name },
+          { label: 'Sucursal', value: location.branch || 'Sucursal asignada' },
+        ],
+        consequences: [
+          'Se conserva íntegro el historial de conteos, compras y movimientos registrados.',
+          'Puedes reactivar esta ubicación cuando vuelva a utilizarse.',
+        ],
+      });
+      if (!accepted) return;
     }
     const { error } = await supabase.from('inventory_locations').update({ active, updated_at: new Date().toISOString() }).eq('id', location.id).eq('organization_id', organizationId);
     if (error) { flash(`No se pudo actualizar la ubicación: ${error.message}`); return; }
