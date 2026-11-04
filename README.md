@@ -107,3 +107,15 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - Rediseño de Flujos → Caja con estado de turno, secuencia Abrir → Contar → Conciliar, importe contado destacado, ayuda para el cierre e historial con etiquetas de cuadre. Mantiene el arqueo ciego y la interfaz responsive.
 - POS incorpora acceso directo a abrir o cerrar el turno desde la pantalla de caja. La sucursal y el usuario siguen asociados al turno.
 - `npm run build:checked` y `git diff --check` correctos. No se ejecutaron pagos ni cierres reales durante la verificación.
+
+### Vista automática de códigos de barras — 2026-10-31
+
+- Las filas del catálogo de productos y la lista de productos estándar muestran una miniatura Code 128 generada desde el SKU actual. Se carga al acercarse a pantalla y se vuelve a generar automáticamente cuando React recibe un SKU distinto.
+- La ficha conserva la etiqueta PNG y la impresión en tamaños 50 × 25 mm y 60 × 30 mm. Un producto nuevo recibe el SKU al guardar y muestra la miniatura al aparecer en la lista; un borrador sin SKU lo señala como pendiente.
+- Verificación local: `npm run build:checked` y `git diff --check` correctos. Cambio en `codex/barcode-auto-preview-20261031`, todavía local y sin publicar.
+
+### Calendario operativo del inventario — 2026-11-04
+
+- La rama local `codex/inventory-system-all-20261102` incorpora vistas mensual, semanal y agenda para conteos programados, sesiones, movimientos registrados y recepciones previstas, con filtros por inventario, sucursal, ubicación, tipo y estado.
+- Los conteos guardan el alcance como líneas de variante/ubicación y su historial. Al iniciar se vinculan a la sesión física existente y se captura el saldo de referencia en ese momento; programar o iniciar no modifica existencias. La asignación de responsable es opcional y requiere miembro activo con permiso de edición de inventario.
+- La migración `supabase/migrations/20261104153641_inventory_operational_calendar.sql` y la interfaz están en el worktree local. Typecheck, build y simulación SQL local de programar, reprogramar, iniciar repetidamente, completar y cancelar pasaron. La migración no está aplicada a Supabase; no se publicó ni se revisó la pantalla con una sesión autenticada.

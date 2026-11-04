@@ -10,13 +10,16 @@ type Props = {
   helpText: string;
   className?: string;
   autoFocus?: boolean;
+  customActionLabel?: string;
+  customApplyLabel?: string;
+  customInputPlaceholder?: string;
   onChange: (value: string | string[]) => void;
 };
 
 const normalize = (value: string) => value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
 const uniqueValues = (values: string[]) => [...new Map(values.map((value) => [normalize(value), value.trim()])).values()].filter(Boolean);
 
-export function InventoryOptionPicker({ label, mode, value, options, placeholder, helpText, className = '', autoFocus = false, onChange }: Props) {
+export function InventoryOptionPicker({ label, mode, value, options, placeholder, helpText, className = '', autoFocus = false, customActionLabel, customApplyLabel, customInputPlaceholder, onChange }: Props) {
   const pickerId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -146,12 +149,12 @@ export function InventoryOptionPicker({ label, mode, value, options, placeholder
         })}
         {!filteredOptions.length && <p className="inventory-option-empty">No hay coincidencias. Puedes escribir una opción nueva.</p>}
       </div>
-      <button type="button" className="inventory-option-custom-action" disabled={mode === 'multiple' && selected.length >= 40} onClick={startCustom}><Plus size={14}/>{mode === 'multiple' && selected.length >= 40 ? 'Límite de 40 etiquetas' : mode === 'single' ? (search.trim() ? `Escribir “${search.trim()}”` : 'Escribir otro tipo') : (search.trim() ? `Escribir etiqueta “${search.trim()}”` : 'Escribir otra etiqueta')}</button>
+      <button type="button" className="inventory-option-custom-action" disabled={mode === 'multiple' && selected.length >= 40} onClick={startCustom}><Plus size={14}/>{mode === 'multiple' && selected.length >= 40 ? 'Límite de 40 etiquetas' : search.trim() ? `Escribir “${search.trim()}”` : customActionLabel || (mode === 'single' ? 'Escribir otro tipo' : 'Escribir otra etiqueta')}</button>
     </div>}
 
     {customOpen && <div className="inventory-option-custom-entry">
-      <input ref={customInputRef} autoFocus maxLength={mode === 'multiple' ? 48 : 100} aria-label={mode === 'single' ? 'Escribir tipo de artículo personalizado' : 'Escribir etiqueta personalizada'} value={customDraft} onChange={(event) => setCustomDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setCustomOpen(false); setCustomDraft(''); } else if (event.key === 'Enter') { event.preventDefault(); addCustom(customDraft); } }} placeholder={mode === 'single' ? 'Ej. material, herramienta…' : 'Ej. vinil mate, rollo…'}/>
-      <button type="button" disabled={!customDraft.trim() || (mode === 'multiple' && selected.length >= 40)} onClick={() => addCustom(customDraft)}>{mode === 'single' ? 'Usar tipo' : selected.length >= 40 ? 'Límite alcanzado' : 'Agregar etiqueta'}</button>
+      <input ref={customInputRef} autoFocus maxLength={mode === 'multiple' ? 48 : 100} aria-label={mode === 'single' ? `Escribir ${label.toLocaleLowerCase('es')} personalizado` : 'Escribir etiqueta personalizada'} value={customDraft} onChange={(event) => setCustomDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setCustomOpen(false); setCustomDraft(''); } else if (event.key === 'Enter') { event.preventDefault(); addCustom(customDraft); } }} placeholder={customInputPlaceholder || (mode === 'single' ? 'Ej. material, herramienta…' : 'Ej. vinil mate, rollo…')}/>
+      <button type="button" disabled={!customDraft.trim() || (mode === 'multiple' && selected.length >= 40)} onClick={() => addCustom(customDraft)}>{mode === 'single' ? customApplyLabel || 'Usar tipo' : selected.length >= 40 ? 'Límite alcanzado' : customApplyLabel || 'Agregar etiqueta'}</button>
       <button type="button" className="inventory-option-cancel-custom" aria-label="Cancelar escritura personalizada" onClick={() => { setCustomOpen(false); setCustomDraft(''); }}><X size={14}/></button>
     </div>}
     <small>{helpText}</small>
