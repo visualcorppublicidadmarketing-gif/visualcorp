@@ -403,6 +403,16 @@
   margin-bottom: 22px;
 }
 
+.vc-sol-strip-3d-title {
+  margin: 10px 0 8px;
+  max-width: 320px;
+}
+
+.vc-service-showcase-3d-badge {
+  margin: 12px 0 10px;
+  max-width: 380px;
+}
+
 .vc-sol-strip-eyebrow {
   display: block;
   font-size: 10.5px;

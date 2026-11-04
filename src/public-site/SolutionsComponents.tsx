@@ -20,6 +20,7 @@ import { useWorkspace } from '../app/workspace';
 import { BorderBeam, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
 import { Dialog, DialogCallout } from '../components/ui/DialogSystem';
 import { publicServiceFamilies, serviceDetailContent, type PublicServiceId } from './content';
+import { Title3D } from './Title3D';
 import {
   brandingEnvironments,
   getPiecesForService,
@@ -262,6 +263,9 @@ export function PanoramicCategoryStrips() {
               <div className="vc-sol-strip-head">
                 <div>
                   <span className="vc-sol-strip-eyebrow">{strip.eyebrow}</span>
+                  <div className="vc-sol-strip-3d-title">
+                    <Title3D serviceId={strip.serviceId} variant="banner" maxWidth={310} showAura={false} />
+                  </div>
                   <h3>{strip.title}</h3>
                   <p>{strip.subtitle}</p>
                 </div>
@@ -670,6 +674,9 @@ export function ServiceVisualShowcase({
             <span className="site-eyebrow">
               <i /> SOLUCIONES Y APLICACIONES EN {serviceName.toUpperCase()}
             </span>
+            <div className="vc-service-showcase-3d-badge">
+              <Title3D serviceId={serviceId} variant="banner" maxWidth={360} showAura={false} />
+            </div>
             <h2 id="service-pieces-heading">
               Piezas que podemos crear
               <br />
