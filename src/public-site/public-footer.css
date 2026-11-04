@@ -158,6 +158,9 @@
 }
 .public-site .footer-social-links > a:hover { transform: translateY(-2px); border-color: rgba(229, 0, 126, .32); background: linear-gradient(105deg, rgba(229, 0, 126, .1), rgba(255, 255, 255, .045)); }
 .public-site .footer-social-links > a > svg:first-child { color: #f18bc7; }
+.public-site .footer-social-links .social-mark-instagram { color: #ef80c7; }
+.public-site .footer-social-links .social-mark-facebook { color: #75aaff; }
+.public-site .footer-social-links .social-mark-tiktok { color: #f7f5fa; }
 .public-site .footer-social-links > a > svg:last-child { color: #969caf; transition: color .2s ease, transform .2s ease; }
 .public-site .footer-social-links > a:hover > svg:last-child { color: #ff9dd6; transform: translate(2px, -2px); }
 .public-site .footer-social-links span { min-width: 0; font-size: 12px; font-weight: 750; }

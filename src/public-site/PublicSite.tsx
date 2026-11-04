@@ -34,6 +34,44 @@ const whatsappHref = (phone: string) => {
   return `https://wa.me/${international}`;
 };
 
+const socialHosts = {
+  instagram: ['instagram.com', 'www.instagram.com'],
+  facebook: ['facebook.com', 'www.facebook.com', 'm.facebook.com'],
+  tiktok: ['tiktok.com', 'www.tiktok.com'],
+};
+
+function socialHref(platform: keyof typeof socialHosts, value: string) {
+  const input = String(value || '').trim();
+  if (!input) return '';
+  if (/^(?:https?:\/\/)?(?:www\.)?(?:instagram|facebook|tiktok)\.com(?:\/|$)/i.test(input)) {
+    try {
+      const url = new URL(/^https?:\/\//i.test(input) ? input : `https://${input}`);
+      if (!socialHosts[platform].includes(url.hostname.toLowerCase())) return '';
+      url.protocol = 'https:';
+      return url.toString();
+    } catch { return ''; }
+  }
+  if (/^[a-z][a-z\d+.-]*:/i.test(input)) return '';
+  const handle = input.replace(/^@/, '').replace(/^\/+|\/+$/g, '');
+  if (!/^[\w.-]+$/.test(handle)) return '';
+  if (platform === 'tiktok') return `https://www.tiktok.com/@${encodeURIComponent(handle)}`;
+  return `https://www.${platform}.com/${encodeURIComponent(handle)}/`;
+}
+
+function socialLinks(settings: any) {
+  return [
+    { platform: 'instagram' as const, label: 'Instagram', value: settings.instagram, detail: settings.instagram?.startsWith('@') ? settings.instagram : 'Ver perfil' },
+    { platform: 'facebook' as const, label: 'Facebook', value: settings.facebook, detail: 'Visual Corp' },
+    { platform: 'tiktok' as const, label: 'TikTok', value: settings.tiktok, detail: settings.tiktok?.startsWith('@') ? settings.tiktok : 'Ver perfil' },
+  ].map((social) => ({ ...social, href: socialHref(social.platform, social.value) })).filter((social) => social.href);
+}
+
+function SocialMark({ platform, size = 16 }: { platform: keyof typeof socialHosts; size?: number }) {
+  if (platform === 'facebook') return <svg className={`social-mark social-mark-${platform}`} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.55 21v-8.2h2.76l.41-3.2h-3.17V7.56c0-.93.26-1.56 1.59-1.56h1.7V3.14C16.02 3.05 15.2 3 14.23 3c-2.86 0-4.82 1.75-4.82 4.96V9.6H6.65v3.2h2.76V21h4.14Z"/></svg>;
+  if (platform === 'tiktok') return <svg className={`social-mark social-mark-${platform}`} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.33V2h-3.55v13.67a2.9 2.9 0 0 1-2.9 2.9 2.9 2.9 0 0 1-2.9-2.9 2.9 2.9 0 0 1 2.9-2.9c.28 0 .55.04.81.12V9.27a6.48 6.48 0 0 0-.81-.05 6.45 6.45 0 1 0 6.45 6.45V8.55a8.3 8.3 0 0 0 4.86 1.57V6.57c-.36 0-.72.04-1.09.12Z"/></svg>;
+  return <svg className={`social-mark social-mark-${platform}`} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.6" cy="6.7" r=".85" fill="currentColor" stroke="none"/></svg>;
+}
+
 function SiteTitle({ children }) {
   useEffect(() => { document.title = `${children} · Visual Corp`; }, [children]);
   return null;
@@ -153,8 +191,8 @@ function SiteFooter({ theme }: { theme: 'light' | 'dark' }) {
           <b>Canales directos</b>
           <p>Cuéntanos qué necesitas y revisaremos contigo el siguiente paso.</p>
           <div className="footer-social-links">
-            <a href={`https://instagram.com/${data.settings.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer"><Globe2 size={16} aria-hidden="true"/><span>Instagram<small>{data.settings.instagram}</small></span><ArrowUpRight size={14} aria-hidden="true"/></a>
-            <a href={whatsappHref(data.settings.contactPhone)} target="_blank" rel="noreferrer"><MessageCircle size={16} aria-hidden="true"/><span>WhatsApp<small>{data.settings.contactPhone}</small></span><ArrowUpRight size={14} aria-hidden="true"/></a>
+            {socialLinks(data.settings).map((social) => <a key={social.platform} href={social.href} target="_blank" rel="noopener noreferrer"><SocialMark platform={social.platform}/><span>{social.label}<small>{social.detail}</small></span><ArrowUpRight size={14} aria-hidden="true"/></a>)}
+            {[{ phone: data.settings.contactPhone, label: 'WhatsApp principal' }, { phone: data.settings.whatsappSecondary, label: 'WhatsApp alternativo' }].filter((contact) => String(contact.phone || '').trim()).map((contact) => <a key={contact.label} href={whatsappHref(contact.phone)} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} aria-hidden="true"/><span>{contact.label}<small>{contact.phone}</small></span><ArrowUpRight size={14} aria-hidden="true"/></a>)}
           </div>
         </div>
       </div>
@@ -366,6 +404,7 @@ export function ContactPage() {
     : 'Hola, Visual Corp. Quisiera conversar sobre un proyecto.';
   const whatsapp = `${whatsappHref(data.settings.contactPhone)}?text=${encodeURIComponent(whatsappText)}`;
   const phoneLink = `tel:${data.settings.contactPhone.replace(/[^\d+]/g, '')}`;
+  const socials = socialLinks(data.settings);
   return <><SiteTitle>Contacto</SiteTitle>
     <section className="contact-hero" ref={contactHeroRef} aria-labelledby="contact-page-title">
       <div className="contact-hero-glow contact-hero-glow-pink"/><div className="contact-hero-glow contact-hero-glow-blue"/>
@@ -380,7 +419,12 @@ export function ContactPage() {
     </section>
     <section className="contact-workspace" id="contacto-opciones" aria-label="Opciones para contactar a Visual Corp">
         <div className="contact-info-column"><div className="contact-section-heading"><Eyebrow>CONTACTO DIRECTO</Eyebrow><h2>Elige cómo<br/>empezar.</h2><p>Escríbenos directamente o déjanos los detalles y los revisaremos contigo.</p></div>
-        <div className="contact-channel-cards"><a className="contact-channel-card contact-channel-whatsapp" href={whatsapp} target="_blank" rel="noreferrer"><span className="contact-channel-icon"><MessageCircle size={19}/></span><span><small>CONVERSACIÓN DIRECTA</small><b>WhatsApp</b><em>{data.settings.contactPhone}</em></span><ArrowUpRight size={17}/></a><a className="contact-channel-card" href={phoneLink}><span className="contact-channel-icon phone-icon"><Phone size={18}/></span><span><small>LLAMADA</small><b>Llámanos</b><em>{data.settings.contactPhone}</em></span><ArrowUpRight size={17}/></a><a className="contact-channel-card" href={`https://instagram.com/${data.settings.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer"><span className="contact-channel-icon instagram-icon"><Globe2 size={18}/></span><span><small>REDES SOCIALES</small><b>Instagram</b><em>{data.settings.instagram}</em></span><ArrowUpRight size={17}/></a></div>
+        <div className="contact-channel-cards">
+          <a className="contact-channel-card contact-channel-whatsapp" href={whatsapp} target="_blank" rel="noopener noreferrer"><span className="contact-channel-icon"><MessageCircle size={19}/></span><span><small>CONVERSACIÓN DIRECTA</small><b>WhatsApp principal</b><em>{data.settings.contactPhone}</em></span><ArrowUpRight size={17}/></a>
+          {String(data.settings.whatsappSecondary || '').trim() && <a className="contact-channel-card contact-channel-whatsapp" href={`${whatsappHref(data.settings.whatsappSecondary)}?text=${encodeURIComponent(whatsappText)}`} target="_blank" rel="noopener noreferrer"><span className="contact-channel-icon"><MessageCircle size={19}/></span><span><small>OTRO CANAL DIRECTO</small><b>WhatsApp alternativo</b><em>{data.settings.whatsappSecondary}</em></span><ArrowUpRight size={17}/></a>}
+          <a className="contact-channel-card" href={phoneLink}><span className="contact-channel-icon phone-icon"><Phone size={18}/></span><span><small>LLAMADA</small><b>Llámanos</b><em>{data.settings.contactPhone}</em></span><ArrowUpRight size={17}/></a>
+          {socials.map((social) => <a key={social.platform} className="contact-channel-card" href={social.href} target="_blank" rel="noopener noreferrer"><span className={`contact-channel-icon social-channel-icon social-icon-${social.platform}`}><SocialMark platform={social.platform} size={18}/></span><span><small>REDES SOCIALES</small><b>{social.label}</b><em>{social.detail}</em></span><ArrowUpRight size={17}/></a>)}
+        </div>
         <div className="contact-service-picker"><div><small>¿YA SABES QUÉ BUSCAS?</small><span>Elige una opción para preparar tu mensaje.</span></div><div className="contact-service-chips" role="group" aria-label="Selecciona una familia de trabajo">{contactServices.map((service) => <button key={service.id} type="button" className={selectedService === service.name ? 'is-selected' : ''} aria-pressed={selectedService === service.name} onClick={() => setSelectedService((current) => current === service.name ? '' : service.name)}>{service.name}</button>)}</div><p className="contact-service-feedback" aria-live="polite">{selectedService ? `Listo: ${selectedService}. También prepararemos tu mensaje de WhatsApp.` : 'Puedes elegir una familia o pedir orientación.'}</p><a className="contact-service-link" href="#contacto-formulario">{selectedService ? `Formulario: ${selectedService}` : 'Prefiero que me orienten'} <ChevronRight size={14}/></a></div>
         <div className="contact-location-card"><div className="contact-location-mark"><MapPin size={19}/></div><div><small>VISÍTANOS EN</small><b>Milagro, Ecuador</b><span>{publicAddress}</span><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(publicAddress)}`} target="_blank" rel="noreferrer">Abrir ubicación en Maps <ArrowUpRight size={13}/></a></div></div>
       </div>

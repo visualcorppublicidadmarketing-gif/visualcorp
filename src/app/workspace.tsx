@@ -107,7 +107,10 @@ function createInitialState() {
       heroTitle: 'Hacemos visible lo que imaginas.',
       heroText: 'Diseño, producción y marketing para marcas que quieren ocupar su espacio.',
       contactPhone: '0967872396',
+      whatsappSecondary: '0997078212',
       instagram: '@visualcorpec',
+      facebook: 'https://www.facebook.com/visual.corp.9',
+      tiktok: '@visualcorpmilagro',
     },
     services: defaultServices,
     catalog,
@@ -188,7 +191,7 @@ export function WorkspaceProvider({ children }) {
         return { ...product, image: images[0] || product.image, images: images.length ? images : [product.image].filter(Boolean) };
       });
       setData((current) => ({ ...current,
-        settings: settings ? { ...current.settings, name: settings.brand, location: settings.address, heroEyebrow: settings.hero_kicker, heroTitle: settings.hero_title, heroText: settings.hero_text, contactPhone: settings.phone, email: settings.email } : current.settings,
+        settings: settings ? { ...current.settings, name: settings.brand, location: settings.address, heroEyebrow: settings.hero_kicker, heroTitle: settings.hero_title, heroText: settings.hero_text, contactPhone: settings.phone || settings.whatsapp, whatsappSecondary: settings.whatsapp_secondary ?? current.settings.whatsappSecondary, instagram: settings.instagram ?? current.settings.instagram, facebook: settings.facebook ?? current.settings.facebook, tiktok: settings.tiktok ?? current.settings.tiktok, email: settings.email } : current.settings,
         services: servicesResult.data ? services : current.services,
         catalog: remoteCatalog.length ? remoteCatalog : current.catalog,
       }));
