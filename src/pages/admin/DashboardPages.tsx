@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Boxes, CheckCircle2, ClipboardCheck, FileText, RefreshCw, Users, Wallet } from 'lucide-react';
 import { formatMoney } from '../../app/workspace';
-import { AppFrame, PageHeading, StatCard } from '../../app/layout';
+import { AppFrame, StatCard } from '../../app/layout';
 import { workspaceNavigation, workspaceNavGroups, canViewNavigationItem } from '../../app/navigation';
 import { ChangeLogPanel } from '../../components/ChangeLog';
 import { AnimatedList, SpotlightLayer, clearSpotlight, updateSpotlight } from '../../components/ui/MagicComponents';
@@ -10,6 +10,7 @@ import { LeadsTable } from './CRMPage';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import { Skeleton } from '../../components/ui/Skeleton';
+import './unified-home.css';
 
 const metricCards = [
   { module: 'sales', to: '/operaciones/pos', key: 'sales_today_total', label: 'Ventas de hoy', note: 'Total confirmado hoy', icon: Wallet, tone: 'blue', money: true },
@@ -123,17 +124,27 @@ export function UnifiedHome() {
     : '';
 
   return <AppFrame area="operations">
-    <PageHeading eyebrow="PANEL DE TRABAJO" title="Todo el equipo, en un solo lugar." description="Revisa lo que requiere atención y abre tus herramientas de trabajo." action={primaryAction && <Link className="button button-dark vc-shimmer-button" to={primaryAction.to}>Abrir {primaryAction.label} <ArrowUpRight size={16}/></Link>}/>
-    {(loading || updatedAt) && <div className="unified-summary-meta" role="status" aria-live="polite"><span className={`status-dot${error ? ' is-warning' : ''}`}/>{loading ? 'Actualizando información…' : `Información actualizada a las ${updatedAt}`}</div>}
+    <div className="unified-dashboard">
+      <header className="unified-dashboard-hero">
+        <div className="unified-dashboard-hero-copy">
+          <div className="unified-dashboard-eyebrow"><span className="unified-dashboard-mark"><ClipboardCheck size={17} aria-hidden="true"/></span><span>PANEL DE TRABAJO</span></div>
+          <h1>Todo el equipo, en un solo lugar.</h1>
+          <p>Revisa lo que requiere atención y abre tus herramientas de trabajo.</p>
+        </div>
+        <div className="unified-dashboard-hero-actions">
+          {(loading || updatedAt) && <div className="unified-summary-meta" role="status" aria-live="polite"><span className={`status-dot${error ? ' is-warning' : ''}`}/>{loading ? 'Actualizando información…' : `Información actualizada a las ${updatedAt}`}</div>}
+          {primaryAction && <Link className="unified-dashboard-action" to={primaryAction.to}>Abrir {primaryAction.label} <ArrowUpRight size={17} aria-hidden="true"/></Link>}
+        </div>
+      </header>
     {error && <div className="unified-summary-error" role="alert"><span>{error}</span><button type="button" className="button button-outline" onClick={() => setRefreshKey((value) => value + 1)} disabled={loading}><RefreshCw size={14}/> {loading ? 'Actualizando…' : 'Reintentar'}</button></div>}
-    {visibleMetrics.length > 0 && <div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, to, key, label, note, noteKey, icon, tone, money }) => {
+    {visibleMetrics.length > 0 && <section className="unified-overview" aria-label="Resumen operativo"><div className="unified-overview-heading"><span className="eyebrow">RESUMEN OPERATIVO</span></div><div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, to, key, label, note, noteKey, icon, tone, money }) => {
       const value = metricValue(summary, key, loading, error);
       const displayValue = loading ? <Skeleton className="dashboard-metric-skeleton"/> : money && typeof value === 'number' ? formatMoney(value) : value;
       const detail = noteKey && !loading && !error && summary?.[noteKey] != null
         ? `${summary[noteKey]} en nivel mínimo`
         : note;
       return <Link key={module} className="unified-metric-link" to={to}><StatCard label={label} value={displayValue} icon={icon} note={detail} tone={tone}/><span className="unified-metric-open" aria-hidden="true"><ArrowUpRight size={16}/></span><span className="sr-only">Abrir módulo: {label}</span></Link>;
-    })}</div>}
+    })}</div></section>}
     {canViewSummary && (hasPermission('crm', 'view') || hasPermission('inventory', 'view')) ? <section className="panel unified-priority-panel" aria-labelledby="unified-priority-heading">
       <div className="panel-heading"><div><span className="eyebrow">SIGUIENTE PASO</span><h2 id="unified-priority-heading">Pendientes que puedes atender</h2></div>{loading ? <span className="unified-priority-state">Actualizando</span> : error ? <span className="unified-priority-state">Sin actualizar</span> : priorities.length ? <span className="unified-priority-state has-items">{priorities.length} {priorities.length === 1 ? 'pendiente' : 'pendientes'}</span> : priorityDataComplete ? <span className="unified-priority-state is-clear"><CheckCircle2 size={15}/> Sin alertas</span> : <span className="unified-priority-state">Sin datos</span>}</div>
       {error ? <p className="unified-priority-empty">No se muestran pendientes hasta confirmar que la información está actualizada.</p> : loading ? <div className="unified-priority-loading" role="status"><span className="sr-only">Consultando los registros autorizados para tu perfil</span><Skeleton className="dashboard-priority-skeleton"/><Skeleton className="dashboard-priority-skeleton is-short"/></div> : priorities.length ? <div className="unified-priority-list">{priorities.map(({ key, to, icon: Icon, title, detail, count }) => <Link className="unified-priority-item" to={to} key={key}><span className={`unified-priority-icon ${key}`}><Icon size={18}/></span><span className="unified-priority-copy"><b>{title}</b><small>{detail}</small></span><span className="unified-priority-count">{count}</span><ArrowUpRight size={16} aria-hidden="true"/></Link>)}</div> : priorityDataComplete ? <p className="unified-priority-empty">No se detectan pendientes en los módulos visibles para tu perfil.</p> : <p className="unified-priority-empty">No se recibieron datos suficientes para confirmar si hay pendientes.</p>}
@@ -149,5 +160,6 @@ export function UnifiedHome() {
     </section>
     {hasPermission('crm', 'view') && <section className="panel unified-recent-panel"><div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO COMERCIAL</span><h2>Solicitudes recientes</h2></div><Link className="text-link" to="/operaciones/crm">Abrir CRM <ArrowUpRight size={14}/></Link></div><LeadsTable/></section>}
     {hasPermission('team', 'view') && <ChangeLogPanel area="operations" compact/>}
+    </div>
   </AppFrame>;
 }

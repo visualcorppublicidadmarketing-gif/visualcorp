@@ -9,11 +9,136 @@ export type PublicServiceFamily = {
 
 export const publicServiceFamilies: PublicServiceFamily[] = [
   { id: 'impresion', name: 'Impresión y papelería', description: 'Piezas gráficas para comunicar tu marca.', mark: '01' },
-  { id: 'gran-formato', name: 'Publicidad de gran formato', description: 'Soluciones para que tu mensaje se vea.', mark: '02' },
+  { id: 'gran-formato', name: 'Publicidad de gran formato', description: 'Piezas visuales para comunicar en distintos espacios.', mark: '02' },
   { id: 'rotulos', name: 'Rótulos y fachadas', description: 'Identidad visible para espacios y negocios.', mark: '03' },
   { id: 'textil', name: 'Textil y promocionales', description: 'Piezas personalizadas para marcas y equipos.', mark: '04' },
-  { id: 'corte', name: 'Corte, grabado y señalética', description: 'Piezas gráficas y señalización a medida.', mark: '05' },
+  { id: 'corte', name: 'Piezas y señalética personalizada', description: 'Referencias para piezas y señalización a medida.', mark: '05' },
   { id: 'eventos', name: 'Exhibición y eventos', description: 'Material visual para presentar ideas y proyectos.', mark: '06' },
+];
+
+export const serviceDeliverableTags: Record<PublicServiceId, [string, string, string, string]> = {
+  impresion: ['Papelería comercial', 'Tarjetas y carpetas', 'Stickers y etiquetas', 'Folletería y catálogos'],
+  'gran-formato': ['Lonas y piezas de gran formato', 'Gráfica para superficies', 'Banners y estructuras visuales', 'Gráfica para vitrinas'],
+  rotulos: ['Rótulos para espacios', 'Letras con volumen', 'Identidad para fachadas', 'Piezas con iluminación por consultar'],
+  textil: ['Prendas personalizadas', 'Artículos para equipos', 'Gorras y accesorios por consultar', 'Artículos promocionales'],
+  corte: ['Piezas con formas especiales', 'Señalética informativa', 'Piezas personalizadas', 'Placas e identificadores'],
+  eventos: ['Backings y fondos', 'Stands y exhibición', 'Displays publicitarios', 'Material para activaciones'],
+};
+
+export type CreativePillar = {
+  id: 'diseno-marca' | 'publicidad-espacios' | 'marketing-activaciones';
+  mark: string;
+  badge: string;
+  title: string;
+  summary: string;
+  capabilities: [string, string, string];
+  recommendedServiceId: PublicServiceId;
+  ctaLabel: string;
+};
+
+export const creativePillars: CreativePillar[] = [
+  {
+    id: 'diseno-marca',
+    mark: '01',
+    badge: 'DISEÑO GRÁFICO & MARCA',
+    title: 'Diseño que ordena cómo se ve y se recuerda tu negocio.',
+    summary: 'Desde la idea visual y la composición gráfica hasta la preparación técnica del archivo para que tu marca mantenga coherencia en papel, redes o gran formato.',
+    capabilities: [
+      'Desarrollo y adaptación de artes gráficos para campañas, empaques y puntos de venta',
+      'Cuidado de jerarquía visual, color, proporción y lectura a corta o larga distancia',
+      'Adaptación de artes según el formato y la técnica que se confirme para el proyecto',
+    ],
+    recommendedServiceId: 'impresion',
+    ctaLabel: 'Cotizar diseño e impresión',
+  },
+  {
+    id: 'publicidad-espacios',
+    mark: '02',
+    badge: 'PUBLICIDAD EXTERIOR & ESPACIOS',
+    title: 'Presencia física para fachadas, vitrinas y puntos de atención.',
+    summary: 'Convertimos tu local o superficie comercial en un punto visible y ordenado mediante rótulos, estructuras, impresión de gran formato y señalización.',
+    capabilities: [
+      'Rótulos, cajas de luz, letras corpóreas e identificación frontal de negocios',
+      'Gráfica para superficies, vitrinas o paredes con opciones según cada proyecto',
+      'Señalización y piezas visuales para espacios, con materiales y montaje por confirmar',
+    ],
+    recommendedServiceId: 'rotulos',
+    ctaLabel: 'Cotizar rótulos o gran formato',
+  },
+  {
+    id: 'marketing-activaciones',
+    mark: '03',
+    badge: 'MARKETING PROMOCIONAL & EVENTOS',
+    title: 'Piezas personalizadas y exhibición para impulsar tus campañas.',
+    summary: 'Acompañamos lanzamientos, ferias, promociones y equipos de trabajo con textil personalizado, artículos promocionales y apoyos visuales para eventos.',
+    capabilities: [
+      'Camisetas, uniformes y artículos promocionales personalizados para equipos o clientes',
+      'Fondos de prensa, displays, portapendones y apoyos visuales para ferias o stands',
+      'Conjuntos gráficos coordinados para temporadas comerciales, sorteos y activaciones',
+    ],
+    recommendedServiceId: 'eventos',
+    ctaLabel: 'Cotizar campaña o promocionales',
+  },
+];
+
+export type ProjectOrientatorGoal = {
+  id: string;
+  label: string;
+  subtitle: string;
+  serviceId: PublicServiceId;
+  secondaryServiceId: PublicServiceId;
+  why: string;
+};
+
+export const projectOrientatorGoals: ProjectOrientatorGoal[] = [
+  {
+    id: 'fachada-local',
+    label: 'Identificar o renovar mi local',
+    subtitle: 'Rótulos, cajas de luz, letras corpóreas y fachada',
+    serviceId: 'rotulos',
+    secondaryServiceId: 'gran-formato',
+    why: 'Ideal cuando abres un punto de atención o buscas que tu negocio destaque con claridad desde el exterior.',
+  },
+  {
+    id: 'campana-gran-formato',
+    label: 'Visibilidad en gran formato',
+    subtitle: 'Piezas de gran formato y gráfica para espacios',
+    serviceId: 'gran-formato',
+    secondaryServiceId: 'impresion',
+    why: 'Pensado para comunicar promociones a distancia, vestir paredes o aprovechar vitrinas comerciales.',
+  },
+  {
+    id: 'imagen-impresa',
+    label: 'Papelería, stickers e impresos',
+    subtitle: 'Tarjetas, catálogos, etiquetas y material comercial',
+    serviceId: 'impresion',
+    secondaryServiceId: 'corte',
+    why: 'Para presentar tu marca en mano del cliente, etiquetar productos o respaldar la atención comercial.',
+  },
+  {
+    id: 'equipo-promocionales',
+    label: 'Uniformes y promocionales',
+    subtitle: 'Camisetas, gorras, tazas y obsequios corporativos',
+    serviceId: 'textil',
+    secondaryServiceId: 'eventos',
+    why: 'Une la imagen de tu equipo de trabajo o entrega artículos personalizados en campañas y activaciones.',
+  },
+  {
+    id: 'senaletica-corte',
+    label: 'Señalética y piezas personalizadas',
+    subtitle: 'Placas, formas y elementos para espacios',
+    serviceId: 'corte',
+    secondaryServiceId: 'rotulos',
+    why: 'Cuando quieres consultar por una pieza con forma propia, señalización de recorridos o un detalle para tu espacio.',
+  },
+  {
+    id: 'feria-evento',
+    label: 'Feria, stand o activación',
+    subtitle: 'Fondos, displays, exhibidores y presentación visual',
+    serviceId: 'eventos',
+    secondaryServiceId: 'textil',
+    why: 'Reúne varias piezas gráficas bajo un mismo concepto para presentar tu marca en un evento o actividad.',
+  },
 ];
 
 // Dirección y canales confirmados por Visual Corp el 8 de octubre de 2026.
@@ -73,7 +198,7 @@ export const serviceDetailContent: Record<PublicServiceId, {
   corte: {
     headline: 'Dale forma a cada detalle.',
     introduction: 'El corte, el grabado y la señalética ayudan a definir formas y comunicar en un espacio. El diseño, las medidas y el uso previsto sirven para orientar cada solicitud.',
-    situations: ['Identificar espacios o indicar recorridos', 'Crear una pieza personalizada para un negocio', 'Explorar un corte o grabado para tu idea'],
+    situations: ['Identificar espacios o indicar recorridos', 'Crear una pieza personalizada para un negocio', 'Consultar por una pieza con forma propia'],
     checklist: ['Una imagen, dibujo o archivo de la forma deseada', 'Las dimensiones y la cantidad aproximada', 'El material, si ya lo tienes definido'],
     preparation: 'Si no conoces el material, describe dónde irá y qué resultado esperas. Revisaremos contigo el alcance y las alternativas disponibles.',
     relatedServices: ['rotulos', 'gran-formato', 'impresion'],

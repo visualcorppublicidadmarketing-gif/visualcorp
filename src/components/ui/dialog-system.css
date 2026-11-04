@@ -1,36 +1,14 @@
 /* ==========================================================================
    Visual Corp Suite — Sistema de Alertas y Diálogo (Dialog & AlertDialog)
    Inspirado en Magic UI, shadcn/ui, HeroUI y patrones WAI-ARIA APG.
-   Compatible con modo oscuro, modo claro ([data-vc-theme='light']) y móvil.
+   Compatible con modo claro (predeterminado en operaciones), modo oscuro
+   ([data-theme='dark'] y sitio público oscuro) y móvil.
    ========================================================================== */
 
-:root {
-  --vc-dlg-bg: rgba(14, 16, 24, 0.96);
-  --vc-dlg-surface: rgba(22, 25, 38, 0.92);
-  --vc-dlg-surface-elevated: rgba(30, 34, 50, 0.95);
-  --vc-dlg-border: rgba(255, 255, 255, 0.12);
-  --vc-dlg-border-strong: rgba(255, 255, 255, 0.2);
-  --vc-dlg-text: #f8fafc;
-  --vc-dlg-muted: #94a3b8;
-  --vc-dlg-subtle: #64748b;
-  --vc-dlg-backdrop: rgba(6, 8, 15, 0.72);
-  --vc-dlg-shadow: 0 28px 72px -12px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.08);
-  --vc-dlg-input-bg: rgba(9, 11, 18, 0.85);
-  --vc-dlg-input-border: rgba(255, 255, 255, 0.16);
-  --vc-dlg-brand: #f97316;
-  --vc-dlg-brand-soft: rgba(249, 115, 22, 0.14);
-  --vc-dlg-info: #38bdf8;
-  --vc-dlg-info-soft: rgba(56, 189, 248, 0.14);
-  --vc-dlg-success: #22c55e;
-  --vc-dlg-success-soft: rgba(34, 197, 94, 0.14);
-  --vc-dlg-warning: #f59e0b;
-  --vc-dlg-warning-soft: rgba(245, 158, 11, 0.15);
-  --vc-dlg-danger: #ef4444;
-  --vc-dlg-danger-soft: rgba(239, 68, 68, 0.15);
-}
-
+:root,
 [data-vc-theme='light'],
-.vc-dialog-overlay.theme-light {
+.vc-dialog-overlay.theme-light,
+.vc-dialog.theme-light {
   --vc-dlg-bg: #ffffff;
   --vc-dlg-surface: #f8fafc;
   --vc-dlg-surface-elevated: #f1f5f9;
@@ -53,6 +31,37 @@
   --vc-dlg-warning-soft: rgba(217, 119, 6, 0.11);
   --vc-dlg-danger: #dc2626;
   --vc-dlg-danger-soft: rgba(220, 38, 38, 0.1);
+}
+
+[data-vc-theme='dark'],
+html[data-theme='dark']:not(:has(.public-site)) .vc-dialog-overlay,
+html[data-theme='dark']:not(:has(.public-site)) .vc-dialog,
+html:has(.public-site):not([data-public-theme='light']) .vc-dialog-overlay,
+html:has(.public-site):not([data-public-theme='light']) .vc-dialog,
+.vc-dialog-overlay.theme-dark,
+.vc-dialog.theme-dark {
+  --vc-dlg-bg: #0e1018;
+  --vc-dlg-surface: #161926;
+  --vc-dlg-surface-elevated: #1e2232;
+  --vc-dlg-border: rgba(255, 255, 255, 0.12);
+  --vc-dlg-border-strong: rgba(255, 255, 255, 0.2);
+  --vc-dlg-text: #f8fafc;
+  --vc-dlg-muted: #94a3b8;
+  --vc-dlg-subtle: #64748b;
+  --vc-dlg-backdrop: rgba(6, 8, 15, 0.72);
+  --vc-dlg-shadow: 0 28px 72px -12px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --vc-dlg-input-bg: rgba(9, 11, 18, 0.85);
+  --vc-dlg-input-border: rgba(255, 255, 255, 0.16);
+  --vc-dlg-brand: #f97316;
+  --vc-dlg-brand-soft: rgba(249, 115, 22, 0.14);
+  --vc-dlg-info: #38bdf8;
+  --vc-dlg-info-soft: rgba(56, 189, 248, 0.14);
+  --vc-dlg-success: #22c55e;
+  --vc-dlg-success-soft: rgba(34, 197, 94, 0.14);
+  --vc-dlg-warning: #f59e0b;
+  --vc-dlg-warning-soft: rgba(245, 158, 11, 0.15);
+  --vc-dlg-danger: #ef4444;
+  --vc-dlg-danger-soft: rgba(239, 68, 68, 0.15);
 }
 
 /* Backdrop & positioning */
@@ -131,8 +140,8 @@
 
 /* Tone accents */
 .vc-dialog.tone-default {
-  --vc-tone-accent: #6366f1;
-  --vc-tone-soft: rgba(99, 102, 241, 0.12);
+  --vc-tone-accent: #7c3aed;
+  --vc-tone-soft: rgba(124, 58, 237, 0.11);
 }
 
 .vc-dialog.tone-brand {
@@ -310,7 +319,7 @@
   gap: 0.9rem;
   padding: 1.25rem 1.35rem 1rem;
   border-bottom: 1px solid var(--vc-dlg-border);
-  background: linear-gradient(180deg, var(--vc-dlg-surface) 0%, transparent 100%);
+  background: linear-gradient(180deg, var(--vc-dlg-surface) 0%, var(--vc-dlg-bg) 100%);
 }
 
 .vc-dialog-header-main {
@@ -392,6 +401,7 @@
 .vc-dialog-header-actions {
   display: flex;
   align-items: center;
+  align-self: flex-start;
   gap: 0.4rem;
   flex-shrink: 0;
 }
@@ -431,6 +441,8 @@
 .ok-dialog-content {
   position: relative;
   z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 1.2rem 1.35rem;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -485,8 +497,9 @@
   margin-left: auto;
 }
 
-/* Dialog buttons */
-.vc-dlg-btn {
+/* Dialog buttons (supports both .vc-dlg-btn and .vc-dialog-btn) */
+.vc-dlg-btn,
+.vc-dialog-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -503,55 +516,66 @@
   text-decoration: none;
 }
 
-.vc-dlg-btn:focus-visible {
+.vc-dlg-btn:focus-visible,
+.vc-dialog-btn:focus-visible {
   outline: 2px solid var(--vc-tone-accent);
   outline-offset: 2px;
 }
 
-.vc-dlg-btn:disabled {
+.vc-dlg-btn:disabled,
+.vc-dialog-btn:disabled {
   opacity: 0.52;
   cursor: not-allowed;
 }
 
-.vc-dlg-btn.variant-outline {
+.vc-dlg-btn.variant-outline,
+.vc-dialog-btn.vc-dialog-btn-outline {
   background: var(--vc-dlg-bg);
   border-color: var(--vc-dlg-border-strong);
   color: var(--vc-dlg-text);
 }
 
-.vc-dlg-btn.variant-outline:hover:not(:disabled) {
+.vc-dlg-btn.variant-outline:hover:not(:disabled),
+.vc-dialog-btn.vc-dialog-btn-outline:hover:not(:disabled) {
   background: var(--vc-dlg-surface-elevated);
 }
 
-.vc-dlg-btn.variant-ghost {
+.vc-dlg-btn.variant-ghost,
+.vc-dialog-btn.vc-dialog-btn-ghost {
   background: transparent;
+  border-color: var(--vc-dlg-border);
   color: var(--vc-dlg-muted);
 }
 
-.vc-dlg-btn.variant-ghost:hover:not(:disabled) {
+.vc-dlg-btn.variant-ghost:hover:not(:disabled),
+.vc-dialog-btn.vc-dialog-btn-ghost:hover:not(:disabled) {
   background: var(--vc-dlg-surface-elevated);
   color: var(--vc-dlg-text);
 }
 
-.vc-dlg-btn.variant-primary {
+.vc-dlg-btn.variant-primary,
+.vc-dialog-btn.vc-dialog-btn-primary {
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.14);
   box-shadow: 0 10px 22px -8px rgba(234, 88, 12, 0.55);
 }
 
-.vc-dlg-btn.variant-primary:hover:not(:disabled) {
+.vc-dlg-btn.variant-primary:hover:not(:disabled),
+.vc-dialog-btn.vc-dialog-btn-primary:hover:not(:disabled) {
   filter: brightness(1.06);
 }
 
-.vc-dlg-btn.variant-danger {
+.vc-dlg-btn.variant-danger,
+.vc-dialog-btn.vc-dialog-btn-danger {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.16);
   box-shadow: 0 10px 22px -8px rgba(220, 38, 38, 0.55);
 }
 
-.vc-dlg-btn.variant-danger:hover:not(:disabled) {
+.vc-dlg-btn.variant-danger:hover:not(:disabled),
+.vc-dialog-btn.vc-dialog-btn-danger:hover:not(:disabled) {
   filter: brightness(1.06);
 }
 
@@ -626,7 +650,7 @@
 .vc-dialog-consequences {
   padding: 0.85rem 1rem;
   border-radius: 0.85rem;
-  background: color-mix(in srgb, var(--vc-tone-soft) 55%, var(--vc-dlg-surface));
+  background: color-mix(in srgb, var(--vc-tone-accent) 8%, var(--vc-dlg-surface));
   border: 1px solid color-mix(in srgb, var(--vc-tone-accent) 26%, var(--vc-dlg-border));
   display: flex;
   flex-direction: column;
@@ -677,6 +701,7 @@
   border-radius: 0.82rem;
   border: 1px solid var(--vc-dlg-border);
   background: var(--vc-dlg-surface);
+  color: var(--vc-dlg-text);
   font-size: 0.85rem;
   line-height: 1.45;
 }
@@ -688,31 +713,31 @@
 
 .vc-dialog-callout.tone-info {
   border-color: color-mix(in srgb, var(--vc-dlg-info) 35%, transparent);
-  background: var(--vc-dlg-info-soft);
+  background: color-mix(in srgb, var(--vc-dlg-info) 9%, var(--vc-dlg-surface));
 }
 .vc-dialog-callout.tone-info > svg { color: var(--vc-dlg-info); }
 
 .vc-dialog-callout.tone-warning {
   border-color: color-mix(in srgb, var(--vc-dlg-warning) 35%, transparent);
-  background: var(--vc-dlg-warning-soft);
+  background: color-mix(in srgb, var(--vc-dlg-warning) 9%, var(--vc-dlg-surface));
 }
 .vc-dialog-callout.tone-warning > svg { color: var(--vc-dlg-warning); }
 
 .vc-dialog-callout.tone-danger {
   border-color: color-mix(in srgb, var(--vc-dlg-danger) 38%, transparent);
-  background: var(--vc-dlg-danger-soft);
+  background: color-mix(in srgb, var(--vc-dlg-danger) 9%, var(--vc-dlg-surface));
 }
 .vc-dialog-callout.tone-danger > svg { color: var(--vc-dlg-danger); }
 
 .vc-dialog-callout.tone-success {
   border-color: color-mix(in srgb, var(--vc-dlg-success) 35%, transparent);
-  background: var(--vc-dlg-success-soft);
+  background: color-mix(in srgb, var(--vc-dlg-success) 9%, var(--vc-dlg-surface));
 }
 .vc-dialog-callout.tone-success > svg { color: var(--vc-dlg-success); }
 
 .vc-dialog-callout.tone-brand {
   border-color: color-mix(in srgb, var(--vc-dlg-brand) 35%, transparent);
-  background: var(--vc-dlg-brand-soft);
+  background: color-mix(in srgb, var(--vc-dlg-brand) 9%, var(--vc-dlg-surface));
 }
 .vc-dialog-callout.tone-brand > svg { color: var(--vc-dlg-brand); }
 
@@ -989,7 +1014,8 @@
     width: 100%;
   }
 
-  .vc-dialog-footer-actions > .vc-dlg-btn {
+  .vc-dialog-footer-actions > .vc-dlg-btn,
+  .vc-dialog-footer-actions > .vc-dialog-btn {
     flex: 1 1 auto;
   }
 }

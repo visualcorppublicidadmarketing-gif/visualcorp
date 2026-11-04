@@ -1,0 +1,1147 @@
+/* ==========================================================================
+   Soluciones, Galería Interactiva y Tiras Panorámicas — Visual Corp Suite
+   Soporte nativo para Modo Oscuro (default) y Modo Claro (data-public-theme="light")
+   ========================================================================== */
+
+.vc-sol-section {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: clamp(64px, 7vw, 104px) clamp(22px, 5.5vw, 84px);
+}
+
+.vc-sol-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 28px;
+  margin-bottom: 38px;
+}
+
+.vc-sol-section-header h2,
+.vc-sol-benefits-header h2 {
+  margin: 12px 0 0;
+  font-family: BebasKai, VisualCorpDisplay, 'Arial Narrow', sans-serif;
+  font-size: clamp(42px, 5vw, 68px);
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.vc-sol-section-header h2 span {
+  background: linear-gradient(105deg, #54caff 8%, #f288cb 58%, #ffda78);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.vc-sol-header-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+  max-width: 460px;
+}
+
+.vc-sol-header-controls p,
+.vc-sol-gallery-desc {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--vc-public-muted, #a7a2b8);
+}
+
+.vc-sol-gallery-desc {
+  margin-top: 10px;
+  max-width: 580px;
+}
+
+.vc-sol-gallery-note {
+  margin: 10px 0 0;
+  max-width: 640px;
+  color: var(--vc-public-muted, #a7a2b8);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* Conmutador de series de referencias visuales. */
+.vc-sol-series-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.vc-sol-series-switch button {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.vc-sol-series-switch button.is-active {
+  background: linear-gradient(135deg, #e5007e, #9b26b6);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(229, 0, 126, 0.28);
+}
+
+.vc-sol-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  border: 1px solid rgba(242, 136, 203, 0.4);
+  background: rgba(229, 0, 126, 0.14);
+  color: #f9d5ec;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.vc-sol-toggle-btn:hover {
+  transform: translateY(-2px);
+  border-color: #f288cb;
+  background: rgba(229, 0, 126, 0.24);
+}
+
+/* ==========================================================================
+   1. Matriz Local · Oficina · Vehículo · Eventos/BTL
+   ========================================================================== */
+.vc-sol-env-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.vc-sol-env-grid.cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vc-sol-env-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+.vc-sol-env-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(242, 136, 203, 0.48);
+  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.34);
+}
+
+.vc-sol-env-media {
+  position: relative;
+  height: 215px;
+  background: radial-gradient(circle at 50% 40%, rgba(229, 0, 126, 0.2), rgba(14, 16, 24, 0.92));
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vc-sol-env-media > img:first-child {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 16px;
+  transition: transform 0.4s ease;
+}
+
+.vc-sol-env-card:hover .vc-sol-env-media > img:first-child {
+  transform: scale(1.06);
+}
+
+.vc-sol-env-media-floating {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(15, 16, 24, 0.86);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.vc-sol-env-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(12, 13, 20, 0.82);
+  color: #f6e7f1;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(8px);
+}
+
+.vc-sol-env-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 22px 22px 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.vc-sol-env-body h3 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.vc-sol-env-body > p {
+  margin: 7px 0 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--vc-public-muted, #a7a2b8);
+}
+
+.vc-sol-env-checklist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.vc-sol-env-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 13px;
+  line-height: 1.42;
+}
+
+.vc-sol-env-checklist li svg {
+  flex: none;
+  margin-top: 2px;
+  color: #54caff;
+}
+
+.vc-sol-env-checklist li a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.18s;
+}
+
+.vc-sol-env-checklist li a:hover {
+  color: #f288cb;
+  text-decoration: underline;
+}
+
+.vc-sol-env-footer {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vc-sol-env-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 11px;
+  border: 1px solid rgba(242, 136, 203, 0.34);
+  background: rgba(229, 0, 126, 0.12);
+  color: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.vc-sol-env-cta:hover {
+  background: rgba(229, 0, 126, 0.25);
+  border-color: #f288cb;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   2. 4 Pilares de Valor Estratégico (Visibilidad, Diferenciación, Durabilidad, Cultura)
+   ========================================================================== */
+.vc-sol-benefits-header {
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto 40px;
+}
+
+.vc-sol-benefits-header p {
+  margin: 14px auto 0;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--vc-public-muted, #a7a2b8);
+}
+
+.vc-sol-benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.vc-sol-benefit-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 24px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.25s ease, border-color 0.25s ease;
+}
+
+.vc-sol-benefit-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(84, 202, 255, 0.45);
+}
+
+.vc-sol-benefit-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.vc-sol-benefit-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  border: 1px solid rgba(242, 136, 203, 0.32);
+  background: linear-gradient(135deg, rgba(229, 0, 126, 0.2), rgba(84, 202, 255, 0.14));
+  color: #f49fd3;
+}
+
+.vc-sol-benefit-num {
+  font-family: BebasKai, VisualCorpDisplay, sans-serif;
+  font-size: 40px;
+  line-height: 1;
+  opacity: 0.2;
+}
+
+.vc-sol-benefit-card h3 {
+  margin: 0 0 10px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.vc-sol-benefit-card p {
+  margin: 0;
+  flex: 1;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--vc-public-muted, #a7a2b8);
+}
+
+.vc-sol-benefit-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #7cd4fc;
+}
+
+/* ==========================================================================
+   3. Tiras Verticales Panorámicas (Estilo Creative Group + Acordeón Interactivo)
+   ========================================================================== */
+.vc-sol-strips-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+}
+
+.vc-sol-strip-block {
+  padding: 28px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+}
+
+.vc-sol-strip-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.vc-sol-strip-eyebrow {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #f288cb;
+  text-transform: uppercase;
+}
+
+.vc-sol-strip-head h3 {
+  margin: 6px 0 6px;
+  font-family: BebasKai, VisualCorpDisplay, sans-serif;
+  font-size: clamp(30px, 3.6vw, 44px);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.vc-sol-strip-head p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--vc-public-muted, #a7a2b8);
+}
+
+.vc-sol-strip-accordion {
+  display: flex;
+  gap: 12px;
+  height: 410px;
+}
+
+.vc-sol-slice {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: radial-gradient(circle at 50% 35%, rgba(84, 202, 255, 0.16), rgba(11, 12, 18, 0.95));
+  overflow: hidden;
+  cursor: pointer;
+  transition: flex 0.42s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.vc-sol-slice.is-expanded {
+  flex: 1.95;
+  border-color: #f288cb;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.42);
+}
+
+.vc-sol-slice img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 18px 14px 86px;
+  transition: transform 0.42s ease;
+}
+
+.vc-sol-slice.is-expanded img {
+  transform: scale(1.05);
+}
+
+.vc-sol-slice-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(10, 11, 18, 0.15) 0%, transparent 40%, rgba(10, 11, 18, 0.94) 100%);
+}
+
+.vc-sol-slice-tag {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(12, 13, 20, 0.78);
+  color: #f5d0e8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+}
+
+.vc-sol-slice-content h4 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.vc-sol-slice-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #f8f6fa;
+  color: #15141c;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-decoration: none;
+  opacity: 0.92;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.vc-sol-slice-cta:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   4. Galería Interactiva Filtrable (Estilo MarketVision /trabajos/ mejorado)
+   ========================================================================== */
+.vc-sol-gallery-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.vc-sol-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(360px, 100%);
+  padding: 0 14px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.vc-sol-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.vc-sol-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 30px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.vc-sol-filter-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.vc-sol-filter-tab:hover {
+  border-color: rgba(242, 136, 203, 0.5);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.vc-sol-filter-tab.is-active {
+  border-color: #f288cb;
+  background: linear-gradient(135deg, rgba(229, 0, 126, 0.28), rgba(84, 202, 255, 0.18));
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(229, 0, 126, 0.22);
+}
+
+.vc-sol-filter-tab small {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vc-sol-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.vc-sol-piece-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.26s ease, border-color 0.26s ease, box-shadow 0.26s ease;
+}
+
+.vc-sol-piece-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(242, 136, 203, 0.48);
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.32);
+}
+
+.vc-sol-piece-image-wrap {
+  position: relative;
+  display: block;
+  height: 248px;
+  background: radial-gradient(circle at 50% 42%, rgba(229, 0, 126, 0.16), rgba(14, 16, 24, 0.9));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.vc-sol-piece-img-main,
+.vc-sol-piece-img-hover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 18px;
+  transition: opacity 0.35s ease, transform 0.4s ease;
+}
+
+.vc-sol-piece-img-hover {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .vc-sol-piece-card:hover .vc-sol-piece-img-main {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  .vc-sol-piece-card:hover .vc-sol-piece-img-hover {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.vc-sol-piece-env {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(12, 13, 20, 0.8);
+  color: #f3e8ef;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(6px);
+}
+
+.vc-sol-piece-real-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 2;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(67, 199, 154, 0.22);
+  border: 1px solid rgba(67, 199, 154, 0.5);
+  color: #9ef3d5;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.vc-sol-piece-quickbtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(15, 16, 24, 0.84);
+  color: #fff;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.vc-sol-piece-quickbtn:hover {
+  background: #e5007e;
+  border-color: #f288cb;
+}
+
+.vc-sol-piece-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.vc-sol-piece-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.vc-sol-piece-specs span {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.vc-sol-piece-body h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.vc-sol-piece-body h3 button,
+.vc-sol-piece-body h3 a {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.vc-sol-piece-body h3 button:hover,
+.vc-sol-piece-body h3 a:hover {
+  color: #f288cb;
+}
+
+.vc-sol-piece-body p {
+  margin: 8px 0 18px;
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--vc-public-muted, #a7a2b8);
+}
+
+.vc-sol-piece-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vc-sol-piece-detail-btn {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--vc-public-muted, #c8c3d6);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.vc-sol-piece-detail-btn:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.vc-sol-piece-quote-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e5007e, #9b26b6);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.vc-sol-piece-quote-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(229, 0, 126, 0.35);
+}
+
+/* Modal Lightbox de pieza */
+.vc-sol-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.vc-sol-modal-main-img {
+  height: 290px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: radial-gradient(circle at 50% 45%, rgba(229, 0, 126, 0.18), rgba(12, 13, 20, 0.94));
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.vc-sol-modal-main-img img {
+  max-width: 100%;
+  max-height: 255px;
+  object-fit: contain;
+}
+
+.vc-sol-modal-thumbs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.vc-sol-modal-thumbs button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vc-sol-modal-thumbs button.is-active {
+  border-color: #f288cb;
+  background: rgba(229, 0, 126, 0.18);
+}
+
+.vc-sol-modal-thumbs img {
+  width: 100%;
+  height: 52px;
+  object-fit: contain;
+}
+
+.vc-sol-modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.vc-sol-modal-desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.vc-sol-modal-specs,
+.vc-sol-modal-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.vc-sol-modal-specs strong,
+.vc-sol-modal-checklist strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.vc-sol-modal-checklist ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vc-sol-modal-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.vc-sol-modal-checklist li svg {
+  flex: none;
+  margin-top: 2px;
+  color: #54caff;
+}
+
+/* ==========================================================================
+   5. Banner de escenario en `/servicios/:slug` y Hero de `/soluciones`
+   ========================================================================== */
+.vc-service-env-banner {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 32px;
+  align-items: center;
+  padding: clamp(26px, 4vw, 44px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: radial-gradient(circle at 85% 25%, rgba(229, 0, 126, 0.22), transparent 52%),
+    linear-gradient(145deg, #161824, #0f1018);
+  color: #f6f5f8;
+}
+
+.vc-service-env-banner h3 {
+  margin: 12px 0 10px;
+  font-family: BebasKai, VisualCorpDisplay, sans-serif;
+  font-size: clamp(32px, 4vw, 50px);
+  font-weight: 400;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.vc-service-env-banner p {
+  margin: 0 0 18px;
+  color: #c5c1d4;
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+
+.vc-service-env-mini-list {
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+
+.vc-service-env-mini-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #ece9f5;
+}
+
+.vc-service-env-mini-list li svg {
+  color: #54caff;
+  flex: none;
+}
+
+.vc-service-env-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.vc-service-env-banner-images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.vc-service-env-banner-images img {
+  width: 100%;
+  height: 230px;
+  object-fit: contain;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.vc-sol-hero-grid {
+  max-width: 1320px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  gap: 36px;
+  align-items: center;
+}
+
+.vc-sol-hero h1 em {
+  font-style: normal;
+  background: linear-gradient(105deg, #54caff 8%, #f288cb 58%, #ffda78);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.vc-sol-hero-collage {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.vc-sol-hero-collage img {
+  width: 100%;
+  height: 185px;
+  object-fit: contain;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: radial-gradient(circle at 50% 35%, rgba(229, 0, 126, 0.2), rgba(15, 16, 25, 0.86));
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* ==========================================================================
+   Modo Claro (html[data-public-theme="light"])
+   ========================================================================== */
+html[data-public-theme='light'] .vc-sol-series-switch,
+html[data-public-theme='light'] .vc-sol-search,
+html[data-public-theme='light'] .vc-sol-filter-tab {
+  border-color: rgba(36, 32, 45, 0.16);
+  background: rgba(36, 32, 45, 0.04);
+  color: #221e2b;
+}
+
+html[data-public-theme='light'] .vc-sol-filter-tab.is-active {
+  color: #221e2b;
+  border-color: #a23e83;
+  background: linear-gradient(135deg, rgba(229, 0, 126, 0.15), rgba(84, 202, 255, 0.18));
+}
+
+html[data-public-theme='light'] .vc-sol-env-card,
+html[data-public-theme='light'] .vc-sol-benefit-card,
+html[data-public-theme='light'] .vc-sol-strip-block,
+html[data-public-theme='light'] .vc-sol-piece-card {
+  border-color: rgba(36, 32, 45, 0.12);
+  background: #ffffff;
+  color: #221e2b;
+  box-shadow: 0 12px 32px rgba(34, 24, 46, 0.06);
+}
+
+html[data-public-theme='light'] .vc-sol-env-media,
+html[data-public-theme='light'] .vc-sol-piece-image-wrap {
+  background: radial-gradient(circle at 50% 42%, rgba(229, 0, 126, 0.1), #f4eff8);
+  border-bottom-color: rgba(36, 32, 45, 0.09);
+}
+
+html[data-public-theme='light'] .vc-sol-header-controls p,
+html[data-public-theme='light'] .vc-sol-gallery-desc,
+html[data-public-theme='light'] .vc-sol-gallery-note,
+html[data-public-theme='light'] .vc-sol-env-body > p,
+html[data-public-theme='light'] .vc-sol-benefit-card p,
+html[data-public-theme='light'] .vc-sol-strip-head p,
+html[data-public-theme='light'] .vc-sol-piece-body p {
+  color: #5c566b;
+}
+
+html[data-public-theme='light'] .vc-sol-piece-specs span {
+  border-color: rgba(36, 32, 45, 0.14);
+  background: #f5f2f8;
+  color: #352f42;
+}
+
+html[data-public-theme='light'] .vc-sol-benefit-tag {
+  border-top-color: rgba(36, 32, 45, 0.1);
+  color: #15668d;
+}
+
+html[data-public-theme='light'] .vc-sol-piece-detail-btn {
+  color: #4b4359;
+}
+
+/* ==========================================================================
+   Responsividad (Tablet y Móvil)
+   ========================================================================== */
+@media (max-width: 1120px) {
+  .vc-sol-env-grid,
+  .vc-sol-env-grid.cols-3,
+  .vc-sol-benefits-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .vc-sol-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .vc-sol-strip-accordion {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    height: auto;
+  }
+  .vc-sol-slice {
+    height: 290px;
+  }
+  .vc-sol-hero-grid,
+  .vc-service-env-banner {
+    grid-template-columns: 1fr;
+  }
+  .vc-sol-header-controls,
+  .vc-sol-gallery-controls {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .vc-sol-env-grid,
+  .vc-sol-env-grid.cols-3,
+  .vc-sol-benefits-grid,
+  .vc-sol-cards-grid,
+  .vc-sol-modal-grid,
+  .vc-service-env-mini-list {
+    grid-template-columns: 1fr;
+  }
+  .vc-sol-strip-accordion {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .vc-sol-slice {
+    height: 240px;
+  }
+  .vc-sol-strip-block {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 460px) {
+  .vc-sol-strip-accordion,
+  .vc-sol-hero-collage,
+  .vc-service-env-banner-images {
+    grid-template-columns: 1fr;
+  }
+}

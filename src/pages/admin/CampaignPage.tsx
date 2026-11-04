@@ -25,16 +25,22 @@ import { isTerminalMarketingStatus, marketingDateKey } from './marketing/marketi
 import { WorkflowToolbar, WorkDetails, ReviewPanel, DateProposal, NonproductionSettings, BulkAssignment } from './marketing/MarketingWorkboard';
 import { CHECKLIST_STATES, DELIVERABLES, compareWork, isMonthlyPlan, isPublication, matchesQueue, publicationWarnings, type Assignee, type MarketingReview, type NonproductionDay, type WorkQueue, type RecordFilter } from './marketing/marketingWorkflow';
 import { saveMarketingPost } from './marketing/marketingWorkflowApi';
+import {
+  CampaignFields, CampaignPlanningSection, MarketingPlanningChooser, TaskFields,
+  type CampaignTaskDraft, type CampaignDraft, type MarketingCampaign,
+  type MarketingCampaignTask, type MarketingTaskRange, type PlanningKind,
+} from './marketing/MarketingPlanning';
 
 type Post = Record<string, any> & { id: string; title: string; status: string; scheduled_date: string; platform: string };
 type Asset = Record<string, any> & { id: string; filename: string; rel_path: string; section: string; is_available: boolean; storage_status?: string; retention_enabled?: boolean; retention_months?: number };
-type Section = 'overview' | 'calendar' | 'library' | 'strategy' | 'operations' | 'results';
-type WorkspaceData = { posts: Post[]; assets: Asset[]; postAssets: any[]; strategy: any[]; work: any[]; history: any[]; leads: any[]; sales: any[]; events: any[]; reviews: MarketingReview[]; days: NonproductionDay[]; assignees: Assignee[] };
+type Section = 'overview' | 'calendar' | 'campaigns' | 'library' | 'strategy' | 'operations' | 'results';
+type WorkspaceData = { posts: Post[]; assets: Asset[]; postAssets: any[]; campaigns: MarketingCampaign[]; campaignItems: MarketingCampaignTask[]; campaignAssets: any[]; campaignItemAssets: any[]; campaignEvents: any[]; strategy: any[]; work: any[]; history: any[]; leads: any[]; sales: any[]; events: any[]; reviews: MarketingReview[]; days: NonproductionDay[]; assignees: Assignee[] };
 
-const emptyData: WorkspaceData = { posts: [], assets: [], postAssets: [], strategy: [], work: [], history: [], leads: [], sales: [], events: [], reviews: [], days: [], assignees: [] };
+const emptyData: WorkspaceData = { posts: [], assets: [], postAssets: [], campaigns: [], campaignItems: [], campaignAssets: [], campaignItemAssets: [], campaignEvents: [], strategy: [], work: [], history: [], leads: [], sales: [], events: [], reviews: [], days: [], assignees: [] };
 const sections: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: 'overview', label: 'Resumen', icon: BarChart3 },
   { id: 'calendar', label: 'Calendario', icon: CalendarDays },
+  { id: 'campaigns', label: 'Campañas', icon: Megaphone },
   { id: 'library', label: 'Biblioteca', icon: Images },
   { id: 'strategy', label: 'Estrategia', icon: Target },
   { id: 'operations', label: 'Operación', icon: CheckCircle2 },
@@ -52,7 +58,9 @@ const checklistFields = [
   ['cover_status', 'Portada'], ['art_status', 'Arte'], ['caption_status', 'Copy'],
   ['video_status', 'Video'], ['voiceover_status', 'Voz'], ['tiktok_status', 'TikTok'],
 ] as const;
-const defaultDraft = (scheduledDate = ''): PublicationDraft => ({ title: '', content_line: '', platform: 'Instagram', format: 'Post', scheduled_date: scheduledDate, scheduled_time: '', owner: '', owner_user_id: '', record_kind: 'publication', blocked_reason: '', cover_status: 'Por confirmar', art_status: 'Por confirmar', caption_status: 'Por confirmar', video_status: 'Por confirmar', voiceover_status: 'Por confirmar', tiktok_status: 'Por confirmar', status: 'Por iniciar', caption: '', next_action: '', due_date: '', objective: '', audience: '', offer: '', call_in: '', callout: '', cta: '', cta_destination: '', external_url: '', hashtags: '', visual_direction: '', tags: '', calendar_color: '', design_ready: false, video_ready: false, canvas_width: '', canvas_height: '' });
+const defaultDraft = (scheduledDate = '', campaignId = ''): PublicationDraft => ({ title: '', content_line: '', platform: 'Instagram', format: 'Post', scheduled_date: scheduledDate, scheduled_time: '', campaign_id: campaignId, owner: '', owner_user_id: '', record_kind: 'publication', blocked_reason: '', cover_status: 'Por confirmar', art_status: 'Por confirmar', caption_status: 'Por confirmar', video_status: 'Por confirmar', voiceover_status: 'Por confirmar', tiktok_status: 'Por confirmar', status: 'Por iniciar', caption: '', next_action: '', due_date: '', objective: '', audience: '', offer: '', call_in: '', callout: '', cta: '', cta_destination: '', external_url: '', hashtags: '', visual_direction: '', tags: '', calendar_color: '', design_ready: false, video_ready: false, canvas_width: '', canvas_height: '' });
+const defaultCampaignDraft = (): CampaignDraft => ({ title: '', brief: '', start_date: '', end_date: '', owner: '', status: 'Planificada' });
+const defaultCampaignTaskDraft = (campaignId = ''): CampaignTaskDraft => ({ campaign_id: campaignId, activity_type: 'Decoración o ambientación', custom_activity_type: '', title: '', brief: '', start_date: '', due_date: '', start_time: '', end_time: '', owner: '', priority: 'Normal', status: 'Pendiente', next_action: '' });
 
 async function readAll(table: string, organizationId: string, orderBy?: string) {
   if (!supabase) return [];
@@ -67,6 +75,20 @@ async function readAll(table: string, organizationId: string, orderBy?: string) 
     if (!data || data.length < pageSize) return rows;
   }
 }
+
+const artworkMapForLinks = (assets: Asset[], links: any[], entityKey: 'campaign_id' | 'item_id') => {
+  const assetsById = new Map<string, Asset>(assets.map((asset) => [asset.id, asset]));
+  const result = new Map<string, MarketingArtworkAsset>();
+  const imageExtensions = new Set(['avif', 'bmp', 'gif', 'jpeg', 'jpg', 'png', 'svg', 'tif', 'tiff', 'webp']);
+  [...links].sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || ''))).forEach((link) => {
+    const entityId = link[entityKey];
+    const asset = assetsById.get(link.asset_id);
+    const extension = String(asset?.extension || asset?.filename?.split('.').pop() || '').replace(/^\./, '').toLowerCase();
+    if (!entityId || result.has(entityId) || !asset || !imageExtensions.has(extension) || asset.storage_status !== 'supabase_storage' || !asset.rel_path.startsWith('storage://marketing-assets/')) return;
+    result.set(entityId, asset);
+  });
+  return result;
+};
 
 export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations' }) {
   const { organizationId, hasPermission, user } = useAuth();
@@ -96,6 +118,15 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const [assetFilter, setAssetFilter] = useState('Todos los archivos');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [planningDialog, setPlanningDialog] = useState<'chooser' | 'campaign' | 'task' | null>(null);
+  const [campaignDraft, setCampaignDraft] = useState<CampaignDraft>(defaultCampaignDraft);
+  const [selectedCampaign, setSelectedCampaign] = useState<MarketingCampaign | null>(null);
+  const [campaignIsNew, setCampaignIsNew] = useState(false);
+  const [draftCampaignArtworkFile, setDraftCampaignArtworkFile] = useState<File | null>(null);
+  const [campaignTaskDraft, setCampaignTaskDraft] = useState<CampaignTaskDraft>(defaultCampaignTaskDraft);
+  const [selectedCampaignTask, setSelectedCampaignTask] = useState<MarketingCampaignTask | null>(null);
+  const [campaignTaskIsNew, setCampaignTaskIsNew] = useState(false);
+  const [draftCampaignTaskArtworkFile, setDraftCampaignTaskArtworkFile] = useState<File | null>(null);
   const editorDialogRef = React.useRef<HTMLElement | null>(null);
   const previousEditorFocusRef = React.useRef<HTMLElement | null>(null);
   const [draft, setDraft] = useState(defaultDraft);
@@ -114,10 +145,15 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     setLoading(true);
     setLoadError('');
     try {
-      const [posts, assets, postAssets, strategy, work, history, leads, sales, events, reviews, days, assigneeResult] = await Promise.all([
+      const [posts, assets, postAssets, campaigns, campaignItems, campaignAssets, campaignItemAssets, campaignEvents, strategy, work, history, leads, sales, events, reviews, days, assigneeResult] = await Promise.all([
         readAll('marketing_posts', organizationId, 'scheduled_date'),
         readAll('marketing_assets', organizationId, 'filename'),
         readAll('marketing_post_assets', organizationId, 'created_at'),
+        readAll('marketing_campaigns', organizationId, 'start_date'),
+        readAll('marketing_campaign_items', organizationId, 'due_date'),
+        readAll('marketing_campaign_assets', organizationId, 'created_at'),
+        readAll('marketing_campaign_item_assets', organizationId, 'created_at'),
+        readAll('marketing_campaign_events', organizationId, 'created_at'),
         readAll('marketing_strategy_items', organizationId, 'category'),
         readAll('marketing_work_items', organizationId, 'due_date'),
         readAll('marketing_work_item_history', organizationId, 'created_at'),
@@ -129,7 +165,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
         supabase.rpc('list_marketing_assignees', { p_organization_id: organizationId }),
       ]);
       if (assigneeResult.error) throw assigneeResult.error;
-      const workspace = { posts, assets, postAssets, strategy, work, history, leads, sales, events, reviews, days, assignees: assigneeResult.data || [] };
+      const workspace = { posts, assets, postAssets, campaigns, campaignItems, campaignAssets, campaignItemAssets, campaignEvents, strategy, work, history, leads, sales, events, reviews, days, assignees: assigneeResult.data || [] };
       setData(workspace);
       return workspace;
     } catch (error: any) {
@@ -146,13 +182,16 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     return () => window.clearTimeout(timeout);
   }, [notice]);
   useEffect(() => {
-    if (!modalOpen) {
+    if (!modalOpen && !planningDialog) {
       if (previousEditorFocusRef.current?.isConnected) previousEditorFocusRef.current.focus();
       return undefined;
     }
     const dialog = editorDialogRef.current;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { void closePostEditor(); return; }
+      if (event.key === 'Escape') {
+        if (planningDialog) { void closePlanningDialog(); return; }
+        void closePostEditor(); return;
+      }
       if (event.key !== 'Tab' || !dialog) return;
       const focusable = [...dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')].filter((element) => element.offsetParent !== null);
       if (!focusable.length) return;
@@ -166,7 +205,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       window.removeEventListener('keydown', closeOnEscape);
       if (previousEditorFocusRef.current?.isConnected) previousEditorFocusRef.current.focus();
     };
-  }, [modalOpen]);
+  }, [modalOpen, planningDialog, saving]);
 
   const statuses = useMemo(() => ['Todos los estados', ...new Set(data.posts.map((post) => post.status).filter(Boolean).sort())], [data.posts]);
   const knownTags = useMemo(() => [...new Set([...DEFAULT_MARKETING_TAGS, ...data.posts.flatMap((post) => getMarketingTags(post.tags))])].sort(), [data.posts]);
@@ -205,6 +244,8 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     }
     return result;
   }, [data.assets, data.postAssets]);
+  const artworkByCampaign = useMemo(() => artworkMapForLinks(data.assets, data.campaignAssets, 'campaign_id'), [data.assets, data.campaignAssets]);
+  const artworkByCampaignTask = useMemo(() => artworkMapForLinks(data.assets, data.campaignItemAssets, 'item_id'), [data.assets, data.campaignItemAssets]);
 
   const publications = data.posts.filter(isPublication);
   const materialsFor = (post: Post) => data.postAssets.filter(link=>link.post_id===post.id).map(link=>data.assets.find(asset=>asset.id===link.asset_id)).filter(Boolean);
@@ -249,7 +290,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     setModalOpen(false);
   };
 
-  const openPost = async (post?: Post, scheduledDate = '') => {
+  const openPost = async (post?: Post, scheduledDate = '', campaignId = '') => {
     if (modalOpen && editorDirty.current && !(await confirm({ eyebrow: 'CAMBIOS SIN GUARDAR', title: '¿Descartar los cambios y abrir otra ficha?', description: 'La información sin guardar de la ficha actual se perderá.', tone: 'warning', confirmLabel: 'Descartar y abrir', cancelLabel: 'Seguir editando' }))) return;
     editorDirty.current = false;
     previousEditorFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -270,10 +311,57 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       call_in: post.call_in || '', callout: post.callout || '', cta: post.cta || '',
       cta_destination: post.cta_destination || '', external_url: post.external_url || '',
       hashtags: post.hashtags || '', visual_direction: post.visual_direction || '',
-      tags: getMarketingTags(post.tags).join(', '), calendar_color: getMarketingCalendarColor(post.calendar_color, post.tags),
+      tags: getMarketingTags(post.tags).join(', '), calendar_color: getMarketingCalendarColor(post.calendar_color, post.tags), campaign_id: post.campaign_id || '',
       design_ready: post.design_ready === true, video_ready: post.video_ready === true,
       canvas_width: post.canvas_width == null ? '' : String(post.canvas_width), canvas_height: post.canvas_height == null ? '' : String(post.canvas_height),
-    } : defaultDraft(scheduledDate));
+    } : defaultDraft(scheduledDate, campaignId));
+  };
+
+  const closePlanningDialog = async () => {
+    if (saving) return;
+    const hasDraft = planningDialog === 'campaign'
+      ? Boolean(campaignDraft.title || campaignDraft.brief || campaignDraft.start_date || campaignDraft.end_date || campaignDraft.owner || draftCampaignArtworkFile)
+      : planningDialog === 'task'
+        ? Boolean(campaignTaskDraft.title || campaignTaskDraft.brief || campaignTaskDraft.start_date || campaignTaskDraft.due_date || campaignTaskDraft.next_action || draftCampaignTaskArtworkFile)
+        : false;
+    if (hasDraft && !(await confirm({ eyebrow: 'CAMBIOS SIN GUARDAR', title: '¿Cerrar y descartar los cambios?', description: 'Los cambios locales de esta planificación se perderán.', tone: 'warning', confirmLabel: 'Descartar cambios', cancelLabel: 'Seguir editando' }))) return;
+    setPlanningDialog(null);
+    setSelectedCampaign(null);
+    setSelectedCampaignTask(null);
+    setDraftCampaignArtworkFile(null);
+    setDraftCampaignTaskArtworkFile(null);
+  };
+  const openCampaignForm = (campaign?: MarketingCampaign) => {
+    setLoadError('');
+    previousEditorFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setSelectedCampaign(campaign || null);
+    setCampaignIsNew(!campaign);
+    setDraftCampaignArtworkFile(null);
+    setCampaignDraft(campaign ? {
+      title: campaign.title || '', brief: campaign.brief || '', start_date: campaign.start_date || '',
+      end_date: campaign.end_date || '', owner: campaign.owner || '', status: campaign.status || 'Planificada',
+    } : defaultCampaignDraft());
+    setPlanningDialog('campaign');
+  };
+  const openCampaignTaskForm = (task?: MarketingCampaignTask, campaignId = '', range?: MarketingTaskRange) => {
+    setLoadError('');
+    previousEditorFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setSelectedCampaignTask(task || null);
+    setCampaignTaskIsNew(!task);
+    setDraftCampaignTaskArtworkFile(null);
+    setCampaignTaskDraft(task ? {
+      campaign_id: task.campaign_id || '', activity_type: task.activity_type || 'Otro', custom_activity_type: task.custom_activity_type || '',
+      title: task.title || '', brief: task.brief || '', start_date: task.start_date || '', due_date: task.due_date || '',
+      start_time: task.start_time?.slice(0, 5) || '', end_time: task.end_time?.slice(0, 5) || '',
+      owner: task.owner || '', priority: task.priority || 'Normal', status: task.status || 'Pendiente', next_action: task.next_action || '',
+    } : { ...defaultCampaignTaskDraft(campaignId), ...(range ? { start_date: range.startDate, due_date: range.endDate, start_time: range.startTime || '', end_time: range.endTime || '' } : {}) });
+    setPlanningDialog('task');
+  };
+  const choosePlanningType = (kind: PlanningKind) => {
+    setPlanningDialog(null);
+    if (kind === 'post') void openPost();
+    else if (kind === 'campaign') openCampaignForm();
+    else openCampaignTaskForm();
   };
   const reschedulePost = (post:Post,date?:string) => { if(canEdit) setProposal({post,date}); };
   const changePostStatus = async (post: Post, status: string) => {
@@ -352,6 +440,142 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     }
   };
 
+  const saveCampaign = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supabase || !organizationId || !canEdit || !campaignDraft.title.trim()) return;
+    if (campaignDraft.start_date && campaignDraft.end_date && campaignDraft.end_date < campaignDraft.start_date) {
+      setLoadError('La fecha de fin de campaña debe ser igual o posterior a su inicio.');
+      return;
+    }
+    setSaving(true);
+    setLoadError('');
+    try {
+      const creating = campaignIsNew;
+      const payload = {
+        title: campaignDraft.title.trim(), brief: campaignDraft.brief.trim(),
+        start_date: campaignDraft.start_date || null, end_date: campaignDraft.end_date || null,
+        owner: campaignDraft.owner.trim(), status: campaignDraft.status, updated_at: new Date().toISOString(), updated_by: user?.id || null,
+      };
+      const result = creating
+        ? await supabase.from('marketing_campaigns').insert({ ...payload, organization_id: organizationId, created_by: user?.id || null, source_system: 'visualcorp-suite', source_id: `suite-${globalThis.crypto.randomUUID()}` }).select('*').single()
+        : await supabase.from('marketing_campaigns').update(payload).eq('organization_id', organizationId).eq('id', selectedCampaign?.id).select('*').maybeSingle();
+      if (result.error) throw result.error;
+      if (!result.data) throw new Error('No encontramos la campaña o tu perfil no puede editarla.');
+      if (draftCampaignArtworkFile) {
+        setSelectedCampaign(result.data as MarketingCampaign);
+        setCampaignIsNew(false);
+        setNotice(creating ? 'Campaña creada. Asocia ahora su referencia visual.' : 'Campaña guardada. Asocia ahora la referencia visual.');
+        await refresh();
+        return;
+      }
+      setPlanningDialog(null);
+      setSelectedCampaign(null);
+      setNotice(creating ? 'Campaña creada en Marketing.' : 'Campaña actualizada y cambio registrado.');
+      await refresh();
+    } catch (error: any) {
+      setLoadError(error?.message || 'No se pudo guardar la campaña.');
+    } finally { setSaving(false); }
+  };
+
+  const saveCampaignTask = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supabase || !organizationId || !canEdit) return;
+    if (!campaignTaskDraft.title.trim() || !campaignTaskDraft.due_date || (campaignTaskDraft.activity_type === 'Otro' && !campaignTaskDraft.custom_activity_type.trim())) {
+      setLoadError('Completa el tipo de actividad, el título y la fecha límite.');
+      return;
+    }
+    if (campaignTaskDraft.start_date && campaignTaskDraft.due_date < campaignTaskDraft.start_date) {
+      setLoadError('La fecha límite debe ser igual o posterior a la fecha de inicio.');
+      return;
+    }
+    if (Boolean(campaignTaskDraft.start_time) !== Boolean(campaignTaskDraft.end_time)) {
+      setLoadError('Completa la hora de inicio y la hora de fin, o deja ambas vacías.');
+      return;
+    }
+    if (campaignTaskDraft.start_time && campaignTaskDraft.due_date === (campaignTaskDraft.start_date || campaignTaskDraft.due_date) && campaignTaskDraft.end_time <= campaignTaskDraft.start_time) {
+      setLoadError('En una actividad de un solo día, la hora de fin debe ser posterior a la hora de inicio.');
+      return;
+    }
+    setSaving(true);
+    setLoadError('');
+    try {
+      const creating = campaignTaskIsNew;
+      const payload = {
+        campaign_id: campaignTaskDraft.campaign_id || null,
+        activity_type: campaignTaskDraft.activity_type,
+        custom_activity_type: campaignTaskDraft.activity_type === 'Otro' ? campaignTaskDraft.custom_activity_type.trim() : '',
+        title: campaignTaskDraft.title.trim(), brief: campaignTaskDraft.brief.trim(),
+        start_date: campaignTaskDraft.start_date || null, due_date: campaignTaskDraft.due_date,
+        start_time: campaignTaskDraft.start_time || null, end_time: campaignTaskDraft.end_time || null,
+        owner: campaignTaskDraft.owner.trim(), priority: campaignTaskDraft.priority,
+        status: campaignTaskDraft.status, next_action: campaignTaskDraft.next_action.trim(), updated_at: new Date().toISOString(), updated_by: user?.id || null,
+      };
+      const result = creating
+        ? await supabase.from('marketing_campaign_items').insert({ ...payload, organization_id: organizationId, created_by: user?.id || null, source_system: 'visualcorp-suite', source_id: `suite-${globalThis.crypto.randomUUID()}` }).select('*').single()
+        : await supabase.from('marketing_campaign_items').update(payload).eq('organization_id', organizationId).eq('id', selectedCampaignTask?.id).select('*').maybeSingle();
+      if (result.error) throw result.error;
+      if (!result.data) throw new Error('No encontramos la actividad o tu perfil no puede editarla.');
+      if (draftCampaignTaskArtworkFile) {
+        setSelectedCampaignTask(result.data as MarketingCampaignTask);
+        setCampaignTaskIsNew(false);
+        setNotice(creating ? 'Actividad creada. Asocia ahora su referencia visual.' : 'Actividad guardada. Asocia ahora la referencia visual.');
+        await refresh();
+        return;
+      }
+      setPlanningDialog(null);
+      setSelectedCampaignTask(null);
+      setNotice(creating ? 'Actividad agregada a Marketing.' : 'Actividad actualizada y cambio registrado.');
+      await refresh();
+    } catch (error: any) {
+      setLoadError(error?.message || 'No se pudo guardar la actividad.');
+    } finally { setSaving(false); }
+  };
+
+  const rescheduleCampaignTask = async (task: MarketingCampaignTask, date: string) => {
+    if (!supabase || !organizationId || !canEdit || !date || date === task.due_date || (task.start_date && date < task.start_date)) return;
+    if (task.start_date && date === task.start_date && task.start_time && task.end_time && task.end_time.slice(0, 5) <= task.start_time.slice(0, 5)) return;
+    setSaving(true);
+    setLoadError('');
+    try {
+      const { data: updated, error } = await supabase.from('marketing_campaign_items').update({ due_date: date, updated_at: new Date().toISOString(), updated_by: user?.id || null }).eq('organization_id', organizationId).eq('id', task.id).select('id').maybeSingle();
+      if (error) throw error;
+      if (!updated) throw new Error('No encontramos la actividad o tu perfil no puede editarla.');
+      setNotice(`El plazo de «${task.title}» cambió al ${formatDate(date)}; la fecha quedó guardada sin reprogramación automática.`);
+      await refresh();
+    } catch (error: any) { setLoadError(error?.message || 'No se pudo cambiar el plazo de la actividad.'); }
+    finally { setSaving(false); }
+  };
+
+  const changeCampaignTaskStatus = async (task: MarketingCampaignTask, status: string) => {
+    if (!supabase || !organizationId || !canEdit || !status || status === task.status) return;
+    setSaving(true);
+    setLoadError('');
+    try {
+      const { data: updated, error } = await supabase.from('marketing_campaign_items').update({ status, updated_at: new Date().toISOString(), updated_by: user?.id || null }).eq('organization_id', organizationId).eq('id', task.id).select('id').maybeSingle();
+      if (error) throw error;
+      if (!updated) throw new Error('No encontramos la actividad o tu perfil no puede editarla.');
+      setNotice(`Etapa de «${task.title}» actualizada a ${status}.`);
+      await refresh();
+    } catch (error: any) { setLoadError(error?.message || 'No se pudo cambiar la etapa de la actividad.'); }
+    finally { setSaving(false); }
+  };
+
+  const deleteCampaignTask = async (task: MarketingCampaignTask) => {
+    if (!supabase || !organizationId || !canDelete) return;
+    if (!(await confirm({ eyebrow: 'ACCIÓN IRREVERSIBLE', title: `¿Eliminar «${task.title}»?`, description: 'Se quitará la actividad y se conservará el historial del cambio.', tone: 'danger', destructive: true, confirmLabel: 'Eliminar actividad', cancelLabel: 'Conservar actividad' }))) return;
+    setSaving(true);
+    setLoadError('');
+    try {
+      const { data: deleted, error } = await supabase.from('marketing_campaign_items').delete().eq('organization_id', organizationId).eq('id', task.id).select('id').maybeSingle();
+      if (error) throw error;
+      if (!deleted) throw new Error('No encontramos la actividad o tu perfil no puede eliminarla.');
+      if (selectedCampaignTask?.id === task.id) { setPlanningDialog(null); setSelectedCampaignTask(null); }
+      setNotice(`Actividad «${task.title}» eliminada.`);
+      await refresh();
+    } catch (error: any) { setLoadError(error?.message || 'No se pudo eliminar la actividad.'); }
+    finally { setSaving(false); }
+  };
+
   const togglePost = (postId: string) => setSelectedPostIds((current) => { const next = new Set(current); next.has(postId) ? next.delete(postId) : next.add(postId); return next; });
   const selectVisiblePosts = () => setSelectedPostIds((current) => { const allVisible = filteredPosts.every((post) => current.has(post.id)); const next = new Set(current); filteredPosts.forEach((post) => allVisible ? next.delete(post.id) : next.add(post.id)); return next; });
   const deletePosts = async (posts: Post[]) => {
@@ -407,7 +631,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const searchPlaceholder = activeSection === 'library' ? 'Buscar por archivo, carpeta o sección…' : 'Buscar publicaciones por tema, canal o responsable…';
 
   return <AppFrame area={area}>
-    <PageHeading eyebrow="MARKETING · CENTRO DE CONTENIDO" title="Marketing y contenido" description="Planifica, produce y revisa publicaciones, piezas, tareas y resultados en el espacio compartido de Visual Corp." action={<div className="vc-content-actions"><button className="button button-outline" type="button" onClick={() => void refresh()} disabled={loading}><RefreshCw size={15} className={loading ? 'vc-content-spin' : ''}/>Actualizar</button>{canEdit && <button className="button button-outline" type="button" onClick={()=>setShowDays(true)}>Días sin producción</button>}{canEdit && <button className="button button-dark vc-shimmer-button" type="button" onClick={() => openPost()}><Plus size={16}/>Nueva publicación</button>}</div>} />
+    <PageHeading eyebrow="MARKETING · CENTRO DE CONTENIDO" title="Marketing y contenido" description="Planifica, produce y revisa campañas, actividades, publicaciones y resultados en el espacio compartido de Visual Corp." action={<div className="vc-content-actions"><button className="button button-outline" type="button" onClick={() => void refresh()} disabled={loading}><RefreshCw size={15} className={loading ? 'vc-content-spin' : ''}/>Actualizar</button>{canEdit && <button className="button button-outline" type="button" onClick={()=>setShowDays(true)}>Días sin producción</button>}{canEdit && <button className="button button-dark vc-shimmer-button" type="button" onClick={() => setPlanningDialog('chooser')}><Plus size={16}/>Nueva planificación</button>}</div>} />
 
     <main className="vc-content-workspace" aria-label="Centro de gestión de marketing">
       <section className="vc-content-hero">
@@ -429,7 +653,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       </section>
 
       <nav className="vc-content-tabs" aria-label="Áreas de marketing">
-        {sections.map(({ id, label, icon: Icon }) => <button key={id} type="button" className={activeSection === id ? 'is-active' : ''} onClick={() => { setActiveSection(id); setQuery(''); }} aria-current={activeSection === id ? 'page' : undefined}><Icon size={16}/>{label}{id === 'calendar' && <span>{data.posts.length}</span>}{id === 'library' && <span>{data.assets.length}</span>}</button>)}
+        {sections.map(({ id, label, icon: Icon }) => <button key={id} type="button" className={activeSection === id ? 'is-active' : ''} onClick={() => { setActiveSection(id); setQuery(''); }} aria-current={activeSection === id ? 'page' : undefined}><Icon size={16}/>{label}{id === 'calendar' && <span>{data.posts.length + data.campaignItems.length}</span>}{id === 'campaigns' && <span>{data.campaigns.length}</span>}{id === 'library' && <span>{data.assets.length}</span>}</button>)}
       </nav>
 
       {(activeSection === 'overview'||activeSection === 'calendar')&&<WorkflowToolbar posts={data.posts} today={today} userId={user?.id} queue={queue} onQueue={setQueue} recordFilter={recordFilter} onRecordFilter={setRecordFilter} reviews={data.reviews}/>}
@@ -438,27 +662,29 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
 
       {(activeSection === 'overview' || activeSection === 'calendar') && (canEdit||canDelete) && <div className="vc-marketing-bulk-bar"><label><input type="checkbox" checked={filteredPosts.length > 0 && filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/> Seleccionar publicaciones visibles</label>{selectedPostIds.size > 0 && <><span>{selectedPostIds.size} seleccionadas</span>{canEdit&&<BulkAssignment assignees={data.assignees} busy={saving} onAssign={id=>void assignSelected(id)}/>}<button type="button" className="vc-small-danger" disabled={!canDelete||saving} title={!canDelete?"El perfil requiere permiso para eliminar publicaciones":undefined} onClick={()=>void deletePosts(data.posts.filter((post)=>selectedPostIds.has(post.id)))}><Trash2 size={13}/>Eliminar seleccionadas</button><button type="button" onClick={()=>setSelectedPostIds(new Set())}>Quitar selección</button></>}</div>}
 
-      {activeSection === 'calendar' && <MarketingCalendar posts={filteredPosts} organizationId={organizationId || ''} artworkByPost={artworkByPost} onArtworkSaved={() => void refresh()} canEdit={canEdit} canDelete={canDelete} selectedIds={selectedPostIds} onToggle={togglePost} onSelect={(post) => openPost(post as Post)} onCreate={(date) => openPost(undefined, date)} onReschedule={(post, date) => void reschedulePost(post as Post, date)} onStatusChange={(post, status) => void changePostStatus(post as Post, status)} onReadinessChange={(post, field, checked) => void changePostReadiness(post as Post, field, checked)} onDuplicate={(post)=>void duplicatePost(post as Post)} onDelete={(post)=>void deletePosts([post as Post])}/>}
+      {activeSection === 'calendar' && <MarketingCalendar posts={filteredPosts} tasks={data.campaignItems} campaigns={data.campaigns} organizationId={organizationId || ''} artworkByPost={artworkByPost} artworkByTask={artworkByCampaignTask} onArtworkSaved={() => void refresh()} canEdit={canEdit} canDelete={canDelete} selectedIds={selectedPostIds} onToggle={togglePost} onSelect={(post) => { void openPost(post as Post); }} onCreate={(date) => { void openPost(undefined, date); }} onReschedule={(post, date) => void reschedulePost(post as Post, date)} onStatusChange={(post, status) => void changePostStatus(post as Post, status)} onReadinessChange={(post, field, checked) => void changePostReadiness(post as Post, field, checked)} onDuplicate={(post)=>void duplicatePost(post as Post)} onDelete={(post)=>void deletePosts([post as Post])} onTaskSelect={(task) => openCampaignTaskForm(task as MarketingCampaignTask)} onTaskReschedule={(task, date) => void rescheduleCampaignTask(task as MarketingCampaignTask, date)} onTaskStatusChange={(task, status) => void changeCampaignTaskStatus(task as MarketingCampaignTask, status)} onTaskCreate={(date) => openCampaignTaskForm(undefined, '', date ? { startDate: date, endDate: date } : undefined)} onTaskCreateRange={(range) => openCampaignTaskForm(undefined, '', range)} onTaskDelete={(task) => void deleteCampaignTask(task as MarketingCampaignTask)}/>}
+
+      {activeSection === 'campaigns' && <CampaignPlanningSection campaigns={data.campaigns} tasks={data.campaignItems} posts={data.posts} campaignArtwork={artworkByCampaign} taskArtwork={artworkByCampaignTask} canEdit={canEdit} organizationId={organizationId || ''} onArtworkSaved={() => void refresh()} onNewCampaign={() => openCampaignForm()} onNewTask={(campaignId) => openCampaignTaskForm(undefined, campaignId || '')} onEditCampaign={(campaign) => openCampaignForm(campaign)} onEditTask={(task) => openCampaignTaskForm(task)} onAddPost={(campaignId) => { void openPost(undefined, '', campaignId); }} onOpenPost={(postId) => { const post = data.posts.find((item) => item.id === postId); if (post) void openPost(post); }} onOpenTask={(taskId) => { const task = data.campaignItems.find((item) => item.id === taskId); if (task) openCampaignTaskForm(task); }}/>}
 
       {activeSection === 'overview' && <>
         {loading ? <div className="vc-content-loading"><LoaderCircle size={21}/>Cargando publicaciones, piezas y tareas…</div>
-          : data.posts.length === 0 ? <EmptyState icon={CalendarDays} title="El calendario está listo para comenzar" text="Aún no hay publicaciones en la base central. Crea la primera ficha para iniciar el flujo editorial." action={canEdit && <button className="button button-dark" onClick={() => openPost()}><Plus size={15}/>Nueva publicación</button>}/>
+          : data.posts.length === 0 ? <EmptyState icon={CalendarDays} title="El calendario está listo para comenzar" text="Aún no hay publicaciones en la base central. Crea una campaña, actividad o publicación para iniciar la planificación." action={canEdit && <button className="button button-dark" onClick={() => setPlanningDialog('chooser')}><Plus size={15}/>Nueva planificación</button>}/>
             : filteredPosts.length === 0 ? <EmptyState icon={Search} title="No encontramos coincidencias" text="Prueba con otro título, canal, responsable o estado." action={<button className="button button-outline" onClick={() => { setQuery(''); setStatusFilter('Todos los estados'); }}>Limpiar búsqueda</button>}/>
               : <div className={`vc-content-post-grid ${activeSection === 'overview' ? 'is-overview' : ''}`}>
                 <div className="vc-content-post-list">
-                  {postView === 'table' ? <div className="vc-marketing-post-table-wrap"><table className="vc-marketing-post-table"><thead><tr><th><input type="checkbox" aria-label="Seleccionar todas las publicaciones visibles" checked={filteredPosts.length>0&&filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/></th><th>Publicación</th><th>Fecha y canal</th><th>Etapa</th><th>Tags</th><th>Acciones</th></tr></thead><tbody>{filteredPosts.map((post)=> <tr key={post.id}><td><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></td><td><button type="button" className="vc-marketing-table-title" onClick={()=>openPost(post)}>{post.title||'Sin título'}</button><small>{post.content_line||'Tema pendiente'}</small><MarketingReadinessIndicators post={post} onChange={(field, checked) => void changePostReadiness(post, field, checked)} disabled={!canEdit||saving}/></td><td>{post.scheduled_date?formatDate(post.scheduled_date):'Fecha pendiente'}<small>{post.platform||'Canal pendiente'}{post.scheduled_time?` · ${post.scheduled_time}`:''}</small></td><td><StageBadge stage={post.status||'Por iniciar'}/></td><td><div className="vc-marketing-table-tags">{getMarketingTags(post.tags).map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div></td><td><ContextMenu label={`Acciones para ${post.title}`} actions={postActions(post)}><span className="vc-marketing-menu-anchor" aria-hidden="true"/></ContextMenu></td></tr>)}</tbody></table></div> : <AnimatedList stagger={0} className="vc-marketing-card-grid" itemClassName="vc-content-post-entry">{filteredPosts.map((post) => {
+                  {postView === 'table' ? <div className="vc-marketing-post-table-wrap"><table className="vc-marketing-post-table"><thead><tr><th><input type="checkbox" aria-label="Seleccionar todas las publicaciones visibles" checked={filteredPosts.length>0&&filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/></th><th>Publicación</th><th>Fecha y canal</th><th>Etapa</th><th>Tags</th><th>Acciones</th></tr></thead><tbody>{filteredPosts.map((post)=> <tr key={post.id}><td><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></td><td><button type="button" className="vc-marketing-table-title" onClick={()=>{ void openPost(post); }}>{post.title||'Sin título'}</button><small>{post.content_line||'Tema pendiente'}</small><MarketingReadinessIndicators post={post} onChange={(field, checked) => void changePostReadiness(post, field, checked)} disabled={!canEdit||saving}/></td><td>{post.scheduled_date?formatDate(post.scheduled_date):'Fecha pendiente'}<small>{post.platform||'Canal pendiente'}{post.scheduled_time?` · ${post.scheduled_time}`:''}</small></td><td><StageBadge stage={post.status||'Por iniciar'}/></td><td><div className="vc-marketing-table-tags">{getMarketingTags(post.tags).map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div></td><td><ContextMenu label={`Acciones para ${post.title}`} actions={postActions(post)}><span className="vc-marketing-menu-anchor" aria-hidden="true"/></ContextMenu></td></tr>)}</tbody></table></div> : <AnimatedList stagger={0} className="vc-marketing-card-grid" itemClassName="vc-content-post-entry">{filteredPosts.map((post) => {
                   const linked = data.postAssets.filter((link) => link.post_id === post.id).length;
                   return <ContextMenu key={post.id} className="vc-marketing-post-context" label={`Acciones para ${post.title}`} actions={postActions(post)}><article className={`vc-content-post is-artwork-card${canEdit||canDelete?' has-selection':''}`}>
                     <header className="vc-marketing-post-card-top">{(canEdit||canDelete)&&<label className="vc-marketing-select-post"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></label>}<div className="vc-content-date" style={getMarketingCalendarColor(post.calendar_color, post.tags)?{borderColor:getMarketingCalendarColor(post.calendar_color, post.tags),color:getMarketingCalendarColor(post.calendar_color, post.tags)}:undefined}><strong>{post.scheduled_date ? post.scheduled_date.slice(8,10) : '—'}</strong><span>{post.scheduled_date ? new Intl.DateTimeFormat('es-EC',{month:'short'}).format(new Date(`${post.scheduled_date.slice(0,10)}T12:00:00`)) : 'PEND.'}</span></div><div className="vc-content-post-end"><StageBadge stage={post.status || 'Por iniciar'}/><span className={`vc-content-dot is-${statusTone(post.status)}`}/></div></header>
                     <MarketingPostArtwork organizationId={organizationId || ''} post={post} asset={artworkByPost.get(post.id)} canEdit={canEdit} variant="overview" onSaved={() => void refresh()}/>
-                    <button className="vc-content-post-main" type="button" onClick={() => openPost(post)}><span className="vc-content-post-eyebrow">{post.content_line || post.platform || 'Contenido'} <i>·</i> {post.format || 'Formato pendiente'}</span><strong>{post.title || 'Sin título'}</strong><span className="vc-content-post-caption">{post.caption || post.next_action || 'Copy y siguiente paso por completar.'}</span><span className="vc-content-post-meta"><span><Megaphone size={13}/>{post.platform || 'Canal pendiente'}</span><span><Images size={13}/>{linked} piezas</span></span></button>
+                    <button className="vc-content-post-main" type="button" onClick={() => { void openPost(post); }}><span className="vc-content-post-eyebrow">{post.content_line || post.platform || 'Contenido'} <i>·</i> {post.format || 'Formato pendiente'}</span><strong>{post.title || 'Sin título'}</strong><span className="vc-content-post-caption">{post.caption || post.next_action || 'Copy y siguiente paso por completar.'}</span><span className="vc-content-post-meta"><span><Megaphone size={13}/>{post.platform || 'Canal pendiente'}</span><span><Images size={13}/>{linked} piezas</span></span></button>
                     <WorkDetails post={post} today={today} reviews={data.reviews} materials={materialsFor(post)} canEdit={canEdit} onReview={()=>setReviewPost(post)} onReschedule={()=>reschedulePost(post)}/>
                     <MarketingReadinessIndicators post={post} onChange={(field, checked) => void changePostReadiness(post, field, checked)} disabled={!canEdit||saving}/>
                     {getMarketingTags(post.tags).length>0&&<div className="vc-marketing-post-tags">{getMarketingTags(post.tags).map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div>}
                   </article></ContextMenu>;
                 })}</AnimatedList>}
                 </div>
-                {activeSection === 'overview' && <aside className="vc-content-side-panel"><div className="vc-content-side-heading"><div><span className="eyebrow">PULSO EDITORIAL</span><h3>Lo que sigue</h3></div><Activity size={17}/></div><div className="vc-content-next-list">{publications.filter((post) => post.scheduled_date && post.scheduled_date >= today && !isTerminalMarketingStatus(post.status)).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)).slice(0,4).map((post) => <button type="button" key={post.id} onClick={() => openPost(post)}><span className="vc-content-next-date">{formatDate(post.scheduled_date)}</span><b>{post.title}</b><small>{post.platform || 'Canal pendiente'}{post.owner ? ` · ${post.owner}` : ''}</small></button>)}{!publications.some((post) => post.scheduled_date && post.scheduled_date >= today && !isTerminalMarketingStatus(post.status)) && <p className="vc-content-side-empty">No hay publicaciones futuras con fecha asignada.</p>}</div><button className="vc-content-text-link" type="button" onClick={() => setActiveSection('calendar')}>Ver calendario completo <ArrowUpRight size={14}/></button><div className="vc-content-side-callout"><span><Lightbulb size={15}/></span><p><b>{overdue ? `${overdue} fichas necesitan atención` : 'El flujo está al día'}</b><br/>Define responsable, fecha límite y próximo paso para que las alertas tengan contexto.</p></div></aside>}
+                {activeSection === 'overview' && <aside className="vc-content-side-panel"><div className="vc-content-side-heading"><div><span className="eyebrow">PULSO EDITORIAL</span><h3>Lo que sigue</h3></div><Activity size={17}/></div><div className="vc-content-next-list">{publications.filter((post) => post.scheduled_date && post.scheduled_date >= today && !isTerminalMarketingStatus(post.status)).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)).slice(0,4).map((post) => <button type="button" key={post.id} onClick={() => { void openPost(post); }}><span className="vc-content-next-date">{formatDate(post.scheduled_date)}</span><b>{post.title}</b><small>{post.platform || 'Canal pendiente'}{post.owner ? ` · ${post.owner}` : ''}</small></button>)}{!publications.some((post) => post.scheduled_date && post.scheduled_date >= today && !isTerminalMarketingStatus(post.status)) && <p className="vc-content-side-empty">No hay publicaciones futuras con fecha asignada.</p>}</div><button className="vc-content-text-link" type="button" onClick={() => setActiveSection('calendar')}>Ver calendario completo <ArrowUpRight size={14}/></button><div className="vc-content-side-callout"><span><Lightbulb size={15}/></span><p><b>{overdue ? `${overdue} fichas necesitan atención` : 'El flujo está al día'}</b><br/>Define responsable, fecha límite y próximo paso para que las alertas tengan contexto.</p></div></aside>}
               </div>}
       </>}
 
@@ -514,9 +740,38 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     </main>
 
     {notice&&<div className="vc-content-toast" role="status"><CheckCircle2 size={16}/>{notice}</div>}
-    {reviewPost&&<ReviewPanel post={reviewPost} materials={materialsFor(reviewPost)} reviews={data.reviews} events={data.events.filter(e=>e.post_id===reviewPost.id).slice(-20).reverse()} canEdit={canEdit} canApprove={canApprove} onClose={()=>setReviewPost(null)} onReload={async()=>{const fresh=await refresh();const current=fresh?.posts.find(p=>p.id===reviewPost.id);if(current)setReviewPost(current);}} onEdit={()=>{setReviewPost(null);openPost(reviewPost);}} onDecision={async(decision,feedback)=>{const result=await supabase!.rpc('review_marketing_post',{p_organization_id:organizationId,p_post_id:reviewPost.id,p_expected_version:reviewPost.row_version,p_decision:decision,p_feedback:feedback});if(result.error)throw result.error;setReviewPost(null);setNotice('Decisión registrada con su versión.');await refresh();}}/>}
+    {reviewPost&&<ReviewPanel post={reviewPost} materials={materialsFor(reviewPost)} reviews={data.reviews} events={data.events.filter(e=>e.post_id===reviewPost.id).slice(-20).reverse()} canEdit={canEdit} canApprove={canApprove} onClose={()=>setReviewPost(null)} onReload={async()=>{const fresh=await refresh();const current=fresh?.posts.find(p=>p.id===reviewPost.id);if(current)setReviewPost(current);}} onEdit={()=>{setReviewPost(null);void openPost(reviewPost);}} onDecision={async(decision,feedback)=>{const result=await supabase!.rpc('review_marketing_post',{p_organization_id:organizationId,p_post_id:reviewPost.id,p_expected_version:reviewPost.row_version,p_decision:decision,p_feedback:feedback});if(result.error)throw result.error;setReviewPost(null);setNotice('Decisión registrada con su versión.');await refresh();}}/>}
     {proposal&&<DateProposal post={proposal.post} today={today} closedDays={data.days} initialDate={proposal.date} onClose={()=>setProposal(null)} onSave={async(field,date)=>{await saveMarketingPost(organizationId!,proposal.post,{[field]:date});setNotice('Fecha actualizada por confirmación del equipo.');await refresh();}}/>}
     {showDays&&<NonproductionSettings days={data.days} onClose={()=>setShowDays(false)} onSave={async(date,reason,remove=false)=>{const result=await supabase!.rpc('set_marketing_nonproduction_day',{p_organization_id:organizationId,p_day:date,p_reason:reason,p_remove:remove});if(result.error)throw result.error;await refresh();}}/>}
+    {planningDialog === 'chooser' && <div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setPlanningDialog(null); }}>
+      <section ref={editorDialogRef} tabIndex={-1} className="vc-content-modal vc-content-modal-editor vc-marketing-planning-dialog" role="dialog" aria-modal="true" aria-labelledby="vc-planning-chooser-title">
+        <header className="vc-publication-editor-header"><div className="vc-publication-editor-title"><span className="eyebrow">NUEVA FICHA</span><h2 id="vc-planning-chooser-title">Nueva planificación</h2><p>Elige qué vas a organizar. Cada tipo usa solo los campos que necesita.</p></div><button type="button" className="icon-button" aria-label="Cerrar" autoFocus onClick={() => setPlanningDialog(null)}><X size={18}/></button></header>
+        <MarketingPlanningChooser onChoose={choosePlanningType} onClose={() => setPlanningDialog(null)}/>
+      </section>
+    </div>}
+    {planningDialog === 'campaign' && <div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) void closePlanningDialog(); }}>
+      <section ref={editorDialogRef} tabIndex={-1} className="vc-content-modal vc-content-modal-editor vc-marketing-planning-dialog" role="dialog" aria-modal="true" aria-labelledby="vc-marketing-campaign-title">
+        <header className="vc-publication-editor-header"><div className="vc-publication-editor-title"><span className="eyebrow">{campaignIsNew ? 'NUEVA CAMPAÑA' : 'CAMPAÑA'}</span><h2 id="vc-marketing-campaign-title">{campaignIsNew ? 'Crea una campaña' : 'Edita la campaña'}</h2><p>{campaignDraft.title || 'Agrupa el objetivo, periodo y trabajo relacionado.'}</p></div><button type="button" className="icon-button" aria-label="Cerrar" autoFocus onClick={() => void closePlanningDialog()}><X size={18}/></button></header>
+        <form onSubmit={saveCampaign}>
+          {loadError && <div className="vc-content-alert is-error" role="alert"><AlertCircle size={16}/><span>{loadError}</span></div>}
+          <fieldset disabled={!canEdit} className="vc-marketing-planning-fieldset"><CampaignFields draft={campaignDraft} onChange={(field, value) => setCampaignDraft((current) => ({ ...current, [field]: value }))} campaign={selectedCampaign} artwork={selectedCampaign ? artworkByCampaign.get(selectedCampaign.id) : undefined} organizationId={organizationId || ''} canEdit={canEdit} canDelete={canDelete} saving={saving} draftFile={draftCampaignArtworkFile} onDraftFileChange={setDraftCampaignArtworkFile} onReferenceSaved={async () => { await refresh(); setDraftCampaignArtworkFile(null); }}/></fieldset>
+          {selectedCampaign && data.campaignEvents.filter((event) => event.campaign_id === selectedCampaign.id).length > 0 && <div className="vc-marketing-planning-history"><b>Actividad reciente</b>{data.campaignEvents.filter((event) => event.campaign_id === selectedCampaign.id).slice(-6).reverse().map((event) => <small key={event.id}>{event.field_name === 'created' ? 'Campaña creada' : `${event.field_name}: ${event.previous_value || 'vacío'} → ${event.new_value}`} · {formatDate(String(event.created_at).slice(0, 10))}</small>)}</div>}
+          <div className="vc-content-modal-actions"><span>{canEdit ? 'La campaña reunirá publicaciones y actividades relacionadas.' : 'Tu perfil tiene acceso de solo lectura.'}</span><button type="button" className="button button-outline" onClick={() => void closePlanningDialog()}>Cerrar</button>{canEdit && <button type="submit" className="button button-dark" disabled={saving}>{saving ? <LoaderCircle className="vc-content-spin" size={15}/> : <Save size={15}/>} {saving ? 'Guardando…' : 'Guardar campaña'}</button>}</div>
+        </form>
+      </section>
+    </div>}
+    {planningDialog === 'task' && <div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) void closePlanningDialog(); }}>
+      <section ref={editorDialogRef} tabIndex={-1} className="vc-content-modal vc-content-modal-editor vc-marketing-planning-dialog" role="dialog" aria-modal="true" aria-labelledby="vc-marketing-task-title">
+        <header className="vc-publication-editor-header"><div className="vc-publication-editor-title"><span className="eyebrow">{campaignTaskIsNew ? 'NUEVA ACTIVIDAD' : 'ACTIVIDAD DE CAMPAÑA'}</span><h2 id="vc-marketing-task-title">{campaignTaskIsNew ? 'Organiza una tarea o entregable' : 'Edita la actividad'}</h2><p>{campaignTaskDraft.title || 'Sin canal ni formato social; define el plazo y siguiente paso.'}</p></div><button type="button" className="icon-button" aria-label="Cerrar" autoFocus onClick={() => void closePlanningDialog()}><X size={18}/></button></header>
+        <form onSubmit={saveCampaignTask}>
+          {loadError && <div className="vc-content-alert is-error" role="alert"><AlertCircle size={16}/><span>{loadError}</span></div>}
+          <fieldset disabled={!canEdit} className="vc-marketing-planning-fieldset"><TaskFields draft={campaignTaskDraft} onChange={(field, value) => setCampaignTaskDraft((current) => ({ ...current, [field]: value }))} campaigns={data.campaigns} campaignTask={selectedCampaignTask} artwork={selectedCampaignTask ? artworkByCampaignTask.get(selectedCampaignTask.id) : undefined} organizationId={organizationId || ''} canEdit={canEdit} canDelete={canDelete} draftFile={draftCampaignTaskArtworkFile} onDraftFileChange={setDraftCampaignTaskArtworkFile} onReferenceSaved={async () => { await refresh(); setDraftCampaignTaskArtworkFile(null); }}/></fieldset>
+          {selectedCampaignTask && data.campaignEvents.filter((event) => event.item_id === selectedCampaignTask.id).length > 0 && <div className="vc-marketing-planning-history"><b>Actividad reciente</b>{data.campaignEvents.filter((event) => event.item_id === selectedCampaignTask.id).slice(-8).reverse().map((event) => <small key={event.id}>{event.field_name === 'created' ? 'Actividad creada' : `${event.field_name === 'due_date' ? 'Fecha límite' : event.field_name === 'status' ? 'Etapa' : event.field_name}: ${event.previous_value || 'vacío'} → ${event.new_value}`} · {formatDate(String(event.created_at).slice(0, 10))}</small>)}</div>}
+          <div className="vc-content-modal-actions"><span>El plazo se conserva aunque la tarea se atrase; la reprogramación automática aplica solo a publicaciones.</span><button type="button" className="button button-outline" onClick={() => void closePlanningDialog()}>Cerrar</button>{canEdit && <button type="submit" className="button button-dark" disabled={saving}>{saving ? <LoaderCircle className="vc-content-spin" size={15}/> : <Save size={15}/>} {saving ? 'Guardando…' : 'Guardar actividad'}</button>}</div>
+        </form>
+      </section>
+    </div>}
+
     {modalOpen && <div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) void closePostEditor(); }}>
       <section ref={editorDialogRef} tabIndex={-1} className="vc-content-modal vc-content-modal-editor" role="dialog" aria-modal="true" aria-labelledby="vc-post-modal-title">
         <header className="vc-publication-editor-header">
@@ -548,7 +803,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
             onSaved={async () => { const fresh=await refresh(); if(selectedPost){const current=fresh?.posts.find(p=>p.id===selectedPost.id);if(current){const concurrent=Object.keys(defaultDraft()).some(key=>JSON.stringify(current[key])!==JSON.stringify(selectedPost[key]));if(!concurrent)setSelectedPost(current);else setLoadError('Otra persona modificó la ficha. Conservamos tus cambios locales; recarga la ficha antes de guardar.');}} setDraftArtworkFile(null); }}
           />
           </section>
-          <PublicationEditorSections key={draftTabKey} draft={draft} onChange={(field, value) => { editorDirty.current=true; setDraft((current) => ({ ...current, [field]: value, ...(field==='design_ready'?{art_status:value?'Sí' as const:'No' as const}:field==='video_ready'?{video_status:value?'Sí' as const:'No' as const}:field==='art_status'?{design_ready:value==='Sí'}:field==='video_status'?{video_ready:value==='Sí'}:{}) })); }} canEdit={canEdit} isNew={isNew} activeTab={editorTab} onTabChange={setEditorTab} selectedPost={selectedPost} checklistFields={checklistFields} events={selectedEvents} formatDate={formatDate} knownTags={knownTags} assignees={data.assignees} canApprove={canApprove}/>
+          <PublicationEditorSections key={draftTabKey} draft={draft} onChange={(field, value) => { editorDirty.current=true; setDraft((current) => ({ ...current, [field]: value, ...(field==='design_ready'?{art_status:value?'Sí' as const:'No' as const}:field==='video_ready'?{video_status:value?'Sí' as const:'No' as const}:field==='art_status'?{design_ready:value==='Sí'}:field==='video_status'?{video_ready:value==='Sí'}:{}) })); }} canEdit={canEdit} isNew={isNew} activeTab={editorTab} onTabChange={setEditorTab} selectedPost={selectedPost} checklistFields={checklistFields} events={selectedEvents} formatDate={formatDate} knownTags={knownTags} assignees={data.assignees} canApprove={canApprove} campaigns={data.campaigns}/>
           {loadError&&<div className="vc-content-alert is-error" role="alert"><div><b>No se pudo guardar</b><p>{loadError}</p><button type="button" disabled={saving} onClick={async()=>{const fresh=await refresh();const current=fresh?.posts.find(p=>p.id===selectedPost?.id);if(current&&await confirm({eyebrow:'RECARGAR FICHA',title:'¿Descartar los cambios locales?',description:'Se cargará la versión actual guardada en el servidor.',tone:'warning',confirmLabel:'Cargar versión del servidor',cancelLabel:'Seguir editando'})){editorDirty.current=false;await openPost(current);}}}>Recargar ficha del servidor</button></div></div>}
           <div className="vc-content-modal-actions">
             <span>{canEdit ? 'La ficha se guarda en el calendario central.' : 'Tu perfil tiene acceso de solo lectura.'}</span>
