@@ -9,3 +9,4 @@ export { Calendar, DatePicker, DateTimePicker, dateFromKey, dateToKey } from './
 export type { CalendarDayMetadata, CalendarMode, CalendarPreset, CalendarProps } from './ui/Calendar';
 export { InventoryOperationsCalendar } from './InventoryOperationsCalendar';
 export type { InventoryOperationsCalendarProps } from './InventoryOperationsCalendar';
+export * from './ui/DialogSystem';

@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Check, LoaderCircle, MessageCircle, ShieldCheck, X } from 'lucide-react';
+import { Check, LoaderCircle, MessageCircle, ShieldCheck } from 'lucide-react';
 import { useSite } from '../store';
 import { buildQuoteWhatsAppMessage, buildWhatsAppUrl, resolveQuoteWhatsAppRoute } from '../lib/whatsapp';
+import { Dialog } from './ui/OperationalKit';
 
 const cleanItems = (items = []) => items.map((item) => ({
   productId: item.productId || item.id || null,
@@ -75,14 +76,10 @@ export function QuoteRequestDialog({ open, onClose, items = [], totals = {}, sou
   };
 
   return (
-    <div className="quote-request-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose?.()}>
-      <section className="quote-request-dialog" role="dialog" aria-modal="true" aria-labelledby="quote-request-title">
-        <button type="button" className="quote-request-close" onClick={onClose} aria-label="Cerrar"><X size={20} /></button>
-        <div className="quote-request-icon"><MessageCircle size={24} /></div>
-        <span className="eyebrow orange">Último paso</span>
-        <h2 id="quote-request-title">Envía tu cotización a Gigaprint</h2>
-        <p>Guardaremos la solicitud y prepararemos el mensaje para el equipo de <b>{destination?.label || 'Ventas'}</b>.</p>
-        <form onSubmit={submit} className="quote-request-form">
+    <Dialog open={open} onOpenChange={(next)=>{if(!next)onClose?.();}} eyebrow="ÚLTIMO PASO" icon={<MessageCircle size={22}/>} title="Envía tu cotización a Gigaprint" description={<>Guardaremos la solicitud y prepararemos el mensaje para el equipo de <b>{destination?.label || 'Ventas'}</b>.</>} tone="brand" size="md" className="quote-request-system-dialog" footer={<button type="submit" form="quote-request-form" className="button button-primary quote-request-submit" disabled={sending}>
+      {sending ? <><LoaderCircle className="spin" size={18} /> Guardando…</> : <><Check size={18} /> Guardar y abrir WhatsApp</>}
+    </button>}>
+        <form id="quote-request-form" onSubmit={submit} className="quote-request-form">
           <div className="quote-request-fields">
             <label>Nombre y apellido *<input value={form.name} onChange={(event) => update('name', event.target.value)} autoComplete="name" /></label>
             <label>WhatsApp *<input value={form.phone} onChange={(event) => update('phone', event.target.value)} inputMode="tel" autoComplete="tel" placeholder="09…" /></label>
@@ -93,11 +90,7 @@ export function QuoteRequestDialog({ open, onClose, items = [], totals = {}, sou
           </div>
           {error && <div className="quote-request-error">{error}</div>}
           <div className="quote-request-assurance"><ShieldCheck size={17} /><span>La solicitud queda registrada antes de abrir WhatsApp.</span></div>
-          <button type="submit" className="button button-primary quote-request-submit" disabled={sending}>
-            {sending ? <><LoaderCircle className="spin" size={18} /> Guardando…</> : <><Check size={18} /> Guardar y abrir WhatsApp</>}
-          </button>
         </form>
-      </section>
-    </div>
+    </Dialog>
   );
 }

@@ -11,7 +11,7 @@ import { calculateQuotePrice, getQuoteBasis } from '../../lib/quotePricing';
 import { calculatePOSLine, formatPOSLineDescription } from '../../lib/posPricing';
 import { calculatePOSPaymentBreakdown } from '../../lib/posPayments';
 import { CommercialDocumentDetails, type CommercialDocumentKind } from '../../components/CommercialDocumentDetails';
-import { Sheet } from '../../components/ui/OperationalKit';
+import { Sheet, useConfirm } from '../../components/ui/OperationalKit';
 import { CommercialAssetsEditor } from '../../components/commercial/CommercialAssetsEditor';
 import { CommercialAssetsGallery } from '../../components/commercial/CommercialAssetsGallery';
 import { GoogleMapsPreview } from '../../components/commercial/GoogleMapsPreview';
@@ -187,6 +187,7 @@ function POSMaterialUsage({ lines, recipes, inventory, branchId, values, status,
 }
 
 export function PosPage() {
+  const confirmDialog=useConfirm();
   const { data, add, update, flash, refreshRemote }=useWorkspace();
   const { organizationId, user, hasPermission }=useAuth();
   const [form,setForm]=useState({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
@@ -517,11 +518,11 @@ export function PosPage() {
     }catch(error){flash(`No se pudo guardar la orden en espera: ${error.message}`);}
     finally{setParking(false);}
   };
-  const resumeParkedOrder=(order)=>{
+  const resumeParkedOrder=async(order)=>{
     const payload=order.payload||{};
     if(!payload.form){flash('Esta orden guardada tiene un formato que no se puede recuperar desde esta pantalla.');return;}
     if(pendingSaleKey.current&&pendingSaleKey.current!==order.idempotency_key){flash('Primero completa o revisa la operación de venta pendiente antes de recuperar otra orden.');return;}
-    if((cart.length||form.quoteId||customerQuery.trim()||form.customer.trim()||form.description.trim())&&!window.confirm('Recuperar esta orden reemplazará los datos del pedido actual. ¿Deseas continuar?'))return;
+    if(cart.length||form.quoteId||customerQuery.trim()||form.customer.trim()||form.description.trim()){const accepted=await confirmDialog({eyebrow:'RECUPERAR ORDEN EN ESPERA',title:'¿Reemplazar el pedido actual?',description:'Al recuperar esta orden, los datos que tienes abiertos en el POS serán sustituidos por la orden guardada.',tone:'warning',confirmLabel:'Recuperar orden',cancelLabel:'Seguir con el pedido actual',summaryItems:[{label:'Cliente',value:payload.form.customer||'Sin cliente'},{label:'Sucursal',value:branchNames[order.branch_id]||'Sucursal'},{label:'Total guardado',value:formatMoney(order.total)}],consequences:['La orden guardada no reservó ni descontó existencias.','Puedes revisar los artículos y datos antes de confirmar la venta.']});if(!accepted)return;}
     const savedForm={...payload.form,branchCode:String(payload.form.branchCode||form.branchCode)};
     const restoredFulfillment=payload.fulfillment||{installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''};
     const restoredMapLink=String(payload.mapLink||'');
@@ -538,6 +539,14 @@ export function PosPage() {
     setCartProductId('');setCartItemName('');setCartUnitPrice('');setCartQuantity('1');setActiveParkedOrderId(order.id);
     pendingSaleKey.current=order.idempotency_key;pendingSaleSnapshotRef.current=recoveredSnapshot;setPendingSaleRecoveryMode(true);setPendingSaleRecoveryError('');
     flash('Orden recuperada. Revisa los datos y confirma la venta cuando esté lista.');
+  };
+  const handleQuoteSelection=async(nextQuoteId:string,select:HTMLSelectElement)=>{
+    if(nextQuoteId&&(cart.length||form.quoteId)){const accepted=await confirmDialog({eyebrow:'ORIGEN DE LA VENTA',title:'¿Cargar esta cotización aprobada?',description:'Los artículos o la cotización que ya tienes en el POS serán reemplazados por el contenido de la cotización elegida.',tone:'warning',confirmLabel:'Cargar cotización',cancelLabel:'Conservar pedido actual',consequences:['Se conserva la cotización aprobada y su total confirmado.','Puedes revisar los datos antes de registrar la venta.']});if(!accepted){select.value=form.quoteId;return;}}
+    const quote=centralQuotes.find((item)=>item.id===nextQuoteId);
+    const knownCustomer=(data.customers||[]).find((customer)=>quote?.customer_id&&customer.id===quote.customer_id)||(data.customers||[]).find((customer)=>quote?.customer_phone&&customer.phone===quote.customer_phone)||(data.customers||[]).find((customer)=>quote?.customer_name&&customer.name.trim().toLocaleLowerCase('es')===quote.customer_name.trim().toLocaleLowerCase('es'));
+    setSelectedCustomerSnapshot(knownCustomer||null);
+    setForm({...form,quoteId:nextQuoteId,total:quote?.selected_total??'',amountPaid:quote?.selected_total??'',customerId:quote?.customer_id||knownCustomer?.id||'',customer:knownCustomer?.name||quote?.customer_name||'',customerPhone:knownCustomer?.phone||quote?.customer_phone||'',customerEmail:knownCustomer?.email||'',customerDocumentReference:knownCustomer?.documentReference||'',description:Array.isArray(quote?.items)?quote.items.map(item=>item.name||item.product_name).join(', '):''});
+    setCustomerQuery(knownCustomer?.name||quote?.customer_name||'');setClientBriefHtml(quote?.client_brief_html||'<p></p>');if(nextQuoteId)setCart([]);
   };
   const addCartLine=()=>{
     const quantity=cartQuantityNumber;
@@ -602,7 +611,7 @@ export function PosPage() {
     const saleNote=pendingSaleRecoveryMode&&pendingSaleKey.current&&typeof pendingSaleSnapshotRef.current?.saleNote==='string'?pendingSaleSnapshotRef.current.saleNote:[form.description,quote?`Cotización ${quote.quote_code}`:cart.map(line=>`${line.name} × ${line.quantity}`).join(' · ')].filter(Boolean).join(' · ');
     const shortages=findPOSStockShortages(lines,catalogLinks,selectedBranchId,data.inventory);
     if(shortages.length&&!canManageBackorders&&!hasPendingBackorderAuthorization){flash('Hay productos sin conteo o con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.');return;}
-    if(shortages.length&&!window.confirm(`Hay ${shortages.length} artículo(s) con conteo pendiente o existencias insuficientes. ¿Confirmar la orden y marcar el faltante como compra urgente?`))return;
+    if(shortages.length){const accepted=await confirmDialog({eyebrow:'VENTA CON FALTANTE DE INVENTARIO',title:'¿Confirmar la orden como compra urgente?',description:`${shortages.length} artículo(s) tienen conteo pendiente o existencias insuficientes en esta sucursal.`,tone:'warning',confirmLabel:'Confirmar y solicitar compra',cancelLabel:'Volver a revisar',summaryItems:[{label:'Artículos con faltante',value:String(shortages.length)}],consequences:['La venta continuará y el faltante quedará señalado para compra urgente.','No se inventará una disponibilidad: el registro conservará el detalle del faltante.']});if(!accepted)return;}
     const hadPendingSaleKey=Boolean(pendingSaleKey.current);
     let saleRequestStarted=false;
     let quoteAlreadyLinked=false;
@@ -687,7 +696,7 @@ export function PosPage() {
         <div className="panel-heading"><div><span className="eyebrow">NUEVA ORDEN</span><h2>Agrega los productos</h2><p className="pos-step-caption">Elige del catálogo o carga una cotización aprobada. Revisa el total y el cobro antes de confirmar.</p></div><ShoppingCart size={19}/></div>
         {pendingSaleRecoveryMode&&<div className={`pos-pending-sale-notice${pendingOperationChanged?' is-changed':''}`} role="status"><div><b>Operación protegida</b><p>{pendingOperationChanged?'Detecté cambios en los datos guardados o en los conceptos de la cotización. No enviaré una venta con la misma clave y contenido distinto. Recarga para recuperar la versión original.':'Si la respuesta anterior se interrumpió, puedes reintentar con esta misma clave y estos datos para evitar una venta duplicada.'}</p></div>{pendingOperationChanged&&<button className="button button-outline" type="button" onClick={()=>window.location.reload()}>Restaurar datos originales</button>}</div>}
         <div className="pos-checkout-main">
-        <label>Origen de la venta<select value={form.quoteId} onChange={(event)=>{if(event.target.value&&(cart.length||form.quoteId)&&!window.confirm("Cargar esta cotización reemplazará los artículos o cotización actuales. ¿Deseas continuar?"))return;const quote=centralQuotes.find((item)=>item.id===event.target.value);const knownCustomer=(data.customers||[]).find((customer)=>quote?.customer_id&&customer.id===quote.customer_id)|| (data.customers||[]).find((customer)=>quote?.customer_phone&&customer.phone===quote.customer_phone)|| (data.customers||[]).find((customer)=>quote?.customer_name&&customer.name.trim().toLocaleLowerCase('es')===quote.customer_name.trim().toLocaleLowerCase('es'));setSelectedCustomerSnapshot(knownCustomer||null);setForm({...form,quoteId:event.target.value,total:quote?.selected_total??'',amountPaid:quote?.selected_total??'',customerId:quote?.customer_id||knownCustomer?.id||'',customer:knownCustomer?.name||quote?.customer_name||'',customerPhone:knownCustomer?.phone||quote?.customer_phone||'',customerEmail:knownCustomer?.email||'',customerDocumentReference:knownCustomer?.documentReference||'',description:Array.isArray(quote?.items)?quote.items.map(item=>item.name||item.product_name).join(', '):''});setCustomerQuery(knownCustomer?.name||quote?.customer_name||'');setClientBriefHtml(quote?.client_brief_html||'<p></p>');if(event.target.value)setCart([]);}}><option value="">Venta manual: catálogo y carrito</option>{centralQuotes.filter((quote)=>quote.status==='accepted'&&quote.price_confirmed&&quote.selected_total!==null).map((quote)=><option key={quote.id} value={quote.id}>{quote.quote_code} · {quote.customer_name||'Cliente'} · {formatMoney(quote.selected_total)}</option>)}</select><small className="pos-field-help">Puedes armar una venta nueva o cargar una cotización aprobada con su precio confirmado.</small></label>
+        <label>Origen de la venta<select value={form.quoteId} onChange={(event)=>void handleQuoteSelection(event.target.value,event.currentTarget)}><option value="">Venta manual: catálogo y carrito</option>{centralQuotes.filter((quote)=>quote.status==='accepted'&&quote.price_confirmed&&quote.selected_total!==null).map((quote)=><option key={quote.id} value={quote.id}>{quote.quote_code} · {quote.customer_name||'Cliente'} · {formatMoney(quote.selected_total)}</option>)}</select><small className="pos-field-help">Puedes armar una venta nueva o cargar una cotización aprobada con su precio confirmado.</small></label>
         <POSCustomerPicker customers={data.customers||[]} remoteMatches={customerLookupActive&&canSearchCustomers&&!form.customerId&&customerSearch.results!==null&&!customerSearch.error?customerSearch.results:null} searchingCustomers={customerSearch.loading} searchError={customerSearch.error} onRetrySearch={()=>setCustomerSearchRequest((request)=>request+1)} canShowMore={Boolean(customerSearch.hasMore&&customerSearchLimit<20)} onShowMore={()=>setCustomerSearchLimit(20)} selectedCustomer={selectedCustomer} duplicateCustomer={duplicateCustomer} customerName={form.customer} onNewNameChange={(value)=>setForm((current)=>({...current,customer:value}))} query={customerQuery} onQueryChange={updateCustomerQuery} onSelect={choosePOSCustomer} phone={form.customerPhone} email={form.customerEmail} documentReference={form.customerDocumentReference} onContactChange={(field,value)=>setForm((current)=>({...current,[field==='phone'?'customerPhone':field==='email'?'customerEmail':'customerDocumentReference']:value}))} canViewSales={canViewCustomerHistory} historyLoading={customerHistory.loading} historyCount={customerHistory.count} historySummary={customerHistory.summary} recentPurchases={customerHistory.rows} onOpenPurchase={(purchase)=>setDetailTarget({kind:'sale',id:purchase.id,code:purchase.code})}/>
         {form.quoteId?<div className="pos-quote-total"><span>Total aprobado en cotización</span><strong>{formatMoney(form.total)}</strong><small>El total se conserva igual al aprobado.</small></div>:<>
           <section className="pos-cart-builder" aria-label="Agregar artículos">

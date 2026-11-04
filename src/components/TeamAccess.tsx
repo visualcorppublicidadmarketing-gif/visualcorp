@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Ban, Check, IdCard, RotateCcw, Save, Search, ShieldCheck, UserPlus, UserRoundX, Users } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { Avatar } from './ui/Avatar';
+import { useConfirm } from './ui/OperationalKit';
 import { supabase } from '../lib/supabaseClient';
 import { normalizePersonName } from '../lib/personName';
 import { legacyRoleNames, permissionModules, specialPermissionActions } from '../auth/accessCatalog';
@@ -16,6 +17,7 @@ export function TeamAccess() {
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const { organizationId, roles, hasPermission, refreshAccess } = useAuth();
+  const confirm = useConfirm();
   const canManageProfiles = hasPermission('team','manage_profiles');
   const canManageMembers = hasPermission('team','manage_members');
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -207,7 +209,7 @@ export function TeamAccess() {
   };
   const setAccountAccessActive = async (account, active: boolean) => {
     if (!canManageMembers || saving || account.memberships.some((membership) => membership.role === 'owner')) return;
-    if (!active && !window.confirm(`¿Bloquear a ${account.full_name || account.email} en Visual Corp?\n\nSe pausarán todos sus perfiles de acceso. Su cuenta Google y su historial se conservarán, y un administrador podrá reactivar el acceso.`)) return;
+    if (!active && !(await confirm({ eyebrow: 'SEGURIDAD DE ACCESO', title: `¿Bloquear a ${account.full_name || account.email} en Visual Corp?`, description: 'Se pausarán todos sus perfiles de acceso activos en el espacio.', tone: 'warning', confirmLabel: 'Bloquear acceso', cancelLabel: 'Cancelar', summaryItems: [{ label: 'Usuario', value: account.full_name || account.email }, { label: 'Correo', value: account.email || '—' }], consequences: ['Su cuenta Google y su historial operativo se conservarán íntegros.', 'Un administrador podrá reactivar el acceso cuando sea necesario.'] }))) return;
     setSaving(true); setMessage(''); setError('');
     try {
       const { data, error: stateError } = await supabase.rpc('set_visualcorp_user_access_active', { p_user_id: account.user_id, p_active: active });
@@ -220,7 +222,7 @@ export function TeamAccess() {
   };
   const removeAccountAccess = async (account) => {
     if (!canManageMembers || saving || !account.memberships.length || account.memberships.some((membership) => membership.role === 'owner')) return;
-    if (!window.confirm(`¿Quitar a ${account.full_name || account.email} de Visual Corp?\n\nSe eliminarán sus perfiles asignados y perderá el acceso al espacio. La cuenta Google seguirá existiendo y el historial de ventas, producción y otras operaciones se conservará. Luego podrás volver a asignarle un perfil.`)) return;
+    if (!(await confirm({ eyebrow: 'ADMINISTRACIÓN DE EQUIPO', title: `¿Quitar a ${account.full_name || account.email} de Visual Corp?`, description: 'Se eliminarán sus perfiles asignados y perderá el acceso al espacio.', tone: 'danger', destructive: true, confirmLabel: 'Retirar del equipo', cancelLabel: 'Conservar cuenta', summaryItems: [{ label: 'Colaborador', value: account.full_name || account.email }, { label: 'Perfiles asignados', value: `${account.memberships.length} perfil(es)` }], consequences: ['La cuenta Google seguirá existiendo sin cambios.', 'El historial de ventas, producción y caja se conservará.', 'Más adelante podrás volver a asignarle un perfil.'] }))) return;
     setSaving(true); setMessage(''); setError('');
     try {
       const { data, error: removeError } = await supabase.rpc('remove_visualcorp_user_access', { p_user_id: account.user_id });
