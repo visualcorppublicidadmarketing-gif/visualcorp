@@ -20,8 +20,10 @@ import {
   fetchPublicPOSOrder,
   submitPublicArtDecision
 } from '../../lib/posStore';
+import { useAlert } from '../../components/ui/OperationalKit';
 
 export function POSArtProofPublicPage() {
+  const alert = useAlert();
   const { orderId } = useParams();
   const [store, setStore] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -136,11 +138,11 @@ export function POSArtProofPublicPage() {
   // Final Action: Client Approves with E-Signature
   const handleConfirmApproval = async () => {
     if (!confirmedChecklist) {
-      alert('Por favor marca la casilla de verificación de conformidad técnica.');
+      await alert({ eyebrow: 'APROBACIÓN DE DISEÑO', title: 'Confirma la revisión técnica', description: 'Marca la casilla de conformidad antes de aprobar el diseño.', tone: 'warning' });
       return;
     }
     if (!hasSignature && !order.artProofSignature) {
-      alert('Por favor dibuja tu firma en el recuadro para formalizar la aprobación.');
+      await alert({ eyebrow: 'APROBACIÓN DE DISEÑO', title: 'Falta tu firma', description: 'Dibuja tu firma en el recuadro para formalizar la aprobación.', tone: 'warning' });
       return;
     }
 
@@ -162,14 +164,14 @@ export function POSArtProofPublicPage() {
       setOrder(res.order);
       setIsApprovedSuccess(true);
     } else {
-      alert('Ocurrió un error al guardar la aprobación: ' + res.error);
+      await alert({ eyebrow: 'APROBACIÓN DE DISEÑO', title: 'No se pudo guardar la aprobación', description: res.error || 'Ocurrió un error inesperado.', tone: 'danger' });
     }
   };
 
   // Request Changes with Pins
   const handleRequestCorrections = async () => {
     if (pins.length === 0) {
-      alert('Haz clic sobre el boceto para clavar al menos un pin con la corrección deseada.');
+      await alert({ eyebrow: 'CAMBIOS DEL DISEÑO', title: 'Marca dónde necesitas cambios', description: 'Haz clic sobre el boceto para colocar al menos una marca y describir la corrección.', tone: 'warning' });
       return;
     }
     const res = await submitPublicArtDecision(order.trackingToken || orderId, {
@@ -178,7 +180,7 @@ export function POSArtProofPublicPage() {
       pins,
     });
     if (res.ok) {
-      alert('Tus observaciones fueron enviadas al equipo de diseño de Gigaprint. ¡Te contactaremos en breve!');
+      await alert({ eyebrow: 'CAMBIOS DEL DISEÑO', title: 'Observaciones enviadas', description: 'El equipo de diseño recibió tus comentarios y se pondrá en contacto contigo.', tone: 'success' });
     }
   };
 

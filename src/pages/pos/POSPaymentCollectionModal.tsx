@@ -11,9 +11,11 @@ import {
 } from 'lucide-react';
 import { addOrderPayment } from '../../lib/posStore';
 import { useToast } from '../../components/studio/Toast';
+import { useConfirm } from '../../components/ui/OperationalKit';
 
 export function POSPaymentCollectionModal({ order, store, advisorId, onClose, onSuccess }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const balanceDue = Number(order?.balanceDue || 0);
   const [payAmount, setPayAmount] = useState(balanceDue);
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -22,7 +24,7 @@ export function POSPaymentCollectionModal({ order, store, advisorId, onClose, on
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const amountNum = Number(payAmount);
     if (isNaN(amountNum) || amountNum <= 0) {
@@ -30,7 +32,7 @@ export function POSPaymentCollectionModal({ order, store, advisorId, onClose, on
       return;
     }
     if (amountNum > balanceDue) {
-      if (!confirm(`El monto ingresado ($${amountNum}) es mayor al saldo pendiente ($${balanceDue}). ¿Deseas continuar?`)) {
+      if (!(await confirm({ eyebrow: 'REGISTRO DE ABONO', title: 'El monto supera el saldo pendiente', description: `Ingresaste $${amountNum.toFixed(2)} y el saldo pendiente es $${balanceDue.toFixed(2)}. ¿Deseas registrar el pago de todas formas?`, tone: 'warning', confirmLabel: 'Registrar pago', cancelLabel: 'Revisar monto', summaryItems: [{ label: 'Monto ingresado', value: `$${amountNum.toFixed(2)}` }, { label: 'Saldo pendiente', value: `$${balanceDue.toFixed(2)}` }] }))) {
         return;
       }
     }

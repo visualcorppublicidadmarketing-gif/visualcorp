@@ -10,8 +10,10 @@ import {
   Sparkles
 } from 'lucide-react';
 import { recordBlindCashAudit, toISODate } from '../../../lib/posStore';
+import { useConfirm } from '../../../components/ui/OperationalKit';
 
 export function POSBlindCashCountModal({ store, advisor, shift, onClose, onAuditSaved }) {
+  const confirm = useConfirm();
   const [denominations, setDenominations] = useState({
     '100': '',
     '50': '',
@@ -72,9 +74,9 @@ export function POSBlindCashCountModal({ store, advisor, shift, onClose, onAudit
     setDenominations(reset as typeof denominations);
   };
 
-  const handleSubmitAudit = (e) => {
+  const handleSubmitAudit = async (e) => {
     e.preventDefault();
-    if (totalDeclared <= 0 && !window.confirm('El monto contado es $0.00. ¿Deseas continuar con el arqueo?')) {
+    if (totalDeclared <= 0 && !(await confirm({ eyebrow: 'ARQUEO DE CAJA', title: 'El efectivo contado es $0,00', description: '¿Deseas guardar el arqueo con un monto declarado de cero?', tone: 'warning', confirmLabel: 'Guardar arqueo', cancelLabel: 'Revisar conteo' }))) {
       return;
     }
 

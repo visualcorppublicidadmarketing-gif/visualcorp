@@ -2,6 +2,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { ClipboardPaste, FileImage, ImagePlus, LoaderCircle, Trash2, Upload } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { formatMarketingFileSize, prepareMarketingImage } from './marketingImageUtils';
+import { useConfirm } from '../../../components/ui/OperationalKit';
 import './marketing-post-artwork.css';
 import './marketing-post-artwork-paste.css';
 
@@ -79,6 +80,7 @@ function imageFolder(date?: string) {
 }
 
 export function MarketingPostArtwork({ organizationId, post, asset, canEdit, canDelete, variant, draftFile = null, isDraft = false, onDraftFileChange, onSaved }: Props) {
+  const confirm = useConfirm();
   const id = useId();
   const zoneRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -293,9 +295,16 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, can
       return;
     }
     if (!canRemoveAsset || !supabase || !asset || !usableAsset || busy || uploadLock.current) return;
-    const accepted = window.confirm(
-      `¿Quitar la imagen de “${post.title || 'esta publicación'}”? Si no está vinculada a otras publicaciones, también se eliminará de la biblioteca privada. Esta acción no se puede deshacer.`,
-    );
+    const accepted = await confirm({
+      eyebrow: 'BIBLIOTECA DE CONTENIDO',
+      title: `¿Quitar la imagen de “${post.title || 'esta publicación'}”?`,
+      description: 'Si no está vinculada a otras publicaciones, también se eliminará de la biblioteca privada.',
+      tone: 'danger',
+      destructive: true,
+      confirmLabel: 'Quitar imagen',
+      cancelLabel: 'Conservar imagen',
+      consequences: ['No se puede deshacer esta acción.'],
+    });
     if (!accepted) return;
 
     uploadLock.current = true;

@@ -9,6 +9,7 @@ import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
 import { AnimatedList } from '../../components/ui/MagicComponents';
 import { ContextMenu, type ContextMenuAction } from '../../components/ui/ContextMenu';
+import { useConfirm } from '../../components/ui/OperationalKit';
 import { EmptyState, StageBadge } from '../../components/feedback';
 import { supabase } from '../../lib/supabaseClient';
 import { MarketingCalendar, MarketingReadinessIndicators } from './marketing/MarketingCalendar';
@@ -69,6 +70,7 @@ async function readAll(table: string, organizationId: string, orderBy?: string) 
 
 export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations' }) {
   const { organizationId, hasPermission, user } = useAuth();
+  const confirm = useConfirm();
   const canView = hasPermission('marketing', 'view');
   const canEdit = hasPermission('marketing', 'edit');
   const canDelete = hasPermission('marketing', 'delete_records');
@@ -150,7 +152,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     }
     const dialog = editorDialogRef.current;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { closePostEditor(); return; }
+      if (event.key === 'Escape') { void closePostEditor(); return; }
       if (event.key !== 'Tab' || !dialog) return;
       const focusable = [...dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')].filter((element) => element.offsetParent !== null);
       if (!focusable.length) return;
@@ -206,10 +208,18 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
 
   const publications = data.posts.filter(isPublication);
   const materialsFor = (post: Post) => data.postAssets.filter(link=>link.post_id===post.id).map(link=>data.assets.find(asset=>asset.id===link.asset_id)).filter(Boolean);
-  const confirmStatus = (post:Post,status:string) => {
+  const confirmStatus = async (post:Post,status:string) => {
     if (!/programad|publicad/i.test(status)) return true;
     const missing = publicationWarnings(post,data.reviews,materialsFor(post));
-    return !missing.length || window.confirm(`La pieza tiene datos pendientes:\n${missing.join('\n')}\n¿Confirmas el registro como ${status}? Esto no publica en redes ni crea una aprobación.`);
+    return !missing.length || await confirm({
+      eyebrow: 'REVISIÓN DE PUBLICACIÓN',
+      title: `La pieza tiene ${missing.length} pendiente${missing.length === 1 ? '' : 's'}`,
+      description: missing.join(' · '),
+      tone: 'warning',
+      confirmLabel: `Registrar como ${status}`,
+      cancelLabel: 'Revisar la ficha',
+      callout: 'Este cambio registra la etapa en el calendario; no publica en redes ni crea una aprobación.',
+    });
   };
   const published = publications.filter((post) => /publicad/i.test(post.status || '')).length;
   const overdue = publications.filter(post=>matchesQueue(post,'overdue',today)).length;
@@ -230,16 +240,17 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const hasEditorArtwork = isNew ? Boolean(draftArtworkFile) : Boolean(selectedPost && artworkByPost.get(selectedPost.id));
   const publishedMissingItems = /publicad/i.test(draft.status) ? [!draft.scheduled_time ? 'hora' : '', !draft.owner ? 'responsable' : '', !hasEditorArtwork ? 'imagen' : ''].filter(Boolean) : [];
 
-  const closePostEditor = () => {
-    if (saving || (editorDirty.current && !window.confirm('¿Cerrar y descartar los cambios sin guardar?'))) return;
+  const closePostEditor = async () => {
+    if (saving) return;
+    if (editorDirty.current && !(await confirm({ eyebrow: 'CAMBIOS SIN GUARDAR', title: '¿Cerrar y descartar los cambios?', description: 'Los cambios locales de esta ficha se perderán.', tone: 'warning', confirmLabel: 'Descartar cambios', cancelLabel: 'Seguir editando' }))) return;
     editorDirty.current = false;
     setDraftArtworkFile(null);
     setSelectedPost(null);
     setModalOpen(false);
   };
 
-  const openPost = (post?: Post, scheduledDate = '') => {
-    if (modalOpen && editorDirty.current && !window.confirm('¿Descartar los cambios y abrir otra ficha?')) return;
+  const openPost = async (post?: Post, scheduledDate = '') => {
+    if (modalOpen && editorDirty.current && !(await confirm({ eyebrow: 'CAMBIOS SIN GUARDAR', title: '¿Descartar los cambios y abrir otra ficha?', description: 'La información sin guardar de la ficha actual se perderá.', tone: 'warning', confirmLabel: 'Descartar y abrir', cancelLabel: 'Seguir editando' }))) return;
     editorDirty.current = false;
     previousEditorFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setDraftArtworkFile(null);
@@ -268,7 +279,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const changePostStatus = async (post: Post, status: string) => {
     if (!supabase || !organizationId || !canEdit || !status || status === post.status) return;
     if (/^aprobad[ao]$/i.test(status)) { setReviewPost(post); return; }
-    if (!confirmStatus(post,status)) return;
+    if (!(await confirmStatus(post,status))) return;
     setSaving(true);
     try {
       await saveMarketingPost(organizationId,post,{status});
@@ -319,7 +330,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       const creating = isNew;
       const { canvas_width: _canvasWidth, canvas_height: _canvasHeight, owner: _historicalOwner, owner_user_id: ownerId, ...draftFields } = draft;
       const fields = { ...draftFields, canvas_width: canvasWidth, canvas_height: canvasHeight, calendar_color: getMarketingCalendarColor(draft.calendar_color, []), title: draft.title.trim(), tags: [...new Set(getMarketingTags(draft.tags.split(',')))], ...((ownerId||null)!==(selectedPost?.owner_user_id||null)?{owner_user_id:ownerId||null}:{}) };
-      if (!confirmStatus({ ...selectedPost, ...fields } as Post,draft.status)) return;
+      if (!(await confirmStatus({ ...selectedPost, ...fields } as Post,draft.status))) return;
       const saved = await saveMarketingPost(organizationId,creating?null:selectedPost,fields,creating?creationKey.current:undefined);
       if(creating&&Object.entries(fields).some(([key,value])=>JSON.stringify(saved[key])!==JSON.stringify(value))){setSelectedPost(saved as Post);setIsNew(false);setNotice('Recuperamos la ficha creada en el intento anterior. Revisa tus cambios antes de volver a guardar.');await refresh();return;}
       editorDirty.current=false;
@@ -346,7 +357,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const deletePosts = async (posts: Post[]) => {
     if (!canDelete || !supabase || !organizationId || !posts.length) return;
     const noun = posts.length === 1 ? `“${posts[0].title}”` : `${posts.length} publicaciones seleccionadas`;
-    if (!window.confirm(`¿Eliminar ${noun} permanentemente? Se quitarán del calendario y sus piezas vinculadas. Los leads conservan su registro y se desvinculan de la publicación.`)) return;
+    if (!(await confirm({ eyebrow: 'ACCIÓN IRREVERSIBLE', title: `¿Eliminar ${noun} permanentemente?`, description: 'Se quitarán del calendario y sus piezas vinculadas. Los leads conservan su registro y se desvinculan de la publicación.', tone: 'danger', destructive: true, confirmLabel: 'Eliminar publicación', cancelLabel: 'Conservar publicación', consequences: ['Los vínculos de arte asociados a otras publicaciones se conservarán.'] }))) return;
     setSaving(true);
     try {
       const { data: deleted, error } = await supabase.from('marketing_posts').delete().eq('organization_id', organizationId).in('id', posts.map((post) => post.id)).select('id');
@@ -354,7 +365,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       const deletedIds = new Set((deleted || []).map((row) => row.id));
       if (!deletedIds.size) throw new Error('No se eliminó ninguna publicación. Revisa el permiso Eliminar en Marketing.');
       setSelectedPostIds((current) => new Set([...current].filter((id) => !deletedIds.has(id))));
-      if (selectedPost && deletedIds.has(selectedPost.id)) closePostEditor();
+      if (selectedPost && deletedIds.has(selectedPost.id)) await closePostEditor();
       setNotice(`${deletedIds.size} publicación${deletedIds.size === 1 ? '' : 'es'} eliminada${deletedIds.size === 1 ? '' : 's'}.`);
       await refresh();
     } catch (error: any) { setLoadError(error?.message || 'No se pudieron eliminar las publicaciones.'); }
@@ -382,7 +393,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     { kind: 'label', label: 'Publicación', onSelect: () => {} },
     { label: 'Revisar pieza', icon: <CheckCircle2 size={14}/>, onSelect: () => setReviewPost(post), disabled: !isPublication(post) },
     { label: 'Proponer nueva fecha', icon: <CalendarDays size={14}/>, onSelect: () => reschedulePost(post), disabled: !canEdit },
-    { label: 'Editar ficha', icon: <Pencil size={14}/>, onSelect: () => openPost(post), disabled: !canEdit },
+    { label: 'Editar ficha', icon: <Pencil size={14}/>, onSelect: () => { void openPost(post); }, disabled: !canEdit },
     { label: 'Duplicar como borrador', icon: <CopyPlus size={14}/>, onSelect: () => void duplicatePost(post), disabled: !canEdit },
     { label: selectedPostIds.has(post.id) ? 'Quitar de seleccionadas' : 'Seleccionar publicación', icon: <Check size={14}/>, kind: 'checkbox', checked: selectedPostIds.has(post.id), onSelect: () => {}, onCheckedChange: () => togglePost(post.id), disabled: !(canEdit || canDelete) },
     { label: post.design_ready ? 'Diseño listo' : 'Marcar diseño listo', group: 'Producción', icon: <FileImage size={14}/>, kind: 'checkbox', checked: post.design_ready === true, onSelect: () => {}, onCheckedChange: (checked) => void changePostReadiness(post, 'design_ready', checked), disabled: !canEdit },
@@ -506,7 +517,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     {reviewPost&&<ReviewPanel post={reviewPost} materials={materialsFor(reviewPost)} reviews={data.reviews} events={data.events.filter(e=>e.post_id===reviewPost.id).slice(-20).reverse()} canEdit={canEdit} canApprove={canApprove} onClose={()=>setReviewPost(null)} onReload={async()=>{const fresh=await refresh();const current=fresh?.posts.find(p=>p.id===reviewPost.id);if(current)setReviewPost(current);}} onEdit={()=>{setReviewPost(null);openPost(reviewPost);}} onDecision={async(decision,feedback)=>{const result=await supabase!.rpc('review_marketing_post',{p_organization_id:organizationId,p_post_id:reviewPost.id,p_expected_version:reviewPost.row_version,p_decision:decision,p_feedback:feedback});if(result.error)throw result.error;setReviewPost(null);setNotice('Decisión registrada con su versión.');await refresh();}}/>}
     {proposal&&<DateProposal post={proposal.post} today={today} closedDays={data.days} initialDate={proposal.date} onClose={()=>setProposal(null)} onSave={async(field,date)=>{await saveMarketingPost(organizationId!,proposal.post,{[field]:date});setNotice('Fecha actualizada por confirmación del equipo.');await refresh();}}/>}
     {showDays&&<NonproductionSettings days={data.days} onClose={()=>setShowDays(false)} onSave={async(date,reason,remove=false)=>{const result=await supabase!.rpc('set_marketing_nonproduction_day',{p_organization_id:organizationId,p_day:date,p_reason:reason,p_remove:remove});if(result.error)throw result.error;await refresh();}}/>}
-    {modalOpen && <div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePostEditor(); }}>
+    {modalOpen && <div className="vc-content-modal-scrim" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) void closePostEditor(); }}>
       <section ref={editorDialogRef} tabIndex={-1} className="vc-content-modal vc-content-modal-editor" role="dialog" aria-modal="true" aria-labelledby="vc-post-modal-title">
         <header className="vc-publication-editor-header">
           <div className="vc-publication-editor-title">
@@ -514,7 +525,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
             <h2 id="vc-post-modal-title">{isNew ? 'Planifica una publicación' : 'Edita la publicación'}</h2>
             <p>{draft.title || 'Organiza el mensaje, el calendario y la producción desde una sola ficha.'}</p>
           </div>
-          <button type="button" className="icon-button" aria-label="Cerrar" autoFocus onClick={closePostEditor}><X size={18}/></button>
+          <button type="button" className="icon-button" aria-label="Cerrar" autoFocus onClick={() => void closePostEditor()}><X size={18}/></button>
         </header>
         <form onSubmit={savePost}>
           <section className="vc-publication-editor-artwork" aria-label="Imagen de referencia">
@@ -538,11 +549,11 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
           />
           </section>
           <PublicationEditorSections key={draftTabKey} draft={draft} onChange={(field, value) => { editorDirty.current=true; setDraft((current) => ({ ...current, [field]: value, ...(field==='design_ready'?{art_status:value?'Sí' as const:'No' as const}:field==='video_ready'?{video_status:value?'Sí' as const:'No' as const}:field==='art_status'?{design_ready:value==='Sí'}:field==='video_status'?{video_ready:value==='Sí'}:{}) })); }} canEdit={canEdit} isNew={isNew} activeTab={editorTab} onTabChange={setEditorTab} selectedPost={selectedPost} checklistFields={checklistFields} events={selectedEvents} formatDate={formatDate} knownTags={knownTags} assignees={data.assignees} canApprove={canApprove}/>
-          {loadError&&<div className="vc-content-alert is-error" role="alert"><div><b>No se pudo guardar</b><p>{loadError}</p><button type="button" disabled={saving} onClick={async()=>{const fresh=await refresh();const current=fresh?.posts.find(p=>p.id===selectedPost?.id);if(current&&window.confirm('¿Descartar los cambios locales y cargar la ficha actual del servidor?')){editorDirty.current=false;openPost(current);}}}>Recargar ficha del servidor</button></div></div>}
+          {loadError&&<div className="vc-content-alert is-error" role="alert"><div><b>No se pudo guardar</b><p>{loadError}</p><button type="button" disabled={saving} onClick={async()=>{const fresh=await refresh();const current=fresh?.posts.find(p=>p.id===selectedPost?.id);if(current&&await confirm({eyebrow:'RECARGAR FICHA',title:'¿Descartar los cambios locales?',description:'Se cargará la versión actual guardada en el servidor.',tone:'warning',confirmLabel:'Cargar versión del servidor',cancelLabel:'Seguir editando'})){editorDirty.current=false;await openPost(current);}}}>Recargar ficha del servidor</button></div></div>}
           <div className="vc-content-modal-actions">
             <span>{canEdit ? 'La ficha se guarda en el calendario central.' : 'Tu perfil tiene acceso de solo lectura.'}</span>
             {canDelete && selectedPost && <button type="button" className="vc-small-danger" disabled={saving} onClick={() => void deletePosts([selectedPost])}><Trash2 size={13}/>Eliminar publicación</button>}
-            <button type="button" className="button button-outline" onClick={closePostEditor}>Cerrar</button>
+            <button type="button" className="button button-outline" onClick={() => void closePostEditor()}>Cerrar</button>
             {canEdit && <button type="submit" className="button button-dark" disabled={saving}>{saving ? <LoaderCircle className="vc-content-spin" size={15}/> : <Save size={15}/>} {saving ? 'Guardando…' : 'Guardar ficha'}</button>}
           </div>
         </form>

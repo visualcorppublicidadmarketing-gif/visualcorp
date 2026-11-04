@@ -3,7 +3,7 @@ import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, CalendarClock, Check, CircleCheck, ClipboardCheck, ClipboardList, Clock3, Hammer, PackageCheck, PenTool, Play, Printer, RefreshCw, RotateCcw, ScanLine, Search, ShieldCheck, Shirt, UserRound } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
-import { Sheet } from '../../components/ui/OperationalKit';
+import { Sheet, useConfirm } from '../../components/ui/OperationalKit';
 import { supabase } from '../../lib/supabaseClient';
 import { ProductionArtworkReference } from './ProductionArtworkReference';
 import { ProductionQueueSkeleton, ProductionQueueSummary, ProductionStageProgress } from './ProductionQueueComponents';
@@ -203,6 +203,7 @@ export function ProductionJobsPage() {
   const { area: areaParam } = useParams<{ area: AreaSlug }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { organizationId, user, hasPermission, profiles, roles } = useAuth();
+  const confirm = useConfirm();
   const area = AREA_CONFIG.find((entry) => entry.slug === areaParam);
   const canSeeWorkshop = hasPermission('workshop', 'view');
   const canEditWorkshop = hasPermission('workshop', 'edit');
@@ -582,7 +583,7 @@ export function ProductionJobsPage() {
     const { data, error } = await supabase.rpc('list_production_job_balance_flags', { p_organization_id: organizationId, p_job_ids: [jobId] });
     if (error) throw error;
     const due = ((data || []) as Array<{ job_id: string; balance_due: boolean }>).some((entry) => entry.job_id === jobId && entry.balance_due);
-    return !due || window.confirm('Este trabajo todavía tiene saldo pendiente. ¿Deseas registrar la entrega de todos modos? El saldo quedará pendiente para seguimiento.');
+    return !due || await confirm({ eyebrow: 'ENTREGA Y COBRO', title: 'El trabajo todavía tiene saldo pendiente', description: 'Puedes registrar la entrega y conservar el saldo pendiente para seguimiento.', tone: 'warning', confirmLabel: 'Continuar con la entrega', cancelLabel: 'Revisar el saldo', summaryItems: [{ label: 'Trabajo', value: jobId }] });
   };
 
   const updateFulfillment = async (action: 'quality_pass' | 'schedule_delivery' | 'deliver' | 'install') => {

@@ -32,9 +32,11 @@ import {
   toISODate
 } from '../../lib/posStore';
 import { useToast } from '../../components/studio/Toast';
+import { useConfirm } from '../../components/ui/OperationalKit';
 
 export function POSCustomerCRM({ store, onStoreUpdate, onReorder }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState(store.customers?.[0]?.id || null);
   const [filterTag, setFilterTag] = useState('all');
@@ -201,8 +203,8 @@ export function POSCustomerCRM({ store, onStoreUpdate, onReorder }) {
   };
 
   // Delete Customer
-  const handleDeleteCustomer = (customerId) => {
-    if (!confirm('¿Estás seguro de eliminar este cliente? Esta acción no se puede deshacer.')) return;
+  const handleDeleteCustomer = async (customerId) => {
+    if (!(await confirm({ eyebrow: 'DIRECTORIO DE CLIENTES', title: '¿Eliminar este cliente?', description: 'Esta acción no se puede deshacer.', tone: 'danger', destructive: true, confirmLabel: 'Eliminar cliente', cancelLabel: 'Conservar cliente' }))) return;
     const res = deleteCustomer(store, customerId);
     if (!res.ok) {
       toast.error(res.error || 'No se pudo eliminar el cliente.');

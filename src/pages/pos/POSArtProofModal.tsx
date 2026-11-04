@@ -18,8 +18,10 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { approveOrderArtProof, addArtProofPin } from '../../lib/posStore';
+import { useAlert } from '../../components/ui/OperationalKit';
 
 export function POSArtProofModal({ order, store, setStore, isOpen, onClose }) {
+  const alert = useAlert();
   if (!isOpen || !order) return null;
 
   const [artUrl, setArtUrl] = useState(order.artUrl || '');
@@ -414,9 +416,13 @@ export function POSArtProofModal({ order, store, setStore, isOpen, onClose }) {
           </div>
           <button
             type="button"
-            onClick={() => {
-              navigator.clipboard.writeText(publicProofUrl);
-              alert('Enlace copiado al portapapeles.');
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(publicProofUrl);
+                await alert({ eyebrow: 'PRUEBA DIGITAL', title: 'Enlace copiado', description: 'El enlace para el cliente está listo para compartir.', tone: 'success' });
+              } catch {
+                await alert({ eyebrow: 'PRUEBA DIGITAL', title: 'No se pudo copiar el enlace', description: 'Revisa los permisos del portapapeles e inténtalo de nuevo.', tone: 'warning' });
+              }
             }}
             className="pos-cat-pill"
             style={{ padding: '3px 8px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
