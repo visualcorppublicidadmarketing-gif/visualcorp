@@ -12,6 +12,10 @@ const MAX_STORAGE_FILE_BYTES = 50 * 1024 * 1024;
 const MAX_SOURCE_FILE_BYTES = 80 * 1024 * 1024;
 
 type MarketingArtworkPost = { id: string; source_id?: string; title: string; scheduled_date?: string };
+type MarketingArtworkAssociation =
+  | { kind: 'post' }
+  | { kind: 'campaign'; campaignId: string }
+  | { kind: 'item'; itemId: string };
 export type MarketingArtworkAsset = {
   id: string;
   filename: string;
@@ -26,6 +30,7 @@ export type MarketingArtworkAsset = {
 type Props = {
   organizationId: string;
   post: MarketingArtworkPost;
+  association?: MarketingArtworkAssociation;
   asset?: MarketingArtworkAsset;
   canEdit: boolean;
   canDelete?: boolean;
@@ -79,7 +84,7 @@ function imageFolder(date?: string) {
   return `Campanas_y_publicaciones/${month ? `${month.slice(0, 4)}/${month}` : 'Por_programar'}`;
 }
 
-export function MarketingPostArtwork({ organizationId, post, asset, canEdit, canDelete, variant, draftFile = null, isDraft = false, onDraftFileChange, onSaved }: Props) {
+export function MarketingPostArtwork({ organizationId, post, association = { kind: 'post' }, asset, canEdit, canDelete, variant, draftFile = null, isDraft = false, onDraftFileChange, onSaved }: Props) {
   const confirm = useConfirm();
   const id = useId();
   const zoneRef = useRef<HTMLDivElement>(null);
@@ -97,6 +102,10 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, can
   const usableAsset = asset?.storage_status === 'supabase_storage' && asset.rel_path.startsWith(BUCKET_PREFIX);
   const canRemoveAsset = Boolean(supabase && canDelete && usableAsset && asset);
   const canRemoveImage = canRemoveAsset || Boolean(draftFile && onDraftFileChange);
+  const entityTypeLabel = association.kind === 'post' ? 'publicación' : association.kind === 'campaign' ? 'campaña' : 'actividad';
+  const linkTable = association.kind === 'post' ? 'marketing_post_assets' : association.kind === 'campaign' ? 'marketing_campaign_assets' : 'marketing_campaign_item_assets';
+  const linkColumn = association.kind === 'post' ? 'post_id' : association.kind === 'campaign' ? 'campaign_id' : 'item_id';
+  const linkEntityId = association.kind === 'post' ? post.id : association.kind === 'campaign' ? association.campaignId : association.itemId;
 
   useEffect(() => {
     if (!draftFile) {
@@ -237,28 +246,50 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, can
       const { error: statusError } = await supabase.from('marketing_assets').update({ storage_status: 'supabase_storage', is_available: true, preview_status: prepared.width ? 'ready' : 'pending', updated_at: new Date().toISOString() }).eq('organization_id', organizationId).eq('id', indexedAsset.id);
       if (statusError) throw new Error(`La imagen se subió; no se pudo actualizar su ficha: ${statusError.message}`);
 
-      const { error: linkError } = await supabase.from('marketing_post_assets').insert({
-        organization_id: organizationId,
-        source_system: 'visualcorp-suite',
-        source_id: `post-image-link-${crypto.randomUUID()}`,
-        source_post_id: post.source_id || post.id,
-        source_asset_id: assetSourceId,
-        post_id: post.id,
-        asset_id: indexedAsset.id,
-        role: 'Imagen de publicación',
-      });
-      if (linkError) throw new Error(`La imagen se guardó en la biblioteca, pero no pudo vincularse a la publicación: ${linkError.message}`);
+      const linkError = association.kind === 'post'
+        ? (await supabase.from('marketing_post_assets').insert({
+          organization_id: organizationId,
+          source_system: 'visualcorp-suite',
+          source_id: `post-image-link-${crypto.randomUUID()}`,
+          source_post_id: post.source_id || post.id,
+          source_asset_id: assetSourceId,
+          post_id: post.id,
+          asset_id: indexedAsset.id,
+          role: 'Imagen de publicación',
+        })).error
+        : association.kind === 'campaign'
+          ? (await supabase.from('marketing_campaign_assets').insert({
+            organization_id: organizationId,
+            source_system: 'visualcorp-suite',
+            source_id: `campaign-image-link-${crypto.randomUUID()}`,
+            source_campaign_id: post.source_id || post.id,
+            source_asset_id: assetSourceId,
+            campaign_id: association.campaignId,
+            asset_id: indexedAsset.id,
+            role: 'Imagen de referencia',
+          })).error
+          : (await supabase.from('marketing_campaign_item_assets').insert({
+            organization_id: organizationId,
+            source_system: 'visualcorp-suite',
+            source_id: `campaign-item-image-link-${crypto.randomUUID()}`,
+            source_item_id: post.source_id || post.id,
+            source_asset_id: assetSourceId,
+            item_id: association.itemId,
+            asset_id: indexedAsset.id,
+            role: 'Imagen de referencia',
+          })).error;
+      if (linkError) throw new Error(`La imagen se guardó en la biblioteca, pero no pudo vincularse a la ${entityTypeLabel}: ${linkError.message}`);
 
       const ratio = source.size > file.size ? ` · ${formatMarketingFileSize(source.size)} → ${formatMarketingFileSize(file.size)} (${Math.round((1 - file.size / source.size) * 100)}% menos)` : ` · ${formatMarketingFileSize(file.size)}${prepared.optimized ? ' optimizada' : ' · formato original conservado'}`;
-      setMessage(`Imagen guardada en esta publicación${ratio}.`);
+      setMessage(`Imagen guardada en esta ${entityTypeLabel}${ratio}.`);
       await onSaved();
       if (draftFile && onDraftFileChange) onDraftFileChange(null);
     } catch (cause: unknown) {
       let cleanupNote = '';
       if (indexedAssetId) {
         try {
-          const { data: existingLink, error: linkCheckError } = await supabase.from('marketing_post_assets')
-            .select('id').eq('organization_id', organizationId).eq('asset_id', indexedAssetId).limit(1).maybeSingle();
+          const { data: existingLink, error: linkCheckError } = await supabase.from(linkTable)
+            .select('id').eq('organization_id', organizationId).eq('asset_id', indexedAssetId).eq(linkColumn, linkEntityId).limit(1).maybeSingle();
           if (linkCheckError) {
             cleanupNote = ' No pudimos confirmar si quedó vinculada; conserva su registro para evitar borrar una imagen que sí se haya guardado.';
           } else if (existingLink) {
@@ -297,8 +328,8 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, can
     if (!canRemoveAsset || !supabase || !asset || !usableAsset || busy || uploadLock.current) return;
     const accepted = await confirm({
       eyebrow: 'BIBLIOTECA DE CONTENIDO',
-      title: `¿Quitar la imagen de “${post.title || 'esta publicación'}”?`,
-      description: 'Si no está vinculada a otras publicaciones, también se eliminará de la biblioteca privada.',
+      title: `¿Quitar la imagen de “${post.title || `esta ${entityTypeLabel}`}”?`,
+      description: 'Si no está vinculada a otras fichas, también se eliminará de la biblioteca privada.',
       tone: 'danger',
       destructive: true,
       confirmLabel: 'Quitar imagen',
@@ -312,27 +343,31 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, can
     setError('');
     setMessage('Quitando imagen…');
     try {
-      const { data: linkedPosts, error: linksError } = await supabase
-        .from('marketing_post_assets')
-        .select('post_id')
-        .eq('organization_id', organizationId)
-        .eq('asset_id', asset.id);
+      const [postLinks, campaignLinks, itemLinks] = await Promise.all([
+        supabase.from('marketing_post_assets').select('post_id').eq('organization_id', organizationId).eq('asset_id', asset.id),
+        supabase.from('marketing_campaign_assets').select('campaign_id').eq('organization_id', organizationId).eq('asset_id', asset.id),
+        supabase.from('marketing_campaign_item_assets').select('item_id').eq('organization_id', organizationId).eq('asset_id', asset.id),
+      ]);
+      const linksError = postLinks.error || campaignLinks.error || itemLinks.error;
       if (linksError) throw new Error(`No se pudo comprobar dónde se usa la imagen: ${linksError.message}`);
 
-      const usedByOtherPosts = (linkedPosts || []).some((link) => link.post_id !== post.id);
-      if (!usedByOtherPosts) {
+      const remainingPostLinks = (postLinks.data || []).filter((link) => !(association.kind === 'post' && link.post_id === post.id));
+      const remainingCampaignLinks = (campaignLinks.data || []).filter((link) => !(association.kind === 'campaign' && link.campaign_id === association.campaignId));
+      const remainingItemLinks = (itemLinks.data || []).filter((link) => !(association.kind === 'item' && link.item_id === association.itemId));
+      const usedByOtherRecords = Boolean(remainingPostLinks.length || remainingCampaignLinks.length || remainingItemLinks.length);
+      if (!usedByOtherRecords) {
         const objectPath = asset.rel_path.slice(BUCKET_PREFIX.length);
         const { error: storageError } = await supabase.storage.from(BUCKET).remove([objectPath]);
         if (storageError) throw new Error(`No se pudo eliminar la imagen del almacenamiento privado: ${storageError.message}`);
       }
 
-      const { error: unlinkError } = await supabase.from('marketing_post_assets').delete()
+      const { error: unlinkError } = await supabase.from(linkTable).delete()
         .eq('organization_id', organizationId)
-        .eq('post_id', post.id)
+        .eq(linkColumn, linkEntityId)
         .eq('asset_id', asset.id);
-      if (unlinkError) throw new Error(`No se pudo quitar la imagen de la publicación: ${unlinkError.message}`);
+      if (unlinkError) throw new Error(`No se pudo quitar la imagen de la ${entityTypeLabel}: ${unlinkError.message}`);
 
-      if (!usedByOtherPosts) {
+      if (!usedByOtherRecords) {
         const { error: indexError } = await supabase.from('marketing_assets').delete()
           .eq('organization_id', organizationId)
           .eq('id', asset.id)
@@ -340,10 +375,10 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, can
         if (indexError) throw new Error(`La imagen salió del almacenamiento, pero no se pudo limpiar su ficha: ${indexError.message}`);
       }
 
-      setMessage(usedByOtherPosts
-        ? 'Imagen quitada de esta publicación; se conserva porque está vinculada a otras.'
-        : 'Imagen eliminada de esta publicación y de la biblioteca.');
-      onSaved();
+      setMessage(usedByOtherRecords
+        ? `Imagen quitada de esta ${entityTypeLabel}; se conserva porque está vinculada a otras fichas.`
+        : `Imagen eliminada de esta ${entityTypeLabel} y de la biblioteca.`);
+      await onSaved();
     } catch (cause: unknown) {
       setMessage('');
       setError(cause instanceof Error ? cause.message : 'No se pudo quitar la imagen.');
@@ -357,7 +392,7 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, can
     if (!canUpload || busy) return;
     const image = files.find((file) => file.type.startsWith('image/'));
     if (!image) {
-      setError('Suelta o pega una imagen para esta publicación.');
+      setError(`Suelta o pega una imagen para esta ${entityTypeLabel}.`);
       return;
     }
     if (files.filter((file) => file.type.startsWith('image/')).length > 1) {
@@ -418,13 +453,13 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, can
   const imageUrl = draftPreviewUrl || previewUrl;
   const pendingDraft = Boolean(draftFile && onDraftFileChange && !isDraft);
   const compactLabel = pendingDraft ? `Subir imagen de ${post.title}` : preview ? `Cambiar imagen de ${post.title}` : `Añadir imagen a ${post.title}`;
-  const removeLabel = draftFile ? 'Descartar imagen pendiente' : `Quitar imagen de ${post.title || 'la publicación'}`;
+  const removeLabel = draftFile ? 'Descartar imagen pendiente' : `Quitar imagen de ${post.title || `la ${entityTypeLabel}`}`;
 
   return <div
     ref={zoneRef}
     className={`vc-marketing-post-artwork is-${variant}${dragOver ? ' is-drag-over' : ''}${preview ? ' has-image' : ''}${pendingDraft ? ' has-pending-upload' : ''}${canRemoveImage ? ' has-remove-control' : ''}${!canUpload ? ' is-readonly' : ''}`}
     role="group"
-    aria-label={`Imagen de ${post.title || 'la publicación'}`}
+    aria-label={`Imagen de ${post.title || `la ${entityTypeLabel}`}`}
     aria-keyshortcuts="Control+V"
     tabIndex={canUpload ? 0 : -1}
     onPaste={handlePaste}
@@ -442,7 +477,7 @@ export function MarketingPostArtwork({ organizationId, post, asset, canEdit, can
     <input ref={inputRef} id={id} type="file" accept="image/*" hidden disabled={!canUpload || busy} onChange={(event) => { if (event.target.files) handleFiles(Array.from(event.target.files)); event.target.value = ''; }}/>
     {preview ? <img src={imageUrl} alt={draftFile ? `Vista previa pendiente: ${draftFile.name}` : `Imagen asociada: ${asset?.filename || post.title}`} loading="lazy" decoding="async" onError={() => { if (!draftPreviewUrl) setPreviewFailed(true); }}/> : <div className="vc-marketing-post-artwork-empty">
       {busy || previewLoading ? <LoaderCircle size={variant === 'compact' ? 13 : 22} className="vc-content-spin"/> : previewFailed ? <FileImage size={variant === 'compact' ? 13 : 22}/> : <ImagePlus size={variant === 'compact' ? 13 : 22}/>}
-      {variant !== 'compact' && <><b>{busy ? 'Procesando y subiendo…' : previewLoading ? 'Cargando imagen…' : previewFailed ? 'No se pudo abrir la imagen' : canUpload ? 'Añade una imagen a esta publicación' : 'Sin imagen asociada'}</b><span>{previewLoading ? 'Preparando la vista previa de la biblioteca privada.' : canUpload ? 'Elige una imagen, arrástrala o pégala con Ctrl+V.' : 'Las imágenes vinculadas aparecerán en esta tarjeta'}</span></>}
+      {variant !== 'compact' && <><b>{busy ? 'Procesando y subiendo…' : previewLoading ? 'Cargando imagen…' : previewFailed ? 'No se pudo abrir la imagen' : canUpload ? `Añade una imagen a esta ${entityTypeLabel}` : 'Sin imagen asociada'}</b><span>{previewLoading ? 'Preparando la vista previa de la biblioteca privada.' : canUpload ? 'Elige una imagen, arrástrala o pégala con Ctrl+V.' : 'Las imágenes vinculadas aparecerán en esta ficha'}</span></>}
     </div>}
     {canUpload && !previewLoading && variant !== 'compact' && <button
       type="button"

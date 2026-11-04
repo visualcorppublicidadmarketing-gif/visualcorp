@@ -6,6 +6,7 @@ import { catalogImagesForProduct } from '../data/catalogProductImages';
 import { AnimatedList, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
 import { multiProductQuoteService } from './content';
 import { ArticleMarkdown } from './ArticleMarkdown';
+import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategoryStrips } from './SolutionsComponents';
 import './storefront.css';
 import './store-promo-teaser.css';
 import './store-product-sku.css';
@@ -145,7 +146,7 @@ function ArticleIndex({ kind }: { kind: ContentKind }) {
     : kind === 'publicaciones'
       ? 'Una selección de novedades y piezas compartidas por Visual Corp.'
       : 'Una galería de proyectos confirmados, con contexto sobre el reto y el trabajo realizado.';
-  return <><ShowcaseHero kind={kind} description={description}/><section className="showcase-section">
+  return <><ShowcaseHero kind={kind} description={description}/>{kind === 'portafolio' && <><InteractiveCatalogGallery eyebrow="TRABAJOS Y SOLUCIONES POR CATEGORÍA" heading="Señalética, letreros, branding, BTL, cortes láser e impresión"/><PanoramicCategoryStrips/><EnvironmentBrandingMatrix compact/></>}<section className="showcase-section">
     <div className="showcase-toolbar"><div><span className="site-eyebrow"><i/>VISUAL CORP</span><h2>{kind === 'portafolio' ? 'Trabajo seleccionado' : kind === 'publicaciones' ? 'Últimas publicaciones' : 'Lecturas recientes'}</h2></div><label className="showcase-search"><Search size={16}/><span className="sr-only">Buscar contenido</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar contenido"/></label></div>
     {loading ? <div className="showcase-empty glass-card" role="status">Cargando contenido…</div> : error ? <ContentLoadError message={error} onRetry={retry}/> : matches.length ? <AnimatedList className="showcase-grid" stagger={0.045}>{matches.map((article) => <ContentCard key={article.id} article={article} kind={kind}/>)}</AnimatedList> : sectionArticles.length && search.trim() ? <div className="showcase-empty glass-card" role="status"><h2>No encontramos resultados para “{search.trim()}”.</h2><p>Prueba con otras palabras o vuelve a ver todo el contenido.</p><button type="button" className="site-secondary-button" onClick={() => setSearch('')}>Limpiar búsqueda <ArrowRight size={15}/></button></div> : <EmptyContent kind={kind}/>}
   </section></>;

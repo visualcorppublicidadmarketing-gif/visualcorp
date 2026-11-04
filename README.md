@@ -67,7 +67,7 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ## Continuidad del trabajo
 
-- **Diseño de Marketing (30 de octubre de 2026):** PR #147 integró los filtros, navegación semanal, estados semánticos, vistas, tarjeta de imagen y ficha accesible. La revisión autenticada detectó y corrigió que el filtro del mes consultaba solo la primera fila; la rama `codex/marketing-calendar-range-20261030` extiende el rango hasta el último día visible del calendario. Verificación y nuevo PR en curso.
+- **Planificación de Marketing (4 de noviembre de 2026):** las campañas agrupan publicaciones y tareas; el calendario incorpora mes con selección de varios días, semana por horas y día actual en intervalos de 30 minutos. El arrastre abre la ficha con el periodo u horario seleccionado. Las tareas mantienen su propio plazo y no reciben canal ni formato social.
 
 - **Acceso al manual (26 de octubre de 2026):** PR #96 integró la biblioteca y sus 43 recursos estáticos. Esta corrección valida en Vercel los roles internos antes de servir `/manual-aprendizaje/fuente/*` y marca la respuesta como privada, sin caché. El contenido quedó en el historial de dos repositorios públicos; bloquear el acceso web no sanea las copias de GitHub. Seguimiento en [docs/manual-aprendizaje/README.md](docs/manual-aprendizaje/README.md).
 

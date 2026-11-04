@@ -199,6 +199,35 @@ export function Dialog({
   const onOpenChangeRef = useRef(onOpenChange);
   onOpenChangeRef.current = onOpenChange;
   const [nudged, setNudged] = useState(false);
+  const [activeTheme, setActiveTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof document === 'undefined') return 'light';
+    const html = document.documentElement;
+    if (html.dataset.vcTheme === 'light' || html.dataset.vcTheme === 'dark') return html.dataset.vcTheme;
+    if (document.querySelector('.public-site')) {
+      return html.dataset.publicTheme === 'light' ? 'light' : 'dark';
+    }
+    return html.dataset.theme === 'dark' ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return;
+    const html = document.documentElement;
+    const syncTheme = () => {
+      if (html.dataset.vcTheme === 'light' || html.dataset.vcTheme === 'dark') {
+        setActiveTheme(html.dataset.vcTheme);
+        return;
+      }
+      if (document.querySelector('.public-site')) {
+        setActiveTheme(html.dataset.publicTheme === 'light' ? 'light' : 'dark');
+        return;
+      }
+      setActiveTheme(html.dataset.theme === 'dark' ? 'dark' : 'light');
+    };
+    syncTheme();
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(html, { attributes: true, attributeFilter: ['data-theme', 'data-public-theme', 'data-vc-theme'] });
+    return () => observer.disconnect();
+  }, [open]);
 
   const triggerNudge = useCallback(() => {
     setNudged(false);
@@ -295,7 +324,7 @@ export function Dialog({
 
   const node = (
     <div
-      className={`vc-dialog-overlay ok-overlay backdrop-${backdrop} side-${side} ${overlayClassName}`}
+      className={`vc-dialog-overlay ok-overlay theme-${activeTheme} backdrop-${backdrop} side-${side} ${overlayClassName}`}
       onMouseDown={(event) => {
         if (event.target !== event.currentTarget) return;
         if (closeOnOverlayClick && !busy) {
@@ -307,7 +336,7 @@ export function Dialog({
     >
       <section
         ref={dialogRef}
-        className={`vc-dialog ok-dialog size-${size} side-${side} tone-${tone} ${nudged ? 'is-nudged' : ''} ${className}`}
+        className={`vc-dialog ok-dialog theme-${activeTheme} size-${size} side-${side} tone-${tone} ${nudged ? 'is-nudged' : ''} ${className}`}
         role={role}
         aria-modal="true"
         aria-labelledby={`${id}-title`}

@@ -3,6 +3,7 @@ import { CalendarDays, CheckCircle2, ClipboardList, CopyCheck, MessageSquareText
 import { MARKETING_COLORS } from './marketingColors';
 import './publication-editor-sections.css';
 import { CHECKLIST_STATES, DELIVERABLES, type Assignee, type ChecklistStatus } from './marketingWorkflow';
+import type { MarketingCampaign } from './MarketingPlanning';
 
 export type PublicationDraft = {
   title: string;
@@ -11,6 +12,7 @@ export type PublicationDraft = {
   format: string;
   scheduled_date: string;
   scheduled_time: string;
+  campaign_id: string;
   owner: string;
   owner_user_id: string;
   record_kind: string;
@@ -59,6 +61,7 @@ type Props = {
   events: HistoryEvent[];
   formatDate: (value?: string) => string;
   knownTags?: string[];
+  campaigns?: MarketingCampaign[];
   assignees?: Assignee[];
   canApprove?: boolean;
 };
@@ -161,7 +164,7 @@ function TagPicker({ value, onChange, calendarColor, onCalendarColorChange, know
   </section>;
 }
 
-export function PublicationEditorSections({ draft, onChange, canEdit, isNew, activeTab, onTabChange, selectedPost, checklistFields, events, formatDate, knownTags, assignees = [] }: Props) {
+export function PublicationEditorSections({ draft, onChange, canEdit, isNew, activeTab, onTabChange, selectedPost, checklistFields, events, formatDate, knownTags, campaigns = [], assignees = [] }: Props) {
   return <>
     <nav className="vc-publication-steps" role="tablist" aria-label="Secciones de la ficha de publicación">
       {tabs.map(({ id, label, icon: Icon, hint }, index) => <button key={id} type="button" role="tab" id={`vc-publication-tab-${id}`} aria-controls="vc-publication-tabpanel" aria-selected={activeTab === id} tabIndex={activeTab === id ? 0 : -1} className={activeTab === id ? 'is-active' : ''} onKeyDown={(event) => { if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); const nextIndex = (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length; onTabChange(tabs[nextIndex].id); document.getElementById(`vc-publication-tab-${tabs[nextIndex].id}`)?.focus(); } }} onClick={() => onTabChange(id)}>
@@ -175,6 +178,7 @@ export function PublicationEditorSections({ draft, onChange, canEdit, isNew, act
         <label className="vc-publication-field"><span>Canal</span><select value={draft.platform} onChange={(event) => onChange('platform', event.target.value)}><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>WhatsApp</option><option>LinkedIn</option><option>Multicanal</option><option>Por definir</option></select></label>
         <label className="vc-publication-field"><span>Formato</span><select value={draft.format} onChange={(event) => onChange('format', event.target.value)}><option>Post</option><option>Historia</option><option>Carrusel</option><option>Reel</option><option>Video</option><option>Diseño</option><option>Por definir</option></select></label>
         <label className="vc-publication-field"><span>Fecha de publicación</span><input type="date" value={draft.scheduled_date} onChange={(event) => onChange('scheduled_date', event.target.value)}/></label>
+        <label className="vc-publication-field"><span>Campaña relacionada</span><select value={draft.campaign_id || ''} onChange={(event) => onChange('campaign_id', event.target.value)}><option value="">Sin campaña</option>{campaigns.filter((campaign) => !/cancelad/i.test(campaign.status)).map((campaign) => <option key={campaign.id} value={campaign.id}>{campaign.title}</option>)}</select></label>
         <label className="vc-publication-field"><span>Hora</span><input type="time" value={draft.scheduled_time} onChange={(event) => onChange('scheduled_time', event.target.value)}/></label>
         <label className="vc-publication-field"><span>Responsable</span><select value={draft.owner_user_id} onChange={(event) => onChange('owner_user_id', event.target.value)}><option value="">{draft.owner && !draft.owner_user_id ? `${draft.owner} · nombre histórico sin vincular` : 'Por asignar'}</option>{draft.owner_user_id&&!assignees.some(a=>a.user_id===draft.owner_user_id)&&<option value={draft.owner_user_id}>{draft.owner||'Miembro inactivo'} · asignación anterior</option>}{assignees.map(person=><option key={person.user_id} value={person.user_id}>{person.display_name}</option>)}</select><small>Los nombres históricos se conservan hasta elegir una cuenta.</small></label>
         <label className="vc-publication-field"><span>Etapa</span><select value={draft.status} onChange={(event) => onChange('status', event.target.value)}>{[...new Set(['Por iniciar','Planificada','En diseño','En producción','En revisión','Programada','Publicada','Completada','Terminada','Bloqueada','Cancelada',draft.status])].map((status) => <option key={status}>{status}</option>)}</select><small>La aprobación se registra desde Revisar pieza.</small></label>
