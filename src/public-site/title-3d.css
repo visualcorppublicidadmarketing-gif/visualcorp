@@ -1,0 +1,127 @@
+/* ==========================================================================
+   TÍTULOS 3D VISUAL CORP CON VISUALITO
+   ========================================================================== */
+
+.vc-title-3d {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  isolation: isolate;
+  user-select: none;
+}
+
+.vc-title-3d-picture {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 100%;
+}
+
+.vc-title-3d-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: var(--title-3d-ratio, 2.4);
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.42)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.28));
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), filter 0.45s ease;
+  will-change: transform;
+}
+
+html[data-public-theme="light"] .vc-title-3d-img {
+  filter: drop-shadow(0 14px 26px rgba(15, 23, 42, 0.22)) drop-shadow(0 4px 10px rgba(15, 23, 42, 0.12));
+}
+
+/* Aura ambiental de color que emula la iluminación de Visualito */
+.vc-title-3d-aura {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: 78%;
+  height: 68%;
+  transform: translate(-50%, -46%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(6, 182, 212, 0.22) 0%,
+    rgba(236, 72, 153, 0.18) 42%,
+    rgba(245, 158, 11, 0.12) 65%,
+    transparent 78%
+  );
+  filter: blur(28px);
+  pointer-events: none;
+  opacity: 0.85;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+html[data-public-theme="light"] .vc-title-3d-aura {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(6, 182, 212, 0.14) 0%,
+    rgba(236, 72, 153, 0.12) 42%,
+    rgba(245, 158, 11, 0.08) 65%,
+    transparent 80%
+  );
+  filter: blur(22px);
+  opacity: 0.6;
+}
+
+/* Interacción de elevación al pasar el cursor */
+.vc-title-3d.is-interactive:hover .vc-title-3d-img {
+  transform: translateY(-5px) scale(1.02);
+  filter: drop-shadow(0 20px 32px rgba(0, 0, 0, 0.52)) drop-shadow(0 6px 14px rgba(236, 72, 153, 0.35));
+}
+
+html[data-public-theme="light"] .vc-title-3d.is-interactive:hover .vc-title-3d-img {
+  filter: drop-shadow(0 20px 34px rgba(15, 23, 42, 0.26)) drop-shadow(0 6px 14px rgba(236, 72, 153, 0.22));
+}
+
+.vc-title-3d.is-interactive:hover .vc-title-3d-aura {
+  opacity: 1;
+  transform: translate(-50%, -48%) scale(1.06);
+}
+
+/* Variantes según ubicación */
+.vc-title-3d--hero {
+  max-width: 780px;
+}
+
+.vc-title-3d--banner {
+  max-width: 580px;
+}
+
+.vc-title-3d--card {
+  max-width: 360px;
+}
+
+.vc-title-3d--badge {
+  max-width: 240px;
+}
+
+/* Soporte accesible para usuarios con movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  .vc-title-3d-img {
+    transition: none !important;
+  }
+  .vc-title-3d.is-interactive:hover .vc-title-3d-img {
+    transform: none !important;
+  }
+  .vc-title-3d-aura {
+    transition: none !important;
+  }
+}
+
+/* Adaptación responsive */
+@media (max-width: 768px) {
+  .vc-title-3d--hero {
+    max-width: 95vw;
+  }
+  .vc-title-3d-aura {
+    filter: blur(18px);
+  }
+}
