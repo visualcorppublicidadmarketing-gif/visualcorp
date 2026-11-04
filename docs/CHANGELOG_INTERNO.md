@@ -58,7 +58,7 @@ Las futuras publicaciones las redacta el equipo desde el panel; la lista no se r
 - Una campaña puede agrupar publicaciones sociales y actividades no sociales, con objetivo, periodo y responsable. Las actividades contemplan decoración o ambientación, diseño interno de campaña, material promocional o recuerdos y un tipo personalizado.
 - Las publicaciones mantienen su flujo y métricas. Las actividades tienen brief, fechas, horas opcionales, responsable, prioridad, etapa, siguiente paso y referencia visual; se guardan fuera de las órdenes de producción.
 - El calendario permite arrastrar varios días en Mes, seleccionar rangos horarios en Semana y usar Día actual con intervalos de 30 minutos. Las actividades conservan su plazo cuando vencen; el proceso automático de reprogramación sigue limitado a publicaciones.
-- La migración `supabase/migrations/20261104170000_marketing_campaign_planning.sql` agrega tablas con alcance por organización, RLS, historial y vínculo opcional de campaña en publicaciones; no convierte ni modifica registros importados.
+- La migración `supabase/migrations/20261104183131_marketing_campaign_planning.sql` quedó aplicada en Supabase; agrega tablas con alcance por organización, RLS, historial y vínculo opcional de campaña en publicaciones, sin convertir ni modificar registros importados.
 
 ## 2026-11-04 — Mejora integral de la interfaz pública y orientador interactivo de proyecto
 
