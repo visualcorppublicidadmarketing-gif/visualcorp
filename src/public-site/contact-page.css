@@ -66,6 +66,9 @@
 .contact-channel-card:hover { transform: translateY(-2px); border-color: #e336a25c; background: linear-gradient(120deg,#df1a8a18,#ffffff08); box-shadow: 0 16px 38px #0002; }
 .contact-channel-icon { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid #48d5a22b; border-radius: 12px; background: #48d5a212; color: #59d7a9; }
 .contact-channel-icon.instagram-icon { border-color: #e33baf2c; background: #dc329618; color: #ed71c1; }
+.contact-channel-icon.social-icon-facebook { border-color: #4386ef42; background: #2774e318; color: #8ab7ff; }
+.contact-channel-icon.social-icon-tiktok { border-color: #ffffff24; background: linear-gradient(135deg,#e6007e16,#00b8d416); color: #faf8fc; }
+.contact-channel-icon.social-icon-instagram { border-color: #e33baf2c; background: linear-gradient(135deg,#dc329618,#7f54e918); color: #ed71c1; }
 .contact-channel-card>span:nth-child(2) { display: grid; gap: 4px; min-width: 0; }
 .contact-channel-card small,.contact-location-card small { color: #898797; font-size: 8px; font-weight: 800; letter-spacing: .15em; }
 .contact-channel-card b { font-size: 14px; }
@@ -177,7 +180,7 @@
   .contact-section-heading>p { font-size: 13px; }
   .contact-channel-cards { grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 22px; }
   .contact-channel-card { grid-template-columns: 34px minmax(0,1fr) 13px; gap: 8px; min-height: 79px; padding: 11px 9px; }
-  .contact-channel-card:nth-child(3) { grid-column: 1/-1; }
+  .contact-channel-card:nth-child(odd):last-child { grid-column: 1/-1; }
   .contact-channel-icon { width: 34px; height: 34px; border-radius: 10px; }
   .contact-channel-card small { font-size: 7px; }
   .contact-channel-card b { font-size: 12px; }

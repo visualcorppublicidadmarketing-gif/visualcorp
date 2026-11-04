@@ -59,7 +59,7 @@ export function ContactAdminPage() {
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); if (!canEdit || saving) return;
     setSaving(true); setError('');
-    try { await saveWebsiteSettings(draft, organizationId); setData((current) => ({ ...current, settings: { ...current.settings, location: draft.location, contactPhone: draft.contactPhone } })); flash('Datos de contacto guardados.'); }
+    try { await saveWebsiteSettings(draft, organizationId); setData((current) => ({ ...current, settings: { ...current.settings, location: draft.location, contactPhone: draft.contactPhone, whatsappSecondary: draft.whatsappSecondary, instagram: draft.instagram, facebook: draft.facebook, tiktok: draft.tiktok } })); flash('Datos de contacto guardados.'); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'No se pudieron guardar los datos.'); }
     finally { setSaving(false); }
   };
@@ -68,8 +68,12 @@ export function ContactAdminPage() {
     <form className="panel form-panel site-contact-editor" onSubmit={save}><div className="panel-heading"><div><span className="eyebrow">DATOS COMPARTIDOS</span><h2>Ubicación y contacto principal</h2></div><Mail size={19}/></div>
       {error && <div className="op-flow-alert error" role="alert">{error}</div>}
       <label>Ubicación<input disabled={!canEdit} value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })}/></label>
-      <label>Teléfono de contacto<input disabled={!canEdit} inputMode="tel" value={draft.contactPhone} onChange={(event) => setDraft({ ...draft, contactPhone: event.target.value })}/></label>
-      <p className="panel-intro">El teléfono se guarda también como WhatsApp principal. Las cuentas sociales y otros contactos no se editan aquí porque aún no están conectados a este formulario.</p>
+      <label>WhatsApp principal<input disabled={!canEdit} inputMode="tel" value={draft.contactPhone} onChange={(event) => setDraft({ ...draft, contactPhone: event.target.value })}/></label>
+      <label>WhatsApp alternativo<input disabled={!canEdit} inputMode="tel" value={draft.whatsappSecondary || ''} onChange={(event) => setDraft({ ...draft, whatsappSecondary: event.target.value })}/></label>
+      <p className="panel-intro">Estos datos aparecen en los canales de contacto del sitio. Puedes ingresar el usuario o la URL de cada perfil.</p>
+      <label>Instagram<input disabled={!canEdit} autoComplete="url" placeholder="@usuario o URL del perfil" value={draft.instagram || ''} onChange={(event) => setDraft({ ...draft, instagram: event.target.value })}/></label>
+      <label>Facebook<input disabled={!canEdit} autoComplete="url" placeholder="URL o nombre de la página" value={draft.facebook || ''} onChange={(event) => setDraft({ ...draft, facebook: event.target.value })}/></label>
+      <label>TikTok<input disabled={!canEdit} autoComplete="url" placeholder="@usuario o URL del perfil" value={draft.tiktok || ''} onChange={(event) => setDraft({ ...draft, tiktok: event.target.value })}/></label>
       <button className="button button-dark" type="submit" disabled={!canEdit || saving}><Check size={16}/>{saving ? 'Guardando…' : 'Guardar contacto'}</button>
     </form>
   </AppFrame>;
