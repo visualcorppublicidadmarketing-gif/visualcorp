@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowRight, Check, CircleHelp, CreditCard, Search, Shopp
 import { formatMoney, localDateKey, useWorkspace } from '../../app/workspace';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
+import { useConfirm } from '../../components/ui/OperationalKit';
 import './visual-corp-pos.css';
 
 const METHODS = { Efectivo: 'cash', Transferencia: 'transfer', Tarjeta: 'card', Otro: 'other' };
@@ -22,6 +23,7 @@ function Field({ label, children, hint = undefined }) {
 }
 
 export function VisualCorpPOS() {
+  const confirm = useConfirm();
   const { data, flash, refreshRemote } = useWorkspace();
   const { organizationId, user, hasPermission } = useAuth();
   const saleStorageKey = `${SALE_PENDING_KEY}-${user?.id || 'anonymous'}`;
@@ -106,7 +108,7 @@ export function VisualCorpPOS() {
       if (!Number.isFinite(initialPaid) || cents(initialPaid) < 0 || cents(initialPaid) > cents(amount) || (activeForm.paymentKind === 'partial' && cents(initialPaid) === 0)) { flash('El abono inicial debe ser mayor a cero y no puede superar el total.'); return; }
       const quote = centralQuotes.find((item) => item.id === activeForm.quoteId);
       if (activeForm.quoteId && (!quote || quote.status !== 'accepted' || !quote.price_confirmed || cents(quote.selected_total) !== cents(amount))) { flash('La cotización debe estar aceptada y conservar el mismo total.'); return; }
-      if (productLink && (!stockItem || stockItem.sourceStatus || Number(stockItem.quantity) < quantity) && !window.confirm('Hay un faltante o conteo pendiente. ¿Confirmar la orden y registrar la compra urgente?')) return;
+      if (productLink && (!stockItem || stockItem.sourceStatus || Number(stockItem.quantity) < quantity) && !(await confirm({ eyebrow: 'DISPONIBILIDAD DE INVENTARIO', title: 'Hay un faltante o un conteo pendiente', description: 'Puedes confirmar la venta y dejar registrada la necesidad de compra urgente.', tone: 'warning', confirmLabel: 'Continuar con la venta', cancelLabel: 'Revisar inventario', summaryItems: [{ label: 'Producto', value: selectedProduct?.name || 'Producto seleccionado' }, { label: 'Cantidad solicitada', value: String(quantity) }] }))) return;
     }
     saleLock.current = true;
     setSaleBusy(true);

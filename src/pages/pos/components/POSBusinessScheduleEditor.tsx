@@ -16,11 +16,13 @@ import {
 } from 'lucide-react';
 import { DEFAULT_BUSINESS_SCHEDULE } from '../../../lib/scheduleEngine';
 import { LiveScheduleWidget } from '../../../components/LiveScheduleWidget';
+import { useConfirm } from '../../../components/ui/OperationalKit';
 
 export function POSBusinessScheduleEditor({
   settings = {} as Record<string, any>,
   onSaveSettings
 }) {
+  const confirm = useConfirm();
   const currentSchedule = settings.businessSchedule || DEFAULT_BUSINESS_SCHEDULE;
   const [schedule, setSchedule] = useState(() => ({
     ...DEFAULT_BUSINESS_SCHEDULE,
@@ -123,8 +125,8 @@ export function POSBusinessScheduleEditor({
   };
 
   // Reset to Defaults
-  const handleResetDefaults = () => {
-    if (window.confirm('¿Deseas restablecer el horario sugerido de Gigaprint?')) {
+  const handleResetDefaults = async () => {
+    if (await confirm({ eyebrow: 'HORARIO DEL NEGOCIO', title: '¿Restablecer el horario sugerido?', description: 'El horario actual será reemplazado por la configuración sugerida de Gigaprint.', tone: 'warning', confirmLabel: 'Restablecer horario', cancelLabel: 'Conservar horario' })) {
       setSchedule(DEFAULT_BUSINESS_SCHEDULE);
       setSavedSuccess(false);
     }

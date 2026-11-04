@@ -26,9 +26,11 @@ import {
   createPOSExpense
 } from '../../lib/posStore';
 import { useToast } from '../../components/studio/Toast';
+import { useConfirm } from '../../components/ui/OperationalKit';
 
 export function POSPurchaseOrdersManager({ store, onStoreUpdate }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -129,8 +131,8 @@ export function POSPurchaseOrdersManager({ store, onStoreUpdate }) {
   };
 
   // Receive Goods into Inventory (Recibir Mercadería)
-  const handleReceiveGoods = (po) => {
-    if (!confirm(`¿Confirmar recepción física de la orden ${po.poNumber}? Esto incrementará el stock de inventario automáticamente.`)) return;
+  const handleReceiveGoods = async (po) => {
+    if (!(await confirm({ eyebrow: 'RECEPCIÓN DE MERCADERÍA', title: `¿Registrar la recepción de ${po.poNumber}?`, description: 'Esta operación incrementará el stock de inventario y registrará el gasto asociado.', tone: 'warning', confirmLabel: 'Confirmar recepción', cancelLabel: 'Revisar orden', summaryItems: [{ label: 'Orden', value: po.poNumber }, { label: 'Proveedor', value: po.supplierName || '—' }] }))) return;
 
     let updatedMaterials = [...(store.materials || [])];
 

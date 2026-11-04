@@ -8,6 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient";
+import { useConfirm } from "../../../components/ui/OperationalKit";
 import {
   DELIVERABLES,
   approvalLabel,
@@ -373,19 +374,17 @@ export function ReviewPanel({
   onReload: () => void;
   onClose: () => void;
 }) {
+  const confirm = useConfirm();
   const [feedback, setFeedback] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const relevant = reviews
     .filter((r) => r.post_id === post.id)
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
-  const close = () => {
-    if (
-      !busy &&
-      (!feedback.trim() ||
-        window.confirm("¿Cerrar sin guardar el comentario de revisión?"))
-    )
-      onClose();
+  const close = async () => {
+    if (busy) return;
+    if (feedback.trim() && !(await confirm({ eyebrow: "REVISIÓN DE CONTENIDO", title: "¿Cerrar sin guardar el comentario?", description: "El comentario escrito en esta sesión se perderá.", tone: "warning", confirmLabel: "Descartar comentario", cancelLabel: "Seguir revisando" }))) return;
+    onClose();
   };
   const decide = async (decision: "approved" | "changes_requested") => {
     if (decision === "changes_requested" && !feedback.trim()) {
@@ -398,9 +397,7 @@ export function ReviewPanel({
     if (
       decision === "approved" &&
       missing.length &&
-      !window.confirm(
-        `La pieza tiene estos pendientes:\n${missing.join("\n")}\n¿Confirmas que revisaste la versión ${post.content_revision} y deseas aprobarla?`,
-      )
+      !(await confirm({ eyebrow: "APROBACIÓN DE CONTENIDO", title: "La pieza tiene pendientes", description: missing.join(" · "), tone: "warning", confirmLabel: "Aprobar esta versión", cancelLabel: "Volver a revisar", callout: `Confirma que revisaste la versión ${post.content_revision} antes de aprobarla.` }))
     )
       return;
     setBusy(true);
@@ -522,14 +519,8 @@ export function ReviewPanel({
             <button
               type="button"
               disabled={busy}
-              onClick={() => {
-                if (
-                  !feedback ||
-                  window.confirm(
-                    "¿Recargar la pieza? Tu comentario permanecerá disponible.",
-                  )
-                )
-                  onReload();
+              onClick={async () => {
+                if (!feedback || await confirm({ eyebrow: "REVISIÓN DE CONTENIDO", title: "¿Recargar la pieza?", description: "Tu comentario permanecerá disponible mientras se actualiza la versión para revisar.", tone: "info", confirmLabel: "Actualizar pieza", cancelLabel: "Ahora no" })) onReload();
               }}
             >
               Actualizar versión para revisar
@@ -542,12 +533,8 @@ export function ReviewPanel({
           <button
             type="button"
             disabled={busy}
-            onClick={() => {
-              if (
-                !feedback ||
-                window.confirm("¿Abrir la ficha y descartar este comentario?")
-              )
-                onEdit();
+            onClick={async () => {
+              if (!feedback || await confirm({ eyebrow: "REVISIÓN DE CONTENIDO", title: "¿Abrir la ficha y descartar este comentario?", description: "El texto escrito en esta sesión no se guardará.", tone: "warning", confirmLabel: "Abrir ficha", cancelLabel: "Seguir revisando" })) onEdit();
             }}
           >
             Editar ficha
@@ -678,6 +665,7 @@ export function NonproductionSettings({
   onSave: (date: string, reason: string, remove?: boolean) => Promise<void>;
   onClose: () => void;
 }) {
+  const confirm = useConfirm();
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -715,9 +703,8 @@ export function NonproductionSettings({
             <button
               type="button"
               disabled={busy}
-              onClick={() => {
-                if (window.confirm(`¿Quitar el cierre del ${day.day}?`))
-                  void act(day.day, day.reason, true);
+              onClick={async () => {
+                if (await confirm({ eyebrow: "CALENDARIO DE PRODUCCIÓN", title: `¿Quitar el cierre del ${day.day}?`, description: "Las propuestas de fechas volverán a considerar esta jornada disponible.", tone: "warning", confirmLabel: "Quitar cierre", cancelLabel: "Conservar cierre" })) void act(day.day, day.reason, true);
               }}
             >
               Quitar

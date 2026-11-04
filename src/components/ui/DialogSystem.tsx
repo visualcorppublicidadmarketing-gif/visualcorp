@@ -990,19 +990,17 @@ export function useDialogSystem(): DialogSystemContextValue {
   const context = useContext(DialogSystemContext);
   if (!context) {
     return {
-      confirm: async (options) =>
-        typeof window !== 'undefined'
-          ? window.confirm(`${options.title}${options.description ? `\n\n${options.description}` : ''}`)
-          : false,
-      alert: async (options) => {
-        if (typeof window !== 'undefined') {
-          window.alert(`${options.title}${options.description ? `\n\n${options.description}` : ''}`);
-        }
+      confirm: async () => {
+        console.error('[DialogSystem] Falta DialogProvider; se canceló la acción para evitar un diálogo nativo del navegador.');
+        return false;
       },
-      prompt: async (options) =>
-        typeof window !== 'undefined'
-          ? window.prompt(`${options.title}${options.description ? `\n\n${options.description}` : ''}`, options.defaultValue || '')
-          : null,
+      alert: async () => {
+        console.error('[DialogSystem] Falta DialogProvider; no se pudo mostrar el aviso.');
+      },
+      prompt: async () => {
+        console.error('[DialogSystem] Falta DialogProvider; se canceló la solicitud de texto.');
+        return null;
+      },
     };
   }
   return context;

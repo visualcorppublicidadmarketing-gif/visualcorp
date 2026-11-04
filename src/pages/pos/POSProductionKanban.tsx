@@ -14,6 +14,7 @@ import {
   assignOrderProductionResource
 } from '../../lib/posStore';
 import { POSPackageLabelModal } from './POSPackageLabelModal';
+import { useAlert } from '../../components/ui/OperationalKit';
 
 export function POSProductionKanban({ 
   store, 
@@ -22,6 +23,7 @@ export function POSProductionKanban({
   onOpenWorkOrder, 
   onOpenArtProof 
 }) {
+  const alert = useAlert();
   const [search, setSearch] = useState('');
   const [advisorFilter, setAdvisorFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
@@ -102,16 +104,16 @@ export function POSProductionKanban({
   };
 
   // Scan-to-Advance Fast Floor Handler
-  const handleScanAdvanceSubmit = (e) => {
+  const handleScanAdvanceSubmit = async (e) => {
     e.preventDefault();
     if (!scanCode.trim()) return;
     const res = advanceOrderProductionStageByScan(store, scanCode.trim(), session?.id || '');
     if (res.ok) {
       setStore(res.updatedStore);
       setScanCode('');
-      alert(`✓ Orden #${res.order?.orderNumber} avanzada a etapa: ${res.order?.productionStage}`);
+      await alert({ eyebrow: 'PRODUCCIÓN', title: 'Orden actualizada', description: `La orden #${res.order?.orderNumber} avanzó a la etapa ${res.order?.productionStage}.`, tone: 'success' });
     } else {
-      alert(`⚠️ ${'error' in res ? res.error : 'No se pudo avanzar la orden.'}`);
+      await alert({ eyebrow: 'PRODUCCIÓN', title: 'No se pudo avanzar la orden', description: 'error' in res ? res.error : 'No se pudo avanzar la orden.', tone: 'danger' });
     }
   };
 

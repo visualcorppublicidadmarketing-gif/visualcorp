@@ -5,8 +5,10 @@ import {
   Printer, Tag, Trash2, XCircle, Check, Sparkles, QrCode
 } from 'lucide-react';
 import { DEFAULT_MATERIALS, toISODate, logMaterialScrap } from '../../lib/posStore';
+import { useAlert } from '../../components/ui/OperationalKit';
 
 export function POSInventoryMaterials({ store, setStore }) {
+  const alert = useAlert();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [adjustModalMaterial, setAdjustModalMaterial] = useState(null);
@@ -77,7 +79,7 @@ export function POSInventoryMaterials({ store, setStore }) {
     setAdjustNotes('');
   };
 
-  const handleSaveScrap = (e) => {
+  const handleSaveScrap = async (e) => {
     e.preventDefault();
     if (!scrapModalMaterial || !scrapQtyM2) return;
 
@@ -90,12 +92,12 @@ export function POSInventoryMaterials({ store, setStore }) {
 
     if (res.ok) {
       setStore(res.updatedStore);
-      alert(`✓ Merma de ${scrapQtyM2} m² registrada y descontada de inventario.`);
+      await alert({ eyebrow: 'INVENTARIO', title: 'Merma registrada', description: `Se registraron ${scrapQtyM2} m² y se descontaron del inventario.`, tone: 'success' });
       setScrapModalMaterial(null);
       setScrapQtyM2('');
       setScrapNotes('');
     } else {
-      alert(`⚠️ Error: ${res.error}`);
+      await alert({ eyebrow: 'INVENTARIO', title: 'No se pudo registrar la merma', description: res.error || 'Ocurrió un error inesperado.', tone: 'danger' });
     }
   };
 

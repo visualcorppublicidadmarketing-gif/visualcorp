@@ -26,10 +26,12 @@ import {
   toISODate
 } from '../../lib/posStore';
 import { useToast } from '../../components/studio/Toast';
+import { useConfirm } from '../../components/ui/OperationalKit';
 import { assetPath } from '../../data/media';
 
 export function POSProductManager({ store, onStoreUpdate, session }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const userRole = session?.role || 'asesora';
   const isAdmin = session?.isAdmin === true || userRole === 'admin' || userRole === 'super_admin';
 
@@ -145,8 +147,8 @@ export function POSProductManager({ store, onStoreUpdate, session }) {
   };
 
   // Delete Product
-  const handleDeleteProduct = (productId) => {
-    if (!confirm('¿Estás seguro de eliminar este producto del catálogo?')) return;
+  const handleDeleteProduct = async (productId) => {
+    if (!(await confirm({ eyebrow: 'CATÁLOGO DE PRODUCTOS', title: '¿Eliminar este producto?', description: 'El producto dejará de estar disponible en el catálogo del punto de venta.', tone: 'danger', destructive: true, confirmLabel: 'Eliminar producto', cancelLabel: 'Conservar producto' }))) return;
     const res = deleteProduct(store, productId);
     if (res.ok) {
       onStoreUpdate(res.updatedStore);
@@ -175,14 +177,14 @@ export function POSProductManager({ store, onStoreUpdate, session }) {
   };
 
   // Bulk Price Adjust (e.g. +10%)
-  const handleApplyBulkPercent = () => {
+  const handleApplyBulkPercent = async () => {
     const pct = Number(bulkPercent);
     if (isNaN(pct) || pct === 0) {
       toast.warning('Ingresa un porcentaje válido (ej. 10 o -5)');
       return;
     }
 
-    if (!confirm(`¿Aplicar ajuste de ${pct}% a todos los ${filteredProducts.length} productos filtrados?`)) return;
+    if (!(await confirm({ eyebrow: 'ACTUALIZACIÓN DE PRECIOS', title: `¿Aplicar ${pct > 0 ? '+' : ''}${pct}% a ${filteredProducts.length} productos?`, description: 'Se actualizará el precio base de todos los productos que coinciden con los filtros actuales.', tone: 'warning', confirmLabel: 'Aplicar ajuste', cancelLabel: 'Cancelar', summaryItems: [{ label: 'Productos', value: String(filteredProducts.length) }, { label: 'Ajuste', value: `${pct > 0 ? '+' : ''}${pct}%` }] }))) return;
 
     let updatedStore = { ...store };
     filteredProducts.forEach((p) => {

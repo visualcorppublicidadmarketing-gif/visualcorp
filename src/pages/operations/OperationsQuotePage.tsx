@@ -9,7 +9,7 @@ import { QuoteProductPicker } from '../../components/QuoteProductPicker';
 import { calculateQuotePrice, getQuoteBasis, quoteTiers } from '../../lib/quotePricing';
 import { supabase } from '../../lib/supabaseClient';
 import { CommercialDocumentDetails } from '../../components/CommercialDocumentDetails';
-import { Sheet } from '../../components/ui/OperationalKit';
+import { Sheet, useConfirm } from '../../components/ui/OperationalKit';
 import { CommercialAssetsEditor } from '../../components/commercial/CommercialAssetsEditor';
 import { GoogleMapsPreview } from '../../components/commercial/GoogleMapsPreview';
 import { RichTextEditor } from '../../components/studio/RichTextEditor';
@@ -43,6 +43,7 @@ function mapsUrl(address: string) {
 export function OperationsQuotePage() {
   const { data, flash } = useWorkspace();
   const { organizationId, hasPermission } = useAuth();
+  const confirm = useConfirm();
   const canSearchCustomers = hasPermission('crm', 'view');
   const canViewQuotes = hasPermission('quotes', 'view');
   const canEditQuotes = hasPermission('quotes', 'edit');
@@ -117,12 +118,18 @@ export function OperationsQuotePage() {
     const allowed = isSale ? canDeleteSales : canDeleteQuotes;
     if (!allowed) return;
     const subject = isSale ? 'venta' : 'cotización';
-    const confirmed = window.confirm(
-      `¿Quitar ${subject} ${document.documentCode} del historial del Cotizador?\n\n` +
-      (isSale
+    const confirmed = await confirm({
+      eyebrow: 'HISTORIAL COMERCIAL',
+      title: `¿Quitar ${subject} ${document.documentCode} del historial del Cotizador?`,
+      description: isSale
         ? 'La venta, pagos, devoluciones y movimientos de caja o inventario se conservarán para la auditoría.'
-        : 'La cotización y su desglose se conservarán en el sistema; solo dejará de aparecer aquí.')
-    );
+        : 'La cotización y su desglose se conservarán en el sistema; solo dejará de aparecer aquí.',
+      tone: 'warning',
+      destructive: true,
+      confirmLabel: 'Quitar del historial',
+      cancelLabel: 'Conservar registro',
+      consequences: ['Los datos financieros y de auditoría se conservarán.'],
+    });
     if (!confirmed) return;
     setRemovingDocumentId(document.id);
     setQuoteError('');

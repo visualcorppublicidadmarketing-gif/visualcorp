@@ -41,8 +41,10 @@ import {
   getRoleCapabilities,
   SYSTEM_ROLES
 } from '../../lib/posStore';
+import { useConfirm } from '../../components/ui/OperationalKit';
 
 export function POSAdvisorsManagement({ store: parentStore, setStore: parentSetStore }) {
+  const confirm = useConfirm();
   const [localStore, setLocalStore] = useState(loadPOSStore);
   const store = parentStore || localStore;
   const setStore = parentSetStore || setLocalStore;
@@ -169,9 +171,9 @@ export function POSAdvisorsManagement({ store: parentStore, setStore: parentSetS
     setIsModalOpen(false);
   };
 
-  const handleDelete = (advisor) => {
+  const handleDelete = async (advisor) => {
     const confirmMsg = `¿Estás seguro de eliminar a "${advisor.name}" del sistema?\n\nEsta acción eliminará sus credenciales de la base de datos, de la nube Supabase y de la pantalla de bloqueo de todas las terminales.`;
-    if (window.confirm(confirmMsg)) {
+    if (await confirm({ eyebrow: 'ADMINISTRACIÓN DE EQUIPO', title: `¿Eliminar a ${advisor.name}?`, description: confirmMsg, tone: 'danger', destructive: true, confirmLabel: 'Eliminar integrante', cancelLabel: 'Conservar integrante' })) {
       const nextStore = deletePOSAdvisor(store, advisor.id);
       setStore(nextStore);
       showToast(`🗑️ "${advisor.name}" ha sido eliminado del sistema y de todas las bases de datos.`);
@@ -197,8 +199,8 @@ export function POSAdvisorsManagement({ store: parentStore, setStore: parentSetS
   };
 
   // Rotate credentials only for staff authorized to use cash registers.
-  const handleForceRotate = () => {
-    if (window.confirm('¿Deseas generar y rotar nuevas contraseñas y PINs de 6 dígitos para todas las asesoras ahora mismo?')) {
+  const handleForceRotate = async () => {
+    if (await confirm({ eyebrow: 'SEGURIDAD DE CAJA', title: '¿Rotar las credenciales del equipo?', description: 'Se generarán nuevas contraseñas y PIN de seis dígitos para todas las asesoras.', tone: 'warning', confirmLabel: 'Rotar credenciales', cancelLabel: 'Cancelar' })) {
       const rotated = rotateAdvisorsCredentials(store.advisors, true);
       const nextState = { ...store, advisors: rotated, lastUpdated: new Date().toISOString() };
       setStore(nextState);

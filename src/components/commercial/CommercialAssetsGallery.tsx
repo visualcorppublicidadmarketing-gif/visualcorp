@@ -3,16 +3,20 @@ import { ExternalLink, Image as ImageIcon, Link2, Trash2 } from 'lucide-react';
 import { COMMERCIAL_ASSET_BUCKET, loadCommercialAssets } from '../../lib/commercialAssets';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../auth/AuthProvider';
+import { useConfirm } from '../ui/OperationalKit';
 import './commercial-components.css';
 
 export function CommercialAssetsGallery({ kind, documentId }: { kind: 'quote' | 'sale'; documentId: string }) {
   const { hasPermission } = useAuth();
+  const confirm = useConfirm();
   const canDelete = kind === 'quote' ? hasPermission('quotes', 'delete_records') : hasPermission('sales', 'edit');
   const [assets, setAssets] = useState<any[]>([]); const [error, setError] = useState('');
   useEffect(() => { let active = true; loadCommercialAssets(kind, documentId).then((rows) => { if (active) setAssets(rows); }).catch((reason) => { if (active) setError(reason?.message || 'No se pudieron cargar los archivos adjuntos.'); }); return () => { active = false; }; }, [kind, documentId]);
   if (!assets.length && !error) return null;
   const remove = async (asset: any) => {
-    if (!canDelete || !supabase || !window.confirm(`¿Quitar “${asset.title || 'este archivo'}” de la ficha?`)) return;
+    if (!canDelete || !supabase) return;
+    const accepted = await confirm({ eyebrow: 'ARCHIVOS DEL TRABAJO', title: `¿Quitar “${asset.title || 'este archivo'}” de la ficha?`, description: 'El archivo dejará de estar vinculado a esta cotización o venta.', tone: 'warning', destructive: true, confirmLabel: 'Quitar archivo', cancelLabel: 'Conservar archivo' });
+    if (!accepted) return;
     setError('');
     if (asset.storage_path) { const { error: storageError } = await supabase.storage.from(COMMERCIAL_ASSET_BUCKET).remove([asset.storage_path]); if (storageError) { setError(storageError.message); return; } }
     const { error: rowError } = await supabase.from('commercial_document_assets').delete().eq('id', asset.id);

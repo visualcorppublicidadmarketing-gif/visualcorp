@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, CheckCircle2, AlertTriangle, FileText, Image as ImageIcon, X, Sparkles } from 'lucide-react';
 import { uploadMedia } from '../../../lib/siteRepository';
+import { useAlert } from '../../../components/ui/OperationalKit';
 
 /**
  * Uploader de arte y archivos con validación automática de resolución (DPI Preflight)
@@ -11,6 +12,7 @@ export function ArtworkUploader({
   onArtworkChange,
   artwork = null
 }) {
+  const alert = useAlert();
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [preflight, setPreflight] = useState(null);
@@ -22,7 +24,7 @@ export function ArtworkUploader({
 
     // Check size (< 50MB)
     if (file.size > 50 * 1024 * 1024) {
-      alert('El archivo excede el tamaño máximo permitido de 50 MB.');
+      await alert({ eyebrow: 'ARCHIVO DEMASIADO GRANDE', title: 'No se pudo añadir el archivo', description: 'El tamaño máximo permitido es 50 MB.', tone: 'warning' });
       return;
     }
 
