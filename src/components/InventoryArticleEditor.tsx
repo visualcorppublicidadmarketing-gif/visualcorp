@@ -30,6 +30,10 @@ type ArticleSource = {
 type Draft = {
   remoteItemId: string;
   variantId: string;
+  name: string;
+  category: string;
+  variant: string;
+  minimum: string;
   description: string;
   itemType: string;
   tags: string;
@@ -55,12 +59,13 @@ type Props = {
   libraryCount: number;
   itemTypeOptions: string[];
   tagOptions: string[];
+  specificationOptions: Partial<Record<'finish' | 'color' | 'purchase_unit' | 'material', string[]>>;
 };
 
 const stringValue = (value: unknown) => typeof value === 'string' ? value : value == null ? '' : String(value);
 const makeKey = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-export function InventoryArticleEditor({ value, saving, onChange, onClose, onSave, onDelete, onAssignBranch, onTransfer, branches, libraryProducts, libraryCount, itemTypeOptions, tagOptions }: Props) {
+export function InventoryArticleEditor({ value, saving, onChange, onClose, onSave, onDelete, onAssignBranch, onTransfer, branches, libraryProducts, libraryCount, itemTypeOptions, tagOptions, specificationOptions }: Props) {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryTerm, setLibraryTerm] = useState('');
   const [branchSelection, setBranchSelection] = useState(value.sourceItem?.branch || '');
@@ -97,9 +102,9 @@ export function InventoryArticleEditor({ value, saving, onChange, onClose, onSav
         <div className="inventory-editor-hero-icon"><Package size={19}/></div>
         <div className="inventory-editor-heading">
           <span className="eyebrow">FICHA DE INVENTARIO</span>
-          <h2 id="inventory-editor-title">{sourceItem?.name || 'Editar artículo'}</h2>
+          <h2 id="inventory-editor-title">{value.name || 'Editar artículo'}</h2>
           <p id="inventory-editor-description">Organiza los datos del producto. El stock se controla por sucursal y conserva su historial.</p>
-          <div className="inventory-editor-identifiers"><span>{sourceItem?.sku || 'Código pendiente'}</span>{sourceItem?.variant && <span>{sourceItem.variant}</span>}<span className={`inventory-editor-stock-state${sourceItem?.sourceStatus ? ' is-pending' : ''}`}>{sourceItem?.sourceStatus ? 'Conteo pendiente' : `${sourceItem?.quantity ?? 0} ${sourceItem?.unit || 'unidades'} contadas`}</span></div>
+          <div className="inventory-editor-identifiers"><span>{sourceItem?.sku || 'Código pendiente'}</span>{value.variant && <span>{value.variant}</span>}<span className={`inventory-editor-stock-state${sourceItem?.sourceStatus ? ' is-pending' : ''}`}>{sourceItem?.sourceStatus ? 'Conteo pendiente' : `${sourceItem?.quantity ?? 0} ${sourceItem?.unit || 'unidades'} contadas`}</span></div>
         </div>
         <button className="icon-button inventory-editor-close" type="button" aria-label="Cerrar ficha" disabled={saving} onClick={onClose}><X size={18}/></button>
       </header>
@@ -109,15 +114,20 @@ export function InventoryArticleEditor({ value, saving, onChange, onClose, onSav
           <section className="inventory-editor-section">
             <div className="inventory-editor-section-title"><span className="inventory-editor-section-icon"><Package size={16}/></span><div><h3>Identificación</h3><p>Clasifica el artículo para encontrarlo con rapidez.</p></div></div>
             <div className="inventory-editor-grid">
-              <InventoryOptionPicker autoFocus label="Tipo de artículo" mode="single" value={value.itemType} options={itemTypeOptions} placeholder="Selecciona un tipo" helpText="Busca un tipo existente o elige “Escribir” para agregar otro." onChange={(next) => update({ itemType: String(next) })}/>
+              <label>Nombre del producto<input autoFocus required maxLength={160} value={value.name} onChange={(event) => update({ name: event.target.value })} placeholder="Nombre visible en el catálogo"/></label>
+              <label>Categoría<input maxLength={100} value={value.category} onChange={(event) => update({ category: event.target.value })} placeholder="Ej. Materiales, Insumos"/></label>
+              <label>Variante<input maxLength={160} value={value.variant} onChange={(event) => update({ variant: event.target.value })} placeholder="Color, medida o presentación"/><small>Solo cambia esta variante; el código de variante se conserva.</small></label>
+              <label>Mínimo para reponer<input type="number" min="0" step="0.001" required value={value.minimum} onChange={(event) => update({ minimum: event.target.value })} placeholder="0"/><small>Alerta cuando las existencias lleguen a este nivel; no cambia el stock.</small></label>
+              <InventoryOptionPicker label="Tipo de artículo" mode="single" value={value.itemType} options={itemTypeOptions} placeholder="Selecciona un tipo" helpText="Busca un tipo existente o elige “Escribir” para agregar otro." onChange={(next) => update({ itemType: String(next) })}/>
               <label className="inventory-editor-wide">Descripción<textarea rows={3} value={value.description || ''} onChange={(event) => update({ description: event.target.value })} placeholder="Detalle del artículo, uso o notas para el equipo"/><small>Esta información se muestra dentro de la ficha, no en la tarjeta del catálogo.</small></label>
               <InventoryOptionPicker className="inventory-editor-wide" label="Etiquetas" mode="multiple" value={selectedTags} options={tagOptions} placeholder="Busca y selecciona etiquetas" helpText="Puedes combinar sugerencias o escribir hasta 40 etiquetas." onChange={(next) => update({ tags: (Array.isArray(next) ? next : [next]).join(', ') })}/>
+              <p className="inventory-editor-wide inventory-editor-identity-note">El nombre y la categoría se comparten entre las variantes y sucursales de esta ficha. El SKU y la unidad base se conservan para proteger sus movimientos e historial.</p>
             </div>
           </section>
 
           <section className="inventory-editor-section">
             <div className="inventory-editor-section-title"><span className="inventory-editor-section-icon"><Boxes size={16}/></span><div><h3>Medidas y características</h3><p>Registra solo las especificaciones que correspondan al producto.</p></div></div>
-            <InventorySpecificationFields idPrefix="edit-inventory" value={value.variantAttributes || {}} onChange={patchSpec}/>
+            <InventorySpecificationFields idPrefix="edit-inventory" value={value.variantAttributes || {}} onChange={patchSpec} options={specificationOptions}/>
           </section>
 
           <section className="inventory-editor-section">

@@ -7,3 +7,5 @@ export { RichTextEditor } from './studio/RichTextEditor';
 export { RichTextContent } from './commercial/RichTextContent';
 export { Calendar, DatePicker, DateTimePicker, dateFromKey, dateToKey } from './ui/Calendar';
 export type { CalendarDayMetadata, CalendarMode, CalendarPreset, CalendarProps } from './ui/Calendar';
+export { InventoryOperationsCalendar } from './InventoryOperationsCalendar';
+export type { InventoryOperationsCalendarProps } from './InventoryOperationsCalendar';

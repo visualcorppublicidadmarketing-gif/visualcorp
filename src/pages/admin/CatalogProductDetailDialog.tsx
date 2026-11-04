@@ -41,7 +41,60 @@ function getPriceTiers(product: CatalogProduct) {
   })).filter((tier: CatalogProduct) => Number.isFinite(tier.qty));
 }
 
-export function CatalogProductCode({ value }: { value: string }) {
+export function CatalogProductBarcodePreview({ sku }: { sku: string }) {
+  const previewRef = useRef<HTMLSpanElement>(null);
+  const barcodeRef = useRef<SVGSVGElement>(null);
+  const [isNearViewport, setIsNearViewport] = useState(false);
+  const [barcodeError, setBarcodeError] = useState(false);
+  const safeSku = String(sku || '').trim();
+
+  useEffect(() => {
+    const preview = previewRef.current;
+    if (!preview) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setIsNearViewport(true);
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setIsNearViewport(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: '120px' });
+    observer.observe(preview);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const barcode = barcodeRef.current;
+    if (!barcode) return;
+    barcode.replaceChildren();
+    setBarcodeError(false);
+    if (!isNearViewport || !safeSku) return;
+    try {
+      JsBarcode(barcode, safeSku, {
+        format: 'CODE128',
+        width: 1,
+        height: 22,
+        displayValue: false,
+        margin: 2,
+        lineColor: '#251b2d',
+        background: '#ffffff',
+      });
+    } catch {
+      setBarcodeError(true);
+    }
+  }, [isNearViewport, safeSku]);
+
+  if (!safeSku) return <span className="catalog-barcode-pending" aria-label="Código de barras pendiente: falta el SKU">SKU pendiente</span>;
+
+  return <span ref={previewRef} className={`catalog-barcode-mini-preview${barcodeError ? ' has-error' : ''}`} title={barcodeError ? 'Este SKU no se puede representar en Code 128.' : `Code 128 generado automáticamente desde el SKU ${safeSku}`}>
+    <svg ref={barcodeRef} role="img" aria-label={`Código de barras Code 128 generado automáticamente para ${safeSku}`} style={{ visibility: barcodeError ? 'hidden' : undefined }}/>
+    {barcodeError && <span role="img" aria-label={`No se pudo generar Code 128 para ${safeSku}`}>SKU no compatible</span>}
+  </span>;
+}
+
+export function CatalogProductCode({ value, showBarcode = false, barcodeValue }: { value: string; showBarcode?: boolean; barcodeValue?: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -53,6 +106,7 @@ export function CatalogProductCode({ value }: { value: string }) {
   };
   return <span className="catalog-product-code">
     <span>SKU</span><code>{value}</code>
+    {showBarcode && <CatalogProductBarcodePreview sku={barcodeValue ?? value}/>}
     <button type="button" onClick={() => void copy()} aria-label={`Copiar SKU ${value}`} title="Copiar SKU">
       {copied ? <Check size={13}/> : <Copy size={13}/>}
     </button>
@@ -196,7 +250,7 @@ function BarcodeLabel({ sku, productName }: { sku: string; productName: string }
       <button type="button" onClick={() => void downloadLabel()} disabled={!canGenerate || Boolean(barcodeError)}><Download size={14}/> Descargar PNG</button>
       <button type="button" onClick={printLabels} disabled={!canGenerate || Boolean(barcodeError)}><Printer size={14}/> Imprimir etiquetas</button>
     </div>
-    <small className="catalog-barcode-note">SKU interno en Code 128. Para la lectura con escáner, conserva el SKU como código oficial del catálogo.</small>
+    <small className="catalog-barcode-note">Code 128 se genera automáticamente desde el SKU y se actualiza cuando cambia. Para escanear, conserva el SKU vigente como código oficial del catálogo.</small>
   </section>;
 }
 
