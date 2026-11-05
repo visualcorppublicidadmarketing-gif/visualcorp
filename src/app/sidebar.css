@@ -1,0 +1,712 @@
+/* =========================================================================
+   Visual Corp Suite - Sidebar Navigation (Desplegado y Compactado)
+   Diseñado para máxima claridad, velocidad de uso y elegancia ejecutiva.
+   ========================================================================= */
+
+:root {
+  --vc-sidebar-width: 256px;
+  --vc-sidebar-collapsed-width: 68px;
+  --vc-sidebar-bg: #ffffff;
+  --vc-sidebar-border: #e8e6ed;
+  --vc-sidebar-link-text: #4e4858;
+  --vc-sidebar-link-hover-bg: #f5f2f8;
+  --vc-sidebar-link-hover-text: #201a29;
+  --vc-sidebar-link-active-bg: linear-gradient(135deg, rgba(138, 76, 175, 0.12) 0%, rgba(165, 16, 145, 0.08) 100%);
+  --vc-sidebar-link-active-text: #793fa0;
+  --vc-sidebar-accent: #793fa0;
+}
+
+[data-theme='dark'] {
+  --vc-sidebar-bg: #13111a;
+  --vc-sidebar-border: #262232;
+  --vc-sidebar-link-text: #b1abbc;
+  --vc-sidebar-link-hover-bg: #1e1a29;
+  --vc-sidebar-link-hover-text: #ffffff;
+  --vc-sidebar-link-active-bg: linear-gradient(135deg, rgba(138, 76, 175, 0.28) 0%, rgba(165, 16, 145, 0.18) 100%);
+  --vc-sidebar-link-active-text: #e2b4ff;
+  --vc-sidebar-accent: #a51091;
+}
+
+/* =========================================================================
+   Contenedor Principal y Layout
+   ========================================================================= */
+
+.work-app {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg, #f4f5f8);
+  position: relative;
+}
+
+.sidebar {
+  position: fixed;
+  z-index: 40;
+  inset: 0 auto 0 0;
+  width: var(--vc-sidebar-width);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--vc-sidebar-bg);
+  border-right: 1px solid var(--vc-sidebar-border);
+  box-shadow: 2px 0 16px rgba(32, 20, 44, 0.03);
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: visible;
+  user-select: none;
+}
+
+.main-shell {
+  flex: 1;
+  min-width: 0;
+  min-height: 100vh;
+  margin-left: var(--vc-sidebar-width);
+  transition: margin-left 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Estado Compactado (Collapsed) en Desktop */
+.work-app.sidebar-collapsed .sidebar {
+  width: var(--vc-sidebar-collapsed-width);
+}
+
+.work-app.sidebar-collapsed .main-shell {
+  margin-left: var(--vc-sidebar-collapsed-width);
+}
+
+/* =========================================================================
+   Cabecera de la Barra Lateral (Brand Header)
+   ========================================================================= */
+
+.sidebar-brand-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--vc-sidebar-border);
+  flex-shrink: 0;
+}
+
+.sidebar-brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  min-width: 0;
+  overflow: hidden;
+  transition: opacity 0.15s ease;
+}
+
+.sidebar-brand-link:hover {
+  opacity: 0.88;
+}
+
+.sidebar-brand-wordmark {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+  transition: opacity 0.18s ease;
+}
+
+.sidebar-brand-symbol {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px rgba(121, 63, 160, 0.22));
+}
+
+.sidebar-toggle-inline-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--vc-sidebar-border);
+  border-radius: 7px;
+  background: transparent;
+  color: #7a7384;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-toggle-inline-btn:hover {
+  background: var(--vc-sidebar-link-hover-bg);
+  color: var(--vc-sidebar-accent);
+  border-color: #d1c8db;
+}
+
+/* Ocultar / mostrar elementos al compactar */
+.work-app.sidebar-collapsed .sidebar-brand-wrapper {
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.work-app.sidebar-collapsed .sidebar-brand-wordmark {
+  display: none;
+}
+
+.work-app.sidebar-collapsed .sidebar-toggle-inline-btn {
+  display: none;
+}
+
+/* =========================================================================
+   Píldora de Estado / Sesión Segura
+   ========================================================================= */
+
+.sidebar-session-banner {
+  margin: 12px 14px 4px 14px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(121, 63, 160, 0.05);
+  border: 1px solid rgba(121, 63, 160, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--vc-sidebar-link-text);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sidebar-session-role {
+  font-size: 9px;
+  font-weight: 500;
+  color: #8c8596;
+  text-transform: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.work-app.sidebar-collapsed .sidebar-session-banner {
+  margin: 10px 8px 4px 8px;
+  padding: 7px 0;
+  justify-content: center;
+  background: transparent;
+  border-color: transparent;
+}
+
+.work-app.sidebar-collapsed .sidebar-session-text {
+  display: none;
+}
+
+/* =========================================================================
+   Área de Navegación con Scroll Suave
+   ========================================================================= */
+
+.sidebar-nav-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 10px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(121, 63, 160, 0.2) transparent;
+}
+
+.sidebar-nav-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-thumb {
+  background: rgba(121, 63, 160, 0.22);
+  border-radius: 4px;
+}
+
+.work-app.sidebar-collapsed .sidebar-nav-container {
+  padding: 8px 6px 16px 6px;
+  align-items: center;
+}
+
+.sidebar-section-kicker {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  color: #928a9c;
+  text-transform: uppercase;
+  margin: 12px 0 6px 8px;
+}
+
+.work-app.sidebar-collapsed .sidebar-section-kicker {
+  display: none;
+}
+
+/* =========================================================================
+   Enlaces de Navegación Individuales (.sidebar-nav-item)
+   ========================================================================= */
+
+.sidebar-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--vc-sidebar-link-text);
+  font-size: 12.5px;
+  font-weight: 550;
+  text-decoration: none;
+  transition: all 0.14s ease;
+  outline: none;
+  border: 1px solid transparent;
+}
+
+.sidebar-nav-item:hover {
+  background: var(--vc-sidebar-link-hover-bg);
+  color: var(--vc-sidebar-link-hover-text);
+}
+
+.sidebar-nav-item:focus-visible {
+  outline: 2px solid var(--vc-sidebar-accent);
+  outline-offset: 1px;
+}
+
+.sidebar-nav-item.is-active {
+  background: var(--vc-sidebar-link-active-bg);
+  color: var(--vc-sidebar-link-active-text);
+  font-weight: 650;
+  border-color: rgba(138, 76, 175, 0.18);
+}
+
+.sidebar-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #7a7384;
+  transition: color 0.14s ease, transform 0.14s ease;
+}
+
+.sidebar-nav-item:hover .sidebar-nav-icon {
+  color: var(--vc-sidebar-accent);
+}
+
+.sidebar-nav-item.is-active .sidebar-nav-icon {
+  color: var(--vc-sidebar-accent);
+}
+
+.sidebar-nav-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
+}
+
+.sidebar-item-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(165, 16, 145, 0.12);
+  color: #a51091;
+  margin-left: auto;
+}
+
+/* Modo Compactado para enlaces individuales */
+.work-app.sidebar-collapsed .sidebar-nav-item {
+  width: 44px;
+  height: 40px;
+  padding: 0;
+  justify-content: center;
+  margin: 2px 0;
+}
+
+.work-app.sidebar-collapsed .sidebar-nav-label {
+  display: none;
+}
+
+.work-app.sidebar-collapsed .sidebar-item-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 8px;
+  height: 8px;
+  padding: 0;
+  border-radius: 50%;
+  background: #e5007e;
+  color: transparent;
+  font-size: 0;
+  box-shadow: 0 0 0 2px var(--vc-sidebar-bg);
+}
+
+/* =========================================================================
+   Grupos de Navegación Desplegables (.sidebar-accordion-group)
+   ========================================================================= */
+
+.sidebar-accordion-group {
+  margin-top: 4px;
+}
+
+.sidebar-group-header-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #3b3543;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.14s ease;
+  outline: none;
+}
+
+[data-theme='dark'] .sidebar-group-header-btn {
+  color: #d1cbd9;
+}
+
+.sidebar-group-header-btn:hover {
+  background: var(--vc-sidebar-link-hover-bg);
+  color: var(--vc-sidebar-link-hover-text);
+}
+
+.sidebar-group-header-btn:focus-visible {
+  outline: 2px solid var(--vc-sidebar-accent);
+  outline-offset: 1px;
+}
+
+.sidebar-accordion-group.has-active-child .sidebar-group-header-btn {
+  color: var(--vc-sidebar-accent);
+  font-weight: 700;
+}
+
+.sidebar-group-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.06);
+  color: #746d7e;
+  margin-left: auto;
+}
+
+[data-theme='dark'] .sidebar-group-badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: #b3acc0;
+}
+
+.sidebar-group-chevron {
+  color: #928a9c;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.sidebar-accordion-group.is-open .sidebar-group-chevron {
+  transform: rotate(180deg);
+}
+
+/* Sub-items del acordeón desplegado */
+.sidebar-group-subitems {
+  margin: 3px 0 6px 18px;
+  padding-left: 10px;
+  border-left: 1.5px solid rgba(121, 63, 160, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-group-subitems .sidebar-nav-item {
+  min-height: 34px;
+  font-size: 12px;
+  padding: 0 8px;
+}
+
+.sidebar-group-subitems .sidebar-nav-item.is-active {
+  border-left: 2px solid var(--vc-sidebar-accent);
+  border-radius: 0 6px 6px 0;
+  margin-left: -11px;
+  padding-left: 9px;
+}
+
+/* =========================================================================
+   Menú Flotante Flyout para Grupos en Modo Compactado
+   ========================================================================= */
+
+.sidebar-collapsed-group-wrapper {
+  position: relative;
+  width: 44px;
+  margin: 2px 0;
+}
+
+.sidebar-collapsed-trigger-btn {
+  width: 44px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #7a7384;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.sidebar-collapsed-trigger-btn:hover {
+  background: var(--vc-sidebar-link-hover-bg);
+  color: var(--vc-sidebar-accent);
+}
+
+.sidebar-collapsed-trigger-btn.has-active-child {
+  background: var(--vc-sidebar-link-active-bg);
+  color: var(--vc-sidebar-accent);
+  border-color: rgba(138, 76, 175, 0.2);
+}
+
+.sidebar-collapsed-active-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a51091;
+  box-shadow: 0 0 6px rgba(165, 16, 145, 0.5);
+}
+
+/* Panel flotante (Flyout Popover) */
+.sidebar-flyout-popover {
+  position: fixed;
+  left: 72px;
+  width: 230px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #ddd7e5;
+  border-radius: 12px;
+  box-shadow: 0 14px 40px -4px rgba(32, 20, 44, 0.18), 0 2px 6px rgba(32, 20, 44, 0.05);
+  padding: 8px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: vc-flyout-in 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme='dark'] .sidebar-flyout-popover {
+  background: #191624;
+  border-color: #322d42;
+  box-shadow: 0 14px 40px -4px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes vc-flyout-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.sidebar-flyout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px 8px 10px;
+  border-bottom: 1px solid var(--vc-sidebar-border);
+  margin-bottom: 4px;
+}
+
+.sidebar-flyout-title {
+  font-size: 11px;
+  font-weight: 750;
+  color: var(--vc-sidebar-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sidebar-flyout-popover .sidebar-nav-item {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  justify-content: flex-start;
+}
+
+.sidebar-flyout-popover .sidebar-nav-label {
+  display: block;
+}
+
+/* Tooltip simple flotante para modo compactado */
+.sidebar-tooltip {
+  position: fixed;
+  left: 72px;
+  padding: 5px 9px;
+  background: #2b2233;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  z-index: 1000;
+  white-space: nowrap;
+  animation: vc-tooltip-in 0.12s ease-out;
+}
+
+@keyframes vc-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* =========================================================================
+   Pie de la Barra Lateral (Perfil de Usuario)
+   ========================================================================= */
+
+.sidebar-profile-card {
+  margin-top: auto;
+  padding: 12px 14px;
+  border-top: 1px solid var(--vc-sidebar-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  background: var(--vc-sidebar-bg);
+  position: relative;
+}
+
+.sidebar-profile-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.sidebar-profile-name {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--vc-sidebar-link-hover-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
+}
+
+.sidebar-profile-role {
+  font-size: 10px;
+  color: #8c8596;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.sidebar-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #8c8596;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.work-app.sidebar-collapsed .sidebar-profile-card {
+  padding: 12px 0;
+  justify-content: center;
+}
+
+.work-app.sidebar-collapsed .sidebar-profile-info {
+  display: none;
+}
+
+.work-app.sidebar-collapsed .sidebar-logout-btn {
+  display: none;
+}
+
+/* =========================================================================
+   Comportamiento Responsive Móvil (< 768px)
+   ========================================================================= */
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: min(300px, 86vw) !important;
+    transform: translateX(-100%);
+    box-shadow: none;
+    z-index: 50;
+  }
+
+  .sidebar.is-mobile-open {
+    transform: translateX(0);
+    box-shadow: 0 16px 48px rgba(25, 17, 36, 0.35);
+  }
+
+  .main-shell {
+    margin-left: 0 !important;
+  }
+
+  .work-app.sidebar-collapsed .sidebar-brand-wordmark {
+    display: block;
+  }
+
+  .work-app.sidebar-collapsed .sidebar-toggle-inline-btn {
+    display: inline-flex;
+  }
+
+  .work-app.sidebar-collapsed .sidebar-section-kicker {
+    display: block;
+  }
+
+  .work-app.sidebar-collapsed .sidebar-nav-item {
+    width: 100%;
+    height: 40px;
+    padding: 0 10px;
+    justify-content: flex-start;
+  }
+
+  .work-app.sidebar-collapsed .sidebar-nav-label {
+    display: block;
+  }
+
+  .work-app.sidebar-collapsed .sidebar-profile-info {
+    display: flex;
+  }
+
+  .work-app.sidebar-collapsed .sidebar-logout-btn {
+    display: inline-flex;
+  }
+}
