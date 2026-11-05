@@ -1176,3 +1176,372 @@
     transform: none;
   }
 }
+
+/* =========================================================================
+   Mejoras Visuales del Calendario Operativo de Inventario (2026)
+   ========================================================================= */
+
+/* Tarjetas KPI interactivas de resumen */
+.inventory-summary-card {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-width: 170px !important;
+  padding: 12px 14px !important;
+  border: 1px solid #e8e3ed !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #ffffff, #faf7fc) !important;
+  box-shadow: 0 2px 6px rgba(37, 27, 49, 0.04) !important;
+  cursor: pointer !important;
+  transition: all 0.16s ease !important;
+}
+
+.inventory-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 27, 49, 0.08) !important;
+  border-color: #d1b8db !important;
+}
+
+.inventory-summary-card.is-active {
+  border-color: #a51091 !important;
+  background: #fbf5fc !important;
+  box-shadow: 0 0 0 2px rgba(165, 16, 145, 0.18) !important;
+}
+
+.inventory-summary-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.inventory-summary-card div span {
+  display: block;
+  font-size: 11px;
+  font-weight: 550;
+  color: #72687a;
+  line-height: 1.25;
+}
+
+.inventory-summary-card div b {
+  display: block;
+  font-size: 20px;
+  font-weight: 750;
+  color: #2b2233;
+  line-height: 1.2;
+}
+
+.inventory-summary-card.is-overdue {
+  border-color: #fca5a5 !important;
+  background: linear-gradient(135deg, #fff5f5, #ffffff) !important;
+}
+
+.inventory-summary-card.is-overdue div b {
+  color: #b91c1c !important;
+}
+
+/* Distinción visual para entradas / salidas en celdas de calendario */
+.inventory-calendar-event.is-entry {
+  border-left-color: #10b981 !important;
+  background: #f0fdf4 !important;
+  color: #065f46 !important;
+}
+.inventory-calendar-event.is-entry .inventory-calendar-event-icon {
+  color: #10b981 !important;
+}
+
+.inventory-calendar-event.is-exit {
+  border-left-color: #f59e0b !important;
+  background: #fffbeb !important;
+  color: #92400e !important;
+}
+.inventory-calendar-event.is-exit .inventory-calendar-event-icon {
+  color: #f59e0b !important;
+}
+
+.inventory-calendar-event-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+  letter-spacing: -0.01em;
+}
+.inventory-calendar-event-badge.badge-entry {
+  background: #dcfce7;
+  color: #15803d;
+}
+.inventory-calendar-event-badge.badge-exit {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* Botón de desbordamiento de eventos (+X más · ver día) */
+.inventory-calendar-overflow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid #dfd6e6;
+  border-radius: 6px;
+  background: #faf6fc;
+  color: #743a8c;
+  font: inherit;
+  font-size: 9.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+  margin-top: 2px;
+}
+.inventory-calendar-overflow:hover {
+  background: #f3e5f8;
+  border-color: #c4a0d6;
+  color: #55186d;
+}
+
+/* Modal de Desglose / Resumen del Día */
+.inventory-calendar-day-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.inventory-calendar-day-filter-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.day-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border: 1px solid #e2dce8;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #5b5266;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.day-pill:hover {
+  background: #fbf8fc;
+  border-color: #cfc2da;
+  color: #2b2233;
+}
+.day-pill.is-active {
+  background: #793fa0;
+  border-color: #793fa0;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(121, 63, 160, 0.25);
+}
+.day-pill.in.is-active {
+  background: #059669;
+  border-color: #059669;
+}
+.day-pill.out.is-active {
+  background: #d97706;
+  border-color: #d97706;
+}
+.day-pill.count.is-active {
+  background: #6d28d9;
+  border-color: #6d28d9;
+}
+.day-pill.receipt.is-active {
+  background: #0284c7;
+  border-color: #0284c7;
+}
+
+.inventory-calendar-day-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #dfd9e6;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #72687a;
+}
+.inventory-calendar-day-search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: #2b2233;
+  width: 100%;
+}
+.inventory-calendar-day-search button {
+  background: none;
+  border: none;
+  color: #743a8c;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inventory-calendar-day-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.inventory-calendar-day-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid #e7e2ee;
+  border-left: 4px solid #8e5aa1;
+  border-radius: 10px;
+  background: #ffffff;
+  transition: all 0.14s ease;
+}
+.inventory-calendar-day-card:hover {
+  box-shadow: 0 4px 14px rgba(45, 30, 55, 0.08);
+  border-color: #cfc2da;
+}
+.inventory-calendar-day-card.is-entry {
+  border-left-color: #10b981;
+  background: #fcfdfc;
+}
+.inventory-calendar-day-card.is-exit {
+  border-left-color: #f59e0b;
+  background: #fdfdfc;
+}
+.inventory-calendar-day-card.event-count_task {
+  border-left-color: #7c3aed;
+}
+.inventory-calendar-day-card.event-count_session {
+  border-left-color: #0d9488;
+}
+.inventory-calendar-day-card.event-purchase_receipt {
+  border-left-color: #0284c7;
+}
+
+.day-card-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #f7f4f9;
+  color: #793fa0;
+  flex-shrink: 0;
+}
+.inventory-calendar-day-card.is-entry .day-card-icon {
+  background: #ecfdf5;
+  color: #059669;
+}
+.inventory-calendar-day-card.is-exit .day-card-icon {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.day-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.day-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.day-card-type-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #743a8c;
+}
+.day-card-overdue-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #dc2626;
+  background: #fee2e2;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.day-card-time {
+  font-size: 10.5px;
+  color: #8c8296;
+  margin-left: auto;
+}
+
+.day-card-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  color: #2b2233;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.day-card-detail {
+  margin: 0;
+  font-size: 11px;
+  color: #6f657a;
+  line-height: 1.3;
+}
+
+.day-card-delta {
+  font-size: 12.5px;
+  font-weight: 750;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.day-card-delta.is-entry {
+  background: #dcfce7;
+  color: #15803d;
+}
+.day-card-delta.is-exit {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.day-card-action-btn {
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  font-size: 11.5px !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.inventory-calendar-day-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: #8c8296;
+  font-size: 13px;
+  border: 1px dashed #e2dce8;
+  border-radius: 10px;
+}
+
+.inventory-calendar-day-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 10px;
+}

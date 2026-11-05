@@ -17,3 +17,103 @@
 .inventory-location-card>.button{min-height:34px;padding:7px 9px;white-space:nowrap}
 @media(max-width:760px){.inventory-location-form{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-location-grid{grid-template-columns:1fr}}
 @media(max-width:480px){.inventory-location-form{grid-template-columns:1fr}.inventory-location-card{align-items:flex-start;flex-wrap:wrap}.inventory-location-card>.button{margin-left:48px}.inventory-location-toolbar{align-items:stretch;flex-direction:column}.inventory-location-toolbar span{padding:0}}
+
+/* Mejoras de mapa de ubicaciones */
+.inventory-location-filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.inventory-location-search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  border: 1px solid var(--line, #d8dce2);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  padding: 0 10px;
+}
+.inventory-location-search-box input {
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  font-size: 13px !important;
+  min-height: auto !important;
+  padding: 0 !important;
+}
+
+.inventory-location-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.location-status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.location-status-badge.is-active {
+  background: #dcfce7;
+  color: #15803d;
+}
+.location-status-badge.is-archived {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.location-system-badge {
+  font-size: 9.5px;
+  font-weight: 650;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.inventory-location-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.location-stock-pill {
+  font-size: 10px;
+  font-weight: 650;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.location-stock-pill.has-stock {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.location-stock-pill.no-stock {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.inventory-location-icon.type-storage {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+.inventory-location-icon.type-production {
+  background: #fff7ed;
+  color: #ea580c;
+}
+.inventory-location-icon.type-receiving {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+.inventory-location-icon.type-dispatch {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.inventory-location-icon.type-quarantine {
+  background: #fef2f2;
+  color: #dc2626;
+}

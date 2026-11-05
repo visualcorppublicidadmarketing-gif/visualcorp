@@ -6,3 +6,101 @@
 .standard-product-fields>label>small{color:#807987;font-size:9px;font-weight:500;line-height:1.4}.standard-product-row-copy>.catalog-product-code{margin-top:1px}.standard-products-list>article>.catalog-product-details-button{flex:none}
 .standard-image-guidance{color:#807987;font-size:9px;line-height:1.35;text-align:center}.standard-image-drop>small.standard-image-guidance{max-width:300px}
 
+
+/* Mejoras de productos estándar */
+.standard-products-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.standard-products-categories {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.standard-cat-chip {
+  padding: 4px 10px;
+  border: 1px solid #e5e2e9;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #655d6e;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.standard-cat-chip:hover {
+  background: #fbf7fd;
+  border-color: #d1b8db;
+  color: #793fa0;
+}
+.standard-cat-chip.is-active {
+  background: #793fa0;
+  border-color: #793fa0;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(121, 63, 160, 0.22);
+}
+
+.standard-product-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.standard-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.standard-status-badge.is-published {
+  background: #dcfce7;
+  color: #15803d;
+}
+.standard-status-badge.is-draft {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.standard-product-tags-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 1px 0;
+}
+
+.standard-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 600;
+  background: #f4f2f7;
+  color: #63586d;
+}
+.standard-tag.route {
+  background: #faf5ff;
+  color: #7c3aed;
+  border: 1px solid #e9d5ff;
+}
+.standard-tag.calc {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.standard-product-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
