@@ -4,6 +4,7 @@ import { ContextMenu, type ContextMenuAction } from '../../../components/ui/Cont
 import { Badge } from '../../../components/ui/OperationalKit';
 import { DatePicker } from '../../../components/ui/Calendar';
 import { SelectDropdown } from '../../../components/ui/SelectDropdown';
+import { AnimatedTabs } from '../../../components/ui/AnimatedTabs';
 import { MarketingPostArtwork, type MarketingArtworkAsset } from './MarketingPostArtwork';
 import { getMarketingCalendarColor, getMarketingTags } from './marketingColors';
 import { addMarketingDays, isTerminalMarketingStatus, marketingDateKey, marketingWeekStart } from './marketingScheduleRules';
@@ -478,12 +479,50 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
     <header className="vc-marketing-calendar-head">
       <div><span className="eyebrow">PLANIFICACIÓN DE MARKETING</span><h2>{view === 'month' ? monthHeading : view === 'day' ? `Agenda del día · ${weekRange}` : `${view === 'kanban' ? 'Kanban semanal' : view === 'table' ? 'Tabla semanal' : isCurrentWeek ? 'Semana actual' : 'Semana'} · ${weekRange}`}</h2><p>{view === 'kanban' ? 'Organiza las publicaciones por etapa. La semana incluye el lunes siguiente para recibir pendientes del fin de semana.' : view === 'table' ? 'Revisa en filas la semana seleccionada y el lunes siguiente. La tabla y Kanban comparten periodo y filtros.' : view === 'week' ? 'Organiza la semana por horas. Arrastra por las franjas para crear una actividad con inicio y fin.' : view === 'day' ? 'Organiza el día en intervalos de 30 minutos. Arrastra por las franjas para crear una actividad.' : 'Arrastra una publicación a otra fecha para reprogramarla; selecciona un rango libre para crear una actividad de varios días.'}</p></div>
       <div className="vc-marketing-calendar-toolbar">
-        <div className="vc-marketing-calendar-view"><button type="button" className={view==='month'?'active':''} aria-pressed={view==='month'} onClick={()=>{setView('month');setExpandedDate(null);}}>Mes</button><button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{if(view==='month'){setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);}setView('week');setExpandedDate(null);}}>Semana</button><button type="button" className={view==='day'?'active':''} aria-pressed={view==='day'} onClick={()=>{setView('day');setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(false);setExpandedDate(null);}}>Día</button><button type="button" className={view==='kanban'?'active':''} aria-pressed={view==='kanban'} onClick={()=>{if(view==='month'){setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);}setView('kanban');setExpandedDate(null);}}>Kanban</button><button type="button" className={view==='table'?'active':''} aria-pressed={view==='table'} onClick={openTableView}>Tabla</button></div>
+        <AnimatedTabs<MarketingCalendarView>
+          ariaLabel="Cambiar vista de calendario"
+          size="sm"
+          variant="segmented"
+          activeId={view}
+          layoutId="marketing-view-pill"
+          onChange={(nextView) => {
+            if (nextView === 'table') {
+              openTableView();
+            } else {
+              if (nextView === 'week' || nextView === 'kanban') {
+                if (view === 'month') {
+                  setAnchor(dateFromKey(todayKey));
+                  setFollowCurrentWeek(true);
+                }
+              } else if (nextView === 'day') {
+                setAnchor(dateFromKey(todayKey));
+                setFollowCurrentWeek(false);
+              }
+              setView(nextView);
+              setExpandedDate(null);
+            }
+          }}
+          tabs={[
+            { id: 'month', label: 'Mes' },
+            { id: 'week', label: 'Semana' },
+            { id: 'day', label: 'Día' },
+            { id: 'kanban', label: 'Kanban' },
+            { id: 'table', label: 'Tabla' },
+          ]}
+        />
         {view === 'month' && (
-          <div className="vc-marketing-density-toggle" role="group" aria-label="Densidad del mes">
-            <button type="button" className={monthDensity === 'compact' ? 'active' : ''} onClick={() => setMonthDensity('compact')} title="Vista compacta de píldoras ejecutivas">Compacta</button>
-            <button type="button" className={monthDensity === 'detailed' ? 'active' : ''} onClick={() => setMonthDensity('detailed')} title="Vista detallada con miniaturas">Detallada</button>
-          </div>
+          <AnimatedTabs<'compact' | 'detailed'>
+            ariaLabel="Densidad del mes"
+            size="sm"
+            variant="segmented"
+            activeId={monthDensity}
+            layoutId="marketing-density-pill"
+            onChange={(density) => setMonthDensity(density)}
+            tabs={[
+              { id: 'compact', label: 'Compacta', tooltip: 'Vista compacta de píldoras ejecutivas' },
+              { id: 'detailed', label: 'Detallada', tooltip: 'Vista detallada con miniaturas' },
+            ]}
+          />
         )}
         <div className="vc-marketing-calendar-controls">
           <DatePicker label="Ir a fecha" value={dateKey(anchor)} onChange={(value)=>{if(!value)return;const [year,month,day]=value.split('-').map(Number);setFollowCurrentWeek(false);setAnchor(new Date(year,month-1,day,12));setExpandedDate(null);}}/>

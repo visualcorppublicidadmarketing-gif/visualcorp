@@ -22,7 +22,17 @@ import {
   Store,
 } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
-import { BorderBeam, Marquee, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
+import {
+  AnimatedShinyText,
+  BorderBeam,
+  DotPattern,
+  Marquee,
+  PulsingBeacon,
+  SpotlightLayer,
+  WordRotate,
+  clearSpotlight,
+  updateSpotlight,
+} from '../components/ui/MagicComponents';
 import { Dialog, DialogCallout } from '../components/ui/DialogSystem';
 import {
   creativePillars,
@@ -116,6 +126,7 @@ function VisualitoStage({ onOpenOrientator }: { onOpenOrientator: () => void }) 
 
   return (
     <div className="home-stage" onPointerMove={move} onPointerLeave={reset} onPointerCancel={reset}>
+      <DotPattern width={26} height={26} className="home-stage-dots" glow />
       <div className="home-stage-glow" aria-hidden="true" />
       <motion.div className="home-stage-scene" style={{ rotateX, rotateY }}>
         <div className="home-stage-ring" aria-hidden="true" />
@@ -415,16 +426,25 @@ export function PublicHomePage() {
           <div className="home-hero-copy">
             <Reveal>
               <span className="home-kicker">
-                <span className="home-status-dot" />
-                {data.settings.heroEyebrow}
+                <PulsingBeacon size={8} color="#27d5ec" />
+                <AnimatedShinyText shimmerWidth={120}>{data.settings.heroEyebrow}</AnimatedShinyText>
               </span>
             </Reveal>
             <Reveal delay={0.05}>
-              <div className="home-discipline-pills" aria-label="Especialidades principales de Visual Corp">
-                <span>Diseño Gráfico</span>
-                <span>Publicidad & Gran Formato</span>
-                <span>Rótulos & Fachadas</span>
-                <span>Marketing & Promocionales</span>
+              <div className="home-discipline-rotator" aria-label="Especialidades principales de Visual Corp">
+                <span className="home-rotator-label">Especialistas en:</span>
+                <WordRotate
+                  words={[
+                    'Rótulos & Fachadas Comerciales',
+                    'Diseño Gráfico & Identidad',
+                    'Publicidad & Gran Formato',
+                    'Brandeo de Vehículos',
+                    'Stands & Eventos Corporativos',
+                    'Textil & Promocionales',
+                  ]}
+                  duration={2800}
+                  className="home-rotator-words"
+                />
               </div>
             </Reveal>
             <Reveal delay={0.08}>

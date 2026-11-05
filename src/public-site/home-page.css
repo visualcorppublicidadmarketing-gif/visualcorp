@@ -43,6 +43,10 @@
 .home-hero-proof span{display:flex;gap:7px;align-items:center}
 .home-hero-proof svg{color:#d888ba}
 .home-stage{position:relative;align-self:stretch;min-width:0;min-height:600px;perspective:1100px}
+.home-stage-dots{position:absolute;inset:0;width:100%;height:100%;opacity:0.18;pointer-events:none;z-index:0}
+.home-discipline-rotator{display:inline-flex;align-items:center;gap:10px;margin-top:16px;padding:6px 14px;border-radius:9999px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);backdrop-filter:blur(8px)}
+.home-rotator-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#62d9ef}
+.home-rotator-words{font-size:13px;font-weight:600;color:#ffffff}
 .home-stage-scene{position:absolute;inset:0 0 48px;transform-style:preserve-3d}
 .home-stage-glow{position:absolute;inset:12% -15% 8%;background:radial-gradient(ellipse,#e5007e19,transparent 66%);pointer-events:none}
 .home-stage-ring{position:absolute;inset:14% 2% 12%;border:1px solid #f09bc02c;border-radius:50%;transform:rotate(-24deg);box-shadow:0 0 0 24px #ffffff02,0 0 0 25px #ffffff05}
