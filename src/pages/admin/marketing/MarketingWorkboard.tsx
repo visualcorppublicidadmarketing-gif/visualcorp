@@ -614,13 +614,19 @@ export function DateProposal({
       >
         <div className="mk-panel-body">
           <h3>{post.title || "Idea por definir"}</h3>
-          <label className="mk-field">
-            Fecha que quieres cambiar
-            <select value={field} onChange={(e) => setField(e.target.value)}>
-              <option value="scheduled_date">Publicación</option>
-              <option value="due_date">Producción</option>
-            </select>
-          </label>
+          <div className="mk-field">
+            <span>Fecha que quieres cambiar</span>
+            <SelectDropdown
+              size="md"
+              fullWidth
+              value={field}
+              options={[
+                { value: "scheduled_date", label: "Publicación" },
+                { value: "due_date", label: "Producción" },
+              ]}
+              onChange={(val) => setField(val as "scheduled_date" | "due_date")}
+            />
+          </div>
           <p>
             Fecha actual: <b>{post[field] || "sin fecha"}</b>
           </p>
@@ -764,21 +770,19 @@ export function BulkAssignment({
   const [owner, setOwner] = useState("");
   return (
     <div className="mk-bulk-assignment">
-      <label>
-        Asignar seleccionadas
-        <select
-          value={owner}
-          onChange={(e) => setOwner(e.target.value)}
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 550, color: 'inherit' }}>Asignar seleccionadas</span>
+        <SelectDropdown
+          size="sm"
           disabled={busy}
-        >
-          <option value="">Elige responsable</option>
-          {assignees.map((a) => (
-            <option key={a.user_id} value={a.user_id}>
-              {a.display_name}
-            </option>
-          ))}
-        </select>
-      </label>
+          value={owner}
+          options={[
+            { value: '', label: 'Elige responsable' },
+            ...assignees.map((a) => ({ value: a.user_id, label: a.display_name })),
+          ]}
+          onChange={(val) => setOwner(val)}
+        />
+      </div>
       <button
         type="button"
         disabled={busy || !owner}

@@ -1,0 +1,224 @@
+/* =========================================================================
+   AnimatedTabs - Componente de pestañas con cápsula fluida y accesibilidad
+   Inspirado en Magic UI / shadcn Tabs / Aceternity
+   ========================================================================= */
+
+.vc-animated-tabs {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  user-select: none;
+  border-radius: 9999px;
+  padding: 3px;
+  background: var(--vc-tabs-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--vc-tabs-border, rgba(255, 255, 255, 0.09));
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.vc-animated-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Light theme overrides */
+:root[data-theme='light'] .vc-animated-tabs,
+.public-site-root .vc-animated-tabs {
+  --vc-tabs-bg: rgba(243, 240, 247, 0.85);
+  --vc-tabs-border: rgba(121, 63, 160, 0.14);
+  box-shadow: inset 0 1px 2px rgba(43, 34, 51, 0.05);
+}
+
+/* Variants */
+.vc-animated-tabs.vc-tabs-segmented {
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.vc-animated-tabs.vc-tabs-glass {
+  background: rgba(25, 20, 32, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+}
+
+.vc-animated-tabs.vc-tabs-underline {
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--vc-tabs-border, rgba(255, 255, 255, 0.1));
+  padding: 0 0 2px 0;
+  box-shadow: none;
+  gap: 16px;
+}
+
+/* Sizes */
+.vc-animated-tabs.vc-tabs-sm {
+  gap: 2px;
+}
+.vc-animated-tabs.vc-tabs-sm .vc-tab-button {
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  min-height: 26px;
+}
+
+.vc-animated-tabs.vc-tabs-md {
+  gap: 3px;
+}
+.vc-animated-tabs.vc-tabs-md .vc-tab-button {
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 550;
+  min-height: 32px;
+}
+
+.vc-animated-tabs.vc-tabs-lg {
+  gap: 4px;
+}
+.vc-animated-tabs.vc-tabs-lg .vc-tab-button {
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 38px;
+}
+
+/* Tab button */
+.vc-tab-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--vc-tab-color, rgba(255, 255, 255, 0.62));
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: color 0.18s ease;
+  white-space: nowrap;
+  outline: none;
+  line-height: 1;
+}
+
+.vc-tabs-segmented .vc-tab-button {
+  border-radius: 7px;
+}
+
+:root[data-theme='light'] .vc-tab-button,
+.public-site-root .vc-tab-button {
+  --vc-tab-color: #5d5366;
+}
+
+.vc-tab-button:hover:not(:disabled):not(.is-active) {
+  color: var(--vc-tab-hover-color, rgba(255, 255, 255, 0.95));
+}
+
+:root[data-theme='light'] .vc-tab-button:hover:not(:disabled):not(.is-active),
+.public-site-root .vc-tab-button:hover:not(:disabled):not(.is-active) {
+  --vc-tab-hover-color: #2b2233;
+}
+
+.vc-tab-button.is-active {
+  color: var(--vc-tab-active-color, #ffffff);
+}
+
+:root[data-theme='light'] .vc-tab-button.is-active,
+.public-site-root .vc-tab-button.is-active {
+  --vc-tab-active-color: #793fa0;
+}
+
+.vc-tab-button:focus-visible {
+  outline: 2px solid #8a4caf;
+  outline-offset: 2px;
+}
+
+.vc-tab-button.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Active indicator sliding pill */
+.vc-tab-active-indicator {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--vc-indicator-bg, #793fa0);
+  background-image: linear-gradient(135deg, #8a4caf 0%, #793fa0 55%, #a51091 100%);
+  box-shadow: 0 2px 10px rgba(121, 63, 160, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  z-index: 1;
+}
+
+:root[data-theme='light'] .vc-tab-active-indicator,
+.public-site-root .vc-tab-active-indicator {
+  background: #ffffff;
+  background-image: none;
+  box-shadow: 0 2px 8px rgba(43, 34, 51, 0.08), 0 1px 2px rgba(43, 34, 51, 0.04);
+}
+
+.vc-tabs-underline .vc-tab-active-indicator {
+  top: auto;
+  bottom: -2px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #8a4caf, #62d9ef);
+  box-shadow: 0 0 8px rgba(98, 217, 239, 0.5);
+}
+
+/* Inner content on top of indicator */
+.vc-tab-label-wrap {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vc-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+}
+
+.vc-tab-text {
+  display: inline-block;
+}
+
+.vc-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.16);
+  color: inherit;
+}
+
+.vc-tab-badge.is-active {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+:root[data-theme='light'] .vc-tab-badge,
+.public-site-root .vc-tab-badge {
+  background: rgba(121, 63, 160, 0.09);
+  color: #793fa0;
+}
+
+:root[data-theme='light'] .vc-tab-badge.is-active,
+.public-site-root .vc-tab-badge.is-active {
+  background: #793fa0;
+  color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-tab-active-indicator {
+    transition: none !important;
+    animation: none !important;
+  }
+}

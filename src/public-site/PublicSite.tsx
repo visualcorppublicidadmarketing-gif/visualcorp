@@ -11,7 +11,9 @@ import { multiProductQuoteService, publicAddress, publicServiceFamilies, service
 import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategoryStrips, ServiceVisualShowcase, StrategicBenefitsGrid } from './SolutionsComponents';
 import { Title3D, type Title3DKey } from './Title3D';
 import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
-import { AnimatedList, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
+import { AnimatedList, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight, PulsingBeacon, AnimatedShinyText } from '../components/ui/MagicComponents';
+import { FloatInput, FloatTextarea, FeedbackAlert } from '../components/ui/FormControls';
+import { SelectDropdown } from '../components/ui/SelectDropdown';
 import { AnimatedThemeToggler } from '../components/ui/AnimatedThemeToggler';
 import { PublicSiteContextMenu } from './PublicSiteContextMenu';
 import { FooterParticles } from './FooterParticles';
@@ -309,17 +311,108 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
     }
   };
   const services = data.services.filter((service) => service.enabled);
-  return <form className={`site-lead-form${variant === 'contact' ? ' contact-form' : ''}`} onSubmit={submit}>
-    <div className="site-form-title">{variant === 'contact' ? <div><span className="contact-form-kicker">CUÉNTANOS TU IDEA</span><b>Empecemos por lo esencial.</b></div> : <b>Detalles del proyecto</b>}<small>Los campos con * son necesarios.</small></div>
-    {sent && <div className="site-success" role="status"><Check size={16}/> Solicitud registrada. Gracias por escribirnos.</div>}
-    {error && <div className="site-form-error" role="alert">{error} <a href={whatsappHref(data.settings.contactPhone)} target="_blank" rel="noreferrer">Abrir WhatsApp <ArrowUpRight size={13}/></a></div>}
-    <div className="site-form-row"><label>Nombre *<input required autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Tu nombre"/></label><label>Teléfono o WhatsApp *<input required type="tel" autoComplete="tel" inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="09…"/></label></div>
-    <label>Negocio <span>(opcional)</span><input value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} placeholder="Nombre de tu negocio"/></label>
-    {variant !== 'quote' && <label>¿Qué necesitas?<select value={selectedService ?? form.service} onChange={(event) => { setForm({ ...form, service: event.target.value }); onServiceChange?.(event.target.value); }}><option value="">Selecciona una familia de trabajo</option>{(selectedService ?? form.service) === multiProductQuoteService && <option value={multiProductQuoteService}>{multiProductQuoteService}</option>}{services.map((service) => <option value={service.name} key={service.id}>{service.name}</option>)}</select></label>}
-    <label>{variant === 'quote' ? (quoteData ? 'Detalles adicionales (opcional)' : 'Describe tu proyecto *') : 'Cuéntanos un poco más'}<textarea required={variant === 'quote' && !quoteData} rows={variant === 'quote' ? 4 : 3} value={form.details} onChange={(event) => setForm({ ...form, details: event.target.value })} placeholder={variant === 'quote' ? 'Agrega cualquier contexto que ayude a entender tu proyecto' : 'Objetivo, referencia o plazo que tienes en mente'}/></label>
-    <button className="site-primary-button form-submit" type="submit" disabled={sending}>{sending ? 'Enviando…' : variant === 'quote' ? 'Enviar solicitud' : 'Enviar a Visual Corp'}<ArrowUpRight size={17}/></button>
-    <small className="site-form-note">{variant === 'quote' ? 'La dirección y el pin se comparten con Visual Corp para revisar la instalación. No incluyas claves ni datos sensibles.' : 'Usaremos estos datos para responder tu solicitud. No incluyas información sensible.'}</small>
-  </form>;
+  const serviceOptions = useMemo(() => [
+    { value: '', label: 'Selecciona una familia de trabajo' },
+    ...((selectedService ?? form.service) === multiProductQuoteService ? [{ value: multiProductQuoteService, label: multiProductQuoteService }] : []),
+    ...services.map((service) => ({ value: service.name, label: service.name, description: service.description })),
+  ], [services, selectedService, form.service]);
+
+  return (
+    <form className={`site-lead-form${variant === 'contact' ? ' contact-form' : ''}`} onSubmit={submit}>
+      <div className="site-form-title">
+        {variant === 'contact' ? (
+          <div>
+            <span className="contact-form-kicker">CUÉNTANOS TU IDEA</span>
+            <b>Empecemos por lo esencial.</b>
+          </div>
+        ) : (
+          <b>Detalles del proyecto</b>
+        )}
+        <small>Los campos con * son necesarios.</small>
+      </div>
+
+      {sent && (
+        <FeedbackAlert type="success">
+          Solicitud registrada. Gracias por escribirnos.
+        </FeedbackAlert>
+      )}
+
+      {error && (
+        <FeedbackAlert
+          type="error"
+          action={
+            <a href={whatsappHref(data.settings.contactPhone)} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600, color: 'inherit' }}>
+              WhatsApp <ArrowUpRight size={13} />
+            </a>
+          }
+        >
+          {error}
+        </FeedbackAlert>
+      )}
+
+      <div className="site-form-row">
+        <FloatInput
+          label="Nombre"
+          required
+          autoComplete="name"
+          value={form.name}
+          onChange={(event) => setForm({ ...form, name: event.target.value })}
+        />
+        <FloatInput
+          label="Teléfono o WhatsApp"
+          required
+          type="tel"
+          autoComplete="tel"
+          inputMode="tel"
+          value={form.phone}
+          onChange={(event) => setForm({ ...form, phone: event.target.value })}
+        />
+      </div>
+
+      <FloatInput
+        label="Negocio (opcional)"
+        value={form.company}
+        onChange={(event) => setForm({ ...form, company: event.target.value })}
+      />
+
+      {variant !== 'quote' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <span style={{ fontSize: 12.5, fontWeight: 550, color: 'inherit', opacity: 0.85 }}>¿Qué necesitas?</span>
+          <SelectDropdown
+            ariaLabel="Selecciona una familia de trabajo"
+            size="form"
+            fullWidth
+            value={selectedService ?? form.service}
+            options={serviceOptions}
+            onChange={(val) => {
+              setForm({ ...form, service: val });
+              onServiceChange?.(val);
+            }}
+          />
+        </div>
+      )}
+
+      <FloatTextarea
+        label={variant === 'quote' ? (quoteData ? 'Detalles adicionales (opcional)' : 'Describe tu proyecto') : 'Cuéntanos un poco más'}
+        required={variant === 'quote' && !quoteData}
+        rows={variant === 'quote' ? 4 : 3}
+        value={form.details}
+        maxChars={1800}
+        onChange={(event) => setForm({ ...form, details: event.target.value })}
+      />
+
+      <button className="site-primary-button form-submit" type="submit" disabled={sending}>
+        {sending ? 'Enviando…' : variant === 'quote' ? 'Enviar solicitud' : 'Enviar a Visual Corp'}
+        <ArrowUpRight size={17} />
+      </button>
+
+      <small className="site-form-note">
+        {variant === 'quote'
+          ? 'La dirección y el pin se comparten con Visual Corp para revisar la instalación. No incluyas claves ni datos sensibles.'
+          : 'Usaremos estos datos para responder tu solicitud. No incluyas información sensible.'}
+      </small>
+    </form>
+  );
 }
 
 export { PublicHomePage } from './HomePage';

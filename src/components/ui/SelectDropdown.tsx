@@ -21,7 +21,8 @@ export type SelectDropdownProps = {
   onChange: (value: string) => void;
   searchable?: boolean;
   searchPlaceholder?: string;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'form';
+  fullWidth?: boolean;
   disabled?: boolean;
   className?: string;
 };
@@ -37,6 +38,7 @@ export function SelectDropdown({
   searchable,
   searchPlaceholder = 'Filtrar opciones…',
   size = 'sm',
+  fullWidth = false,
   disabled = false,
   className = '',
 }: SelectDropdownProps) {
@@ -197,12 +199,12 @@ export function SelectDropdown({
   const listboxId = `${id}-listbox`;
 
   return (
-    <div className={`vc-select-dropdown ${className}`.trim()}>
+    <div className={`vc-select-dropdown${fullWidth ? ' is-full-width' : ''} ${className}`.trim()}>
       <button
         ref={triggerRef}
         type="button"
         disabled={disabled}
-        className={`vc-select-trigger is-${size}${isActiveFilter ? ' is-active-filter' : ''}`}
+        className={`vc-select-trigger is-${size}${fullWidth ? ' is-full-width' : ''}${isActiveFilter ? ' is-active-filter' : ''}`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? listboxId : undefined}
