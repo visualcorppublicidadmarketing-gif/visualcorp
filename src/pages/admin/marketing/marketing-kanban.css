@@ -33,6 +33,14 @@
 .vc-marketing-kanban-card-title:focus-visible{outline:2px solid #8750a5;outline-offset:3px;border-radius:4px}
 .vc-marketing-kanban-card-topic{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;color:#716977;font-size:11px;line-height:1.5}
 .vc-marketing-kanban-card .vc-marketing-post-artwork.is-week{min-height:170px;aspect-ratio:16/9}
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban.has-image{min-height:150px;aspect-ratio:16/9;border-radius:9px;overflow:hidden}
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image){min-height:38px;height:38px;aspect-ratio:auto;padding:4px 8px;display:flex;align-items:center;justify-content:space-between;border:1px dashed #d9cedf;border-radius:8px;background:#fcf9fd}
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image):hover{border-color:#8e52ad;background:#f9f2fc}
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-empty{display:flex;flex-direction:row;align-items:center;gap:6px;min-height:0;padding:0}
+.vc-marketing-kanban-empty-cue{font-size:10px;font-weight:650;color:#786485}
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-paste,
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-browse{position:static;height:26px;padding:2px 8px;font-size:9.5px;border-radius:6px;opacity:1}
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-paste kbd{display:none}
 .vc-marketing-kanban-card-meta{display:grid;gap:6px;color:#706779;font-size:10px}
 .vc-marketing-kanban-card-meta>span{display:flex;align-items:center;gap:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vc-marketing-kanban-card-meta svg{flex:none;color:#937aa1}

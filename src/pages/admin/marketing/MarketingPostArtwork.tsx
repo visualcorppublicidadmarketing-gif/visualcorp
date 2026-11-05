@@ -34,7 +34,7 @@ type Props = {
   asset?: MarketingArtworkAsset;
   canEdit: boolean;
   canDelete?: boolean;
-  variant: 'overview' | 'week' | 'compact' | 'detail' | 'editor';
+  variant: 'overview' | 'week' | 'compact' | 'detail' | 'editor' | 'kanban';
   draftFile?: File | null;
   isDraft?: boolean;
   onDraftFileChange?: (file: File | null) => void;
@@ -477,7 +477,8 @@ export function MarketingPostArtwork({ organizationId, post, association = { kin
     <input ref={inputRef} id={id} type="file" accept="image/*" hidden disabled={!canUpload || busy} onChange={(event) => { if (event.target.files) handleFiles(Array.from(event.target.files)); event.target.value = ''; }}/>
     {preview ? <img src={imageUrl} alt={draftFile ? `Vista previa pendiente: ${draftFile.name}` : `Imagen asociada: ${asset?.filename || post.title}`} loading="lazy" decoding="async" onError={() => { if (!draftPreviewUrl) setPreviewFailed(true); }}/> : <div className="vc-marketing-post-artwork-empty">
       {busy || previewLoading ? <LoaderCircle size={variant === 'compact' ? 13 : 22} className="vc-content-spin"/> : previewFailed ? <FileImage size={variant === 'compact' ? 13 : 22}/> : <ImagePlus size={variant === 'compact' ? 13 : 22}/>}
-      {variant !== 'compact' && <><b>{busy ? 'Procesando y subiendo…' : previewLoading ? 'Cargando imagen…' : previewFailed ? 'No se pudo abrir la imagen' : canUpload ? `Añade una imagen a esta ${entityTypeLabel}` : 'Sin imagen asociada'}</b><span>{previewLoading ? 'Preparando la vista previa de la biblioteca privada.' : canUpload ? 'Elige una imagen, arrástrala o pégala con Ctrl+V.' : 'Las imágenes vinculadas aparecerán en esta ficha'}</span></>}
+      {variant !== 'compact' && variant !== 'kanban' && <><b>{busy ? 'Procesando y subiendo…' : previewLoading ? 'Cargando imagen…' : previewFailed ? 'No se pudo abrir la imagen' : canUpload ? `Añade una imagen a esta ${entityTypeLabel}` : 'Sin imagen asociada'}</b><span>{previewLoading ? 'Preparando la vista previa de la biblioteca privada.' : canUpload ? 'Elige una imagen, arrástrala o pégala con Ctrl+V.' : 'Las imágenes vinculadas aparecerán en esta ficha'}</span></>}
+      {variant === 'kanban' && !preview && <span className="vc-marketing-kanban-empty-cue">{canUpload ? 'Añadir imagen · Ctrl+V' : 'Sin imagen'}</span>}
     </div>}
     {canUpload && !previewLoading && variant !== 'compact' && <button
       type="button"
@@ -488,11 +489,11 @@ export function MarketingPostArtwork({ organizationId, post, association = { kin
       onClick={(event) => { void pasteFromSystemClipboard(event); }}
     >
       <ClipboardPaste size={variant === 'overview' || variant === 'detail' ? 17 : 15}/>
-      <span>{draftFile ? 'Pegar otra' : variant === 'week' ? 'Pegar' : 'Pegar imagen'}</span>
+      <span>{draftFile ? 'Pegar otra' : (variant === 'week' || variant === 'kanban') ? 'Pegar' : 'Pegar imagen'}</span>
       <kbd>Ctrl + V</kbd>
     </button>}
     {canUpload && !previewLoading && <button type="button" className="vc-marketing-post-artwork-browse" aria-label={compactLabel} title={compactLabel} disabled={busy} onClick={(event) => { event.stopPropagation(); if (pendingDraft && draftFile) { void saveImage(draftFile); return; } inputRef.current?.click(); }}>
-      {busy ? <LoaderCircle size={14} className="vc-content-spin"/> : pendingDraft ? <><Upload size={14}/><span>Subir imagen</span></> : variant === 'compact' ? <ImagePlus size={14}/> : <><Upload size={14}/><span>{preview ? (variant === 'week' ? 'Cambiar' : 'Cambiar imagen') : (variant === 'week' ? 'Elegir' : 'Elegir imagen')}</span></>}
+      {busy ? <LoaderCircle size={14} className="vc-content-spin"/> : pendingDraft ? <><Upload size={14}/><span>Subir imagen</span></> : variant === 'compact' ? <ImagePlus size={14}/> : <><Upload size={14}/><span>{preview ? ((variant === 'week' || variant === 'kanban') ? 'Cambiar' : 'Cambiar imagen') : ((variant === 'week' || variant === 'kanban') ? 'Elegir' : 'Elegir imagen')}</span></>}
     </button>}
     {canRemoveImage && <button
       type="button"

@@ -364,6 +364,53 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     else openCampaignTaskForm();
   };
   const reschedulePost = (post:Post,date?:string) => { if(canEdit) setProposal({post,date}); };
+  const quickSchedulePost = async (post: Post, date: string, time?: string) => {
+    if (!supabase || !organizationId || !canEdit || !date) return;
+    const newDate = date.slice(0, 10);
+    const patch: Record<string, any> = { scheduled_date: newDate };
+    if (time !== undefined) {
+      patch.scheduled_time = time;
+    }
+    setData((prev) => ({
+      ...prev,
+      posts: prev.posts.map((p) => (p.id === post.id ? { ...p, ...patch } : p)),
+    }));
+    try {
+      await saveMarketingPost(organizationId, post, patch);
+      setNotice(`“${post.title || 'Publicación'}” reprogramada para el ${formatDate(newDate)}${time ? ` a las ${time}` : ' (Todo el día)'}.`);
+      await refresh();
+    } catch (error: any) {
+      setLoadError(error?.message || 'No se pudo mover la publicación.');
+      await refresh();
+    }
+  };
+  const quickScheduleCampaignTask = async (task: MarketingCampaignTask, date: string, startTime?: string, endTime?: string) => {
+    if (!supabase || !organizationId || !canEdit || !date) return;
+    const newDate = date.slice(0, 10);
+    const patch: Record<string, any> = {
+      due_date: newDate,
+      updated_at: new Date().toISOString(),
+      updated_by: user?.id || null,
+    };
+    if (startTime !== undefined) patch.start_time = startTime || null;
+    if (endTime !== undefined) patch.end_time = endTime || null;
+    if (task.start_date && task.start_date > newDate) {
+      patch.start_date = newDate;
+    }
+    setData((prev) => ({
+      ...prev,
+      campaignItems: prev.campaignItems.map((item) => (item.id === task.id ? { ...item, ...patch } : item)),
+    }));
+    try {
+      const { error } = await supabase.from('marketing_campaign_items').update(patch).eq('organization_id', organizationId).eq('id', task.id);
+      if (error) throw error;
+      setNotice(`Actividad “${task.title}” movida al ${formatDate(newDate)}${startTime ? ` (${startTime}–${endTime || ''})` : ''}.`);
+      await refresh();
+    } catch (error: any) {
+      setLoadError(error?.message || 'No se pudo mover la actividad.');
+      await refresh();
+    }
+  };
   const changePostStatus = async (post: Post, status: string) => {
     if (!supabase || !organizationId || !canEdit || !status || status === post.status) return;
     if (/^aprobad[ao]$/i.test(status)) { setReviewPost(post); return; }
@@ -662,7 +709,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
 
       {(activeSection === 'overview' || activeSection === 'calendar') && (canEdit||canDelete) && <div className="vc-marketing-bulk-bar"><label><input type="checkbox" checked={filteredPosts.length > 0 && filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/> Seleccionar publicaciones visibles</label>{selectedPostIds.size > 0 && <><span>{selectedPostIds.size} seleccionadas</span>{canEdit&&<BulkAssignment assignees={data.assignees} busy={saving} onAssign={id=>void assignSelected(id)}/>}<button type="button" className="vc-small-danger" disabled={!canDelete||saving} title={!canDelete?"El perfil requiere permiso para eliminar publicaciones":undefined} onClick={()=>void deletePosts(data.posts.filter((post)=>selectedPostIds.has(post.id)))}><Trash2 size={13}/>Eliminar seleccionadas</button><button type="button" onClick={()=>setSelectedPostIds(new Set())}>Quitar selección</button></>}</div>}
 
-      {activeSection === 'calendar' && <MarketingCalendar posts={filteredPosts} tasks={data.campaignItems} campaigns={data.campaigns} organizationId={organizationId || ''} artworkByPost={artworkByPost} artworkByTask={artworkByCampaignTask} onArtworkSaved={() => void refresh()} canEdit={canEdit} canDelete={canDelete} selectedIds={selectedPostIds} onToggle={togglePost} onSelect={(post) => { void openPost(post as Post); }} onCreate={(date) => { void openPost(undefined, date); }} onReschedule={(post, date) => void reschedulePost(post as Post, date)} onStatusChange={(post, status) => void changePostStatus(post as Post, status)} onReadinessChange={(post, field, checked) => void changePostReadiness(post as Post, field, checked)} onDuplicate={(post)=>void duplicatePost(post as Post)} onDelete={(post)=>void deletePosts([post as Post])} onTaskSelect={(task) => openCampaignTaskForm(task as MarketingCampaignTask)} onTaskReschedule={(task, date) => void rescheduleCampaignTask(task as MarketingCampaignTask, date)} onTaskStatusChange={(task, status) => void changeCampaignTaskStatus(task as MarketingCampaignTask, status)} onTaskCreate={(date) => openCampaignTaskForm(undefined, '', date ? { startDate: date, endDate: date } : undefined)} onTaskCreateRange={(range) => openCampaignTaskForm(undefined, '', range)} onTaskDelete={(task) => void deleteCampaignTask(task as MarketingCampaignTask)}/>}
+      {activeSection === 'calendar' && <MarketingCalendar posts={filteredPosts} tasks={data.campaignItems} campaigns={data.campaigns} organizationId={organizationId || ''} artworkByPost={artworkByPost} artworkByTask={artworkByCampaignTask} onArtworkSaved={() => void refresh()} canEdit={canEdit} canDelete={canDelete} selectedIds={selectedPostIds} onToggle={togglePost} onSelect={(post) => { void openPost(post as Post); }} onCreate={(date) => { void openPost(undefined, date); }} onReschedule={(post, date) => void reschedulePost(post as Post, date)} onQuickReschedule={(post, date, time) => void quickSchedulePost(post as Post, date, time)} onStatusChange={(post, status) => void changePostStatus(post as Post, status)} onReadinessChange={(post, field, checked) => void changePostReadiness(post as Post, field, checked)} onDuplicate={(post)=>void duplicatePost(post as Post)} onDelete={(post)=>void deletePosts([post as Post])} onTaskSelect={(task) => openCampaignTaskForm(task as MarketingCampaignTask)} onTaskReschedule={(task, date) => void rescheduleCampaignTask(task as MarketingCampaignTask, date)} onTaskQuickSchedule={(task, date, startTime, endTime) => void quickScheduleCampaignTask(task as MarketingCampaignTask, date, startTime, endTime)} onTaskStatusChange={(task, status) => void changeCampaignTaskStatus(task as MarketingCampaignTask, status)} onTaskCreate={(date) => openCampaignTaskForm(undefined, '', date ? { startDate: date, endDate: date } : undefined)} onTaskCreateRange={(range) => openCampaignTaskForm(undefined, '', range)} onTaskDelete={(task) => void deleteCampaignTask(task as MarketingCampaignTask)}/>}
 
       {activeSection === 'campaigns' && <CampaignPlanningSection campaigns={data.campaigns} tasks={data.campaignItems} posts={data.posts} campaignArtwork={artworkByCampaign} taskArtwork={artworkByCampaignTask} canEdit={canEdit} organizationId={organizationId || ''} onArtworkSaved={() => void refresh()} onNewCampaign={() => openCampaignForm()} onNewTask={(campaignId) => openCampaignTaskForm(undefined, campaignId || '')} onEditCampaign={(campaign) => openCampaignForm(campaign)} onEditTask={(task) => openCampaignTaskForm(task)} onAddPost={(campaignId) => { void openPost(undefined, '', campaignId); }} onOpenPost={(postId) => { const post = data.posts.find((item) => item.id === postId); if (post) void openPost(post); }} onOpenTask={(taskId) => { const task = data.campaignItems.find((item) => item.id === taskId); if (task) openCampaignTaskForm(task); }}/>}
 

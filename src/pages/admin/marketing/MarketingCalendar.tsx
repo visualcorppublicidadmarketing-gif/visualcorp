@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye, CircleDot, Filter, GripVertical, ListFilter, Megaphone, Film, Image as ImageIcon, CheckCircle2, Circle } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye, CircleDot, Filter, GripVertical, ListFilter, Megaphone, Film, Image as ImageIcon, CheckCircle2, Circle, Maximize2, Minimize2 } from 'lucide-react';
 import { ContextMenu, type ContextMenuAction } from '../../../components/ui/ContextMenu';
 import { Badge } from '../../../components/ui/OperationalKit';
 import { DatePicker } from '../../../components/ui/Calendar';
@@ -38,6 +38,7 @@ type Props = {
   onSelect: (post: MarketingCalendarPost) => void;
   onCreate: (date: string) => void;
   onReschedule: (post: MarketingCalendarPost, date: string) => void;
+  onQuickReschedule?: (post: MarketingCalendarPost, date: string, time?: string) => void;
   onStatusChange: (post: MarketingCalendarPost, status: string) => void;
   onReadinessChange: (post: MarketingCalendarPost, field: 'design_ready' | 'video_ready', checked: boolean) => void;
   onDuplicate: (post: MarketingCalendarPost) => void;
@@ -47,6 +48,7 @@ type Props = {
   artworkByTask: ReadonlyMap<string, MarketingArtworkAsset>;
   onTaskSelect: (task: MarketingCalendarTask) => void;
   onTaskReschedule: (task: MarketingCalendarTask, date: string) => void;
+  onTaskQuickSchedule?: (task: MarketingCalendarTask, date: string, startTime?: string, endTime?: string) => void;
   onTaskStatusChange: (task: MarketingCalendarTask, status: string) => void;
   onTaskCreate: (date?: string) => void;
   onTaskCreateRange: (range: MarketingTaskRange) => void;
@@ -165,9 +167,11 @@ function readCalendarPreferences(organizationId: string): MarketingCalendarPrefe
   }
 }
 
-export function MarketingCalendar({ posts, tasks, campaigns, organizationId, artworkByPost, artworkByTask, onArtworkSaved, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onStatusChange, onReadinessChange, onDuplicate, onDelete, onTaskSelect, onTaskReschedule, onTaskStatusChange, onTaskCreate, onTaskCreateRange, onTaskDelete }: Props) {
+export function MarketingCalendar({ posts, tasks, campaigns, organizationId, artworkByPost, artworkByTask, onArtworkSaved, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onQuickReschedule, onStatusChange, onReadinessChange, onDuplicate, onDelete, onTaskSelect, onTaskReschedule, onTaskQuickSchedule, onTaskStatusChange, onTaskCreate, onTaskCreateRange, onTaskDelete }: Props) {
   const [anchor, setAnchor] = useState(() => new Date());
   const [view, setView] = useState<MarketingCalendarView>('month');
+  const [monthDensity, setMonthDensity] = useState<'compact' | 'detailed'>('compact');
+  const [isFocusMode, setIsFocusMode] = useState<boolean>(false);
   const [todayKey, setTodayKey] = useState(() => marketingDateKey());
   const [followCurrentWeek, setFollowCurrentWeek] = useState(true);
   const [channelFilter, setChannelFilter] = useState('Todos los canales');
@@ -469,10 +473,28 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
     observer.observe(grid);
     return () => observer.disconnect();
   }, [view, cells]);
-  return <section className={`vc-marketing-calendar is-${view}`} aria-label={`Calendario de Marketing en vista ${view}`}>
+  return <section className={`vc-marketing-calendar is-${view}${isFocusMode ? ' is-focus-mode' : ''}`} aria-label={`Calendario de Marketing en vista ${view}`}>
     <header className="vc-marketing-calendar-head">
       <div><span className="eyebrow">PLANIFICACIÓN DE MARKETING</span><h2>{view === 'month' ? monthHeading : view === 'day' ? `Agenda del día · ${weekRange}` : `${view === 'kanban' ? 'Kanban semanal' : view === 'table' ? 'Tabla semanal' : isCurrentWeek ? 'Semana actual' : 'Semana'} · ${weekRange}`}</h2><p>{view === 'kanban' ? 'Organiza las publicaciones por etapa. La semana incluye el lunes siguiente para recibir pendientes del fin de semana.' : view === 'table' ? 'Revisa en filas la semana seleccionada y el lunes siguiente. La tabla y Kanban comparten periodo y filtros.' : view === 'week' ? 'Organiza la semana por horas. Arrastra por las franjas para crear una actividad con inicio y fin.' : view === 'day' ? 'Organiza el día en intervalos de 30 minutos. Arrastra por las franjas para crear una actividad.' : 'Arrastra una publicación a otra fecha para reprogramarla; selecciona un rango libre para crear una actividad de varios días.'}</p></div>
-      <div className="vc-marketing-calendar-toolbar"><div className="vc-marketing-calendar-view"><button type="button" className={view==='month'?'active':''} aria-pressed={view==='month'} onClick={()=>{setView('month');setExpandedDate(null);}}>Mes</button><button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{if(view==='month'){setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);}setView('week');setExpandedDate(null);}}>Semana</button><button type="button" className={view==='day'?'active':''} aria-pressed={view==='day'} onClick={()=>{setView('day');setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(false);setExpandedDate(null);}}>Día</button><button type="button" className={view==='kanban'?'active':''} aria-pressed={view==='kanban'} onClick={()=>{if(view==='month'){setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);}setView('kanban');setExpandedDate(null);}}>Kanban</button><button type="button" className={view==='table'?'active':''} aria-pressed={view==='table'} onClick={openTableView}>Tabla</button></div><div className="vc-marketing-calendar-controls"><DatePicker label="Ir a fecha" value={dateKey(anchor)} onChange={(value)=>{if(!value)return;const [year,month,day]=value.split('-').map(Number);setFollowCurrentWeek(false);setAnchor(new Date(year,month-1,day,12));setExpandedDate(null);}}/><button className="button button-outline" type="button" onClick={()=>{setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);setExpandedDate(null);}}>Hoy</button><button className="icon-button" type="button" aria-label="Anterior" onClick={()=>move(-1)}><ChevronLeft size={17}/></button><button className="icon-button" type="button" aria-label="Siguiente" onClick={()=>move(1)}><ChevronRight size={17}/></button><ContextMenu className="vc-calendar-toolbar-context vc-marketing-context-menu" label="Acciones del calendario" actions={calendarActions}><span aria-hidden="true"/></ContextMenu></div></div>
+      <div className="vc-marketing-calendar-toolbar">
+        <div className="vc-marketing-calendar-view"><button type="button" className={view==='month'?'active':''} aria-pressed={view==='month'} onClick={()=>{setView('month');setExpandedDate(null);}}>Mes</button><button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{if(view==='month'){setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);}setView('week');setExpandedDate(null);}}>Semana</button><button type="button" className={view==='day'?'active':''} aria-pressed={view==='day'} onClick={()=>{setView('day');setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(false);setExpandedDate(null);}}>Día</button><button type="button" className={view==='kanban'?'active':''} aria-pressed={view==='kanban'} onClick={()=>{if(view==='month'){setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);}setView('kanban');setExpandedDate(null);}}>Kanban</button><button type="button" className={view==='table'?'active':''} aria-pressed={view==='table'} onClick={openTableView}>Tabla</button></div>
+        {view === 'month' && (
+          <div className="vc-marketing-density-toggle" role="group" aria-label="Densidad del mes">
+            <button type="button" className={monthDensity === 'compact' ? 'active' : ''} onClick={() => setMonthDensity('compact')} title="Vista compacta de píldoras ejecutivas">Compacta</button>
+            <button type="button" className={monthDensity === 'detailed' ? 'active' : ''} onClick={() => setMonthDensity('detailed')} title="Vista detallada con miniaturas">Detallada</button>
+          </div>
+        )}
+        <div className="vc-marketing-calendar-controls">
+          <DatePicker label="Ir a fecha" value={dateKey(anchor)} onChange={(value)=>{if(!value)return;const [year,month,day]=value.split('-').map(Number);setFollowCurrentWeek(false);setAnchor(new Date(year,month-1,day,12));setExpandedDate(null);}}/>
+          <button className="button button-outline" type="button" onClick={()=>{setAnchor(dateFromKey(todayKey));setFollowCurrentWeek(true);setExpandedDate(null);}}>Hoy</button>
+          <button className="icon-button" type="button" aria-label="Anterior" onClick={()=>move(-1)}><ChevronLeft size={17}/></button>
+          <button className="icon-button" type="button" aria-label="Siguiente" onClick={()=>move(1)}><ChevronRight size={17}/></button>
+          <button className={`icon-button vc-marketing-focus-btn${isFocusMode ? ' active' : ''}`} type="button" aria-label={isFocusMode ? 'Salir de pantalla completa' : 'Modo enfoque pantalla completa'} title={isFocusMode ? 'Salir de pantalla completa' : 'Modo enfoque pantalla completa'} onClick={() => setIsFocusMode(!isFocusMode)}>
+            {isFocusMode ? <Minimize2 size={16}/> : <Maximize2 size={16}/>}
+          </button>
+          <ContextMenu className="vc-calendar-toolbar-context vc-marketing-context-menu" label="Acciones del calendario" actions={calendarActions}><span aria-hidden="true"/></ContextMenu>
+        </div>
+      </div>
     </header>
     <div className="vc-marketing-kanban-filters" aria-label={`Filtros del calendario · ${view}`}>
       <label><ListFilter size={14}/><span>Tipo</span><select aria-label="Filtrar por tipo de registro" value={recordTypeFilter} onChange={(event) => setRecordTypeFilter(event.target.value as MarketingRecordTypeFilter)}><option value="all">Publicaciones y actividades</option><option value="posts">Solo publicaciones</option><option value="tasks">Solo actividades</option></select></label>
@@ -485,7 +507,7 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
       {view === 'kanban' && <label className="vc-marketing-empty-lanes-toggle"><input type="checkbox" checked={showEmptyKanbanLanes} onChange={(event) => setShowEmptyKanbanLanes(event.target.checked)}/>Mostrar etapas vacías</label>}
     </div>
     {(view === 'month' || view === 'week' || view === 'day') && filteredPeriodPosts.length === 0 && calendarTasks.length === 0 && <div className="vc-marketing-calendar-empty" role="status">No hay publicaciones ni actividades para este periodo con los filtros actuales.</div>}
-    {view === 'week' || view === 'day' ? <MarketingTimeGrid view={view} dates={cells} today={today} posts={filteredPeriodPosts} tasks={calendarTasks} campaignNames={campaignNames} canEdit={canEdit} onPostSelect={onSelect} onTaskSelect={onTaskSelect} postActions={contextualActions} taskActions={taskActions} onCreateRange={onTaskCreateRange}/> : view === 'kanban' ? <>
+    {view === 'week' || view === 'day' ? <MarketingTimeGrid view={view} dates={cells} today={today} posts={filteredPeriodPosts} tasks={calendarTasks} campaignNames={campaignNames} canEdit={canEdit} onPostSelect={onSelect} onTaskSelect={onTaskSelect} postActions={contextualActions} taskActions={taskActions} onCreateRange={onTaskCreateRange} onPostSchedule={onQuickReschedule || onReschedule} onTaskSchedule={onTaskQuickSchedule}/> : view === 'kanban' ? <>
       <div className="vc-marketing-kanban-rule" role="note"><span><Check size={15}/></span><div><b>Regla de continuidad activa</b><small>Las fichas vencidas sin publicar pasan automáticamente al siguiente día hábil. Si el vencimiento cae sábado o domingo, pasan al lunes. Publicadas, terminadas y canceladas se respetan.{canEdit ? ' También se revisan al abrir el Kanban mientras el proceso diario completa el traslado en segundo plano.' : ' Tu perfil puede consultar la regla; los cambios requieren permiso de edición.'}</small></div></div>
       <div className="vc-marketing-kanban-board" role="list" aria-label={`Kanban semanal · ${weekRange}`}>
         {kanbanPosts.length === 0 && <div className="vc-marketing-calendar-empty" role="status">No hay publicaciones para esta semana con los filtros actuales. Prueba otros filtros o límpialos.</div>}
@@ -507,7 +529,7 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
                   <div className="vc-marketing-kanban-card-top"><time>{formattedDate}{post.scheduled_time ? ` · ${post.scheduled_time}` : ''}</time>{(canEdit || canDelete) && <input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={() => onToggle(post.id)}/>}</div>
                   <button type="button" className="vc-marketing-kanban-card-title" draggable={canEdit} onDragStart={(event) => { event.dataTransfer.setData('text/plain', post.id); event.dataTransfer.effectAllowed = 'move'; setDraggingKanban(post.id); }} onDragEnd={() => setDraggingKanban(null)} onClick={() => onSelect(post)} title="Arrastra entre columnas para cambiar la etapa"><GripVertical size={13}/><b>{post.title || 'Sin título'}</b></button>
                   <span className="vc-marketing-kanban-card-topic">{post.content_line || post.next_action || 'Tema y siguiente paso por completar.'}</span>
-                  <MarketingPostArtwork {...artworkProps} variant="week"/>
+                  <MarketingPostArtwork {...artworkProps} variant="kanban"/>
                   <MarketingReadinessIndicators post={post} onChange={(field, checked) => onReadinessChange(post, field, checked)} disabled={!canEdit}/>
                   <div className="vc-marketing-kanban-card-meta"><span><Megaphone size={12}/>{post.platform || 'Canal pendiente'}</span><span>{post.owner || 'Responsable pendiente'}</span></div>
                   <div className="vc-marketing-kanban-card-foot"><span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status || 'Por iniciar'}</span>{tags.length > 0 && <div>{tags.slice(0, 2).map((tag) => <Badge key={tag} color={color || undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>)}</div>}</div>
@@ -555,7 +577,7 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
         return <React.Fragment key={key}>{cellIndex % 7 === 0 && <div className="vc-marketing-calendar-week-number" role="rowheader" aria-label={`Semana ${weekLabel}`}>{weekLabel}</div>}<ContextMenu displayContents trigger={false} className="vc-calendar-day-scope vc-marketing-context-menu" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" data-calendar-date={key} aria-label={`${key}, ${items.length} publicaciones y ${dayTasks.length} actividades`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${dragging?' can-drop':''}${expandedDate===key?' is-expanded':''}${isSelectedRange?' is-selected-range':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
           onPointerDown={(event)=>startMonthSelection(event,key)}
           onDragOver={(event)=>{if(canEdit&&dragging)event.preventDefault();}}
-          onDrop={(event)=>{event.preventDefault();const post=posts.find((item)=>item.id===(event.dataTransfer.getData('text/plain')||dragging));if(post&&post.scheduled_date.slice(0,10)!==key)onReschedule(post,key);setDragging(null);}}
+          onDrop={(event)=>{event.preventDefault();event.currentTarget.classList.remove('is-drop-target');const rawId=event.dataTransfer.getData('text/plain')||dragging;if(!rawId)return;const post=posts.find((item)=>item.id===rawId);if(post){if(post.scheduled_date.slice(0,10)!==key){if(onQuickReschedule){onQuickReschedule(post,key,post.scheduled_time);}else{onReschedule(post,key);}}setDragging(null);return;}const task=calendarTasks.find((item)=>item.id===rawId);if(task){if(onTaskQuickSchedule){onTaskQuickSchedule(task,key,task.start_time||undefined,task.end_time||undefined);}else{onTaskReschedule(task,key);}setDragging(null);return;}setDragging(null);}}
           onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))event.currentTarget.classList.remove('is-drop-target');}}
           onDragEnter={(event)=>{if(dragging)event.currentTarget.classList.add('is-drop-target');}}>
           <div className="vc-marketing-calendar-day-head"><span>{date.getDate()}</span>{items.length>0&&<button type="button" className="vc-marketing-calendar-day-agenda-toggle" aria-label={`Abrir agenda del ${key}`} onClick={()=>setExpandedDate(expandedDate===key?null:key)}>{items.length}</button>}{canEdit&&<button type="button" aria-label={`Crear publicación el ${key}`} onClick={()=>onCreate(key)}><Plus size={13}/></button>}</div>
@@ -563,7 +585,9 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
             const color=getMarketingCalendarColor(post.calendar_color,post.tags);
             const tags=getMarketingTags(post.tags);
             const artworkProps={organizationId,post,asset:artworkByPost.get(post.id),canEdit,canDelete,onSaved:onArtworkSaved};
-              return <div className={`vc-marketing-event-row${canEdit||canDelete?' is-selectable':''}${isWeekCalendarView(view)?' is-week-card':''}`} key={post.id}>
+              const postAsset = artworkByPost.get(post.id);
+              const hasAsset = Boolean(postAsset?.rel_path || postAsset?.filename);
+              return <div className={`vc-marketing-event-row${canEdit||canDelete?' is-selectable':''}${isWeekCalendarView(view)?' is-week-card':''}${monthDensity==='compact'?' is-compact-row':''}`} key={post.id}>
               {(canEdit||canDelete)&&<input className="vc-marketing-event-select" type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={()=>onToggle(post.id)}/>}
               {isWeekCalendarView(view) ? <ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><article className={`vc-marketing-week-card tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined}>
                 <div className="vc-marketing-week-card-head"><div>{post.scheduled_time?<time>{post.scheduled_time}</time>:<span>Hora pendiente</span>}<small>{post.platform||'Canal pendiente'}{post.format?` · ${post.format}`:''}</small></div><span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span></div>
@@ -571,8 +595,11 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
                 <MarketingPostArtwork {...artworkProps} variant="week"/>
                 <MarketingReadinessIndicators post={post} onChange={(field, checked) => onReadinessChange(post, field, checked)} disabled={!canEdit}/>
                 <div className="vc-marketing-week-card-foot"><span>{post.owner||'Responsable pendiente'}</span>{tags.length>0&&<div>{tags.slice(0,2).map((tag)=><Badge key={tag} color={color||undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>)}</div>}</div>
-              </article></ContextMenu> : <><MarketingPostArtwork {...artworkProps} variant="compact"/><ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><div className={`vc-marketing-calendar-event tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined} title={`${post.title} · ${post.status}${tags.length?` · ${tags.join(', ')}`:''}`}>
-                {post.scheduled_time&&<time>{post.scheduled_time}</time>}<button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className="vc-marketing-event-label" title="Abrir ficha de publicación">{post.title||'Sin título'}</button><MarketingReadinessIndicators post={post} compact onChange={(field, checked) => onReadinessChange(post, field, checked)} disabled={!canEdit}/><span className={`vc-marketing-event-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span>{tags.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${tags.join(', ')}`}>{tags[0]}</Badge>}
+              </article></ContextMenu> : <>
+                {monthDensity === 'detailed' && <MarketingPostArtwork {...artworkProps} variant="compact"/>}
+                <ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><div className={`vc-marketing-calendar-event tone-${statusClass(post)}${monthDensity==='compact'?' is-compact-pill':''}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined} title={`${post.title} · ${post.status}${tags.length?` · ${tags.join(', ')}`:''}`}>
+                  {color && <span className="vc-marketing-pill-indicator" style={{ backgroundColor: color }}/>}
+                  {post.scheduled_time&&<time>{post.scheduled_time}</time>}<button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className="vc-marketing-event-label" title="Abrir ficha de publicación">{post.title||'Sin título'}</button>{hasAsset && <span title="Tiene arte vinculado"><ImageIcon size={11} className="vc-marketing-has-asset-icon"/></span>}<MarketingReadinessIndicators post={post} compact onChange={(field, checked) => onReadinessChange(post, field, checked)} disabled={!canEdit}/><span className={`vc-marketing-event-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span>{monthDensity === 'detailed' && tags.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${tags.join(', ')}`}>{tags[0]}</Badge>}
               </div></ContextMenu></>}
             </div>;
           })}{visibleTasks.map((task)=>{
@@ -580,7 +607,7 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
             const campaignName=task.campaign_id?campaignNames.get(task.campaign_id):'';
             const isOverdue=Boolean(task.due_date&&task.due_date.slice(0,10)<today&&!/listo|cancelad/i.test(task.status||''));
             const artworkPost={id:task.id,source_id:task.source_id,title:task.title,scheduled_date:task.due_date||''};
-            return <div className="vc-marketing-task-event-row" key={`task:${task.id}`}><MarketingPostArtwork organizationId={organizationId} post={artworkPost} association={{kind:'item',itemId:task.id}} asset={artworkByTask.get(task.id)} canEdit={canEdit} canDelete={canDelete} variant="compact" onSaved={onArtworkSaved}/><ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${task.title}`} actions={taskActions(task)}><button type="button" className={`vc-marketing-calendar-event is-task${isOverdue?' is-overdue':''}`} onClick={()=>onTaskSelect(task)} title={`${typeName}${campaignName?` · ${campaignName}`:''} · ${task.status}${isOverdue?' · Atrasada':''}`}><span className="vc-marketing-event-type">{typeName}</span><b className="vc-marketing-event-label">{task.title}</b>{campaignName&&<small className="vc-marketing-event-campaign">{campaignName}</small>}<span className="vc-marketing-event-status">{task.status}{isOverdue?' · Atrasada':''}</span></button></ContextMenu></div>;
+            return <div className={`vc-marketing-task-event-row${monthDensity==='compact'?' is-compact-row':''}`} key={`task:${task.id}`} draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',task.id);event.dataTransfer.effectAllowed='move';setDragging(task.id);}} onDragEnd={()=>setDragging(null)}>{monthDensity === 'detailed' && <MarketingPostArtwork organizationId={organizationId} post={artworkPost} association={{kind:'item',itemId:task.id}} asset={artworkByTask.get(task.id)} canEdit={canEdit} canDelete={canDelete} variant="compact" onSaved={onArtworkSaved}/>}<ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${task.title}`} actions={taskActions(task)}><button type="button" className={`vc-marketing-calendar-event is-task${isOverdue?' is-overdue':''}${monthDensity==='compact'?' is-compact-pill':''}`} onClick={()=>onTaskSelect(task)} title={`${typeName}${campaignName?` · ${campaignName}`:''} · ${task.status}${isOverdue?' · Atrasada':''}`}><span className="vc-marketing-event-type">{typeName}</span><b className="vc-marketing-event-label">{task.title}</b>{monthDensity === 'detailed' && campaignName&&<small className="vc-marketing-event-campaign">{campaignName}</small>}<span className="vc-marketing-event-status">{task.status}{isOverdue?' · Atrasada':''}</span></button></ContextMenu></div>;
           })}{remaining>0&&<button type="button" className="vc-marketing-calendar-more" onClick={()=>setExpandedDate(expandedDate===key?null:key)}>+{remaining} más · ver agenda</button>}</div>
         </div></ContextMenu></React.Fragment>;
       })}
