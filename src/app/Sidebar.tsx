@@ -5,6 +5,8 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Moon,
+  Sun,
   type LucideIcon,
 } from 'lucide-react';
 import { Avatar } from '../components/ui/Avatar';
@@ -32,6 +34,8 @@ export type SidebarProps = {
   googleAvatarUrl?: string;
   signOut: () => void;
   leadsCount: number;
+  theme?: 'light' | 'dark';
+  toggleTheme?: () => void;
 };
 
 export function Sidebar({
@@ -49,6 +53,8 @@ export function Sidebar({
   googleAvatarUrl,
   signOut,
   leadsCount,
+  theme = 'light',
+  toggleTheme,
 }: SidebarProps) {
   const { pathname } = useLocation();
 
@@ -146,7 +152,7 @@ export function Sidebar({
     setProfileFlyout({ top: Math.max(12, rect.top - 120) });
   };
 
-  const renderNavLinkItem = (link: AppNavLink, isSubitem = false) => {
+  const renderNavLinkItem = (link: AppNavLink, isSubitem = false, inFlyout = false) => {
     const Icon = link.icon;
     const isCrm = link.to === '/operaciones/crm';
     const badgeCount = isCrm && leadsCount > 0 ? leadsCount : undefined;
@@ -156,16 +162,18 @@ export function Sidebar({
         key={link.to}
         end={link.end}
         to={link.to}
-        title={isCollapsed ? undefined : link.label}
+        title={isCollapsed && !inFlyout ? undefined : link.label}
         aria-label={link.label}
-        onMouseEnter={(e) => showTooltip(link.label, e)}
+        onMouseEnter={(e) => {
+          if (!inFlyout) showTooltip(link.label, e);
+        }}
         onMouseLeave={hideTooltip}
         onClick={() => {
           setActiveFlyout(null);
           onCloseMobile();
         }}
         className={({ isActive }) =>
-          `sidebar-nav-item${isActive ? ' is-active' : ''}${isSubitem ? ' is-subitem' : ''}`
+          `sidebar-nav-item${isActive ? ' is-active' : ''}${isSubitem ? ' is-subitem' : ''}${inFlyout ? ' is-flyout-item' : ''}`
         }
       >
         <span className="sidebar-nav-icon" aria-hidden="true">
@@ -350,7 +358,7 @@ export function Sidebar({
             <span className="sidebar-flyout-title">{currentFlyoutGroup.label}</span>
             <span className="sidebar-group-badge">{currentFlyoutGroup.items.length}</span>
           </div>
-          {currentFlyoutGroup.items.map((link) => renderNavLinkItem(link, false))}
+          {currentFlyoutGroup.items.map((link) => renderNavLinkItem(link, false, true))}
         </div>
       )}
 
@@ -370,6 +378,19 @@ export function Sidebar({
               {profileLabel}
             </div>
           </div>
+          {toggleTheme && (
+            <button
+              type="button"
+              className="sidebar-nav-item"
+              style={{ width: '100%', marginTop: 3 }}
+              onClick={toggleTheme}
+            >
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+              <span className="sidebar-nav-label">
+                Modo {theme === 'dark' ? 'claro' : 'oscuro'}
+              </span>
+            </button>
+          )}
           <button
             type="button"
             className="sidebar-nav-item"

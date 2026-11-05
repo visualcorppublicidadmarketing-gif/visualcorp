@@ -11,6 +11,7 @@ import { canViewNavigationItem, workspaceNavigation, workspaceNavGroups, type Ap
 import { Avatar, getGoogleAvatarUrl } from '../components/ui/Avatar';
 import { ProductionAttention } from '../pages/operations/ProductionAttention';
 import { Sidebar } from './Sidebar';
+import './admin-dark-theme.css';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 const brandSymbol = '/brand/visualcorp-symbol.png';
@@ -115,7 +116,7 @@ export function AppFrame({ area, children }: AppFrameProps) {
     { kind: 'separator', label: '', onSelect: () => {} },
     { label: 'Volver arriba', icon: <ArrowUpRight size={14}/>, shortcut: '↑', onSelect: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
   ];
-  return <div className={`work-app area-${area}${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
+  return <div className={`work-app area-${area}${sidebarCollapsed ? ' sidebar-collapsed' : ''}${theme === 'dark' ? ' theme-dark' : ' theme-light'}`} data-theme={theme}>
     <ContextMenu scope="document" trigger={false} label="Acciones de navegación" actions={contextActions}/>
     <Sidebar
       area={area}
@@ -132,9 +133,11 @@ export function AppFrame({ area, children }: AppFrameProps) {
       googleAvatarUrl={googleAvatarUrl}
       signOut={signOut}
       leadsCount={data.leads.length}
+      theme={theme}
+      toggleTheme={toggleTheme}
     />
     {mobileNavOpen && <button className="mobile-nav-backdrop" aria-label="Cerrar menú" onClick={() => setMobileNavOpen(false)}/>}
-    <div className="main-shell"><header className="topbar"><button className="desktop-sidebar-toggle" type="button" aria-label={sidebarCollapsed ? 'Expandir barra lateral (Ctrl+B)' : 'Contraer barra lateral (Ctrl+B)'} aria-pressed={sidebarCollapsed} title={sidebarCollapsed ? 'Expandir barra lateral (Ctrl+B)' : 'Contraer barra lateral (Ctrl+B)'} onClick={toggleSidebar}>{sidebarCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}</button><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'} aria-expanded={mobileNavOpen} aria-controls="sidebar-workspace" onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}</button><div className="breadcrumbs"><span>{areaTitle}</span><ChevronRight size={14}/><b>{data.settings.name}</b></div><div className="topbar-right"><AdminCommandPalette items={nav}/><ProductionAttention/><span className="local-badge"><PulsingBeacon size={7} color="#10b981" /> Supabase conectado</span><button className="top-avatar" aria-label={`Cerrar sesión de ${userDisplayName}`} title={userDisplayName} onClick={signOut}><Avatar name={userDisplayName} src={googleAvatarUrl} size="sm" badge={googleAvatarUrl ? <span className="vc-google-avatar-mark">G</span> : undefined}/></button></div></header><main className="main-content"><motion.div key={pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.24 }}>{children}</motion.div><footer className="local-footer">Acceso autenticado y permisos comprobados en Supabase.</footer></main></div>
+    <div className="main-shell"><header className="topbar"><button className="desktop-sidebar-toggle" type="button" aria-label={sidebarCollapsed ? 'Expandir barra lateral (Ctrl+B)' : 'Contraer barra lateral (Ctrl+B)'} aria-pressed={sidebarCollapsed} title={sidebarCollapsed ? 'Expandir barra lateral (Ctrl+B)' : 'Contraer barra lateral (Ctrl+B)'} onClick={toggleSidebar}>{sidebarCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}</button><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'} aria-expanded={mobileNavOpen} aria-controls="sidebar-workspace" onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}</button><div className="breadcrumbs"><span>{areaTitle}</span><ChevronRight size={14}/><b>{data.settings.name}</b></div><div className="topbar-right"><button type="button" className="icon-button topbar-theme-toggle" aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'} title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'} onClick={toggleTheme}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button><AdminCommandPalette items={nav}/><ProductionAttention/><span className="local-badge"><PulsingBeacon size={7} color="#10b981" /> Supabase conectado</span><button className="top-avatar" aria-label={`Cerrar sesión de ${userDisplayName}`} title={userDisplayName} onClick={signOut}><Avatar name={userDisplayName} src={googleAvatarUrl} size="sm" badge={googleAvatarUrl ? <span className="vc-google-avatar-mark">G</span> : undefined}/></button></div></header><main className="main-content"><motion.div key={pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.24 }}>{children}</motion.div><footer className="local-footer">Acceso autenticado y permisos comprobados en Supabase.</footer></main></div>
   </div>;
 }
 

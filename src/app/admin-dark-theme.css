@@ -1,0 +1,460 @@
+/* =========================================================================
+   Visual Corp Suite - Admin Dark Theme
+   Tokens, panels, tables, controls, inputs, and marketing calendar
+   ========================================================================= */
+
+:root[data-theme='dark'],
+body[data-theme='dark'],
+.work-app.theme-dark,
+.work-app[data-theme='dark'],
+[data-theme='dark'] {
+  color-scheme: dark;
+  --ink: #f1f2f6;
+  --muted: #9ba0b4;
+  --line: #262939;
+  --panel: #161824;
+  --bg: #0d0e15;
+  --purple: #c084fc;
+  --blue: #38bdf8;
+  --amber: #fbbf24;
+  --pink: #f472b6;
+  --shadow: 0 18px 46px rgba(0, 0, 0, 0.55);
+}
+
+/* App shell & canvas */
+.work-app.theme-dark {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.work-app.theme-dark .main-shell {
+  background: var(--bg);
+}
+
+.work-app.theme-dark .topbar {
+  background: rgba(22, 24, 36, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.work-app.theme-dark .desktop-sidebar-toggle {
+  background: #202334;
+  color: #c4c7d5;
+}
+
+.work-app.theme-dark .breadcrumbs {
+  color: #8c8f9f;
+}
+
+.work-app.theme-dark .breadcrumbs b {
+  color: #f1f2f6;
+}
+
+.work-app.theme-dark .breadcrumbs svg {
+  color: #55586d;
+}
+
+.work-app.theme-dark .local-badge {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.topbar-theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.topbar-theme-toggle:hover {
+  transform: scale(1.06);
+}
+
+.work-app.theme-dark .topbar-theme-toggle {
+  background: #202334;
+  color: #f59e0b;
+}
+
+.work-app.theme-dark .topbar-theme-toggle:hover {
+  background: #2a2e45;
+  color: #fbbf24;
+}
+
+/* Panels, cards, stats, and dashboard */
+.work-app.theme-dark .panel,
+.work-app.theme-dark .stat-card,
+.work-app.theme-dark .operation-card,
+.work-app.theme-dark .unified-priority-item,
+.work-app.theme-dark .unified-launcher-panel {
+  background: var(--panel);
+  border-color: var(--line);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.work-app.theme-dark .page-heading h1,
+.work-app.theme-dark .panel-heading h2,
+.work-app.theme-dark .stat-meta > b,
+.work-app.theme-dark .operation-card b,
+.work-app.theme-dark .unified-priority-copy b,
+.work-app.theme-dark .activity-row b,
+.work-app.theme-dark .sale-row b,
+.work-app.theme-dark .quick-links b,
+.work-app.theme-dark .campaign-title h2,
+.work-app.theme-dark .unified-module-group-heading h3 {
+  color: #f1f2f6;
+}
+
+.work-app.theme-dark .page-heading p,
+.work-app.theme-dark .stat-meta > span,
+.work-app.theme-dark .stat-meta > small,
+.work-app.theme-dark .operation-card small,
+.work-app.theme-dark .unified-priority-copy small,
+.work-app.theme-dark .activity-row small,
+.work-app.theme-dark .sale-row small,
+.work-app.theme-dark .quick-links small,
+.work-app.theme-dark .campaign-main > p,
+.work-app.theme-dark .campaign-meta {
+  color: var(--muted);
+}
+
+.work-app.theme-dark .activity-row,
+.work-app.theme-dark .sale-row,
+.work-app.theme-dark .quick-links > a,
+.work-app.theme-dark .toggle-row,
+.work-app.theme-dark .sale-activity,
+.work-app.theme-dark .unified-module-group {
+  border-color: var(--line);
+}
+
+.work-app.theme-dark .quick-links > a:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.work-app.theme-dark .notice-box {
+  background: #191c2b;
+  border-color: #2e334a;
+}
+
+.work-app.theme-dark .notice-box b {
+  color: #f1f2f6;
+}
+
+.work-app.theme-dark .notice-box p {
+  color: var(--muted);
+}
+
+.work-app.theme-dark .empty-state {
+  color: var(--muted);
+}
+
+.work-app.theme-dark .empty-state > span {
+  background: #232033;
+  color: #c084fc;
+}
+
+/* Forms, inputs, buttons, and controls */
+.work-app.theme-dark input,
+.work-app.theme-dark select,
+.work-app.theme-dark textarea {
+  background: #181b29;
+  border-color: #2f344d;
+  color: #f1f2f6;
+}
+
+.work-app.theme-dark input:focus,
+.work-app.theme-dark select:focus,
+.work-app.theme-dark textarea:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.18);
+}
+
+.work-app.theme-dark label {
+  color: #c4c7d5;
+}
+
+.work-app.theme-dark .button-outline {
+  background: #1a1c29;
+  border-color: #2f3348;
+  color: #e2e4ed;
+}
+
+.work-app.theme-dark .button-outline:hover {
+  background: #23273a;
+  border-color: #454a66;
+}
+
+.work-app.theme-dark .icon-button {
+  background: #202334;
+  color: #b8bccd;
+}
+
+.work-app.theme-dark .icon-button:hover {
+  background: #2a2e45;
+  color: #ffffff;
+}
+
+.work-app.theme-dark .button-dark {
+  background: #2a2d3e;
+  color: #ffffff;
+}
+
+.work-app.theme-dark .button-dark:hover {
+  background: #393d54;
+}
+
+/* Tables */
+.work-app.theme-dark table th {
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  background: #1a1d2b;
+}
+
+.work-app.theme-dark table td {
+  border-bottom: 1px solid var(--line);
+  color: #c4c7d5;
+}
+
+.work-app.theme-dark table td b {
+  color: #f1f2f6;
+}
+
+.work-app.theme-dark table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Admin Command Palette */
+.work-app.theme-dark .admin-command-trigger {
+  background: #181b29;
+  border-color: #2e334a;
+  color: #9ba0b4;
+}
+
+.work-app.theme-dark .admin-command-trigger kbd {
+  background: #222638;
+  border-color: #353a52;
+  color: #c4c7d5;
+}
+
+.work-app.theme-dark .admin-command-dialog {
+  background: #161824;
+  border-color: #2f344d;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+}
+
+.work-app.theme-dark .admin-command-search {
+  border-bottom-color: #272a3d;
+  color: #9ba0b4;
+}
+
+.work-app.theme-dark .admin-command-search input {
+  background: transparent;
+  color: #f1f2f6;
+}
+
+.work-app.theme-dark .admin-command-option {
+  background: #161824;
+}
+
+.work-app.theme-dark .admin-command-option:hover,
+.work-app.theme-dark .admin-command-option.active {
+  background: #222638;
+}
+
+.work-app.theme-dark .admin-command-option-label b {
+  color: #f1f2f6;
+}
+
+.work-app.theme-dark .admin-command-footer {
+  border-top-color: #272a3d;
+  color: #8b8f9f;
+}
+
+.work-app.theme-dark .admin-command-footer kbd {
+  background: #222638;
+  border-color: #353a52;
+  color: #c4c7d5;
+}
+
+/* Marketing Calendar in Dark Mode */
+.work-app.theme-dark .vc-marketing-calendar {
+  background: var(--panel);
+  border-color: var(--line);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+.work-app.theme-dark .vc-marketing-calendar-head h2 {
+  color: #f1f2f6;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-head p {
+  color: var(--muted);
+}
+
+.work-app.theme-dark .vc-marketing-calendar-grid {
+  border-color: var(--line);
+}
+
+.work-app.theme-dark .vc-marketing-calendar-weekday {
+  background: #1a1d2c;
+  color: #9ba0b4;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-day {
+  background: #161824;
+  border-color: #262939;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-day.is-outside {
+  background: #10111a;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-day.is-today {
+  background: #221c32;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-day-head {
+  color: #c4c7d5;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-day-head > button {
+  color: #c084fc;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-day-head > button:hover {
+  background: #282138;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-week-number {
+  background: #1a1d2c;
+  color: #7b8098;
+  border-color: #262939;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-more {
+  background: #1f2233;
+  border-color: #383c54;
+  color: #d8b4fe;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-more:hover {
+  background: #29243f;
+  border-color: #8a4caf;
+}
+
+.work-app.theme-dark .vc-marketing-day-agenda {
+  background: #171927;
+  border-color: #2b2f44;
+}
+
+.work-app.theme-dark .vc-marketing-day-agenda > header {
+  border-bottom-color: #2b2f44;
+}
+
+.work-app.theme-dark .vc-marketing-day-agenda > header b,
+.work-app.theme-dark .vc-marketing-agenda-title b {
+  color: #f1f2f6;
+}
+
+.work-app.theme-dark .vc-marketing-day-agenda article {
+  border-bottom-color: #23273a;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-filters {
+  background: #171926;
+  border-color: #2a2e42;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-column {
+  background: #141622;
+  border-color: #272a3d;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-column-head {
+  border-bottom-color: #272a3d;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-column-head b {
+  color: #f1f2f6;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-column-head > div > span {
+  background: #222638;
+  color: #d8b4fe;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card {
+  background: #191c2b;
+  border-color: #31364d;
+  color: #e2e4ed;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card-title b {
+  color: #f1f2f6;
+}
+
+.work-app.theme-dark .vc-marketing-table-wrap {
+  background: #161824;
+  border-color: #262939;
+}
+
+.work-app.theme-dark .vc-marketing-table th {
+  background: #1a1d2c;
+  color: #9ba0b4;
+  border-bottom-color: #262939;
+}
+
+.work-app.theme-dark .vc-marketing-table td {
+  border-bottom-color: #262939;
+  color: #c4c7d5;
+}
+
+.work-app.theme-dark .vc-marketing-table-date b,
+.work-app.theme-dark .vc-marketing-table-channel b,
+.work-app.theme-dark .vc-marketing-table-publication-main > button b {
+  color: #f1f2f6;
+}
+
+.work-app.theme-dark .vc-marketing-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.work-app.theme-dark .vc-marketing-time-scroll {
+  background: #161824;
+  border-color: #262939;
+}
+
+.work-app.theme-dark .vc-marketing-time-head {
+  background: #181b29;
+  border-color: #262939;
+}
+
+.work-app.theme-dark .vc-marketing-time-gutter {
+  background: #141622;
+  border-color: #262939;
+  color: #8c8f9f;
+}
+
+.work-app.theme-dark .vc-marketing-time-day-heading {
+  border-color: #262939;
+  color: #e2e4ed;
+}
+
+.work-app.theme-dark .vc-marketing-time-day-heading.is-today {
+  background: #251c36;
+  color: #d8b4fe;
+}
+
+.work-app.theme-dark .vc-marketing-sunday-toggle-btn {
+  background: #1d2030;
+  border-color: #31364d;
+  color: #c4c7d5;
+}
+
+.work-app.theme-dark .vc-marketing-sunday-toggle-btn.is-active {
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.15);
+  color: #e9d5ff;
+}

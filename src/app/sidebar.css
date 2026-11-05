@@ -494,13 +494,14 @@
 .sidebar-flyout-popover {
   position: fixed;
   left: 72px;
-  width: 230px;
-  max-height: 80vh;
+  min-width: 260px;
+  max-width: 310px;
+  max-height: 85vh;
   overflow-y: auto;
   background: #ffffff;
   border: 1px solid #ddd7e5;
   border-radius: 12px;
-  box-shadow: 0 14px 40px -4px rgba(32, 20, 44, 0.18), 0 2px 6px rgba(32, 20, 44, 0.05);
+  box-shadow: 0 16px 44px -4px rgba(32, 20, 44, 0.2), 0 2px 8px rgba(32, 20, 44, 0.06);
   padding: 8px;
   z-index: 1000;
   display: flex;
@@ -512,7 +513,7 @@
 [data-theme='dark'] .sidebar-flyout-popover {
   background: #191624;
   border-color: #322d42;
-  box-shadow: 0 14px 40px -4px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 16px 44px -4px rgba(0, 0, 0, 0.7), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes vc-flyout-in {
@@ -543,15 +544,96 @@
   letter-spacing: 0.06em;
 }
 
+/* Reglas de especificidad reforzada para el contenido del Flyout Popover */
+.work-app.sidebar-collapsed .sidebar-flyout-popover .sidebar-nav-item,
 .sidebar-flyout-popover .sidebar-nav-item {
-  width: 100%;
-  height: 36px;
-  padding: 0 10px;
-  justify-content: flex-start;
+  width: 100% !important;
+  min-width: 100% !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 11px !important;
+  justify-content: flex-start !important;
+  margin: 1px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  border-radius: 8px !important;
+  color: #3b3543 !important;
+  text-decoration: none !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  transition: all 0.14s ease !important;
 }
 
+.work-app.sidebar-collapsed .sidebar-flyout-popover .sidebar-nav-item:hover,
+.sidebar-flyout-popover .sidebar-nav-item:hover {
+  background: var(--vc-sidebar-link-hover-bg, rgba(165, 16, 145, 0.08)) !important;
+  color: var(--vc-sidebar-accent, #a51091) !important;
+}
+
+.work-app.sidebar-collapsed .sidebar-flyout-popover .sidebar-nav-item.is-active,
+.sidebar-flyout-popover .sidebar-nav-item.is-active {
+  background: var(--vc-sidebar-link-active-bg, rgba(165, 16, 145, 0.12)) !important;
+  color: var(--vc-sidebar-accent, #a51091) !important;
+  font-weight: 650 !important;
+}
+
+.work-app.sidebar-collapsed .sidebar-flyout-popover .sidebar-nav-label,
 .sidebar-flyout-popover .sidebar-nav-label {
-  display: block;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: inherit !important;
+  font-size: 13px !important;
+  font-weight: 550 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.25 !important;
+  flex: 1 !important;
+  text-align: left !important;
+}
+
+.work-app.sidebar-collapsed .sidebar-flyout-popover .sidebar-nav-icon,
+.sidebar-flyout-popover .sidebar-nav-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  color: inherit !important;
+}
+
+.work-app.sidebar-collapsed .sidebar-flyout-popover .sidebar-item-badge,
+.sidebar-flyout-popover .sidebar-item-badge {
+  position: static !important;
+  display: inline-flex !important;
+  min-width: 18px !important;
+  height: 18px !important;
+  padding: 0 6px !important;
+  border-radius: 9999px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  background: rgba(165, 16, 145, 0.12) !important;
+  color: #a51091 !important;
+  box-shadow: none !important;
+  margin-left: auto !important;
+}
+
+[data-theme='dark'] .sidebar-flyout-popover .sidebar-nav-item,
+[data-theme='dark'] .work-app.sidebar-collapsed .sidebar-flyout-popover .sidebar-nav-item {
+  color: #d8d0e5 !important;
+}
+
+[data-theme='dark'] .sidebar-flyout-popover .sidebar-nav-item:hover,
+[data-theme='dark'] .work-app.sidebar-collapsed .sidebar-flyout-popover .sidebar-nav-item:hover {
+  background: rgba(229, 0, 126, 0.15) !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .sidebar-flyout-popover .sidebar-nav-item.is-active,
+[data-theme='dark'] .work-app.sidebar-collapsed .sidebar-flyout-popover .sidebar-nav-item.is-active {
+  background: rgba(229, 0, 126, 0.22) !important;
+  color: #ffffff !important;
 }
 
 /* Tooltip simple flotante para modo compactado */

@@ -320,8 +320,8 @@
 /* All-Day Collapsible and Action Group */
 .vc-marketing-all-day-row.is-collapsed .vc-marketing-all-day-cell {
   min-height: 38px;
-  max-height: 74px;
-  overflow: hidden;
+  height: auto;
+  overflow: visible;
 }
 .vc-marketing-all-day-meta {
   display: flex;
