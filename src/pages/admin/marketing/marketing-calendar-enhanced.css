@@ -50,7 +50,7 @@
 .vc-marketing-week-card-status{font-size:8px}
 .vc-marketing-week-card-head{flex-wrap:wrap}
 .vc-marketing-week-card-status{flex:none;max-width:100%;padding:3px 7px;overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:anywhere;line-height:1.25}
-.vc-marketing-calendar-event>span.vc-marketing-event-status{display:block;flex-basis:100%;max-width:100%;overflow:visible;color:var(--event-color,#70527f);font-size:7px;font-weight:750;line-height:1.2;text-overflow:clip;white-space:normal;overflow-wrap:anywhere}
+.vc-marketing-calendar-event>span.vc-marketing-event-status{display:block;flex-basis:100%;max-width:100%;overflow:hidden;color:var(--event-color,#70527f);font-size:8px;font-weight:750;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}
 .vc-marketing-week-card-title b{font-size:12px}
 .vc-marketing-week-card-title>span{font-size:9px}
 .vc-marketing-week-card-foot>span{font-size:9px}
@@ -147,7 +147,170 @@
 .vc-marketing-focus-btn{color:#6b5c75}
 .vc-marketing-focus-btn.active{border-color:#763b96;background:#763b96;color:#fff}
 .vc-marketing-calendar.is-focus-mode{position:fixed;inset:12px;z-index:1000;overflow-y:auto;padding:20px;border-radius:16px;background:#fff;box-shadow:0 12px 48px rgba(0,0,0,.22)}
-.vc-marketing-calendar-event.is-compact-pill{display:flex;align-items:center;min-height:22px;padding:2px 5px;border-radius:5px;gap:4px;overflow:hidden;white-space:nowrap}
-.vc-marketing-pill-indicator{width:4px;height:12px;flex-shrink:0;border-radius:2px}
-.vc-marketing-has-asset-icon{flex-shrink:0;color:#7a4697}
-.vc-marketing-event-row.is-compact-row,.vc-marketing-task-event-row.is-compact-row{margin-bottom:2px}
+.vc-marketing-event-row.is-compact-row,
+.vc-marketing-event-row.is-selectable.is-compact-row {
+  position: relative;
+  display: block;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  margin-bottom: 2px;
+}
+
+.vc-marketing-event-row.is-compact-row > .vc-marketing-event-select {
+  position: absolute;
+  top: 4px;
+  right: 22px;
+  z-index: 4;
+  margin: 0;
+}
+
+.vc-marketing-task-event-row.is-compact-row {
+  display: block;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  margin-bottom: 2px;
+}
+
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill,
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 7px;
+  border-radius: 7px;
+}
+
+.vc-marketing-compact-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+}
+
+.vc-marketing-pill-indicator {
+  width: 4px;
+  height: 12px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.vc-marketing-compact-top time {
+  flex-shrink: 0;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #5b3b75;
+  font-size: 8.5px !important;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.vc-marketing-compact-top .vc-marketing-event-label {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #322a38;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 750;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill .vc-marketing-compact-top .vc-marketing-event-label {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.vc-marketing-compact-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+}
+
+.vc-marketing-compact-foot .vc-marketing-event-status {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  font-size: 8.5px !important;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.vc-marketing-compact-icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.vc-marketing-has-asset-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: rgba(122, 70, 151, 0.12);
+}
+
+.vc-marketing-has-asset-icon {
+  flex-shrink: 0;
+  color: #7a4697;
+}
+
+.vc-marketing-compact-icons .vc-marketing-readiness-indicators.is-compact {
+  display: inline-flex !important;
+  width: auto !important;
+  flex-wrap: nowrap !important;
+  gap: 2px;
+}
+
+.vc-marketing-compact-icons .vc-marketing-readiness-indicators.is-compact .vc-marketing-readiness-item {
+  padding: 1px 3px;
+  min-height: 16px;
+  border-radius: 4px;
+}
+
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-task.is-compact-pill {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  min-height: 26px;
+  padding: 4px 7px;
+}
+
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-task.is-compact-pill .vc-marketing-event-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+}

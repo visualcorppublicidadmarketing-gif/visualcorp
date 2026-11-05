@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye, CircleDot, Filter, GripVertical, ListFilter, Megaphone, Film, Image as ImageIcon, CheckCircle2, Circle, Maximize2, Minimize2 } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye, CircleDot, Filter, FolderOpen, GripVertical, ListFilter, Megaphone, Film, Image as ImageIcon, CheckCircle2, Circle, Maximize2, Minimize2, UserRound } from 'lucide-react';
 import { ContextMenu, type ContextMenuAction } from '../../../components/ui/ContextMenu';
 import { Badge } from '../../../components/ui/OperationalKit';
 import { DatePicker } from '../../../components/ui/Calendar';
+import { SelectDropdown } from '../../../components/ui/SelectDropdown';
 import { MarketingPostArtwork, type MarketingArtworkAsset } from './MarketingPostArtwork';
 import { getMarketingCalendarColor, getMarketingTags } from './marketingColors';
 import { addMarketingDays, isTerminalMarketingStatus, marketingDateKey, marketingWeekStart } from './marketingScheduleRules';
@@ -497,14 +498,98 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
       </div>
     </header>
     <div className="vc-marketing-kanban-filters" aria-label={`Filtros del calendario · ${view}`}>
-      <label><ListFilter size={14}/><span>Tipo</span><select aria-label="Filtrar por tipo de registro" value={recordTypeFilter} onChange={(event) => setRecordTypeFilter(event.target.value as MarketingRecordTypeFilter)}><option value="all">Publicaciones y actividades</option><option value="posts">Solo publicaciones</option><option value="tasks">Solo actividades</option></select></label>
-      <label><span>Campaña</span><select aria-label="Filtrar por campaña" value={campaignFilter} onChange={(event) => setCampaignFilter(event.target.value)}><option value="all">Todas las campañas</option><option value="none">Sin campaña</option>{campaigns.map((campaign) => <option key={campaign.id} value={campaign.id}>{campaign.title}</option>)}</select></label>
-      <label><Filter size={14}/><span>Canal</span><select aria-label="Filtrar por canal" value={channelFilter} onChange={(event) => setChannelFilter(event.target.value)}><option>Todos los canales</option>{kanbanChannels.map((channel) => <option key={channel}>{channel}</option>)}<option>Canal pendiente</option></select></label>
-      <label><span>Responsable</span><select aria-label="Filtrar por responsable" value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}><option>Todos los responsables</option>{kanbanOwners.map((owner) => <option key={owner}>{owner}</option>)}<option>Sin asignar</option></select></label>
-      <label><ListFilter size={14}/><span>Estado</span><select aria-label="Filtrar por estado de entrega" value={kanbanStateFilter} onChange={(event) => setKanbanStateFilter(event.target.value as MarketingStateFilter)}><option value="all">Todos los estados</option><option value="pending">Pendientes</option><option value="work">En diseño o producción</option><option value="review">En revisión o aprobadas</option><option value="published">Publicadas</option><option value="finished">Terminadas</option><option value="blocked">Bloqueadas o canceladas</option></select></label>
-      <span className="vc-marketing-kanban-result-count" aria-live="polite">{view === 'kanban' || view === 'table' ? kanbanPosts.length : filteredPeriodPosts.length} publicaciones · {calendarTasks.length} actividades</span>
-      {(channelFilter !== 'Todos los canales' || ownerFilter !== 'Todos los responsables' || kanbanStateFilter !== 'all' || campaignFilter !== 'all' || recordTypeFilter !== 'all') && <button type="button" className="vc-marketing-filter-clear" onClick={() => { setChannelFilter('Todos los canales'); setOwnerFilter('Todos los responsables'); setKanbanStateFilter('all'); setCampaignFilter('all'); setRecordTypeFilter('all'); }}>Limpiar filtros</button>}
-      {view === 'kanban' && <label className="vc-marketing-empty-lanes-toggle"><input type="checkbox" checked={showEmptyKanbanLanes} onChange={(event) => setShowEmptyKanbanLanes(event.target.checked)}/>Mostrar etapas vacías</label>}
+      <div className="vc-marketing-filters-group">
+        <SelectDropdown
+          label="Tipo"
+          ariaLabel="Filtrar por tipo de registro"
+          icon={<ListFilter size={13} />}
+          value={recordTypeFilter}
+          defaultValue="all"
+          onChange={(val) => setRecordTypeFilter(val as MarketingRecordTypeFilter)}
+          options={[
+            { value: 'all', label: 'Publicaciones y actividades', badge: posts.length + tasks.length },
+            { value: 'posts', label: 'Solo publicaciones', badge: posts.length },
+            { value: 'tasks', label: 'Solo actividades', badge: tasks.length },
+          ]}
+        />
+        <SelectDropdown
+          label="Campaña"
+          ariaLabel="Filtrar por campaña"
+          icon={<FolderOpen size={13} />}
+          value={campaignFilter}
+          defaultValue="all"
+          onChange={(val) => setCampaignFilter(val)}
+          options={[
+            { value: 'all', label: 'Todas las campañas', badge: campaigns.length },
+            { value: 'none', label: 'Sin campaña' },
+            ...campaigns.map((campaign) => ({ value: campaign.id, label: campaign.title })),
+          ]}
+        />
+        <SelectDropdown
+          label="Canal"
+          ariaLabel="Filtrar por canal"
+          icon={<Megaphone size={13} />}
+          value={channelFilter}
+          defaultValue="Todos los canales"
+          onChange={(val) => setChannelFilter(val)}
+          options={[
+            { value: 'Todos los canales', label: 'Todos los canales', badge: posts.length },
+            ...kanbanChannels.map((channel) => ({
+              value: channel,
+              label: channel,
+              badge: posts.filter((p) => p.platform === channel).length,
+            })),
+            {
+              value: 'Canal pendiente',
+              label: 'Canal pendiente',
+              badge: posts.filter((p) => !p.platform).length,
+            },
+          ]}
+        />
+        <SelectDropdown
+          label="Responsable"
+          ariaLabel="Filtrar por responsable"
+          icon={<UserRound size={13} />}
+          value={ownerFilter}
+          defaultValue="Todos los responsables"
+          onChange={(val) => setOwnerFilter(val)}
+          options={[
+            { value: 'Todos los responsables', label: 'Todos los responsables', badge: posts.length },
+            ...kanbanOwners.map((owner) => ({
+              value: owner,
+              label: owner,
+              badge: posts.filter((p) => p.owner === owner).length,
+            })),
+            {
+              value: 'Sin asignar',
+              label: 'Sin asignar',
+              badge: posts.filter((p) => !p.owner).length,
+            },
+          ]}
+        />
+        <SelectDropdown
+          label="Estado"
+          ariaLabel="Filtrar por estado de entrega"
+          icon={<CircleDot size={13} />}
+          value={kanbanStateFilter}
+          defaultValue="all"
+          onChange={(val) => setKanbanStateFilter(val as MarketingStateFilter)}
+          options={[
+            { value: 'all', label: 'Todos los estados' },
+            { value: 'pending', label: 'Pendientes', dotColor: '#806293' },
+            { value: 'work', label: 'En diseño o producción', dotColor: '#8257a2' },
+            { value: 'review', label: 'En revisión o aprobadas', dotColor: '#b38a32' },
+            { value: 'published', label: 'Publicadas', dotColor: '#3d9b73' },
+            { value: 'finished', label: 'Terminadas', dotColor: '#737c88' },
+            { value: 'blocked', label: 'Bloqueadas o canceladas', dotColor: '#af5d57' },
+          ]}
+        />
+      </div>
+      <div className="vc-marketing-filters-meta">
+        <span className="vc-marketing-kanban-result-count" aria-live="polite">{view === 'kanban' || view === 'table' ? kanbanPosts.length : filteredPeriodPosts.length} publicaciones · {calendarTasks.length} actividades</span>
+        {(channelFilter !== 'Todos los canales' || ownerFilter !== 'Todos los responsables' || kanbanStateFilter !== 'all' || campaignFilter !== 'all' || recordTypeFilter !== 'all') && <button type="button" className="vc-marketing-filter-clear" onClick={() => { setChannelFilter('Todos los canales'); setOwnerFilter('Todos los responsables'); setKanbanStateFilter('all'); setCampaignFilter('all'); setRecordTypeFilter('all'); }}>Limpiar filtros</button>}
+        {view === 'kanban' && <label className="vc-marketing-empty-lanes-toggle"><input type="checkbox" checked={showEmptyKanbanLanes} onChange={(event) => setShowEmptyKanbanLanes(event.target.checked)}/>Mostrar etapas vacías</label>}
+      </div>
     </div>
     {(view === 'month' || view === 'week' || view === 'day') && filteredPeriodPosts.length === 0 && calendarTasks.length === 0 && <div className="vc-marketing-calendar-empty" role="status">No hay publicaciones ni actividades para este periodo con los filtros actuales.</div>}
     {view === 'week' || view === 'day' ? <MarketingTimeGrid view={view} dates={cells} today={today} posts={filteredPeriodPosts} tasks={calendarTasks} campaignNames={campaignNames} canEdit={canEdit} onPostSelect={onSelect} onTaskSelect={onTaskSelect} postActions={contextualActions} taskActions={taskActions} onCreateRange={onTaskCreateRange} onPostSchedule={onQuickReschedule || onReschedule} onTaskSchedule={onTaskQuickSchedule}/> : view === 'kanban' ? <>
@@ -597,10 +682,54 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
                 <div className="vc-marketing-week-card-foot"><span>{post.owner||'Responsable pendiente'}</span>{tags.length>0&&<div>{tags.slice(0,2).map((tag)=><Badge key={tag} color={color||undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>)}</div>}</div>
               </article></ContextMenu> : <>
                 {monthDensity === 'detailed' && <MarketingPostArtwork {...artworkProps} variant="compact"/>}
-                <ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><div className={`vc-marketing-calendar-event tone-${statusClass(post)}${monthDensity==='compact'?' is-compact-pill':''}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined} title={`${post.title} · ${post.status}${tags.length?` · ${tags.join(', ')}`:''}`}>
-                  {color && <span className="vc-marketing-pill-indicator" style={{ backgroundColor: color }}/>}
-                  {post.scheduled_time&&<time>{post.scheduled_time}</time>}<button type="button" draggable={canEdit} onDragStart={(event)=>{event.dataTransfer.setData('text/plain',post.id);event.dataTransfer.effectAllowed='move';setDragging(post.id);}} onDragEnd={()=>setDragging(null)} onClick={()=>onSelect(post)} className="vc-marketing-event-label" title="Abrir ficha de publicación">{post.title||'Sin título'}</button>{hasAsset && <span title="Tiene arte vinculado"><ImageIcon size={11} className="vc-marketing-has-asset-icon"/></span>}<MarketingReadinessIndicators post={post} compact onChange={(field, checked) => onReadinessChange(post, field, checked)} disabled={!canEdit}/><span className={`vc-marketing-event-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span>{monthDensity === 'detailed' && tags.length>0&&<Badge color={color||undefined} title={`Etiquetas: ${tags.join(', ')}`}>{tags[0]}</Badge>}
-              </div></ContextMenu></>}
+                <ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}>
+                  <div
+                    className={`vc-marketing-calendar-event tone-${statusClass(post)}${monthDensity === 'compact' ? ' is-compact-pill' : ' is-detailed-card'}`}
+                    style={color ? { '--event-color': color, '--event-tint': `${color}18` } as React.CSSProperties : undefined}
+                    title={`${post.title} · ${post.status}${tags.length ? ` · ${tags.join(', ')}` : ''}`}
+                  >
+                    <div className="vc-marketing-compact-top">
+                      {color && <span className="vc-marketing-pill-indicator" style={{ backgroundColor: color }} aria-hidden="true" />}
+                      {post.scheduled_time && <time>{post.scheduled_time}</time>}
+                      <button
+                        type="button"
+                        draggable={canEdit}
+                        onDragStart={(event) => {
+                          event.dataTransfer.setData('text/plain', post.id);
+                          event.dataTransfer.effectAllowed = 'move';
+                          setDragging(post.id);
+                        }}
+                        onDragEnd={() => setDragging(null)}
+                        onClick={() => onSelect(post)}
+                        className="vc-marketing-event-label"
+                        title="Abrir ficha de publicación"
+                      >
+                        {post.title || 'Sin título'}
+                      </button>
+                    </div>
+                    <div className="vc-marketing-compact-foot">
+                      <span className={`vc-marketing-event-status tone-${statusClass(post)}`}>{post.status || 'Por iniciar'}</span>
+                      <span className="vc-marketing-compact-icons">
+                        {hasAsset && (
+                          <span className="vc-marketing-has-asset-badge" title="Tiene arte vinculado">
+                            <ImageIcon size={10} className="vc-marketing-has-asset-icon" />
+                          </span>
+                        )}
+                        <MarketingReadinessIndicators
+                          post={post}
+                          compact
+                          onChange={(field, checked) => onReadinessChange(post, field, checked)}
+                          disabled={!canEdit}
+                        />
+                      </span>
+                    </div>
+                    {monthDensity === 'detailed' && tags.length > 0 && (
+                      <Badge color={color || undefined} title={`Etiquetas: ${tags.join(', ')}`}>
+                        {tags[0]}
+                      </Badge>
+                    )}
+                  </div>
+                </ContextMenu></>}
             </div>;
           })}{visibleTasks.map((task)=>{
             const typeName=task.activity_type==='Otro'?task.custom_activity_type||'Otro':task.activity_type;
