@@ -1,0 +1,667 @@
+/* Estilos para el Monitor de Rollos y Bobinas en Vivo (Visual Corp Suite) */
+
+.vc-live-rolls-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.vc-live-rolls-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px;
+  background: var(--surface-panel, #ffffff);
+  border: 1px solid var(--border-soft, #e2d9eb);
+  border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(34, 18, 54, 0.04);
+}
+
+.vc-live-rolls-title-block h2 {
+  font-size: 22px;
+  font-weight: 750;
+  margin: 6px 0 4px;
+  color: var(--text-heading, #1f142b);
+}
+
+.vc-live-rolls-title-block p {
+  font-size: 13.5px;
+  color: var(--text-muted, #67597a);
+  max-width: 620px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.vc-live-badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.vc-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: vc-pulse 2s infinite;
+}
+
+@keyframes vc-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.vc-live-rolls-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.vc-live-alert-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 650;
+  animation: vc-alert-bounce 3s infinite ease-in-out;
+}
+
+@keyframes vc-alert-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+/* Filtros */
+.vc-live-rolls-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vc-live-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vc-live-filter-chips button {
+  padding: 7px 14px;
+  border: 1px solid var(--border-soft, #e2d9eb);
+  background: var(--surface-panel, #ffffff);
+  color: var(--text-body, #423554);
+  border-radius: 24px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vc-live-filter-chips button:hover {
+  background: #f6f0fa;
+  border-color: #cbadd8;
+}
+
+.vc-live-filter-chips button.is-active {
+  background: #251636;
+  color: #ffffff;
+  border-color: #251636;
+  box-shadow: 0 2px 8px rgba(37, 22, 54, 0.25);
+}
+
+.vc-live-filter-chips button.chip-danger {
+  color: #dc2626;
+  border-color: #fca5a5;
+  background: #fff5f5;
+}
+
+.vc-live-filter-chips button.chip-danger.is-active {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+.vc-live-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-panel, #ffffff);
+  border: 1px solid var(--border-soft, #e2d9eb);
+  border-radius: 24px;
+  padding: 6px 14px;
+  min-width: 260px;
+}
+
+.vc-live-search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  width: 100%;
+}
+
+/* Grid de Tarjetas */
+.vc-live-rolls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 18px;
+}
+
+.vc-roll-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-panel, #ffffff);
+  border: 1px solid var(--border-soft, #e5dbe8);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 4px 16px rgba(44, 21, 64, 0.04);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.vc-roll-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(44, 21, 64, 0.08);
+}
+
+/* Tonos según porcentaje */
+.vc-roll-card.is-healthy {
+  border-top: 4px solid #10b981;
+}
+
+.vc-roll-card.is-medium {
+  border-top: 4px solid #0ea5e9;
+}
+
+.vc-roll-card.is-warning {
+  border-top: 4px solid #f59e0b;
+}
+
+.vc-roll-card.is-critical {
+  border-top: 4px solid #ef4444;
+  background: linear-gradient(180deg, rgba(254, 242, 242, 0.3) 0%, rgba(255, 255, 255, 1) 100%);
+}
+
+.vc-roll-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.vc-roll-machine-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #7c3aed;
+  background: #f3e8ff;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.vc-roll-card-head h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 2px 0 4px;
+  color: var(--text-heading, #1f142b);
+  line-height: 1.25;
+}
+
+.vc-roll-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+}
+
+.vc-roll-family-tag {
+  color: #6d28d9;
+  font-weight: 700;
+}
+
+.vc-roll-tag {
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.vc-roll-status-icon {
+  color: #8b5cf6;
+}
+
+.vc-roll-status-icon .is-spinning {
+  animation: vc-spin 12s linear infinite;
+}
+
+@keyframes vc-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Bloque Visual del Cilindro / Bobina */
+.vc-roll-visual-block {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 14px;
+  background: #f9f6fc;
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+.vc-roll-cylinder {
+  position: relative;
+  width: 54px;
+  height: 64px;
+  background: #e2d8ec;
+  border: 2px solid #cbbad9;
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.vc-roll-cylinder-fill {
+  width: 100%;
+  transition: height 0.3s ease-out;
+  border-radius: 0 0 6px 6px;
+}
+
+.is-healthy .vc-roll-cylinder-fill {
+  background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+.is-medium .vc-roll-cylinder-fill {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
+}
+
+.is-warning .vc-roll-cylinder-fill {
+  background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+.is-critical .vc-roll-cylinder-fill {
+  background: linear-gradient(180deg, #f87171 0%, #dc2626 100%);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+}
+
+.vc-roll-cylinder-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #d1c1df;
+  border: 2px dashed #9f88b5;
+  pointer-events: none;
+}
+
+.vc-roll-metrics {
+  display: flex;
+  flex-direction: column;
+}
+
+.vc-roll-pct-display {
+  display: flex;
+  align-items: baseline;
+  line-height: 1;
+}
+
+.vc-roll-pct-num {
+  font-size: 34px;
+  font-weight: 850;
+  font-family: inherit;
+  color: var(--text-heading, #1f142b);
+}
+
+.is-critical .vc-roll-pct-num {
+  color: #dc2626;
+}
+
+.vc-roll-pct-unit {
+  font-size: 18px;
+  font-weight: 700;
+  margin-left: 2px;
+  color: var(--text-muted, #67597a);
+}
+
+.vc-roll-meters-sub {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-top: 3px;
+}
+
+.vc-roll-meters-sub span {
+  color: #9ca3af;
+  font-size: 11.5px;
+}
+
+.vc-roll-warning-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #b91c1c;
+  background: #fee2e2;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-top: 5px;
+  letter-spacing: 0.02em;
+}
+
+/* Controles de Ajuste Táctil */
+.vc-roll-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid #f0e6f5;
+  border-bottom: 1px solid #f0e6f5;
+}
+
+.vc-control-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #7c688c;
+  letter-spacing: 0.03em;
+}
+
+.vc-roll-quick-buttons {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.vc-roll-quick-buttons button {
+  padding: 8px 2px;
+  min-height: 38px;
+  border: 1px solid #dccde4;
+  background: #ffffff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #3b284c;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.vc-roll-quick-buttons button:hover {
+  background: #f4ecf8;
+  border-color: #b18ec4;
+}
+
+.vc-roll-quick-buttons button.is-selected {
+  background: #3b284c;
+  color: #ffffff;
+  border-color: #3b284c;
+}
+
+.vc-roll-slider-row {
+  margin-top: 2px;
+}
+
+.vc-roll-slider-row input[type='range'] {
+  width: 100%;
+  height: 8px;
+  accent-color: #7c3aed;
+  cursor: pointer;
+}
+
+/* Footer de Tarjeta */
+.vc-roll-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  gap: 10px;
+}
+
+.vc-roll-operator-info small {
+  font-size: 11px;
+  color: #837295;
+}
+
+.vc-roll-btn-replace {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fdf4ff;
+  border: 1px solid #f0abfc;
+  color: #a21caf;
+  font-size: 12px;
+  font-weight: 750;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.vc-roll-btn-replace:hover {
+  background: #fae8ff;
+  border-color: #e879f9;
+  color: #86198f;
+  transform: translateY(-1px);
+}
+
+/* Modales */
+.vc-live-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(22, 12, 33, 0.65);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.vc-live-modal {
+  width: 100%;
+  max-width: 460px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(22, 12, 33, 0.35);
+  overflow: hidden;
+  animation: vc-modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes vc-modal-pop {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.vc-live-modal header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  background: #faf7fc;
+  border-bottom: 1px solid #f0e6f5;
+}
+
+.vc-modal-icon-zap {
+  color: #d946ef;
+}
+
+.vc-live-modal header h3 {
+  font-size: 18px;
+  font-weight: 750;
+  margin: 0;
+  color: #1f142b;
+}
+
+.vc-live-modal header p {
+  font-size: 12.5px;
+  color: #705d84;
+  margin: 2px 0 0;
+}
+
+.vc-live-modal-body {
+  padding: 20px 24px;
+  font-size: 13.5px;
+  color: #3b284c;
+}
+
+.vc-live-checkbox-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: #fbf9fd;
+  border: 1px solid #e7ddec;
+  border-radius: 10px;
+  margin-top: 14px;
+  cursor: pointer;
+}
+
+.vc-live-checkbox-card input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: #8b5cf6;
+  margin-top: 2px;
+}
+
+.vc-live-checkbox-card b {
+  display: block;
+  font-size: 13px;
+  color: #1f142b;
+}
+
+.vc-live-checkbox-card small {
+  display: block;
+  font-size: 11.5px;
+  color: #6d5b80;
+  margin-top: 2px;
+}
+
+.vc-live-modal footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 24px;
+  background: #faf7fc;
+  border-top: 1px solid #f0e6f5;
+}
+
+.vc-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vc-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: #3b284c;
+}
+
+.vc-form-grid input,
+.vc-form-grid select {
+  padding: 8px 12px;
+  border: 1px solid #dccde4;
+  border-radius: 8px;
+  font-size: 13.5px;
+}
+
+/* Modo oscuro */
+[data-public-theme='dark'] .vc-live-rolls-header,
+[data-public-theme='dark'] .vc-roll-card,
+[data-public-theme='dark'] .vc-live-filter-chips button,
+[data-public-theme='dark'] .vc-live-search-box,
+[data-public-theme='dark'] .vc-live-modal {
+  background: #181920;
+  border-color: #2e2f3d;
+  color: #e2e4ef;
+}
+
+[data-public-theme='dark'] .vc-live-rolls-title-block h2,
+[data-public-theme='dark'] .vc-roll-card-head h3,
+[data-public-theme='dark'] .vc-roll-pct-num,
+[data-public-theme='dark'] .vc-live-modal header h3 {
+  color: #f1f3fa;
+}
+
+[data-public-theme='dark'] .vc-roll-visual-block,
+[data-public-theme='dark'] .vc-live-modal header,
+[data-public-theme='dark'] .vc-live-modal footer,
+[data-public-theme='dark'] .vc-live-checkbox-card {
+  background: #20212b;
+  border-color: #313342;
+}
+
+[data-public-theme='dark'] .vc-roll-cylinder {
+  background: #282a36;
+  border-color: #404456;
+}
+
+[data-public-theme='dark'] .vc-roll-quick-buttons button {
+  background: #22232e;
+  border-color: #36394a;
+  color: #cbd0e2;
+}
+
+[data-public-theme='dark'] .vc-roll-quick-buttons button.is-selected {
+  background: #7c3aed;
+  color: #ffffff;
+  border-color: #7c3aed;
+}
+
+/* Adaptación Móvil */
+@media (max-width: 640px) {
+  .vc-live-rolls-header {
+    padding: 16px;
+  }
+  .vc-live-rolls-grid {
+    grid-template-columns: 1fr;
+  }
+  .vc-live-search-box {
+    width: 100%;
+  }
+  .vc-roll-quick-buttons button {
+    padding: 10px 0;
+    font-size: 13px;
+  }
+}
