@@ -109,9 +109,10 @@ export function MarketingTimeGrid({
   const [nowMinute, setNowMinute] = useState(() => new Date().getHours() * 60 + new Date().getMinutes());
   const [allDayCollapsed, setAllDayCollapsed] = useState(() => {
     try {
-      return window.localStorage.getItem('vc-calendar-allday-collapsed') === 'true';
+      const saved = window.localStorage.getItem('vc-calendar-allday-collapsed');
+      return saved !== null ? saved === 'true' : true;
     } catch {
-      return false;
+      return true;
     }
   });
   const toggleAllDay = () => setAllDayCollapsed((curr) => {
