@@ -119,3 +119,9 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - La rama local `codex/inventory-system-all-20261102` incorpora vistas mensual, semanal y agenda para conteos programados, sesiones, movimientos registrados y recepciones previstas, con filtros por inventario, sucursal, ubicación, tipo y estado.
 - Los conteos guardan el alcance como líneas de variante/ubicación y su historial. Al iniciar se vinculan a la sesión física existente y se captura el saldo de referencia en ese momento; programar o iniciar no modifica existencias. La asignación de responsable es opcional y requiere miembro activo con permiso de edición de inventario.
 - La migración `supabase/migrations/20261104153641_inventory_operational_calendar.sql` y la interfaz están en el worktree local. Typecheck, build y simulación SQL local de programar, reprogramar, iniciar repetidamente, completar y cancelar pasaron. La migración no está aplicada a Supabase; no se publicó ni se revisó la pantalla con una sesión autenticada.
+
+### Indicadores y diferencias de conteo — 2026-11-05
+
+- En `main` local, el panel cuenta registros de inventario con consumo y muestra cantidades históricas separadas por unidad. Los saldos contados en cero aparecen bajo mínimo cuando el artículo tiene un mínimo positivo configurado; los saldos sin conteo siguen aparte.
+- El recorrido de conteo anticipa la diferencia frente al saldo de apertura y el detalle del calendario conserva esperado, observado y diferencia por variante y ubicación. Esa comparación no demuestra por sí sola una pérdida si hubo movimientos después de abrir la sesión.
+- Verificación previa a la publicación: `npm run build:checked`, 18 pruebas enfocadas y `git diff --check` correctos. No se aplicaron migraciones ni se verificaron saldos reales con una sesión autenticada. Siguiente paso: contrastar conteos y reposición con datos operativos reales.

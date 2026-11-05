@@ -235,6 +235,31 @@
   border-radius: 9px;
 }
 
+.guided-count-variance {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 9px 11px;
+  border: 1px solid #e8ddeb;
+  border-radius: 9px;
+  background: #faf6fc;
+  color: #604c6a;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.guided-count-variance.is-short {
+  border-color: #f0d6d1;
+  background: #fff7f4;
+  color: #964b3f;
+}
+
+.guided-count-variance.is-match {
+  border-color: #d6e7dc;
+  background: #f5faf6;
+  color: #3f7350;
+}
+
 .inventory-brand-nav button:focus-visible,
 .inventory-section-nav button:focus-visible,
 .inventory-branch-switcher-track button:focus-visible {
