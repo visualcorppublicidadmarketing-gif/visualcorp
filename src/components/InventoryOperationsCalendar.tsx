@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  AlertTriangle, ArrowDownUp, CalendarDays, Check, ChevronLeft, ChevronRight,
-  ClipboardCheck, Clock3, MapPin, PackageCheck, Plus, Truck, UserRound,
+  AlertTriangle, ArrowDownRight, ArrowDownUp, ArrowUpRight, CalendarDays, Check,
+  ChevronLeft, ChevronRight, ClipboardCheck, Clock3, Filter, MapPin, PackageCheck,
+  Plus, Search, Truck, UserRound,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { inventoryCountDifference } from '../lib/inventoryMetrics.mjs';
@@ -22,6 +23,9 @@ type EventType = 'count_task' | 'count_session' | 'movement' | 'purchase_receipt
 type CalendarEvent = {
   id: string; type: EventType; date: string; branchId: string; title: string; detail: string;
   status: string; statusKey: string; overdue: boolean; locationCodes: string[]; raw: any; lines: any[];
+  quantityDelta?: number;
+  unit?: string;
+  movementKind?: 'in' | 'out' | 'neutral';
 };
 
 const ZONE = 'America/Guayaquil';
@@ -133,6 +137,9 @@ export function InventoryOperationsCalendar({
   const [actionBusy, setActionBusy] = useState(false);
   const [assignees, setAssignees] = useState<Array<{ user_id: string; display_name: string }>>([]);
   const [auditRows, setAuditRows] = useState<any[]>([]);
+  const [dayOverviewKey, setDayOverviewKey] = useState<string | null>(null);
+  const [daySearch, setDaySearch] = useState('');
+  const [dayKindFilter, setDayKindFilter] = useState<'all' | 'in' | 'out' | 'count' | 'receipt'>('all');
   const [draft, setDraft] = useState({
     date: focusDate, branchId: '', scopeType: 'all' as 'all' | 'area' | 'location' | 'selected',
     area: '', location: '', assignee: '', note: '', selectedLineKeys: [] as string[],
@@ -258,8 +265,9 @@ export function InventoryOperationsCalendar({
       const date = inEcuadorDate(row.created_at);
       const item = itemByLine.get(lineKey(row.variant_id, row.location_code || 'MAIN'))
         || items.find(candidate => candidate.variantId === row.variant_id && candidate.branchId === row.branch_id);
-      const amount = Math.abs(Number(row.quantity_delta || 0));
-      const sign = Number(row.quantity_delta) > 0 ? '+' : '−';
+      const delta = Number(row.quantity_delta || 0);
+      const amount = Math.abs(delta);
+      const sign = delta > 0 ? '+' : '−';
       events.push({
         id: row.id, type: 'movement', date, branchId: row.branch_id,
         title: itemTitle(item, row.reason || row.movement_type),
@@ -267,6 +275,9 @@ export function InventoryOperationsCalendar({
           + ' · ' + (branchById.get(row.branch_id)?.name || 'Sucursal'),
         status: 'recorded', statusKey: 'recorded', overdue: false,
         locationCodes: row.location_code ? [locationToken(row.branch_id, row.location_code)] : [], raw: row, lines: [],
+        quantityDelta: delta,
+        unit: item?.unit || '',
+        movementKind: delta > 0 ? 'in' : delta < 0 ? 'out' : 'neutral',
       });
     }
     for (const row of purchaseRows) {
@@ -482,35 +493,85 @@ export function InventoryOperationsCalendar({
     }
   };
 
-  const renderEvent = (event: CalendarEvent, compact = false) => <button
-    key={event.type + '-' + event.id}
-    className={'inventory-calendar-event event-' + event.type + ' status-' + event.statusKey}
-    type="button" onClick={() => openEvent(event)}
-    title={eventTypeLabel(event.type) + ' · ' + event.title}
-  >
-    <span className="inventory-calendar-event-icon">{iconFor(event.type)}</span>
-    <span className="inventory-calendar-event-copy"><b>{event.title}</b>{!compact && <small>{event.detail}</small>}</span>
-    {event.overdue && <span className="inventory-calendar-overdue-dot" aria-label="Atrasado"><AlertTriangle size={12}/></span>}
-  </button>;
+  const renderEvent = (event: CalendarEvent, compact = false) => {
+    const isMovement = event.type === 'movement';
+    const isEntry = isMovement && (event.quantityDelta ?? 0) > 0;
+    const isExit = isMovement && (event.quantityDelta ?? 0) < 0;
+    const deltaSign = isEntry ? '+' : isExit ? '−' : '';
+    const formattedDelta = isMovement && event.quantityDelta !== undefined
+      ? `${deltaSign}${quantityLabel(Math.abs(event.quantityDelta))} ${event.unit || ''}`.trim()
+      : null;
+
+    let subClass = '';
+    if (isEntry) subClass = ' is-entry';
+    else if (isExit) subClass = ' is-exit';
+
+    return (
+      <button
+        key={event.type + '-' + event.id}
+        className={`inventory-calendar-event event-${event.type} status-${event.statusKey}${subClass}`}
+        type="button"
+        onClick={() => openEvent(event)}
+        title={`${eventTypeLabel(event.type)} · ${event.title} (${event.detail})`}
+      >
+        <span className="inventory-calendar-event-icon">
+          {isEntry ? <ArrowUpRight size={13} /> : isExit ? <ArrowDownRight size={13} /> : iconFor(event.type)}
+        </span>
+        <span className="inventory-calendar-event-copy">
+          <b>{event.title}</b>
+          {!compact && <small>{event.detail}</small>}
+        </span>
+        {formattedDelta && (
+          <span className={`inventory-calendar-event-badge ${isEntry ? 'badge-entry' : 'badge-exit'}`}>{formattedDelta}</span>
+        )}
+        {event.overdue && (
+          <span className="inventory-calendar-overdue-dot" aria-label="Atrasado"><AlertTriangle size={12}/></span>
+        )}
+      </button>
+    );
+  };
+
   const renderDayCell = (key: string, index: number) => {
     const dateEvents = eventsForDay(key);
     const inMonth = key.slice(0, 7) === focusDate.slice(0, 7);
     const classes = 'inventory-calendar-day' + (inMonth ? '' : ' is-outside')
       + (key === focusDate ? ' is-selected' : '') + (key === todayKey() ? ' is-today' : '');
-    return <div className={classes} key={key} role="gridcell" aria-selected={key === focusDate}>
-      <div className="inventory-calendar-day-heading">
-        <button type="button" className="inventory-calendar-day-select"
-          aria-label={dateLabel(key) + (dateEvents.length ? ', ' + dateEvents.length + ' eventos' : '')}
-          onClick={() => setFocusDate(key)}><span>{keyDate(key).getUTCDate()}</span>{dateEvents.length > 0 && <small>{dateEvents.length}</small>}</button>
-        {view === 'week' && <span className="inventory-calendar-weekday">{weekdays[index]}</span>}
+    const maxPreview = view === 'month' ? 3 : 6;
+    const hasOverflow = dateEvents.length > maxPreview;
+    return (
+      <div className={classes} key={key} role="gridcell" aria-selected={key === focusDate}>
+        <div className="inventory-calendar-day-heading">
+          <button
+            type="button"
+            className="inventory-calendar-day-select"
+            aria-label={dateLabel(key) + (dateEvents.length ? ', ' + dateEvents.length + ' eventos' : '')}
+            onClick={() => {
+              setFocusDate(key);
+              if (dateEvents.length > 0) setDayOverviewKey(key);
+            }}
+          >
+            <span>{keyDate(key).getUTCDate()}</span>
+            {dateEvents.length > 0 && <small>{dateEvents.length}</small>}
+          </button>
+          {view === 'week' && <span className="inventory-calendar-weekday">{weekdays[index]}</span>}
+        </div>
+        <div className="inventory-calendar-day-events">
+          {dateEvents.slice(0, maxPreview).map(event => renderEvent(event, view === 'month'))}
+          {hasOverflow && (
+            <button
+              className="inventory-calendar-overflow"
+              type="button"
+              onClick={() => {
+                setFocusDate(key);
+                setDayOverviewKey(key);
+              }}
+            >
+              +{dateEvents.length - maxPreview} más · ver día
+            </button>
+          )}
+        </div>
       </div>
-      <div className="inventory-calendar-day-events">
-        {dateEvents.slice(0, view === 'month' ? 3 : 6).map(event => renderEvent(event, view === 'month'))}
-        {dateEvents.length > (view === 'month' ? 3 : 6) && <button className="inventory-calendar-overflow" type="button" onClick={() => setFocusDate(key)}>
-          +{dateEvents.length - (view === 'month' ? 3 : 6)} más · ver día
-        </button>}
-      </div>
-    </div>;
+    );
   };
 
   const selectedTask = selectedEvent?.type === 'count_task' ? selectedEvent.raw : null;
@@ -576,10 +637,73 @@ export function InventoryOperationsCalendar({
       <span className="inventory-calendar-result-count">{filteredEvents.length} eventos</span>
     </div>
     <div className="inventory-calendar-summary">
-      <article><span>Conteos pendientes</span><b>{pendingCount}</b></article>
-      {canViewPurchases && <article><span>Recepciones previstas</span><b>{receiptCount}</b></article>}
-      <article><span>Movimientos del periodo</span><b>{movementCount}</b></article>
-      {overdueCount > 0 && <article className="is-overdue"><span>Requieren atención</span><b><AlertTriangle size={15}/>{overdueCount}</b></article>}
+      <article
+        role="button"
+        tabIndex={0}
+        className={`inventory-summary-card${typeFilter === 'count_task' ? ' is-active' : ''}`}
+        onClick={() => setTypeFilter(curr => curr === 'count_task' ? 'all' : 'count_task')}
+        title="Clic para filtrar conteos programados"
+      >
+        <span className="inventory-summary-icon" style={{ background: '#f3e8ff', color: '#7e22ce' }}>
+          <ClipboardCheck size={18} />
+        </span>
+        <div>
+          <span>Conteos pendientes</span>
+          <b>{pendingCount}</b>
+        </div>
+      </article>
+
+      {canViewPurchases && (
+        <article
+          role="button"
+          tabIndex={0}
+          className={`inventory-summary-card${typeFilter === 'purchase_receipt' ? ' is-active' : ''}`}
+          onClick={() => setTypeFilter(curr => curr === 'purchase_receipt' ? 'all' : 'purchase_receipt')}
+          title="Clic para filtrar recepciones previstas"
+        >
+          <span className="inventory-summary-icon" style={{ background: '#e0f2fe', color: '#0369a1' }}>
+            <Truck size={18} />
+          </span>
+          <div>
+            <span>Recepciones previstas</span>
+            <b>{receiptCount}</b>
+          </div>
+        </article>
+      )}
+
+      <article
+        role="button"
+        tabIndex={0}
+        className={`inventory-summary-card${typeFilter === 'movement' ? ' is-active' : ''}`}
+        onClick={() => setTypeFilter(curr => curr === 'movement' ? 'all' : 'movement')}
+        title="Clic para filtrar movimientos del periodo"
+      >
+        <span className="inventory-summary-icon" style={{ background: '#e0f2fe', color: '#0284c7' }}>
+          <ArrowDownUp size={18} />
+        </span>
+        <div>
+          <span>Movimientos del periodo</span>
+          <b>{movementCount}</b>
+        </div>
+      </article>
+
+      {overdueCount > 0 && (
+        <article
+          role="button"
+          tabIndex={0}
+          className={`inventory-summary-card is-overdue${statusFilter === 'overdue' ? ' is-active' : ''}`}
+          onClick={() => setStatusFilter(curr => curr === 'overdue' ? 'all' : 'overdue')}
+          title="Clic para filtrar eventos que requieren atención"
+        >
+          <span className="inventory-summary-icon" style={{ background: '#fee2e2', color: '#b91c1c' }}>
+            <AlertTriangle size={18} />
+          </span>
+          <div>
+            <span>Requieren atención</span>
+            <b>{overdueCount}</b>
+          </div>
+        </article>
+      )}
     </div>
     {loadError && <div className="inventory-calendar-alert" role="status"><AlertTriangle size={16}/><span>{loadError}</span>
       <button type="button" onClick={() => void reload()}>Reintentar</button></div>}
@@ -736,6 +860,187 @@ export function InventoryOperationsCalendar({
           <a className="button button-outline" href="/operaciones/compras">Abrir Compras <ChevronRight size={14}/></a>
         </>}
       </div>}
+    </Dialog>
+    {/* Modal Detalle / Desglose Completo de Operaciones del Día */}
+    <Dialog
+      open={Boolean(dayOverviewKey)}
+      onOpenChange={(open) => {
+        if (!open) {
+          setDayOverviewKey(null);
+          setDaySearch('');
+          setDayKindFilter('all');
+        }
+      }}
+      title={dayOverviewKey ? `Operaciones del ${dateLabel(dayOverviewKey, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}` : 'Operaciones del día'}
+      description={dayOverviewKey ? `${eventsForDay(dayOverviewKey).length} registros encontrados para esta fecha.` : undefined}
+      footer={
+        <div className="inventory-calendar-day-modal-footer">
+          {canManageInventory && (
+            <button
+              type="button"
+              className="button button-dark"
+              onClick={() => {
+                const targetDate = dayOverviewKey || focusDate;
+                setDayOverviewKey(null);
+                const defaultBranch = branchFilter !== 'all' ? branchFilter : branches[0]?.id || '';
+                const firstLocation = branchLocations(defaultBranch)[0]?.code || 'MAIN';
+                setDraft({
+                  date: targetDate,
+                  branchId: defaultBranch,
+                  scopeType: 'all',
+                  area: allAreas[0] || '',
+                  location: firstLocation,
+                  assignee: '',
+                  note: '',
+                  selectedLineKeys: [],
+                });
+                setShowCreate(true);
+              }}
+            >
+              <Plus size={15} /> Programar conteo en este día
+            </button>
+          )}
+          <button
+            type="button"
+            className="button button-outline"
+            onClick={() => setDayOverviewKey(null)}
+          >
+            Cerrar
+          </button>
+        </div>
+      }
+    >
+      {dayOverviewKey && (() => {
+        const dayEvents = eventsForDay(dayOverviewKey);
+        const entries = dayEvents.filter(e => e.type === 'movement' && (e.quantityDelta ?? 0) > 0);
+        const exits = dayEvents.filter(e => e.type === 'movement' && (e.quantityDelta ?? 0) < 0);
+        const counts = dayEvents.filter(e => e.type === 'count_task' || e.type === 'count_session');
+        const receipts = dayEvents.filter(e => e.type === 'purchase_receipt');
+
+        const filteredDayEvents = dayEvents.filter(event => {
+          if (dayKindFilter === 'in' && !(event.type === 'movement' && (event.quantityDelta ?? 0) > 0)) return false;
+          if (dayKindFilter === 'out' && !(event.type === 'movement' && (event.quantityDelta ?? 0) < 0)) return false;
+          if (dayKindFilter === 'count' && !(event.type === 'count_task' || event.type === 'count_session')) return false;
+          if (dayKindFilter === 'receipt' && event.type !== 'purchase_receipt') return false;
+          if (daySearch.trim()) {
+            const q = daySearch.toLowerCase();
+            return (event.title + ' ' + event.detail + ' ' + eventTypeLabel(event.type)).toLowerCase().includes(q);
+          }
+          return true;
+        });
+
+        return (
+          <div className="inventory-calendar-day-modal-content">
+            <div className="inventory-calendar-day-filter-pills">
+              <button
+                type="button"
+                className={`day-pill${dayKindFilter === 'all' ? ' is-active' : ''}`}
+                onClick={() => setDayKindFilter('all')}
+              >
+                Todos ({dayEvents.length})
+              </button>
+              <button
+                type="button"
+                className={`day-pill in${dayKindFilter === 'in' ? ' is-active' : ''}`}
+                onClick={() => setDayKindFilter('in')}
+              >
+                <ArrowUpRight size={13} /> Entradas ({entries.length})
+              </button>
+              <button
+                type="button"
+                className={`day-pill out${dayKindFilter === 'out' ? ' is-active' : ''}`}
+                onClick={() => setDayKindFilter('out')}
+              >
+                <ArrowDownRight size={13} /> Salidas ({exits.length})
+              </button>
+              {counts.length > 0 && (
+                <button
+                  type="button"
+                  className={`day-pill count${dayKindFilter === 'count' ? ' is-active' : ''}`}
+                  onClick={() => setDayKindFilter('count')}
+                >
+                  <ClipboardCheck size={13} /> Conteos ({counts.length})
+                </button>
+              )}
+              {receipts.length > 0 && (
+                <button
+                  type="button"
+                  className={`day-pill receipt${dayKindFilter === 'receipt' ? ' is-active' : ''}`}
+                  onClick={() => setDayKindFilter('receipt')}
+                >
+                  <Truck size={13} /> Recepciones ({receipts.length})
+                </button>
+              )}
+            </div>
+
+            <div className="inventory-calendar-day-search">
+              <Search size={14} />
+              <input
+                type="text"
+                placeholder="Buscar artículo, OT o motivo en este día…"
+                value={daySearch}
+                onChange={(e) => setDaySearch(e.target.value)}
+              />
+              {daySearch && (
+                <button type="button" onClick={() => setDaySearch('')}>Limpiar</button>
+              )}
+            </div>
+
+            <div className="inventory-calendar-day-event-list">
+              {filteredDayEvents.map((event) => {
+                const isMovement = event.type === 'movement';
+                const isEntry = isMovement && (event.quantityDelta ?? 0) > 0;
+                const isExit = isMovement && (event.quantityDelta ?? 0) < 0;
+                const deltaSign = isEntry ? '+' : isExit ? '−' : '';
+                const formattedDelta = isMovement && event.quantityDelta !== undefined
+                  ? `${deltaSign}${quantityLabel(Math.abs(event.quantityDelta))} ${event.unit || ''}`.trim()
+                  : null;
+
+                return (
+                  <article
+                    key={event.type + '-' + event.id}
+                    className={`inventory-calendar-day-card event-${event.type} status-${event.statusKey}${isEntry ? ' is-entry' : ''}${isExit ? ' is-exit' : ''}`}
+                  >
+                    <div className="day-card-icon">
+                      {isEntry ? <ArrowUpRight size={16} /> : isExit ? <ArrowDownRight size={16} /> : iconFor(event.type)}
+                    </div>
+                    <div className="day-card-info">
+                      <div className="day-card-header">
+                        <span className="day-card-type-badge">{eventTypeLabel(event.type)}</span>
+                        {event.overdue && (
+                          <span className="day-card-overdue-badge">
+                            <AlertTriangle size={11} /> Atrasado
+                          </span>
+                        )}
+                        <time className="day-card-time">{statusLabel(event.statusKey)}</time>
+                      </div>
+                      <h4 className="day-card-title">{event.title}</h4>
+                      <p className="day-card-detail">{event.detail}</p>
+                    </div>
+                    {formattedDelta && (
+                      <div className={`day-card-delta ${isEntry ? 'is-entry' : 'is-exit'}`}>
+                        {formattedDelta}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      className="button button-outline day-card-action-btn"
+                      onClick={() => openEvent(event)}
+                    >
+                      Ver detalle
+                    </button>
+                  </article>
+                );
+              })}
+              {!filteredDayEvents.length && (
+                <div className="inventory-calendar-day-empty">
+                  No hay operaciones que coincidan con los filtros de búsqueda en esta fecha.
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </Dialog>
   </section>;
 }

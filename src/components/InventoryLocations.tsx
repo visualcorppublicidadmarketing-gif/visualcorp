@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Archive, Layers3, LockKeyhole, MapPin, Plus, RotateCcw } from 'lucide-react';
+import { AlertTriangle, Archive, ArrowUpFromLine, Boxes, Flame, Layers3, LockKeyhole, MapPin, Plus, RotateCcw, Search, Truck } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
@@ -25,15 +25,47 @@ export function InventoryLocations({ id, hidden, canManage, catalogLinks = [] })
   const [draft, setDraft] = useState<any>(blankDraft);
   const [busy, setBusy] = useState(false);
   const [branchFilter, setBranchFilter] = useState('Todas');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!draft.branchId && branches[0]?.id) setDraft((current) => ({ ...current, branchId: branches[0].id }));
   }, [branches, draft.branchId]);
 
+  const itemCountByLocation = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of ((data as any).inventory || [])) {
+      if (!item.archived && item.branchId && item.location) {
+        const key = `${item.branchId}|${item.location}`;
+        map.set(key, (map.get(key) || 0) + (Number(item.quantity) > 0 ? 1 : 0));
+      }
+    }
+    return map;
+  }, [(data as any).inventory]);
+
+  const iconForType = (type: string) => {
+    switch (type) {
+      case 'storage': return <Boxes size={17} />;
+      case 'production': return <Flame size={17} />;
+      case 'receiving': return <Truck size={17} />;
+      case 'dispatch': return <ArrowUpFromLine size={17} />;
+      case 'quarantine': return <AlertTriangle size={17} />;
+      default: return <Layers3 size={17} />;
+    }
+  };
+
   const visible = useMemo(() => locations
-    .filter((location) => branchFilter === 'Todas' || location.branchId === branchFilter)
+    .filter((location) => {
+      if (branchFilter !== 'Todas' && location.branchId !== branchFilter) return false;
+      if (typeFilter !== 'all' && location.type !== typeFilter) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return (location.code + ' ' + location.name + ' ' + (location.branch || '')).toLowerCase().includes(q);
+      }
+      return true;
+    })
     .sort((a, b) => `${a.branch} ${a.name}`.localeCompare(`${b.branch} ${b.name}`, 'es')),
-  [locations, branchFilter]);
+  [locations, branchFilter, typeFilter, searchQuery]);
 
   const saveLocation = async (event) => {
     event.preventDefault();
@@ -114,13 +146,82 @@ export function InventoryLocations({ id, hidden, canManage, catalogLinks = [] })
       <label>Uso<select value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value })}>{locationTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <button className="button button-dark" disabled={busy || !draft.branchId}><Plus size={15}/>{busy ? 'Guardando…' : 'Añadir ubicación'}</button>
     </form>}
-    <div className="inventory-location-toolbar"><label>Ver sucursal<select value={branchFilter} onChange={(event) => setBranchFilter(event.target.value)}><option value="Todas">Todas</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label><span>{visible.length} ubicaciones</span></div>
+    <div className="inventory-location-toolbar">
+      <div className="inventory-location-filters">
+        <label>
+          Sucursal
+          <select value={branchFilter} onChange={(event) => setBranchFilter(event.target.value)}>
+            <option value="Todas">Todas las sucursales</option>
+            {branches.map((branch) => (
+              <option key={branch.id} value={branch.id}>{branch.name}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Tipo de uso
+          <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+            <option value="all">Todos los usos</option>
+            {locationTypes.map(([val, label]) => (
+              <option key={val} value={val}>{label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="inventory-location-search">
+          Buscar
+          <div className="inventory-location-search-box">
+            <Search size={14} />
+            <input
+              type="text"
+              placeholder="Código o nombre…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </label>
+      </div>
+      <span className="inventory-location-count">{visible.length} ubicaciones encontradas</span>
+    </div>
     <div className="inventory-location-grid">
-      {visible.map((location) => <article className={`inventory-location-card${!location.active ? ' is-inactive' : ''}`} key={location.id}>
-        <span className="inventory-location-icon"><Layers3 size={17}/></span>
-        <div className="inventory-location-copy"><b>{location.code} · {location.name}</b><small>{location.branch} · {locationTypes.find(([value]) => value === location.type)?.[1] || 'Otra'}{location.parentId ? ` · dentro de ${locations.find((row) => row.id === location.parentId)?.name || 'ubicación superior'}` : ''}</small><span>{location.active ? 'Activa' : 'Archivada'}{location.isSystem ? ' · Predeterminada del sistema' : ''}</span></div>
-        {canManage && !location.isSystem && <button className="button button-quiet" type="button" onClick={() => setLocationActive(location, !location.active)} aria-label={location.active ? `Archivar ${location.code}` : `Reactivar ${location.code}`}>{location.active ? <><Archive size={14}/> Archivar</> : <><RotateCcw size={14}/> Reactivar</>}</button>}
-      </article>)}
+      {visible.map((location) => {
+        const key = `${location.branchId}|${location.code}`;
+        const storedItems = itemCountByLocation.get(key) || 0;
+        const parentLocation = location.parentId ? locations.find((row) => row.id === location.parentId) : null;
+        return (
+          <article className={`inventory-location-card${!location.active ? ' is-inactive' : ''}`} key={location.id}>
+            <span className={`inventory-location-icon type-${location.type}`}>
+              {iconForType(location.type)}
+            </span>
+            <div className="inventory-location-copy">
+              <div className="inventory-location-header-row">
+                <b>{location.code} · {location.name}</b>
+                <span className={`location-status-badge ${location.active ? 'is-active' : 'is-archived'}`}>
+                  {location.active ? 'Activa' : 'Archivada'}
+                </span>
+                {location.isSystem && <span className="location-system-badge">Sistema</span>}
+              </div>
+              <small>
+                {location.branch} · {locationTypes.find(([value]) => value === location.type)?.[1] || 'Otra'}
+                {parentLocation ? ` · dentro de ${parentLocation.name} (${parentLocation.code})` : ''}
+              </small>
+              <div className="inventory-location-meta-row">
+                <span className={`location-stock-pill ${storedItems > 0 ? 'has-stock' : 'no-stock'}`}>
+                  {storedItems > 0 ? `${storedItems} artículos con saldo` : 'Sin saldo activo'}
+                </span>
+              </div>
+            </div>
+            {canManage && !location.isSystem && (
+              <button
+                className="button button-quiet"
+                type="button"
+                onClick={() => setLocationActive(location, !location.active)}
+                aria-label={location.active ? `Archivar ${location.code}` : `Reactivar ${location.code}`}
+              >
+                {location.active ? <><Archive size={14}/> Archivar</> : <><RotateCcw size={14}/> Reactivar</>}
+              </button>
+            )}
+          </article>
+        );
+      })}
       {!visible.length && <div className="inventory-empty">No hay ubicaciones configuradas para este filtro.</div>}
     </div>
   </section>;

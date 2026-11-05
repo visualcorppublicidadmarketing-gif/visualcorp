@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ClipboardPaste, FileText, ImagePlus, PackagePlus, Pencil, Plus, Save, Trash2, Upload, X } from 'lucide-react';
+import { ClipboardPaste, FileText, Globe, ImagePlus, PackagePlus, Pencil, Plus, Save, Trash2, Upload, Workflow, X } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { useWorkspace } from '../../app/workspace';
 import { supabase } from '../../lib/supabaseClient';
@@ -85,7 +85,21 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
     setProducts(p.data || []); setTemplates(t.data || []); setRoutes(Object.fromEntries((r.data || []).map((row) => [row.catalog_product_id, row.workflow_code])));
   }, [organizationId]);
   useEffect(() => { void refresh(); }, [refresh]);
-  const visible = useMemo(() => products.filter((p) => (p.name + ' ' + p.sku + ' ' + p.id + ' ' + p.description + ' ' + (p.subcategory || p.category_id)).toLowerCase().includes(query.toLowerCase())), [products, query]);
+  const [selectedCategory, setSelectedCategory] = useState('Todas');
+  const allCategories = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of products) {
+      const cat = p.subcategory || p.category_id;
+      if (cat && String(cat).trim()) set.add(String(cat).trim());
+    }
+    return ['Todas', ...Array.from(set).sort((a, b) => a.localeCompare(b, 'es'))];
+  }, [products]);
+
+  const visible = useMemo(() => products.filter((p) => {
+    const cat = p.subcategory || p.category_id || '';
+    if (selectedCategory !== 'Todas' && cat !== selectedCategory) return false;
+    return (p.name + ' ' + p.sku + ' ' + p.id + ' ' + p.description + ' ' + cat).toLowerCase().includes(query.toLowerCase());
+  }), [products, query, selectedCategory]);
 
   const openEdit = (product?: any) => {
     setError(''); setNotice(''); setImageMessage('');
@@ -214,17 +228,63 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
     <header className="standard-products-heading"><div><span className="eyebrow">CATÁLOGO · PERSONALIZADOS</span><h2 id="standard-products-title">Productos estándar para venta</h2><p>Crea modelos que se reutilizan al cotizar y vender: precios fijos o por cantidad, especificaciones y opciones que cambian en cada pedido.</p></div>{canEdit && <button className="button button-dark" type="button" onClick={() => openEdit()}><PackagePlus size={16}/> Nuevo producto</button>}</header>
     {notice && <p className="standard-products-notice" role="status">{notice}</p>}{error && !draft && <p className="standard-products-error" role="alert">{error}</p>}
     <div className="standard-products-separation"><b>Catálogo de venta</b><span>Las plantillas aquí no representan existencias físicas ni generan movimientos de stock.</span></div>
-    <div className="standard-products-search"><input aria-label="Buscar productos estándar" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar producto estándar"/><span>{visible.length} productos</span></div>
+    <div className="standard-products-filter-bar">
+      <div className="standard-products-search">
+        <input aria-label="Buscar productos estándar" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar producto estándar por nombre, SKU o categoría…"/>
+        <span>{visible.length} productos</span>
+      </div>
+      <div className="standard-products-categories" role="group" aria-label="Filtrar por categoría">
+        {allCategories.map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            className={`standard-cat-chip${selectedCategory === cat ? ' is-active' : ''}`}
+            onClick={() => setSelectedCategory(cat)}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+    </div>
     <div className="standard-products-list">{visible.map((product) => {
       const details = product.custom_options?.standard_details || {};
       const scales = (Array.isArray(product.price_scales) ? product.price_scales : []).filter((scale: any) => scale && scale.qty != null && (scale.pvp != null || scale.price != null));
       const fromPrice = scales.find((scale: any) => Number(scale.qty) === 1)?.pvp ?? scales.find((scale: any) => Number(scale.qty) === 1)?.price ?? product.price;
-      const productUnit = product.calc_type === 'm2' ? ' / m²' : ' / unidad';
-      const priceSummary = details.price_model === 'quantity' || scales.length ? 'Por cantidad · desde ' + formatPrice(Number(fromPrice)) + productUnit : 'Precio fijo · ' + formatPrice(Number(product.price)) + productUnit;
-      const specSummary = [details.materials && 'Materiales: ' + details.materials, details.colors && 'Colores: ' + details.colors, details.dimensions && 'Medidas: ' + details.dimensions].filter(Boolean).join(' · ');
+      const productUnit = product.calc_type === 'm2' ? ' / m²' : ' / u.';
+      const priceSummary = details.price_model === 'quantity' || scales.length ? 'Escalas · desde ' + formatPrice(Number(fromPrice)) + productUnit : 'Precio fijo · ' + formatPrice(Number(product.price)) + productUnit;
+      const specSummary = [details.materials && 'Material: ' + details.materials, details.colors && 'Color: ' + details.colors, details.dimensions && 'Medidas: ' + details.dimensions].filter(Boolean).join(' · ');
       const workflowRoute = routes[product.id] ? templates.find((template) => template.code === routes[product.id])?.name || routes[product.id] : '';
-      return <article key={product.id}><div className="standard-product-thumb">{(product.image_url || product.images?.[0]) ? <img src={product.image_url || product.images[0]} alt={`Referencia de ${product.name}`}/> : <ImagePlus size={17}/>}</div><div className="standard-product-row-copy"><b>{product.name}</b><small>{product.subcategory || product.category_id} · {workflowRoute || 'Ruta por definir'}</small><small className="standard-product-price-summary">{priceSummary}{specSummary ? ' · ' + specSummary : ''}</small><CatalogProductCode value={product.sku || product.id} showBarcode barcodeValue={product.sku || ''}/></div><span className={product.is_published ? 'is-published' : ''}>{product.is_published ? 'Publicado' : 'Borrador'}</span><button className="button button-outline" type="button" onClick={() => setDetailProduct({ ...product, family: product.subcategory || product.category_id, workflowRoute })}><FileText size={14}/> Ficha</button>{canEdit && <button className="button button-outline" type="button" onClick={() => openEdit(product)}><Pencil size={14}/> Editar</button>}</article>;
-    })}{!visible.length && <p className="standard-products-empty">Crea aquí modelos de productos que puedas personalizar y vender más de una vez.</p>}</div>
+      return (
+        <article key={product.id} className="standard-product-card">
+          <div className="standard-product-thumb">
+            {(product.image_url || product.images?.[0]) ? (
+              <img src={product.image_url || product.images[0]} alt={`Referencia de ${product.name}`}/>
+            ) : (
+              <ImagePlus size={19}/>
+            )}
+          </div>
+          <div className="standard-product-row-copy">
+            <div className="standard-product-title-row">
+              <b>{product.name}</b>
+              <span className={`standard-status-badge ${product.is_published ? 'is-published' : 'is-draft'}`}>
+                {product.is_published ? <><Globe size={11}/> Publicado</> : <><FileText size={11}/> Borrador</>}
+              </span>
+            </div>
+            <div className="standard-product-tags-row">
+              <span className="standard-tag category">{product.subcategory || product.category_id}</span>
+              {workflowRoute && <span className="standard-tag route"><Workflow size={11}/> {workflowRoute}</span>}
+              <span className="standard-tag calc">{product.calc_type === 'm2' ? 'm²' : 'unidad'}</span>
+            </div>
+            <small className="standard-product-price-summary">{priceSummary}{specSummary ? ' · ' + specSummary : ''}</small>
+            <CatalogProductCode value={product.sku || product.id} showBarcode barcodeValue={product.sku || ''}/>
+          </div>
+          <div className="standard-product-actions">
+            <button className="button button-outline" type="button" onClick={() => setDetailProduct({ ...product, family: product.subcategory || product.category_id, workflowRoute })}><FileText size={14}/> Ficha</button>
+            {canEdit && <button className="button button-outline" type="button" onClick={() => openEdit(product)}><Pencil size={14}/> Editar</button>}
+          </div>
+        </article>
+      );
+    })}{!visible.length && <p className="standard-products-empty">No hay productos estándar que coincidan con estos filtros.</p>}</div>
     {canManageRoutes && <details className="standard-workflow-builder"><summary><Plus size={15}/> Crear ruta de producción por áreas</summary><p>Estas etapas se copian al trabajo que se genere desde cada venta; las tareas ya creadas conservan su secuencia.</p><form onSubmit={saveTemplate}><label>Nombre de la ruta<input required minLength={3} maxLength={100} value={templateName} onChange={(event) => setTemplateName(event.target.value)} placeholder="Recuerdo de acrílico personalizado"/></label><div className="standard-workflow-steps">{steps.map((step, index) => <div key={index}><select aria-label={'Área de etapa ' + (index + 1)} value={step.area} onChange={(event) => setSteps((old) => old.map((row, rowIndex) => rowIndex === index ? { ...row, area: event.target.value } : row))}>{AREAS.map((area) => <option key={area.code} value={area.code}>{area.name}</option>)}</select><input aria-label={'Nombre de etapa ' + (index + 1)} value={step.title} maxLength={140} onChange={(event) => setSteps((old) => old.map((row, rowIndex) => rowIndex === index ? { ...row, title: event.target.value } : row))}/><button type="button" aria-label={'Eliminar etapa ' + (index + 1)} disabled={steps.length === 1} onClick={() => setSteps((old) => old.filter((_, rowIndex) => rowIndex !== index))}><Trash2 size={14}/></button></div>)}</div><div className="standard-workflow-actions"><button className="button button-outline" type="button" disabled={steps.length >= 16} onClick={() => setSteps((old) => [...old, { area: 'TAL', title: '' }])}><Plus size={14}/> Añadir etapa</button><button className="button button-dark" type="submit" disabled={busy}><Save size={14}/> Guardar ruta</button></div></form></details>}
 
     <CatalogProductDetailDialog product={detailProduct} onClose={() => setDetailProduct(null)}/>

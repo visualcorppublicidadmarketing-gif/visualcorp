@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Boxes, CircleAlert, ClipboardList, ClipboardCheck, DollarSign, Plus, Search, Trash2, LayoutGrid, List, ChartNoAxesCombined, Image as ImageIcon, SlidersHorizontal, Ruler } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Boxes, CalendarDays, CircleAlert, ClipboardList, ClipboardCheck, Disc, DollarSign, Droplets, FileSpreadsheet, Flame, Image as ImageIcon, Layers, LayoutGrid, List, MapPin, PackageCheck, Plus, Ruler, Search, ShoppingCart, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { useWorkspace, formatDate, formatMoney } from '../app/workspace';
 import { PageHeading } from '../app/layout';
 import { useAuth } from '../auth/AuthProvider';
@@ -550,7 +550,48 @@ export function InventoryWorkspace() {
       <button type="button" aria-pressed={inventoryBrandScope==='giga'} onClick={()=>{setInventoryBrandScope('giga');setBranch('Todas');setCategory('Todas');}}>Giga <span>{new Set(items.filter(item=>!item.archived&&brandOf(item)==='giga').map(item=>item.remoteItemId||item.sku)).size}</span></button>
       <small>Los traspasos entre sucursales conservan responsable, motivo y registro de movimiento.</small>
     </nav>
-    <nav className="inventory-section-nav" aria-label="Secciones del inventario"><button type="button" aria-pressed={activeSection==='catalog'} onClick={()=>setActiveSection('catalog')}>Artículos físicos</button><button type="button" aria-pressed={activeSection==='live-rolls'} onClick={()=>setActiveSection('live-rolls')}>Rollos en vivo</button><button type="button" aria-pressed={activeSection==='live-inks'} onClick={()=>setActiveSection('live-inks')}>Tintas en vivo</button><button type="button" aria-pressed={activeSection==='stock'} onClick={()=>setActiveSection('stock')}>Existencias</button><button type="button" aria-pressed={activeSection==='calendar'} onClick={()=>setActiveSection('calendar')}>Calendario</button><button type="button" aria-pressed={activeSection==='counts'} onClick={()=>setActiveSection('counts')}>Conteos</button><button type="button" aria-pressed={activeSection==='locations'} onClick={()=>setActiveSection('locations')}>Ubicaciones</button>{canViewStandardProducts&&<button type="button" aria-pressed={activeSection==='standard-products'} onClick={()=>setActiveSection('standard-products')}>Productos estándar</button>}<button type="button" aria-pressed={activeSection==='integrations'} onClick={()=>setActiveSection('integrations')}>POS y producción</button><button type="button" aria-pressed={activeSection==='imports'} onClick={()=>setActiveSection('imports')}>Importaciones</button><button type="button" aria-pressed={activeSection==='movements'} onClick={()=>setActiveSection('movements')}>Movimientos</button><a href="/operaciones/compras">Compras</a></nav>
+        <nav className="inventory-section-nav" aria-label="Secciones del inventario">
+      <button type="button" aria-pressed={activeSection === 'catalog'} onClick={() => setActiveSection('catalog')}>
+        <Boxes size={14} /> Artículos físicos
+      </button>
+      <button type="button" aria-pressed={activeSection === 'live-rolls'} onClick={() => setActiveSection('live-rolls')}>
+        <Disc size={14} /> Rollos en vivo
+      </button>
+      <button type="button" aria-pressed={activeSection === 'live-inks'} onClick={() => setActiveSection('live-inks')}>
+        <Droplets size={14} /> Tintas en vivo
+      </button>
+      <button type="button" aria-pressed={activeSection === 'stock'} onClick={() => setActiveSection('stock')}>
+        <PackageCheck size={14} /> Existencias
+      </button>
+      <button type="button" aria-pressed={activeSection === 'calendar'} onClick={() => setActiveSection('calendar')}>
+        <CalendarDays size={14} /> Calendario
+      </button>
+      <button type="button" aria-pressed={activeSection === 'counts'} onClick={() => setActiveSection('counts')}>
+        <ClipboardCheck size={14} /> Conteos
+        {pendingPhysicalCount > 0 && <span className="inventory-nav-badge">{pendingPhysicalCount}</span>}
+      </button>
+      <button type="button" aria-pressed={activeSection === 'locations'} onClick={() => setActiveSection('locations')}>
+        <MapPin size={14} /> Ubicaciones
+      </button>
+      {canViewStandardProducts && (
+        <button type="button" aria-pressed={activeSection === 'standard-products'} onClick={() => setActiveSection('standard-products')}>
+          <Layers size={14} /> Productos estándar
+        </button>
+      )}
+      <button type="button" aria-pressed={activeSection === 'integrations'} onClick={() => setActiveSection('integrations')}>
+        <Flame size={14} /> POS y producción
+      </button>
+      <button type="button" aria-pressed={activeSection === 'imports'} onClick={() => setActiveSection('imports')}>
+        <FileSpreadsheet size={14} /> Importaciones
+        {Number(pendingImportCount || 0) > 0 && <span className="inventory-nav-badge">{pendingImportCount}</span>}
+      </button>
+      <button type="button" aria-pressed={activeSection === 'movements'} onClick={() => setActiveSection('movements')}>
+        <ArrowLeftRight size={14} /> Movimientos
+      </button>
+      <a href="/operaciones/compras" className="inventory-nav-link-out">
+        <ShoppingCart size={14} /> Compras
+      </a>
+    </nav>
     {activeSection==='calendar'&&<InventoryOperationsCalendar organizationId={organizationId} branches={data.branches||[]} locations={data.inventoryLocations||[]} items={items} brandScope={inventoryBrandScope} canManageInventory={canManageInventory} canViewPurchases={hasPermission('purchases','view')} onNotice={flash} onStartCount={startScheduledCount}/>}
     <div className="inventory-stats" hidden={activeSection==='calendar'}><article><Boxes/><span>Artículos</span><b>{new Set(scopedItems.filter(i=>!i.archived).map(i=>i.remoteItemId||i.sku)).size}</b></article><article className={low.length?'inventory-stat-alert':''}><CircleAlert/><span>En mínimo / agotados</span><b>{low.length}</b></article><article className={pendingPhysicalCount?'inventory-stat-alert':''}><ClipboardCheck/><span>Conteos pendientes</span><b>{pendingPhysicalCount}</b></article><article><ArrowLeftRight/><span>Movimientos</span><b>{scopedEvents.length}</b></article><article><ClipboardList/><span>Áreas</span><b>{new Set(scopedItems.filter(i=>!i.archived).map(i=>i.area).filter(Boolean)).size}</b></article></div>
     {activeSection==='catalog'&&<div className="inventory-branch-switcher"><span className="inventory-branch-switcher-label"><Boxes size={16}/>Sucursal</span><div className="inventory-branch-switcher-track" role="group" aria-label="Seleccionar sucursal o inventario"><button type="button" aria-pressed={inventoryBrandScope==='visual'} onClick={()=>{setInventoryBrandScope('visual');setBranch('Todas');setCategory('Todas');}}>Visual</button><button type="button" aria-pressed={inventoryBrandScope==='giga'} onClick={()=>{setInventoryBrandScope('giga');setBranch('Todas');setCategory('Todas');}}>Giga</button></div><small>{inventoryBrandScope==='general'?'Vista general: selecciona Visual o Giga':inventoryBrandScope==='giga'?'Viendo artículos de Giga':'Viendo artículos de Visual'}</small></div>}
