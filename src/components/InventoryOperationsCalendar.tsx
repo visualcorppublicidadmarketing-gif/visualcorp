@@ -4,6 +4,7 @@ import {
   ClipboardCheck, Clock3, MapPin, PackageCheck, Plus, Truck, UserRound,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { inventoryCountDifference } from '../lib/inventoryMetrics.mjs';
 import { DatePicker } from './ui/Calendar';
 import { Dialog } from './ui/OperationalKit';
 import './InventoryOperationsCalendar.css';
@@ -63,6 +64,7 @@ const monthLabel = (key: string) => new Intl.DateTimeFormat('es-EC', {
 const timestampLabel = (value?: string) => value ? new Intl.DateTimeFormat('es-EC', {
   dateStyle: 'medium', timeStyle: 'short', timeZone: ZONE,
 }).format(new Date(value)) : '';
+const quantityLabel = (value: number) => new Intl.NumberFormat('es-EC', { maximumFractionDigits: 3 }).format(value);
 const unique = <T,>(values: T[]) => [...new Set(values)];
 const lineKey = (variant: string, location: string) => variant + '|' + (location || 'MAIN');
 const locationToken = (branchId: string, code: string) => branchId + '|' + code;
@@ -515,6 +517,10 @@ export function InventoryOperationsCalendar({
   const selectedPurchase = selectedEvent?.type === 'purchase_receipt' ? selectedEvent.raw : null;
   const selectedMovement = selectedEvent?.type === 'movement' ? selectedEvent.raw : null;
   const selectedSession = selectedEvent?.type === 'count_session' ? selectedEvent.raw : null;
+  const sessionDifferences = selectedSession ? selectedEvent.lines.filter((line: any) => {
+    const difference = line.status === 'counted' ? inventoryCountDifference(line.expected_quantity, line.counted_quantity) : null;
+    return difference !== null && difference !== 0;
+  }).length : 0;
   const selectedLineKeys = new Set(draft.selectedLineKeys);
   const toggleLine = (key: string, checked: boolean) => setDraft(current => ({
     ...current, selectedLineKeys: checked
@@ -694,7 +700,25 @@ export function InventoryOperationsCalendar({
           <span><PackageCheck size={14}/>{selectedEvent.lines.length} artículos</span>
           <span><Clock3 size={14}/>Abierta {timestampLabel(selectedSession.opened_at)}</span>
           {selectedSession.completed_at && <span><Check size={14}/>Cerrada {timestampLabel(selectedSession.completed_at)}</span>}
+          {sessionDifferences > 0 && <span><AlertTriangle size={14}/>{sessionDifferences} con diferencia frente al saldo de apertura</span>}
         </div>}
+        {selectedSession && <section className="inventory-calendar-count-results" aria-label="Resultado por artículo del conteo">
+          <h4>Resultado por artículo</h4>
+          <div className="inventory-calendar-count-list">{selectedEvent.lines.map((line: any) => {
+            const item = items.find(candidate => candidate.variantId === line.variant_id && candidate.branchId === selectedSession.branch_id && (candidate.location || 'MAIN') === (line.location_code || 'MAIN'))
+              || items.find(candidate => candidate.variantId === line.variant_id && candidate.branchId === selectedSession.branch_id);
+            const difference = line.status === 'counted' ? inventoryCountDifference(line.expected_quantity, line.counted_quantity) : null;
+            const unit = item?.unit || '';
+            const observed = line.status === 'counted' ? quantityLabel(Number(line.counted_quantity)) + ' ' + unit : line.status === 'skipped' ? 'Omitido' : 'Pendiente';
+            return <article key={line.id}>
+              <div><b>{itemTitle(item, 'Variante ' + String(line.variant_id).slice(0, 8))}</b><small>{line.location_code || 'MAIN'} · Saldo al abrir: {line.expected_quantity === null ? 'sin registro' : quantityLabel(Number(line.expected_quantity)) + ' ' + unit}</small></div>
+              <span>Observado: {observed}</span>
+              <strong className={difference === null ? '' : difference < 0 ? 'is-short' : difference > 0 ? 'is-over' : 'is-match'}>
+                {difference === null ? line.status === 'counted' ? 'Primer conteo' : 'Sin comparar' : difference === 0 ? 'Sin diferencia' : (difference > 0 ? '+' : '−') + quantityLabel(Math.abs(difference)) + ' ' + unit}
+              </strong>
+            </article>;
+          })}</div>
+        </section>}
         {selectedMovement && <div className="inventory-calendar-detail-facts">
           <span><MapPin size={14}/>{selectedMovement.location_code || 'MAIN'}</span>
           <span><Clock3 size={14}/>{timestampLabel(selectedMovement.created_at)}</span>

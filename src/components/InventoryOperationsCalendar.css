@@ -797,6 +797,64 @@
   color: #805191;
 }
 
+.inventory-calendar-count-results {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.inventory-calendar-count-results h4 {
+  margin: 0;
+  color: #554b5d;
+  font-size: 12px;
+}
+
+.inventory-calendar-count-list {
+  display: grid;
+  gap: 7px;
+  max-height: 280px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.inventory-calendar-count-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 7px 12px;
+  padding: 9px 10px;
+  border: 1px solid #eee8f0;
+  border-radius: 8px;
+  background: #fcfbfd;
+}
+
+.inventory-calendar-count-list article b,
+.inventory-calendar-count-list article small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.inventory-calendar-count-list article b {
+  color: #423b49;
+  font-size: 11px;
+}
+
+.inventory-calendar-count-list article small,
+.inventory-calendar-count-list article span {
+  color: #79717f;
+  font-size: 10px;
+}
+
+.inventory-calendar-count-list article strong {
+  color: #605368;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.inventory-calendar-count-list article strong.is-short { color: #964b3f; }
+.inventory-calendar-count-list article strong.is-over { color: #75458a; }
+.inventory-calendar-count-list article strong.is-match { color: #3f7350; }
+
 .inventory-calendar-detail .inventory-calendar-note {
   padding: 9px;
   border-radius: 8px;
@@ -975,6 +1033,9 @@
 }
 
 @media (max-width: 760px) {
+  .inventory-calendar-count-list article {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .inventory-calendar-heading {
     align-items: flex-start;
   }
