@@ -67,6 +67,8 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ## Continuidad del trabajo
 
+- **Diálogos y avisos (5 de noviembre de 2026):** refinamiento aislado desde `origin/main` (`a447842`) en `codex/dialog-alert-refinement-20261105`. Las confirmaciones críticas usan efectos discretos por defecto; el aviso global ahora admite cierre manual, lectores de pantalla, tema oscuro/claro y espacio seguro móvil. Se corrigió el temporizador para que un aviso anterior no quite uno más reciente. `npm run build:checked` pasó; cambios locales sin publicación.
+
 - **Planificación de Marketing (4 de noviembre de 2026):** las campañas agrupan publicaciones y tareas; el calendario incorpora mes con selección de varios días, semana por horas y día actual en intervalos de 30 minutos. El arrastre abre la ficha con el periodo u horario seleccionado. Las tareas mantienen su propio plazo y no reciben canal ni formato social.
 
 - **Acceso al manual (26 de octubre de 2026):** PR #96 integró la biblioteca y sus 43 recursos estáticos. Esta corrección valida en Vercel los roles internos antes de servir `/manual-aprendizaje/fuente/*` y marca la respuesta como privada, sin caché. El contenido quedó en el historial de dos repositorios públicos; bloquear el acceso web no sanea las copias de GitHub. Seguimiento en [docs/manual-aprendizaje/README.md](docs/manual-aprendizaje/README.md).
