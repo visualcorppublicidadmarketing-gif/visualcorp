@@ -38,7 +38,7 @@ type Props = {
   selectedIds: Set<string>;
   onToggle: (postId: string) => void;
   onSelect: (post: MarketingCalendarPost) => void;
-  onCreate: (date: string) => void;
+  onCreate: (date?: string, time?: string) => void;
   onReschedule: (post: MarketingCalendarPost, date: string) => void;
   onQuickReschedule?: (post: MarketingCalendarPost, date: string, time?: string) => void;
   onStatusChange: (post: MarketingCalendarPost, status: string) => void;
@@ -173,6 +173,8 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
   const [anchor, setAnchor] = useState(() => new Date());
   const [view, setView] = useState<MarketingCalendarView>('month');
   const [monthDensity, setMonthDensity] = useState<'compact' | 'detailed'>('compact');
+  const [hideSunday, setHideSunday] = useState<boolean>(() => { try { return window.localStorage.getItem('vc-calendar-hide-sunday') === 'true'; } catch { return false; } });
+  const toggleHideSunday = () => setHideSunday((prev) => { const next = !prev; try { window.localStorage.setItem('vc-calendar-hide-sunday', String(next)); } catch { /* ignore */ } return next; });
   const [isFocusMode, setIsFocusMode] = useState<boolean>(false);
   const [todayKey, setTodayKey] = useState(() => marketingDateKey());
   const [followCurrentWeek, setFollowCurrentWeek] = useState(true);
@@ -300,12 +302,13 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
     if (view === 'day') return [new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), 12)];
     if (view !== 'month') {
       const start = new Date(anchor); start.setDate(anchor.getDate() - ((anchor.getDay() + 6) % 7));
-      return Array.from({ length: 7 }, (_, index) => { const date = new Date(start); date.setDate(start.getDate() + index); return date; });
+      const daysCount = (view === 'week' && hideSunday) ? 6 : 7;
+      return Array.from({ length: daysCount }, (_, index) => { const date = new Date(start); date.setDate(start.getDate() + index); return date; });
     }
     const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
     const start = new Date(first); start.setDate(first.getDate() - ((first.getDay() + 6) % 7));
-    return Array.from({ length: 42 }, (_, index) => { const date = new Date(start); date.setDate(start.getDate() + index); return date; });
-  }, [anchor, view]);
+    const allCells = Array.from({ length: 42 }, (_, index) => { const date = new Date(start); date.setDate(start.getDate() + index); return date; }); return hideSunday ? allCells.filter((d) => d.getDay() !== 0) : allCells;
+  }, [anchor, view, hideSunday]);
   const postsInPeriod = useMemo(() => {
     const start = dateKey(cells[0]);
     const end = view === 'month'
@@ -313,7 +316,7 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
       : view === 'day' ? dateKey(cells[0])
         : view === 'kanban' || view === 'table'
         ? addMarketingDays(dateKey(cells[6]), 1)
-        : dateKey(cells[6]);
+        : dateKey(cells[cells.length - 1] || cells[0]);
     return posts.filter((post) => {
       const scheduledDate = String(post.scheduled_date || '').slice(0, 10);
       return /^\d{4}-\d{2}-\d{2}$/.test(scheduledDate) && scheduledDate >= start && scheduledDate <= end;
@@ -445,7 +448,7 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
   ];
   const weekRange = view === 'day'
     ? new Intl.DateTimeFormat('es-EC', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(cells[0])
-    : `${new Intl.DateTimeFormat('es-EC', { day: 'numeric', month: 'short' }).format(cells[0])} – ${new Intl.DateTimeFormat('es-EC', { day: 'numeric', month: 'short' }).format(cells[6])} ${cells[6].getFullYear()}`;
+    : `${new Intl.DateTimeFormat('es-EC', { day: 'numeric', month: 'short' }).format(cells[0])} – ${new Intl.DateTimeFormat('es-EC', { day: 'numeric', month: 'short' }).format(cells[cells.length - 1] || cells[0])} ${(cells[cells.length - 1] || cells[0]).getFullYear()}`;
   const monthHeading = monthLabel.format(anchor).replace(/^./, (letter) => letter.toLocaleUpperCase('es'));
   const monthSelectionStart = monthSelection ? (monthSelection.anchor < monthSelection.focus ? monthSelection.anchor : monthSelection.focus) : '';
   const monthSelectionEnd = monthSelection ? (monthSelection.anchor > monthSelection.focus ? monthSelection.anchor : monthSelection.focus) : '';
@@ -523,6 +526,17 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
               { id: 'detailed', label: 'Detallada', tooltip: 'Vista detallada con miniaturas' },
             ]}
           />
+        )}
+        {(view === 'week' || view === 'month') && (
+          <button
+            type="button"
+            className={`button button-outline vc-marketing-sunday-toggle-btn${hideSunday ? ' is-active' : ''}`}
+            onClick={toggleHideSunday}
+            title={hideSunday ? 'Mostrar domingos (Lun–Dom)' : 'Ocultar domingos (Lun–Sáb)'}
+            aria-pressed={hideSunday}
+          >
+            {hideSunday ? 'Lun–Sáb (Sin domingo)' : 'Lun–Dom'}
+          </button>
         )}
         <div className="vc-marketing-calendar-controls">
           <DatePicker label="Ir a fecha" value={dateKey(anchor)} onChange={(value)=>{if(!value)return;const [year,month,day]=value.split('-').map(Number);setFollowCurrentWeek(false);setAnchor(new Date(year,month-1,day,12));setExpandedDate(null);}}/>
@@ -631,7 +645,7 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
       </div>
     </div>
     {(view === 'month' || view === 'week' || view === 'day') && filteredPeriodPosts.length === 0 && calendarTasks.length === 0 && <div className="vc-marketing-calendar-empty" role="status">No hay publicaciones ni actividades para este periodo con los filtros actuales.</div>}
-    {view === 'week' || view === 'day' ? <MarketingTimeGrid view={view} dates={cells} today={today} posts={filteredPeriodPosts} tasks={calendarTasks} campaignNames={campaignNames} canEdit={canEdit} onPostSelect={onSelect} onTaskSelect={onTaskSelect} postActions={contextualActions} taskActions={taskActions} onCreateRange={onTaskCreateRange} onPostSchedule={onQuickReschedule || onReschedule} onTaskSchedule={onTaskQuickSchedule}/> : view === 'kanban' ? <>
+    {view === 'week' || view === 'day' ? <MarketingTimeGrid view={view} dates={cells} today={today} posts={filteredPeriodPosts} tasks={calendarTasks} campaignNames={campaignNames} canEdit={canEdit} onPostSelect={onSelect} onTaskSelect={onTaskSelect} postActions={contextualActions} taskActions={taskActions} onCreatePost={onCreate} onCreateRange={onTaskCreateRange} onPostSchedule={onQuickReschedule || onReschedule} onTaskSchedule={onTaskQuickSchedule}/> : view === 'kanban' ? <>
       <div className="vc-marketing-kanban-rule" role="note"><span><Check size={15}/></span><div><b>Regla de continuidad activa</b><small>Las fichas vencidas sin publicar pasan automáticamente al siguiente día hábil. Si el vencimiento cae sábado o domingo, pasan al lunes. Publicadas, terminadas y canceladas se respetan.{canEdit ? ' También se revisan al abrir el Kanban mientras el proceso diario completa el traslado en segundo plano.' : ' Tu perfil puede consultar la regla; los cambios requieren permiso de edición.'}</small></div></div>
       <div className="vc-marketing-kanban-board" role="list" aria-label={`Kanban semanal · ${weekRange}`}>
         {kanbanPosts.length === 0 && <div className="vc-marketing-calendar-empty" role="status">No hay publicaciones para esta semana con los filtros actuales. Prueba otros filtros o límpialos.</div>}
@@ -684,13 +698,14 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
         })}</tbody>
       </table>
     </div> : <>
-      <div ref={isWeekCalendarView(view) ? weekGridRef : undefined} onScroll={isWeekCalendarView(view) ? updateWeekScrollPosition : undefined} tabIndex={isWeekCalendarView(view) ? 0 : undefined} className="vc-marketing-calendar-grid" role="grid" aria-label={monthHeading} style={{'--calendar-cols':8} as React.CSSProperties}>
-      {view === 'month' && <div className="vc-marketing-calendar-weekday vc-marketing-calendar-week-number-heading" role="columnheader" aria-label="Semana del mes">Sem.</div>}{weekdays.map((day)=><div key={day} className="vc-marketing-calendar-weekday" role="columnheader">{day}</div>)}
+      <div ref={isWeekCalendarView(view) ? weekGridRef : undefined} onScroll={isWeekCalendarView(view) ? updateWeekScrollPosition : undefined} tabIndex={isWeekCalendarView(view) ? 0 : undefined} className={`vc-marketing-calendar-grid${hideSunday ? ' hide-sunday' : ''}`} role="grid" aria-label={monthHeading} style={{'--calendar-cols': hideSunday ? 7 : 8} as React.CSSProperties}>
+      {view === 'month' && <div className="vc-marketing-calendar-weekday vc-marketing-calendar-week-number-heading" role="columnheader" aria-label="Semana del mes">Sem.</div>}{(hideSunday ? weekdays.slice(0, 6) : weekdays).map((day)=><div key={day} className="vc-marketing-calendar-weekday" role="columnheader">{day}</div>)}
       {cells.map((date,cellIndex)=>{
         const key=dateKey(date), items=byDate.get(key)||[];
         const dayTasks = calendarTasks.filter((task) => String(task.start_date || task.due_date || '').slice(0, 10) <= key && String(task.due_date || task.start_date || '').slice(0, 10) >= key);
         const inMonth=date.getMonth()===anchor.getMonth();
-        const firstDateOfRow = cells.slice(cellIndex - (cellIndex % 7), cellIndex - (cellIndex % 7) + 7);
+        const rowSize = hideSunday ? 6 : 7;
+        const firstDateOfRow = cells.slice(cellIndex - (cellIndex % rowSize), cellIndex - (cellIndex % rowSize) + rowSize);
         const monthRepresentative = firstDateOfRow.find((rowDate) => rowDate.getMonth() === anchor.getMonth() && rowDate.getFullYear() === anchor.getFullYear());
         const weekLabel = weekOfMonth(view === 'month' ? monthRepresentative || date : date);
         const maxVisible=6;
@@ -698,7 +713,7 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
         const visibleTasks=dayTasks.slice(0,Math.max(0,maxVisible-visible.length));
         const remaining=items.length+dayTasks.length-visible.length-visibleTasks.length;
         const isSelectedRange=Boolean(monthSelection && key>=monthSelectionStart && key<=monthSelectionEnd);
-        return <React.Fragment key={key}>{cellIndex % 7 === 0 && <div className="vc-marketing-calendar-week-number" role="rowheader" aria-label={`Semana ${weekLabel}`}>{weekLabel}</div>}<ContextMenu displayContents trigger={false} className="vc-calendar-day-scope vc-marketing-context-menu" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" data-calendar-date={key} aria-label={`${key}, ${items.length} publicaciones y ${dayTasks.length} actividades`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${dragging?' can-drop':''}${expandedDate===key?' is-expanded':''}${isSelectedRange?' is-selected-range':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
+        return <React.Fragment key={key}>{cellIndex % rowSize === 0 && <div className="vc-marketing-calendar-week-number" role="rowheader" aria-label={`Semana ${weekLabel}`}>{weekLabel}</div>}<ContextMenu displayContents trigger={false} className="vc-calendar-day-scope vc-marketing-context-menu" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" data-calendar-date={key} aria-label={`${key}, ${items.length} publicaciones y ${dayTasks.length} actividades`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${dragging?' can-drop':''}${expandedDate===key?' is-expanded':''}${isSelectedRange?' is-selected-range':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
           onPointerDown={(event)=>startMonthSelection(event,key)}
           onDragOver={(event)=>{if(canEdit&&dragging)event.preventDefault();}}
           onDrop={(event)=>{event.preventDefault();event.currentTarget.classList.remove('is-drop-target');const rawId=event.dataTransfer.getData('text/plain')||dragging;if(!rawId)return;const post=posts.find((item)=>item.id===rawId);if(post){if(post.scheduled_date.slice(0,10)!==key){if(onQuickReschedule){onQuickReschedule(post,key,post.scheduled_time);}else{onReschedule(post,key);}}setDragging(null);return;}const task=calendarTasks.find((item)=>item.id===rawId);if(task){if(onTaskQuickSchedule){onTaskQuickSchedule(task,key,task.start_time||undefined,task.end_time||undefined);}else{onTaskReschedule(task,key);}setDragging(null);return;}setDragging(null);}}
