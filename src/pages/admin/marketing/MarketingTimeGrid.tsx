@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Clock, Plus, Sun, Moon } from 'lucide-react';
+import { Clock, Plus, Sun, Moon, ChevronDown, ChevronUp, X, Calendar, CheckSquare, Layers } from 'lucide-react';
 import { ContextMenu, type ContextMenuAction } from '../../../components/ui/ContextMenu';
 import type { MarketingCalendarPost, MarketingCalendarTask } from './MarketingCalendar';
 import type { MarketingTaskRange } from './MarketingPlanning';
@@ -16,6 +16,7 @@ type Props = {
   onTaskSelect: (task: MarketingCalendarTask) => void;
   postActions: (post: MarketingCalendarPost) => ContextMenuAction[];
   taskActions: (task: MarketingCalendarTask) => ContextMenuAction[];
+  onCreatePost?: (date?: string, time?: string) => void;
   onCreateRange: (range: MarketingTaskRange) => void;
   onPostSchedule?: (post: MarketingCalendarPost, date: string, time?: string) => void;
   onTaskSchedule?: (task: MarketingCalendarTask, date: string, startTime?: string, endTime?: string) => void;
@@ -93,6 +94,7 @@ export function MarketingTimeGrid({
   onTaskSelect,
   postActions,
   taskActions,
+  onCreatePost,
   onCreateRange,
   onPostSchedule,
   onTaskSchedule,
@@ -105,6 +107,25 @@ export function MarketingTimeGrid({
   const [dragOverTarget, setDragOverTarget] = useState<{ date: string; slot?: number } | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [nowMinute, setNowMinute] = useState(() => new Date().getHours() * 60 + new Date().getMinutes());
+  const [allDayCollapsed, setAllDayCollapsed] = useState(() => {
+    try {
+      return window.localStorage.getItem('vc-calendar-allday-collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const toggleAllDay = () => setAllDayCollapsed((curr) => {
+    const next = !curr;
+    try {
+      window.localStorage.setItem('vc-calendar-allday-collapsed', String(next));
+    } catch {}
+    return next;
+  });
+  const [pendingSlotCreation, setPendingSlotCreation] = useState<{
+    date: string;
+    time: string;
+    range: MarketingTaskRange;
+  } | null>(null);
 
   const selectionRef = useRef<Selection | null>(null);
   const onCreateRangeRef = useRef(onCreateRange);
@@ -205,7 +226,8 @@ export function MarketingTimeGrid({
       if (active) {
         const first = Math.min(active.anchor, active.focus);
         const last = Math.max(active.anchor, active.focus) + unitMinutes;
-        onCreateRangeRef.current(createRange(first, last, firstDate));
+        const range = createRange(first, last, firstDate);
+        setPendingSlotCreation({ date: range.startDate, time: range.startTime, range });
       }
       setActiveSelection(null);
     };
@@ -227,7 +249,8 @@ export function MarketingTimeGrid({
 
   const createRangeForSlot = (date: string, relativeSlot: number) => {
     const start = minutesForDate(date, firstDate) + earliestMinute + relativeSlot * unitMinutes;
-    onCreateRange(createRange(start, start + unitMinutes, firstDate));
+    const range = createRange(start, start + unitMinutes, firstDate);
+    setPendingSlotCreation({ date: range.startDate, time: range.startTime, range });
   };
 
   const getEntries = (date: string) => {
@@ -407,7 +430,7 @@ export function MarketingTimeGrid({
 
       <div ref={timelineRef} className="vc-marketing-time-scroll" role="grid" aria-label={view === 'day' ? `Día ${firstDate}; intervalos de 30 minutos` : `Semana ${firstDate} al ${lastDate}; 7 días completos`}>
         {/* Head with day titles */}
-        <div className="vc-marketing-time-head">
+        <div className="vc-marketing-time-head" style={{ '--vc-grid-day-count': dates.length } as React.CSSProperties}>
           <div className="vc-marketing-time-gutter" aria-hidden="true">Hora</div>
           {dates.map((date) => {
             const key = dateKey(date);
@@ -421,12 +444,29 @@ export function MarketingTimeGrid({
         </div>
 
         {/* All-day row */}
-        <div className="vc-marketing-all-day-row">
-          <div className="vc-marketing-time-gutter">Todo el día</div>
+        <div className={`vc-marketing-all-day-row${allDayCollapsed ? ' is-collapsed' : ' is-expanded'}`} style={{ '--vc-grid-day-count': dates.length } as React.CSSProperties}>
+          <div className="vc-marketing-time-gutter vc-marketing-all-day-gutter">
+            <div className="vc-marketing-all-day-meta">
+              <span>Todo el día</span>
+              <button
+                type="button"
+                className="vc-marketing-all-day-toggle"
+                onClick={toggleAllDay}
+                title={allDayCollapsed ? 'Desplegar todas las tarjetas de Todo el día' : 'Contraer sección Todo el día'}
+                aria-label={allDayCollapsed ? 'Desplegar sección Todo el día' : 'Contraer sección Todo el día'}
+                aria-expanded={!allDayCollapsed}
+              >
+                {allDayCollapsed ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+              </button>
+            </div>
+          </div>
           {dates.map((date) => {
             const key = dateKey(date);
             const entries = getEntries(key).allDay;
             const isDropTarget = dragOverTarget?.date === key && dragOverTarget?.slot === undefined;
+            const maxAllDay = view === 'day' ? 2 : 1;
+            const visibleEntries = allDayCollapsed ? entries.slice(0, maxAllDay) : entries;
+            const hiddenCount = entries.length - visibleEntries.length;
 
             return (
               <div
@@ -449,45 +489,74 @@ export function MarketingTimeGrid({
                 onDrop={(e) => handleAllDayDrop(e, key)}
               >
                 {canEdit && (
-                  <button type="button" className="vc-marketing-all-day-create" onClick={() => onCreateRange({ startDate: key, endDate: key })} aria-label={`Crear actividad sin horario el ${key}`}>
-                    + Actividad
-                  </button>
+                  <div className="vc-marketing-all-day-create-group">
+                    <button
+                      type="button"
+                      className="vc-marketing-all-day-create is-post"
+                      onClick={() => onCreatePost?.(key)}
+                      aria-label={`Crear publicación el ${key}`}
+                      title="Crear publicación"
+                    >
+                      + Publicación
+                    </button>
+                    <button
+                      type="button"
+                      className="vc-marketing-all-day-create is-task"
+                      onClick={() => onCreateRange({ startDate: key, endDate: key })}
+                      aria-label={`Crear actividad el ${key}`}
+                      title="Crear actividad"
+                    >
+                      + Actividad
+                    </button>
+                  </div>
                 )}
                 {isDropTarget && (
                   <div className="vc-marketing-drop-cue">Mover a Todo el día</div>
                 )}
                 {entries.length ? (
-                  entries.map((entry) => (
-                    <ContextMenu key={entry.key} displayContents trigger={false} className="vc-marketing-time-event-context" label={`Acciones para ${entry.title}`} actions={entry.kind === 'post' && entry.post ? postActions(entry.post) : entry.task ? taskActions(entry.task) : []}>
+                  <>
+                    {visibleEntries.map((entry) => (
+                      <ContextMenu key={entry.key} displayContents trigger={false} className="vc-marketing-time-event-context" label={`Acciones para ${entry.title}`} actions={entry.kind === 'post' && entry.post ? postActions(entry.post) : entry.task ? taskActions(entry.task) : []}>
+                        <button
+                          type="button"
+                          draggable={canEdit}
+                          onDragStart={(e) => handleDragStart(e, entry.kind, entry.post?.id || entry.task?.id || '', entry.title)}
+                          onDragEnd={() => { setDraggingItem(null); setDragOverTarget(null); }}
+                          className={`vc-marketing-time-event is-all-day tone-${entry.tone}${entry.overdue ? ' is-overdue' : ''}${draggingItem?.id === (entry.post?.id || entry.task?.id) ? ' is-dragging' : ''}`}
+                          onClick={() => createPostOrTask(entry)}
+                        >
+                          <b>{entry.title}</b>
+                          <span>{entry.subline}</span>
+                          {!allDayCollapsed && view === 'day' && canEdit && entry.kind === 'post' && entry.post && (
+                            <div className="vc-marketing-day-quick-times" onClick={(e) => e.stopPropagation()}>
+                              <span className="vc-marketing-quick-time-label">Fijar hora:</span>
+                              {['09:00', '11:30', '15:00', '17:30'].map((time) => (
+                                <button
+                                  key={time}
+                                  type="button"
+                                  className="vc-marketing-quick-time-btn"
+                                  onClick={() => onPostSchedule?.(entry.post!, key, time)}
+                                  title={`Asignar ${time}`}
+                                >
+                                  {time}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </button>
+                      </ContextMenu>
+                    ))}
+                    {hiddenCount > 0 && (
                       <button
                         type="button"
-                        draggable={canEdit}
-                        onDragStart={(e) => handleDragStart(e, entry.kind, entry.post?.id || entry.task?.id || '', entry.title)}
-                        onDragEnd={() => { setDraggingItem(null); setDragOverTarget(null); }}
-                        className={`vc-marketing-time-event is-all-day tone-${entry.tone}${entry.overdue ? ' is-overdue' : ''}${draggingItem?.id === (entry.post?.id || entry.task?.id) ? ' is-dragging' : ''}`}
-                        onClick={() => createPostOrTask(entry)}
+                        className="vc-marketing-all-day-more-pill"
+                        onClick={() => setAllDayCollapsed(false)}
+                        title="Desplegar todas las tarjetas de Todo el día"
                       >
-                        <b>{entry.title}</b>
-                        <span>{entry.subline}</span>
-                        {view === 'day' && canEdit && entry.kind === 'post' && entry.post && (
-                          <div className="vc-marketing-day-quick-times" onClick={(e) => e.stopPropagation()}>
-                            <span className="vc-marketing-quick-time-label">Fijar hora:</span>
-                            {['09:00', '11:30', '15:00', '17:30'].map((time) => (
-                              <button
-                                key={time}
-                                type="button"
-                                className="vc-marketing-quick-time-btn"
-                                onClick={() => onPostSchedule?.(entry.post!, key, time)}
-                                title={`Asignar ${time}`}
-                              >
-                                {time}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        +{hiddenCount} más ▾
                       </button>
-                    </ContextMenu>
-                  ))
+                    )}
+                  </>
                 ) : (
                   <span className="vc-marketing-all-day-empty">—</span>
                 )}
@@ -497,7 +566,7 @@ export function MarketingTimeGrid({
         </div>
 
         {/* Time body grid */}
-        <div className="vc-marketing-time-body" style={{ '--calendar-slots': visibleSlotCount } as React.CSSProperties}>
+        <div className="vc-marketing-time-body" style={{ '--calendar-slots': visibleSlotCount, '--vc-grid-day-count': dates.length } as React.CSSProperties}>
           {/* Time hour labels on the left gutter */}
           <div className="vc-marketing-time-gutter vc-marketing-time-labels">
             {Array.from({ length: visibleSlotCount }, (_, i) => {
@@ -645,6 +714,69 @@ export function MarketingTimeGrid({
           })}
         </div>
       </div>
+
+      {pendingSlotCreation && (
+        <div className="vc-marketing-slot-modal-overlay" onClick={() => setPendingSlotCreation(null)}>
+          <div
+            className="vc-marketing-slot-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Registrar en este horario"
+          >
+            <div className="vc-marketing-slot-modal-head">
+              <div>
+                <span className="eyebrow">REGISTRAR EN HORARIO</span>
+                <h3>{pendingSlotCreation.date} · {pendingSlotCreation.time}</h3>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Cerrar modal"
+                onClick={() => setPendingSlotCreation(null)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="vc-marketing-slot-modal-desc">
+              ¿Qué deseas registrar en este intervalo de la agenda?
+            </p>
+            <div className="vc-marketing-slot-modal-buttons">
+              <button
+                type="button"
+                className="vc-slot-choice-btn is-post"
+                onClick={() => {
+                  const target = pendingSlotCreation;
+                  setPendingSlotCreation(null);
+                  if (onCreatePost) onCreatePost(target.date, target.time);
+                  else onCreateRange(target.range);
+                }}
+              >
+                <div className="vc-slot-choice-icon"><Calendar size={20} /></div>
+                <div className="vc-slot-choice-text">
+                  <b>Nueva Publicación</b>
+                  <small>Post, Reel, Historia o TikTok con copy, arte y hora asignada ({pendingSlotCreation.time})</small>
+                </div>
+              </button>
+              <button
+                type="button"
+                className="vc-slot-choice-btn is-task"
+                onClick={() => {
+                  const target = pendingSlotCreation;
+                  setPendingSlotCreation(null);
+                  onCreateRange(target.range);
+                }}
+              >
+                <div className="vc-slot-choice-icon"><CheckSquare size={20} /></div>
+                <div className="vc-slot-choice-text">
+                  <b>Nueva Actividad / Tarea</b>
+                  <small>Grabación, sesión, diseño o logística ({pendingSlotCreation.range.startTime} a {pendingSlotCreation.range.endTime})</small>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

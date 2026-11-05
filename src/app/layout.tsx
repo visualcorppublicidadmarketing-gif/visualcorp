@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowUpRight, ChevronDown, ChevronRight, CircleHelp, LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, X, type LucideIcon } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, ChevronRight, CircleHelp, LayoutDashboard, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, X, type LucideIcon } from 'lucide-react';
 import { useWorkspace } from './workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { AdminCommandPalette } from '../components/AdminCommandPalette';
@@ -31,6 +31,29 @@ export function AppFrame({ area, children }: AppFrameProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return window.localStorage.getItem('vc-suite-sidebar-collapsed') === 'true'; } catch { return false; }
   });
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = window.localStorage.getItem('vc-suite-theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch {
+      return 'light';
+    }
+  });
+
+  const toggleTheme = () => {
+    setTheme((curr) => {
+      const next = curr === 'dark' ? 'light' : 'dark';
+      try { window.localStorage.setItem('vc-suite-theme', next); } catch {}
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', theme);
+  }, [theme]);
+
   const toggleSidebar = () => setSidebarCollapsed((collapsed) => {
     const next = !collapsed;
     try { window.localStorage.setItem('vc-suite-sidebar-collapsed', String(next)); } catch { /* Storage can be unavailable in private browsing. */ }

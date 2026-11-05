@@ -1,4 +1,5 @@
-.vc-marketing-calendar-grid{grid-template-columns:36px repeat(7,minmax(0,1fr))}
+.vc-marketing-calendar-grid{grid-template-columns:36px repeat(var(--calendar-cols, 8),minmax(0,1fr))}
+.vc-marketing-calendar-grid.hide-sunday{grid-template-columns:36px repeat(var(--calendar-cols, 7),minmax(0,1fr))}
 .vc-marketing-calendar.is-week .vc-marketing-calendar-grid{grid-template-columns:repeat(7,minmax(190px,1fr));grid-auto-rows:minmax(345px,auto);overflow-x:auto;align-items:stretch;overscroll-behavior-x:contain;scrollbar-width:thin}
 .vc-marketing-calendar.is-week .vc-marketing-calendar-weekday{position:sticky;top:0;z-index:2;border-right:1px solid #ebe7ef;text-align:left;font-size:10px}
 .vc-marketing-calendar.is-week .vc-marketing-calendar-day{min-height:345px;padding:9px;background:linear-gradient(180deg,#fdfcfe,#fff 125px)}
@@ -88,7 +89,7 @@
 .vc-marketing-calendar.is-month .vc-marketing-calendar-day.is-selected-range{position:relative;z-index:1;outline:2px solid #8a4caf;outline-offset:-3px;background:#f4eafa;box-shadow:inset 0 0 0 1px #fff}
 .vc-marketing-selection-hint{margin:0 0 8px;color:#766b7d;font-size:11px}
 .vc-marketing-time-scroll{max-height:min(72vh,900px);overflow:auto;border:1px solid #e5dfea;border-radius:13px;background:#fff;overscroll-behavior:contain;scrollbar-width:thin}
-.vc-marketing-time-head,.vc-marketing-all-day-row,.vc-marketing-time-body{display:grid;grid-template-columns:56px repeat(7,minmax(0,1fr));min-width:0;width:100%}
+.vc-marketing-time-head,.vc-marketing-all-day-row,.vc-marketing-time-body{display:grid;grid-template-columns:56px repeat(var(--vc-grid-day-count, 7),minmax(0,1fr));min-width:0;width:100%}
 .vc-marketing-time-grid.is-day .vc-marketing-time-head,.vc-marketing-time-grid.is-day .vc-marketing-all-day-row,.vc-marketing-time-grid.is-day .vc-marketing-time-body{grid-template-columns:64px minmax(320px,1fr);min-width:100%}
 .vc-marketing-time-head{position:sticky;top:0;z-index:5;border-bottom:1px solid #e7e1ec;background:#fcfbfd}
 .vc-marketing-time-gutter{position:sticky;left:0;z-index:4;display:flex;align-items:center;justify-content:center;padding:5px 3px;border-right:1px solid #e9e4ed;background:#faf8fc;color:#736a78;font-size:9px;font-weight:750;text-align:center}
@@ -313,4 +314,365 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 10px;
+}
+
+
+/* All-Day Collapsible and Action Group */
+.vc-marketing-all-day-row.is-collapsed .vc-marketing-all-day-cell {
+  min-height: 38px;
+  max-height: 74px;
+  overflow: hidden;
+}
+.vc-marketing-all-day-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.vc-marketing-all-day-toggle {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #dfd5e7;
+  border-radius: 5px;
+  background: #fff;
+  color: #76528b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.vc-marketing-all-day-toggle:hover {
+  background: #f7effb;
+  border-color: #8a4caf;
+}
+.vc-marketing-all-day-more-pill {
+  padding: 2px 7px;
+  border: 1px solid #dfd4e6;
+  border-radius: 999px;
+  background: #faf6fc;
+  color: #7b4c92;
+  font-size: 8px;
+  font-weight: 750;
+  cursor: pointer;
+  text-align: center;
+  width: 100%;
+  margin-top: 2px;
+  transition: all 0.14s ease;
+}
+.vc-marketing-all-day-more-pill:hover {
+  background: #efe4f6;
+  border-color: #8a4caf;
+  color: #5d2877;
+}
+.vc-marketing-all-day-create-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 3px;
+  flex-wrap: wrap;
+}
+.vc-marketing-all-day-create.is-post {
+  border-color: #d1b8e0;
+  color: #8736a5;
+}
+.vc-marketing-all-day-create.is-task {
+  border-color: #b8cde0;
+  color: #206da5;
+}
+.vc-marketing-sunday-toggle-btn.is-active {
+  border-color: #793fa0;
+  background: #f4ebfa;
+  color: #793fa0;
+  font-weight: 750;
+}
+
+/* Slot Choice Modal */
+.vc-marketing-slot-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 12, 22, 0.65);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+.vc-marketing-slot-modal {
+  width: min(100%, 460px);
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e2daf0;
+  padding: 22px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+}
+.vc-marketing-slot-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.vc-marketing-slot-modal-head h3 {
+  margin: 4px 0 0;
+  font-size: 16px;
+  color: #241c2c;
+  text-transform: capitalize;
+}
+.vc-marketing-slot-modal-desc {
+  margin: 0 0 18px;
+  font-size: 12.5px;
+  color: #766d7f;
+  line-height: 1.5;
+}
+.vc-marketing-slot-modal-buttons {
+  display: grid;
+  gap: 10px;
+}
+.vc-slot-choice-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #e4dcec;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+.vc-slot-choice-btn:hover {
+  border-color: #a51091;
+  background: #faf6fc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(165, 16, 145, 0.12);
+}
+.vc-slot-choice-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.vc-slot-choice-btn.is-post .vc-slot-choice-icon {
+  background: #f7eefb;
+  color: #9c27b0;
+}
+.vc-slot-choice-btn.is-task .vc-slot-choice-icon {
+  background: #ebf5fb;
+  color: #0288d1;
+}
+.vc-slot-choice-text b {
+  display: block;
+  font-size: 13px;
+  color: #241c2c;
+}
+.vc-slot-choice-text small {
+  display: block;
+  font-size: 10.5px;
+  color: #7f7488;
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+/* =========================================================================
+   Marketing Calendar - Dark Mode Themes
+   ========================================================================= */
+:root[data-theme='dark'] .vc-marketing-calendar,
+.work-app.theme-dark .vc-marketing-calendar,
+.work-app[data-theme='dark'] .vc-marketing-calendar,
+[data-theme='dark'] .vc-marketing-calendar {
+  --cal-bg: #14161f;
+  --cal-border: #262939;
+  --cal-surface: #1a1c28;
+  --cal-surface-hover: #222535;
+  --cal-text: #f0f1f5;
+  --cal-muted: #9ba0b4;
+}
+
+:root[data-theme='dark'] .vc-marketing-calendar .vc-marketing-calendar-head h2,
+.work-app.theme-dark .vc-marketing-calendar .vc-marketing-calendar-head h2 {
+  color: #f3f4f8;
+}
+
+:root[data-theme='dark'] .vc-marketing-calendar .vc-marketing-calendar-head p,
+.work-app.theme-dark .vc-marketing-calendar .vc-marketing-calendar-head p {
+  color: #9ba0b4;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-scroll,
+.work-app.theme-dark .vc-marketing-time-scroll {
+  background: #14161f;
+  border-color: #262939;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-head,
+.work-app.theme-dark .vc-marketing-time-head {
+  background: #1a1c28;
+  border-color: #262939;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-gutter,
+.work-app.theme-dark .vc-marketing-time-gutter {
+  background: #161822;
+  border-color: #262939;
+  color: #9ba0b4;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-day-heading,
+.work-app.theme-dark .vc-marketing-time-day-heading {
+  border-color: #262939;
+  color: #e5e7eb;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-day-heading.is-today,
+.work-app.theme-dark .vc-marketing-time-day-heading.is-today {
+  background: #251c33;
+  color: #d8b4fe;
+}
+
+:root[data-theme='dark'] .vc-marketing-all-day-row,
+.work-app.theme-dark .vc-marketing-all-day-row {
+  background: #181a25;
+  border-color: #262939;
+}
+
+:root[data-theme='dark'] .vc-marketing-all-day-cell,
+.work-app.theme-dark .vc-marketing-all-day-cell {
+  border-color: #262939;
+}
+
+:root[data-theme='dark'] .vc-marketing-all-day-toggle,
+.work-app.theme-dark .vc-marketing-all-day-toggle {
+  background: #222534;
+  border-color: #35384c;
+  color: #c4b5fd;
+}
+
+:root[data-theme='dark'] .vc-marketing-all-day-more-pill,
+.work-app.theme-dark .vc-marketing-all-day-more-pill {
+  background: #242234;
+  border-color: #3f3956;
+  color: #d8b4fe;
+}
+
+:root[data-theme='dark'] .vc-marketing-all-day-create,
+.work-app.theme-dark .vc-marketing-all-day-create {
+  background: #1f212f;
+  border-color: #373b52;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-day-column,
+.work-app.theme-dark .vc-marketing-time-day-column {
+  border-color: #262939;
+  background: repeating-linear-gradient(to bottom, #14161f 0, #14161f 41px, #1c1f2d 41px, #1c1f2d 42px);
+}
+
+:root[data-theme='dark'] .vc-marketing-time-slot,
+.work-app.theme-dark .vc-marketing-time-slot {
+  border-bottom-color: #1e2130;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-slot.is-hour,
+.work-app.theme-dark .vc-marketing-time-slot.is-hour {
+  border-top-color: #282c40;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-slot:hover,
+.work-app.theme-dark .vc-marketing-time-slot:hover {
+  background: #231f33;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-event,
+.work-app.theme-dark .vc-marketing-time-event {
+  background: #221f2d;
+  border-color: #3b334a;
+  border-left-color: #a855f7;
+  color: #f3f4f8;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-event b,
+.work-app.theme-dark .vc-marketing-time-event b {
+  color: #ffffff;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-event>span,
+.work-app.theme-dark .vc-marketing-time-event>span {
+  color: #b5adc0;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-event time,
+.work-app.theme-dark .vc-marketing-time-event time {
+  color: #c084fc;
+}
+
+:root[data-theme='dark'] .vc-marketing-calendar-grid,
+.work-app.theme-dark .vc-marketing-calendar-grid {
+  border-color: #262939;
+  background: #14161f;
+}
+
+:root[data-theme='dark'] .vc-marketing-calendar-weekday,
+.work-app.theme-dark .vc-marketing-calendar-weekday {
+  background: #1a1c28;
+  border-color: #262939;
+  color: #9ba0b4;
+}
+
+:root[data-theme='dark'] .vc-marketing-calendar-day,
+.work-app.theme-dark .vc-marketing-calendar-day {
+  background: #151722;
+  border-color: #262939;
+  color: #e2e4ec;
+}
+
+:root[data-theme='dark'] .vc-marketing-calendar-day.is-outside,
+.work-app.theme-dark .vc-marketing-calendar-day.is-outside {
+  background: #101118;
+  color: #5d6175;
+}
+
+:root[data-theme='dark'] .vc-marketing-calendar-day.is-today,
+.work-app.theme-dark .vc-marketing-calendar-day.is-today {
+  background: #201a2d;
+}
+
+:root[data-theme='dark'] .vc-marketing-slot-modal,
+.work-app.theme-dark .vc-marketing-slot-modal {
+  background: #161822;
+  border-color: #2c2f42;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme='dark'] .vc-marketing-slot-modal-head h3,
+.work-app.theme-dark .vc-marketing-slot-modal-head h3 {
+  color: #f3f4f8;
+}
+
+:root[data-theme='dark'] .vc-marketing-slot-modal-desc,
+.work-app.theme-dark .vc-marketing-slot-modal-desc {
+  color: #9ba0b4;
+}
+
+:root[data-theme='dark'] .vc-slot-choice-btn,
+.work-app.theme-dark .vc-slot-choice-btn {
+  background: #1b1d29;
+  border-color: #2a2d40;
+}
+
+:root[data-theme='dark'] .vc-slot-choice-btn:hover,
+.work-app.theme-dark .vc-slot-choice-btn:hover {
+  background: #252236;
+  border-color: #a855f7;
+}
+
+:root[data-theme='dark'] .vc-slot-choice-text b,
+.work-app.theme-dark .vc-slot-choice-text b {
+  color: #f3f4f8;
+}
+
+:root[data-theme='dark'] .vc-slot-choice-text small,
+.work-app.theme-dark .vc-slot-choice-text small {
+  color: #9ba0b4;
 }
