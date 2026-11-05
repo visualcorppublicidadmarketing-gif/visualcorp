@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Info, X } from 'lucide-react';
 import sourceCatalog from '../data/estebanicoSupabaseCatalog.snapshot.json';
 import { catalogImagesForProduct } from '../data/catalogProductImages';
 import { inventoryImageForSku } from '../data/inventoryProductImages';
@@ -158,6 +159,7 @@ function readState() {
 export function WorkspaceProvider({ children }) {
   const [data, setData] = useState(readState);
   const [notice, setNotice] = useState('');
+  const noticeTimerRef = useRef<number | null>(null);
   const { organizationId, user, hasPermission } = useAuth();
   useEffect(() => {
     if (!supabaseConfigured) return;
@@ -320,10 +322,22 @@ export function WorkspaceProvider({ children }) {
     return () => window.removeEventListener('storage', sync);
   }, []);
 
-  const flash = (message) => {
+  const flash = useCallback((message: string) => {
+    if (noticeTimerRef.current !== null) window.clearTimeout(noticeTimerRef.current);
     setNotice(message);
-    window.setTimeout(() => setNotice(''), 2800);
-  };
+    noticeTimerRef.current = window.setTimeout(() => {
+      setNotice((current) => current === message ? '' : current);
+      noticeTimerRef.current = null;
+    }, 4200);
+  }, []);
+  const dismissNotice = useCallback(() => {
+    if (noticeTimerRef.current !== null) window.clearTimeout(noticeTimerRef.current);
+    noticeTimerRef.current = null;
+    setNotice('');
+  }, []);
+  useEffect(() => () => {
+    if (noticeTimerRef.current !== null) window.clearTimeout(noticeTimerRef.current);
+  }, []);
   const add = (collection, value) => {
     const row = { ...value, id: value.id || uid(collection), createdAt: value.createdAt || new Date().toISOString() };
     setData((current) => ({ ...current, [collection]: [row, ...current[collection]] }));
@@ -331,8 +345,8 @@ export function WorkspaceProvider({ children }) {
   };
   const update = (collection, id, patch) => setData((current) => ({ ...current, [collection]: current[collection].map((row) => row.id === id ? { ...row, ...patch, updatedAt: new Date().toISOString() } : row) }));
   const remove = (collection, id) => setData((current) => ({ ...current, [collection]: current[collection].filter((row) => row.id !== id) }));
-  const api = useMemo(() => ({ data, setData, add, update, remove, flash, notice, refreshRemote }), [data, notice, refreshRemote]);
-  return <WorkspaceContext.Provider value={api}>{children}{notice && <div className="toast" role="status">{notice}</div>}</WorkspaceContext.Provider>;
+  const api = useMemo(() => ({ data, setData, add, update, remove, flash, notice, refreshRemote }), [data, flash, notice, refreshRemote]);
+  return <WorkspaceContext.Provider value={api}>{children}{notice && <div className="vc-app-toast" role="status" aria-live="polite" aria-atomic="true"><span className="vc-app-toast-icon" aria-hidden="true"><Info size={17}/></span><p>{notice}</p><button type="button" aria-label="Cerrar aviso" onClick={dismissNotice}><X size={17}/></button></div>}</WorkspaceContext.Provider>;
 }
 
 export function useWorkspace() {
