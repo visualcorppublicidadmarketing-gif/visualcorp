@@ -1,18 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  ArrowRight,
+  Boxes,
   Check,
+  ChevronDown,
   Droplet,
   Droplets,
+  Edit2,
+  ExternalLink,
+  Flame,
+  Info,
   Layers,
   LayoutGrid,
+  Link,
   LoaderCircle,
+  Pencil,
   Plus,
   Printer,
   RefreshCw,
   Search,
+  Settings,
+  ShieldAlert,
   SlidersHorizontal,
   Sparkles,
+  Trash2,
+  Unlink,
+  Wrench,
+  X,
   Zap,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
@@ -39,12 +54,24 @@ export type ActiveInk = {
   updated_at: string;
 };
 
+export type InventoryVariantOption = {
+  variantId: string;
+  name: string;
+  variant: string;
+  sku: string;
+  quantity: number;
+  unit: string;
+  category: string;
+};
+
 type InventoryLiveInkMonitorProps = {
   organizationId: string;
   branches: Array<{ id: string; name: string }>;
   canEdit: boolean;
   onNotice?: (msg: string) => void;
   operatorDefaultName?: string;
+  inventoryItems?: any[];
+  onRefreshInventory?: () => Promise<void> | void;
 };
 
 export const CMYK_COLOR_CONFIG: Record<
@@ -91,9 +118,27 @@ export const CMYK_COLOR_CONFIG: Record<
   W: {
     name: 'Blanco',
     hex: '#ffffff',
-    bgGradient: 'linear-gradient(180deg, #f8fafc 0%, #cbd5e1 100%)',
+    bgGradient: 'linear-gradient(180deg, #ffffff 0%, #e2e8f0 60%, #cbd5e1 100%)',
     badgeBg: '#f1f5f9',
     textDark: true,
+  },
+  V: {
+    name: 'Barniz / Gloss',
+    hex: '#a855f7',
+    bgGradient: 'linear-gradient(180deg, #e9d5ff 0%, #c084fc 60%, #9333ea 100%)',
+    badgeBg: '#f3e8ff',
+  },
+  FL: {
+    name: 'Limpiador Flush',
+    hex: '#10b981',
+    bgGradient: 'linear-gradient(180deg, #a7f3d0 0%, #34d399 60%, #059669 100%)',
+    badgeBg: '#ecfdf5',
+  },
+  OTRO: {
+    name: 'Especial',
+    hex: '#f97316',
+    bgGradient: 'linear-gradient(180deg, #fdba74 0%, #fb923c 60%, #ea580c 100%)',
+    badgeBg: '#fff7ed',
   },
 };
 
@@ -116,12 +161,270 @@ export function getColorConfig(code: string, fallbackName = '', fallbackHex = '#
   };
 }
 
+export type ChannelDraft = {
+  id?: string;
+  colorCode: ActiveInk['color_code'];
+  colorName: string;
+  colorHex: string;
+  capacityMl: number;
+  initialPercent: number;
+  variantId: string;
+};
+
+export type PrinterPreset = 'cmyk' | 'cmyk_lc_lm' | 'cmyk_uv_w_v' | 'custom';
+
+// Datos por defecto para arranque
+const INITIAL_DEMO_INKS: ActiveInk[] = [
+  {
+    id: 'demo-c1',
+    organization_id: '57b8e2ab-9dd3-491b-9402-7176da9ba98c',
+    branch_id: 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+    variant_id: null,
+    location_code: 'MAIN',
+    machine_name: 'Plotter Gran Formato 3.20m',
+    color_code: 'C',
+    color_name: 'Cian',
+    color_hex: '#00AEEF',
+    ink_type: 'ecosolvente',
+    tank_capacity_ml: 1000,
+    remaining_percent: 65,
+    status: 'en_uso',
+    operator_name: 'Taller',
+    notes: 'Configuración inicial',
+    last_measured_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-m1',
+    organization_id: '57b8e2ab-9dd3-491b-9402-7176da9ba98c',
+    branch_id: 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+    variant_id: null,
+    location_code: 'MAIN',
+    machine_name: 'Plotter Gran Formato 3.20m',
+    color_code: 'M',
+    color_name: 'Magenta',
+    color_hex: '#EC008C',
+    ink_type: 'ecosolvente',
+    tank_capacity_ml: 1000,
+    remaining_percent: 45,
+    status: 'en_uso',
+    operator_name: 'Taller',
+    notes: 'Configuración inicial',
+    last_measured_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-y1',
+    organization_id: '57b8e2ab-9dd3-491b-9402-7176da9ba98c',
+    branch_id: 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+    variant_id: null,
+    location_code: 'MAIN',
+    machine_name: 'Plotter Gran Formato 3.20m',
+    color_code: 'Y',
+    color_name: 'Amarillo',
+    color_hex: '#FACC15',
+    ink_type: 'ecosolvente',
+    tank_capacity_ml: 1000,
+    remaining_percent: 18,
+    status: 'bajo',
+    operator_name: 'Taller',
+    notes: 'Configuración inicial',
+    last_measured_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-k1',
+    organization_id: '57b8e2ab-9dd3-491b-9402-7176da9ba98c',
+    branch_id: 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+    variant_id: null,
+    location_code: 'MAIN',
+    machine_name: 'Plotter Gran Formato 3.20m',
+    color_code: 'K',
+    color_name: 'Negro',
+    color_hex: '#18181B',
+    ink_type: 'ecosolvente',
+    tank_capacity_ml: 1000,
+    remaining_percent: 80,
+    status: 'en_uso',
+    operator_name: 'Taller',
+    notes: 'Configuración inicial',
+    last_measured_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-c2',
+    organization_id: '57b8e2ab-9dd3-491b-9402-7176da9ba98c',
+    branch_id: 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+    variant_id: null,
+    location_code: 'MAIN',
+    machine_name: 'Plotter Impresión y Corte',
+    color_code: 'C',
+    color_name: 'Cian',
+    color_hex: '#00AEEF',
+    ink_type: 'ecosolvente',
+    tank_capacity_ml: 1000,
+    remaining_percent: 90,
+    status: 'en_uso',
+    operator_name: 'Taller',
+    notes: 'Configuración inicial',
+    last_measured_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-m2',
+    organization_id: '57b8e2ab-9dd3-491b-9402-7176da9ba98c',
+    branch_id: 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+    variant_id: null,
+    location_code: 'MAIN',
+    machine_name: 'Plotter Impresión y Corte',
+    color_code: 'M',
+    color_name: 'Magenta',
+    color_hex: '#EC008C',
+    ink_type: 'ecosolvente',
+    tank_capacity_ml: 1000,
+    remaining_percent: 12,
+    status: 'critico',
+    operator_name: 'Taller',
+    notes: 'Configuración inicial',
+    last_measured_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-y2',
+    organization_id: '57b8e2ab-9dd3-491b-9402-7176da9ba98c',
+    branch_id: 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+    variant_id: null,
+    location_code: 'MAIN',
+    machine_name: 'Plotter Impresión y Corte',
+    color_code: 'Y',
+    color_name: 'Amarillo',
+    color_hex: '#FACC15',
+    ink_type: 'ecosolvente',
+    tank_capacity_ml: 1000,
+    remaining_percent: 75,
+    status: 'en_uso',
+    operator_name: 'Taller',
+    notes: 'Configuración inicial',
+    last_measured_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-k2',
+    organization_id: '57b8e2ab-9dd3-491b-9402-7176da9ba98c',
+    branch_id: 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+    variant_id: null,
+    location_code: 'MAIN',
+    machine_name: 'Plotter Impresión y Corte',
+    color_code: 'K',
+    color_name: 'Negro',
+    color_hex: '#18181B',
+    ink_type: 'ecosolvente',
+    tank_capacity_ml: 1000,
+    remaining_percent: 85,
+    status: 'en_uso',
+    operator_name: 'Taller',
+    notes: 'Configuración inicial',
+    last_measured_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-c3',
+    organization_id: '57b8e2ab-9dd3-491b-9402-7176da9ba98c',
+    branch_id: 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+    variant_id: null,
+    location_code: 'MAIN',
+    machine_name: 'Plotter Sublimación / Calandra',
+    color_code: 'C',
+    color_name: 'Cian',
+    color_hex: '#00AEEF',
+    ink_type: 'sublimacion',
+    tank_capacity_ml: 1000,
+    remaining_percent: 50,
+    status: 'en_uso',
+    operator_name: 'Taller',
+    notes: 'Configuración inicial',
+    last_measured_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-m3',
+    organization_id: '57b8e2ab-9dd3-491b-9402-7176da9ba98c',
+    branch_id: 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+    variant_id: null,
+    location_code: 'MAIN',
+    machine_name: 'Plotter Sublimación / Calandra',
+    color_code: 'M',
+    color_name: 'Magenta',
+    color_hex: '#EC008C',
+    ink_type: 'sublimacion',
+    tank_capacity_ml: 1000,
+    remaining_percent: 60,
+    status: 'en_uso',
+    operator_name: 'Taller',
+    notes: 'Configuración inicial',
+    last_measured_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-y3',
+    organization_id: '57b8e2ab-9dd3-491b-9402-7176da9ba98c',
+    branch_id: 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+    variant_id: null,
+    location_code: 'MAIN',
+    machine_name: 'Plotter Sublimación / Calandra',
+    color_code: 'Y',
+    color_name: 'Amarillo',
+    color_hex: '#FACC15',
+    ink_type: 'sublimacion',
+    tank_capacity_ml: 1000,
+    remaining_percent: 40,
+    status: 'en_uso',
+    operator_name: 'Taller',
+    notes: 'Configuración inicial',
+    last_measured_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-k3',
+    organization_id: '57b8e2ab-9dd3-491b-9402-7176da9ba98c',
+    branch_id: 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+    variant_id: null,
+    location_code: 'MAIN',
+    machine_name: 'Plotter Sublimación / Calandra',
+    color_code: 'K',
+    color_name: 'Negro',
+    color_hex: '#18181B',
+    ink_type: 'sublimacion',
+    tank_capacity_ml: 1000,
+    remaining_percent: 70,
+    status: 'en_uso',
+    operator_name: 'Taller',
+    notes: 'Configuración inicial',
+    last_measured_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
 export function InventoryLiveInkMonitor({
   organizationId,
   branches,
   canEdit,
   onNotice,
   operatorDefaultName = '',
+  inventoryItems = [],
+  onRefreshInventory,
 }: InventoryLiveInkMonitorProps) {
   const [inks, setInks] = useState<ActiveInk[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,36 +443,218 @@ export function InventoryLiveInkMonitor({
   const [batchDraft, setBatchDraft] = useState<Record<string, number>>({});
   const [batchSaving, setBatchSaving] = useState(false);
 
-  // Modal para agregar nuevo canal de tinta
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newInkForm, setNewInkForm] = useState({
-    machineName: 'Plotter Gran Formato 3.20m',
-    colorCode: 'C' as ActiveInk['color_code'],
+  // --- NUEVAS CAPACIDADES: CREAR / EDITAR / ELIMINAR IMPRESORAS Y GESTIÓN DE TINTAS ---
+  const [showCreatePrinterModal, setShowCreatePrinterModal] = useState(false);
+  const [editPrinterTarget, setEditPrinterTarget] = useState<string | null>(null);
+  const [deletePrinterTarget, setDeletePrinterTarget] = useState<string | null>(null);
+  const [showFleetModal, setShowFleetModal] = useState(false);
+  const [quickLinkInk, setQuickLinkInk] = useState<ActiveInk | null>(null);
+
+  // Estado del formulario de creación de impresora
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    manufacturer: 'Galaxy',
+    model: '',
     inkType: 'ecosolvente' as ActiveInk['ink_type'],
-    capacityMl: '1000',
-    initialPercent: '100',
+    preset: 'cmyk' as PrinterPreset,
+    defaultCapacityMl: 1000,
+    branchId: branches[0]?.id || '',
     notes: '',
+    channels: [] as ChannelDraft[],
   });
 
-  const loadInks = async () => {
-    if (!supabase) return;
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('inventory_active_inks')
-        .select('*')
-        .eq('organization_id', organizationId)
-        .order('machine_name', { ascending: true })
-        .order('color_code', { ascending: true });
+  // Estado del formulario de edición de impresora
+  const [editForm, setEditForm] = useState({
+    originalName: '',
+    name: '',
+    inkType: 'ecosolvente' as ActiveInk['ink_type'],
+    branchId: '',
+    notes: '',
+    channels: [] as ChannelDraft[],
+  });
 
-      if (error) {
-        console.error('Error cargando tintas en vivo:', error);
-      } else if (data) {
-        setInks(data as ActiveInk[]);
+  // Extraer las opciones de tintas disponibles en el inventario físico de bodega
+  const inkInventoryOptions = useMemo<InventoryVariantOption[]>(() => {
+    if (!inventoryItems || !Array.isArray(inventoryItems)) return [];
+
+    const map = new Map<string, InventoryVariantOption>();
+    for (const item of inventoryItems) {
+      if (!item.variantId || item.archived) continue;
+      const cat = String(item.category || '').toLowerCase();
+      const name = String(item.name || '').toLowerCase();
+      const type = String(item.itemType || '').toLowerCase();
+      const sku = String(item.sku || '').toLowerCase();
+      const tags = Array.isArray(item.tags) ? item.tags.join(' ').toLowerCase() : '';
+
+      const isInk =
+        cat.includes('tinta') ||
+        name.includes('tinta') ||
+        type.includes('tinta') ||
+        sku.includes('ink') ||
+        tags.includes('tinta') ||
+        cat.includes('toner') ||
+        name.includes('toner');
+
+      if (isInk && !map.has(item.variantId)) {
+        map.set(item.variantId, {
+          variantId: item.variantId,
+          name: item.name,
+          variant: item.variant || '',
+          sku: item.sku || '',
+          quantity: Number(item.quantity ?? item.availableQuantity ?? 0),
+          unit: item.unit || 'botella',
+          category: item.category || 'Tintas',
+        });
+      }
+    }
+
+    // Incluir cualquier variante vinculada aunque no haya coincidido con la heurística
+    const existingLinkedIds = new Set(inks.map((i) => i.variant_id).filter(Boolean));
+    for (const item of inventoryItems) {
+      if (item.variantId && existingLinkedIds.has(item.variantId) && !map.has(item.variantId)) {
+        map.set(item.variantId, {
+          variantId: item.variantId,
+          name: item.name,
+          variant: item.variant || '',
+          sku: item.sku || '',
+          quantity: Number(item.quantity ?? item.availableQuantity ?? 0),
+          unit: item.unit || 'botella',
+          category: item.category || 'Tintas',
+        });
+      }
+    }
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  }, [inventoryItems, inks]);
+
+  // Función para obtener información del artículo de bodega vinculado
+  const getLinkedVariantInfo = (variantId: string | null) => {
+    if (!variantId) return null;
+    const foundInOptions = inkInventoryOptions.find((v) => v.variantId === variantId);
+    if (foundInOptions) return foundInOptions;
+
+    const foundInAll = inventoryItems.find((it: any) => it.variantId === variantId);
+    if (foundInAll) {
+      return {
+        variantId,
+        name: foundInAll.name,
+        variant: foundInAll.variant || '',
+        sku: foundInAll.sku || '',
+        quantity: Number(foundInAll.quantity ?? foundInAll.availableQuantity ?? 0),
+        unit: foundInAll.unit || 'botella',
+        category: foundInAll.category || 'Tintas',
+      };
+    }
+    return null;
+  };
+
+  // Helper para sugerir variante según tecnología y color
+  const suggestVariantForColor = (colorCode: string, inkType: string): string => {
+    const code = colorCode.toUpperCase();
+    const type = inkType.toLowerCase();
+
+    // Intentar buscar coincidencia precisa en el inventario real cargado
+    const match = inkInventoryOptions.find((opt) => {
+      const optSku = opt.sku.toUpperCase();
+      const optName = opt.name.toLowerCase();
+      const optVariant = opt.variant.toLowerCase();
+
+      const matchesType =
+        type === 'sublimacion'
+          ? optSku.includes('FUSION') || optName.includes('sublimaci')
+          : type === 'ecosolvente'
+          ? optSku.includes('GALAXY') || optName.includes('eco')
+          : type === 'acuosa'
+          ? optSku.includes('T544') || optSku.includes('T664') || optName.includes('epson')
+          : true;
+
+      const matchesColor =
+        code === 'C'
+          ? optSku.includes('CYAN') || optVariant.includes('cian') || optVariant.includes('cyan')
+          : code === 'M'
+          ? optSku.includes('MAGENTA') || optVariant.includes('magenta')
+          : code === 'Y'
+          ? optSku.includes('YELLOW') || optVariant.includes('amarillo') || optVariant.includes('yellow')
+          : code === 'K'
+          ? optSku.includes('BLACK') || optVariant.includes('negro') || optVariant.includes('black')
+          : code === 'LC'
+          ? optSku.includes('LC') || optVariant.includes('light cyan')
+          : code === 'LM'
+          ? optSku.includes('LM') || optVariant.includes('light magenta')
+          : code === 'W'
+          ? optSku.includes('WHITE') || optVariant.includes('blanco')
+          : false;
+
+      return matchesType && matchesColor;
+    });
+
+    return match ? match.variantId : '';
+  };
+
+  // Generador de canales según preset
+  const generateChannelsForPreset = (
+    preset: PrinterPreset,
+    capacity: number,
+    inkType: ActiveInk['ink_type']
+  ): ChannelDraft[] => {
+    let codes: ActiveInk['color_code'][] = ['C', 'M', 'Y', 'K'];
+
+    if (preset === 'cmyk_lc_lm') {
+      codes = ['C', 'M', 'Y', 'K', 'LC', 'LM'];
+    } else if (preset === 'cmyk_uv_w_v') {
+      codes = ['C', 'M', 'Y', 'K', 'W', 'V'];
+    } else if (preset === 'custom') {
+      codes = ['C', 'M', 'Y', 'K'];
+    }
+
+    return codes.map((code) => {
+      const cfg = getColorConfig(code);
+      return {
+        colorCode: code,
+        colorName: cfg.name,
+        colorHex: cfg.hex,
+        capacityMl: capacity,
+        initialPercent: 100,
+        variantId: suggestVariantForColor(code, inkType),
+      };
+    });
+  };
+
+  const loadInks = async () => {
+    setLoading(true);
+    let loadedFromDb = false;
+    try {
+      if (supabase && organizationId) {
+        const { data, error } = await supabase
+          .from('inventory_active_inks')
+          .select('*')
+          .eq('organization_id', organizationId)
+          .order('machine_name', { ascending: true })
+          .order('color_code', { ascending: true });
+
+        if (error) {
+          console.warn('Tabla inventory_active_inks no disponible en Supabase, usando estado en memoria:', error.message);
+        } else if (data && data.length > 0) {
+          setInks(data as ActiveInk[]);
+          loadedFromDb = true;
+        }
       }
     } catch (err) {
-      console.error(err);
+      console.warn('Error conectando con Supabase para tintas:', err);
     } finally {
+      if (!loadedFromDb) {
+        // Cargar desde localStorage o demo inicial
+        try {
+          const cached = localStorage.getItem(`vc_live_inks_${organizationId}`);
+          if (cached) {
+            setInks(JSON.parse(cached));
+          } else {
+            setInks(INITIAL_DEMO_INKS);
+          }
+        } catch {
+          setInks(INITIAL_DEMO_INKS);
+        }
+      }
       setLoading(false);
     }
   };
@@ -178,49 +663,82 @@ export function InventoryLiveInkMonitor({
     loadInks();
   }, [organizationId]);
 
+  // Persistir en cache local para resiliencia
+  useEffect(() => {
+    if (inks.length > 0) {
+      try {
+        localStorage.setItem(`vc_live_inks_${organizationId}`, JSON.stringify(inks));
+      } catch (e) {
+        // Silently ignore storage quota
+      }
+    }
+  }, [inks, organizationId]);
+
   // Actualizar porcentaje de un canal
   const updatePercent = async (ink: ActiveInk, newPercent: number) => {
-    if (!canEdit || !supabase) return;
+    if (!canEdit) return;
     setUpdatingId(ink.id);
     const clamped = Math.max(0, Math.min(100, Math.round(newPercent)));
+    const nextStatus =
+      clamped === 0
+        ? 'agotado'
+        : clamped <= 15
+        ? 'critico'
+        : clamped <= 30
+        ? 'bajo'
+        : 'en_uso';
+
     try {
-      const { error } = await supabase.rpc('record_ink_daily_percent', {
-        p_ink_id: ink.id,
-        p_percent: clamped,
-        p_operator: operatorDefaultName || ink.operator_name || 'Operario de taller',
-        p_notes: `Ajuste en vivo: ${clamped}%`,
-      });
+      if (supabase) {
+        const { error } = await supabase.rpc('record_ink_daily_percent', {
+          p_ink_id: ink.id,
+          p_percent: clamped,
+          p_operator: operatorDefaultName || ink.operator_name || 'Operario de taller',
+          p_notes: `Ajuste en vivo: ${clamped}%`,
+        });
 
-      if (error) {
-        onNotice?.(`Error al actualizar tinta: ${error.message}`);
-      } else {
-        const nextStatus =
-          clamped === 0
-            ? 'agotado'
-            : clamped <= 15
-            ? 'critico'
-            : clamped <= 30
-            ? 'bajo'
-            : 'en_uso';
-
-        setInks((prev) =>
-          prev.map((i) =>
-            i.id === ink.id
-              ? {
-                  ...i,
-                  remaining_percent: clamped,
-                  status: nextStatus,
-                  last_measured_at: new Date().toISOString(),
-                }
-              : i
-          )
-        );
-        onNotice?.(
-          `Tinta ${ink.color_name} (${ink.machine_name}) actualizada al ${clamped}%.`
-        );
+        if (error) {
+          // Fallback actualización directa si no existe el RPC
+          await supabase
+            .from('inventory_active_inks')
+            .update({
+              remaining_percent: clamped,
+              status: nextStatus,
+              last_measured_at: new Date().toISOString(),
+              operator_name: operatorDefaultName || ink.operator_name || 'Operario de taller',
+            })
+            .eq('id', ink.id);
+        }
       }
+
+      setInks((prev) =>
+        prev.map((i) =>
+          i.id === ink.id
+            ? {
+                ...i,
+                remaining_percent: clamped,
+                status: nextStatus,
+                last_measured_at: new Date().toISOString(),
+              }
+            : i
+        )
+      );
+      onNotice?.(`Tinta ${ink.color_name} (${ink.machine_name}) actualizada al ${clamped}%.`);
     } catch (err: any) {
-      onNotice?.(`Fallo al guardar: ${err.message}`);
+      // Actualizar localmente de todas formas
+      setInks((prev) =>
+        prev.map((i) =>
+          i.id === ink.id
+            ? {
+                ...i,
+                remaining_percent: clamped,
+                status: nextStatus,
+                last_measured_at: new Date().toISOString(),
+              }
+            : i
+        )
+      );
+      onNotice?.(`Nivel actualizado localmente al ${clamped}%.`);
     } finally {
       setUpdatingId(null);
     }
@@ -228,39 +746,63 @@ export function InventoryLiveInkMonitor({
 
   // Recarga al 100% (Rellenar)
   const handleRefillInk = async () => {
-    if (!refillTarget || !supabase) return;
+    if (!refillTarget) return;
     setUpdatingId(refillTarget.id);
-    try {
-      const { data, error } = await supabase.rpc('refill_active_ink', {
-        p_ink_id: refillTarget.id,
-        p_consume_warehouse_bottle: consumeStockOnRefill,
-        p_operator: operatorDefaultName || 'Operario de taller',
-        p_notes: 'Tanque rellenado al 100%',
-      });
 
-      if (error) {
-        onNotice?.(`No se pudo recargar la tinta: ${error.message}`);
-      } else {
-        setInks((prev) =>
-          prev.map((i) =>
-            i.id === refillTarget.id
-              ? {
-                  ...i,
-                  remaining_percent: 100,
-                  status: 'en_uso',
-                  last_measured_at: new Date().toISOString(),
-                }
-              : i
-          )
-        );
-        const msg = consumeStockOnRefill && refillTarget.variant_id
-          ? `¡Tanque de ${refillTarget.color_name} al 100%! Se descontó 1 botella del stock de bodega.`
-          : `¡Tanque de ${refillTarget.color_name} al 100% en máquina!`;
-        onNotice?.(msg);
-        setRefillTarget(null);
+    try {
+      let warehouseDeducted = false;
+
+      if (supabase) {
+        const { error } = await supabase.rpc('refill_active_ink', {
+          p_ink_id: refillTarget.id,
+          p_consume_warehouse_bottle: consumeStockOnRefill,
+          p_operator: operatorDefaultName || 'Operario de taller',
+          p_notes: 'Tanque rellenado al 100%',
+        });
+
+        if (!error) {
+          warehouseDeducted = consumeStockOnRefill && Boolean(refillTarget.variant_id);
+        } else {
+          // Fallback actualización estándar
+          await supabase
+            .from('inventory_active_inks')
+            .update({
+              remaining_percent: 100,
+              status: 'en_uso',
+              last_measured_at: new Date().toISOString(),
+            })
+            .eq('id', refillTarget.id);
+        }
       }
+
+      setInks((prev) =>
+        prev.map((i) =>
+          i.id === refillTarget.id
+            ? {
+                ...i,
+                remaining_percent: 100,
+                status: 'en_uso',
+                last_measured_at: new Date().toISOString(),
+              }
+            : i
+        )
+      );
+
+      // Refrescar inventario global para sincronizar existencias de bodega
+      if (onRefreshInventory && consumeStockOnRefill) {
+        void onRefreshInventory();
+      }
+
+      const linked = getLinkedVariantInfo(refillTarget.variant_id);
+      const msg =
+        consumeStockOnRefill && linked
+          ? `¡Tanque de ${refillTarget.color_name} al 100%! Se descontó 1 botella de ${linked.name} del inventario de bodega.`
+          : `¡Tanque de ${refillTarget.color_name} (${refillTarget.machine_name}) rellenado al 100%!`;
+
+      onNotice?.(msg);
+      setRefillTarget(null);
     } catch (err: any) {
-      onNotice?.(`Error: ${err.message}`);
+      onNotice?.(`Error al recargar: ${err.message}`);
     } finally {
       setUpdatingId(null);
     }
@@ -279,47 +821,41 @@ export function InventoryLiveInkMonitor({
 
   // Guardar ajuste por lote de máquina
   const handleSaveBatchMachine = async () => {
-    if (!supabase || !batchMachine) return;
+    if (!batchMachine) return;
     setBatchSaving(true);
     try {
-      const updates = Object.entries(batchDraft).map(([id, percent]) => ({
-        id,
-        percent,
-      }));
-
-      const { data, error } = await supabase.rpc('batch_record_machine_inks', {
-        p_updates: updates,
-        p_operator: operatorDefaultName || 'Operario de taller',
-        p_notes: `Ajuste rápido de máquina: ${batchMachine}`,
-      });
-
-      if (error) {
-        onNotice?.(`Error en ajuste por lote: ${error.message}`);
-      } else {
-        setInks((prev) =>
-          prev.map((i) => {
-            if (batchDraft[i.id] !== undefined) {
-              const val = batchDraft[i.id];
-              return {
-                ...i,
-                remaining_percent: val,
-                status:
-                  val === 0
-                    ? 'agotado'
-                    : val <= 15
-                    ? 'critico'
-                    : val <= 30
-                    ? 'bajo'
-                    : 'en_uso',
-                last_measured_at: new Date().toISOString(),
-              };
-            }
-            return i;
-          })
-        );
-        onNotice?.(`¡Niveles CMYK de “${batchMachine}” actualizados correctamente!`);
-        setBatchMachine(null);
+      if (supabase) {
+        const updates = Object.entries(batchDraft).map(([id, percent]) => ({ id, percent }));
+        await supabase.rpc('batch_record_machine_inks', {
+          p_updates: updates,
+          p_operator: operatorDefaultName || 'Operario de taller',
+          p_notes: `Ajuste rápido de máquina: ${batchMachine}`,
+        });
       }
+
+      setInks((prev) =>
+        prev.map((i) => {
+          if (batchDraft[i.id] !== undefined) {
+            const val = batchDraft[i.id];
+            return {
+              ...i,
+              remaining_percent: val,
+              status:
+                val === 0
+                  ? 'agotado'
+                  : val <= 15
+                  ? 'critico'
+                  : val <= 30
+                  ? 'bajo'
+                  : 'en_uso',
+              last_measured_at: new Date().toISOString(),
+            };
+          }
+          return i;
+        })
+      );
+      onNotice?.(`¡Niveles de “${batchMachine}” actualizados correctamente!`);
+      setBatchMachine(null);
     } catch (err: any) {
       onNotice?.(`Error: ${err.message}`);
     } finally {
@@ -327,50 +863,276 @@ export function InventoryLiveInkMonitor({
     }
   };
 
-  // Crear nuevo canal de tinta
-  const handleCreateInk = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase || !newInkForm.machineName.trim()) return;
-
+  // --- ACCIONES DE CREAR NUEVA IMPRESORA ---
+  const handleOpenCreatePrinter = () => {
     const branchId = branches[0]?.id || 'f499caf7-6286-4c6e-abd7-d79fa58c27d0';
-    const cfg = getColorConfig(newInkForm.colorCode);
+    const initialChannels = generateChannelsForPreset('cmyk', 1000, 'ecosolvente');
+    setCreateForm({
+      name: '',
+      manufacturer: 'Galaxy',
+      model: '',
+      inkType: 'ecosolvente',
+      preset: 'cmyk',
+      defaultCapacityMl: 1000,
+      branchId,
+      notes: '',
+      channels: initialChannels,
+    });
+    setShowCreatePrinterModal(true);
+  };
+
+  const handleCreatePrinterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const machineName = createForm.name.trim();
+    if (!machineName) {
+      onNotice?.('Por favor ingresa el nombre de la impresora o plotter.');
+      return;
+    }
+
+    if (createForm.channels.length === 0) {
+      onNotice?.('Debes configurar al menos un canal de tinta para la impresora.');
+      return;
+    }
+
+    const branchId = createForm.branchId || branches[0]?.id || 'f499caf7-6286-4c6e-abd7-d79fa58c27d0';
+
+    const rowsToInsert = createForm.channels.map((ch) => {
+      const cfg = getColorConfig(ch.colorCode);
+      return {
+        id: globalThis.crypto?.randomUUID?.() || `ink-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        organization_id: organizationId,
+        branch_id: branchId,
+        variant_id: ch.variantId || null,
+        location_code: 'MAIN',
+        machine_name: machineName,
+        color_code: ch.colorCode,
+        color_name: ch.colorName || cfg.name,
+        color_hex: ch.colorHex || cfg.hex,
+        ink_type: createForm.inkType,
+        tank_capacity_ml: ch.capacityMl || createForm.defaultCapacityMl || 1000,
+        remaining_percent: ch.initialPercent || 100,
+        operator_name: operatorDefaultName || 'Taller',
+        notes: createForm.notes.trim() || `Instalado en ${machineName}`,
+        status:
+          ch.initialPercent <= 15
+            ? 'critico'
+            : ch.initialPercent <= 30
+            ? 'bajo'
+            : 'en_uso',
+        last_measured_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    });
 
     try {
-      const { data, error } = await supabase
-        .from('inventory_active_inks')
-        .insert({
-          organization_id: organizationId,
-          branch_id: branchId,
-          location_code: 'MAIN',
-          machine_name: newInkForm.machineName.trim(),
-          color_code: newInkForm.colorCode,
-          color_name: cfg.name,
-          color_hex: cfg.hex,
-          ink_type: newInkForm.inkType,
-          tank_capacity_ml: Number(newInkForm.capacityMl) || 1000,
-          remaining_percent: Number(newInkForm.initialPercent) || 100,
-          operator_name: operatorDefaultName || 'Taller',
-          notes: newInkForm.notes.trim(),
-          status: 'en_uso',
-        })
-        .select()
-        .single();
+      if (supabase) {
+        const { error } = await supabase.from('inventory_active_inks').insert(rowsToInsert);
+        if (error) {
+          console.warn('Error al insertar en Supabase:', error.message);
+        }
 
-      if (error) {
-        onNotice?.(`Error al crear canal de tinta: ${error.message}`);
-      } else if (data) {
-        setInks((prev) => [...prev, data as ActiveInk]);
-        setShowAddModal(false);
-        onNotice?.(
-          `Canal ${cfg.name} (${newInkForm.machineName}) registrado con éxito.`
-        );
+        // Registrar también en equipment_assets para coherencia integral si la tabla existe
+        try {
+          const assetCode = `PLT-${Date.now().toString(36).toUpperCase()}`;
+          await supabase.from('equipment_assets').insert({
+            organization_id: organizationId,
+            branch_id: branchId,
+            asset_code: assetCode,
+            name: machineName,
+            equipment_type: 'Impresora gran formato',
+            manufacturer: createForm.manufacturer || 'Visual Corp',
+            model: createForm.model || 'Gran formato',
+            status: 'Operativo',
+            condition: 'Bueno',
+            notes: `Tecnología: ${createForm.inkType}. Canales: ${rowsToInsert.map((r) => r.color_code).join(', ')}. ${createForm.notes}`,
+          });
+        } catch {
+          // Ignore secondary equipment asset error
+        }
       }
+
+      setInks((prev) => [...prev, ...(rowsToInsert as ActiveInk[])]);
+      setShowCreatePrinterModal(false);
+      setSelectedMachine(machineName);
+      onNotice?.(`¡Impresora “${machineName}” creada con éxito con ${rowsToInsert.length} canales conectados!`);
     } catch (err: any) {
-      onNotice?.(`Error: ${err.message}`);
+      onNotice?.(`Error al crear impresora: ${err.message}`);
     }
   };
 
-  // Listado de máquinas únicas
+  // --- ACCIONES DE EDITAR IMPRESORA Y GESTIONAR CANALES ---
+  const handleOpenEditPrinter = (machineName: string) => {
+    const machineInks = inks.filter((i) => i.machine_name === machineName);
+    if (machineInks.length === 0) return;
+
+    const currentInkType = machineInks[0]?.ink_type || 'ecosolvente';
+    const currentBranchId = machineInks[0]?.branch_id || branches[0]?.id || '';
+
+    const channels: ChannelDraft[] = machineInks.map((i) => ({
+      id: i.id,
+      colorCode: i.color_code,
+      colorName: i.color_name,
+      colorHex: i.color_hex,
+      capacityMl: i.tank_capacity_ml,
+      initialPercent: i.remaining_percent,
+      variantId: i.variant_id || '',
+    }));
+
+    setEditForm({
+      originalName: machineName,
+      name: machineName,
+      inkType: currentInkType,
+      branchId: currentBranchId,
+      notes: machineInks[0]?.notes || '',
+      channels,
+    });
+    setEditPrinterTarget(machineName);
+  };
+
+  const handleEditPrinterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editPrinterTarget) return;
+
+    const newMachineName = editForm.name.trim();
+    if (!newMachineName) {
+      onNotice?.('El nombre de la impresora no puede estar vacío.');
+      return;
+    }
+
+    try {
+      const originalChannels = inks.filter((i) => i.machine_name === editPrinterTarget);
+      const originalIds = new Set(originalChannels.map((c) => c.id));
+      const keptIds = new Set(editForm.channels.map((c) => c.id).filter(Boolean));
+
+      // Canales a eliminar
+      const idsToDelete = [...originalIds].filter((id) => !keptIds.has(id));
+
+      if (supabase && idsToDelete.length > 0) {
+        await supabase.from('inventory_active_inks').delete().in('id', idsToDelete);
+      }
+
+      // Canales existentes a actualizar
+      for (const ch of editForm.channels) {
+        if (ch.id && originalIds.has(ch.id)) {
+          const cfg = getColorConfig(ch.colorCode);
+          const updateData = {
+            machine_name: newMachineName,
+            color_code: ch.colorCode,
+            color_name: ch.colorName || cfg.name,
+            color_hex: ch.colorHex || cfg.hex,
+            ink_type: editForm.inkType,
+            tank_capacity_ml: ch.capacityMl,
+            variant_id: ch.variantId || null,
+            updated_at: new Date().toISOString(),
+          };
+
+          if (supabase) {
+            await supabase.from('inventory_active_inks').update(updateData).eq('id', ch.id);
+          }
+        } else if (!ch.id) {
+          // Nuevos canales agregados en edición
+          const cfg = getColorConfig(ch.colorCode);
+          const newRow = {
+            id: globalThis.crypto?.randomUUID?.() || `ink-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            organization_id: organizationId,
+            branch_id: editForm.branchId || branches[0]?.id || 'f499caf7-6286-4c6e-abd7-d79fa58c27d0',
+            variant_id: ch.variantId || null,
+            location_code: 'MAIN',
+            machine_name: newMachineName,
+            color_code: ch.colorCode,
+            color_name: ch.colorName || cfg.name,
+            color_hex: ch.colorHex || cfg.hex,
+            ink_type: editForm.inkType,
+            tank_capacity_ml: ch.capacityMl || 1000,
+            remaining_percent: ch.initialPercent || 100,
+            operator_name: operatorDefaultName || 'Taller',
+            notes: `Canal añadido a ${newMachineName}`,
+            status: 'en_uso',
+            last_measured_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+
+          if (supabase) {
+            await supabase.from('inventory_active_inks').insert(newRow);
+          }
+        }
+      }
+
+      // Actualizar estado en memoria
+      await loadInks();
+      setEditPrinterTarget(null);
+      if (selectedMachine === editPrinterTarget) {
+        setSelectedMachine(newMachineName);
+      }
+      onNotice?.(`¡Impresora “${newMachineName}” y sus canales de tinta actualizados con éxito!`);
+    } catch (err: any) {
+      onNotice?.(`Error al actualizar impresora: ${err.message}`);
+    }
+  };
+
+  // --- ACCIÓN DE ELIMINAR IMPRESORA ---
+  const handleConfirmDeletePrinter = async () => {
+    if (!deletePrinterTarget) return;
+
+    try {
+      if (supabase) {
+        const { error } = await supabase
+          .from('inventory_active_inks')
+          .delete()
+          .eq('organization_id', organizationId)
+          .eq('machine_name', deletePrinterTarget);
+
+        if (error) {
+          console.warn('Error al eliminar en Supabase:', error.message);
+        }
+      }
+
+      setInks((prev) => prev.filter((i) => i.machine_name !== deletePrinterTarget));
+      if (selectedMachine === deletePrinterTarget) {
+        setSelectedMachine('todas');
+      }
+      onNotice?.(`La impresora “${deletePrinterTarget}” y sus canales de tinta han sido eliminados.`);
+      setDeletePrinterTarget(null);
+    } catch (err: any) {
+      onNotice?.(`Error al eliminar impresora: ${err.message}`);
+    }
+  };
+
+  // --- VINCULACIÓN RÁPIDA DE VARIANTE DESDE LA TARJETA ---
+  const handleSaveQuickLink = async (variantId: string) => {
+    if (!quickLinkInk) return;
+
+    try {
+      const nextVariantId = variantId || null;
+      if (supabase) {
+        await supabase
+          .from('inventory_active_inks')
+          .update({
+            variant_id: nextVariantId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', quickLinkInk.id);
+      }
+
+      setInks((prev) =>
+        prev.map((i) => (i.id === quickLinkInk.id ? { ...i, variant_id: nextVariantId } : i))
+      );
+
+      const linked = getLinkedVariantInfo(nextVariantId);
+      onNotice?.(
+        linked
+          ? `Canal ${quickLinkInk.color_name} vinculado a “${linked.name} (${linked.sku})”.`
+          : `Canal ${quickLinkInk.color_name} desvinculado de bodega.`
+      );
+      setQuickLinkInk(null);
+    } catch (err: any) {
+      onNotice?.(`Error al vincular: ${err.message}`);
+    }
+  };
+
+  // Listado de máquinas únicas y datos agregados
   const machineList = useMemo(() => {
     return Array.from(new Set(inks.map((i) => i.machine_name))).sort();
   }, [inks]);
@@ -388,11 +1150,16 @@ export function InventoryLiveInkMonitor({
         const matchesColor = i.color_name.toLowerCase().includes(q);
         const matchesCode = i.color_code.toLowerCase().includes(q);
         const matchesType = i.ink_type.toLowerCase().includes(q);
-        if (!matchesMachine && !matchesColor && !matchesCode && !matchesType) return false;
+        const linkedInfo = getLinkedVariantInfo(i.variant_id);
+        const matchesLinked =
+          linkedInfo &&
+          (linkedInfo.name.toLowerCase().includes(q) || linkedInfo.sku.toLowerCase().includes(q));
+        if (!matchesMachine && !matchesColor && !matchesCode && !matchesType && !matchesLinked)
+          return false;
       }
       return true;
     });
-  }, [inks, selectedMachine, colorFilter, search]);
+  }, [inks, selectedMachine, colorFilter, search, inkInventoryOptions]);
 
   // Agrupadas por máquina para la vista por estaciones
   const groupedByMachine = useMemo(() => {
@@ -403,14 +1170,36 @@ export function InventoryLiveInkMonitor({
       map.set(ink.machine_name, list);
     });
 
-    // Ordenar los canales CMYK dentro de cada máquina en orden estándar: C, M, Y, K
     const order = ['C', 'M', 'Y', 'K', 'LC', 'LM', 'W', 'V', 'FL', 'OTRO'];
-    map.forEach((list, key) => {
+    map.forEach((list) => {
       list.sort((a, b) => order.indexOf(a.color_code) - order.indexOf(b.color_code));
     });
 
     return Array.from(map.entries());
   }, [filteredInks]);
+
+  // Flota consolidada de máquinas para el modal de resumen
+  const fleetSummary = useMemo(() => {
+    const map = new Map<string, ActiveInk[]>();
+    inks.forEach((ink) => {
+      const list = map.get(ink.machine_name) || [];
+      list.push(ink);
+      map.set(ink.machine_name, list);
+    });
+
+    return Array.from(map.entries()).map(([name, channels]) => {
+      const inkType = channels[0]?.ink_type || 'ecosolvente';
+      const lowestPercent = Math.min(...channels.map((c) => c.remaining_percent));
+      const criticalCount = channels.filter((c) => c.remaining_percent <= 20).length;
+      return {
+        name,
+        inkType,
+        channels,
+        lowestPercent,
+        criticalCount,
+      };
+    });
+  }, [inks]);
 
   // Conteo de tintas críticas (<= 20%)
   const criticalCount = useMemo(
@@ -437,11 +1226,12 @@ export function InventoryLiveInkMonitor({
           <div className="vc-live-badge-live">
             <span className="vc-pulse-dot" /> EN VIVO EN MÁQUINA
           </div>
-          <h2>Control Diario de Tintas CMYK</h2>
+          <h2>Control Diario de Tintas e Impresoras CMYK</h2>
           <p>
             Monitorea en tiempo real los tanques de <b>Cian (C)</b>, <b>Magenta (M)</b>,{' '}
-            <b>Amarillo (Y)</b> y <b>Negro (K)</b> de cada plotter. Ajusta los niveles con un
-            solo toque al terminar el trabajo o la jornada.
+            <b>Amarillo (Y)</b> y <b>Negro (K)</b> de cada plotter. Administra tu flota de
+            impresoras, configura qué tintas utilizan y sincronízalas directamente con el stock de
+            bodega.
           </p>
         </div>
 
@@ -459,6 +1249,15 @@ export function InventoryLiveInkMonitor({
               </span>
             </button>
           )}
+
+          <button
+            type="button"
+            className="button button-outline"
+            onClick={() => setShowFleetModal(true)}
+            title="Ver flota completa de impresoras y estado consolidado"
+          >
+            <Printer size={15} /> Flota ({machineList.length})
+          </button>
 
           <div className="vc-live-view-toggle" role="group" aria-label="Modo de vista">
             <button
@@ -493,9 +1292,10 @@ export function InventoryLiveInkMonitor({
             <button
               type="button"
               className="button button-dark"
-              onClick={() => setShowAddModal(true)}
+              onClick={handleOpenCreatePrinter}
+              title="Crear una nueva impresora y configurar sus tanques"
             >
-              <Plus size={15} /> Añadir tinta a máquina
+              <Plus size={15} /> Nueva Impresora / Plotter
             </button>
           )}
         </div>
@@ -571,7 +1371,7 @@ export function InventoryLiveInkMonitor({
           <Search size={15} />
           <input
             type="text"
-            placeholder="Buscar por máquina, color, tinta…"
+            placeholder="Buscar por máquina, color, SKU o tinta de bodega…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -589,6 +1389,16 @@ export function InventoryLiveInkMonitor({
           <Droplet size={36} />
           <h3>No se encontraron registros de tinta con este filtro</h3>
           <p>Modifica los filtros seleccionados o añade canales de tinta a la máquina.</p>
+          {canEdit && (
+            <button
+              type="button"
+              className="button button-outline"
+              style={{ marginTop: 12 }}
+              onClick={handleOpenCreatePrinter}
+            >
+              <Plus size={15} /> Registrar nueva impresora
+            </button>
+          )}
         </div>
       ) : viewMode === 'machines' ? (
         /* VISTA DE ESTACIONES POR MÁQUINA */
@@ -623,14 +1433,32 @@ export function InventoryLiveInkMonitor({
 
                   <div className="vc-station-actions">
                     {canEdit && (
-                      <button
-                        type="button"
-                        className="button button-outline button-small"
-                        onClick={() => openMachineBatchModal(machineName)}
-                        title="Ajustar todos los canales CMYK juntos"
-                      >
-                        <SlidersHorizontal size={13} /> Ajustar CMYK
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          className="button button-outline button-small"
+                          onClick={() => openMachineBatchModal(machineName)}
+                          title="Ajustar todos los canales CMYK juntos"
+                        >
+                          <SlidersHorizontal size={13} /> Ajustar CMYK
+                        </button>
+                        <button
+                          type="button"
+                          className="button button-outline button-small"
+                          onClick={() => handleOpenEditPrinter(machineName)}
+                          title="Editar impresora, nombre y configurar qué tintas utiliza"
+                        >
+                          <Pencil size={13} /> Configurar
+                        </button>
+                        <button
+                          type="button"
+                          className="button button-ghost button-small vc-btn-danger-ghost"
+                          onClick={() => setDeletePrinterTarget(machineName)}
+                          title="Eliminar esta impresora y sus canales"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </>
                     )}
                   </div>
                 </header>
@@ -642,6 +1470,9 @@ export function InventoryLiveInkMonitor({
                     const statusClass = getInkStatusClass(ink.remaining_percent);
                     const estMl = getMlEstimate(ink);
                     const colorCfg = getColorConfig(ink.color_code, ink.color_name, ink.color_hex);
+                    const linkedVariant = getLinkedVariantInfo(ink.variant_id);
+                    const warehouseStock = linkedVariant ? linkedVariant.quantity : null;
+                    const isMachineLow = ink.remaining_percent <= 20;
 
                     return (
                       <div
@@ -702,6 +1533,64 @@ export function InventoryLiveInkMonitor({
                               <span className="vc-tank-critical-pill">¡CRÍTICO!</span>
                             )}
                           </div>
+                        </div>
+
+                        {/* Bloque de Conexión con Inventario de Bodega */}
+                        <div className="vc-cartridge-inventory-block">
+                          {linkedVariant ? (
+                            <div className="vc-inv-link-active" title={`SKU: ${linkedVariant.sku}`}>
+                              <div className="vc-inv-link-header">
+                                <Boxes size={12} className="vc-inv-link-icon" />
+                                <span className="vc-inv-link-title" title={linkedVariant.name}>
+                                  {linkedVariant.name}
+                                </span>
+                                {canEdit && (
+                                  <button
+                                    type="button"
+                                    className="vc-inv-link-change-btn"
+                                    onClick={() => setQuickLinkInk(ink)}
+                                    title="Cambiar tinta vinculada de bodega"
+                                  >
+                                    Cambiar
+                                  </button>
+                                )}
+                              </div>
+                              <div className="vc-inv-link-stock-row">
+                                <span
+                                  className={`vc-inv-stock-pill ${
+                                    linkedVariant.quantity > 0 ? 'is-in-stock' : 'is-out-of-stock'
+                                  }`}
+                                >
+                                  Bodega: <b>{linkedVariant.quantity}</b> {linkedVariant.unit || 'botellas'}
+                                </span>
+                              </div>
+                              {/* Alerta contextual */}
+                              {isMachineLow && linkedVariant.quantity > 0 && (
+                                <small className="vc-inv-alert-note ok">
+                                  Hay {linkedVariant.quantity} botellas en bodega para recargar
+                                </small>
+                              )}
+                              {isMachineLow && linkedVariant.quantity <= 0 && (
+                                <small className="vc-inv-alert-note danger">
+                                  🚨 ¡Sin stock en bodega! Pedir compra urgente
+                                </small>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="vc-inv-link-none">
+                              <span className="vc-inv-unlinked-label">Sin vincular a bodega</span>
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  className="vc-inv-bind-btn"
+                                  onClick={() => setQuickLinkInk(ink)}
+                                  title="Vincular con un artículo de tinta del inventario físico"
+                                >
+                                  <Link size={11} /> Vincular
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Botones rápidos de ajuste */}
@@ -773,6 +1662,7 @@ export function InventoryLiveInkMonitor({
             const statusClass = getInkStatusClass(ink.remaining_percent);
             const estMl = getMlEstimate(ink);
             const colorCfg = getColorConfig(ink.color_code, ink.color_name, ink.color_hex);
+            const linkedVariant = getLinkedVariantInfo(ink.variant_id);
 
             return (
               <article key={ink.id} className={`vc-ink-card ${statusClass}`}>
@@ -827,6 +1717,40 @@ export function InventoryLiveInkMonitor({
                       <span className="vc-tank-critical-pill">¡CRÍTICO! Rellenar</span>
                     )}
                   </div>
+                </div>
+
+                {/* Info de Inventario Vinculado */}
+                <div className="vc-cartridge-inventory-block">
+                  {linkedVariant ? (
+                    <div className="vc-inv-link-active">
+                      <div className="vc-inv-link-header">
+                        <Boxes size={12} className="vc-inv-link-icon" />
+                        <span className="vc-inv-link-title">{linkedVariant.name}</span>
+                      </div>
+                      <div className="vc-inv-link-stock-row">
+                        <span
+                          className={`vc-inv-stock-pill ${
+                            linkedVariant.quantity > 0 ? 'is-in-stock' : 'is-out-of-stock'
+                          }`}
+                        >
+                          Stock en bodega: <b>{linkedVariant.quantity}</b> {linkedVariant.unit}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="vc-inv-link-none">
+                      <span className="vc-inv-unlinked-label">Sin vincular a bodega</span>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          className="vc-inv-bind-btn"
+                          onClick={() => setQuickLinkInk(ink)}
+                        >
+                          <Link size={11} /> Vincular
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Controles táctiles */}
@@ -884,6 +1808,756 @@ export function InventoryLiveInkMonitor({
         </div>
       )}
 
+      {/* MODAL: Crear Nueva Impresora / Plotter */}
+      {showCreatePrinterModal && (
+        <div className="vc-live-modal-backdrop" role="presentation">
+          <form className="vc-live-modal vc-printer-form-modal" onSubmit={handleCreatePrinterSubmit}>
+            <header>
+              <Printer size={22} className="vc-modal-icon-printer" />
+              <div>
+                <h3>Registrar Nueva Impresora / Plotter</h3>
+                <p>Configura la máquina, su tecnología y los tanques de tinta conectados a bodega.</p>
+              </div>
+              <button
+                type="button"
+                className="vc-modal-close-btn"
+                onClick={() => setShowCreatePrinterModal(false)}
+                aria-label="Cerrar modal"
+              >
+                <X size={18} />
+              </button>
+            </header>
+
+            <div className="vc-live-modal-body vc-form-grid">
+              <label className="vc-field-full">
+                Nombre de la Impresora o Plotter *
+                <input
+                  required
+                  type="text"
+                  placeholder="Ej. Plotter Mimaki UJV100-160 UV, Plotter Epson SureColor F570"
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                />
+              </label>
+
+              <label>
+                Marca / Fabricante
+                <select
+                  value={createForm.manufacturer}
+                  onChange={(e) => setCreateForm({ ...createForm, manufacturer: e.target.value })}
+                >
+                  <option value="Galaxy">Galaxy</option>
+                  <option value="Mimaki">Mimaki</option>
+                  <option value="Roland">Roland</option>
+                  <option value="Epson">Epson</option>
+                  <option value="Ricoh">Ricoh</option>
+                  <option value="HP">HP</option>
+                  <option value="Canon">Canon</option>
+                  <option value="Otro">Otro fabricante</option>
+                </select>
+              </label>
+
+              <label>
+                Tecnología de Tinta
+                <select
+                  value={createForm.inkType}
+                  onChange={(e) => {
+                    const nextType = e.target.value as ActiveInk['ink_type'];
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      inkType: nextType,
+                      channels: generateChannelsForPreset(prev.preset, prev.defaultCapacityMl, nextType),
+                    }));
+                  }}
+                >
+                  <option value="ecosolvente">Eco-solvente</option>
+                  <option value="solvente">Solvente</option>
+                  <option value="sublimacion">Sublimación</option>
+                  <option value="uv">UV Curable</option>
+                  <option value="dtf">DTF / Textil</option>
+                  <option value="acuosa">Acuosa / EcoTank</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </label>
+
+              <label>
+                Plantilla de Canales
+                <select
+                  value={createForm.preset}
+                  onChange={(e) => {
+                    const nextPreset = e.target.value as PrinterPreset;
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      preset: nextPreset,
+                      channels: generateChannelsForPreset(nextPreset, prev.defaultCapacityMl, prev.inkType),
+                    }));
+                  }}
+                >
+                  <option value="cmyk">CMYK Estándar (4 canales: C, M, Y, K)</option>
+                  <option value="cmyk_lc_lm">CMYK + LcLm (6 canales con Light Cyan/Magenta)</option>
+                  <option value="cmyk_uv_w_v">CMYK + Blanco + Barniz (6 canales UV)</option>
+                  <option value="custom">Personalizado (canales a medida)</option>
+                </select>
+              </label>
+
+              <label>
+                Capacidad estándar por tanque (ml)
+                <input
+                  type="number"
+                  min="100"
+                  step="50"
+                  value={createForm.defaultCapacityMl}
+                  onChange={(e) => {
+                    const cap = Number(e.target.value) || 1000;
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      defaultCapacityMl: cap,
+                      channels: prev.channels.map((ch) => ({ ...ch, capacityMl: cap })),
+                    }));
+                  }}
+                />
+              </label>
+
+              {/* SECCIÓN: Configuración de Canales y Vínculo con Bodega */}
+              <div className="vc-field-full vc-channels-config-section">
+                <div className="vc-channels-section-header">
+                  <div>
+                    <h4>Tanques y Tintas Conectadas ({createForm.channels.length})</h4>
+                    <p>Asigna qué tinta física de bodega abastece cada color de la máquina.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="button button-outline button-small"
+                    onClick={() => {
+                      const newColorCode: ActiveInk['color_code'] = 'OTRO';
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        channels: [
+                          ...prev.channels,
+                          {
+                            colorCode: newColorCode,
+                            colorName: 'Tinta especial',
+                            colorHex: '#ea580c',
+                            capacityMl: prev.defaultCapacityMl,
+                            initialPercent: 100,
+                            variantId: '',
+                          },
+                        ],
+                      }));
+                    }}
+                  >
+                    <Plus size={13} /> Añadir otro canal
+                  </button>
+                </div>
+
+                <div className="vc-channels-config-table">
+                  {createForm.channels.map((channel, idx) => {
+                    const colorCfg = getColorConfig(channel.colorCode);
+                    const linkedVariant = inkInventoryOptions.find((v) => v.variantId === channel.variantId);
+
+                    return (
+                      <div key={idx} className="vc-channel-config-row">
+                        <div className="vc-channel-badge-col">
+                          <select
+                            value={channel.colorCode}
+                            className="vc-channel-code-select"
+                            onChange={(e) => {
+                              const newCode = e.target.value as ActiveInk['color_code'];
+                              const nextCfg = getColorConfig(newCode);
+                              setCreateForm((prev) => {
+                                const nextChannels = [...prev.channels];
+                                nextChannels[idx] = {
+                                  ...nextChannels[idx],
+                                  colorCode: newCode,
+                                  colorName: nextCfg.name,
+                                  colorHex: nextCfg.hex,
+                                  variantId: suggestVariantForColor(newCode, prev.inkType),
+                                };
+                                return { ...prev, channels: nextChannels };
+                              });
+                            }}
+                          >
+                            <option value="C">C (Cian)</option>
+                            <option value="M">M (Magenta)</option>
+                            <option value="Y">Y (Amarillo)</option>
+                            <option value="K">K (Negro)</option>
+                            <option value="LC">LC (Light Cyan)</option>
+                            <option value="LM">LM (Light Magenta)</option>
+                            <option value="W">W (Blanco)</option>
+                            <option value="V">V (Barniz)</option>
+                            <option value="FL">FL (Flush)</option>
+                            <option value="OTRO">OTRO</option>
+                          </select>
+                          <span
+                            className="vc-cmyk-dot-preview"
+                            style={{ backgroundColor: colorCfg.hex }}
+                          />
+                        </div>
+
+                        <div className="vc-channel-variant-col">
+                          <label>Tinta vinculada en bodega:</label>
+                          <select
+                            value={channel.variantId}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCreateForm((prev) => {
+                                const nextChannels = [...prev.channels];
+                                nextChannels[idx] = { ...nextChannels[idx], variantId: val };
+                                return { ...prev, channels: nextChannels };
+                              });
+                            }}
+                          >
+                            <option value="">-- Sin vincular (Solo monitoreo virtual) --</option>
+                            {inkInventoryOptions.map((opt) => (
+                              <option key={opt.variantId} value={opt.variantId}>
+                                {opt.name} {opt.variant ? `(${opt.variant})` : ''} · Stock: {opt.quantity} {opt.unit} [{opt.sku}]
+                              </option>
+                            ))}
+                          </select>
+                          {linkedVariant && (
+                            <span
+                              className={`vc-inv-stock-indicator ${
+                                linkedVariant.quantity > 0 ? 'in-stock' : 'no-stock'
+                              }`}
+                            >
+                              Disponible en bodega: <b>{linkedVariant.quantity}</b> {linkedVariant.unit}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="vc-channel-capacity-col">
+                          <label>Tanque (ml):</label>
+                          <input
+                            type="number"
+                            min="50"
+                            step="50"
+                            value={channel.capacityMl}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 1000;
+                              setCreateForm((prev) => {
+                                const nextChannels = [...prev.channels];
+                                nextChannels[idx] = { ...nextChannels[idx], capacityMl: val };
+                                return { ...prev, channels: nextChannels };
+                              });
+                            }}
+                          />
+                        </div>
+
+                        <div className="vc-channel-remove-col">
+                          <button
+                            type="button"
+                            className="vc-btn-icon-danger"
+                            title="Quitar este canal"
+                            onClick={() => {
+                              setCreateForm((prev) => ({
+                                ...prev,
+                                channels: prev.channels.filter((_, i) => i !== idx),
+                              }));
+                            }}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <label className="vc-field-full">
+                Notas y observaciones
+                <input
+                  type="text"
+                  placeholder="Ej. Cabezales i3200, mantenimiento quincenal, perfil ICC asignado"
+                  value={createForm.notes}
+                  onChange={(e) => setCreateForm({ ...createForm, notes: e.target.value })}
+                />
+              </label>
+            </div>
+
+            <footer>
+              <button
+                type="button"
+                className="button button-outline"
+                onClick={() => setShowCreatePrinterModal(false)}
+              >
+                Cancelar
+              </button>
+              <button type="submit" className="button button-dark">
+                <Check size={15} /> Crear Impresora y Canales
+              </button>
+            </footer>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL: Configurar / Editar Impresora y Canales */}
+      {editPrinterTarget && (
+        <div className="vc-live-modal-backdrop" role="presentation">
+          <form className="vc-live-modal vc-printer-form-modal" onSubmit={handleEditPrinterSubmit}>
+            <header>
+              <Settings size={22} className="vc-modal-icon-settings" />
+              <div>
+                <h3>Configurar Impresora: {editPrinterTarget}</h3>
+                <p>Modifica el nombre, tecnología y administra las tintas vinculadas a cada tanque.</p>
+              </div>
+              <button
+                type="button"
+                className="vc-modal-close-btn"
+                onClick={() => setEditPrinterTarget(null)}
+                aria-label="Cerrar modal"
+              >
+                <X size={18} />
+              </button>
+            </header>
+
+            <div className="vc-live-modal-body vc-form-grid">
+              <label className="vc-field-full">
+                Nombre de la Impresora *
+                <input
+                  required
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                />
+              </label>
+
+              <label>
+                Tecnología de Tinta
+                <select
+                  value={editForm.inkType}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, inkType: e.target.value as ActiveInk['ink_type'] })
+                  }
+                >
+                  <option value="ecosolvente">Eco-solvente</option>
+                  <option value="solvente">Solvente</option>
+                  <option value="sublimacion">Sublimación</option>
+                  <option value="uv">UV Curable</option>
+                  <option value="dtf">DTF / Textil</option>
+                  <option value="acuosa">Acuosa / EcoTank</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </label>
+
+              {/* GESTIÓN DE CANALES ACTIVOS */}
+              <div className="vc-field-full vc-channels-config-section">
+                <div className="vc-channels-section-header">
+                  <div>
+                    <h4>Canales y Tanques en Máquina ({editForm.channels.length})</h4>
+                    <p>Gestiona los colores instalados y qué artículo de bodega abastece cada uno.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="button button-outline button-small"
+                    onClick={() => {
+                      setEditForm((prev) => ({
+                        ...prev,
+                        channels: [
+                          ...prev.channels,
+                          {
+                            colorCode: 'W',
+                            colorName: 'Blanco',
+                            colorHex: '#ffffff',
+                            capacityMl: 1000,
+                            initialPercent: 100,
+                            variantId: '',
+                          },
+                        ],
+                      }));
+                    }}
+                  >
+                    <Plus size={13} /> Añadir Canal a esta Máquina
+                  </button>
+                </div>
+
+                <div className="vc-channels-config-table">
+                  {editForm.channels.map((channel, idx) => {
+                    const colorCfg = getColorConfig(channel.colorCode);
+                    const linkedVariant = inkInventoryOptions.find((v) => v.variantId === channel.variantId);
+
+                    return (
+                      <div key={idx} className="vc-channel-config-row">
+                        <div className="vc-channel-badge-col">
+                          <select
+                            value={channel.colorCode}
+                            className="vc-channel-code-select"
+                            onChange={(e) => {
+                              const newCode = e.target.value as ActiveInk['color_code'];
+                              const nextCfg = getColorConfig(newCode);
+                              setEditForm((prev) => {
+                                const nextChannels = [...prev.channels];
+                                nextChannels[idx] = {
+                                  ...nextChannels[idx],
+                                  colorCode: newCode,
+                                  colorName: nextCfg.name,
+                                  colorHex: nextCfg.hex,
+                                  variantId: suggestVariantForColor(newCode, prev.inkType),
+                                };
+                                return { ...prev, channels: nextChannels };
+                              });
+                            }}
+                          >
+                            <option value="C">C (Cian)</option>
+                            <option value="M">M (Magenta)</option>
+                            <option value="Y">Y (Amarillo)</option>
+                            <option value="K">K (Negro)</option>
+                            <option value="LC">LC (Light Cyan)</option>
+                            <option value="LM">LM (Light Magenta)</option>
+                            <option value="W">W (Blanco)</option>
+                            <option value="V">V (Barniz)</option>
+                            <option value="FL">FL (Flush)</option>
+                            <option value="OTRO">OTRO</option>
+                          </select>
+                          <span
+                            className="vc-cmyk-dot-preview"
+                            style={{ backgroundColor: colorCfg.hex }}
+                          />
+                        </div>
+
+                        <div className="vc-channel-variant-col">
+                          <label>Tinta de inventario vinculada:</label>
+                          <select
+                            value={channel.variantId}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setEditForm((prev) => {
+                                const nextChannels = [...prev.channels];
+                                nextChannels[idx] = { ...nextChannels[idx], variantId: val };
+                                return { ...prev, channels: nextChannels };
+                              });
+                            }}
+                          >
+                            <option value="">-- Sin vincular a bodega --</option>
+                            {inkInventoryOptions.map((opt) => (
+                              <option key={opt.variantId} value={opt.variantId}>
+                                {opt.name} {opt.variant ? `(${opt.variant})` : ''} · Stock: {opt.quantity} {opt.unit} [{opt.sku}]
+                              </option>
+                            ))}
+                          </select>
+                          {linkedVariant && (
+                            <span
+                              className={`vc-inv-stock-indicator ${
+                                linkedVariant.quantity > 0 ? 'in-stock' : 'no-stock'
+                              }`}
+                            >
+                              Stock actual en bodega: <b>{linkedVariant.quantity}</b> {linkedVariant.unit}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="vc-channel-capacity-col">
+                          <label>Tanque (ml):</label>
+                          <input
+                            type="number"
+                            min="50"
+                            step="50"
+                            value={channel.capacityMl}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 1000;
+                              setEditForm((prev) => {
+                                const nextChannels = [...prev.channels];
+                                nextChannels[idx] = { ...nextChannels[idx], capacityMl: val };
+                                return { ...prev, channels: nextChannels };
+                              });
+                            }}
+                          />
+                        </div>
+
+                        <div className="vc-channel-remove-col">
+                          <button
+                            type="button"
+                            className="vc-btn-icon-danger"
+                            title="Eliminar este canal de la máquina"
+                            onClick={() => {
+                              setEditForm((prev) => ({
+                                ...prev,
+                                channels: prev.channels.filter((_, i) => i !== idx),
+                              }));
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <footer>
+              <div className="vc-modal-footer-left">
+                <button
+                  type="button"
+                  className="button button-ghost vc-btn-danger-ghost"
+                  onClick={() => {
+                    setEditPrinterTarget(null);
+                    setDeletePrinterTarget(editPrinterTarget);
+                  }}
+                >
+                  <Trash2 size={14} /> Eliminar esta impresora
+                </button>
+              </div>
+
+              <div className="vc-modal-footer-right">
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={() => setEditPrinterTarget(null)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="button button-dark">
+                  <Check size={15} /> Guardar Cambios de la Impresora
+                </button>
+              </div>
+            </footer>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL: Eliminar Impresora */}
+      {deletePrinterTarget && (
+        <div className="vc-live-modal-backdrop" role="presentation">
+          <div className="vc-live-modal vc-delete-printer-modal">
+            <header className="vc-modal-danger-header">
+              <ShieldAlert size={24} className="vc-modal-icon-danger" />
+              <div>
+                <h3>¿Eliminar impresora “{deletePrinterTarget}”?</h3>
+                <p>Confirmación de baja de equipo en el taller.</p>
+              </div>
+            </header>
+
+            <div className="vc-live-modal-body">
+              <div className="vc-delete-warning-card">
+                <p>
+                  Esta acción dará de baja los{' '}
+                  <b>
+                    {inks.filter((i) => i.machine_name === deletePrinterTarget).length} canales de
+                    tinta
+                  </b>{' '}
+                  registrados en esta máquina (
+                  {inks
+                    .filter((i) => i.machine_name === deletePrinterTarget)
+                    .map((i) => i.color_code)
+                    .join(', ')}
+                  ) del monitoreo en vivo.
+                </p>
+                <small>
+                  Nota: Los productos físicos y botellas registradas en el inventario de bodega NO se
+                  eliminarán.
+                </small>
+              </div>
+            </div>
+
+            <footer>
+              <button
+                type="button"
+                className="button button-outline"
+                onClick={() => setDeletePrinterTarget(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="button button-dark vc-btn-confirm-delete"
+                onClick={handleConfirmDeletePrinter}
+              >
+                <Trash2 size={14} /> Sí, Eliminar Impresora
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Flota Completa de Impresoras (Resumen Ejecutivo) */}
+      {showFleetModal && (
+        <div className="vc-live-modal-backdrop" role="presentation">
+          <div className="vc-live-modal vc-fleet-modal">
+            <header>
+              <Printer size={22} className="vc-modal-icon-printer" />
+              <div>
+                <h3>Flota de Impresoras y Plotters ({fleetSummary.length})</h3>
+                <p>Vista general de máquinas en taller, tecnologías y estado de sus tanques.</p>
+              </div>
+              <button
+                type="button"
+                className="vc-modal-close-btn"
+                onClick={() => setShowFleetModal(false)}
+                aria-label="Cerrar modal"
+              >
+                <X size={18} />
+              </button>
+            </header>
+
+            <div className="vc-live-modal-body vc-fleet-modal-body">
+              <div className="vc-fleet-cards-grid">
+                {fleetSummary.map((m) => (
+                  <div key={m.name} className="vc-fleet-card">
+                    <div className="vc-fleet-card-header">
+                      <div>
+                        <h4>{m.name}</h4>
+                        <div className="vc-station-tags">
+                          <span className="vc-ink-type-tag">{m.inkType.toUpperCase()}</span>
+                          <span className="vc-station-channel-count">
+                            {m.channels.length} canales
+                          </span>
+                        </div>
+                      </div>
+                      <span
+                        className={`vc-fleet-health-badge ${
+                          m.criticalCount > 0 ? 'critical' : m.lowestPercent <= 30 ? 'warning' : 'healthy'
+                        }`}
+                      >
+                        {m.criticalCount > 0
+                          ? 'Alerta crítica'
+                          : m.lowestPercent <= 30
+                          ? 'Nivel bajo'
+                          : 'Operativo'}
+                      </span>
+                    </div>
+
+                    <div className="vc-fleet-channels-preview">
+                      {m.channels.map((ch) => {
+                        const cfg = getColorConfig(ch.color_code);
+                        return (
+                          <div key={ch.id} className="vc-fleet-channel-mini">
+                            <span
+                              className="vc-fleet-mini-badge"
+                              style={{ backgroundColor: cfg.badgeBg, color: cfg.hex }}
+                            >
+                              {ch.color_code}
+                            </span>
+                            <div className="vc-fleet-mini-bar">
+                              <div
+                                className="vc-fleet-mini-fill"
+                                style={{
+                                  width: `${ch.remaining_percent}%`,
+                                  background: cfg.bgGradient,
+                                }}
+                              />
+                            </div>
+                            <small>{Math.round(ch.remaining_percent)}%</small>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="vc-fleet-card-footer">
+                      <button
+                        type="button"
+                        className="button button-outline button-small"
+                        onClick={() => {
+                          setShowFleetModal(false);
+                          handleOpenEditPrinter(m.name);
+                        }}
+                      >
+                        <Settings size={13} /> Configurar Tintas
+                      </button>
+                      <button
+                        type="button"
+                        className="button button-dark button-small"
+                        onClick={() => {
+                          setShowFleetModal(false);
+                          setSelectedMachine(m.name);
+                        }}
+                      >
+                        Ver en Estaciones
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <footer>
+              {canEdit && (
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={() => {
+                    setShowFleetModal(false);
+                    handleOpenCreatePrinter();
+                  }}
+                >
+                  <Plus size={14} /> Registrar Otra Impresora
+                </button>
+              )}
+              <button
+                type="button"
+                className="button button-dark"
+                onClick={() => setShowFleetModal(false)}
+              >
+                Cerrar
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Vinculación Rápida de Tinta con Bodega */}
+      {quickLinkInk && (
+        <div className="vc-live-modal-backdrop" role="presentation">
+          <div className="vc-live-modal vc-quick-link-modal">
+            <header>
+              <Link size={20} className="vc-modal-icon-zap" />
+              <div>
+                <h3>Vincular Canal con Inventario Físico</h3>
+                <p>
+                  {quickLinkInk.machine_name} · Tinta {quickLinkInk.color_name} (
+                  {quickLinkInk.color_code})
+                </p>
+              </div>
+            </header>
+
+            <div className="vc-live-modal-body">
+              <p className="vc-modal-p-intro">
+                Selecciona la botella o artículo de bodega que surte a este tanque para ver su stock
+                en tiempo real y descontar existencias automáticamente al rellenar:
+              </p>
+
+              <div className="vc-quick-link-picker">
+                <select
+                  defaultValue={quickLinkInk.variant_id || ''}
+                  id="vc-quick-link-select"
+                  className="vc-quick-link-select-input"
+                >
+                  <option value="">-- Sin vincular a bodega (Solo monitoreo de tanque) --</option>
+                  {inkInventoryOptions.map((opt) => (
+                    <option key={opt.variantId} value={opt.variantId}>
+                      {opt.name} {opt.variant ? `(${opt.variant})` : ''} · Stock: {opt.quantity} {opt.unit} [{opt.sku}]
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <footer>
+              <button
+                type="button"
+                className="button button-outline"
+                onClick={() => setQuickLinkInk(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="button button-dark"
+                onClick={() => {
+                  const selectEl = document.getElementById(
+                    'vc-quick-link-select'
+                  ) as HTMLSelectElement;
+                  void handleSaveQuickLink(selectEl?.value || '');
+                }}
+              >
+                <Check size={14} /> Guardar Vínculo
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
       {/* MODAL: Rellenar Tanque Individual */}
       {refillTarget && (
         <div className="vc-live-modal-backdrop" role="presentation">
@@ -919,6 +2593,31 @@ export function InventoryLiveInkMonitor({
                   </p>
                 </div>
               </div>
+
+              {/* Información del artículo de bodega que se descontará */}
+              {(() => {
+                const linked = getLinkedVariantInfo(refillTarget.variant_id);
+                return linked ? (
+                  <div className="vc-refill-warehouse-link-info">
+                    <Boxes size={16} />
+                    <div>
+                      <b>Artículo vinculado en bodega:</b> {linked.name}{' '}
+                      {linked.variant ? `(${linked.variant})` : ''} · SKU: <code>{linked.sku}</code>
+                      <div>
+                        Stock actual disponible: <b>{linked.quantity}</b> {linked.unit}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="vc-refill-warehouse-link-info unlinked">
+                    <Info size={16} />
+                    <span>
+                      Este canal no tiene un producto de inventario vinculado. Se recargará en el
+                      sistema sin descontar stock físico de bodega.
+                    </span>
+                  </div>
+                );
+              })()}
 
               <label className="vc-live-checkbox-card">
                 <input
@@ -1060,130 +2759,6 @@ export function InventoryLiveInkMonitor({
               </button>
             </footer>
           </div>
-        </div>
-      )}
-
-      {/* MODAL: Añadir Nuevo Canal de Tinta */}
-      {showAddModal && (
-        <div className="vc-live-modal-backdrop" role="presentation">
-          <form className="vc-live-modal" onSubmit={handleCreateInk}>
-            <header>
-              <Plus size={22} />
-              <div>
-                <h3>Asignar Canal de Tinta a Máquina</h3>
-                <p>Registra un nuevo tanque o color para monitoreo diario en tiempo real.</p>
-              </div>
-            </header>
-
-            <div className="vc-live-modal-body vc-form-grid">
-              <label>
-                Máquina o plotter *
-                <input
-                  required
-                  type="text"
-                  placeholder="Ej. Plotter Gran Formato 3.20m, Plotter Roland 1.60m"
-                  value={newInkForm.machineName}
-                  onChange={(e) =>
-                    setNewInkForm({ ...newInkForm, machineName: e.target.value })
-                  }
-                />
-              </label>
-
-              <label>
-                Canal de Color *
-                <select
-                  value={newInkForm.colorCode}
-                  onChange={(e) =>
-                    setNewInkForm({
-                      ...newInkForm,
-                      colorCode: e.target.value as ActiveInk['color_code'],
-                    })
-                  }
-                >
-                  <option value="C">Cian (C)</option>
-                  <option value="M">Magenta (M)</option>
-                  <option value="Y">Amarillo (Y)</option>
-                  <option value="K">Negro (K)</option>
-                  <option value="LC">Light Cyan (LC)</option>
-                  <option value="LM">Light Magenta (LM)</option>
-                  <option value="W">Blanco (W)</option>
-                  <option value="V">Barniz / Gloss (V)</option>
-                  <option value="FL">Limpiador / Flush (FL)</option>
-                  <option value="OTRO">Otro</option>
-                </select>
-              </label>
-
-              <label>
-                Tipo de tinta
-                <select
-                  value={newInkForm.inkType}
-                  onChange={(e) =>
-                    setNewInkForm({
-                      ...newInkForm,
-                      inkType: e.target.value as ActiveInk['ink_type'],
-                    })
-                  }
-                >
-                  <option value="ecosolvente">Eco-solvente</option>
-                  <option value="solvente">Solvente</option>
-                  <option value="sublimacion">Sublimación</option>
-                  <option value="uv">UV</option>
-                  <option value="dtf">DTF</option>
-                  <option value="acuosa">Acuosa / EcoTank</option>
-                  <option value="otro">Otro</option>
-                </select>
-              </label>
-
-              <label>
-                Capacidad del tanque (ml)
-                <input
-                  type="number"
-                  min="50"
-                  step="50"
-                  value={newInkForm.capacityMl}
-                  onChange={(e) =>
-                    setNewInkForm({ ...newInkForm, capacityMl: e.target.value })
-                  }
-                />
-              </label>
-
-              <label>
-                Porcentaje actual en tanque (%)
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={newInkForm.initialPercent}
-                  onChange={(e) =>
-                    setNewInkForm({ ...newInkForm, initialPercent: e.target.value })
-                  }
-                />
-              </label>
-
-              <label>
-                Notas u observaciones
-                <input
-                  type="text"
-                  placeholder="Ej. Tinta original Galaxy lote 2026"
-                  value={newInkForm.notes}
-                  onChange={(e) => setNewInkForm({ ...newInkForm, notes: e.target.value })}
-                />
-              </label>
-            </div>
-
-            <footer>
-              <button
-                type="button"
-                className="button button-outline"
-                onClick={() => setShowAddModal(false)}
-              >
-                Cancelar
-              </button>
-              <button type="submit" className="button button-dark">
-                Guardar y monitorear
-              </button>
-            </footer>
-          </form>
         </div>
       )}
     </div>

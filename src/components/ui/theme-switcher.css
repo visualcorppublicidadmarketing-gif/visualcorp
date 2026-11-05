@@ -1,0 +1,256 @@
+/* =========================================================================
+   Visual Corp Suite — Theme Switcher Styles
+   Capsule segmented toggle, sidebar row, and icon variations
+   ========================================================================= */
+
+/* 1. Capsule Segmented Control (Topbar) */
+.vc-theme-capsule-switcher {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  height: 36px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(235, 230, 242, 0.7);
+  border: 1px solid rgba(138, 76, 175, 0.18);
+  box-shadow: inset 0 1px 3px rgba(32, 20, 44, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  user-select: none;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vc-theme-capsule-switcher.theme-is-dark {
+  background: rgba(22, 24, 38, 0.85);
+  border-color: rgba(192, 132, 252, 0.22);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.vc-capsule-opt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 11px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #696277;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.vc-capsule-opt:hover {
+  color: #191522;
+}
+
+.vc-theme-capsule-switcher.theme-is-dark .vc-capsule-opt {
+  color: #9da3be;
+}
+
+.vc-theme-capsule-switcher.theme-is-dark .vc-capsule-opt:hover {
+  color: #f1f2f8;
+}
+
+/* Selected state in Light Mode */
+.vc-theme-capsule-switcher.theme-is-light .vc-capsule-opt.is-selected {
+  background: #ffffff;
+  color: #793fa0;
+  font-weight: 750;
+  box-shadow: 0 2px 8px rgba(121, 63, 160, 0.16), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.vc-theme-capsule-switcher.theme-is-light .vc-capsule-opt.is-selected .vc-theme-sun {
+  color: #f59e0b;
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.4));
+}
+
+/* Selected state in Dark Mode */
+.vc-theme-capsule-switcher.theme-is-dark .vc-capsule-opt.is-selected {
+  background: linear-gradient(135deg, #2b2540 0%, #1e1b2f 100%);
+  color: #e2b4ff;
+  border: 1px solid rgba(192, 132, 252, 0.3);
+  font-weight: 750;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), 0 0 12px rgba(192, 132, 252, 0.2);
+}
+
+.vc-theme-capsule-switcher.theme-is-dark .vc-capsule-opt.is-selected .vc-theme-moon {
+  color: #38bdf8;
+  filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.5));
+}
+
+.vc-capsule-text {
+  font-size: 11.5px;
+  letter-spacing: -0.01em;
+}
+
+/* 2. Full Row Variant (Sidebar Footer) */
+.vc-theme-row-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  margin: 0 8px 10px;
+  border-radius: 12px;
+  background: rgba(246, 243, 250, 0.8);
+  border: 1px solid #e7e2ee;
+  transition: all 0.2s ease;
+}
+
+[data-theme='dark'] .vc-theme-row-container,
+.theme-dark .vc-theme-row-container {
+  background: rgba(22, 24, 38, 0.7);
+  border-color: #272a3e;
+}
+
+.vc-theme-row-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.vc-theme-row-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #554d63;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+[data-theme='dark'] .vc-theme-row-title,
+.theme-dark .vc-theme-row-title {
+  color: #8e95ae;
+}
+
+.vc-theme-row-shortcut {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #ffffff;
+  border: 1px solid #d9d4e2;
+  color: #7b738c;
+  font-family: inherit;
+}
+
+[data-theme='dark'] .vc-theme-row-shortcut,
+.theme-dark .vc-theme-row-shortcut {
+  background: #1c1f30;
+  border-color: #31364d;
+  color: #9ba0b4;
+}
+
+.vc-theme-row-segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 9px;
+  background: #ece8f2;
+}
+
+[data-theme='dark'] .vc-theme-row-segmented,
+.theme-dark .vc-theme-row-segmented {
+  background: #141624;
+}
+
+.vc-theme-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #645c73;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.vc-theme-seg-btn:hover {
+  color: #191522;
+}
+
+[data-theme='dark'] .vc-theme-seg-btn,
+.theme-dark .vc-theme-seg-btn {
+  color: #8c93ac;
+}
+
+[data-theme='dark'] .vc-theme-seg-btn:hover,
+.theme-dark .vc-theme-seg-btn:hover {
+  color: #f1f2f8;
+}
+
+.vc-theme-seg-btn.is-active {
+  background: #ffffff;
+  color: #793fa0;
+  font-weight: 750;
+  box-shadow: 0 1px 4px rgba(32, 20, 44, 0.08);
+}
+
+[data-theme='dark'] .vc-theme-seg-btn.is-active,
+.theme-dark .vc-theme-seg-btn.is-active {
+  background: #272a3e;
+  color: #e2b4ff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+.vc-theme-seg-btn.is-active .vc-theme-sun {
+  color: #f59e0b;
+}
+
+.vc-theme-seg-btn.is-active .vc-theme-moon {
+  color: #38bdf8;
+}
+
+/* 3. Icon Button Variant */
+.vc-theme-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(138, 76, 175, 0.18);
+  background: #ffffff;
+  color: #645c73;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vc-theme-icon-btn:hover {
+  transform: scale(1.05);
+  border-color: #793fa0;
+  color: #793fa0;
+  box-shadow: 0 2px 8px rgba(121, 63, 160, 0.15);
+}
+
+.vc-theme-icon-btn.is-dark {
+  background: #1b1e2e;
+  border-color: #2c3147;
+  color: #fbbf24;
+}
+
+.vc-theme-icon-btn.is-dark:hover {
+  background: #252a3f;
+  border-color: #c084fc;
+  color: #fde047;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* Responsive adjustment */
+@media (max-width: 640px) {
+  .vc-theme-capsule-switcher .vc-capsule-text {
+    display: none;
+  }
+  .vc-capsule-opt {
+    padding: 0 8px;
+  }
+}
