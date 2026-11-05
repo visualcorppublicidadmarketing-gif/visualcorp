@@ -17,9 +17,17 @@ export async function saveMarketingPost(
   creationKey?: string,
 ): Promise<WorkflowPost> {
   if (!supabase) throw new Error("Conexión no disponible.");
+  // Empty optional UUID controls represent an absent relation in Postgres.
+  const nullableUuidFields = new Set(["campaign_id", "owner_user_id"]);
+  const normalizedPatch = Object.fromEntries(
+    Object.entries(patch).map(([key, value]) => [
+      key,
+      nullableUuidFields.has(key) && value === "" ? null : value,
+    ]),
+  );
   // Preserve legacy values (including old time ranges) when unrelated fields are edited.
   const changes = Object.fromEntries(
-    Object.entries(patch).filter(
+    Object.entries(normalizedPatch).filter(
       ([key, value]) =>
         !post || JSON.stringify(value) !== JSON.stringify(post[key]),
     ),
