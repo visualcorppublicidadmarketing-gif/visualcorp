@@ -970,3 +970,579 @@
     align-items: stretch;
   }
 }
+
+
+/* =========================================================================
+   Nuevos Estilos: Gestión de Impresoras y Conexión con Inventario Físico
+   ========================================================================= */
+
+/* Bloque de conexión de bodega en el cartucho */
+.vc-cartridge-inventory-block {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: rgba(245, 243, 248, 0.7);
+  border: 1px solid #ebdfee;
+  border-radius: 9px;
+  font-size: 11.5px;
+  text-align: left;
+}
+
+[data-theme='dark'] .vc-cartridge-inventory-block {
+  background: #1c1827;
+  border-color: #2e283d;
+}
+
+.vc-inv-link-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.vc-inv-link-icon {
+  color: #793fa0;
+  flex-shrink: 0;
+}
+
+.vc-inv-link-title {
+  font-weight: 650;
+  color: var(--text-heading, #261738);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.vc-inv-link-change-btn {
+  background: transparent;
+  border: none;
+  color: #793fa0;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.vc-inv-link-change-btn:hover {
+  color: #a51091;
+}
+
+.vc-inv-link-stock-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vc-inv-stock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.vc-inv-stock-pill.is-in-stock {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.vc-inv-stock-pill.is-out-of-stock {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.vc-inv-alert-note {
+  display: block;
+  font-size: 10px;
+  margin-top: 4px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.vc-inv-alert-note.ok {
+  color: #047857;
+}
+
+.vc-inv-alert-note.danger {
+  color: #b91c1c;
+  animation: vc-pulse 2s infinite;
+}
+
+.vc-inv-link-none {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vc-inv-unlinked-label {
+  color: #8c819c;
+  font-style: italic;
+  font-size: 11px;
+}
+
+.vc-inv-bind-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: #f3e8ff;
+  border: 1px solid #d8b4fe;
+  color: #7e22ce;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vc-inv-bind-btn:hover {
+  background: #7e22ce;
+  color: #ffffff;
+}
+
+/* Modal de Creación y Edición de Impresora */
+.vc-printer-form-modal {
+  max-width: 780px !important;
+  width: 95vw;
+}
+
+.vc-field-full {
+  grid-column: 1 / -1;
+}
+
+.vc-channels-config-section {
+  background: #faf8fd;
+  border: 1px solid #e9dff3;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 6px;
+}
+
+[data-theme='dark'] .vc-channels-config-section {
+  background: #181522;
+  border-color: #2e263d;
+}
+
+.vc-channels-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.vc-channels-section-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--text-heading, #261738);
+}
+
+.vc-channels-section-header p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted, #736488);
+}
+
+.vc-channels-config-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vc-channel-config-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #e5ddeb;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(38, 23, 56, 0.03);
+}
+
+[data-theme='dark'] .vc-channel-config-row {
+  background: #201b2d;
+  border-color: #383049;
+}
+
+.vc-channel-badge-col {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.vc-channel-code-select {
+  padding: 6px 8px;
+  border: 1px solid #d4c7e2;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 12px;
+  background: #faf7fd;
+  color: #38244f;
+}
+
+.vc-cmyk-dot-preview {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.vc-channel-variant-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.vc-channel-variant-col label,
+.vc-channel-capacity-col label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #635377;
+  margin: 0;
+}
+
+.vc-channel-variant-col select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #dfd4ec;
+  border-radius: 7px;
+  font-size: 12px;
+  background: #ffffff;
+}
+
+[data-theme='dark'] .vc-channel-variant-col select {
+  background: #171322;
+  border-color: #383049;
+  color: #dcd4ea;
+}
+
+.vc-inv-stock-indicator {
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.vc-inv-stock-indicator.in-stock {
+  color: #059669;
+}
+
+.vc-inv-stock-indicator.no-stock {
+  color: #dc2626;
+}
+
+.vc-channel-capacity-col {
+  width: 110px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.vc-channel-capacity-col input {
+  padding: 6px 10px;
+  border: 1px solid #dfd4ec;
+  border-radius: 7px;
+  font-size: 12px;
+  width: 100%;
+}
+
+.vc-channel-remove-col {
+  flex-shrink: 0;
+}
+
+.vc-btn-icon-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #9c88a8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vc-btn-icon-danger:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+.vc-btn-danger-ghost {
+  color: #dc2626 !important;
+}
+
+.vc-btn-danger-ghost:hover {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+}
+
+.vc-modal-footer-left {
+  margin-right: auto;
+}
+
+.vc-modal-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Modal Eliminar Impresora */
+.vc-delete-printer-modal {
+  max-width: 520px !important;
+}
+
+.vc-modal-danger-header {
+  border-bottom-color: #fee2e2 !important;
+}
+
+.vc-modal-icon-danger {
+  color: #dc2626;
+  flex-shrink: 0;
+}
+
+.vc-delete-warning-card {
+  padding: 14px 16px;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 10px;
+  color: #742a2a;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.vc-delete-warning-card small {
+  display: block;
+  margin-top: 8px;
+  color: #9b2c2c;
+  font-size: 11.5px;
+}
+
+.vc-btn-confirm-delete {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+.vc-btn-confirm-delete:hover {
+  background: #b91c1c !important;
+}
+
+/* Modal de Flota Completa */
+.vc-fleet-modal {
+  max-width: 860px !important;
+  width: 95vw;
+}
+
+.vc-fleet-modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.vc-fleet-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+}
+
+.vc-fleet-card {
+  padding: 16px;
+  background: #faf8fd;
+  border: 1px solid #e7dced;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+[data-theme='dark'] .vc-fleet-card {
+  background: #1c1827;
+  border-color: #312840;
+}
+
+.vc-fleet-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.vc-fleet-card-header h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 750;
+  color: var(--text-heading, #261738);
+}
+
+.vc-fleet-health-badge {
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.vc-fleet-health-badge.healthy {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.vc-fleet-health-badge.warning {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.vc-fleet-health-badge.critical {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  animation: vc-pulse 2s infinite;
+}
+
+.vc-fleet-channels-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  border: 1px solid #ece4f2;
+  border-radius: 8px;
+}
+
+[data-theme='dark'] .vc-fleet-channels-preview {
+  background: #15121e;
+  border-color: #2c2538;
+}
+
+.vc-fleet-channel-mini {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.vc-fleet-mini-badge {
+  width: 22px;
+  height: 20px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.vc-fleet-mini-bar {
+  flex: 1;
+  height: 6px;
+  background: #eeeaf4;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+[data-theme='dark'] .vc-fleet-mini-bar {
+  background: #2b2438;
+}
+
+.vc-fleet-mini-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.vc-fleet-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid #eee8f3;
+}
+
+[data-theme='dark'] .vc-fleet-card-footer {
+  border-top-color: #2e263d;
+}
+
+/* Modal de Vinculación Rápida */
+.vc-quick-link-modal {
+  max-width: 500px !important;
+}
+
+.vc-quick-link-picker {
+  margin: 16px 0;
+}
+
+.vc-quick-link-select-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d8cde5;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #ffffff;
+}
+
+[data-theme='dark'] .vc-quick-link-select-input {
+  background: #171322;
+  border-color: #352c46;
+  color: #ded6ec;
+}
+
+.vc-refill-warehouse-link-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  color: #166534;
+  font-size: 12.5px;
+  margin: 12px 0;
+}
+
+.vc-refill-warehouse-link-info code {
+  background: rgba(22, 101, 52, 0.1);
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.vc-refill-warehouse-link-info.unlinked {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+.vc-modal-icon-settings,
+.vc-modal-icon-printer {
+  color: #793fa0;
+  flex-shrink: 0;
+}
+
+.vc-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: #9286a2;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  margin-left: auto;
+}
+
+.vc-modal-close-btn:hover {
+  background: #eee8f4;
+  color: #20142f;
+}

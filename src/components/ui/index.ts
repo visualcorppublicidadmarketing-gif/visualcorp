@@ -7,3 +7,4 @@ export * from './OperationalKit';
 export * from './ContextMenu';
 export * from './Avatar';
 export * from './AnimatedThemeToggler';
+export * from './ThemeSwitcher';

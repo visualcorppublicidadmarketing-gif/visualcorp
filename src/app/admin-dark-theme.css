@@ -458,3 +458,67 @@ body[data-theme='dark'],
   background: rgba(168, 85, 247, 0.15);
   color: #e9d5ff;
 }
+
+/* Additional Suite Dark Theme Refinements */
+.work-app.theme-dark .vc-marketing-calendar-view,
+[data-theme='dark'] .vc-marketing-calendar-view {
+  background: #161826;
+  border-color: #292d42;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-view button,
+[data-theme='dark'] .vc-marketing-calendar-view button {
+  color: #9ea5bf;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-view button:hover,
+[data-theme='dark'] .vc-marketing-calendar-view button:hover {
+  color: #f1f2f8;
+}
+
+.work-app.theme-dark .vc-marketing-calendar-view button.active,
+[data-theme='dark'] .vc-marketing-calendar-view button.active {
+  background: #272a3e;
+  color: #e2b4ff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+}
+
+.work-app.theme-dark .vc-marketing-post-artwork-browse,
+[data-theme='dark'] .vc-marketing-post-artwork-browse {
+  border-color: #2e334a;
+  background: #191c2b;
+  color: #c4c7d5;
+}
+
+.work-app.theme-dark .sidebar-brand-wrapper,
+[data-theme='dark'] .sidebar-brand-wrapper {
+  border-bottom-color: #222536;
+}
+
+.work-app.theme-dark .sidebar-profile-card,
+[data-theme='dark'] .sidebar-profile-card {
+  border-top-color: #222536;
+  background: transparent;
+}
+
+.work-app.theme-dark .sidebar-profile-name,
+[data-theme='dark'] .sidebar-profile-name {
+  color: #f1f2f8;
+}
+
+.work-app.theme-dark .sidebar-profile-role,
+[data-theme='dark'] .sidebar-profile-role {
+  color: #8c93ac;
+}
+
+.work-app.theme-dark .sidebar-flyout-popover,
+[data-theme='dark'] .sidebar-flyout-popover {
+  background: #141624;
+  border-color: #292d42;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+.work-app.theme-dark .sidebar-flyout-title,
+[data-theme='dark'] .sidebar-flyout-title {
+  color: #f1f2f8;
+}

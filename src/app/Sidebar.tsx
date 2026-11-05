@@ -12,6 +12,7 @@ import {
 import { Avatar } from '../components/ui/Avatar';
 import { PulsingBeacon } from '../components/ui/MagicComponents';
 import type { AppNavLink, AppNavGroup } from './navigation';
+import { ThemeSwitcher } from '../components/ui/ThemeSwitcher';
 import './sidebar.css';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
@@ -311,6 +312,25 @@ export function Sidebar({
             );
           })}
         </nav>
+
+        {/* Selector de tema visual (Claro / Oscuro) */}
+        {toggleTheme && (
+          isCollapsed ? (
+            <div className="sidebar-collapsed-theme-wrapper" style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+              <ThemeSwitcher
+                theme={theme || 'light'}
+                onToggle={toggleTheme}
+                variant="icon"
+              />
+            </div>
+          ) : (
+            <ThemeSwitcher
+              theme={theme || 'light'}
+              onToggle={toggleTheme}
+              variant="row"
+            />
+          )
+        )}
 
         {/* Tarjeta de perfil inferior */}
         <div
