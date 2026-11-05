@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient";
 import { useConfirm } from "../../../components/ui/OperationalKit";
+import { SelectDropdown } from "../../../components/ui/SelectDropdown";
 import {
   DELIVERABLES,
   approvalLabel,
@@ -180,20 +181,22 @@ export function WorkflowToolbar({
           <span className="eyebrow">TU BANDEJA DE TRABAJO</span>
           <h2>Qué sigue y qué falta</h2>
         </div>
-        <label>
-          Tipo de registro
-          <select
-            value={recordFilter}
-            onChange={(e) => {
-              onRecordFilter(e.target.value as RecordFilter);
-              onQueue("all");
-            }}
-          >
-            <option value="publications">Publicaciones</option>
-            <option value="monthly_plans">Planes mensuales</option>
-            <option value="ideas">Espacios sin título</option>
-          </select>
-        </label>
+        <SelectDropdown
+          size="md"
+          label="Tipo de registro"
+          ariaLabel="Tipo de registro"
+          value={recordFilter}
+          defaultValue="publications"
+          onChange={(val) => {
+            onRecordFilter(val as RecordFilter);
+            onQueue("all");
+          }}
+          options={[
+            { value: "publications", label: "Publicaciones", badge: publications.length },
+            { value: "monthly_plans", label: "Planes mensuales" },
+            { value: "ideas", label: "Espacios sin título" },
+          ]}
+        />
       </div>
       {recordFilter === "publications" && (
         <div className="mk-work-queues">
