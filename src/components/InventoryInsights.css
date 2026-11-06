@@ -91,3 +91,1159 @@
 @media(max-width:760px){.inventory-product-card{grid-template-columns:76px minmax(0,1fr);}.inventory-product-image{width:76px;height:76px;}.inventory-product-actions{grid-template-columns:repeat(3,minmax(0,1fr));}.inventory-product-actions button{min-height:42px;padding-inline:5px;font-size:9px;}}
 @media(max-width:540px){.inventory-product-card{grid-template-columns:64px minmax(0,1fr);grid-template-rows:auto minmax(44px,auto) 32px auto auto;padding:12px;}.inventory-product-image{width:64px;height:64px;}.inventory-product-main{flex-direction:row;padding-right:28px;}.inventory-product-main b{font-size:12px;}.inventory-product-tags{grid-column:2;flex-wrap:wrap;max-height:44px;overflow:hidden;}.inventory-product-state{grid-column:2;}.inventory-product-facts{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(48px,auto);}.inventory-product-actions{grid-template-columns:repeat(2,minmax(0,1fr));}.inventory-product-actions button{min-height:42px;padding-inline:8px;font-size:10px;}}
 @media(prefers-reduced-motion:reduce){.inventory-product-image img{transition:none}.inventory-product-image:not(:disabled):hover img{transform:none}}
+
+
+/* =========================================================================
+   Inventory Insights Dark & Light Mode Theme Harmony
+   ========================================================================= */
+
+[data-theme='dark'] .inventory-insights-header h3,
+.work-app.theme-dark .inventory-insights-header h3 {
+  color: #f2f3f8 !important;
+}
+[data-theme='dark'] .inventory-insights-header p,
+.work-app.theme-dark .inventory-insights-header p {
+  color: #929bb2 !important;
+}
+[data-theme='dark'] .inventory-empty,
+.work-app.theme-dark .inventory-empty {
+  border: 1px dashed #2e344e !important;
+  background: #171928 !important;
+  color: #929bb2 !important;
+}
+
+/* Search & Filter Bar Theme Styles */
+.inventory-insights-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 220px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e2dce8;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #554d60;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.inventory-insights-search:focus-within {
+  border-color: #793fa0;
+  box-shadow: 0 0 0 3px rgba(121, 63, 160, 0.15);
+}
+.inventory-insights-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #2b2533;
+  font: inherit;
+  font-size: 11px;
+}
+.inventory-insights-search input::placeholder {
+  color: #9b93a5;
+}
+
+[data-theme='dark'] .inventory-insights-search,
+.work-app.theme-dark .inventory-insights-search {
+  border-color: #2e344e !important;
+  background: #181b2a !important;
+  color: #9fa7be !important;
+}
+[data-theme='dark'] .inventory-insights-search:focus-within,
+.work-app.theme-dark .inventory-insights-search:focus-within {
+  border-color: #c084fc !important;
+  box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.18) !important;
+}
+[data-theme='dark'] .inventory-insights-search input,
+.work-app.theme-dark .inventory-insights-search input {
+  color: #f2f3f8 !important;
+}
+[data-theme='dark'] .inventory-insights-search input::placeholder,
+.work-app.theme-dark .inventory-insights-search input::placeholder {
+  color: #6d758d !important;
+}
+
+[data-theme='dark'] .inventory-insights-filters select,
+.work-app.theme-dark .inventory-insights-filters select {
+  border-color: #2e344e !important;
+  background: #181b2a !important;
+  color: #dce1ef !important;
+}
+[data-theme='dark'] .inventory-insights-filters > span,
+.work-app.theme-dark .inventory-insights-filters > span {
+  color: #9ba1b7 !important;
+}
+[data-theme='dark'] .inventory-clear-filters,
+.work-app.theme-dark .inventory-clear-filters {
+  border-color: #333a54 !important;
+  background: #1e2236 !important;
+  color: #c5cbdc !important;
+}
+[data-theme='dark'] .inventory-clear-filters:hover,
+.work-app.theme-dark .inventory-clear-filters:hover {
+  background: #272d45 !important;
+  color: #ffffff !important;
+}
+
+/* Quick Status Filter Pills */
+.inventory-quick-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.inventory-quick-status button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #e5dfec;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #5a5264;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.inventory-quick-status button b {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 7px;
+  background: #f1edf5;
+  color: #635079;
+  font-size: 9px;
+  font-weight: 700;
+}
+.inventory-quick-status button:hover {
+  border-color: #d0c5db;
+  background: #faf7fc;
+  color: #362944;
+}
+.inventory-quick-status button.active {
+  border-color: #793fa0;
+  background: linear-gradient(135deg, #793fa0, #93228a);
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(121, 63, 160, 0.25);
+}
+.inventory-quick-status button.active b {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+.inventory-quick-status button.attention:not(.active) {
+  border-color: #f7d6a5;
+  background: #fffbf5;
+  color: #9a5f18;
+}
+.inventory-quick-status button.attention:not(.active) b {
+  background: #fdedd4;
+  color: #9a5f18;
+}
+
+[data-theme='dark'] .inventory-quick-status button,
+.work-app.theme-dark .inventory-quick-status button {
+  border-color: #292e44 !important;
+  background: #181b2a !important;
+  color: #c2cad9 !important;
+}
+[data-theme='dark'] .inventory-quick-status button b,
+.work-app.theme-dark .inventory-quick-status button b {
+  background: #22263a !important;
+  color: #a4adc1 !important;
+}
+[data-theme='dark'] .inventory-quick-status button:hover,
+.work-app.theme-dark .inventory-quick-status button:hover {
+  border-color: #3e4666 !important;
+  background: #202438 !important;
+  color: #ffffff !important;
+}
+[data-theme='dark'] .inventory-quick-status button.active,
+.work-app.theme-dark .inventory-quick-status button.active {
+  border-color: #c084fc !important;
+  background: linear-gradient(135deg, #793fa0, #a51091) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(121, 63, 160, 0.4) !important;
+}
+[data-theme='dark'] .inventory-quick-status button.active b,
+.work-app.theme-dark .inventory-quick-status button.active b {
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+}
+[data-theme='dark'] .inventory-quick-status button.attention:not(.active),
+.work-app.theme-dark .inventory-quick-status button.attention:not(.active) {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #fde68a !important;
+}
+[data-theme='dark'] .inventory-quick-status button.attention:not(.active) b,
+.work-app.theme-dark .inventory-quick-status button.attention:not(.active) b {
+  background: rgba(245, 158, 11, 0.22) !important;
+  color: #fde68a !important;
+}
+
+/* Modes switcher in Dark Mode */
+[data-theme='dark'] .inventory-insights-modes,
+.work-app.theme-dark .inventory-insights-modes {
+  border-color: #2a2f45 !important;
+  background: #181b2a !important;
+}
+[data-theme='dark'] .inventory-insights-modes button,
+.work-app.theme-dark .inventory-insights-modes button {
+  color: #8c95aa !important;
+}
+[data-theme='dark'] .inventory-insights-modes button:hover,
+.work-app.theme-dark .inventory-insights-modes button:hover {
+  color: #ffffff !important;
+  background: #22263b !important;
+}
+[data-theme='dark'] .inventory-insights-modes button.active,
+.work-app.theme-dark .inventory-insights-modes button.active {
+  background: linear-gradient(100deg, #793fa0, #a51091) !important;
+  color: #ffffff !important;
+}
+
+/* Bulk Bar in Dark & Light */
+.inventory-bulk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px 14px;
+  border: 1px solid #e7e0ed;
+  border-radius: 10px;
+  background: #faf7fc;
+  color: #584f63;
+  font-size: 11px;
+}
+[data-theme='dark'] .inventory-bulk-bar,
+.work-app.theme-dark .inventory-bulk-bar {
+  border-color: #282e44 !important;
+  background: #171928 !important;
+  color: #cbd2e3 !important;
+}
+[data-theme='dark'] .inventory-bulk-tools,
+.work-app.theme-dark .inventory-bulk-tools {
+  border-color: #2f354e !important;
+  background: #1a1d2e !important;
+}
+[data-theme='dark'] .inventory-bulk-count,
+.work-app.theme-dark .inventory-bulk-count {
+  background: #2b233a !important;
+  color: #d8b4fe !important;
+}
+[data-theme='dark'] .inventory-bulk-branch,
+.work-app.theme-dark .inventory-bulk-branch {
+  border-color: #333a52 !important;
+  background: #181b2a !important;
+}
+[data-theme='dark'] .inventory-bulk-branch select,
+.work-app.theme-dark .inventory-bulk-branch select {
+  color: #f2f3f8 !important;
+}
+[data-theme='dark'] .inventory-bulk-tools .button,
+.work-app.theme-dark .inventory-bulk-tools .button {
+  border-color: #353d58 !important;
+  background: #202438 !important;
+  color: #dbe0ee !important;
+}
+[data-theme='dark'] .inventory-bulk-tools .button:hover,
+.work-app.theme-dark .inventory-bulk-tools .button:hover {
+  background: #2a314b !important;
+  color: #ffffff !important;
+}
+[data-theme='dark'] .inventory-bulk-clear,
+.work-app.theme-dark .inventory-bulk-clear {
+  color: #9ea6bc !important;
+}
+[data-theme='dark'] .inventory-bulk-clear:hover,
+.work-app.theme-dark .inventory-bulk-clear:hover {
+  background: #24293f !important;
+  color: #ffffff !important;
+}
+
+/* Cards View in Dark Mode */
+[data-theme='dark'] .inventory-product-card,
+.work-app.theme-dark .inventory-product-card {
+  border-color: #282d42 !important;
+  background: #171928 !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+}
+[data-theme='dark'] .inventory-product-card:hover,
+.work-app.theme-dark .inventory-product-card:hover {
+  border-color: #3e4768 !important;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45) !important;
+}
+[data-theme='dark'] .inventory-product-image,
+.work-app.theme-dark .inventory-product-image {
+  border: 1px solid #282e44 !important;
+  background: #1a1e30 !important;
+  color: #8892aa !important;
+}
+[data-theme='dark'] .inventory-product-main b,
+.work-app.theme-dark .inventory-product-main b {
+  color: #f2f3f8 !important;
+}
+[data-theme='dark'] .inventory-product-main small,
+.work-app.theme-dark .inventory-product-main small {
+  color: #929bb2 !important;
+}
+[data-theme='dark'] .inventory-product-variant,
+.work-app.theme-dark .inventory-product-variant {
+  color: #c084fc !important;
+}
+[data-theme='dark'] .inventory-product-tags em,
+.work-app.theme-dark .inventory-product-tags em {
+  border: 1px solid #2d334f !important;
+  background: #22263b !important;
+  color: #c4b5fd !important;
+}
+[data-theme='dark'] .inventory-card-select,
+.work-app.theme-dark .inventory-card-select {
+  border-color: #313750 !important;
+  background: #1b1e2f !important;
+}
+[data-theme='dark'] .inventory-product-facts,
+.work-app.theme-dark .inventory-product-facts {
+  border-top-color: #262b3f !important;
+}
+[data-theme='dark'] .inventory-product-facts > span,
+.work-app.theme-dark .inventory-product-facts > span {
+  border: 1px solid #292f46 !important;
+  background: #1b1e2f !important;
+  color: #939cb2 !important;
+}
+[data-theme='dark'] .inventory-product-facts strong,
+.work-app.theme-dark .inventory-product-facts strong {
+  color: #ffffff !important;
+}
+[data-theme='dark'] .inventory-product-actions,
+.work-app.theme-dark .inventory-product-actions {
+  border-top-color: #262b3f !important;
+}
+[data-theme='dark'] .inventory-product-actions button,
+.work-app.theme-dark .inventory-product-actions button {
+  border: 1px solid #333a54 !important;
+  background: #1e2236 !important;
+  color: #d6dceb !important;
+}
+[data-theme='dark'] .inventory-product-actions button:hover,
+.work-app.theme-dark .inventory-product-actions button:hover {
+  border-color: #4b557b !important;
+  background: #272d45 !important;
+  color: #ffffff !important;
+}
+[data-theme='dark'] .inventory-product-actions button.inventory-action-primary,
+.work-app.theme-dark .inventory-product-actions button.inventory-action-primary {
+  border-color: transparent !important;
+  background: linear-gradient(100deg, #873bd0 0%, #b3148c 50%, #2198cc 100%) !important;
+  color: #ffffff !important;
+}
+
+/* Table View in Dark Mode */
+[data-theme='dark'] .inventory-insights-table-wrap,
+.work-app.theme-dark .inventory-insights-table-wrap {
+  border: 1px solid #262b3f !important;
+  background: #151726 !important;
+}
+[data-theme='dark'] .inventory-insights-table th,
+.work-app.theme-dark .inventory-insights-table th {
+  border-bottom: 1px solid #262b40 !important;
+  background: #181b2c !important;
+  color: #9da6bc !important;
+}
+[data-theme='dark'] .inventory-insights-table td,
+.work-app.theme-dark .inventory-insights-table td {
+  border-top: 1px solid #212538 !important;
+  color: #cbd2e3 !important;
+}
+[data-theme='dark'] .inventory-insights-table td b,
+.work-app.theme-dark .inventory-insights-table td b {
+  color: #f2f3f8 !important;
+}
+[data-theme='dark'] .inventory-insights-table td small,
+.work-app.theme-dark .inventory-insights-table td small {
+  color: #8c95aa !important;
+}
+[data-theme='dark'] .inventory-insights-table tbody tr:hover td,
+.work-app.theme-dark .inventory-insights-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+[data-theme='dark'] .inventory-insights-actions button,
+.work-app.theme-dark .inventory-insights-actions button {
+  border: 1px solid #333a54 !important;
+  background: #1e2236 !important;
+  color: #d6dceb !important;
+}
+[data-theme='dark'] .inventory-insights-actions button:hover,
+.work-app.theme-dark .inventory-insights-actions button:hover {
+  border-color: #4b557a !important;
+  background: #282e46 !important;
+  color: #ffffff !important;
+}
+[data-theme='dark'] .inventory-insights-actions .inventory-delete-small,
+.work-app.theme-dark .inventory-insights-actions .inventory-delete-small {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #fca5a5 !important;
+}
+[data-theme='dark'] .inventory-insights-actions .inventory-delete-small:hover,
+.work-app.theme-dark .inventory-insights-actions .inventory-delete-small:hover {
+  background: rgba(239, 68, 68, 0.22) !important;
+  color: #ffffff !important;
+}
+[data-theme='dark'] .inventory-table-select,
+.work-app.theme-dark .inventory-table-select {
+  border-color: #313750 !important;
+  background: #1b1e2f !important;
+}
+[data-theme='dark'] .inventory-table-mockup-label,
+.work-app.theme-dark .inventory-table-mockup-label {
+  border: 1px solid #3d2f57 !important;
+  background: #252038 !important;
+  color: #d8b4fe !important;
+}
+[data-theme='dark'] .inventory-insights-identity img,
+.work-app.theme-dark .inventory-insights-identity img {
+  border-color: #2d334c !important;
+  background: #1b1e2f !important;
+}
+
+/* =========================================================================
+   Executive Analytics Dashboard for Inventory
+   ========================================================================= */
+.inventory-analytics-dashboard {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* KPI Scorecard Grid */
+.inventory-analytics-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 185px), 1fr));
+  gap: 12px;
+}
+.inventory-analytics-kpi-card {
+  position: relative;
+  display: grid;
+  align-content: space-between;
+  gap: 8px;
+  min-height: 100px;
+  padding: 14px;
+  border: 1px solid #e7e1ed;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 3px 12px rgba(32, 20, 44, 0.04);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.inventory-analytics-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(32, 20, 44, 0.08);
+}
+.kpi-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.kpi-label {
+  color: #71697d;
+  font-size: 11px;
+  font-weight: 650;
+}
+.kpi-icon-badge {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+}
+.kpi-icon-badge.purple { background: #f3e8ff; color: #9333ea; }
+.kpi-icon-badge.green { background: #dcfce7; color: #16a34a; }
+.kpi-icon-badge.amber { background: #fef3c7; color: #d97706; }
+.kpi-icon-badge.red { background: #fee2e2; color: #dc2626; }
+.kpi-icon-badge.blue { background: #e0f2fe; color: #0284c7; }
+
+.kpi-value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #271f30;
+}
+.kpi-pct {
+  font-size: 11px;
+  font-weight: 700;
+}
+.kpi-pct.green { color: #16a34a; }
+.kpi-pct.amber { color: #d97706; }
+.kpi-pct.red { color: #dc2626; }
+.kpi-pct.purple { color: #9333ea; }
+.kpi-sub-unit {
+  font-size: 12px;
+  font-weight: 600;
+  color: #787084;
+}
+.kpi-subtext {
+  color: #837a8f;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.kpi-card-warning {
+  border-color: #fbd38d !important;
+}
+.kpi-card-danger {
+  border-color: #feb2b2 !important;
+}
+.warning-text { color: #b7791f !important; }
+.danger-text { color: #c53030 !important; }
+
+/* Dark Mode for KPI Cards */
+[data-theme='dark'] .inventory-analytics-kpi-card,
+.work-app.theme-dark .inventory-analytics-kpi-card {
+  border-color: #282d42 !important;
+  background: #171928 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+}
+[data-theme='dark'] .inventory-analytics-kpi-card:hover,
+.work-app.theme-dark .inventory-analytics-kpi-card:hover {
+  border-color: #3b4363 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+}
+[data-theme='dark'] .kpi-label,
+.work-app.theme-dark .kpi-label {
+  color: #9ea7bd !important;
+}
+[data-theme='dark'] .kpi-value,
+.work-app.theme-dark .kpi-value {
+  color: #ffffff !important;
+}
+[data-theme='dark'] .kpi-subtext,
+.work-app.theme-dark .kpi-subtext {
+  color: #8b94ab !important;
+}
+[data-theme='dark'] .kpi-icon-badge.purple,
+.work-app.theme-dark .kpi-icon-badge.purple { background: rgba(147, 51, 234, 0.2) !important; color: #c084fc !important; }
+[data-theme='dark'] .kpi-icon-badge.green,
+.work-app.theme-dark .kpi-icon-badge.green { background: rgba(22, 163, 74, 0.2) !important; color: #4ade80 !important; }
+[data-theme='dark'] .kpi-icon-badge.amber,
+.work-app.theme-dark .kpi-icon-badge.amber { background: rgba(217, 119, 6, 0.2) !important; color: #fbbf24 !important; }
+[data-theme='dark'] .kpi-icon-badge.red,
+.work-app.theme-dark .kpi-icon-badge.red { background: rgba(220, 38, 38, 0.2) !important; color: #f87171 !important; }
+[data-theme='dark'] .kpi-icon-badge.blue,
+.work-app.theme-dark .kpi-icon-badge.blue { background: rgba(2, 132, 199, 0.2) !important; color: #38bdf8 !important; }
+[data-theme='dark'] .warning-text,
+.work-app.theme-dark .warning-text { color: #fde68a !important; }
+[data-theme='dark'] .danger-text,
+.work-app.theme-dark .danger-text { color: #fca5a5 !important; }
+[data-theme='dark'] .kpi-card-warning,
+.work-app.theme-dark .kpi-card-warning { border-color: rgba(245, 158, 11, 0.4) !important; }
+[data-theme='dark'] .kpi-card-danger,
+.work-app.theme-dark .kpi-card-danger { border-color: rgba(239, 68, 68, 0.4) !important; }
+
+/* Distribution Strip Card */
+.inventory-analytics-strip-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e7e1ed;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 3px 12px rgba(32, 20, 44, 0.04);
+}
+.analytics-strip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.analytics-strip-header h4 {
+  margin: 0;
+  font-size: 13px;
+  color: #271f30;
+}
+.analytics-strip-header p {
+  margin: 3px 0 0;
+  font-size: 10px;
+  color: #797184;
+}
+.analytics-strip-meta span {
+  display: inline-flex;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #f4eef9;
+  color: #793fa0;
+  font-size: 10px;
+  font-weight: 700;
+}
+.inventory-health-progress-bar {
+  display: flex;
+  height: 12px;
+  width: 100%;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #eeeaf2;
+}
+.bar-segment {
+  height: 100%;
+  transition: width .3s ease;
+}
+.bar-segment.bar-ok { background: #10b981; }
+.bar-segment.bar-warning { background: #f59e0b; }
+.bar-segment.bar-danger { background: #ef4444; }
+.bar-segment.bar-uncounted { background: #a855f7; }
+
+.inventory-health-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  gap: 8px;
+  padding-top: 4px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid #e8e2ee;
+  border-radius: 8px;
+  background: #fbf9fd;
+  color: #4e445a;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.legend-item:hover {
+  border-color: #793fa0;
+  background: #f6f0fb;
+}
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.legend-dot.dot-ok { background: #10b981; }
+.legend-dot.dot-warning { background: #f59e0b; }
+.legend-dot.dot-danger { background: #ef4444; }
+.legend-dot.dot-uncounted { background: #a855f7; }
+.legend-title {
+  flex: 1;
+  text-align: left;
+}
+.legend-item b {
+  font-size: 11px;
+}
+.legend-item small {
+  color: #797184;
+}
+
+/* Dark Mode for Strip Card */
+[data-theme='dark'] .inventory-analytics-strip-card,
+.work-app.theme-dark .inventory-analytics-strip-card {
+  border-color: #282d42 !important;
+  background: #171928 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+}
+[data-theme='dark'] .analytics-strip-header h4,
+.work-app.theme-dark .analytics-strip-header h4 {
+  color: #f2f3f8 !important;
+}
+[data-theme='dark'] .analytics-strip-header p,
+.work-app.theme-dark .analytics-strip-header p {
+  color: #929bb2 !important;
+}
+[data-theme='dark'] .analytics-strip-meta span,
+.work-app.theme-dark .analytics-strip-meta span {
+  background: #251e36 !important;
+  color: #c084fc !important;
+}
+[data-theme='dark'] .inventory-health-progress-bar,
+.work-app.theme-dark .inventory-health-progress-bar {
+  background: #22263a !important;
+}
+[data-theme='dark'] .legend-item,
+.work-app.theme-dark .legend-item {
+  border-color: #2b324c !important;
+  background: #1b1e2f !important;
+  color: #c4ccdf !important;
+}
+[data-theme='dark'] .legend-item:hover,
+.work-app.theme-dark .legend-item:hover {
+  border-color: #c084fc !important;
+  background: #24293f !important;
+}
+[data-theme='dark'] .legend-item small,
+.work-app.theme-dark .legend-item small {
+  color: #8791aa !important;
+}
+
+/* Split Grid */
+.inventory-analytics-split-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+  gap: 14px;
+  min-width: 0;
+}
+.inventory-analytics-section-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e7e1ed;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 3px 12px rgba(32, 20, 44, 0.04);
+}
+.section-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #793fa0;
+}
+.section-card-title h4 {
+  margin: 0;
+  font-size: 13px;
+  color: #271f30;
+}
+.section-card-title small {
+  display: block;
+  font-size: 10px;
+  color: #797184;
+}
+.sub-section-title {
+  margin: 8px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #554d60;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Branch Boxes */
+.analytics-branches-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 10px;
+}
+.analytics-branch-box {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid #e8e2ee;
+  border-radius: 10px;
+  background: #fbf9fd;
+}
+.branch-box-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #3b3248;
+}
+.branch-box-head b {
+  flex: 1;
+}
+.branch-total-badge {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #efe7f6;
+  color: #793fa0;
+  font-size: 9px;
+  font-weight: 750;
+}
+.branch-box-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  font-size: 9px;
+  color: #726b7c;
+}
+.branch-box-stats strong {
+  color: #2e2638;
+}
+.branch-box-value {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed #e2dae9;
+  font-size: 10px;
+}
+.branch-box-value strong {
+  color: #793fa0;
+  font-weight: 800;
+}
+
+/* Areas List */
+.analytics-areas-list {
+  display: grid;
+  gap: 8px;
+}
+.analytics-area-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.2fr) minmax(80px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #ece6f2;
+  border-radius: 8px;
+  background: #faf8fc;
+}
+.area-info {
+  display: grid;
+  gap: 2px;
+}
+.area-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2e2638;
+}
+.area-count {
+  font-size: 9px;
+  color: #797184;
+}
+.area-bar-bg {
+  height: 6px;
+  border-radius: 999px;
+  background: #e9e3ef;
+  overflow: hidden;
+}
+.area-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #793fa0, #b3148c);
+}
+.area-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.area-alert-badge {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #fff3e0;
+  color: #d97706;
+  font-size: 8px;
+  font-weight: 700;
+}
+.area-ok-badge {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 8px;
+  font-weight: 700;
+}
+.area-val {
+  font-size: 10px;
+  font-weight: 700;
+  color: #554d60;
+}
+
+/* Top Consumed Materials */
+.analytics-top-list {
+  display: grid;
+  gap: 8px;
+}
+.top-consumed-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #ece6f2;
+  border-radius: 8px;
+  background: #faf8fc;
+}
+.top-rank-badge {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: #efe7f6;
+  color: #793fa0;
+  font-size: 11px;
+  font-weight: 800;
+  flex: none;
+}
+.top-item-details {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.top-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.top-item-header b {
+  font-size: 11px;
+  color: #2e2638;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.top-consumed-val {
+  font-size: 11px;
+  font-weight: 800;
+  color: #793fa0;
+  white-space: nowrap;
+}
+.top-item-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #797184;
+}
+.top-item-bar-bg {
+  height: 5px;
+  border-radius: 999px;
+  background: #e9e3ef;
+  overflow: hidden;
+}
+.top-item-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #793fa0, #2198cc);
+}
+
+/* Units Grid */
+.analytics-units-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 110px), 1fr));
+  gap: 8px;
+}
+.analytics-unit-card {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid #eae3f1;
+  border-radius: 8px;
+  background: #f8f6fb;
+}
+.unit-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #793fa0;
+  text-transform: uppercase;
+}
+.unit-amount {
+  font-size: 14px;
+  color: #271f30;
+}
+.analytics-unit-card small {
+  font-size: 8px;
+  color: #837a8f;
+}
+
+/* Reservations Summary */
+.analytics-reservations-summary {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e5dfee;
+  border-radius: 8px;
+  background: #f7f3fb;
+}
+.reservations-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #634b79;
+}
+.reservations-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.res-tag {
+  display: inline-flex;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #ded5e6;
+  font-size: 9px;
+  color: #4b3d5b;
+}
+
+.text-amber { color: #d97706 !important; font-weight: 700; }
+.text-red { color: #dc2626 !important; font-weight: 700; }
+
+/* Dark Mode for Split Grid Components */
+[data-theme='dark'] .inventory-analytics-section-card,
+.work-app.theme-dark .inventory-analytics-section-card {
+  border-color: #282d42 !important;
+  background: #171928 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+}
+[data-theme='dark'] .section-card-title,
+.work-app.theme-dark .section-card-title {
+  color: #c084fc !important;
+}
+[data-theme='dark'] .section-card-title h4,
+.work-app.theme-dark .section-card-title h4 {
+  color: #f2f3f8 !important;
+}
+[data-theme='dark'] .section-card-title small,
+.work-app.theme-dark .section-card-title small {
+  color: #8b94ab !important;
+}
+[data-theme='dark'] .sub-section-title,
+.work-app.theme-dark .sub-section-title {
+  color: #a4adc1 !important;
+}
+
+[data-theme='dark'] .analytics-branch-box,
+.work-app.theme-dark .analytics-branch-box {
+  border-color: #2a3048 !important;
+  background: #1b1e2f !important;
+}
+[data-theme='dark'] .branch-box-head,
+.work-app.theme-dark .branch-box-head {
+  color: #f2f3f8 !important;
+}
+[data-theme='dark'] .branch-total-badge,
+.work-app.theme-dark .branch-total-badge {
+  background: #2b233a !important;
+  color: #d8b4fe !important;
+}
+[data-theme='dark'] .branch-box-stats,
+.work-app.theme-dark .branch-box-stats {
+  color: #8c95aa !important;
+}
+[data-theme='dark'] .branch-box-stats strong,
+.work-app.theme-dark .branch-box-stats strong {
+  color: #ffffff !important;
+}
+[data-theme='dark'] .branch-box-value,
+.work-app.theme-dark .branch-box-value {
+  border-top-color: #2d344d !important;
+}
+[data-theme='dark'] .branch-box-value strong,
+.work-app.theme-dark .branch-box-value strong {
+  color: #c084fc !important;
+}
+
+[data-theme='dark'] .analytics-area-row,
+.work-app.theme-dark .analytics-area-row {
+  border-color: #282e44 !important;
+  background: #1b1e2f !important;
+}
+[data-theme='dark'] .area-name,
+.work-app.theme-dark .area-name {
+  color: #f2f3f8 !important;
+}
+[data-theme='dark'] .area-count,
+.work-app.theme-dark .area-count {
+  color: #8c95aa !important;
+}
+[data-theme='dark'] .area-bar-bg,
+.work-app.theme-dark .area-bar-bg {
+  background: #262c42 !important;
+}
+[data-theme='dark'] .area-alert-badge,
+.work-app.theme-dark .area-alert-badge {
+  background: rgba(245, 158, 11, 0.2) !important;
+  color: #fbbf24 !important;
+}
+[data-theme='dark'] .area-ok-badge,
+.work-app.theme-dark .area-ok-badge {
+  background: rgba(22, 163, 74, 0.2) !important;
+  color: #4ade80 !important;
+}
+[data-theme='dark'] .area-val,
+.work-app.theme-dark .area-val {
+  color: #a4adc1 !important;
+}
+
+[data-theme='dark'] .top-consumed-item,
+.work-app.theme-dark .top-consumed-item {
+  border-color: #282e44 !important;
+  background: #1b1e2f !important;
+}
+[data-theme='dark'] .top-rank-badge,
+.work-app.theme-dark .top-rank-badge {
+  background: #2b233a !important;
+  color: #d8b4fe !important;
+}
+[data-theme='dark'] .top-item-header b,
+.work-app.theme-dark .top-item-header b {
+  color: #f2f3f8 !important;
+}
+[data-theme='dark'] .top-consumed-val,
+.work-app.theme-dark .top-consumed-val {
+  color: #c084fc !important;
+}
+[data-theme='dark'] .top-item-sub,
+.work-app.theme-dark .top-item-sub {
+  color: #8c95aa !important;
+}
+[data-theme='dark'] .top-item-bar-bg,
+.work-app.theme-dark .top-item-bar-bg {
+  background: #262c42 !important;
+}
+
+[data-theme='dark'] .analytics-unit-card,
+.work-app.theme-dark .analytics-unit-card {
+  border-color: #2d344e !important;
+  background: #1e2236 !important;
+}
+[data-theme='dark'] .unit-label,
+.work-app.theme-dark .unit-label {
+  color: #c084fc !important;
+}
+[data-theme='dark'] .unit-amount,
+.work-app.theme-dark .unit-amount {
+  color: #f2f3f8 !important;
+}
+[data-theme='dark'] .analytics-unit-card small,
+.work-app.theme-dark .analytics-unit-card small {
+  color: #8c95aa !important;
+}
+
+[data-theme='dark'] .analytics-reservations-summary,
+.work-app.theme-dark .analytics-reservations-summary {
+  border-color: #2f3652 !important;
+  background: #191c2c !important;
+}
+[data-theme='dark'] .reservations-header,
+.work-app.theme-dark .reservations-header {
+  color: #d8b4fe !important;
+}
+[data-theme='dark'] .res-tag,
+.work-app.theme-dark .res-tag {
+  border-color: #353d5a !important;
+  background: #21253a !important;
+  color: #dbe1ef !important;
+}
+[data-theme='dark'] .text-amber,
+.work-app.theme-dark .text-amber { color: #fde68a !important; }
+[data-theme='dark'] .text-red,
+.work-app.theme-dark .text-red { color: #fca5a5 !important; }
+
+@media (max-width: 768px) {
+  .inventory-analytics-split-grid {
+    grid-template-columns: 1fr;
+  }
+  .analytics-area-row {
+    grid-template-columns: 1fr auto;
+  }
+  .area-bar-bg {
+    display: none;
+  }
+}
