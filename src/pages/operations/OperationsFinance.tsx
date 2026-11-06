@@ -156,6 +156,8 @@ export function OperationsFinance() {
   const realtimeFlushTimer = useRef<number | null>(null);
   const [sales, setSales] = useState([]);
   const [saleLinesError, setSaleLinesError] = useState('');
+  const [saleLineCostSnapshots, setSaleLineCostSnapshots] = useState<any[]>([]);
+  const [saleLineCostsError, setSaleLineCostsError] = useState('');
   const [payments, setPayments] = useState([]);
   const [saleReturns, setSaleReturns] = useState([]);
   const [saleReturnsError, setSaleReturnsError] = useState('');
@@ -303,6 +305,8 @@ export function OperationsFinance() {
       setHasLoaded(false);
       setError('');
       setSaleLinesError('');
+      setSaleLineCostSnapshots([]);
+      setSaleLineCostsError('');
       if (!supabase) {
         setError('La conexión con la base de datos no está disponible.');
         setLoading(false);
@@ -349,6 +353,8 @@ export function OperationsFinance() {
         if (branchResult.error) throw branchResult.error;
         let enrichedSales = salesRows;
         let productLineError = '';
+        let productCostSnapshots: any[] = [];
+        let productCostLoadError = '';
         try {
           const today = businessDate(new Date());
           const weekStart = businessWeekStart(today);
@@ -364,24 +370,42 @@ export function OperationsFinance() {
           for (let index = 0; index < insightSaleIds.length; index += 250) lineBatches.push(insightSaleIds.slice(index, index + 250));
           const lineRowsByBatch = await Promise.all(lineBatches.map((saleIds) => readAllRows(() => supabase
             .from('sale_lines')
-            .select('id,sale_id,variant_id,catalog_product_id,sku_snapshot,description_snapshot,quantity,unit_price,line_total')
+            .select('id,sale_id,variant_id,catalog_product_id,sku_snapshot,description_snapshot,quantity,fulfilled_quantity,unit_price,line_total')
             .eq('organization_id', organizationId)
             .in('sale_id', saleIds)
             .order('sale_id')
             .order('id'))));
           const linesBySale = new Map<string, any[]>();
-          lineRowsByBatch.flat().forEach((line) => {
+          const lineRows = lineRowsByBatch.flat();
+          lineRows.forEach((line) => {
             const lines = linesBySale.get(line.sale_id) || [];
             lines.push(line);
             linesBySale.set(line.sale_id, lines);
           });
           enrichedSales = salesRows.map((sale) => ({ ...sale, sale_lines: linesBySale.get(sale.id) || [] }));
+          if (canSeeInventoryCosts && lineRows.length) {
+            const lineIds = lineRows.map((line) => line.id);
+            const costBatches = [];
+            for (let index = 0; index < lineIds.length; index += 250) costBatches.push(lineIds.slice(index, index + 250));
+            try {
+              const costRows = await Promise.all(costBatches.map((ids) => readAllRows(() => supabase
+                .from('sale_line_cost_snapshots')
+                .select('sale_line_id,source_kind,unit_cost_snapshot,cost_total_snapshot')
+                .eq('organization_id', organizationId)
+                .in('sale_line_id', ids))));
+              productCostSnapshots = costRows.flat();
+            } catch (costError) {
+              productCostLoadError = costError?.message || 'No se pudieron cargar los costos reales de las líneas.';
+            }
+          }
         } catch (lineLoadError) {
           productLineError = lineLoadError?.message || 'No se pudieron cargar las líneas de producto.';
         }
         if (active) {
           setSales(enrichedSales);
           setSaleLinesError(productLineError);
+          setSaleLineCostSnapshots(productCostSnapshots);
+          setSaleLineCostsError(productCostLoadError);
           setPayments(paymentRows);
           setAdvisors(teamResult.error ? [] : teamResult.data || []);
           setBranches(branchResult.data || []);
@@ -391,7 +415,7 @@ export function OperationsFinance() {
         try {
           const returnRows = await readAllRows(() => supabase
             .from('sale_returns')
-            .select('id,sale_id,kind,refund_amount,refund_status,sale_return_lines(quantity,sale_lines(id,unit_price))')
+            .select('id,sale_id,kind,refund_amount,refund_status,sale_return_lines(quantity,disposition,sale_lines(id,unit_price))')
             .eq('organization_id', organizationId)
             .order('created_at', { ascending: false }));
           if (active) setSaleReturns(returnRows);
@@ -1589,7 +1613,7 @@ export function OperationsFinance() {
           </div>
         </section>
 
-        <FinanceSalesInsights today={businessToday} month={month} monthSales={salesInPeriod} currentWeekSales={salesMatchingTeamAndBranch} returnsBySale={returnsBySale} saleReturns={saleReturns} saleReturnsError={saleReturnsError} saleLinesError={saleLinesError} />
+        <FinanceSalesInsights today={businessToday} month={month} monthSales={salesInPeriod} currentWeekSales={salesMatchingTeamAndBranch} returnsBySale={returnsBySale} saleReturns={saleReturns} saleReturnsError={saleReturnsError} saleLinesError={saleLinesError} saleLineCostSnapshots={saleLineCostSnapshots} saleLineCostsError={saleLineCostsError} canViewProductMargins={canSeeInventoryCosts} />
         <div className="op-finance-grid">
           <section className="panel">
             <div className="panel-heading"><div><span className="eyebrow">COMPARATIVO DEL PERIODO</span><h2>Desempeño por Asesor</h2></div><ChartNoAxesCombined size={19} /></div>
@@ -1680,7 +1704,7 @@ export function OperationsFinance() {
           </div>
         </section>
 
-        <FinanceSalesInsights today={businessToday} month={month} monthSales={salesInPeriod} currentWeekSales={salesMatchingTeamAndBranch} returnsBySale={returnsBySale} saleReturns={saleReturns} saleReturnsError={saleReturnsError} saleLinesError={saleLinesError} />
+        <FinanceSalesInsights today={businessToday} month={month} monthSales={salesInPeriod} currentWeekSales={salesMatchingTeamAndBranch} returnsBySale={returnsBySale} saleReturns={saleReturns} saleReturnsError={saleReturnsError} saleLinesError={saleLinesError} saleLineCostSnapshots={saleLineCostSnapshots} saleLineCostsError={saleLineCostsError} canViewProductMargins={canSeeInventoryCosts} />
         <div className="op-finance-grid">
           <section className="panel">
             <div className="panel-heading"><div><span className="eyebrow">COMPARATIVO DEL PERIODO</span><h2>Desempeño por Asesor</h2></div><ChartNoAxesCombined size={19} /></div>

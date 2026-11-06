@@ -299,6 +299,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
         </> : <>
           <div className="commercial-detail-total-row"><span>Subtotal de la venta</span><b>{saleSubtotal === null ? '—' : formatMoney(saleSubtotal)}</b></div>
           <div className="commercial-detail-total-row"><span>Descuento registrado</span><b>{discount === null ? '—' : formatMoney(discount)}</b></div>
+          {discount !== null && discount > 0 && document?.discount_reason && <p className="commercial-detail-tax-reason">Motivo del descuento: {document.discount_reason}</p>}
           <div className="commercial-detail-tax-note"><span>IVA</span><b>{taxLabel}</b></div>
           <div className="commercial-detail-total-row is-grand"><span>Total registrado</span><b>{saleTotal === null ? '—' : formatMoney(saleTotal)}</b></div>
           <div className="commercial-detail-total-row is-balance"><span>Abonado · saldo pendiente</span><b>{formatMoney(paid)} · {balance === null ? '—' : formatMoney(balance)}</b></div>

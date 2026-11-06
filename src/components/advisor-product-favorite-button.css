@@ -1,0 +1,6 @@
+.advisor-product-favorite { display: inline-grid; place-items: center; flex: 0 0 auto; width: 34px; height: 34px; border: 1px solid var(--line, #d8d4df); border-radius: 10px; background: var(--paper, #fff); color: var(--muted, #736e7d); cursor: pointer; transition: color .16s ease, border-color .16s ease, background .16s ease, transform .16s ease; }
+.advisor-product-favorite:hover:not(:disabled) { transform: translateY(-1px); border-color: #e4a700; color: #c78900; }
+.advisor-product-favorite.is-active { border-color: color-mix(in srgb, #e5a900 42%, var(--line, #d8d4df)); background: color-mix(in srgb, #ffc83d 14%, var(--paper, #fff)); color: #e1a000; }
+.advisor-product-favorite:focus-visible { outline: 2px solid var(--accent, #9b36d2); outline-offset: 2px; }
+.advisor-product-favorite:disabled { opacity: .55; cursor: wait; }
+@media (prefers-reduced-motion: reduce) { .advisor-product-favorite { transition: none; } }

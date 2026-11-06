@@ -22,6 +22,7 @@
 .operations-quote-area span{font-size:9px}
 .operations-quote-area b{color:#6f2c79;font-size:13px}
 .operations-quote-area small{color:#92919d;font-size:8px}
+.operations-quote-size-presets{display:flex;flex-wrap:wrap;gap:5px}.operations-quote-size-presets button,.operations-quote-discount-presets button{min-height:27px;padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--muted);font:inherit;font-size:9px;cursor:pointer}.operations-quote-size-presets button:hover,.operations-quote-discount-presets button:hover{border-color:#9b67b1;color:var(--ink)}.operations-quote-size-presets button:focus-visible,.operations-quote-discount-presets button:focus-visible{outline:2px solid #9b67b1;outline-offset:2px}
 .operations-quote-item-details{grid-template-columns:minmax(130px,.65fr) minmax(0,1.35fr)}
 .operations-quote-line-description{display:grid;gap:6px;min-width:0;color:#55535f;font-size:10px;font-weight:650}.operations-quote-line-description textarea{width:100%;min-height:54px;resize:vertical}.operations-quote-line-description textarea::placeholder{color:#9a97a1;font-weight:400}
 .operations-quote-line-total{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:11px;border-top:1px solid #eeedf1;color:#7a7b85;font-size:9px}
@@ -60,6 +61,7 @@
 .operations-quote-customer{padding-top:2px;border-top:0}
 .operations-quote-customer .divider-label{margin:0 0 10px}
 .operations-quote-financial-editor{display:grid;gap:12px;padding:13px;border:1px solid #e8e2ec;border-radius:10px;background:#fcfbfd}.operations-quote-financial-editor>summary{color:#5f356d;font-size:11px;font-weight:750;cursor:pointer}.operations-quote-financial-editor .operations-quote-fields{padding-top:3px}.operations-quote-financial-editor .operations-quote-wide{grid-column:1/-1}.operations-quote-financial-editor .operations-quote-iva-toggle{display:flex;align-items:center;gap:8px;min-height:40px;padding:8px 10px;border:1px solid #e9e4ed;border-radius:8px;background:#fff;color:#4b4551;font-size:10px;font-weight:700}.operations-quote-financial-editor .operations-quote-iva-toggle input{width:16px;height:16px;accent-color:#891589}.operations-quote-financial-summary{display:grid;gap:6px;padding-top:10px;border-top:1px solid #ebe7ee}.operations-quote-financial-summary>span,.operations-quote-total-breakdown>span{display:flex;justify-content:space-between;gap:10px;color:#77717d;font-size:9px}.operations-quote-financial-summary b,.operations-quote-total-breakdown b{color:#393440;font-size:10px}.operations-quote-total-breakdown{display:grid;gap:4px;max-width:360px}
+.operations-quote-discount-control{grid-column:1/-1;display:grid;gap:7px}.operations-quote-discount-heading{display:flex;justify-content:space-between;gap:10px}.operations-quote-discount-heading label{color:var(--ink);font-size:10px;font-weight:750}.operations-quote-discount-heading output{color:var(--ink);font-size:10px;font-weight:800;font-variant-numeric:tabular-nums}.operations-quote-discount-control input[type=range]{width:100%;accent-color:#891589}.operations-quote-discount-presets{display:flex;justify-content:space-between;gap:5px}.operations-quote-discount-presets button.is-active{border-color:#9b67b1;background:color-mix(in srgb,#9b67b1 12%,var(--paper));color:var(--ink);font-weight:800}.operations-quote-discount-control>small{color:var(--muted);font-size:9px}
 .operations-quote-selected-total{display:grid;gap:6px;margin-top:1px;padding:14px;border:1px solid #e1d4ea;border-radius:10px;background:linear-gradient(105deg,#fbf7fc,#f8f7fc)}
 .operations-quote-selected-total>span{color:#8c4188;font-size:8px;font-weight:850;letter-spacing:.11em}
 .operations-quote-selected-total>b{color:#272832;font-size:20px;letter-spacing:-.04em}
@@ -118,3 +120,6 @@
 .operations-quote-history .operations-quote-delete-link:disabled{opacity:.55;cursor:wait}
 .operations-quote-history .operations-quote-delete-link:focus-visible{outline:3px solid #8b42a7;outline-offset:2px}
 @media(max-width:700px){.operations-quote-history .sale-payment-summary{flex-wrap:wrap;align-items:center;margin:0 0 5px 45px}.operations-quote-history .sale-payment-summary>span{margin-right:auto}}
+.operations-quote-summary-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.operations-quote-summary-actions .button{justify-content:center;min-height:40px}
+@media(max-width:560px){.operations-quote-summary-actions{grid-template-columns:1fr}}

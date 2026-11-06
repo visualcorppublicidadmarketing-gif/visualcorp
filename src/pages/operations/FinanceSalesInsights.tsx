@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { ChartNoAxesCombined, Clock3, Package } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Banknote, ChartNoAxesCombined, Clock3, Package, TrendingUp } from 'lucide-react';
 import { netSaleAmount } from './financeSales';
 import './finance-sales-insights.css';
 
@@ -42,9 +42,13 @@ type Props = {
   saleReturns: any[];
   saleReturnsError: string;
   saleLinesError: string;
+  saleLineCostSnapshots: any[];
+  saleLineCostsError: string;
+  canViewProductMargins: boolean;
 };
 
-export function FinanceSalesInsights({ today, month, monthSales, currentWeekSales, returnsBySale, saleReturns, saleReturnsError, saleLinesError }: Props) {
+export function FinanceSalesInsights({ today, month, monthSales, currentWeekSales, returnsBySale, saleReturns, saleReturnsError, saleLinesError, saleLineCostSnapshots, saleLineCostsError, canViewProductMargins }: Props) {
+  const [productSort, setProductSort] = useState<'quantity' | 'revenue' | 'margin'>('quantity');
   const insights = useMemo(() => {
     const daily = Array.from({ length: monthDays(month) }, (_, index) => {
       const date = `${month}-${String(index + 1).padStart(2, '0')}`;
@@ -52,7 +56,7 @@ export function FinanceSalesInsights({ today, month, monthSales, currentWeekSale
     });
     const weekdayTotals = new Map(WEEKDAYS.map((day) => [day.id, { ...day, amount: 0, count: 0 }]));
     const hourly = Array.from({ length: 24 }, (_, hour) => ({ hour, amount: 0, count: 0 }));
-    const lineRevenue = new Map<string, { label: string; sku: string; amount: number; units: number }>();
+    const lineRevenue = new Map<string, { label: string; sku: string; amount: number; units: number; sales: Set<string>; marginAmount: number; marginRevenue: number; marginLines: number; missingMarginLines: number }>();
 
     monthSales.forEach((sale) => {
       const date = localDate(sale.created_at);
@@ -72,16 +76,18 @@ export function FinanceSalesInsights({ today, month, monthSales, currentWeekSale
         if (!key) return;
         const item = lineRevenue.get(key) || {
           label: line.description_snapshot || 'Producto sin descripción',
-          sku: line.sku_snapshot || '', amount: 0, units: 0,
+          sku: line.sku_snapshot || '', amount: 0, units: 0, sales: new Set<string>(), marginAmount: 0, marginRevenue: 0, marginLines: 0, missingMarginLines: 0,
         };
         item.amount += Number(line.line_total || 0) * (1 - discountRate);
         item.units += Number(line.quantity || 0);
+        item.sales.add(String(sale.id));
         lineRevenue.set(key, item);
       });
     });
 
     const returnsBySaleLine = new Map<string, number>();
     const returnedUnitsBySaleLine = new Map<string, number>();
+    const restockedUnitsBySaleLine = new Map<string, number>();
     saleReturns.forEach((saleReturn) => {
       if (saleReturn.kind === 'cancellation') return;
       (saleReturn.sale_return_lines || []).forEach((returnLine) => {
@@ -89,6 +95,7 @@ export function FinanceSalesInsights({ today, month, monthSales, currentWeekSale
         if (!saleLine?.id) return;
         returnsBySaleLine.set(saleLine.id, (returnsBySaleLine.get(saleLine.id) || 0) + Number(returnLine.quantity || 0) * Number(saleLine.unit_price || 0));
         returnedUnitsBySaleLine.set(saleLine.id, (returnedUnitsBySaleLine.get(saleLine.id) || 0) + Number(returnLine.quantity || 0));
+        if (returnLine.disposition === 'restock') restockedUnitsBySaleLine.set(saleLine.id, (restockedUnitsBySaleLine.get(saleLine.id) || 0) + Number(returnLine.quantity || 0));
       });
     });
     if (!saleReturnsError) {
@@ -103,6 +110,38 @@ export function FinanceSalesInsights({ today, month, monthSales, currentWeekSale
             item.amount -= (returnsBySaleLine.get(line.id) || 0) * (1 - discountRate);
             item.units -= returnedUnitsBySaleLine.get(line.id) || 0;
           }
+        });
+      });
+    }
+
+    const costByLine = new Map(saleLineCostSnapshots.map((snapshot) => [snapshot.sale_line_id, snapshot]));
+    const marginCoverage = { total: 0, covered: 0 };
+    const canCalculateMargins = canViewProductMargins && !saleLinesError && !saleLineCostsError && !saleReturnsError;
+    if (canCalculateMargins) {
+      monthSales.forEach((sale) => {
+        const subtotal = Number(sale.subtotal || 0);
+        const discountRate = subtotal > 0 ? Math.min(1, Math.max(0, Number(sale.discount_total || 0) / subtotal)) : 0;
+        (sale.sale_lines || []).forEach((line) => {
+          const fulfilled = Number(line.fulfilled_quantity || 0);
+          if (fulfilled <= 0) return;
+          const key = line.catalog_product_id || line.variant_id || line.sku_snapshot || line.description_snapshot || line.id;
+          const item = lineRevenue.get(key);
+          if (!item) return;
+          marginCoverage.total += 1;
+          const snapshot = costByLine.get(line.id);
+          if (!snapshot || snapshot.source_kind !== 'inventory_cost' || snapshot.unit_cost_snapshot == null || snapshot.cost_total_snapshot == null) {
+            item.missingMarginLines += 1;
+            return;
+          }
+          marginCoverage.covered += 1;
+          const returned = Math.min(fulfilled, returnedUnitsBySaleLine.get(line.id) || 0);
+          const restocked = Math.min(fulfilled, restockedUnitsBySaleLine.get(line.id) || 0);
+          const netFulfilled = Math.max(0, fulfilled - returned);
+          const netRevenue = netFulfilled * Number(line.unit_price || 0) * (1 - discountRate);
+          const netCost = Math.max(0, Number(snapshot.cost_total_snapshot) - Math.round(restocked * Number(snapshot.unit_cost_snapshot) * 100) / 100);
+          item.marginAmount += netRevenue - netCost;
+          item.marginRevenue += netRevenue;
+          item.marginLines += 1;
         });
       });
     }
@@ -124,16 +163,30 @@ export function FinanceSalesInsights({ today, month, monthSales, currentWeekSale
       : undefined;
     const weekdayRows = WEEKDAYS.map((day) => weekdayTotals.get(day.id)!);
     const topHour = hourly.filter((item) => item.count).sort((a, b) => b.amount - a.amount)[0];
-    const products = [...lineRevenue.values()].map((item) => ({ ...item, amount: Math.max(0, item.amount), units: Math.max(0, item.units) }))
-      .sort((a, b) => b.amount - a.amount || a.label.localeCompare(b.label, 'es')).slice(0, 5);
+    const products = [...lineRevenue.values()].map((item) => ({
+      ...item,
+      amount: Math.max(0, item.amount),
+      units: Math.max(0, item.units),
+      salesCount: item.sales.size,
+      margin: item.marginLines > 0 && item.missingMarginLines === 0 ? item.marginAmount : null,
+      marginRate: item.marginLines > 0 && item.missingMarginLines === 0 && item.marginRevenue > 0 ? item.marginAmount / item.marginRevenue : null,
+    }))
+      .sort((a, b) => b.amount - a.amount || a.label.localeCompare(b.label, 'es'));
     return {
       daily, weekdayRows, hourly, products, week, weekTotal, weekDaily, weekStart, weekEnd,
       currentWeekDay, topHour, maxDaily: Math.max(1, ...daily.map((item) => item.amount)),
       maxWeek: Math.max(1, ...weekDaily.map((item) => item.amount)),
       maxWeekday: Math.max(1, ...weekdayRows.map((item) => item.amount)),
-      maxHour: Math.max(1, ...hourly.map((item) => item.amount)),
+      maxHour: Math.max(1, ...hourly.map((item) => item.amount)), marginCoverage, canCalculateMargins,
     };
-  }, [today, month, monthSales, currentWeekSales, returnsBySale, saleReturns, saleReturnsError]);
+  }, [today, month, monthSales, currentWeekSales, returnsBySale, saleReturns, saleReturnsError, saleLinesError, saleLineCostSnapshots, saleLineCostsError, canViewProductMargins]);
+  const rankedProducts = useMemo(() => [...insights.products]
+    .filter((item) => productSort !== 'margin' || item.margin !== null)
+    .sort((left, right) => productSort === 'quantity'
+      ? right.units - left.units || right.amount - left.amount
+      : productSort === 'margin'
+        ? Number(right.margin) - Number(left.margin) || right.units - left.units
+        : right.amount - left.amount || right.units - left.units), [insights.products, productSort]);
 
   return <section className="panel finance-sales-insights" aria-labelledby="finance-sales-insights-title">
     <div className="panel-heading">
@@ -175,11 +228,16 @@ export function FinanceSalesInsights({ today, month, monthSales, currentWeekSale
         </div>}
       </article>
       <article className="finance-sales-card finance-sales-products">
-        <div className="finance-sales-card-heading"><Package size={16} aria-hidden="true"/><h3>Productos con más ventas</h3></div>
-        {saleLinesError ? <p className="finance-sales-empty" role="status">No se puede generar el ranking porque falló la carga de líneas de venta.</p> : saleReturnsError ? <p className="finance-sales-empty" role="status">No se puede ajustar el ranking por devoluciones porque falló la carga.</p> : insights.products.length ? <ol>
-          {insights.products.map((item, index) => <li key={`${item.label}-${item.sku}`}><span className="finance-sales-rank">{index + 1}</span><span className="finance-sales-product-name"><b>{item.label}</b>{item.sku && <small>{item.sku}</small>}</span><span className="finance-sales-product-units">{item.units.toLocaleString('es-EC')} un.</span><strong>{money(item.amount)}</strong></li>)}
+        <div className="finance-sales-card-heading"><Package size={16} aria-hidden="true"/><h3>Productos más vendidos por asesora</h3></div>
+        <div className="finance-sales-product-ranks" role="group" aria-label="Ordenar productos por métrica">
+          <button type="button" className={productSort === 'quantity' ? 'active' : ''} aria-pressed={productSort === 'quantity'} onClick={() => setProductSort('quantity')}><Package size={13}/> Cantidad</button>
+          <button type="button" className={productSort === 'revenue' ? 'active' : ''} aria-pressed={productSort === 'revenue'} onClick={() => setProductSort('revenue')}><Banknote size={13}/> Facturación neta</button>
+          {canViewProductMargins && <button type="button" className={productSort === 'margin' ? 'active' : ''} aria-pressed={productSort === 'margin'} onClick={() => setProductSort('margin')}><TrendingUp size={13}/> Margen bruto real</button>}
+        </div>
+        {saleLinesError ? <p className="finance-sales-empty" role="status">No se puede generar el ranking porque falló la carga de líneas de venta.</p> : saleReturnsError ? <p className="finance-sales-empty" role="status">No se puede ajustar el ranking por devoluciones porque falló la carga.</p> : productSort === 'margin' && saleLineCostsError ? <p className="finance-sales-empty" role="status">No se pudo cargar el costo real de las líneas: {saleLineCostsError}</p> : productSort === 'margin' && !insights.canCalculateMargins ? <p className="finance-sales-empty" role="status">El margen requiere permiso de costos, devoluciones y líneas cargadas correctamente.</p> : productSort === 'margin' && !rankedProducts.length ? <p className="finance-sales-empty" role="status">No hay líneas entregadas con costo real completo para calcular el margen de este periodo.</p> : rankedProducts.length ? <ol>
+          {rankedProducts.slice(0, 5).map((item, index) => <li key={`${item.label}-${item.sku}`}><span className="finance-sales-rank">{index + 1}</span><span className="finance-sales-product-name"><b>{item.label}</b><small>{item.sku ? `${item.sku} · ` : ''}{item.salesCount} {item.salesCount === 1 ? 'venta' : 'ventas'}</small></span><span className="finance-sales-product-units">{item.units.toLocaleString('es-EC')} cant.</span><strong>{productSort === 'margin' ? <>{money(item.margin!)}<small>{item.marginRate === null ? 'Margen % n/d' : `${new Intl.NumberFormat('es-EC',{style:'percent',maximumFractionDigits:1}).format(item.marginRate)} sobre venta neta`}</small></> : money(item.amount)}</strong></li>)}
         </ol> : <p className="finance-sales-empty">No hay líneas de producto en las ventas confirmadas de este mes.</p>}
-        <p className="finance-sales-note">Descuento general distribuido proporcionalmente entre líneas; devoluciones imputadas según sus líneas y cantidades registradas. Excluye conceptos sin vínculo a producto, como ingresos manuales.</p>
+        {productSort === 'margin' ? <p className="finance-sales-note">Margen bruto en líneas entregadas con costo real capturado, menos devoluciones; excluye líneas sin costo real y costos indirectos. Cobertura: {insights.marginCoverage.total ? `${insights.marginCoverage.covered} de ${insights.marginCoverage.total} líneas entregadas (${Math.round(insights.marginCoverage.covered / insights.marginCoverage.total * 100)}%)` : 'sin líneas entregadas con costo en este periodo'}.</p> : <p className="finance-sales-note">{productSort === 'quantity' ? 'Ordenado por cantidad vendida; el valor monetario corresponde a facturación neta por producto.' : 'Ordenado por facturación neta de devoluciones.'} El descuento general se distribuye proporcionalmente; excluye conceptos manuales sin vínculo a producto. Asesora y sucursal siguen los filtros del informe.</p>}
       </article>
     </div>
   </section>;
