@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ArrowUpRight, CalendarClock, ChartNoAxesCombined, Check, CircleDollarSign, Clock3, Download, Plus, ReceiptText, ShieldCheck, Truck } from 'lucide-react';
+import { ArrowUpRight, CalendarClock, ChartNoAxesCombined, Check, CircleDollarSign, Clock3, Download, Filter, Plus, ReceiptText, ShieldCheck, Tag, Truck, X } from 'lucide-react';
+import { ALL_EXPENSE_CATEGORIES, EXPENSE_GROUPS, getExpenseGroupForCategory } from './financeCategories';
 import { useAuth } from '../../auth/AuthProvider';
 import { normalizePersonName } from '../../lib/personName';
 import { supabase } from '../../lib/supabaseClient';
@@ -25,7 +26,7 @@ const previousCalendarMonth = (value: string) => {
   const previous = new Date(Date.UTC(year, month - 2, 1));
   return `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, '0')}`;
 };
-const categories = ['Compras e insumos', 'Arriendo', 'Internet y telefonía', 'Servicios básicos', 'Transporte', 'Mantenimiento', 'Marketing', 'Honorarios', 'Otros'];
+const categories = ALL_EXPENSE_CATEGORIES;
 const methods = [['cash', 'Efectivo'], ['transfer', 'Transferencia'], ['card', 'Tarjeta'], ['cheque', 'Cheque'], ['other', 'Otro']];
 const FINANCE_PAGE_SIZE = 500;
 
@@ -95,6 +96,10 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
   const [reviewRefs, setReviewRefs] = useState<Record<string, { authorization: string; evidence: string }>>({});
   const [payrollDeliveryRefs, setPayrollDeliveryRefs] = useState<Record<string, string>>({});
   const [budgetForm, setBudgetForm] = useState({ category: categories[0], branch: '', amount: '', note: '' });
+  const [expenseCategoryFilter, setExpenseCategoryFilter] = useState('all');
+  const [expenseCustomCategory, setExpenseCustomCategory] = useState('');
+  const [budgetCustomCategory, setBudgetCustomCategory] = useState('');
+  const [templateCustomCategory, setTemplateCustomCategory] = useState('');
 
   const refresh = async () => {
     if (!supabase || !organizationId || !canManage) return;
@@ -423,17 +428,49 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
       documentCount: reportExpenses.length,
     };
   }, [expenses, month, branch, supplierNames]);
+  const extraExpenseCategories = useMemo(() => {
+    const known = new Set(ALL_EXPENSE_CATEGORIES);
+    const extra = new Set<string>();
+    expenses.forEach((e) => {
+      if (e.category && !known.has(e.category)) extra.add(e.category);
+    });
+    budgets.forEach((b) => {
+      if (b.category && !known.has(b.category)) extra.add(b.category);
+    });
+    return Array.from(extra).sort((a, b) => a.localeCompare(b, 'es-EC'));
+  }, [expenses, budgets]);
+
+  const expenseCategoryBreakdown = useMemo(() => {
+    const scopedExpenses = expenses.filter((e) => isInSelectedBranch(e) && e.status !== 'void' && (!month || e.document_date.slice(0, 7) === month));
+    const totalPeriodSpent = scopedExpenses.reduce((sum, e) => sum + Number(e.total || 0), 0);
+    const byCategory = new Map<string, { category: string; group: string; count: number; total: number }>();
+    scopedExpenses.forEach((e) => {
+      const cat = e.category || 'Otros';
+      const row = byCategory.get(cat) || { category: cat, group: getExpenseGroupForCategory(cat), count: 0, total: 0 };
+      row.count += 1;
+      row.total += Number(e.total || 0);
+      byCategory.set(cat, row);
+    });
+    const rows = [...byCategory.values()].sort((a, b) => b.total - a.total);
+    return {
+      totalPeriodSpent,
+      rows,
+    };
+  }, [expenses, branch, month]);
+
   const visibleExpenses = useMemo(() => {
     const term = expenseSearch.trim().toLocaleLowerCase('es-EC');
     return expenses.filter((expense) => {
       const state = expensePaymentState(expense);
       const matchesStatus = expenseStatusFilter === 'all'
         || expenseStatusFilter === state;
+      const matchesCategory = expenseCategoryFilter === 'all'
+        || expense.category === expenseCategoryFilter;
       const searchable = [expense.description, expense.category, expense.reference, branchNames.get(expense.branch_id), supplierNames.get(expense.supplier_id), orderNames.get(expense.purchase_order_id)]
         .filter(Boolean).join(' ').toLocaleLowerCase('es-EC');
-      return isInSelectedBranch(expense) && matchesStatus && (!term || searchable.includes(term));
+      return isInSelectedBranch(expense) && matchesStatus && matchesCategory && (!term || searchable.includes(term));
     });
-  }, [expenses, expenseSearch, expenseStatusFilter, branch, branchNames, supplierNames, orderNames]);
+  }, [expenses, expenseSearch, expenseStatusFilter, expenseCategoryFilter, branch, branchNames, supplierNames, orderNames]);
   const visibleTemplates = templates.filter((item) => item.active && (branch === 'all' || item.branch_id === branch));
   const visibleDeductions = deductions.filter((item) => !month || String(item.payroll_period || '').slice(0, 7) === month);
   const deductionPersonName = (item: any) => (item.personnel_id && personnelNames.get(item.personnel_id)) || teamNames.get(item.employee_user_id) || 'Integrante del equipo';
@@ -486,9 +523,12 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
 
   const saveExpense = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setError(''); setNotice('');
+    const finalCategory = expenseForm.category === '__custom__'
+      ? (expenseCustomCategory.trim() || 'Otros gastos operativos')
+      : expenseForm.category;
     try {
       const { error: saveError } = await supabase.rpc('record_finance_expense', {
-        p_description: expenseForm.description.trim(), p_category: expenseForm.category, p_total: Number(expenseForm.total),
+        p_description: expenseForm.description.trim(), p_category: finalCategory, p_total: Number(expenseForm.total),
         p_due_date: expenseForm.due || null, p_branch_id: expenseForm.branch || null,
         p_supplier_id: expenseForm.supplier || null, p_purchase_order_id: expenseForm.order || null,
         p_paid_now: Number(expenseForm.paid || 0), p_method: expenseForm.method,
@@ -496,6 +536,7 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
       });
       if (saveError) throw saveError;
       setExpenseForm({ ...expenseForm, description: '', total: '', paid: '', due: '', reference: '', documentReference: '', note: '' });
+      setExpenseCustomCategory('');
       setNotice('Egreso guardado. El saldo pendiente y el pago inicial quedaron separados.'); await refresh();
     } catch (saveError: any) { setError(saveError.message || 'No se pudo guardar el egreso.'); }
     finally { setBusy(false); }
@@ -514,8 +555,11 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
 
   const saveTemplate = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setError(''); setNotice('');
-    const { error: saveError } = await supabase.from('finance_recurring_templates').insert({ organization_id: organizationId, description: templateForm.description.trim(), category: templateForm.category, expected_amount: Number(templateForm.amount), cadence: templateForm.cadence, next_due_date: templateForm.due, cadence_anchor_day: Number(templateForm.due.slice(-2)), branch_id: templateForm.branch || null, supplier_id: templateForm.supplier || null, note: templateForm.note.trim() });
-    if (saveError) setError(saveError.message); else { setNotice('Pago periódico guardado con su sucursal y proveedor; cada vencimiento se confirma manualmente.'); setTemplateForm({ ...templateForm, description: '', amount: '', branch: '', supplier: '', note: '' }); await refresh(); }
+    const finalCategory = templateForm.category === '__custom__'
+      ? (templateCustomCategory.trim() || 'Servicios básicos (luz, agua)')
+      : templateForm.category;
+    const { error: saveError } = await supabase.from('finance_recurring_templates').insert({ organization_id: organizationId, description: templateForm.description.trim(), category: finalCategory, expected_amount: Number(templateForm.amount), cadence: templateForm.cadence, next_due_date: templateForm.due, cadence_anchor_day: Number(templateForm.due.slice(-2)), branch_id: templateForm.branch || null, supplier_id: templateForm.supplier || null, note: templateForm.note.trim() });
+    if (saveError) setError(saveError.message); else { setNotice('Pago periódico guardado con su sucursal y proveedor; cada vencimiento se confirma manualmente.'); setTemplateForm({ ...templateForm, description: '', amount: '', branch: '', supplier: '', note: '' }); setTemplateCustomCategory(''); await refresh(); }
     setBusy(false);
   };
 
@@ -696,7 +740,38 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
           <div className="panel-heading"><div><span className="eyebrow">NUEVO MOVIMIENTO</span><h3>Registrar egreso</h3></div><Plus size={18}/></div>
           <p className="muted">Compra pagada hoy o factura/servicio pendiente. El pago inicial es opcional y admite abonos posteriores.</p>
           <label>Descripción<input required maxLength={240} placeholder="Ej. servicio de internet" value={expenseForm.description} onChange={(event) => setExpenseForm({ ...expenseForm, description: event.target.value })}/></label>
-          <div className="op-finance-ledger-field-pair"><label>Categoría<select value={expenseForm.category} onChange={(event) => setExpenseForm({ ...expenseForm, category: event.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label><label>Sucursal<select value={expenseForm.branch} onChange={(event) => setExpenseForm({ ...expenseForm, branch: event.target.value })}><option value="">General / sin sucursal</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label></div>
+          <div className="op-finance-ledger-field-pair">
+            <label>Categoría operativa
+              <select value={expenseForm.category} onChange={(event) => setExpenseForm({ ...expenseForm, category: event.target.value })}>
+                {EXPENSE_GROUPS.map((group) => (
+                  <optgroup key={group.group} label={group.group}>
+                    {group.categories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </optgroup>
+                ))}
+                {extraExpenseCategories.length > 0 && (
+                  <optgroup label="Otras categorías registradas">
+                    {extraExpenseCategories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </optgroup>
+                )}
+                <option value="__custom__">+ Otra categoría personalizada...</option>
+              </select>
+            </label>
+            <label>Sucursal
+              <select value={expenseForm.branch} onChange={(event) => setExpenseForm({ ...expenseForm, branch: event.target.value })}>
+                <option value="">General / sin sucursal</option>
+                {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+              </select>
+            </label>
+          </div>
+          {expenseForm.category === '__custom__' && (
+            <label>Nombre de la nueva categoría
+              <input required maxLength={80} placeholder="Ej. Impuestos municipales, Alucobond especial..." value={expenseCustomCategory} onChange={(event) => setExpenseCustomCategory(event.target.value)} />
+            </label>
+          )}
           <div className="op-finance-ledger-field-pair"><label>Proveedor<select value={expenseForm.supplier} onChange={(event) => setExpenseForm({ ...expenseForm, supplier: event.target.value, order: '' })}><option value="">Sin proveedor vinculado</option>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label><label>Orden de compra<select value={expenseForm.order} onChange={(event) => setExpenseForm({ ...expenseForm, order: event.target.value })}><option value="">Sin orden vinculada</option>{orders.filter((order) => !expenseForm.supplier || order.supplier_id === expenseForm.supplier).map((order) => <option key={order.id} value={order.id}>{order.order_number} · {order.status}</option>)}</select></label></div>
           {expenseForm.order && orderReferenceTotals[expenseForm.order] !== undefined && <p className="muted">Referencia de Compras: la orden suma {money(orderReferenceTotals[expenseForm.order])} según cantidades y costos registrados. Confirma el total real en la factura; esta referencia no registra ni paga la orden.</p>}
           <div className="op-finance-ledger-field-pair"><label>Total USD<input required type="number" min="0.01" step="0.01" value={expenseForm.total} onChange={(event) => setExpenseForm({ ...expenseForm, total: event.target.value })}/></label><label>Vence el<input type="date" value={expenseForm.due} onChange={(event) => setExpenseForm({ ...expenseForm, due: event.target.value })}/></label></div>
@@ -707,7 +782,61 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
           <button className="button button-primary" disabled={busy}><Plus size={15}/> Guardar egreso</button>
         </form>
         <section className="panel op-finance-ledger-register" id="op-finance-expense-register"><div className="panel-heading"><div><span className="eyebrow">COMPROMISOS Y PAGOS</span><h3>Movimientos de egreso</h3></div><CircleDollarSign size={19}/></div>
-          {!expenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={24}/><b>Aún no hay egresos</b><span>Registra compras pagadas al instante o servicios que debas pagar después.</span></div> : <><div className="op-finance-ledger-filters"><label>Buscar egreso<input type="search" value={expenseSearch} onChange={(event) => setExpenseSearch(event.target.value)} placeholder="Descripción, proveedor, OC o documento"/></label><label>Estado<select value={expenseStatusFilter} onChange={(event) => setExpenseStatusFilter(event.target.value)}><option value="all">Todos los estados</option><option value="open">Por pagar</option><option value="overdue">Vencidos</option><option value="paid">Pagados</option><option value="void">Anulados</option><option value="review">Revisar datos</option></select></label><span className="op-finance-ledger-result-count">{visibleExpenses.length} de {expenses.length} egresos</span></div>{!visibleExpenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={22}/><b>Sin coincidencias</b><span>Prueba otro término o estado para encontrar el egreso.</span></div> : <div className="op-finance-ledger-list">{visibleExpenses.map((expense) => { const balance = expenseBalance(expense); const state = expensePaymentState(expense); const form = paymentForms[expense.id] || { amount: '', method: 'transfer' }; const stateLabel = state === 'void' ? 'Anulado' : state === 'paid' ? 'Pagado' : state === 'overdue' ? 'Vencido' : state === 'open' ? 'Por pagar' : 'Revisar datos'; return <article key={expense.id}>
+          {!expenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={24}/><b>Aún no hay egresos</b><span>Registra compras pagadas al instante o servicios que debas pagar después.</span></div> : <>
+          {Boolean(expenseCategoryBreakdown.rows.length) && (
+            <div className="op-finance-category-chips-wrap">
+              <div className="op-finance-category-chips-header">
+                <span><Tag size={13} /> Egresos por categoría ({month || 'General'}):</span>
+                {expenseCategoryFilter !== 'all' && (
+                  <button type="button" className="op-finance-clear-pill" onClick={() => setExpenseCategoryFilter('all')}>
+                    Limpiar filtro ({expenseCategoryFilter}) <X size={12} />
+                  </button>
+                )}
+              </div>
+              <div className="op-finance-category-chips" role="group" aria-label="Filtro rápido por categoría de egreso">
+                {expenseCategoryBreakdown.rows.map((row) => {
+                  const isSelected = expenseCategoryFilter === row.category;
+                  return (
+                    <button
+                      key={row.category}
+                      type="button"
+                      className={`op-finance-category-chip ${isSelected ? 'is-active' : ''}`}
+                      onClick={() => setExpenseCategoryFilter(isSelected ? 'all' : row.category)}
+                      title={`Filtrar por ${row.category}: ${money(row.total)} en ${row.count} movimientos`}
+                    >
+                      <span className="op-finance-chip-name">{row.category}</span>
+                      <b className="op-finance-chip-amount">{money(row.total)}</b>
+                      <small className="op-finance-chip-count">{row.count}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <div className="op-finance-ledger-filters">
+            <label>Buscar egreso<input type="search" value={expenseSearch} onChange={(event) => setExpenseSearch(event.target.value)} placeholder="Descripción, proveedor, OC o documento"/></label>
+            <label>Categoría
+              <select value={expenseCategoryFilter} onChange={(event) => setExpenseCategoryFilter(event.target.value)}>
+                <option value="all">Todas las categorías</option>
+                {EXPENSE_GROUPS.map((group) => (
+                  <optgroup key={group.group} label={group.group}>
+                    {group.categories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </optgroup>
+                ))}
+                {extraExpenseCategories.length > 0 && (
+                  <optgroup label="Otras registradas">
+                    {extraExpenseCategories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+            </label>
+            <label>Estado<select value={expenseStatusFilter} onChange={(event) => setExpenseStatusFilter(event.target.value)}><option value="all">Todos los estados</option><option value="open">Por pagar</option><option value="overdue">Vencidos</option><option value="paid">Pagados</option><option value="void">Anulados</option><option value="review">Revisar datos</option></select></label>
+            <span className="op-finance-ledger-result-count">{visibleExpenses.length} de {expenses.length} egresos</span>
+          </div>{!visibleExpenses.length ? <div className="op-finance-ledger-empty"><ReceiptText size={22}/><b>Sin coincidencias</b><span>Prueba otro término o estado para encontrar el egreso.</span></div> : <div className="op-finance-ledger-list">{visibleExpenses.map((expense) => { const balance = expenseBalance(expense); const state = expensePaymentState(expense); const form = paymentForms[expense.id] || { amount: '', method: 'transfer' }; const stateLabel = state === 'void' ? 'Anulado' : state === 'paid' ? 'Pagado' : state === 'overdue' ? 'Vencido' : state === 'open' ? 'Por pagar' : 'Revisar datos'; return <article key={expense.id}>
             <div className="op-finance-ledger-record-top"><div><b>{expense.description}</b><span>{expense.category}{expense.branch_id ? ` · ${branchNames.get(expense.branch_id) || 'Sucursal'}` : ' · General'}{expense.supplier_id ? ` · ${supplierNames.get(expense.supplier_id) || 'Proveedor'}` : ''}{expense.purchase_order_id ? ` · OC ${orderNames.get(expense.purchase_order_id) || 'vinculada'}` : ''}{expense.reference ? ` · Doc. ${expense.reference}` : ''}</span></div><span className={`op-finance-ledger-status ${state === 'paid' ? 'is-paid' : state === 'void' ? 'is-void' : state === 'review' ? 'is-review' : ''}`}>{stateLabel}</span></div>
             <div className="op-finance-ledger-record-numbers"><span>Registrado {new Date(`${expense.document_date}T12:00:00`).toLocaleDateString('es-EC')} {expense.due_date ? `· vence ${new Date(`${expense.due_date}T12:00:00`).toLocaleDateString('es-EC')}` : ''}</span><b>{state === 'void' ? '—' : money(balance)} <small>{state === 'void' ? 'no exigible' : state === 'review' ? 'verificar saldo' : 'pendiente'}</small></b></div>
             <div className="op-finance-ledger-progress"><i style={{ width: `${Math.min(100, Number(expense.paid_total) / Number(expense.total) * 100)}%` }}/></div><small>{state === 'void' ? 'Compromiso anulado; excluido de obligaciones y saldos.' : state === 'review' ? 'El estado y el saldo no coinciden; revisa el registro antes de continuar.' : `Pagado ${money(Number(expense.paid_total))} de ${money(Number(expense.total))}`}</small>
@@ -723,7 +852,30 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
         <p className="muted">Los montos los defines tú. Se comparan con egresos registrados por fecha de documento; guardar un presupuesto no crea gastos ni pagos.</p>
         {!month ? <p className="op-finance-cost-error" role="alert">Selecciona un mes en el filtro superior para planificar.</p> : <>
           <div className="op-finance-budget-period"><span>Periodo del presupuesto</span><b>{payrollMonthLabel(`${month}-01`)}</b></div>
-          <label>Categoría<select value={budgetForm.category} onChange={(event) => setBudgetForm({ ...budgetForm, category: event.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
+          <label>Categoría
+            <select value={budgetForm.category} onChange={(event) => setBudgetForm({ ...budgetForm, category: event.target.value })}>
+              {EXPENSE_GROUPS.map((group) => (
+                <optgroup key={group.group} label={group.group}>
+                  {group.categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </optgroup>
+              ))}
+              {extraExpenseCategories.length > 0 && (
+                <optgroup label="Otras categorías registradas">
+                  {extraExpenseCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </optgroup>
+              )}
+              <option value="__custom__">+ Otra categoría personalizada...</option>
+            </select>
+          </label>
+          {budgetForm.category === '__custom__' && (
+            <label>Nombre de la nueva categoría para presupuesto
+              <input required maxLength={80} placeholder="Ej. Nueva partida de insumos..." value={budgetCustomCategory} onChange={(event) => setBudgetCustomCategory(event.target.value)} />
+            </label>
+          )}
           <label>Sucursal<select required value={budgetForm.branch} onChange={(event) => setBudgetForm({ ...budgetForm, branch: event.target.value })}>
             <option value="" disabled={branch !== 'all'}>General / sin sucursal{branch !== 'all' ? ' · usa Todas las sucursales para editar' : ''}</option>
             {branches.filter((item) => branch === 'all' || item.id === branch).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
@@ -776,7 +928,30 @@ export function OperationsFinanceControls({ month, branch, realtimeRefreshKey = 
     </section>}
     {section === 'recurring' && <div className="op-finance-ledger-columns">
       <form className="panel op-finance-ledger-form" onSubmit={saveTemplate}><div className="panel-heading"><div><span className="eyebrow">PREVISIÓN Y RECORDATORIOS</span><h3>Programar pago periódico</h3></div><CalendarClock size={18}/></div><p className="muted">Cada vencimiento crea una cuenta por pagar solo cuando lo confirmes. No se ejecutan cargos ni pagos automáticos.</p>
-        <label>Concepto<input required placeholder="Internet, arriendo, agua…" value={templateForm.description} onChange={(event) => setTemplateForm({ ...templateForm, description: event.target.value })}/></label><div className="op-finance-ledger-field-pair"><label>Categoría<select value={templateForm.category} onChange={(event) => setTemplateForm({ ...templateForm, category: event.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label><label>Frecuencia<select value={templateForm.cadence} onChange={(event) => setTemplateForm({ ...templateForm, cadence: event.target.value })}><option value="monthly">Mensual</option><option value="quarterly">Trimestral</option><option value="annual">Anual</option></select></label></div><div className="op-finance-ledger-field-pair"><label>Monto esperado USD<input required type="number" min="0.01" step="0.01" value={templateForm.amount} onChange={(event) => setTemplateForm({ ...templateForm, amount: event.target.value })}/></label><label>Próximo vencimiento<input required type="date" value={templateForm.due} onChange={(event) => setTemplateForm({ ...templateForm, due: event.target.value })}/></label></div>
+        <label>Concepto<input required placeholder="Internet, arriendo, agua…" value={templateForm.description} onChange={(event) => setTemplateForm({ ...templateForm, description: event.target.value })}/></label><div className="op-finance-ledger-field-pair"><label>Categoría
+            <select value={templateForm.category} onChange={(event) => setTemplateForm({ ...templateForm, category: event.target.value })}>
+              {EXPENSE_GROUPS.map((group) => (
+                <optgroup key={group.group} label={group.group}>
+                  {group.categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </optgroup>
+              ))}
+              {extraExpenseCategories.length > 0 && (
+                <optgroup label="Otras categorías registradas">
+                  {extraExpenseCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </optgroup>
+              )}
+              <option value="__custom__">+ Otra categoría personalizada...</option>
+            </select>
+          </label>
+          {templateForm.category === '__custom__' && (
+            <label>Nombre de la categoría periódica
+              <input required maxLength={80} placeholder="Ej. Suscripción Cloud, Licencia..." value={templateCustomCategory} onChange={(event) => setTemplateCustomCategory(event.target.value)} />
+            </label>
+          )}<label>Frecuencia<select value={templateForm.cadence} onChange={(event) => setTemplateForm({ ...templateForm, cadence: event.target.value })}><option value="monthly">Mensual</option><option value="quarterly">Trimestral</option><option value="annual">Anual</option></select></label></div><div className="op-finance-ledger-field-pair"><label>Monto esperado USD<input required type="number" min="0.01" step="0.01" value={templateForm.amount} onChange={(event) => setTemplateForm({ ...templateForm, amount: event.target.value })}/></label><label>Próximo vencimiento<input required type="date" value={templateForm.due} onChange={(event) => setTemplateForm({ ...templateForm, due: event.target.value })}/></label></div>
         <div className="op-finance-ledger-field-pair"><label>Sucursal<select value={templateForm.branch} onChange={(event) => setTemplateForm({ ...templateForm, branch: event.target.value })}><option value="">General / sin sucursal</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label><label>Proveedor<select value={templateForm.supplier} onChange={(event) => setTemplateForm({ ...templateForm, supplier: event.target.value })}><option value="">Sin proveedor vinculado</option>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label></div>
         <button className="button button-primary" disabled={busy}><Plus size={15}/> Guardar pago periódico</button>
       </form><section className="panel op-finance-ledger-register"><div className="panel-heading"><div><span className="eyebrow">CALENDARIO DE OBLIGACIONES</span><h3>Pagos esperados</h3></div><Clock3 size={18}/></div>{!visibleTemplates.length ? <div className="op-finance-ledger-empty"><CalendarClock size={24}/><b>Sin pagos periódicos para este filtro</b><span>Agrega internet, renta, luz, agua u otros pagos recurrentes.</span></div> : <div className="op-finance-ledger-list">{visibleTemplates.map((item) => <article key={item.id}><div className="op-finance-ledger-record-top"><div><b>{item.description}</b><span>{item.category} · {item.cadence === 'monthly' ? 'Mensual' : item.cadence === 'quarterly' ? 'Trimestral' : 'Anual'}{item.branch_id ? ` · ${branchNames.get(item.branch_id) || 'Sucursal'}` : ' · General'}{item.supplier_id ? ` · ${supplierNames.get(item.supplier_id) || 'Proveedor'}` : ''}</span></div><span className="op-finance-ledger-status">Recordatorio</span></div><div className="op-finance-ledger-record-numbers"><span>Próximo vencimiento {new Date(`${item.next_due_date}T12:00:00`).toLocaleDateString('es-EC')}</span><b>{money(item.expected_amount)}</b></div><button className="button button-outline" disabled={busy} onClick={() => void generateRecurringExpense(item)}><ReceiptText size={15}/> Crear cuenta por pagar</button></article>)}</div>}</section>

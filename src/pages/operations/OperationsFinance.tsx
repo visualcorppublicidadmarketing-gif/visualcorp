@@ -11,9 +11,11 @@ import {
   Clock3,
   Coins,
   Download,
+  Filter,
   Layers,
   LayoutDashboard,
   LoaderCircle,
+  Package,
   PackageCheck,
   Receipt,
   RefreshCw,
@@ -22,7 +24,15 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  X,
 } from 'lucide-react';
+import {
+  PRODUCT_FAMILIES,
+  type ProductFamily,
+  type ProductFamilyKey,
+  classifyLineToFamily,
+  getFamilyDef,
+} from './financeCategories';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import { AdvisorIncomeEntry } from './AdvisorIncomeEntry';
@@ -114,6 +124,22 @@ async function readAllRows(createQuery) {
   }
 }
 
+
+function FamilyIcon({ familyKey, size = 16 }: { familyKey: ProductFamilyKey; size?: number }) {
+  switch (familyKey) {
+    case 'gran_formato': return <Layers size={size} />;
+    case 'rotulos_corporeos': return <Award size={size} />;
+    case 'textil_confeccion': return <PackageCheck size={size} />;
+    case 'promocionales_souvenirs': return <Coins size={size} />;
+    case 'imprenta_papeleria': return <Receipt size={size} />;
+    case 'corte_laser': return <Clock3 size={size} />;
+    case 'exhibicion_stands': return <LayoutDashboard size={size} />;
+    case 'diseno_creatividad': return <ChartNoAxesCombined size={size} />;
+    case 'otros':
+    default: return <Wallet size={size} />;
+  }
+}
+
 export function OperationsFinance() {
   const { organizationId, hasPermission, user } = useAuth();
   const canManageFinance = hasPermission('finance', 'manage_finance');
@@ -153,6 +179,7 @@ export function OperationsFinance() {
   const [advisor, setAdvisor] = useState('all');
   const [branch, setBranch] = useState('all');
   const [method, setMethod] = useState('all');
+  const [familyFilter, setFamilyFilter] = useState('all');
   const [activeTab, setActiveTab] = useState<FinanceTab>(() => {
     if (typeof window !== 'undefined') {
       const param = new URLSearchParams(window.location.search).get('tab') as FinanceTab;
@@ -686,18 +713,97 @@ export function OperationsFinance() {
     return totals;
   }, new Map()), [payments]);
 
+  const saleMatchesFamily = (sale: any, targetFamily: string) => {
+    if (targetFamily === 'all') return true;
+    const lines = sale.sale_lines || [];
+    if (!lines.length) return targetFamily === 'otros';
+    return lines.some((line: any) => classifyLineToFamily(line) === targetFamily);
+  };
+
+  const salesFamilyBreakdown = useMemo(() => {
+    const baseSales = sales.filter((sale) => (
+      sale.status === 'confirmed'
+      && (!month || monthInBusinessTimeZone(sale.created_at) === month)
+      && (advisor === 'all' || sale.advisor_id === advisor)
+      && (branch === 'all' || sale.branch_id === branch)
+    ));
+    const totalBaseSold = baseSales.reduce((sum, sale) => sum + netSaleAmount(sale, returnsBySale), 0);
+
+    const familyStats = new Map<ProductFamilyKey, {
+      family: ProductFamily;
+      totalAmount: number;
+      totalUnits: number;
+      linesCount: number;
+      salesCount: number;
+      saleIds: Set<string>;
+    }>();
+
+    PRODUCT_FAMILIES.forEach((fam) => {
+      familyStats.set(fam.key, {
+        family: fam,
+        totalAmount: 0,
+        totalUnits: 0,
+        linesCount: 0,
+        salesCount: 0,
+        saleIds: new Set<string>(),
+      });
+    });
+
+    baseSales.forEach((sale) => {
+      const lines = sale.sale_lines || [];
+      const subtotal = Number(sale.subtotal || 0);
+      const discountRate = subtotal > 0 ? Math.min(1, Number(sale.discount_total || 0) / subtotal) : 0;
+      const saleNet = netSaleAmount(sale, returnsBySale);
+
+      if (!lines.length) {
+        const otros = familyStats.get('otros')!;
+        otros.totalAmount += saleNet;
+        otros.totalUnits += 1;
+        otros.linesCount += 1;
+        otros.saleIds.add(sale.id);
+        return;
+      }
+
+      lines.forEach((line: any) => {
+        const famKey = classifyLineToFamily(line);
+        const stat = familyStats.get(famKey) || familyStats.get('otros')!;
+        const netLine = Number(line.line_total || (Number(line.quantity || 1) * Number(line.unit_price || 0))) * (1 - discountRate);
+        stat.totalAmount += netLine;
+        stat.totalUnits += Number(line.quantity || 0);
+        stat.linesCount += 1;
+        stat.saleIds.add(sale.id);
+      });
+    });
+
+    const rows = [...familyStats.values()]
+      .map((stat) => ({
+        ...stat,
+        salesCount: stat.saleIds.size,
+        percentage: totalBaseSold > 0 ? Math.max(0, (stat.totalAmount / totalBaseSold) * 100) : 0,
+      }))
+      .sort((a, b) => b.totalAmount - a.totalAmount || b.salesCount - a.salesCount);
+
+    return {
+      totalBaseSold,
+      rows,
+      activeRows: rows.filter((r) => r.totalAmount > 0 || r.salesCount > 0),
+    };
+  }, [sales, month, advisor, branch, returnsBySale]);
+
   const salesInPeriod = useMemo(() => sales.filter((sale) => (
     sale.status === 'confirmed'
     && (!month || monthInBusinessTimeZone(sale.created_at) === month)
     && (advisor === 'all' || sale.advisor_id === advisor)
     && (branch === 'all' || sale.branch_id === branch)
-  )), [sales, month, advisor, branch]);
+    && (familyFilter === 'all' || saleMatchesFamily(sale, familyFilter))
+  )), [sales, month, advisor, branch, familyFilter]);
   const selectedIds = useMemo(() => new Set(salesInPeriod.map((sale) => sale.id)), [salesInPeriod]);
   const salesMatchingTeamAndBranch = useMemo(() => sales.filter((sale) => (
     sale.status === 'confirmed'
     && (advisor === 'all' || sale.advisor_id === advisor)
     && (branch === 'all' || sale.branch_id === branch)
-  )), [sales, advisor, branch]);
+    && (familyFilter === 'all' || saleMatchesFamily(sale, familyFilter))
+  )), [sales, advisor, branch, familyFilter]);
   const openReceivables = useMemo(() => salesMatchingTeamAndBranch.flatMap((sale) => {
     const total = Number(sale.total || 0);
     const returns = returnsBySale.get(sale.id) || { returnedValue: 0, settledRefund: 0, pendingRefund: 0, count: 0 };
@@ -1245,11 +1351,11 @@ export function OperationsFinance() {
             </div>
 
             <div className="op-finance-filters-top-actions">
-              {(advisor !== 'all' || branch !== 'all' || method !== 'all') && (
+              {(advisor !== 'all' || branch !== 'all' || method !== 'all' || familyFilter !== 'all') && (
                 <button
                   type="button"
                   className="op-finance-reset-filters"
-                  onClick={() => { setAdvisor('all'); setBranch('all'); setMethod('all'); }}
+                  onClick={() => { setAdvisor('all'); setBranch('all'); setMethod('all'); setFamilyFilter('all'); }}
                   title="Restablecer filtros a valores por defecto"
                 >
                   <RotateCcw size={13} /> Limpiar filtros
@@ -1286,7 +1392,38 @@ export function OperationsFinance() {
                 {paymentMethods.map((item) => <option key={item} value={item}>{paymentMethodLabel(item)}</option>)}
               </select>
             </label>
+
+            <label className="op-finance-filter-field">
+              <span>Familia / Categoría</span>
+              <select value={familyFilter} onChange={(event) => setFamilyFilter(event.target.value)}>
+                <option value="all">Todas las familias ({PRODUCT_FAMILIES.length})</option>
+                {PRODUCT_FAMILIES.map((fam) => {
+                  const stat = salesFamilyBreakdown.rows.find((r) => r.family.key === fam.key);
+                  const count = stat ? stat.salesCount : 0;
+                  return (
+                    <option key={fam.key} value={fam.key}>
+                      {fam.shortLabel} {count > 0 ? `(${count})` : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
           </div>
+
+          {familyFilter !== 'all' && (
+            <div className="op-finance-active-family-banner">
+              <span>
+                <Filter size={14} /> Filtrando por <b>{getFamilyDef(familyFilter).label}</b>
+              </span>
+              <button
+                type="button"
+                className="op-finance-banner-clear-btn"
+                onClick={() => setFamilyFilter('all')}
+              >
+                Mostrar todas las familias <X size={13} />
+              </button>
+            </div>
+          )}
         </section>
 
         {/* Hero KPIs & Collection Meter */}
@@ -1388,6 +1525,70 @@ export function OperationsFinance() {
     {/* TAB: RESUMEN OR TODO */}
     {(activeTab === 'resumen' || activeTab === 'todo') && (
       <>
+        {/* Visual Corp Product Families Composition */}
+        <section className="panel op-finance-families-panel" aria-labelledby="op-finance-families-title">
+          <div className="panel-heading">
+            <div>
+              <span className="eyebrow">INTELIGENCIA DE VENTAS · FAMILIAS VISUAL CORP</span>
+              <h2 id="op-finance-families-title">Composición de Ventas por Familia / Categoría</h2>
+              <p className="op-finance-cost-note">
+                Clasificación inteligente según líneas de producto confirmadas en el POS. Haz clic en cualquier tarjeta para filtrar.
+              </p>
+            </div>
+            <div className="op-finance-family-actions">
+              {familyFilter !== 'all' && (
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={() => setFamilyFilter('all')}
+                >
+                  <RotateCcw size={14} /> Ver todas ({PRODUCT_FAMILIES.length})
+                </button>
+              )}
+              <Layers size={19} />
+            </div>
+          </div>
+
+          <div className="op-finance-family-cards-grid" role="group" aria-label="Tarjetas de familias de productos">
+            {salesFamilyBreakdown.rows.map((item) => {
+              const isSelected = familyFilter === item.family.key;
+              return (
+                <article
+                  key={item.family.key}
+                  className={`op-finance-family-card ${isSelected ? 'is-selected' : ''} ${item.totalAmount > 0 ? 'has-sales' : 'is-empty'}`}
+                  onClick={() => setFamilyFilter(isSelected ? 'all' : item.family.key)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFamilyFilter(isSelected ? 'all' : item.family.key); } }}
+                  style={{ '--family-color': item.family.color } as React.CSSProperties}
+                >
+                  <div className="op-finance-family-card-top">
+                    <span className="op-finance-family-badge" style={{ backgroundColor: item.family.badgeBg, color: item.family.color }}>
+                      <FamilyIcon familyKey={item.family.key} size={15} />
+                      {item.family.shortLabel}
+                    </span>
+                    <span className="op-finance-family-share">{item.percentage.toFixed(1)}%</span>
+                  </div>
+
+                  <div className="op-finance-family-card-main">
+                    <b className="op-finance-family-amount">{money(item.totalAmount)}</b>
+                    <p className="op-finance-family-desc">{item.family.description}</p>
+                  </div>
+
+                  <div className="op-finance-family-progress">
+                    <i style={{ width: `${Math.min(100, Math.max(0, item.percentage))}%`, backgroundColor: item.family.color }} />
+                  </div>
+
+                  <div className="op-finance-family-card-footer">
+                    <span>{item.salesCount} {item.salesCount === 1 ? 'pedido' : 'pedidos'}</span>
+                    <span>{item.totalUnits.toLocaleString('es-EC')} un.</span>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
         <FinanceSalesInsights today={businessToday} month={month} monthSales={salesInPeriod} currentWeekSales={salesMatchingTeamAndBranch} returnsBySale={returnsBySale} saleReturns={saleReturns} saleReturnsError={saleReturnsError} saleLinesError={saleLinesError} />
         <div className="op-finance-grid">
           <section className="panel">
@@ -1415,6 +1616,70 @@ export function OperationsFinance() {
     {/* TAB: VENTAS */}
     {activeTab === 'ventas' && (
       <>
+        {/* Visual Corp Product Families Composition */}
+        <section className="panel op-finance-families-panel" aria-labelledby="op-finance-families-title">
+          <div className="panel-heading">
+            <div>
+              <span className="eyebrow">INTELIGENCIA DE VENTAS · FAMILIAS VISUAL CORP</span>
+              <h2 id="op-finance-families-title">Composición de Ventas por Familia / Categoría</h2>
+              <p className="op-finance-cost-note">
+                Clasificación inteligente según líneas de producto confirmadas en el POS. Haz clic en cualquier tarjeta para filtrar.
+              </p>
+            </div>
+            <div className="op-finance-family-actions">
+              {familyFilter !== 'all' && (
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={() => setFamilyFilter('all')}
+                >
+                  <RotateCcw size={14} /> Ver todas ({PRODUCT_FAMILIES.length})
+                </button>
+              )}
+              <Layers size={19} />
+            </div>
+          </div>
+
+          <div className="op-finance-family-cards-grid" role="group" aria-label="Tarjetas de familias de productos">
+            {salesFamilyBreakdown.rows.map((item) => {
+              const isSelected = familyFilter === item.family.key;
+              return (
+                <article
+                  key={item.family.key}
+                  className={`op-finance-family-card ${isSelected ? 'is-selected' : ''} ${item.totalAmount > 0 ? 'has-sales' : 'is-empty'}`}
+                  onClick={() => setFamilyFilter(isSelected ? 'all' : item.family.key)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFamilyFilter(isSelected ? 'all' : item.family.key); } }}
+                  style={{ '--family-color': item.family.color } as React.CSSProperties}
+                >
+                  <div className="op-finance-family-card-top">
+                    <span className="op-finance-family-badge" style={{ backgroundColor: item.family.badgeBg, color: item.family.color }}>
+                      <FamilyIcon familyKey={item.family.key} size={15} />
+                      {item.family.shortLabel}
+                    </span>
+                    <span className="op-finance-family-share">{item.percentage.toFixed(1)}%</span>
+                  </div>
+
+                  <div className="op-finance-family-card-main">
+                    <b className="op-finance-family-amount">{money(item.totalAmount)}</b>
+                    <p className="op-finance-family-desc">{item.family.description}</p>
+                  </div>
+
+                  <div className="op-finance-family-progress">
+                    <i style={{ width: `${Math.min(100, Math.max(0, item.percentage))}%`, backgroundColor: item.family.color }} />
+                  </div>
+
+                  <div className="op-finance-family-card-footer">
+                    <span>{item.salesCount} {item.salesCount === 1 ? 'pedido' : 'pedidos'}</span>
+                    <span>{item.totalUnits.toLocaleString('es-EC')} un.</span>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
         <FinanceSalesInsights today={businessToday} month={month} monthSales={salesInPeriod} currentWeekSales={salesMatchingTeamAndBranch} returnsBySale={returnsBySale} saleReturns={saleReturns} saleReturnsError={saleReturnsError} saleLinesError={saleLinesError} />
         <div className="op-finance-grid">
           <section className="panel">
