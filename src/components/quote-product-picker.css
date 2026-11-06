@@ -38,4 +38,6 @@
 .quote-product-chosen small{overflow:hidden;color:#777984;font-size:9px;text-overflow:ellipsis;white-space:nowrap}
 .quote-product-chosen>button{flex:none;padding:7px 9px;border:1px solid #e4e0e9;border-radius:8px;background:#fff;color:#6d2878;font-size:9px;font-weight:700;cursor:pointer}
 .quote-product-chosen>button:hover{background:#f8f1fa}
+.quote-product-chosen>.advisor-product-favorite{flex:none;width:32px;height:32px;padding:0;border-color:#e4e0e9;background:#fff;color:#74717a}
+.quote-product-chosen>.advisor-product-favorite.is-active{border-color:#f0c74c;background:#fff8df;color:#d49b00}
 @media(max-width:600px){.quote-product-results{max-height:70vh}.quote-product-options{max-height:38vh}.quote-product-status{font-size:0}.quote-product-status svg{width:14px;height:14px}}

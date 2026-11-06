@@ -351,7 +351,6 @@ export function SmartQuotePage() {
     total: quote.total,
     variant: [
       selectionText,
-      readableDimensions,
       readableDesign,
       isArea ? readableFinishing : '',
       installation ? 'Instalación incluida' : '',
@@ -359,6 +358,22 @@ export function SmartQuotePage() {
       shippingOption !== 'pickup' ? `Envío: ${activeShipping.name}` : ''
     ].filter(Boolean).join(' · '),
     quoteBreakdown: quote,
+    pricingDetails: {
+      dimensions: isArea ? `${widthCm} × ${heightCm} cm` : '',
+      widthCm,
+      heightCm,
+      pieceQuantity: effectiveQuantity,
+      pieceUnit: 'piezas',
+      areaPerPiece: quote.area,
+      totalArea: quote.totalArea,
+      rate: quote.rate,
+      rateUnit: quote.mode === 'area' ? 'm²' : 'unidad',
+      tierLabel: quote.tier?.label || 'PVP',
+      material: quote.material,
+      design: quote.design,
+      extras: extrasList.map((extra) => ({ name: extra.name, amount: extra.price })),
+      subtotal: quote.subtotal,
+    },
     artworkUrl: artwork?.remoteUrl || null,
     artworkName: artwork?.name || null
   }] : [];
@@ -618,6 +633,9 @@ export function SmartQuotePage() {
                     <button type="button" className="preset-chip" onClick={() => setDimensionPreset(300, 100)}>3.0 × 1.0 m</button>
                     <button type="button" className="preset-chip" onClick={() => setDimensionPreset(200, 200)}>2.0 × 2.0 m</button>
                     <button type="button" className="preset-chip" onClick={() => setDimensionPreset(400, 150)}>4.0 × 1.5 m</button>
+                    <button type="button" className="preset-chip" onClick={() => setDimensionPreset(80, 200)}>0.8 × 2.0 m</button>
+                    <button type="button" className="preset-chip" onClick={() => setDimensionPreset(120, 80)}>1.2 × 0.8 m</button>
+                    <button type="button" className="preset-chip" onClick={() => setDimensionPreset(60, 40)}>0.6 × 0.4 m</button>
                   </div>
 
                   <div className="fields two">

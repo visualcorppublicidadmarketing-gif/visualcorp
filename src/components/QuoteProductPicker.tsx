@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, Search, Shapes, X } from 'lucide-react';
+import { Check, ChevronDown, Search, Shapes, Star, X } from 'lucide-react';
+import { AdvisorProductFavoriteButton } from './AdvisorProductFavoriteButton';
 import './quote-product-picker.css';
 
 type Product = {
@@ -18,11 +19,14 @@ type Props = {
   selected: Product | undefined;
   onSelect: (product: Product | null) => void;
   idPrefix?: string;
+  favoriteIds?: Set<string>;
+  onToggleFavorite?: (productId: string) => void;
 };
 
 const normalize = (value: unknown) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').trim();
+const EMPTY_FAVORITES = new Set<string>();
 
-export function QuoteProductPicker({ products, selected, onSelect, idPrefix }: Props) {
+export function QuoteProductPicker({ products, selected, onSelect, idPrefix, favoriteIds = EMPTY_FAVORITES, onToggleFavorite }: Props) {
   const generatedId = useId().replace(/:/g, '');
   const pickerId = idPrefix || `quote-product-${generatedId}`;
   const [query, setQuery] = useState('');
@@ -30,6 +34,7 @@ export function QuoteProductPicker({ products, selected, onSelect, idPrefix }: P
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [showAll, setShowAll] = useState(false);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const families = useMemo(() => {
     const counts = new Map<string, number>();
@@ -47,11 +52,12 @@ export function QuoteProductPicker({ products, selected, onSelect, idPrefix }: P
       }));
       const matches = tokens.length === 0 || words.every((word) => word.rank < 99);
       const familyMatches = !family || (product.family || 'General') === family;
-      return { product, originalIndex, matches: matches && familyMatches, rank: words.reduce((sum, word) => sum + word.rank, 0) };
+      const favoriteMatches = !favoritesOnly || favoriteIds.has(product.id);
+      return { product, originalIndex, matches: matches && familyMatches && favoriteMatches, favoriteRank: favoriteIds.has(product.id) ? 0 : 1, rank: words.reduce((sum, word) => sum + word.rank, 0) };
     }).filter((entry) => entry.matches)
-      .sort((a, b) => a.rank - b.rank || a.originalIndex - b.originalIndex)
+      .sort((a, b) => (tokens.length ? a.rank - b.rank : a.favoriteRank - b.favoriteRank) || a.originalIndex - b.originalIndex)
       .map((entry) => entry.product);
-  }, [products, query, family]);
+  }, [products, query, family, favoritesOnly, favoriteIds]);
   const visible = results.slice(0, showAll ? results.length : 8);
   const activeProductId = visible[activeIndex]?.id;
 
@@ -91,6 +97,7 @@ export function QuoteProductPicker({ products, selected, onSelect, idPrefix }: P
     {selected ? <div className="quote-product-chosen">
       {selected.image && <img src={selected.image} alt="" loading="lazy"/>}
       <span><b>{selected.name}</b><small>{selected.family} · {selected.mode === 'area' ? 'Se calcula por área' : selected.unit || 'unidad'} · {selected.confirmed ? 'Tarifa confirmada' : 'Tarifa por validar'}</small></span>
+      {onToggleFavorite && <AdvisorProductFavoriteButton favorite={favoriteIds.has(selected.id)} onToggle={() => onToggleFavorite(selected.id)}/>}
       <button type="button" onClick={() => choose(null)} aria-label="Cambiar producto">Cambiar</button>
     </div> : <div className="quote-product-search-shell">
       <div className="quote-product-search-box">
@@ -103,6 +110,7 @@ export function QuoteProductPicker({ products, selected, onSelect, idPrefix }: P
       {open && <div className="quote-product-results">
         <div className="quote-product-results-top"><span>{results.length} {results.length === 1 ? 'resultado' : 'resultados'}</span><span>{products.length} productos en catálogo</span></div>
         <div className="quote-family-filters" aria-label="Filtrar por familia">
+          {onToggleFavorite && <button type="button" className={favoritesOnly ? 'active' : ''} aria-pressed={favoritesOnly} onPointerDown={(event) => event.preventDefault()} onClick={() => { setFavoritesOnly((value) => !value); setActiveIndex(-1); }}><Star size={12} aria-hidden="true"/> Mis favoritos <small>{favoriteIds.size}</small></button>}
           <button type="button" className={!family ? 'active' : ''} onPointerDown={(event) => event.preventDefault()} onClick={() => { setFamily(''); setActiveIndex(-1); }}>Todas</button>
           {families.slice(0, 5).map(([name]) => <button type="button" key={name} className={family === name ? 'active' : ''} onPointerDown={(event) => event.preventDefault()} onClick={() => { setFamily(family === name ? '' : name); setActiveIndex(-1); }}>{name}</button>)}
           {families.length > 5 && <details className="quote-more-families"><summary aria-label="Ver más familias"><Shapes size={14}/></summary><div>{families.slice(5).map(([name, count]) => <button type="button" key={name} className={family === name ? 'active' : ''} onPointerDown={(event) => event.preventDefault()} onClick={() => { setFamily(family === name ? '' : name); setActiveIndex(-1); }}>{name}<small>{count}</small></button>)}</div></details>}
@@ -113,7 +121,7 @@ export function QuoteProductPicker({ products, selected, onSelect, idPrefix }: P
             <span className="quote-product-option-copy"><b>{product.name}</b><small>{product.family} · {product.mode === 'area' ? 'Por área' : product.unit || 'unidad'}</small></span>
             <span className={`quote-product-status ${product.confirmed ? 'confirmed' : ''}`}>{product.confirmed ? <><Check size={12}/> Tarifa lista</> : 'Por validar'}</span>
           </button>)}
-          {results.length === 0 && <p className="quote-product-empty">No encontramos ese producto. Prueba con menos palabras o elige otra familia.</p>}
+          {results.length === 0 && <p className="quote-product-empty">{favoritesOnly && favoriteIds.size === 0 ? 'Aún no tienes productos favoritos. Selecciona un artículo y márcalo con la estrella.' : 'No encontramos ese producto. Prueba con menos palabras o elige otra familia.'}</p>}
           {results.length > visible.length && <button type="button" className="quote-product-more" onPointerDown={(event) => event.preventDefault()} onClick={() => setShowAll(true)}>Ver más resultados ({results.length - visible.length})</button>}
         </div>
       </div>}

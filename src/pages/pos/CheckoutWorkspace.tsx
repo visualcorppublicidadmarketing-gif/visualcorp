@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowDownRight, ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, Check, ChevronRight, CircleHelp, ClipboardList, Database, FileText, Globe2, History, Image, LayoutDashboard, LogOut, Megaphone, Menu, Package, Pencil, Plus, Settings2, ShoppingBag, ShoppingCart, Truck, Users, Wallet, X } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, Check, ChevronRight, CircleHelp, ClipboardList, Copy, Database, FileText, Globe2, History, Image, LayoutDashboard, LogOut, Megaphone, Menu, Package, Pencil, Plus, Settings2, ShoppingBag, ShoppingCart, Truck, Users, Wallet, X } from 'lucide-react';
 import { AppFrame, PageHeading, StatCard } from '../../app/layout';
 import { EmptyState, StageBadge } from '../../components/feedback';
 import { formatDate, formatMoney, useWorkspace } from '../../app/workspace';
@@ -21,6 +21,10 @@ import { normalizeGoogleMapsUrl } from '../../lib/maps';
 import { POSCustomerPicker } from './components/POSCustomerPicker';
 import { POSCheckoutSteps, type POSCheckoutStep } from './components/POSCheckoutSteps';
 import { POSProductSearch } from './components/POSProductSearch';
+import { AdvisorProductFavoriteButton } from '../../components/AdvisorProductFavoriteButton';
+import { MeasurementPreview } from '../../components/MeasurementPreview';
+import { useAdvisorProductFavorites } from '../../hooks/useAdvisorProductFavorites';
+import { buildPOSWhatsAppMessage, copyTextToClipboard } from '../../lib/whatsapp';
 import { getProductionDetails, isProductionWorkflowCode, POSProductionDetails, type ProductionDetailsValue, type ProductionLine, type ProductionWorkflowCode } from './POSProductionDetails';
 import './pos-fulfillment.css';
 import './checkout-workspace.css';
@@ -51,17 +55,17 @@ const sanitizePOSPayments = (rows: unknown) => {
   return sanitized.length?sanitized:[{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}];
 };
 const sanitizePOSSaleLines = (lines: unknown) => Array.isArray(lines)?lines.slice(0,100).filter((line)=>line&&typeof line==='object'&&Number.isFinite(Number(line.quantity))&&Number(line.quantity)>0&&Number.isFinite(Number(line.unit_price))&&Number(line.unit_price)>=0).map((line,index)=>({line_key:String(line.line_key||`legacy-${index}`),catalog_product_id:line.catalog_product_id||null,sku:String(line.sku||''),description:String(line.description||'Artículo cotizado'),quantity:Number(line.quantity),unit_price:Number(line.unit_price),material_requests:sanitizePOSMaterialRequests(line.material_requests||line.materialRequests).map((request)=>({recipe_id:request.recipeId,quantity:request.quantity}))})):[];
-const getPOSQuoteSaleLines = (quote: any) => Array.isArray(quote?.items)?quote.items.map((item,index)=>({line_key:`quote-${quote.id}-${index}`,catalog_product_id:item.product_id||null,sku:item.sku||item.product_id||'',description:[item.name||item.product_name||'Artículo cotizado',item.width_cm&&item.height_cm?`${item.width_cm} × ${item.height_cm} cm`:null,item.unit||null].filter(Boolean).join(' · '),quantity:Number(item.quantity),unit_price:Number(item.total)/Number(item.quantity),widthCm:item.width_cm||null,heightCm:item.height_cm||null,optionChoice:item.option_choice||''})):[];
+const getPOSQuoteSaleLines = (quote: any) => Array.isArray(quote?.items)?quote.items.map((item,index)=>({line_key:`quote-${quote.id}-${index}`,catalog_product_id:item.product_id||null,sku:item.sku||item.product_id||'',description:[item.name||item.product_name||'Artículo cotizado',item.width_cm&&item.height_cm?`${item.width_cm} × ${item.height_cm} cm`:null,item.unit||null].filter(Boolean).join(' · '),quantity:Number(item.quantity),pieceQuantity:Number(item.piece_quantity)||Number(item.quantity),totalArea:item.unit==='m²'?Number(item.quantity):null,unit_price:Number(item.total)/Number(item.quantity),widthCm:item.width_cm||null,heightCm:item.height_cm||null,unit:item.unit||'unidad',optionChoice:item.option_choice||''})):[];
 const sanitizeProductionDetails = (value: unknown): Record<string, ProductionDetailsValue> => {
   if(!value||typeof value!=='object'||Array.isArray(value))return {};
   return Object.fromEntries(Object.entries(value).slice(0,100).filter(([key,entry])=>key.length<=150&&entry&&typeof entry==='object').map(([key,entry]:[string,any])=>[key,{workflow_code:isProductionWorkflowCode(entry.workflow_code)?entry.workflow_code:'review',specifications:entry.specifications&&typeof entry.specifications==='object'&&!Array.isArray(entry.specifications)?entry.specifications:{}}]));
 };
 const posSaleLinesSignature = (lines: unknown) => JSON.stringify(sanitizePOSSaleLines(lines).map(({ material_requests: _requests, ...line }) => line));
 const pendingSaleSignature = (snapshot: any) => JSON.stringify({
-  form: {
+    form: {
     total:String(snapshot?.form?.total||''),amountPaid:String(snapshot?.form?.amountPaid||''),method:String(snapshot?.form?.method||''),customer:String(snapshot?.form?.customer||''),customerId:String(snapshot?.form?.customerId||''),customerPhone:String(snapshot?.form?.customerPhone||''),customerEmail:String(snapshot?.form?.customerEmail||''),customerDocumentReference:String(snapshot?.form?.customerDocumentReference||''),description:String(snapshot?.form?.description||''),productId:String(snapshot?.form?.productId||''),branchCode:String(snapshot?.form?.branchCode||''),quantity:String(snapshot?.form?.quantity||''),quoteId:String(snapshot?.form?.quoteId||''),
   },
-  cart:sanitizePOSCart(snapshot?.cart).map(({key:_key,...line})=>line),saleLines:sanitizePOSSaleLines(snapshot?.saleLines),materialRequestsByLine:sanitizePOSMaterialRequestMap(snapshot?.materialRequestsByLine),saleNote:String(snapshot?.saleNote||''),
+  cart:sanitizePOSCart(snapshot?.cart).map(({key:_key,...line})=>line),discountPercent:String(snapshot?.discountPercent||'0'),discountReason:String(snapshot?.discountReason||''),saleLines:sanitizePOSSaleLines(snapshot?.saleLines),materialRequestsByLine:sanitizePOSMaterialRequestMap(snapshot?.materialRequestsByLine),saleNote:String(snapshot?.saleNote||''),
   fulfillment:{installationRequired:Boolean(snapshot?.fulfillment?.installationRequired),installationAddress:String(snapshot?.fulfillment?.installationAddress||''),latitude:String(snapshot?.fulfillment?.latitude||''),longitude:String(snapshot?.fulfillment?.longitude||''),installationAt:String(snapshot?.fulfillment?.installationAt||''),deliveryAt:String(snapshot?.fulfillment?.deliveryAt||'')},
     mapLink:String(snapshot?.mapLink||''),payments:sanitizePOSPayments(snapshot?.payments),chargeNow:snapshot?.chargeNow!==false,activeParkedOrderId:String(snapshot?.activeParkedOrderId||''),allowBackorder:typeof snapshot?.allowBackorder==='boolean'?snapshot.allowBackorder:null,productionByLine:sanitizeProductionDetails(snapshot?.productionByLine),
 });
@@ -191,6 +195,7 @@ export function PosPage() {
   const confirmDialog=useConfirm();
   const { data, add, update, flash, refreshRemote }=useWorkspace();
   const { organizationId, user, hasPermission }=useAuth();
+  const { favoriteIds, toggleFavorite, status: favoriteStorageStatus }=useAdvisorProductFavorites(organizationId, user?.id);
   const [form,setForm]=useState({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
   const [fulfillment,setFulfillment]=useState({installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});
   const [showLocationPicker,setShowLocationPicker]=useState(false);
@@ -205,6 +210,8 @@ export function PosPage() {
   const [customerHistory,setCustomerHistory]=useState({loading:false,count:0,rows:[],summary:null});
   const [detailTarget,setDetailTarget]=useState<{kind:CommercialDocumentKind;id:string;code:string}|null>(null);
   const [cart,setCart]=useState([]);
+  const [discountPercent,setDiscountPercent]=useState('0');
+  const [discountReason,setDiscountReason]=useState('');
   const [materialRequestsByLine,setMaterialRequestsByLine]=useState<Record<string,POSMaterialRequestDraft[]>>({});
   const [productionByLine,setProductionByLine]=useState<Record<string, ProductionDetailsValue>>({});
   const [productWorkflowRoutes,setProductWorkflowRoutes]=useState<Record<string, ProductionWorkflowCode>>({});
@@ -251,7 +258,7 @@ export function PosPage() {
   const [draftLoadedKey,setDraftLoadedKey]=useState('');
   const pendingSaleKey=useRef('');
   const pendingSaleSnapshotRef=useRef<any>(null);
-  const pendingSaleSnapshot={form,cart,materialRequestsByLine,fulfillment,mapLink,payments,chargeNow,activeParkedOrderId,allowBackorder:pendingSaleSnapshotRef.current?.allowBackorder,saleLines:pendingSaleSnapshotRef.current?.saleLines,saleNote:pendingSaleSnapshotRef.current?.saleNote,productionByLine,clientBriefHtml};
+  const pendingSaleSnapshot={form,cart,discountPercent,discountReason,materialRequestsByLine,fulfillment,mapLink,payments,chargeNow,activeParkedOrderId,allowBackorder:pendingSaleSnapshotRef.current?.allowBackorder,saleLines:pendingSaleSnapshotRef.current?.saleLines,saleNote:pendingSaleSnapshotRef.current?.saleNote,productionByLine,clientBriefHtml};
   const pendingSaleChanged=Boolean(pendingSaleRecoveryMode&&pendingSaleSnapshotRef.current&&pendingSaleSignature(pendingSaleSnapshot)!==pendingSaleSignature(pendingSaleSnapshotRef.current));
   useEffect(()=>{
     if(!supabase||!organizationId||!user)return;
@@ -266,10 +273,12 @@ export function PosPage() {
       const restoredPayments=sanitizePOSPayments(snapshot.payments);
       const restoredProductionByLine=sanitizeProductionDetails(snapshot.productionByLine);
       const restoredMaterialRequests=sanitizePOSMaterialRequestMap(snapshot.materialRequestsByLine);
-      const restoredSnapshot={form:restoredForm,cart:restoredCart,materialRequestsByLine:restoredMaterialRequests,fulfillment:snapshot.fulfillment,mapLink:snapshot.mapLink,payments:restoredPayments,chargeNow:snapshot.chargeNow,activeParkedOrderId:snapshot.activeParkedOrderId,allowBackorder:snapshot.allowBackorder,saleLines:Array.isArray(snapshot.saleLines)?sanitizePOSSaleLines(snapshot.saleLines):undefined,saleNote:String(snapshot.saleNote||''),productionByLine:restoredProductionByLine,productionJobs:Array.isArray(snapshot.productionJobs)?snapshot.productionJobs:undefined,clientBriefHtml:String(snapshot.clientBriefHtml||'<p></p>')};
+      const restoredDiscountPercent=String(Math.min(40,Math.max(0,Math.round(Number(snapshot.discountPercent)||0))));
+      const restoredDiscountReason=String(snapshot.discountReason||'').slice(0,300);
+      const restoredSnapshot={form:restoredForm,cart:restoredCart,discountPercent:restoredDiscountPercent,discountReason:restoredDiscountReason,materialRequestsByLine:restoredMaterialRequests,fulfillment:snapshot.fulfillment,mapLink:snapshot.mapLink,payments:restoredPayments,chargeNow:snapshot.chargeNow,activeParkedOrderId:snapshot.activeParkedOrderId,allowBackorder:snapshot.allowBackorder,saleLines:Array.isArray(snapshot.saleLines)?sanitizePOSSaleLines(snapshot.saleLines):undefined,saleNote:String(snapshot.saleNote||''),productionByLine:restoredProductionByLine,productionJobs:Array.isArray(snapshot.productionJobs)?snapshot.productionJobs:undefined,clientBriefHtml:String(snapshot.clientBriefHtml||'<p></p>')};
       pendingSaleSnapshotRef.current=restoredSnapshot;setPendingSaleRecoveryMode(true);
       setForm((current)=>({...current,...restoredForm}));
-      setCart(restoredCart);setMaterialRequestsByLine(restoredMaterialRequests);setProductionByLine(restoredProductionByLine);setFulfillment(snapshot.fulfillment||{installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});setMapLink(String(snapshot.mapLink||''));setClientBriefHtml(String(snapshot.clientBriefHtml||'<p></p>'));
+      setCart(restoredCart);setDiscountPercent(restoredDiscountPercent);setDiscountReason(restoredDiscountReason);setMaterialRequestsByLine(restoredMaterialRequests);setProductionByLine(restoredProductionByLine);setFulfillment(snapshot.fulfillment||{installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});setMapLink(String(snapshot.mapLink||''));setClientBriefHtml(String(snapshot.clientBriefHtml||'<p></p>'));
       setPayments(restoredPayments);
       setChargeNow(snapshot.chargeNow!==false);setActiveParkedOrderId(String(snapshot.activeParkedOrderId||''));setCustomerQuery(String(restoredForm.customer||''));setSelectedCustomerSnapshot(restoredForm.customerId?{id:String(restoredForm.customerId),name:String(restoredForm.customer||''),phone:String(restoredForm.customerPhone||''),email:String(restoredForm.customerEmail||''),documentReference:String(restoredForm.customerDocumentReference||'')}:null);setDraftLoadedKey(posDraftStorageKey);
       setPendingSaleRecoveryError('');
@@ -297,7 +306,7 @@ export function PosPage() {
     if(!organizationId||!user)return;
     if(sessionStorage.getItem(pendingSaleSnapshotStorageKey)){setDraftLoadedKey(posDraftStorageKey);return;}
     setDraftLoadedKey('');
-    setCart([]);setMaterialRequestsByLine({});setProductionByLine({});
+    setCart([]);setDiscountPercent('0');setDiscountReason('');setMaterialRequestsByLine({});setProductionByLine({});
     try{
       const raw=sessionStorage.getItem(posDraftStorageKey);
       if(raw){
@@ -305,7 +314,7 @@ export function PosPage() {
         const age=Date.now()-Number(saved.savedAt||0);
         if(age>=0&&age<24*60*60*1000&&Array.isArray(saved.cart)){
           const restored=sanitizePOSCart(saved.cart);
-          if(restored.length){setCart(restored);setMaterialRequestsByLine(sanitizePOSMaterialRequestMap(saved.materialRequestsByLine));setProductionByLine(sanitizeProductionDetails(saved.productionByLine));flash('Recuperé el carrito de esta sesión. Revisa sucursal, artículos y precios antes de cobrar.');}
+          if(restored.length){setCart(restored);setDiscountPercent(String(Math.min(40,Math.max(0,Math.round(Number(saved.discountPercent)||0)))));setDiscountReason(String(saved.discountReason||'').slice(0,300));setMaterialRequestsByLine(sanitizePOSMaterialRequestMap(saved.materialRequestsByLine));setProductionByLine(sanitizeProductionDetails(saved.productionByLine));flash('Recuperé el carrito de esta sesión. Revisa sucursal, artículos y precios antes de cobrar.');}
           if(typeof saved.branchCode==='string'&&saved.branchCode)setForm((current)=>({...current,branchCode:saved.branchCode}));
         }else sessionStorage.removeItem(posDraftStorageKey);
       }
@@ -314,9 +323,9 @@ export function PosPage() {
   },[organizationId,user?.id,posDraftStorageKey,pendingSaleSnapshotStorageKey]);
   useEffect(()=>{
     if(!organizationId||!user||draftLoadedKey!==posDraftStorageKey)return;
-    if(cart.length)sessionStorage.setItem(posDraftStorageKey,JSON.stringify({version:1,savedAt:Date.now(),branchCode:form.branchCode,cart,materialRequestsByLine,productionByLine}));
+    if(cart.length)sessionStorage.setItem(posDraftStorageKey,JSON.stringify({version:1,savedAt:Date.now(),branchCode:form.branchCode,cart,discountPercent,discountReason,materialRequestsByLine,productionByLine}));
     else sessionStorage.removeItem(posDraftStorageKey);
-  },[organizationId,user?.id,draftLoadedKey,posDraftStorageKey,cart,materialRequestsByLine,form.branchCode,productionByLine]);
+  },[organizationId,user?.id,draftLoadedKey,posDraftStorageKey,cart,discountPercent,discountReason,materialRequestsByLine,form.branchCode,productionByLine]);
   useEffect(()=>{
     if(!data.branches.length)return;
     if(data.branches.some((branch)=>branch.code===form.branchCode))return;
@@ -324,7 +333,7 @@ export function PosPage() {
   },[data.branches,form.branchCode]);
   const resetCheckout=()=>{
     setForm((current)=>({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:current.branchCode,quantity:'1',quoteId:''}));
-    setCustomerQuery('');setSelectedCustomerSnapshot(null);setCart([]);setMaterialRequestsByLine({});setProductionByLine({});setActiveParkedOrderId('');setChargeNow(true);setPayments([{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}]);
+    setCustomerQuery('');setSelectedCustomerSnapshot(null);setCart([]);setDiscountPercent('0');setDiscountReason('');setMaterialRequestsByLine({});setProductionByLine({});setActiveParkedOrderId('');setChargeNow(true);setPayments([{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}]);
     setCartProductId('');setCartItemName('');setCartQuantity('1');setCartUnitPrice('');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');
     setFulfillment({installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});setMapLink('');setClientBriefHtml('<p></p>');saleAssets.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl));setSaleAssets([]);setMobileSummaryOpen(false);setPaymentTarget(null);
     setCheckoutStep('order');
@@ -398,7 +407,10 @@ export function PosPage() {
   },[form.customerId,canViewCustomerHistory,organizationId]);
   const branchName=data.branches.find((branch)=>branch.code===form.branchCode)?.name||(form.branchCode==='GIGA'?'Gigaprint':form.branchCode==='VIS'?'Visual Corp':form.branchCode);
   const cartTotal=Math.round(cart.reduce((sum,line)=>sum+(Number(line.total)||Number(line.quantity)*Number(line.unitPrice)),0)*100)/100;
-  const activeTotal=form.quoteId?Number(form.total)||0:cartTotal;
+  const manualDiscountPercent=Math.min(40,Math.max(0,Math.round(Number(discountPercent)||0)));
+  const manualDiscountAmount=Math.round(cartTotal*manualDiscountPercent)/100;
+  const discountReasonValid=Boolean(form.quoteId||manualDiscountAmount===0||(discountReason.trim().length>=3&&discountReason.trim().length<=300));
+  const activeTotal=form.quoteId?Number(form.total)||0:Math.max(0,Math.round((cartTotal-manualDiscountAmount)*100)/100);
   const paymentBreakdown=calculatePOSPaymentBreakdown(activeTotal,payments);
   const paymentPreview=paymentBreakdown.applied;
   const selectedCartProduct=data.catalog.find((product)=>product.id===cartProductId);
@@ -410,6 +422,14 @@ export function PosPage() {
   const hasPendingBackorderAuthorization=Boolean(pendingSaleRecoveryMode&&pendingSaleSnapshotRef.current?.allowBackorder===true);
   const quotePreview=centralQuotes.find((quote)=>quote.id===form.quoteId);
   const currentQuoteLines=getPOSQuoteSaleLines(quotePreview);
+  const advisorDisplayName=user?.user_metadata?.full_name||user?.user_metadata?.name||user?.email||'Visual Corp';
+  const quoteFinancial=quotePreview?.items?.find((item:any)=>item?.document_details?.financial)?.document_details?.financial||null;
+  const copyPOSWhatsApp=async()=>{
+    const messageItems=form.quoteId?currentQuoteLines.map((line:any)=>({name:line.description,quantity:line.quantity,pieceQuantity:line.pieceQuantity,pieceUnit:'piezas',totalArea:line.totalArea,unit:line.unit,dimensions:line.widthCm&&line.heightCm?`${line.widthCm} × ${line.heightCm} cm`:undefined,unitPrice:line.unit_price,lineTotal:line.unit_price*line.quantity})):cart.map((line:any)=>({name:line.name,quantity:line.mode==='area'?line.billingQuantity:line.quantity,pieceQuantity:line.mode==='area'?line.quantity:undefined,pieceUnit:'piezas',totalArea:line.mode==='area'?line.areaTotal:undefined,unit:line.mode==='area'?'m²':line.unit,dimensions:line.widthCm&&line.heightCm?`${line.widthCm} × ${line.heightCm} cm`:undefined,unitPrice:line.unitPrice,lineTotal:line.total}));
+    if(!messageItems.length){flash('Agrega un artículo o una cotización antes de copiar.');return;}
+    const message=buildPOSWhatsAppMessage({advisor:advisorDisplayName,customer:form.customer,branch:branchName,reference:quotePreview?.quote_code,items:messageItems,total:activeTotal,quoteFinancial,subtotal:form.quoteId?undefined:cartTotal,discountAmount:manualDiscountAmount,discountPercent:manualDiscountPercent,discountReason});
+    try{await copyTextToClipboard(message);flash('Resumen de la orden copiado para WhatsApp.');}catch(error:any){flash(error?.message||'No se pudo copiar el mensaje.');}
+  };
   const saleMaterialLines=form.quoteId&&pendingSaleRecoveryMode&&Array.isArray(pendingSaleSnapshotRef.current?.saleLines)&&pendingSaleSnapshotRef.current.saleLines.length?sanitizePOSSaleLines(pendingSaleSnapshotRef.current.saleLines):form.quoteId?currentQuoteLines:cart.map((line)=>({line_key:line.key,catalog_product_id:line.productId||null,description:line.description||line.name,quantity:Number(line.billingQuantity)||line.quantity}));
   const updateMaterialRequest=(lineKey:string,recipeId:string,quantity:string)=>setMaterialRequestsByLine((current)=>{
     const next=(current[lineKey]||[]).filter((request)=>request.recipeId!==recipeId);
@@ -466,8 +486,8 @@ export function PosPage() {
   const cashShiftPending=needsCashShift&&!pendingSaleRecoveryMode&&cashierSession.loading;
   const cashShiftUnavailable=needsCashShift&&!pendingSaleRecoveryMode&&!cashierSession.loading&&!cashierSession.session;
   const missingCartAccessoryLink=cart.some(line=>trackedAccessoryProductIds.has(line.productId)&&!catalogLinks.some(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.productId));
-  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&catalogLinkStatus==='ready'&&workflowRouteStatus==='ready'&&(!saleMaterialLines.some((line)=>line.catalog_product_id)||materialRecipesStatus==='ready')&&!missingCartAccessoryLink&&!backorderPermissionMissing&&!pendingSaleRecoveryError&&!pendingOperationChanged&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
-  const submitBlockReason=pendingSaleRecoveryError||(pendingOperationChanged?'Los datos de la operación o de la cotización cambiaron mientras la venta estaba pendiente. Recarga para restaurar la versión original antes de reintentar.':savingSale?'Guardando la venta…':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando los vínculos de inventario…':catalogLinkStatus==='error'?'No se pudieron consultar los vínculos de inventario. Recarga antes de confirmar.':saleMaterialLines.some((line)=>line.catalog_product_id)&&materialRecipesStatus!=='ready'?(materialRecipesStatus==='checking'?'Comprobando las recetas de materiales de esta sucursal…':'No se pudieron verificar las recetas. Vuelve a Detalles del trabajo y reintenta la consulta.'):missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':backorderPermissionMissing?'Hay artículos sin conteo o con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.':duplicateCustomer?`Ya existe ${duplicateCustomer.name} con ese teléfono, correo o identificación. Selecciónalo para evitar crear un duplicado.`:customerLookupFailed?'No se pudo verificar si el cliente ya existe. Reintenta la búsqueda antes de confirmar.':customerLookupPending?'Buscando coincidencias del cliente…':customerNameMissing?'Completa el nombre del cliente o limpia la búsqueda si será una venta de mostrador.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'');
+  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&catalogLinkStatus==='ready'&&workflowRouteStatus==='ready'&&(!saleMaterialLines.some((line)=>line.catalog_product_id)||materialRecipesStatus==='ready')&&!missingCartAccessoryLink&&!backorderPermissionMissing&&!pendingSaleRecoveryError&&!pendingOperationChanged&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&discountReasonValid&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
+  const submitBlockReason=pendingSaleRecoveryError||(pendingOperationChanged?'Los datos de la operación o de la cotización cambiaron mientras la venta estaba pendiente. Recarga para restaurar la versión original antes de reintentar.':savingSale?'Guardando la venta…':!discountReasonValid?'Escribe el motivo del descuento (mínimo 3 y máximo 300 caracteres).':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando los vínculos de inventario…':catalogLinkStatus==='error'?'No se pudieron consultar los vínculos de inventario. Recarga antes de confirmar.':saleMaterialLines.some((line)=>line.catalog_product_id)&&materialRecipesStatus!=='ready'?(materialRecipesStatus==='checking'?'Comprobando las recetas de materiales de esta sucursal…':'No se pudieron verificar las recetas. Vuelve a Detalles del trabajo y reintenta la consulta.'):missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':backorderPermissionMissing?'Hay artículos sin conteo o con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.':duplicateCustomer?`Ya existe ${duplicateCustomer.name} con ese teléfono, correo o identificación. Selecciónalo para evitar crear un duplicado.`:customerLookupFailed?'No se pudo verificar si el cliente ya existe. Reintenta la búsqueda antes de confirmar.':customerLookupPending?'Buscando coincidencias del cliente…':customerNameMissing?'Completa el nombre del cliente o limpia la búsqueda si será una venta de mostrador.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'');
   const cartQuantityNumber=Number(cartQuantity);
   const cartWidthNumber=Number(cartWidthCm);
   const cartHeightNumber=Number(cartHeightCm);
@@ -531,6 +551,7 @@ export function PosPage() {
   const continueToPayment=()=>{
     if(!form.quoteId&&!cart.length){setCheckoutStep('order');focusCheckoutField('#pos-product-search-input');flash('Agrega un artículo o carga una cotización.');return;}
     if(activeTotal<=0){setCheckoutStep('order');flash('La orden necesita un total mayor que cero.');return;}
+    if(!discountReasonValid){setCheckoutStep('order');focusCheckoutField('#pos-discount-reason');flash('Escribe el motivo del descuento comercial para continuar.');return;}
     if(customerNameMissing){setCheckoutStep('order');focusCheckoutField('.pos-customer-picker input[role="combobox"]');flash('Completa el nombre del cliente o limpia la búsqueda para una venta de mostrador.');return;}
     if(saleMaterialLines.some((line)=>line.catalog_product_id)&&materialRecipesStatus!=='ready'){setCheckoutStep('details');flash(materialRecipesStatus==='checking'?'Espera a que se comprueben las recetas de materiales.':'Reintenta la consulta de recetas antes de cobrar.');return;}
     if(!validateWorkDetails())return;
@@ -540,6 +561,7 @@ export function PosPage() {
   const advanceFromOrder=()=>{
     if(!form.quoteId&&!cart.length){focusCheckoutField('#pos-product-search-input');flash('Agrega un artículo o carga una cotización.');return;}
     if(activeTotal<=0){flash('La orden necesita un total mayor que cero.');return;}
+    if(!discountReasonValid){focusCheckoutField('#pos-discount-reason');flash('Escribe el motivo del descuento comercial para continuar.');return;}
     if(customerNameMissing){focusCheckoutField('.pos-customer-picker input[role="combobox"]');flash('Completa el nombre del cliente o limpia la búsqueda para una venta de mostrador.');return;}
     if(requiresWorkDetails){setCheckoutStep('details');setMobileSummaryOpen(false);return;}
     continueToPayment();
@@ -558,7 +580,7 @@ export function PosPage() {
     setParking(true);
     try{
       const key=globalThis.crypto?.randomUUID?.()||`park-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const payload={form:{...form},cart,materialRequestsByLine,productionByLine,fulfillment,mapLink,payments,chargeNow,clientBriefHtml};
+      const payload={form:{...form},cart,discountPercent:manualDiscountPercent,discountReason,materialRequestsByLine,productionByLine,fulfillment,mapLink,payments,chargeNow,clientBriefHtml};
       const {data:branch,error:branchError}=await supabase.from('branches').select('id').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();
       if(branchError)throw branchError;
       if(!branch?.id)throw new Error('No encontramos la sucursal seleccionada.');
@@ -583,11 +605,13 @@ export function PosPage() {
     const restoredChargeNow=payload.chargeNow!==false;
     const restoredProductionByLine=sanitizeProductionDetails(payload.productionByLine);
     const restoredMaterialRequests=sanitizePOSMaterialRequestMap(payload.materialRequestsByLine);
-    const recoveredSnapshot={form:savedForm,cart:restoredCart,materialRequestsByLine:restoredMaterialRequests,productionByLine:restoredProductionByLine,fulfillment:restoredFulfillment,mapLink:restoredMapLink,payments:restoredPayments,chargeNow:restoredChargeNow,activeParkedOrderId:order.id};
+    const restoredDiscountPercent=String(Math.min(40,Math.max(0,Math.round(Number(payload.discountPercent)||0))));
+    const restoredDiscountReason=String(payload.discountReason||'').slice(0,300);
+    const recoveredSnapshot={form:savedForm,cart:restoredCart,discountPercent:restoredDiscountPercent,discountReason:restoredDiscountReason,materialRequestsByLine:restoredMaterialRequests,productionByLine:restoredProductionByLine,fulfillment:restoredFulfillment,mapLink:restoredMapLink,payments:restoredPayments,chargeNow:restoredChargeNow,activeParkedOrderId:order.id};
     try{sessionStorage.setItem(pendingSaleStorageKey,order.idempotency_key);sessionStorage.setItem(pendingSaleSnapshotStorageKey,JSON.stringify({version:1,savedAt:Date.now(),...recoveredSnapshot}));}
     catch{if(!pendingSaleKey.current){sessionStorage.removeItem(pendingSaleStorageKey);sessionStorage.removeItem(pendingSaleSnapshotStorageKey);}flash('No se pudo guardar la recuperación de esta orden en esta sesión. No se envió la venta.');return;}
     setFulfillment(restoredFulfillment);setMapLink(restoredMapLink);setPayments(restoredPayments);setChargeNow(restoredChargeNow);setCustomerQuery(String(savedForm.customer||''));setSelectedCustomerSnapshot(savedForm.customerId?{id:String(savedForm.customerId),name:String(savedForm.customer||''),phone:String(savedForm.customerPhone||''),email:String(savedForm.customerEmail||''),documentReference:String(savedForm.customerDocumentReference||'')}:null);
-    setForm(savedForm);setCart(restoredCart);setMaterialRequestsByLine(restoredMaterialRequests);setProductionByLine(restoredProductionByLine);
+    setForm(savedForm);setCart(restoredCart);setDiscountPercent(restoredDiscountPercent);setDiscountReason(restoredDiscountReason);setMaterialRequestsByLine(restoredMaterialRequests);setProductionByLine(restoredProductionByLine);
     setCartProductId('');setCartItemName('');setCartUnitPrice('');setCartQuantity('1');setActiveParkedOrderId(order.id);
     setCheckoutStep('order');
     pendingSaleKey.current=order.idempotency_key;pendingSaleSnapshotRef.current=recoveredSnapshot;setPendingSaleRecoveryMode(true);setPendingSaleRecoveryError('');
@@ -599,6 +623,7 @@ export function PosPage() {
     const knownCustomer=(data.customers||[]).find((customer)=>quote?.customer_id&&customer.id===quote.customer_id)||(data.customers||[]).find((customer)=>quote?.customer_phone&&customer.phone===quote.customer_phone)||(data.customers||[]).find((customer)=>quote?.customer_name&&customer.name.trim().toLocaleLowerCase('es')===quote.customer_name.trim().toLocaleLowerCase('es'));
     setSelectedCustomerSnapshot(knownCustomer||null);
     setForm({...form,quoteId:nextQuoteId,total:quote?.selected_total??'',amountPaid:quote?.selected_total??'',customerId:quote?.customer_id||knownCustomer?.id||'',customer:knownCustomer?.name||quote?.customer_name||'',customerPhone:knownCustomer?.phone||quote?.customer_phone||'',customerEmail:knownCustomer?.email||'',customerDocumentReference:knownCustomer?.documentReference||'',description:Array.isArray(quote?.items)?quote.items.map(item=>item.name||item.product_name).join(', '):''});
+    if(nextQuoteId){setDiscountPercent('0');setDiscountReason('');}
     setCustomerQuery(knownCustomer?.name||quote?.customer_name||'');setClientBriefHtml(quote?.client_brief_html||'<p></p>');if(nextQuoteId)setCart([]);
   };
   const addCartLine=()=>{
@@ -639,7 +664,7 @@ export function PosPage() {
     if(pendingOperationChanged){flash('La operación pendiente cambió. Recarga para restaurar sus datos originales antes de reintentar.');return;}
     if(!canSubmitSale)return;
     const quote=centralQuotes.find(q=>q.id===form.quoteId);
-    const total=form.quoteId?Number(form.total):cartTotal;
+    const total=activeTotal;
     if(!total||total<=0||!user||!organizationId)return;
     if(fulfillment.installationRequired&&!fulfillment.installationAddress.trim()){flash('Agrega la dirección de instalación antes de confirmar.');return;}
     if(Boolean(fulfillment.latitude)!==Boolean(fulfillment.longitude)){flash('Completa ambas coordenadas del pin o deja los dos campos vacíos.');return;}
@@ -667,6 +692,8 @@ export function PosPage() {
     const requestsForLine=(line)=>({ ...line,material_requests:(materialRequestsByLine[line.line_key]||[]).filter((request)=>materialRecipes.some((recipe)=>recipe.id===request.recipeId&&recipe.active&&recipe.branch_id===selectedBranchId&&recipe.catalog_product_id===line.catalog_product_id&&recipe.calculation_mode==='explicit_quantity')).map((request)=>({recipe_id:request.recipeId,quantity:Number(request.quantity)})) });
     const lines=form.quoteId?sanitizePOSSaleLines(quoteLines).map(line=>({ ...requestsForLine(line),sku:data.catalog.find(product=>product.id===line.catalog_product_id)?.sku||line.sku||line.catalog_product_id||'' })):cart.map(line=>requestsForLine({line_key:line.key,catalog_product_id:line.productId||null,sku:line.sku||line.productId||'',description:line.description||line.name,quantity:Number(line.billingQuantity)||line.quantity,unit_price:line.unitPrice}));
     const saleNote=pendingSaleRecoveryMode&&pendingSaleKey.current&&typeof pendingSaleSnapshotRef.current?.saleNote==='string'?pendingSaleSnapshotRef.current.saleNote:[form.description,quote?`Cotización ${quote.quote_code}`:cart.map(line=>`${line.name} × ${line.quantity}`).join(' · ')].filter(Boolean).join(' · ');
+    const discountAuditNote=!form.quoteId&&manualDiscountAmount>0?`Descuento comercial (${manualDiscountPercent}%): ${discountReason.trim()}`:'';
+    const saleNoteWithDiscount=[discountAuditNote,saleNote].filter(Boolean).join('\n');
     const shortages=findPOSStockShortages(lines,catalogLinks,selectedBranchId,data.inventory);
     if(shortages.length&&!canManageBackorders&&!hasPendingBackorderAuthorization){flash('Hay productos sin conteo o con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.');return;}
     if(shortages.length){const accepted=await confirmDialog({eyebrow:'VENTA CON FALTANTE DE INVENTARIO',title:'¿Confirmar la orden como compra urgente?',description:`${shortages.length} artículo(s) tienen conteo pendiente o existencias insuficientes en esta sucursal.`,tone:'warning',confirmLabel:'Confirmar y solicitar compra',cancelLabel:'Volver a revisar',summaryItems:[{label:'Artículos con faltante',value:String(shortages.length)}],consequences:['La venta continuará y el faltante quedará señalado para compra urgente.','No se inventará una disponibilidad: el registro conservará el detalle del faltante.']});if(!accepted)return;}
@@ -687,7 +714,7 @@ export function PosPage() {
         return {line_index:index,workflow_code:value.workflow_code,specifications:{...value.specifications,installation_required:fulfillment.installationRequired,installation_address:fulfillment.installationAddress}};
       });
       const fulfillmentPayload={installation_required:fulfillment.installationRequired,installation_address:fulfillment.installationAddress,installation_maps_url:normalizedMapLink,installation_latitude:fulfillment.latitude,installation_longitude:fulfillment.longitude,installation_estimated_at:fulfillment.installationAt?new Date(fulfillment.installationAt).toISOString():null,delivery_due_at:fulfillment.deliveryAt?new Date(fulfillment.deliveryAt).toISOString():null};
-      const currentSnapshot={form,cart,materialRequestsByLine,productionByLine,productionJobs,fulfillment,mapLink:normalizedMapLink,payments,chargeNow,activeParkedOrderId,allowBackorder:typeof pendingSaleSnapshotRef.current?.allowBackorder==='boolean'?pendingSaleSnapshotRef.current.allowBackorder:canManageBackorders,saleLines:lines,saleNote,clientBriefHtml};
+      const currentSnapshot={form,cart,discountPercent:manualDiscountPercent,discountReason:discountReason.trim(),materialRequestsByLine,productionByLine,productionJobs,fulfillment,mapLink:normalizedMapLink,payments,chargeNow,activeParkedOrderId,allowBackorder:typeof pendingSaleSnapshotRef.current?.allowBackorder==='boolean'?pendingSaleSnapshotRef.current.allowBackorder:canManageBackorders,saleLines:lines,saleNote,clientBriefHtml};
       sessionStorage.setItem(pendingSaleSnapshotStorageKey,JSON.stringify({version:1,savedAt:Date.now(),...currentSnapshot}));
       pendingSaleSnapshotRef.current=currentSnapshot;setPendingSaleRecoveryMode(true);
       saleRequestStarted=true;
@@ -696,8 +723,8 @@ export function PosPage() {
         p_branch_code:form.branchCode,
         p_customer_id:form.customerId||null,
         p_customer_data:{full_name:form.customer.trim(),phone:form.customerPhone.trim(),email:form.customerEmail.trim(),document_reference:form.customerDocumentReference.trim()},
-        p_discount:0,
-        p_note:saleNote,
+        p_discount:form.quoteId?0:manualDiscountAmount,
+        p_note:saleNoteWithDiscount,
         p_allow_backorder:Boolean(currentSnapshot.allowBackorder),
         p_lines:lines,
         p_payments:salePayments,
@@ -772,10 +799,12 @@ export function PosPage() {
               families={cartFamilies} codesByProduct={skuCodesByProduct}
               stockByProduct={stockByProduct}
               renderImage={(product)=><POSProductVisual src={product.image} className="pos-product-image"/>}
+              favoriteIds={favoriteIds} onToggleFavorite={toggleFavorite}
             />
+            {favoriteStorageStatus==='local'&&<small className="pos-favorite-storage-note">Las estrellas se guardan en este navegador hasta conectar el almacenamiento del equipo.</small>}
             {!cartProductId&&cartMode==='quantity'&&<label>Concepto libre<input value={cartItemName} onChange={(event)=>setCartItemName(event.target.value)} placeholder="Producto o servicio acordado"/></label>}
-            {selectedCartProduct&&<div className="pos-selected-product"><POSProductVisual src={selectedCartProduct.image} alt={selectedCartProduct.name} className="pos-selected-image" iconSize={18}/><span><b>{selectedCartProduct.name}</b><small>{selectedCartProduct.sku||selectedCartProduct.id} · {selectedCartProduct.family} · {selectedCartProduct.unit||'unidad'}{cartPriceAvailable?' · tarifa lista para venta':' · tarifa pendiente de configurar'}</small><small>{!selectedCatalogLink?'Sin vínculo: esta venta no descontará inventario.':!selectedLinkedStock||selectedLinkedStock.sourceStatus?'Vínculo activo; falta conteo físico para confirmar disponibilidad.':`Disponible en ${branchName}: ${selectedAvailableStock} ${selectedLinkedStock.unit}.`}</small></span><button className="icon-button" type="button" aria-label="Quitar artículo seleccionado" onClick={()=>{setCartProductId('');setCartUnitPrice('');}}><X size={14}/></button></div>}
-            {cartMode==='area'&&<div className="pos-cart-inputs pos-measure-inputs"><label>Ancho (cm)<input id="pos-cart-width" type="number" min="0.01" step="0.01" value={cartWidthCm} onChange={(event)=>setCartWidthCm(event.target.value)}/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" value={cartHeightCm} onChange={(event)=>setCartHeightCm(event.target.value)}/></label><label>Cantidad de piezas<input type="number" min="1" step="1" value={cartQuantity} onChange={(event)=>setCartQuantity(event.target.value)}/></label></div>}
+            {selectedCartProduct&&<div className="pos-selected-product"><POSProductVisual src={selectedCartProduct.image} alt={selectedCartProduct.name} className="pos-selected-image" iconSize={18}/><span><b>{selectedCartProduct.name}</b><small>{selectedCartProduct.sku||selectedCartProduct.id} · {selectedCartProduct.family} · {selectedCartProduct.unit||'unidad'}{cartPriceAvailable?' · tarifa lista para venta':' · tarifa pendiente de configurar'}</small><small>{!selectedCatalogLink?'Sin vínculo: esta venta no descontará inventario.':!selectedLinkedStock||selectedLinkedStock.sourceStatus?'Vínculo activo; falta conteo físico para confirmar disponibilidad.':`Disponible en ${branchName}: ${selectedAvailableStock} ${selectedLinkedStock.unit}.`}</small></span><AdvisorProductFavoriteButton favorite={favoriteIds.has(selectedCartProduct.id)} onToggle={()=>toggleFavorite(selectedCartProduct.id)}/><button className="icon-button" type="button" aria-label="Quitar artículo seleccionado" onClick={()=>{setCartProductId('');setCartUnitPrice('');}}><X size={14}/></button></div>}
+            {cartMode==='area'&&<><div className="pos-measure-presets" role="group" aria-label="Tamaños rápidos"><span>Tamaños comunes</span>{[[100,100,'1 × 1 m'],[200,100,'2 × 1 m'],[300,100,'3 × 1 m'],[80,200,'80 × 200 cm'],[120,80,'120 × 80 cm'],[60,40,'60 × 40 cm']].map(([width,height,label])=><button key={`${width}x${height}`} type="button" onClick={()=>{setCartWidthCm(String(width));setCartHeightCm(String(height));}}>{label}</button>)}</div><div className="pos-cart-inputs pos-measure-inputs"><label>Ancho (cm)<input id="pos-cart-width" type="number" min="0.01" step="0.01" value={cartWidthCm} onChange={(event)=>setCartWidthCm(event.target.value)}/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" value={cartHeightCm} onChange={(event)=>setCartHeightCm(event.target.value)}/></label><label>Cantidad de piezas<input type="number" min="1" step="1" value={cartQuantity} onChange={(event)=>setCartQuantity(event.target.value)}/></label></div><MeasurementPreview widthCm={cartWidthNumber} heightCm={cartHeightNumber} pieces={cartQuantityNumber}/></>}
             {cartMode==='quantity'&&<div className="pos-cart-inputs"><label>Cantidad<input id="pos-cart-quantity" type="number" min="1" step="1" value={cartQuantity} onChange={(event)=>setCartQuantity(event.target.value)}/></label>{!selectedCartProduct&&<label>Precio acordado por unidad<div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartUnitPrice} onChange={(event)=>setCartUnitPrice(event.target.value)} placeholder="0,00"/></div></label>}</div>}
             {selectedCartProduct&&<>{selectedCartProduct.optionPrices?.length>0&&<label>Material / acabado<select value={cartOptionChoice} onChange={(event)=>setCartOptionChoice(event.target.value)}><option value="">Tarifa base</option>{selectedCartProduct.optionPrices.map(option=><option key={option.label} value={option.label}>{option.label}</option>)}</select></label>}<QuotePriceComparison product={selectedCartProduct} basis={cartPricingBasis} selectedTier={cartPriceTier} onSelect={setCartPriceTier} optionChoice={cartOptionChoice}/>{cartMode==='area'&&invalidMeasurementStockLink&&<p className="pos-calculation-warning">Este artículo descuenta inventario medido en “{measurementStockUnit}”. Asigna una existencia en m² antes de venderlo para evitar un descuento incorrecto.</p>}</>}
             {selectedCartProduct&&cartCalculation&&<div className="pos-calculation-total"><span>{cartMode==='area'?`${cartAreaPerPiece.toFixed(4)} m² por pieza × ${cartQuantityNumber} · ${cartCalculation.billedQuantity.toFixed(4)} m² en total`:`${cartQuantityNumber} ${selectedCartProduct.unit||'unidades'} · tarifa por ${selectedCartProduct.unit||'unidad'}`}</span><strong>{formatMoney(cartCalculation.total)}</strong></div>}
@@ -794,14 +823,15 @@ export function PosPage() {
         </section>}
         {checkoutStep==='payment'&&<section className="pos-checkout-review" aria-label="Revisión antes de confirmar">
           <div className="pos-stage-heading"><span className="eyebrow">ETAPA 3 DE 3</span><h3>Revisa la orden antes de confirmar</h3><p>Comprueba artículos, cliente, entrega y cobro. La venta se registra una sola vez.</p></div>
-          <dl className="pos-review-grid"><div><dt>Cliente</dt><dd>{form.customer||'Venta de mostrador'}</dd></div><div><dt>Sucursal</dt><dd>{branchName}</dd></div><div><dt>Artículos</dt><dd>{form.quoteId?'Cotización '+(centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||''):cart.length+' '+(cart.length===1?'artículo':'artículos')}</dd></div><div><dt>Entrega</dt><dd>{fulfillment.deliveryAt?new Date(fulfillment.deliveryAt).toLocaleString('es-EC',{dateStyle:'medium',timeStyle:'short'}):'Sin fecha indicada'}</dd></div><div><dt>Instalación</dt><dd>{fulfillment.installationRequired?fulfillment.installationAddress||'Dirección pendiente':'No solicitada'}</dd></div><div><dt>Cobro</dt><dd>{chargeNow?'Aplicado '+formatMoney(paymentBreakdown.applied)+' · Saldo '+formatMoney(paymentBreakdown.balance):'Pendiente de cobro'}</dd></div></dl>
-          <button className="button button-outline" type="button" onClick={()=>setCheckoutStep('details')}>Editar detalles del trabajo</button>
+          <dl className="pos-review-grid"><div><dt>Cliente</dt><dd>{form.customer||'Venta de mostrador'}</dd></div><div><dt>Sucursal</dt><dd>{branchName}</dd></div><div><dt>Artículos</dt><dd>{form.quoteId?'Cotización '+(centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||''):cart.length+' '+(cart.length===1?'artículo':'artículos')}</dd></div>{!form.quoteId&&<><div><dt>Subtotal</dt><dd>{formatMoney(cartTotal)}</dd></div><div><dt>Descuento comercial</dt><dd>{manualDiscountAmount?`${formatMoney(manualDiscountAmount)} · ${manualDiscountPercent}% · ${discountReason.trim()}`:'Sin descuento'}</dd></div><div><dt>Total</dt><dd>{formatMoney(activeTotal)}</dd></div></>}<div><dt>Entrega</dt><dd>{fulfillment.deliveryAt?new Date(fulfillment.deliveryAt).toLocaleString('es-EC',{dateStyle:'medium',timeStyle:'short'}):'Sin fecha indicada'}</dd></div><div><dt>Instalación</dt><dd>{fulfillment.installationRequired?fulfillment.installationAddress||'Dirección pendiente':'No solicitada'}</dd></div><div><dt>Cobro</dt><dd>{chargeNow?'Aplicado '+formatMoney(paymentBreakdown.applied)+' · Saldo '+formatMoney(paymentBreakdown.balance):'Pendiente de cobro'}</dd></div></dl>
+          <div className="pos-review-actions"><button className="button button-outline" type="button" onClick={()=>void copyPOSWhatsApp()}><Copy size={15}/> Copiar WhatsApp</button><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('details')}>Editar detalles del trabajo</button></div>
         </section>}
         <aside className={`pos-order-summary${mobileSummaryOpen?' is-open':''}`} data-checkout-step={checkoutStep}>
           <div className="pos-mobile-summary-bar"><span><small>ORDEN ACTUAL</small><b>{formatMoney(activeTotal)}</b></span><button className="button button-dark" type="button" aria-expanded={mobileSummaryOpen} onClick={()=>setMobileSummaryOpen((open)=>!open)}>{mobileSummaryOpen?'Cerrar pedido':'Ver pedido y cobrar'}</button></div>
           {form.quoteId
             ? <section className="pos-cart pos-quote-cart" aria-label="Resumen de cotización"><div className="pos-cart-heading"><div><span className="eyebrow">COTIZACIÓN APROBADA</span><h3>{centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||'Pedido aprobado'}</h3></div><strong>{formatMoney(activeTotal)}</strong></div><p className="pos-cart-empty">{form.description||'Los conceptos y el total se conservarán como fueron aprobados.'}</p></section>
             : <section className="pos-cart" aria-label="Carrito de venta"><div className="pos-cart-heading"><div><span className="eyebrow">ORDEN ACTUAL</span><h3>{cart.length} {cart.length===1?'artículo':'artículos'}</h3></div><strong>{formatMoney(cartTotal)}</strong></div>{cart.length===0?<p className="pos-cart-empty">Agrega productos del catálogo o registra un concepto libre con precio acordado.</p>:<div className="pos-cart-lines">{cart.map((line)=><POSCartLineEditor key={line.key} line={line} product={data.catalog.find((product)=>product.id===line.productId)} inventoryStatus={cartInventoryStatus(line)} onRemove={()=>{setCart(current=>current.filter(item=>item.key!==line.key));setMaterialRequestsByLine(current=>{const next={...current};delete next[line.key];return next;});}} onSave={(nextLine)=>setCart(current=>current.map(item=>item.key===line.key?nextLine:item))}/>)}</div>}</section>}
+          {!form.quoteId&&cart.length>0&&<section className="pos-discount-editor" aria-labelledby="pos-discount-title"><div className="pos-discount-heading"><div><span className="eyebrow">AJUSTE COMERCIAL</span><h3 id="pos-discount-title">Descuento de la venta</h3></div><strong>{manualDiscountPercent}%</strong></div><div className="pos-discount-slider-row"><label htmlFor="pos-discount-percent">Porcentaje de descuento <span>Hasta 40%</span></label><input id="pos-discount-percent" type="range" min="0" max="40" step="1" value={manualDiscountPercent} onChange={(event)=>setDiscountPercent(event.target.value)} aria-describedby="pos-discount-hint"/><div className="pos-discount-milestones">{[0,10,20,40].map((value)=><button key={value} type="button" className={manualDiscountPercent===value?'is-active':''} onClick={()=>setDiscountPercent(String(value))}>{value}%</button>)}</div></div>{manualDiscountAmount>0&&<label className="pos-discount-reason" htmlFor="pos-discount-reason">Motivo del descuento <span>Obligatorio · {discountReason.trim().length}/300</span><input id="pos-discount-reason" type="text" maxLength={300} value={discountReason} onChange={(event)=>setDiscountReason(event.target.value)} aria-invalid={!discountReasonValid} placeholder="Ej.: cliente frecuente, volumen acordado"/></label>}<p id="pos-discount-hint" className="pos-discount-hint">El descuento se registra en la venta y requiere un motivo. Las cotizaciones aprobadas conservan su total.</p><dl className="pos-discount-total"><div><dt>Subtotal</dt><dd>{formatMoney(cartTotal)}</dd></div>{manualDiscountAmount>0&&<div><dt>Descuento</dt><dd>−{formatMoney(manualDiscountAmount)}</dd></div>}<div className="is-total"><dt>Total por cobrar</dt><dd>{formatMoney(activeTotal)}</dd></div></dl></section>}
         <section className="pos-payment-section" hidden={checkoutStep!=='payment'}>
           <div className="pos-payment-title"><div><span className="eyebrow">COBRO</span><h3>Forma de pago</h3></div><label className="pos-charge-toggle"><input type="checkbox" checked={chargeNow} onChange={(event)=>setChargeNow(event.target.checked)}/> Cobrar ahora</label></div>
           {chargeNow?<>

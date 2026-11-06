@@ -13,9 +13,10 @@ const cleanItems = (items = []) => items.map((item) => ({
   total: Number(item.total ?? item.totalPrice ?? (Number(item.price || item.unitPrice || 0) * Number(item.quantity || 1))),
   variant: item.variant || item.description || '',
   quoteBreakdown: item.quoteBreakdown || null,
+  pricingDetails: item.pricingDetails || null,
 }));
 
-export function QuoteRequestDialog({ open, onClose, items = [], totals = {}, source = 'cotizador' }: { open: boolean; onClose?: () => void; items?: Array<Record<string, any>>; totals?: { subtotal?: number; taxRate?: number; taxAmount?: number; total?: number }; source?: string }) {
+export function QuoteRequestDialog({ open, onClose, items = [], totals = {}, source = 'cotizador' }: { open: boolean; onClose?: () => void; items?: Array<Record<string, any>>; totals?: { subtotal?: number; discountAmount?: number; taxRate?: number; taxAmount?: number; shipping?: number; total?: number }; source?: string }) {
   const { data, saveQuoteRequest, notify } = useSite();
   const [form, setForm] = useState({ name: '', phone: '', city: '', email: '', company: '', notes: '' });
   const [sending, setSending] = useState(false);
@@ -33,7 +34,7 @@ export function QuoteRequestDialog({ open, onClose, items = [], totals = {}, sou
       return;
     }
     if (!destination?.number) {
-      setError('Gigaprint todavía no ha configurado un número de WhatsApp para cotizaciones.');
+      setError('No hay un número de WhatsApp configurado para recibir cotizaciones.');
       return;
     }
 
@@ -65,6 +66,8 @@ export function QuoteRequestDialog({ open, onClose, items = [], totals = {}, sou
       subtotal: payload.subtotal,
       taxRate: payload.taxRate,
       taxAmount: payload.taxAmount,
+      discountAmount: Number(totals.discountAmount || 0),
+      shipping: Number(totals.shipping || 0),
       total: payload.total,
       notes: payload.notes,
       settings: data.settings,
@@ -76,7 +79,7 @@ export function QuoteRequestDialog({ open, onClose, items = [], totals = {}, sou
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next)=>{if(!next)onClose?.();}} eyebrow="ÚLTIMO PASO" icon={<MessageCircle size={22}/>} title="Envía tu cotización a Gigaprint" description={<>Guardaremos la solicitud y prepararemos el mensaje para el equipo de <b>{destination?.label || 'Ventas'}</b>.</>} tone="brand" size="md" className="quote-request-system-dialog" footer={<button type="submit" form="quote-request-form" className="button button-primary quote-request-submit" disabled={sending}>
+    <Dialog open={open} onOpenChange={(next)=>{if(!next)onClose?.();}} eyebrow="ÚLTIMO PASO" icon={<MessageCircle size={22}/>} title={`Envía tu cotización a ${destination?.label || 'Visual Corp'}`} description={<>Guardaremos la solicitud y prepararemos el mensaje para el equipo de <b>{destination?.label || 'Ventas Visual Corp'}</b>.</>} tone="brand" size="md" className="quote-request-system-dialog" footer={<button type="submit" form="quote-request-form" className="button button-primary quote-request-submit" disabled={sending}>
       {sending ? <><LoaderCircle className="spin" size={18} /> Guardando…</> : <><Check size={18} /> Guardar y abrir WhatsApp</>}
     </button>}>
         <form id="quote-request-form" onSubmit={submit} className="quote-request-form">
