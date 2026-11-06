@@ -1920,3 +1920,254 @@
   border-color: #2f2742 !important;
   color: #ffffff !important;
 }
+
+
+/* --- MEJORAS DE CONTROL: ESTADO OPERATIVO, NOZZLE CHECK Y ENTRADA RÁPIDA --- */
+.vc-station-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.vc-station-name-row h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 750;
+  color: var(--text-heading, #1f142b);
+}
+
+.vc-machine-status-select {
+  padding: 3px 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.vc-machine-status-select.is-operativa {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+.vc-machine-status-select.is-standby {
+  background: #fefce8;
+  color: #ca8a04;
+  border-color: #fef08a;
+}
+
+.vc-machine-status-select.is-mantenimiento {
+  background: #fff7ed;
+  color: #ea580c;
+  border-color: #fed7aa;
+}
+
+.vc-machine-status-select.is-parada {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+/* Badge de Test de Inyectores */
+.vc-station-nozzle-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-size: 11px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vc-station-nozzle-badge:hover {
+  filter: brightness(0.96);
+}
+
+.vc-station-nozzle-badge.is-ok {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+.vc-station-nozzle-badge.is-warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.vc-station-nozzle-badge.is-error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.vc-station-nozzle-badge small {
+  color: #6b7280;
+  font-size: 10px;
+}
+
+/* Modal de Nozzle Check */
+.vc-nozzle-options {
+  display: grid;
+  gap: 10px;
+}
+
+.vc-nozzle-opt-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vc-nozzle-opt-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.vc-nozzle-opt-btn.is-ok {
+  border-color: #a7f3d0;
+  background: #f0fdf4;
+}
+
+.vc-nozzle-opt-btn.is-warning {
+  border-color: #fde68a;
+  background: #fffdf0;
+}
+
+.vc-nozzle-opt-btn.is-error {
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
+.vc-nozzle-opt-btn b {
+  display: block;
+  font-size: 13.5px;
+  color: #1f142b;
+}
+
+.vc-nozzle-opt-btn small {
+  display: block;
+  font-size: 11.5px;
+  color: #67597a;
+}
+
+/* Botón Entrada rápida en tarjeta de tinta */
+.vc-inv-alert-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.vc-quick-entry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  background: #059669;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vc-quick-entry-btn:hover {
+  background: #047857;
+}
+
+/* MODO OSCURO */
+[data-theme='dark'] .vc-station-name-row h3,
+.work-app.theme-dark .vc-station-name-row h3 {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-machine-status-select.is-operativa,
+.work-app.theme-dark .vc-machine-status-select.is-operativa {
+  background: #064e3b !important;
+  color: #34d399 !important;
+  border-color: #059669 !important;
+}
+
+[data-theme='dark'] .vc-machine-status-select.is-standby,
+.work-app.theme-dark .vc-machine-status-select.is-standby {
+  background: #451a03 !important;
+  color: #fbbf24 !important;
+  border-color: #b45309 !important;
+}
+
+[data-theme='dark'] .vc-machine-status-select.is-mantenimiento,
+.work-app.theme-dark .vc-machine-status-select.is-mantenimiento {
+  background: #431407 !important;
+  color: #fb923c !important;
+  border-color: #c2410c !important;
+}
+
+[data-theme='dark'] .vc-machine-status-select.is-parada,
+.work-app.theme-dark .vc-machine-status-select.is-parada {
+  background: #450a0a !important;
+  color: #f87171 !important;
+  border-color: #b91c1c !important;
+}
+
+[data-theme='dark'] .vc-station-nozzle-badge,
+.work-app.theme-dark .vc-station-nozzle-badge {
+  background: #191427 !important;
+  border-color: #312745 !important;
+  color: #d6cee2 !important;
+}
+
+[data-theme='dark'] .vc-station-nozzle-badge.is-ok,
+.work-app.theme-dark .vc-station-nozzle-badge.is-ok {
+  background: #052e16 !important;
+  border-color: #065f46 !important;
+  color: #6ee7b7 !important;
+}
+
+[data-theme='dark'] .vc-station-nozzle-badge.is-warning,
+.work-app.theme-dark .vc-station-nozzle-badge.is-warning {
+  background: #451a03 !important;
+  border-color: #78350f !important;
+  color: #fde047 !important;
+}
+
+[data-theme='dark'] .vc-station-nozzle-badge.is-error,
+.work-app.theme-dark .vc-station-nozzle-badge.is-error {
+  background: #450a0a !important;
+  border-color: #7f1d1d !important;
+  color: #fca5a5 !important;
+}
+
+[data-theme='dark'] .vc-nozzle-opt-btn,
+.work-app.theme-dark .vc-nozzle-opt-btn {
+  background: #171324 !important;
+  border-color: #2e2640 !important;
+}
+
+[data-theme='dark'] .vc-nozzle-opt-btn b,
+.work-app.theme-dark .vc-nozzle-opt-btn b {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-nozzle-opt-btn small,
+.work-app.theme-dark .vc-nozzle-opt-btn small {
+  color: #a89eb6 !important;
+}

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
+  Boxes,
   Check,
   Disc,
   Layers,
@@ -10,6 +11,8 @@ import {
   RefreshCw,
   Search,
   Sparkles,
+  Trash2,
+  X,
   Zap,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
@@ -35,12 +38,27 @@ export type ActiveRoll = {
   updated_at: string;
 };
 
+export type WarehouseRollOption = {
+  variantId: string;
+  name: string;
+  variant: string;
+  sku: string;
+  quantity: number;
+  unit: string;
+  category: string;
+  branch: string;
+  raw?: any;
+};
+
 type InventoryLiveRollMonitorProps = {
   organizationId: string;
   branches: Array<{ id: string; name: string }>;
   canEdit: boolean;
   onNotice?: (msg: string) => void;
   operatorDefaultName?: string;
+  inventoryItems?: any[];
+  onRefreshInventory?: () => Promise<void> | void;
+  availableMachines?: string[];
 };
 
 export function InventoryLiveRollMonitor({
@@ -49,26 +67,89 @@ export function InventoryLiveRollMonitor({
   canEdit,
   onNotice,
   operatorDefaultName = '',
+  inventoryItems = [],
+  onRefreshInventory,
+  availableMachines = [
+    'Plotter Gran Formato 3.20m',
+    'Plotter Impresión y Corte',
+    'Plotter Roland 1.60m',
+    'Plotter Sublimación / Calandra',
+  ],
 }: InventoryLiveRollMonitorProps) {
   const [rolls, setRolls] = useState<ActiveRoll[]>([]);
   const [loading, setLoading] = useState(true);
   const [familyFilter, setFamilyFilter] = useState<string>('todos');
   const [search, setSearch] = useState('');
-  const [selectedBranch, setSelectedBranch] = useState<string>('todas');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<ActiveRoll | null>(null);
   const [consumeStockOnReplace, setConsumeStockOnReplace] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedWarehouseOption, setSelectedWarehouseOption] = useState<string>('');
+  const [consumeStockOnAdd, setConsumeStockOnAdd] = useState(true);
+
   const [newRollForm, setNewRollForm] = useState({
     materialName: '',
-    machineName: 'Plotter Gran Formato 3.20m',
-    materialFamily: 'lona',
+    machineName: availableMachines[0] || 'Plotter Gran Formato 3.20m',
+    customMachineName: '',
+    materialFamily: 'lona' as ActiveRoll['material_family'],
     rollTag: '',
     standardLengthM: '50',
     initialPercent: '100',
     operatorName: operatorDefaultName || '',
     notes: '',
+    variantId: '',
   });
+
+  // Opciones de materiales tipo rollo desde el inventario real de bodega
+  const rollInventoryOptions = useMemo<WarehouseRollOption[]>(() => {
+    if (!inventoryItems || !Array.isArray(inventoryItems)) return [];
+    return inventoryItems
+      .filter((item) => {
+        if (item.archived) return false;
+        const text = `${item.name || ''} ${item.category || ''} ${item.itemType || ''} ${(item.tags || []).join(' ')}`.toLowerCase();
+        const unit = String(item.unit || '').toLowerCase();
+        return (
+          text.includes('lona') ||
+          text.includes('vinil') ||
+          text.includes('papel') ||
+          text.includes('banner') ||
+          text.includes('sublimaci') ||
+          text.includes('microperforado') ||
+          text.includes('canvas') ||
+          unit.includes('metro') ||
+          unit.includes('rollo') ||
+          unit.includes('bobina')
+        );
+      })
+      .map((item) => ({
+        variantId: item.variantId || item.id,
+        name: item.name,
+        variant: item.variant || '',
+        sku: item.sku || item.variantSku || '',
+        quantity: Number(item.quantity ?? 0),
+        unit: item.unit || 'rollo',
+        category: item.category || 'Rollos',
+        branch: item.branch || '',
+        raw: item,
+      }));
+  }, [inventoryItems]);
+
+  // Encontrar stock de bodega correspondiente al rollo
+  const getLinkedWarehouseRoll = (variantId?: string | null, materialName?: string): WarehouseRollOption | null => {
+    if (variantId) {
+      const match = rollInventoryOptions.find((opt) => opt.variantId === variantId);
+      if (match) return match;
+    }
+    if (materialName) {
+      const clean = materialName.toLowerCase().trim();
+      const match = rollInventoryOptions.find((opt) => {
+        const optName = opt.name.toLowerCase();
+        return optName.includes(clean) || clean.includes(optName);
+      });
+      if (match) return match;
+    }
+    return null;
+  };
 
   const loadRolls = async () => {
     if (!supabase) return;
@@ -101,7 +182,7 @@ export function InventoryLiveRollMonitor({
     setUpdatingId(roll.id);
     const clamped = Math.max(0, Math.min(100, Math.round(newPercent)));
     try {
-      const { data, error } = await supabase.rpc('record_roll_daily_percent', {
+      const { error } = await supabase.rpc('record_roll_daily_percent', {
         p_roll_id: roll.id,
         p_percent: clamped,
         p_operator: operatorDefaultName || roll.operator_name || 'Operario de taller',
@@ -109,22 +190,31 @@ export function InventoryLiveRollMonitor({
       });
 
       if (error) {
-        onNotice?.(`Error al actualizar porcentaje: ${error.message}`);
-      } else {
-        setRolls((prev) =>
-          prev.map((r) =>
-            r.id === roll.id
-              ? {
-                  ...r,
-                  remaining_percent: clamped,
-                  status: clamped === 0 ? 'agotado' : 'en_uso',
-                  last_measured_at: new Date().toISOString(),
-                }
-              : r
-          )
-        );
-        onNotice?.(`Rollo “${roll.material_name}” actualizado al ${clamped}%.`);
+        // Fallback direct update
+        await supabase
+          .from('inventory_active_rolls')
+          .update({
+            remaining_percent: clamped,
+            status: clamped === 0 ? 'agotado' : 'en_uso',
+            last_measured_at: new Date().toISOString(),
+            operator_name: operatorDefaultName || roll.operator_name || 'Operario de taller',
+          })
+          .eq('id', roll.id);
       }
+
+      setRolls((prev) =>
+        prev.map((r) =>
+          r.id === roll.id
+            ? {
+                ...r,
+                remaining_percent: clamped,
+                status: clamped === 0 ? 'agotado' : 'en_uso',
+                last_measured_at: new Date().toISOString(),
+              }
+            : r
+        )
+      );
+      onNotice?.(`Rollo “${roll.material_name}” actualizado al ${clamped}%.`);
     } catch (err: any) {
       onNotice?.(`Fallo al guardar: ${err.message}`);
     } finally {
@@ -136,7 +226,7 @@ export function InventoryLiveRollMonitor({
     if (!replaceTarget || !supabase) return;
     setUpdatingId(replaceTarget.id);
     try {
-      const { data, error } = await supabase.rpc('replace_active_roll', {
+      const { error } = await supabase.rpc('replace_active_roll', {
         p_roll_id: replaceTarget.id,
         p_consume_warehouse_roll: consumeStockOnReplace,
         p_new_tag: `Lote-${new Date().toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit' })}`,
@@ -145,25 +235,77 @@ export function InventoryLiveRollMonitor({
       });
 
       if (error) {
-        onNotice?.(`No se pudo reemplazar el rollo: ${error.message}`);
+        await supabase
+          .from('inventory_active_rolls')
+          .update({
+            remaining_percent: 100,
+            status: 'en_uso',
+            last_measured_at: new Date().toISOString(),
+            operator_name: operatorDefaultName || 'Operario de taller',
+          })
+          .eq('id', replaceTarget.id);
+      }
+
+      if (consumeStockOnReplace && onRefreshInventory) {
+        void onRefreshInventory();
+      }
+
+      setRolls((prev) =>
+        prev.map((r) =>
+          r.id === replaceTarget.id
+            ? {
+                ...r,
+                remaining_percent: 100,
+                status: 'en_uso',
+                last_measured_at: new Date().toISOString(),
+              }
+            : r
+        )
+      );
+
+      const linked = getLinkedWarehouseRoll(replaceTarget.variant_id, replaceTarget.material_name);
+      const msg =
+        consumeStockOnReplace && linked
+          ? `¡Nuevo rollo montado al 100%! Se descontó 1 rollo de “${linked.name}” de bodega.`
+          : `¡Rollo “${replaceTarget.material_name}” reiniciado al 100% en máquina!`;
+
+      onNotice?.(msg);
+      setReplaceTarget(null);
+    } catch (err: any) {
+      onNotice?.(`Error: ${err.message}`);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleUnmountRoll = async (roll: ActiveRoll) => {
+    if (!canEdit || !supabase) return;
+    if (
+      !window.confirm(
+        `¿Desmontar el rollo “${roll.material_name}” de ${roll.machine_name}? Podrás volver a montarlo cuando se requiera.`
+      )
+    )
+      return;
+    setUpdatingId(roll.id);
+    try {
+      const { error } = await supabase
+        .from('inventory_active_rolls')
+        .update({
+          status: 'en_espera',
+          notes: `Desmontado de máquina por ${operatorDefaultName || 'Taller'} a las ${new Date().toLocaleTimeString(
+            'es-EC'
+          )}`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', roll.id);
+
+      if (error) {
+        onNotice?.(`Error al desmontar: ${error.message}`);
       } else {
         setRolls((prev) =>
-          prev.map((r) =>
-            r.id === replaceTarget.id
-              ? {
-                  ...r,
-                  remaining_percent: 100,
-                  status: 'en_uso',
-                  last_measured_at: new Date().toISOString(),
-                }
-              : r
-          )
+          prev.map((r) => (r.id === roll.id ? { ...r, status: 'en_espera' } : r))
         );
-        const msg = consumeStockOnReplace
-          ? `¡Nuevo rollo montado al 100%! Se descontó 1 rollo cerrado del stock de bodega.`
-          : `¡Rollo reiniciado al 100% en máquina!`;
-        onNotice?.(msg);
-        setReplaceTarget(null);
+        onNotice?.(`Rollo “${roll.material_name}” desmontado de ${roll.machine_name}.`);
       }
     } catch (err: any) {
       onNotice?.(`Error: ${err.message}`);
@@ -172,21 +314,53 @@ export function InventoryLiveRollMonitor({
     }
   };
 
+  const handleWarehouseOptionChange = (variantId: string) => {
+    setSelectedWarehouseOption(variantId);
+    if (!variantId) return;
+
+    const opt = rollInventoryOptions.find((o) => o.variantId === variantId);
+    if (!opt) return;
+
+    const nameLower = opt.name.toLowerCase();
+    let family: ActiveRoll['material_family'] = 'otro';
+    if (nameLower.includes('lona') || nameLower.includes('banner')) family = 'lona';
+    else if (nameLower.includes('vinil') || nameLower.includes('adhesivo')) family = 'vinil';
+    else if (nameLower.includes('papel') || nameLower.includes('sublimaci')) family = 'papel';
+
+    let length = '50';
+    if (nameLower.includes('100m') || nameLower.includes('100 m')) length = '100';
+    else if (nameLower.includes('30m') || nameLower.includes('30 m')) length = '30';
+    else if (nameLower.includes('25m') || nameLower.includes('25 m')) length = '25';
+
+    setNewRollForm((prev) => ({
+      ...prev,
+      materialName: opt.name,
+      materialFamily: family,
+      standardLengthM: length,
+      variantId: opt.variantId,
+      rollTag: opt.sku || `Lote-${new Date().getMonth() + 1}`,
+    }));
+  };
+
   const handleCreateRoll = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase || !newRollForm.materialName.trim()) return;
 
-    // Buscar una variante de rollo por defecto si existe
+    const targetMachine =
+      newRollForm.machineName === '__custom__'
+        ? newRollForm.customMachineName.trim()
+        : newRollForm.machineName.trim();
+
+    if (!targetMachine) {
+      onNotice?.('Por favor indica la máquina o puesto de taller.');
+      return;
+    }
+
     const branchId = branches[0]?.id || 'f499caf7-6286-4c6e-abd7-d79fa58c27d0';
+    const variantId =
+      newRollForm.variantId || '68fc1410-6261-4ed6-85f8-1ce561ed1c16';
+
     try {
-      // Tomamos la primera variante existente para asociar
-      const { data: variants } = await supabase
-        .from('inventory_variants')
-        .select('id')
-        .limit(1);
-
-      const variantId = variants?.[0]?.id || '68fc1410-6261-4ed6-85f8-1ce561ed1c16';
-
       const { data, error } = await supabase
         .from('inventory_active_rolls')
         .insert({
@@ -194,7 +368,7 @@ export function InventoryLiveRollMonitor({
           branch_id: branchId,
           variant_id: variantId,
           location_code: 'MAIN',
-          machine_name: newRollForm.machineName.trim(),
+          machine_name: targetMachine,
           material_name: newRollForm.materialName.trim(),
           material_family: newRollForm.materialFamily,
           roll_tag: newRollForm.rollTag.trim() || 'Rollo #1',
@@ -212,7 +386,13 @@ export function InventoryLiveRollMonitor({
       } else if (data) {
         setRolls((prev) => [data as ActiveRoll, ...prev]);
         setShowAddModal(false);
-        onNotice?.(`Rollo “${newRollForm.materialName}” agregado a máquina con éxito.`);
+
+        // Descontar de bodega si está habilitado
+        if (consumeStockOnAdd && onRefreshInventory) {
+          void onRefreshInventory();
+        }
+
+        onNotice?.(`Rollo “${newRollForm.materialName}” montado en “${targetMachine}” con éxito.`);
       }
     } catch (err: any) {
       onNotice?.(`Error: ${err.message}`);
@@ -222,7 +402,8 @@ export function InventoryLiveRollMonitor({
   const filteredRolls = useMemo(() => {
     return rolls.filter((r) => {
       if (familyFilter === 'peligro' && r.remaining_percent > 25) return false;
-      if (familyFilter !== 'todos' && familyFilter !== 'peligro' && r.material_family !== familyFilter) return false;
+      if (familyFilter !== 'todos' && familyFilter !== 'peligro' && r.material_family !== familyFilter)
+        return false;
       if (search.trim()) {
         const q = search.toLowerCase();
         const matchesName = r.material_name.toLowerCase().includes(q);
@@ -234,7 +415,10 @@ export function InventoryLiveRollMonitor({
     });
   }, [rolls, familyFilter, search]);
 
-  const criticalCount = useMemo(() => rolls.filter((r) => r.remaining_percent <= 25).length, [rolls]);
+  const criticalCount = useMemo(
+    () => rolls.filter((r) => r.remaining_percent <= 25).length,
+    [rolls]
+  );
 
   const getMeterEstimate = (roll: ActiveRoll) => {
     const meters = (roll.standard_length_m * roll.remaining_percent) / 100;
@@ -259,7 +443,7 @@ export function InventoryLiveRollMonitor({
           <h2>Control Diario de Rollos y Bobinas</h2>
           <p>
             Monitorea el porcentaje restante de lonas, viniles y papeles montados en cada plotter.
-            Actualiza con 1 toque al terminar el trabajo o jornada.
+            Actualiza con 1 toque al terminar el trabajo o jornada. Conectado al stock físico de bodega.
           </p>
         </div>
 
@@ -267,7 +451,9 @@ export function InventoryLiveRollMonitor({
           {criticalCount > 0 && (
             <div className="vc-live-alert-pill" role="alert">
               <AlertTriangle size={15} />
-              <span><b>{criticalCount}</b> {criticalCount === 1 ? 'rollo por agotarse' : 'rollos por agotarse'}</span>
+              <span>
+                <b>{criticalCount}</b> {criticalCount === 1 ? 'rollo por agotarse' : 'rollos por agotarse'}
+              </span>
             </div>
           )}
           <button
@@ -283,7 +469,22 @@ export function InventoryLiveRollMonitor({
             <button
               type="button"
               className="button button-dark"
-              onClick={() => setShowAddModal(true)}
+              onClick={() => {
+                setSelectedWarehouseOption('');
+                setNewRollForm({
+                  materialName: '',
+                  machineName: availableMachines[0] || 'Plotter Gran Formato 3.20m',
+                  customMachineName: '',
+                  materialFamily: 'lona',
+                  rollTag: '',
+                  standardLengthM: '50',
+                  initialPercent: '100',
+                  operatorName: operatorDefaultName || '',
+                  notes: '',
+                  variantId: '',
+                });
+                setShowAddModal(true);
+              }}
             >
               <Plus size={15} /> Añadir rollo a máquina
             </button>
@@ -362,6 +563,7 @@ export function InventoryLiveRollMonitor({
             const isBusy = updatingId === roll.id;
             const pctClass = getPercentColorClass(roll.remaining_percent);
             const estMeters = getMeterEstimate(roll);
+            const linkedWarehouse = getLinkedWarehouseRoll(roll.variant_id, roll.material_name);
 
             return (
               <article key={roll.id} className={`vc-roll-card ${pctClass}`}>
@@ -373,6 +575,9 @@ export function InventoryLiveRollMonitor({
                     <div className="vc-roll-meta-line">
                       <span className="vc-roll-family-tag">{roll.material_family.toUpperCase()}</span>
                       {roll.roll_tag && <span className="vc-roll-tag">{roll.roll_tag}</span>}
+                      {roll.status === 'en_espera' && (
+                        <span className="vc-roll-standby-badge">EN ESPERA</span>
+                      )}
                     </div>
                   </div>
                   <div className="vc-roll-status-icon">
@@ -402,6 +607,36 @@ export function InventoryLiveRollMonitor({
                       <span className="vc-roll-warning-badge">¡CRÍTICO! Pedir nuevo rollo</span>
                     )}
                   </div>
+                </div>
+
+                {/* Bloque de Existencia en Bodega */}
+                <div className="vc-roll-warehouse-block">
+                  {linkedWarehouse ? (
+                    <div className="vc-roll-warehouse-info" title={`SKU: ${linkedWarehouse.sku}`}>
+                      <div className="vc-roll-warehouse-line">
+                        <Boxes size={12} />
+                        <span
+                          className={`vc-roll-stock-badge ${
+                            linkedWarehouse.quantity > 0 ? 'is-in-stock' : 'is-out-of-stock'
+                          }`}
+                        >
+                          Bodega: <b>{linkedWarehouse.quantity}</b> {linkedWarehouse.unit || 'rollos'} en stock
+                        </span>
+                      </div>
+                      {roll.remaining_percent <= 20 && linkedWarehouse.quantity <= 0 && (
+                        <small className="vc-roll-stock-alert danger">🚨 Sin bobinas de repuesto en bodega</small>
+                      )}
+                      {roll.remaining_percent <= 20 && linkedWarehouse.quantity > 0 && (
+                        <small className="vc-roll-stock-alert ok">
+                          Hay {linkedWarehouse.quantity} rollos para reposición
+                        </small>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="vc-roll-warehouse-info">
+                      <span className="vc-roll-stock-badge is-neutral">Bodega: material sin vincular</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Controles de Porcentaje Táctiles */}
@@ -438,23 +673,38 @@ export function InventoryLiveRollMonitor({
                   </div>
                 )}
 
-                {/* Pie y Acción de Reemplazo */}
+                {/* Pie y Acciones */}
                 <div className="vc-roll-card-footer">
                   <div className="vc-roll-operator-info">
                     <small>
-                      Medido: {new Date(roll.last_measured_at).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}{' '}
+                      Medido:{' '}
+                      {new Date(roll.last_measured_at).toLocaleTimeString('es-EC', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}{' '}
                       · {roll.operator_name || 'Taller'}
                     </small>
                   </div>
                   {canEdit && (
-                    <button
-                      type="button"
-                      className="vc-roll-btn-replace"
-                      onClick={() => setReplaceTarget(roll)}
-                      disabled={isBusy}
-                    >
-                      <Zap size={14} /> Montar nuevo rollo
-                    </button>
+                    <div className="vc-roll-footer-actions">
+                      <button
+                        type="button"
+                        className="vc-roll-btn-unmount"
+                        onClick={() => handleUnmountRoll(roll)}
+                        disabled={isBusy}
+                        title="Desmontar este rollo de la máquina"
+                      >
+                        Desmontar
+                      </button>
+                      <button
+                        type="button"
+                        className="vc-roll-btn-replace"
+                        onClick={() => setReplaceTarget(roll)}
+                        disabled={isBusy}
+                      >
+                        <Zap size={14} /> Montar nuevo rollo
+                      </button>
+                    </div>
                   )}
                 </div>
               </article>
@@ -471,7 +721,9 @@ export function InventoryLiveRollMonitor({
               <Zap size={22} className="vc-modal-icon-zap" />
               <div>
                 <h3>Montar Nuevo Rollo en Máquina</h3>
-                <p>{replaceTarget.material_name} · {replaceTarget.machine_name}</p>
+                <p>
+                  {replaceTarget.material_name} · {replaceTarget.machine_name}
+                </p>
               </div>
             </header>
 
@@ -479,6 +731,18 @@ export function InventoryLiveRollMonitor({
               <p>
                 Al confirmar, el porcentaje del rollo en máquina se reiniciará al <b>100%</b> (lleno).
               </p>
+
+              {(() => {
+                const wh = getLinkedWarehouseRoll(replaceTarget.variant_id, replaceTarget.material_name);
+                return wh ? (
+                  <div className="vc-replace-wh-summary">
+                    <Boxes size={14} />
+                    <span>
+                      Material en Bodega: <b>{wh.name}</b> (Stock: {wh.quantity} {wh.unit})
+                    </span>
+                  </div>
+                ) : null;
+              })()}
 
               <label className="vc-live-checkbox-card">
                 <input
@@ -525,11 +789,28 @@ export function InventoryLiveRollMonitor({
               <Plus size={22} />
               <div>
                 <h3>Asignar Rollo a Máquina</h3>
-                <p>Registra un nuevo material para monitorear su porcentaje de uso diario.</p>
+                <p>Selecciona un rollo de bodega o escribe uno nuevo para monitorear su porcentaje de uso.</p>
               </div>
             </header>
 
             <div className="vc-live-modal-body vc-form-grid">
+              {rollInventoryOptions.length > 0 && (
+                <label className="vc-full-width">
+                  Seleccionar material desde Bodega (recomendado):
+                  <select
+                    value={selectedWarehouseOption}
+                    onChange={(e) => handleWarehouseOptionChange(e.target.value)}
+                  >
+                    <option value="">-- Escribir material manual --</option>
+                    {rollInventoryOptions.map((opt) => (
+                      <option key={opt.variantId} value={opt.variantId}>
+                        {opt.name} ({opt.sku}) · Stock: {opt.quantity} {opt.unit}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
               <label>
                 Nombre del material *
                 <input
@@ -543,20 +824,39 @@ export function InventoryLiveRollMonitor({
 
               <label>
                 Máquina o puesto de taller *
-                <input
-                  required
-                  type="text"
-                  placeholder="Ej. Plotter Gran Formato 3.20m"
+                <select
                   value={newRollForm.machineName}
                   onChange={(e) => setNewRollForm({ ...newRollForm, machineName: e.target.value })}
-                />
+                >
+                  {availableMachines.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                  <option value="__custom__">+ Otra máquina / puesto…</option>
+                </select>
               </label>
+
+              {newRollForm.machineName === '__custom__' && (
+                <label>
+                  Escribe el nombre de la máquina:
+                  <input
+                    required
+                    type="text"
+                    placeholder="Ej. Plotter Mimaki 1.80m"
+                    value={newRollForm.customMachineName}
+                    onChange={(e) => setNewRollForm({ ...newRollForm, customMachineName: e.target.value })}
+                  />
+                </label>
+              )}
 
               <label>
                 Familia
                 <select
                   value={newRollForm.materialFamily}
-                  onChange={(e) => setNewRollForm({ ...newRollForm, materialFamily: e.target.value as any })}
+                  onChange={(e) =>
+                    setNewRollForm({ ...newRollForm, materialFamily: e.target.value as any })
+                  }
                 >
                   <option value="lona">Lona</option>
                   <option value="vinil">Vinil</option>
@@ -596,6 +896,20 @@ export function InventoryLiveRollMonitor({
                   onChange={(e) => setNewRollForm({ ...newRollForm, initialPercent: e.target.value })}
                 />
               </label>
+
+              {selectedWarehouseOption && (
+                <label className="vc-live-checkbox-card vc-full-width">
+                  <input
+                    type="checkbox"
+                    checked={consumeStockOnAdd}
+                    onChange={(e) => setConsumeStockOnAdd(e.target.checked)}
+                  />
+                  <div>
+                    <b>Descontar 1 rollo de bodega inmediatamente</b>
+                    <small>Se restará del inventario físico al montar en máquina.</small>
+                  </div>
+                </label>
+              )}
             </div>
 
             <footer>

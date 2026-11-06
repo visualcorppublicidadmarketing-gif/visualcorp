@@ -693,3 +693,122 @@
     font-size: 13px;
   }
 }
+
+
+/* --- MEJORAS DE CONTROL DE ROLLOS: STOCK DE BODEGA Y DESMONTAR --- */
+.vc-roll-warehouse-block {
+  margin: 10px 0;
+  padding: 8px 10px;
+  background: var(--surface-muted, #f8f6fc);
+  border: 1px solid var(--border-soft, #ede8f5);
+  border-radius: 8px;
+}
+
+.vc-roll-warehouse-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vc-roll-stock-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.vc-roll-stock-badge.is-in-stock {
+  color: #047857;
+}
+
+.vc-roll-stock-badge.is-out-of-stock {
+  color: #dc2626;
+}
+
+.vc-roll-stock-badge.is-neutral {
+  color: #6b7280;
+}
+
+.vc-roll-stock-alert {
+  display: block;
+  font-size: 10.5px;
+  margin-top: 3px;
+  font-weight: 600;
+}
+
+.vc-roll-stock-alert.danger {
+  color: #dc2626;
+}
+
+.vc-roll-stock-alert.ok {
+  color: #059669;
+}
+
+.vc-roll-standby-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  background: #fef08a;
+  color: #854d0e;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+.vc-roll-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vc-roll-btn-unmount {
+  padding: 6px 10px;
+  border: 1px solid #dccde4;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted, #67597a);
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vc-roll-btn-unmount:hover {
+  background: #f3edf8;
+  color: var(--text-heading, #1f142b);
+}
+
+.vc-replace-wh-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: #f3edf8;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #4c1d95;
+}
+
+/* Modo oscuro para rollos */
+.work-app.theme-dark .vc-roll-warehouse-block,
+[data-theme='dark'] .work-app .vc-roll-warehouse-block {
+  background: #14111f !important;
+  border-color: #272036 !important;
+}
+
+.work-app.theme-dark .vc-roll-btn-unmount,
+[data-theme='dark'] .work-app .vc-roll-btn-unmount {
+  border-color: #3b3052 !important;
+  color: #a89eb6 !important;
+}
+
+.work-app.theme-dark .vc-roll-btn-unmount:hover,
+[data-theme='dark'] .work-app .vc-roll-btn-unmount:hover {
+  background: #251e36 !important;
+  color: #ffffff !important;
+}
+
+.work-app.theme-dark .vc-replace-wh-summary,
+[data-theme='dark'] .work-app .vc-replace-wh-summary {
+  background: #1d182e !important;
+  color: #d8b4fe !important;
+}
