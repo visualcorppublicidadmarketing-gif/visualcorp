@@ -87,32 +87,60 @@ export function Sidebar({
   const [profileFlyout, setProfileFlyout] = useState<{ top: number } | null>(null);
 
   const sidebarRef = useRef<HTMLElement>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
+  const profileTriggerRef = useRef<HTMLButtonElement>(null);
+  const suppressFocusOpenRef = useRef(false);
+
+  const focusClosedTrigger = (trigger: HTMLElement | null) => {
+    if (!trigger) return;
+    suppressFocusOpenRef.current = true;
+    trigger.focus();
+    window.setTimeout(() => { suppressFocusOpenRef.current = false; }, 0);
+  };
 
   // Cerrar flyouts flotantes en resize, scroll o escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setActiveFlyout(null);
+        if (profileFlyout) {
+          setProfileFlyout(null);
+          focusClosedTrigger(profileTriggerRef.current);
+        } else if (activeFlyout) {
+          setActiveFlyout(null);
+          focusClosedTrigger(document.getElementById(`nav-group-trigger-${area}-${activeFlyout.groupId}`));
+        }
         setProfileFlyout(null);
         setTooltip(null);
       }
     };
 
     const handlePointerDown = (e: PointerEvent) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const isInsideSidebar = sidebarRef.current?.contains(target);
+      const isInsideFlyout = flyoutRef.current?.contains(target);
+      if (!isInsideSidebar && !isInsideFlyout) {
         setActiveFlyout(null);
         setProfileFlyout(null);
         setTooltip(null);
       }
     };
+    const handleViewportChange = () => {
+      setActiveFlyout(null);
+      setProfileFlyout(null);
+      setTooltip(null);
+    };
 
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('scroll', handleViewportChange);
     document.addEventListener('pointerdown', handlePointerDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('scroll', handleViewportChange);
       document.removeEventListener('pointerdown', handlePointerDown);
     };
-  }, []);
+  }, [activeFlyout, area, profileFlyout]);
 
   // Al navegar, cerrar drawers y flyouts
   useEffect(() => {
@@ -136,20 +164,33 @@ export function Sidebar({
     setTooltip(null);
   };
 
-  const handleGroupTriggerMouseEnter = (
-    groupId: string,
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
+  const profileAvatar = (
+    <Avatar
+      name={userDisplayName}
+      src={googleAvatarUrl}
+      size="md"
+      className="profile-avatar"
+      badge={googleAvatarUrl ? <span className="vc-google-avatar-mark">G</span> : undefined}
+    />
+  );
+
+  const openGroupFlyout = (groupId: string, trigger: HTMLButtonElement) => {
     if (!isCollapsed) return;
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = trigger.getBoundingClientRect();
     setTooltip(null);
+    setProfileFlyout(null);
     setActiveFlyout({ groupId, top: Math.max(12, Math.min(rect.top - 10, window.innerHeight - 340)) });
   };
 
-  const handleProfileMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleGroupTriggerMouseEnter = (groupId: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    openGroupFlyout(groupId, e.currentTarget);
+  };
+
+  const openProfileFlyout = (trigger: HTMLElement) => {
     if (!isCollapsed) return;
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = trigger.getBoundingClientRect();
     setTooltip(null);
+    setActiveFlyout(null);
     setProfileFlyout({ top: Math.max(12, rect.top - 120) });
   };
 
@@ -169,6 +210,11 @@ export function Sidebar({
           if (!inFlyout) showTooltip(link.label, e);
         }}
         onMouseLeave={hideTooltip}
+        onBlur={(e) => {
+          if (inFlyout && !e.currentTarget.parentElement?.contains(e.relatedTarget as Node | null)) {
+            setActiveFlyout(null);
+          }
+        }}
         onClick={() => {
           setActiveFlyout(null);
           onCloseMobile();
@@ -189,8 +235,6 @@ export function Sidebar({
       </NavLink>
     );
   };
-
-  const currentFlyoutGroup = navGroups.find((g) => g.id === activeFlyout?.groupId);
 
   return (
     <>
@@ -264,18 +308,45 @@ export function Sidebar({
               return (
                 <div key={group.id} className="sidebar-collapsed-group-wrapper">
                   <button
+                    id={`nav-group-trigger-${area}-${group.id}`}
                     type="button"
                     className={`sidebar-collapsed-trigger-btn${
                       containsCurrentPage ? ' has-active-child' : ''
                     }${activeFlyout?.groupId === group.id ? ' is-flyout-open' : ''}`}
                     aria-label={group.label}
                     title={group.label}
+                    aria-expanded={activeFlyout?.groupId === group.id}
+                    aria-controls={activeFlyout?.groupId === group.id ? groupControlId : undefined}
                     onMouseEnter={(e) => handleGroupTriggerMouseEnter(group.id, e)}
-                    onClick={(e) => handleGroupTriggerMouseEnter(group.id, e)}
+                    onFocus={(e) => {
+                      if (!suppressFocusOpenRef.current) openGroupFlyout(group.id, e.currentTarget);
+                    }}
+                    onBlur={(e) => {
+                      if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node | null)) setActiveFlyout(null);
+                    }}
+                    onClick={(e) => openGroupFlyout(group.id, e.currentTarget)}
                   >
                     <GroupIcon size={18} />
+                    <span className="sidebar-collapsed-label">{group.label}</span>
                     {containsCurrentPage && <span className="sidebar-collapsed-active-dot" />}
                   </button>
+                  {activeFlyout?.groupId === group.id && (
+                    <div
+                      id={groupControlId}
+                      ref={flyoutRef}
+                      className="sidebar-flyout-popover"
+                      style={{ top: activeFlyout.top }}
+                      onMouseLeave={() => setActiveFlyout(null)}
+                      role="group"
+                      aria-label={`Opciones de ${group.label}`}
+                    >
+                      <div className="sidebar-flyout-header">
+                        <span className="sidebar-flyout-title">{group.label}</span>
+                        <span className="sidebar-group-badge">{group.items.length}</span>
+                      </div>
+                      {group.items.map((link) => renderNavLinkItem(link, false, true))}
+                    </div>
+                  )}
                 </div>
               );
             }
@@ -335,16 +406,29 @@ export function Sidebar({
         {/* Tarjeta de perfil inferior */}
         <div
           className="sidebar-profile-card"
-          onMouseEnter={handleProfileMouseEnter}
+          onMouseEnter={(e) => openProfileFlyout(e.currentTarget)}
           onMouseLeave={hideTooltip}
         >
-          <Avatar
-            name={userDisplayName}
-            src={googleAvatarUrl}
-            size="md"
-            className="profile-avatar"
-            badge={googleAvatarUrl ? <span className="vc-google-avatar-mark">G</span> : undefined}
-          />
+          {isCollapsed ? (
+            <button
+              ref={profileTriggerRef}
+              type="button"
+              className="sidebar-profile-trigger"
+              aria-label={`Perfil de ${userDisplayName}`}
+              aria-expanded={Boolean(profileFlyout)}
+              aria-controls={profileFlyout ? 'sidebar-profile-flyout' : undefined}
+              onMouseEnter={(e) => openProfileFlyout(e.currentTarget)}
+              onFocus={(e) => {
+                if (!suppressFocusOpenRef.current) openProfileFlyout(e.currentTarget);
+              }}
+              onBlur={(e) => {
+                if (!flyoutRef.current?.contains(e.relatedTarget as Node | null)) setProfileFlyout(null);
+              }}
+              onClick={(e) => openProfileFlyout(e.currentTarget)}
+            >
+              {profileAvatar}
+            </button>
+          ) : profileAvatar}
           <div className="sidebar-profile-info">
             <b className="sidebar-profile-name" title={userDisplayName}>
               {userDisplayName}
@@ -363,68 +447,54 @@ export function Sidebar({
             <LogOut size={16} />
           </button>
         </div>
-      </aside>
-
-      {/* Flyout flotante de grupos (modo compactado) */}
-      {isCollapsed && currentFlyoutGroup && activeFlyout && (
-        <div
-          className="sidebar-flyout-popover"
-          style={{ top: activeFlyout.top }}
-          onMouseLeave={() => setActiveFlyout(null)}
-          role="menu"
-          aria-label={`Opciones de ${currentFlyoutGroup.label}`}
-        >
-          <div className="sidebar-flyout-header">
-            <span className="sidebar-flyout-title">{currentFlyoutGroup.label}</span>
-            <span className="sidebar-group-badge">{currentFlyoutGroup.items.length}</span>
-          </div>
-          {currentFlyoutGroup.items.map((link) => renderNavLinkItem(link, false, true))}
-        </div>
-      )}
-
-      {/* Popover flotante de perfil (modo compactado) */}
-      {isCollapsed && profileFlyout && (
-        <div
-          className="sidebar-flyout-popover sidebar-profile-popover"
-          style={{ top: profileFlyout.top }}
-          onMouseLeave={() => setProfileFlyout(null)}
-          role="menu"
-          aria-label="Perfil de usuario"
-        >
-          <div style={{ padding: '6px 10px 8px 10px', borderBottom: '1px solid var(--vc-sidebar-border)' }}>
-            <div style={{ fontWeight: 700, fontSize: 12 }}>{userDisplayName}</div>
-            <div style={{ fontSize: 10, color: '#8c8596', marginTop: 2 }}>{userEmail}</div>
-            <div style={{ fontSize: 9.5, color: '#a51091', fontWeight: 600, marginTop: 4 }}>
-              {profileLabel}
+        {isCollapsed && profileFlyout && (
+          <div
+            id="sidebar-profile-flyout"
+            ref={flyoutRef}
+            className="sidebar-flyout-popover sidebar-profile-popover"
+            style={{ top: profileFlyout.top }}
+            onMouseLeave={() => setProfileFlyout(null)}
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setProfileFlyout(null);
+            }}
+            role="group"
+            aria-label="Perfil de usuario"
+          >
+            <div style={{ padding: '6px 10px 8px 10px', borderBottom: '1px solid var(--vc-sidebar-border)' }}>
+              <div style={{ fontWeight: 700, fontSize: 12 }}>{userDisplayName}</div>
+              <div style={{ fontSize: 10, color: '#8c8596', marginTop: 2 }}>{userEmail}</div>
+              <div style={{ fontSize: 9.5, color: '#a51091', fontWeight: 600, marginTop: 4 }}>
+                {profileLabel}
+              </div>
             </div>
-          </div>
-          {toggleTheme && (
+            {toggleTheme && (
+              <button
+                type="button"
+                className="sidebar-nav-item"
+                style={{ width: '100%', marginTop: 3 }}
+                onClick={toggleTheme}
+              >
+                {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+                <span className="sidebar-nav-label">
+                  Modo {theme === 'dark' ? 'claro' : 'oscuro'}
+                </span>
+              </button>
+            )}
             <button
               type="button"
               className="sidebar-nav-item"
-              style={{ width: '100%', marginTop: 3 }}
-              onClick={toggleTheme}
+              style={{ width: '100%', marginTop: 4, color: '#ef4444' }}
+              onClick={() => {
+                setProfileFlyout(null);
+                signOut();
+              }}
             >
-              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-              <span className="sidebar-nav-label">
-                Modo {theme === 'dark' ? 'claro' : 'oscuro'}
-              </span>
+              <LogOut size={16} />
+              <span className="sidebar-nav-label">Cerrar sesión</span>
             </button>
-          )}
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            style={{ width: '100%', marginTop: 4, color: '#ef4444' }}
-            onClick={() => {
-              setProfileFlyout(null);
-              signOut();
-            }}
-          >
-            <LogOut size={16} />
-            <span className="sidebar-nav-label">Cerrar sesión</span>
-          </button>
-        </div>
-      )}
+          </div>
+        )}
+      </aside>
 
       {/* Tooltip simple flotante en modo compactado */}
       {isCollapsed && tooltip && !activeFlyout && !profileFlyout && (

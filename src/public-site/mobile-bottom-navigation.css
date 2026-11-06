@@ -1,6 +1,7 @@
 .mobile-bottom-navigation,.mobile-bottom-sheet,.mobile-bottom-backdrop{display:none}
 
 @media(max-width:1400px){
+  .public-site .site-header .site-nav{display:none}
   .public-site .site-header .site-menu-toggle,.public-site .site-header .site-quote-button{display:none}
   .public-site .site-header-actions{gap:8px}
   .public-site .site-header .site-theme-toggle{width:40px;height:40px}
@@ -54,6 +55,12 @@
   .public-site .mobile-bottom-item{font-size:8px}
   .public-site .mobile-bottom-item svg{width:18px;height:18px}
   .public-site .mobile-bottom-sheet{right:8px;left:8px;width:calc(100% - 16px);padding:15px}
+}
+
+@media(max-width:360px){
+  .public-site .site-header-inner{gap:8px;padding-inline:12px}
+  .public-site .site-brand{width:clamp(100px,38vw,128px)}
+  .public-site .site-session-avatar{display:none}
 }
 
 @media(min-width:1401px){.public-site .mobile-bottom-navigation,.public-site .mobile-bottom-sheet,.public-site .mobile-bottom-backdrop{display:none}}
