@@ -1183,17 +1183,17 @@
 
 /* Tarjetas KPI interactivas de resumen */
 .inventory-summary-card {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  min-width: 170px !important;
-  padding: 12px 14px !important;
-  border: 1px solid #e8e3ed !important;
-  border-radius: 12px !important;
-  background: linear-gradient(135deg, #ffffff, #faf7fc) !important;
-  box-shadow: 0 2px 6px rgba(37, 27, 49, 0.04) !important;
-  cursor: pointer !important;
-  transition: all 0.16s ease !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 170px;
+  padding: 12px 14px;
+  border: 1px solid #e8e3ed;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffffff, #faf7fc);
+  box-shadow: 0 2px 6px rgba(37, 27, 49, 0.04);
+  cursor: pointer;
+  transition: all 0.16s ease;
 }
 
 .inventory-summary-card:hover {
@@ -1244,18 +1244,18 @@
 
 /* Distinción visual para entradas / salidas en celdas de calendario */
 .inventory-calendar-event.is-entry {
-  border-left-color: #10b981 !important;
-  background: #f0fdf4 !important;
-  color: #065f46 !important;
+  border-left-color: #10b981;
+  background: #f0fdf4;
+  color: #065f46;
 }
 .inventory-calendar-event.is-entry .inventory-calendar-event-icon {
   color: #10b981 !important;
 }
 
 .inventory-calendar-event.is-exit {
-  border-left-color: #f59e0b !important;
-  background: #fffbeb !important;
-  color: #92400e !important;
+  border-left-color: #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
 }
 .inventory-calendar-event.is-exit .inventory-calendar-event-icon {
   color: #f59e0b !important;
@@ -1544,4 +1544,274 @@
   justify-content: space-between;
   width: 100%;
   gap: 10px;
+}
+
+
+/* =========================================================================
+   Calendario Operativo de Inventario en Modo Oscuro (Visual Corp Admin)
+   ========================================================================= */
+
+[data-theme='dark'] .inventory-operations-calendar,
+.work-app.theme-dark .inventory-operations-calendar {
+  --calendar-ink: #f1ecf7;
+  --calendar-muted: #a69bb8;
+  --calendar-line: #2d263b;
+  --calendar-accent: #c084fc;
+}
+
+[data-theme='dark'] .inventory-calendar-heading h2,
+.work-app.theme-dark .inventory-calendar-heading h2 {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .inventory-calendar-heading p,
+.work-app.theme-dark .inventory-calendar-heading p {
+  color: #a89eb6 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-toolbar,
+.work-app.theme-dark .inventory-calendar-toolbar {
+  background: #171422 !important;
+  border-color: #2b253a !important;
+  color: #f1ecf7;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme='dark'] .inventory-calendar-view-switch,
+.work-app.theme-dark .inventory-calendar-view-switch {
+  background: #1f1a2d !important;
+  border-color: #2d263b !important;
+}
+
+[data-theme='dark'] .inventory-calendar-view-switch button,
+.work-app.theme-dark .inventory-calendar-view-switch button {
+  color: #b1a6c2 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-view-switch button[aria-pressed="true"],
+.work-app.theme-dark .inventory-calendar-view-switch button[aria-pressed="true"] {
+  background: #2f2542 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme='dark'] .inventory-calendar-nav,
+.work-app.theme-dark .inventory-calendar-nav {
+  background: #1a1626 !important;
+  border-color: #2e263d !important;
+  color: #d6cee2 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-nav:hover,
+.work-app.theme-dark .inventory-calendar-nav:hover {
+  background: #251e36 !important;
+  border-color: #793fa0 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .inventory-calendar-period,
+.work-app.theme-dark .inventory-calendar-period {
+  color: #f1ecf7 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-filters,
+.work-app.theme-dark .inventory-calendar-filters {
+  background: #171422 !important;
+  border-color: #2b253a !important;
+}
+
+[data-theme='dark'] .inventory-calendar-filters label,
+.work-app.theme-dark .inventory-calendar-filters label {
+  color: #c4bad4 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-filters select,
+.work-app.theme-dark .inventory-calendar-filters select {
+  background: #13101d !important;
+  border-color: #2f2742 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .inventory-calendar-result-count,
+.work-app.theme-dark .inventory-calendar-result-count {
+  color: #9f93b2 !important;
+}
+
+/* Tarjetas KPI de Resumen */
+[data-theme='dark'] .inventory-summary-card,
+.work-app.theme-dark .inventory-summary-card {
+  background: #1a1626 !important;
+  border-color: #2e263d !important;
+  color: #f1ecf7 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme='dark'] .inventory-summary-card:hover,
+.work-app.theme-dark .inventory-summary-card:hover {
+  background: #201b2f !important;
+  border-color: #793fa0 !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme='dark'] .inventory-summary-card.is-active,
+.work-app.theme-dark .inventory-summary-card.is-active {
+  border-color: #9333ea !important;
+  background: #271d36 !important;
+  box-shadow: 0 0 0 2px rgba(165, 16, 145, 0.35) !important;
+}
+
+[data-theme='dark'] .inventory-summary-card div span,
+.work-app.theme-dark .inventory-summary-card div span {
+  color: #a89eb6 !important;
+}
+
+[data-theme='dark'] .inventory-summary-card div b,
+.work-app.theme-dark .inventory-summary-card div b {
+  color: #ffffff !important;
+}
+
+/* Contenedor del Mes y Grilla */
+[data-theme='dark'] .inventory-calendar-month,
+[data-theme='dark'] .inventory-calendar-week,
+[data-theme='dark'] .inventory-calendar-agenda,
+.work-app.theme-dark .inventory-calendar-month,
+.work-app.theme-dark .inventory-calendar-week,
+.work-app.theme-dark .inventory-calendar-agenda {
+  background: #14111f !important;
+  border-color: #282138 !important;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme='dark'] .inventory-calendar-weekdays,
+.work-app.theme-dark .inventory-calendar-weekdays {
+  background: #181424 !important;
+  border-bottom: 1px solid #282138 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-weekdays > span,
+.work-app.theme-dark .inventory-calendar-weekdays > span {
+  color: #c4bad4 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-weekdays > span + span,
+.work-app.theme-dark .inventory-calendar-weekdays > span + span {
+  border-left-color: #282138 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-day,
+.work-app.theme-dark .inventory-calendar-day {
+  background: #14111f !important;
+  border-right-color: #241e33 !important;
+  border-bottom-color: #241e33 !important;
+  color: #f1ecf7 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-day.is-outside,
+.work-app.theme-dark .inventory-calendar-day.is-outside {
+  background: #0f0d17 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-day.is-outside .inventory-calendar-day-select,
+.work-app.theme-dark .inventory-calendar-day.is-outside .inventory-calendar-day-select {
+  color: #5d546b !important;
+}
+
+[data-theme='dark'] .inventory-calendar-day.is-today,
+.work-app.theme-dark .inventory-calendar-day.is-today {
+  background: linear-gradient(155deg, #1d172c, #14111f) !important;
+  border-color: #793fa0 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-day.is-selected,
+.work-app.theme-dark .inventory-calendar-day.is-selected {
+  background: #231b34 !important;
+  box-shadow: inset 0 0 0 2px #9333ea !important;
+}
+
+/* Píldoras de Eventos en Modo Oscuro */
+[data-theme='dark'] .inventory-calendar-event.is-entry,
+.work-app.theme-dark .inventory-calendar-event.is-entry {
+  background: rgba(16, 185, 129, 0.16) !important;
+  border-left-color: #10b981 !important;
+  color: #34d399 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-event.is-entry .inventory-calendar-event-title,
+.work-app.theme-dark .inventory-calendar-event.is-entry .inventory-calendar-event-title {
+  color: #a7f3d0 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-event-badge.badge-entry,
+.work-app.theme-dark .inventory-calendar-event-badge.badge-entry {
+  background: rgba(16, 185, 129, 0.28) !important;
+  color: #6ee7b7 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-event.is-exit,
+.work-app.theme-dark .inventory-calendar-event.is-exit {
+  background: rgba(245, 158, 11, 0.16) !important;
+  border-left-color: #f59e0b !important;
+  color: #fbbf24 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-event.is-exit .inventory-calendar-event-title,
+.work-app.theme-dark .inventory-calendar-event.is-exit .inventory-calendar-event-title {
+  color: #fde68a !important;
+}
+
+[data-theme='dark'] .inventory-calendar-event-badge.badge-exit,
+.work-app.theme-dark .inventory-calendar-event-badge.badge-exit {
+  background: rgba(245, 158, 11, 0.28) !important;
+  color: #fcd34d !important;
+}
+
+[data-theme='dark'] .inventory-calendar-overflow,
+.work-app.theme-dark .inventory-calendar-overflow {
+  background: #1c172a !important;
+  border-color: #312845 !important;
+  color: #d6b8f0 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-overflow:hover,
+.work-app.theme-dark .inventory-calendar-overflow:hover {
+  background: #281f3b !important;
+  border-color: #793fa0 !important;
+  color: #ffffff !important;
+}
+
+/* Modal de Detalle del Día */
+[data-theme='dark'] .inventory-calendar-day-search,
+.work-app.theme-dark .inventory-calendar-day-search {
+  background: #14111e !important;
+  border-color: #2b243b !important;
+  color: #f1ecf7 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-day-search input,
+.work-app.theme-dark .inventory-calendar-day-search input {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .day-pill,
+.work-app.theme-dark .day-pill {
+  background: #1a1626 !important;
+  border-color: #2e263d !important;
+  color: #c4bad4 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-day-card,
+.work-app.theme-dark .inventory-calendar-day-card {
+  background: #181425 !important;
+  border-color: #2c243c !important;
+  color: #f1ecf7 !important;
+}
+
+[data-theme='dark'] .inventory-calendar-day-card .day-card-title,
+.work-app.theme-dark .inventory-calendar-day-card .day-card-title {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .inventory-calendar-day-card .day-card-detail,
+.work-app.theme-dark .inventory-calendar-day-card .day-card-detail {
+  color: #a89eb6 !important;
 }
