@@ -32,10 +32,9 @@ body[data-theme='dark'],
 }
 
 .work-app.theme-dark .topbar {
-  background: rgba(22, 24, 36, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
+  background: #12101b !important;
+  border-bottom: 1px solid #262135 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 .work-app.theme-dark .desktop-sidebar-toggle {

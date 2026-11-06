@@ -169,10 +169,10 @@
 }
 
 .vc-live-filter-chips button.is-active {
-  background: #2b1842;
-  border-color: #2b1842;
+  background: #793fa0;
+  border-color: #682d8f;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(43, 24, 66, 0.2);
+  box-shadow: 0 2px 8px rgba(121, 63, 160, 0.25);
 }
 
 .vc-filter-divider {
@@ -571,10 +571,10 @@
 }
 
 .vc-touch-btn-row button.is-selected {
-  background: #2b1842;
-  border-color: #2b1842;
+  background: #793fa0;
+  border-color: #682d8f;
   color: #ffffff;
-  box-shadow: 0 1px 4px rgba(43, 24, 66, 0.2);
+  box-shadow: 0 1px 4px rgba(121, 63, 160, 0.2);
 }
 
 .vc-cartridge-quick-touch input[type='range'] {
@@ -1545,4 +1545,378 @@
 .vc-modal-close-btn:hover {
   background: #eee8f4;
   color: #20142f;
+}
+
+
+/* =========================================================================
+   Monitor de Tintas CMYK en Modo Oscuro (Visual Corp Admin)
+   ========================================================================= */
+
+[data-theme='dark'] .vc-live-inks-header,
+.work-app.theme-dark .vc-live-inks-header {
+  background: #171422 !important;
+  border-color: #2b253a !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme='dark'] .vc-live-inks-title-block h2,
+.work-app.theme-dark .vc-live-inks-title-block h2 {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-live-inks-title-block p,
+.work-app.theme-dark .vc-live-inks-title-block p {
+  color: #a89eb6 !important;
+}
+
+[data-theme='dark'] .vc-live-view-toggle,
+.work-app.theme-dark .vc-live-view-toggle {
+  background: #201a2d !important;
+}
+
+[data-theme='dark'] .vc-live-view-toggle button,
+.work-app.theme-dark .vc-live-view-toggle button {
+  color: #b1a6c2 !important;
+}
+
+[data-theme='dark'] .vc-live-view-toggle button.is-active,
+.work-app.theme-dark .vc-live-view-toggle button.is-active {
+  background: #2f2542 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme='dark'] .vc-live-filter-chips button,
+.work-app.theme-dark .vc-live-filter-chips button {
+  background: #1a1626 !important;
+  border-color: #2f2840 !important;
+  color: #c4bad4 !important;
+}
+
+[data-theme='dark'] .vc-live-filter-chips button:hover,
+.work-app.theme-dark .vc-live-filter-chips button:hover {
+  border-color: #793fa0 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-live-filter-chips button.is-active,
+.work-app.theme-dark .vc-live-filter-chips button.is-active {
+  background: #793fa0 !important;
+  border-color: #9333ea !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(121, 63, 160, 0.4) !important;
+}
+
+[data-theme='dark'] .vc-filter-divider,
+.work-app.theme-dark .vc-filter-divider {
+  background: #2e263d !important;
+}
+
+[data-theme='dark'] .vc-live-search-box,
+.work-app.theme-dark .vc-live-search-box {
+  background: #1a1626 !important;
+  border-color: #2f2840 !important;
+  color: #c4bad4 !important;
+}
+
+[data-theme='dark'] .vc-live-search-box input,
+.work-app.theme-dark .vc-live-search-box input {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-machine-station-card,
+.work-app.theme-dark .vc-machine-station-card {
+  background: #171422 !important;
+  border-color: #2b253a !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme='dark'] .vc-machine-station-card:hover,
+.work-app.theme-dark .vc-machine-station-card:hover {
+  box-shadow: 0 6px 26px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme='dark'] .vc-machine-station-card.has-critical-ink,
+.work-app.theme-dark .vc-machine-station-card.has-critical-ink {
+  border-color: #ef4444 !important;
+  background: linear-gradient(180deg, #2b141e 0%, #171422 90px) !important;
+}
+
+[data-theme='dark'] .vc-machine-station-card.has-warning-ink,
+.work-app.theme-dark .vc-machine-station-card.has-warning-ink {
+  border-color: #ca8a04 !important;
+}
+
+[data-theme='dark'] .vc-station-header,
+.work-app.theme-dark .vc-station-header {
+  border-bottom-color: #282138 !important;
+}
+
+[data-theme='dark'] .vc-station-title-group h3,
+.work-app.theme-dark .vc-station-title-group h3 {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-station-icon,
+.work-app.theme-dark .vc-station-icon {
+  background: #251d33 !important;
+  color: #c084fc !important;
+}
+
+[data-theme='dark'] .vc-station-channel-count,
+.work-app.theme-dark .vc-station-channel-count {
+  color: #9f93b2 !important;
+}
+
+[data-theme='dark'] .vc-ink-type-tag,
+.work-app.theme-dark .vc-ink-type-tag {
+  background: #291e38 !important;
+  color: #d8b4fe !important;
+}
+
+[data-theme='dark'] .vc-bay-cartridge,
+.work-app.theme-dark .vc-bay-cartridge {
+  background: #1d192b !important;
+  border-color: #2f2742 !important;
+}
+
+[data-theme='dark'] .vc-bay-cartridge:hover,
+.work-app.theme-dark .vc-bay-cartridge:hover {
+  background: #231e34 !important;
+  border-color: #793fa0 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme='dark'] .vc-bay-cartridge.is-critical,
+.work-app.theme-dark .vc-bay-cartridge.is-critical {
+  border-color: #ef4444 !important;
+  background: linear-gradient(180deg, #2e151d 0%, #1d192b 100%) !important;
+}
+
+[data-theme='dark'] .vc-bay-cartridge.is-warning,
+.work-app.theme-dark .vc-bay-cartridge.is-warning {
+  border-color: #ca8a04 !important;
+  background: linear-gradient(180deg, #2c2214 0%, #1d192b 100%) !important;
+}
+
+[data-theme='dark'] .vc-cartridge-color-name,
+.work-app.theme-dark .vc-cartridge-color-name {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-tank-cylinder,
+.work-app.theme-dark .vc-tank-cylinder {
+  background: #110e1a !important;
+  border-color: #2e263d !important;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme='dark'] .vc-tank-marks span,
+.work-app.theme-dark .vc-tank-marks span {
+  color: rgba(226, 217, 238, 0.45) !important;
+}
+
+[data-theme='dark'] .vc-tank-pct b,
+.work-app.theme-dark .vc-tank-pct b {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-tank-pct span,
+.work-app.theme-dark .vc-tank-pct span {
+  color: #c084fc !important;
+}
+
+[data-theme='dark'] .vc-tank-ml,
+.work-app.theme-dark .vc-tank-ml {
+  color: #a89eb6 !important;
+}
+
+[data-theme='dark'] .vc-cartridge-quick-touch,
+.work-app.theme-dark .vc-cartridge-quick-touch {
+  border-top-color: #2c253d !important;
+}
+
+[data-theme='dark'] .vc-touch-btn-row button,
+.work-app.theme-dark .vc-touch-btn-row button {
+  background: #13101c !important;
+  border-color: #2c243c !important;
+  color: #d6cee2 !important;
+}
+
+[data-theme='dark'] .vc-touch-btn-row button:hover,
+.work-app.theme-dark .vc-touch-btn-row button:hover {
+  background: #2a223c !important;
+  border-color: #793fa0 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-touch-btn-row button.is-selected,
+.work-app.theme-dark .vc-touch-btn-row button.is-selected {
+  background: #793fa0 !important;
+  border-color: #a51091 !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 6px rgba(121, 63, 160, 0.4) !important;
+}
+
+[data-theme='dark'] .vc-cartridge-footer small,
+.work-app.theme-dark .vc-cartridge-footer small {
+  color: #9f93b2 !important;
+}
+
+[data-theme='dark'] .vc-btn-refill,
+.work-app.theme-dark .vc-btn-refill {
+  background: rgba(121, 63, 160, 0.22) !important;
+  border-color: #793fa0 !important;
+  color: #e2b4ff !important;
+}
+
+[data-theme='dark'] .vc-btn-refill:hover,
+.work-app.theme-dark .vc-btn-refill:hover {
+  background: rgba(121, 63, 160, 0.35) !important;
+  border-color: #a51091 !important;
+  color: #ffffff !important;
+}
+
+/* Vista Cuadrícula */
+[data-theme='dark'] .vc-ink-card,
+.work-app.theme-dark .vc-ink-card {
+  background: #171422 !important;
+  border-color: #2b253a !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme='dark'] .vc-ink-card:hover,
+.work-app.theme-dark .vc-ink-card:hover {
+  background: #1d192c !important;
+  border-color: #793fa0 !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme='dark'] .vc-ink-card.is-critical,
+.work-app.theme-dark .vc-ink-card.is-critical {
+  border-color: #ef4444 !important;
+  background: linear-gradient(180deg, #2e151d 0%, #171422 100%) !important;
+}
+
+[data-theme='dark'] .vc-ink-card.is-warning,
+.work-app.theme-dark .vc-ink-card.is-warning {
+  border-color: #ca8a04 !important;
+  background: linear-gradient(180deg, #2c2214 0%, #171422 100%) !important;
+}
+
+[data-theme='dark'] .vc-ink-title-row h3,
+.work-app.theme-dark .vc-ink-title-row h3 {
+  color: #ffffff !important;
+}
+
+/* Modales de Tintas en Modo Oscuro */
+[data-theme='dark'] .vc-live-modal,
+.work-app.theme-dark .vc-live-modal {
+  background: #181524 !important;
+  border: 1px solid #2f2742 !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7) !important;
+  color: #f1ecf7 !important;
+}
+
+[data-theme='dark'] .vc-live-modal header,
+.work-app.theme-dark .vc-live-modal header {
+  background: #13101d !important;
+  border-bottom-color: #261f36 !important;
+}
+
+[data-theme='dark'] .vc-live-modal header h3,
+.work-app.theme-dark .vc-live-modal header h3 {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-live-modal header p,
+.work-app.theme-dark .vc-live-modal header p {
+  color: #a89eb6 !important;
+}
+
+[data-theme='dark'] .vc-live-modal footer,
+.work-app.theme-dark .vc-live-modal footer {
+  background: #13101d !important;
+  border-top-color: #261f36 !important;
+}
+
+[data-theme='dark'] .vc-refill-summary-box,
+.work-app.theme-dark .vc-refill-summary-box {
+  background: #1d192c !important;
+  border-color: #2d2540 !important;
+}
+
+[data-theme='dark'] .vc-refill-summary-box h4,
+.work-app.theme-dark .vc-refill-summary-box h4 {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-refill-summary-box p,
+.work-app.theme-dark .vc-refill-summary-box p {
+  color: #a89eb6 !important;
+}
+
+[data-theme='dark'] .vc-live-checkbox-card,
+.work-app.theme-dark .vc-live-checkbox-card {
+  background: #1d192c !important;
+  border-color: #2d2540 !important;
+}
+
+[data-theme='dark'] .vc-live-checkbox-card b,
+.work-app.theme-dark .vc-live-checkbox-card b {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-live-checkbox-card small,
+.work-app.theme-dark .vc-live-checkbox-card small {
+  color: #a89eb6 !important;
+}
+
+[data-theme='dark'] .vc-batch-intro,
+.work-app.theme-dark .vc-batch-intro {
+  color: #d6cee2 !important;
+}
+
+[data-theme='dark'] .vc-batch-channel-row,
+.work-app.theme-dark .vc-batch-channel-row {
+  background: #1d192c !important;
+  border-color: #2d2540 !important;
+}
+
+[data-theme='dark'] .vc-batch-col-badge b,
+.work-app.theme-dark .vc-batch-col-badge b {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-batch-pct-badge,
+.work-app.theme-dark .vc-batch-pct-badge {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-batch-preset-btns button,
+.work-app.theme-dark .vc-batch-preset-btns button {
+  background: #13101c !important;
+  border-color: #2b243b !important;
+  color: #d6cee2 !important;
+}
+
+[data-theme='dark'] .vc-batch-preset-btns button.is-selected,
+.work-app.theme-dark .vc-batch-preset-btns button.is-selected {
+  background: #793fa0 !important;
+  border-color: #a51091 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .vc-form-grid label,
+.work-app.theme-dark .vc-form-grid label {
+  color: #d6cee2 !important;
+}
+
+[data-theme='dark'] .vc-form-grid input,
+[data-theme='dark'] .vc-form-grid select,
+.work-app.theme-dark .vc-form-grid input,
+.work-app.theme-dark .vc-form-grid select {
+  background: #13101d !important;
+  border-color: #2f2742 !important;
+  color: #ffffff !important;
 }

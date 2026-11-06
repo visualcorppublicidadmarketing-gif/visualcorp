@@ -792,3 +792,48 @@
     display: inline-flex;
   }
 }
+
+
+/* Refuerzo de visibilidad y contraste para etiquetas de flyout popover */
+.sidebar-nav-item.is-flyout-item,
+.sidebar-flyout-popover .sidebar-nav-item {
+  width: 100% !important;
+  min-width: 100% !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 11px !important;
+  justify-content: flex-start !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  color: #2b1842 !important;
+}
+
+.sidebar-nav-item.is-flyout-item .sidebar-nav-label,
+.sidebar-flyout-popover .sidebar-nav-label {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #2b1842 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  flex: 1 !important;
+  text-align: left !important;
+}
+
+[data-theme='dark'] .sidebar-nav-item.is-flyout-item,
+[data-theme='dark'] .sidebar-flyout-popover .sidebar-nav-item,
+.work-app.theme-dark .sidebar-nav-item.is-flyout-item,
+.work-app.theme-dark .sidebar-flyout-popover .sidebar-nav-item {
+  color: #f1ecf7 !important;
+}
+
+[data-theme='dark'] .sidebar-nav-item.is-flyout-item .sidebar-nav-label,
+[data-theme='dark'] .sidebar-flyout-popover .sidebar-nav-label,
+.work-app.theme-dark .sidebar-nav-item.is-flyout-item .sidebar-nav-label,
+.work-app.theme-dark .sidebar-flyout-popover .sidebar-nav-label {
+  color: #f1ecf7 !important;
+}

@@ -132,10 +132,10 @@
 }
 
 .vc-live-filter-chips button.is-active {
-  background: #251636;
+  background: #793fa0;
   color: #ffffff;
-  border-color: #251636;
-  box-shadow: 0 2px 8px rgba(37, 22, 54, 0.25);
+  border-color: #682d8f;
+  box-shadow: 0 2px 8px rgba(121, 63, 160, 0.25);
 }
 
 .vc-live-filter-chips button.chip-danger {
@@ -606,47 +606,75 @@
   font-size: 13.5px;
 }
 
-/* Modo oscuro */
-[data-public-theme='dark'] .vc-live-rolls-header,
-[data-public-theme='dark'] .vc-roll-card,
-[data-public-theme='dark'] .vc-live-filter-chips button,
-[data-public-theme='dark'] .vc-live-search-box,
-[data-public-theme='dark'] .vc-live-modal {
-  background: #181920;
-  border-color: #2e2f3d;
-  color: #e2e4ef;
+/* Modo oscuro para monitor de rollos en vivo */
+.work-app.theme-dark .vc-live-rolls-header,
+[data-theme='dark'] .work-app .vc-live-rolls-header,
+.work-app[data-theme='dark'] .vc-live-rolls-header,
+.work-app.theme-dark .vc-roll-card,
+[data-theme='dark'] .work-app .vc-roll-card,
+.work-app[data-theme='dark'] .vc-roll-card,
+.work-app.theme-dark .vc-live-filter-chips button,
+[data-theme='dark'] .work-app .vc-live-filter-chips button,
+.work-app[data-theme='dark'] .vc-live-filter-chips button,
+.work-app.theme-dark .vc-live-search-box,
+[data-theme='dark'] .work-app .vc-live-search-box,
+.work-app[data-theme='dark'] .vc-live-search-box,
+.work-app.theme-dark .vc-live-modal,
+[data-theme='dark'] .work-app .vc-live-modal,
+.work-app[data-theme='dark'] .vc-live-modal {
+  background: #181524;
+  border-color: #2c253d;
+  color: #f1ecf7;
 }
 
-[data-public-theme='dark'] .vc-live-rolls-title-block h2,
-[data-public-theme='dark'] .vc-roll-card-head h3,
-[data-public-theme='dark'] .vc-roll-pct-num,
-[data-public-theme='dark'] .vc-live-modal header h3 {
-  color: #f1f3fa;
-}
-
-[data-public-theme='dark'] .vc-roll-visual-block,
-[data-public-theme='dark'] .vc-live-modal header,
-[data-public-theme='dark'] .vc-live-modal footer,
-[data-public-theme='dark'] .vc-live-checkbox-card {
-  background: #20212b;
-  border-color: #313342;
-}
-
-[data-public-theme='dark'] .vc-roll-cylinder {
-  background: #282a36;
-  border-color: #404456;
-}
-
-[data-public-theme='dark'] .vc-roll-quick-buttons button {
-  background: #22232e;
-  border-color: #36394a;
-  color: #cbd0e2;
-}
-
-[data-public-theme='dark'] .vc-roll-quick-buttons button.is-selected {
-  background: #7c3aed;
+.work-app.theme-dark .vc-live-rolls-title-block h2,
+[data-theme='dark'] .work-app .vc-live-rolls-title-block h2,
+.work-app.theme-dark .vc-roll-card-head h3,
+[data-theme='dark'] .work-app .vc-roll-card-head h3,
+.work-app.theme-dark .vc-roll-pct-num,
+[data-theme='dark'] .work-app .vc-roll-pct-num,
+.work-app.theme-dark .vc-live-modal header h3,
+[data-theme='dark'] .work-app .vc-live-modal header h3 {
   color: #ffffff;
-  border-color: #7c3aed;
+}
+
+.work-app.theme-dark .vc-roll-visual-block,
+[data-theme='dark'] .work-app .vc-roll-visual-block,
+.work-app.theme-dark .vc-live-modal header,
+[data-theme='dark'] .work-app .vc-live-modal header,
+.work-app.theme-dark .vc-live-modal footer,
+[data-theme='dark'] .work-app .vc-live-modal footer,
+.work-app.theme-dark .vc-live-checkbox-card,
+[data-theme='dark'] .work-app .vc-live-checkbox-card {
+  background: #14111f;
+  border-color: #272036;
+}
+
+.work-app.theme-dark .vc-roll-cylinder,
+[data-theme='dark'] .work-app .vc-roll-cylinder {
+  background: #201a2d;
+  border-color: #3b3052;
+}
+
+.work-app.theme-dark .vc-roll-quick-buttons button,
+[data-theme='dark'] .work-app .vc-roll-quick-buttons button {
+  background: #14111e;
+  border-color: #2c243c;
+  color: #d6cee2;
+}
+
+.work-app.theme-dark .vc-roll-quick-buttons button.is-selected,
+[data-theme='dark'] .work-app .vc-roll-quick-buttons button.is-selected {
+  background: #793fa0;
+  color: #ffffff;
+  border-color: #a51091;
+}
+
+.work-app.theme-dark .vc-live-filter-chips button.is-active,
+[data-theme='dark'] .work-app .vc-live-filter-chips button.is-active {
+  background: #793fa0;
+  border-color: #9333ea;
+  color: #ffffff;
 }
 
 /* Adaptación Móvil */
