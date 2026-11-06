@@ -1,6 +1,6 @@
 /* Dark surfaces shared by the operational workspaces. Keep photographic and
    status colors intact; these overrides only replace light UI chrome. */
-.work-app.theme-dark {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) {
   --vc-surface: #171a25;
   --vc-surface-raised: #1e2230;
   --vc-surface-soft: #12151e;
@@ -8,7 +8,11 @@
   --vc-ink: #f1f3f8;
   --vc-muted: #b2b8c8;
   --vc-focus: #d08cf1;
+  --cream: #0d0e15;
+  --cream-2: #161824;
+  --paper: #171a25;
   --surface: #171a25;
+  --surface-card: #1e2230;
   --surface-soft: #1e2230;
   --panel: #171a25;
   --line: #303447;
@@ -17,7 +21,7 @@
   color-scheme: dark;
 }
 
-.work-app.theme-dark .vc-content-hero {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-hero {
   border-color: #363149;
   background:
     radial-gradient(circle at 78% 45%, rgba(131, 86, 187, 0.2), transparent 24rem),
@@ -25,528 +29,1094 @@
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
 }
 
-.work-app.theme-dark .vc-content-hero:after { border-color: #8b6eaa45; box-shadow: 0 0 0 36px #8b6eaa10, 0 0 0 74px #8b6eaa08; }
-.work-app.theme-dark .vc-content-brand { color: #d5c5e5; }
-.work-app.theme-dark .vc-content-brand i { color: #89839a; }
-.work-app.theme-dark .vc-content-hero h2 { color: #f5f2fb; }
-.work-app.theme-dark .vc-content-hero h2 em { color: #d093f0; }
-.work-app.theme-dark .vc-content-hero-copy > p { color: #b5bac9; }
-.work-app.theme-dark .vc-content-brand > span,
-.work-app.theme-dark .vc-content-hero-stat > span { border-color: #4a3e5e; background: #272136; color: #e4c1fa; box-shadow: none; }
-.work-app.theme-dark .vc-content-hero-stat { border-color: #39334a; background: #1c1e2b; color: var(--vc-ink); box-shadow: 0 14px 36px #08091055; }
-.work-app.theme-dark .vc-content-hero-stat strong { color: var(--vc-ink); }
-.work-app.theme-dark .vc-content-hero-stat small { color: var(--vc-muted); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-hero:after { border-color: #8b6eaa45; box-shadow: 0 0 0 36px #8b6eaa10, 0 0 0 74px #8b6eaa08; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-brand { color: #d5c5e5; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-brand i { color: #89839a; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-hero h2 { color: #f5f2fb; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-hero h2 em { color: #d093f0; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-hero-copy > p { color: #b5bac9; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-brand > span,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-hero-stat > span { border-color: #4a3e5e; background: #272136; color: #e4c1fa; box-shadow: none; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-hero-stat { border-color: #39334a; background: #1c1e2b; color: var(--vc-ink); box-shadow: 0 14px 36px #08091055; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-hero-stat strong { color: var(--vc-ink); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-hero-stat small { color: var(--vc-muted); }
 
 /* Editorial overview, filters, and post cards */
-.work-app.theme-dark .vc-content-kpi,
-.work-app.theme-dark .vc-content-tabs,
-.work-app.theme-dark .vc-content-toolbar,
-.work-app.theme-dark .vc-marketing-bulk-bar,
-.work-app.theme-dark .vc-content-post,
-.work-app.theme-dark .vc-marketing-view-toggle,
-.work-app.theme-dark .vc-marketing-post-table-wrap,
-.work-app.theme-dark .vc-results-card,
-.work-app.theme-dark .vc-ops-card {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-kpi,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-tabs,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-toolbar,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-bulk-bar,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-post,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-view-toggle,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-post-table-wrap,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-results-card,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-ops-card {
   color: var(--vc-ink);
   background: var(--vc-surface);
   border-color: var(--vc-line);
   box-shadow: none;
 }
 
-.work-app.theme-dark .vc-content-kpi small,
-.work-app.theme-dark .vc-content-kpi em,
-.work-app.theme-dark .vc-content-toolbar small,
-.work-app.theme-dark .vc-content-post p,
-.work-app.theme-dark .vc-content-post small,
-.work-app.theme-dark .vc-results-card p,
-.work-app.theme-dark .vc-results-card small,
-.work-app.theme-dark .vc-ops-card p,
-.work-app.theme-dark .vc-ops-meta,
-.work-app.theme-dark .vc-content-post-meta {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-kpi small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-kpi em,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-toolbar small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-post p,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-post small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-results-card p,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-results-card small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-ops-card p,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-ops-meta,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-post-meta {
   color: var(--vc-muted);
 }
 
-.work-app.theme-dark .vc-content-kpi strong,
-.work-app.theme-dark .vc-content-toolbar b,
-.work-app.theme-dark .vc-content-post h2,
-.work-app.theme-dark .vc-content-post h3,
-.work-app.theme-dark .vc-content-post b,
-.work-app.theme-dark .vc-results-card strong,
-.work-app.theme-dark .vc-ops-card h3 {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-kpi strong,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-toolbar b,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-post h2,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-post h3,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-post b,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-results-card strong,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-ops-card h3 {
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .vc-content-tabs button,
-.work-app.theme-dark .vc-marketing-view-toggle button {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-tabs button,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-view-toggle button {
   border-color: transparent;
   background: transparent;
   color: #c0c5d3;
 }
 
-.work-app.theme-dark .vc-content-tabs button:hover,
-.work-app.theme-dark .vc-marketing-view-toggle button:hover {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-tabs button:hover,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-view-toggle button:hover {
   background: #252a3a;
   color: #fff;
 }
 
-.work-app.theme-dark .vc-content-tabs button.is-active,
-.work-app.theme-dark .vc-marketing-view-toggle button.active {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-tabs button.is-active,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-view-toggle button.active {
   border-color: #55406a;
   background: #2a2037;
   color: #f0c7ff;
 }
 
-.work-app.theme-dark .vc-content-section-icon,
-.work-app.theme-dark .vc-content-kpi > span {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-section-icon,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-kpi > span {
   background: #282237;
   color: #deb0f4;
 }
 
-.work-app.theme-dark .vc-content-search,
-.work-app.theme-dark .vc-content-search input,
-.work-app.theme-dark .vc-marketing-bulk-bar button {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-search,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-search input,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-bulk-bar button {
   border-color: var(--vc-line);
   background: #12151e;
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .vc-content-modal,
-.work-app.theme-dark .vc-content-modal > header,
-.work-app.theme-dark .vc-content-modal form,
-.work-app.theme-dark .vc-post-checklist,
-.work-app.theme-dark .vc-content-modal-actions {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-modal,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-modal > header,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-modal form,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-post-checklist,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-modal-actions {
   border-color: var(--vc-line);
   background: var(--vc-surface);
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .vc-content-modal > header h2,
-.work-app.theme-dark .vc-content-modal h3,
-.work-app.theme-dark .vc-post-checklist b { color: var(--vc-ink); }
-.work-app.theme-dark .vc-content-modal p,
-.work-app.theme-dark .vc-content-modal label,
-.work-app.theme-dark .vc-post-checklist > div > span,
-.work-app.theme-dark .vc-post-checklist > p,
-.work-app.theme-dark .vc-content-modal-actions > span { color: var(--vc-muted); }
-.work-app.theme-dark .vc-post-form-grid :is(input, select, textarea),
-.work-app.theme-dark .vc-content-modal input,
-.work-app.theme-dark .vc-content-modal select,
-.work-app.theme-dark .vc-content-modal textarea { border-color: var(--vc-line); background: #11141d; color: var(--vc-ink); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-modal > header h2,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-modal h3,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-post-checklist b { color: var(--vc-ink); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-modal p,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-modal label,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-post-checklist > div > span,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-post-checklist > p,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-modal-actions > span { color: var(--vc-muted); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-post-form-grid :is(input, select, textarea),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-modal input,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-modal select,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-modal textarea { border-color: var(--vc-line); background: #11141d; color: var(--vc-ink); }
 
-.work-app.theme-dark .vc-content-post,
-.work-app.theme-dark .vc-content-post h2,
-.work-app.theme-dark .vc-content-post h3,
-.work-app.theme-dark .vc-content-post p,
-.work-app.theme-dark .vc-content-post small {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-post,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-post h2,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-post h3,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-post p,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-post small {
   color: var(--vc-ink);
 }
 
 /* Operations overview */
-.work-app.theme-dark .op-overview-metric,
-.work-app.theme-dark .op-overview-live,
-.work-app.theme-dark .op-overview-queue,
-.work-app.theme-dark .op-overview-more,
-.work-app.theme-dark .op-overview-unavailable {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-metric,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-live,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-queue,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-more,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-unavailable {
   border-color: var(--vc-line);
   background: var(--vc-surface);
   color: var(--vc-ink);
   box-shadow: none;
 }
 
-.work-app.theme-dark .op-overview-metric-copy > span,
-.work-app.theme-dark .op-overview-metric-copy > small,
-.work-app.theme-dark .op-overview-item-copy > small,
-.work-app.theme-dark .op-overview-item-meta > small,
-.work-app.theme-dark .op-overview-item-action,
-.work-app.theme-dark .op-overview-footnote,
-.work-app.theme-dark .op-overview-more,
-.work-app.theme-dark .op-overview-unavailable span {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-metric-copy > span,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-metric-copy > small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-item-copy > small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-item-meta > small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-item-action,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-footnote,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-more,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-unavailable span {
   color: var(--vc-muted);
 }
 
-.work-app.theme-dark .op-overview-metric-copy > b,
-.work-app.theme-dark .op-overview-queue-heading h3,
-.work-app.theme-dark .op-overview-item-copy > b,
-.work-app.theme-dark .op-overview-empty b,
-.work-app.theme-dark .op-overview-unavailable b {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-metric-copy > b,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-queue-heading h3,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-item-copy > b,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-empty b,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-unavailable b {
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .op-overview-metric-icon,
-.work-app.theme-dark .op-overview-count {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-metric-icon,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-count {
   background: #282237;
   color: #dec0f3;
 }
 
-.work-app.theme-dark .op-overview-search,
-.work-app.theme-dark .op-overview-filters button,
-.work-app.theme-dark .op-overview-branch select,
-.work-app.theme-dark .op-overview-unavailable button {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-search,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-filters button,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-branch select,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-unavailable button {
   border-color: var(--vc-line);
   background: #12151e;
   color: #dce0e9;
 }
 
-.work-app.theme-dark .op-overview-filters button[aria-pressed='true'] {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-filters button[aria-pressed='true'] {
   border-color: #79538f;
   background: #2a2037;
   color: #f0c7ff;
 }
 
-.work-app.theme-dark .op-overview-search input {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-search input {
   background: transparent;
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .op-overview-item,
-.work-app.theme-dark .op-overview-footnote {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-item,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-overview-footnote {
   border-color: var(--vc-line);
 }
 
-.work-app.theme-dark .op-flow-tabs,
-.work-app.theme-dark .op-flow-page .op-flow-kpi,
-.work-app.theme-dark .op-flow-page .op-flow-footnote,
-.work-app.theme-dark .op-flow-page .op-flow-list article,
-.work-app.theme-dark .op-flow-page .op-flow-actions button {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-tabs,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .op-flow-kpi,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .op-flow-footnote,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .op-flow-list article,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .op-flow-actions button {
   border-color: var(--vc-line);
   background: var(--vc-surface);
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .op-flow-tabs button { color: #c4c9d7; }
-.work-app.theme-dark .op-flow-tabs button:hover { background: #242839; color: #fff; }
-.work-app.theme-dark .op-flow-tabs button.active { background: #2b2039; color: #f0c7ff; box-shadow: inset 0 0 0 1px #65477a; }
-.work-app.theme-dark .op-flow-header p,
-.work-app.theme-dark .op-flow-page .muted,
-.work-app.theme-dark .op-flow-page .op-flow-kpi span,
-.work-app.theme-dark .op-flow-page .op-flow-footnote { color: var(--vc-muted); }
-.work-app.theme-dark .op-flow-page :is(label, input, select, textarea) { color: var(--vc-ink); }
-.work-app.theme-dark .op-flow-page :is(input, select, textarea) { border-color: var(--vc-line); background: #11141d; }
-.work-app.theme-dark .op-flow-page hr,
-.work-app.theme-dark .op-flow-transfer-line { border-color: var(--vc-line); }
-.work-app.theme-dark .op-flow-page .op-flow-list article { border-color: var(--vc-line); }
-.work-app.theme-dark .op-flow-page .op-flow-list article > :is(small, span) { color: var(--vc-muted); }
-.work-app.theme-dark .op-flow-page .op-flow-status { border: 1px solid #454258; background: #282437; color: #e7d5f5; }
-.work-app.theme-dark .op-flow-page .status-open,
-.work-app.theme-dark .op-flow-page .status-accepted,
-.work-app.theme-dark .op-flow-page .status-received,
-.work-app.theme-dark .op-flow-page .status-completed,
-.work-app.theme-dark .op-flow-page .status-ready { background: #173225; color: #a9e4bd; }
-.work-app.theme-dark .op-flow-page .status-partially_received,
-.work-app.theme-dark .op-flow-page .status-dispatched,
-.work-app.theme-dark .op-flow-page .status-in_progress,
-.work-app.theme-dark .op-flow-page .status-sent { background: #172a42; color: #acd4ff; }
-.work-app.theme-dark .op-flow-page .status-blocked,
-.work-app.theme-dark .op-flow-page .status-pending,
-.work-app.theme-dark .op-flow-page .status-requested,
-.work-app.theme-dark .op-flow-page .status-draft { background: #392d18; color: #f5d58c; }
-.work-app.theme-dark .op-flow-page .status-cancelled,
-.work-app.theme-dark .op-flow-page .status-rejected,
-.work-app.theme-dark .op-flow-page .status-expired,
-.work-app.theme-dark .op-flow-page .status-overdue { background: #3b2224; color: #f4b8b4; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-tabs button { color: #c4c9d7; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-tabs button:hover { background: #242839; color: #fff; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-tabs button.active { background: #2b2039; color: #f0c7ff; box-shadow: inset 0 0 0 1px #65477a; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-header p,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .muted,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .op-flow-kpi span,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .op-flow-footnote { color: var(--vc-muted); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page :is(label, input, select, textarea) { color: var(--vc-ink); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page :is(input, select, textarea) { border-color: var(--vc-line); background: #11141d; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page hr,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-transfer-line { border-color: var(--vc-line); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .op-flow-list article { border-color: var(--vc-line); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .op-flow-list article > :is(small, span) { color: var(--vc-muted); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .op-flow-status { border: 1px solid #454258; background: #282437; color: #e7d5f5; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-open,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-accepted,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-received,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-completed,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-ready { background: #173225; color: #a9e4bd; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-partially_received,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-dispatched,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-in_progress,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-sent { background: #172a42; color: #acd4ff; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-blocked,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-pending,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-requested,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-draft { background: #392d18; color: #f5d58c; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-cancelled,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-rejected,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-expired,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-flow-page .status-overdue { background: #3b2224; color: #f4b8b4; }
 
 /* Inventory catalog, cards, guided counts, and locations */
-.work-app.theme-dark .inventory-product-card,
-.work-app.theme-dark .inventory-card-context,
-.work-app.theme-dark .inventory-guided-count .guided-count-card,
-.work-app.theme-dark .inventory-location-card,
-.work-app.theme-dark .inventory-product-group-content .inventory-table-wrap,
-.work-app.theme-dark .inventory-library-toggle,
-.work-app.theme-dark .inventory-reference-library,
-.work-app.theme-dark .inventory-summary-card {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-card,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-card-context,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-guided-count .guided-count-card,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-location-card,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-group-content .inventory-table-wrap,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-library-toggle,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-reference-library,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-summary-card {
   border-color: var(--vc-line);
   background: var(--vc-surface);
   color: var(--vc-ink);
   box-shadow: none;
 }
 
-.work-app.theme-dark .inventory-product-image,
-.work-app.theme-dark .inventory-product-group > summary::before,
-.work-app.theme-dark .inventory-product-group > summary em,
-.work-app.theme-dark .inventory-product-group-content .inventory-table-wrap th,
-.work-app.theme-dark .inventory-library-search,
-.work-app.theme-dark .inventory-guided-count .guided-count-progress > div,
-.work-app.theme-dark .inventory-guided-count .guided-count-progress-bar {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-image,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-group > summary::before,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-group > summary em,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-group-content .inventory-table-wrap th,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-library-search,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-guided-count .guided-count-progress > div,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-guided-count .guided-count-progress-bar {
   border-color: var(--vc-line);
   background: var(--vc-surface-raised);
   color: #d9c2eb;
 }
 
-.work-app.theme-dark .inventory-product-card :is(b, strong, h3, h4),
-.work-app.theme-dark .inventory-product-group > summary b,
-.work-app.theme-dark .inventory-guided-count :is(h3, h4, b),
-.work-app.theme-dark .inventory-summary-card div b {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-card :is(b, strong, h3, h4),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-group > summary b,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-guided-count :is(h3, h4, b),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-summary-card div b {
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .inventory-product-card :is(small, p, label),
-.work-app.theme-dark .inventory-product-group > summary small,
-.work-app.theme-dark .inventory-guided-count :is(p, small, label),
-.work-app.theme-dark .inventory-summary-card div span {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-card :is(small, p, label),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-group > summary small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-guided-count :is(p, small, label),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-summary-card div span {
   color: var(--vc-muted);
 }
 
-.work-app.theme-dark .inventory-product-group-content .inventory-table-wrap table td,
-.work-app.theme-dark .inventory-product-group-content .inventory-table-wrap table th {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-group-content .inventory-table-wrap table td,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-group-content .inventory-table-wrap table th {
   border-color: var(--vc-line);
   color: #d7dbe5;
 }
 
-.work-app.theme-dark .inventory-card-select,
-.work-app.theme-dark .inventory-card-select input,
-.work-app.theme-dark .inventory-guided-count input,
-.work-app.theme-dark .inventory-modal input,
-.work-app.theme-dark .inventory-modal select,
-.work-app.theme-dark .inventory-modal textarea {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-card-select,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-card-select input,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-guided-count input,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-modal input,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-modal select,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-modal textarea {
   border-color: var(--vc-line);
   background: #11141d;
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .inventory-movement-modal,
-.work-app.theme-dark .inventory-movement-current,
-.work-app.theme-dark .inventory-count-preview,
-.work-app.theme-dark .inventory-movement-footer {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-modal,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-current,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-count-preview,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-footer {
   border-color: var(--vc-line);
   background: var(--vc-surface);
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .inventory-movement-title-wrap h3,
-.work-app.theme-dark .inventory-movement-current > div:nth-child(2) > strong,
-.work-app.theme-dark .inventory-count-preview > strong {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-title-wrap h3,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-current > div:nth-child(2) > strong,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-count-preview > strong {
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .inventory-movement-title-wrap p,
-.work-app.theme-dark .inventory-movement-help,
-.work-app.theme-dark .inventory-movement-field,
-.work-app.theme-dark .inventory-movement-field > small,
-.work-app.theme-dark .inventory-movement-branch,
-.work-app.theme-dark .inventory-count-preview > small {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-title-wrap p,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-help,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-field,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-field > small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-branch,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-count-preview > small {
   color: var(--vc-muted);
 }
 
 /* Purchasing, personnel, catalog, and their forms */
-.work-app.theme-dark .purchase-suggestion-list article,
-.work-app.theme-dark .purchase-order-card,
-.work-app.theme-dark .purchasing-modal,
-.work-app.theme-dark .purchasing-form,
-.work-app.theme-dark .personnel-list-row,
-.work-app.theme-dark .personnel-contact-card,
-.work-app.theme-dark .personnel-linked-account,
-.work-app.theme-dark .personnel-compensation-list article,
-.work-app.theme-dark .catalog-family,
-.work-app.theme-dark .catalog-product-card,
-.work-app.theme-dark .catalog-view-tools,
-.work-app.theme-dark .catalog-toolbar {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-suggestion-list article,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-order-card,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-modal,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-form,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-contact-card,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-linked-account,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-compensation-list article,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-family,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-product-card,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-view-tools,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-toolbar {
   border-color: var(--vc-line);
   background: var(--vc-surface);
   color: var(--vc-ink);
   box-shadow: none;
 }
 
-.work-app.theme-dark .purchase-suggestion-list :is(b, strong),
-.work-app.theme-dark .purchase-order-card :is(h3, b, strong),
-.work-app.theme-dark .purchasing-modal h2,
-.work-app.theme-dark .personnel-detail-heading h2,
-.work-app.theme-dark .personnel-list-copy b,
-.work-app.theme-dark .personnel-detail-panel :is(h3, h4, b),
-.work-app.theme-dark .catalog-product-identity b {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-suggestion-list :is(b, strong),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-order-card :is(h3, b, strong),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-modal h2,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-detail-heading h2,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-copy b,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-detail-panel :is(h3, h4, b),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-product-identity b {
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .purchase-suggestion-list small,
-.work-app.theme-dark .purchase-order-card :is(small, p),
-.work-app.theme-dark .purchasing-modal > header p,
-.work-app.theme-dark .personnel-detail-heading p,
-.work-app.theme-dark .personnel-list-copy small,
-.work-app.theme-dark .personnel-detail-panel :is(small, p, label),
-.work-app.theme-dark .catalog-product-identity small {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-suggestion-list small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-order-card :is(small, p),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-modal > header p,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-detail-heading p,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-copy small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-detail-panel :is(small, p, label),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-product-identity small {
   color: var(--vc-muted);
 }
 
-.work-app.theme-dark .purchase-priority-row,
-.work-app.theme-dark .personnel-list-row,
-.work-app.theme-dark .catalog-product-card {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-priority-row,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-product-card {
   border-bottom-color: var(--vc-line);
 }
 
-.work-app.theme-dark .purchase-priority-main b,
-.work-app.theme-dark .purchase-priority-progress b {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-priority-main b,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-priority-progress b {
   color: #e6e9f1;
 }
 
-.work-app.theme-dark .purchase-priority-main small,
-.work-app.theme-dark .purchase-priority-progress small,
-.work-app.theme-dark .purchase-results-count {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-priority-main small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-priority-progress small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-results-count {
   color: var(--vc-muted);
 }
 
-.work-app.theme-dark .purchase-status,
-.work-app.theme-dark .personnel-status {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-status,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-status {
   border: 1px solid #454258;
   background: #282437;
   color: #e7d5f5;
 }
 
-.work-app.theme-dark .purchase-status.status-ordered { background: #172a42; color: #acd4ff; }
-.work-app.theme-dark .purchase-status.status-partially_received { background: #392d18; color: #f5d58c; }
-.work-app.theme-dark .purchase-status.status-received { background: #173225; color: #a9e4bd; }
-.work-app.theme-dark .purchase-status.status-cancelled { background: #292b34; color: #c2c6d1; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-status.status-ordered { background: #172a42; color: #acd4ff; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-status.status-partially_received { background: #392d18; color: #f5d58c; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-status.status-received { background: #173225; color: #a9e4bd; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-status.status-cancelled { background: #292b34; color: #c2c6d1; }
 
-.work-app.theme-dark .purchasing-toolbar .search-box,
-.work-app.theme-dark .supplier-toolbar .search-box,
-.work-app.theme-dark .purchasing-form :is(input, select, textarea),
-.work-app.theme-dark .purchasing-modal :is(input, select, textarea),
-.work-app.theme-dark .personnel-page :is(input, select, textarea),
-.work-app.theme-dark .catalog-page :is(input, select, textarea),
-.work-app.theme-dark .catalog-rate-field input {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-toolbar .search-box,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .supplier-toolbar .search-box,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-form :is(input, select, textarea),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-modal :is(input, select, textarea),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-page :is(input, select, textarea),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-page :is(input, select, textarea),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-rate-field input {
   border-color: var(--vc-line);
   background: #11141d;
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .personnel-list-row:hover,
-.work-app.theme-dark .personnel-list-row.selected,
-.work-app.theme-dark .catalog-family > header,
-.work-app.theme-dark .catalog-product-card:hover {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row:hover,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row.selected,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-family > header,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-product-card:hover {
   background: #202333;
 }
 
-.work-app.theme-dark .personnel-heading h1 { color: var(--vc-ink); }
-.work-app.theme-dark .personnel-heading p { color: var(--vc-muted); }
-.work-app.theme-dark .team-account-block,
-.work-app.theme-dark .team-account-remove,
-.work-app.theme-dark .team-account-reactivate,
-.work-app.theme-dark .team-subpages a { border-color: var(--vc-line); background: var(--vc-surface-raised); color: #e2e5ee; }
-.work-app.theme-dark .team-account-block { border-color: #7b4046; background: #321f26; color: #ffc3c0; }
-.work-app.theme-dark .team-account-remove { border-color: #71464a; background: #2a1e24; color: #f0c0bd; }
-.work-app.theme-dark .team-account-reactivate { border-color: #35664c; background: #192b22; color: #b7e6c8; }
-.work-app.theme-dark .team-subpages a.active { border-color: #664a79; background: #2b2039; color: #f0c7ff; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-heading h1 { color: var(--vc-ink); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-heading p { color: var(--vc-muted); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .team-account-block,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .team-account-remove,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .team-account-reactivate,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .team-subpages a { border-color: var(--vc-line); background: var(--vc-surface-raised); color: #e2e5ee; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .team-account-block { border-color: #7b4046; background: #321f26; color: #ffc3c0; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .team-account-remove { border-color: #71464a; background: #2a1e24; color: #f0c0bd; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .team-account-reactivate { border-color: #35664c; background: #192b22; color: #b7e6c8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .team-subpages a.active { border-color: #664a79; background: #2b2039; color: #f0c7ff; }
 
 /* POS and quotation builder */
-.work-app.theme-dark .pos-product-browser,
-.work-app.theme-dark .pos-product-tile,
-.work-app.theme-dark .pos-selected-product,
-.work-app.theme-dark .pos-cart,
-.work-app.theme-dark .pos-order-summary,
-.work-app.theme-dark .pos-cashier-card,
-.work-app.theme-dark .pos-card,
-.work-app.theme-dark .pos-parked-card,
-.work-app.theme-dark .pos-recent-panel,
-.work-app.theme-dark .operations-quote-line,
-.work-app.theme-dark .operations-quote-tier,
-.work-app.theme-dark .operations-quote-section,
-.work-app.theme-dark .operations-quote-summary,
-.work-app.theme-dark .rich-text-editor,
-.work-app.theme-dark .rich-text-editor-toolbar,
-.work-app.theme-dark .quote-product,
-.work-app.theme-dark .quote-product-results {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-browser,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-tile,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-selected-product,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-cart,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-order-summary,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-cashier-card,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-card,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-parked-card,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-recent-panel,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-line,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-tier,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-section,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-summary,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-text-editor,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-text-editor-toolbar,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-product,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-product-results {
   border-color: var(--vc-line);
   background: var(--vc-surface);
   color: var(--vc-ink);
   box-shadow: none;
 }
 
-.work-app.theme-dark .pos-product-browser :is(h2, h3, b, strong),
-.work-app.theme-dark .pos-product-tile-copy b,
-.work-app.theme-dark .pos-cart :is(b, strong),
-.work-app.theme-dark .pos-order-summary :is(b, strong),
-.work-app.theme-dark .operations-quote :is(h2, h3, b, strong),
-.work-app.theme-dark .rich-text-editor :is(h2, h3, b) {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-browser :is(h2, h3, b, strong),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-tile-copy b,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-cart :is(b, strong),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-order-summary :is(b, strong),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote :is(h2, h3, b, strong),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-text-editor :is(h2, h3, b) {
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .pos-product-browser :is(small, p, label),
-.work-app.theme-dark .pos-product-tile-copy small,
-.work-app.theme-dark .pos-cart small,
-.work-app.theme-dark .operations-quote :is(small, p, label),
-.work-app.theme-dark .rich-text-editor :is(small, p) {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-browser :is(small, p, label),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-tile-copy small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-cart small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote :is(small, p, label),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-text-editor :is(small, p) {
   color: var(--vc-muted);
 }
 
-.work-app.theme-dark .pos-product-browser input,
-.work-app.theme-dark .pos-product-browser select,
-.work-app.theme-dark .pos-line-editor :is(input, select, textarea),
-.work-app.theme-dark .pos-payment-row :is(input, select),
-.work-app.theme-dark .operations-quote :is(input, select, textarea),
-.work-app.theme-dark .rich-text-editor [contenteditable='true'] {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-browser input,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-browser select,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-line-editor :is(input, select, textarea),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-payment-row :is(input, select),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote :is(input, select, textarea),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-text-editor [contenteditable='true'] {
   border-color: var(--vc-line);
   background: #11141d;
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .pos-product-browser input::placeholder,
-.work-app.theme-dark .operations-quote input::placeholder,
-.work-app.theme-dark .rich-text-editor [contenteditable='true']:empty::before {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-browser input::placeholder,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote input::placeholder,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-text-editor [contenteditable='true']:empty::before {
   color: #939bae;
 }
 
-.work-app.theme-dark .pos-checkout-step,
-.work-app.theme-dark .pos-cart-line,
-.work-app.theme-dark .operations-quote-count,
-.work-app.theme-dark .operations-quote-area,
-.work-app.theme-dark .operations-quote-icon-button {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-checkout-step,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-cart-line,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-count,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-area,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-icon-button {
   border-color: var(--vc-line);
   background: var(--vc-surface-raised);
   color: #dce0ea;
 }
 
-.work-app.theme-dark .rich-editor-shell,
-.work-app.theme-dark .rich-editor-head,
-.work-app.theme-dark .rich-editor-writing-surface,
-.work-app.theme-dark .rich-editor-writing-hint,
-.work-app.theme-dark .rich-editor-status,
-.work-app.theme-dark .editor-fullscreen-inner,
-.work-app.theme-dark .editor-full-head {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-head,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-writing-surface,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-writing-hint,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-status,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .editor-fullscreen-inner,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .editor-full-head {
   border-color: var(--vc-line);
   background: var(--vc-surface);
   color: var(--vc-ink);
 }
 
-.work-app.theme-dark .rich-editor-title :is(h2, b),
-.work-app.theme-dark .rich-editor-full-heading :is(h2, p),
-.work-app.theme-dark .rich-editor-status,
-.work-app.theme-dark .rich-editor-writing-hint { color: var(--vc-ink); }
-.work-app.theme-dark .rich-editor-title p,
-.work-app.theme-dark .rich-editor-status-note { color: var(--vc-muted); }
-.work-app.theme-dark .rich-editor-shell .rich-editor-content { background: #11141d; color: #edf0f7; }
-.work-app.theme-dark .rich-editor-shell .rich-editor-content :is(h1, h2, h3) { color: #f1f3f8; }
-.work-app.theme-dark .rich-editor-shell .rich-editor-content a { color: #e3a6f4; }
-.work-app.theme-dark .rich-editor-writing-hint kbd { border-color: var(--vc-line); background: #222637; color: #d2d6e1; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-title :is(h2, b),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-full-heading :is(h2, p),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-status,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-writing-hint { color: var(--vc-ink); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-title p,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-status-note { color: var(--vc-muted); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell .rich-editor-content { background: #11141d; color: #edf0f7; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell .rich-editor-content :is(h1, h2, h3) { color: #f1f3f8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell .rich-editor-content a { color: #e3a6f4; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-writing-hint kbd { border-color: var(--vc-line); background: #222637; color: #d2d6e1; }
 
-.work-app.theme-dark .operations-quote-line-heading h3,
-.work-app.theme-dark .operations-quote-section-heading h3,
-.work-app.theme-dark .operations-quote-line-total b { color: var(--vc-ink); }
-.work-app.theme-dark .operations-quote-line-heading > div > span,
-.work-app.theme-dark .operations-quote-line-total span,
-.work-app.theme-dark .operations-quote-intro { color: var(--vc-muted); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-line-heading h3,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-section-heading h3,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-line-total b { color: var(--vc-ink); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-line-heading > div > span,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-line-total span,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-intro { color: var(--vc-muted); }
 
-.work-app.theme-dark .pos-checkout-step[aria-current='step'],
-.work-app.theme-dark .pos-product-tile.is-keyboard-active,
-.work-app.theme-dark .operations-quote-tier.active {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-checkout-step[aria-current='step'],
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-tile.is-keyboard-active,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .operations-quote-tier.active {
   border-color: #9465ac;
   background: #2a2037;
   color: #f2d9ff;
 }
 
-.work-app.theme-dark .vc-marketing-post-artwork:not(.has-image),
-.work-app.theme-dark .vc-marketing-post-artwork-empty,
-.work-app.theme-dark .inventory-reference-library article,
-.work-app.theme-dark .inventory-library-grid article {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-post-artwork:not(.has-image),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-post-artwork-empty,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-reference-library article,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-library-grid article {
   border-color: #41455a;
   background: #181b27;
   color: #dce0ea;
 }
 
-.work-app.theme-dark :is(.vc-content-kpi, .op-overview-metric, .inventory-product-card, .purchase-order-card, .personnel-list-row, .pos-product-tile, .catalog-product-card):focus-visible {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.vc-content-kpi, .op-overview-metric, .inventory-product-card, .purchase-order-card, .personnel-list-row, .pos-product-tile, .catalog-product-card):focus-visible {
   outline-color: #d08cf1;
   outline-offset: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .work-app.theme-dark :is(.vc-content-tabs button, .vc-marketing-view-toggle button, .op-overview-metric, .inventory-product-card, .personnel-list-row) {
+  :is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.vc-content-tabs button, .vc-marketing-view-toggle button, .op-overview-metric, .inventory-product-card, .personnel-list-row) {
     transition: none;
+  }
+}
+
+/* Bring inventory detail tiles into the same contrast system as their card. */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-card .inventory-product-facts {
+  border-top-color: #34384b;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-card .inventory-product-facts > span {
+  border-color: #363a4d;
+  background: #1b1f2c;
+  color: #b6bdcd;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-card .inventory-product-facts > span strong {
+  color: #f0f2f8;
+}
+
+/* The Marketing work queue has its own legacy light surfaces. */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .mk-work-toolbar {
+  border-color: var(--vc-line);
+  background: var(--vc-surface);
+  color: var(--vc-ink);
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .mk-work-toolbar :is(h2, p, label, small, .mk-work-details) {
+  color: var(--vc-ink);
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .mk-work-toolbar .eyebrow,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .mk-work-details small {
+  color: var(--vc-muted);
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .mk-work-toolbar select {
+  border-color: #41465a;
+  background: #1b1f2c;
+  color: #edf0f7;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .mk-work-queues button {
+  border-color: #41465a;
+  background: #202434;
+  color: #e5e8f1;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .mk-work-queues button:hover,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .mk-work-queues button:focus-visible {
+  border-color: #80609b;
+  background: #29263a;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .mk-work-queues button[aria-pressed="true"] {
+  border-color: #9465ac;
+  background: #392544;
+  color: #f5eaff;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .mk-work-queues b {
+  background: #373b4d;
+  color: #f1e6f7;
+}
+
+/* Calendar event cards use inline status tints in light mode; replace only
+   their surfaces and text in dark mode while retaining the semantic edge. */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event {
+  border-color: #414357;
+  border-left-color: var(--event-color, #a77bd0);
+  background: #222331;
+  color: #e9e7f0;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event.tone-active,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event.tone-working {
+  background: #2b2337;
+  color: #eadcf7;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event.tone-review {
+  background: #342b1c;
+  color: #f2dfb4;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event.tone-approved {
+  background: #202c3b;
+  color: #d5e5fa;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event.tone-published {
+  background: #1c3028;
+  color: #d6f0e1;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event.tone-completed {
+  background: #262a33;
+  color: #dfe2e9;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event:is(.tone-blocked, .tone-cancelled) {
+  background: #382526;
+  color: #f4d9d6;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event .vc-marketing-event-label,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event .vc-marketing-event-status {
+  color: inherit;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event .vc-marketing-event-status.tone-review { color: #f3d48c; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event .vc-marketing-event-status.tone-published { color: #9fe0bc; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event .vc-marketing-event-status.tone-approved { color: #a9d0fa; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event .vc-marketing-event-status:is(.tone-blocked, .tone-cancelled) { color: #ffc0b8; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event .vc-marketing-event-label,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event .vc-marketing-compact-icons > span {
+  color: inherit;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event .vc-marketing-has-asset-badge,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event .vc-marketing-readiness-indicators > * {
+  border-color: #56516a;
+  background: #292737;
+  color: #e8d9f2;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-task {
+  border-color: #514060;
+  border-left-color: #aa79d0;
+  background: #292235;
+  color: #eadcf7;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-more,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-calendar.is-month .vc-marketing-calendar-foot {
+  color: #b7b2c3;
+}
+
+/* POS: align checkout panels with the operational theme, including legacy
+   surfaces that still consume the shared paper and ink variables. */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.pos-grid, .pos-checkout-form, .pos-checkout-main) {
+  --paper: #171a25;
+  --ink: #f1f3f8;
+  --muted: #b2b8c8;
+  --line: #303447;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.pos-checkout-main, .pos-checkout-details, .pos-checkout-review,
+  .pos-order-summary, .pos-cart, .pos-payment-section, .pos-parked-panel,
+  .pos-recent-panel, .pos-product-browser, .pos-checkout-form .form-panel) {
+  border-color: var(--vc-line);
+  background: var(--vc-surface);
+  color: var(--vc-ink);
+  box-shadow: none;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.pos-checkout-main, .pos-checkout-details, .pos-checkout-review,
+  .pos-order-summary, .pos-cart, .pos-payment-section, .pos-parked-panel,
+  .pos-recent-panel, .pos-product-browser) :is(h1, h2, h3, h4, b, strong, label, legend) {
+  color: var(--vc-ink);
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.pos-checkout-main, .pos-checkout-details, .pos-checkout-review,
+  .pos-order-summary, .pos-cart, .pos-payment-section, .pos-parked-panel,
+  .pos-recent-panel, .pos-product-browser) :is(p, small, .muted, .pos-search-hint,
+  .pos-scan-hint, .pos-catalog-count, .pos-submit-guidance, .pos-payment-reference) {
+  color: var(--vc-muted);
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.pos-cart-line, .pos-cart-line-wrap, .pos-payment-row,
+  .pos-review-grid > *, .pos-checkout-step, .pos-checkout-steps,
+  .pos-fulfillment-fields, .pos-line-editor, .pos-parked-active,
+  .pos-pending-sale-notice, .pos-balance-change-preview) {
+  border-color: #363a4e;
+  background: #1d2130;
+  color: #e8ebf3;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.pos-checkout-main, .pos-checkout-details, .pos-checkout-review,
+  .pos-order-summary, .pos-cart, .pos-payment-section, .pos-parked-panel,
+  .pos-recent-panel, .pos-product-browser) :is(input, select, textarea) {
+  border-color: #42475d;
+  background: #11141d;
+  color: #f1f3f8;
+  color-scheme: dark;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.pos-checkout-main, .pos-checkout-details, .pos-checkout-review,
+  .pos-order-summary, .pos-cart, .pos-payment-section, .pos-parked-panel,
+  .pos-recent-panel, .pos-product-browser) :is(input, select, textarea)::placeholder {
+  color: #939bad;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.pos-product-tile, .pos-catalog-empty, .pos-sales-state,
+  .pos-sale-success, .pos-mobile-summary-bar) {
+  border-color: #363a4e;
+  background: #1d2130;
+  color: var(--vc-ink);
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-checkout-step[aria-current='step'] { border-color: #9465ac; background: #2a2037; color: #f2d9ff; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-checkout-step.is-complete { border-color: #285d49; background: #182b25; color: #b8ebcf; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-tile:hover,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-tile.is-keyboard-active { border-color: #80609b; background: #29263a; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-sale-success { border-color: #285d49; background: #182b25; }
+
+/* Inventory calendar: the operational view has its own light-first palette. */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-operations-calendar {
+  --calendar-ink: #f1f3f8;
+  --calendar-muted: #b2b8c8;
+  --calendar-line: #363a4d;
+  --calendar-accent: #d09bf0;
+  color: var(--vc-ink);
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.inventory-calendar-toolbar, .inventory-calendar-filters,
+  .inventory-calendar-month, .inventory-calendar-week, .inventory-calendar-agenda,
+  .inventory-calendar-summary article, .inventory-calendar-empty,
+  .inventory-calendar-form, .inventory-calendar-detail, .inventory-calendar-count-results,
+  .inventory-calendar-count-list article, .inventory-calendar-audit,
+  .inventory-calendar-receipt-lines article, .inventory-calendar-scope-preview,
+  .inventory-calendar-line-picker, .inventory-calendar-day-modal-content,
+  .inventory-calendar-day-search, .inventory-calendar-day-card) {
+  border-color: #363a4d;
+  background: #171a25;
+  color: #e8ebf3;
+  box-shadow: none;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.inventory-calendar-toolbar, .inventory-calendar-filters,
+  .inventory-calendar-month, .inventory-calendar-week, .inventory-calendar-agenda,
+  .inventory-calendar-summary, .inventory-calendar-form, .inventory-calendar-detail,
+  .inventory-calendar-count-results, .inventory-calendar-day-modal-content,
+  .inventory-calendar-day-search) :is(h2, h3, h4, b, strong, legend, label) { color: #f1f3f8; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.inventory-calendar-toolbar, .inventory-calendar-filters,
+  .inventory-calendar-month, .inventory-calendar-week, .inventory-calendar-agenda,
+  .inventory-calendar-summary, .inventory-calendar-form, .inventory-calendar-detail,
+  .inventory-calendar-count-results, .inventory-calendar-day-modal-content) :is(p, small, time,
+  .inventory-calendar-result-count, .inventory-calendar-event-copy > small,
+  .inventory-calendar-agenda-empty, .inventory-calendar-mobile-agenda > p) { color: #b2b8c8; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.inventory-calendar-filters select, .inventory-calendar-field select,
+  .inventory-calendar-field textarea, .inventory-calendar-reschedule select,
+  .inventory-calendar-day-search input, .inventory-calendar-day-search button,
+  .inventory-calendar-line-picker input) {
+  border-color: #42475d;
+  background: #11141d;
+  color: #f1f3f8;
+  color-scheme: dark;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.inventory-calendar-view-switch, .inventory-calendar-day,
+  .inventory-calendar-weekday, .inventory-calendar-day-select, .inventory-calendar-nav,
+  .inventory-calendar-event, .inventory-calendar-overflow, .day-pill,
+  .inventory-calendar-day-card, .day-card-icon) {
+  border-color: #363a4d;
+  background-color: #1d2130;
+  color: #e8ebf3;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.inventory-calendar-day-select, .inventory-calendar-nav,
+  .inventory-calendar-view-switch button, .inventory-calendar-overflow):hover,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.inventory-calendar-day-select, .inventory-calendar-nav,
+  .inventory-calendar-view-switch button, .inventory-calendar-overflow):focus-visible {
+  border-color: #80609b;
+  background-color: #29263a;
+  color: #f2d9ff;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day.is-outside { background: #141721; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day.is-outside .inventory-calendar-day-select { color: #7f8799; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day.is-today .inventory-calendar-day-select > span,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day.is-selected .inventory-calendar-day-select { background: #633a7d; color: #fff; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-event.status-overdue,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .day-card-overdue-badge { border-color: #704147; background: #382326; color: #ffc0b8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-event.is-entry,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day-card.is-entry { background: #182b25; color: #ccebd8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-event.is-exit,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day-card.is-exit { background: #30271a; color: #f4dfb5; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-event.event-count_task,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day-card.event-count_task { background: #292235; color: #eadcf7; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-event.event-count_session,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day-card.event-count_session { background: #192d30; color: #c7e9e8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-event.event-purchase_receipt,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day-card.event-purchase_receipt { background: #1c2b3b; color: #d3e7fa; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-detail-facts > span,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-summary article { border-color: #363a4d; background: #1d2130; color: #e8ebf3; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-detail-status > span,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-scope-preview > span,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-line-picker label > span { background: #242839; color: #d9ddea; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day-card .day-card-title { color: #f1f3f8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day-card .day-card-detail,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day-card .day-card-time { color: #b2b8c8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day-card .day-card-delta.is-entry { background: #1b3a2c; color: #a9e7c1; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-calendar-day-card .day-card-delta.is-exit { background: #3a2d18; color: #f3d48c; }
+
+/* Purchasing: unify summaries, supplier/order lists, and editing dialogs. */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.purchasing-hero, .purchasing-summary, .purchasing-toolbar,
+  .purchasing-overview-grid > *, .purchase-priority-row, .purchase-order-list,
+  .purchase-line, .order-line-editor, .receipt-line-editor, .purchase-order-details,
+  .purchase-order-estimate, .purchase-order-note, .purchase-receipt-history,
+  .supplier-card, .supplier-toolbar, .purchasing-empty, .purchasing-form,
+  .purchasing-confirm-modal) {
+  border-color: #363a4d;
+  background: #171a25;
+  color: #e8ebf3;
+  box-shadow: none;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.purchasing-hero, .purchasing-summary, .purchasing-toolbar,
+  .purchasing-overview-grid, .purchase-priority-list, .purchase-order-list,
+  .purchase-order-card, .supplier-card, .purchasing-form, .purchasing-confirm-modal) :is(h2, h3, h4, b, strong) { color: #f1f3f8; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.purchasing-hero, .purchasing-summary, .purchasing-toolbar,
+  .purchasing-overview-grid, .purchase-priority-list, .purchase-order-list,
+  .purchase-order-card, .supplier-card, .purchasing-form, .purchasing-confirm-modal) :is(p, small, label, .purchasing-kicker, .purchasing-footnote, .purchase-results-count) { color: #b2b8c8; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.purchasing-workspace, .purchasing-form, .purchasing-confirm-modal,
+  .purchasing-modal, .supplier-toolbar, .purchase-order-card, .purchase-order-details) :is(input, select, textarea) {
+  border-color: #42475d;
+  background: #11141d;
+  color: #f1f3f8;
+  color-scheme: dark;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.purchasing-nav, .purchase-status-filter, .supplier-archive-filter,
+  .purchase-prerequisite, .purchase-variant-options, .purchase-suggestion-list article,
+  .purchase-line, .order-line-editor, .receipt-line-editor, .supplier-card) {
+  border-color: #363a4d;
+  background: #1d2130;
+  color: #e8ebf3;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.purchase-status.status-ordered, .purchase-status.status-partially_received) { border-color: #67522d; background: #332817; color: #f1d28b; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-status.status-received { border-color: #2e634a; background: #192d25; color: #a9e7c1; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-status.status-cancelled { border-color: #704147; background: #382326; color: #ffc0b8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.purchasing-alert, .purchasing-modal-error).is-error { border-color: #704147; background: #382326; color: #ffc0b8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-alert:not(.is-error) { border-color: #67522d; background: #332817; color: #f1d28b; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-backdrop { background: rgba(5, 7, 13, .78); }
+
+/* Personnel: empty states, records, and compensation details. */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.personnel-first-record, .personnel-directory, .personnel-detail-panel,
+  .personnel-modal, .personnel-pay-form, .personnel-history, .personnel-compensation,
+  .personnel-empty, .personnel-detail-placeholder, .personnel-contact-grid > div,
+  .personnel-account-panel, .personnel-account-card, .personnel-linked-account,
+  .personnel-new-account, .personnel-compensation-list article,
+  .personnel-private-note, .personnel-inline-empty, .personnel-inline-loading,
+  .personnel-history-icon, .personnel-privacy-hint, .personnel-alert) {
+  border-color: #363a4d;
+  background: #171a25;
+  color: #e8ebf3;
+  box-shadow: none;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-page :is(h1, h2, h3, h4, b, strong, label, legend) { color: #f1f3f8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-page :is(p, small, .eyebrow, .muted-count, time) { color: #b2b8c8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.personnel-modal, .personnel-pay-form, .personnel-filters,
+  .personnel-search, .personnel-detail-panel) :is(input, select, textarea) {
+  border-color: #42475d;
+  background: #11141d;
+  color: #f1f3f8;
+  color-scheme: dark;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.personnel-first-record-icon, .personnel-metric-icon,
+  .personnel-avatar, .personnel-contact-card, .personnel-account-card) {
+  border-color: #3c4054;
+  background: #242839;
+  color: #dfc4f2;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row { border-color: #303447; background: #171a25; color: #e8ebf3; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row:hover,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row.selected { background: #242033; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-copy :is(b, small) { color: inherit; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-copy small { color: #b2b8c8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-modal-backdrop { background: rgba(5, 7, 13, .78); }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-private-note { border-color: #67522d; background: #332817; color: #f1d28b; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-new-account { border-color: #363a4d; background: #1d2130; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-detail-placeholder :is(small, b, p) { color: #b2b8c8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-compensation-list article :is(small, span, time) { color: #b2b8c8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-history-icon { border-color: #41465a; background: #202434; color: #dfc4f2; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-alert.is-success { border-color: #2e634a; background: #192d25; color: #b8ebcf; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-alert.is-warning { border-color: #67522d; background: #332817; color: #f1d28b; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-alert.is-error { border-color: #704147; background: #382326; color: #ffc0b8; }
+
+/* Quotation product picker and catalog pricing editor. */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-product-picker {
+  --quote-picker-surface: #171a25;
+  --quote-picker-ink: #f1f3f8;
+  color: #e8ebf3;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.quote-product-search-box, .quote-product-search-shell,
+  .quote-product-results, .quote-product-results-top, .quote-product-options > button,
+  .quote-product-option-copy,
+  .quote-product-chosen, .quote-product-empty, .quote-product-placeholder,
+  .quote-family-filters, .quote-more-families) {
+  border-color: #363a4d;
+  background: #171a25;
+  color: #e8ebf3;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-product-picker :is(input, select, textarea) {
+  border-color: #42475d;
+  background: #11141d;
+  color: #f1f3f8;
+  color-scheme: dark;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-product-picker :is(h3, h4, b, strong) { color: #f1f3f8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-product-picker :is(p, small, .quote-product-hint, .quote-product-status) { color: #b2b8c8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-product-option-copy :is(b, strong) { color: #f1f3f8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-product-option-copy :is(p, small, span) { color: #b2b8c8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-family-filters button,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-more-families { border-color: #41465a; background: #202434; color: #e5e8f1; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-family-filters button.active { border-color: #9465ac; background: #392544; color: #f5eaff; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-product-status.confirmed { border-color: #2e634a; background: #192d25; color: #a9e7c1; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.catalog-overview, .catalog-browser, .catalog-toolbar,
+  .catalog-family, .catalog-family-filters, .catalog-pricing-editor,
+  .catalog-tier-editor, .catalog-tier-table-wrap, .catalog-tier-empty,
+  .catalog-no-results, .catalog-sku-panel, .catalog-rate-feedback) {
+  border-color: #363a4d;
+  background: #171a25;
+  color: #e8ebf3;
+  box-shadow: none;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-page :is(h1, h2, h3, h4, b, strong, label, th) { color: #f1f3f8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-page :is(p, small, .eyebrow, .catalog-tier-help, .catalog-rate-inheritance) { color: #b2b8c8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-page :is(input, select, textarea, .catalog-rate-input, .rate-input) {
+  border-color: #42475d;
+  background: #11141d;
+  color: #f1f3f8;
+  color-scheme: dark;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-page :is(.catalog-tier-table th, .catalog-tier-table td) { border-color: #363a4d; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-page .catalog-tier-table th { background: #202434; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-page .catalog-tier-table tr:nth-child(even) { background: #1b1f2c; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-page :is(.catalog-family-filters button, .catalog-view-switch button,
+  .catalog-tier-add, .catalog-tier-remove, .catalog-group-toggle) { border-color: #41465a; background: #202434; color: #e5e8f1; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-page :is(.catalog-family-filters button.active, .catalog-view-switch button.active) { border-color: #9465ac; background: #392544; color: #f5eaff; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-page .catalog-rate-feedback.is-success { border-color: #2e634a; background: #192d25; color: #a9e7c1; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-page .catalog-rate-feedback.is-error { border-color: #704147; background: #382326; color: #ffc0b8; }
+
+/* Marketing planning chooser, campaign children, and workflow dialogs. */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.vc-marketing-plan-chooser, .vc-marketing-plan-choice,
+  .vc-marketing-campaign-card, .vc-marketing-campaign-card-head,
+  .vc-marketing-campaign-children, .vc-marketing-campaign-post,
+  .vc-marketing-campaign-task, .vc-marketing-campaign-no-children,
+  .vc-marketing-standalone-tasks, .vc-marketing-planning-dialog,
+  .vc-marketing-planning-section, .vc-marketing-planning-fieldset,
+  .vc-marketing-planning-history, .mk-dialog, .mk-panel-body,
+  .mk-review-panel, .mk-review-event, .mk-review-materials,
+  .mk-local-reference, .mk-closure, .mk-bulk-assignment, .mk-bulk-report) {
+  border-color: #363a4d;
+  background: #171a25;
+  color: #e8ebf3;
+  box-shadow: none;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.vc-marketing-plan-chooser, .vc-marketing-plan-choice,
+  .vc-marketing-campaign-card, .vc-marketing-campaign-children,
+  .vc-marketing-planning-dialog, .mk-dialog, .mk-panel-body, .mk-review-panel) :is(h2, h3, h4, b, strong, legend, label) { color: #f1f3f8; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.vc-marketing-plan-chooser, .vc-marketing-plan-choice,
+  .vc-marketing-campaign-card, .vc-marketing-campaign-children,
+  .vc-marketing-planning-dialog, .mk-dialog, .mk-panel-body, .mk-review-panel) :is(p, small, .eyebrow, .vc-marketing-campaign-task-meta, .mk-preserve-text) { color: #b2b8c8; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.vc-marketing-planning-dialog, .mk-dialog,
+  .vc-marketing-planning-fields, .vc-marketing-planning-fieldset) :is(input, select, textarea) {
+  border-color: #42475d;
+  background: #11141d;
+  color: #f1f3f8;
+  color-scheme: dark;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.vc-marketing-plan-choice-actions button,
+  .vc-marketing-campaign-actions button, .vc-marketing-planning-section-actions button,
+  .vc-content-modal-actions button, .mk-dialog button:not(.mk-danger)) {
+  border-color: #41465a;
+  background: #202434;
+  color: #e5e8f1;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.vc-marketing-plan-choice-actions button:hover,
+  .vc-marketing-campaign-actions button:hover, .vc-marketing-planning-section-actions button:hover,
+  .vc-content-modal-actions button:hover, .mk-dialog button:not(.mk-danger):hover) {
+  border-color: #80609b;
+  background: #29263a;
+  color: #f2d9ff;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-campaign-task.is-bloqueado,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-campaign-task.is-cancelado { border-color: #704147; background: #382326; color: #ffc0b8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-campaign-task.is-high { border-color: #67522d; background: #332817; color: #f1d28b; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .mk-dialog .mk-danger { border-color: #79464b; background: #44262b; color: #ffc0b8; }
+
+/* Rich text editor controls, insert panels, and fullscreen canvas. */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell {
+  --editor-surface: #171a25;
+  --editor-raised: #202434;
+  --editor-line: #363a4d;
+  --editor-ink: #f1f3f8;
+  --editor-muted: #b2b8c8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.rich-editor-head, .rich-editor-toolbar,
+  .rich-editor-tool-group, .rich-editor-settings, .rich-editor-setting,
+  .rich-editor-insert-panel, .rich-editor-url-field, .rich-editor-writing-hint,
+  .editor-fullscreen-overlay, .editor-fullscreen-inner, .rich-editor-confirm) {
+  border-color: #363a4d;
+  background: #171a25;
+  color: #e8ebf3;
+  box-shadow: none;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell :is(h2, h3, h4, b, strong, label) { color: #f1f3f8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell :is(p, small, .rich-editor-eyebrow, .rich-editor-group-label, .rich-editor-status-note) { color: #b2b8c8; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell :is(.rich-editor-tool-button, .rich-editor-expand,
+  .rich-editor-insert-actions button, .rich-editor-confirm button, .rich-editor-tool-buttons button) {
+  border-color: #41465a;
+  background: #202434;
+  color: #e5e8f1;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell :is(.rich-editor-tool-button, .rich-editor-expand,
+  .rich-editor-insert-actions button, .rich-editor-confirm button, .rich-editor-tool-buttons button):hover,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell :is(.rich-editor-tool-button, .rich-editor-tool-buttons button).is-active {
+  border-color: #80609b;
+  background: #30253a;
+  color: #f2d9ff;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell :is(select, input, textarea, .rich-editor-url-field) {
+  border-color: #42475d;
+  background: #11141d;
+  color: #f1f3f8;
+  color-scheme: dark;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell .rich-editor-writing-surface { border-color: #363a4d; background: #11141d; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell .rich-editor-writing-surface :is(p, li, blockquote, h1, h2, h3) { color: #e8ebf3; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell .rich-editor-writing-surface a { color: #e3a6f4; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .editor-fullscreen-overlay { background: #090b11eF; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell .rich-editor-confirm { background: #171a25; }
+
+/* Consistent focus visibility for controls on dark operational surfaces. */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.inventory-operations-calendar, .purchasing-workspace,
+  .personnel-page, .quote-product-picker, .catalog-page, .vc-marketing-planning-dialog,
+  .mk-dialog, .rich-editor-shell, .pos-checkout-main, .pos-checkout-form) :is(
+  button, input, select, textarea, a[href], [tabindex]:not([tabindex='-1'])
+):focus-visible {
+  outline: 2px solid #d08cf1;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.inventory-operations-calendar, .purchasing-workspace,
+    .personnel-page, .quote-product-picker, .catalog-page, .vc-marketing-planning-dialog,
+    .mk-dialog, .rich-editor-shell, .pos-checkout-main, .pos-checkout-form) * {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms !important;
   }
 }
