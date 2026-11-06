@@ -453,6 +453,10 @@
   margin: 2px 0;
 }
 
+.sidebar-collapsed-label {
+  display: none;
+}
+
 .sidebar-collapsed-trigger-btn {
   width: 44px;
   height: 40px;
@@ -493,10 +497,11 @@
 /* Panel flotante (Flyout Popover) */
 .sidebar-flyout-popover {
   position: fixed;
-  left: 72px;
-  min-width: 260px;
-  max-width: 310px;
-  max-height: 85vh;
+  left: calc(var(--vc-sidebar-collapsed-width) + 4px);
+  width: min(310px, calc(100vw - var(--vc-sidebar-collapsed-width) - 12px));
+  min-width: min(260px, calc(100vw - var(--vc-sidebar-collapsed-width) - 12px));
+  max-width: calc(100vw - var(--vc-sidebar-collapsed-width) - 12px);
+  max-height: min(85vh, calc(100vh - 24px));
   overflow-y: auto;
   background: #ffffff;
   border: 1px solid #ddd7e5;
@@ -507,6 +512,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  pointer-events: auto;
   animation: vc-flyout-in 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -680,6 +686,23 @@
   position: relative;
 }
 
+.sidebar-profile-trigger {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sidebar-profile-trigger:focus-visible {
+  outline: 2px solid var(--vc-sidebar-accent);
+  outline-offset: 3px;
+}
+
 .sidebar-profile-info {
   display: flex;
   flex-direction: column;
@@ -784,8 +807,58 @@
     display: block;
   }
 
+  .work-app.sidebar-collapsed .sidebar-collapsed-group-wrapper {
+    width: 100%;
+  }
+
+  .work-app.sidebar-collapsed .sidebar-collapsed-trigger-btn {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 11px;
+    padding: 0 10px;
+  }
+
+  .work-app.sidebar-collapsed .sidebar-collapsed-label {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    flex: 1;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .work-app.sidebar-collapsed .sidebar:not(.is-mobile-open) .sidebar-flyout-popover {
+    display: none;
+  }
+
+  .work-app.sidebar-collapsed .sidebar.is-mobile-open .sidebar-flyout-popover {
+    position: static;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    max-height: min(38vh, 300px);
+    margin: 4px 0 8px;
+    padding: 6px;
+    border-radius: 9px;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .work-app.sidebar-collapsed .sidebar.is-mobile-open .sidebar-profile-popover {
+    margin: 6px 12px 12px;
+  }
+
   .work-app.sidebar-collapsed .sidebar-profile-info {
     display: flex;
+  }
+
+  .work-app.sidebar-collapsed .sidebar-profile-card {
+    padding: 12px 14px;
+    justify-content: flex-start;
   }
 
   .work-app.sidebar-collapsed .sidebar-logout-btn {
