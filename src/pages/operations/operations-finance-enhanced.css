@@ -302,7 +302,7 @@
 
 .op-finance-filters-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
   width: 100%;
 }
@@ -619,6 +619,328 @@
   flex-shrink: 0;
 }
 
+
+/* --------------------------------------------------------------------------
+   Active Family Filter Banner
+   -------------------------------------------------------------------------- */
+.op-finance-active-family-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(121, 63, 160, 0.08);
+  border: 1px solid rgba(121, 63, 160, 0.25);
+  color: var(--purple, #793fa0);
+  font-size: 0.82rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.op-finance-active-family-banner span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.op-finance-banner-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--paper, #ffffff);
+  border: 1px solid rgba(121, 63, 160, 0.3);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  font-weight: 650;
+  color: var(--purple, #793fa0);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.op-finance-banner-clear-btn:hover {
+  background: rgba(121, 63, 160, 0.15);
+  border-color: var(--purple, #793fa0);
+}
+
+/* --------------------------------------------------------------------------
+   Product Families Composition Cards Grid
+   -------------------------------------------------------------------------- */
+.op-finance-families-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.op-finance-family-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.op-finance-family-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.op-finance-family-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #e5e0ea);
+  background: var(--paper, #ffffff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  outline: none;
+}
+
+.op-finance-family-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--family-color, #793fa0);
+  opacity: 0.85;
+  transition: width 0.2s ease;
+}
+
+.op-finance-family-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.08);
+  border-color: var(--family-color, #793fa0);
+}
+
+.op-finance-family-card:hover::before {
+  width: 6px;
+}
+
+.op-finance-family-card.is-selected {
+  border-color: var(--family-color, #793fa0);
+  box-shadow: 0 0 0 2px var(--family-color, #793fa0), 0 8px 20px -6px rgba(0, 0, 0, 0.12);
+  background: var(--surface-soft, #faf9fc);
+}
+
+.op-finance-family-card.is-selected::before {
+  width: 6px;
+}
+
+.op-finance-family-card.is-empty {
+  opacity: 0.65;
+}
+
+.op-finance-family-card.is-empty:hover {
+  opacity: 0.95;
+}
+
+.op-finance-family-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.op-finance-family-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.op-finance-family-share {
+  font-size: 0.78rem;
+  font-weight: 750;
+  color: var(--muted, #66697a);
+}
+
+.op-finance-family-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.op-finance-family-amount {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--ink, #191522);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.op-finance-family-desc {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--muted, #66697a);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.op-finance-family-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line, #e5e0ea);
+  overflow: hidden;
+  width: 100%;
+}
+
+.op-finance-family-progress i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.op-finance-family-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted, #66697a);
+  padding-top: 4px;
+  border-top: 1px dashed var(--line, #e5e0ea);
+}
+
+/* --------------------------------------------------------------------------
+   Expense Category Chips & Pills
+   -------------------------------------------------------------------------- */
+.op-finance-category-chips-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-soft, #f7f6f9);
+  border: 1px solid var(--line, #e5e0ea);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.op-finance-category-chips-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted, #66697a);
+}
+
+.op-finance-category-chips-header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.op-finance-clear-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #fca5a5;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.72rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.op-finance-clear-pill:hover {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+.op-finance-category-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.op-finance-category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line, #dedfe5);
+  background: var(--paper, #ffffff);
+  color: var(--ink, #191522);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 0;
+}
+
+.op-finance-category-chip:hover {
+  border-color: var(--purple, #793fa0);
+  background: rgba(121, 63, 160, 0.05);
+}
+
+.op-finance-category-chip.is-active {
+  border-color: var(--purple, #793fa0);
+  background: rgba(121, 63, 160, 0.12);
+  color: var(--purple, #793fa0);
+  font-weight: 700;
+  box-shadow: 0 0 0 1px var(--purple, #793fa0);
+}
+
+.op-finance-chip-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.op-finance-chip-amount {
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.op-finance-chip-count {
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--surface-soft, #f0eef3);
+  font-size: 0.68rem;
+  font-weight: 650;
+  color: var(--muted, #66697a);
+}
+
 /* --------------------------------------------------------------------------
    Responsive Layout Breakpoints (No more cut-offs!)
    -------------------------------------------------------------------------- */
@@ -628,6 +950,9 @@
   }
   .op-finance-executive-shortcuts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .op-finance-family-cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   }
 }
 
@@ -654,6 +979,12 @@
   .op-finance-tab-btn {
     padding: 6px 9px;
     font-size: 0.76rem;
+  }
+  .op-finance-family-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .op-finance-chip-name {
+    max-width: 150px;
   }
 }
 
@@ -882,4 +1213,71 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-customer-source-summary {
   background: #131521;
   border-color: #2b3046;
+}
+
+/* Categorization Dark Theme Overrides */
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-family-card {
+  background: #181b2a;
+  border-color: #2e334a;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-family-card:hover {
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-family-card.is-selected {
+  background: #1f2337;
+  border-color: var(--family-color, #a855f7);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-family-amount {
+  color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-family-progress {
+  background: #282d45;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-family-card-footer {
+  border-top-color: #2e334a;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-active-family-banner {
+  background: rgba(168, 85, 247, 0.12);
+  border-color: rgba(168, 85, 247, 0.35);
+  color: #d8b4fe;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-banner-clear-btn {
+  background: #181b2a;
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #d8b4fe;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-category-chips-wrap {
+  background: #141724;
+  border-color: #282c3f;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-category-chip {
+  background: #1f2337;
+  border-color: #2e334a;
+  color: #e2e8f0;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-category-chip:hover {
+  background: #282d45;
+  border-color: #a855f7;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-category-chip.is-active {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: #a855f7;
+  color: #d8b4fe;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-chip-count {
+  background: #121420;
+  color: #9da4b8;
 }
