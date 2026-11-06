@@ -621,11 +621,37 @@ export function InventoryWorkspace() {
         </button>
       </div>
     )}/>
-    <nav className="inventory-brand-nav" aria-label="Inventarios por marca">
-      <button type="button" aria-pressed={inventoryBrandScope==='general'} onClick={()=>{setInventoryBrandScope('general');setBranch('Todas');setCategory('Todas');}}>General <span>{new Set(items.filter(item=>!item.archived).map(item=>item.remoteItemId||item.sku)).size}</span></button>
-      <button type="button" aria-pressed={inventoryBrandScope==='visual'} onClick={()=>{setInventoryBrandScope('visual');setBranch('Todas');setCategory('Todas');}}>Visual <span>{new Set(items.filter(item=>!item.archived&&brandOf(item)==='visual').map(item=>item.remoteItemId||item.sku)).size}</span></button>
-      <button type="button" aria-pressed={inventoryBrandScope==='giga'} onClick={()=>{setInventoryBrandScope('giga');setBranch('Todas');setCategory('Todas');}}>Giga <span>{new Set(items.filter(item=>!item.archived&&brandOf(item)==='giga').map(item=>item.remoteItemId||item.sku)).size}</span></button>
-      <small>Los traspasos entre sucursales conservan responsable, motivo y registro de movimiento.</small>
+    <nav className="inventory-brand-nav" aria-label="Inventarios por marca y sucursal">
+      <div className="inventory-brand-nav-pills" role="group" aria-label="Seleccionar inventario por marca">
+        <button
+          type="button"
+          aria-pressed={inventoryBrandScope==='general'}
+          onClick={()=>{setInventoryBrandScope('general');setBranch('Todas');setCategory('Todas');}}
+        >
+          General <span>{new Set(items.filter(item=>!item.archived).map(item=>item.remoteItemId||item.sku)).size}</span>
+        </button>
+        <button
+          type="button"
+          aria-pressed={inventoryBrandScope==='visual'}
+          onClick={()=>{setInventoryBrandScope('visual');setBranch('Todas');setCategory('Todas');}}
+        >
+          Visual <span>{new Set(items.filter(item=>!item.archived&&brandOf(item)==='visual').map(item=>item.remoteItemId||item.sku)).size}</span>
+        </button>
+        <button
+          type="button"
+          aria-pressed={inventoryBrandScope==='giga'}
+          onClick={()=>{setInventoryBrandScope('giga');setBranch('Todas');setCategory('Todas');}}
+        >
+          Giga <span>{new Set(items.filter(item=>!item.archived&&brandOf(item)==='giga').map(item=>item.remoteItemId||item.sku)).size}</span>
+        </button>
+      </div>
+      <small className="inventory-brand-nav-note">
+        {inventoryBrandScope==='general'
+          ? 'Vista general consolidada (Visual Corp + GigaPrint). Traspasos con registro y trazabilidad.'
+          : inventoryBrandScope==='visual'
+          ? 'Viendo catálogo e inventario exclusivo de Visual Corp.'
+          : 'Viendo catálogo e inventario exclusivo de GigaPrint.'}
+      </small>
     </nav>
         <nav className="inventory-section-nav" aria-label="Secciones del inventario">
       <button type="button" aria-pressed={activeSection === 'catalog'} onClick={() => setActiveSection('catalog')}>
@@ -670,8 +696,60 @@ export function InventoryWorkspace() {
       </a>
     </nav>
     {activeSection==='calendar'&&<InventoryOperationsCalendar organizationId={organizationId} branches={data.branches||[]} locations={data.inventoryLocations||[]} items={items} brandScope={inventoryBrandScope} canManageInventory={canManageInventory} canViewPurchases={hasPermission('purchases','view')} onNotice={flash} onStartCount={startScheduledCount}/>}
-    <div className="inventory-stats" hidden={activeSection==='calendar'}><article><Boxes/><span>Artículos</span><b>{new Set(scopedItems.filter(i=>!i.archived).map(i=>i.remoteItemId||i.sku)).size}</b></article><article className={low.length?'inventory-stat-alert':''}><CircleAlert/><span>En mínimo / agotados</span><b>{low.length}</b></article><article className={pendingPhysicalCount?'inventory-stat-alert':''}><ClipboardCheck/><span>Conteos pendientes</span><b>{pendingPhysicalCount}</b></article><article><ArrowLeftRight/><span>Movimientos</span><b>{scopedEvents.length}</b></article><article><ClipboardList/><span>Áreas</span><b>{new Set(scopedItems.filter(i=>!i.archived).map(i=>i.area).filter(Boolean)).size}</b></article></div>
-    {activeSection==='catalog'&&<div className="inventory-branch-switcher"><span className="inventory-branch-switcher-label"><Boxes size={16}/>Sucursal</span><div className="inventory-branch-switcher-track" role="group" aria-label="Seleccionar sucursal o inventario"><button type="button" aria-pressed={inventoryBrandScope==='visual'} onClick={()=>{setInventoryBrandScope('visual');setBranch('Todas');setCategory('Todas');}}>Visual</button><button type="button" aria-pressed={inventoryBrandScope==='giga'} onClick={()=>{setInventoryBrandScope('giga');setBranch('Todas');setCategory('Todas');}}>Giga</button></div><small>{inventoryBrandScope==='general'?'Vista general: selecciona Visual o Giga':inventoryBrandScope==='giga'?'Viendo artículos de Giga':'Viendo artículos de Visual'}</small></div>}
+    <div className="inventory-stats" hidden={activeSection==='calendar'}>
+      <article className="inv-stat-card">
+        <div className="inv-stat-icon is-purple"><Boxes size={22}/></div>
+        <div className="inv-stat-body">
+          <span className="inv-stat-label">Artículos en catálogo</span>
+          <b className="inv-stat-value">{new Set(scopedItems.filter(i=>!i.archived).map(i=>i.remoteItemId||i.sku)).size}</b>
+          <span className="inv-stat-badge is-neutral">Activos en bodega</span>
+        </div>
+      </article>
+
+      <article className={`inv-stat-card ${low.length ? 'inventory-stat-alert is-alert-danger' : 'is-alert-ok'}`}>
+        <div className={`inv-stat-icon ${low.length ? 'is-danger' : 'is-ok'}`}>
+          <CircleAlert size={22}/>
+        </div>
+        <div className="inv-stat-body">
+          <span className="inv-stat-label">Stock bajo o agotado</span>
+          <b className="inv-stat-value">{low.length}</b>
+          <span className={`inv-stat-badge ${low.length ? 'is-danger' : 'is-ok'}`}>
+            {low.length ? `${low.length} por reponer` : 'Stock al día'}
+          </span>
+        </div>
+      </article>
+
+      <article className={`inv-stat-card ${pendingPhysicalCount ? 'inventory-stat-alert is-alert-warning' : 'is-alert-ok'}`}>
+        <div className={`inv-stat-icon ${pendingPhysicalCount ? 'is-warning' : 'is-ok'}`}>
+          <ClipboardCheck size={22}/>
+        </div>
+        <div className="inv-stat-body">
+          <span className="inv-stat-label">Conteos físicos</span>
+          <b className="inv-stat-value">{pendingPhysicalCount}</b>
+          <span className={`inv-stat-badge ${pendingPhysicalCount ? 'is-warning' : 'is-ok'}`}>
+            {pendingPhysicalCount ? `${pendingPhysicalCount} por conciliar` : '100% auditado'}
+          </span>
+        </div>
+      </article>
+
+      <article className="inv-stat-card">
+        <div className="inv-stat-icon is-teal"><ArrowLeftRight size={22}/></div>
+        <div className="inv-stat-body">
+          <span className="inv-stat-label">Trazabilidad</span>
+          <b className="inv-stat-value">{scopedEvents.length}</b>
+          <span className="inv-stat-badge is-neutral">Movimientos totales</span>
+        </div>
+      </article>
+
+      <article className="inv-stat-card">
+        <div className="inv-stat-icon is-violet"><ClipboardList size={22}/></div>
+        <div className="inv-stat-body">
+          <span className="inv-stat-label">Áreas operativas</span>
+          <b className="inv-stat-value">{new Set(scopedItems.filter(i=>!i.archived).map(i=>i.area).filter(Boolean)).size}</b>
+          <span className="inv-stat-badge is-neutral">Talleres y zonas</span>
+        </div>
+      </article>
+    </div>
       {activeSection==='live-rolls'&&<InventoryLiveRollMonitor organizationId={organizationId} branches={data.branches||[]} canEdit={canManageInventory} onNotice={flash} operatorDefaultName={user?.email?.split('@')[0]||'Taller'} inventoryItems={items} onRefreshInventory={refreshRemote} availableMachines={['Plotter Gran Formato 3.20m', 'Plotter Impresión y Corte', 'Plotter Roland 1.60m', 'Plotter Sublimación / Calandra']} />}
       {activeSection==='live-inks'&&<InventoryLiveInkMonitor organizationId={organizationId} branches={data.branches||[]} canEdit={canManageInventory} onNotice={flash} operatorDefaultName={user?.email?.split('@')[0]||'Taller'} inventoryItems={items} onRefreshInventory={refreshRemote} categories={data.inventoryCategories||[]} areas={data.areas||[]} />}
     <InventoryInsights id="inventory-catalog" hidden={activeSection!=='catalog'} items={scopedItems} optionSourceItems={items} canSeeCosts={canSeeCosts} canEditCosts={canEditCosts} canEdit={canManageInventory} canReserve={canManageLinks} canMove={canManageInventory} canRequestTransfer={false} onTransfer={(item,branchName)=>item.branchId?openTransferRequest(item,branchName||branches.find(value=>value!==item.branch)):flash('Asigna una sucursal antes de solicitar un traspaso.')} onEdit={(item)=>{const productImages=Array.isArray(item.productImages)&&item.productImages.length?item.productImages.map((image,index)=>({key:`stored-${item.remoteItemId}-${index}`,src:image.url,path:image.path,label:image.label})):item.referenceImageUrl?[{key:`legacy-${item.remoteItemId}`,src:item.referenceImageUrl,path:item.referenceImageStoragePath||item.referenceImageUrl,label:'Imagen de referencia'}]:[];setMetadataEdit({remoteItemId:item.remoteItemId,variantId:item.variantId,name:String(item.name||""),category:String(item.category||""),variant:String(item.variant||""),minimum:String(item.minimum??0),itemType:item.itemType||'',tags:(item.tags||[]).join(', '),referenceImageUrl:item.referenceImageUrl||'',productImages,customFields:item.customFields||{},brandScope:brandOf(item),variantAttributes:inventoryVariantSpecificationValues(item.variantAttributes,item.customFields),description:item.description||'',sourceItem:item});}} onReserve={(item)=>item.branchId?setReservationEdit({itemId:item.id,quantity:String(item.reservedQuantity||0),note:''}):flash('Asigna una sucursal antes de reservar existencias.')} onMovement={(item,type)=>item.branchId?(type==='transferencia'?openTransferRequest(item,branches.find(value=>value!==item.branch)):setMovement({itemId:item.id,type,quantity:'',actor:'',reason:'',reference:''})):flash('Asigna una sucursal antes de registrar movimientos.')} onCost={(item)=>setCostEdit({variantId:item.variantId,unitCost:item.unitCost??'',supplierName:item.supplierName||'',name:item.name})} onArchive={removeItem} onArchiveMany={removeItems} branchOptions={branches} onAssignBranch={assignInventoryBranch} onAssignBranchMany={assignInventoryBranchMany} onDuplicate={duplicateItem} formatDate={formatDate} formatMoney={formatMoney} metadataEdit={metadataEdit} setMetadataEdit={setMetadataEdit} reservationEdit={reservationEdit} setReservationEdit={setReservationEdit} onSaveMetadata={saveMetadata} onSaveReservation={saveReservation} metadataSaveBusy={metadataSaveBusy}/>
