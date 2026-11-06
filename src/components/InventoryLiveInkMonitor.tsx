@@ -31,6 +31,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { InventoryCmykBatchModal } from './InventoryCmykBatchModal';
 import './inventory-live-ink-monitor.css';
 
 export type ActiveInk = {
@@ -72,6 +73,8 @@ type InventoryLiveInkMonitorProps = {
   operatorDefaultName?: string;
   inventoryItems?: any[];
   onRefreshInventory?: () => Promise<void> | void;
+  categories?: Array<{ id: string; name: string; code?: string }>;
+  areas?: Array<{ id: string; name: string; code?: string }>;
 };
 
 export const CMYK_COLOR_CONFIG: Record<
@@ -425,8 +428,28 @@ export function InventoryLiveInkMonitor({
   operatorDefaultName = '',
   inventoryItems = [],
   onRefreshInventory,
+  categories = [],
+  areas = [],
 }: InventoryLiveInkMonitorProps) {
   const [inks, setInks] = useState<ActiveInk[]>([]);
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchModalPrinter, setBatchModalPrinter] = useState<string>('');
+  const [machineStatusMap, setMachineStatusMap] = useState<Record<string, 'operativa' | 'standby' | 'mantenimiento' | 'parada'>>({
+    'Plotter Gran Formato 3.20m': 'operativa',
+    'Plotter Impresión y Corte': 'operativa',
+    'Plotter Roland 1.60m': 'standby',
+    'Plotter Sublimación / Calandra': 'operativa',
+  });
+  const [machineNozzleCheck, setMachineNozzleCheck] = useState<Record<string, { status: 'ok' | 'warning' | 'error'; time: string; operator: string }>>({
+    'Plotter Gran Formato 3.20m': { status: 'ok', time: '11:30 a. m.', operator: 'Taller' },
+    'Plotter Impresión y Corte': { status: 'ok', time: '10:15 a. m.', operator: 'Taller' },
+    'Plotter Roland 1.60m': { status: 'warning', time: 'Ayer', operator: 'Taller' },
+    'Plotter Sublimación / Calandra': { status: 'ok', time: '09:00 a. m.', operator: 'Taller' },
+  });
+  const [nozzleCheckModalMachine, setNozzleCheckModalMachine] = useState<string | null>(null);
+  const [quickEntryInk, setQuickEntryInk] = useState<{ ink: ActiveInk; variant: InventoryVariantOption } | null>(null);
+  const [quickEntryQty, setQuickEntryQty] = useState<number>(4);
+  const [quickEntryBusy, setQuickEntryBusy] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [selectedMachine, setSelectedMachine] = useState<string>('todas');
   const [colorFilter, setColorFilter] = useState<string>('todos');
@@ -1291,6 +1314,20 @@ export function InventoryLiveInkMonitor({
           {canEdit && (
             <button
               type="button"
+              className="button button-outline"
+              onClick={() => {
+                setBatchModalPrinter('');
+                setShowBatchModal(true);
+              }}
+              title="Crear lote de tintas CMYK en bodega y vincular a máquinas"
+            >
+              <Droplets size={15} /> + Lote Tintas CMYK
+            </button>
+          )}
+
+          {canEdit && (
+            <button
+              type="button"
               className="button button-dark"
               onClick={handleOpenCreatePrinter}
               title="Crear una nueva impresora y configurar sus tanques"
@@ -1421,12 +1458,48 @@ export function InventoryLiveInkMonitor({
                       <Printer size={18} />
                     </span>
                     <div>
-                      <h3>{machineName}</h3>
+                      <div className="vc-station-name-row">
+                        <h3>{machineName}</h3>
+                        <select
+                          className={`vc-machine-status-select is-${machineStatusMap[machineName] || 'operativa'}`}
+                          value={machineStatusMap[machineName] || 'operativa'}
+                          disabled={!canEdit}
+                          onChange={(e) => {
+                            const val = e.target.value as any;
+                            setMachineStatusMap((prev) => ({ ...prev, [machineName]: val }));
+                            const labels = {
+                              operativa: '🟢 Operativa',
+                              standby: '🟡 Standby',
+                              mantenimiento: '🟠 En Mantenimiento',
+                              parada: '🔴 Parada Técnica',
+                            };
+                            onNotice?.(`Estado de “${machineName}”: ${labels[val as keyof typeof labels]}`);
+                          }}
+                          title="Estado operativo de la máquina"
+                        >
+                          <option value="operativa">🟢 Operativa</option>
+                          <option value="standby">🟡 Standby</option>
+                          <option value="mantenimiento">🟠 Mantenimiento</option>
+                          <option value="parada">🔴 Parada</option>
+                        </select>
+                      </div>
                       <div className="vc-station-tags">
                         <span className="vc-ink-type-tag">{machineType.toUpperCase()}</span>
                         <span className="vc-station-channel-count">
                           {machineInks.length} canales activos
                         </span>
+                        <button
+                          type="button"
+                          className={`vc-station-nozzle-badge is-${machineNozzleCheck[machineName]?.status || 'ok'}`}
+                          onClick={() => setNozzleCheckModalMachine(machineName)}
+                          title="Registrar o consultar Test de Inyectores (Nozzle Check)"
+                        >
+                          <Sparkles size={11} />
+                          <span>
+                            Inyectores: <b>{machineNozzleCheck[machineName]?.status === 'warning' ? 'Desvíos leves' : machineNozzleCheck[machineName]?.status === 'error' ? 'Tapados' : '100% OK'}</b>
+                          </span>
+                          <small>{machineNozzleCheck[machineName]?.time || 'Hoy'}</small>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1570,11 +1643,26 @@ export function InventoryLiveInkMonitor({
                                   Hay {linkedVariant.quantity} botellas en bodega para recargar
                                 </small>
                               )}
-                              {isMachineLow && linkedVariant.quantity <= 0 && (
-                                <small className="vc-inv-alert-note danger">
-                                  🚨 ¡Sin stock en bodega! Pedir compra urgente
-                                </small>
-                              )}
+                              {linkedVariant.quantity <= 0 ? (
+                                <div className="vc-inv-alert-action-row">
+                                  <small className="vc-inv-alert-note danger">
+                                    🚨 ¡Sin stock en bodega!
+                                  </small>
+                                  {canEdit && (
+                                    <button
+                                      type="button"
+                                      className="vc-quick-entry-btn"
+                                      onClick={() => {
+                                        setQuickEntryQty(4);
+                                        setQuickEntryInk({ ink, variant: linkedVariant });
+                                      }}
+                                      title="Registrar entrada rápida de botellas a bodega"
+                                    >
+                                      <Plus size={10} /> + Entrada
+                                    </button>
+                                  )}
+                                </div>
+                              ) : null}
                             </div>
                           ) : (
                             <div className="vc-inv-link-none">
@@ -2147,7 +2235,20 @@ export function InventoryLiveInkMonitor({
                     <h4>Canales y Tanques en Máquina ({editForm.channels.length})</h4>
                     <p>Gestiona los colores instalados y qué artículo de bodega abastece cada uno.</p>
                   </div>
-                  <button
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="button button-outline button-small"
+                      onClick={() => {
+                        setBatchModalPrinter(editForm.name || editForm.originalName);
+                        setShowBatchModal(true);
+                      }}
+                      title="Crear lote de tintas CMYK en bodega y vincular a esta máquina"
+                      style={{ borderColor: '#a855f7', color: '#9333ea' }}
+                    >
+                      <Droplets size={13} /> + Crear Lote CMYK en Bodega
+                    </button>
+                    <button
                     type="button"
                     className="button button-outline button-small"
                     onClick={() => {
@@ -2169,6 +2270,7 @@ export function InventoryLiveInkMonitor({
                   >
                     <Plus size={13} /> Añadir Canal a esta Máquina
                   </button>
+                  </div>
                 </div>
 
                 <div className="vc-channels-config-table">
@@ -2756,6 +2858,241 @@ export function InventoryLiveInkMonitor({
                 disabled={batchSaving}
               >
                 {batchSaving ? 'Guardando cambios…' : 'Guardar todos los niveles'}
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+      {/* MODAL: Crear Lote de Tintas CMYK en Bodega */}
+      {showBatchModal && (
+        <InventoryCmykBatchModal
+          open={showBatchModal}
+          onClose={() => setShowBatchModal(false)}
+          organizationId={organizationId}
+          branches={branches}
+          categories={categories}
+          areas={areas}
+          printers={machineList}
+          defaultPrinter={batchModalPrinter}
+          onSuccess={async () => {
+            await loadInks();
+            if (onRefreshInventory) {
+              await onRefreshInventory();
+            }
+            onNotice?.('¡Lote de tintas CMYK registrado y sincronizado con máquinas!');
+          }}
+          onNotice={onNotice}
+        />
+      )}
+
+      {/* MODAL: Test de Inyectores (Nozzle Check) */}
+      {nozzleCheckModalMachine && (
+        <div className="vc-live-modal-backdrop" role="presentation">
+          <div className="vc-live-modal vc-nozzle-modal">
+            <header>
+              <Sparkles size={22} className="vc-modal-icon-settings" />
+              <div>
+                <h3>Test de Inyectores (Nozzle Check)</h3>
+                <p>{nozzleCheckModalMachine} · Registrar estado del cabezal</p>
+              </div>
+              <button
+                type="button"
+                className="vc-modal-close-btn"
+                onClick={() => setNozzleCheckModalMachine(null)}
+                aria-label="Cerrar modal"
+              >
+                <X size={18} />
+              </button>
+            </header>
+            <div className="vc-live-modal-body">
+              <p style={{ fontSize: '13.5px', marginBottom: '14px', color: 'var(--text-muted, #67597a)' }}>
+                Selecciona el resultado de la impresión del patrón de inyectores:
+              </p>
+              <div className="vc-nozzle-options">
+                <button
+                  type="button"
+                  className="vc-nozzle-opt-btn is-ok"
+                  onClick={() => {
+                    const time = new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+                    setMachineNozzleCheck((prev) => ({
+                      ...prev,
+                      [nozzleCheckModalMachine]: { status: 'ok', time, operator: operatorDefaultName || 'Taller' },
+                    }));
+                    onNotice?.(`Test de inyectores para “${nozzleCheckModalMachine}”: 100% OK.`);
+                    setNozzleCheckModalMachine(null);
+                  }}
+                >
+                  <span className="vc-nozzle-dot green" />
+                  <div>
+                    <b>🟢 100% OK (Test perfecto)</b>
+                    <small>Todos los canales disparan nítidos sin cortes.</small>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  className="vc-nozzle-opt-btn is-warning"
+                  onClick={() => {
+                    const time = new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+                    setMachineNozzleCheck((prev) => ({
+                      ...prev,
+                      [nozzleCheckModalMachine]: { status: 'warning', time, operator: operatorDefaultName || 'Taller' },
+                    }));
+                    onNotice?.(
+                      `Test de inyectores para “${nozzleCheckModalMachine}”: Desvíos leves (Limpieza cabezal recomendada).`
+                    );
+                    setNozzleCheckModalMachine(null);
+                  }}
+                >
+                  <span className="vc-nozzle-dot yellow" />
+                  <div>
+                    <b>🟡 Desvíos leves (Limpieza recomendada)</b>
+                    <small>Algunas líneas discontinuas. Requiere limpieza estándar de cabezal.</small>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  className="vc-nozzle-opt-btn is-error"
+                  onClick={() => {
+                    const time = new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+                    setMachineNozzleCheck((prev) => ({
+                      ...prev,
+                      [nozzleCheckModalMachine]: { status: 'error', time, operator: operatorDefaultName || 'Taller' },
+                    }));
+                    onNotice?.(
+                      `Test de inyectores para “${nozzleCheckModalMachine}”: Inyectores tapados (Limpieza profunda / Flush).`
+                    );
+                    setNozzleCheckModalMachine(null);
+                  }}
+                >
+                  <span className="vc-nozzle-dot red" />
+                  <div>
+                    <b>🔴 Inyectores tapados (Flush / Parada)</b>
+                    <small>Cortes severos de tinta. Requiere flush o mantenimiento preventivo.</small>
+                  </div>
+                </button>
+              </div>
+            </div>
+            <footer>
+              <button
+                type="button"
+                className="button button-outline"
+                onClick={() => setNozzleCheckModalMachine(null)}
+              >
+                Cancelar
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Entrada Rápida a Bodega */}
+      {quickEntryInk && (
+        <div className="vc-live-modal-backdrop" role="presentation">
+          <div className="vc-live-modal">
+            <header>
+              <Boxes size={22} className="vc-modal-icon-settings" />
+              <div>
+                <h3>Entrada Rápida a Bodega</h3>
+                <p>
+                  {quickEntryInk.variant.name} ({quickEntryInk.variant.sku})
+                </p>
+              </div>
+              <button
+                type="button"
+                className="vc-modal-close-btn"
+                onClick={() => setQuickEntryInk(null)}
+                aria-label="Cerrar modal"
+              >
+                <X size={18} />
+              </button>
+            </header>
+            <div className="vc-live-modal-body">
+              <p style={{ fontSize: '13.5px', color: 'var(--text-muted, #67597a)' }}>
+                Registra de inmediato la recepción de botellas de esta tinta en bodega para recargar la máquina:
+              </p>
+              <div style={{ display: 'grid', gap: '14px', margin: '14px 0' }}>
+                <label style={{ fontSize: '13px', display: 'grid', gap: '4px' }}>
+                  Cantidad de botellas a ingresar:
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={quickEntryQty}
+                    onChange={(e) => setQuickEntryQty(Math.max(1, Number(e.target.value)))}
+                    style={{ padding: '8px 12px', fontSize: '15px', borderRadius: '8px' }}
+                  />
+                </label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[1, 2, 4, 6, 12].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className="button button-outline button-small"
+                      onClick={() => setQuickEntryQty(n)}
+                      style={{ fontWeight: quickEntryQty === n ? 700 : 400 }}
+                    >
+                      +{n} botellas
+                    </button>
+                  ))}
+                </div>
+                <div
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    background: 'var(--surface-muted, #f8f6fc)',
+                    border: '1px solid var(--border-soft, #e2d9eb)',
+                    fontSize: '13px',
+                  }}
+                >
+                  Stock actual en bodega: <b>{quickEntryInk.variant.quantity}</b> botellas → Nuevo saldo:{' '}
+                  <b style={{ color: '#059669' }}>{quickEntryInk.variant.quantity + quickEntryQty}</b> botellas.
+                </div>
+              </div>
+            </div>
+            <footer>
+              <button
+                type="button"
+                className="button button-outline"
+                onClick={() => setQuickEntryInk(null)}
+                disabled={quickEntryBusy}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="button button-dark"
+                disabled={quickEntryBusy}
+                onClick={async () => {
+                  setQuickEntryBusy(true);
+                  try {
+                    const { ink, variant } = quickEntryInk;
+                    const targetBranchId = ink.branch_id || branches[0]?.id;
+                    const newTotal = (variant.quantity || 0) + quickEntryQty;
+
+                    if (supabase) {
+                      await supabase.rpc('set_inventory_count', {
+                        p_variant_id: variant.variantId,
+                        p_branch_id: targetBranchId,
+                        p_counted_quantity: newTotal,
+                        p_location_code: ink.location_code || 'MAIN',
+                        p_note: `Entrada rápida de ${quickEntryQty} botellas para recarga de ${ink.machine_name}`,
+                      });
+                    }
+
+                    if (onRefreshInventory) {
+                      await onRefreshInventory();
+                    }
+
+                    onNotice?.(`¡Entrada registrada! Bodega ahora tiene ${newTotal} botellas de ${variant.name}.`);
+                    setQuickEntryInk(null);
+                  } catch (err: any) {
+                    onNotice?.(`Error al registrar entrada: ${err.message}`);
+                  } finally {
+                    setQuickEntryBusy(false);
+                  }
+                }}
+              >
+                {quickEntryBusy ? 'Guardando…' : `Confirmar +${quickEntryQty} botellas en Bodega`}
               </button>
             </footer>
           </div>

@@ -97,3 +97,224 @@
 @media(max-width:900px){.ok-dialog:has(.inventory-create-form) .inventory-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.ok-dialog:has(.inventory-create-form){width:100%;max-height:95vh;border-radius:14px}.ok-dialog:has(.inventory-create-form) .inventory-form-grid{grid-template-columns:minmax(0,1fr)}.ok-dialog:has(.inventory-create-form) .inventory-notes{grid-column:auto}.ok-dialog:has(.inventory-create-form)>.ok-dialog-content{padding:14px}}
 .inventory-standard-products{display:grid;gap:12px}.inventory-standard-products-note{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid #eadfee;border-radius:12px;background:linear-gradient(125deg,#fcf8fd,#fff);color:#704394}.inventory-standard-products-note>svg{flex:none;margin-top:2px}.inventory-standard-products-note>span{display:grid;gap:3px}.inventory-standard-products-note b{font-size:11px}.inventory-standard-products-note small{color:#79717f;font-size:10px;line-height:1.45}
+
+
+/* Segmented type switcher in inventory movement modal */
+.inventory-movement-type-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+.inventory-movement-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--vc-line, #e2dce7);
+  border-radius: 9px;
+  background: var(--vc-surface, #ffffff);
+  color: var(--vc-muted, #77717e);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.inventory-movement-tab:hover:not(:disabled) {
+  border-color: var(--purple, #7c3aed);
+  color: var(--vc-ink, #2d2934);
+}
+.inventory-movement-tab.is-active {
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+.inventory-movement-tab.tab-consumo.is-active {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+}
+.inventory-movement-tab.tab-entrada.is-active {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+.inventory-movement-tab.tab-ajuste.is-active {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+}
+.inventory-movement-tab.tab-merma.is-active {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.inventory-movement-tab.tab-transferencia.is-active {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+
+/* Stepper wrapper and buttons */
+.inventory-movement-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.inventory-movement-avail-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--vc-muted, #77717e);
+}
+.inventory-movement-avail-badge b {
+  color: var(--vc-ink, #2d2934);
+}
+.inventory-movement-stepper-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+.inventory-movement-stepper-wrap .inventory-movement-quantity-input {
+  flex: 1 1 auto;
+}
+.inventory-movement-step-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 42px;
+  min-height: 42px;
+  border: 1px solid var(--vc-line, #e2dce7);
+  border-radius: 10px;
+  background: var(--vc-surface, #ffffff);
+  color: var(--vc-ink, #2d2934);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.inventory-movement-step-btn:hover:not(:disabled) {
+  border-color: var(--purple, #7c3aed);
+  background: rgba(124, 58, 237, 0.08);
+  color: var(--purple, #7c3aed);
+}
+.inventory-movement-step-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Preset chips and Reason/Actor chips */
+.inventory-movement-presets,
+.inventory-movement-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+}
+.inventory-preset-chip,
+.inventory-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border: 1px solid var(--vc-line, #e2dce7);
+  border-radius: 7px;
+  background: var(--vc-surface, #ffffff);
+  color: var(--vc-muted, #625c69);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.inventory-preset-chip:hover,
+.inventory-chip:hover {
+  border-color: var(--purple, #7c3aed);
+  color: var(--vc-ink, #2d2934);
+}
+.inventory-preset-chip.is-selected,
+.inventory-chip.is-selected {
+  border-color: var(--purple, #7c3aed);
+  background: rgba(124, 58, 237, 0.12);
+  color: var(--purple, #7c3aed);
+  font-weight: 700;
+}
+.inventory-preset-chip.is-highlight {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+}
+
+/* Live validation alert */
+.inventory-movement-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.inventory-movement-alert.danger {
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* Transfer destination fields */
+.inventory-movement-transfer-fields {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+/* Quick templates bar in "+ Añadir artículo" */
+.inventory-quick-preset-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--vc-line, #e2dce7);
+  border-radius: 12px;
+  background: rgba(124, 58, 237, 0.04);
+}
+.inventory-quick-preset-label {
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--purple, #7c3aed);
+}
+.inventory-quick-preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.inventory-quick-preset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border: 1px solid var(--vc-line, #e2dce7);
+  border-radius: 8px;
+  background: var(--vc-surface, #ffffff);
+  color: var(--vc-ink, #2d2934);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.inventory-quick-preset-btn:hover {
+  border-color: var(--purple, #7c3aed);
+  background: rgba(124, 58, 237, 0.08);
+  color: var(--purple, #7c3aed);
+}
+
+/* Direct stock action buttons in InventoryArticleEditor */
+.inventory-editor-stock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.inventory-editor-stock-actions .button {
+  flex: 1 1 auto;
+  min-height: 36px;
+  font-size: 11px;
+}

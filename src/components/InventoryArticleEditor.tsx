@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { ArrowLeftRight, Boxes, Check, ChevronDown, Image as ImageIcon, MapPin, Package, Trash2, X } from 'lucide-react';
+import { ArrowLeftRight, Boxes, Check, ChevronDown, ClipboardCheck, Image as ImageIcon, MapPin, Package, PackageMinus, PackagePlus, Trash2, X } from 'lucide-react';
 import type { InventorySpecificationDraft } from './InventorySpecificationFields';
 import { InventorySpecificationFields } from './InventorySpecificationFields';
 import { InventoryOptionPicker } from './InventoryOptionPicker';
@@ -65,7 +65,7 @@ type Props = {
 const stringValue = (value: unknown) => typeof value === 'string' ? value : value == null ? '' : String(value);
 const makeKey = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-export function InventoryArticleEditor({ value, saving, onChange, onClose, onSave, onDelete, onAssignBranch, onTransfer, branches, libraryProducts, libraryCount, itemTypeOptions, tagOptions, specificationOptions }: Props) {
+export function InventoryArticleEditor({ value, saving, onChange, onClose, onSave, onDelete, onAssignBranch, onTransfer, onMovement, branches, libraryProducts, libraryCount, itemTypeOptions, tagOptions, specificationOptions }: Props) {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryTerm, setLibraryTerm] = useState('');
   const [branchSelection, setBranchSelection] = useState(value.sourceItem?.branch || '');
@@ -140,6 +140,45 @@ export function InventoryArticleEditor({ value, saving, onChange, onClose, onSav
           <section className="inventory-editor-section">
             <div className="inventory-editor-section-title"><span className="inventory-editor-section-icon"><MapPin size={16}/></span><div><h3>Sucursal y existencias</h3><p>Asigna el artículo o registra un traspaso con su responsable.</p></div></div>
             <div className="inventory-editor-branch-card"><div className="inventory-editor-branch-current"><span className="inventory-editor-branch-pin"><MapPin size={16}/></span><div><small>SUCURSAL ACTUAL</small><b>{sourceItem?.branch || 'Pendiente de asignar'}</b><span>{hasCountedStock ? `${sourceItem?.quantity ?? 0} ${sourceItem?.unit || 'unidades'} registradas` : 'Sin conteo físico confirmado'}</span></div></div><div className="inventory-editor-branch-controls"><label>{sourceItem?.branchId && hasCountedStock ? 'Destino del traspaso' : sourceItem?.branchId ? 'Sucursal del conteo pendiente' : 'Asignar sucursal'}<select value={branchSelection} onChange={(event) => setBranchSelection(event.target.value)}><option value="">Selecciona una sucursal</option>{branches.filter((name) => !hasCountedStock || name !== sourceItem?.branch).map((name) => <option key={name} value={name}>{name}</option>)}</select></label>{hasCountedStock ? <button type="button" className="button button-outline" disabled={!branchSelection || branchSelection === sourceItem?.branch} onClick={() => onTransfer(sourceItem, branchSelection)}><ArrowLeftRight size={15}/>Preparar traspaso</button> : <button type="button" className="button button-outline" disabled={!branchSelection || branchSelection === sourceItem?.branch} onClick={() => onAssignBranch(sourceItem, branchSelection)}><MapPin size={15}/>{sourceItem?.branchId ? 'Cambiar sucursal' : 'Asignar sucursal'}</button>}</div><p className="inventory-editor-branch-note">{hasCountedStock ? 'El traspaso solicita cantidad, responsable y motivo. El historial queda registrado.' : 'La asignación no crea saldo. El artículo seguirá pendiente hasta contar sus existencias.'}</p></div>
+            {sourceItem?.branchId && onMovement && (
+              <div className="inventory-editor-stock-actions">
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={() => {
+                    onClose();
+                    onMovement(sourceItem, 'ajuste');
+                  }}
+                >
+                  <ClipboardCheck size={14} />
+                  <span>Ajustar / Confirmar conteo</span>
+                </button>
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={() => {
+                    onClose();
+                    onMovement(sourceItem, 'entrada');
+                  }}
+                >
+                  <PackagePlus size={14} />
+                  <span>+ Entrada rápida</span>
+                </button>
+                {hasCountedStock && (
+                  <button
+                    type="button"
+                    className="button button-outline"
+                    onClick={() => {
+                      onClose();
+                      onMovement(sourceItem, 'consumo');
+                    }}
+                  >
+                    <PackageMinus size={14} />
+                    <span>− Consumo de taller</span>
+                  </button>
+                )}
+              </div>
+            )}
           </section>
 
           <section className="inventory-editor-section">

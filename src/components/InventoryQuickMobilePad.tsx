@@ -95,14 +95,26 @@ export function InventoryQuickMobilePad({
     try {
       const branchId = selectedItem.branchId || branches[0]?.id || 'f499caf7-6286-4c6e-abd7-d79fa58c27d0';
 
-      const { data, error } = await supabase.rpc('record_inventory_movement', {
-        p_variant_id: selectedItem.variantId,
-        p_branch_id: branchId,
-        p_movement_type: mode,
-        p_quantity: qty,
-        p_reason: `${reason.trim()} · ${actor.trim()}`,
-        p_location_code: selectedItem.location || 'MAIN',
-      });
+      let rpcResult: { data?: any; error?: any };
+      if (mode === 'adjustment') {
+        rpcResult = await supabase.rpc('set_inventory_count', {
+          p_variant_id: selectedItem.variantId,
+          p_branch_id: branchId,
+          p_counted_quantity: qty,
+          p_location_code: selectedItem.location || 'MAIN',
+          p_note: `${reason.trim()} · ${actor.trim()}`,
+        });
+      } else {
+        rpcResult = await supabase.rpc('record_inventory_movement', {
+          p_variant_id: selectedItem.variantId,
+          p_branch_id: branchId,
+          p_movement_type: mode,
+          p_quantity: qty,
+          p_reason: `${reason.trim()} · ${actor.trim()}`,
+          p_location_code: selectedItem.location || 'MAIN',
+        });
+      }
+      const error = rpcResult.error;
 
       if (error) {
         onNotice?.(`No se pudo registrar: ${error.message}`);

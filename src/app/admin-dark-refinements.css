@@ -1204,3 +1204,39 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Dark mode refinements for Inventory Movement & Quick Presets */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-tab {
+  border-color: var(--vc-line);
+  background: var(--vc-surface);
+  color: var(--vc-muted);
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-tab:hover:not(:disabled) {
+  border-color: var(--vc-purple);
+  color: var(--vc-ink);
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-movement-step-btn,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-preset-chip,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-chip,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-quick-preset-btn {
+  border-color: var(--vc-line);
+  background: #191c28;
+  color: var(--vc-ink);
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-preset-chip:hover,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-chip:hover,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-quick-preset-btn:hover {
+  border-color: var(--vc-purple);
+  color: #ffffff;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-preset-chip.is-selected,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-chip.is-selected {
+  border-color: var(--vc-purple);
+  background: rgba(168, 85, 247, 0.2);
+  color: #d8b4fe;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-quick-preset-bar {
+  border-color: var(--vc-line);
+  background: rgba(168, 85, 247, 0.08);
+}
