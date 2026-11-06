@@ -1160,14 +1160,14 @@ export function OperationsFinance() {
   </section>;
 
     const tabs: Array<{ id: FinanceTab; label: string; icon: React.ReactNode; badge?: string }> = [
-    { id: 'resumen', label: 'Resumen Ejecutivo', icon: <LayoutDashboard size={15} /> },
-    { id: 'ventas', label: 'Ventas e Ingresos', icon: <TrendingUp size={15} />, badge: salesInPeriod.length ? String(salesInPeriod.length) : undefined },
-    { id: 'cajas', label: 'Cajas y Conciliación', icon: <Coins size={15} />, badge: openCashRows.length ? `${openCashRows.length} abiertas` : undefined },
-    { id: 'flujo', label: 'Flujo y Egresos', icon: <Receipt size={15} /> },
-    { id: 'cartera', label: 'Cartera y Cobranzas', icon: <Users size={15} />, badge: openReceivables.length ? String(openReceivables.length) : undefined },
-    ...(canSeeInventoryCosts ? [{ id: 'costos' as const, label: 'Costos y Catálogo', icon: <PackageCheck size={15} />, badge: inventoryCatalogCostSummary?.missing_variants.length ? `${inventoryCatalogCostSummary.missing_variants.length} s/c` : undefined }] : []),
-    { id: 'asesoras', label: 'Rendimiento Asesoras', icon: <Award size={15} /> },
-    { id: 'todo', label: 'Vista Panorámica', icon: <Layers size={15} /> },
+    { id: 'resumen', label: 'Resumen', icon: <LayoutDashboard size={15} /> },
+    { id: 'ventas', label: 'Ventas', icon: <TrendingUp size={15} />, badge: salesInPeriod.length ? String(salesInPeriod.length) : undefined },
+    { id: 'cajas', label: 'Cajas', icon: <Coins size={15} />, badge: openCashRows.length ? `${openCashRows.length} abiertas` : undefined },
+    { id: 'flujo', label: 'Flujo', icon: <Receipt size={15} /> },
+    { id: 'cartera', label: 'Cartera', icon: <Users size={15} />, badge: openReceivables.length ? String(openReceivables.length) : undefined },
+    ...(canSeeInventoryCosts ? [{ id: 'costos' as const, label: 'Costos', icon: <PackageCheck size={15} />, badge: inventoryCatalogCostSummary?.missing_variants.length ? `${inventoryCatalogCostSummary.missing_variants.length} s/c` : undefined }] : []),
+    { id: 'asesoras', label: 'Asesoras', icon: <Award size={15} /> },
+    { id: 'todo', label: 'Todo', icon: <Layers size={15} /> },
   ];
 
   return <div className="op-finance-page">
@@ -1208,137 +1208,148 @@ export function OperationsFinance() {
       </div>
     </div>
 
-    {/* Enhanced Filter Toolbar */}
-    <section className="op-finance-filters-bar" aria-label="Filtros del resumen financiero">
-      <div className="op-finance-month-stepper">
-        <button
-          type="button"
-          className="op-finance-stepper-btn"
-          onClick={() => setMonth((m) => shiftBusinessMonth(m, -1))}
-          title="Mes anterior"
-          aria-label="Ir al mes anterior"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <button
-          type="button"
-          className={`op-finance-stepper-btn ${month === currentMonth() ? 'is-current' : ''}`}
-          onClick={() => setMonth(currentMonth())}
-          title="Volver al mes actual"
-        >
-          <Calendar size={14} />
-          <span>{month ? monthLabel(month) : 'Mes actual'}</span>
-        </button>
-        <button
-          type="button"
-          className="op-finance-stepper-btn"
-          onClick={() => setMonth((m) => shiftBusinessMonth(m, 1))}
-          title="Mes siguiente"
-          aria-label="Ir al mes siguiente"
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
+    {/* Monthly filters, hero KPIs & progress meter are only shown for financial overview and transaction tabs */}
+    {activeTab !== 'costos' && activeTab !== 'asesoras' && (
+      <>
+        {/* Enhanced Filter Toolbar */}
+        <section className="op-finance-filters-bar" aria-label="Filtros del resumen financiero">
+          <div className="op-finance-filters-top">
+            <div className="op-finance-month-stepper">
+              <button
+                type="button"
+                className="op-finance-stepper-btn"
+                onClick={() => setMonth((m) => shiftBusinessMonth(m, -1))}
+                title="Mes anterior"
+                aria-label="Ir al mes anterior"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                className={`op-finance-stepper-btn ${month === currentMonth() ? 'is-current' : ''}`}
+                onClick={() => setMonth(currentMonth())}
+                title="Volver al mes actual"
+              >
+                <Calendar size={14} />
+                <span>{month ? monthLabel(month) : 'Mes actual'}</span>
+              </button>
+              <button
+                type="button"
+                className="op-finance-stepper-btn"
+                onClick={() => setMonth((m) => shiftBusinessMonth(m, 1))}
+                title="Mes siguiente"
+                aria-label="Ir al mes siguiente"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
 
-      <label className="op-finance-filter-field">
-        <span>Asesora</span>
-        <select value={advisor} onChange={(event) => setAdvisor(event.target.value)}>
-          <option value="all">Todas las asesoras</option>
-          {financeAdvisorOptions.map((person) => (
-            <option key={person.user_id} value={person.user_id}>
-              {normalizePersonName(person.full_name) || person.email || person.user_id.slice(0, 8)}
-            </option>
-          ))}
-        </select>
-      </label>
+            <div className="op-finance-filters-top-actions">
+              {(advisor !== 'all' || branch !== 'all' || method !== 'all') && (
+                <button
+                  type="button"
+                  className="op-finance-reset-filters"
+                  onClick={() => { setAdvisor('all'); setBranch('all'); setMethod('all'); }}
+                  title="Restablecer filtros a valores por defecto"
+                >
+                  <RotateCcw size={13} /> Limpiar filtros
+                </button>
+              )}
+            </div>
+          </div>
 
-      <label className="op-finance-filter-field">
-        <span>Sucursal</span>
-        <select value={branch} onChange={(event) => setBranch(event.target.value)}>
-          <option value="all">Todas las sucursales</option>
-          {branches.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-        </select>
-      </label>
+          <div className="op-finance-filters-grid">
+            <label className="op-finance-filter-field">
+              <span>Asesora</span>
+              <select value={advisor} onChange={(event) => setAdvisor(event.target.value)}>
+                <option value="all">Todas las asesoras</option>
+                {financeAdvisorOptions.map((person) => (
+                  <option key={person.user_id} value={person.user_id}>
+                    {normalizePersonName(person.full_name) || person.email || person.user_id.slice(0, 8)}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-      <label className="op-finance-filter-field">
-        <span>Medio de pago</span>
-        <select value={method} onChange={(event) => setMethod(event.target.value)}>
-          <option value="all">Todos los medios</option>
-          {paymentMethods.map((item) => <option key={item} value={item}>{paymentMethodLabel(item)}</option>)}
-        </select>
-      </label>
+            <label className="op-finance-filter-field">
+              <span>Sucursal</span>
+              <select value={branch} onChange={(event) => setBranch(event.target.value)}>
+                <option value="all">Todas las sucursales</option>
+                {branches.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
 
-      {(advisor !== 'all' || branch !== 'all' || method !== 'all') && (
-        <button
-          type="button"
-          className="op-finance-reset-filters"
-          onClick={() => { setAdvisor('all'); setBranch('all'); setMethod('all'); }}
-          title="Restablecer filtros a valores por defecto"
-        >
-          <RotateCcw size={13} /> Limpiar
-        </button>
-      )}
-    </section>
+            <label className="op-finance-filter-field">
+              <span>Medio de pago</span>
+              <select value={method} onChange={(event) => setMethod(event.target.value)}>
+                <option value="all">Todos los medios</option>
+                {paymentMethods.map((item) => <option key={item} value={item}>{paymentMethodLabel(item)}</option>)}
+              </select>
+            </label>
+          </div>
+        </section>
 
-    {/* Hero KPIs & Collection Meter */}
-    <section className="op-finance-kpis-grid" role="group" aria-label="Indicadores financieros principales">
-      <article className="op-finance-kpi-card is-sales">
-        <div className="op-finance-kpi-top">
-          <span className="op-finance-kpi-label">Ventas netas confirmadas</span>
-          <span className="op-finance-kpi-icon"><TrendingUp size={16} /></span>
+        {/* Hero KPIs & Collection Meter */}
+        <section className="op-finance-kpis-grid" role="group" aria-label="Indicadores financieros principales">
+          <article className="op-finance-kpi-card is-sales">
+            <div className="op-finance-kpi-top">
+              <span className="op-finance-kpi-label">Ventas netas confirmadas</span>
+              <span className="op-finance-kpi-icon"><TrendingUp size={16} /></span>
+            </div>
+            <b className="op-finance-kpi-value">{saleReturnsError ? '—' : money(totalSold)}</b>
+            <p className="op-finance-kpi-note">{saleReturnsError ? 'Error al cargar devoluciones' : `${salesInPeriod.length} ventas · menos devoluciones`}</p>
+          </article>
+
+          <article className="op-finance-kpi-card is-collected">
+            <div className="op-finance-kpi-top">
+              <span className="op-finance-kpi-label">Recaudación del periodo</span>
+              <span className="op-finance-kpi-icon"><Banknote size={16} /></span>
+            </div>
+            <b className="op-finance-kpi-value">{money(totalCollected)}</b>
+            <p className="op-finance-kpi-note">Abonos recibidos de ventas filtradas</p>
+          </article>
+
+          <article className={`op-finance-kpi-card ${saleReturnsError ? '' : outstanding > 0 ? 'is-outstanding' : 'is-settled'}`}>
+            <div className="op-finance-kpi-top">
+              <span className="op-finance-kpi-label">Saldo por cobrar</span>
+              <span className="op-finance-kpi-icon">{outstanding > 0 ? <Clock3 size={16} /> : <CheckCircle2 size={16} />}</span>
+            </div>
+            <b className="op-finance-kpi-value">{saleReturnsError ? '—' : money(outstanding)}</b>
+            <p className="op-finance-kpi-note">{saleReturnsError ? 'Error al cargar devoluciones' : outstanding > 0 ? `${receivablesWithBalance.length} ventas con saldo abierto` : 'Cartera 100% al día'}</p>
+          </article>
+
+          <article className="op-finance-kpi-card is-average">
+            <div className="op-finance-kpi-top">
+              <span className="op-finance-kpi-label">Promedio neto / venta</span>
+              <span className="op-finance-kpi-icon"><ChartNoAxesCombined size={16} /></span>
+            </div>
+            <b className="op-finance-kpi-value">{saleReturnsError ? '—' : money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b>
+            <p className="op-finance-kpi-note">{saleReturnsError ? 'Error en devoluciones' : 'Ticket promedio neto ajustado'}</p>
+          </article>
+        </section>
+
+        {/* Collection Progress Meter */}
+        <div className="op-finance-collection-overview">
+          <div className="op-finance-collection-stats">
+            <div>
+              <span className="op-finance-collection-label">Tasa de Recaudación del Periodo</span>
+              <strong>{totalSold > 0 ? `${Math.min(100, Math.round(totalCollected / totalSold * 100))}%` : '—'}</strong>
+              <small>Cobrado neto {money(totalCollected)} de {money(totalSold)} en ventas netas</small>
+            </div>
+            <div className="op-finance-collection-status">
+              {outstanding > 0 ? (
+                <span className="op-finance-badge is-warning"><Clock3 size={13} /> {money(outstanding)} por cobrar</span>
+              ) : (
+                <span className="op-finance-badge is-success"><CheckCircle2 size={13} /> Cartera al día</span>
+              )}
+            </div>
+          </div>
+          <div className="op-finance-collection-track" role="progressbar" aria-valuenow={Math.min(100, Math.round(totalSold > 0 ? totalCollected / totalSold * 100 : 0))} aria-valuemin={0} aria-valuemax={100}>
+            <div className="op-finance-collection-fill" style={{ width: `${Math.min(100, Math.max(0, totalSold > 0 ? (totalCollected / totalSold) * 100 : 0))}%` }} />
+          </div>
         </div>
-        <b className="op-finance-kpi-value">{saleReturnsError ? '—' : money(totalSold)}</b>
-        <p className="op-finance-kpi-note">{saleReturnsError ? 'Error al cargar devoluciones' : `${salesInPeriod.length} ventas · menos devoluciones`}</p>
-      </article>
-
-      <article className="op-finance-kpi-card is-collected">
-        <div className="op-finance-kpi-top">
-          <span className="op-finance-kpi-label">Recaudación del periodo</span>
-          <span className="op-finance-kpi-icon"><Banknote size={16} /></span>
-        </div>
-        <b className="op-finance-kpi-value">{money(totalCollected)}</b>
-        <p className="op-finance-kpi-note">Abonos recibidos de ventas filtradas</p>
-      </article>
-
-      <article className={`op-finance-kpi-card ${saleReturnsError ? '' : outstanding > 0 ? 'is-outstanding' : 'is-settled'}`}>
-        <div className="op-finance-kpi-top">
-          <span className="op-finance-kpi-label">Saldo por cobrar</span>
-          <span className="op-finance-kpi-icon">{outstanding > 0 ? <Clock3 size={16} /> : <CheckCircle2 size={16} />}</span>
-        </div>
-        <b className="op-finance-kpi-value">{saleReturnsError ? '—' : money(outstanding)}</b>
-        <p className="op-finance-kpi-note">{saleReturnsError ? 'Error al cargar devoluciones' : outstanding > 0 ? `${receivablesWithBalance.length} ventas con saldo abierto` : 'Cartera 100% al día'}</p>
-      </article>
-
-      <article className="op-finance-kpi-card is-average">
-        <div className="op-finance-kpi-top">
-          <span className="op-finance-kpi-label">Promedio neto / venta</span>
-          <span className="op-finance-kpi-icon"><ChartNoAxesCombined size={16} /></span>
-        </div>
-        <b className="op-finance-kpi-value">{saleReturnsError ? '—' : money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b>
-        <p className="op-finance-kpi-note">{saleReturnsError ? 'Error en devoluciones' : 'Ticket promedio neto ajustado'}</p>
-      </article>
-    </section>
-
-    {/* Collection Progress Meter */}
-    <div className="op-finance-collection-overview">
-      <div className="op-finance-collection-stats">
-        <div>
-          <span className="op-finance-collection-label">Tasa de Recaudación del Periodo</span>
-          <strong>{totalSold > 0 ? `${Math.min(100, Math.round(totalCollected / totalSold * 100))}%` : '—'}</strong>
-          <small>Cobrado neto {money(totalCollected)} de {money(totalSold)} en ventas netas</small>
-        </div>
-        <div className="op-finance-collection-status">
-          {outstanding > 0 ? (
-            <span className="op-finance-badge is-warning"><Clock3 size={13} /> {money(outstanding)} por cobrar</span>
-          ) : (
-            <span className="op-finance-badge is-success"><CheckCircle2 size={13} /> Cartera al día</span>
-          )}
-        </div>
-      </div>
-      <div className="op-finance-collection-track" role="progressbar" aria-valuenow={Math.min(100, Math.round(totalSold > 0 ? totalCollected / totalSold * 100 : 0))} aria-valuemin={0} aria-valuemax={100}>
-        <div className="op-finance-collection-fill" style={{ width: `${Math.min(100, Math.max(0, totalSold > 0 ? (totalCollected / totalSold) * 100 : 0))}%` }} />
-      </div>
-    </div>
+      </>
+    )}
 
     {/* Executive Shortcuts (Only on Resumen) */}
     {activeTab === 'resumen' && (
