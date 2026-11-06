@@ -54,6 +54,7 @@ type Props = {
   onDelete: (item: ArticleSource, confirmed?: boolean) => void;
   onAssignBranch: (item: ArticleSource, branchName: string) => void;
   onTransfer: (item: ArticleSource, branchName: string) => void;
+  onMovement?: (item: any, type: string) => void;
   branches: string[];
   libraryProducts: ReferenceProduct[];
   libraryCount: number;
