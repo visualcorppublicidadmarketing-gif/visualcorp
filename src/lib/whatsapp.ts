@@ -125,8 +125,8 @@ export async function copyTextToClipboard(value: string) {
   if (!copied) throw new Error('El navegador no permitió copiar el mensaje.');
 }
 
-export function buildPOSWhatsAppMessage({ advisor, customer, branch, reference, items = [], total, quoteFinancial, subtotal, discountAmount = 0, discountPercent = 0, discountReason }: {
-  advisor: string; customer?: string; branch?: string; reference?: string; items?: Array<Record<string, any>>; total: number; quoteFinancial?: Record<string, any> | null; subtotal?: number; discountAmount?: number; discountPercent?: number; discountReason?: string;
+export function buildPOSWhatsAppMessage({ advisor, customer, branch, reference, items = [], total, quoteFinancial, subtotal, discountAmount = 0, discountPercent = 0, discountReason, taxRate = 0, taxAmount = 0 }: {
+  advisor: string; customer?: string; branch?: string; reference?: string; items?: Array<Record<string, any>>; total: number; quoteFinancial?: Record<string, any> | null; subtotal?: number; discountAmount?: number; discountPercent?: number; discountReason?: string; taxRate?: number; taxAmount?: number;
 }) {
   const lines = [`*PEDIDO ${String(advisor || 'VISUAL CORP').toLocaleUpperCase('es')}*`, '', `Cliente: ${customer?.trim() || 'Venta de mostrador'}`, `Sucursal: ${branch || 'Por confirmar'}`];
   if (reference) lines.push(`Cotización: ${reference}`);
@@ -143,7 +143,7 @@ export function buildPOSWhatsAppMessage({ advisor, customer, branch, reference, 
     lines.push('', `*Subtotal:* ${amount(quoteFinancial.subtotal)}`);
     if (Number(quoteFinancial.discount_amount) > 0) lines.push(`*Descuento comercial:* −${amount(quoteFinancial.discount_amount)}`);
     if (Number(quoteFinancial.shipping_cost) > 0) lines.push(`*Envío / otros cargos:* ${amount(quoteFinancial.shipping_cost)}`);
-    if (Number(quoteFinancial.iva_rate) > 0) lines.push(`*IVA (${Number(quoteFinancial.iva_rate)}%):* ${amount(quoteFinancial.iva_amount)}`);
+    if (quoteFinancial.iva_applied === true && Number(quoteFinancial.iva_rate) > 0) lines.push(`*IVA (${Number(quoteFinancial.iva_rate)}%):* ${amount(quoteFinancial.iva_amount)}`);
     else lines.push('*IVA:* No aplicado');
   } else if (Number.isFinite(Number(subtotal))) {
     lines.push('', `*Subtotal:* ${amount(subtotal)}`);
@@ -151,6 +151,8 @@ export function buildPOSWhatsAppMessage({ advisor, customer, branch, reference, 
       lines.push(`*Descuento comercial (${Number(discountPercent) || 0}%):* −${amount(discountAmount)}`);
       if (discountReason?.trim()) lines.push(`Motivo: ${discountReason.trim()}`);
     }
+    if (Number(taxRate) > 0) lines.push(`*IVA (${Number(taxRate)}%):* ${amount(taxAmount)}`);
+    else lines.push('*IVA:* No aplicado');
   }
   lines.push(`*TOTAL:* ${amount(total)}`, '', '_Valores según la orden registrada en el POS._');
   return lines.join('\n');
