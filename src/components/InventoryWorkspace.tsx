@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabaseClient';
 import './InventoryWorkspace.css';
 import './InventoryWorkspaceRefinement.css';
 import { InventoryInsights } from './InventoryInsights';
+import { InventoryMovementModal } from './InventoryMovementModal';
 import { Dialog, useConfirm } from './ui/OperationalKit';
 import { InventoryLocations } from './InventoryLocations';
 import { InventorySpecificationFields, type InventorySpecificationDraft } from './InventorySpecificationFields';
