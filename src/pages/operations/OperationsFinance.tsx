@@ -1,14 +1,41 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUpRight, Banknote, ChartNoAxesCombined, Download, LoaderCircle, PackageCheck, RefreshCw, ShieldAlert } from 'lucide-react';
+import {
+  ArrowUpRight,
+  Award,
+  Banknote,
+  Calendar,
+  ChartNoAxesCombined,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  Coins,
+  Download,
+  Layers,
+  LayoutDashboard,
+  LoaderCircle,
+  PackageCheck,
+  Receipt,
+  RefreshCw,
+  RotateCcw,
+  ShieldAlert,
+  TrendingUp,
+  Users,
+  Wallet,
+} from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import { AdvisorIncomeEntry } from './AdvisorIncomeEntry';
 import { OperationsFinanceControls } from './OperationsFinanceControls';
 import { FinanceSalesInsights } from './FinanceSalesInsights';
 import { FinanceCashRegisters } from './FinanceCashRegisters';
+import { AdvisorFinance } from './AdvisorFinance';
 import { netSaleAmount } from './financeSales';
 import { normalizePersonName } from '../../lib/personName';
 import './operations-lifecycle.css';
+import './operations-finance-enhanced.css';
+
+export type FinanceTab = 'resumen' | 'ventas' | 'cajas' | 'flujo' | 'cartera' | 'costos' | 'asesoras' | 'todo';
 
 const BUSINESS_TIME_ZONE = 'America/Guayaquil';
 const PAGE_SIZE = 500;
@@ -126,6 +153,28 @@ export function OperationsFinance() {
   const [advisor, setAdvisor] = useState('all');
   const [branch, setBranch] = useState('all');
   const [method, setMethod] = useState('all');
+  const [activeTab, setActiveTab] = useState<FinanceTab>(() => {
+    if (typeof window !== 'undefined') {
+      const param = new URLSearchParams(window.location.search).get('tab') as FinanceTab;
+      if (['resumen', 'ventas', 'cajas', 'flujo', 'cartera', 'costos', 'asesoras', 'todo'].includes(param)) {
+        return param;
+      }
+    }
+    return 'resumen';
+  });
+
+  const handleTabChange = (tab: FinanceTab) => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (tab === 'resumen') {
+        url.searchParams.delete('tab');
+      } else {
+        url.searchParams.set('tab', tab);
+      }
+      window.history.replaceState(null, '', url.toString());
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -959,6 +1008,14 @@ export function OperationsFinance() {
   const salesAdvisorIds = new Set(advisors.filter(isSalesAdvisor).map((person) => person.user_id));
   const advisorSummary = [...grouped.values()].filter((item) => salesAdvisorIds.has(item.id)).sort((a, b) => b.sold - a.sold);
   const maxSold = Math.max(1, ...advisorSummary.map((item) => item.sold));
+  const paymentMethodSummary = useMemo(() => {
+    const totals: Record<string, number> = {};
+    paymentsInPeriod.forEach((payment) => {
+      const name = payment.method || 'Sin medio';
+      totals[name] = (totals[name] || 0) + Number(payment.amount || 0);
+    });
+    return Object.entries(totals).sort((a, b) => b[1] - a[1]);
+  }, [paymentsInPeriod]);
   const paymentMethods = [...new Set([...payments, ...refundSettlements].map((movement) => movement.method).filter(Boolean))].sort();
   const personName = (id) => advisorNames.get(id) || `Usuario ${String(id || '').slice(0, 8) || 'sin asignar'}`;
 
@@ -1102,244 +1159,490 @@ export function OperationsFinance() {
     <button className="button button-outline" type="button" onClick={() => setLoadAttempt((current) => current + 1)}>Reintentar carga</button>
   </section>;
 
+    const tabs: Array<{ id: FinanceTab; label: string; icon: React.ReactNode; badge?: string }> = [
+    { id: 'resumen', label: 'Resumen Ejecutivo', icon: <LayoutDashboard size={15} /> },
+    { id: 'ventas', label: 'Ventas e Ingresos', icon: <TrendingUp size={15} />, badge: salesInPeriod.length ? String(salesInPeriod.length) : undefined },
+    { id: 'cajas', label: 'Cajas y Conciliación', icon: <Coins size={15} />, badge: openCashRows.length ? `${openCashRows.length} abiertas` : undefined },
+    { id: 'flujo', label: 'Flujo y Egresos', icon: <Receipt size={15} /> },
+    { id: 'cartera', label: 'Cartera y Cobranzas', icon: <Users size={15} />, badge: openReceivables.length ? String(openReceivables.length) : undefined },
+    ...(canSeeInventoryCosts ? [{ id: 'costos' as const, label: 'Costos y Catálogo', icon: <PackageCheck size={15} />, badge: inventoryCatalogCostSummary?.missing_variants.length ? `${inventoryCatalogCostSummary.missing_variants.length} s/c` : undefined }] : []),
+    { id: 'asesoras', label: 'Rendimiento Asesoras', icon: <Award size={15} /> },
+    { id: 'todo', label: 'Vista Panorámica', icon: <Layers size={15} /> },
+  ];
+
   return <div className="op-finance-page">
     <section className="panel op-finance-intro">
-      <div>
-        <span className="eyebrow">INGRESOS Y RECAUDACIÓN</span>
-        <h2>Finanzas por asesora</h2>
-        <p>Ventas confirmadas y pagos recibidos desde el punto de venta. Cada abono conserva su fecha, medio de pago y venta asociada.</p>
+      <div className="op-finance-intro-copy">
+        <span className="eyebrow">CENTRO FINANCIERO · VISUAL CORP</span>
+        <h2>Finanzas y Recaudación</h2>
+        <p>Control integral de ingresos confirmados, recaudación en POS, conciliación de cajas, flujo de efectivo operativo y cartera de cobranzas.</p>
         <span className={`op-finance-sync ${realtimeStatus === 'live' ? 'is-live' : ''}`} role="status">
           <i aria-hidden="true" />{realtimeStatus === 'live' ? 'Conectado a cambios en vivo' : realtimeStatus === 'offline' ? 'Sin conexión en vivo' : 'Reconectando datos…'}
         </span>
       </div>
-      <a className="button button-outline" href="/operaciones/pos">Registrar venta o abono en POS <ArrowUpRight size={15} /></a>
+      <div className="op-finance-intro-actions">
+        <a className="button button-outline" href="/operaciones/pos">Abrir POS <ArrowUpRight size={15} /></a>
+        <a className="button button-outline" href="/operaciones/cajas-abiertas"><Coins size={15} /> Cajas abiertas</a>
+      </div>
     </section>
+
     {error && <div className="op-flow-alert error" role="alert"><ShieldAlert size={16} />{error}</div>}
-    <section className="panel op-finance-filters">
-      <label>Mes<input type="month" value={month} onChange={(event) => setMonth(event.target.value)} /></label>
-      <label>Asesora<select value={advisor} onChange={(event) => setAdvisor(event.target.value)}>
-        <option value="all">Todas las asesoras</option>
-        {financeAdvisorOptions.map((person) => (
-          <option key={person.user_id} value={person.user_id}>{normalizePersonName(person.full_name) || person.email || person.user_id.slice(0, 8)}</option>
+
+    {/* Sub-Navigation Tab Bar */}
+    <div className="op-finance-nav-wrap">
+      <div className="op-finance-tab-bar" role="tablist" aria-label="Secciones del centro financiero">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            className={`op-finance-tab-btn ${activeTab === tab.id ? 'is-active' : ''}`}
+            onClick={() => handleTabChange(tab.id)}
+          >
+            {tab.icon}
+            <span>{tab.label}</span>
+            {tab.badge && <span className="op-finance-tab-badge">{tab.badge}</span>}
+          </button>
         ))}
-      </select></label>
-      <label>Sucursal<select value={branch} onChange={(event) => setBranch(event.target.value)}>
-        <option value="all">Todas las sucursales</option>
-        {branches.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-      </select></label>
-      <label>Medio de pago<select value={method} onChange={(event) => setMethod(event.target.value)}>
-        <option value="all">Todos los medios</option>
-        {paymentMethods.map((item) => <option key={item} value={item}>{paymentMethodLabel(item)}</option>)}
-      </select></label>
-    </section>
-    <section className="op-finance-kpis" role="group" aria-label="Resumen financiero del periodo filtrado">
-      <article className="is-sales"><span>Ventas netas confirmadas</span><b>{saleReturnsError ? '—' : money(totalSold)}</b><small>{saleReturnsError ? 'No disponible: error al cargar devoluciones' : `${salesInPeriod.length} ventas · menos artículos devueltos`}</small></article>
-      <article className="is-collected"><span>Pagos recibidos en el periodo</span><b>{money(totalCollected)}</b><small>Abonos asociados a las ventas filtradas</small></article>
-      <article className={saleReturnsError ? '' : outstanding > 0 ? 'is-outstanding' : 'is-settled'}><span>Saldo por cobrar</span><b>{saleReturnsError ? '—' : money(outstanding)}</b><small>{saleReturnsError ? 'No disponible: error al cargar devoluciones' : 'Ajustado por devoluciones de ventas filtradas'}</small></article>
-      <article className="is-average"><span>Promedio neto por venta</span><b>{saleReturnsError ? '—' : money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b><small>{saleReturnsError ? 'No disponible: error al cargar devoluciones' : 'Ventas confirmadas menos artículos devueltos'}</small></article>
-    </section>
-    <FinanceSalesInsights today={businessToday} month={month} monthSales={salesInPeriod} currentWeekSales={salesMatchingTeamAndBranch} returnsBySale={returnsBySale} saleReturns={saleReturns} saleReturnsError={saleReturnsError} saleLinesError={saleLinesError} />
-    <FinanceCashRegisters today={businessToday} organizationId={organizationId || ''} branches={branches} advisors={advisors} sales={sales} returnsBySale={returnsBySale} saleReturnsError={saleReturnsError} canManage={canManageFinance} canManageTeam={canManageTeam} refreshKey={realtimeRevision.cash} onChanged={() => setRealtimeRevision((current) => ({ ...current, cash: current.cash + 1 }))} />
-    <div className="op-finance-grid">
-      <section className="panel">
-        <div className="panel-heading"><div><span className="eyebrow">COMPARATIVO DEL PERIODO</span><h2>Desempeño por Asesor</h2></div><ChartNoAxesCombined size={19} /></div>
-        <div className="op-finance-advisors">{advisorSummary.map((item) => (
-          <article key={item.id}>
-            <div className="op-finance-advisor-line"><b>{personName(item.id)}</b><span>{money(item.sold)} · {item.count} ventas</span></div>
-            <div className="op-finance-bar"><i style={{ width: `${Math.max(2, item.sold / maxSold * 100)}%` }} /></div>
-            <small>Recaudado en el periodo: {money(item.collected)}</small>
-          </article>
-        ))}{!advisorSummary.length && <p className="muted">No hay ventas confirmadas para estos filtros.</p>}</div>
-        <p className="op-finance-note">{saleReturnsError ? 'No se pudieron cargar las devoluciones; los importes por asesora son brutos provisionales.' : 'Las ventas descuentan artículos devueltos.'} La atribución usa la asesora responsable guardada en la venta; el recaudo se agrupa por fecha del abono, incluso si la venta fue registrada en un mes anterior.</p>
-      </section>
-      <section className="panel">
-        <div className="panel-heading"><div><span className="eyebrow">COMPOSICIÓN DE RECAUDACIÓN</span><h2>Por medio de pago</h2></div></div>
-        <div className="op-finance-methods">{Object.entries(paymentsInPeriod.reduce<Record<string, number>>((totals, payment) => {
-          const name = payment.method || 'Sin medio';
-          totals[name] = (totals[name] || 0) + Number(payment.amount || 0);
-          return totals;
-        }, {})).sort((a, b) => b[1] - a[1]).map(([name, amount]) => (
-          <div key={name}><span>{paymentMethodLabel(name)}</span><b>{money(amount)}</b></div>
-        ))}{!paymentsInPeriod.length && <p className="muted">Sin pagos en el periodo seleccionado.</p>}</div>
-        <p className="op-finance-note">Ventas {saleReturnsError ? '—' : money(totalSold)} · Pagos históricos asociados {money(allHistoricalPayments)} · Recaudo del periodo {money(totalCollected)}.</p>
-      </section>
+      </div>
     </div>
-    <AdvisorIncomeEntry branches={branches} advisors={advisors} customers={canSeeCrm ? customers : null} customersError={customersError} currentUserId={user?.id || ''} canChooseAdvisor={hasPermission('team', 'view')} selectedBranch={branch} onRecorded={() => setRealtimeRevision((current) => ({ ...current, sales: current.sales + 1, cash: current.cash + 1 }))} />
-    <OperationsFinanceControls month={month} branch={branch} realtimeRefreshKey={realtimeRevision.expenses} />
-    <section className="panel op-finance-receivables" aria-labelledby="op-finance-receivables-title">
-      <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → FINANZAS → CRM · SALDOS ABIERTOS</span><h2 id="op-finance-receivables-title">Antigüedad de saldos por cobrar</h2><p className="op-finance-cost-note">La venta se ajusta por el valor de artículos devueltos. Solo los reembolsos liquidados reducen el cobro neto. El filtro de mes y medio de pago no aplica; se usan asesora y sucursal.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadReceivablesCsv} disabled={!openReceivables.length || !!saleReturnsError}><Download size={15}/> Exportar saldos CSV</button><a className="button button-outline" href="/operaciones/pos">Abrir POS <ArrowUpRight size={15}/></a>{canSeeCrm && <a className="button button-outline" href="/operaciones/clientes">Abrir CRM <ArrowUpRight size={15}/></a>}</div></div>
-      {saleReturnsError && <p className="op-finance-cost-error" role="alert">{saleReturnsError}</p>}
-      {!saleReturnsError && <><div className="op-finance-receivables-metrics"><article className="is-total"><span>Saldo abierto ajustado</span><b>{money(openReceivables.reduce((sum, item) => sum + item.balance, 0))}</b><small>{receivablesWithBalance.length} ventas con saldo</small></article>{receivableAging.map((bucket) => <article key={bucket.label}><span>{bucket.label}</span><b>{money(bucket.amount)}</b><small>{bucket.count} ventas desde POS</small></article>)}<article className={customerCredits.length ? 'is-unlinked' : ''}><span>Saldo a favor por revisar</span><b>{money(customerCredits.reduce((sum, item) => sum + item.customerCredit, 0))}</b><small>{customerCredits.length} ventas · sin liquidación automática</small></article><article className={receivablesWithoutCrm.length ? 'is-unlinked' : ''}><span>Sin ficha CRM vinculada</span><b>{money(receivablesWithoutCrmAmount)}</b><small>{receivablesWithoutCrm.length} ventas con saldo</small></article></div>
-      {openReceivables.length ? <div className="op-finance-receivables-list">{openReceivables.slice(0, 10).map(({ sale, total, adjustedTotal, returnedValue, settledRefund, pendingRefund, collected, balance, customerCredit, ageDays }) => <article key={sale.id}>
-        <div className="op-finance-receivables-sale"><b>{sale.sale_code || sale.id.slice(0, 8)} · {sale.customers?.full_name || 'Cliente sin nombre'}</b><span>{timestamp(sale.created_at)} · {personName(sale.advisor_id)} · {branchName(sale.branch_id)}</span></div>
-        <div className="op-finance-receivables-progress"><div><span>Cobrado neto {money(collected)} de {money(adjustedTotal)}{returnedValue > 0 ? ` · devuelto ${money(returnedValue)}` : ''}{settledRefund > 0 ? ` · reembolsado ${money(settledRefund)}` : ''}{pendingRefund > 0 ? ` · reembolso pendiente ${money(pendingRefund)}` : ''}</span><b>{balance > 0 ? money(balance) : `A favor ${money(customerCredit)}`}</b></div><div className="op-finance-receivables-track" role="progressbar" aria-label={`Cobrado neto ${money(collected)} de ${money(adjustedTotal)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(adjustedTotal > 0 ? Math.max(0, collected) / adjustedTotal * 100 : 100))}><i style={{ width: `${Math.min(100, Math.max(0, adjustedTotal > 0 ? Math.max(0, collected) / adjustedTotal * 100 : 100))}%` }}/></div></div>
-        <span className={`op-finance-receivables-age ${ageDays > 30 ? 'is-aged' : ''}`}>{ageDays} días desde la venta</span>
-        {sale.customer_id && canSeeCrm ? <a className="op-finance-receivables-crm" href={`/operaciones/clientes?cliente=${encodeURIComponent(sale.customer_id)}`}>Abrir ficha CRM <ArrowUpRight size={13}/></a> : <span className={`op-finance-receivables-crm ${sale.customer_id ? '' : 'is-unlinked'}`}>{sale.customer_id ? 'Ficha CRM vinculada' : 'Sin ficha CRM'}</span>}
-      </article>)}</div> : <div className="op-finance-ledger-empty"><Banknote size={23}/><b>Sin saldos abiertos en este alcance</b><span>Cambia la asesora o la sucursal para revisar otras ventas confirmadas.</span></div>}
-      {openReceivables.length > 10 && <p className="op-finance-cost-note">Se muestran las 10 ventas con mayor antigüedad; el resumen y el CSV consideran {receivablesWithBalance.length} saldos abiertos y {customerCredits.length} saldos a favor.</p>}
-      <p className="op-finance-cost-note">Los días son antigüedad desde la venta, no mora contractual. El valor devuelto usa cantidad por precio unitario guardado en POS; cobrado neto resta únicamente reembolsos liquidados. Los reembolsos pendientes se muestran aparte y el saldo a favor requiere revisión manual. No se crean pagos, créditos ni compensaciones automáticamente. Las fichas CRM permiten documentar el seguimiento.</p></>}
+
+    {/* Enhanced Filter Toolbar */}
+    <section className="op-finance-filters-bar" aria-label="Filtros del resumen financiero">
+      <div className="op-finance-month-stepper">
+        <button
+          type="button"
+          className="op-finance-stepper-btn"
+          onClick={() => setMonth((m) => shiftBusinessMonth(m, -1))}
+          title="Mes anterior"
+          aria-label="Ir al mes anterior"
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <button
+          type="button"
+          className={`op-finance-stepper-btn ${month === currentMonth() ? 'is-current' : ''}`}
+          onClick={() => setMonth(currentMonth())}
+          title="Volver al mes actual"
+        >
+          <Calendar size={14} />
+          <span>{month ? monthLabel(month) : 'Mes actual'}</span>
+        </button>
+        <button
+          type="button"
+          className="op-finance-stepper-btn"
+          onClick={() => setMonth((m) => shiftBusinessMonth(m, 1))}
+          title="Mes siguiente"
+          aria-label="Ir al mes siguiente"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+
+      <label className="op-finance-filter-field">
+        <span>Asesora</span>
+        <select value={advisor} onChange={(event) => setAdvisor(event.target.value)}>
+          <option value="all">Todas las asesoras</option>
+          {financeAdvisorOptions.map((person) => (
+            <option key={person.user_id} value={person.user_id}>
+              {normalizePersonName(person.full_name) || person.email || person.user_id.slice(0, 8)}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="op-finance-filter-field">
+        <span>Sucursal</span>
+        <select value={branch} onChange={(event) => setBranch(event.target.value)}>
+          <option value="all">Todas las sucursales</option>
+          {branches.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </select>
+      </label>
+
+      <label className="op-finance-filter-field">
+        <span>Medio de pago</span>
+        <select value={method} onChange={(event) => setMethod(event.target.value)}>
+          <option value="all">Todos los medios</option>
+          {paymentMethods.map((item) => <option key={item} value={item}>{paymentMethodLabel(item)}</option>)}
+        </select>
+      </label>
+
+      {(advisor !== 'all' || branch !== 'all' || method !== 'all') && (
+        <button
+          type="button"
+          className="op-finance-reset-filters"
+          onClick={() => { setAdvisor('all'); setBranch('all'); setMethod('all'); }}
+          title="Restablecer filtros a valores por defecto"
+        >
+          <RotateCcw size={13} /> Limpiar
+        </button>
+      )}
     </section>
-    {canSeeRefundSettlements && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-refund-title">
-      <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → CAJA → FINANZAS</span><h2 id="op-finance-refund-title">Cobros y reembolsos liquidados</h2><p className="op-finance-cost-note">Filtra por la fecha real del cobro o de la liquidación, además de asesora, sucursal y medio.</p></div><button className="button button-outline" onClick={downloadRefundsCsv} disabled={!refundsSettledInPeriod.length}><Download size={15}/> Exportar reembolsos</button></div>
-      {refundSettlementError ? <p className="op-finance-cost-error" role="alert">{refundSettlementError}</p> : <>
-        <div className="op-finance-refund-metrics"><article><span>Cobros POS del periodo</span><b>{money(posCashInflow)}</b><small>Incluye ventas anuladas si hubo cobro efectivo registrado</small></article><article><span>Reembolsos liquidados</span><b>{money(posRefundOutflow)}</b><small>{refundsSettledInPeriod.length} liquidaciones con fecha efectiva</small></article><article className={posNetCashFlow < 0 ? 'is-negative' : ''}><span>Flujo neto POS</span><b>{money(posNetCashFlow)}</b><small>Cobros menos reembolsos liquidados</small></article></div>
-        <div className="op-finance-table-wrap"><table className="op-finance-table"><thead><tr><th>Liquidado</th><th>Devolución</th><th>Venta</th><th>Asesora</th><th>Sucursal</th><th>Medio</th><th>Referencia / caja</th><th>Monto</th></tr></thead><tbody>{[...refundsSettledInPeriod].sort((a, b) => new Date(b.settled_at).getTime() - new Date(a.settled_at).getTime()).slice(0, 100).map((refund) => { const sale = salesById.get(refund.sale_id); return <tr key={refund.id}><td>{timestamp(refund.settled_at)}</td><td>{refund.return_code}</td><td>{sale?.sale_code || refund.sale_id.slice(0, 8)}</td><td>{personName(sale?.advisor_id)}</td><td>{branchName(refund.branch_id)}</td><td>{refund.method}</td><td>{refund.reference || (refund.cash_session_id ? `Caja ${refund.cash_session_id.slice(0, 8)}` : '—')}</td><td>{money(refund.amount)}</td></tr>; })}{!refundsSettledInPeriod.length && <tr><td colSpan={8}>No hay reembolsos liquidados en el periodo seleccionado.</td></tr>}</tbody></table></div>
-        <p className="op-finance-cost-note">El flujo neto POS incluye cobros y reembolsos liquidados; no descuenta compras, nómina ni otros egresos. Los reembolsos en efectivo se registran también como salida en el cierre de su caja. La tabla muestra hasta 100 liquidaciones; los indicadores incluyen todo el periodo.</p>
-      </>}
-    </section>}
-    {canManageFinance && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-operating-title">
-      <div className="panel-heading"><div><span className="eyebrow">POS + DEVOLUCIONES + EGRESOS → FINANZAS</span><h2 id="op-finance-operating-title">Flujo de efectivo operativo registrado</h2><p className="op-finance-cost-note">Solo considera cobros POS y pagos efectivos de egresos o devoluciones en el mes y sucursal seleccionados. No usa filtros de asesora ni medio de pago. Es un flujo de movimientos registrados, no una medida de utilidad.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadOperatingCashflowCsv} disabled={!operatingCashflowRows.length || expensePaymentsLoading || !!refundSettlementError || !!expensePaymentsError}><Download size={15}/> Exportar flujo CSV</button><a className="button button-outline" href="/operaciones/flujos">Gestionar egresos <ArrowUpRight size={15}/></a></div></div>
-      {refundSettlementError && <p className="op-finance-cost-error" role="alert">{refundSettlementError}</p>}
-      {expensePaymentsError && <p className="op-finance-cost-error" role="alert">{expensePaymentsError}</p>}
-      {!refundSettlementError && !expensePaymentsError && expensePaymentsLoading && <p className="muted">Cargando cobros, liquidaciones y pagos efectivos de egresos…</p>}
-      {!refundSettlementError && !expensePaymentsError && !expensePaymentsLoading && <>
-        <div className="op-finance-refund-metrics">
-          <article><span>Cobros recibidos</span><b>{money(operatingCashflow.collections)}</b><small>{operatingCashflow.paymentCount} pagos registrados en POS</small></article>
-          <article><span>Devoluciones liquidadas</span><b>{money(operatingCashflow.refunds)}</b><small>{operatingCashflow.refundCount} salidas efectivas</small></article>
-          <article><span>Egresos pagados de la sucursal</span><b>{money(operatingCashflow.branchExpenses)}</b><small>{operatingCashflow.expenseCount} pagos de egreso con este alcance</small></article>
-          <article><span>Egresos generales</span><b>{money(operatingCashflow.generalExpenses)}</b><small>{branch === 'all' ? 'Incluidos en el flujo neto de toda la empresa' : 'Visibles aparte; excluidos del neto de esta sucursal'}</small></article>
-          <article className={operatingCashflow.net < 0 ? 'is-negative' : ''}><span>Flujo neto registrado</span><b>{money(operatingCashflow.net)}</b><small>{branch === 'all' ? 'Cobros menos devoluciones y todos los egresos pagados' : 'Cobros menos devoluciones y egresos de la sucursal'}</small></article>
+
+    {/* Hero KPIs & Collection Meter */}
+    <section className="op-finance-kpis-grid" role="group" aria-label="Indicadores financieros principales">
+      <article className="op-finance-kpi-card is-sales">
+        <div className="op-finance-kpi-top">
+          <span className="op-finance-kpi-label">Ventas netas confirmadas</span>
+          <span className="op-finance-kpi-icon"><TrendingUp size={16} /></span>
         </div>
-        {month && <div className="op-finance-month-comparison" aria-labelledby="op-finance-cash-trend-title">
-          <div className="op-finance-month-comparison-heading"><div><span className="eyebrow">TENDENCIA DE CAJA · MISMO ALCANCE</span><h3 id="op-finance-cash-trend-title">Tendencia de seis meses</h3><p>{monthLabel(operatingCashflowTrend[0]?.period || month)} a {monthLabel(month)} · {branch === 'all' ? 'toda la empresa' : `sucursal ${branchName(branch)}`}</p></div></div>
-          <div className="op-finance-cash-trend" role="list" aria-label="Flujo de caja neto por mes">
-            {operatingCashflowTrend.map((item) => {
-              const extent = Math.min(50, Math.abs(item.net) / operatingCashflowTrendScale * 50);
-              return <article role="listitem" key={item.period}>
-                <b>{monthLabel(item.period)}</b>
-                <span>Cobros <strong>{money(item.collections)}</strong></span>
-                <span>Salidas <strong>{money(item.outflows)}</strong></span>
-                <span className={`op-finance-cash-trend-net ${item.net < 0 ? 'is-negative' : 'is-positive'}`}>Neto <strong>{money(item.net)}</strong></span>
-                <div className="op-finance-cash-trend-track" role="img" aria-label={`Neto ${money(item.net)}`}><i className={item.net < 0 ? 'is-negative' : 'is-positive'} style={{ width: `${extent}%`, left: item.net < 0 ? `calc(50% - ${extent}%)` : '50%' }}/></div>
-              </article>;
-            })}
-          </div>
-          <p className="op-finance-cost-note">Usa cobros POS, reembolsos liquidados y pagos efectivos de egresos por su fecha registrada. La sucursal seleccionada excluye gastos generales; “Todas” los incluye. No es utilidad contable ni presupuesto y no aplica los filtros de asesora o medio de pago.</p>
-        </div>}
-        {month && <div className="op-finance-month-comparison" aria-labelledby="op-finance-month-comparison-title">
-          <div className="op-finance-month-comparison-heading"><div><span className="eyebrow">ANÁLISIS DEL PERIODO</span><h3 id="op-finance-month-comparison-title">Comparación con el mes anterior</h3><p>{monthLabel(month)} frente a {monthLabel(previousMonth)} · {branch === 'all' ? 'toda la empresa' : `sucursal ${branchName(branch)}`}</p></div></div>
-          <div className="op-finance-month-comparison-grid">
-            {[
-              { label: 'Cobros recibidos', current: operatingCashflow.collections, previous: previousOperatingCashflow.collections },
-              { label: 'Devoluciones liquidadas', current: operatingCashflow.refunds, previous: previousOperatingCashflow.refunds },
-              { label: 'Egresos pagados', current: operatingCashflow.expenses, previous: previousOperatingCashflow.expenses },
-              { label: 'Flujo neto registrado', current: operatingCashflow.net, previous: previousOperatingCashflow.net },
-            ].map((item) => {
-              const difference = item.current - item.previous;
-              return <article key={item.label}>
-                <span>{item.label}</span><b>{money(item.current)}</b>
-                <small>Mes anterior: {money(item.previous)}</small>
-                <small className={difference < 0 ? 'is-negative' : difference > 0 ? 'is-positive' : ''}>Variación: {difference > 0 ? '+' : ''}{money(difference)}</small>
-              </article>;
-            })}
-          </div>
-          <p className="op-finance-cost-note">Compara movimientos según su fecha efectiva y la sucursal seleccionada; no aplica los filtros de asesora o medio de pago. La variación es nominal y no representa presupuesto ni utilidad.</p>
-        </div>}
-        <div className="op-finance-expense-breakdown" aria-labelledby="op-finance-expense-breakdown-title">
-          <div className="op-finance-expense-breakdown-heading"><div><span className="eyebrow">SALIDAS EFECTIVAS</span><h3 id="op-finance-expense-breakdown-title">Egresos pagados por categoría</h3></div><b>{money(operatingCashflow.branchExpenses + (branch === 'all' ? operatingCashflow.generalExpenses : 0))}</b></div>
-          {operatingExpenseCategories.length ? <div className="op-finance-expense-breakdown-list">{operatingExpenseCategories.map(([category, amount]) => <div className="op-finance-expense-category" key={category}><div><span>{category}</span><b>{money(amount)}</b></div><div className="op-finance-expense-track" role="progressbar" aria-label={`${category}: ${money(amount)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(amount / largestOperatingExpenseCategory * 100)}><i style={{ width: `${Math.max(2, amount / largestOperatingExpenseCategory * 100)}%` }} /></div></div>)}</div> : <p className="muted">No hay pagos efectivos de egresos para el mes y sucursal seleccionados.</p>}
-          <p className="op-finance-cost-note">{branch === 'all' ? 'Incluye egresos generales y de sucursales.' : 'Incluye solo egresos asignados a la sucursal elegida; los generales aparecen aparte arriba.'} Las barras comparan montos entre categorías del filtro actual.</p>
+        <b className="op-finance-kpi-value">{saleReturnsError ? '—' : money(totalSold)}</b>
+        <p className="op-finance-kpi-note">{saleReturnsError ? 'Error al cargar devoluciones' : `${salesInPeriod.length} ventas · menos devoluciones`}</p>
+      </article>
+
+      <article className="op-finance-kpi-card is-collected">
+        <div className="op-finance-kpi-top">
+          <span className="op-finance-kpi-label">Recaudación del periodo</span>
+          <span className="op-finance-kpi-icon"><Banknote size={16} /></span>
         </div>
-      </>}
-      <p className="op-finance-cost-note">La cifra es un flujo de efectivo basado en registros, no utilidad contable. No incluye obligaciones pendientes, descuentos de nómina ni movimientos entre cajas. Los gastos generales no se distribuyen entre sucursales.</p>
-    </section>}
-    {canSeeCashReconciliation && <section className="panel op-finance-cash-panel" aria-labelledby="op-finance-cash-title">
-      <div className="panel-heading">
-        <div><span className="eyebrow">CAJA → FINANZAS</span><h2 id="op-finance-cash-title">Conciliación de cierres de caja</h2><p className="op-finance-cost-note">Los cierres usan esperado y contado de Caja; las sesiones abiertas muestran el efectivo esperado al momento. Aplica mes de cierre y sucursal, no filtros de asesora o medio de pago.</p></div>
-        <div className="op-finance-cash-actions"><button className="button button-outline" onClick={() => setCashRefreshKey((value) => value + 1)} disabled={cashSessionLoading}><RefreshCw size={15}/> Actualizar</button><button className="button button-outline" onClick={downloadCashReconciliationCsv} disabled={cashSessionLoading || !cashReconciliationRows.length}><Download size={15}/> Exportar CSV</button><a className="button button-outline" href="/operaciones/flujos"><Banknote size={15}/> Abrir Caja <ArrowUpRight size={14}/></a></div>
-      </div>
-      <div className="op-finance-cash-metrics">
-        <article><span>Efectivo esperado en cajas abiertas</span><b>{cashSessionError || cashExpectedInOpenSessions === null ? '—' : money(cashExpectedInOpenSessions)}</b><small>{cashSessionError ? 'No disponible por error de carga' : `${openCashRows.length} sesiones abiertas · fuera del efectivo ya cerrado`}</small></article>
-        <article><span>Cierres del periodo</span><b>{cashSessionError ? '—' : closedCashRows.length}</b><small>{cashSessionError ? 'No disponible por error de carga' : `${cashSessionsWithDifference} con diferencia registrada`}</small></article>
-        <article className="is-shortfall"><span>Faltante registrado</span><b>{cashSessionError ? '—' : money(cashShortfall)}</b><small>{cashSessionError ? 'No disponible por error de carga' : 'Suma de diferencias negativas, sin compensarlas con sobrantes'}</small></article>
-        <article className="is-surplus"><span>Sobrante registrado</span><b>{cashSessionError ? '—' : money(cashSurplus)}</b><small>{cashSessionError ? 'No disponible por error de carga' : 'Suma de diferencias positivas del periodo'}</small></article>
-      </div>
-      {cashSessionError ? <p className="op-finance-cost-error" role="alert">{cashSessionError}</p> : cashSessionLoading ? <p className="muted">Cargando cierres y turnos abiertos…</p> : !cashReconciliationRows.length ? <div className="op-finance-cash-empty"><Banknote size={22}/><b>Sin cierres ni cajas abiertas para este filtro</b><span>Prueba otro mes o sucursal, o revisa los turnos en Caja.</span></div> : <div className="op-finance-table-wrap"><table className="op-finance-table op-finance-cash-table"><thead><tr><th>Estado</th><th>Apertura / cierre</th><th>Sucursal</th><th>Responsable</th><th>Esperado</th><th>Contado</th><th>Diferencia</th></tr></thead><tbody>{cashReconciliationRows.map((session) => <tr key={session.id}><td><span className={`op-finance-cash-status ${session.status === 'open' ? 'is-open' : 'is-closed'}`}>{session.status === 'open' ? 'Abierta' : 'Cerrada'}</span></td><td>{session.status === 'open' ? `Abierta ${timestamp(session.opened_at)}` : `Cerrada ${timestamp(session.closed_at)}`}</td><td>{branchName(session.branch_id)}</td><td>{personName(session.opened_by)}</td><td>{session.expected === null ? 'No disponible' : money(session.expected)}</td><td>{session.counted === null ? 'Pendiente' : money(session.counted)}</td><td className={session.difference < 0 ? 'is-negative' : session.difference > 0 ? 'is-positive' : ''}>{session.difference === null ? 'Pendiente' : money(session.difference)}</td></tr>)}</tbody></table></div>}
-      {cashMovementError && <p className="op-finance-cost-error" role="alert">No se pudieron cargar todos los movimientos de las cajas abiertas; se oculta su esperado para evitar mostrar un importe incompleto. {cashMovementError}</p>}
-      <p className="op-finance-cost-note">El esperado en una caja abierta se calcula con efectivo inicial + pagos POS en efectivo + entradas y salidas manuales registradas. La diferencia es contado menos esperado. Este informe no vuelve a sumar los cobros ni los reembolsos en los KPIs de ingresos.</p>
-    </section>}
-    {canSeeInventoryCosts && <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-cost-title">
-      <div className="panel-heading"><div><span className="eyebrow">INVENTARIO → POS → FINANZAS</span><h2 id="op-finance-cost-title">Costo de inventario capturado en ventas</h2></div></div>
-      {inventoryCostError ? <p className="op-finance-cost-error" role="alert">{inventoryCostError}</p> : inventoryCostLoading ? <p className="muted">Calculando referencia de costos para este periodo…</p> : inventoryCostSummary ? <div className="op-finance-cost-metrics op-finance-return-cost-metrics">
-        <article><span>Costo neto de artículos vendidos</span><b>{money(Number(inventoryCostSummary.cost_total || 0))}</b><small>Descuenta las unidades devueltas que reingresaron al stock</small></article>
-        <article><span>Costo restituido por devoluciones</span><b>{money(Number(inventoryCostSummary.restocked_return_cost || 0))}</b><small>{Number(inventoryCostSummary.restocked_return_units || 0)} unidades registradas como reingresadas a inventario</small></article>
-        <article><span>Cobertura de costo en líneas de inventario</span><b>{Number(inventoryCostSummary.inventory_lines || 0) + Number(inventoryCostSummary.missing_inventory_cost_lines || 0) > 0 ? `${Math.round(Number(inventoryCostSummary.inventory_lines || 0) / (Number(inventoryCostSummary.inventory_lines || 0) + Number(inventoryCostSummary.missing_inventory_cost_lines || 0)) * 100)}%` : '—'}</b><small>{inventoryCostSummary.inventory_lines || 0} con costo · {inventoryCostSummary.missing_inventory_cost_lines || 0} sin costo configurado</small></article>
-      </div> : <p className="muted">Aún no hay datos de costo para este periodo.</p>}
-      <p className="op-finance-cost-note">Se agrupa por fecha de venta y descuenta devoluciones con destino «Reintegrar como vendible». «Separar para revisión» y «Registrar como merma» conservan el costo de la venta. Es una referencia operativa, no utilidad contable; excluye servicios y costos indirectos.</p>
-    </section>}
-    {canSeeInventoryCosts && <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-catalog-cost-title">
-      <div className="panel-heading op-finance-catalog-cost-heading"><div><span className="eyebrow">INVENTARIO → FINANZAS · CATÁLOGO ACTUAL</span><h2 id="op-finance-catalog-cost-title">Variantes activas sin costo unitario</h2></div><div className="op-finance-cost-actions"><button className="button button-outline" onClick={() => setInventoryCatalogCostRefreshKey((key) => key + 1)} disabled={inventoryCatalogCostLoading}><RefreshCw className={inventoryCatalogCostLoading ? 'spin' : ''} size={15}/> Actualizar</button><a className="button button-outline" href="/operaciones/inventario">Revisar en Inventario <ArrowUpRight size={15}/></a><button className="button button-outline" onClick={downloadMissingInventoryCostsCsv} disabled={!inventoryCatalogCostSummary?.missing_variants.length}><Download size={15}/> Exportar pendientes</button></div></div>
-      <p className="op-finance-cost-note">Este control es global para las variantes activas del catálogo y no cambia con los filtros de mes, asesora o sucursal. Configurar un costo mejora las próximas capturas; no modifica los snapshots de ventas pasadas.</p>
-      {inventoryCatalogCostError ? <p className="op-finance-cost-error" role="alert">{inventoryCatalogCostError}</p> : inventoryCatalogCostLoading ? <p className="muted">Revisando costos unitarios del catálogo activo…</p> : inventoryCatalogCostSummary ? <>
-        <div className="op-finance-cost-metrics op-finance-catalog-cost-metrics">
-          <article><span>Variantes activas</span><b>{inventoryCatalogCostSummary.active_variants}</b><small>Productos vigentes en Inventario</small></article>
-          <article><span>Con costo configurado</span><b>{inventoryCatalogCostSummary.configured_variants}</b><small>Costos privados gestionados desde Inventario</small></article>
-          <article><span>Sin costo configurado</span><b>{inventoryCatalogCostSummary.missing_variants.length}</b><small>Requieren revisión de costo unitario</small></article>
-          <article><span>Cobertura del catálogo</span><b>{inventoryCatalogCostSummary.active_variants ? `${Math.round(inventoryCatalogCostSummary.configured_variants / inventoryCatalogCostSummary.active_variants * 100)}%` : '—'}</b><small>Variantes activas con costo registrado</small></article>
+        <b className="op-finance-kpi-value">{money(totalCollected)}</b>
+        <p className="op-finance-kpi-note">Abonos recibidos de ventas filtradas</p>
+      </article>
+
+      <article className={`op-finance-kpi-card ${saleReturnsError ? '' : outstanding > 0 ? 'is-outstanding' : 'is-settled'}`}>
+        <div className="op-finance-kpi-top">
+          <span className="op-finance-kpi-label">Saldo por cobrar</span>
+          <span className="op-finance-kpi-icon">{outstanding > 0 ? <Clock3 size={16} /> : <CheckCircle2 size={16} />}</span>
         </div>
-        {inventoryCatalogCostSummary.missing_variants.length ? <>
-          <div className="op-finance-table-wrap"><table className="op-finance-table"><thead><tr><th>Producto</th><th>SKU de producto</th><th>Variante</th><th>SKU de variante</th></tr></thead><tbody>{inventoryCatalogCostSummary.missing_variants.slice(0, 12).map((variant) => <tr key={variant.id}><td>{variant.inventory_item?.name || 'Producto sin nombre'}</td><td>{variant.inventory_item?.sku || '—'}</td><td>{variant.label || 'Variante general'}</td><td>{variant.sku}</td></tr>)}</tbody></table></div>
-          {inventoryCatalogCostSummary.missing_variants.length > 12 && <p className="op-finance-cost-note">Se muestran las primeras 12 variantes por SKU; el CSV exporta las {inventoryCatalogCostSummary.missing_variants.length} pendientes.</p>}
-        </> : <p className="op-finance-cost-note">Todas las variantes activas tienen un costo unitario configurado.</p>}
-      </> : <p className="muted">No se pudo preparar el resumen de costos del catálogo.</p>}
-    </section>}
-    {canSeeInventoryCosts && <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-material-title">
-      <div className="panel-heading"><div><span className="eyebrow">INVENTARIO → POS Y PRODUCCIÓN → FINANZAS</span><h2 id="op-finance-material-title">Costo de materiales consumidos</h2></div></div>
-      {materialCostError ? <p className="op-finance-cost-error" role="alert">{materialCostError}</p> : materialCostLoading ? <p className="muted">Calculando consumos de materiales para este periodo…</p> : materialCostSummary ? <div className="op-finance-cost-metrics">
-        <article><span>Costo de materiales registrados</span><b>{money(Number(materialCostSummary.material_cost_total || 0))}</b><small>Basado en el costo guardado al descontar stock</small></article>
-        <article><span>Cobertura de costo por movimiento</span><b>{Number(materialCostSummary.consumption_movements || 0) > 0 ? `${Math.round(Number(materialCostSummary.costed_movements || 0) / Number(materialCostSummary.consumption_movements || 1) * 100)}%` : '—'}</b><small>{materialCostSummary.costed_movements || 0} con costo · {materialCostSummary.missing_cost_movements || 0} sin costo al consumir</small></article>
-      </div> : <p className="muted">Aún no hay consumos de materiales capturados para este periodo.</p>}
-      <div className="op-finance-material-links"><a className="button button-outline" href="/operaciones/flujos">Ver producción</a><a className="button button-outline" href="/operaciones/inventario">Ver inventario</a></div>
-      <p className="op-finance-cost-note">Incluye salidas registradas por recetas de venta y consumos de órdenes de producción. Se captura desde la activación del control; no estima costos históricos sin snapshot ni representa utilidad contable.</p>
-    </section>}
-    {canSeeCrm && <section className="panel op-finance-customer-analysis" aria-labelledby="op-finance-customer-analysis-title">
-      <div className="panel-heading"><div><span className="eyebrow">FINANZAS → CRM · CLIENTES</span><h2 id="op-finance-customer-analysis-title">Concentración de ventas por cliente</h2><p className="op-finance-cost-note">Ventas confirmadas del periodo, asesora y sucursal seleccionados; los retornos registrados reducen el valor. El filtro de medio de pago no aplica.</p></div><a className="button button-outline" href="/operaciones/clientes">Abrir CRM <ArrowUpRight size={15}/></a></div>
-      {saleReturnsError ? <p className="op-finance-cost-error" role="alert">No se calcula el valor ajustado por cliente porque no se pudieron cargar las devoluciones.</p> : <>
-        <div className="op-finance-customer-metrics">
-          <article><span>Clientes con compras</span><b>{customerRevenueAnalysis.customers}</b><small>En el periodo seleccionado</small></article>
-          <article><span>Clientes recurrentes</span><b>{customerRevenueAnalysis.repeatCustomers}</b><small>Más de una venta en el periodo</small></article>
-          <article><span>Ventas de los 5 principales</span><b>{customerRevenueAnalysis.customers ? `${Math.round(customerRevenueAnalysis.topFiveShare * 100)}%` : '—'}</b><small>Porción de ventas vinculadas al CRM</small></article>
-          <article className={customerRevenueAnalysis.unlinkedSales ? 'is-unlinked' : ''}><span>Ventas sin ficha CRM</span><b>{money(customerRevenueAnalysis.unlinkedRevenue)}</b><small>{customerRevenueAnalysis.unlinkedSales} ventas sin cliente asociado</small></article>
+        <b className="op-finance-kpi-value">{saleReturnsError ? '—' : money(outstanding)}</b>
+        <p className="op-finance-kpi-note">{saleReturnsError ? 'Error al cargar devoluciones' : outstanding > 0 ? `${receivablesWithBalance.length} ventas con saldo abierto` : 'Cartera 100% al día'}</p>
+      </article>
+
+      <article className="op-finance-kpi-card is-average">
+        <div className="op-finance-kpi-top">
+          <span className="op-finance-kpi-label">Promedio neto / venta</span>
+          <span className="op-finance-kpi-icon"><ChartNoAxesCombined size={16} /></span>
         </div>
-        <div className="op-finance-customer-source-summary">
-          <div><span className="eyebrow">SITIO WEB → CRM → FINANZAS</span><h3>Compras de clientes captados desde el sitio</h3><p>Ventas del periodo vinculadas a clientes cuyo origen en CRM es una solicitud web.</p></div>
-          <div><b>{money(customerRevenueAnalysis.websiteOriginRevenue)}</b><span>{customerRevenueAnalysis.websiteOriginSales} ventas · {customerRevenueAnalysis.websiteOriginCustomers} clientes</span></div>
-          <small>Conecta solicitudes públicas, CRM y POS; no mide retorno ni atribuye ventas a una campaña específica.</small>
-        </div>
-        {customerRevenueAnalysis.topCustomers.length ? <div className="op-finance-customer-list">{customerRevenueAnalysis.topCustomers.map((customer, index) => <article key={customer.id}>
-          <div className="op-finance-customer-rank"><span>{index + 1}</span><div><b>{customer.name}</b><small>{customer.sales} {customer.sales === 1 ? 'venta' : 'ventas'} · saldo abierto {money(customer.openBalance)}</small><small>{saleLinesError ? 'Producto frecuente no disponible: falló la carga de líneas.' : customer.topProduct ? `Producto más frecuente: ${customer.topProduct} · ${customer.topProductSales} ${customer.topProductSales === 1 ? 'venta' : 'ventas'}` : 'Sin líneas de producto vinculadas en este periodo'}</small><small>{customer.openBalance > 0.005 ? 'Seguimiento sugerido: revisar el saldo abierto antes de cerrar otra venta.' : customer.sales > 1 && customer.topProductSales > 1 ? `Seguimiento sugerido: consultar si necesita reponer ${customer.topProduct}.` : customer.sales > 1 ? 'Seguimiento sugerido: revisar compras recientes y registrar preferencias en CRM.' : 'Seguimiento sugerido: registrar preferencias y próxima fecha de contacto en CRM.'}</small></div></div>
-          <div className="op-finance-customer-value"><b>{money(customer.revenue)}</b><a href={`/operaciones/clientes?cliente=${encodeURIComponent(customer.id)}`}>Ver ficha CRM <ArrowUpRight size={13}/></a></div>
-          <div className="op-finance-customer-track" role="progressbar" aria-label={`${customer.name}: ${money(customer.revenue)} de ventas`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(customer.revenue / Math.max(1, customerRevenueAnalysis.linkedRevenue) * 100)}><i style={{ width: `${Math.max(2, customer.revenue / Math.max(1, customerRevenueAnalysis.linkedRevenue) * 100)}%` }}/></div>
-        </article>)}</div> : <div className="op-finance-ledger-empty"><Banknote size={22}/><b>Sin ventas vinculadas al CRM en este alcance</b><span>Las ventas sin ficha se cuentan aparte y pueden asociarse al registrar un ingreso manual.</span></div>}
-        <p className="op-finance-cost-note">El porcentaje de concentración compara los 5 clientes principales con todas las ventas que sí tienen ficha CRM. El valor no es utilidad y no incluye costos ni gastos.</p>
-      </>}
-    </section>}
-    {canSeeQuotes && <section className="panel op-finance-quote-analysis" aria-labelledby="op-finance-quote-analysis-title">
-      <div className="panel-heading"><div><span className="eyebrow">COTIZADOR → POS → FINANZAS</span><h2 id="op-finance-quote-analysis-title">Ventas vinculadas a cotizaciones</h2><p className="op-finance-cost-note">Ventas confirmadas del periodo, asesora y sucursal seleccionados. El filtro de medio de pago no aplica.</p></div><a className="button button-outline" href="/operaciones/cotizador">Abrir Cotizador <ArrowUpRight size={15}/></a></div>
-      {saleReturnsError && <p className="op-finance-cost-error" role="alert">No se puede calcular el valor neto de ventas cotizadas porque no se pudieron cargar las devoluciones; los conteos de vínculos siguen disponibles.</p>}
-      <div className="op-finance-quote-metrics">
-        <article><span>Valor de ventas con vínculo</span><b>{saleReturnsError ? '—' : money(quoteSalesAnalysis.netSalesValue)}</b><small>{saleReturnsError ? 'Devoluciones pendientes de cargar' : 'Valor neto de devoluciones registradas'}</small></article>
-        <article><span>Ventas vinculadas</span><b>{quoteSalesAnalysis.sales}</b><small>{Math.round(quoteSalesAnalysis.salesShare * 100)}% de {salesInPeriod.length} ventas confirmadas del periodo</small></article>
-        <article><span>Cotizaciones asociadas</span><b>{quoteSalesAnalysis.quotes}</b><small>Identificadores únicos vinculados a ventas</small></article>
-      </div>
-      {!quoteSalesAnalysis.sales && <div className="op-finance-ledger-empty"><ChartNoAxesCombined size={22}/><b>Sin ventas vinculadas a cotizaciones en este alcance</b><span>Al confirmar en POS una venta que parte de una cotización, Finanzas podrá medir su valor en este periodo.</span></div>}
-      <p className="op-finance-cost-note">La proporción mide ventas con un vínculo guardado en POS; no es una tasa de conversión del Cotizador porque no compara la cohorte completa de cotizaciones emitidas. El valor no es recaudo ni utilidad.</p>
-    </section>}
-    <section className="panel">
-      <div className="panel-heading"><div><span className="eyebrow">MOVIMIENTOS REGISTRADOS</span><h2>Abonos recibidos</h2></div><button className="button button-outline" onClick={downloadCsv} disabled={!paymentsInPeriod.length}><Download size={15} /> Exportar CSV</button></div>
-      <div className="op-finance-table-wrap"><table className="op-finance-table">
-        <thead><tr><th>Fecha</th><th>Asesora</th><th>Venta</th><th>Sucursal</th><th>Medio</th><th>Registró el pago</th><th>Monto</th></tr></thead>
-        <tbody>{[...paymentsInPeriod].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((payment) => {
-          const sale = salesById.get(payment.sale_id);
-          return <tr key={payment.id}>
-            <td>{timestamp(payment.created_at)}</td><td>{personName(sale?.advisor_id)}</td>
-            <td>{sale?.sale_code || payment.sale_id.slice(0, 8)} · {sale?.customers?.full_name || 'Cliente sin nombre'}</td>
-            <td>{branchName(sale?.branch_id)}</td><td>{paymentMethodLabel(payment.method)}</td>
-            <td>{personName(payment.created_by)}</td><td>{money(payment.amount)}</td>
-          </tr>;
-        })}{!paymentsInPeriod.length && <tr><td colSpan={7}>No hay abonos para mostrar con los filtros elegidos.</td></tr>}</tbody>
-      </table></div>
+        <b className="op-finance-kpi-value">{saleReturnsError ? '—' : money(salesInPeriod.length ? totalSold / salesInPeriod.length : 0)}</b>
+        <p className="op-finance-kpi-note">{saleReturnsError ? 'Error en devoluciones' : 'Ticket promedio neto ajustado'}</p>
+      </article>
     </section>
+
+    {/* Collection Progress Meter */}
+    <div className="op-finance-collection-overview">
+      <div className="op-finance-collection-stats">
+        <div>
+          <span className="op-finance-collection-label">Tasa de Recaudación del Periodo</span>
+          <strong>{totalSold > 0 ? `${Math.min(100, Math.round(totalCollected / totalSold * 100))}%` : '—'}</strong>
+          <small>Cobrado neto {money(totalCollected)} de {money(totalSold)} en ventas netas</small>
+        </div>
+        <div className="op-finance-collection-status">
+          {outstanding > 0 ? (
+            <span className="op-finance-badge is-warning"><Clock3 size={13} /> {money(outstanding)} por cobrar</span>
+          ) : (
+            <span className="op-finance-badge is-success"><CheckCircle2 size={13} /> Cartera al día</span>
+          )}
+        </div>
+      </div>
+      <div className="op-finance-collection-track" role="progressbar" aria-valuenow={Math.min(100, Math.round(totalSold > 0 ? totalCollected / totalSold * 100 : 0))} aria-valuemin={0} aria-valuemax={100}>
+        <div className="op-finance-collection-fill" style={{ width: `${Math.min(100, Math.max(0, totalSold > 0 ? (totalCollected / totalSold) * 100 : 0))}%` }} />
+      </div>
+    </div>
+
+    {/* Executive Shortcuts (Only on Resumen) */}
+    {activeTab === 'resumen' && (
+      <div className="op-finance-executive-shortcuts">
+        <button type="button" className="op-finance-shortcut-card" onClick={() => handleTabChange('cajas')}>
+          <div>
+            <b>Cajas y Conciliación</b>
+            <span>{openCashRows.length} abiertas · {closedCashRows.length} cierres</span>
+          </div>
+          <Coins size={18} />
+        </button>
+        <button type="button" className="op-finance-shortcut-card" onClick={() => handleTabChange('cartera')}>
+          <div>
+            <b>Cartera y Cobranzas</b>
+            <span>{openReceivables.length} saldos abiertos · {money(outstanding)}</span>
+          </div>
+          <Users size={18} />
+        </button>
+        <button type="button" className="op-finance-shortcut-card" onClick={() => handleTabChange('flujo')}>
+          <div>
+            <b>Flujo Operativo</b>
+            <span>Neto {money(operatingCashflow.net)} · 6 meses</span>
+          </div>
+          <Receipt size={18} />
+        </button>
+        <button type="button" className="op-finance-shortcut-card" onClick={() => handleTabChange('asesoras')}>
+          <div>
+            <b>Rendimiento Asesoras</b>
+            <span>{advisors.length} asesoras · rutas y metas</span>
+          </div>
+          <Award size={18} />
+        </button>
+      </div>
+    )}
+
+    {/* TAB: RESUMEN OR TODO */}
+    {(activeTab === 'resumen' || activeTab === 'todo') && (
+      <>
+        <FinanceSalesInsights today={businessToday} month={month} monthSales={salesInPeriod} currentWeekSales={salesMatchingTeamAndBranch} returnsBySale={returnsBySale} saleReturns={saleReturns} saleReturnsError={saleReturnsError} saleLinesError={saleLinesError} />
+        <div className="op-finance-grid">
+          <section className="panel">
+            <div className="panel-heading"><div><span className="eyebrow">COMPARATIVO DEL PERIODO</span><h2>Desempeño por Asesor</h2></div><ChartNoAxesCombined size={19} /></div>
+            <div className="op-finance-advisors">{advisorSummary.map((item) => (
+              <article key={item.id}>
+                <div className="op-finance-advisor-line"><b>{personName(item.id)}</b><span>{money(item.sold)} · {item.count} ventas</span></div>
+                <div className="op-finance-bar"><i style={{ width: `${Math.max(2, item.sold / maxSold * 100)}%` }} /></div>
+                <small>Recaudado en el periodo: {money(item.collected)}</small>
+              </article>
+            ))}{!advisorSummary.length && <p className="muted">No hay ventas confirmadas para estos filtros.</p>}</div>
+            <p className="op-finance-note">{saleReturnsError ? 'No se pudieron cargar las devoluciones; los importes por asesora son brutos provisionales.' : 'Las ventas descuentan artículos devueltos.'} La atribución usa la asesora responsable guardada en la venta; el recaudo se agrupa por fecha del abono.</p>
+          </section>
+          <section className="panel">
+            <div className="panel-heading"><div><span className="eyebrow">COMPOSICIÓN DE RECAUDACIÓN</span><h2>Por medio de pago</h2></div></div>
+            <div className="op-finance-methods">{paymentMethodSummary.map(([name, amount]) => (
+              <div key={name}><span>{paymentMethodLabel(name)}</span><b>{money(amount)}</b></div>
+            ))}{!paymentsInPeriod.length && <p className="muted">Sin pagos en el periodo seleccionado.</p>}</div>
+            <p className="op-finance-note">Ventas {saleReturnsError ? '—' : money(totalSold)} · Pagos históricos {money(allHistoricalPayments)} · Recaudo del periodo {money(totalCollected)}.</p>
+          </section>
+        </div>
+      </>
+    )}
+
+    {/* TAB: VENTAS */}
+    {activeTab === 'ventas' && (
+      <>
+        <FinanceSalesInsights today={businessToday} month={month} monthSales={salesInPeriod} currentWeekSales={salesMatchingTeamAndBranch} returnsBySale={returnsBySale} saleReturns={saleReturns} saleReturnsError={saleReturnsError} saleLinesError={saleLinesError} />
+        <div className="op-finance-grid">
+          <section className="panel">
+            <div className="panel-heading"><div><span className="eyebrow">COMPARATIVO DEL PERIODO</span><h2>Desempeño por Asesor</h2></div><ChartNoAxesCombined size={19} /></div>
+            <div className="op-finance-advisors">{advisorSummary.map((item) => (
+              <article key={item.id}>
+                <div className="op-finance-advisor-line"><b>{personName(item.id)}</b><span>{money(item.sold)} · {item.count} ventas</span></div>
+                <div className="op-finance-bar"><i style={{ width: `${Math.max(2, item.sold / maxSold * 100)}%` }} /></div>
+                <small>Recaudado en el periodo: {money(item.collected)}</small>
+              </article>
+            ))}{!advisorSummary.length && <p className="muted">No hay ventas confirmadas para estos filtros.</p>}</div>
+          </section>
+          <section className="panel">
+            <div className="panel-heading"><div><span className="eyebrow">COMPOSICIÓN DE RECAUDACIÓN</span><h2>Por medio de pago</h2></div></div>
+            <div className="op-finance-methods">{paymentMethodSummary.map(([name, amount]) => (
+              <div key={name}><span>{paymentMethodLabel(name)}</span><b>{money(amount)}</b></div>
+            ))}{!paymentsInPeriod.length && <p className="muted">Sin pagos en el periodo seleccionado.</p>}</div>
+          </section>
+        </div>
+        <AdvisorIncomeEntry branches={branches} advisors={advisors} customers={canSeeCrm ? customers : null} customersError={customersError} currentUserId={user?.id || ''} canChooseAdvisor={hasPermission('team', 'view')} selectedBranch={branch} onRecorded={() => setRealtimeRevision((current) => ({ ...current, sales: current.sales + 1, cash: current.cash + 1 }))} />
+      </>
+    )}
+
+    {/* TAB: CAJAS OR TODO */}
+    {(activeTab === 'cajas' || activeTab === 'todo') && (
+      <>
+        <FinanceCashRegisters today={businessToday} organizationId={organizationId || ''} branches={branches} advisors={advisors} sales={sales} returnsBySale={returnsBySale} saleReturnsError={saleReturnsError} canManage={canManageFinance} canManageTeam={canManageTeam} refreshKey={realtimeRevision.cash} onChanged={() => setRealtimeRevision((current) => ({ ...current, cash: current.cash + 1 }))} />
+        {canSeeCashReconciliation && <section className="panel op-finance-cash-panel" aria-labelledby="op-finance-cash-title">
+          <div className="panel-heading">
+            <div><span className="eyebrow">CAJA → FINANZAS</span><h2 id="op-finance-cash-title">Conciliación de cierres de caja</h2><p className="op-finance-cost-note">Los cierres usan esperado y contado de Caja; las sesiones abiertas muestran el efectivo esperado al momento. Aplica mes de cierre y sucursal, no filtros de asesora o medio de pago.</p></div>
+            <div className="op-finance-cash-actions"><button className="button button-outline" onClick={() => setCashRefreshKey((value) => value + 1)} disabled={cashSessionLoading}><RefreshCw size={15}/> Actualizar</button><button className="button button-outline" onClick={downloadCashReconciliationCsv} disabled={cashSessionLoading || !cashReconciliationRows.length}><Download size={15}/> Exportar CSV</button><a className="button button-outline" href="/operaciones/flujos"><Banknote size={15}/> Abrir Caja <ArrowUpRight size={14}/></a></div>
+          </div>
+          <div className="op-finance-cash-metrics">
+            <article><span>Efectivo esperado en cajas abiertas</span><b>{cashSessionError || cashExpectedInOpenSessions === null ? '—' : money(cashExpectedInOpenSessions)}</b><small>{cashSessionError ? 'No disponible por error de carga' : `${openCashRows.length} sesiones abiertas · fuera del efectivo ya cerrado`}</small></article>
+            <article><span>Cierres del periodo</span><b>{cashSessionError ? '—' : closedCashRows.length}</b><small>{cashSessionError ? 'No disponible por error de carga' : `${cashSessionsWithDifference} con diferencia registrada`}</small></article>
+            <article className="is-shortfall"><span>Faltante registrado</span><b>{cashSessionError ? '—' : money(cashShortfall)}</b><small>{cashSessionError ? 'No disponible por error de carga' : 'Suma de diferencias negativas, sin compensarlas con sobrantes'}</small></article>
+            <article className="is-surplus"><span>Sobrante registrado</span><b>{cashSessionError ? '—' : money(cashSurplus)}</b><small>{cashSessionError ? 'No disponible por error de carga' : 'Suma de diferencias positivas del periodo'}</small></article>
+          </div>
+          {cashSessionError ? <p className="op-finance-cost-error" role="alert">{cashSessionError}</p> : cashSessionLoading ? <p className="muted">Cargando cierres y turnos abiertos…</p> : !cashReconciliationRows.length ? <div className="op-finance-cash-empty"><Banknote size={22}/><b>Sin cierres ni cajas abiertas para este filtro</b><span>Prueba otro mes o sucursal, o revisa los turnos en Caja.</span></div> : <div className="op-finance-table-wrap"><table className="op-finance-table op-finance-cash-table"><thead><tr><th>Estado</th><th>Apertura / cierre</th><th>Sucursal</th><th>Responsable</th><th>Esperado</th><th>Contado</th><th>Diferencia</th></tr></thead><tbody>{cashReconciliationRows.map((session) => <tr key={session.id}><td><span className={`op-finance-cash-status ${session.status === 'open' ? 'is-open' : 'is-closed'}`}>{session.status === 'open' ? 'Abierta' : 'Cerrada'}</span></td><td>{session.status === 'open' ? `Abierta ${timestamp(session.opened_at)}` : `Cerrada ${timestamp(session.closed_at)}`}</td><td>{branchName(session.branch_id)}</td><td>{personName(session.opened_by)}</td><td>{session.expected === null ? 'No disponible' : money(session.expected)}</td><td>{session.counted === null ? 'Pendiente' : money(session.counted)}</td><td className={session.difference < 0 ? 'is-negative' : session.difference > 0 ? 'is-positive' : ''}>{session.difference === null ? 'Pendiente' : money(session.difference)}</td></tr>)}</tbody></table></div>}
+          {cashMovementError && <p className="op-finance-cost-error" role="alert">No se pudieron cargar todos los movimientos de las cajas abiertas; se oculta su esperado para evitar mostrar un importe incompleto. {cashMovementError}</p>}
+          <p className="op-finance-cost-note">El esperado en una caja abierta se calcula con efectivo inicial + pagos POS en efectivo + entradas y salidas manuales registradas. La diferencia es contado menos esperado. Este informe no vuelve a sumar los cobros ni los reembolsos en los KPIs de ingresos.</p>
+        </section>}
+      </>
+    )}
+
+    {/* TAB: FLUJO OR TODO */}
+    {(activeTab === 'flujo' || activeTab === 'todo') && (
+      <>
+        {canManageFinance && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-operating-title">
+          <div className="panel-heading"><div><span className="eyebrow">POS + DEVOLUCIONES + EGRESOS → FINANZAS</span><h2 id="op-finance-operating-title">Flujo de efectivo operativo registrado</h2><p className="op-finance-cost-note">Solo considera cobros POS y pagos efectivos de egresos o devoluciones en el mes y sucursal seleccionados. No usa filtros de asesora ni medio de pago. Es un flujo de movimientos registrados, no una medida de utilidad.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadOperatingCashflowCsv} disabled={!operatingCashflowRows.length || expensePaymentsLoading || !!refundSettlementError || !!expensePaymentsError}><Download size={15}/> Exportar flujo CSV</button><a className="button button-outline" href="/operaciones/flujos">Gestionar egresos <ArrowUpRight size={15}/></a></div></div>
+          {refundSettlementError && <p className="op-finance-cost-error" role="alert">{refundSettlementError}</p>}
+          {expensePaymentsError && <p className="op-finance-cost-error" role="alert">{expensePaymentsError}</p>}
+          {!refundSettlementError && !expensePaymentsError && expensePaymentsLoading && <p className="muted">Cargando cobros, liquidaciones y pagos efectivos de egresos…</p>}
+          {!refundSettlementError && !expensePaymentsError && !expensePaymentsLoading && <>
+            <div className="op-finance-refund-metrics">
+              <article><span>Cobros recibidos</span><b>{money(operatingCashflow.collections)}</b><small>{operatingCashflow.paymentCount} pagos registrados en POS</small></article>
+              <article><span>Devoluciones liquidadas</span><b>{money(operatingCashflow.refunds)}</b><small>{operatingCashflow.refundCount} salidas efectivas</small></article>
+              <article><span>Egresos pagados de la sucursal</span><b>{money(operatingCashflow.branchExpenses)}</b><small>{operatingCashflow.expenseCount} pagos de egreso con este alcance</small></article>
+              <article><span>Egresos generales</span><b>{money(operatingCashflow.generalExpenses)}</b><small>{branch === 'all' ? 'Incluidos en el flujo neto de toda la empresa' : 'Visibles aparte; excluidos del neto de esta sucursal'}</small></article>
+              <article className={operatingCashflow.net < 0 ? 'is-negative' : ''}><span>Flujo neto registrado</span><b>{money(operatingCashflow.net)}</b><small>{branch === 'all' ? 'Cobros menos devoluciones y todos los egresos pagados' : 'Cobros menos devoluciones y egresos de la sucursal'}</small></article>
+            </div>
+            {month && <div className="op-finance-month-comparison" aria-labelledby="op-finance-cash-trend-title">
+              <div className="op-finance-month-comparison-heading"><div><span className="eyebrow">TENDENCIA DE CAJA · MISMO ALCANCE</span><h3 id="op-finance-cash-trend-title">Tendencia de seis meses</h3><p>{monthLabel(operatingCashflowTrend[0]?.period || month)} a {monthLabel(month)} · {branch === 'all' ? 'toda la empresa' : `sucursal ${branchName(branch)}`}</p></div></div>
+              <div className="op-finance-cash-trend" role="list" aria-label="Flujo de caja neto por mes">
+                {operatingCashflowTrend.map((item) => {
+                  const extent = Math.min(50, Math.abs(item.net) / operatingCashflowTrendScale * 50);
+                  return <article role="listitem" key={item.period}>
+                    <b>{monthLabel(item.period)}</b>
+                    <span>Cobros <strong>{money(item.collections)}</strong></span>
+                    <span>Salidas <strong>{money(item.outflows)}</strong></span>
+                    <span className={`op-finance-cash-trend-net ${item.net < 0 ? 'is-negative' : 'is-positive'}`}>Neto <strong>{money(item.net)}</strong></span>
+                    <div className="op-finance-cash-trend-track" role="img" aria-label={`Neto ${money(item.net)}`}><i className={item.net < 0 ? 'is-negative' : 'is-positive'} style={{ width: `${extent}%`, left: item.net < 0 ? `calc(50% - ${extent}%)` : '50%' }}/></div>
+                  </article>;
+                })}
+              </div>
+              <p className="op-finance-cost-note">Usa cobros POS, reembolsos liquidados y pagos efectivos de egresos por su fecha registrada. La sucursal seleccionada excluye gastos generales; “Todas” los incluye. No es utilidad contable ni presupuesto y no aplica los filtros de asesora o medio de pago.</p>
+            </div>}
+            {month && <div className="op-finance-month-comparison" aria-labelledby="op-finance-month-comparison-title">
+              <div className="op-finance-month-comparison-heading"><div><span className="eyebrow">ANÁLISIS DEL PERIODO</span><h3 id="op-finance-month-comparison-title">Comparación con el mes anterior</h3><p>{monthLabel(month)} frente a {monthLabel(previousMonth)} · {branch === 'all' ? 'toda la empresa' : `sucursal ${branchName(branch)}`}</p></div></div>
+              <div className="op-finance-month-comparison-grid">
+                {[
+                  { label: 'Cobros recibidos', current: operatingCashflow.collections, previous: previousOperatingCashflow.collections },
+                  { label: 'Devoluciones liquidadas', current: operatingCashflow.refunds, previous: previousOperatingCashflow.refunds },
+                  { label: 'Egresos pagados', current: operatingCashflow.expenses, previous: previousOperatingCashflow.expenses },
+                  { label: 'Flujo neto registrado', current: operatingCashflow.net, previous: previousOperatingCashflow.net },
+                ].map((item) => {
+                  const difference = item.current - item.previous;
+                  return <article key={item.label}>
+                    <span>{item.label}</span><b>{money(item.current)}</b>
+                    <small>Mes anterior: {money(item.previous)}</small>
+                    <small className={difference < 0 ? 'is-negative' : difference > 0 ? 'is-positive' : ''}>Variación: {difference > 0 ? '+' : ''}{money(difference)}</small>
+                  </article>;
+                })}
+              </div>
+              <p className="op-finance-cost-note">Compara movimientos según su fecha efectiva y la sucursal seleccionada; no aplica los filtros de asesora o medio de pago. La variación es nominal y no representa presupuesto ni utilidad.</p>
+            </div>}
+            <div className="op-finance-expense-breakdown" aria-labelledby="op-finance-expense-breakdown-title">
+              <div className="op-finance-expense-breakdown-heading"><div><span className="eyebrow">SALIDAS EFECTIVAS</span><h3 id="op-finance-expense-breakdown-title">Egresos pagados por categoría</h3></div><b>{money(operatingCashflow.branchExpenses + (branch === 'all' ? operatingCashflow.generalExpenses : 0))}</b></div>
+              {operatingExpenseCategories.length ? <div className="op-finance-expense-breakdown-list">{operatingExpenseCategories.map(([category, amount]) => <div className="op-finance-expense-category" key={category}><div><span>{category}</span><b>{money(amount)}</b></div><div className="op-finance-expense-track" role="progressbar" aria-label={`${category}: ${money(amount)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(amount / largestOperatingExpenseCategory * 100)}><i style={{ width: `${Math.max(2, amount / largestOperatingExpenseCategory * 100)}%` }} /></div></div>)}</div> : <p className="muted">No hay pagos efectivos de egresos para el mes y sucursal seleccionados.</p>}
+              <p className="op-finance-cost-note">{branch === 'all' ? 'Incluye egresos generales y de sucursales.' : 'Incluye solo egresos asignados a la sucursal elegida; los generales aparecen aparte arriba.'} Las barras comparan montos entre categorías del filtro actual.</p>
+            </div>
+          </>}
+          <p className="op-finance-cost-note">La cifra es un flujo de efectivo basado en registros, no utilidad contable. No incluye obligaciones pendientes, descuentos de nómina ni movimientos entre cajas. Los gastos generales no se distribuyen entre sucursales.</p>
+        </section>}
+        <OperationsFinanceControls month={month} branch={branch} realtimeRefreshKey={realtimeRevision.expenses} />
+      </>
+    )}
+
+    {/* TAB: CARTERA OR TODO */}
+    {(activeTab === 'cartera' || activeTab === 'todo') && (
+      <>
+        <section className="panel op-finance-receivables" aria-labelledby="op-finance-receivables-title">
+          <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → FINANZAS → CRM · SALDOS ABIERTOS</span><h2 id="op-finance-receivables-title">Antigüedad de saldos por cobrar</h2><p className="op-finance-cost-note">La venta se ajusta por el valor de artículos devueltos. Solo los reembolsos liquidados reducen el cobro neto. El filtro de mes y medio de pago no aplica; se usan asesora y sucursal.</p></div><div className="op-finance-heading-actions"><button className="button button-outline" onClick={downloadReceivablesCsv} disabled={!openReceivables.length || !!saleReturnsError}><Download size={15}/> Exportar saldos CSV</button><a className="button button-outline" href="/operaciones/pos">Abrir POS <ArrowUpRight size={15}/></a>{canSeeCrm && <a className="button button-outline" href="/operaciones/clientes">Abrir CRM <ArrowUpRight size={15}/></a>}</div></div>
+          {saleReturnsError && <p className="op-finance-cost-error" role="alert">{saleReturnsError}</p>}
+          {!saleReturnsError && <><div className="op-finance-receivables-metrics"><article className="is-total"><span>Saldo abierto ajustado</span><b>{money(openReceivables.reduce((sum, item) => sum + item.balance, 0))}</b><small>{receivablesWithBalance.length} ventas con saldo</small></article>{receivableAging.map((bucket) => <article key={bucket.label}><span>{bucket.label}</span><b>{money(bucket.amount)}</b><small>{bucket.count} ventas desde POS</small></article>)}<article className={customerCredits.length ? 'is-unlinked' : ''}><span>Saldo a favor por revisar</span><b>{money(customerCredits.reduce((sum, item) => sum + item.customerCredit, 0))}</b><small>{customerCredits.length} ventas · sin liquidación automática</small></article><article className={receivablesWithoutCrm.length ? 'is-unlinked' : ''}><span>Sin ficha CRM vinculada</span><b>{money(receivablesWithoutCrmAmount)}</b><small>{receivablesWithoutCrm.length} ventas con saldo</small></article></div>
+          {openReceivables.length ? <div className="op-finance-receivables-list">{openReceivables.slice(0, 10).map(({ sale, total, adjustedTotal, returnedValue, settledRefund, pendingRefund, collected, balance, customerCredit, ageDays }) => <article key={sale.id}>
+            <div className="op-finance-receivables-sale"><b>{sale.sale_code || sale.id.slice(0, 8)} · {sale.customers?.full_name || 'Cliente sin nombre'}</b><span>{timestamp(sale.created_at)} · {personName(sale.advisor_id)} · {branchName(sale.branch_id)}</span></div>
+            <div className="op-finance-receivables-progress"><div><span>Cobrado neto {money(collected)} de {money(adjustedTotal)}{returnedValue > 0 ? ` · devuelto ${money(returnedValue)}` : ''}{settledRefund > 0 ? ` · reembolsado ${money(settledRefund)}` : ''}{pendingRefund > 0 ? ` · reembolso pendiente ${money(pendingRefund)}` : ''}</span><b>{balance > 0 ? money(balance) : `A favor ${money(customerCredit)}`}</b></div><div className="op-finance-receivables-track" role="progressbar" aria-label={`Cobrado neto ${money(collected)} de ${money(adjustedTotal)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(adjustedTotal > 0 ? Math.max(0, collected) / adjustedTotal * 100 : 100))}><i style={{ width: `${Math.min(100, Math.max(0, adjustedTotal > 0 ? Math.max(0, collected) / adjustedTotal * 100 : 100))}%` }}/></div></div>
+            <span className={`op-finance-receivables-age ${ageDays > 30 ? 'is-aged' : ''}`}>{ageDays} días desde la venta</span>
+            {sale.customer_id && canSeeCrm ? <a className="op-finance-receivables-crm" href={`/operaciones/clientes?cliente=${encodeURIComponent(sale.customer_id)}`}>Abrir ficha CRM <ArrowUpRight size={13}/></a> : <span className={`op-finance-receivables-crm ${sale.customer_id ? '' : 'is-unlinked'}`}>{sale.customer_id ? 'Ficha CRM vinculada' : 'Sin ficha CRM'}</span>}
+          </article>)}</div> : <div className="op-finance-ledger-empty"><Banknote size={23}/><b>Sin saldos abiertos en este alcance</b><span>Cambia la asesora o la sucursal para revisar otras ventas confirmadas.</span></div>}
+          {openReceivables.length > 10 && <p className="op-finance-cost-note">Se muestran las 10 ventas con mayor antigüedad; el resumen y el CSV consideran {receivablesWithBalance.length} saldos abiertos y {customerCredits.length} saldos a favor.</p>}
+          <p className="op-finance-cost-note">Los días son antigüedad desde la venta, no mora contractual. El valor devuelto usa cantidad por precio unitario guardado en POS; cobrado neto resta únicamente reembolsos liquidados. Los reembolsos pendientes se muestran aparte y el saldo a favor requiere revisión manual. No se crean pagos, créditos ni compensaciones automáticamente. Las fichas CRM permiten documentar el seguimiento.</p></>}
+        </section>
+
+        {canSeeRefundSettlements && <section className="panel op-finance-refund-panel" aria-labelledby="op-finance-refund-title">
+          <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → CAJA → FINANZAS</span><h2 id="op-finance-refund-title">Cobros y reembolsos liquidados</h2><p className="op-finance-cost-note">Filtra por la fecha real del cobro o de la liquidación, además de asesora, sucursal y medio.</p></div><button className="button button-outline" onClick={downloadRefundsCsv} disabled={!refundsSettledInPeriod.length}><Download size={15}/> Exportar reembolsos</button></div>
+          {refundSettlementError ? <p className="op-finance-cost-error" role="alert">{refundSettlementError}</p> : <>
+            <div className="op-finance-refund-metrics"><article><span>Cobros POS del periodo</span><b>{money(posCashInflow)}</b><small>Incluye ventas anuladas si hubo cobro efectivo registrado</small></article><article><span>Reembolsos liquidados</span><b>{money(posRefundOutflow)}</b><small>{refundsSettledInPeriod.length} liquidaciones con fecha efectiva</small></article><article className={posNetCashFlow < 0 ? 'is-negative' : ''}><span>Flujo neto POS</span><b>{money(posNetCashFlow)}</b><small>Cobros menos reembolsos liquidados</small></article></div>
+            <div className="op-finance-table-wrap"><table className="op-finance-table"><thead><tr><th>Liquidado</th><th>Devolución</th><th>Venta</th><th>Asesora</th><th>Sucursal</th><th>Medio</th><th>Referencia / caja</th><th>Monto</th></tr></thead><tbody>{[...refundsSettledInPeriod].sort((a, b) => new Date(b.settled_at).getTime() - new Date(a.settled_at).getTime()).slice(0, 100).map((refund) => { const sale = salesById.get(refund.sale_id); return <tr key={refund.id}><td>{timestamp(refund.settled_at)}</td><td>{refund.return_code}</td><td>{sale?.sale_code || refund.sale_id.slice(0, 8)}</td><td>{personName(sale?.advisor_id)}</td><td>{branchName(refund.branch_id)}</td><td>{refund.method}</td><td>{refund.reference || (refund.cash_session_id ? `Caja ${refund.cash_session_id.slice(0, 8)}` : '—')}</td><td>{money(refund.amount)}</td></tr>; })}{!refundsSettledInPeriod.length && <tr><td colSpan={8}>No hay reembolsos liquidados en el periodo seleccionado.</td></tr>}</tbody></table></div>
+            <p className="op-finance-cost-note">El flujo neto POS incluye cobros y reembolsos liquidados; no descuenta compras, nómina ni otros egresos. Los reembolsos en efectivo se registran también como salida en el cierre de su caja. La tabla muestra hasta 100 liquidaciones; los indicadores incluyen todo el periodo.</p>
+          </>}
+        </section>}
+
+        {canSeeCrm && <section className="panel op-finance-customer-analysis" aria-labelledby="op-finance-customer-analysis-title">
+          <div className="panel-heading"><div><span className="eyebrow">FINANZAS → CRM · CLIENTES</span><h2 id="op-finance-customer-analysis-title">Concentración de ventas por cliente</h2><p className="op-finance-cost-note">Ventas confirmadas del periodo, asesora y sucursal seleccionados; los retornos registrados reducen el valor. El filtro de medio de pago no aplica.</p></div><a className="button button-outline" href="/operaciones/clientes">Abrir CRM <ArrowUpRight size={15}/></a></div>
+          {saleReturnsError ? <p className="op-finance-cost-error" role="alert">No se calcula el valor ajustado por cliente porque no se pudieron cargar las devoluciones.</p> : <>
+            <div className="op-finance-customer-metrics">
+              <article><span>Clientes con compras</span><b>{customerRevenueAnalysis.customers}</b><small>En el periodo seleccionado</small></article>
+              <article><span>Clientes recurrentes</span><b>{customerRevenueAnalysis.repeatCustomers}</b><small>Más de una venta en el periodo</small></article>
+              <article><span>Ventas de los 5 principales</span><b>{customerRevenueAnalysis.customers ? `${Math.round(customerRevenueAnalysis.topFiveShare * 100)}%` : '—'}</b><small>Porción de ventas vinculadas al CRM</small></article>
+              <article className={customerRevenueAnalysis.unlinkedSales ? 'is-unlinked' : ''}><span>Ventas sin ficha CRM</span><b>{money(customerRevenueAnalysis.unlinkedRevenue)}</b><small>{customerRevenueAnalysis.unlinkedSales} ventas sin cliente asociado</small></article>
+            </div>
+            <div className="op-finance-customer-source-summary">
+              <div><span className="eyebrow">SITIO WEB → CRM → FINANZAS</span><h3>Compras de clientes captados desde el sitio</h3><p>Ventas del periodo vinculadas a clientes cuyo origen en CRM es una solicitud web.</p></div>
+              <div><b>{money(customerRevenueAnalysis.websiteOriginRevenue)}</b><span>{customerRevenueAnalysis.websiteOriginSales} ventas · {customerRevenueAnalysis.websiteOriginCustomers} clientes</span></div>
+              <small>Conecta solicitudes públicas, CRM y POS; no mide retorno ni atribuye ventas a una campaña específica.</small>
+            </div>
+            {customerRevenueAnalysis.topCustomers.length ? <div className="op-finance-customer-list">{customerRevenueAnalysis.topCustomers.map((customer, index) => <article key={customer.id}>
+              <div className="op-finance-customer-rank"><span>{index + 1}</span><div><b>{customer.name}</b><small>{customer.sales} {customer.sales === 1 ? 'venta' : 'ventas'} · saldo abierto {money(customer.openBalance)}</small><small>{saleLinesError ? 'Producto frecuente no disponible: falló la carga de líneas.' : customer.topProduct ? `Producto más frecuente: ${customer.topProduct} · ${customer.topProductSales} ${customer.topProductSales === 1 ? 'venta' : 'ventas'}` : 'Sin líneas de producto vinculadas en este periodo'}</small><small>{customer.openBalance > 0.005 ? 'Seguimiento sugerido: revisar el saldo abierto antes de cerrar otra venta.' : customer.sales > 1 && customer.topProductSales > 1 ? `Seguimiento sugerido: consultar si necesita reponer ${customer.topProduct}.` : customer.sales > 1 ? 'Seguimiento sugerido: revisar compras recientes y registrar preferencias en CRM.' : 'Seguimiento sugerido: registrar preferencias y próxima fecha de contacto en CRM.'}</small></div></div>
+              <div className="op-finance-customer-value"><b>{money(customer.revenue)}</b><a href={`/operaciones/clientes?cliente=${encodeURIComponent(customer.id)}`}>Ver ficha CRM <ArrowUpRight size={13}/></a></div>
+              <div className="op-finance-customer-track" role="progressbar" aria-label={`${customer.name}: ${money(customer.revenue)} de ventas`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(customer.revenue / Math.max(1, customerRevenueAnalysis.linkedRevenue) * 100)}><i style={{ width: `${Math.max(2, customer.revenue / Math.max(1, customerRevenueAnalysis.linkedRevenue) * 100)}%` }}/></div>
+            </article>)}</div> : <div className="op-finance-ledger-empty"><Banknote size={22}/><b>Sin ventas vinculadas al CRM en este alcance</b><span>Las ventas sin ficha se cuentan aparte y pueden asociarse al registrar un ingreso manual.</span></div>}
+            <p className="op-finance-cost-note">El porcentaje de concentración compara los 5 clientes principales con todas las ventas que sí tienen ficha CRM. El valor no es utilidad y no incluye costos ni gastos.</p>
+          </>}
+        </section>}
+      </>
+    )}
+
+    {/* TAB: COSTOS OR TODO */}
+    {canSeeInventoryCosts && (activeTab === 'costos' || activeTab === 'todo') && (
+      <>
+        <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-cost-title">
+          <div className="panel-heading"><div><span className="eyebrow">INVENTARIO → POS → FINANZAS</span><h2 id="op-finance-cost-title">Costo de inventario capturado en ventas</h2></div></div>
+          {inventoryCostError ? <p className="op-finance-cost-error" role="alert">{inventoryCostError}</p> : inventoryCostLoading ? <p className="muted">Calculando referencia de costos para este periodo…</p> : inventoryCostSummary ? <div className="op-finance-cost-metrics op-finance-return-cost-metrics">
+            <article><span>Costo neto de artículos vendidos</span><b>{money(Number(inventoryCostSummary.cost_total || 0))}</b><small>Descuenta las unidades devueltas que reingresaron al stock</small></article>
+            <article><span>Costo restituido por devoluciones</span><b>{money(Number(inventoryCostSummary.restocked_return_cost || 0))}</b><small>{Number(inventoryCostSummary.restocked_return_units || 0)} unidades registradas como reingresadas a inventario</small></article>
+            <article><span>Cobertura de costo en líneas de inventario</span><b>{Number(inventoryCostSummary.inventory_lines || 0) + Number(inventoryCostSummary.missing_inventory_cost_lines || 0) > 0 ? `${Math.round(Number(inventoryCostSummary.inventory_lines || 0) / (Number(inventoryCostSummary.inventory_lines || 0) + Number(inventoryCostSummary.missing_inventory_cost_lines || 0)) * 100)}%` : '—'}</b><small>{inventoryCostSummary.inventory_lines || 0} con costo · {inventoryCostSummary.missing_inventory_cost_lines || 0} sin costo configurado</small></article>
+          </div> : <p className="muted">Aún no hay datos de costo para este periodo.</p>}
+          <p className="op-finance-cost-note">Se agrupa por fecha de venta y descuenta devoluciones con destino «Reintegrar como vendible». «Separar para revisión» y «Registrar como merma» conservan el costo de la venta. Es una referencia operativa, no utilidad contable; excluye servicios y costos indirectos.</p>
+        </section>
+
+        <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-catalog-cost-title">
+          <div className="panel-heading op-finance-catalog-cost-heading"><div><span className="eyebrow">INVENTARIO → FINANZAS · CATÁLOGO ACTUAL</span><h2 id="op-finance-catalog-cost-title">Variantes activas sin costo unitario</h2></div><div className="op-finance-cost-actions"><button className="button button-outline" onClick={() => setInventoryCatalogCostRefreshKey((key) => key + 1)} disabled={inventoryCatalogCostLoading}><RefreshCw className={inventoryCatalogCostLoading ? 'spin' : ''} size={15}/> Actualizar</button><a className="button button-outline" href="/operaciones/inventario">Revisar en Inventario <ArrowUpRight size={15}/></a><button className="button button-outline" onClick={downloadMissingInventoryCostsCsv} disabled={!inventoryCatalogCostSummary?.missing_variants.length}><Download size={15}/> Exportar pendientes</button></div></div>
+          <p className="op-finance-cost-note">Este control es global para las variantes activas del catálogo y no cambia con los filtros de mes, asesora o sucursal. Configurar un costo mejora las próximas capturas; no modifica los snapshots de ventas pasadas.</p>
+          {inventoryCatalogCostError ? <p className="op-finance-cost-error" role="alert">{inventoryCatalogCostError}</p> : inventoryCatalogCostLoading ? <p className="muted">Revisando costos unitarios del catálogo activo…</p> : inventoryCatalogCostSummary ? <>
+            <div className="op-finance-cost-metrics op-finance-catalog-cost-metrics">
+              <article><span>Variantes activas</span><b>{inventoryCatalogCostSummary.active_variants}</b><small>Productos vigentes en Inventario</small></article>
+              <article><span>Con costo configurado</span><b>{inventoryCatalogCostSummary.configured_variants}</b><small>Costos privados gestionados desde Inventario</small></article>
+              <article><span>Sin costo configurado</span><b>{inventoryCatalogCostSummary.missing_variants.length}</b><small>Requieren revisión de costo unitario</small></article>
+              <article><span>Cobertura del catálogo</span><b>{inventoryCatalogCostSummary.active_variants ? `${Math.round(inventoryCatalogCostSummary.configured_variants / inventoryCatalogCostSummary.active_variants * 100)}%` : '—'}</b><small>Variantes activas con costo registrado</small></article>
+            </div>
+            {inventoryCatalogCostSummary.missing_variants.length ? <>
+              <div className="op-finance-table-wrap"><table className="op-finance-table"><thead><tr><th>Producto</th><th>SKU de producto</th><th>Variante</th><th>SKU de variante</th></tr></thead><tbody>{inventoryCatalogCostSummary.missing_variants.slice(0, 12).map((variant) => <tr key={variant.id}><td>{variant.inventory_item?.name || 'Producto sin nombre'}</td><td>{variant.inventory_item?.sku || '—'}</td><td>{variant.label || 'Variante general'}</td><td>{variant.sku}</td></tr>)}</tbody></table></div>
+              {inventoryCatalogCostSummary.missing_variants.length > 12 && <p className="op-finance-cost-note">Se muestran las primeras 12 variantes por SKU; el CSV exporta las {inventoryCatalogCostSummary.missing_variants.length} pendientes.</p>}
+            </> : <p className="op-finance-cost-note">Todas las variantes activas tienen un costo unitario configurado.</p>}
+          </> : <p className="muted">No se pudo preparar el resumen de costos del catálogo.</p>}
+        </section>
+
+        <section className="panel op-finance-cost-panel" aria-labelledby="op-finance-material-title">
+          <div className="panel-heading"><div><span className="eyebrow">INVENTARIO → POS Y PRODUCCIÓN → FINANZAS</span><h2 id="op-finance-material-title">Costo de materiales consumidos</h2></div></div>
+          {materialCostError ? <p className="op-finance-cost-error" role="alert">{materialCostError}</p> : materialCostLoading ? <p className="muted">Calculando consumos de materiales para este periodo…</p> : materialCostSummary ? <div className="op-finance-cost-metrics">
+            <article><span>Costo de materiales registrados</span><b>{money(Number(materialCostSummary.material_cost_total || 0))}</b><small>Basado en el costo guardado al descontar stock</small></article>
+            <article><span>Cobertura de costo por movimiento</span><b>{Number(materialCostSummary.consumption_movements || 0) > 0 ? `${Math.round(Number(materialCostSummary.costed_movements || 0) / Number(materialCostSummary.consumption_movements || 1) * 100)}%` : '—'}</b><small>{materialCostSummary.costed_movements || 0} con costo · {materialCostSummary.missing_cost_movements || 0} sin costo al consumir</small></article>
+          </div> : <p className="muted">Aún no hay consumos de materiales capturados para este periodo.</p>}
+          <div className="op-finance-material-links"><a className="button button-outline" href="/operaciones/flujos">Ver producción</a><a className="button button-outline" href="/operaciones/inventario">Ver inventario</a></div>
+          <p className="op-finance-cost-note">Incluye salidas registradas por recetas de venta y consumos de órdenes de producción. Se captura desde la activación del control; no estima costos históricos sin snapshot ni representa utilidad contable.</p>
+        </section>
+      </>
+    )}
+
+    {/* TAB: ASESORAS OR TODO */}
+    {(activeTab === 'asesoras' || activeTab === 'todo') && (
+      <AdvisorFinance allAdvisors embedded />
+    )}
+
+    {/* Shared Quotes Analysis & Payments Table (Always in Ventas or Todo) */}
+    {(activeTab === 'ventas' || activeTab === 'todo') && (
+      <>
+        {canSeeQuotes && <section className="panel op-finance-quote-analysis" aria-labelledby="op-finance-quote-analysis-title">
+          <div className="panel-heading"><div><span className="eyebrow">COTIZADOR → POS → FINANZAS</span><h2 id="op-finance-quote-analysis-title">Ventas vinculadas a cotizaciones</h2><p className="op-finance-cost-note">Ventas confirmadas del periodo, asesora y sucursal seleccionados. El filtro de medio de pago no aplica.</p></div><a className="button button-outline" href="/operaciones/cotizador">Abrir Cotizador <ArrowUpRight size={15}/></a></div>
+          {saleReturnsError && <p className="op-finance-cost-error" role="alert">No se puede calcular el valor neto de ventas cotizadas porque no se pudieron cargar las devoluciones; los conteos de vínculos siguen disponibles.</p>}
+          <div className="op-finance-quote-metrics">
+            <article><span>Valor de ventas con vínculo</span><b>{saleReturnsError ? '—' : money(quoteSalesAnalysis.netSalesValue)}</b><small>{saleReturnsError ? 'Devoluciones pendientes de cargar' : 'Valor neto de devoluciones registradas'}</small></article>
+            <article><span>Ventas vinculadas</span><b>{quoteSalesAnalysis.sales}</b><small>{Math.round(quoteSalesAnalysis.salesShare * 100)}% de {salesInPeriod.length} ventas confirmadas del periodo</small></article>
+            <article><span>Cotizaciones asociadas</span><b>{quoteSalesAnalysis.quotes}</b><small>Identificadores únicos vinculados a ventas</small></article>
+          </div>
+          {!quoteSalesAnalysis.sales && <div className="op-finance-ledger-empty"><ChartNoAxesCombined size={22}/><b>Sin ventas vinculadas a cotizaciones en este alcance</b><span>Al confirmar en POS una venta que parte de una cotización, Finanzas podrá medir su valor en este periodo.</span></div>}
+          <p className="op-finance-cost-note">La proporción mide ventas con un vínculo guardado en POS; no es una tasa de conversión del Cotizador porque no compara la cohorte completa de cotizaciones emitidas. El valor no es recaudo ni utilidad.</p>
+        </section>}
+
+        <section className="panel">
+          <div className="panel-heading"><div><span className="eyebrow">MOVIMIENTOS REGISTRADOS</span><h2>Abonos recibidos</h2></div><button className="button button-outline" onClick={downloadCsv} disabled={!paymentsInPeriod.length}><Download size={15} /> Exportar CSV</button></div>
+          <div className="op-finance-table-wrap"><table className="op-finance-table">
+            <thead><tr><th>Fecha</th><th>Asesora</th><th>Venta</th><th>Sucursal</th><th>Medio</th><th>Registró el pago</th><th>Monto</th></tr></thead>
+            <tbody>{[...paymentsInPeriod].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((payment) => {
+              const sale = salesById.get(payment.sale_id);
+              return <tr key={payment.id}>
+                <td>{timestamp(payment.created_at)}</td><td>{personName(sale?.advisor_id)}</td>
+                <td>{sale?.sale_code || payment.sale_id.slice(0, 8)} · {sale?.customers?.full_name || 'Cliente sin nombre'}</td>
+                <td>{branchName(sale?.branch_id)}</td><td>{paymentMethodLabel(payment.method)}</td>
+                <td>{personName(payment.created_by)}</td><td>{money(payment.amount)}</td>
+              </tr>;
+            })}{!paymentsInPeriod.length && <tr><td colSpan={7}>No hay abonos para mostrar con los filtros elegidos.</td></tr>}</tbody>
+          </table></div>
+        </section>
+      </>
+    )}
+
     <aside className="op-flow-footnote"><PackageCheck size={16} /><span>Las ventas confirmadas y sus abonos provienen de POS. El centro financiero incorpora egresos operativos, obligaciones y previsiones; nómina permanece separada y no se procesa aquí.</span></aside>
   </div>;
 }

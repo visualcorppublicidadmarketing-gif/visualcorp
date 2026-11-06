@@ -1102,6 +1102,90 @@
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .editor-fullscreen-overlay { background: #090b11eF; }
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell .rich-editor-confirm { background: #171a25; }
 
+/* Operations Finance, Sales Insights, Cash Registers, Ledger & Advisor Dark Overrides */
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .op-finance-page, .op-finance-filters, .op-finance-entry, .op-finance-cost-panel,
+  .op-finance-receivables, .op-finance-refund-panel, .op-finance-customer-analysis,
+  .op-finance-quote-analysis, .op-finance-cash-panel, .op-finance-ledger-panel,
+  .op-finance-ledger-form, .op-finance-ledger-register, .op-finance-obligations-forecast,
+  .finance-sales-insights, .finance-cash-registers, .advisor-team-week, .advisor-finance-ledger
+) {
+  color: var(--vc-ink, #f1f3f8);
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .op-finance-ledger-form input, .op-finance-ledger-form select,
+  .op-finance-ledger-pay input, .op-finance-ledger-pay select,
+  .op-finance-form-grid input, .op-finance-form-grid select,
+  .op-finance-filters input, .op-finance-filters select,
+  .finance-cash-register-form input, .finance-cash-register-form select,
+  .advisor-route-form input, .advisor-route-form select,
+  .advisor-cancel-dialog textarea
+) {
+  border-color: #42475d;
+  background: #11141d;
+  color: #f1f3f8;
+  color-scheme: dark;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .op-finance-ledger-list article, .op-finance-obligations-list article,
+  .finance-cash-register-card, .finance-sales-card, .advisor-team-card,
+  .advisor-register-list article, .advisor-route-list article
+) {
+  background: #191c2b;
+  border-color: #2e334a;
+  color: #f1f3f8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .op-finance-ledger-kpis article, .op-finance-obligations-metrics article,
+  .finance-sales-week-days > div
+) {
+  background: #141724;
+  border-color: #2b3046;
+  color: #f1f3f8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .op-finance-ledger-kpis article b, .op-finance-obligations-metrics article b,
+  .finance-sales-week-header > b, .finance-sales-card-heading h3,
+  .advisor-team-card > b, .op-finance-ledger-record-numbers > b
+) {
+  color: #ffffff;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .op-finance-ledger-footnote {
+  background: #141724;
+  color: #a4abbf;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .advisor-cancel-dialog {
+  background: #171a27;
+  border-color: #3b415a;
+  color: #f1f3f8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .advisor-finance-kind {
+  background: #2a223e;
+  color: #d8b4fe;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .advisor-finance-kind.sale {
+  background: #13392e;
+  color: #86efac;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .advisor-finance-alert {
+  background: #451a1a;
+  color: #fca5a5;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .advisor-finance-notice {
+  background: #13382d;
+  color: #86efac;
+}
+
 /* Consistent focus visibility for controls on dark operational surfaces. */
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.inventory-operations-calendar, .purchasing-workspace,
   .personnel-page, .quote-product-picker, .catalog-page, .vc-marketing-planning-dialog,
