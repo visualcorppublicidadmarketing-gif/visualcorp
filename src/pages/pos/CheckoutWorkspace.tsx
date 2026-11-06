@@ -21,8 +21,8 @@ import { normalizeGoogleMapsUrl } from '../../lib/maps';
 import { POSCustomerPicker } from './components/POSCustomerPicker';
 import { POSCheckoutSteps, type POSCheckoutStep } from './components/POSCheckoutSteps';
 import { POSProductSearch } from './components/POSProductSearch';
+import { POSMeasurementControls } from './components';
 import { AdvisorProductFavoriteButton } from '../../components/AdvisorProductFavoriteButton';
-import { MeasurementPreview } from '../../components/MeasurementPreview';
 import { useAdvisorProductFavorites } from '../../hooks/useAdvisorProductFavorites';
 import { buildPOSWhatsAppMessage, copyTextToClipboard } from '../../lib/whatsapp';
 import { getProductionDetails, isProductionWorkflowCode, POSProductionDetails, type ProductionDetailsValue, type ProductionLine, type ProductionWorkflowCode } from './POSProductionDetails';
@@ -31,6 +31,7 @@ import './checkout-workspace.css';
 import './pos-material-usage.css';
 
 const trackedAccessoryProductIds = new Set(['prod-extras-ojal-peque-o-c-u','prod-extras-ojales-grande-c-u']);
+const roundMoney = (value:number) => Math.round((value + Number.EPSILON) * 100) / 100;
 const normalizeCustomerPhone = (value) => { const digits=String(value||'').replace(/\D/g,'');return digits.startsWith('593')&&digits.length===12?`0${digits.slice(3)}`:digits; };
 type POSMaterialRequestDraft = { recipeId: string; quantity: string };
 const sanitizePOSMaterialRequests = (value: unknown): POSMaterialRequestDraft[] => {
@@ -55,12 +56,37 @@ const sanitizePOSPayments = (rows: unknown) => {
   return sanitized.length?sanitized:[{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}];
 };
 const sanitizePOSSaleLines = (lines: unknown) => Array.isArray(lines)?lines.slice(0,100).filter((line)=>line&&typeof line==='object'&&Number.isFinite(Number(line.quantity))&&Number(line.quantity)>0&&Number.isFinite(Number(line.unit_price))&&Number(line.unit_price)>=0).map((line,index)=>({line_key:String(line.line_key||`legacy-${index}`),catalog_product_id:line.catalog_product_id||null,sku:String(line.sku||''),description:String(line.description||'Artículo cotizado'),quantity:Number(line.quantity),unit_price:Number(line.unit_price),material_requests:sanitizePOSMaterialRequests(line.material_requests||line.materialRequests).map((request)=>({recipe_id:request.recipeId,quantity:request.quantity}))})):[];
-const getPOSQuoteSaleLines = (quote: any) => Array.isArray(quote?.items)?quote.items.map((item,index)=>({line_key:`quote-${quote.id}-${index}`,catalog_product_id:item.product_id||null,sku:item.sku||item.product_id||'',description:[item.name||item.product_name||'Artículo cotizado',item.width_cm&&item.height_cm?`${item.width_cm} × ${item.height_cm} cm`:null,item.unit||null].filter(Boolean).join(' · '),quantity:Number(item.quantity),pieceQuantity:Number(item.piece_quantity)||Number(item.quantity),totalArea:item.unit==='m²'?Number(item.quantity):null,unit_price:Number(item.total)/Number(item.quantity),widthCm:item.width_cm||null,heightCm:item.height_cm||null,unit:item.unit||'unidad',optionChoice:item.option_choice||''})):[];
+const getPOSQuoteFinancial = (quote: any) => quote?.items?.find((item:any)=>item?.document_details?.financial)?.document_details?.financial||null;
+const getPOSQuoteSaleLines = (quote: any) => {
+  const financial = getPOSQuoteFinancial(quote);
+  return Array.isArray(quote?.items) ? quote.items.map((item,index) => {
+    const quantity=Number(item.quantity);
+    const finalLineTotal=Number(item.total)||0;
+    const lineSubtotal=financial
+      ? Number(item.subtotal ?? (finalLineTotal-(Number(item.discount_amount)||0)-(Number(item.tax_amount)||0)-(Number(item.shipping_share)||0)))||0
+      : finalLineTotal;
+    return {
+      line_key:`quote-${quote.id}-${index}`,catalog_product_id:item.product_id||null,sku:item.sku||item.product_id||'',
+      description:[item.name||item.product_name||'Artículo cotizado',item.width_cm&&item.height_cm?`${item.width_cm} × ${item.height_cm} cm`:null,item.unit||null].filter(Boolean).join(' · '),
+      quantity,pieceQuantity:Number(item.piece_quantity)||quantity,totalArea:item.unit==='m²'?quantity:null,
+      unit_price:quantity>0?lineSubtotal/quantity:0,widthCm:item.width_cm||null,heightCm:item.height_cm||null,unit:item.unit||'unidad',optionChoice:item.option_choice||'',
+    };
+  }) : [];
+};
 const sanitizeProductionDetails = (value: unknown): Record<string, ProductionDetailsValue> => {
   if(!value||typeof value!=='object'||Array.isArray(value))return {};
   return Object.fromEntries(Object.entries(value).slice(0,100).filter(([key,entry])=>key.length<=150&&entry&&typeof entry==='object').map(([key,entry]:[string,any])=>[key,{workflow_code:isProductionWorkflowCode(entry.workflow_code)?entry.workflow_code:'review',specifications:entry.specifications&&typeof entry.specifications==='object'&&!Array.isArray(entry.specifications)?entry.specifications:{}}]));
 };
 const posSaleLinesSignature = (lines: unknown) => JSON.stringify(sanitizePOSSaleLines(lines).map(({ material_requests: _requests, ...line }) => line));
+function POSFinancialBreakdown({ subtotal, discount, taxRate, taxAmount, total, shipping = 0, taxApplied = true, taxLabel = 'No aplicado', className = '' }: { subtotal:number; discount:number; taxRate:number; taxAmount:number; total:number; shipping?:number; taxApplied?:boolean; taxLabel?:string; className?:string }) {
+  return <dl className={`pos-order-financial-breakdown ${className}`} aria-label="Desglose del total de la orden">
+    <div><dt>Subtotal</dt><dd>{formatMoney(subtotal)}</dd></div>
+    {discount>0&&<div><dt>Descuento</dt><dd>−{formatMoney(discount)}</dd></div>}
+    {taxApplied?<div className="pos-tax-line"><dt>IVA ({taxRate}%)</dt><dd>+{formatMoney(taxAmount)}</dd></div>:<div className="pos-tax-line"><dt>IVA</dt><dd>{taxLabel}</dd></div>}
+    {shipping>0&&<div><dt>Envío / otros cargos</dt><dd>{formatMoney(shipping)}</dd></div>}
+    <div className="is-total"><dt>Total por cobrar</dt><dd>{formatMoney(total)}</dd></div>
+  </dl>;
+}
 const pendingSaleSignature = (snapshot: any) => JSON.stringify({
     form: {
     total:String(snapshot?.form?.total||''),amountPaid:String(snapshot?.form?.amountPaid||''),method:String(snapshot?.form?.method||''),customer:String(snapshot?.form?.customer||''),customerId:String(snapshot?.form?.customerId||''),customerPhone:String(snapshot?.form?.customerPhone||''),customerEmail:String(snapshot?.form?.customerEmail||''),customerDocumentReference:String(snapshot?.form?.customerDocumentReference||''),description:String(snapshot?.form?.description||''),productId:String(snapshot?.form?.productId||''),branchCode:String(snapshot?.form?.branchCode||''),quantity:String(snapshot?.form?.quantity||''),quoteId:String(snapshot?.form?.quoteId||''),
@@ -234,6 +260,8 @@ export function PosPage() {
   const [materialRecipesStatus,setMaterialRecipesStatus]=useState<'checking'|'ready'|'error'>('checking');
   const [materialRecipesReload,setMaterialRecipesReload]=useState(0);
   const [centralQuotes,setCentralQuotes]=useState([]);
+  const [configuredTaxRate,setConfiguredTaxRate]=useState(15);
+  const [taxConfigurationStatus,setTaxConfigurationStatus]=useState<'loading'|'ready'|'error'>('loading');
   const [paymentTarget,setPaymentTarget]=useState(null);
   const [paymentForm,setPaymentForm]=useState({amount:'',method:'Efectivo',reference:'',note:''});
   const [parkedOrders,setParkedOrders]=useState([]);
@@ -339,6 +367,22 @@ export function PosPage() {
     setCheckoutStep('order');
   };
   useEffect(()=>{if(!supabase||!organizationId){setCatalogLinkStatus('error');return;}let active=true;setCatalogLinkStatus('checking');Promise.all([supabase.from('catalog_inventory_links').select('catalog_product_id,inventory_variant_id,branch_id,location_code,active').eq('organization_id',organizationId).eq('active',true),supabase.from('central_quotes').select('*').eq('organization_id',organizationId).order('created_at',{ascending:false}).limit(100)]).then(([links,quotes])=>{if(!active)return;if(links.error){setCatalogLinkStatus('error');flash(`No se pudieron verificar los vínculos de stock: ${links.error.message}`);}else{setCatalogLinks(links.data||[]);setCatalogLinkStatus('ready');}if(quotes.error)flash(`No se pudieron cargar cotizaciones centrales: ${quotes.error.message}`);else setCentralQuotes(quotes.data||[]);});return()=>{active=false;};},[organizationId]);
+  useEffect(()=>{
+    if(!supabase||!organizationId){setTaxConfigurationStatus('error');return;}
+    let active=true;setTaxConfigurationStatus('loading');
+    void (async()=>{
+      try{
+        const {data:settings,error}=await supabase.from('calculator_settings').select('tax_rate').eq('organization_id',organizationId).eq('id','default').maybeSingle();
+        if(!active)return;
+        if(error){setTaxConfigurationStatus('error');return;}
+        const configured=settings?.tax_rate;
+        const rate=configured===null||configured===undefined?15:Number(configured);
+        if(!Number.isFinite(rate)||rate<0||rate>100){setTaxConfigurationStatus('error');return;}
+        setConfiguredTaxRate(rate);setTaxConfigurationStatus('ready');
+      }catch{if(active)setTaxConfigurationStatus('error');}
+    })();
+    return()=>{active=false;};
+  },[organizationId]);
   useEffect(()=>{let active=true;const load=async()=>{if(!supabase||!organizationId||!user){setCashierSession({loading:false,session:null,branch:null,error:''});return;}setCashierSession(current=>({...current,loading:true,error:''}));try{const {data:branch,error:branchError}=await supabase.from('branches').select('id,code,name').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();if(branchError)throw branchError;if(!branch?.id){if(active)setCashierSession({loading:false,session:null,branch:null,error:''});return;}const {data:session,error:sessionError}=await supabase.from('cash_sessions').select('id,opened_at,opening_cash,status').eq('organization_id',organizationId).eq('branch_id',branch.id).eq('opened_by',user.id).eq('status','open').maybeSingle();if(sessionError)throw sessionError;if(active)setCashierSession({loading:false,session,branch,error:''});}catch(error){if(active)setCashierSession({loading:false,session:null,branch:null,error:error.message||'Error desconocido'});}};load();return()=>{active=false;};},[organizationId,user?.id,form.branchCode]);
   const refreshParkedOrders=async()=>{
     if(!supabase||!organizationId)return;
@@ -406,11 +450,30 @@ export function PosPage() {
     return()=>{active=false;};
   },[form.customerId,canViewCustomerHistory,organizationId]);
   const branchName=data.branches.find((branch)=>branch.code===form.branchCode)?.name||(form.branchCode==='GIGA'?'Gigaprint':form.branchCode==='VIS'?'Visual Corp':form.branchCode);
+  const quotePreview=centralQuotes.find((quote)=>quote.id===form.quoteId);
+  const currentQuoteLines=getPOSQuoteSaleLines(quotePreview);
+  const quoteFinancial=getPOSQuoteFinancial(quotePreview);
+  const quoteHasFinancial=Boolean(quoteFinancial&&Number.isFinite(Number(quoteFinancial.subtotal)));
+  const quoteTaxApplied=quoteHasFinancial&&quoteFinancial.iva_applied===true;
+  const quoteTaxRate=quoteHasFinancial?Number(quoteFinancial.iva_rate)||0:0;
+  const quoteTaxAmount=quoteTaxApplied?Number(quoteFinancial.iva_amount)||0:0;
+  const quoteSubtotal=quoteHasFinancial?Number(quoteFinancial.subtotal)||0:currentQuoteLines.reduce((sum,line)=>sum+Number(line.quantity)*Number(line.unit_price),0);
+  const quoteDiscount=quoteHasFinancial?Number(quoteFinancial.discount_amount)||0:0;
+  const quoteShipping=quoteHasFinancial?Number(quoteFinancial.shipping_cost)||0:0;
   const cartTotal=Math.round(cart.reduce((sum,line)=>sum+(Number(line.total)||Number(line.quantity)*Number(line.unitPrice)),0)*100)/100;
   const manualDiscountPercent=Math.min(40,Math.max(0,Math.round(Number(discountPercent)||0)));
-  const manualDiscountAmount=Math.round(cartTotal*manualDiscountPercent)/100;
+  const manualDiscountAmount=roundMoney(cartTotal*manualDiscountPercent/100);
+  const discountedSubtotal=roundMoney(Math.max(0,cartTotal-manualDiscountAmount));
+  const manualTaxAmount=roundMoney(discountedSubtotal*configuredTaxRate/100);
   const discountReasonValid=Boolean(form.quoteId||manualDiscountAmount===0||(discountReason.trim().length>=3&&discountReason.trim().length<=300));
-  const activeTotal=form.quoteId?Number(form.total)||0:Math.max(0,Math.round((cartTotal-manualDiscountAmount)*100)/100);
+  const activeTotal=form.quoteId?Number(form.total)||0:roundMoney(discountedSubtotal+manualTaxAmount);
+  const activeSubtotal=form.quoteId?quoteSubtotal:cartTotal;
+  const activeDiscount=form.quoteId?quoteDiscount:manualDiscountAmount;
+  const activeTaxRate=form.quoteId?quoteTaxRate:configuredTaxRate;
+  const activeTaxAmount=form.quoteId?quoteTaxAmount:manualTaxAmount;
+  const activeShipping=form.quoteId?quoteShipping:0;
+  const activeTaxApplied=form.quoteId?quoteTaxApplied:true;
+  const activeTaxLabel=form.quoteId?(quoteHasFinancial?'No aplicado':'No consta en la cotización'):'No aplicado';
   const paymentBreakdown=calculatePOSPaymentBreakdown(activeTotal,payments);
   const paymentPreview=paymentBreakdown.applied;
   const selectedCartProduct=data.catalog.find((product)=>product.id===cartProductId);
@@ -420,14 +483,11 @@ export function PosPage() {
   const canViewPOSSales=hasPermission('sales','view');
   const canManageBackorders=hasPermission('purchases','edit');
   const hasPendingBackorderAuthorization=Boolean(pendingSaleRecoveryMode&&pendingSaleSnapshotRef.current?.allowBackorder===true);
-  const quotePreview=centralQuotes.find((quote)=>quote.id===form.quoteId);
-  const currentQuoteLines=getPOSQuoteSaleLines(quotePreview);
   const advisorDisplayName=user?.user_metadata?.full_name||user?.user_metadata?.name||user?.email||'Visual Corp';
-  const quoteFinancial=quotePreview?.items?.find((item:any)=>item?.document_details?.financial)?.document_details?.financial||null;
   const copyPOSWhatsApp=async()=>{
     const messageItems=form.quoteId?currentQuoteLines.map((line:any)=>({name:line.description,quantity:line.quantity,pieceQuantity:line.pieceQuantity,pieceUnit:'piezas',totalArea:line.totalArea,unit:line.unit,dimensions:line.widthCm&&line.heightCm?`${line.widthCm} × ${line.heightCm} cm`:undefined,unitPrice:line.unit_price,lineTotal:line.unit_price*line.quantity})):cart.map((line:any)=>({name:line.name,quantity:line.mode==='area'?line.billingQuantity:line.quantity,pieceQuantity:line.mode==='area'?line.quantity:undefined,pieceUnit:'piezas',totalArea:line.mode==='area'?line.areaTotal:undefined,unit:line.mode==='area'?'m²':line.unit,dimensions:line.widthCm&&line.heightCm?`${line.widthCm} × ${line.heightCm} cm`:undefined,unitPrice:line.unitPrice,lineTotal:line.total}));
     if(!messageItems.length){flash('Agrega un artículo o una cotización antes de copiar.');return;}
-    const message=buildPOSWhatsAppMessage({advisor:advisorDisplayName,customer:form.customer,branch:branchName,reference:quotePreview?.quote_code,items:messageItems,total:activeTotal,quoteFinancial,subtotal:form.quoteId?undefined:cartTotal,discountAmount:manualDiscountAmount,discountPercent:manualDiscountPercent,discountReason});
+    const message=buildPOSWhatsAppMessage({advisor:advisorDisplayName,customer:form.customer,branch:branchName,reference:quotePreview?.quote_code,items:messageItems,total:activeTotal,quoteFinancial,subtotal:form.quoteId?undefined:cartTotal,discountAmount:manualDiscountAmount,discountPercent:manualDiscountPercent,discountReason,taxRate:configuredTaxRate,taxAmount:manualTaxAmount});
     try{await copyTextToClipboard(message);flash('Resumen de la orden copiado para WhatsApp.');}catch(error:any){flash(error?.message||'No se pudo copiar el mensaje.');}
   };
   const saleMaterialLines=form.quoteId&&pendingSaleRecoveryMode&&Array.isArray(pendingSaleSnapshotRef.current?.saleLines)&&pendingSaleSnapshotRef.current.saleLines.length?sanitizePOSSaleLines(pendingSaleSnapshotRef.current.saleLines):form.quoteId?currentQuoteLines:cart.map((line)=>({line_key:line.key,catalog_product_id:line.productId||null,description:line.description||line.name,quantity:Number(line.billingQuantity)||line.quantity}));
@@ -486,8 +546,8 @@ export function PosPage() {
   const cashShiftPending=needsCashShift&&!pendingSaleRecoveryMode&&cashierSession.loading;
   const cashShiftUnavailable=needsCashShift&&!pendingSaleRecoveryMode&&!cashierSession.loading&&!cashierSession.session;
   const missingCartAccessoryLink=cart.some(line=>trackedAccessoryProductIds.has(line.productId)&&!catalogLinks.some(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.productId));
-  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&catalogLinkStatus==='ready'&&workflowRouteStatus==='ready'&&(!saleMaterialLines.some((line)=>line.catalog_product_id)||materialRecipesStatus==='ready')&&!missingCartAccessoryLink&&!backorderPermissionMissing&&!pendingSaleRecoveryError&&!pendingOperationChanged&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&discountReasonValid&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
-  const submitBlockReason=pendingSaleRecoveryError||(pendingOperationChanged?'Los datos de la operación o de la cotización cambiaron mientras la venta estaba pendiente. Recarga para restaurar la versión original antes de reintentar.':savingSale?'Guardando la venta…':!discountReasonValid?'Escribe el motivo del descuento (mínimo 3 y máximo 300 caracteres).':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando los vínculos de inventario…':catalogLinkStatus==='error'?'No se pudieron consultar los vínculos de inventario. Recarga antes de confirmar.':saleMaterialLines.some((line)=>line.catalog_product_id)&&materialRecipesStatus!=='ready'?(materialRecipesStatus==='checking'?'Comprobando las recetas de materiales de esta sucursal…':'No se pudieron verificar las recetas. Vuelve a Detalles del trabajo y reintenta la consulta.'):missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':backorderPermissionMissing?'Hay artículos sin conteo o con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.':duplicateCustomer?`Ya existe ${duplicateCustomer.name} con ese teléfono, correo o identificación. Selecciónalo para evitar crear un duplicado.`:customerLookupFailed?'No se pudo verificar si el cliente ya existe. Reintenta la búsqueda antes de confirmar.':customerLookupPending?'Buscando coincidencias del cliente…':customerNameMissing?'Completa el nombre del cliente o limpia la búsqueda si será una venta de mostrador.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'');
+  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&catalogLinkStatus==='ready'&&workflowRouteStatus==='ready'&&(form.quoteId||taxConfigurationStatus==='ready')&&(!saleMaterialLines.some((line)=>line.catalog_product_id)||materialRecipesStatus==='ready')&&!missingCartAccessoryLink&&!backorderPermissionMissing&&!pendingSaleRecoveryError&&!pendingOperationChanged&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&discountReasonValid&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
+  const submitBlockReason=pendingSaleRecoveryError||(pendingOperationChanged?'Los datos de la operación o de la cotización cambiaron mientras la venta estaba pendiente. Recarga para restaurar la versión original antes de reintentar.':savingSale?'Guardando la venta…':!discountReasonValid?'Escribe el motivo del descuento (mínimo 3 y máximo 300 caracteres).':!form.quoteId&&taxConfigurationStatus==='loading'?'Consultando la tasa de IVA de la organización…':!form.quoteId&&taxConfigurationStatus==='error'?'No se pudo verificar la tasa de IVA. Recarga antes de confirmar la venta.':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando los vínculos de inventario…':catalogLinkStatus==='error'?'No se pudieron consultar los vínculos de inventario. Recarga antes de confirmar.':saleMaterialLines.some((line)=>line.catalog_product_id)&&materialRecipesStatus!=='ready'?(materialRecipesStatus==='checking'?'Comprobando las recetas de materiales de esta sucursal…':'No se pudieron verificar las recetas. Vuelve a Detalles del trabajo y reintenta la consulta.'):missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':backorderPermissionMissing?'Hay artículos sin conteo o con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.':duplicateCustomer?`Ya existe ${duplicateCustomer.name} con ese teléfono, correo o identificación. Selecciónalo para evitar crear un duplicado.`:customerLookupFailed?'No se pudo verificar si el cliente ya existe. Reintenta la búsqueda antes de confirmar.':customerLookupPending?'Buscando coincidencias del cliente…':customerNameMissing?'Completa el nombre del cliente o limpia la búsqueda si será una venta de mostrador.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'');
   const cartQuantityNumber=Number(cartQuantity);
   const cartWidthNumber=Number(cartWidthCm);
   const cartHeightNumber=Number(cartHeightCm);
@@ -574,6 +634,7 @@ export function PosPage() {
   const choosePOSCustomer=(customer)=>{setSelectedCustomerSnapshot(customer||null);setForm((current)=>({...current,customerId:customer?.id||'',customer:customer?.name||'',customerPhone:customer?.phone||'',customerEmail:customer?.email||'',customerDocumentReference:customer?.documentReference||''}));setCustomerQuery(customer?.name||'');};
   const parkCurrentOrder=async()=>{
     if(!user||!organizationId||parking)return;
+    if(!form.quoteId&&taxConfigurationStatus!=='ready'){flash(taxConfigurationStatus==='loading'?'Espera a que se confirme la tasa de IVA antes de guardar el total.':'No se pudo verificar la tasa de IVA. Recarga antes de guardar la orden.');return;}
     if(activeParkedOrderId){flash('Esta orden ya está en espera; confírmala para cerrarla desde esta pantalla.');return;}
     if(!form.quoteId&&!cart.length){flash('Agrega artículos o elige una cotización antes de guardar en espera.');return;}
     if(!activeTotal||activeTotal<=0){flash('La orden necesita un total mayor que cero para guardarse en espera.');return;}
@@ -683,8 +744,9 @@ export function PosPage() {
     const quoteLines=recoveredSaleLines||currentQuoteLines;
     if(form.quoteId&&(!quoteLines.length||quoteLines.some(line=>!Number.isFinite(line.quantity)||line.quantity<=0||!Number.isFinite(line.unit_price)||line.unit_price<0))){flash('La cotización no tiene conceptos completos para crear la venta. Corrige sus artículos antes de cobrar.');return;}
     if(quoteLines.some(line=>line.catalog_product_id&&trackedAccessoryProductIds.has(line.catalog_product_id)&&!catalogLinks.some(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.catalog_product_id))){flash('La cotización incluye ojales sin vínculo de inventario en esta sucursal. Corrige el vínculo antes de confirmar para no registrar una venta sin descuento de stock.');return;}
-    const quoteLinesTotal=Math.round(quoteLines.reduce((sum,line)=>sum+line.quantity*line.unit_price,0)*100)/100;
-    if(form.quoteId&&quoteLinesTotal!==Math.round(total*100)/100){flash(`Los conceptos de la cotización suman ${formatMoney(quoteLinesTotal)} y no coinciden con el total aprobado de ${formatMoney(total)}. No se registró la venta.`);return;}
+    const quoteLinesTotal=roundMoney(quoteLines.reduce((sum,line)=>sum+line.quantity*line.unit_price,0));
+    const quoteExpectedSubtotal=quoteHasFinancial?Number(quoteFinancial.subtotal)||0:total;
+    if(form.quoteId&&quoteLinesTotal!==roundMoney(quoteExpectedSubtotal)){flash(`El subtotal de los conceptos de la cotización (${formatMoney(quoteLinesTotal)}) no coincide con su desglose (${formatMoney(quoteExpectedSubtotal)}). No se registró la venta.`);return;}
     const saleProductLines=saleMaterialLines.filter((line)=>line.catalog_product_id);
     if(saleProductLines.length&&materialRecipesStatus!=='ready'){flash('No se pueden verificar las recetas de materiales de esta sucursal. Reintenta la consulta antes de confirmar la venta.');return;}
     const missingMaterialUsage=saleMaterialLines.flatMap((line)=>materialRecipes.filter((recipe)=>recipe.active&&recipe.branch_id===selectedBranchId&&recipe.catalog_product_id===line.catalog_product_id&&recipe.calculation_mode==='explicit_quantity').filter((recipe)=>{const entry=(materialRequestsByLine[line.line_key]||[]).find((request)=>request.recipeId===recipe.id);const quantity=Number(entry?.quantity);return !Number.isFinite(quantity)||quantity<=0||quantity>1000000;}).map((recipe)=>({line,recipe})));
@@ -693,7 +755,8 @@ export function PosPage() {
     const lines=form.quoteId?sanitizePOSSaleLines(quoteLines).map(line=>({ ...requestsForLine(line),sku:data.catalog.find(product=>product.id===line.catalog_product_id)?.sku||line.sku||line.catalog_product_id||'' })):cart.map(line=>requestsForLine({line_key:line.key,catalog_product_id:line.productId||null,sku:line.sku||line.productId||'',description:line.description||line.name,quantity:Number(line.billingQuantity)||line.quantity,unit_price:line.unitPrice}));
     const saleNote=pendingSaleRecoveryMode&&pendingSaleKey.current&&typeof pendingSaleSnapshotRef.current?.saleNote==='string'?pendingSaleSnapshotRef.current.saleNote:[form.description,quote?`Cotización ${quote.quote_code}`:cart.map(line=>`${line.name} × ${line.quantity}`).join(' · ')].filter(Boolean).join(' · ');
     const discountAuditNote=!form.quoteId&&manualDiscountAmount>0?`Descuento comercial (${manualDiscountPercent}%): ${discountReason.trim()}`:'';
-    const saleNoteWithDiscount=[discountAuditNote,saleNote].filter(Boolean).join('\n');
+    const quoteDiscountAuditNote=form.quoteId&&quoteDiscount>0?`Descuento comercial (${Math.round(Number(quoteFinancial?.discount_percent)||0)}%): ${String(quoteFinancial?.discount_reason||'Descuento aprobado en cotización').trim()}`:'';
+    const saleNoteWithDiscount=[discountAuditNote,quoteDiscountAuditNote,saleNote].filter(Boolean).join('\n');
     const shortages=findPOSStockShortages(lines,catalogLinks,selectedBranchId,data.inventory);
     if(shortages.length&&!canManageBackorders&&!hasPendingBackorderAuthorization){flash('Hay productos sin conteo o con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.');return;}
     if(shortages.length){const accepted=await confirmDialog({eyebrow:'VENTA CON FALTANTE DE INVENTARIO',title:'¿Confirmar la orden como compra urgente?',description:`${shortages.length} artículo(s) tienen conteo pendiente o existencias insuficientes en esta sucursal.`,tone:'warning',confirmLabel:'Confirmar y solicitar compra',cancelLabel:'Volver a revisar',summaryItems:[{label:'Artículos con faltante',value:String(shortages.length)}],consequences:['La venta continuará y el faltante quedará señalado para compra urgente.','No se inventará una disponibilidad: el registro conservará el detalle del faltante.']});if(!accepted)return;}
@@ -722,8 +785,8 @@ export function PosPage() {
         p_idempotency_key:pendingSaleKey.current,
         p_branch_code:form.branchCode,
         p_customer_id:form.customerId||null,
-        p_customer_data:{full_name:form.customer.trim(),phone:form.customerPhone.trim(),email:form.customerEmail.trim(),document_reference:form.customerDocumentReference.trim()},
-        p_discount:form.quoteId?0:manualDiscountAmount,
+        p_customer_data:{full_name:form.customer.trim(),phone:form.customerPhone.trim(),email:form.customerEmail.trim(),document_reference:form.customerDocumentReference.trim(),central_quote_id:form.quoteId||null},
+        p_discount:form.quoteId?quoteDiscount:manualDiscountAmount,
         p_note:saleNoteWithDiscount,
         p_allow_backorder:Boolean(currentSnapshot.allowBackorder),
         p_lines:lines,
@@ -804,7 +867,7 @@ export function PosPage() {
             {favoriteStorageStatus==='local'&&<small className="pos-favorite-storage-note">Las estrellas se guardan en este navegador hasta conectar el almacenamiento del equipo.</small>}
             {!cartProductId&&cartMode==='quantity'&&<label>Concepto libre<input value={cartItemName} onChange={(event)=>setCartItemName(event.target.value)} placeholder="Producto o servicio acordado"/></label>}
             {selectedCartProduct&&<div className="pos-selected-product"><POSProductVisual src={selectedCartProduct.image} alt={selectedCartProduct.name} className="pos-selected-image" iconSize={18}/><span><b>{selectedCartProduct.name}</b><small>{selectedCartProduct.sku||selectedCartProduct.id} · {selectedCartProduct.family} · {selectedCartProduct.unit||'unidad'}{cartPriceAvailable?' · tarifa lista para venta':' · tarifa pendiente de configurar'}</small><small>{!selectedCatalogLink?'Sin vínculo: esta venta no descontará inventario.':!selectedLinkedStock||selectedLinkedStock.sourceStatus?'Vínculo activo; falta conteo físico para confirmar disponibilidad.':`Disponible en ${branchName}: ${selectedAvailableStock} ${selectedLinkedStock.unit}.`}</small></span><AdvisorProductFavoriteButton favorite={favoriteIds.has(selectedCartProduct.id)} onToggle={()=>toggleFavorite(selectedCartProduct.id)}/><button className="icon-button" type="button" aria-label="Quitar artículo seleccionado" onClick={()=>{setCartProductId('');setCartUnitPrice('');}}><X size={14}/></button></div>}
-            {cartMode==='area'&&<><div className="pos-measure-presets" role="group" aria-label="Tamaños rápidos"><span>Tamaños comunes</span>{[[100,100,'1 × 1 m'],[200,100,'2 × 1 m'],[300,100,'3 × 1 m'],[80,200,'80 × 200 cm'],[120,80,'120 × 80 cm'],[60,40,'60 × 40 cm']].map(([width,height,label])=><button key={`${width}x${height}`} type="button" onClick={()=>{setCartWidthCm(String(width));setCartHeightCm(String(height));}}>{label}</button>)}</div><div className="pos-cart-inputs pos-measure-inputs"><label>Ancho (cm)<input id="pos-cart-width" type="number" min="0.01" step="0.01" value={cartWidthCm} onChange={(event)=>setCartWidthCm(event.target.value)}/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" value={cartHeightCm} onChange={(event)=>setCartHeightCm(event.target.value)}/></label><label>Cantidad de piezas<input type="number" min="1" step="1" value={cartQuantity} onChange={(event)=>setCartQuantity(event.target.value)}/></label></div><MeasurementPreview widthCm={cartWidthNumber} heightCm={cartHeightNumber} pieces={cartQuantityNumber}/></>}
+            {cartMode==='area'&&<POSMeasurementControls widthValue={cartWidthCm} heightValue={cartHeightCm} quantityValue={cartQuantity} widthCm={cartWidthNumber} heightCm={cartHeightNumber} quantity={cartQuantityNumber} onWidthChange={setCartWidthCm} onHeightChange={setCartHeightCm} onQuantityChange={setCartQuantity}/>}
             {cartMode==='quantity'&&<div className="pos-cart-inputs"><label>Cantidad<input id="pos-cart-quantity" type="number" min="1" step="1" value={cartQuantity} onChange={(event)=>setCartQuantity(event.target.value)}/></label>{!selectedCartProduct&&<label>Precio acordado por unidad<div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartUnitPrice} onChange={(event)=>setCartUnitPrice(event.target.value)} placeholder="0,00"/></div></label>}</div>}
             {selectedCartProduct&&<>{selectedCartProduct.optionPrices?.length>0&&<label>Material / acabado<select value={cartOptionChoice} onChange={(event)=>setCartOptionChoice(event.target.value)}><option value="">Tarifa base</option>{selectedCartProduct.optionPrices.map(option=><option key={option.label} value={option.label}>{option.label}</option>)}</select></label>}<QuotePriceComparison product={selectedCartProduct} basis={cartPricingBasis} selectedTier={cartPriceTier} onSelect={setCartPriceTier} optionChoice={cartOptionChoice}/>{cartMode==='area'&&invalidMeasurementStockLink&&<p className="pos-calculation-warning">Este artículo descuenta inventario medido en “{measurementStockUnit}”. Asigna una existencia en m² antes de venderlo para evitar un descuento incorrecto.</p>}</>}
             {selectedCartProduct&&cartCalculation&&<div className="pos-calculation-total"><span>{cartMode==='area'?`${cartAreaPerPiece.toFixed(4)} m² por pieza × ${cartQuantityNumber} · ${cartCalculation.billedQuantity.toFixed(4)} m² en total`:`${cartQuantityNumber} ${selectedCartProduct.unit||'unidades'} · tarifa por ${selectedCartProduct.unit||'unidad'}`}</span><strong>{formatMoney(cartCalculation.total)}</strong></div>}
@@ -823,7 +886,8 @@ export function PosPage() {
         </section>}
         {checkoutStep==='payment'&&<section className="pos-checkout-review" aria-label="Revisión antes de confirmar">
           <div className="pos-stage-heading"><span className="eyebrow">ETAPA 3 DE 3</span><h3>Revisa la orden antes de confirmar</h3><p>Comprueba artículos, cliente, entrega y cobro. La venta se registra una sola vez.</p></div>
-          <dl className="pos-review-grid"><div><dt>Cliente</dt><dd>{form.customer||'Venta de mostrador'}</dd></div><div><dt>Sucursal</dt><dd>{branchName}</dd></div><div><dt>Artículos</dt><dd>{form.quoteId?'Cotización '+(centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||''):cart.length+' '+(cart.length===1?'artículo':'artículos')}</dd></div>{!form.quoteId&&<><div><dt>Subtotal</dt><dd>{formatMoney(cartTotal)}</dd></div><div><dt>Descuento comercial</dt><dd>{manualDiscountAmount?`${formatMoney(manualDiscountAmount)} · ${manualDiscountPercent}% · ${discountReason.trim()}`:'Sin descuento'}</dd></div><div><dt>Total</dt><dd>{formatMoney(activeTotal)}</dd></div></>}<div><dt>Entrega</dt><dd>{fulfillment.deliveryAt?new Date(fulfillment.deliveryAt).toLocaleString('es-EC',{dateStyle:'medium',timeStyle:'short'}):'Sin fecha indicada'}</dd></div><div><dt>Instalación</dt><dd>{fulfillment.installationRequired?fulfillment.installationAddress||'Dirección pendiente':'No solicitada'}</dd></div><div><dt>Cobro</dt><dd>{chargeNow?'Aplicado '+formatMoney(paymentBreakdown.applied)+' · Saldo '+formatMoney(paymentBreakdown.balance):'Pendiente de cobro'}</dd></div></dl>
+          <dl className="pos-review-grid"><div><dt>Cliente</dt><dd>{form.customer||'Venta de mostrador'}</dd></div><div><dt>Sucursal</dt><dd>{branchName}</dd></div><div><dt>Artículos</dt><dd>{form.quoteId?'Cotización '+(centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||''):cart.length+' '+(cart.length===1?'artículo':'artículos')}</dd></div><div><dt>Entrega</dt><dd>{fulfillment.deliveryAt?new Date(fulfillment.deliveryAt).toLocaleString('es-EC',{dateStyle:'medium',timeStyle:'short'}):'Sin fecha indicada'}</dd></div><div><dt>Instalación</dt><dd>{fulfillment.installationRequired?fulfillment.installationAddress||'Dirección pendiente':'No solicitada'}</dd></div><div><dt>Cobro</dt><dd>{chargeNow?'Aplicado '+formatMoney(paymentBreakdown.applied)+' · Saldo '+formatMoney(paymentBreakdown.balance):'Pendiente de cobro'}</dd></div></dl>
+          {(form.quoteId||cart.length>0)&&<POSFinancialBreakdown subtotal={activeSubtotal} discount={activeDiscount} taxRate={activeTaxRate} taxAmount={activeTaxAmount} total={activeTotal} shipping={activeShipping} taxApplied={activeTaxApplied} taxLabel={activeTaxLabel} className="pos-review-financial"/>}
           <div className="pos-review-actions"><button className="button button-outline" type="button" onClick={()=>void copyPOSWhatsApp()}><Copy size={15}/> Copiar WhatsApp</button><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('details')}>Editar detalles del trabajo</button></div>
         </section>}
         <aside className={`pos-order-summary${mobileSummaryOpen?' is-open':''}`} data-checkout-step={checkoutStep}>
@@ -831,7 +895,8 @@ export function PosPage() {
           {form.quoteId
             ? <section className="pos-cart pos-quote-cart" aria-label="Resumen de cotización"><div className="pos-cart-heading"><div><span className="eyebrow">COTIZACIÓN APROBADA</span><h3>{centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||'Pedido aprobado'}</h3></div><strong>{formatMoney(activeTotal)}</strong></div><p className="pos-cart-empty">{form.description||'Los conceptos y el total se conservarán como fueron aprobados.'}</p></section>
             : <section className="pos-cart" aria-label="Carrito de venta"><div className="pos-cart-heading"><div><span className="eyebrow">ORDEN ACTUAL</span><h3>{cart.length} {cart.length===1?'artículo':'artículos'}</h3></div><strong>{formatMoney(cartTotal)}</strong></div>{cart.length===0?<p className="pos-cart-empty">Agrega productos del catálogo o registra un concepto libre con precio acordado.</p>:<div className="pos-cart-lines">{cart.map((line)=><POSCartLineEditor key={line.key} line={line} product={data.catalog.find((product)=>product.id===line.productId)} inventoryStatus={cartInventoryStatus(line)} onRemove={()=>{setCart(current=>current.filter(item=>item.key!==line.key));setMaterialRequestsByLine(current=>{const next={...current};delete next[line.key];return next;});}} onSave={(nextLine)=>setCart(current=>current.map(item=>item.key===line.key?nextLine:item))}/>)}</div>}</section>}
-          {!form.quoteId&&cart.length>0&&<section className="pos-discount-editor" aria-labelledby="pos-discount-title"><div className="pos-discount-heading"><div><span className="eyebrow">AJUSTE COMERCIAL</span><h3 id="pos-discount-title">Descuento de la venta</h3></div><strong>{manualDiscountPercent}%</strong></div><div className="pos-discount-slider-row"><label htmlFor="pos-discount-percent">Porcentaje de descuento <span>Hasta 40%</span></label><input id="pos-discount-percent" type="range" min="0" max="40" step="1" value={manualDiscountPercent} onChange={(event)=>setDiscountPercent(event.target.value)} aria-describedby="pos-discount-hint"/><div className="pos-discount-milestones">{[0,10,20,40].map((value)=><button key={value} type="button" className={manualDiscountPercent===value?'is-active':''} onClick={()=>setDiscountPercent(String(value))}>{value}%</button>)}</div></div>{manualDiscountAmount>0&&<label className="pos-discount-reason" htmlFor="pos-discount-reason">Motivo del descuento <span>Obligatorio · {discountReason.trim().length}/300</span><input id="pos-discount-reason" type="text" maxLength={300} value={discountReason} onChange={(event)=>setDiscountReason(event.target.value)} aria-invalid={!discountReasonValid} placeholder="Ej.: cliente frecuente, volumen acordado"/></label>}<p id="pos-discount-hint" className="pos-discount-hint">El descuento se registra en la venta y requiere un motivo. Las cotizaciones aprobadas conservan su total.</p><dl className="pos-discount-total"><div><dt>Subtotal</dt><dd>{formatMoney(cartTotal)}</dd></div>{manualDiscountAmount>0&&<div><dt>Descuento</dt><dd>−{formatMoney(manualDiscountAmount)}</dd></div>}<div className="is-total"><dt>Total por cobrar</dt><dd>{formatMoney(activeTotal)}</dd></div></dl></section>}
+          {!form.quoteId&&cart.length>0&&<section className="pos-discount-editor" aria-labelledby="pos-discount-title"><div className="pos-discount-heading"><div><span className="eyebrow">AJUSTE COMERCIAL</span><h3 id="pos-discount-title">Descuento de la venta</h3></div><strong>{manualDiscountPercent}%</strong></div><div className="pos-discount-slider-row"><label htmlFor="pos-discount-percent">Porcentaje de descuento <span>Hasta 40%</span></label><input id="pos-discount-percent" type="range" min="0" max="40" step="1" value={manualDiscountPercent} onChange={(event)=>setDiscountPercent(event.target.value)} aria-describedby="pos-discount-hint"/><div className="pos-discount-milestones">{[0,10,20,40].map((value)=><button key={value} type="button" className={manualDiscountPercent===value?'is-active':''} onClick={()=>setDiscountPercent(String(value))}>{value}%</button>)}</div></div>{manualDiscountAmount>0&&<label className="pos-discount-reason" htmlFor="pos-discount-reason">Motivo del descuento <span>Obligatorio · {discountReason.trim().length}/300</span><input id="pos-discount-reason" type="text" maxLength={300} value={discountReason} onChange={(event)=>setDiscountReason(event.target.value)} aria-invalid={!discountReasonValid} placeholder="Ej.: cliente frecuente, volumen acordado"/></label>}<p id="pos-discount-hint" className="pos-discount-hint">El descuento se registra en la venta y requiere un motivo. Las cotizaciones aprobadas conservan su desglose.</p></section>}
+          {(form.quoteId||cart.length>0)&&<POSFinancialBreakdown subtotal={activeSubtotal} discount={activeDiscount} taxRate={activeTaxRate} taxAmount={activeTaxAmount} total={activeTotal} shipping={activeShipping} taxApplied={activeTaxApplied} taxLabel={activeTaxLabel} className="pos-sidebar-financial"/>}
         <section className="pos-payment-section" hidden={checkoutStep!=='payment'}>
           <div className="pos-payment-title"><div><span className="eyebrow">COBRO</span><h3>Forma de pago</h3></div><label className="pos-charge-toggle"><input type="checkbox" checked={chargeNow} onChange={(event)=>setChargeNow(event.target.checked)}/> Cobrar ahora</label></div>
           {chargeNow?<>
@@ -850,7 +915,7 @@ export function PosPage() {
         </section>
         {activeParkedOrderId&&<div className="pos-parked-active"><span>ORDEN RECUPERADA</span><b>Se conserva en espera hasta confirmar la venta.</b></div>}
         <div className="pos-submit-actions">
-          <button className="button button-outline" type="button" disabled={parking||pendingSaleRecoveryMode||Boolean(activeParkedOrderId)||(!form.quoteId&&!cart.length)} onClick={parkCurrentOrder}>{activeParkedOrderId?'Ya está en espera':parking?'Guardando…':'Guardar en espera'} <ClipboardList size={15}/></button>
+          <button className="button button-outline" type="button" disabled={parking||pendingSaleRecoveryMode||Boolean(activeParkedOrderId)||(!form.quoteId&&!cart.length)||(!form.quoteId&&taxConfigurationStatus!=='ready')} onClick={parkCurrentOrder}>{activeParkedOrderId?'Ya está en espera':parking?'Guardando…':'Guardar en espera'} <ClipboardList size={15}/></button>
           {checkoutStep==='order'?<button className="button button-dark" type="button" onClick={advanceFromOrder}>{requiresWorkDetails?'Ir a detalles':'Revisar y cobrar'} <ChevronRight size={15}/></button>:checkoutStep==='details'?<button className="button button-dark" type="button" onClick={continueToPayment}>Revisar y cobrar <ChevronRight size={15}/></button>:<button className="button button-dark form-submit" type="submit" disabled={!canSubmitSale}>{savingSale?'Guardando venta…':'Confirmar orden'} <Check size={16}/></button>}
         </div>
         {submitBlockReason&&<p className="pos-submit-guidance" role="status">{submitBlockReason}</p>}

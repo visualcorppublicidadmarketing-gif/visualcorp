@@ -204,6 +204,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
   const saleTotal = !isQuote ? numberOrNull(document?.total) : null;
   const saleSubtotal = !isQuote ? numberOrNull(document?.subtotal) ?? lineSubtotal : null;
   const discount = !isQuote ? numberOrNull(document?.discount_total) : null;
+  const saleShipping = !isQuote ? numberOrNull(document?.shipping_cost) : null;
   const taxAmount = document ? optionalMoney(document, ['iva_amount', 'iva_total', 'vat_amount', 'vat_total', 'tax_amount', 'tax_total']) ?? (isQuote ? numberOrNull(quoteFinancial.iva_amount) : null) : null;
   const taxRate = document ? optionalMoney(document, ['iva_rate', 'vat_rate', 'tax_rate']) ?? (isQuote ? numberOrNull(quoteFinancial.iva_rate) : null) : null;
   const payments = !isQuote && Array.isArray(document?.sale_payments) ? document.sale_payments : [];
@@ -301,6 +302,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
           <div className="commercial-detail-total-row"><span>Descuento registrado</span><b>{discount === null ? '—' : formatMoney(discount)}</b></div>
           {discount !== null && discount > 0 && document?.discount_reason && <p className="commercial-detail-tax-reason">Motivo del descuento: {document.discount_reason}</p>}
           <div className="commercial-detail-tax-note"><span>IVA</span><b>{taxLabel}</b></div>
+          {saleShipping !== null && saleShipping > 0 && <div className="commercial-detail-total-row"><span>Envío / otros cargos</span><b>{formatMoney(saleShipping)}</b></div>}
           <div className="commercial-detail-total-row is-grand"><span>Total registrado</span><b>{saleTotal === null ? '—' : formatMoney(saleTotal)}</b></div>
           <div className="commercial-detail-total-row is-balance"><span>Abonado · saldo pendiente</span><b>{formatMoney(paid)} · {balance === null ? '—' : formatMoney(balance)}</b></div>
         </>}
