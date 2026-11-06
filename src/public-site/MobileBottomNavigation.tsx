@@ -28,6 +28,13 @@ export function MobileBottomNavigation({ services }: { services: ServiceLink[] }
   useEffect(() => { setOpenGroup(null); }, [location.pathname]);
 
   useEffect(() => {
+    const desktopLayout = window.matchMedia('(min-width: 1401px)');
+    const closeOnDesktop = () => { if (desktopLayout.matches) setOpenGroup(null); };
+    desktopLayout.addEventListener('change', closeOnDesktop);
+    return () => desktopLayout.removeEventListener('change', closeOnDesktop);
+  }, []);
+
+  useEffect(() => {
     if (!openGroup) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';

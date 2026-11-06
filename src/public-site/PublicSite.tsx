@@ -98,7 +98,7 @@ function SiteHeader({ theme, onThemeChange }) {
     closeNavigation();
   }, [location.pathname]);
   useEffect(() => {
-    const layoutChange = window.matchMedia('(max-width: 1120px)');
+    const layoutChange = window.matchMedia('(max-width: 1400px)');
     const handleLayoutChange = () => closeNavigation();
     layoutChange.addEventListener('change', handleLayoutChange);
     return () => layoutChange.removeEventListener('change', handleLayoutChange);
@@ -129,7 +129,7 @@ function SiteHeader({ theme, onThemeChange }) {
   const userAvatar = getGoogleAvatarUrl(user);
   const AdminAccessIcon = user ? PanelsTopLeft : LogIn;
   return <>
-  <header className="site-header" ref={headerRef}>
+  <header className={`site-header${user ? ' has-session' : ''}`} ref={headerRef}>
     <div className="site-header-inner"><BrandLink onClick={closeNavigation} theme={theme} />
       <nav className="site-nav" aria-label="Navegación principal">
         <NavLink to="/" end onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Inicio</NavLink>
