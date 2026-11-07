@@ -26,6 +26,7 @@ import { AdvisorProductFavoriteButton } from '../../components/AdvisorProductFav
 import { useAdvisorProductFavorites } from '../../hooks/useAdvisorProductFavorites';
 import { buildPOSWhatsAppMessage, copyTextToClipboard } from '../../lib/whatsapp';
 import { getProductionDetails, isProductionWorkflowCode, POSProductionDetails, type ProductionDetailsValue, type ProductionLine, type ProductionWorkflowCode } from './POSProductionDetails';
+import { POSSaleEditorModal } from './components/POSSaleEditorModal';
 import './pos-fulfillment.css';
 import './checkout-workspace.css';
 import './pos-material-usage.css';
@@ -136,34 +137,78 @@ function POSCartLineEditor({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
+    name: String(line.name || ''),
+    description: String(line.description || ''),
     quantity: String(line.quantity),
     widthCm: String(line.widthCm || ''),
     heightCm: String(line.heightCm || ''),
     unitPrice: String(line.unitPrice),
     pricingTier: (line.pricingTier || 'pvp') as 'pvp' | 'instalacion' | 'corporativo',
+    lineDiscountPercent: String(line.lineDiscountPercent || '0'),
   });
 
   useEffect(() => {
     setDraft({
+      name: String(line.name || ''),
+      description: String(line.description || ''),
       quantity: String(line.quantity),
       widthCm: String(line.widthCm || ''),
       heightCm: String(line.heightCm || ''),
       unitPrice: String(line.unitPrice),
       pricingTier: (line.pricingTier || 'pvp') as 'pvp' | 'instalacion' | 'corporativo',
+      lineDiscountPercent: String(line.lineDiscountPercent || '0'),
     });
-  }, [line.key, line.quantity, line.widthCm, line.heightCm, line.unitPrice, line.pricingTier]);
+  }, [line.key, line.name, line.description, line.quantity, line.widthCm, line.heightCm, line.unitPrice, line.pricingTier, line.lineDiscountPercent]);
 
-  const applyLineUpdate = (nextQty: number, nextWidthCm: number, nextHeightCm: number, nextTier: 'pvp' | 'instalacion' | 'corporativo', nextCustomUnitPrice: number) => {
-    if (!Number.isSafeInteger(nextQty) || nextQty < 1) return false;
-    if (line.productId) {
-      if (!product) return false;
+  const applyLineUpdate = (
+    nextName: string,
+    nextDescription: string,
+    nextQty: number,
+    nextWidthCm: number,
+    nextHeightCm: number,
+    nextTier: 'pvp' | 'instalacion' | 'corporativo',
+    nextUnitPrice: number,
+    nextLineDiscount: number,
+  ) => {
+    if (!Number.isFinite(nextQty) || nextQty <= 0) return false;
+    const cleanDiscount = Math.min(100, Math.max(0, nextLineDiscount || 0));
+
+    if (line.productId && product) {
       if (line.mode === 'area' && (!Number.isFinite(nextWidthCm) || !Number.isFinite(nextHeightCm) || nextWidthCm <= 0 || nextHeightCm <= 0)) return false;
-      const calculation = calculatePOSLine({ product, mode: line.mode, quantity: nextQty, widthCm: nextWidthCm, heightCm: nextHeightCm, tier: nextTier, optionChoice: line.optionChoice || '' });
+      const customPriceArg = Number.isFinite(nextUnitPrice) && nextUnitPrice > 0 ? nextUnitPrice : undefined;
+      const calculation = calculatePOSLine({
+        product,
+        mode: line.mode,
+        quantity: Math.max(1, Math.round(nextQty)),
+        widthCm: nextWidthCm,
+        heightCm: nextHeightCm,
+        tier: nextTier,
+        optionChoice: line.optionChoice || '',
+        customUnitPrice: customPriceArg,
+        lineDiscountPercent: cleanDiscount,
+      });
       if (!calculation) return false;
       const tierLabel = { pvp: 'Normal', instalacion: 'Con instalación', corporativo: 'Corporativo' }[nextTier] || 'Normal';
+      const formattedDesc = formatPOSLineDescription({
+        name: nextName || line.name,
+        mode: line.mode,
+        quantity: calculation.quantity,
+        unit: calculation.unit,
+        unitPrice: calculation.unitPrice,
+        pricingTierLabel: tierLabel,
+        widthCm: line.mode === 'area' ? nextWidthCm : undefined,
+        heightCm: line.mode === 'area' ? nextHeightCm : undefined,
+        areaPerPiece: calculation.areaPerPiece || undefined,
+        areaTotal: calculation.areaTotal || undefined,
+        optionChoice: line.optionChoice || undefined,
+        lineDiscountPercent: cleanDiscount,
+        customUnitPriceApplied: calculation.customUnitPriceApplied,
+      });
+
       const nextLine = {
         ...line,
-        quantity: nextQty,
+        name: nextName || line.name,
+        quantity: calculation.quantity,
         billingQuantity: calculation.billedQuantity,
         unitPrice: calculation.unitPrice,
         total: calculation.total,
@@ -173,13 +218,42 @@ function POSCartLineEditor({
         heightCm: line.mode === 'area' ? nextHeightCm : null,
         areaPerPiece: calculation.areaPerPiece || null,
         areaTotal: calculation.areaTotal || null,
-        description: formatPOSLineDescription({ name: line.name, mode: line.mode, quantity: nextQty, unit: calculation.unit, unitPrice: calculation.unitPrice, pricingTierLabel: tierLabel, widthCm: line.mode === 'area' ? nextWidthCm : undefined, heightCm: line.mode === 'area' ? nextHeightCm : undefined, areaPerPiece: calculation.areaPerPiece || undefined, areaTotal: calculation.areaTotal || undefined, optionChoice: line.optionChoice || undefined }),
+        lineDiscountPercent: cleanDiscount,
+        customUnitPriceApplied: calculation.customUnitPriceApplied,
+        description: nextDescription.trim() ? nextDescription : formattedDesc,
       };
       onSave(nextLine);
       return true;
     } else {
-      if (!Number.isFinite(nextCustomUnitPrice) || nextCustomUnitPrice <= 0) return false;
-      onSave({ ...line, quantity: nextQty, billingQuantity: nextQty, unitPrice: nextCustomUnitPrice, total: Math.round(nextQty * nextCustomUnitPrice * 100) / 100, description: `${line.name} · ${nextQty} unidades · precio acordado` });
+      if (!Number.isFinite(nextUnitPrice) || nextUnitPrice < 0) return false;
+      let areaPerPiece = 0;
+      let billingQuantity = nextQty;
+      if (line.mode === 'area') {
+        if (!Number.isFinite(nextWidthCm) || !Number.isFinite(nextHeightCm) || nextWidthCm <= 0 || nextHeightCm <= 0) return false;
+        areaPerPiece = Math.round((nextWidthCm * nextHeightCm / 10000) * 10000) / 10000;
+        billingQuantity = Math.round((areaPerPiece * nextQty) * 10000) / 10000;
+      }
+      const effectivePrice = cleanDiscount > 0 ? Number((nextUnitPrice * (1 - cleanDiscount / 100)).toFixed(4)) : nextUnitPrice;
+      const total = roundMoney(billingQuantity * effectivePrice);
+      const desc = nextDescription.trim() ? nextDescription : (line.mode === 'area'
+        ? `${nextName || line.name} · ${nextWidthCm} × ${nextHeightCm} cm · ${nextQty} pzs · ${billingQuantity} m² · $${effectivePrice.toFixed(2)}/m²`
+        : `${nextName || line.name} · ${nextQty} und · $${effectivePrice.toFixed(2)} c/u`);
+
+      onSave({
+        ...line,
+        name: nextName || line.name,
+        quantity: nextQty,
+        billingQuantity,
+        unitPrice: effectivePrice,
+        total,
+        widthCm: line.mode === 'area' ? nextWidthCm : null,
+        heightCm: line.mode === 'area' ? nextHeightCm : null,
+        areaPerPiece: line.mode === 'area' ? areaPerPiece : null,
+        areaTotal: line.mode === 'area' ? billingQuantity : null,
+        lineDiscountPercent: cleanDiscount,
+        customUnitPriceApplied: true,
+        description: desc,
+      });
       return true;
     }
   };
@@ -187,11 +261,29 @@ function POSCartLineEditor({
   const stepQuantity = (delta: -1 | 1) => {
     const nextQty = Math.max(1, Number(line.quantity || 1) + delta);
     if (nextQty === Number(line.quantity)) return;
-    applyLineUpdate(nextQty, Number(line.widthCm || 0), Number(line.heightCm || 0), line.pricingTier || 'pvp', Number(line.unitPrice || 0));
+    applyLineUpdate(
+      line.name,
+      line.description,
+      nextQty,
+      Number(line.widthCm || 0),
+      Number(line.heightCm || 0),
+      line.pricingTier || 'pvp',
+      Number(line.unitPrice || 0),
+      Number(line.lineDiscountPercent || 0),
+    );
   };
 
   const save = () => {
-    const ok = applyLineUpdate(Number(draft.quantity), Number(draft.widthCm), Number(draft.heightCm), draft.pricingTier, Number(draft.unitPrice));
+    const ok = applyLineUpdate(
+      draft.name,
+      draft.description,
+      Number(draft.quantity),
+      Number(draft.widthCm),
+      Number(draft.heightCm),
+      draft.pricingTier,
+      Number(draft.unitPrice),
+      Number(draft.lineDiscountPercent),
+    );
     if (ok) setEditing(false);
   };
 
@@ -203,6 +295,8 @@ function POSCartLineEditor({
         <span className="pos-line-badges">
           {line.pricingTierLabel && <span className="pos-line-badge is-tier">{line.pricingTierLabel}</span>}
           {line.mode === 'area' && line.widthCm && line.heightCm && <span className="pos-line-badge is-measure">{line.widthCm}×{line.heightCm} cm · {Number(line.areaTotal || 0).toFixed(2)} m²</span>}
+          {Number(line.lineDiscountPercent) > 0 && <span className="pos-line-badge is-discount">−{line.lineDiscountPercent}% desc</span>}
+          {line.customUnitPriceApplied && <span className="pos-line-badge is-custom">Precio acordado</span>}
           {workflowLabel && <span className="pos-line-badge is-workflow"><Route size={10} aria-hidden="true"/> {workflowLabel}</span>}
         </span>
         <small>{line.description||`${line.quantity} × ${formatMoney(line.unitPrice)}`}</small>
@@ -219,12 +313,15 @@ function POSCartLineEditor({
         </div>
       </div>
     </div>
-    <button type="button" className="pos-line-edit-toggle" aria-expanded={editing} onClick={() => setEditing((value) => !value)}><Pencil size={13}/>{editing ? 'Cerrar edición' : 'Editar cantidad, tarifa y medidas'}</button>
+    <button type="button" className="pos-line-edit-toggle" aria-expanded={editing} onClick={() => setEditing((value) => !value)}><Pencil size={13}/>{editing ? 'Cerrar edición' : 'Editar concepto, cantidad, precio o medidas'}</button>
     {editing && <div className="pos-line-editor">
-      <label>Cantidad<input type="number" min="1" step="1" value={draft.quantity} onChange={(event) => setDraft((current) => ({ ...current, quantity: event.target.value }))}/></label>
+      <label className="pos-line-editor-span-2">Nombre / Concepto<input type="text" value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}/></label>
+      <label className="pos-line-editor-span-2">Descripción visible<input type="text" value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}/></label>
+      <label>Cantidad<input type="number" min="0.001" step="any" value={draft.quantity} onChange={(event) => setDraft((current) => ({ ...current, quantity: event.target.value }))}/></label>
+      <label>Precio unit. / m² ($)<div className="money-input"><span>$</span><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(event) => setDraft((current) => ({ ...current, unitPrice: event.target.value }))}/></div></label>
       {line.productId && <label>Tarifa<select value={draft.pricingTier} onChange={(event) => setDraft((current) => ({ ...current, pricingTier: event.target.value as 'pvp' | 'instalacion' | 'corporativo' }))}><option value="pvp">Normal (PVP)</option><option value="instalacion">Con instalación</option><option value="corporativo">Corporativo</option></select></label>}
+      <label>Desc. línea (%)<input type="number" min="0" max="100" step="1" value={draft.lineDiscountPercent} onChange={(event) => setDraft((current) => ({ ...current, lineDiscountPercent: event.target.value }))}/></label>
       {line.mode === 'area' && <><label>Ancho (cm)<input type="number" min="0.01" step="0.01" value={draft.widthCm} onChange={(event) => setDraft((current) => ({ ...current, widthCm: event.target.value }))}/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" value={draft.heightCm} onChange={(event) => setDraft((current) => ({ ...current, heightCm: event.target.value }))}/></label></>}
-      {!line.productId && <label>Precio por unidad<div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={draft.unitPrice} onChange={(event) => setDraft((current) => ({ ...current, unitPrice: event.target.value }))}/></div></label>}
       <button type="button" className="button button-outline" onClick={save}>Guardar cambios</button>
     </div>}
   </article>;
@@ -350,6 +447,16 @@ export function PosPage() {
   const [cashReloadTick,setCashReloadTick]=useState(0);
   const [recentSalesQuery,setRecentSalesQuery]=useState('');
   const [recentSalesFilter,setRecentSalesFilter]=useState<'all'|'balance'|'paid'>('all');
+  const [cartCustomUnitPrice,setCartCustomUnitPrice]=useState('');
+  const [showEditBaseModal,setShowEditBaseModal]=useState(false);
+  const [newBaseAmount,setNewBaseAmount]=useState('');
+  const [savingBase,setSavingBase]=useState(false);
+  const [showCashMovementModal,setShowCashMovementModal]=useState(false);
+  const [cashMovementDirection,setCashMovementDirection]=useState<'in'|'out'>('in');
+  const [cashMovementAmount,setCashMovementAmount]=useState('');
+  const [cashMovementReason,setCashMovementReason]=useState('');
+  const [savingCashMovement,setSavingCashMovement]=useState(false);
+  const [editingSaleId,setEditingSaleId]=useState<string|null>(null);
   const posDraftStorageKey=`visualcorp-pos-cart-draft-v1:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
   const pendingSaleStorageKey=`visualcorp-pos-pending-sale-key:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
   const pendingSaleSnapshotStorageKey=`${pendingSaleStorageKey}:snapshot`;
@@ -432,7 +539,7 @@ export function PosPage() {
   const resetCheckout=()=>{
     setForm((current)=>({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:current.branchCode,quantity:'1',quoteId:''}));
     setCustomerQuery('');setSelectedCustomerSnapshot(null);setCart([]);setDiscountPercent('0');setDiscountReason('');setMaterialRequestsByLine({});setProductionByLine({});setActiveParkedOrderId('');setChargeNow(true);setPayments([{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}]);
-    setCartProductId('');setCartItemName('');setCartQuantity('1');setCartUnitPrice('');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');
+    setCartProductId('');setCartItemName('');setCartQuantity('1');setCartUnitPrice('');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartCustomUnitPrice('');
     setFulfillment({installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});setMapLink('');setClientBriefHtml('<p></p>');saleAssets.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl));setSaleAssets([]);setMobileSummaryOpen(false);setPaymentTarget(null);
     setCheckoutStep('order');
   };
@@ -454,41 +561,183 @@ export function PosPage() {
     return()=>{active=false;};
   },[organizationId]);
   useEffect(()=>{let active=true;const load=async()=>{if(!supabase||!organizationId||!user){setCashierSession({loading:false,session:null,branch:null,error:''});return;}setCashierSession(current=>({...current,loading:true,error:''}));try{const {data:branch,error:branchError}=await supabase.from('branches').select('id,code,name').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();if(branchError)throw branchError;if(!branch?.id){if(active)setCashierSession({loading:false,session:null,branch:null,error:''});return;}const {data:session,error:sessionError}=await supabase.from('cash_sessions').select('id,opened_at,opening_cash,status').eq('organization_id',organizationId).eq('branch_id',branch.id).eq('opened_by',user.id).eq('status','open').maybeSingle();if(sessionError)throw sessionError;if(active)setCashierSession({loading:false,session,branch,error:''});}catch(error){if(active)setCashierSession({loading:false,session:null,branch:null,error:error.message||'Error desconocido'});}};load();return()=>{active=false;};},[organizationId,user?.id,form.branchCode,cashReloadTick]);
-  const openCashSessionFromPOS=async()=>{
-    if(!supabase||!organizationId||!user||openingQuickCash)return;
-    const openingAmount=Number(quickCashAmount);
-    if(!Number.isFinite(openingAmount)||openingAmount<0){flash('Ingresa un fondo inicial válido (0 o mayor).');return;}
+  const openCashSessionFromPOS = async (overrideAmount?: number) => {
+    if (!supabase || !organizationId || !user || openingQuickCash) return;
+    const openingAmount = overrideAmount !== undefined ? overrideAmount : Number(quickCashAmount);
+    if (!Number.isFinite(openingAmount) || openingAmount < 0) {
+      flash('Ingresa un fondo inicial válido (0 o mayor).');
+      return;
+    }
     setOpeningQuickCash(true);
-    try{
-      const {data:branch,error:branchError}=await supabase.from('branches').select('id,code,name').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();
-      if(branchError)throw branchError;
-      if(!branch?.id)throw new Error('No encontramos la sucursal seleccionada.');
-      let registerId:string|null=null;
-      const {data:registers,error:regError}=await supabase.from('cash_registers').select('id,name,active,assigned_advisor_id').eq('organization_id',organizationId).eq('branch_id',branch.id);
-      if(!regError&&Array.isArray(registers)&&registers.length>0){
-        const activeRegs=registers.filter((r:any)=>r.active);
-        const myReg=activeRegs.find((r:any)=>r.assigned_advisor_id===user.id);
-        if(myReg){registerId=myReg.id;}
-        else if(hasPermission('cash','edit')&&activeRegs[0]){registerId=activeRegs[0].id;}
-        else{throw new Error('Esta sucursal usa cajas asignadas y no tienes una activa asignada. Pide a administración que te asigne una caja en Flujos.');}
+    try {
+      const { data: branch, error: branchError } = await supabase
+        .from('branches')
+        .select('id,code,name')
+        .eq('organization_id', organizationId)
+        .eq('code', form.branchCode)
+        .maybeSingle();
+      if (branchError) throw branchError;
+      if (!branch?.id) throw new Error('No encontramos la sucursal seleccionada.');
+
+      let rpcSucceeded = false;
+      try {
+        const { error: rpcError } = await supabase.rpc('open_pos_cash_session', {
+          p_branch_id: branch.id,
+          p_opening_cash: openingAmount,
+        });
+        if (!rpcError) {
+          rpcSucceeded = true;
+        }
+      } catch {
+        rpcSucceeded = false;
       }
-      const {error:insertError}=await supabase.from('cash_sessions').insert({
-        organization_id:organizationId,
-        branch_id:branch.id,
-        cash_register_id:registerId,
-        opening_cash:openingAmount,
-        opened_by:user.id,
-        status:'open',
-      }).select('id').single();
-      if(insertError)throw insertError;
+
+      if (!rpcSucceeded) {
+        let registerId: string | null = null;
+        const { data: registers, error: regError } = await supabase
+          .from('cash_registers')
+          .select('id,name,active,assigned_advisor_id')
+          .eq('organization_id', organizationId)
+          .eq('branch_id', branch.id);
+        if (!regError && Array.isArray(registers) && registers.length > 0) {
+          const activeRegs = registers.filter((r: any) => r.active);
+          const myReg = activeRegs.find((r: any) => r.assigned_advisor_id === user.id);
+          if (myReg) {
+            registerId = myReg.id;
+          } else if (hasPermission('cash', 'edit') && activeRegs[0]) {
+            registerId = activeRegs[0].id;
+          }
+        }
+        const { error: insertError } = await supabase
+          .from('cash_sessions')
+          .insert({
+            organization_id: organizationId,
+            branch_id: branch.id,
+            cash_register_id: registerId,
+            opening_cash: openingAmount,
+            opened_by: user.id,
+            status: 'open',
+          })
+          .select('id')
+          .single();
+        if (insertError) throw insertError;
+      }
+
       setShowQuickCashOpen(false);
-      setCashReloadTick((tick)=>tick+1);
-      flash(`Turno de caja abierto en ${branch.name||branch.code} con fondo inicial de ${formatMoney(openingAmount)}.`);
-    }catch(error:any){
-      flash(`No se pudo abrir la caja desde el POS: ${error?.message||'Error desconocido'}`);
-    }finally{
+      setCashReloadTick((tick) => tick + 1);
+      flash(`Turno de caja abierto en ${branch.name || branch.code} con fondo inicial de ${formatMoney(openingAmount)}.`);
+    } catch (error: any) {
+      flash(`No se pudo abrir la caja desde el POS: ${error?.message || 'Error desconocido'}`);
+    } finally {
       setOpeningQuickCash(false);
     }
+  };
+
+  const handleUpdateBase = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cashierSession.session?.id || savingBase) return;
+    const amount = Number(newBaseAmount);
+    if (!Number.isFinite(amount) || amount < 0) {
+      flash('Ingresa un monto de base válido.');
+      return;
+    }
+    setSavingBase(true);
+    try {
+      const { error: rpcErr } = await supabase.rpc('update_cash_session_details', {
+        p_session: cashierSession.session.id,
+        p_opening_cash: amount,
+        p_reason: 'Ajuste desde POS',
+      });
+      if (rpcErr) {
+        const { error: directErr } = await supabase
+          .from('cash_sessions')
+          .update({ opening_cash: amount })
+          .eq('id', cashierSession.session.id);
+        if (directErr) throw directErr;
+      }
+      setShowEditBaseModal(false);
+      setCashReloadTick((tick) => tick + 1);
+      flash(`Base de caja actualizada a ${formatMoney(amount)}.`);
+    } catch (err: any) {
+      flash(`Error al actualizar base: ${err.message}`);
+    } finally {
+      setSavingBase(false);
+    }
+  };
+
+  const handleRecordCashMovement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cashierSession.session?.id || savingCashMovement) return;
+    const amount = Number(cashMovementAmount);
+    const reason = cashMovementReason.trim();
+    if (!Number.isFinite(amount) || amount <= 0) {
+      flash('Ingresa un monto mayor a cero.');
+      return;
+    }
+    if (reason.length < 3) {
+      flash('Indica el motivo del movimiento (mínimo 3 caracteres).');
+      return;
+    }
+    setSavingCashMovement(true);
+    try {
+      const key = globalThis.crypto?.randomUUID?.() || `mov-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const { error } = await supabase.rpc('record_cash_session_movement', {
+        p_session: cashierSession.session.id,
+        p_direction: cashMovementDirection,
+        p_amount: amount,
+        p_reason: reason,
+        p_key: key,
+      });
+      if (error) throw error;
+      setShowCashMovementModal(false);
+      setCashMovementAmount('');
+      setCashMovementReason('');
+      setCashReloadTick((tick) => tick + 1);
+      flash(`Movimiento de ${cashMovementDirection === 'in' ? 'ingreso' : 'retiro'} (${formatMoney(amount)}) registrado.`);
+    } catch (err: any) {
+      flash(`No se pudo registrar el movimiento: ${err.message}`);
+    } finally {
+      setSavingCashMovement(false);
+    }
+  };
+
+  const handleExpressCashCheckout = async () => {
+    if (!form.quoteId && !cart.length) {
+      focusCheckoutField('#pos-product-search-input');
+      flash('Agrega un artículo o cotización antes de cobrar.');
+      return;
+    }
+    if (activeTotal <= 0) {
+      flash('La orden requiere un total mayor a cero.');
+      return;
+    }
+    if (!discountReasonValid) {
+      focusCheckoutField('#pos-discount-reason');
+      flash('Escribe el motivo del descuento antes de continuar.');
+      return;
+    }
+    if (customerNameMissing) {
+      focusCheckoutField('.pos-customer-picker input[role="combobox"]');
+      flash('Completa el nombre del cliente o limpia la búsqueda.');
+      return;
+    }
+    setChargeNow(true);
+    setPayments([
+      {
+        id: 'payment-1',
+        method: 'Efectivo',
+        amount: activeTotal.toFixed(2),
+        reference: '',
+        note: 'Cobro exprés en efectivo',
+      },
+    ]);
+    if (requiresWorkDetails && !validateWorkDetails()) {
+      setCheckoutStep('details');
+      return;
+    }
+    setCheckoutStep('payment');
+    setMobileSummaryOpen(true);
+    flash('Cobro exprés en efectivo seleccionado con monto exacto.');
   };
   const refreshParkedOrders=async()=>{
     if(!supabase||!organizationId)return;
@@ -694,8 +943,10 @@ export function PosPage() {
   const cartHeightNumber=Number(cartHeightCm);
   const cartAreaPerPiece=cartMode==='area'&&cartWidthNumber>0&&cartHeightNumber>0?Math.round((cartWidthNumber*cartHeightNumber/10000)*10000)/10000:0;
   const cartPricingBasis=selectedCartProduct?getQuoteBasis(selectedCartProduct,{quantity:cartQuantityNumber,area:cartAreaPerPiece}):0;
-  const cartCalculation=selectedCartProduct?calculatePOSLine({product:selectedCartProduct,mode:cartMode,quantity:cartQuantityNumber,widthCm:cartWidthNumber,heightCm:cartHeightNumber,tier:cartPriceTier,optionChoice:cartOptionChoice}):null;
-  const cartPriceAvailable=Boolean((selectedCartProduct?.confirmed||selectedCartProduct?.published===true)&&cartCalculation);
+  const customAgreedPriceNumber = Number(cartCustomUnitPrice);
+  const hasCustomAgreedPrice = Number.isFinite(customAgreedPriceNumber) && customAgreedPriceNumber > 0;
+  const cartCalculation=selectedCartProduct?calculatePOSLine({product:selectedCartProduct,mode:cartMode,quantity:cartQuantityNumber,widthCm:cartWidthNumber,heightCm:cartHeightNumber,tier:cartPriceTier,optionChoice:cartOptionChoice,customUnitPrice:hasCustomAgreedPrice?customAgreedPriceNumber:undefined}):null;
+  const cartPriceAvailable=Boolean(hasCustomAgreedPrice ? cartCalculation : (selectedCartProduct?.confirmed||selectedCartProduct?.published===true)&&cartCalculation);
   const measurementStockLink=selectedCartProduct&&catalogLinks.find(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===selectedCartProduct.id);
   const measurementStock=measurementStockLink&&data.inventory.find(row=>row.variantId===measurementStockLink.inventory_variant_id&&row.branchId===measurementStockLink.branch_id);
   const measurementStockUnit=String(measurementStock?.unit||'').trim().toLocaleLowerCase('es');
@@ -768,7 +1019,7 @@ export function PosPage() {
     flash(`Se duplicó “${line.name}” en el carrito. Puedes editar su medida o tarifa.`);
   };
   const chooseCartProduct=(product)=>{
-    setCartMode(product.mode==='area'?'area':'quantity');setCartFamily(product.family||'Todas');setCartProductId(product.id);setCartItemName('');setCartUnitPrice('');setCartPriceTier('pvp');setCartOptionChoice('');setCartSearch('');
+    setCartMode(product.mode==='area'?'area':'quantity');setCartFamily(product.family||'Todas');setCartProductId(product.id);setCartItemName('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartPriceTier('pvp');setCartOptionChoice('');setCartSearch('');
     requestAnimationFrame(()=>document.getElementById(product.mode==='area'?'pos-cart-width':'pos-cart-quantity')?.focus());
   };
   const handleCartScan=(query:string,highlightedProduct?:any)=>{
@@ -882,7 +1133,7 @@ export function PosPage() {
     const quantity=cartQuantityNumber;
     if(!Number.isSafeInteger(quantity)||quantity<1){flash('La cantidad debe ser un número entero mayor que cero.');return;}
     if(selectedCartProduct){
-      if(!cartPriceAvailable){flash('Este producto no tiene una tarifa publicada disponible para esta cantidad o medida. Pide que administración complete el catálogo.');return;}
+      if(!cartPriceAvailable){flash('Este producto no tiene tarifa disponible para esta cantidad o medida. Ingresa un precio acordado o completa el catálogo.');return;}
       if(cartMode==='area'&&(!Number.isFinite(cartWidthNumber)||!Number.isFinite(cartHeightNumber)||cartWidthNumber<=0||cartHeightNumber<=0)){flash('Ingresa el ancho y el alto en centímetros para calcular la superficie.');return;}
       if(invalidMeasurementStockLink){flash(`El producto por medidas está vinculado a inventario en “${measurementStockUnit||'unidad no identificada'}”. Cambia ese vínculo a una existencia medida en m² antes de venderlo.`);return;}
       const pricingTierLabel={pvp:'Normal',instalacion:'Con instalación',corporativo:'Corporativo'}[cartPriceTier]||'Normal';
@@ -891,10 +1142,32 @@ export function PosPage() {
         productId:selectedCartProduct.id,sku:selectedCartProduct.sku||selectedCartProduct.id,name:selectedCartProduct.name,family:selectedCartProduct.family||'General',image:selectedCartProduct.image||'',
         mode:cartMode,quantity,billingQuantity:cartCalculation.billedQuantity,unit:cartCalculation.unit,unitPrice:cartCalculation.unitPrice,total:cartCalculation.total,
         widthCm:cartMode==='area'?cartWidthNumber:null,heightCm:cartMode==='area'?cartHeightNumber:null,areaPerPiece:cartCalculation.areaPerPiece||null,areaTotal:cartCalculation.areaTotal||null,
-        pricingTier:cartPriceTier,pricingTierLabel,optionChoice:cartOptionChoice||'',description:formatPOSLineDescription({name:selectedCartProduct.name,mode:cartMode,quantity,unit:cartCalculation.unit,unitPrice:cartCalculation.unitPrice,pricingTierLabel,widthCm:cartMode==='area'?cartWidthNumber:undefined,heightCm:cartMode==='area'?cartHeightNumber:undefined,areaPerPiece:cartCalculation.areaPerPiece||undefined,areaTotal:cartCalculation.areaTotal||undefined,optionChoice:cartOptionChoice||undefined}),
+        pricingTier:cartPriceTier,pricingTierLabel,optionChoice:cartOptionChoice||'',customUnitPriceApplied:Boolean(hasCustomAgreedPrice),description:formatPOSLineDescription({name:selectedCartProduct.name,mode:cartMode,quantity,unit:cartCalculation.unit,unitPrice:cartCalculation.unitPrice,pricingTierLabel,widthCm:cartMode==='area'?cartWidthNumber:undefined,heightCm:cartMode==='area'?cartHeightNumber:undefined,areaPerPiece:cartCalculation.areaPerPiece||undefined,areaTotal:cartCalculation.areaTotal||undefined,optionChoice:cartOptionChoice||undefined,customUnitPriceApplied:Boolean(hasCustomAgreedPrice)}),
       };
       setCart(current=>[...current,line]);
-      setCartProductId('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartUnitPrice('');
+      setCartProductId('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartUnitPrice('');setCartCustomUnitPrice('');
+      requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
+      return;
+    }
+    if(cartMode==='area'){
+      if(!cartItemName.trim()){flash('Escribe el concepto libre por m².');return;}
+      if(!Number.isFinite(cartWidthNumber)||!Number.isFinite(cartHeightNumber)||cartWidthNumber<=0||cartHeightNumber<=0){flash('Ingresa el ancho y alto en centímetros para calcular los m².');return;}
+      const unitPrice=Number(cartUnitPrice);
+      if(!Number.isFinite(unitPrice)||unitPrice<=0){flash('Ingresa el precio acordado por m² para el concepto libre.');return;}
+      const name=cartItemName.trim();
+      const areaPerPiece=Math.round((cartWidthNumber*cartHeightNumber/10000)*10000)/10000;
+      const billedArea=Math.round((areaPerPiece*quantity)*10000)/10000;
+      const total=roundMoney(billedArea*unitPrice);
+      const line={
+        key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        productId:'',sku:'LIBRE-M2',name,family:'Concepto libre por m²',image:'',mode:'area',
+        quantity,billingQuantity:billedArea,unit:'m²',unitPrice,total,
+        widthCm:cartWidthNumber,heightCm:cartHeightNumber,areaPerPiece,areaTotal:billedArea,
+        pricingTier:'pvp',pricingTierLabel:'Precio acordado',optionChoice:'',customUnitPriceApplied:true,
+        description:`${name} · ${cartWidthNumber} × ${cartHeightNumber} cm · ${quantity} ${quantity===1?'pieza':'piezas'} · ${billedArea} m² · $${unitPrice.toFixed(2)}/m²`,
+      };
+      setCart(current=>[...current,line]);
+      setCartItemName('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartUnitPrice('');setCartCustomUnitPrice('');
       requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
       return;
     }
@@ -902,9 +1175,9 @@ export function PosPage() {
     if(!cartItemName.trim()){flash('Elige un producto o escribe un concepto de venta.');return;}
     if(!Number.isFinite(unitPrice)||unitPrice<=0){flash('Ingresa el precio acordado para el concepto libre.');return;}
     const name=cartItemName.trim();
-    const line={key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:'',name,family:'Concepto libre',image:'',mode:'quantity',quantity,billingQuantity:quantity,unit:'unidad',unitPrice,total:Math.round(quantity*unitPrice*100)/100,description:`${name} · ${quantity} unidades · precio acordado`};
+    const line={key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:'',sku:'LIBRE',name,family:'Concepto libre',image:'',mode:'quantity',quantity,billingQuantity:quantity,unit:'unidad',unitPrice,total:Math.round(quantity*unitPrice*100)/100,customUnitPriceApplied:true,description:`${name} · ${quantity} unidades · $${unitPrice.toFixed(2)} c/u`};
     setCart(current=>[...current,line]);
-    setCartItemName('');setCartQuantity('1');setCartUnitPrice('');
+    setCartItemName('');setCartQuantity('1');setCartUnitPrice('');setCartCustomUnitPrice('');
     requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
   };
   const save=async(event)=>{
@@ -1100,18 +1373,62 @@ export function PosPage() {
       <div className="pos-cashier-actions">
         {cashierSession.loading?<span className="inventory-status pending">Consultando turno…</span>:cashierSession.session?<>
           <span className="inventory-status available">Caja abierta · {new Date(cashierSession.session.opened_at).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})}{Number.isFinite(Number(cashierSession.session.opening_cash))?` · Base ${formatMoney(Number(cashierSession.session.opening_cash))}`:''}</span>
+          <button type="button" className="button button-outline pos-cashier-ctrl-btn" onClick={()=>{setNewBaseAmount(String(cashierSession.session.opening_cash||'0'));setShowEditBaseModal(true);}}><Pencil size={12}/> Editar base</button>
+          <button type="button" className="button button-outline pos-cashier-ctrl-btn is-in" onClick={()=>{setCashMovementDirection('in');setCashMovementAmount('');setCashMovementReason('');setShowCashMovementModal(true);}}><Plus size={12}/> + Entrada</button>
+          <button type="button" className="button button-outline pos-cashier-ctrl-btn is-out" onClick={()=>{setCashMovementDirection('out');setCashMovementAmount('');setCashMovementReason('');setShowCashMovementModal(true);}}><Minus size={12}/> - Retiro</button>
           <Link to="/operaciones/flujos?tab=cash" className="button button-outline">Arqueo / Cerrar turno <ArrowUpRight size={14}/></Link>
         </>:cashierSession.error?<span className="inventory-status pending" title={cashierSession.error}>No se pudo verificar el turno</span>:<>
           <span className="inventory-status pending">Sin turno abierto en {branchName}</span>
-          <button type="button" className="button button-dark pos-quick-cash-trigger" onClick={()=>setShowQuickCashOpen((open)=>!open)}><Wallet size={14}/> {showQuickCashOpen?'Ocultar apertura':'Abrir caja aquí'}</button>
+          <div className="pos-cashier-quick-presets" role="group" aria-label="Apertura rápida de caja en 1 clic">
+            {['0','20','50','100'].map((val)=><button key={val} type="button" className="button button-outline pos-cashier-quick-chip" disabled={openingQuickCash} onClick={()=>void openCashSessionFromPOS(Number(val))}>Iniciar ${val}</button>)}
+          </div>
+          <button type="button" className="button button-dark pos-quick-cash-trigger" onClick={()=>setShowQuickCashOpen((open)=>!open)}><Wallet size={14}/> {showQuickCashOpen?'Ocultar':'Otro fondo'}</button>
           <Link to="/operaciones/flujos?tab=cash" className="button button-outline">Flujos de caja <ArrowUpRight size={14}/></Link>
         </>}
       </div>
+      {showEditBaseModal&&cashierSession.session&&<form className="pos-quick-cash-drawer" onSubmit={handleUpdateBase}>
+        <div>
+          <span className="eyebrow">AJUSTAR BASE INICIAL</span>
+          <b>Modificar fondo de apertura ({formatMoney(Number(cashierSession.session.opening_cash||0))})</b>
+          <small>Corrige el efectivo inicial con el que empezó el turno de caja actual.</small>
+        </div>
+        <div className="pos-quick-cash-controls">
+          <label className="pos-quick-cash-input">
+            <span>Nueva base ($)</span>
+            <input type="number" min="0" step="0.01" required value={newBaseAmount} onChange={(e)=>setNewBaseAmount(e.target.value)}/>
+          </label>
+          <button type="submit" className="button button-dark" disabled={savingBase}>{savingBase?'Guardando…':'Guardar base'}</button>
+          <button type="button" className="button button-outline" onClick={()=>setShowEditBaseModal(false)}>Cancelar</button>
+        </div>
+      </form>}
+      {showCashMovementModal&&cashierSession.session&&<form className="pos-quick-cash-drawer is-movement" onSubmit={handleRecordCashMovement}>
+        <div>
+          <span className="eyebrow">{cashMovementDirection==='in'?'+ ENTRADA DE EFECTIVO':'− RETIRO DE EFECTIVO'}</span>
+          <b>{cashMovementDirection==='in'?'Ingreso rápido a la gaveta de caja':'Salida o retiro de efectivo'}</b>
+          <small>Registra el importe y el motivo para cuadrar en el arqueo final.</small>
+        </div>
+        <div className="pos-quick-cash-controls">
+          <div className="pos-mode-switch compact" role="group">
+            <button type="button" className={cashMovementDirection==='in'?'active':''} onClick={()=>setCashMovementDirection('in')}>+ Entrada</button>
+            <button type="button" className={cashMovementDirection==='out'?'active':''} onClick={()=>setCashMovementDirection('out')}>− Retiro</button>
+          </div>
+          <label className="pos-quick-cash-input">
+            <span>Monto ($)</span>
+            <input type="number" min="0.01" step="0.01" required placeholder="0.00" value={cashMovementAmount} onChange={(e)=>setCashMovementAmount(e.target.value)}/>
+          </label>
+          <label className="pos-quick-cash-input is-wide">
+            <span>Motivo del movimiento *</span>
+            <input type="text" required placeholder="Ej.: Cambio de sencillo, pago de delivery, etc." value={cashMovementReason} onChange={(e)=>setCashMovementReason(e.target.value)}/>
+          </label>
+          <button type="submit" className="button button-dark" disabled={savingCashMovement}>{savingCashMovement?'Registrando…':'Registrar movimiento'}</button>
+          <button type="button" className="button button-outline" onClick={()=>setShowCashMovementModal(false)}>Cancelar</button>
+        </div>
+      </form>}
       {showQuickCashOpen&&!cashierSession.session&&<div className="pos-quick-cash-drawer" role="region" aria-label="Apertura rápida de turno de caja">
         <div>
-          <span className="eyebrow">APERTURA RÁPIDA EN {branchName.toUpperCase()}</span>
+          <span className="eyebrow">APERTURA PERSONALIZADA EN {branchName.toUpperCase()}</span>
           <b>Habilita cobros en efectivo sin salir del POS</b>
-          <small>Ingresa el fondo inicial de sencillo en gaveta para iniciar tu turno ahora mismo.</small>
+          <small>Ingresa cualquier fondo inicial de sencillo en gaveta para iniciar tu turno.</small>
         </div>
         <div className="pos-quick-cash-controls">
           <div className="pos-quick-cash-presets" role="group" aria-label="Fondos iniciales sugeridos">
@@ -1157,6 +1474,12 @@ export function PosPage() {
             />
             {favoriteStorageStatus==='local'&&<small className="pos-favorite-storage-note">Las estrellas se guardan en este navegador hasta conectar el almacenamiento del equipo.</small>}
             {!cartProductId&&cartMode==='quantity'&&<label>Concepto libre<input value={cartItemName} onChange={(event)=>setCartItemName(event.target.value)} placeholder="Producto o servicio acordado"/></label>}
+            {!cartProductId&&cartMode==='area'&&<div className="pos-custom-area-box">
+              <label><span>Concepto libre por m²</span><input value={cartItemName} onChange={(event)=>setCartItemName(event.target.value)} placeholder="Ej.: Lona banner medida especial, Rotulación libre"/></label>
+              <POSMeasurementControls widthValue={cartWidthCm} heightValue={cartHeightCm} quantityValue={cartQuantity} widthCm={cartWidthNumber} heightCm={cartHeightNumber} quantity={cartQuantityNumber} onWidthChange={setCartWidthCm} onHeightChange={setCartHeightCm} onQuantityChange={setCartQuantity}/>
+              <label><span>Precio acordado por m² ($)</span><div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartUnitPrice} onChange={(event)=>setCartUnitPrice(event.target.value)} placeholder="Ej.: 12.00"/></div></label>
+              {cartAreaPerPiece>0&&Number(cartUnitPrice)>0&&<div className="pos-calculation-total"><span>{cartAreaPerPiece.toFixed(4)} m² c/u × {cartQuantityNumber} · {(cartAreaPerPiece*cartQuantityNumber).toFixed(4)} m² en total</span><strong>{formatMoney((cartAreaPerPiece*cartQuantityNumber)*Number(cartUnitPrice))}</strong></div>}
+            </div>}
             {selectedCartProduct&&<div className="pos-selected-product">
               <POSProductVisual src={selectedCartProduct.image} alt={selectedCartProduct.name} className="pos-selected-image" iconSize={18}/>
               <span>
@@ -1168,9 +1491,9 @@ export function PosPage() {
                 </small>
               </span>
               <AdvisorProductFavoriteButton favorite={favoriteIds.has(selectedCartProduct.id)} onToggle={()=>toggleFavorite(selectedCartProduct.id)}/>
-              <button className="icon-button" type="button" aria-label="Quitar artículo seleccionado" onClick={()=>{setCartProductId('');setCartUnitPrice('');}}><X size={14}/></button>
+              <button className="icon-button" type="button" aria-label="Quitar artículo seleccionado" onClick={()=>{setCartProductId('');setCartUnitPrice('');setCartCustomUnitPrice('');}}><X size={14}/></button>
             </div>}
-            {cartMode==='area'&&<POSMeasurementControls widthValue={cartWidthCm} heightValue={cartHeightCm} quantityValue={cartQuantity} widthCm={cartWidthNumber} heightCm={cartHeightNumber} quantity={cartQuantityNumber} onWidthChange={setCartWidthCm} onHeightChange={setCartHeightCm} onQuantityChange={setCartQuantity}/>}
+            {cartMode==='area'&&selectedCartProduct&&<POSMeasurementControls widthValue={cartWidthCm} heightValue={cartHeightCm} quantityValue={cartQuantity} widthCm={cartWidthNumber} heightCm={cartHeightNumber} quantity={cartQuantityNumber} onWidthChange={setCartWidthCm} onHeightChange={setCartHeightCm} onQuantityChange={setCartQuantity}/>}
             {cartMode==='quantity'&&<div className="pos-cart-inputs">
               <div className="pos-qty-control-group">
                 <label htmlFor="pos-cart-quantity">Cantidad</label>
@@ -1185,12 +1508,19 @@ export function PosPage() {
               </div>
               {!selectedCartProduct&&<label>Precio acordado por unidad<div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartUnitPrice} onChange={(event)=>setCartUnitPrice(event.target.value)} placeholder="0,00"/></div></label>}
             </div>}
+            {selectedCartProduct&&<div className="pos-agreed-price-wrap">
+              <label><span>Precio acordado ($) · <small>Opcional: sobrescribe PVP unitario/m²</small></span><div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartCustomUnitPrice} onChange={(event)=>setCartCustomUnitPrice(event.target.value)} placeholder={cartCalculation?cartCalculation.unitPrice.toFixed(2):'0.00'}/></div></label>
+              {hasCustomAgreedPrice&&<button type="button" className="button button-outline pos-reset-agreed-btn" onClick={()=>setCartCustomUnitPrice('')}>Usar catálogo</button>}
+            </div>}
             {selectedCartProduct&&<>{selectedCartProduct.optionPrices?.length>0&&<label>Material / acabado<select value={cartOptionChoice} onChange={(event)=>setCartOptionChoice(event.target.value)}><option value="">Tarifa base</option>{selectedCartProduct.optionPrices.map(option=><option key={option.label} value={option.label}>{option.label}</option>)}</select></label>}<QuotePriceComparison product={selectedCartProduct} basis={cartPricingBasis} selectedTier={cartPriceTier} onSelect={setCartPriceTier} optionChoice={cartOptionChoice}/>{cartMode==='area'&&invalidMeasurementStockLink&&<p className="pos-calculation-warning">Este artículo descuenta inventario medido en “{measurementStockUnit}”. Asigna una existencia en m² antes de venderlo para evitar un descuento incorrecto.</p>}</>}
             {selectedCartProduct&&cartCalculation&&<div className="pos-calculation-total"><span>{cartMode==='area'?`${cartAreaPerPiece.toFixed(4)} m² por pieza × ${cartQuantityNumber} · ${cartCalculation.billedQuantity.toFixed(4)} m² en total`:`${cartQuantityNumber} ${selectedCartProduct.unit||'unidades'} · tarifa por ${selectedCartProduct.unit||'unidad'}`}</span><strong>{formatMoney(cartCalculation.total)}</strong></div>}
             <button className="button button-outline pos-add-item" type="button" onClick={addCartLine} disabled={Boolean(selectedCartProduct&&!cartPriceAvailable)||Boolean(invalidMeasurementStockLink)}><Plus size={15}/> Agregar al carrito</button>
            </section>
          </>}
-         <div className="pos-step-actions"><button className="button button-dark" type="button" onClick={advanceFromOrder}>{requiresWorkDetails?'Continuar con detalles':'Revisar y cobrar'} <ChevronRight size={15}/></button></div>
+         <div className="pos-step-actions">
+           <button className="button button-outline pos-express-cash-btn" type="button" onClick={()=>void handleExpressCashCheckout()}><Wallet size={15}/> Cobro exprés efectivo</button>
+           <button className="button button-dark" type="button" onClick={advanceFromOrder}>{requiresWorkDetails?'Continuar con detalles':'Revisar y cobrar'} <ChevronRight size={15}/></button>
+         </div>
         </div>
         {checkoutStep==='details'&&<section className="pos-checkout-details" aria-label="Detalles del trabajo">
           <div className="pos-stage-heading"><span className="eyebrow">ETAPA 2 DE 3</span><h3>Detalles del trabajo</h3><p>Completa producción, entrega y referencias cuando el pedido las necesite.</p></div>
@@ -1218,6 +1548,7 @@ export function PosPage() {
                   </div>
                   <div className="pos-cart-heading-right">
                     <strong>{formatMoney(cartTotal)}</strong>
+                    {cart.length>0&&<button type="button" className="pos-clear-cart-btn is-express" onClick={()=>void handleExpressCashCheckout()} title="Cobrar inmediatamente en efectivo exacto">Cobro exprés</button>}
                     {cart.length>1&&!pendingSaleRecoveryMode&&<button type="button" className="pos-clear-cart-btn" onClick={()=>{setCart([]);setMaterialRequestsByLine({});setProductionByLine({});flash('Carrito vaciado.');}}>Vaciar</button>}
                   </div>
                 </div>
@@ -1293,7 +1624,7 @@ export function PosPage() {
             <button type="button" className={recentSalesFilter==='paid'?'is-active':''} onClick={()=>setRecentSalesFilter('paid')}>Pagadas ({salesToday.filter((s:any)=>!(Number(s.balance)>0)).length})</button>
           </div>
         </div>}
-        {posSalesStatus==='loading'?<div className="pos-sales-state" role="status">Consultando las ventas de hoy para {branchName}…</div>:posSalesStatus==='restricted'?<div className="pos-sales-state">Tu perfil no tiene permiso para consultar ventas.</div>:posSalesStatus==='error'?<div className="pos-sales-state" role="alert"><span>No se pudieron cargar las ventas de esta sucursal.</span><button className="button button-outline" type="button" onClick={()=>void refreshPOSDaySales()}>Reintentar</button></div>:salesToday.length===0?<EmptyState icon={Wallet} title="Todavía no hay ventas" text={`Las ventas confirmadas de hoy en ${branchName} aparecerán aquí.`}/>:filteredRecentSales.length===0?<div className="pos-sales-state"><span>No hay ventas que coincidan con el filtro actual.</span><button className="button button-outline" type="button" onClick={()=>{setRecentSalesQuery('');setRecentSalesFilter('all');}}>Ver todas</button></div>:<div className="activity-list">{filteredRecentSales.map((sale)=><article className="sale-activity" key={sale.id}><div className="sale-row"><span className="sale-icon"><ShoppingCart size={17}/></span><span><b>{sale.customer||sale.description||'Venta'}</b><small>{sale.method} · {new Date(sale.date).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})} · {sale.code}</small></span><strong>{formatMoney(sale.total)}</strong></div><div className="sale-payment-summary"><span>Abonado: <b>{formatMoney(sale.paid||0)}</b></span><span className={Number(sale.balance)>0?'pos-sale-balance-tag is-due':'pos-sale-balance-tag is-paid'}>Saldo: <b>{formatMoney(sale.balance||0)}</b></span>{sale.urgent&&<span className="inventory-status pending">Compra urgente pendiente</span>}</div><div className="pos-sale-card-actions"><button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>setDetailTarget({kind:'sale',id:sale.id,code:sale.code})}>Ver ficha completa</button>{Number(sale.balance)>0&&<button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>{setPaymentTarget(paymentTarget===sale.id?null:sale.id);setPaymentForm({amount:String(sale.balance),method:'Efectivo',reference:'',note:''});}}>Registrar abono</button>}</div>{Number(sale.balance)>0&&paymentTarget===sale.id&&<form className="payment-form" onSubmit={(event)=>registerBalancePayment(event,sale)}>
+        {posSalesStatus==='loading'?<div className="pos-sales-state" role="status">Consultando las ventas de hoy para {branchName}…</div>:posSalesStatus==='restricted'?<div className="pos-sales-state">Tu perfil no tiene permiso para consultar ventas.</div>:posSalesStatus==='error'?<div className="pos-sales-state" role="alert"><span>No se pudieron cargar las ventas de esta sucursal.</span><button className="button button-outline" type="button" onClick={()=>void refreshPOSDaySales()}>Reintentar</button></div>:salesToday.length===0?<EmptyState icon={Wallet} title="Todavía no hay ventas" text={`Las ventas confirmadas de hoy en ${branchName} aparecerán aquí.`}/>:filteredRecentSales.length===0?<div className="pos-sales-state"><span>No hay ventas que coincidan con el filtro actual.</span><button className="button button-outline" type="button" onClick={()=>{setRecentSalesQuery('');setRecentSalesFilter('all');}}>Ver todas</button></div>:<div className="activity-list">{filteredRecentSales.map((sale)=><article className="sale-activity" key={sale.id}><div className="sale-row"><span className="sale-icon"><ShoppingCart size={17}/></span><span><b>{sale.customer||sale.description||'Venta'}</b><small>{sale.method} · {new Date(sale.date).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})} · {sale.code}</small></span><strong>{formatMoney(sale.total)}</strong></div><div className="sale-payment-summary"><span>Abonado: <b>{formatMoney(sale.paid||0)}</b></span><span className={Number(sale.balance)>0?'pos-sale-balance-tag is-due':'pos-sale-balance-tag is-paid'}>Saldo: <b>{formatMoney(sale.balance||0)}</b></span>{sale.urgent&&<span className="inventory-status pending">Compra urgente pendiente</span>}</div><div className="pos-sale-card-actions"><button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>setDetailTarget({kind:'sale',id:sale.id,code:sale.code})}>Ver ficha completa</button><button className="button button-outline pos-sale-detail-trigger pos-sale-edit-btn" type="button" onClick={()=>setEditingSaleId(sale.id)}><Pencil size={13}/> Editar venta</button>{Number(sale.balance)>0&&<button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>{setPaymentTarget(paymentTarget===sale.id?null:sale.id);setPaymentForm({amount:String(sale.balance),method:'Efectivo',reference:'',note:''});}}>Registrar abono</button>}</div>{Number(sale.balance)>0&&paymentTarget===sale.id&&<form className="payment-form" onSubmit={(event)=>registerBalancePayment(event,sale)}>
           <label>{paymentForm.method==='Efectivo'?'Monto recibido':'Monto aplicado'}<input type="number" min={0.01} max={paymentForm.method==='Efectivo'?undefined:sale.balance} step={0.01} required value={paymentForm.amount} onChange={(event)=>setPaymentForm({...paymentForm,amount:event.target.value})}/></label>
           {paymentForm.method==='Efectivo'&&<small className="pos-balance-change-preview">Se aplicará {formatMoney(Math.min(Number(paymentForm.amount)||0,Number(sale.balance)))} · Vuelto {formatMoney(Math.max(0,(Number(paymentForm.amount)||0)-Number(sale.balance)))}</small>}
           <label>Forma de pago<select value={paymentForm.method} onChange={(event)=>setPaymentForm({...paymentForm,method:event.target.value})}><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></label>
@@ -1304,6 +1635,7 @@ export function PosPage() {
       </section>
     </div><div className="notice-box"><span><CircleHelp size={17}/></span><div><b>Antes de confirmar</b><p>Los vínculos conectan productos con variantes de inventario; la disponibilidad depende de un conteo físico registrado por sucursal. Si falta el conteo o la existencia no alcanza, el POS lo muestra como pendiente y permite marcar la compra urgente al confirmar. Las órdenes en espera no reservan existencias y esta pantalla no emite comprobantes tributarios.</p></div></div>
     <Sheet open={Boolean(detailTarget)} onOpenChange={(open)=>{if(!open)setDetailTarget(null);}} title={detailTarget ? `Ficha completa · ${detailTarget.code}` : 'Ficha completa'} description="Productos, imágenes, valores y pagos registrados en esta compra.">{detailTarget&&<CommercialDocumentDetails kind="sale" documentId={detailTarget.id}/>}</Sheet>
+    <POSSaleEditorModal open={Boolean(editingSaleId)} saleId={editingSaleId} organizationId={organizationId} branchName={branchName} onSaved={()=>{void refreshPOSDaySales();void refreshRemote();flash('Venta modificada exitosamente.');}} onClose={()=>setEditingSaleId(null)}/>
   </AppFrame>;
 }
 

@@ -1,2 +1,77 @@
-.cash-movement-form,.cash-close-form,.cash-movement-history{margin-top:18px;padding-top:16px;border-top:1px solid #e9e9ed}.cash-movement-form h3,.cash-close-form h3,.cash-movement-history h3{margin:0;font-size:14px}.cash-movement-form .button{display:inline-flex;align-items:center;gap:7px}.cash-close-amounts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.cash-close-amounts span{display:grid;gap:3px;padding:8px;border-radius:8px;background:#f5f5f8;color:#666975;font-size:11px}.cash-close-amounts strong{color:#252631;font-size:13px}
-@media(max-width:620px){.cash-close-amounts{grid-template-columns:1fr}}
+/* Cash Management Styles */
+.cash-management-container { box-sizing: border-box; width: 100%; min-width: 0; }
+.cash-mgmt-feedback { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px; padding: 11px 14px; border-radius: 9px; font-size: .83rem; box-sizing: border-box; width: 100%; }
+.cash-mgmt-feedback.error { background: #fff0ed; border: 1px solid #f6cfc9; color: #9c2e26; }
+.cash-mgmt-feedback.success { background: #eaf7f0; border: 1px solid #bce6cf; color: #166545; }
+.cash-mgmt-feedback svg { flex: 0 0 16px; }
+.feedback-dismiss { margin-left: auto; border: 0; background: transparent; color: inherit; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+.feedback-dismiss:hover { background: #00000012; }
+
+/* KPI Row and Edit Opening */
+.op-flow-kpi-wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; width: 100%; box-sizing: border-box; }
+.op-flow-kpi-wrap .op-flow-kpi { flex: 1 1 200px; min-width: 0; margin: 0; }
+.edit-opening-trigger { font-size: .75rem; min-height: 32px; }
+.inline-opening-editor { display: grid; gap: 8px; margin: 8px 0 12px; padding: 12px; border: 1px solid #c8dcf4; border-radius: 10px; background: #f5f9ff; box-sizing: border-box; width: 100%; }
+.inline-opening-editor h4, .closed-edit-inline-box h4, .closed-reopen-inline-box h4 { margin: 0; font-size: .82rem; color: #1e457e; }
+.inline-editor-row { display: flex; gap: 8px; align-items: center; }
+.inline-editor-row input { flex: 1 1 auto; min-width: 0; min-height: 34px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 7px; background: #fff; font-size: .84rem; }
+
+/* Quick Presets Pills */
+.cash-quick-presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+.cash-quick-presets .preset-pill { min-height: 27px; padding: 0 10px; border: 1px solid #c2d4ea; border-radius: 999px; background: #fff; color: #1e4c8a; font-size: .73rem; font-weight: 700; cursor: pointer; transition: all .15s ease; }
+.cash-quick-presets .preset-pill:hover { background: #eaf3fd; border-color: #2661ac; }
+.cash-quick-presets .preset-pill.is-selected { background: #2661ac; border-color: #2661ac; color: #fff; }
+
+/* Open Turn Panel */
+.cash-open-panel { display: grid; gap: 12px; width: 100%; box-sizing: border-box; }
+.cash-quick-opening-section { display: grid; gap: 6px; padding: 12px; border: 1px solid #d0e1f7; border-radius: 10px; background: #f8fbff; box-sizing: border-box; width: 100%; }
+.cash-quick-opening-section label { color: var(--ink); font-size: .77rem; font-weight: 600; }
+.cash-quick-opening-section input { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: .88rem; box-sizing: border-box; }
+.open-turn-btn { width: 100%; justify-content: center; min-height: 42px; font-size: .88rem; }
+
+/* Movement Form & History */
+.cash-movement-form, .cash-close-form, .cash-movement-history { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); width: 100%; box-sizing: border-box; }
+.cash-movement-form h3, .cash-close-form h3, .cash-movement-history h3 { margin: 0 0 10px; font-size: .86rem; color: var(--ink); }
+.cash-movement-form .button { display: inline-flex; align-items: center; gap: 7px; }
+.cash-move-card { padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); width: 100%; box-sizing: border-box; }
+.cash-move-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-width: 0; box-sizing: border-box; }
+.cash-move-left { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; min-width: 0; }
+.cash-move-left b { font-size: .84rem; font-variant-numeric: tabular-nums; }
+.cash-move-left b.text-in { color: #18835f; }
+.cash-move-left b.text-out { color: #bc4b41; }
+.cash-move-left small { color: var(--muted); font-size: .7rem; }
+.cash-move-left span { color: var(--ink); font-size: .76rem; word-break: break-word; }
+.cash-move-actions { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.subtle-btn { display: grid; width: 26px; height: 26px; place-items: center; border: 0; border-radius: 5px; background: transparent; color: var(--muted); cursor: pointer; }
+.subtle-btn:hover { background: #0000000e; color: var(--ink); }
+.subtle-btn.danger:hover { background: #fff0ed; color: #a82e25; }
+
+/* Movement Edit Inline */
+.move-edit-inline-panel { display: grid; gap: 7px; width: 100%; box-sizing: border-box; }
+.move-edit-fields { display: grid; grid-template-columns: 110px 95px 1fr; gap: 6px; width: 100%; box-sizing: border-box; }
+.move-edit-fields select, .move-edit-fields input { min-height: 32px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 6px; font-size: .78rem; background: #fff; box-sizing: border-box; }
+.move-edit-btn-row { display: flex; gap: 6px; }
+
+/* Cierre Historial & Arqueo Cards */
+.cash-close-amounts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; width: 100%; box-sizing: border-box; }
+.cash-close-amounts span { display: grid; gap: 3px; padding: 8px; border-radius: 8px; background: #f5f5f8; color: #666975; font-size: 11px; min-width: 0; }
+.cash-close-amounts strong { color: #252631; font-size: 13px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cash-history-card-item { display: grid; gap: 7px; width: 100%; box-sizing: border-box; }
+.cash-history-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.cash-history-actions .button { font-size: .73rem; padding: 0 9px; min-height: 29px; }
+
+/* Formulario inline para editar o reabrir turno cerrado */
+.closed-edit-inline-box, .closed-reopen-inline-box { display: grid; gap: 8px; margin-top: 6px; padding: 11px; border: 1px solid #b8d4f4; border-radius: 9px; background: #f7faff; box-sizing: border-box; width: 100%; }
+.closed-edit-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; box-sizing: border-box; }
+.closed-edit-inline-box label, .closed-reopen-inline-box label { display: grid; gap: 4px; font-size: .74rem; color: var(--ink); font-weight: 600; min-width: 0; }
+.closed-edit-inline-box input, .closed-reopen-inline-box input { width: 100%; min-height: 34px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 7px; background: #fff; font-size: .82rem; box-sizing: border-box; }
+.closed-edit-actions { display: flex; gap: 6px; margin-top: 2px; }
+
+@media (max-width: 640px) {
+  .cash-close-amounts { grid-template-columns: 1fr; }
+  .op-flow-kpi-wrap { flex-direction: column; align-items: stretch; }
+  .move-edit-fields { grid-template-columns: 1fr; }
+  .closed-edit-fields { grid-template-columns: 1fr; }
+  .cash-history-actions { flex-direction: column; }
+  .cash-history-actions .button { width: 100%; justify-content: center; }
+}

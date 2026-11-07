@@ -81,10 +81,23 @@ Ayudar a una persona que llega por primera vez a reconocer a Visual Corp, encont
 
 ## Continuación v09 — ejemplos prácticos en el portafolio
 
-**Fecha:** 7 de noviembre de 2026. **Estado:** implementado en el checkout local; pendiente revisión y publicación.
+**Fecha:** 7 de noviembre de 2026. **Estado:** verificado en el checkout local y publicado en `main` mediante #219.
 
 - Se conectaron cinco ejemplos prácticos ya preparados en el sitio: ambientación de temporada, campaña en punto de venta, cuadernos corporativos, recuerdos en acrílico y exhibición para ferias.
 - Las tarjetas usan muestras conceptuales existentes y declaran que no representan proyectos de clientes ni trabajos ejecutados. Los casos reales quedan separados y requieren descripción, evidencia y autorización de publicación confirmadas.
 - Cada ejemplo enlaza a contacto; no se añadieron dependencias, activos nuevos, registros ni cambios de base de datos.
 - Se consultaron las guías oficiales de tarjetas de Magic UI, shadcn y HeroUI. Se mantuvieron las tarjetas propias del sitio porque el proyecto ya usa React, CSS y patrones visuales existentes; no se justificó incorporar otra biblioteca.
-- Pendiente: revisión visual local, compilación y sincronización de contexto. No se desplegó.
+- Se verificó `/portafolio` en el navegador local en temas oscuro y claro; los cinco ejemplos y sus enlaces de contacto aparecen y los casos documentados siguen en un bloque separado.
+- `npm run build` y `git diff --check` terminaron correctamente. Vite advierte que el chunk principal supera 500 kB. `npm run build:checked` no pasa por errores TypeScript en `OperationsQuotePage.tsx`, archivo modificado fuera de esta tarea.
+- La sincronización del contexto terminó correctamente. Los ejemplos se publicaron con #219.
+
+## Continuación v10 — animaciones de contacto
+
+**Fecha:** 7 de noviembre de 2026. **Estado:** verificado en el checkout local.
+
+- Las vías de contacto aparecen escalonadas; el formulario y la ubicación se revelan al entrar en pantalla; el contenido del mapa y su leyenda tienen una transición breve al cambiar de vista.
+- Se respetan `prefers-reduced-motion` y `useReducedMotion`. Se reutilizan Motion y `AnimatedList`, ya presentes en el proyecto; no se añadió biblioteca ni servicio.
+- Se revisaron los patrones oficiales Blur Fade de Magic UI, Accordion de shadcn y Animation de HeroUI. Se eligió el sistema Motion existente por su integración con el sitio y sus controles de movimiento reducido.
+- En el navegador local se revisó la página Contacto y se probó el cambio entre Google Maps y el mapa ilustrado. No se envió el formulario.
+- `npm run build:checked` y `git diff --check` terminaron correctamente. Vite mantiene el aviso de chunk principal de 630.12 kB.
+- La sincronización del contexto terminó correctamente. El despliegue se verifica por separado en Vercel.

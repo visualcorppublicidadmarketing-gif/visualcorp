@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
-import { X, Printer, Wrench, Download, ExternalLink, Tag, Eye } from 'lucide-react';
+import { X, Printer, Wrench, Download, ExternalLink, Tag, SlidersHorizontal, Edit3 } from 'lucide-react';
 import { POSPackageLabelModal } from './POSPackageLabelModal';
 import { getGoogleMapsEmbedUrl, getGoogleMapsOpenUrl } from '../../lib/maps';
 
 export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose }) {
-  const [selectedMachine, setSelectedMachine] = useState('plotter_320_solvente');
+  const [selectedMachine, setSelectedMachine] = useState(order?.machineAssigned || 'plotter_320_solvente');
   const [showLabelModal, setShowLabelModal] = useState(false);
+  const [isCustomizing, setIsCustomizing] = useState(false);
+
+  // Editable header, client, technician, and notes before printing
+  const [headerTitle, setHeaderTitle] = useState('VISUAL CORP');
+  const [headerSubtitle, setHeaderSubtitle] = useState('ORDEN DE TRABAJO & ESPECIFICACIONES TÉCNICAS');
+  const [customerName, setCustomerName] = useState(order?.customerName || '');
+  const [customerPhone, setCustomerPhone] = useState(order?.customerPhone || '');
+  const [technicianAssigned, setTechnicianAssigned] = useState(order?.technicianAssigned || 'Operario de taller');
+  const [workshopNotes, setWorkshopNotes] = useState(order?.productionNotes || '');
+  const [additionalNote, setAdditionalNote] = useState('');
 
   if (!isOpen || !order) return null;
 
   const trackingToken = order.trackingToken || order.orderNumber;
-  const trackingUrl = `https://gigaprint-ec.github.io/gigaprint-webpage/seguimiento/${trackingToken}`;
+  const trackingUrl = `https://visualcorp.ec/seguimiento/${trackingToken}`;
   const qrCodeUrl = `https://quickchart.io/qr?text=${encodeURIComponent(trackingUrl)}&size=90&margin=1`;
   const installationMapUrl = getGoogleMapsOpenUrl(order.installationMapsUrl, order.installationAddress);
   const installationMapEmbedUrl = getGoogleMapsEmbedUrl(order.installationMapsUrl, order.installationAddress);
@@ -22,6 +32,8 @@ export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose 
     { id: 'laser_digital_konica', name: 'Prensa Digital Láser Konica Minolta' },
     { id: 'dtf_textil', name: 'Plotter Textil DTF 60cm' }
   ];
+
+  const currentMachineLabel = machines.find((m) => m.id === selectedMachine)?.name || selectedMachine;
 
   const handlePrint = () => {
     window.print();
@@ -44,7 +56,7 @@ export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose 
           color: '#000',
           borderRadius: '16px',
           width: '100%',
-          maxWidth: '760px',
+          maxWidth: '820px',
           maxHeight: '90vh',
           overflowY: 'auto',
           padding: '24px',
@@ -53,21 +65,42 @@ export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose 
           gap: '16px'
         }}>
           {/* Top Controls */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Wrench size={20} color="#ea580c" />
+              <Wrench size={20} color="#7c3aed" />
               <strong style={{ fontSize: '16px', color: '#0f172a' }}>Hoja de Producción & Taller (Work Order)</strong>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setIsCustomizing(!isCustomizing)}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: isCustomizing ? '1px solid #7c3aed' : '1px solid #cbd5e1',
+                  background: isCustomizing ? '#f3e8ff' : '#f8fafc',
+                  color: isCustomizing ? '#6b21a8' : '#334155',
+                  fontWeight: '800',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <SlidersHorizontal size={15} />
+                {isCustomizing ? 'Cerrar edición' : 'Editar antes de imprimir'}
+              </button>
+
               <button
                 type="button"
                 onClick={() => setShowLabelModal(true)}
                 style={{
                   padding: '8px 12px',
                   borderRadius: '8px',
-                  border: '1px solid #fed7aa',
-                  background: '#fff7ed',
-                  color: '#ea580c',
+                  border: '1px solid #e9d5ff',
+                  background: '#faf5ff',
+                  color: '#6b21a8',
                   fontWeight: '800',
                   fontSize: '13px',
                   cursor: 'pointer',
@@ -78,6 +111,7 @@ export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose 
               >
                 <Tag size={15} /> Etiqueta Bulto
               </button>
+
               <button
                 type="button"
                 onClick={handlePrint}
@@ -85,7 +119,7 @@ export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose 
                   padding: '8px 14px',
                   borderRadius: '8px',
                   border: 0,
-                  background: '#ea580c',
+                  background: '#7c3aed',
                   color: '#fff',
                   fontWeight: '800',
                   fontSize: '13px',
@@ -97,6 +131,7 @@ export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose 
               >
                 <Printer size={15} /> Imprimir Hoja
               </button>
+
               <button
                 type="button"
                 onClick={onClose}
@@ -113,13 +148,132 @@ export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose 
             </div>
           </div>
 
+          {/* Inline Customization Panel */}
+          {isCustomizing && (
+            <div className="no-print" style={{
+              padding: '14px 16px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '10px',
+              display: 'grid',
+              gap: '10px',
+              fontSize: '12px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong style={{ color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Edit3 size={15} color="#7c3aed" /> Modificar membrete y datos de la orden de taller
+                </strong>
+                <button
+                  type="button"
+                  onClick={() => setIsCustomizing(false)}
+                  style={{ fontSize: '11px', color: '#7c3aed', background: 'transparent', border: 0, cursor: 'pointer', fontWeight: 700 }}
+                >
+                  Listo
+                </button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10.5px', fontWeight: 800, color: '#475569', marginBottom: '2px', textTransform: 'uppercase' }}>Título del Membrete</label>
+                  <input
+                    type="text"
+                    value={headerTitle}
+                    onChange={(e) => setHeaderTitle(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10.5px', fontWeight: 800, color: '#475569', marginBottom: '2px', textTransform: 'uppercase' }}>Subtítulo / Área</label>
+                  <input
+                    type="text"
+                    value={headerSubtitle}
+                    onChange={(e) => setHeaderSubtitle(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10.5px', fontWeight: 800, color: '#475569', marginBottom: '2px', textTransform: 'uppercase' }}>Nombre del Cliente</label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10.5px', fontWeight: 800, color: '#475569', marginBottom: '2px', textTransform: 'uppercase' }}>Teléfono del Cliente</label>
+                  <input
+                    type="text"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10.5px', fontWeight: 800, color: '#475569', marginBottom: '2px', textTransform: 'uppercase' }}>Máquina a Asignar</label>
+                  <select
+                    value={selectedMachine}
+                    onChange={(e) => setSelectedMachine(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#fff' }}
+                  >
+                    {machines.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10.5px', fontWeight: 800, color: '#475569', marginBottom: '2px', textTransform: 'uppercase' }}>Técnico / Operario</label>
+                  <input
+                    type="text"
+                    value={technicianAssigned}
+                    onChange={(e) => setTechnicianAssigned(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10.5px', fontWeight: 800, color: '#475569', marginBottom: '2px', textTransform: 'uppercase' }}>Instrucciones Especiales de Taller</label>
+                  <input
+                    type="text"
+                    value={workshopNotes}
+                    onChange={(e) => setWorkshopNotes(e.target.value)}
+                    placeholder="Ej: Dejar demasía de 5cm, ojales cada 30cm..."
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10.5px', fontWeight: 800, color: '#475569', marginBottom: '2px', textTransform: 'uppercase' }}>Nota Adicional Inmediata</label>
+                  <input
+                    type="text"
+                    value={additionalNote}
+                    onChange={(e) => setAdditionalNote(e.target.value)}
+                    placeholder="Instrucción de despacho o prioridad..."
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Printable Production Sheet */}
           <div className="printable-work-order" style={{ display: 'grid', gap: '14px', fontFamily: 'Arial, sans-serif' }}>
             {/* Header Banner */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
               <div>
-                <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '900', letterSpacing: '-0.02em' }}>GIGAPRINT — TALLER</h1>
-                <span style={{ fontSize: '12px', color: '#475569', fontWeight: 'bold' }}>ORDEN DE TRABAJO & ESPECIFICACIONES TÉCNICAS</span>
+                <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '900', letterSpacing: '-0.02em', color: '#1e1b4b' }}>
+                  {headerTitle} — TALLER
+                </h1>
+                <span style={{ fontSize: '12px', color: '#475569', fontWeight: 'bold' }}>
+                  {headerSubtitle}
+                </span>
               </div>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -130,7 +284,7 @@ export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose 
                 />
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>NRO. DE ORDEN</span>
-                  <strong style={{ fontSize: '22px', fontWeight: '900', color: '#ea580c' }}>#{order.orderNumber}</strong>
+                  <strong style={{ fontSize: '22px', fontWeight: '900', color: '#7c3aed' }}>#{order.orderNumber}</strong>
                 </div>
               </div>
             </div>
@@ -143,8 +297,8 @@ export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose 
               </div>
               <div>
                 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', display: 'block' }}>CLIENTE</span>
-                <strong style={{ fontSize: '14px', color: '#0f172a' }}>{order.customerName}</strong>
-                {order.customerPhone && <span style={{ fontSize: '11.5px', color: '#16a34a', display: 'block' }}>📞 {order.customerPhone}</span>}
+                <strong style={{ fontSize: '14px', color: '#0f172a' }}>{customerName || order.customerName}</strong>
+                {(customerPhone || order.customerPhone) && <span style={{ fontSize: '11.5px', color: '#16a34a', display: 'block' }}>📞 {customerPhone || order.customerPhone}</span>}
               </div>
               <div>
                 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', display: 'block' }}>ÁREA DE PRODUCCIÓN</span>
@@ -163,7 +317,7 @@ export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose 
               <div>
                 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', display: 'block' }}>MÁQUINA & TÉCNICO</span>
                 <span style={{ fontSize: '12px', color: '#0f172a', fontWeight: 'bold' }}>
-                  ⚙️ {order.machineAssigned || 'Plotter Solvente 3.20m'} · 👷 {order.technicianAssigned || 'Operario'}
+                  ⚙️ {currentMachineLabel} · 👷 {technicianAssigned}
                 </span>
               </div>
               <div>
@@ -272,7 +426,7 @@ export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose 
                         {it.quantity || 1}
                       </td>
                       <td style={{ padding: '7px', border: '1px solid #cbd5e1', color: '#0f172a' }}>
-                        <span style={{ fontWeight: 'bold', color: '#ea580c' }}>
+                        <span style={{ fontWeight: 'bold', color: '#7c3aed' }}>
                           {it.finishing || 'Sin acabados'}
                         </span>
                         {it.notes && (
@@ -288,10 +442,20 @@ export function POSWorkOrderModal({ order, items = [], advisor, isOpen, onClose 
             </div>
 
             {/* Special Instructions */}
-            {order.productionNotes && (
-              <div style={{ background: '#fffbeb', padding: '10px 12px', borderRadius: '6px', border: '1px solid #fde68a', fontSize: '11.5px' }}>
-                <strong style={{ color: '#b45309', display: 'block', marginBottom: '2px' }}>INSTRUCCIONES ESPECIALES DE TALLER:</strong>
-                {order.productionNotes}
+            {(workshopNotes || additionalNote) && (
+              <div style={{ background: '#fffbeb', padding: '10px 12px', borderRadius: '6px', border: '1px solid #fde68a', fontSize: '11.5px', display: 'grid', gap: '4px' }}>
+                {workshopNotes && (
+                  <div>
+                    <strong style={{ color: '#b45309', display: 'block', marginBottom: '2px' }}>INSTRUCCIONES ESPECIALES DE TALLER:</strong>
+                    <span>{workshopNotes}</span>
+                  </div>
+                )}
+                {additionalNote && (
+                  <div style={{ borderTop: workshopNotes ? '1px dashed #fde68a' : 'none', paddingTop: workshopNotes ? '4px' : '0' }}>
+                    <strong style={{ color: '#7c3aed', display: 'block', marginBottom: '2px' }}>NOTA ADICIONAL DE PRODUCCIÓN:</strong>
+                    <span>{additionalNote}</span>
+                  </div>
+                )}
               </div>
             )}
 
