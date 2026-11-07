@@ -7,6 +7,7 @@ import { AnimatedList, SpotlightLayer, clearSpotlight, updateSpotlight } from '.
 import { multiProductQuoteService } from './content';
 import { ArticleMarkdown } from './ArticleMarkdown';
 import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategoryStrips } from './SolutionsComponents';
+import { PortfolioPracticalExamples } from './PortfolioPracticalExamples';
 import './storefront.css';
 import './store-promo-teaser.css';
 import './store-product-sku.css';

@@ -312,6 +312,47 @@
   .oq-history-actions-bar{margin-left:0}
 }
 
+/* Volume Tier Badges & Receipt Action */
+.is-volume-tier{
+  background:rgba(234,88,12,0.14);
+  color:#ea580c;
+  border:1px solid rgba(234,88,12,0.28);
+  font-weight:700;
+  border-radius:6px;
+  padding:3px 8px;
+}
+.theme-dark .is-volume-tier,
+[data-theme='dark'] .is-volume-tier{
+  background:rgba(251,146,60,0.18);
+  color:#fb923c;
+  border-color:rgba(251,146,60,0.35);
+}
+.is-volume-rec{
+  background:rgba(79,70,229,0.12);
+  color:#4f46e5;
+  border:1px solid rgba(79,70,229,0.24);
+  border-radius:6px;
+  padding:3px 8px;
+  max-width:280px;
+}
+.theme-dark .is-volume-rec,
+[data-theme='dark'] .is-volume-rec{
+  background:rgba(129,140,248,0.15);
+  color:#a5b4fc;
+  border-color:rgba(129,140,248,0.3);
+}
+.operations-quote-detail-link.is-receipt{
+  background:rgba(16,185,129,0.12);
+  color:#059669;
+  border:1px solid rgba(16,185,129,0.25);
+}
+.theme-dark .operations-quote-detail-link.is-receipt,
+[data-theme='dark'] .operations-quote-detail-link.is-receipt{
+  background:rgba(52,211,153,0.15);
+  color:#34d399;
+  border-color:rgba(52,211,153,0.3);
+}
+
 @media print{
   @page{size:auto;margin:14mm}
   body *{visibility:hidden!important}
