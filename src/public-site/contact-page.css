@@ -214,3 +214,97 @@
   .contact-mobile-dock { animation: none; }
   .contact-faq-list details p { animation: none; }
 }
+
+.public-site .contact-location-section {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(260px, .76fr) minmax(0, 1.24fr);
+  align-items: center;
+  gap: clamp(28px, 4.5vw, 62px);
+  width: min(1240px, calc(100% - 48px));
+  min-width: 0;
+  margin: 0 auto 96px;
+  padding: clamp(24px, 4vw, 52px);
+  overflow: hidden;
+  border: 1px solid #ffffff20;
+  border-radius: 28px;
+  background: radial-gradient(ellipse at 10% 0%, #df1a8a1f, transparent 42%), radial-gradient(ellipse at 100% 100%, #1c95d41a, transparent 42%), linear-gradient(125deg, #17151e, #11131b 65%, #15121b);
+  box-shadow: 0 28px 78px #0004, inset 0 1px #ffffff0c;
+}
+.contact-location-section::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image: linear-gradient(#ffffff05 1px, transparent 1px), linear-gradient(90deg, #ffffff05 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(120deg, #000, transparent 85%);
+  content: '';
+  opacity: .4;
+  pointer-events: none;
+}
+.contact-location-copy { min-width: 0; }
+.contact-location-copy h2 {
+  margin: 16px 0 14px;
+  color: #faf8fc;
+  font-family: BebasKai, 'Arial Narrow', sans-serif;
+  font-size: clamp(48px, 5.4vw, 72px);
+  font-weight: 400;
+  line-height: .92;
+  letter-spacing: .005em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.contact-location-copy h2 em {
+  color: transparent;
+  background: linear-gradient(100deg, #24b7ea 0%, #e8249a 58%, #ffca39 115%);
+  background-clip: text;
+  font-style: normal;
+}
+.contact-location-copy>p { max-width: 42ch; margin: 0; color: #bbb8c4; font-size: 13px; line-height: 1.7; }
+.contact-location-address { display: flex; min-width: 0; align-items: center; gap: 12px; margin-top: 25px; }
+.contact-location-address>span { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; border: 1px solid #e943ad42; border-radius: 12px; background: #e943ad15; color: #ef79c2; }
+.contact-location-address>div { display: grid; gap: 4px; min-width: 0; }
+.contact-location-address b { color: #f5f2f8; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.contact-location-address small { color: #aaa6b4; font-size: 10px; }
+.contact-location-directions { display: inline-flex; min-height: 40px; align-items: center; gap: 8px; margin-top: 16px; color: #f092ce; font-size: 11px; font-weight: 750; text-decoration: none; }
+.contact-location-directions:hover { color: #ffc1e4; }
+.contact-location-directions:focus-visible,.contact-map-toggle button:focus-visible { outline: 3px solid #f184cb; outline-offset: 3px; }
+.contact-map-toggle { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; max-width: 390px; margin-top: 24px; padding: 5px; border: 1px solid #ffffff1e; border-radius: 13px; background: #0d0d14a6; }
+.contact-map-toggle button { display: inline-flex; min-width: 0; min-height: 44px; align-items: center; justify-content: center; gap: 7px; padding: 0 10px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #c2beca; font: inherit; font-size: 10px; font-weight: 750; white-space: nowrap; cursor: pointer; transition: background .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.contact-map-toggle button:hover { border-color: #ffffff24; color: #fff; }
+.contact-map-toggle button[aria-pressed="true"] { border-color: #f075c052; background: linear-gradient(110deg, #d91b91, #843ac4); box-shadow: 0 7px 18px #c71c8a35, inset 0 1px #ffffff25; color: #fff; }
+.contact-location-map-card { min-width: 0; margin: 0; padding: 10px; border: 1px solid #ffffff24; border-radius: 20px; background: linear-gradient(145deg, #ffffff13, #ffffff06); box-shadow: 0 24px 58px #0006, inset 0 1px #ffffff18; }
+.contact-location-map-topline { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 10px; padding: 3px 4px 11px; }
+.contact-location-map-topline>span { display: inline-flex; min-width: 0; align-items: center; gap: 8px; color: #e6cde0; font-size: 8px; font-weight: 850; letter-spacing: .14em; }
+.contact-location-map-topline>span i { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: #45d5a0; box-shadow: 0 0 12px #45d5a088; }
+.contact-location-map-topline>small { flex: 0 0 auto; color: #aaa6b4; font-size: 9px; }
+.contact-map-viewport { position: relative; width: 100%; max-width: 100%; overflow: hidden; aspect-ratio: 1.12; border: 1px solid #ffffff15; border-radius: 13px; background: #f6f3f7; }
+.contact-map-viewport iframe,.contact-map-viewport img { display: block; width: 100%; height: 100%; border: 0; }
+.contact-map-viewport img { object-fit: contain; }
+.contact-location-map-caption { display: flex; min-width: 0; align-items: center; gap: 10px; padding: 12px 5px 3px; }
+.contact-location-map-icon { display: grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; border: 1px solid #49d2a240; border-radius: 10px; background: #49d2a218; color: #74dfb5; }
+.contact-location-map-caption>span:last-child { display: grid; gap: 4px; min-width: 0; }
+.contact-location-map-caption b { color: #f3eff7; font-size: 10px; }
+.contact-location-map-caption small { color: #aaa6b4; font-size: 9px; line-height: 1.45; }
+@media(max-width:760px) {
+  .public-site .contact-location-section { grid-template-columns: minmax(0, 1fr); gap: 22px; width: calc(100% - 36px); margin-bottom: 68px; padding: 22px; border-radius: 22px; }
+  .contact-location-copy h2 { margin: 13px 0 11px; font-size: clamp(47px, 10vw, 64px); }
+  .contact-location-copy>p { font-size: 12px; }
+  .contact-location-address { margin-top: 18px; }
+  .contact-map-toggle { max-width: none; margin-top: 18px; }
+  .contact-map-toggle button { min-height: 43px; font-size: 10px; }
+  .contact-location-map-card { padding: 8px; border-radius: 16px; }
+  .contact-map-viewport { border-radius: 11px; }
+}
+@media(max-width:390px) {
+  .public-site .contact-location-section { width: calc(100% - 28px); padding: 16px; }
+  .contact-map-toggle { gap: 4px; padding: 4px; }
+  .contact-map-toggle button { gap: 5px; padding: 0 6px; font-size: 9px; }
+  .contact-location-map-topline>span { font-size: 7px; letter-spacing: .1em; }
+  .contact-location-map-topline>small { font-size: 8px; }
+  .contact-location-map-caption small { font-size: 8px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .contact-map-toggle button { transition: none; }
+}
