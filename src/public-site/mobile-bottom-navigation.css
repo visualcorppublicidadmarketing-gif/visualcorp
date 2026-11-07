@@ -1,6 +1,6 @@
 .mobile-bottom-navigation,.mobile-bottom-sheet,.mobile-bottom-backdrop{display:none}
 
-@media(max-width:1400px){
+@media(max-width:1100px){
   .public-site .site-header .site-nav{display:none}
   .public-site .site-header .site-menu-toggle,.public-site .site-header .site-quote-button{display:none}
   .public-site .site-header-actions{gap:8px}
@@ -63,7 +63,7 @@
   .public-site .site-session-avatar{display:none}
 }
 
-@media(min-width:1401px){.public-site .mobile-bottom-navigation,.public-site .mobile-bottom-sheet,.public-site .mobile-bottom-backdrop{display:none}}
+@media(min-width:1101px){.public-site .mobile-bottom-navigation,.public-site .mobile-bottom-sheet,.public-site .mobile-bottom-backdrop{display:none}}
 @media(prefers-reduced-motion:reduce){.public-site .mobile-bottom-item svg{transition:none}.public-site .mobile-bottom-sheet{animation:none}}
 
 html[data-public-theme="light"] .public-site .mobile-bottom-navigation{border-color:#e2d9e8;background:rgba(255,255,255,.94);color:#504657}
