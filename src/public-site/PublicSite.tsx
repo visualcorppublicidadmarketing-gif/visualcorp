@@ -89,9 +89,10 @@ function SiteHeader({ theme, onThemeChange }) {
   const { data } = useWorkspace();
   const { user } = useAuth();
   const location = useLocation();
-  const [openMenu, setOpenMenu] = useState<'services' | 'company' | null>(null);
+  const [openMenu, setOpenMenu] = useState<'services' | 'explore' | 'company' | null>(null);
   const headerRef = useRef(null);
   const servicesRef = useRef(null);
+  const exploreRef = useRef(null);
   const companyRef = useRef(null);
   const closeNavigation = () => setOpenMenu(null);
   useEffect(() => {
@@ -110,7 +111,7 @@ function SiteHeader({ theme, onThemeChange }) {
     const handleEscape = (event) => {
       if (event.key !== 'Escape') return;
       if (openMenu) {
-        const trigger = openMenu === 'services' ? servicesRef : companyRef;
+        const trigger = { services: servicesRef, explore: exploreRef, company: companyRef }[openMenu];
         setOpenMenu(null);
         trigger.current?.focus();
       }
@@ -124,7 +125,9 @@ function SiteHeader({ theme, onThemeChange }) {
   }, [openMenu]);
   const services = data.services.filter((service) => service.enabled);
   const serviceIsActive = location.pathname.startsWith('/servicios');
-  const companyIsActive = ['/nosotros', '/como-trabajamos'].includes(location.pathname);
+  const exploreIsActive = ['/soluciones', '/portafolio', '/publicaciones', '/blog', '/tienda/promociones'].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
+  const companyIsActive = ['/nosotros', '/como-trabajamos', '/contacto'].includes(location.pathname);
+  const storeIsActive = location.pathname.startsWith('/tienda') && !location.pathname.startsWith('/tienda/promociones');
   const userDisplayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'Tu cuenta';
   const userAvatar = getGoogleAvatarUrl(user);
   const AdminAccessIcon = user ? PanelsTopLeft : LogIn;
@@ -134,13 +137,9 @@ function SiteHeader({ theme, onThemeChange }) {
       <nav className="site-nav" aria-label="Navegación principal">
         <NavLink to="/" end onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Inicio</NavLink>
         <button ref={servicesRef} type="button" className={`site-nav-trigger${serviceIsActive || openMenu === 'services' ? ' is-active' : ''}`} aria-expanded={openMenu === 'services'} aria-controls="site-services-panel" onClick={() => setOpenMenu((current) => current === 'services' ? null : 'services')}>Servicios<ChevronDown size={15} aria-hidden="true" /></button>
-        <NavLink to="/soluciones" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Soluciones</NavLink>
+        <button ref={exploreRef} type="button" className={`site-nav-trigger${exploreIsActive || openMenu === 'explore' ? ' is-active' : ''}`} aria-expanded={openMenu === 'explore'} aria-controls="site-explore-panel" onClick={() => setOpenMenu((current) => current === 'explore' ? null : 'explore')}>Explorar<ChevronDown size={15} aria-hidden="true" /></button>
         <button ref={companyRef} type="button" className={`site-nav-trigger${companyIsActive || openMenu === 'company' ? ' is-active' : ''}`} aria-expanded={openMenu === 'company'} aria-controls="site-company-panel" onClick={() => setOpenMenu((current) => current === 'company' ? null : 'company')}>La empresa<ChevronDown size={15} aria-hidden="true" /></button>
-        <NavLink to="/portafolio" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Portafolio</NavLink>
-        <NavLink to="/publicaciones" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Publicaciones</NavLink>
-        <NavLink to="/blog" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Blog</NavLink>
-        <NavLink to="/tienda" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Tienda</NavLink>
-        <NavLink to="/contacto" onClick={closeNavigation} className={({ isActive }) => `site-nav-link${isActive ? ' is-active' : ''}`}>Contacto</NavLink>
+        <Link to="/tienda" onClick={closeNavigation} className={`site-nav-link${storeIsActive ? ' is-active' : ''}`}>Tienda</Link>
       </nav>
       <div className="site-header-actions">
         <AnimatedThemeToggler theme={theme} onThemeChange={onThemeChange} className="site-theme-toggle" aria-label={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}><span className="site-theme-toggle-icons" aria-hidden="true"><Sun className="theme-sun" size={17}/><Moon className="theme-moon" size={17}/></span></AnimatedThemeToggler>
@@ -156,7 +155,17 @@ function SiteHeader({ theme, onThemeChange }) {
         <div className="site-mega-intro"><span className="site-mega-kicker">LO QUE HACEMOS <i/></span><h2>De la idea<br/>a lo tangible<span>.</span></h2><p>Explora lo que podemos crear para tu marca, tu espacio o tu próximo proyecto.</p><Link to="/servicios" onClick={closeNavigation}>Explorar todos los servicios <ArrowUpRight size={16} aria-hidden="true" /></Link><Link to="/soluciones" onClick={closeNavigation}>Branding por espacio y catálogo <ArrowUpRight size={16} aria-hidden="true" /></Link></div>
         <div className="site-mega-content"><span className="site-mega-label">ELIGE UNA ESPECIALIDAD</span><div className="site-mega-services">{services.map((service) => { const Icon = serviceIcons[service.id] || Sparkles; return <Link key={service.id} to={`/servicios/${service.id}`} onClick={closeNavigation} className={location.pathname === `/servicios/${service.id}` ? 'is-active' : ''}><span className="site-mega-icon"><Icon size={19} aria-hidden="true" /></span><span><strong>{service.name}</strong><small>{service.description}</small></span><ArrowUpRight className="site-mega-arrow" size={17} aria-hidden="true" /></Link>; })}</div></div>
       </div>}
-      {openMenu === 'company' && <div className="site-mega-panel site-company-panel" id="site-company-panel"><div className="site-mega-intro"><span className="site-mega-kicker">VISUAL CORP <i/></span><h2>Conoce<br/>nuestro mundo<span>.</span></h2><p>Una mirada a quiénes somos y cómo damos forma a cada proyecto.</p></div><div className="site-company-links"><Link to="/nosotros" onClick={closeNavigation}><span className="site-company-number">01</span><strong>Quiénes somos</strong><small>La marca, el equipo y lo que nos mueve.</small><ArrowUpRight size={20} aria-hidden="true" /></Link><Link to="/como-trabajamos" onClick={closeNavigation}><span className="site-company-number">02</span><strong>Cómo trabajamos</strong><small>Del primer contacto a la producción.</small><ArrowUpRight size={20} aria-hidden="true" /></Link></div></div>}
+      {openMenu === 'explore' && <div className="site-mega-panel site-explore-panel" id="site-explore-panel" role="region" aria-label="Explorar Visual Corp">
+        <div className="site-mega-intro"><span className="site-mega-kicker">IDEAS, PROYECTOS Y NOVEDADES <i/></span><h2>Encuentra<br/>inspiración<span>.</span></h2><p>Recorre nuestras soluciones, trabajos y contenidos, o encuentra promociones vigentes.</p><Link to="/soluciones" onClick={closeNavigation}>Ver soluciones <ArrowUpRight size={16} aria-hidden="true" /></Link></div>
+        <div className="site-explore-links">
+          <Link to="/soluciones" onClick={closeNavigation} className={location.pathname.startsWith('/soluciones') ? 'is-active' : ''}><span className="site-explore-icon"><PanelsTopLeft size={19} aria-hidden="true"/></span><span><strong>Soluciones</strong><small>Ideas para marcas, espacios y negocios.</small></span><ArrowUpRight size={17} aria-hidden="true"/></Link>
+          <Link to="/portafolio" onClick={closeNavigation} className={location.pathname.startsWith('/portafolio') ? 'is-active' : ''}><span className="site-explore-icon"><ScanLine size={19} aria-hidden="true"/></span><span><strong>Portafolio</strong><small>Proyectos realizados para nuestros clientes.</small></span><ArrowUpRight size={17} aria-hidden="true"/></Link>
+          <Link to="/publicaciones" onClick={closeNavigation} className={location.pathname.startsWith('/publicaciones') ? 'is-active' : ''}><span className="site-explore-icon"><Globe2 size={19} aria-hidden="true"/></span><span><strong>Publicaciones</strong><small>Campañas, ideas y contenido de marca.</small></span><ArrowUpRight size={17} aria-hidden="true"/></Link>
+          <Link to="/blog" onClick={closeNavigation} className={location.pathname.startsWith('/blog') ? 'is-active' : ''}><span className="site-explore-icon"><Sparkles size={19} aria-hidden="true"/></span><span><strong>Blog</strong><small>Consejos, tendencias y novedades.</small></span><ArrowUpRight size={17} aria-hidden="true"/></Link>
+          <Link to="/tienda/promociones" onClick={closeNavigation} className={location.pathname.startsWith('/tienda/promociones') ? 'is-active' : ''}><span className="site-explore-icon"><Store size={19} aria-hidden="true"/></span><span><strong>Promociones</strong><small>Ofertas y sorteos de la tienda.</small></span><ArrowUpRight size={17} aria-hidden="true"/></Link>
+        </div>
+      </div>}
+      {openMenu === 'company' && <div className="site-mega-panel site-company-panel" id="site-company-panel" role="region" aria-label="La empresa"><div className="site-mega-intro"><span className="site-mega-kicker">VISUAL CORP <i/></span><h2>Conoce<br/>nuestro mundo<span>.</span></h2><p>Una mirada a quiénes somos y cómo damos forma a cada proyecto.</p><Link to="/contacto" onClick={closeNavigation}>Conversemos <ArrowUpRight size={16} aria-hidden="true" /></Link></div><div className="site-company-links"><Link to="/nosotros" onClick={closeNavigation}><span className="site-company-number">01</span><strong>Quiénes somos</strong><small>La marca, el equipo y lo que nos mueve.</small><ArrowUpRight size={20} aria-hidden="true" /></Link><Link to="/como-trabajamos" onClick={closeNavigation}><span className="site-company-number">02</span><strong>Cómo trabajamos</strong><small>Del primer contacto a la producción.</small><ArrowUpRight size={20} aria-hidden="true" /></Link><Link to="/contacto" onClick={closeNavigation}><span className="site-company-number">03</span><strong>Contacto</strong><small>Hablemos de tu próximo proyecto.</small><ArrowUpRight size={20} aria-hidden="true" /></Link></div></div>}
     </div>
   </header>
   <MobileBottomNavigation services={services}/>
