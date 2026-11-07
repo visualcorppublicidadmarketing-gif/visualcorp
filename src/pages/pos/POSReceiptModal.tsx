@@ -3,25 +3,30 @@ import {
   X,
   Printer,
   MessageCircle,
-  CheckCircle2,
-  AlertCircle,
-  QrCode,
-  ExternalLink,
   Tag,
   SlidersHorizontal,
-  Sparkles
+  Edit3
 } from 'lucide-react';
 import { POSPackageLabelModal } from './POSPackageLabelModal';
 
 export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose }) {
   const [receiptWidth, setReceiptWidth] = useState('80mm'); // '80mm' | '58mm'
   const [showLabelModal, setShowLabelModal] = useState(false);
+  const [isEditingHeader, setIsEditingHeader] = useState(false);
+
+  // Editable header, client, and notes before printing
+  const [headerTitle, setHeaderTitle] = useState('VISUAL CORP');
+  const [headerSubtitle, setHeaderSubtitle] = useState('Agencia de Publicidad y Marketing');
+  const [headerLocation, setHeaderLocation] = useState('Milagro, Ecuador');
+  const [headerPhone, setHeaderPhone] = useState(order?.advisorPhone || 'Tel: +593 98 765 4321');
+  const [customerName, setCustomerName] = useState(order?.customerName || '');
+  const [receiptNote, setReceiptNote] = useState(order?.receiptNote || '');
 
   if (!isOpen || !order) return null;
 
   const money = (val) => `$${(Number(val) || 0).toFixed(2)}`;
   const trackingToken = order.trackingToken || order.orderNumber;
-  const trackingUrl = `https://gigaprint-ec.github.io/gigaprint-webpage/seguimiento/${trackingToken}`;
+  const trackingUrl = `https://visualcorp.ec/seguimiento/${trackingToken}`;
   const qrCodeUrl = `https://quickchart.io/qr?text=${encodeURIComponent(trackingUrl)}&size=140&margin=1`;
 
   const handlePrint = () => {
@@ -38,9 +43,9 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
 
   const getWhatsAppMessage = () => {
     const lines = [
-      `*GIGAPRINT — COMPROBANTE DE VENTA # ${order.orderNumber}*`,
+      `*${headerTitle} — COMPROBANTE DE VENTA # ${order.orderNumber}*`,
       `================================`,
-      `*Cliente:* ${order.customerName}`,
+      `*Cliente:* ${customerName || order.customerName}`,
       order.customerIdentification ? `*RUC/CI:* ${order.customerIdentification}` : null,
       `*Trabajo:* ${order.jobName}`,
       `*Fecha:* ${order.orderDate} | *Entrega:* ${order.deliveryDate || 'Por coordinar'}`,
@@ -60,11 +65,14 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
     lines.push(`*Total Venta:* ${money(order.totalAmount)}`);
     lines.push(`*Abonado:* ${money(order.depositAmount)}`);
     lines.push(`*Saldo por Pagar:* ${money(order.balanceDue)}`);
+    if (receiptNote) {
+      lines.push(`*Nota:* ${receiptNote}`);
+    }
     lines.push(`================================`);
     lines.push(`📱 *Sigue el estado de tu trabajo en vivo aquí:*`);
     lines.push(`${trackingUrl}`);
     lines.push(`================================`);
-    lines.push(`¡Gracias por confiar en Gigaprint — Tus ideas en grande! 🚀`);
+    lines.push(`¡Gracias por confiar en ${headerTitle} — Agencia de Publicidad y Marketing! 🚀`);
 
     return encodeURIComponent(lines.filter(Boolean).join('\n'));
   };
@@ -95,7 +103,7 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
           background: 'var(--paper)',
           borderRadius: '20px',
           width: '100%',
-          maxWidth: '520px',
+          maxWidth: '540px',
           maxHeight: '90vh',
           overflowY: 'auto',
           border: '1px solid var(--line)',
@@ -111,9 +119,9 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
             padding: '14px 20px',
             borderBottom: '1px solid var(--line)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--orange-dark)', textTransform: 'uppercase' }}>
-                Ticket #{order.orderNumber}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase' }}>
+                Recibo #{order.orderNumber}
               </span>
               <div style={{ display: 'flex', gap: '4px', background: 'var(--bg)', padding: '2px 4px', borderRadius: '6px', border: '1px solid var(--line)' }}>
                 <button
@@ -125,7 +133,7 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
                     fontWeight: 800,
                     borderRadius: '4px',
                     border: 0,
-                    background: receiptWidth === '80mm' ? 'var(--orange)' : 'transparent',
+                    background: receiptWidth === '80mm' ? '#7c3aed' : 'transparent',
                     color: receiptWidth === '80mm' ? '#fff' : 'var(--muted)',
                     cursor: 'pointer'
                   }}
@@ -141,7 +149,7 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
                     fontWeight: 800,
                     borderRadius: '4px',
                     border: 0,
-                    background: receiptWidth === '58mm' ? 'var(--orange)' : 'transparent',
+                    background: receiptWidth === '58mm' ? '#7c3aed' : 'transparent',
                     color: receiptWidth === '58mm' ? '#fff' : 'var(--muted)',
                     cursor: 'pointer'
                   }}
@@ -149,6 +157,27 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
                   58mm
                 </button>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setIsEditingHeader(!isEditingHeader)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '3px 8px',
+                  fontSize: '10.5px',
+                  fontWeight: 700,
+                  borderRadius: '6px',
+                  border: isEditingHeader ? '1px solid #7c3aed' : '1px solid var(--line)',
+                  background: isEditingHeader ? '#f3e8ff' : 'var(--bg)',
+                  color: isEditingHeader ? '#6b21a8' : 'var(--ink)',
+                  cursor: 'pointer'
+                }}
+              >
+                <SlidersHorizontal size={12} />
+                {isEditingHeader ? 'Ocultar edición' : 'Editar antes de imprimir'}
+              </button>
             </div>
             <button
               type="button"
@@ -158,6 +187,94 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
               <X size={20} />
             </button>
           </div>
+
+          {/* Edit Header & Notes Panel */}
+          {isEditingHeader && (
+            <div className="no-print" style={{
+              margin: '12px 20px 0',
+              padding: '12px 14px',
+              background: '#faf5ff',
+              border: '1px solid #e9d5ff',
+              borderRadius: '12px',
+              display: 'grid',
+              gap: '10px',
+              fontSize: '12px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong style={{ color: '#581c87', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px' }}>
+                  <Edit3 size={14} color="#7c3aed" /> Modificar membrete y datos de impresión
+                </strong>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingHeader(false)}
+                  style={{ fontSize: '11px', color: '#7c3aed', background: 'transparent', border: 0, cursor: 'pointer', fontWeight: 700 }}
+                >
+                  Listo
+                </button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: '#6b21a8', marginBottom: '2px', textTransform: 'uppercase' }}>Empresa / Membrete</label>
+                  <input
+                    type="text"
+                    value={headerTitle}
+                    onChange={(e) => setHeaderTitle(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #d8b4fe', fontSize: '12px', background: '#fff' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: '#6b21a8', marginBottom: '2px', textTransform: 'uppercase' }}>Subtítulo / Especialidad</label>
+                  <input
+                    type="text"
+                    value={headerSubtitle}
+                    onChange={(e) => setHeaderSubtitle(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #d8b4fe', fontSize: '12px', background: '#fff' }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: '#6b21a8', marginBottom: '2px', textTransform: 'uppercase' }}>Ubicación / Ciudad</label>
+                  <input
+                    type="text"
+                    value={headerLocation}
+                    onChange={(e) => setHeaderLocation(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #d8b4fe', fontSize: '12px', background: '#fff' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: '#6b21a8', marginBottom: '2px', textTransform: 'uppercase' }}>Teléfono en cabecera</label>
+                  <input
+                    type="text"
+                    value={headerPhone}
+                    onChange={(e) => setHeaderPhone(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #d8b4fe', fontSize: '12px', background: '#fff' }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: '#6b21a8', marginBottom: '2px', textTransform: 'uppercase' }}>Nombre del cliente</label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #d8b4fe', fontSize: '12px', background: '#fff' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: '#6b21a8', marginBottom: '2px', textTransform: 'uppercase' }}>Nota adicional en recibo</label>
+                  <input
+                    type="text"
+                    value={receiptNote}
+                    onChange={(e) => setReceiptNote(e.target.value)}
+                    placeholder="Instrucción de entrega, garantía, etc."
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', border: '1px solid #d8b4fe', fontSize: '12px', background: '#fff' }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Printable Ticket Area */}
           <div
@@ -174,14 +291,14 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
             }}
           >
             <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-              <h2 style={{ margin: 0, fontSize: receiptWidth === '58mm' ? '18px' : '22px', fontWeight: 900, color: '#ea580c' }}>GIGAPRINT</h2>
-              <p style={{ margin: '2px 0', fontSize: '10px', fontWeight: 700 }}>Tus ideas en grande</p>
-              <p style={{ margin: '2px 0', fontSize: '10px' }}>Milagro, Guayas - Ecuador · Tel: +593 98 765 4321</p>
+              <h2 style={{ margin: 0, fontSize: receiptWidth === '58mm' ? '18px' : '22px', fontWeight: 900, color: '#6b21a8' }}>{headerTitle}</h2>
+              <p style={{ margin: '2px 0', fontSize: '10px', fontWeight: 700 }}>{headerSubtitle}</p>
+              <p style={{ margin: '2px 0', fontSize: '10px' }}>{headerLocation} · {headerPhone}</p>
               <p style={{ margin: '4px 0 0', fontSize: '12px', fontWeight: 800 }}>ORDEN # {order.orderNumber}</p>
             </div>
 
             <div style={{ borderTop: '1px dashed #71717a', borderBottom: '1px dashed #71717a', padding: '8px 0', fontSize: '10.5px', display: 'grid', gap: '3px' }}>
-              <div><b>Cliente:</b> {order.customerName}</div>
+              <div><b>Cliente:</b> {customerName || order.customerName}</div>
               {order.customerIdentification && <div><b>CI/RUC:</b> {order.customerIdentification}</div>}
               {order.customerPhone && <div><b>Tel:</b> {order.customerPhone}</div>}
               <div><b>Trabajo:</b> {order.jobName}</div>
@@ -205,7 +322,7 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
                       <td style={{ padding: '5px 0' }}>
                         <b>{it.product_name || it.productName}</b>
                         {it.width_cm && it.height_cm && <div style={{ fontSize: '9.5px', color: '#71717a' }}>{it.width_cm} × {it.height_cm} cm</div>}
-                        {it.finishing && it.finishing !== 'none' && <div style={{ fontSize: '9.5px', color: '#ea580c' }}>Acabado: {it.finishing}</div>}
+                        {it.finishing && it.finishing !== 'none' && <div style={{ fontSize: '9.5px', color: '#6b21a8' }}>Acabado: {it.finishing}</div>}
                         {it.notes && <div style={{ fontSize: '9px', color: '#0284c7', fontStyle: 'italic' }}>Nota: {it.notes}</div>}
                       </td>
                       <td style={{ padding: '5px 0', textAlign: 'right', verticalAlign: 'top', fontWeight: 700 }}>
@@ -236,7 +353,7 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 900, borderTop: '1px solid #18181b', paddingTop: '5px' }}>
                 <span>TOTAL:</span>
-                <span style={{ color: '#ea580c' }}>{money(order.totalAmount)}</span>
+                <span style={{ color: '#6b21a8' }}>{money(order.totalAmount)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a', fontWeight: 700 }}>
                 <span>Abonado:</span>
@@ -247,6 +364,12 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
                 <span>{money(order.balanceDue)}</span>
               </div>
             </div>
+
+            {receiptNote && (
+              <div style={{ borderTop: '1px dashed #71717a', marginTop: '8px', paddingTop: '6px', fontSize: '10px', color: '#18181b' }}>
+                <b>Nota:</b> {receiptNote}
+              </div>
+            )}
 
             {/* QR Code for Client Tracking */}
             <div style={{ textAlign: 'center', marginTop: '14px', borderTop: '1px dashed #71717a', paddingTop: '10px' }}>
@@ -259,13 +382,13 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
                 ESCANEA PARA SEGUIR TU PEDIDO
               </p>
               <span style={{ fontSize: '8px', color: '#71717a' }}>
-                gigaprint-ec.github.io/gigaprint-webpage/seguimiento/{trackingToken}
+                visualcorp.ec/seguimiento/{trackingToken}
               </span>
             </div>
 
             <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '9px', color: '#71717a' }}>
               <p style={{ margin: 0 }}>Valores sujetos a confirmación técnica.</p>
-              <p style={{ margin: '2px 0 0', fontWeight: 700 }}>¡Gracias por su preferencia!</p>
+              <p style={{ margin: '2px 0 0', fontWeight: 700 }}>¡Gracias por confiar en Visual Corp!</p>
             </div>
           </div>
 
@@ -306,8 +429,8 @@ export function POSReceiptModal({ order, items = [], advisor, isOpen, onClose })
                 padding: '10px 8px',
                 borderRadius: '10px',
                 border: '1.5px solid var(--line)',
-                background: '#fff7ed',
-                color: '#ea580c',
+                background: '#f5f3ff',
+                color: '#6b21a8',
                 fontWeight: 800,
                 fontSize: '12px',
                 cursor: 'pointer',

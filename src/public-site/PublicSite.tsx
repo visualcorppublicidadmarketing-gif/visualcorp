@@ -481,6 +481,7 @@ export function ProcessPage() {
 
 export function ContactPage() {
   const { data } = useWorkspace();
+  const reduceMotion = useReducedMotion();
   const [searchParams] = useSearchParams();
   const contactHeroRef = useRef<HTMLElement | null>(null);
   const contactFormRef = useRef<HTMLDivElement | null>(null);
@@ -533,17 +534,17 @@ export function ContactPage() {
     </section>
     <section className="contact-workspace" id="contacto-opciones" aria-label="Opciones para contactar a Visual Corp">
         <div className="contact-info-column"><div className="contact-section-heading"><Eyebrow>CONTACTO DIRECTO</Eyebrow><h2>Elige cómo<br/>empezar.</h2><p>Escríbenos directamente o déjanos los detalles y los revisaremos contigo.</p></div>
-        <div className="contact-channel-cards">
+        <AnimatedList className="contact-channel-cards" stagger={0.075}>
           <a className="contact-channel-card contact-channel-whatsapp" href={whatsapp} target="_blank" rel="noopener noreferrer"><span className="contact-channel-icon"><MessageCircle size={19}/></span><span><small>CONVERSACIÓN DIRECTA</small><b>WhatsApp principal</b><em>{data.settings.contactPhone}</em></span><ArrowUpRight size={17}/></a>
           {String(data.settings.whatsappSecondary || '').trim() && <a className="contact-channel-card contact-channel-whatsapp" href={`${whatsappHref(data.settings.whatsappSecondary)}?text=${encodeURIComponent(whatsappText)}`} target="_blank" rel="noopener noreferrer"><span className="contact-channel-icon"><MessageCircle size={19}/></span><span><small>OTRO CANAL DIRECTO</small><b>WhatsApp alternativo</b><em>{data.settings.whatsappSecondary}</em></span><ArrowUpRight size={17}/></a>}
           <a className="contact-channel-card" href={phoneLink}><span className="contact-channel-icon phone-icon"><Phone size={18}/></span><span><small>LLAMADA</small><b>Llámanos</b><em>{data.settings.contactPhone}</em></span><ArrowUpRight size={17}/></a>
           {socials.map((social) => <a key={social.platform} className="contact-channel-card" href={social.href} target="_blank" rel="noopener noreferrer"><span className={`contact-channel-icon social-channel-icon social-icon-${social.platform}`}><SocialMark platform={social.platform} size={18}/></span><span><small>REDES SOCIALES</small><b>{social.label}</b><em>{social.detail}</em></span><ArrowUpRight size={17}/></a>)}
-        </div>
+        </AnimatedList>
         <div className="contact-service-picker"><div><small>¿YA SABES QUÉ BUSCAS?</small><span>Elige una opción para preparar tu mensaje.</span></div><div className="contact-service-chips" role="group" aria-label="Selecciona una familia de trabajo">{contactServices.map((service) => <button key={service.id} type="button" className={selectedService === service.name ? 'is-selected' : ''} aria-pressed={selectedService === service.name} onClick={() => setSelectedService((current) => current === service.name ? '' : service.name)}>{service.name}</button>)}</div><p className="contact-service-feedback" aria-live="polite">{selectedService ? `Listo: ${selectedService}. También prepararemos tu mensaje de WhatsApp.` : 'Puedes elegir una familia o pedir orientación.'}</p><a className="contact-service-link" href="#contacto-formulario">{selectedService ? `Formulario: ${selectedService}` : 'Prefiero que me orienten'} <ChevronRight size={14}/></a></div>
       </div>
-      <div className="contact-form-column" ref={contactFormRef} id="contacto-formulario"><div className="contact-form-intro"><span className="contact-form-step">01 <i/> 01</span><span>FORMULARIO DE CONTACTO</span></div><LeadForm initialService={initialContactService} selectedService={selectedService} onServiceChange={setSelectedService}/></div>
+      <motion.div className="contact-form-column" ref={contactFormRef} id="contacto-formulario" initial={reduceMotion ? false : { opacity: 0, x: 18 }} whileInView={reduceMotion ? undefined : { opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.16 }} transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.08, ease: 'easeOut' }}><div className="contact-form-intro"><span className="contact-form-step">01 <i/> 01</span><span>FORMULARIO DE CONTACTO</span></div><LeadForm initialService={initialContactService} selectedService={selectedService} onServiceChange={setSelectedService}/></motion.div>
     </section>
-    <section className="contact-location-section" ref={contactLocationRef} aria-labelledby="contact-location-title">
+    <motion.section className="contact-location-section" ref={contactLocationRef} aria-labelledby="contact-location-title" initial={reduceMotion ? false : { opacity: 0, y: 16 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.5, ease: 'easeOut' }}>
       <div className="contact-location-copy">
         <Eyebrow>VISÍTANOS EN MILAGRO</Eyebrow>
         <h2 id="contact-location-title">Encuéntranos<br/><em>en Milagro.</em></h2>
@@ -558,13 +559,15 @@ export function ContactPage() {
       <figure className={`contact-location-map-card is-${locationMapView}`}>
         <div className="contact-location-map-topline"><span><i/>{locationMapView === 'google' ? 'MAPA INTERACTIVO' : 'MAPA DE VISUAL CORP'}</span><small>Milagro, Ecuador</small></div>
         <div id="contact-location-map" className="contact-map-viewport" role="region" aria-label={locationMapView === 'google' ? 'Mapa interactivo de Google Maps de la ubicación de Visual Corp' : 'Mapa ilustrado de referencia de Visual Corp'}>
-          {locationMapView === 'google'
-            ? <iframe title={`Google Maps: ${publicAddress}`} src={googleMapsEmbedUrl} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/>
-            : <img src="/images/location/visual-corp-map.webp" alt="Mapa ilustrado de Visual Corp en Milagro" loading="lazy"/>}
+          <motion.div key={locationMapView} className="contact-map-layer" initial={reduceMotion ? false : { opacity: 0, y: 7, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: reduceMotion ? 0 : 0.24, ease: 'easeOut' }}>
+            {locationMapView === 'google'
+              ? <iframe title={`Google Maps: ${publicAddress}`} src={googleMapsEmbedUrl} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/>
+              : <img src="/images/location/visual-corp-map.webp" alt="Mapa ilustrado de Visual Corp en Milagro" loading="lazy"/>}
+          </motion.div>
         </div>
-        <figcaption className="contact-location-map-caption"><span className="contact-location-map-icon">{locationMapView === 'google' ? <MapPin size={16}/> : <PanelsTopLeft size={16}/>}</span><span><b>{locationMapView === 'google' ? 'Ubicación interactiva' : 'Mapa ilustrado de la empresa'}</b><small>{locationMapView === 'google' ? 'Explora la zona o abre la ruta en Google Maps.' : 'Referencia visual; confirma la ruta exacta con Google Maps.'}</small></span></figcaption>
+        <motion.figcaption key={locationMapView} className="contact-location-map-caption" initial={reduceMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduceMotion ? 0 : 0.2, ease: 'easeOut' }}><span className="contact-location-map-icon">{locationMapView === 'google' ? <MapPin size={16}/> : <PanelsTopLeft size={16}/>}</span><span><b>{locationMapView === 'google' ? 'Ubicación interactiva' : 'Mapa ilustrado de la empresa'}</b><small>{locationMapView === 'google' ? 'Explora la zona o abre la ruta en Google Maps.' : 'Referencia visual; confirma la ruta exacta con Google Maps.'}</small></span></motion.figcaption>
       </figure>
-    </section>
+    </motion.section>
     <section className="contact-next-steps" aria-labelledby="contact-next-title"><div className="contact-next-heading"><Eyebrow>UN BUEN COMIENZO</Eyebrow><h2 id="contact-next-title">Así ponemos<br/>tu idea en marcha.</h2><p>Una conversación sencilla nos ayuda a entender lo que necesitas y revisar contigo el siguiente paso.</p></div><AnimatedList className="contact-step-list" stagger={0.12}><article><span>01</span><div><b>Cuéntanos tu idea</b><p>Indica qué quieres comunicar, crear o resolver.</p></div><MessageCircle size={18}/></article><article><span>02</span><div><b>Comparte lo que ya sabes</b><p>Medidas, cantidades, referencias o una foto pueden orientar la conversación.</p></div><Sparkles size={18}/></article><article><span>03</span><div><b>Revisamos cómo avanzar</b><p>El alcance, los valores y los tiempos se confirman según cada proyecto.</p></div><ArrowRight size={18}/></article></AnimatedList></section>
     <section className="contact-faq" ref={contactFaqRef} aria-labelledby="contact-faq-title"><div className="contact-faq-heading"><Eyebrow>ANTES DE ESCRIBIR</Eyebrow><h2 id="contact-faq-title">Preguntas frecuentes</h2></div><div className="contact-faq-list"><details><summary>¿Necesito tener el diseño listo?<ChevronDown size={17}/></summary><p>No. Puedes empezar con una idea, una necesidad o una referencia. Si ya tienes un diseño, medidas o cantidades, compártelas para orientar mejor la conversación.</p></details><details><summary>¿Cómo se definen los valores y tiempos?<ChevronDown size={17}/></summary><p>Se revisan según el tipo de trabajo y sus detalles. El equipo confirma el alcance, los valores y los tiempos antes de cotizar.</p></details><details><summary>¿Puedo visitar Visual Corp?<ChevronDown size={17}/></summary><p>Estamos en {publicAddress}. Abre la ubicación en Maps desde esta página para planificar tu visita.</p></details></div></section>
     {showContactDock && <nav className="contact-mobile-dock" aria-label="Acciones rápidas de contacto"><a className="contact-mobile-dock-whatsapp" href={whatsapp} target="_blank" rel="noreferrer"><MessageCircle size={17} aria-hidden="true"/><span>WhatsApp</span><ArrowUpRight size={15} aria-hidden="true"/></a><a className="contact-mobile-dock-form" href="#contacto-formulario"><span>Ir al formulario</span><ArrowDownRight size={15} aria-hidden="true"/></a></nav>}

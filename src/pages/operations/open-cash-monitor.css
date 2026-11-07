@@ -1,3 +1,4 @@
+/* Open Cash Monitor Styles */
 .open-cash-heading-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
 .open-cash-live { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: .76rem; font-weight: 700; white-space: nowrap; }
 .open-cash-live i, .open-cash-state i { width: 8px; height: 8px; border-radius: 50%; background: #b7791f; box-shadow: 0 0 0 3px color-mix(in srgb, #b7791f 14%, transparent); }
@@ -8,16 +9,40 @@
 .open-cash-alert, .open-cash-feedback.error { color: #8f2d26; background: #fff0ed; border: 1px solid #f5d0ca; }
 .open-cash-feedback.success { color: #176044; background: #eaf7f0; border: 1px solid #c8e8d5; }
 .open-cash-alert svg, .open-cash-feedback svg { flex: 0 0 auto; margin-top: 1px; }
-.open-cash-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+
+/* KPI Overview */
+.open-cash-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; width: 100%; box-sizing: border-box; }
 .open-cash-overview.personal { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.open-cash-stat { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
+.open-cash-stat { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); box-sizing: border-box; }
 .open-cash-stat-icon { display: grid; flex: 0 0 40px; width: 40px; height: 40px; place-items: center; border-radius: 12px; background: #eef4ff; color: #2557a7; }
 .open-cash-stat:nth-child(2) .open-cash-stat-icon { background: #eef7f2; color: #28744f; }
 .open-cash-stat:nth-child(3) .open-cash-stat-icon { background: #f3efff; color: #6843a5; }
 .open-cash-stat > div { display: grid; min-width: 0; gap: 3px; }
 .open-cash-stat small, .open-cash-stat span { color: var(--muted); font-size: .74rem; }
 .open-cash-stat b { overflow: hidden; font-size: 1.32rem; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
-.open-cash-panel { display: grid; gap: 16px; }
+
+/* Iniciar Turno de Caja Panel Superior */
+.open-cash-start-panel { display: grid; gap: 14px; margin-bottom: 16px; padding: 18px 20px; border: 1px solid #b8d4f8; border-radius: 14px; background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%); box-shadow: 0 4px 18px #2557a70c; box-sizing: border-box; width: 100%; }
+.open-cash-start-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.open-cash-start-header h3 { margin: 2px 0 3px; font-size: 1.06rem; color: #1a3f7a; }
+.open-cash-start-header p { margin: 0; color: var(--muted); font-size: .8rem; }
+.open-cash-start-dismiss { display: grid; flex: 0 0 32px; width: 32px; height: 32px; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; }
+.open-cash-start-dismiss:hover { background: #0000000d; color: var(--ink); }
+.open-cash-start-form { display: grid; gap: 14px; width: 100%; box-sizing: border-box; }
+.open-cash-start-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; align-items: end; width: 100%; box-sizing: border-box; }
+.open-cash-start-fields label, .open-cash-modal-body label { display: grid; gap: 6px; color: var(--ink); font-size: .77rem; font-weight: 600; min-width: 0; }
+.open-cash-start-fields select, .open-cash-start-fields input,
+.open-cash-modal-body select, .open-cash-modal-body input { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font: inherit; font-size: .84rem; box-sizing: border-box; }
+.open-cash-start-opening { display: grid; gap: 6px; min-width: 0; }
+.open-cash-quick-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 2px; }
+.preset-pill { min-height: 28px; padding: 0 10px; border: 1px solid #bfd3eb; border-radius: 999px; background: #fff; color: #204c8c; font-size: .74rem; font-weight: 700; cursor: pointer; transition: all .15s ease; }
+.preset-pill:hover { background: #eaf2fc; border-color: #2661ac; }
+.preset-pill.is-selected { background: #2661ac; border-color: #2661ac; color: #fff; }
+.open-cash-start-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px; }
+.open-cash-start-actions .button { min-height: 38px; }
+
+/* Panel Principal de Cajas Abiertas */
+.open-cash-panel { display: grid; gap: 16px; box-sizing: border-box; width: 100%; }
 .open-cash-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .open-cash-panel-heading h2 { margin: 4px 0 3px; font-size: 1.08rem; }
 .open-cash-panel-heading p { max-width: 660px; margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.5; }
@@ -25,11 +50,13 @@
 .open-cash-close-all span { display: grid; min-width: 21px; height: 21px; place-items: center; padding: 0 5px; border-radius: 999px; background: #ffffff26; font-size: .72rem; }
 .open-cash-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
 .open-cash-toolbar label { display: grid; min-width: min(100%, 240px); gap: 5px; color: var(--muted); font-size: .76rem; }
-.open-cash-toolbar select, .open-cash-count-fields input { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font: inherit; }
+.open-cash-toolbar select, .open-cash-count-fields input { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font: inherit; box-sizing: border-box; }
 .open-cash-toolbar select:focus-visible, .open-cash-count-fields input:focus-visible, .open-cash-dialog-dismiss:focus-visible, .open-cash-bulk-confirm input:focus-visible { outline: 3px solid color-mix(in srgb, #2557a7 38%, transparent); outline-offset: 2px; }
 .open-cash-refresh-note { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; color: var(--muted); font-size: .74rem; }
-.open-cash-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.open-cash-card { display: grid; min-width: 0; gap: 10px; padding: 15px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); box-shadow: 0 5px 18px #17283b08; }
+
+/* Grid de Tarjetas de Caja Abierta */
+.open-cash-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; box-sizing: border-box; }
+.open-cash-card { display: grid; min-width: 0; gap: 10px; padding: 15px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); box-shadow: 0 5px 18px #17283b08; box-sizing: border-box; }
 .open-cash-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .open-cash-state { display: inline-flex; align-items: center; gap: 7px; color: #246848; font-size: .67rem; font-weight: 800; letter-spacing: .06em; }
 .open-cash-state i { width: 7px; height: 7px; background: #18835f; box-shadow: 0 0 0 3px #18835f1f; }
@@ -42,16 +69,51 @@
 .open-cash-meta > b small { color: #9a6331; font-size: .67rem; font-weight: 500; }
 .open-cash-opening { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 10px 11px; border-radius: 9px; background: #f4f7fb; }
 .open-cash-opening b { font-size: .97rem; font-variant-numeric: tabular-nums; }
-.open-cash-close-one { justify-self: stretch; justify-content: center; min-height: 39px; margin-top: 1px; }
+.open-cash-card-actions { display: grid; gap: 7px; margin-top: 4px; padding-top: 9px; border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent); }
+.open-cash-action-subrow { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.open-cash-action-subrow .button { font-size: .74rem; padding: 0 8px; justify-content: center; }
+.open-cash-close-one { justify-self: stretch; justify-content: center; min-height: 38px; }
+
+/* Empty state */
 .open-cash-empty { display: grid; justify-items: center; gap: 8px; padding: 45px 18px; color: var(--muted); text-align: center; }
 .open-cash-empty > b { color: var(--ink); font-size: .95rem; }
 .open-cash-empty > span:last-child { max-width: 440px; font-size: .81rem; line-height: 1.5; }
 .open-cash-empty-icon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: #eaf7f0; color: #23744f; }
 .open-cash-spin { animation: open-cash-spin 1s linear infinite; }
 @keyframes open-cash-spin { to { transform: rotate(360deg); } }
-.open-cash-dialog { width: min(720px, calc(100vw - 28px)); max-width: none; max-height: min(88svh, 900px); padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 80px #101b2b42; }
+
+/* Historial de Turnos Cerrados Recientes */
+.open-cash-history-section { display: grid; gap: 16px; margin-top: 16px; }
+.open-cash-history-empty { margin: 0; padding: 22px; color: var(--muted); font-size: .84rem; text-align: center; }
+.open-cash-history-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; box-sizing: border-box; }
+.open-cash-history-card { display: grid; gap: 9px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: 0 3px 12px #00000006; box-sizing: border-box; }
+.open-cash-history-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.open-cash-history-card-header b { font-size: .88rem; color: var(--ink); }
+.open-cash-history-card-header span { color: var(--muted); font-size: .72rem; }
+.open-cash-diff-tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: .72rem; font-weight: 700; white-space: nowrap; }
+.open-cash-diff-tag.exact { background: #eaf7f0; color: #176044; }
+.open-cash-diff-tag.surplus { background: #ebf5fa; color: #1c5f88; }
+.open-cash-diff-tag.shortfall { background: #fdf0ed; color: #9c2e26; }
+.open-cash-history-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.open-cash-history-meta div { display: grid; gap: 2px; }
+.open-cash-history-meta small { color: var(--muted); font-size: .68rem; }
+.open-cash-history-meta span { color: var(--ink); font-size: .76rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.open-cash-history-dates small { color: var(--muted); font-size: .7rem; }
+.open-cash-history-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 8px 10px; border-radius: 8px; background: #f6f8fb; }
+.open-cash-history-metrics div { display: grid; gap: 2px; }
+.open-cash-history-metrics small { color: var(--muted); font-size: .66rem; text-transform: uppercase; letter-spacing: .03em; }
+.open-cash-history-metrics b { font-size: .8rem; font-variant-numeric: tabular-nums; }
+.open-cash-history-metrics .diff-val.exact { color: #18835f; }
+.open-cash-history-metrics .diff-val.surplus { color: #1c5f88; }
+.open-cash-history-metrics .diff-val.shortfall { color: #a82e25; }
+.open-cash-history-note { margin: 0; padding: 7px 9px; border-radius: 6px; background: #fafafa; font-size: .74rem; color: var(--ink); border: 1px dashed var(--line); line-height: 1.4; }
+.open-cash-history-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+.open-cash-history-actions .button { font-size: .74rem; padding: 0 8px; justify-content: center; }
+
+/* Dialogos Generales */
+.open-cash-dialog { width: min(720px, calc(100vw - 28px)); max-width: none; max-height: min(88svh, 900px); padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 80px #101b2b42; box-sizing: border-box; }
 .open-cash-dialog::backdrop { background: #101a28a8; backdrop-filter: blur(3px); }
-.open-cash-dialog > form { display: grid; max-height: inherit; grid-template-rows: auto auto minmax(0, 1fr) auto auto; }
+.open-cash-dialog > form, .open-cash-dialog > div { display: grid; max-height: inherit; grid-template-rows: auto auto minmax(0, 1fr) auto auto; box-sizing: border-box; }
 .open-cash-dialog-heading { display: flex; align-items: center; gap: 12px; padding: 18px 20px 13px; border-bottom: 1px solid var(--line); }
 .open-cash-dialog-icon { display: grid; flex: 0 0 40px; width: 40px; height: 40px; place-items: center; border-radius: 11px; background: #fff4e9; color: #a95b19; }
 .open-cash-dialog-heading > div { display: grid; min-width: 0; gap: 3px; }
@@ -59,53 +121,109 @@
 .open-cash-dialog-dismiss { display: grid; flex: 0 0 34px; width: 34px; height: 34px; place-items: center; margin-left: auto; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; }
 .open-cash-dialog-dismiss:hover { background: color-mix(in srgb, var(--line) 50%, transparent); color: var(--ink); }
 .open-cash-dialog-copy { margin: 0; padding: 14px 20px; color: var(--muted); font-size: .81rem; line-height: 1.5; }
-.open-cash-count-list { display: grid; align-content: start; gap: 10px; padding: 0 20px 12px; overflow: auto; overscroll-behavior: contain; }
-.open-cash-count-item { display: grid; gap: 12px; padding: 13px; border: 1px solid var(--line); border-radius: 11px; background: color-mix(in srgb, var(--line) 18%, var(--surface)); }
+.open-cash-modal-body { display: grid; gap: 12px; padding: 14px 20px 18px; overflow-y: auto; box-sizing: border-box; }
+.open-cash-dialog-footer { display: flex; justify-content: flex-end; gap: 9px; padding: 13px 20px 18px; border-top: 1px solid var(--line); }
+
+/* Conciliación & Arqueo Dialog */
+.open-cash-reconcile-dialog { width: min(780px, calc(100vw - 28px)); }
+.open-cash-count-list { display: grid; align-content: start; gap: 12px; padding: 0 20px 14px; overflow: auto; overscroll-behavior: contain; }
+.open-cash-count-item { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--line) 16%, var(--surface)); box-sizing: border-box; }
 .open-cash-count-item > header { display: flex; justify-content: space-between; gap: 14px; }
 .open-cash-count-item > header > div { display: grid; gap: 3px; }
-.open-cash-count-item > header b { font-size: .84rem; }
+.open-cash-count-item > header b { font-size: .86rem; }
 .open-cash-count-item > header span, .open-cash-count-item > header small { color: var(--muted); font-size: .72rem; }
-.open-cash-count-fields { display: grid; grid-template-columns: minmax(130px, .72fr) minmax(220px, 1.28fr); gap: 10px; }
+
+/* Desglose Multi-Método */
+.open-cash-breakdown-card { display: grid; gap: 10px; padding: 12px 14px; border: 1px solid #d4e2f3; border-radius: 10px; background: #f8fbff; box-sizing: border-box; }
+.breakdown-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 8px; }
+.breakdown-grid div { display: grid; gap: 2px; }
+.breakdown-grid small { color: var(--muted); font-size: .67rem; text-transform: uppercase; letter-spacing: .02em; }
+.breakdown-grid b { font-size: .86rem; font-variant-numeric: tabular-nums; }
+.breakdown-grid .val-in { color: #18835f; }
+.breakdown-grid .val-out { color: #b84135; }
+.breakdown-grid .muted-val { color: var(--muted); font-size: .84rem; font-variant-numeric: tabular-nums; }
+.breakdown-expected-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; border-top: 1px solid #dce8f7; }
+.breakdown-expected-bar span { color: #224d86; font-size: .76rem; font-weight: 700; }
+.breakdown-expected-bar b { color: #174278; font-size: 1.08rem; font-variant-numeric: tabular-nums; }
+
+/* Contador de Billetes y Monedas */
+.open-cash-denominations-section { display: grid; gap: 8px; }
+.open-cash-toggle-denoms-btn { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px dashed #bfd5ec; border-radius: 8px; background: #ffffff; color: #23589b; font-size: .76rem; font-weight: 700; cursor: pointer; justify-self: start; }
+.open-cash-toggle-denoms-btn:hover { background: #f0f6fd; border-color: #2661ac; }
+.open-cash-denoms-accordion { display: grid; gap: 10px; padding: 12px; border: 1px solid #d2e4f7; border-radius: 10px; background: #ffffff; box-sizing: border-box; }
+.denoms-group h4 { margin: 0 0 6px; font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.denoms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); gap: 6px; }
+.denom-card { display: flex; flex-direction: column; gap: 4px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: #f9fbfd; font-size: .74rem; }
+.denom-label { font-weight: 700; color: #1a447c; }
+.denom-card input { width: 100%; min-height: 30px; padding: 3px 6px; border: 1px solid #cedbe8; border-radius: 6px; text-align: center; font-size: .84rem; font-weight: 600; box-sizing: border-box; }
+.reset-denoms-btn { justify-self: start; margin-top: 2px; }
+
+/* Campos de Conteo y Comparación */
+.open-cash-count-fields { display: grid; grid-template-columns: minmax(140px, .75fr) minmax(220px, 1.25fr); gap: 10px; }
 .open-cash-count-fields label { display: grid; align-content: start; gap: 5px; color: var(--muted); font-size: .72rem; }
 .open-cash-count-fields label > span { font-size: .67rem; }
-.open-cash-count-fields input { min-height: 38px; background: var(--surface); color: var(--ink); font-size: .82rem; }
-.open-cash-expected { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 3px 10px; padding: 11px 12px; border: 1px solid #cde8d8; border-radius: 9px; background: #f0faf4; }
-.open-cash-expected > span { color: #326a4e; font-size: .75rem; font-weight: 700; }
-.open-cash-expected > b { color: #165a3a; font-size: 1.04rem; font-variant-numeric: tabular-nums; }
-.open-cash-expected > small { grid-column: 1 / -1; color: #5e7769; font-size: .69rem; line-height: 1.4; }
-.open-cash-bulk-confirm { display: flex; align-items: flex-start; gap: 9px; padding: 13px 20px; color: var(--ink); font-size: .76rem; line-height: 1.45; }
-.open-cash-bulk-confirm input { flex: 0 0 16px; width: 16px; height: 16px; margin: 1px 0 0; accent-color: #2661ac; }
-.open-cash-dialog-footer { display: flex; justify-content: flex-end; gap: 9px; padding: 13px 20px 18px; border-top: 1px solid var(--line); }
-.open-cash-results { display: grid; gap: 10px; margin-bottom: 14px; padding: 15px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
-.open-cash-results h2 { margin: 0; font-size: .93rem; }
-.open-cash-results ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.open-cash-results li { display: grid; gap: 3px; padding: 9px 10px; border-radius: 8px; font-size: .76rem; }
-.open-cash-results li.success { background: #eef8f2; color: #205b40; }
-.open-cash-results li.error { background: #fff2ef; color: #8f2d26; }
-.open-cash-results li b { font-size: .79rem; }
-.open-cash-results li span { line-height: 1.45; }
-@media (max-width: 960px) {
+.open-cash-count-fields input { min-height: 38px; background: var(--surface); color: var(--ink); font-size: .84rem; }
+
+/* Banner de Cuadre en Vivo */
+.open-cash-live-diff { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 8px; font-size: .78rem; font-weight: 650; line-height: 1.4; }
+.open-cash-live-diff.exact { background: #eaf7f0; color: #166545; border: 1px solid #bce6cf; }
+.open-cash-live-diff.surplus { background: #ebf5fa; color: #195880; border: 1px solid #bde1f2; }
+.open-cash-live-diff.shortfall { background: #fdf0ed; color: #9c2e26; border: 1px solid #f6cfc9; }
+.open-cash-live-diff svg { flex: 0 0 16px; }
+
+/* Movimientos Drawer/Modal */
+.open-cash-movements-dialog { width: min(680px, calc(100vw - 28px)); }
+.open-cash-movements-body { display: grid; gap: 16px; max-height: min(70vh, 650px); overflow-y: auto; padding: 16px 20px; box-sizing: border-box; }
+.open-cash-new-move-form { display: grid; gap: 10px; padding: 13px; border: 1px solid var(--line); border-radius: 11px; background: #f9fbfd; }
+.open-cash-new-move-form h3, .open-cash-movements-list h3 { margin: 0; font-size: .86rem; color: var(--ink); }
+.open-cash-direction-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.direction-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: .77rem; font-weight: 700; cursor: pointer; transition: all .15s ease; }
+.direction-btn.in:hover { border-color: #18835f; color: #18835f; }
+.direction-btn.in.active { background: #eaf7f0; border-color: #18835f; color: #166545; }
+.direction-btn.out:hover { border-color: #bc4b41; color: #bc4b41; }
+.direction-btn.out.active { background: #fff0ed; border-color: #bc4b41; color: #92322a; }
+.open-cash-move-fields { display: grid; grid-template-columns: 140px 1fr; gap: 10px; }
+.open-cash-movements-list ul { display: grid; gap: 7px; margin: 8px 0 0; padding: 0; list-style: none; }
+.move-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); box-sizing: border-box; }
+.move-item.in { border-left: 4px solid #18835f; }
+.move-item.out { border-left: 4px solid #bc4b41; }
+.move-info { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; min-width: 0; }
+.move-badge { padding: 2px 7px; border-radius: 5px; font-size: .68rem; font-weight: 800; text-transform: uppercase; }
+.move-badge.in { background: #eaf7f0; color: #166545; }
+.move-badge.out { background: #fff0ed; color: #92322a; }
+.move-info b { font-size: .88rem; font-variant-numeric: tabular-nums; }
+.move-reason { color: var(--ink); font-size: .78rem; word-break: break-word; }
+.move-time { color: var(--muted); font-size: .7rem; }
+.move-actions { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.button-icon-subtle { display: grid; width: 28px; height: 28px; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.button-icon-subtle:hover { background: #0000000c; color: var(--ink); }
+.button-icon-subtle.danger:hover { background: #fff0ed; color: #a82e25; }
+.move-edit-inline-form { display: grid; gap: 8px; width: 100%; box-sizing: border-box; }
+.move-edit-inputs { display: grid; grid-template-columns: 110px 100px 1fr; gap: 8px; }
+.move-edit-actions { display: flex; gap: 6px; }
+
+/* Responsive Media Queries */
+@media (max-width: 1080px) {
   .open-cash-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .open-cash-history-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (max-width: 680px) {
+
+@media (max-width: 768px) {
   .open-cash-overview, .open-cash-overview.personal { grid-template-columns: 1fr; }
-  .open-cash-stat { padding: 13px; }
-  .open-cash-stat b { font-size: 1.16rem; }
+  .open-cash-start-fields { grid-template-columns: 1fr; }
+  .open-cash-grid { grid-template-columns: 1fr; }
+  .open-cash-history-grid { grid-template-columns: 1fr; }
+  .open-cash-count-fields { grid-template-columns: 1fr; }
+  .open-cash-move-fields { grid-template-columns: 1fr; }
+  .move-edit-inputs { grid-template-columns: 1fr; }
   .open-cash-panel-heading { flex-direction: column; }
   .open-cash-close-all { width: 100%; justify-content: center; }
   .open-cash-toolbar { align-items: stretch; flex-direction: column; }
   .open-cash-toolbar label { min-width: 0; }
-  .open-cash-refresh-note { min-height: 0; }
-  .open-cash-grid { grid-template-columns: 1fr; }
-  .open-cash-count-fields { grid-template-columns: 1fr; }
-  .open-cash-dialog { border-radius: 13px; }
-  .open-cash-dialog-heading, .open-cash-dialog-copy { padding-left: 15px; padding-right: 15px; }
-  .open-cash-count-list { padding-left: 12px; padding-right: 12px; }
-  .open-cash-bulk-confirm { padding-left: 15px; padding-right: 15px; }
-  .open-cash-dialog-footer { padding-left: 12px; padding-right: 12px; flex-direction: column-reverse; }
+  .open-cash-dialog-footer { flex-direction: column-reverse; }
   .open-cash-dialog-footer .button { width: 100%; justify-content: center; }
-  .open-cash-count-item > header { flex-direction: column; gap: 5px; }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .open-cash-spin { animation: none; }
 }

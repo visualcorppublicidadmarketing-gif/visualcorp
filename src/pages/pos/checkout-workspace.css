@@ -704,3 +704,424 @@
     margin-left: 0;
   }
 }
+
+
+/* ============================================================================
+   POS QUICK CASH & CASHIER OPERATIONAL CONTROLS
+   ============================================================================ */
+.pos-cashier-quick-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.pos-cashier-quick-chip {
+  min-height: 29px;
+  padding: 0 9px;
+  border-radius: 8px;
+  font-size: 10.5px;
+  font-weight: 750;
+  border-color: color-mix(in srgb, #8c42ad 35%, var(--line));
+  background: color-mix(in srgb, #8c42ad 9%, var(--paper));
+  color: #722c8e;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.pos-cashier-quick-chip:hover {
+  background: #793297;
+  color: #ffffff;
+}
+
+.pos-cashier-ctrl-btn {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.pos-cashier-ctrl-btn.is-in {
+  color: #1b7348;
+  border-color: #badfcb;
+}
+.pos-cashier-ctrl-btn.is-in:hover {
+  background: #eaf6ef;
+}
+.pos-cashier-ctrl-btn.is-out {
+  color: #a83838;
+  border-color: #f1c5c5;
+}
+.pos-cashier-ctrl-btn.is-out:hover {
+  background: #fdf0f0;
+}
+
+.pos-quick-cash-drawer.is-movement {
+  border-color: color-mix(in srgb, #3b82f6 28%, var(--line));
+  background: color-mix(in srgb, var(--paper) 93%, #eef5ff);
+}
+.pos-quick-cash-input.is-wide {
+  flex: 1;
+  min-width: 220px;
+}
+
+/* ============================================================================
+   FREE AREA CONCEPT & CUSTOM AGREED PRICING IN BUILDER
+   ============================================================================ */
+.pos-custom-area-box {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, #8c42ad 30%, var(--line));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper) 93%, #f8f1fb);
+}
+.pos-custom-area-box > label {
+  display: grid;
+  gap: 5px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.pos-agreed-price-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 9px 11px;
+  border: 1px dashed color-mix(in srgb, #8c42ad 40%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--paper) 95%, #faf5fd);
+}
+.pos-agreed-price-wrap > label {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 750;
+  color: var(--ink);
+}
+.pos-reset-agreed-btn {
+  min-height: 38px;
+  padding: 0 10px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Cart line badges */
+.pos-line-badge.is-custom {
+  background: #fbf3dc;
+  border: 1px solid #e8d08e;
+  color: #7d5912;
+}
+.pos-line-badge.is-discount {
+  background: #eaf7ef;
+  border: 1px solid #b7e3c7;
+  color: #17653e;
+}
+.pos-line-editor-span-2 {
+  grid-column: 1 / -1;
+}
+
+/* Express cash buttons */
+.pos-express-cash-btn {
+  border-color: #278858;
+  color: #196940;
+  font-weight: 800;
+  background: color-mix(in srgb, #278858 8%, var(--paper));
+}
+.pos-express-cash-btn:hover {
+  background: #1b6d43;
+  color: #ffffff;
+  border-color: #1b6d43;
+}
+.pos-clear-cart-btn.is-express {
+  color: #1c7347;
+  font-weight: 800;
+}
+
+/* ============================================================================
+   POS SALE EDITOR MODAL (POST-VENTA CONFIRMADA)
+   ============================================================================ */
+.pos-sale-edit-btn {
+  color: #793297;
+  border-color: #d8c3e6;
+}
+.pos-sale-edit-btn:hover {
+  background: #f5edf9;
+  border-color: #8c42ad;
+}
+
+.pos-sale-editor-container {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  max-width: 100%;
+}
+.pos-editor-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.pos-editor-form {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.pos-editor-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid #f0b5b8;
+  border-radius: 10px;
+  background: #fff2f2;
+  color: #9c2730;
+  font-size: 12px;
+  font-weight: 650;
+}
+.pos-editor-section {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper) 95%, #f7f2fa);
+}
+.pos-editor-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pos-editor-section-header h4 {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.pos-editor-section-title-wrap {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 180px;
+}
+.pos-editor-section-title-wrap small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.pos-editor-add-btn {
+  margin-left: auto;
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 10.5px;
+  font-weight: 750;
+}
+
+.pos-editor-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.pos-editor-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.pos-editor-span-2 {
+  grid-column: span 2;
+}
+.pos-editor-row-full {
+  display: grid;
+  gap: 5px;
+}
+.pos-editor-section label {
+  display: grid;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.pos-editor-section label input,
+.pos-editor-section label select,
+.pos-editor-section label textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 11.5px;
+}
+
+/* Lines list inside editor */
+.pos-editor-lines-list {
+  display: grid;
+  gap: 8px;
+}
+.pos-editor-line-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 2fr) minmax(70px, 0.7fr) minmax(85px, 0.9fr) minmax(90px, 1fr) 34px;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+}
+.pos-editor-line-idx {
+  align-self: center;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+}
+.pos-editor-line-subtotal {
+  display: grid;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.pos-editor-line-subtotal strong {
+  font-size: 12px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.pos-editor-line-delete {
+  margin-bottom: 3px;
+}
+
+/* Payments list inside editor */
+.pos-editor-payments-list {
+  display: grid;
+  gap: 8px;
+}
+.pos-editor-payment-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(100px, 1fr) minmax(0, 2fr) 34px;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+}
+.pos-editor-payment-delete {
+  margin-bottom: 3px;
+}
+
+/* Financial summary card in editor */
+.pos-editor-financial-card {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper) 91%, #ece5f3);
+}
+.pos-editor-financial-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.pos-editor-financial-row strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.pos-editor-financial-row.is-discount strong {
+  color: #b42330;
+}
+.pos-editor-financial-row.is-total {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--ink);
+}
+.pos-editor-financial-row.is-total strong {
+  font-size: 17px;
+}
+.pos-editor-financial-row.is-change strong {
+  color: #17653e;
+}
+.pos-editor-financial-row.is-balance-due strong {
+  color: #b45309;
+}
+.pos-editor-financial-row.is-paid strong {
+  color: #187448;
+}
+
+.pos-editor-amendment-reason label {
+  display: grid;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 750;
+  color: var(--ink);
+}
+.pos-editor-amendment-reason input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.pos-editor-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .pos-editor-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pos-editor-grid-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pos-editor-span-2 {
+    grid-column: 1 / -1;
+  }
+  .pos-editor-line-row {
+    grid-template-columns: 24px minmax(0, 1fr) minmax(65px, 0.7fr) minmax(75px, 0.8fr) auto 30px;
+  }
+}
+
+@media (max-width: 640px) {
+  .pos-editor-grid-4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pos-editor-line-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .pos-editor-line-idx {
+    display: none;
+  }
+  .pos-editor-line-desc {
+    grid-column: 1 / -1;
+  }
+  .pos-editor-payment-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .pos-editor-payment-row .pos-editor-span-2 {
+    grid-column: 1 / -1;
+  }
+}
