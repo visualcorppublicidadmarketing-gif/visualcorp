@@ -1,0 +1,1309 @@
+/* ==========================================================================
+   Visual Corp Suite — ChatterDrawer360 & ChatterTimelinePanel Styles
+   Inspired by Odoo 18 (mail.thread + mail.activity) and Twenty CRM.
+   Prefix: .vc-chatter-*
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Tokens & Default Light Theme
+   -------------------------------------------------------------------------- */
+:root {
+  --vc-chatter-bg: #ffffff;
+  --vc-chatter-bg-soft: #f8fafc;
+  --vc-chatter-bg-subtle: #f1f5f9;
+  --vc-chatter-border: #e2e8f0;
+  --vc-chatter-border-hover: #cbd5e1;
+  --vc-chatter-ink: #0f172a;
+  --vc-chatter-ink-muted: #64748b;
+  --vc-chatter-ink-faint: #94a3b8;
+  
+  --vc-chatter-primary: #793fa0;
+  --vc-chatter-primary-hover: #672f8c;
+  --vc-chatter-primary-soft: rgba(121, 63, 160, 0.08);
+  --vc-chatter-primary-line: rgba(121, 63, 160, 0.2);
+  
+  --vc-chatter-magenta: #a51091;
+  --vc-chatter-magenta-soft: rgba(165, 16, 145, 0.08);
+  
+  --vc-chatter-blue: #0284c7;
+  --vc-chatter-blue-soft: #e0f2fe;
+  
+  --vc-chatter-green: #10b981;
+  --vc-chatter-green-soft: #ecfdf5;
+  --vc-chatter-green-ink: #047857;
+  
+  --vc-chatter-amber: #f59e0b;
+  --vc-chatter-amber-soft: #fef3c7;
+  --vc-chatter-amber-ink: #b45309;
+  
+  --vc-chatter-danger: #ef4444;
+  --vc-chatter-danger-soft: #fee2e2;
+  --vc-chatter-danger-ink: #b91c1c;
+
+  --vc-chatter-shadow-drawer: -12px 0 36px rgba(15, 23, 42, 0.16), -3px 0 10px rgba(15, 23, 42, 0.05);
+  --vc-chatter-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --vc-chatter-shadow-focus: 0 0 0 3px rgba(121, 63, 160, 0.18);
+  
+  --vc-chatter-radius-sm: 6px;
+  --vc-chatter-radius-md: 10px;
+  --vc-chatter-radius-lg: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   Dark Mode Overrides
+   -------------------------------------------------------------------------- */
+[data-theme='dark'] .vc-chatter-drawer-root,
+[data-theme='dark'] .vc-chatter-timeline-container,
+.work-app.theme-dark .vc-chatter-drawer-root,
+.work-app.theme-dark .vc-chatter-timeline-container {
+  --vc-chatter-bg: #141724;
+  --vc-chatter-bg-soft: #191d2d;
+  --vc-chatter-bg-subtle: #1f2438;
+  --vc-chatter-border: #282f48;
+  --vc-chatter-border-hover: #384266;
+  --vc-chatter-ink: #f1f5f9;
+  --vc-chatter-ink-muted: #94a3b8;
+  --vc-chatter-ink-faint: #64748b;
+  
+  --vc-chatter-primary: #c084fc;
+  --vc-chatter-primary-hover: #d8b4fe;
+  --vc-chatter-primary-soft: rgba(192, 132, 252, 0.14);
+  --vc-chatter-primary-line: rgba(192, 132, 252, 0.28);
+  
+  --vc-chatter-magenta: #f472b6;
+  --vc-chatter-magenta-soft: rgba(244, 114, 182, 0.14);
+  
+  --vc-chatter-blue: #38bdf8;
+  --vc-chatter-blue-soft: rgba(56, 189, 248, 0.14);
+  
+  --vc-chatter-green: #34d399;
+  --vc-chatter-green-soft: rgba(52, 211, 153, 0.14);
+  --vc-chatter-green-ink: #6ee7b7;
+  
+  --vc-chatter-amber: #fbbf24;
+  --vc-chatter-amber-soft: rgba(251, 191, 36, 0.14);
+  --vc-chatter-amber-ink: #fde68a;
+  
+  --vc-chatter-danger: #f87171;
+  --vc-chatter-danger-soft: rgba(248, 113, 113, 0.14);
+  --vc-chatter-danger-ink: #fca5a5;
+
+  --vc-chatter-shadow-drawer: -12px 0 44px rgba(0, 0, 0, 0.7), -3px 0 14px rgba(0, 0, 0, 0.5);
+  --vc-chatter-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --vc-chatter-shadow-focus: 0 0 0 3px rgba(192, 132, 252, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   Drawer Shell & Slide-Over Animations
+   -------------------------------------------------------------------------- */
+.vc-chatter-drawer-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.vc-chatter-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: vcChatterFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  z-index: 1201;
+}
+
+[data-theme='dark'] .vc-chatter-backdrop,
+.work-app.theme-dark .vc-chatter-backdrop {
+  background-color: rgba(0, 0, 0, 0.72);
+}
+
+@keyframes vcChatterFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.vc-chatter-drawer-panel {
+  position: relative;
+  z-index: 1202;
+  width: 100%;
+  max-width: min(640px, 100vw);
+  height: 100%;
+  background-color: var(--vc-chatter-bg);
+  box-shadow: var(--vc-chatter-shadow-drawer);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+  animation: vcChatterSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes vcChatterSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.vc-chatter-drawer-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background-color: var(--vc-chatter-bg-soft);
+  border-bottom: 1px solid var(--vc-chatter-border);
+  gap: 12px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.vc-chatter-drawer-topbar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vc-chatter-drawer-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vc-chatter-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vc-chatter-drawer-id {
+  font-size: 0.82rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--vc-chatter-ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vc-chatter-drawer-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.vc-chatter-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: var(--vc-chatter-radius-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--vc-chatter-ink-muted);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  box-sizing: border-box;
+}
+
+.vc-chatter-icon-btn:hover {
+  background-color: var(--vc-chatter-bg-subtle);
+  border-color: var(--vc-chatter-border);
+  color: var(--vc-chatter-ink);
+}
+
+.vc-chatter-drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   ChatterTimelinePanel (Standalone or Inside Drawer)
+   -------------------------------------------------------------------------- */
+.vc-chatter-timeline-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--vc-chatter-bg);
+  color: var(--vc-chatter-ink);
+  min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   1. 360° Executive Header & Quick KPIs
+   -------------------------------------------------------------------------- */
+.vc-chatter-header-card {
+  background: linear-gradient(145deg, var(--vc-chatter-bg-soft), var(--vc-chatter-bg));
+  border: 1px solid var(--vc-chatter-border);
+  border-radius: var(--vc-chatter-radius-lg);
+  padding: 18px;
+  box-shadow: var(--vc-chatter-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.vc-chatter-header-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--vc-chatter-primary), var(--vc-chatter-magenta), var(--vc-chatter-blue));
+}
+
+.vc-chatter-header-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.vc-chatter-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.vc-chatter-type-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vc-chatter-type-customer {
+  background-color: var(--vc-chatter-primary-soft);
+  color: var(--vc-chatter-primary);
+  border: 1px solid var(--vc-chatter-primary-line);
+}
+
+.vc-chatter-type-job {
+  background-color: var(--vc-chatter-blue-soft);
+  color: var(--vc-chatter-blue);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+}
+
+.vc-chatter-type-quote {
+  background-color: var(--vc-chatter-magenta-soft);
+  color: var(--vc-chatter-magenta);
+  border: 1px solid rgba(165, 16, 145, 0.25);
+}
+
+.vc-chatter-type-sale {
+  background-color: var(--vc-chatter-green-soft);
+  color: var(--vc-chatter-green-ink);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.vc-chatter-type-inventory {
+  background-color: var(--vc-chatter-amber-soft);
+  color: var(--vc-chatter-amber-ink);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.vc-chatter-stage-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background-color: var(--vc-chatter-bg-subtle);
+  color: var(--vc-chatter-ink);
+  border: 1px solid var(--vc-chatter-border);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vc-chatter-stage-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--vc-chatter-primary);
+}
+
+.vc-chatter-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.vc-chatter-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--vc-chatter-ink);
+  word-break: break-word;
+}
+
+.vc-chatter-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 0.85rem;
+  color: var(--vc-chatter-ink-muted);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* Quick KPIs Grid */
+.vc-chatter-kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.vc-chatter-kpi-card {
+  background-color: var(--vc-chatter-bg);
+  border: 1px solid var(--vc-chatter-border);
+  border-radius: var(--vc-chatter-radius-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  box-sizing: border-box;
+  min-width: 0;
+  transition: border-color 0.16s ease;
+}
+
+.vc-chatter-kpi-card:hover {
+  border-color: var(--vc-chatter-border-hover);
+}
+
+.vc-chatter-kpi-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--vc-chatter-ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vc-chatter-kpi-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--vc-chatter-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vc-chatter-kpi-value.is-warn {
+  color: var(--vc-chatter-amber-ink);
+}
+
+.vc-chatter-kpi-value.is-danger {
+  color: var(--vc-chatter-danger-ink);
+}
+
+.vc-chatter-kpi-value.is-success {
+  color: var(--vc-chatter-green-ink);
+}
+
+/* Quick Action Bar */
+.vc-chatter-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+  border-top: 1px dashed var(--vc-chatter-border);
+}
+
+.vc-chatter-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--vc-chatter-radius-sm);
+  text-decoration: none;
+  border: 1px solid var(--vc-chatter-border);
+  background-color: var(--vc-chatter-bg);
+  color: var(--vc-chatter-ink);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.vc-chatter-action-btn:hover {
+  background-color: var(--vc-chatter-bg-subtle);
+  border-color: var(--vc-chatter-border-hover);
+  transform: translateY(-1px);
+}
+
+.vc-chatter-action-btn.is-whatsapp {
+  background-color: #25d366;
+  border-color: #128c7e;
+  color: #ffffff;
+}
+
+.vc-chatter-action-btn.is-whatsapp:hover {
+  background-color: #20ba5a;
+  color: #ffffff;
+}
+
+.vc-chatter-action-btn.is-portal {
+  background-color: var(--vc-chatter-primary-soft);
+  border-color: var(--vc-chatter-primary-line);
+  color: var(--vc-chatter-primary);
+}
+
+.vc-chatter-action-btn.is-portal:hover {
+  background-color: rgba(121, 63, 160, 0.15);
+}
+
+/* --------------------------------------------------------------------------
+   2. Composer Box (Odoo Chatter Style)
+   -------------------------------------------------------------------------- */
+.vc-chatter-composer {
+  background-color: var(--vc-chatter-bg-soft);
+  border: 1px solid var(--vc-chatter-border);
+  border-radius: var(--vc-chatter-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--vc-chatter-shadow-card);
+  box-sizing: border-box;
+}
+
+.vc-chatter-composer-tabs {
+  display: flex;
+  background-color: var(--vc-chatter-bg-subtle);
+  border-bottom: 1px solid var(--vc-chatter-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-wrap: wrap;
+}
+
+.vc-chatter-composer-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.vc-chatter-composer-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--vc-chatter-ink-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.vc-chatter-composer-tab:hover {
+  color: var(--vc-chatter-ink);
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='dark'] .vc-chatter-composer-tab:hover,
+.work-app.theme-dark .vc-chatter-composer-tab:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.vc-chatter-composer-tab.is-active {
+  color: var(--vc-chatter-primary);
+  border-bottom-color: var(--vc-chatter-primary);
+  background-color: var(--vc-chatter-bg-soft);
+}
+
+.vc-chatter-composer-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+/* Quick Mention Pills */
+.vc-chatter-mention-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.vc-chatter-mention-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--vc-chatter-ink-muted);
+  margin-right: 4px;
+}
+
+.vc-chatter-mention-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background-color: var(--vc-chatter-bg);
+  border: 1px solid var(--vc-chatter-border);
+  color: var(--vc-chatter-ink-muted);
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.vc-chatter-mention-pill:hover {
+  background-color: var(--vc-chatter-primary-soft);
+  border-color: var(--vc-chatter-primary-line);
+  color: var(--vc-chatter-primary);
+}
+
+/* Textarea & Inputs */
+.vc-chatter-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 84px;
+  max-height: 240px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--vc-chatter-ink);
+  background-color: var(--vc-chatter-bg);
+  border: 1px solid var(--vc-chatter-border);
+  border-radius: var(--vc-chatter-radius-md);
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.vc-chatter-textarea:focus {
+  outline: none;
+  border-color: var(--vc-chatter-primary);
+  box-shadow: var(--vc-chatter-shadow-focus);
+}
+
+.vc-chatter-input,
+.vc-chatter-select {
+  width: 100%;
+  box-sizing: border-box;
+  height: 38px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+  color: var(--vc-chatter-ink);
+  background-color: var(--vc-chatter-bg);
+  border: 1px solid var(--vc-chatter-border);
+  border-radius: var(--vc-chatter-radius-sm);
+  font-family: inherit;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.vc-chatter-input:focus,
+.vc-chatter-select:focus {
+  outline: none;
+  border-color: var(--vc-chatter-primary);
+  box-shadow: var(--vc-chatter-shadow-focus);
+}
+
+/* Grid layout for Activity Form */
+.vc-chatter-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.vc-chatter-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.vc-chatter-form-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--vc-chatter-ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vc-chatter-priority-group {
+  display: flex;
+  gap: 6px;
+}
+
+.vc-chatter-priority-btn {
+  flex: 1;
+  height: 36px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--vc-chatter-border);
+  background-color: var(--vc-chatter-bg);
+  color: var(--vc-chatter-ink-muted);
+  border-radius: var(--vc-chatter-radius-sm);
+  cursor: pointer;
+  transition: all 0.14s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.vc-chatter-priority-btn.is-active.priority-alta {
+  background-color: var(--vc-chatter-danger-soft);
+  border-color: var(--vc-chatter-danger);
+  color: var(--vc-chatter-danger-ink);
+}
+
+.vc-chatter-priority-btn.is-active.priority-media {
+  background-color: var(--vc-chatter-amber-soft);
+  border-color: var(--vc-chatter-amber);
+  color: var(--vc-chatter-amber-ink);
+}
+
+.vc-chatter-priority-btn.is-active.priority-baja {
+  background-color: var(--vc-chatter-blue-soft);
+  border-color: var(--vc-chatter-blue);
+  color: var(--vc-chatter-blue);
+}
+
+/* Checkbox Row */
+.vc-chatter-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--vc-chatter-ink);
+  user-select: none;
+}
+
+.vc-chatter-checkbox-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--vc-chatter-primary);
+  cursor: pointer;
+}
+
+.vc-chatter-composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 6px;
+}
+
+.vc-chatter-author-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--vc-chatter-ink-muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc-chatter-btn-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 16px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  border-radius: var(--vc-chatter-radius-sm);
+  background: linear-gradient(135deg, var(--vc-chatter-primary), var(--vc-chatter-primary-hover));
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.vc-chatter-btn-submit:hover:not(:disabled) {
+  opacity: 0.94;
+  transform: translateY(-1px);
+}
+
+.vc-chatter-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   3. Pending Scheduled Activities Strip
+   -------------------------------------------------------------------------- */
+.vc-chatter-activities-strip {
+  background-color: var(--vc-chatter-bg-soft);
+  border: 1px solid var(--vc-chatter-border);
+  border-left: 4px solid var(--vc-chatter-amber);
+  border-radius: var(--vc-chatter-radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.vc-chatter-activities-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vc-chatter-activities-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vc-chatter-amber-ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.vc-chatter-activities-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background-color: var(--vc-chatter-amber-soft);
+  color: var(--vc-chatter-amber-ink);
+}
+
+.vc-chatter-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vc-chatter-activity-card {
+  background-color: var(--vc-chatter-bg);
+  border: 1px solid var(--vc-chatter-border);
+  border-radius: var(--vc-chatter-radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.vc-chatter-activity-card:hover {
+  border-color: var(--vc-chatter-border-hover);
+}
+
+.vc-chatter-activity-card.is-overdue {
+  border-color: rgba(239, 68, 68, 0.4);
+  background-color: rgba(239, 68, 68, 0.02);
+}
+
+.vc-chatter-activity-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.vc-chatter-activity-headline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vc-chatter-activity-name {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--vc-chatter-ink);
+}
+
+.vc-chatter-activity-due {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.vc-chatter-activity-due.is-overdue {
+  background-color: var(--vc-chatter-danger-soft);
+  color: var(--vc-chatter-danger-ink);
+}
+
+.vc-chatter-activity-due.is-today {
+  background-color: var(--vc-chatter-amber-soft);
+  color: var(--vc-chatter-amber-ink);
+}
+
+.vc-chatter-activity-due.is-upcoming {
+  background-color: var(--vc-chatter-blue-soft);
+  color: var(--vc-chatter-blue);
+}
+
+.vc-chatter-activity-meta {
+  font-size: 0.75rem;
+  color: var(--vc-chatter-ink-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vc-chatter-activity-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.vc-chatter-btn-complete {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: var(--vc-chatter-radius-sm);
+  background-color: var(--vc-chatter-green-soft);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--vc-chatter-green-ink);
+  cursor: pointer;
+  transition: all 0.14s ease;
+  white-space: nowrap;
+}
+
+.vc-chatter-btn-complete:hover {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   4. Unified Chronological Timeline (Chatter Feed)
+   -------------------------------------------------------------------------- */
+.vc-chatter-timeline-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.vc-chatter-feed-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.vc-chatter-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.vc-chatter-filter-pill {
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: var(--vc-chatter-bg-soft);
+  border: 1px solid var(--vc-chatter-border);
+  color: var(--vc-chatter-ink-muted);
+  cursor: pointer;
+  transition: all 0.14s ease;
+  white-space: nowrap;
+}
+
+.vc-chatter-filter-pill:hover {
+  border-color: var(--vc-chatter-border-hover);
+  color: var(--vc-chatter-ink);
+}
+
+.vc-chatter-filter-pill.is-active {
+  background-color: var(--vc-chatter-primary-soft);
+  border-color: var(--vc-chatter-primary);
+  color: var(--vc-chatter-primary);
+}
+
+.vc-chatter-search-wrap {
+  position: relative;
+  min-width: 180px;
+  flex: 1;
+  max-width: 260px;
+}
+
+.vc-chatter-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--vc-chatter-ink-faint);
+  pointer-events: none;
+}
+
+.vc-chatter-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 10px 0 30px;
+  font-size: 0.78rem;
+  border: 1px solid var(--vc-chatter-border);
+  border-radius: 999px;
+  background-color: var(--vc-chatter-bg-soft);
+  color: var(--vc-chatter-ink);
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.vc-chatter-search-input:focus {
+  border-color: var(--vc-chatter-primary);
+  background-color: var(--vc-chatter-bg);
+  box-shadow: var(--vc-chatter-shadow-focus);
+}
+
+/* Timeline Feed with Vertical Rail */
+.vc-chatter-rail-wrap {
+  position: relative;
+  padding-left: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-sizing: border-box;
+}
+
+.vc-chatter-rail-wrap::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 14px;
+  width: 2px;
+  background-color: var(--vc-chatter-border);
+}
+
+.vc-chatter-event-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.vc-chatter-event-icon-node {
+  position: absolute;
+  left: -28px;
+  top: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: var(--vc-chatter-bg);
+  border: 2px solid var(--vc-chatter-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+.vc-chatter-event-icon-node.node-note {
+  background-color: var(--vc-chatter-primary-soft);
+  border-color: var(--vc-chatter-primary);
+  color: var(--vc-chatter-primary);
+}
+
+.vc-chatter-event-icon-node.node-activity {
+  background-color: var(--vc-chatter-amber-soft);
+  border-color: var(--vc-chatter-amber);
+  color: var(--vc-chatter-amber-ink);
+}
+
+.vc-chatter-event-icon-node.node-activity_done {
+  background-color: var(--vc-chatter-green-soft);
+  border-color: var(--vc-chatter-green);
+  color: var(--vc-chatter-green-ink);
+}
+
+.vc-chatter-event-icon-node.node-whatsapp,
+.vc-chatter-event-icon-node.node-call {
+  background-color: #ecfdf5;
+  border-color: #10b981;
+  color: #047857;
+}
+
+.vc-chatter-event-icon-node.node-stage_change {
+  background-color: var(--vc-chatter-blue-soft);
+  border-color: var(--vc-chatter-blue);
+  color: var(--vc-chatter-blue);
+}
+
+.vc-chatter-event-icon-node.node-file {
+  background-color: var(--vc-chatter-magenta-soft);
+  border-color: var(--vc-chatter-magenta);
+  color: var(--vc-chatter-magenta);
+}
+
+.vc-chatter-event-icon-node.node-sale {
+  background-color: var(--vc-chatter-green-soft);
+  border-color: var(--vc-chatter-green);
+  color: var(--vc-chatter-green-ink);
+}
+
+.vc-chatter-event-icon-node.node-system {
+  background-color: var(--vc-chatter-bg-subtle);
+  border-color: var(--vc-chatter-border);
+  color: var(--vc-chatter-ink-muted);
+}
+
+/* Event Card Body */
+.vc-chatter-event-card {
+  background-color: var(--vc-chatter-bg);
+  border: 1px solid var(--vc-chatter-border);
+  border-radius: var(--vc-chatter-radius-md);
+  padding: 12px 14px;
+  box-shadow: var(--vc-chatter-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  min-width: 0;
+  transition: border-color 0.16s ease;
+}
+
+.vc-chatter-event-card:hover {
+  border-color: var(--vc-chatter-border-hover);
+}
+
+.vc-chatter-event-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vc-chatter-event-author-info {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.vc-chatter-event-author-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--vc-chatter-ink);
+}
+
+.vc-chatter-event-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: var(--vc-chatter-bg-subtle);
+  color: var(--vc-chatter-ink-muted);
+}
+
+.vc-chatter-event-badge.is-demo {
+  background-color: var(--vc-chatter-amber-soft);
+  color: var(--vc-chatter-amber-ink);
+  border: 1px dashed var(--vc-chatter-amber);
+}
+
+.vc-chatter-event-meta-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vc-chatter-event-time {
+  font-size: 0.72rem;
+  color: var(--vc-chatter-ink-faint);
+  white-space: nowrap;
+}
+
+.vc-chatter-event-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--vc-chatter-ink);
+  margin: 0;
+}
+
+.vc-chatter-event-content {
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--vc-chatter-ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Mention Tag Highlights in timeline */
+.vc-chatter-mention-tag {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: var(--vc-chatter-primary-soft);
+  color: var(--vc-chatter-primary);
+  border: 1px solid var(--vc-chatter-primary-line);
+  font-size: 0.82rem;
+  margin: 0 2px;
+}
+
+/* Sale/Financial Pills in Event Card */
+.vc-chatter-event-metrics-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.vc-chatter-event-metric-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: var(--vc-chatter-bg-soft);
+  border: 1px solid var(--vc-chatter-border);
+  color: var(--vc-chatter-ink);
+}
+
+/* Empty States */
+.vc-chatter-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 20px;
+  text-align: center;
+  background-color: var(--vc-chatter-bg-soft);
+  border: 1px dashed var(--vc-chatter-border);
+  border-radius: var(--vc-chatter-radius-lg);
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.vc-chatter-empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--vc-chatter-primary-soft);
+  color: var(--vc-chatter-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vc-chatter-empty-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--vc-chatter-ink);
+}
+
+.vc-chatter-empty-text {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--vc-chatter-ink-muted);
+  max-width: 320px;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 680px) {
+  .vc-chatter-drawer-panel {
+    max-width: 100vw;
+    width: 100vw;
+  }
+  
+  .vc-chatter-timeline-container {
+    padding: 12px;
+    gap: 16px;
+  }
+
+  .vc-chatter-header-card {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .vc-chatter-kpis-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vc-chatter-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .vc-chatter-feed-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vc-chatter-search-wrap {
+    max-width: 100%;
+  }
+
+  .vc-chatter-action-bar {
+    justify-content: flex-start;
+  }
+
+  .vc-chatter-action-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .vc-chatter-kpis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vc-chatter-activity-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .vc-chatter-activity-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

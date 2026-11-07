@@ -27,6 +27,8 @@ import { useWorkspace, formatDate, formatMoney } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
 import { Avatar } from './ui/Avatar';
+import { ChatterDrawer360 } from './ui/ChatterDrawer360';
+import { VisualCorpVault } from './VisualCorpVault';
 import './customer-book.css';
 
 type Customer = {
@@ -95,6 +97,7 @@ export function CustomerBook() {
   const [interactionType, setInteractionType] = useState<InteractionType>('follow_up');
   const [interactionFilter, setInteractionFilter] = useState<'all' | InteractionType>('all');
   const [profileSaving, setProfileSaving] = useState(false);
+  const [showChatter360, setShowChatter360] = useState(false);
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -605,6 +608,13 @@ export function CustomerBook() {
               <ArrowLeft size={15} /> Volver al directorio
             </button>
             <div className="customer-quick-actions">
+              <button
+                type="button"
+                className="button button-outline"
+                onClick={() => setShowChatter360(true)}
+              >
+                <Sparkles size={15} /> Ficha 360° &amp; Chatter
+              </button>
               {whatsappHref && (
                 <a className="button button-outline is-whatsapp" href={whatsappHref} target="_blank" rel="noreferrer">
                   <MessageCircle size={15} /> WhatsApp directo
@@ -1003,6 +1013,19 @@ export function CustomerBook() {
               </section>
             </div>
           </div>
+          <section className="panel" style={{ marginTop: '16px' }}>
+            <VisualCorpVault embeddedCustomerId={selectedCustomer.id} compact />
+          </section>
+          <ChatterDrawer360
+            open={showChatter360}
+            onClose={() => setShowChatter360(false)}
+            recordType="customer"
+            recordId={selectedCustomer.id}
+            recordTitle={selectedCustomer.name}
+            recordSubtitle={selectedCustomer.documentReference ? `RUC/CI: ${selectedCustomer.documentReference}` : selectedCustomer.email || 'Cliente Visual Corp'}
+            recordPhone={selectedCustomer.phone}
+            recordStage={selectedCustomerStats.balanceDue > 0 ? 'Saldo pendiente' : 'Cuenta al día'}
+          />
           {detailLoading && <p className="customer-history-loading">Actualizando el historial completo…</p>}
         </>
       ) : (

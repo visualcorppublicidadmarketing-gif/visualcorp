@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, ClipboardList, Clock3, RefreshCw, Search, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, ClipboardList, Clock3, FolderOpen, MessageSquare, RefreshCw, Search, ShieldCheck, Sparkles } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
 import { EmptyState } from '../../components/feedback';
 import { supabase } from '../../lib/supabaseClient';
 import { ProductionQueueViews, type ProductionQueueViewItem } from './ProductionQueueViews';
+import { ChatterDrawer360 } from '../../components/ui/ChatterDrawer360';
 import './production-coordination.css';
 
 type Job = {
@@ -64,6 +65,12 @@ export function ProductionCoordinationPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [balanceUnavailable, setBalanceUnavailable] = useState(false);
+  const [chatterTarget, setChatterTarget] = useState<{
+    recordId: string;
+    recordTitle: string;
+    recordSubtitle: string;
+    recordStage: string;
+  } | null>(null);
   const canView = hasPermission('sales', 'view') || hasPermission('workshop', 'view');
 
   const loadPage = useCallback(async (nextPage: number, replace: boolean) => {
@@ -142,11 +149,12 @@ export function ProductionCoordinationPage() {
     navigate(`/operaciones/trabajos/${slug}?job=${encodeURIComponent(job.id)}`);
   };
   const renderQueueCard = (item: ProductionQueueViewItem<QueueOriginal>, compact = false) => {
-    if (item.original.kind === 'legacy') return <article className="pc-order pc-order-legacy"><div className="pc-order-main"><div className="pc-order-title"><span>Orden interna · {item.code}</span><h2>{item.title}</h2></div><span className="pc-status">{item.statusLabel}</span></div><div className="pc-order-bottom"><span>{item.ownerLabel} · {dateLabel(item.dueAt)}</span>{item.original.order.can_open_detail && <Link className="button button-outline" to="/operaciones/flujos">Abrir flujos <ArrowRight size={14}/></Link>}</div></article>;
+    if (item.original.kind === 'legacy') return <article className="pc-order pc-order-legacy"><div className="pc-order-main"><div className="pc-order-title"><span>Orden interna · {item.code}</span><h2>{item.title}</h2></div><span className="pc-status">{item.statusLabel}</span></div><div className="pc-order-bottom"><span>{item.ownerLabel} · {dateLabel(item.dueAt)}</span><div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}><button type="button" className="button button-outline" onClick={(e) => { e.stopPropagation(); setChatterTarget({ recordId: item.code, recordTitle: item.title, recordSubtitle: `Orden interna · ${item.customer}`, recordStage: item.statusLabel }); }}><MessageSquare size={14}/> Chatter 360°</button>{item.original.order.can_open_detail && <Link className="button button-outline" to="/operaciones/flujos">Abrir flujos <ArrowRight size={14}/></Link>}</div></div></article>;
     const { job, steps: jobSteps, current } = item.original;
     const canOpen = job.can_open_detail;
     const statusClass = current?.status === 'blocked' ? ' is-blocked' : '';
-    return <article className={`pc-order${compact ? ' is-compact' : ''}`}><div className="pc-order-main"><div className="pc-order-title"><span>{job.sale_code || 'Pedido activo'}</span><h2>{job.title}</h2></div><span className={`pc-status${statusClass}`}>{item.statusLabel}</span></div><div className="pc-order-facts"><div><small>Área y siguiente paso</small><b>{current?.area_name || AREA_NAMES[current?.area_code || 'ASE']} · {current?.title || 'Revisar entrega'}</b>{current?.readiness_reasons?.[0] && <span>{current.readiness_reasons[0].message}</span>}</div><div><small>Responsable</small><b>{item.ownerLabel}</b></div><div className={item.overdue ? 'is-late' : ''}><small>Fecha límite</small><b><CalendarClock size={14}/>{dateLabel(item.dueAt)}</b></div><div><small>Avance</small><b><Clock3 size={14}/>{jobSteps.filter((step) => step.status === 'completed').length} de {jobSteps.length} etapas</b></div></div><div className="pc-order-bottom"><span>{job.fulfillment_status === 'quality_check' ? 'Calidad pendiente' : ['ready_for_delivery','scheduled'].includes(job.fulfillment_status || '') ? 'Pendiente de retiro / entrega' : job.approval_required && job.artwork_review_status !== 'approved' ? 'Arte pendiente de revisión' : 'Flujo activo'}{job.balance_due ? ' · ⚠ saldo pendiente' : ''}</span>{canOpen ? <Link className="button button-outline" to={`/operaciones/trabajos/${AREA_SLUG[current?.area_code || 'ASE'] || 'asesoria'}?job=${encodeURIComponent(job.id)}`}>Abrir ficha <ArrowRight size={14}/></Link> : <span>Ficha reservada</span>}</div></article>;
+    const code = job.sale_code || job.id.slice(0, 8);
+    return <article className={`pc-order${compact ? ' is-compact' : ''}`}><div className="pc-order-main"><div className="pc-order-title"><span>{job.sale_code || 'Pedido activo'}</span><h2>{job.title}</h2></div><span className={`pc-status${statusClass}`}>{item.statusLabel}</span></div><div className="pc-order-facts"><div><small>Área y siguiente paso</small><b>{current?.area_name || AREA_NAMES[current?.area_code || 'ASE']} · {current?.title || 'Revisar entrega'}</b>{current?.readiness_reasons?.[0] && <span>{current.readiness_reasons[0].message}</span>}</div><div><small>Responsable</small><b>{item.ownerLabel}</b></div><div className={item.overdue ? 'is-late' : ''}><small>Fecha límite</small><b><CalendarClock size={14}/>{dateLabel(item.dueAt)}</b></div><div><small>Avance</small><b><Clock3 size={14}/>{jobSteps.filter((step) => step.status === 'completed').length} de {jobSteps.length} etapas</b></div></div><div className="pc-order-bottom"><span>{job.fulfillment_status === 'quality_check' ? 'Calidad pendiente' : ['ready_for_delivery','scheduled'].includes(job.fulfillment_status || '') ? 'Pendiente de retiro / entrega' : job.approval_required && job.artwork_review_status !== 'approved' ? 'Arte pendiente de revisión' : 'Flujo activo'}{job.balance_due ? ' · ⚠ saldo pendiente' : ''}</span><div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}><button type="button" className="button button-outline" onClick={(e) => { e.stopPropagation(); setChatterTarget({ recordId: code, recordTitle: job.title, recordSubtitle: `${current?.area_name || AREA_NAMES[current?.area_code || 'ASE']} · ${code}`, recordStage: item.statusLabel }); }}><MessageSquare size={14}/> Chatter 360°</button><Link className="button button-outline" to={`/seguimiento/${encodeURIComponent(code)}`} onClick={(e) => e.stopPropagation()}>Portal cliente</Link>{canOpen ? <Link className="button button-outline" to={`/operaciones/trabajos/${AREA_SLUG[current?.area_code || 'ASE'] || 'asesoria'}?job=${encodeURIComponent(job.id)}`}>Abrir ficha <ArrowRight size={14}/></Link> : <span>Ficha reservada</span>}</div></div></article>;
   };
   const attentionCount = items.filter(({ job, current }) => current?.status === 'blocked' || isLate(current?.due_at || job.due_at) || current?.status === 'ready' && !current.assigned || job.approval_required && job.artwork_review_status !== 'approved').length + legacyOrders.filter((order) => order.status === 'blocked' || isLate(order.due_at) || order.status === 'queued' && !order.assigned).length;
   const blockedCount = items.filter(({ current }) => current?.status === 'blocked').length + legacyOrders.filter((order) => order.status === 'blocked').length;
@@ -158,7 +166,7 @@ export function ProductionCoordinationPage() {
   if (!canView) return <AppFrame area="operations"><main className="pc-page"><EmptyState icon={ClipboardList} title="Acceso restringido" text="Tu perfil no tiene acceso a la coordinación de trabajos."/></main></AppFrame>;
 
   return <AppFrame area="operations"><main className="pc-page">
-    <PageHeading eyebrow="OPERACIONES · PRODUCCIÓN" title="Coordinación de trabajos" description="Vista compartida de Diseño, Asesoría, Impresión, Sublimación, Corte láser y Taller. Abre cada ficha para asignar, recibir, revisar calidad o registrar avances." action={<button className="button button-outline" type="button" onClick={() => void loadPage(0, true)} disabled={loading}><RefreshCw size={15}/> Actualizar</button>}/>
+    <PageHeading eyebrow="OPERACIONES · PRODUCCIÓN" title="Coordinación de trabajos" description="Vista compartida de Diseño, Asesoría, Impresión, Sublimación, Corte láser y Taller. Abre cada ficha para asignar, recibir, revisar calidad o registrar avances." action={<div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}><Link className="button button-outline" to="/operaciones/automatizaciones"><Sparkles size={15}/> Autopilot</Link><Link className="button button-outline" to="/operaciones/archivos"><FolderOpen size={15}/> Vault de artes</Link><Link className="button button-outline" to="/seguimiento"><ShieldCheck size={15}/> Portal aprobación</Link><button className="button button-outline" type="button" onClick={() => void loadPage(0, true)} disabled={loading}><RefreshCw size={15}/> Actualizar</button></div>}/>
     <section className="pc-summary" aria-label="Resumen del trabajo cargado">
       <div><span><ClipboardList size={15}/> En curso</span><b>{count}</b></div>
       <div data-tone="amber"><span><AlertTriangle size={15}/> Atención</span><b>{attentionCount}</b></div>
@@ -175,5 +183,16 @@ export function ProductionCoordinationPage() {
     {balanceUnavailable && <div className="pc-balance-warning" role="status"><AlertTriangle size={15}/> Los trabajos están cargados, pero no se pudo verificar el saldo de algunos pedidos. Actualiza la vista para reintentar.</div>}
     {loading ? <div className="pc-empty" role="status">Cargando trabajos…</div> : viewItems.length ? <ProductionQueueViews areaSlug="coordinacion" areaName="Coordinación de trabajos" items={viewItems} today={localDay(new Date().toISOString())} renderCard={renderQueueCard} onOpen={openQueueItem}/> : <div className="pc-empty">No hay coincidencias entre los trabajos cargados.</div>}
     {jobs.length + legacyOrders.length < count && <div className="pc-more"><button className="button button-outline" type="button" disabled={loadingMore} onClick={() => void loadPage(page + 1, false)}>{loadingMore ? 'Cargando…' : 'Cargar más trabajos'} <ArrowRight size={14}/></button><span>{jobs.length + legacyOrders.length} de {count}</span></div>}
+    {chatterTarget && (
+      <ChatterDrawer360
+        open={Boolean(chatterTarget)}
+        onClose={() => setChatterTarget(null)}
+        recordType="job"
+        recordId={chatterTarget.recordId}
+        recordTitle={chatterTarget.recordTitle}
+        recordSubtitle={chatterTarget.recordSubtitle}
+        recordStage={chatterTarget.recordStage}
+      />
+    )}
   </main></AppFrame>;
 }
