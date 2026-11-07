@@ -52,6 +52,7 @@ type Props = {
   onClose: () => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   defaultActor?: string;
+  currentUserLabel?: string;
   locationsForBranch?: (branchName: string) => Array<{ id: string; code: string; name: string }>;
 };
 
@@ -74,6 +75,7 @@ export function InventoryMovementModal({
   onClose,
   onSubmit,
   defaultActor = 'Esteban',
+  currentUserLabel = 'Usuario autenticado',
   locationsForBranch,
 }: Props) {
   if (!movement || !item) return null;
@@ -545,28 +547,34 @@ export function InventoryMovementModal({
             </div>
           )}
 
-          {/* Responsable Field + Quick Chips */}
-          <div className="inventory-movement-field">
-            <span>Responsable</span>
-            <input
-              required
-              value={movement.actor}
-              onChange={(e) => onChange({ ...movement, actor: e.target.value })}
-              placeholder={isCount ? 'Quién contó' : 'Quién entrega o utiliza'}
-            />
-            <div className="inventory-movement-chips" aria-label="Responsables frecuentes">
-              {ACTOR_PRESETS.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  className={`inventory-chip ${movement.actor === name ? 'is-selected' : ''}`}
-                  onClick={() => onChange({ ...movement, actor: name })}
-                >
-                  {name}
-                </button>
-              ))}
+          {/* Count authorship comes from the authenticated Supabase user. */}
+          {isCount ? (
+            <p className="inventory-movement-actor-auto" role="status">
+              Conteo registrado automáticamente a nombre de <strong>{currentUserLabel}</strong>.
+            </p>
+          ) : (
+            <div className="inventory-movement-field">
+              <span>Responsable</span>
+              <input
+                required
+                value={movement.actor}
+                onChange={(e) => onChange({ ...movement, actor: e.target.value })}
+                placeholder="Quién entrega o utiliza"
+              />
+              <div className="inventory-movement-chips" aria-label="Responsables frecuentes">
+                {ACTOR_PRESETS.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className={`inventory-chip ${movement.actor === name ? 'is-selected' : ''}`}
+                    onClick={() => onChange({ ...movement, actor: name })}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Motivo / Reason Field + Quick Chips */}
           <div className="inventory-movement-field">
