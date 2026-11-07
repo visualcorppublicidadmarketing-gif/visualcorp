@@ -331,3 +331,14 @@
   color: #4f3265;
   font-weight: 750;
 }
+
+/* El carril de secciones contiene su desplazamiento y no ensancha la página. */
+.inventory-section-nav {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+}
