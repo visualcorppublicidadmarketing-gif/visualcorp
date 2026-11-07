@@ -141,8 +141,9 @@ function FamilyIcon({ familyKey, size = 16 }: { familyKey: ProductFamilyKey; siz
 }
 
 export function OperationsFinance() {
-  const { organizationId, hasPermission, user } = useAuth();
+  const { organizationId, hasPermission, user, roles } = useAuth();
   const canManageFinance = hasPermission('finance', 'manage_finance');
+  const canManageCashRegisters = canManageFinance && roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
   const canManageTeam = hasPermission('team', 'manage_members');
   const canSeePayrollDeductions = hasPermission('personnel', 'view_compensation');
   const canSeeInventoryCosts = hasPermission('inventory_costs', 'view') && hasPermission('inventory_costs', 'view_costs');
@@ -1730,7 +1731,7 @@ export function OperationsFinance() {
     {/* TAB: CAJAS OR TODO */}
     {(activeTab === 'cajas' || activeTab === 'todo') && (
       <>
-        <FinanceCashRegisters today={businessToday} organizationId={organizationId || ''} branches={branches} advisors={advisors} sales={sales} returnsBySale={returnsBySale} saleReturnsError={saleReturnsError} canManage={canManageFinance} canManageTeam={canManageTeam} refreshKey={realtimeRevision.cash} onChanged={() => setRealtimeRevision((current) => ({ ...current, cash: current.cash + 1 }))} />
+        <FinanceCashRegisters today={businessToday} organizationId={organizationId || ''} branches={branches} advisors={advisors} sales={sales} returnsBySale={returnsBySale} saleReturnsError={saleReturnsError} canManage={canManageCashRegisters} canManageTeam={canManageTeam} refreshKey={realtimeRevision.cash} onChanged={() => setRealtimeRevision((current) => ({ ...current, cash: current.cash + 1 }))} />
         {canSeeCashReconciliation && <section className="panel op-finance-cash-panel" aria-labelledby="op-finance-cash-title">
           <div className="panel-heading">
             <div><span className="eyebrow">CAJA → FINANZAS</span><h2 id="op-finance-cash-title">Conciliación de cierres de caja</h2><p className="op-finance-cost-note">Los cierres usan esperado y contado de Caja; las sesiones abiertas muestran el efectivo esperado al momento. Aplica mes de cierre y sucursal, no filtros de asesora o medio de pago.</p></div>

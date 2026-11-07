@@ -41,6 +41,119 @@ type WeeklyGoal = { id: string; cash_register_id: string; week_start: string; go
 type Draft = { branch_id: string; name: string; assigned_advisor_id: string; active: boolean; goal_amount: string };
 type BranchAdvisor = { user_id: string; role: string; full_name: string };
 
+type AdvisorCashRegisterSetupProps = {
+  organizationId: string;
+  userId: string;
+  weekStart: string;
+  branches: Array<{ id: string; name: string }>;
+  registers: CashRegister[];
+  goals: WeeklyGoal[];
+  loading: boolean;
+  onChanged: () => void;
+};
+
+/** Lets an advisor create and maintain only the active register assigned to them. */
+export function AdvisorCashRegisterSetup({ organizationId, userId, weekStart, branches, registers, goals, loading, onChanged }: AdvisorCashRegisterSetupProps) {
+  const [drafts, setDrafts] = useState<Record<string, { name: string; goal_amount: string }>>({});
+  const [registersWithHistory, setRegistersWithHistory] = useState<Set<string>>(new Set());
+  const [historyChecked, setHistoryChecked] = useState(false);
+  const [savingBranchId, setSavingBranchId] = useState('');
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    const nextDrafts: Record<string, { name: string; goal_amount: string }> = {};
+    branches.forEach((branch) => {
+      const register = registers.find((item) => item.branch_id === branch.id && item.assigned_advisor_id === userId && item.active);
+      const goal = register ? goals.find((item) => item.cash_register_id === register.id && item.week_start === weekStart) : null;
+      nextDrafts[branch.id] = { name: register?.name || '', goal_amount: goal ? String(goal.goal_amount) : '' };
+    });
+    setDrafts(nextDrafts);
+  }, [branches, registers, goals, userId, weekStart]);
+
+  useEffect(() => {
+    let active = true;
+    const registerIds = registers.filter((item) => item.assigned_advisor_id === userId).map((item) => item.id);
+    if (!supabase || !organizationId || !registerIds.length) {
+      setRegistersWithHistory(new Set()); setHistoryChecked(true);
+      return () => { active = false; };
+    }
+    setHistoryChecked(false);
+    void supabase.from('cash_sessions').select('cash_register_id').eq('organization_id', organizationId).in('cash_register_id', registerIds).then(({ data, error: historyError }) => {
+      if (!active) return;
+      setRegistersWithHistory(historyError ? new Set(registerIds) : new Set((data || []).map((session) => session.cash_register_id).filter(Boolean)));
+      setHistoryChecked(true);
+    }, () => {
+      if (!active) return;
+      setRegistersWithHistory(new Set(registerIds)); setHistoryChecked(true);
+    });
+    return () => { active = false; };
+  }, [organizationId, registers, userId]);
+
+  const saveBranch = async (branch: { id: string; name: string }) => {
+    if (!supabase || savingBranchId) return;
+    const draft = drafts[branch.id] || { name: '', goal_amount: '' };
+    const name = draft.name.trim();
+    if (!name || name.length > 80) { setError('El nombre de la caja debe tener entre 1 y 80 caracteres.'); return; }
+    let goalAmount: number | null;
+    try { goalAmount = validateGoalAmount(draft.goal_amount); }
+    catch (cause: any) { setError(cause.message); return; }
+    if (goalAmount === null) { setError('Define una meta semanal para completar la configuración de la caja.'); return; }
+
+    setSavingBranchId(branch.id); setError(''); setNotice('');
+    try {
+      const register = registers.find((item) => item.branch_id === branch.id && item.assigned_advisor_id === userId && item.active);
+      const result = register
+        ? await supabase.rpc('update_cash_register_and_weekly_goal', {
+          p_organization_id: organizationId,
+          p_cash_register_id: register.id,
+          p_branch_id: register.branch_id,
+          p_name: name,
+          p_active: true,
+          p_week_start: weekStart,
+          p_goal_amount: goalAmount,
+        })
+        : await supabase.rpc('create_cash_register_with_weekly_goal', {
+          p_organization_id: organizationId,
+          p_branch_id: branch.id,
+          p_name: name,
+          p_assigned_advisor_id: userId,
+          p_week_start: weekStart,
+          p_goal_amount: goalAmount,
+        });
+      if (result.error) throw result.error;
+      setNotice(register ? `Se actualizaron tu caja y la meta de ${branch.name}.` : `Se creó tu caja para ${branch.name}.`);
+      onChanged();
+    } catch (cause: any) {
+      setError(registerErrorMessage(cause, 'No se pudo guardar tu caja.'));
+    } finally { setSavingBranchId(''); }
+  };
+
+  return <section className="panel finance-cash-registers" aria-labelledby="advisor-cash-registers-title">
+    <div className="panel-heading"><div><span className="eyebrow">MIS CAJAS · CONFIGURACIÓN</span><h2 id="advisor-cash-registers-title">Mis cajas</h2><p>Crea una caja asignada a tu perfil o actualiza el nombre mientras no tenga turnos y la meta semanal.</p></div><Wallet size={19} aria-hidden="true"/></div>
+    {error && <p className="finance-cash-register-alert" role="alert"><CircleAlert size={15}/>{error}</p>}
+    {notice && <p className="finance-cash-register-notice" role="status">{notice}</p>}
+    {loading ? <p className="muted"><LoaderCircle className="spin" size={15}/> Cargando tus cajas…</p> : !branches.length
+      ? <div className="finance-cash-register-empty"><b>No hay sucursales disponibles para tu perfil.</b><span>Solicita a un encargado que revise tu asignación de sucursal.</span></div>
+      : <div className="finance-cash-register-list">{branches.map((branch) => {
+        const register = registers.find((item) => item.branch_id === branch.id && item.assigned_advisor_id === userId && item.active);
+        const draft = drafts[branch.id] || { name: '', goal_amount: '' };
+        const goal = register ? goals.find((item) => item.cash_register_id === register.id && item.week_start === weekStart) : null;
+        const saving = savingBranchId === branch.id;
+        const canRename = !register || (historyChecked && !registersWithHistory.has(register.id));
+        return <form className="finance-cash-register-card advisor-cash-register-card" key={branch.id} onSubmit={(event) => { event.preventDefault(); void saveBranch(branch); }}>
+          <div className="finance-cash-register-summary"><div><span>{branch.name} · {register?.name || 'Sin caja asignada'} <small className={`finance-cash-register-state ${register ? 'is-active' : 'is-inactive'}`}>{register ? 'Activa' : 'Pendiente'}</small></span><b>{goal ? `Meta semanal: ${money(Number(goal.goal_amount))}` : 'Meta semanal pendiente'}</b></div></div>
+          <div className="finance-cash-register-form">
+            <label>Nombre de caja<input required maxLength={80} disabled={!canRename} value={draft.name} onChange={(event) => setDrafts((current) => ({ ...current, [branch.id]: { ...draft, name: event.target.value } }))} placeholder="Ej. Mi caja"/></label>
+            <label>Meta semanal · USD<input required type="number" min="0.01" step="0.01" inputMode="decimal" value={draft.goal_amount} onChange={(event) => setDrafts((current) => ({ ...current, [branch.id]: { ...draft, goal_amount: event.target.value } }))} placeholder="Monto de esta semana"/></label>
+          </div>
+          <button className="button button-outline" type="submit" disabled={saving || !draft.name.trim() || !draft.goal_amount.trim()}>{saving ? <><LoaderCircle className="spin" size={14}/> Guardando…</> : <><Save size={14}/>{register ? 'Guardar mis cambios' : 'Crear mi caja'}</>}</button>
+        </form>;
+      })}</div>}
+    <p className="finance-cash-register-note">La caja queda asignada a ti. La sucursal y la persona asignada quedan fijas; después del primer turno, el nombre también queda fijo. Puedes seguir actualizando tu meta semanal.</p>
+  </section>;
+}
+
 type Props = {
   today: string;
   organizationId: string;
@@ -278,7 +391,7 @@ export function FinanceCashRegisters({ today, organizationId, branches, advisors
           <button className="button button-dark" type="button" disabled={busy || branchAdvisorsPending || !newRegister.name.trim() || !newRegister.branch_id || !eligibleBranchAdvisors.some((advisor) => advisor.user_id === newRegister.assigned_advisor_id) || !newRegister.goal_amount.trim()} onClick={() => void createRegister()}><Banknote size={15}/> Crear caja y meta</button>
         </>}
       </div>}
-      {!canManage && <p className="finance-cash-register-note">La administración de cajas y metas requiere permiso de gestión financiera.</p>}
+      {!canManage && <p className="finance-cash-register-note">La administración completa corresponde a encargados del local y administración. Las asesoras gestionan solo sus cajas desde Mi semana.</p>}
     </>}
   </section>;
 }

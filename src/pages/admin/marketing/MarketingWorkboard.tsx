@@ -2,8 +2,11 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   AlertCircle,
   CalendarDays,
+  Check,
   CheckCircle2,
   ClipboardCheck,
+  Copy,
+  Pencil,
   UserRound,
   X,
 } from "lucide-react";
@@ -242,6 +245,7 @@ export function WorkDetails({
   materials,
   onReview,
   onReschedule,
+  onOpen,
   canEdit,
 }: {
   post: WorkflowPost;
@@ -250,6 +254,7 @@ export function WorkDetails({
   materials: any[];
   onReview: () => void;
   onReschedule: () => void;
+  onOpen?: () => void;
   canEdit: boolean;
 }) {
   const progress = checklistProgress(post);
@@ -257,14 +262,19 @@ export function WorkDetails({
   const warnings = publication
     ? publicationWarnings(post, reviews, materials)
     : [];
+  const approvalText = approvalLabel(post, reviews);
+  const isApproved = /aprobada/i.test(approvalText) && !/sin|pendiente/i.test(approvalText);
+  const hasChangesReq = /cambios/i.test(approvalText);
+  const applicableDeliverables = DELIVERABLES.filter(([key]) => post[key] !== "No aplica");
+
   return (
     <section
       className="mk-work-details"
       aria-label={`Pendientes de ${post.title || "idea por definir"}`}
     >
-      <div>
-        <span>
-          <UserRound size={14} />
+      <div className="mk-work-meta-pills">
+        <span className={post.owner ? "has-owner" : "is-unassigned"}>
+          <UserRound size={13} />
           {post.owner_user_id
             ? post.owner
             : post.owner
@@ -272,8 +282,8 @@ export function WorkDetails({
               : "Sin responsable"}
         </span>
         <span>
-          <CalendarDays size={14} />
-          Producción: {post.due_date || "sin fecha"}
+          <CalendarDays size={13} />
+          Entrega: {post.due_date || "sin fecha"}
         </span>
         <span>
           Publicación: {post.scheduled_date || "sin fecha"}{" "}
@@ -288,9 +298,19 @@ export function WorkDetails({
           Publicación pendiente de confirmar
         </strong>
       )}
-      <p>{post.next_action || "Define el siguiente paso de esta pieza."}</p>
+      <p className="mk-work-next-action">{post.next_action || "Define el siguiente paso de esta pieza."}</p>
       {publication && (
         <>
+          <div className="mk-progress-header">
+            <small>
+              {progress.total
+                ? `${progress.done} de ${progress.total} entregables confirmados`
+                : "Sin entregables aplicables"}
+            </small>
+            <small className={`mk-approval-pill ${isApproved ? "is-approved" : hasChangesReq ? "is-changes" : "is-pending"}`}>
+              {approvalText}
+            </small>
+          </div>
           <div
             className="mk-progress"
             role="progressbar"
@@ -310,16 +330,24 @@ export function WorkDetails({
               }}
             />
           </div>
-          <small>
-            {progress.total
-              ? `${progress.done} de ${progress.total} entregables confirmados`
-              : "Sin entregables aplicables"}
-          </small>
-          <small>{approvalLabel(post, reviews)}</small>
+          {applicableDeliverables.length > 0 && (
+            <div className="mk-deliverable-mini-pills" aria-label="Estado por entregable">
+              {applicableDeliverables.map(([key, label]) => {
+                const val = post[key] || "Por confirmar";
+                const tone = val === "Sí" ? "is-yes" : val === "No" ? "is-no" : "is-wait";
+                return (
+                  <span key={key} className={`mk-deliv-pill ${tone}`} title={`${label}: ${val}`}>
+                    <i>{val === "Sí" ? "✓" : val === "No" ? "✕" : "•"}</i>
+                    {label}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
       {warnings.length > 0 && (
-        <details>
+        <details className="mk-warnings-details">
           <summary>
             <AlertCircle size={14} />
             {warnings.length} datos por resolver
@@ -335,6 +363,12 @@ export function WorkDetails({
         <p className="mk-danger">Bloqueo: {post.blocked_reason}</p>
       )}
       <div className="mk-work-actions">
+        {onOpen && (
+          <button type="button" className="mk-action-primary" onClick={onOpen}>
+            <Pencil size={14} />
+            Abrir ficha
+          </button>
+        )}
         {publication && (
           <button type="button" onClick={onReview}>
             <ClipboardCheck size={15} />
@@ -447,8 +481,21 @@ export function ReviewPanel({
             <p>Sin material asociado. Abre la ficha para vincularlo.</p>
           )}
         </section>
-        <h3>Mensaje</h3>
-        <p className="mk-preserve-text">
+        <div className="mk-review-section-head">
+          <h3>Mensaje</h3>
+          {post.caption && (
+            <button
+              type="button"
+              className="mk-review-copy-btn"
+              onClick={() => {
+                void navigator.clipboard.writeText(post.caption || "");
+              }}
+            >
+              <Copy size={13} /> Copiar mensaje
+            </button>
+          )}
+        </div>
+        <p className="mk-preserve-text mk-review-caption-box">
           {post.caption || "Caption pendiente"}
         </p>
         <p>
@@ -456,12 +503,17 @@ export function ReviewPanel({
           {post.cta_destination || "Destino pendiente"}
         </p>
         <h3>Preparación</h3>
-        <ul>
-          {DELIVERABLES.map(([key, label]) => (
-            <li key={key}>
-              {label}: {post[key] || "Por confirmar"}
-            </li>
-          ))}
+        <ul className="mk-review-deliverables-grid">
+          {DELIVERABLES.map(([key, label]) => {
+            const val = post[key] || "Por confirmar";
+            const tone = val === "Sí" ? "is-yes" : val === "No" ? "is-no" : val === "No aplica" ? "is-na" : "is-wait";
+            return (
+              <li key={key} className={`mk-review-deliv-item ${tone}`}>
+                <span>{label}</span>
+                <b>{val}</b>
+              </li>
+            );
+          })}
         </ul>
         <p>
           <b>Siguiente acción:</b> {post.next_action || "Pendiente"}
