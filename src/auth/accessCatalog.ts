@@ -19,6 +19,7 @@ export const permissionModules = [
   ['cash', 'Caja'],
   ['finance', 'Finanzas'],
   ['personnel', 'Personal'],
+  ['team_schedule', 'Horarios y turnos'],
 ] as const;
 
 export const specialPermissionActions = [

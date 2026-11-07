@@ -117,6 +117,7 @@ alter table public.production_jobs
 drop policy if exists cash_sessions_register_assignment on public.cash_sessions;
 drop policy if exists cash_sessions_access_insert on public.cash_sessions;
 drop policy if exists cash_sessions_assigned_register_insert on public.cash_sessions;
+drop policy if exists cash_sessions_open_insert on public.cash_sessions;
 
 create policy cash_sessions_open_insert on public.cash_sessions
   for insert to authenticated

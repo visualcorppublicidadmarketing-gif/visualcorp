@@ -72,9 +72,17 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
     <img src={wordmark} alt="Visual Corp" />
     <span className="site-eyebrow"><i /> CONEXIÓN SEGURA</span>
     <h1>No pudimos comprobar tus permisos.</h1>
-    <p>Revisa tu conexión y vuelve a intentarlo. Tu acceso no se cambiará por un problema temporal de conexión.</p>
+    <p>Por seguridad, el panel permanecerá cerrado hasta que podamos verificar tus permisos. Revisa la conexión e inténtalo de nuevo; tu cuenta y sus perfiles no se modifican.</p>
     <button className="site-primary-button" type="button" onClick={() => void auth.refreshAccess()}>Reintentar</button>
     <button className="site-secondary-button" type="button" onClick={() => void auth.signOut()}>Cerrar sesión <LogOut size={16} /></button>
+  </section></main>;
+
+  if (!auth.workAccessOpen && auth.user) return <main className="access-screen"><section className="access-card" role="status">
+    <img src={wordmark} alt="Visual Corp" />
+    <span className="site-eyebrow"><i /> FUERA DEL HORARIO DE TRABAJO</span>
+    <h1>El panel se abrirá en el próximo horario laboral.</h1>
+    <p>El acceso del equipo funciona de lunes a viernes de 08:00 a 18:30 y los sábados de 08:00 a 13:00, hora de Ecuador. Los horarios especiales que registre un administrador también se aplican aquí.</p>
+    <button className="site-secondary-button" type="button" onClick={() => void auth.signOut()}>Cerrar sesión</button>
   </section></main>;
 
   const requiredModule = permissionByPath[location.pathname] || ({ website: 'website', catalog: 'catalog_admin', team: 'team', operations: 'dashboard' }[area]);

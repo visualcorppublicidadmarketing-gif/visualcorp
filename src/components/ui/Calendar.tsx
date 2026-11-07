@@ -138,7 +138,7 @@ export function Calendar(props: CalendarProps) {
   </MonthContext.Provider></MetadataContext.Provider>;
 }
 
-type PickerProps = Omit<SharedProps, 'label'> & { value: string; onChange: (value: string) => void; label?: string };
+type PickerProps = Omit<SharedProps, 'label'> & { value: string; onChange: (value: string) => void; label?: string; disabled?: boolean };
 function usePicker(open: boolean, setOpen: (open: boolean) => void, root: { current: HTMLDivElement | null }, popover: { current: HTMLDivElement | null }) {
   useEffect(() => {
     if (!open) return undefined;
@@ -233,32 +233,34 @@ const dateDisplay = (value: string) => {
   const date = dateFromKey(value);
   return date ? new Intl.DateTimeFormat('es-EC', { dateStyle: 'medium', timeZone: 'America/Guayaquil' }).format(date) : 'Elegir fecha';
 };
-export function DatePicker({ value, onChange, label = 'Fecha', minDate, maxDate, className = '', presets, unavailableDates, isDateUnavailable, getDateMetadata, cellSize }: PickerProps) {
+export function DatePicker({ value, onChange, label = 'Fecha', minDate, maxDate, className = '', presets, unavailableDates, isDateUnavailable, getDateMetadata, cellSize, disabled = false }: PickerProps) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const popover = useRef<HTMLDivElement>(null);
   usePicker(open, setOpen, root, popover);
+  useEffect(() => { if (disabled) setOpen(false); }, [disabled]);
   return <div className={`ok-date-picker ${className}`} ref={root}>
-    <button ref={trigger} type="button" className="ok-date-trigger" aria-label={`${label}: ${dateDisplay(value)}`} aria-expanded={open} aria-haspopup="dialog" aria-controls={id} onClick={() => setOpen(current => !current)}><CalendarDays size={15}/><span>{dateDisplay(value)}</span></button>
+    <button ref={trigger} type="button" className="ok-date-trigger" disabled={disabled} aria-label={`${label}: ${dateDisplay(value)}`} aria-expanded={open} aria-haspopup="dialog" aria-controls={id} onClick={() => setOpen(current => !current)}><CalendarDays size={15}/><span>{dateDisplay(value)}</span></button>
     <CalendarPopover open={open} id={id} label={label} trigger={trigger} popover={popover}><Calendar value={value} onChange={next => { onChange(next); setOpen(false); }} label={label} minDate={minDate} maxDate={maxDate} presets={presets} unavailableDates={unavailableDates} isDateUnavailable={isDateUnavailable} getDateMetadata={getDateMetadata} cellSize={cellSize}/></CalendarPopover>
   </div>;
 }
 
-export function DateTimePicker({ value, onChange, label = 'Fecha y hora', minDate, maxDate, className = '', unavailableDates, isDateUnavailable, getDateMetadata, cellSize }: PickerProps) {
+export function DateTimePicker({ value, onChange, label = 'Fecha y hora', minDate, maxDate, className = '', unavailableDates, isDateUnavailable, getDateMetadata, cellSize, disabled = false }: PickerProps) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const popover = useRef<HTMLDivElement>(null);
   usePicker(open, setOpen, root, popover);
+  useEffect(() => { if (disabled) setOpen(false); }, [disabled]);
   const dateValue = value?.slice(0, 10) || '';
   const timeValue = value?.slice(11, 16) || '09:00';
   const display = dateValue ? `${dateDisplay(dateValue)} · ${timeValue}` : 'Elegir fecha y hora';
   const update = (date: string, time: string) => onChange(date ? `${date}T${time || '09:00'}` : '');
   return <div className={`ok-date-picker ${className}`} ref={root}>
-    <button ref={trigger} type="button" className="ok-date-trigger" aria-label={`${label}: ${display}`} aria-expanded={open} aria-haspopup="dialog" aria-controls={id} onClick={() => setOpen(current => !current)}><CalendarDays size={15}/><span>{display}</span></button>
-    <CalendarPopover open={open} id={id} label={label} trigger={trigger} popover={popover}><Calendar value={dateValue} onChange={date => update(date, timeValue)} label={label} minDate={minDate} maxDate={maxDate} unavailableDates={unavailableDates} isDateUnavailable={isDateUnavailable} getDateMetadata={getDateMetadata} cellSize={cellSize}/><label className="ok-time-field"><span><Clock3 size={14}/> Hora local</span><input type="time" value={timeValue} onChange={event => update(dateValue, event.target.value)} disabled={!dateValue} aria-label="Hora local"/></label></CalendarPopover>
+    <button ref={trigger} type="button" className="ok-date-trigger" disabled={disabled} aria-label={`${label}: ${display}`} aria-expanded={open} aria-haspopup="dialog" aria-controls={id} onClick={() => setOpen(current => !current)}><CalendarDays size={15}/><span>{display}</span></button>
+    <CalendarPopover open={open} id={id} label={label} trigger={trigger} popover={popover}><Calendar value={dateValue} onChange={date => update(date, timeValue)} label={label} minDate={minDate} maxDate={maxDate} unavailableDates={unavailableDates} isDateUnavailable={isDateUnavailable} getDateMetadata={getDateMetadata} cellSize={cellSize}/><label className="ok-time-field"><span><Clock3 size={14}/> Hora local</span><input type="time" value={timeValue} onChange={event => update(dateValue, event.target.value)} disabled={disabled || !dateValue} aria-label="Hora local"/></label></CalendarPopover>
   </div>;
 }
