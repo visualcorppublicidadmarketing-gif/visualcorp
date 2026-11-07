@@ -6,12 +6,12 @@ type ServiceLink = { id: string; name: string };
 type NavigationGroup = 'services' | 'company' | 'explore';
 
 const exploreLinks = [
+  { to: '/soluciones', label: 'Soluciones' },
   { to: '/portafolio', label: 'Portafolio' },
   { to: '/publicaciones', label: 'Publicaciones' },
   { to: '/blog', label: 'Blog' },
   { to: '/tienda', label: 'Tienda' },
   { to: '/tienda/promociones', label: 'Promociones y sorteos' },
-  { to: '/contacto', label: 'Contacto' },
 ];
 
 export function MobileBottomNavigation({ services }: { services: ServiceLink[] }) {
@@ -56,7 +56,7 @@ export function MobileBottomNavigation({ services }: { services: ServiceLink[] }
     };
   }, [openGroup]);
 
-  const isCompanyActive = ['/nosotros', '/como-trabajamos'].includes(location.pathname);
+  const isCompanyActive = ['/nosotros', '/como-trabajamos', '/contacto'].includes(location.pathname);
   const isExploreActive = exploreLinks.some(({ to }) => location.pathname === to || location.pathname.startsWith(`${to}/`));
   const isServicesActive = location.pathname.startsWith('/servicios');
   const toggle = (group: NavigationGroup) => setOpenGroup((current) => current === group ? null : group);
@@ -76,6 +76,7 @@ export function MobileBottomNavigation({ services }: { services: ServiceLink[] }
         {openGroup === 'company' && <nav className="mobile-bottom-sheet-grid" aria-label="La empresa">
           <Link className="mobile-bottom-sheet-link" to="/nosotros" onClick={() => setOpenGroup(null)}><span>Quiénes somos</span><ArrowUpRight size={15}/></Link>
           <Link className="mobile-bottom-sheet-link" to="/como-trabajamos" onClick={() => setOpenGroup(null)}><span>Cómo trabajamos</span><ArrowUpRight size={15}/></Link>
+          <Link className="mobile-bottom-sheet-link" to="/contacto" onClick={() => setOpenGroup(null)}><span>Contacto</span><ArrowUpRight size={15}/></Link>
         </nav>}
         {openGroup === 'explore' && <nav className="mobile-bottom-sheet-grid" aria-label="Otras secciones">
           {exploreLinks.map(({ to, label }) => <Link className="mobile-bottom-sheet-link" key={to} to={to} onClick={() => setOpenGroup(null)}><span>{label}</span><ArrowUpRight size={15}/></Link>)}
