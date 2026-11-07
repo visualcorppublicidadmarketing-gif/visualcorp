@@ -1,0 +1,1919 @@
+/* ==========================================================================
+   Visual Corp Suite — Portal de Seguimiento & Aprobación Digital de Arte
+   Inspirado en Printavo, ShopVOX, Odoo Customer Portal y Linear
+   Prefix: .vc-portal-*
+   ========================================================================== */
+
+/* Variables de Color y Tema */
+:root {
+  --vcp-bg: #f8fafc;
+  --vcp-surface: #ffffff;
+  --vcp-surface-alt: #f1f5f9;
+  --vcp-surface-subtle: #f8fafc;
+  --vcp-border: #e2e8f0;
+  --vcp-border-strong: #cbd5e1;
+  --vcp-text: #0f172a;
+  --vcp-text-muted: #64748b;
+  --vcp-text-subtle: #94a3b8;
+  --vcp-primary: #793fa0;
+  --vcp-primary-hover: #673187;
+  --vcp-cyan: #06b6d4;
+  --vcp-emerald: #10b981;
+  --vcp-amber: #f59e0b;
+  --vcp-rose: #f43f5e;
+  --vcp-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --vcp-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --vcp-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
+}
+
+[data-theme='dark'] .vc-portal-page,
+.work-app.theme-dark .vc-portal-page,
+.work-app.theme-dark {
+  --vcp-bg: #0b0d14;
+  --vcp-surface: #131722;
+  --vcp-surface-alt: #1a202e;
+  --vcp-surface-subtle: #161b27;
+  --vcp-border: #242c3d;
+  --vcp-border-strong: #333f56;
+  --vcp-text: #f8fafc;
+  --vcp-text-muted: #94a3b8;
+  --vcp-text-subtle: #64748b;
+  --vcp-primary: #a855f7;
+  --vcp-primary-hover: #c084fc;
+  --vcp-cyan: #38bdf8;
+  --vcp-emerald: #34d399;
+  --vcp-amber: #fbbf24;
+  --vcp-rose: #fb7185;
+  --vcp-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --vcp-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --vcp-shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* Reset y Contenedor Principal */
+.vc-portal-page {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--vcp-bg);
+  color: var(--vcp-text);
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+.vc-portal-page *,
+.vc-portal-page *::before,
+.vc-portal-page *::after {
+  box-sizing: border-box;
+}
+
+.vc-portal-container {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ==========================================================================
+   1. TOP BAR & BRAND
+   ========================================================================== */
+.vc-portal-top-bar {
+  background: var(--vcp-surface);
+  border-bottom: 1px solid var(--vcp-border);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.vc-portal-top-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 68px;
+  gap: 16px;
+}
+
+.vc-portal-logo-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.vc-portal-logo-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #793fa0 0%, #06b6d4 100%);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(121, 63, 160, 0.3);
+}
+
+.vc-portal-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.vc-portal-brand-text strong {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--vcp-text);
+}
+
+.vc-portal-brand-text span {
+  font-size: 11px;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-btn-support {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--vcp-border);
+  background: var(--vcp-surface-alt);
+  color: var(--vcp-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.vc-portal-btn-support:hover {
+  background: var(--vcp-border);
+  color: var(--vcp-cyan);
+}
+
+/* ==========================================================================
+   SEARCH HERO & QUICK CHIPS
+   ========================================================================== */
+.vc-portal-search-hero {
+  padding: 38px 0 28px;
+  background: radial-gradient(circle at 50% 0%, rgba(121, 63, 160, 0.12) 0%, rgba(6, 182, 212, 0.04) 50%, transparent 80%);
+  border-bottom: 1px solid var(--vcp-border);
+}
+
+.vc-portal-hero-content {
+  max-width: 820px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vc-portal-pill-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: rgba(121, 63, 160, 0.12);
+  border: 1px solid rgba(121, 63, 160, 0.25);
+  color: var(--vcp-primary);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.vc-portal-hero-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 850;
+  line-height: 1.2;
+  margin: 0 0 10px;
+  color: var(--vcp-text);
+  letter-spacing: -0.5px;
+}
+
+.vc-portal-hero-subtitle {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--vcp-text-muted);
+  margin: 0 0 24px;
+  max-width: 660px;
+}
+
+.vc-portal-search-form {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto 18px;
+}
+
+.vc-portal-search-input-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.vc-portal-search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--vcp-text-muted);
+  pointer-events: none;
+}
+
+.vc-portal-search-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 40px 0 44px;
+  border-radius: 10px;
+  border: 1px solid var(--vcp-border-strong);
+  background: var(--vcp-surface);
+  color: var(--vcp-text);
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: var(--vcp-shadow-sm);
+}
+
+.vc-portal-search-input:focus {
+  border-color: var(--vcp-primary);
+  box-shadow: 0 0 0 3px rgba(121, 63, 160, 0.2);
+}
+
+.vc-portal-clear-search {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--vcp-text-subtle);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vc-portal-clear-search:hover {
+  color: var(--vcp-text);
+}
+
+.vc-portal-search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--vcp-primary) 0%, #a855f7 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(121, 63, 160, 0.35);
+  white-space: nowrap;
+}
+
+.vc-portal-search-btn:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.vc-portal-quick-chips {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.vc-portal-quick-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.vc-portal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--vcp-border);
+  background: var(--vcp-surface);
+  color: var(--vcp-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vc-portal-chip strong {
+  color: var(--vcp-primary);
+  font-weight: 750;
+}
+
+.vc-portal-chip:hover {
+  border-color: var(--vcp-primary);
+  background: var(--vcp-surface-alt);
+  color: var(--vcp-text);
+  transform: translateY(-1px);
+}
+
+.vc-portal-chip.is-active {
+  border-color: var(--vcp-primary);
+  background: rgba(121, 63, 160, 0.12);
+  color: var(--vcp-text);
+}
+
+/* ==========================================================================
+   MAIN CONTENT & CARDS
+   ========================================================================== */
+.vc-portal-main-content {
+  flex: 1;
+  padding: 28px 0 48px;
+}
+
+.vc-portal-order-card {
+  background: var(--vcp-surface);
+  border: 1px solid var(--vcp-border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--vcp-shadow-sm);
+  transition: border-color 0.2s ease;
+}
+
+.vc-portal-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--vcp-border);
+}
+
+.vc-portal-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--vcp-primary);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.vc-portal-card-header h3 {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--vcp-text);
+}
+
+/* ==========================================================================
+   ORDER HEADER CARD
+   ========================================================================== */
+.vc-portal-order-header-card {
+  border-left: 4px solid var(--vcp-primary);
+}
+
+.vc-portal-order-header-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: center;
+}
+
+.vc-portal-badge-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.vc-portal-code-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--vcp-surface-alt);
+  border: 1px solid var(--vcp-border-strong);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--vcp-primary);
+}
+
+.vc-portal-demo-tag {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--vcp-amber);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.vc-portal-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.vc-portal-status-badge.status-aprobacion_pendiente {
+  background: rgba(6, 182, 212, 0.12);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  color: var(--vcp-cyan);
+}
+
+.vc-portal-status-badge.status-cambios_solicitados {
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  color: var(--vcp-rose);
+}
+
+.vc-portal-status-badge.status-en_proceso {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: var(--vcp-emerald);
+}
+
+.vc-portal-status-badge.status-completado {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid var(--vcp-emerald);
+  color: var(--vcp-emerald);
+}
+
+.vc-portal-order-title {
+  font-size: 22px;
+  font-weight: 850;
+  margin: 0 0 12px;
+  line-height: 1.3;
+  color: var(--vcp-text);
+}
+
+.vc-portal-order-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-order-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vc-portal-order-meta strong {
+  color: var(--vcp-text);
+}
+
+.vc-portal-order-advisor-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: var(--vcp-surface-alt);
+  border: 1px solid var(--vcp-border);
+}
+
+.vc-portal-advisor-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(121, 63, 160, 0.15);
+  color: var(--vcp-primary);
+}
+
+.vc-portal-advisor-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.vc-portal-advisor-info small {
+  font-size: 11px;
+  color: var(--vcp-text-subtle);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.vc-portal-advisor-info strong {
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--vcp-text);
+}
+
+.vc-portal-advisor-info span {
+  font-size: 12px;
+  color: var(--vcp-text-muted);
+}
+
+/* ==========================================================================
+   BANNER DE CELEBRACIÓN DE APROBACIÓN
+   ========================================================================== */
+.vc-portal-celebration-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%);
+  border: 2px solid var(--vcp-emerald);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+  animation: vcpFadeSlideDown 0.3s ease-out;
+}
+
+@keyframes vcpFadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vc-portal-celebration-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--vcp-emerald);
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.vc-portal-celebration-text {
+  flex: 1;
+  min-width: 260px;
+}
+
+.vc-portal-celebration-text h3 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--vcp-text);
+}
+
+.vc-portal-celebration-text p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--vcp-text);
+}
+
+.vc-portal-btn-whatsapp-celebrate {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: #25d366;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.35);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.vc-portal-btn-whatsapp-celebrate:hover {
+  background: #20ba5a;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   2. STEPPER DE 6 ETAPAS EN VIVO (VISUAL TRACKER)
+   ========================================================================== */
+.vc-portal-stage-indicator {
+  font-size: 13px;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-stage-indicator strong {
+  color: var(--vcp-primary);
+}
+
+.vc-portal-stepper-track {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  position: relative;
+  margin-top: 10px;
+}
+
+.vc-portal-step-node {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding: 14px 12px;
+  border-radius: 10px;
+  background: var(--vcp-surface-alt);
+  border: 1px solid var(--vcp-border);
+  transition: all 0.25s ease;
+}
+
+.vc-portal-step-node.is-completed {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.vc-portal-step-node.is-current {
+  border-color: var(--vcp-primary);
+  background: rgba(121, 63, 160, 0.08);
+  box-shadow: 0 0 0 1px var(--vcp-primary), 0 4px 12px rgba(121, 63, 160, 0.15);
+}
+
+.vc-portal-step-node.is-pending {
+  opacity: 0.65;
+}
+
+.vc-portal-step-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  background: var(--vcp-surface);
+  border: 2px solid var(--vcp-border-strong);
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-step-node.is-completed .vc-portal-step-marker {
+  background: var(--vcp-emerald);
+  border-color: var(--vcp-emerald);
+  color: #ffffff;
+}
+
+.vc-portal-step-node.is-current .vc-portal-step-marker {
+  background: var(--vcp-primary);
+  border-color: var(--vcp-primary);
+  color: #ffffff;
+}
+
+.vc-portal-pulse-ring {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--vcp-primary);
+  animation: vcpPulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes vcpPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+.vc-portal-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vc-portal-step-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--vcp-text-muted);
+  margin-bottom: 2px;
+}
+
+.vc-portal-step-icon-row small {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.vc-portal-step-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--vcp-text);
+  line-height: 1.25;
+}
+
+.vc-portal-step-subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vcp-cyan);
+}
+
+.vc-portal-step-desc {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--vcp-text-muted);
+  margin: 4px 0 8px;
+}
+
+.vc-portal-step-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 750;
+  margin-top: auto;
+}
+
+.vc-portal-step-status.is-done {
+  color: var(--vcp-emerald);
+}
+
+.vc-portal-step-status.is-active {
+  color: var(--vcp-primary);
+}
+
+.vc-portal-step-status.is-waiting {
+  color: var(--vcp-text-subtle);
+}
+
+/* ==========================================================================
+   3. DIGITAL PROOFING & SIGN-OFF BOX
+   ========================================================================== */
+.vc-portal-proof-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vc-portal-spec-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--vcp-surface-alt);
+  border: 1px solid var(--vcp-border);
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-proofing-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+/* Visor de Arte */
+.vc-portal-proof-viewer-pane {
+  display: flex;
+  flex-direction: column;
+  background: #0f131c;
+  border: 1px solid var(--vcp-border-strong);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.vc-portal-viewer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: #181d2a;
+  border-bottom: 1px solid #2a3245;
+  color: #e2e8f0;
+}
+
+.vc-portal-viewer-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.vc-portal-viewer-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vc-portal-ctrl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: #242c3d;
+  border: 1px solid #37445c;
+  color: #f1f5f9;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.vc-portal-ctrl-btn:hover {
+  background: #333f56;
+  color: var(--vcp-cyan);
+}
+
+.vc-portal-ctrl-btn.active {
+  background: var(--vcp-primary);
+  border-color: var(--vcp-primary);
+  color: #ffffff;
+}
+
+.vc-portal-zoom-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  min-width: 36px;
+  text-align: center;
+}
+
+.vc-portal-art-viewport {
+  position: relative;
+  min-height: 360px;
+  background: #0c0e15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.vc-portal-svg-canvas {
+  width: 100%;
+  max-width: 100%;
+  transition: transform 0.2s ease-out;
+}
+
+.vc-portal-svg-art {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+}
+
+.vc-portal-viewer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 14px;
+  background: #141824;
+  border-top: 1px solid #242c3d;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.vc-portal-viewer-footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Panel de Firma & Checklist */
+.vc-portal-signoff-pane {
+  display: flex;
+  flex-direction: column;
+}
+
+.vc-portal-signoff-form-box {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vc-portal-signoff-header h4 {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  color: var(--vcp-text);
+}
+
+.vc-portal-signoff-header p {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--vcp-text-muted);
+  margin: 0;
+}
+
+.vc-portal-checklist-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vc-portal-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--vcp-surface-alt);
+  border: 1px solid var(--vcp-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vc-portal-check-item:hover {
+  border-color: var(--vcp-primary);
+  background: rgba(121, 63, 160, 0.05);
+}
+
+.vc-portal-check-item.is-checked {
+  border-color: var(--vcp-emerald);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.vc-portal-check-item input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--vcp-emerald);
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.vc-portal-check-label {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+
+.vc-portal-check-label strong {
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--vcp-text);
+}
+
+.vc-portal-check-label small {
+  font-size: 12px;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-check-all-btn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--vcp-primary);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 6px;
+  transition: opacity 0.2s ease;
+}
+
+.vc-portal-check-all-btn:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+.vc-portal-approver-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vc-portal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vc-portal-field span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vcp-text);
+}
+
+.vc-portal-field input,
+.vc-portal-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--vcp-border-strong);
+  background: var(--vcp-surface);
+  color: var(--vcp-text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.vc-portal-field input:focus,
+.vc-portal-field textarea:focus {
+  border-color: var(--vcp-primary);
+  box-shadow: 0 0 0 2px rgba(121, 63, 160, 0.2);
+}
+
+.vc-portal-validation-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid var(--vcp-rose);
+  color: var(--vcp-rose);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.vc-portal-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.vc-portal-btn-approve-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  transition: all 0.2s ease;
+}
+
+.vc-portal-btn-approve-primary:hover {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+}
+
+.vc-portal-btn-revision-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid var(--vcp-border-strong);
+  background: var(--vcp-surface-alt);
+  color: var(--vcp-text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vc-portal-btn-revision-secondary:hover {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--vcp-amber);
+  color: var(--vcp-amber);
+}
+
+.vc-portal-legal-note {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--vcp-text-subtle);
+}
+
+/* Estado de Arte Aprobado Oficialmente */
+.vc-portal-signoff-completed-box {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.vc-portal-approved-badge-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--vcp-emerald);
+}
+
+.vc-portal-approved-badge-banner h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 850;
+  color: var(--vcp-text);
+}
+
+.vc-portal-approved-badge-banner p {
+  margin: 0 0 2px;
+  font-size: 13px;
+  color: var(--vcp-text);
+}
+
+.vc-portal-approved-badge-banner small {
+  font-size: 11px;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-approved-checklist-summary h5 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--vcp-text);
+}
+
+.vc-portal-approved-checklist-summary ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vc-portal-approved-checklist-summary li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--vcp-text-muted);
+}
+
+.icon-check {
+  color: var(--vcp-emerald);
+  flex-shrink: 0;
+}
+
+.vc-portal-feedback-note {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--vcp-surface);
+  border: 1px solid var(--vcp-border);
+  font-size: 12px;
+}
+
+.vc-portal-feedback-note strong {
+  color: var(--vcp-text);
+}
+
+.vc-portal-feedback-note p {
+  margin: 4px 0 0;
+  font-style: italic;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-post-approval-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vc-portal-post-approval-msg p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--vcp-text-muted);
+}
+
+/* ==========================================================================
+   4. RESUMEN FINANCIERO & TABLA DE ÍTEMS
+   ========================================================================== */
+.vc-portal-two-col-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+.vc-portal-item-count {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--vcp-text-muted);
+}
+
+/* Tabla de Ítems */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.vc-portal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.vc-portal-table th {
+  padding: 10px 12px;
+  background: var(--vcp-surface-alt);
+  color: var(--vcp-text-muted);
+  font-weight: 750;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--vcp-border);
+  white-space: nowrap;
+}
+
+.vc-portal-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--vcp-border);
+  vertical-align: top;
+}
+
+.vc-portal-table tr:last-child td {
+  border-bottom: none;
+}
+
+.vc-portal-table-desc {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--vcp-text-muted);
+  line-height: 1.35;
+}
+
+.vc-portal-material-pill {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--vcp-surface-alt);
+  border: 1px solid var(--vcp-border);
+  font-size: 11px;
+  color: var(--vcp-text-muted);
+}
+
+.text-right {
+  text-align: right;
+}
+
+.vc-portal-pickup-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-top: 18px;
+  border-radius: 10px;
+  background: var(--vcp-surface-alt);
+  border: 1px solid var(--vcp-border);
+}
+
+.vc-portal-pin-icon {
+  color: var(--vcp-primary);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.vc-portal-pickup-info strong {
+  font-size: 13px;
+  color: var(--vcp-text);
+}
+
+.vc-portal-pickup-info p {
+  margin: 2px 0 4px;
+  font-size: 13px;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-pickup-info small {
+  font-size: 11px;
+  color: var(--vcp-text-subtle);
+}
+
+/* Card Financiero */
+.vc-portal-financial-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.vc-portal-payment-status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.vc-portal-payment-status.status-pagado {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--vcp-emerald);
+}
+
+.vc-portal-payment-status.status-abonado {
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--vcp-cyan);
+}
+
+.vc-portal-payment-status.status-pendiente {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--vcp-amber);
+}
+
+.vc-portal-finance-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--vcp-surface-alt);
+  border: 1px solid var(--vcp-border);
+  margin-bottom: 16px;
+}
+
+.vc-portal-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-metric-row strong {
+  font-size: 15px;
+  color: var(--vcp-text);
+}
+
+.vc-portal-metric-divider {
+  height: 1px;
+  background: var(--vcp-border);
+  margin: 4px 0;
+}
+
+.vc-portal-metric-balance {
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--vcp-text);
+}
+
+.vc-portal-metric-balance strong {
+  font-size: 20px;
+  font-weight: 850;
+}
+
+.text-success {
+  color: var(--vcp-emerald);
+}
+
+.text-warn {
+  color: var(--vcp-amber);
+}
+
+.vc-portal-payment-info-box {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--vcp-surface-subtle);
+  border: 1px dashed var(--vcp-border-strong);
+  margin-bottom: 16px;
+}
+
+.vc-portal-payment-info-box p {
+  margin: 0 0 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-payment-info-box small {
+  font-size: 11px;
+  color: var(--vcp-text-subtle);
+  font-weight: 600;
+}
+
+.vc-portal-contact-advisor-box {
+  margin-top: auto;
+}
+
+.vc-portal-btn-whatsapp-full {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 44px;
+  border-radius: 8px;
+  background: #25d366;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
+}
+
+.vc-portal-btn-whatsapp-full:hover {
+  background: #20ba5a;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   5. TIMELINE & AUDITORÍA DE CHATTER
+   ========================================================================== */
+.vc-portal-chatter-count {
+  font-size: 12px;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-chatter-timeline {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin-bottom: 20px;
+  padding-left: 20px;
+}
+
+.vc-portal-chatter-timeline::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 7px;
+  width: 2px;
+  background: var(--vcp-border);
+}
+
+.vc-portal-timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.vc-portal-timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.vc-portal-timeline-bullet {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--vcp-surface);
+  border: 2px solid var(--vcp-border-strong);
+  color: var(--vcp-text-muted);
+  flex-shrink: 0;
+  margin-left: -20px;
+}
+
+.vc-portal-timeline-item.type-approval .vc-portal-timeline-bullet {
+  background: var(--vcp-emerald);
+  border-color: var(--vcp-emerald);
+  color: #ffffff;
+}
+
+.vc-portal-timeline-item.type-revision .vc-portal-timeline-bullet {
+  background: var(--vcp-amber);
+  border-color: var(--vcp-amber);
+  color: #ffffff;
+}
+
+.vc-portal-timeline-item.type-designer .vc-portal-timeline-bullet {
+  background: var(--vcp-primary);
+  border-color: var(--vcp-primary);
+  color: #ffffff;
+}
+
+.vc-portal-timeline-item.type-client_message .vc-portal-timeline-bullet {
+  background: var(--vcp-cyan);
+  border-color: var(--vcp-cyan);
+  color: #ffffff;
+}
+
+.vc-portal-timeline-content {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--vcp-surface-alt);
+  border: 1px solid var(--vcp-border);
+}
+
+.vc-portal-timeline-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.vc-portal-timeline-header strong {
+  font-size: 13px;
+  color: var(--vcp-text);
+}
+
+.vc-portal-role-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--vcp-surface);
+  border: 1px solid var(--vcp-border);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--vcp-text-muted);
+  text-transform: uppercase;
+}
+
+.vc-portal-time-stamp {
+  font-size: 11px;
+  color: var(--vcp-text-subtle);
+  margin-left: auto;
+}
+
+.vc-portal-timeline-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--vcp-text);
+}
+
+/* Input Form Chatter */
+.vc-portal-chatter-input-form {
+  padding-top: 14px;
+  border-top: 1px solid var(--vcp-border);
+}
+
+.vc-portal-chatter-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.vc-portal-chat-input {
+  flex: 1;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--vcp-border-strong);
+  background: var(--vcp-surface);
+  color: var(--vcp-text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.vc-portal-chat-input:focus {
+  border-color: var(--vcp-primary);
+}
+
+.vc-portal-chat-send-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: none;
+  background: var(--vcp-primary);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.vc-portal-chat-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vc-portal-chat-send-btn:not(:disabled):hover {
+  background: var(--vcp-primary-hover);
+}
+
+/* ==========================================================================
+   ESTADO VACÍO (EMPTY STATE)
+   ========================================================================== */
+.vc-portal-empty-card {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--vcp-surface);
+  border: 1px solid var(--vcp-border);
+  border-radius: 14px;
+  max-width: 640px;
+  margin: 20px auto;
+}
+
+.vc-portal-empty-icon {
+  color: var(--vcp-amber);
+  margin-bottom: 14px;
+}
+
+.vc-portal-empty-card h2 {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 10px;
+  color: var(--vcp-text);
+}
+
+.vc-portal-empty-card p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--vcp-text-muted);
+  margin: 0 0 24px;
+}
+
+.vc-portal-empty-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.vc-portal-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  background: var(--vcp-primary);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.vc-portal-btn-primary:hover {
+  background: var(--vcp-primary-hover);
+}
+
+.vc-portal-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--vcp-border-strong);
+  background: var(--vcp-surface);
+  color: var(--vcp-text);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vc-portal-btn-outline:hover {
+  background: var(--vcp-surface-alt);
+  border-color: var(--vcp-cyan);
+  color: var(--vcp-cyan);
+}
+
+/* ==========================================================================
+   MODAL DE PANTALLA COMPLETA
+   ========================================================================== */
+.vc-portal-fullscreen-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(11, 13, 20, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.vc-portal-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #141824;
+  border: 1px solid #242c3d;
+  border-radius: 10px;
+  color: #f8fafc;
+  margin-bottom: 16px;
+}
+
+.vc-portal-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.vc-portal-modal-close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vc-portal-modal-close-btn:hover {
+  color: #ffffff;
+  background: #242c3d;
+}
+
+.vc-portal-modal-canvas-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  background: #090b10;
+  border: 1px solid #1a202e;
+  border-radius: 10px;
+  padding: 24px;
+}
+
+.vc-portal-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  margin-top: 16px;
+  background: #141824;
+  border: 1px solid #242c3d;
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.vc-portal-footer {
+  border-top: 1px solid var(--vcp-border);
+  background: var(--vcp-surface);
+  padding: 24px 0;
+  margin-top: auto;
+}
+
+.vc-portal-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--vcp-text-muted);
+}
+
+.vc-portal-footer-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.vc-portal-footer-links a {
+  color: var(--vcp-text-muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.vc-portal-footer-links a:hover {
+  color: var(--vcp-primary);
+}
+
+/* ==========================================================================
+   RESPONSIVIDAD & REGLAS ZERO OVERFLOW
+   ========================================================================== */
+@media (max-width: 1260px) {
+  .vc-portal-stepper-track {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .vc-portal-proofing-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .vc-portal-two-col-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .vc-portal-order-header-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vc-portal-order-advisor-card {
+    justify-content: flex-start;
+  }
+
+  .vc-portal-stepper-track {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .vc-portal-top-bar-inner {
+    height: auto;
+    padding: 12px 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .vc-portal-btn-support {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .vc-portal-search-form {
+    flex-direction: column;
+  }
+
+  .vc-portal-search-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .vc-portal-stepper-track {
+    grid-template-columns: 1fr;
+  }
+
+  .vc-portal-order-card {
+    padding: 16px;
+  }
+
+  .vc-portal-order-title {
+    font-size: 18px;
+  }
+
+  .vc-portal-order-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .vc-portal-art-viewport {
+    min-height: 240px;
+    padding: 8px;
+  }
+
+  .vc-portal-footer-inner {
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .vc-portal-footer-links {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

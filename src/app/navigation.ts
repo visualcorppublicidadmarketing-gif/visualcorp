@@ -1,7 +1,7 @@
 import {
   BookOpen, Boxes, BriefcaseBusiness, ChartNoAxesCombined,
-  ClipboardList, Database, FileText, Globe2, History, Image, LayoutDashboard, Megaphone,
-  Newspaper, ShoppingBag, ShoppingCart, Truck, Users, Wallet, Radio, Workflow, type LucideIcon,
+  ClipboardList, Database, FileText, FolderOpen, Globe2, History, Image, LayoutDashboard, Megaphone,
+  Newspaper, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Truck, Users, Wallet, Radio, Workflow, type LucideIcon,
 } from 'lucide-react';
 
 export type AppNavLink = {
@@ -27,6 +27,9 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText, module: 'quotes' },
   { to: '/operaciones/crm', label: 'Solicitudes', icon: Users, module: 'crm' },
   { to: '/operaciones/clientes', label: 'Directorio de clientes', icon: Users, module: 'crm' },
+  { to: '/operaciones/automatizaciones', label: 'Automatizaciones', icon: Sparkles, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
+  { to: '/operaciones/archivos', label: 'Archivos y artes (Vault)', icon: FolderOpen, module: 'workshop', anyOf: ['sales', 'workshop', 'quotes', 'crm'] },
+  { to: '/seguimiento', label: 'Portal de aprobación', icon: ShieldCheck, module: 'workshop', anyOf: ['sales', 'workshop', 'quotes', 'crm'] },
   { to: '/operaciones/flujos', label: 'Flujos y producción', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
   { to: '/operaciones/coordinacion-trabajos', label: 'Coordinación de trabajos', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'workshop'] },
   { to: '/operaciones/trabajos/diseno', label: 'Diseño', icon: ClipboardList, module: 'workshop' },
@@ -53,8 +56,8 @@ export const workspaceNavigation: AppNavLink[] = [
 ];
 
 export const workspaceNavGroups: AppNavGroup[] = [
-  { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/mi-semana', '/operaciones/rutas-productos', '/operaciones/trabajos/asesoria', '/operaciones/finanzas', '/operaciones/cajas-abiertas', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes', '/operaciones/catalogo'] },
-  { id: 'production', label: 'Producción y abastecimiento', icon: Boxes, paths: ['/operaciones/flujos', '/operaciones/coordinacion-trabajos', '/operaciones/trabajos/diseno', '/operaciones/trabajos/impresion', '/operaciones/trabajos/sublimacion', '/operaciones/trabajos/laser', '/operaciones/trabajos/taller', '/operaciones/inventario', '/operaciones/compras', '/operaciones/equipos'] },
+  { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/mi-semana', '/operaciones/rutas-productos', '/operaciones/trabajos/asesoria', '/operaciones/finanzas', '/operaciones/cajas-abiertas', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes', '/operaciones/catalogo', '/seguimiento'] },
+  { id: 'production', label: 'Producción y abastecimiento', icon: Boxes, paths: ['/operaciones/automatizaciones', '/operaciones/archivos', '/operaciones/flujos', '/operaciones/coordinacion-trabajos', '/operaciones/trabajos/diseno', '/operaciones/trabajos/impresion', '/operaciones/trabajos/sublimacion', '/operaciones/trabajos/laser', '/operaciones/trabajos/taller', '/operaciones/inventario', '/operaciones/compras', '/operaciones/equipos'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing'] },
   { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
   { id: 'team', label: 'Equipo y sistema', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo', '/operaciones/cambios', '/admin/respaldo'] },
