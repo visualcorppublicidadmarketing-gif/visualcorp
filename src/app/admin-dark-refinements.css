@@ -1806,6 +1806,101 @@
   color: #fca5a5;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-products-search input {
+  border-color: var(--vc-line, #262939);
+  background: #191c28;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-cat-chip {
+  border-color: var(--vc-line, #262939);
+  background: #191c28;
+  color: var(--vc-muted, #9ba0b4);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-cat-chip:hover {
+  background: #25293a;
+  color: #f1f2f6;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-cat-chip.is-active {
+  background: rgba(168, 85, 247, 0.35);
+  border-color: #a855f7;
+  color: #f3e8ff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-tag {
+  background: #202434;
+  color: var(--vc-muted, #9ba0b4);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-status-badge.is-draft {
+  background: #25293a;
+  color: #9ba0b4;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-workflow-builder {
+  border-color: var(--vc-line, #262939);
+  background: #171a26;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .standard-workflow-builder label input,
+  .standard-workflow-steps input,
+  .standard-workflow-steps select
+) {
+  border-color: var(--vc-line, #262939);
+  background: #191c28;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-workflow-steps > div button {
+  border-color: var(--vc-line, #262939);
+  background: #202434;
+  color: var(--vc-muted, #9ba0b4);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-product-editor {
+  border-color: var(--vc-line, #262939);
+  background: #171a25;
+  color: var(--vc-ink, #f1f2f6);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .standard-product-fields > label input:not([type=checkbox]),
+  .standard-product-fields > label select,
+  .standard-product-fields textarea
+) {
+  border-color: var(--vc-line, #262939);
+  background: #191c28;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-publish {
+  border-color: rgba(168, 85, 247, 0.3);
+  background: rgba(168, 85, 247, 0.08);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-publish b {
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-publish small {
+  color: var(--vc-muted, #9ba0b4);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-image-drop {
+  border-color: rgba(168, 85, 247, 0.35);
+  background: rgba(168, 85, 247, 0.06);
+  color: #c084fc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-image-grid figure {
+  border-color: var(--vc-line, #262939);
+  background: #12141e;
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .catalog-toolbar .search-box {
   border-color: var(--vc-line, #262939);
   background: #191c28;

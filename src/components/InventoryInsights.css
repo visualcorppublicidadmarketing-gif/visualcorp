@@ -1247,3 +1247,201 @@
     display: none;
   }
 }
+
+
+/* =========================================================================
+   Modern Premium Inventory Cards — Semiotics, Health Bar & Action Hierarchy
+   ========================================================================= */
+
+.inventory-product-card {
+  grid-template-columns: 92px minmax(0, 1fr);
+  grid-template-areas:
+    "image main"
+    "image tags"
+    "image state"
+    "meter meter"
+    "facts facts"
+    "actions actions";
+  grid-template-rows: auto minmax(20px, auto) 32px auto 1fr auto;
+  border-radius: 16px;
+}
+
+.inventory-product-card.is-card-low {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.inventory-product-card.is-card-ok:hover {
+  border-color: rgba(121, 63, 160, 0.35);
+}
+
+.inventory-product-submeta {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px !important;
+}
+
+.inventory-card-sku {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid #e3dceb;
+  border-radius: 5px;
+  background: #f6f3fa;
+  color: #5a3a78;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.inventory-product-submeta > span {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: #f3f2f6;
+  color: #65606e;
+  font-size: 8.5px;
+  font-weight: 600;
+}
+
+.inventory-product-tags em.is-type-tag {
+  background: linear-gradient(135deg, rgba(121, 63, 160, 0.14), rgba(165, 16, 145, 0.1));
+  border: 1px solid rgba(121, 63, 160, 0.22);
+  color: #69308d;
+  font-weight: 700;
+}
+
+.inventory-card-min-hint {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #f4f1f8;
+  color: #70667d;
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.inventory-card-health-meter {
+  grid-area: meter;
+  width: 100%;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eeeaf3;
+}
+
+.inventory-card-health-meter > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.inventory-card-health-meter > i.is-ok {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+
+.inventory-card-health-meter > i.is-low {
+  background: linear-gradient(90deg, #d97706, #f59e0b);
+}
+
+.inventory-card-health-meter > i.is-pending {
+  width: 30% !important;
+  background: repeating-linear-gradient(
+    45deg,
+    #8b5cf6,
+    #8b5cf6 5px,
+    #a78bfa 5px,
+    #a78bfa 10px
+  );
+}
+
+.inventory-product-facts > span.is-fact-primary {
+  border-color: #e2dbed;
+  background: #f9f6fc;
+}
+
+.inventory-product-facts > span.is-available-ok strong {
+  color: #15803d;
+}
+
+.inventory-product-facts > span.is-available-low strong {
+  color: #b45309;
+}
+
+.inventory-product-facts > span.is-fact-cost strong {
+  color: #6b3594;
+}
+
+.inventory-product-actions button.is-btn-in:hover {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.inventory-product-actions button.is-btn-out:hover {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.inventory-product-actions button.is-btn-count:hover {
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.inventory-product-actions button.is-btn-cost:hover {
+  border-color: #7dd3fc;
+  background: #f0f9ff;
+  color: #0369a1;
+}
+
+/* Dark mode for upgraded Inventory Product Cards */
+[data-theme='dark'] .inventory-card-sku,
+.work-app.theme-dark .inventory-card-sku {
+  border-color: #343b57 !important;
+  background: #1e2336 !important;
+  color: #d8b4fe !important;
+}
+
+[data-theme='dark'] .inventory-product-submeta > span,
+.work-app.theme-dark .inventory-product-submeta > span,
+[data-theme='dark'] .inventory-card-min-hint,
+.work-app.theme-dark .inventory-card-min-hint {
+  background: #1a1e30 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .inventory-product-tags em.is-type-tag,
+.work-app.theme-dark .inventory-product-tags em.is-type-tag {
+  background: rgba(192, 132, 252, 0.16) !important;
+  border-color: rgba(192, 132, 252, 0.32) !important;
+  color: #e9d5ff !important;
+}
+
+[data-theme='dark'] .inventory-card-health-meter,
+.work-app.theme-dark .inventory-card-health-meter {
+  background: #23283d !important;
+}
+
+[data-theme='dark'] .inventory-product-facts > span.is-fact-primary,
+.work-app.theme-dark .inventory-product-facts > span.is-fact-primary {
+  border-color: #2f3754 !important;
+  background: #1a1f33 !important;
+}
+
+[data-theme='dark'] .inventory-product-facts > span.is-available-ok strong,
+.work-app.theme-dark .inventory-product-facts > span.is-available-ok strong {
+  color: #4ade80 !important;
+}
+
+[data-theme='dark'] .inventory-product-facts > span.is-available-low strong,
+.work-app.theme-dark .inventory-product-facts > span.is-available-low strong {
+  color: #fbbf24 !important;
+}
+
+[data-theme='dark'] .inventory-product-facts > span.is-fact-cost strong,
+.work-app.theme-dark .inventory-product-facts > span.is-fact-cost strong {
+  color: #c084fc !important;
+}

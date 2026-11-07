@@ -5,3 +5,327 @@
 @media(max-width:560px){.vc-marketing-post-context .vc-content-post.is-artwork-card:not(.has-selection) .vc-marketing-post-card-top{grid-template-columns:40px minmax(0,1fr)}}
 .vc-marketing-post-context .is-artwork-card .vc-marketing-readiness-indicators{margin-top:3px}
 .vc-marketing-post-table .vc-marketing-readiness-indicators{margin-top:5px}
+
+
+/* =========================================================================
+   Modern Premium Marketing Cards & WorkDetails Semiotics (Light & Dark Mode)
+   ========================================================================= */
+
+.vc-marketing-post-card-top .vc-content-post-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.vc-marketing-channel-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 21px;
+  padding: 2px 8px;
+  border: 1px solid #e4dce9;
+  border-radius: 999px;
+  background: #f6f3fa;
+  color: #5b4373;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.vc-marketing-channel-pill.is-instagram {
+  border-color: rgba(225, 48, 108, 0.25);
+  background: rgba(225, 48, 108, 0.08);
+  color: #be185d;
+}
+
+.vc-marketing-channel-pill.is-tiktok {
+  border-color: rgba(15, 23, 42, 0.2);
+  background: rgba(15, 23, 42, 0.06);
+  color: #1e293b;
+}
+
+.vc-marketing-channel-pill.is-facebook {
+  border-color: rgba(37, 99, 235, 0.24);
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+}
+
+.vc-marketing-channel-pill.is-whatsapp {
+  border-color: rgba(22, 163, 74, 0.25);
+  background: rgba(22, 163, 74, 0.08);
+  color: #15803d;
+}
+
+/* WorkDetails inside Marketing Post Cards */
+.mk-work-meta-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.mk-work-meta-pills > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid #ebe6f1;
+  border-radius: 6px;
+  background: #faf8fc;
+  color: #61596b;
+  font-size: 8.5px;
+  font-weight: 600;
+}
+
+.mk-work-meta-pills > span.is-unassigned {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.mk-work-next-action {
+  margin: 0;
+  color: #463f4f;
+  font-size: 9.5px;
+  line-height: 1.4;
+}
+
+.mk-progress-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.mk-approval-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.mk-approval-pill.is-approved {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.mk-approval-pill.is-changes {
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.mk-approval-pill.is-pending {
+  border: 1px solid #e5dfec;
+  background: #f5f2f9;
+  color: #6b6177;
+}
+
+.mk-deliverable-mini-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.mk-deliv-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border: 1px solid #e7e1ee;
+  border-radius: 6px;
+  background: #faf8fc;
+  color: #685f73;
+  font-size: 8px;
+  font-weight: 650;
+}
+
+.mk-deliv-pill i {
+  font-style: normal;
+  font-weight: 800;
+}
+
+.mk-deliv-pill.is-yes {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.mk-deliv-pill.is-no {
+  border-color: #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.mk-work-actions .mk-action-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-color: transparent !important;
+  background: linear-gradient(100deg, #873bd0 0%, #b3148c 55%, #2198cc 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 10px rgba(135, 59, 208, 0.25);
+}
+
+.mk-work-actions .mk-action-primary:hover {
+  filter: brightness(1.06);
+}
+
+/* Review Panel Deliverables Grid & Copy Action */
+.mk-review-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mk-review-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  padding: 3px 9px;
+  border: 1px solid #dfd7e8;
+  border-radius: 7px;
+  background: #faf8fc;
+  color: #5d367d;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mk-review-caption-box {
+  padding: 10px 12px;
+  border: 1px solid #e9e4ef;
+  border-radius: 10px;
+  background: #faf9fc;
+}
+
+.mk-review-deliverables-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 7px;
+  padding: 0;
+  margin: 6px 0 10px;
+  list-style: none;
+}
+
+.mk-review-deliv-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 9px;
+  border: 1px solid #e6e0ed;
+  border-radius: 8px;
+  background: #faf8fc;
+  font-size: 9.5px;
+}
+
+.mk-review-deliv-item.is-yes {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.mk-review-deliv-item.is-no {
+  border-color: #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+/* Dark Mode for Marketing Cards & Review Panel */
+[data-theme='dark'] .vc-marketing-channel-pill,
+.work-app.theme-dark .vc-marketing-channel-pill {
+  border-color: #323954 !important;
+  background: #1a1f32 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme='dark'] .vc-marketing-channel-pill.is-instagram,
+.work-app.theme-dark .vc-marketing-channel-pill.is-instagram {
+  border-color: rgba(244, 114, 182, 0.35) !important;
+  background: rgba(244, 114, 182, 0.14) !important;
+  color: #f9a8d4 !important;
+}
+
+[data-theme='dark'] .vc-marketing-channel-pill.is-facebook,
+.work-app.theme-dark .vc-marketing-channel-pill.is-facebook {
+  border-color: rgba(96, 165, 250, 0.35) !important;
+  background: rgba(96, 165, 250, 0.14) !important;
+  color: #93c5fd !important;
+}
+
+[data-theme='dark'] .vc-marketing-channel-pill.is-whatsapp,
+.work-app.theme-dark .vc-marketing-channel-pill.is-whatsapp {
+  border-color: rgba(74, 222, 128, 0.35) !important;
+  background: rgba(74, 222, 128, 0.14) !important;
+  color: #86efac !important;
+}
+
+[data-theme='dark'] .mk-work-meta-pills > span,
+.work-app.theme-dark .mk-work-meta-pills > span,
+[data-theme='dark'] .mk-deliv-pill,
+.work-app.theme-dark .mk-deliv-pill,
+[data-theme='dark'] .mk-review-deliv-item,
+.work-app.theme-dark .mk-review-deliv-item {
+  border-color: #2b324b !important;
+  background: #151929 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .mk-deliv-pill.is-yes,
+.work-app.theme-dark .mk-deliv-pill.is-yes,
+[data-theme='dark'] .mk-review-deliv-item.is-yes,
+.work-app.theme-dark .mk-review-deliv-item.is-yes,
+[data-theme='dark'] .mk-approval-pill.is-approved,
+.work-app.theme-dark .mk-approval-pill.is-approved {
+  border-color: rgba(34, 197, 94, 0.35) !important;
+  background: rgba(34, 197, 94, 0.14) !important;
+  color: #86efac !important;
+}
+
+[data-theme='dark'] .mk-deliv-pill.is-no,
+.work-app.theme-dark .mk-deliv-pill.is-no,
+[data-theme='dark'] .mk-review-deliv-item.is-no,
+.work-app.theme-dark .mk-review-deliv-item.is-no {
+  border-color: rgba(244, 63, 94, 0.35) !important;
+  background: rgba(244, 63, 94, 0.14) !important;
+  color: #fda4af !important;
+}
+
+[data-theme='dark'] .mk-approval-pill.is-changes,
+.work-app.theme-dark .mk-approval-pill.is-changes,
+[data-theme='dark'] .mk-work-meta-pills > span.is-unassigned,
+.work-app.theme-dark .mk-work-meta-pills > span.is-unassigned {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  background: rgba(245, 158, 11, 0.14) !important;
+  color: #fde68a !important;
+}
+
+[data-theme='dark'] .mk-approval-pill.is-pending,
+.work-app.theme-dark .mk-approval-pill.is-pending {
+  border-color: #2f3651 !important;
+  background: #1a1e30 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme='dark'] .mk-review-caption-box,
+.work-app.theme-dark .mk-review-caption-box {
+  border-color: #2b324b !important;
+  background: #141826 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme='dark'] .mk-review-copy-btn,
+.work-app.theme-dark .mk-review-copy-btn {
+  border-color: #363e5c !important;
+  background: #1b2033 !important;
+  color: #e9d5ff !important;
+}
