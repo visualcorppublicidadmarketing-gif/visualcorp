@@ -1964,3 +1964,642 @@
   background: #11141d;
 }
 
+/* ==========================================================================
+   POS 2.0: Ecosystem Bar, Semiotics, Quick Tools, Builder, CRM & Dark Parity
+   ========================================================================== */
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-eco-card {
+  border-color: var(--vc-line, #262939);
+  background: var(--vc-surface, #161824);
+  color: var(--vc-ink, #f1f2f6);
+  box-shadow: none;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-eco-copy small {
+  color: var(--vc-muted, #9ba0b4);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-eco-copy b {
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-eco-icon {
+  background: rgba(168, 85, 247, 0.16);
+  color: #d8b4fe;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-eco-icon.is-emerald {
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-eco-icon.is-blue {
+  background: rgba(59, 130, 246, 0.16);
+  color: #93c5fd;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-eco-icon.is-violet {
+  background: rgba(139, 92, 246, 0.18);
+  color: #c4b5fd;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-eco-link,
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-inline-inv-link {
+  color: #d8b4fe;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-branch-pill {
+  border-color: var(--vc-line, #2b3044);
+  background: #1d2130;
+  color: var(--vc-muted, #b2b8c8);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-branch-pill:hover {
+  border-color: rgba(168, 85, 247, 0.45);
+  color: #f1f2f6;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-branch-pill.is-active {
+  border-color: #a855f7;
+  background: linear-gradient(135deg, #9333ea, #6b21a8);
+  color: #ffffff;
+}
+
+/* Cashier Card & Quick Cash Drawer */
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .work-app .pos-cashier-icon {
+  background: rgba(168, 85, 247, 0.16);
+  color: #d8b4fe;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .work-app .pos-cashier-copy b {
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .work-app .pos-cashier-copy > span,
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .work-app .pos-cashier-copy small {
+  color: var(--vc-muted, #9ba0b4);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-quick-cash-drawer {
+  border-color: rgba(168, 85, 247, 0.35);
+  background: #1a1d2c;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-quick-cash-input input {
+  border-color: var(--vc-line, #2b3044);
+  background: #11141d;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+/* Origin & Branch Row + Steps */
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-origin-branch-row > label {
+  border-color: var(--vc-line, #2b3044);
+  background: #191c29;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-checkout-step-number {
+  background: #25293b;
+  color: #d8b4fe;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-checkout-step.is-active .pos-checkout-step-number {
+  background: #9333ea;
+  color: #ffffff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-checkout-step.is-complete .pos-checkout-step-number {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+/* Product Browser, Search, Filter Pills & Tiles */
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-browser .search-input {
+  border-color: var(--vc-line, #2b3044);
+  background: #11141d;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-favorites-filter,
+  .pos-stock-filter-pill,
+  .pos-family-chip,
+  .pos-reset-filters-btn
+) {
+  border-color: var(--vc-line, #2b3044);
+  background: #1d2130;
+  color: var(--vc-muted, #b2b8c8);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-favorites-filter.active {
+  border-color: rgba(234, 179, 8, 0.45);
+  background: rgba(234, 179, 8, 0.16);
+  color: #fde047;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-stock-filter-pill.active {
+  border-color: rgba(168, 85, 247, 0.45);
+  background: rgba(168, 85, 247, 0.18);
+  color: #e9d5ff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-stock-filter-pill.is-available.active {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-family-chip:hover {
+  border-color: rgba(168, 85, 247, 0.45);
+  color: #f1f2f6;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-family-chip.is-active {
+  border-color: #9333ea;
+  background: #9333ea;
+  color: #ffffff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-tile.selected {
+  border-color: #a855f7;
+  background: #262038;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.22);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-tile-copy strong {
+  color: #e9d5ff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-tile-star-btn {
+  border-color: var(--vc-line, #2b3044);
+  background: #171a26;
+  color: var(--vc-muted, #9ba0b4);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-tile-star-btn.is-starred {
+  border-color: rgba(234, 179, 8, 0.5);
+  background: #2d2612;
+  color: #facc15;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-sku-chip {
+  background: #262b3d;
+  color: #e2e8f0;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-stock-pill.is-available {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.14);
+  color: #86efac !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-stock-pill.is-low {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.14);
+  color: #fcd34d !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-stock-pill.is-shortage {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5 !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-stock-pill.is-unlinked {
+  border-color: var(--vc-line, #2b3044);
+  background: #232738;
+  color: var(--vc-muted, #9ba0b4) !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-tile-quick-add {
+  border-color: rgba(168, 85, 247, 0.4);
+  background: rgba(168, 85, 247, 0.16);
+  color: #e9d5ff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-tile-quick-add:hover {
+  border-color: #9333ea;
+  background: #9333ea;
+  color: #ffffff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-selected-stock-line.is-available {
+  color: #86efac !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-selected-stock-line.is-low {
+  color: #fcd34d !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-selected-stock-line.is-shortage {
+  color: #fca5a5 !important;
+}
+
+/* Cart Builder, Mode Switch, Quantity Stepper & Measurement Controls */
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-cart-builder {
+  border-color: var(--vc-line, #262939);
+  background: #171a26;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-mode-switch {
+  border-color: var(--vc-line, #262939);
+  background: #11141d;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-mode-switch button {
+  color: var(--vc-muted, #9ba0b4);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-mode-switch button.active {
+  background: #262138;
+  color: #e9d5ff;
+  box-shadow: none;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-calculation-total {
+  border-color: rgba(168, 85, 247, 0.35);
+  background: #1d2130;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-calculation-total span {
+  color: var(--vc-muted, #b2b8c8);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-calculation-total strong {
+  color: #f1f2f6;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-calculation-warning {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fcd34d;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-selected-product > .pos-selected-image,
+  .pos-cart-line > .pos-cart-image,
+  .pos-line-placeholder
+) {
+  background: #24283b;
+  color: #d8b4fe;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-qty-stepper-row {
+  border-color: var(--vc-line, #2b3044);
+  background: #11141d;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-qty-step-btn,
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-line-step-btn {
+  border-color: var(--vc-line, #2b3044);
+  background: #232738;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-qty-step-btn:hover,
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-line-step-btn:hover {
+  background: #352748;
+  color: #e9d5ff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-qty-preset {
+  border-color: var(--vc-line, #2b3044);
+  background: #1d2130;
+  color: var(--vc-muted, #b2b8c8);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-qty-preset.is-active {
+  border-color: #9333ea;
+  background: #9333ea;
+  color: #ffffff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-measurement-control {
+  border-color: var(--vc-line, #2b3044);
+  background: #191c29;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-measurement-icon {
+  border-color: rgba(168, 85, 247, 0.35);
+  background: rgba(168, 85, 247, 0.14);
+  color: #d8b4fe;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-measure-stepper {
+  border-color: var(--vc-line, #2b3044);
+  background: #11141d;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-measure-step-button {
+  background: #232738;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-measurement-metrics > div,
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-measurement-preset {
+  border-color: var(--vc-line, #2b3044);
+  background: #141722;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-measurement-preset.is-active {
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.16);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-measurement-preset.is-active :is(span, b) {
+  color: #e9d5ff;
+}
+
+/* POS Customer Picker & CRM Snapshot */
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-search-wrap {
+  border-color: var(--vc-line, #2b3044);
+  background: #11141d;
+  color: var(--vc-muted, #9ba0b4);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-search-wrap > input {
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-clear {
+  background: #232738;
+  color: var(--vc-muted, #b2b8c8);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-results {
+  border-color: var(--vc-line, #2b3044);
+  background: #171a26;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-result {
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-result:hover,
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-result.active {
+  background: #24283b;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-customer-result-copy b,
+  .pos-customer-selected-name b,
+  .pos-customer-lifetime b,
+  .pos-customer-purchase b,
+  .pos-customer-purchase strong
+) {
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-customer-selected,
+  .pos-customer-new
+) {
+  border-color: var(--vc-line, #2b3044);
+  background: #191c29;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-lifetime > div {
+  border-color: var(--vc-line, #2b3044);
+  background: #141722;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-customer-result-tag,
+  .pos-customer-tags span,
+  .pos-customer-favorites span
+) {
+  border-color: var(--vc-line, #2b3044);
+  background: #232738;
+  color: var(--vc-muted, #b2b8c8);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-customer-change,
+  .pos-customer-show-more
+) {
+  border-color: var(--vc-line, #2b3044);
+  background: #232738;
+  color: #d8b4fe;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-whatsapp {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.14);
+  color: #86efac;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-duplicate {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fcd34d;
+}
+
+/* Cart Lines, Inline Stepper, Semantic Badges, Discount & Financials */
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-clear-cart-btn {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-line-badge.is-tier {
+  background: rgba(168, 85, 247, 0.18);
+  color: #e9d5ff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-line-badge.is-measure {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-line-badge.is-workflow {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-line-stock-note.is-available {
+  color: #86efac !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-line-stock-note.is-low {
+  color: #fcd34d !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-line-stock-note.is-shortage {
+  color: #fca5a5 !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-line-edit-toggle {
+  color: #d8b4fe;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-line-edit-toggle:hover {
+  background: #232738;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-discount-editor,
+  .pos-order-financial-breakdown,
+  .pos-order-summary .pos-payment-section,
+  .pos-order-summary .pos-payment-balance
+) {
+  border-color: var(--vc-line, #2b3044);
+  background: #191c29;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-discount-milestones button {
+  border-color: var(--vc-line, #2b3044);
+  background: #141722;
+  color: var(--vc-muted, #9ba0b4);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-discount-milestones button.is-active {
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.2);
+  color: #e9d5ff;
+}
+
+/* Payment Denominations, Guidance & Today's Sales Filter */
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-denomination-pill {
+  border-color: var(--vc-line, #2b3044);
+  background: #141722;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-denomination-pill:hover,
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-denomination-pill.is-active {
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-denomination-pill.is-fill {
+  border-color: rgba(168, 85, 247, 0.45);
+  background: rgba(168, 85, 247, 0.16);
+  color: #e9d5ff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-balance-pending b {
+  color: #fca5a5;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-order-summary .pos-change-due,
+  .pos-balance-change-preview
+) {
+  color: #86efac;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-submit-guidance {
+  border-color: var(--vc-line, #2b3044);
+  background: #191c29;
+  color: var(--vc-muted, #b2b8c8);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-checkout-guidance,
+  .pos-credit-note,
+  .pos-order-summary .pos-parked-active
+) {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fcd34d;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-checkout-guidance > a {
+  color: #e9d5ff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-recent-filter-pills button {
+  border-color: var(--vc-line, #2b3044);
+  background: #191c29;
+  color: var(--vc-muted, #9ba0b4);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-recent-filter-pills button.is-active {
+  border-color: #9333ea;
+  background: #9333ea;
+  color: #ffffff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-sale-balance-tag.is-pending {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fcd34d !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-sale-balance-tag.is-paid {
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac !important;
+}
+
+/* POS Step 2: Material Usage & Production Details */
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-material-usage {
+  border-color: var(--vc-line, #2b3044);
+  background: #191c29;
+  box-shadow: none;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-material-usage.is-error {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-material-usage-heading b,
+  .pos-material-usage-copy b
+) {
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-material-usage-heading small,
+  .pos-material-usage-copy small,
+  .pos-material-usage-input
+) {
+  color: var(--vc-muted, #9ba0b4);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-material-usage-copy .pos-material-stock-pending {
+  color: #fcd34d;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-material-usage-row {
+  border-color: var(--vc-line, #2b3044);
+  background: #141722;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-material-usage-input input {
+  border-color: var(--vc-line, #2b3044);
+  background: #11141d;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-production-details,
+  .pos-production-line
+) {
+  border-color: var(--vc-line, #2b3044);
+  background: #191c29;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-production-route-note,
+  .pos-production-line-fields .pos-production-approval
+) {
+  border-color: var(--vc-line, #2b3044);
+  background: #141722;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(
+  .pos-production-details-icon,
+  .pos-production-line-number
+) {
+  background: rgba(168, 85, 247, 0.18);
+  color: #e9d5ff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-production-line-toggle {
+  color: #d8b4fe;
+}
+
+
