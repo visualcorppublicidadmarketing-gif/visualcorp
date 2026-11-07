@@ -12,6 +12,7 @@ export function AuthProvider({ children }) {
   const [profiles, setProfiles] = useState<AccessProfile[]>([]);
   const [permissions, setPermissions] = useState<PermissionMap>({});
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [workAccessOpen, setWorkAccessOpen] = useState(true);
   const [loading, setLoading] = useState(Boolean(supabase));
   const [accessError, setAccessError] = useState('');
   const sessionRef = useRef<any>(null);
@@ -32,7 +33,7 @@ export function AuthProvider({ children }) {
 
     if (!nextSession?.user) {
       syncManualAccessCookie(null, []);
-      setRoles([]); setProfiles([]); setPermissions({}); setOrganizationId(null); setAccessError(''); setLoading(false); return;
+      setRoles([]); setProfiles([]); setPermissions({}); setOrganizationId(null); setWorkAccessOpen(true); setAccessError(''); setLoading(false); return;
     }
     if (userChanged) {
       setRoles([]); setProfiles([]); setPermissions({}); setOrganizationId(null); setAccessError(''); setLoading(true);
@@ -49,12 +50,20 @@ export function AuthProvider({ children }) {
       if (requestId !== accessRequestRef.current) return;
       if (error) {
         syncManualAccessCookie(null, []);
+        setRoles([]); setProfiles([]); setPermissions({}); setOrganizationId(null);
         setAccessError('No pudimos comprobar tus permisos. Revisa tu conexión e inténtalo de nuevo.');
         return;
       }
       const access = data || {};
+      const scheduleAllowsAccess = access.work_access_open !== false;
+      setWorkAccessOpen(scheduleAllowsAccess);
       const assigned = Array.isArray(access.roles) ? access.roles : [];
-      const nextRoles = [...new Set<string>(assigned.map((profile: AccessProfile) => profile.role).filter(Boolean))];
+      const nextRoles = scheduleAllowsAccess ? [...new Set<string>(assigned.map((profile: AccessProfile) => profile.role).filter(Boolean))] : [];
+      if (!scheduleAllowsAccess) {
+        syncManualAccessCookie(null, []);
+        setProfiles([]); setRoles([]); setPermissions({}); setOrganizationId(access.organization_id || null); setAccessError('');
+        return;
+      }
       syncManualAccessCookie(nextSession, nextRoles);
       const nextPermissions = access.permissions || {};
       setProfiles((previous) => JSON.stringify(previous) === JSON.stringify(assigned) ? previous : assigned);
@@ -65,6 +74,7 @@ export function AuthProvider({ children }) {
     } catch {
       if (requestId === accessRequestRef.current) {
         syncManualAccessCookie(null, []);
+        setRoles([]); setProfiles([]); setPermissions({}); setOrganizationId(null);
         setAccessError('No pudimos comprobar tus permisos. Revisa tu conexión e inténtalo de nuevo.');
       }
     } finally {
@@ -98,7 +108,7 @@ export function AuthProvider({ children }) {
     };
     window.addEventListener('focus', refreshVisible);
     document.addEventListener('visibilitychange', refreshVisible);
-    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void refreshAccess(); }, 60_000);
+    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void refreshAccess(); }, 15_000);
     return () => {
       alive = false; listener.subscription.unsubscribe(); window.removeEventListener('focus', refreshVisible);
       document.removeEventListener('visibilitychange', refreshVisible); window.clearInterval(interval);
@@ -106,7 +116,7 @@ export function AuthProvider({ children }) {
   }, [refreshAccess]);
 
   const value = useMemo(() => ({
-    session, user: session?.user || null, roles, profiles, permissions, organizationId, loading, accessError, refreshAccess,
+    session, user: session?.user || null, roles, profiles, permissions, organizationId, loading, accessError, workAccessOpen, refreshAccess,
     hasPermission: (module: string, action: string) => roles.includes('owner') || permissions?.[module]?.[action] === true || (action === 'view' && permissions?.[module]?.edit === true),
     sendSignInLink: async (email: string) => {
       if (!supabase) throw new Error('La conexión con Supabase todavía no está configurada.');
@@ -119,7 +129,7 @@ export function AuthProvider({ children }) {
       if (error) throw error;
     },
     signOut: async () => { if (supabase) await supabase.auth.signOut(); },
-  }), [session, roles, profiles, permissions, organizationId, loading, accessError, refreshAccess]);
+  }), [session, roles, profiles, permissions, organizationId, loading, accessError, workAccessOpen, refreshAccess]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

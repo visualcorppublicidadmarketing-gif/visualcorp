@@ -1,6 +1,6 @@
 import {
   BookOpen, Boxes, BriefcaseBusiness, ChartNoAxesCombined,
-  ClipboardList, Database, FileText, FolderOpen, Globe2, History, Image, LayoutDashboard, Megaphone,
+  CalendarClock, ClipboardList, Database, FileText, FolderOpen, Globe2, History, Image, LayoutDashboard, Megaphone,
   Newspaper, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Truck, Users, Wallet, Radio, Workflow, type LucideIcon,
 } from 'lucide-react';
 
@@ -52,6 +52,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/admin/contacto', label: 'Contacto web', icon: Users, module: 'website' },
   { to: '/operaciones/personal', label: 'Personal', icon: Users, module: 'personnel' },
   { to: '/operaciones/equipo', label: 'Usuarios, perfiles y permisos', icon: Users, module: 'team' },
+  { to: '/operaciones/equipo/horarios', label: 'Horarios y turnos', icon: CalendarClock, module: 'team_schedule' },
   { to: '/operaciones/cambios', label: 'Novedades', icon: History, module: 'team' },
   { to: '/admin/respaldo', label: 'Respaldo y migración', icon: Database, module: 'backup' },
 ];
@@ -61,7 +62,7 @@ export const workspaceNavGroups: AppNavGroup[] = [
   { id: 'production', label: 'Producción y abastecimiento', icon: Boxes, paths: ['/operaciones/automatizaciones', '/operaciones/archivos', '/operaciones/flujos', '/operaciones/kiosk', '/operaciones/coordinacion-trabajos', '/operaciones/trabajos/diseno', '/operaciones/trabajos/impresion', '/operaciones/trabajos/sublimacion', '/operaciones/trabajos/laser', '/operaciones/trabajos/taller', '/operaciones/inventario', '/operaciones/compras', '/operaciones/equipos'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing'] },
   { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
-  { id: 'team', label: 'Equipo y sistema', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo', '/operaciones/cambios', '/admin/respaldo'] },
+  { id: 'team', label: 'Equipo y sistema', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo', '/operaciones/equipo/horarios', '/operaciones/cambios', '/admin/respaldo'] },
 ];
 
 /**
