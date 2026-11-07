@@ -2603,3 +2603,311 @@
 }
 
 
+
+
+/* ==========================================================================
+   USUARIOS, PERMISOS, ROLES, PERSONAL, DESCUENTOS, ASISTENCIA Y CRM 2.0 (DARK MODE)
+   ========================================================================== */
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) {
+  /* TeamAccess 2.0 */
+  & .team-metric-icon.is-personnel {
+    background: #172f42;
+    color: #93cef5;
+  }
+  & .team-metric-icon.is-discount {
+    background: #361f39;
+    color: #f0abfc;
+  }
+  & .team-filter-pill {
+    border-color: #363a4d;
+    background: #171a26;
+    color: #b4bcd0;
+  }
+  & .team-filter-pill:hover {
+    border-color: #7c3f76;
+    color: #f3f5fa;
+  }
+  & .team-filter-pill.active {
+    border-color: #c084fc;
+    background: rgba(168, 85, 247, 0.2);
+    color: #f3e8ff;
+  }
+  & .team-meta-chip {
+    border-color: #363a4d;
+    background: #141722;
+    color: #b8c0d4;
+  }
+  & .team-meta-chip.is-linked-worker {
+    border-color: rgba(16, 185, 129, 0.45);
+    background: rgba(6, 95, 70, 0.32);
+    color: #a7f3d0;
+  }
+  & .team-meta-chip.is-unlinked-worker {
+    border-color: rgba(192, 132, 252, 0.4);
+    background: rgba(107, 33, 168, 0.25);
+    color: #f3e8ff;
+  }
+  & .team-capability-badge.is-pos {
+    background: rgba(147, 51, 234, 0.24);
+    color: #f3e8ff;
+  }
+  & .team-capability-badge.is-refund {
+    background: rgba(2, 132, 199, 0.24);
+    color: #bae6fd;
+  }
+  & .team-capability-badge.is-prices {
+    background: rgba(217, 119, 6, 0.24);
+    color: #fde68a;
+  }
+  & .team-capability-badge.is-salary {
+    background: rgba(16, 185, 129, 0.24);
+    color: #a7f3d0;
+  }
+  & .team-profile-inspect-link,
+  & .team-governance-list a {
+    color: #f0abfc;
+  }
+  & .team-inline-assign select {
+    border-color: #3c4257;
+    background: #131620;
+    color: #f1f3f9;
+  }
+  & .team-role-presets {
+    border-color: #363a4d;
+    background: #131620;
+  }
+  & .team-role-preset-card {
+    border-color: #363a4d;
+    background: #1b1f2e;
+  }
+  & .team-role-preset-card:hover {
+    border-color: #c084fc;
+  }
+  & .team-role-preset-badge {
+    background: rgba(168, 85, 247, 0.22);
+    color: #f3e8ff;
+  }
+  & .team-gov-box {
+    border-color: #363a4d;
+    background: #151824;
+  }
+  & .team-gov-box.is-enabled {
+    border-color: #93538e;
+    background: rgba(88, 28, 135, 0.18);
+  }
+  & .team-matrix-search {
+    border-color: #3c4257;
+    background: #131620;
+    color: #b4bcd0;
+  }
+  & .team-matrix-search input {
+    color: #f1f3f9;
+  }
+  & .team-row-quick-btn {
+    border-color: #3c4257;
+    background: #181c29;
+    color: #e2e8f0;
+  }
+  & .team-row-quick-btn:hover {
+    border-color: #c084fc;
+    color: #f3e8ff;
+  }
+  & .team-special-grid label.is-checked {
+    border-color: #9d5b97;
+    background: rgba(126, 34, 206, 0.2);
+  }
+
+  /* PersonnelPage 2.0 */
+  & .personnel-metric-icon.is-blue {
+    background: #172e42;
+    color: #93cef5;
+  }
+  & .personnel-metric-icon.is-amber {
+    background: #382a16;
+    color: #fcd34d;
+  }
+  & .personnel-linked-pill {
+    background: rgba(168, 85, 247, 0.22);
+    color: #f3e8ff;
+  }
+  & .personnel-tabs {
+    border-bottom-color: #303446;
+  }
+  & .personnel-tabs button {
+    border-color: #363a4d;
+    background: #161925;
+    color: #b4bcd0;
+  }
+  & .personnel-tabs button:hover {
+    border-color: #7c3f76;
+    color: #f8fafc;
+  }
+  & .personnel-tabs button.active {
+    border-color: #c084fc;
+    background: rgba(147, 51, 234, 0.22);
+    color: #f3e8ff;
+    box-shadow: none;
+  }
+  & .personnel-netpay-banner {
+    border-color: #463858;
+    background: linear-gradient(135deg, #1d192b 0%, #16202e 100%);
+  }
+  & .personnel-netpay-card,
+  & .personnel-att-kpi,
+  & .personnel-perf-card,
+  & .personnel-deduction-form,
+  & .personnel-quick-checkin-bar,
+  & .personnel-attendance-form {
+    border-color: #363a4d;
+    background: #171a26;
+    color: #f1f3f9;
+  }
+  & .personnel-netpay-card.is-deduction b {
+    color: #fbbf24;
+  }
+  & .personnel-netpay-card.is-net {
+    border-color: rgba(16, 185, 129, 0.45);
+    background: rgba(6, 78, 59, 0.28);
+  }
+  & .personnel-netpay-card.is-net b {
+    color: #6ee7b7;
+  }
+  & .personnel-chip-btn {
+    border-color: #3c4257;
+    background: #131620;
+    color: #e2e8f0;
+  }
+  & .personnel-chip-btn:hover {
+    border-color: #c084fc;
+    color: #f0abfc;
+  }
+  & .personnel-att-pill.is-presente,
+  & .personnel-att-badge.is-presente,
+  & .personnel-att-pill.is-remoto,
+  & .personnel-att-badge.is-remoto,
+  & .personnel-mini-attendance.is-presente,
+  & .personnel-mini-attendance.is-remoto {
+    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(6, 95, 70, 0.35);
+    color: #a7f3d0;
+  }
+  & .personnel-att-pill.is-tardanza,
+  & .personnel-att-badge.is-tardanza,
+  & .personnel-mini-attendance.is-tardanza {
+    border-color: rgba(245, 158, 11, 0.4);
+    background: rgba(120, 53, 15, 0.38);
+    color: #fde68a;
+  }
+  & .personnel-att-pill.is-falta,
+  & .personnel-att-badge.is-falta,
+  & .personnel-mini-attendance.is-falta {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(127, 29, 29, 0.38);
+    color: #fecaca;
+  }
+  & .personnel-att-pill.is-permiso,
+  & .personnel-att-badge.is-permiso,
+  & .personnel-att-pill.is-vacaciones,
+  & .personnel-att-badge.is-vacaciones,
+  & .personnel-mini-attendance.is-permiso,
+  & .personnel-mini-attendance.is-vacaciones {
+    border-color: rgba(56, 189, 248, 0.4);
+    background: rgba(12, 74, 110, 0.38);
+    color: #bae6fd;
+  }
+
+  /* CustomerBook 2.0 */
+  & .customer-directory-stat > span.is-amber {
+    background: #3a2b15;
+    color: #fcd34d;
+  }
+  & .customer-directory-stat > span.is-violet {
+    background: #341f3b;
+    color: #f0abfc;
+  }
+  & .customer-directory-stat > span.is-blue {
+    background: #172d42;
+    color: #93cef5;
+  }
+  & .customer-quick-actions .button.is-whatsapp {
+    border-color: rgba(16, 185, 129, 0.45);
+    background: rgba(6, 95, 70, 0.3);
+    color: #a7f3d0;
+  }
+  & .customer-summary-card.is-alert {
+    border-color: rgba(245, 158, 11, 0.45);
+    background: rgba(120, 53, 15, 0.25);
+  }
+  & .customer-summary-card.is-alert b {
+    color: #fde68a;
+  }
+  & .customer-top-products-head {
+    color: #f0abfc;
+  }
+  & .customer-top-product-chip {
+    border-color: #463552;
+    background: #211b2c;
+  }
+  & .customer-top-product-chip b {
+    color: #f8fafc;
+  }
+  & .customer-top-product-chip small {
+    color: #e879f9;
+  }
+  & .customer-tag-list em.is-metric-ltv {
+    background: rgba(6, 95, 70, 0.38);
+    color: #a7f3d0;
+  }
+  & .customer-tag-list em.is-metric-balance {
+    background: rgba(120, 53, 15, 0.42);
+    color: #fde68a;
+  }
+  & .customer-tag-list em.is-metric-quotes {
+    background: rgba(12, 74, 110, 0.42);
+    color: #bae6fd;
+  }
+  & .customer-type-pill {
+    border-color: #363a4d;
+    background: #151824;
+    color: #b4bcd0;
+  }
+  & .customer-type-pill.active {
+    border-color: #c084fc;
+    background: rgba(147, 51, 234, 0.24);
+    color: #f3e8ff;
+  }
+  & .customer-timeline-head select {
+    border-color: #3c4257;
+    background: #131620;
+    color: #f1f3f9;
+  }
+  & .customer-interaction-badge.is-note {
+    background: #282438;
+    color: #d8b4fe;
+  }
+  & .customer-interaction-badge.is-call {
+    background: #162c3f;
+    color: #bae6fd;
+  }
+  & .customer-interaction-badge.is-message {
+    background: #143326;
+    color: #a7f3d0;
+  }
+  & .customer-interaction-badge.is-meeting {
+    background: #382a16;
+    color: #fde68a;
+  }
+  & .customer-interaction-badge.is-followup {
+    background: #361e38;
+    color: #f5d0fe;
+  }
+  & .customer-sale-subchips em.is-discount {
+    background: rgba(147, 51, 234, 0.25);
+    color: #f3e8ff;
+  }
+  & .customer-sale-subchips em.is-balance {
+    background: rgba(180, 83, 9, 0.3);
+    color: #fde68a;
+  }
+}

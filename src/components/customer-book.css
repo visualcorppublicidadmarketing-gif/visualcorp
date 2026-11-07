@@ -85,3 +85,257 @@
 @media(max-width:900px){.customer-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.customer-detail-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.customer-book>.page-heading{align-items:flex-start}.customer-book>.page-heading>.button{width:100%;justify-content:center}.customer-add-primary-fields{grid-template-columns:1fr}.customer-directory-toolbar{grid-template-columns:1fr}.customer-sort-control{justify-content:space-between}.customer-sort-control select{flex:1}.customer-row{grid-template-columns:36px minmax(0,1fr)}.customer-row-open{grid-column:2;display:flex;justify-content:space-between;justify-items:initial;width:100%}.customer-row-open>small{white-space:normal}.customer-row-open>b{align-self:center}.customer-add-extra-fields,.customer-profile-fields{grid-template-columns:1fr}.customer-directory-stat{min-height:73px;padding:12px}.customer-directory-stat>span{width:32px;height:32px}.customer-summary-card{padding:12px}.customer-summary-card b{font-size:14px}.customer-history-list article{align-items:flex-start}}
 @media(max-width:430px){.customer-directory-stats{gap:7px}.customer-directory-stat{align-items:flex-start;flex-direction:column;gap:7px;padding:10px}.customer-directory-stat>span{width:28px;height:28px;border-radius:9px}.customer-directory-stat>div{gap:2px}.customer-directory-stat small{font-size:9px}.customer-directory-stat b{font-size:17px}.customer-result-count{font-size:9px}.customer-contact-filters{gap:5px}.customer-contact-filters button{gap:5px;padding:0 8px;font-size:9px}.customer-row{gap:9px;padding:12px 2px}.customer-row-details>b{font-size:11px}.customer-row-details>small{white-space:normal}.customer-add-actions{align-items:stretch;flex-direction:column}.customer-add-actions .button{justify-content:center}}
+
+/* === Mejoras CRM 360°, Segmentación y Métricas de Clientes 2.0 === */
+.customer-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.customer-directory-stats-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.customer-directory-stat > span.is-amber {
+  background: #fef6e4;
+  color: #a16207;
+}
+.customer-directory-stat > span.is-violet {
+  background: #f5ebfa;
+  color: #86198f;
+}
+.customer-directory-stat > span.is-blue {
+  background: #ebf5fd;
+  color: #1d649b;
+}
+.customer-directory-stat em {
+  color: var(--vc-muted, #767885);
+  font-size: 9.5px;
+  font-style: normal;
+}
+.customer-detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.customer-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.customer-quick-actions .button.is-whatsapp {
+  border-color: #a7e3bf;
+  background: #effaf3;
+  color: #156839;
+}
+.customer-summary-grid-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.customer-summary-sub {
+  color: var(--vc-muted, #787a86);
+  font-size: 10px;
+}
+.customer-summary-card.is-alert {
+  border-color: #f3c6a5;
+  background: #fff9f5;
+}
+.customer-summary-card.is-alert b {
+  color: #b45309;
+}
+.customer-top-products-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 15px;
+}
+.customer-top-products-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #841278;
+  font-size: 11px;
+}
+.customer-top-products-chips {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.customer-top-product-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid #eadcf0;
+  border-radius: 999px;
+  background: #faf5fc;
+  font-size: 10px;
+}
+.customer-top-product-chip b {
+  color: var(--vc-ink, #23222c);
+}
+.customer-top-product-chip small {
+  color: #841278;
+  font-weight: 700;
+}
+.customer-vip-pill {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8d117e 0%, #c026d3 100%);
+  color: #fff;
+  font-size: 8.5px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.customer-tag-list em.is-metric-ltv {
+  background: #edf9f2;
+  color: #166534;
+  font-weight: 700;
+}
+.customer-tag-list em.is-metric-balance {
+  background: #fef3e6;
+  color: #b45309;
+  font-weight: 700;
+}
+.customer-tag-list em.is-metric-quotes {
+  background: #edf5fc;
+  color: #1d5b8f;
+  font-weight: 700;
+}
+.customer-interaction-type-row {
+  display: grid;
+  gap: 6px;
+}
+.customer-interaction-type-row > span {
+  color: #555762;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.customer-interaction-type-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.customer-type-pill {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--vc-line, #dfdde8);
+  border-radius: 999px;
+  background: #f7f6fa;
+  color: #5f616e;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.customer-type-pill.active {
+  border-color: #841278;
+  background: #fbf2fa;
+  color: #841278;
+  font-weight: 750;
+}
+.customer-timeline-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.customer-timeline-head select {
+  min-height: 30px;
+  padding: 3px 8px;
+  border: 1px solid var(--vc-line, #dfdde8);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--vc-ink, #23222c);
+  font: inherit;
+  font-size: 10px;
+}
+.customer-timeline-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.customer-interaction-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 750;
+}
+.customer-interaction-badge.is-note {
+  background: #f1eff6;
+  color: #5b4b7a;
+}
+.customer-interaction-badge.is-call {
+  background: #e9f6fd;
+  color: #1c5f94;
+}
+.customer-interaction-badge.is-message {
+  background: #e9f9f0;
+  color: #166534;
+}
+.customer-interaction-badge.is-meeting {
+  background: #fef5e6;
+  color: #9a5b11;
+}
+.customer-interaction-badge.is-followup {
+  background: #faedf9;
+  color: #841278;
+}
+.customer-sale-subchips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.customer-sale-subchips em {
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 700;
+}
+.customer-sale-subchips em.is-discount {
+  background: #f9eef9;
+  color: #841278;
+}
+.customer-sale-subchips em.is-balance {
+  background: #fef3e6;
+  color: #b45309;
+}
+
+@media (max-width: 1260px) {
+  .customer-directory-stats-6,
+  .customer-summary-grid-6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .customer-directory-stats-6,
+  .customer-summary-grid-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .customer-detail-topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+@media (max-width: 480px) {
+  .customer-directory-stats-6,
+  .customer-summary-grid-6 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
