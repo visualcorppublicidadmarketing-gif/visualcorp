@@ -11,6 +11,8 @@ supabase/.temp/
 Thumbs.db
 npm-debug.log*
 pnpm-debug.log*
+pnpm-lock.yaml
+audits/
 yarn-debug.log*
 *.local.json
 

@@ -1,5 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlignLeft, ArrowDown, ArrowUp, Image, Link2, List, Minus, Plus, Quote, Trash2, Type } from 'lucide-react';
+import {
+  AlignLeft,
+  ArrowDown,
+  ArrowUp,
+  Copy,
+  Image,
+  Link2,
+  List,
+  Minus,
+  Plus,
+  Quote,
+  Trash2,
+  Type,
+} from 'lucide-react';
 
 type BlockType = 'heading' | 'paragraph' | 'image' | 'quote' | 'divider' | 'list' | 'link';
 type ContentBlock = { id: string; type: BlockType; content: string; url?: string; level?: number; ordered?: boolean };
@@ -17,10 +30,11 @@ function parseMarkdown(markdown: string): ContentBlock[] {
     return { id: makeId(), type: 'paragraph', content: part };
   });
 }
+
 function serializeMarkdown(blocks: ContentBlock[]) {
   return blocks.map((block) => {
     if (block.type === 'heading') return `${'#'.repeat(block.level || 2)} ${block.content.trim()}`;
-    if (block.type === 'image') return block.url.trim() ? `![${block.content.trim()}](${block.url.trim()})` : '';
+    if (block.type === 'image') return block.url?.trim() ? `![${block.content.trim()}](${block.url.trim()})` : '';
     if (block.type === 'quote') return block.content.split(/\r?\n/).map((line) => `> ${line}`).join('\n');
     if (block.type === 'divider') return '---';
     if (block.type === 'list') return block.content.split(/\r?\n/).filter(Boolean).map((line, index) => block.ordered ? `${index + 1}. ${line}` : `- ${line}`).join('\n');
@@ -28,38 +42,218 @@ function serializeMarkdown(blocks: ContentBlock[]) {
     return block.content.trim();
   }).filter(Boolean).join('\n\n');
 }
+
 const blockTypes: { type: BlockType; label: string; icon: typeof Type }[] = [
-  { type: 'heading', label: 'Título', icon: Type }, { type: 'paragraph', label: 'Texto', icon: AlignLeft },
-  { type: 'image', label: 'Imagen', icon: Image }, { type: 'quote', label: 'Cita', icon: Quote }, { type: 'list', label: 'Lista', icon: List }, { type: 'link', label: 'Enlace', icon: Link2 }, { type: 'divider', label: 'Separador', icon: Minus },
+  { type: 'heading', label: 'Título', icon: Type },
+  { type: 'paragraph', label: 'Texto', icon: AlignLeft },
+  { type: 'image', label: 'Imagen', icon: Image },
+  { type: 'quote', label: 'Cita', icon: Quote },
+  { type: 'list', label: 'Lista', icon: List },
+  { type: 'link', label: 'Enlace', icon: Link2 },
+  { type: 'divider', label: 'Separador', icon: Minus },
 ];
 
 export function MarkdownBlockEditor({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const [blocks, setBlocks] = useState<ContentBlock[]>(() => parseMarkdown(value));
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const lastSerialized = useRef(value);
+
   useEffect(() => {
     if (value === lastSerialized.current) return;
     lastSerialized.current = value;
     setBlocks(parseMarkdown(value));
   }, [value]);
-  const change = (next: ContentBlock[]) => { const serialized = serializeMarkdown(next); lastSerialized.current = serialized; setBlocks(next); onChange(serialized); };
-  const add = (type: BlockType) => change([...blocks, { id: makeId(), type, content: type === 'divider' ? '' : '', ...(type === 'image' ? { url: '' } : {}) }]);
+
+  const change = (next: ContentBlock[]) => {
+    const serialized = serializeMarkdown(next);
+    lastSerialized.current = serialized;
+    setBlocks(next);
+    onChange(serialized);
+  };
+
+  const add = (type: BlockType) => change([...blocks, { id: makeId(), type, content: '', ...(type === 'image' ? { url: '' } : {}) }]);
   const update = (id: string, fields: Partial<ContentBlock>) => change(blocks.map((block) => block.id === id ? { ...block, ...fields } : block));
-  const move = (index: number, delta: -1 | 1) => { const target = index + delta; if (target < 0 || target >= blocks.length) return; const next = [...blocks]; [next[index], next[target]] = [next[target], next[index]]; change(next); };
-  return <div className="markdown-block-editor">
-    <div className="markdown-block-toolbar" aria-label="Añadir bloque">{blockTypes.map(({ type, label, icon: Icon }) => <button key={type} type="button" onClick={() => add(type)}><Icon size={14}/><span>{label}</span><Plus size={12}/></button>)}</div>
-    {blocks.length === 0 && <div className="empty-state">Empieza con un título, un párrafo o una imagen.</div>}
-    <div className="markdown-block-list">{blocks.map((block, index) => {
-      const label = blockTypes.find((item) => item.type === block.type)?.label || 'Bloque';
-      return <section className="markdown-block" key={block.id}>
-        <header><span>{index + 1} · {label}</span><div><button type="button" onClick={() => move(index, -1)} disabled={index === 0} aria-label="Mover bloque arriba"><ArrowUp size={14}/></button><button type="button" onClick={() => move(index, 1)} disabled={index === blocks.length - 1} aria-label="Mover bloque abajo"><ArrowDown size={14}/></button><button type="button" onClick={() => change(blocks.filter((item) => item.id !== block.id))} aria-label="Eliminar bloque"><Trash2 size={14}/></button></div></header>
-        {block.type === 'heading' && <div className="markdown-heading-fields"><select aria-label="Nivel del título" value={block.level || 2} onChange={(event) => update(block.id, { level: Number(event.target.value) })}><option value={2}>Título de sección</option><option value={3}>Subtítulo</option></select><input aria-label="Texto del título" value={block.content} onChange={(event) => update(block.id, { content: event.target.value })} placeholder="Título de sección"/></div>}
-        {block.type === 'paragraph' && <textarea aria-label="Texto del párrafo" rows={4} value={block.content} onChange={(event) => update(block.id, { content: event.target.value })} placeholder="Escribe el contenido del párrafo"/>}
-        {block.type === 'quote' && <textarea aria-label="Texto de la cita" rows={3} value={block.content} onChange={(event) => update(block.id, { content: event.target.value })} placeholder="Escribe la cita"/>}
-        {block.type === 'list' && <><select aria-label="Tipo de lista" value={block.ordered ? 'ordered' : 'unordered'} onChange={(event) => update(block.id, { ordered: event.target.value === 'ordered' })}><option value="unordered">Viñetas</option><option value="ordered">Numerada</option></select><textarea aria-label="Elementos de la lista" rows={4} value={block.content} onChange={(event) => update(block.id, { content: event.target.value })} placeholder={'Un elemento por línea'}/></>}
-        {block.type === 'link' && <div className="markdown-heading-fields"><input aria-label="Texto del enlace" value={block.content} onChange={(event) => update(block.id, { content: event.target.value })} placeholder="Texto visible"/><input aria-label="Destino del enlace" type="url" value={block.url || ''} onChange={(event) => update(block.id, { url: event.target.value })} placeholder="https://…"/></div>}
-        {block.type === 'image' && <div className="markdown-image-fields"><input aria-label="URL de la imagen" type="url" value={block.url || ''} onChange={(event) => update(block.id, { url: event.target.value })} placeholder="URL de imagen https://…"/><input aria-label="Texto alternativo de la imagen" value={block.content} onChange={(event) => update(block.id, { content: event.target.value })} placeholder="Texto alternativo"/>{block.url && <img src={block.url} alt="Vista previa" loading="lazy"/>}</div>}
-        {block.type === 'divider' && <p className="markdown-divider-preview">Separador visual</p>}
-      </section>;
-    })}</div>
-  </div>;
+  const move = (index: number, delta: -1 | 1) => {
+    const target = index + delta;
+    if (target < 0 || target >= blocks.length) return;
+    const next = [...blocks];
+    [next[index], next[target]] = [next[target], next[index]];
+    change(next);
+  };
+  const duplicate = (index: number) => {
+    const targetBlock = blocks[index];
+    if (!targetBlock) return;
+    const clone: ContentBlock = { ...targetBlock, id: makeId() };
+    const next = [...blocks];
+    next.splice(index + 1, 0, clone);
+    change(next);
+  };
+  const remove = (id: string) => change(blocks.filter((item) => item.id !== id));
+
+  return (
+    <div className="markdown-block-editor">
+      <div className="markdown-block-editor-header">
+        <div className="editor-header-title">
+          <span>Estructura del contenido</span>
+          <span className="markdown-block-count">{blocks.length} {blocks.length === 1 ? 'bloque' : 'bloques'}</span>
+        </div>
+      </div>
+      <div className="markdown-block-toolbar" aria-label="Añadir bloque">
+        {blockTypes.map(({ type, label, icon: Icon }) => (
+          <button key={type} type="button" onClick={() => add(type)}>
+            <Icon size={14} />
+            <span>{label}</span>
+            <Plus size={12} />
+          </button>
+        ))}
+      </div>
+      {blocks.length === 0 && (
+        <div className="empty-state">
+          Empieza con un título, un párrafo o una imagen, o carga una plantilla rápida recomendada arriba.
+        </div>
+      )}
+      <div className="markdown-block-list">
+        {blocks.map((block, index) => {
+          const label = blockTypes.find((item) => item.type === block.type)?.label || 'Bloque';
+          return (
+            <section className="markdown-block" key={block.id}>
+              <header>
+                <span>{index + 1} · {label}</span>
+                <div className="markdown-block-actions">
+                  <button type="button" onClick={() => duplicate(index)} title="Duplicar bloque" aria-label="Duplicar bloque">
+                    <Copy size={13} />
+                  </button>
+                  <button type="button" onClick={() => move(index, -1)} disabled={index === 0} title="Mover bloque arriba" aria-label="Mover bloque arriba">
+                    <ArrowUp size={14} />
+                  </button>
+                  <button type="button" onClick={() => move(index, 1)} disabled={index === blocks.length - 1} title="Mover bloque abajo" aria-label="Mover bloque abajo">
+                    <ArrowDown size={14} />
+                  </button>
+                  <button type="button" onClick={() => remove(block.id)} title="Eliminar bloque" aria-label="Eliminar bloque">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </header>
+
+              {block.type === 'heading' && (
+                <div className="markdown-heading-fields">
+                  <select
+                    aria-label="Nivel del título"
+                    value={block.level || 2}
+                    onChange={(event) => update(block.id, { level: Number(event.target.value) })}
+                  >
+                    <option value={2}>Título de sección (H2)</option>
+                    <option value={3}>Subtítulo (H3)</option>
+                  </select>
+                  <input
+                    aria-label="Texto del título"
+                    value={block.content}
+                    onChange={(event) => update(block.id, { content: event.target.value })}
+                    placeholder="Título de sección"
+                  />
+                </div>
+              )}
+
+              {block.type === 'paragraph' && (
+                <textarea
+                  aria-label="Texto del párrafo"
+                  rows={4}
+                  value={block.content}
+                  onChange={(event) => update(block.id, { content: event.target.value })}
+                  placeholder="Escribe el contenido del párrafo..."
+                />
+              )}
+
+              {block.type === 'quote' && (
+                <textarea
+                  aria-label="Texto de la cita"
+                  rows={3}
+                  value={block.content}
+                  onChange={(event) => update(block.id, { content: event.target.value })}
+                  placeholder="Escribe la cita o texto destacado..."
+                />
+              )}
+
+              {block.type === 'list' && (
+                <>
+                  <select
+                    aria-label="Tipo de lista"
+                    value={block.ordered ? 'ordered' : 'unordered'}
+                    onChange={(event) => update(block.id, { ordered: event.target.value === 'ordered' })}
+                  >
+                    <option value="unordered">Lista con viñetas</option>
+                    <option value="ordered">Lista numerada</option>
+                  </select>
+                  <textarea
+                    aria-label="Elementos de la lista"
+                    rows={4}
+                    value={block.content}
+                    onChange={(event) => update(block.id, { content: event.target.value })}
+                    placeholder="Un elemento por línea..."
+                  />
+                </>
+              )}
+
+              {block.type === 'link' && (
+                <div className="markdown-heading-fields">
+                  <input
+                    aria-label="Texto del enlace"
+                    value={block.content}
+                    onChange={(event) => update(block.id, { content: event.target.value })}
+                    placeholder="Texto visible del enlace"
+                  />
+                  <input
+                    aria-label="Destino del enlace"
+                    type="url"
+                    value={block.url || ''}
+                    onChange={(event) => update(block.id, { url: event.target.value })}
+                    placeholder="https://..."
+                  />
+                </div>
+              )}
+
+              {block.type === 'image' && (
+                <div className="markdown-image-fields">
+                  <input
+                    aria-label="URL de la imagen"
+                    type="url"
+                    value={block.url || ''}
+                    onChange={(event) => {
+                      update(block.id, { url: event.target.value });
+                      setFailedImages((prev) => ({ ...prev, [block.id]: false }));
+                    }}
+                    placeholder="URL de imagen https://..."
+                  />
+                  <input
+                    aria-label="Texto alternativo de la imagen"
+                    value={block.content}
+                    onChange={(event) => update(block.id, { content: event.target.value })}
+                    placeholder="Texto alternativo (descripción para accesibilidad)"
+                  />
+                  {block.url?.trim() ? (
+                    failedImages[block.id] ? (
+                      <div className="markdown-image-error" role="status">
+                        <span>⚠️ No se pudo cargar la vista previa. Verifica que la URL sea pública y válida.</span>
+                      </div>
+                    ) : (
+                      <div className="markdown-image-preview-wrapper">
+                        <img
+                          src={block.url.trim()}
+                          alt={block.content || 'Vista previa'}
+                          loading="lazy"
+                          onError={() => setFailedImages((prev) => ({ ...prev, [block.id]: true }))}
+                        />
+                      </div>
+                    )
+                  ) : null}
+                </div>
+              )}
+
+              {block.type === 'divider' && <p className="markdown-divider-preview">── Separador visual ──</p>}
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
 }

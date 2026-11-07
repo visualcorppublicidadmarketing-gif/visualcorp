@@ -446,3 +446,31 @@ html[data-public-theme="light"] .public-site .store-product-compare:focus-visibl
 html[data-public-theme="light"] .public-site .store-category-card:focus-visible {
   outline-color: #8c236e;
 }
+
+/* Contact location panel in the public light theme. */
+html[data-public-theme="light"] .public-site .contact-location-section {
+  border-color: #e4dce8;
+  background: radial-gradient(ellipse at 10% 0%, #f5e5f2, transparent 42%), radial-gradient(ellipse at 100% 100%, #e7f3f8, transparent 42%), linear-gradient(125deg, #fff, #f8f4fa 65%, #f5f2f8);
+  box-shadow: 0 24px 64px rgb(48 34 60 / 10%), inset 0 1px #fff;
+}
+html[data-public-theme="light"] .public-site .contact-location-section::before { background-image: linear-gradient(#604b7309 1px, transparent 1px), linear-gradient(90deg, #604b7309 1px, transparent 1px); }
+html[data-public-theme="light"] .public-site .contact-location-copy h2 { color: #211b2a; }
+html[data-public-theme="light"] .public-site .contact-location-copy>p { color: #5f5967; }
+html[data-public-theme="light"] .public-site .contact-location-address>span { border-color: #e7c9df; background: #f9edf6; color: #8c236e; }
+html[data-public-theme="light"] .public-site .contact-location-address b { color: #292231; }
+html[data-public-theme="light"] .public-site .contact-location-address small { color: #5f5967; }
+html[data-public-theme="light"] .public-site .contact-location-directions { color: #84246c; }
+html[data-public-theme="light"] .public-site .contact-location-directions:hover { color: #5f174e; }
+html[data-public-theme="light"] .public-site .contact-map-toggle { border-color: #e2d9e7; background: #fff; box-shadow: 0 5px 18px rgb(48 34 60 / 6%); }
+html[data-public-theme="light"] .public-site .contact-map-toggle button { color: #51495a; }
+html[data-public-theme="light"] .public-site .contact-map-toggle button:hover { border-color: #d9b6d2; color: #70235f; }
+html[data-public-theme="light"] .public-site .contact-map-toggle button[aria-pressed="true"] { border-color: #8f286f; background: linear-gradient(110deg, #8f286f, #63318e); color: #fff; }
+html[data-public-theme="light"] .public-site .contact-location-map-card { border-color: #e2d9e7; background: linear-gradient(145deg, #fff, #f9f5fa); box-shadow: 0 18px 42px rgb(48 34 60 / 12%), inset 0 1px #fff; }
+html[data-public-theme="light"] .public-site .contact-location-map-topline>span { color: #70235f; }
+html[data-public-theme="light"] .public-site .contact-location-map-topline>small { color: #5f5967; }
+html[data-public-theme="light"] .public-site .contact-map-viewport { border-color: #e3dce8; background: #f5f0f7; }
+html[data-public-theme="light"] .public-site .contact-location-map-icon { border-color: #a8d9c6; background: #edf8f2; color: #176a4b; }
+html[data-public-theme="light"] .public-site .contact-location-map-caption b { color: #292231; }
+html[data-public-theme="light"] .public-site .contact-location-map-caption small { color: #5f5967; }
+html[data-public-theme="light"] .public-site .contact-location-directions:focus-visible,
+html[data-public-theme="light"] .public-site .contact-map-toggle button:focus-visible { outline-color: #8c236e; }

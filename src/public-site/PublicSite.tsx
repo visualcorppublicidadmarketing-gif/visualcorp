@@ -6,7 +6,7 @@ import { useWorkspace } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
 import { Avatar, getGoogleAvatarUrl } from '../components/ui/Avatar';
-import { isGoogleMapsUrl } from '../lib/maps';
+import { getGoogleMapsEmbedUrl, getGoogleMapsOpenUrl, isGoogleMapsUrl } from '../lib/maps';
 import { multiProductQuoteService, publicAddress, publicServiceFamilies, serviceDeliverableTags, serviceDetailContent, serviceProjectPrompts, type PublicServiceId } from './content.ts';
 import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategoryStrips, ServiceVisualShowcase, StrategicBenefitsGrid } from './SolutionsComponents';
 import { Title3D, type Title3DKey } from './Title3D';
@@ -484,28 +484,31 @@ export function ContactPage() {
   const [searchParams] = useSearchParams();
   const contactHeroRef = useRef<HTMLElement | null>(null);
   const contactFormRef = useRef<HTMLDivElement | null>(null);
+  const contactLocationRef = useRef<HTMLElement | null>(null);
   const contactFaqRef = useRef<HTMLElement | null>(null);
   const [showContactDock, setShowContactDock] = useState(false);
   const contactServices = data.services.filter((service) => service.enabled);
   const requestedService = searchParams.get('servicio') || '';
   const initialContactService = contactServices.find((service) => service.id === requestedService || service.name.toLocaleLowerCase('es') === requestedService.toLocaleLowerCase('es'))?.name || '';
   const [selectedService, setSelectedService] = useState(initialContactService);
+  const [locationMapView, setLocationMapView] = useState<'google' | 'visual'>('google');
   useEffect(() => setSelectedService(initialContactService), [initialContactService]);
   useEffect(() => {
     const hero = contactHeroRef.current;
     const form = contactFormRef.current;
+    const location = contactLocationRef.current;
     const faq = contactFaqRef.current;
-    if (!hero || !form || !faq || !('IntersectionObserver' in window)) return undefined;
-    const visible = new Map<Element, boolean>([[hero, true], [form, false], [faq, false]]);
+    if (!hero || !form || !location || !faq || !('IntersectionObserver' in window)) return undefined;
+    const visible = new Map<Element, boolean>([[hero, true], [form, false], [location, false], [faq, false]]);
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
-        const minimumVisibleRatio = entry.target === form ? 0.22 : entry.target === faq ? 0.1 : 0;
+        const minimumVisibleRatio = entry.target === form ? 0.22 : entry.target === faq || entry.target === location ? 0.1 : 0;
         const isPastHero = entry.target === hero && entry.boundingClientRect.bottom <= 12;
         visible.set(entry.target, entry.target === hero ? !isPastHero : entry.intersectionRatio >= minimumVisibleRatio && entry.isIntersecting);
       });
-      setShowContactDock(!visible.get(hero) && !visible.get(form) && !visible.get(faq));
+      setShowContactDock(!visible.get(hero) && !visible.get(form) && !visible.get(location) && !visible.get(faq));
     }, { threshold: [0, 0.1, 0.22] });
-    [hero, form, faq].forEach((element) => observer.observe(element));
+    [hero, form, location, faq].forEach((element) => observer.observe(element));
     return () => observer.disconnect();
   }, []);
   const whatsappText = selectedService
@@ -514,6 +517,8 @@ export function ContactPage() {
   const whatsapp = `${whatsappHref(data.settings.contactPhone)}?text=${encodeURIComponent(whatsappText)}`;
   const phoneLink = `tel:${data.settings.contactPhone.replace(/[^\d+]/g, '')}`;
   const socials = socialLinks(data.settings);
+  const googleMapsOpenUrl = getGoogleMapsOpenUrl('', publicAddress);
+  const googleMapsEmbedUrl = getGoogleMapsEmbedUrl('', publicAddress);
   return <><SiteTitle>Contacto</SiteTitle>
     <section className="contact-hero" ref={contactHeroRef} aria-labelledby="contact-page-title">
       <div className="contact-hero-glow contact-hero-glow-pink"/><div className="contact-hero-glow contact-hero-glow-blue"/>
@@ -535,9 +540,30 @@ export function ContactPage() {
           {socials.map((social) => <a key={social.platform} className="contact-channel-card" href={social.href} target="_blank" rel="noopener noreferrer"><span className={`contact-channel-icon social-channel-icon social-icon-${social.platform}`}><SocialMark platform={social.platform} size={18}/></span><span><small>REDES SOCIALES</small><b>{social.label}</b><em>{social.detail}</em></span><ArrowUpRight size={17}/></a>)}
         </div>
         <div className="contact-service-picker"><div><small>¿YA SABES QUÉ BUSCAS?</small><span>Elige una opción para preparar tu mensaje.</span></div><div className="contact-service-chips" role="group" aria-label="Selecciona una familia de trabajo">{contactServices.map((service) => <button key={service.id} type="button" className={selectedService === service.name ? 'is-selected' : ''} aria-pressed={selectedService === service.name} onClick={() => setSelectedService((current) => current === service.name ? '' : service.name)}>{service.name}</button>)}</div><p className="contact-service-feedback" aria-live="polite">{selectedService ? `Listo: ${selectedService}. También prepararemos tu mensaje de WhatsApp.` : 'Puedes elegir una familia o pedir orientación.'}</p><a className="contact-service-link" href="#contacto-formulario">{selectedService ? `Formulario: ${selectedService}` : 'Prefiero que me orienten'} <ChevronRight size={14}/></a></div>
-        <div className="contact-location-card"><div className="contact-location-mark"><MapPin size={19}/></div><div><small>VISÍTANOS EN</small><b>Milagro, Ecuador</b><span>{publicAddress}</span><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(publicAddress)}`} target="_blank" rel="noreferrer">Abrir ubicación en Maps <ArrowUpRight size={13}/></a></div></div>
       </div>
       <div className="contact-form-column" ref={contactFormRef} id="contacto-formulario"><div className="contact-form-intro"><span className="contact-form-step">01 <i/> 01</span><span>FORMULARIO DE CONTACTO</span></div><LeadForm initialService={initialContactService} selectedService={selectedService} onServiceChange={setSelectedService}/></div>
+    </section>
+    <section className="contact-location-section" ref={contactLocationRef} aria-labelledby="contact-location-title">
+      <div className="contact-location-copy">
+        <Eyebrow>VISÍTANOS EN MILAGRO</Eyebrow>
+        <h2 id="contact-location-title">Encuéntranos<br/><em>en Milagro.</em></h2>
+        <p>Consulta nuestra ubicación y elige la vista que te resulte más útil para orientarte.</p>
+        <div className="contact-location-address"><span><MapPin size={19}/></span><div><b>{publicAddress}</b><small>Milagro, Ecuador</small></div></div>
+        <a className="contact-location-directions" href={googleMapsOpenUrl} target="_blank" rel="noopener noreferrer">Abrir en Google Maps <ArrowUpRight size={15}/></a>
+        <div className="contact-map-toggle" role="group" aria-label="Elige cómo visualizar la ubicación">
+          <button type="button" aria-pressed={locationMapView === 'google'} aria-controls="contact-location-map" onClick={() => setLocationMapView('google')}><MapPin size={16}/> Google Maps</button>
+          <button type="button" aria-pressed={locationMapView === 'visual'} aria-controls="contact-location-map" onClick={() => setLocationMapView('visual')}><PanelsTopLeft size={16}/> Mapa ilustrado</button>
+        </div>
+      </div>
+      <figure className={`contact-location-map-card is-${locationMapView}`}>
+        <div className="contact-location-map-topline"><span><i/>{locationMapView === 'google' ? 'MAPA INTERACTIVO' : 'MAPA DE VISUAL CORP'}</span><small>Milagro, Ecuador</small></div>
+        <div id="contact-location-map" className="contact-map-viewport" role="region" aria-label={locationMapView === 'google' ? 'Mapa interactivo de Google Maps de la ubicación de Visual Corp' : 'Mapa ilustrado de referencia de Visual Corp'}>
+          {locationMapView === 'google'
+            ? <iframe title={`Google Maps: ${publicAddress}`} src={googleMapsEmbedUrl} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/>
+            : <img src="/images/location/visual-corp-map.webp" alt="Mapa ilustrado de Visual Corp en Milagro" loading="lazy"/>}
+        </div>
+        <figcaption className="contact-location-map-caption"><span className="contact-location-map-icon">{locationMapView === 'google' ? <MapPin size={16}/> : <PanelsTopLeft size={16}/>}</span><span><b>{locationMapView === 'google' ? 'Ubicación interactiva' : 'Mapa ilustrado de la empresa'}</b><small>{locationMapView === 'google' ? 'Explora la zona o abre la ruta en Google Maps.' : 'Referencia visual; confirma la ruta exacta con Google Maps.'}</small></span></figcaption>
+      </figure>
     </section>
     <section className="contact-next-steps" aria-labelledby="contact-next-title"><div className="contact-next-heading"><Eyebrow>UN BUEN COMIENZO</Eyebrow><h2 id="contact-next-title">Así ponemos<br/>tu idea en marcha.</h2><p>Una conversación sencilla nos ayuda a entender lo que necesitas y revisar contigo el siguiente paso.</p></div><AnimatedList className="contact-step-list" stagger={0.12}><article><span>01</span><div><b>Cuéntanos tu idea</b><p>Indica qué quieres comunicar, crear o resolver.</p></div><MessageCircle size={18}/></article><article><span>02</span><div><b>Comparte lo que ya sabes</b><p>Medidas, cantidades, referencias o una foto pueden orientar la conversación.</p></div><Sparkles size={18}/></article><article><span>03</span><div><b>Revisamos cómo avanzar</b><p>El alcance, los valores y los tiempos se confirman según cada proyecto.</p></div><ArrowRight size={18}/></article></AnimatedList></section>
     <section className="contact-faq" ref={contactFaqRef} aria-labelledby="contact-faq-title"><div className="contact-faq-heading"><Eyebrow>ANTES DE ESCRIBIR</Eyebrow><h2 id="contact-faq-title">Preguntas frecuentes</h2></div><div className="contact-faq-list"><details><summary>¿Necesito tener el diseño listo?<ChevronDown size={17}/></summary><p>No. Puedes empezar con una idea, una necesidad o una referencia. Si ya tienes un diseño, medidas o cantidades, compártelas para orientar mejor la conversación.</p></details><details><summary>¿Cómo se definen los valores y tiempos?<ChevronDown size={17}/></summary><p>Se revisan según el tipo de trabajo y sus detalles. El equipo confirma el alcance, los valores y los tiempos antes de cotizar.</p></details><details><summary>¿Puedo visitar Visual Corp?<ChevronDown size={17}/></summary><p>Estamos en {publicAddress}. Abre la ubicación en Maps desde esta página para planificar tu visita.</p></details></div></section>

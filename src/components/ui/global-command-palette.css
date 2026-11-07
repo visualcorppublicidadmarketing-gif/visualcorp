@@ -1,0 +1,900 @@
+/* ==========================================================================
+   Visual Corp Suite — Global Command Palette Styles
+   Inspirado en Linear, Twenty CRM, Midday y Raycast.
+   Soporte completo para Modo Claro y Modo Oscuro ([data-theme='dark']).
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Variables de Tema por Defecto (Modo Claro)
+   -------------------------------------------------------------------------- */
+:root {
+  --vc-cmd-bg: rgba(255, 255, 255, 0.96);
+  --vc-cmd-overlay: rgba(14, 16, 26, 0.45);
+  --vc-cmd-border: rgba(22, 23, 30, 0.1);
+  --vc-cmd-border-strong: rgba(22, 23, 30, 0.16);
+  --vc-cmd-header-bg: rgba(249, 248, 252, 0.9);
+  --vc-cmd-text-ink: #141624;
+  --vc-cmd-text-muted: #676375;
+  --vc-cmd-text-faint: #9894a6;
+  --vc-cmd-item-hover: rgba(121, 63, 160, 0.07);
+  --vc-cmd-item-active: #f1eef8;
+  --vc-cmd-item-border-active: rgba(121, 63, 160, 0.28);
+  --vc-cmd-accent: #793fa0;
+  --vc-cmd-accent-gradient: linear-gradient(135deg, #009ee2 0%, #e5007d 50%, #f47920 100%);
+  --vc-cmd-kbd-bg: #ece9f3;
+  --vc-cmd-kbd-border: #d7d2e3;
+  --vc-cmd-kbd-text: #484457;
+  --vc-cmd-footer-bg: rgba(247, 246, 251, 0.95);
+  --vc-cmd-tab-bg: rgba(235, 232, 244, 0.7);
+  --vc-cmd-tab-active-bg: #141624;
+  --vc-cmd-tab-active-text: #ffffff;
+  --vc-cmd-shadow: 0 24px 64px -12px rgba(20, 22, 36, 0.28), 0 0 0 1px rgba(22, 23, 30, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   Variables de Tema (Modo Oscuro)
+   -------------------------------------------------------------------------- */
+[data-theme='dark'],
+.theme-dark,
+.vc-palette-overlay.theme-dark {
+  --vc-cmd-bg: rgba(18, 20, 32, 0.96);
+  --vc-cmd-overlay: rgba(5, 7, 14, 0.72);
+  --vc-cmd-border: rgba(255, 255, 255, 0.1);
+  --vc-cmd-border-strong: rgba(255, 255, 255, 0.18);
+  --vc-cmd-header-bg: rgba(24, 27, 42, 0.92);
+  --vc-cmd-text-ink: #f2f3f8;
+  --vc-cmd-text-muted: #9fa5bc;
+  --vc-cmd-text-faint: #6c738c;
+  --vc-cmd-item-hover: rgba(192, 132, 252, 0.1);
+  --vc-cmd-item-active: rgba(192, 132, 252, 0.18);
+  --vc-cmd-item-border-active: rgba(192, 132, 252, 0.38);
+  --vc-cmd-accent: #c084fc;
+  --vc-cmd-accent-gradient: linear-gradient(135deg, #38bdf8 0%, #f472b6 50%, #fb923c 100%);
+  --vc-cmd-kbd-bg: #272c42;
+  --vc-cmd-kbd-border: #3b4260;
+  --vc-cmd-kbd-text: #d8ddf0;
+  --vc-cmd-footer-bg: rgba(14, 16, 26, 0.95);
+  --vc-cmd-tab-bg: rgba(36, 41, 62, 0.8);
+  --vc-cmd-tab-active-bg: #f2f3f8;
+  --vc-cmd-tab-active-text: #0e101a;
+  --vc-cmd-shadow: 0 28px 72px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* --------------------------------------------------------------------------
+   Botón Disparador Inline (Opcional en Sidebar o Navbar)
+   -------------------------------------------------------------------------- */
+.vc-palette-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  max-width: 280px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--vc-cmd-border);
+  border-radius: 10px;
+  background: var(--vc-cmd-bg);
+  color: var(--vc-cmd-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.vc-palette-trigger:hover {
+  border-color: var(--vc-cmd-border-strong);
+  color: var(--vc-cmd-text-ink);
+  transform: translateY(-1px);
+}
+
+.vc-palette-trigger-search-icon {
+  flex-shrink: 0;
+  color: var(--vc-cmd-text-faint);
+}
+
+.vc-palette-trigger-text {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vc-palette-trigger-kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--vc-cmd-kbd-border);
+  border-radius: 5px;
+  background: var(--vc-cmd-kbd-bg);
+  color: var(--vc-cmd-kbd-text);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* --------------------------------------------------------------------------
+   Backdrop Overlay con Blur Profundo
+   -------------------------------------------------------------------------- */
+.vc-palette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: max(6vh, 24px) 16px 24px;
+  background: var(--vc-cmd-overlay);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: vcPaletteOverlayFade 0.18s ease-out;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+@keyframes vcPaletteOverlayFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Contenedor Principal del Diálogo (Raycast / Linear Style)
+   -------------------------------------------------------------------------- */
+.vc-palette-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  max-height: min(85vh, 680px);
+  display: flex;
+  flex-direction: column;
+  background: var(--vc-cmd-bg);
+  border: 1px solid var(--vc-cmd-border);
+  border-radius: 20px;
+  box-shadow: var(--vc-cmd-shadow);
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
+  animation: vcPaletteScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--vc-cmd-text-ink);
+}
+
+@keyframes vcPaletteScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Cabecera y Barra de Entrada
+   -------------------------------------------------------------------------- */
+.vc-palette-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--vc-cmd-header-bg);
+  border-bottom: 1px solid var(--vc-cmd-border);
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.vc-palette-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.vc-palette-search-icon {
+  color: var(--vc-cmd-accent);
+  flex-shrink: 0;
+}
+
+.vc-palette-input {
+  flex: 1;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--vc-cmd-text-ink);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  padding: 4px 0;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.vc-palette-input::placeholder {
+  color: var(--vc-cmd-text-faint);
+  font-weight: 400;
+}
+
+.vc-palette-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: var(--vc-cmd-kbd-bg);
+  color: var(--vc-cmd-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.vc-palette-clear-btn:hover {
+  background: var(--vc-cmd-border-strong);
+  color: var(--vc-cmd-text-ink);
+}
+
+/* Badges de Sucursal, Tema y Cerrar en Cabecera */
+.vc-palette-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.vc-palette-branch-badge,
+.vc-palette-theme-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--vc-cmd-border);
+  border-radius: 8px;
+  background: var(--vc-cmd-bg);
+  color: var(--vc-cmd-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.vc-palette-branch-badge:hover,
+.vc-palette-theme-badge:hover {
+  border-color: var(--vc-cmd-accent);
+  color: var(--vc-cmd-text-ink);
+  background: var(--vc-cmd-item-hover);
+}
+
+.vc-palette-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--vc-cmd-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--vc-cmd-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vc-palette-close-btn:hover {
+  border-color: var(--vc-cmd-border-strong);
+  color: var(--vc-cmd-text-ink);
+  background: var(--vc-cmd-item-hover);
+}
+
+/* --------------------------------------------------------------------------
+   Notificación Flotante (Toast) Dentro de la Paleta
+   -------------------------------------------------------------------------- */
+.vc-palette-toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: var(--vc-cmd-accent);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  animation: vcPaletteToastSlide 0.2s ease-out;
+}
+
+@keyframes vcPaletteToastSlide {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.vc-palette-toast-icon {
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Barra de Píldoras de Filtrado (Categorías)
+   -------------------------------------------------------------------------- */
+.vc-palette-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: var(--vc-cmd-bg);
+  border-bottom: 1px solid var(--vc-cmd-border);
+  overflow-x: auto;
+  box-sizing: border-box;
+  min-width: 0;
+  scrollbar-width: none;
+}
+
+.vc-palette-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.vc-palette-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: var(--vc-cmd-tab-bg);
+  color: var(--vc-cmd-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vc-palette-tab:hover {
+  color: var(--vc-cmd-text-ink);
+  background: var(--vc-cmd-border-strong);
+}
+
+.vc-palette-tab.active {
+  background: var(--vc-cmd-tab-active-bg);
+  color: var(--vc-cmd-tab-active-text);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.vc-palette-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(125, 125, 125, 0.2);
+}
+
+.vc-palette-tab.active .vc-palette-tab-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: inherit;
+}
+
+[data-theme='dark'] .vc-palette-tab.active .vc-palette-tab-count,
+.theme-dark .vc-palette-tab.active .vc-palette-tab-count {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* --------------------------------------------------------------------------
+   Lista de Resultados y Secciones
+   -------------------------------------------------------------------------- */
+.vc-palette-results {
+  flex: 1;
+  min-height: 180px;
+  max-height: 480px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.vc-palette-results::-webkit-scrollbar {
+  width: 6px;
+}
+
+.vc-palette-results::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.vc-palette-results::-webkit-scrollbar-thumb {
+  background: var(--vc-cmd-border-strong);
+  border-radius: 4px;
+}
+
+/* Estado Vacío */
+.vc-palette-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  color: var(--vc-cmd-text-muted);
+}
+
+.vc-palette-empty-icon {
+  color: var(--vc-cmd-text-faint);
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.vc-palette-empty h4 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--vc-cmd-text-ink);
+}
+
+.vc-palette-empty p {
+  margin: 0 0 16px;
+  max-width: 380px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--vc-cmd-text-muted);
+}
+
+.vc-palette-empty-reset {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--vc-cmd-border);
+  border-radius: 8px;
+  background: var(--vc-cmd-kbd-bg);
+  color: var(--vc-cmd-text-ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vc-palette-empty-reset:hover {
+  border-color: var(--vc-cmd-accent);
+  color: var(--vc-cmd-accent);
+}
+
+/* Secciones de Resultados */
+.vc-palette-section {
+  margin-bottom: 14px;
+}
+
+.vc-palette-section:last-child {
+  margin-bottom: 4px;
+}
+
+.vc-palette-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--vc-cmd-text-faint);
+}
+
+.vc-palette-section-count {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.vc-palette-section-items {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   Elemento Individual de Resultado (.vc-palette-item)
+   -------------------------------------------------------------------------- */
+.vc-palette-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  box-sizing: border-box;
+  min-width: 0;
+  color: var(--vc-cmd-text-ink);
+}
+
+.vc-palette-item:hover,
+.vc-palette-item.active {
+  background: var(--vc-cmd-item-active);
+  border-color: var(--vc-cmd-item-border-active);
+}
+
+/* Iconos Tintados por Categoría */
+.vc-palette-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.vc-palette-item:hover .vc-palette-item-icon,
+.vc-palette-item.active .vc-palette-item-icon {
+  transform: scale(1.06);
+}
+
+.vc-palette-icon-modulos {
+  background: rgba(6, 156, 219, 0.12);
+  color: #0284c7;
+}
+
+.vc-palette-icon-acciones {
+  background: rgba(121, 63, 160, 0.12);
+  color: #793fa0;
+}
+
+.vc-palette-icon-clientes {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.vc-palette-icon-cotizaciones {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+}
+
+.vc-palette-icon-inventario {
+  background: rgba(168, 85, 247, 0.12);
+  color: #9333ea;
+}
+
+/* Variantes de Color en Modo Oscuro */
+[data-theme='dark'] .vc-palette-icon-modulos,
+.theme-dark .vc-palette-icon-modulos {
+  background: rgba(56, 189, 248, 0.16);
+  color: #38bdf8;
+}
+
+[data-theme='dark'] .vc-palette-icon-acciones,
+.theme-dark .vc-palette-icon-acciones {
+  background: rgba(192, 132, 252, 0.16);
+  color: #c084fc;
+}
+
+[data-theme='dark'] .vc-palette-icon-clientes,
+.theme-dark .vc-palette-icon-clientes {
+  background: rgba(52, 211, 153, 0.16);
+  color: #34d399;
+}
+
+[data-theme='dark'] .vc-palette-icon-cotizaciones,
+.theme-dark .vc-palette-icon-cotizaciones {
+  background: rgba(251, 191, 36, 0.16);
+  color: #fbbf24;
+}
+
+[data-theme='dark'] .vc-palette-icon-inventario,
+.theme-dark .vc-palette-icon-inventario {
+  background: rgba(216, 180, 254, 0.16);
+  color: #d8b4fe;
+}
+
+/* Contenido del Item */
+.vc-palette-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vc-palette-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vc-palette-item-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--vc-cmd-text-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vc-palette-item-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: var(--vc-cmd-kbd-bg);
+  color: var(--vc-cmd-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vc-palette-item-badge.is-reference {
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+[data-theme='dark'] .vc-palette-item-badge.is-reference,
+.theme-dark .vc-palette-item-badge.is-reference {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.vc-palette-item-subtitle {
+  font-size: 11.5px;
+  color: var(--vc-cmd-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+/* Acciones Secundarias para Clientes */
+.vc-palette-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+.vc-palette-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--vc-cmd-border);
+  border-radius: 7px;
+  background: var(--vc-cmd-bg);
+  color: var(--vc-cmd-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.vc-palette-action-btn:hover {
+  border-color: var(--vc-cmd-accent);
+  color: var(--vc-cmd-text-ink);
+  transform: translateY(-1px);
+}
+
+.vc-palette-action-btn.whatsapp:hover {
+  background: #25d366;
+  border-color: #25d366;
+  color: #ffffff;
+}
+
+.vc-palette-action-btn.chatter:hover {
+  background: var(--vc-cmd-accent);
+  border-color: var(--vc-cmd-accent);
+  color: #ffffff;
+}
+
+.vc-palette-action-btn.copy:hover {
+  background: var(--vc-cmd-item-hover);
+}
+
+.vc-palette-action-btn .success {
+  color: #10b981;
+}
+
+/* Indicador de Ejecución Enter */
+.vc-palette-item-enter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--vc-cmd-accent);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  animation: vcPaletteEnterFade 0.15s ease-out;
+}
+
+@keyframes vcPaletteEnterFade {
+  from {
+    opacity: 0;
+    transform: translateX(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Pie de Página (Footer con Atajos y Marca)
+   -------------------------------------------------------------------------- */
+.vc-palette-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  background: var(--vc-cmd-footer-bg);
+  border-top: 1px solid var(--vc-cmd-border);
+  box-sizing: border-box;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--vc-cmd-text-muted);
+}
+
+.vc-palette-shortcuts {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.vc-palette-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vc-palette-shortcut kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 4px;
+  border: 1px solid var(--vc-cmd-kbd-border);
+  border-radius: 4px;
+  background: var(--vc-cmd-kbd-bg);
+  color: var(--vc-cmd-kbd-text);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.vc-palette-brand-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vc-cmd-text-faint);
+  white-space: nowrap;
+}
+
+.vc-palette-brand-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+/* --------------------------------------------------------------------------
+   Diseño Responsive y Zero Overflow (<=680px y <=1260px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 680px) {
+  .vc-palette-overlay {
+    padding: 12px 10px;
+    align-items: flex-start;
+  }
+
+  .vc-palette-dialog {
+    max-height: 94vh;
+    border-radius: 16px;
+  }
+
+  .vc-palette-header {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .vc-palette-input {
+    font-size: 15px;
+  }
+
+  .vc-palette-branch-badge span,
+  .vc-palette-theme-badge span {
+    display: none;
+  }
+
+  .vc-palette-branch-badge,
+  .vc-palette-theme-badge {
+    padding: 0 7px;
+    height: 26px;
+  }
+
+  .vc-palette-tabs-bar {
+    padding: 8px 12px;
+    gap: 5px;
+  }
+
+  .vc-palette-tab {
+    height: 26px;
+    font-size: 11px;
+    padding: 0 8px;
+  }
+
+  .vc-palette-results {
+    padding: 8px 10px;
+  }
+
+  .vc-palette-item {
+    padding: 8px 10px;
+    gap: 10px;
+  }
+
+  .vc-palette-item-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .vc-palette-item-title {
+    font-size: 12.5px;
+  }
+
+  .vc-palette-item-subtitle {
+    font-size: 10.5px;
+  }
+
+  .vc-palette-item-enter span {
+    display: none;
+  }
+
+  .vc-palette-footer {
+    padding: 8px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .vc-palette-shortcuts {
+    gap: 10px;
+  }
+
+  .vc-palette-brand-tag {
+    font-size: 10px;
+  }
+}
