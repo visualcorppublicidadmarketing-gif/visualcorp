@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowDownRight, ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, Check, ChevronRight, CircleHelp, ClipboardList, Copy, Database, FileText, Globe2, History, Image, LayoutDashboard, LogOut, Megaphone, Menu, Package, Pencil, Plus, Settings2, ShoppingBag, ShoppingCart, Truck, Users, Wallet, X } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, Check, CheckCircle2, ChevronRight, CircleHelp, ClipboardList, Copy, Database, FileText, Globe2, History, Image, LayoutDashboard, Link2, LogOut, Megaphone, Menu, Minus, Package, Pencil, Plus, Route, Search, Settings2, ShoppingBag, ShoppingCart, Sparkles, Store, TriangleAlert, Truck, Users, Wallet, X } from 'lucide-react';
 import { AppFrame, PageHeading, StatCard } from '../../app/layout';
 import { EmptyState, StageBadge } from '../../components/feedback';
 import { formatDate, formatMoney, useWorkspace } from '../../app/workspace';
@@ -20,7 +20,7 @@ import { persistCommercialAssets, type CommercialAssetDraft } from '../../lib/co
 import { normalizeGoogleMapsUrl } from '../../lib/maps';
 import { POSCustomerPicker } from './components/POSCustomerPicker';
 import { POSCheckoutSteps, type POSCheckoutStep } from './components/POSCheckoutSteps';
-import { POSProductSearch } from './components/POSProductSearch';
+import { POSProductSearch, type POSStockSemanticMeta } from './components/POSProductSearch';
 import { POSMeasurementControls } from './components';
 import { AdvisorProductFavoriteButton } from '../../components/AdvisorProductFavoriteButton';
 import { useAdvisorProductFavorites } from '../../hooks/useAdvisorProductFavorites';
@@ -115,50 +115,114 @@ function POSProductVisual({ src, alt = '', className = '', iconSize = 17 }: { sr
   return <img className={className} src={src} alt={alt} loading="lazy" onError={() => setFailed(true)}/>;
 }
 
-function POSCartLineEditor({ line, product, inventoryStatus, onRemove, onSave }: { line: any; product: any; inventoryStatus: string; onRemove: () => void; onSave: (nextLine: any) => void }) {
+function POSCartLineEditor({
+  line,
+  product,
+  inventoryStatus,
+  inventoryTone = 'neutral',
+  workflowLabel,
+  onRemove,
+  onSave,
+  onDuplicate,
+}: {
+  line: any;
+  product: any;
+  inventoryStatus: string;
+  inventoryTone?: 'available' | 'warning' | 'neutral';
+  workflowLabel?: string;
+  onRemove: () => void;
+  onSave: (nextLine: any) => void;
+  onDuplicate?: () => void;
+}) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState({ quantity: String(line.quantity), widthCm: String(line.widthCm || ''), heightCm: String(line.heightCm || ''), unitPrice: String(line.unitPrice) });
+  const [draft, setDraft] = useState({
+    quantity: String(line.quantity),
+    widthCm: String(line.widthCm || ''),
+    heightCm: String(line.heightCm || ''),
+    unitPrice: String(line.unitPrice),
+    pricingTier: (line.pricingTier || 'pvp') as 'pvp' | 'instalacion' | 'corporativo',
+  });
 
   useEffect(() => {
-    setDraft({ quantity: String(line.quantity), widthCm: String(line.widthCm || ''), heightCm: String(line.heightCm || ''), unitPrice: String(line.unitPrice) });
-  }, [line.key, line.quantity, line.widthCm, line.heightCm, line.unitPrice]);
+    setDraft({
+      quantity: String(line.quantity),
+      widthCm: String(line.widthCm || ''),
+      heightCm: String(line.heightCm || ''),
+      unitPrice: String(line.unitPrice),
+      pricingTier: (line.pricingTier || 'pvp') as 'pvp' | 'instalacion' | 'corporativo',
+    });
+  }, [line.key, line.quantity, line.widthCm, line.heightCm, line.unitPrice, line.pricingTier]);
 
-  const save = () => {
-    const quantity = Number(draft.quantity);
-    if (!Number.isSafeInteger(quantity) || quantity < 1) return;
+  const applyLineUpdate = (nextQty: number, nextWidthCm: number, nextHeightCm: number, nextTier: 'pvp' | 'instalacion' | 'corporativo', nextCustomUnitPrice: number) => {
+    if (!Number.isSafeInteger(nextQty) || nextQty < 1) return false;
     if (line.productId) {
-      if (!product) return;
-      const widthCm = Number(draft.widthCm);
-      const heightCm = Number(draft.heightCm);
-      if (line.mode === 'area' && (!Number.isFinite(widthCm) || !Number.isFinite(heightCm) || widthCm <= 0 || heightCm <= 0)) return;
-      const calculation = calculatePOSLine({ product, mode: line.mode, quantity, widthCm, heightCm, tier: line.pricingTier || 'pvp', optionChoice: line.optionChoice || '' });
-      if (!calculation) return;
+      if (!product) return false;
+      if (line.mode === 'area' && (!Number.isFinite(nextWidthCm) || !Number.isFinite(nextHeightCm) || nextWidthCm <= 0 || nextHeightCm <= 0)) return false;
+      const calculation = calculatePOSLine({ product, mode: line.mode, quantity: nextQty, widthCm: nextWidthCm, heightCm: nextHeightCm, tier: nextTier, optionChoice: line.optionChoice || '' });
+      if (!calculation) return false;
+      const tierLabel = { pvp: 'Normal', instalacion: 'Con instalación', corporativo: 'Corporativo' }[nextTier] || 'Normal';
       const nextLine = {
         ...line,
-        quantity,
+        quantity: nextQty,
         billingQuantity: calculation.billedQuantity,
         unitPrice: calculation.unitPrice,
         total: calculation.total,
-        widthCm: line.mode === 'area' ? widthCm : null,
-        heightCm: line.mode === 'area' ? heightCm : null,
+        pricingTier: nextTier,
+        pricingTierLabel: tierLabel,
+        widthCm: line.mode === 'area' ? nextWidthCm : null,
+        heightCm: line.mode === 'area' ? nextHeightCm : null,
         areaPerPiece: calculation.areaPerPiece || null,
         areaTotal: calculation.areaTotal || null,
-        description: formatPOSLineDescription({ name: line.name, mode: line.mode, quantity, unit: calculation.unit, unitPrice: calculation.unitPrice, pricingTierLabel: line.pricingTierLabel || 'Normal', widthCm: line.mode === 'area' ? widthCm : undefined, heightCm: line.mode === 'area' ? heightCm : undefined, areaPerPiece: calculation.areaPerPiece || undefined, areaTotal: calculation.areaTotal || undefined, optionChoice: line.optionChoice || undefined }),
+        description: formatPOSLineDescription({ name: line.name, mode: line.mode, quantity: nextQty, unit: calculation.unit, unitPrice: calculation.unitPrice, pricingTierLabel: tierLabel, widthCm: line.mode === 'area' ? nextWidthCm : undefined, heightCm: line.mode === 'area' ? nextHeightCm : undefined, areaPerPiece: calculation.areaPerPiece || undefined, areaTotal: calculation.areaTotal || undefined, optionChoice: line.optionChoice || undefined }),
       };
       onSave(nextLine);
+      return true;
     } else {
-      const unitPrice = Number(draft.unitPrice);
-      if (!Number.isFinite(unitPrice) || unitPrice <= 0) return;
-      onSave({ ...line, quantity, billingQuantity: quantity, unitPrice, total: Math.round(quantity * unitPrice * 100) / 100, description: `${line.name} · ${quantity} unidades · precio acordado` });
+      if (!Number.isFinite(nextCustomUnitPrice) || nextCustomUnitPrice <= 0) return false;
+      onSave({ ...line, quantity: nextQty, billingQuantity: nextQty, unitPrice: nextCustomUnitPrice, total: Math.round(nextQty * nextCustomUnitPrice * 100) / 100, description: `${line.name} · ${nextQty} unidades · precio acordado` });
+      return true;
     }
-    setEditing(false);
+  };
+
+  const stepQuantity = (delta: -1 | 1) => {
+    const nextQty = Math.max(1, Number(line.quantity || 1) + delta);
+    if (nextQty === Number(line.quantity)) return;
+    applyLineUpdate(nextQty, Number(line.widthCm || 0), Number(line.heightCm || 0), line.pricingTier || 'pvp', Number(line.unitPrice || 0));
+  };
+
+  const save = () => {
+    const ok = applyLineUpdate(Number(draft.quantity), Number(draft.widthCm), Number(draft.heightCm), draft.pricingTier, Number(draft.unitPrice));
+    if (ok) setEditing(false);
   };
 
   return <article className="pos-cart-line-wrap">
-    <div className="pos-cart-line"><POSProductVisual src={line.image} className="pos-cart-image" iconSize={16}/><span className="pos-line-main"><b>{line.name}</b><small>{line.description||`${line.quantity} × ${formatMoney(line.unitPrice)}`}</small><small>{inventoryStatus}</small></span><strong>{formatMoney(line.total||line.quantity*line.unitPrice)}</strong><button className="icon-button danger" type="button" aria-label={`Quitar ${line.name}`} onClick={onRemove}><X size={15}/></button></div>
-    <button type="button" className="pos-line-edit-toggle" aria-expanded={editing} onClick={() => setEditing((value) => !value)}><Pencil size={13}/>{editing ? 'Cerrar edición' : 'Editar cantidad y medidas'}</button>
+    <div className="pos-cart-line">
+      <POSProductVisual src={line.image} className="pos-cart-image" iconSize={16}/>
+      <span className="pos-line-main">
+        <b>{line.name}</b>
+        <span className="pos-line-badges">
+          {line.pricingTierLabel && <span className="pos-line-badge is-tier">{line.pricingTierLabel}</span>}
+          {line.mode === 'area' && line.widthCm && line.heightCm && <span className="pos-line-badge is-measure">{line.widthCm}×{line.heightCm} cm · {Number(line.areaTotal || 0).toFixed(2)} m²</span>}
+          {workflowLabel && <span className="pos-line-badge is-workflow"><Route size={10} aria-hidden="true"/> {workflowLabel}</span>}
+        </span>
+        <small>{line.description||`${line.quantity} × ${formatMoney(line.unitPrice)}`}</small>
+        <small className={`pos-line-stock-note is-${inventoryTone}`}>{inventoryStatus}</small>
+      </span>
+      <div className="pos-line-right-col">
+        <strong>{formatMoney(line.total||line.quantity*line.unitPrice)}</strong>
+        <div className="pos-line-quick-controls" role="group" aria-label={`Cantidad y acciones de ${line.name}`}>
+          <button type="button" className="pos-line-step-btn" disabled={Number(line.quantity) <= 1} aria-label={`Reducir cantidad de ${line.name}`} onClick={() => stepQuantity(-1)}><Minus size={12}/></button>
+          <span className="pos-line-qty-pill" title="Cantidad de piezas/unidades">{line.quantity}</span>
+          <button type="button" className="pos-line-step-btn" aria-label={`Aumentar cantidad de ${line.name}`} onClick={() => stepQuantity(1)}><Plus size={12}/></button>
+          {onDuplicate && <button className="icon-button" type="button" title="Duplicar línea (para otra medida o acabado)" aria-label={`Duplicar ${line.name}`} onClick={onDuplicate}><Copy size={13}/></button>}
+          <button className="icon-button danger" type="button" title="Quitar del carrito" aria-label={`Quitar ${line.name}`} onClick={onRemove}><X size={15}/></button>
+        </div>
+      </div>
+    </div>
+    <button type="button" className="pos-line-edit-toggle" aria-expanded={editing} onClick={() => setEditing((value) => !value)}><Pencil size={13}/>{editing ? 'Cerrar edición' : 'Editar cantidad, tarifa y medidas'}</button>
     {editing && <div className="pos-line-editor">
       <label>Cantidad<input type="number" min="1" step="1" value={draft.quantity} onChange={(event) => setDraft((current) => ({ ...current, quantity: event.target.value }))}/></label>
+      {line.productId && <label>Tarifa<select value={draft.pricingTier} onChange={(event) => setDraft((current) => ({ ...current, pricingTier: event.target.value as 'pvp' | 'instalacion' | 'corporativo' }))}><option value="pvp">Normal (PVP)</option><option value="instalacion">Con instalación</option><option value="corporativo">Corporativo</option></select></label>}
       {line.mode === 'area' && <><label>Ancho (cm)<input type="number" min="0.01" step="0.01" value={draft.widthCm} onChange={(event) => setDraft((current) => ({ ...current, widthCm: event.target.value }))}/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" value={draft.heightCm} onChange={(event) => setDraft((current) => ({ ...current, heightCm: event.target.value }))}/></label></>}
       {!line.productId && <label>Precio por unidad<div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={draft.unitPrice} onChange={(event) => setDraft((current) => ({ ...current, unitPrice: event.target.value }))}/></div></label>}
       <button type="button" className="button button-outline" onClick={save}>Guardar cambios</button>
@@ -280,6 +344,12 @@ export function PosPage() {
   const [pendingSaleRecoveryMode,setPendingSaleRecoveryMode]=useState(false);
   const [mobileSummaryOpen,setMobileSummaryOpen]=useState(false);
   const [checkoutStep,setCheckoutStep]=useState<POSCheckoutStep>('order');
+  const [showQuickCashOpen,setShowQuickCashOpen]=useState(false);
+  const [quickCashAmount,setQuickCashAmount]=useState('20');
+  const [openingQuickCash,setOpeningQuickCash]=useState(false);
+  const [cashReloadTick,setCashReloadTick]=useState(0);
+  const [recentSalesQuery,setRecentSalesQuery]=useState('');
+  const [recentSalesFilter,setRecentSalesFilter]=useState<'all'|'balance'|'paid'>('all');
   const posDraftStorageKey=`visualcorp-pos-cart-draft-v1:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
   const pendingSaleStorageKey=`visualcorp-pos-pending-sale-key:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
   const pendingSaleSnapshotStorageKey=`${pendingSaleStorageKey}:snapshot`;
@@ -383,7 +453,43 @@ export function PosPage() {
     })();
     return()=>{active=false;};
   },[organizationId]);
-  useEffect(()=>{let active=true;const load=async()=>{if(!supabase||!organizationId||!user){setCashierSession({loading:false,session:null,branch:null,error:''});return;}setCashierSession(current=>({...current,loading:true,error:''}));try{const {data:branch,error:branchError}=await supabase.from('branches').select('id,code,name').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();if(branchError)throw branchError;if(!branch?.id){if(active)setCashierSession({loading:false,session:null,branch:null,error:''});return;}const {data:session,error:sessionError}=await supabase.from('cash_sessions').select('id,opened_at,opening_cash,status').eq('organization_id',organizationId).eq('branch_id',branch.id).eq('opened_by',user.id).eq('status','open').maybeSingle();if(sessionError)throw sessionError;if(active)setCashierSession({loading:false,session,branch,error:''});}catch(error){if(active)setCashierSession({loading:false,session:null,branch:null,error:error.message||'Error desconocido'});}};load();return()=>{active=false;};},[organizationId,user?.id,form.branchCode]);
+  useEffect(()=>{let active=true;const load=async()=>{if(!supabase||!organizationId||!user){setCashierSession({loading:false,session:null,branch:null,error:''});return;}setCashierSession(current=>({...current,loading:true,error:''}));try{const {data:branch,error:branchError}=await supabase.from('branches').select('id,code,name').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();if(branchError)throw branchError;if(!branch?.id){if(active)setCashierSession({loading:false,session:null,branch:null,error:''});return;}const {data:session,error:sessionError}=await supabase.from('cash_sessions').select('id,opened_at,opening_cash,status').eq('organization_id',organizationId).eq('branch_id',branch.id).eq('opened_by',user.id).eq('status','open').maybeSingle();if(sessionError)throw sessionError;if(active)setCashierSession({loading:false,session,branch,error:''});}catch(error){if(active)setCashierSession({loading:false,session:null,branch:null,error:error.message||'Error desconocido'});}};load();return()=>{active=false;};},[organizationId,user?.id,form.branchCode,cashReloadTick]);
+  const openCashSessionFromPOS=async()=>{
+    if(!supabase||!organizationId||!user||openingQuickCash)return;
+    const openingAmount=Number(quickCashAmount);
+    if(!Number.isFinite(openingAmount)||openingAmount<0){flash('Ingresa un fondo inicial válido (0 o mayor).');return;}
+    setOpeningQuickCash(true);
+    try{
+      const {data:branch,error:branchError}=await supabase.from('branches').select('id,code,name').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();
+      if(branchError)throw branchError;
+      if(!branch?.id)throw new Error('No encontramos la sucursal seleccionada.');
+      let registerId:string|null=null;
+      const {data:registers,error:regError}=await supabase.from('cash_registers').select('id,name,active,assigned_advisor_id').eq('organization_id',organizationId).eq('branch_id',branch.id);
+      if(!regError&&Array.isArray(registers)&&registers.length>0){
+        const activeRegs=registers.filter((r:any)=>r.active);
+        const myReg=activeRegs.find((r:any)=>r.assigned_advisor_id===user.id);
+        if(myReg){registerId=myReg.id;}
+        else if(hasPermission('cash','edit')&&activeRegs[0]){registerId=activeRegs[0].id;}
+        else{throw new Error('Esta sucursal usa cajas asignadas y no tienes una activa asignada. Pide a administración que te asigne una caja en Flujos.');}
+      }
+      const {error:insertError}=await supabase.from('cash_sessions').insert({
+        organization_id:organizationId,
+        branch_id:branch.id,
+        cash_register_id:registerId,
+        opening_cash:openingAmount,
+        opened_by:user.id,
+        status:'open',
+      }).select('id').single();
+      if(insertError)throw insertError;
+      setShowQuickCashOpen(false);
+      setCashReloadTick((tick)=>tick+1);
+      flash(`Turno de caja abierto en ${branch.name||branch.code} con fondo inicial de ${formatMoney(openingAmount)}.`);
+    }catch(error:any){
+      flash(`No se pudo abrir la caja desde el POS: ${error?.message||'Error desconocido'}`);
+    }finally{
+      setOpeningQuickCash(false);
+    }
+  };
   const refreshParkedOrders=async()=>{
     if(!supabase||!organizationId)return;
     const [{data:orders,error:ordersError},{data:branches,error:branchesError}]=await Promise.all([
@@ -542,6 +648,41 @@ export function PosPage() {
     const stock=stockRows.length===1?stockRows[0]:null;
     return [product.id,!links.length?'Sin vínculo de inventario':links.length>1?'Varias existencias vinculadas · revisa la disponibilidad':!stock||stock.sourceStatus?'Disponibilidad por confirmar':`Disponible: ${Number(stock.availableQuantity ?? (Number(stock.quantity||0)-Number(stock.reservedQuantity||0)))} ${stock.unit||product.unit||'unidades'}`];
   })),[modeCatalog,linksByProduct,inventoryByVariant]);
+  const stockMetaByProduct=useMemo<Record<string,POSStockSemanticMeta>>(()=>Object.fromEntries(data.catalog.map(product=>{
+    const links=linksByProduct.get(product.id)||[];
+    if(!links.length){
+      return [product.id,{tone:'unlinked',label:'Sin vínculo · no descuenta stock',linked:false}];
+    }
+    const primaryLink=links[0];
+    const stockRows=inventoryByVariant.get(primaryLink.inventory_variant_id)||[];
+    const stock=stockRows[0]||null;
+    if(links.length>1){
+      return [product.id,{tone:'low',label:'Varias existencias vinculadas',locationCode:primaryLink.location_code||'',linked:true}];
+    }
+    if(!stock||stock.sourceStatus){
+      return [product.id,{tone:'low',label:'Conteo físico pendiente',locationCode:primaryLink.location_code||'',linked:true}];
+    }
+    const available=Number(stock.availableQuantity ?? (Number(stock.quantity||0)-Number(stock.reservedQuantity||0)));
+    const minStock=Number(stock.minStock||0);
+    const unit=stock.unit||product.unit||'unidades';
+    if(available<=0){
+      return [product.id,{tone:'shortage',label:`Agotado (0 ${unit}) · Compra urgente`,availableQuantity:0,unit,locationCode:primaryLink.location_code||'',linked:true}];
+    }
+    if(minStock>0&&available<=minStock){
+      return [product.id,{tone:'low',label:`Stock bajo: ${available} ${unit}`,availableQuantity:available,unit,locationCode:primaryLink.location_code||'',linked:true}];
+    }
+    return [product.id,{tone:'available',label:`En stock: ${available} ${unit}`,availableQuantity:available,unit,locationCode:primaryLink.location_code||'',linked:true}];
+  })),[data.catalog,linksByProduct,inventoryByVariant]);
+  const acceptedQuotes=useMemo(()=>centralQuotes.filter((quote)=>quote.status==='accepted'&&quote.price_confirmed&&quote.selected_total!==null),[centralQuotes]);
+  const filteredRecentSales=useMemo(()=>{
+    const q=recentSalesQuery.trim().toLocaleLowerCase('es');
+    return salesToday.filter((sale:any)=>{
+      if(recentSalesFilter==='balance'&&!(Number(sale.balance)>0))return false;
+      if(recentSalesFilter==='paid'&&Number(sale.balance)>0)return false;
+      if(!q)return true;
+      return `${sale.customer||''} ${sale.description||''} ${sale.code||''} ${sale.method||''}`.toLocaleLowerCase('es').includes(q);
+    });
+  },[salesToday,recentSalesQuery,recentSalesFilter]);
   const needsCashShift=chargeNow&&payments.some(payment=>payment.method==='Efectivo');
   const cashShiftPending=needsCashShift&&!pendingSaleRecoveryMode&&cashierSession.loading;
   const cashShiftUnavailable=needsCashShift&&!pendingSaleRecoveryMode&&!cashierSession.loading&&!cashierSession.session;
@@ -575,6 +716,56 @@ export function PosPage() {
     const available=Number(stock.availableQuantity??(Number(stock.quantity||0)-Number(stock.reservedQuantity||0)));
     const required=Number(line.billingQuantity)||Number(line.quantity)||0;
     return available<required?`Faltan ${Math.max(0,required-available)} ${stock.unit||'unidades'}; el faltante quedará como compra urgente.`:`Se descontarán ${required} ${stock.unit||'unidades'} al confirmar.`;
+  };
+  const cartInventoryTone=(line): 'available'|'warning'|'neutral' => {
+    if(!line.productId||catalogLinkStatus!=='ready'||!selectedBranchId)return 'neutral';
+    const link=catalogLinks.find(item=>item.active&&item.branch_id===selectedBranchId&&item.catalog_product_id===line.productId);
+    if(!link)return trackedAccessoryProductIds.has(line.productId)?'warning':'neutral';
+    const stock=data.inventory.find(item=>item.variantId===link.inventory_variant_id&&item.branchId===link.branch_id);
+    if(!stock||stock.sourceStatus)return 'warning';
+    const available=Number(stock.availableQuantity??(Number(stock.quantity||0)-Number(stock.reservedQuantity||0)));
+    const required=Number(line.billingQuantity)||Number(line.quantity)||0;
+    return available<required?'warning':'available';
+  };
+  const quickAddProductToCart=(product:any)=>{
+    if(!product||product.mode==='area')return;
+    const calc=calculatePOSLine({product,mode:'quantity',quantity:1,tier:'pvp',optionChoice:''});
+    if(!calc||!(product.confirmed||product.published)){chooseCartProduct(product);return;}
+    const existing=cart.find((item:any)=>item.productId===product.id&&item.mode==='quantity'&&(item.pricingTier||'pvp')==='pvp'&&!item.optionChoice);
+    if(existing){
+      const nextQty=Number(existing.quantity||1)+1;
+      const nextCalc=calculatePOSLine({product,mode:'quantity',quantity:nextQty,tier:'pvp',optionChoice:''});
+      if(nextCalc){
+        setCart((current)=>current.map((item:any)=>item.key===existing.key?{
+          ...item,
+          quantity:nextQty,
+          billingQuantity:nextCalc.billedQuantity,
+          unitPrice:nextCalc.unitPrice,
+          total:nextCalc.total,
+          description:formatPOSLineDescription({name:item.name,mode:'quantity',quantity:nextQty,unit:nextCalc.unit,unitPrice:nextCalc.unitPrice,pricingTierLabel:item.pricingTierLabel||'Normal'}),
+        }:item));
+        flash(`${product.name} actualizado a ${nextQty} ${nextCalc.unit} en el carrito.`);
+        return;
+      }
+    }
+    const line={
+      key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      productId:product.id,sku:product.sku||product.id,name:product.name,family:product.family||'General',image:product.image||'',
+      mode:'quantity',quantity:1,billingQuantity:calc.billedQuantity,unit:calc.unit,unitPrice:calc.unitPrice,total:calc.total,
+      widthCm:null,heightCm:null,areaPerPiece:null,areaTotal:null,
+      pricingTier:'pvp',pricingTierLabel:'Normal',optionChoice:'',
+      description:formatPOSLineDescription({name:product.name,mode:'quantity',quantity:1,unit:calc.unit,unitPrice:calc.unitPrice,pricingTierLabel:'Normal'}),
+    };
+    setCart((current)=>[...current,line]);
+    flash(`${product.name} agregado al carrito.`);
+  };
+  const duplicateCartLine=(line:any)=>{
+    const copy={
+      ...line,
+      key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    };
+    setCart((current)=>[...current,copy]);
+    flash(`Se duplicó “${line.name}” en el carrito. Puedes editar su medida o tarifa.`);
   };
   const chooseCartProduct=(product)=>{
     setCartMode(product.mode==='area'?'area':'quantity');setCartFamily(product.family||'Todas');setCartProductId(product.id);setCartItemName('');setCartUnitPrice('');setCartPriceTier('pvp');setCartOptionChoice('');setCartSearch('');
@@ -834,26 +1025,124 @@ export function PosPage() {
     }catch(error){flash(`No se guardó el abono; puedes reintentar sin duplicarlo: ${error.message}`);}
     finally{setSavingBalancePayment('');}
   };
+  const connectedStockCount=useMemo(()=>Object.values(stockMetaByProduct).filter((meta)=>meta.tone==='available').length,[stockMetaByProduct]);
+  const quickCashDenominations=useMemo(()=>{
+    const base=[5,10,20,50,100];
+    if(activeTotal>0){
+      const nextTen=Math.ceil(activeTotal/10)*10;
+      const nextTwenty=Math.ceil(activeTotal/20)*20;
+      return [...new Set([nextTen,nextTwenty,...base].filter((val)=>val>=activeTotal&&val<=500))].sort((a,b)=>a-b).slice(0,5);
+    }
+    return base;
+  },[activeTotal]);
+
   return <AppFrame area="operations">
-     <PageHeading eyebrow="PUNTO DE VENTA" title="Caja y ventas" description="Arma el pedido, confirma el cobro y deja lista la información de entrega." action={<span className="local-badge"><span className="status-dot"/> {catalogLinkStatus==='ready'?'Vínculos de inventario consultados':catalogLinkStatus==='error'?'No se pudieron consultar los vínculos':'Consultando vínculos de inventario'}</span>}/>
+     <PageHeading eyebrow="PUNTO DE VENTA · SISTEMA CONECTADO" title="Caja y ventas" description="Arma el pedido, verifica existencias en vivo, asigna rutas de producción y confirma el cobro." action={<div className="pos-heading-actions"><span className={`local-badge ${catalogLinkStatus==='ready'?'is-ready':catalogLinkStatus==='error'?'is-error':''}`}><span className="status-dot"/> {catalogLinkStatus==='ready'?`${linksByProduct.size} vínculos activos en ${branchName}`:catalogLinkStatus==='error'?'No se pudieron consultar los vínculos':'Consultando vínculos de inventario'}</span></div>}/>
     {lastSaleConfirmation&&<section className="pos-sale-success" role="status" aria-live="polite"><span className="pos-sale-success-icon"><Check size={19}/></span><div className="pos-sale-success-copy"><small>VENTA REGISTRADA · {lastSaleConfirmation.branch}</small><h2>{lastSaleConfirmation.code}</h2><span>Total {formatMoney(lastSaleConfirmation.total)} · Aplicado {formatMoney(lastSaleConfirmation.paid)} · Saldo {formatMoney(lastSaleConfirmation.balance)}{lastSaleConfirmation.change>0?` · Vuelto ${formatMoney(lastSaleConfirmation.change)}`:''}</span></div><button className="icon-button" type="button" aria-label="Cerrar confirmación de venta" onClick={()=>setLastSaleConfirmation(null)}><X size={16}/></button></section>}
+
+    <section className="pos-ecosystem-bar" aria-label="Conexiones operativas del Punto de Venta">
+      <div className="pos-eco-card is-branch">
+        <span className="pos-eco-icon"><Store size={16}/></span>
+        <div className="pos-eco-copy">
+          <small>SUCURSAL ACTIVA</small>
+          <div className="pos-branch-pills" role="group" aria-label="Cambiar sucursal activa">
+            {(data.branches.length?data.branches:[{id:'vis',code:'VIS',name:'Visual Corp'},{id:'giga',code:'GIGA',name:'Gigaprint'}]).map((branch)=><button
+              key={branch.code}
+              type="button"
+              className={`pos-branch-pill${form.branchCode===branch.code?' is-active':''}`}
+              aria-pressed={form.branchCode===branch.code}
+              onClick={()=>setForm((current)=>({...current,branchCode:branch.code}))}
+            >{branch.name||branch.code}</button>)}
+          </div>
+        </div>
+      </div>
+
+      <div className="pos-eco-card">
+        <span className="pos-eco-icon is-violet"><ShoppingBag size={16}/></span>
+        <div className="pos-eco-copy">
+          <small>CATÁLOGO DE PRODUCTOS</small>
+          <b>{data.catalog.length} artículos ({data.catalog.filter(p=>p.mode!=='area').length} und · {data.catalog.filter(p=>p.mode==='area').length} m²)</b>
+          <Link to="/operaciones/catalogo" className="pos-eco-link">Abrir catálogo y tarifas <ArrowUpRight size={12}/></Link>
+        </div>
+      </div>
+
+      <div className="pos-eco-card">
+        <span className="pos-eco-icon is-emerald"><Boxes size={16}/></span>
+        <div className="pos-eco-copy">
+          <small>INVENTARIO · {branchName.toUpperCase()}</small>
+          <b>{linksByProduct.size} vinculados · {connectedStockCount} con stock listo</b>
+          <Link to="/operaciones/inventario?tab=pos" className="pos-eco-link">Vínculos POS y conteos <ArrowUpRight size={12}/></Link>
+        </div>
+      </div>
+
+      <div className="pos-eco-card">
+        <span className="pos-eco-icon is-blue"><FileText size={16}/></span>
+        <div className="pos-eco-copy">
+          <small>COTIZADOR CENTRAL</small>
+          <b>{acceptedQuotes.length} {acceptedQuotes.length===1?'aprobada lista':'aprobadas listas'} para cobrar</b>
+          <div className="pos-eco-inline-links">
+            <Link to="/operaciones/cotizador" className="pos-eco-link">Ir al cotizador <ArrowUpRight size={12}/></Link>
+            <Link to="/operaciones/clientes" className="pos-eco-link">Clientes ({data.customers?.length||0}) <ArrowUpRight size={12}/></Link>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <div className="stat-grid compact-stats"><StatCard label="Venta confirmada hoy" value={posSalesStatus==='ready'?formatMoney(salesToday.reduce((sum,sale)=>sum+sale.total,0)):'—'} icon={Wallet} note={posSalesStatus==='ready'?branchName:posSalesStatus==='loading'?'Consultando esta sucursal':posSalesStatus==='restricted'?'Sin permiso para ver ventas':'No se pudo consultar'} tone="blue"/><StatCard label="Transacciones" value={posSalesStatus==='ready'?salesToday.length:'—'} icon={ShoppingCart} note={posSalesStatus==='ready'?'Hoy · sucursal seleccionada':'Conteo no disponible'} tone="violet"/><StatCard label="Método más común" value={posSalesStatus==='ready'&&salesToday.length?mostFrequent(salesToday.map((sale)=>sale.method)):'—'} icon={ArrowDownRight} note={posSalesStatus==='ready'?'En ventas confirmadas de hoy':'Sin datos de caja'} tone="amber"/></div>
-    <section className="pos-cashier-card"><span className="pos-cashier-icon"><Users size={18}/></span><span className="pos-cashier-copy"><small>CAJERO REGISTRADO</small><b>{user?.email||'Sesión autenticada'}</b><span>{cashierSession.branch?.name||branchName} · la venta y los pagos quedan atribuidos a esta cuenta</span></span>{cashierSession.loading?<span className="inventory-status pending">Consultando turno</span>:cashierSession.session?<><span className="inventory-status available">Caja abierta · {new Date(cashierSession.session.opened_at).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})}</span><Link to="/operaciones/flujos?tab=cash" className="button button-outline">Cerrar turno <ArrowUpRight size={14}/></Link></>:cashierSession.error?<span className="inventory-status pending" title={cashierSession.error}>No se pudo verificar el turno</span>:<Link to="/operaciones/flujos?tab=cash" className="button button-outline">Abrir caja <ArrowUpRight size={14}/></Link>}</section>
+
+    <section className="pos-cashier-card">
+      <span className="pos-cashier-icon"><Users size={18}/></span>
+      <span className="pos-cashier-copy">
+        <small>CAJERO Y TURNO DE CAJA</small>
+        <b>{user?.email||'Sesión autenticada'}</b>
+        <span>{cashierSession.branch?.name||branchName} · la venta y los pagos en efectivo se registran en tu turno activo</span>
+      </span>
+      <div className="pos-cashier-actions">
+        {cashierSession.loading?<span className="inventory-status pending">Consultando turno…</span>:cashierSession.session?<>
+          <span className="inventory-status available">Caja abierta · {new Date(cashierSession.session.opened_at).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})}{Number.isFinite(Number(cashierSession.session.opening_cash))?` · Base ${formatMoney(Number(cashierSession.session.opening_cash))}`:''}</span>
+          <Link to="/operaciones/flujos?tab=cash" className="button button-outline">Arqueo / Cerrar turno <ArrowUpRight size={14}/></Link>
+        </>:cashierSession.error?<span className="inventory-status pending" title={cashierSession.error}>No se pudo verificar el turno</span>:<>
+          <span className="inventory-status pending">Sin turno abierto en {branchName}</span>
+          <button type="button" className="button button-dark pos-quick-cash-trigger" onClick={()=>setShowQuickCashOpen((open)=>!open)}><Wallet size={14}/> {showQuickCashOpen?'Ocultar apertura':'Abrir caja aquí'}</button>
+          <Link to="/operaciones/flujos?tab=cash" className="button button-outline">Flujos de caja <ArrowUpRight size={14}/></Link>
+        </>}
+      </div>
+      {showQuickCashOpen&&!cashierSession.session&&<div className="pos-quick-cash-drawer" role="region" aria-label="Apertura rápida de turno de caja">
+        <div>
+          <span className="eyebrow">APERTURA RÁPIDA EN {branchName.toUpperCase()}</span>
+          <b>Habilita cobros en efectivo sin salir del POS</b>
+          <small>Ingresa el fondo inicial de sencillo en gaveta para iniciar tu turno ahora mismo.</small>
+        </div>
+        <div className="pos-quick-cash-controls">
+          <div className="pos-quick-cash-presets" role="group" aria-label="Fondos iniciales sugeridos">
+            {['0','20','50','100'].map((val)=><button key={val} type="button" className={`pos-denomination-pill${quickCashAmount===val?' is-active':''}`} onClick={()=>setQuickCashAmount(val)}>${val}</button>)}
+          </div>
+          <label className="pos-quick-cash-input">
+            <span>Fondo inicial ($)</span>
+            <input type="number" min="0" step="0.01" value={quickCashAmount} onChange={(e)=>setQuickCashAmount(e.target.value)}/>
+          </label>
+          <button type="button" className="button button-dark" disabled={openingQuickCash} onClick={()=>void openCashSessionFromPOS()}>{openingQuickCash?'Abriendo…':'Confirmar apertura'}</button>
+        </div>
+      </div>}
+    </section>
+
     <div className="pos-grid">
       <form className="panel form-panel pos-checkout-form" onSubmit={save}>
         <div className="panel-heading"><div><span className="eyebrow">NUEVA ORDEN</span><h2>{checkoutStep==='order'?'Agrega los productos':checkoutStep==='details'?'Prepara el trabajo':'Revisa y cobra'}</h2><p className="pos-step-caption">Elige del catálogo o carga una cotización aprobada. Revisa el total y el cobro antes de confirmar.</p></div><ShoppingCart size={19}/></div>
-        <POSCheckoutSteps active={checkoutStep} onChange={chooseCheckoutStep}/>
+        <POSCheckoutSteps active={checkoutStep} onChange={chooseCheckoutStep} itemCount={form.quoteId?currentQuoteLines.length:cart.length} requiresDetails={requiresWorkDetails}/>
         {pendingSaleRecoveryMode&&<div className={`pos-pending-sale-notice${pendingOperationChanged?' is-changed':''}`} role="status"><div><b>Operación protegida</b><p>{pendingOperationChanged?'Detecté cambios en los datos guardados o en los conceptos de la cotización. No enviaré una venta con la misma clave y contenido distinto. Recarga para recuperar la versión original.':'Si la respuesta anterior se interrumpió, puedes reintentar con esta misma clave y estos datos para evitar una venta duplicada.'}</p></div>{pendingOperationChanged&&<button className="button button-outline" type="button" onClick={()=>window.location.reload()}>Restaurar datos originales</button>}</div>}
         <div className="pos-checkout-main" hidden={checkoutStep!=='order'}>
-        <label>Origen de la venta<select value={form.quoteId} onChange={(event)=>void handleQuoteSelection(event.target.value,event.currentTarget)}><option value="">Venta manual: catálogo y carrito</option>{centralQuotes.filter((quote)=>quote.status==='accepted'&&quote.price_confirmed&&quote.selected_total!==null).map((quote)=><option key={quote.id} value={quote.id}>{quote.quote_code} · {quote.customer_name||'Cliente'} · {formatMoney(quote.selected_total)}</option>)}</select><small className="pos-field-help">Puedes armar una venta nueva o cargar una cotización aprobada con su precio confirmado.</small></label>
-        <label className="pos-payment-fields pos-branch-selector">Sucursal<select value={form.branchCode} disabled={!data.branches.length} onChange={(event)=>setForm((current)=>({...current,branchCode:event.target.value}))}>{data.branches.length?data.branches.map((branch)=><option key={branch.id} value={branch.code}>{branch.name||branch.code}</option>):<option value={form.branchCode}>{branchName}</option>}</select></label>
+        <div className="pos-origin-branch-row">
+          <label>Origen de la venta<select value={form.quoteId} onChange={(event)=>void handleQuoteSelection(event.target.value,event.currentTarget)}><option value="">Venta manual: catálogo y carrito</option>{acceptedQuotes.map((quote)=><option key={quote.id} value={quote.id}>{quote.quote_code} · {quote.customer_name||'Cliente'} · {formatMoney(quote.selected_total)}</option>)}</select><small className="pos-field-help">Puedes armar una venta nueva o cargar una cotización aprobada con su precio confirmado.</small></label>
+          <label className="pos-payment-fields pos-branch-selector">Sucursal<select value={form.branchCode} disabled={!data.branches.length} onChange={(event)=>setForm((current)=>({...current,branchCode:event.target.value}))}>{data.branches.length?data.branches.map((branch)=><option key={branch.id} value={branch.code}>{branch.name||branch.code}</option>):<option value={form.branchCode}>{branchName}</option>}</select><small className="pos-field-help">Define de qué inventario se descuenta y en qué caja ingresa.</small></label>
+        </div>
         <POSCustomerPicker customers={data.customers||[]} remoteMatches={customerLookupActive&&canSearchCustomers&&!form.customerId&&customerSearch.results!==null&&!customerSearch.error?customerSearch.results:null} searchingCustomers={customerSearch.loading} searchError={customerSearch.error} onRetrySearch={()=>setCustomerSearchRequest((request)=>request+1)} canShowMore={Boolean(customerSearch.hasMore&&customerSearchLimit<20)} onShowMore={()=>setCustomerSearchLimit(20)} selectedCustomer={selectedCustomer} duplicateCustomer={duplicateCustomer} customerName={form.customer} onNewNameChange={(value)=>setForm((current)=>({...current,customer:value}))} query={customerQuery} onQueryChange={updateCustomerQuery} onSelect={choosePOSCustomer} phone={form.customerPhone} email={form.customerEmail} documentReference={form.customerDocumentReference} onContactChange={(field,value)=>setForm((current)=>({...current,[field==='phone'?'customerPhone':field==='email'?'customerEmail':'customerDocumentReference']:value}))} canViewSales={canViewCustomerHistory} historyLoading={customerHistory.loading} historyCount={customerHistory.count} historySummary={customerHistory.summary} recentPurchases={customerHistory.rows} onOpenPurchase={(purchase)=>setDetailTarget({kind:'sale',id:purchase.id,code:purchase.code})}/>
         {form.quoteId?<div className="pos-quote-total"><span>Total aprobado en cotización</span><strong>{formatMoney(form.total)}</strong><small>El total se conserva igual al aprobado.</small></div>:<>
           <section className="pos-cart-builder" aria-label="Agregar artículos">
-            <div className="pos-cart-builder-heading"><span className="eyebrow">CATÁLOGO Y CONCEPTOS</span><span>Precios en USD</span></div>
+            <div className="pos-cart-builder-heading"><span className="eyebrow">CATÁLOGO Y CONCEPTOS CONECTADOS</span><span>Precios en USD · IVA {configuredTaxRate}%</span></div>
             <div className="pos-mode-switch" role="group" aria-label="Forma de calcular el producto">
-              <button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>{setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por cantidad</button>
-              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>{setCartMode('area');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por medidas (m²)</button>
+              <button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>{setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por cantidad ({data.catalog.filter(p=>p.mode!=='area').length})</button>
+              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>{setCartMode('area');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por medidas m² ({data.catalog.filter(p=>p.mode==='area').length})</button>
             </div>
             <POSProductSearch
               products={modeCatalog} query={cartSearch} onQueryChange={setCartSearch}
@@ -861,14 +1150,41 @@ export function PosPage() {
               disabled={!selectedBranchId} family={cartFamily} onFamilyChange={setCartFamily}
               families={cartFamilies} codesByProduct={skuCodesByProduct}
               stockByProduct={stockByProduct}
+              stockMetaByProduct={stockMetaByProduct}
               renderImage={(product)=><POSProductVisual src={product.image} className="pos-product-image"/>}
               favoriteIds={favoriteIds} onToggleFavorite={toggleFavorite}
+              onQuickAdd={cartMode==='quantity'?quickAddProductToCart:undefined}
             />
             {favoriteStorageStatus==='local'&&<small className="pos-favorite-storage-note">Las estrellas se guardan en este navegador hasta conectar el almacenamiento del equipo.</small>}
             {!cartProductId&&cartMode==='quantity'&&<label>Concepto libre<input value={cartItemName} onChange={(event)=>setCartItemName(event.target.value)} placeholder="Producto o servicio acordado"/></label>}
-            {selectedCartProduct&&<div className="pos-selected-product"><POSProductVisual src={selectedCartProduct.image} alt={selectedCartProduct.name} className="pos-selected-image" iconSize={18}/><span><b>{selectedCartProduct.name}</b><small>{selectedCartProduct.sku||selectedCartProduct.id} · {selectedCartProduct.family} · {selectedCartProduct.unit||'unidad'}{cartPriceAvailable?' · tarifa lista para venta':' · tarifa pendiente de configurar'}</small><small>{!selectedCatalogLink?'Sin vínculo: esta venta no descontará inventario.':!selectedLinkedStock||selectedLinkedStock.sourceStatus?'Vínculo activo; falta conteo físico para confirmar disponibilidad.':`Disponible en ${branchName}: ${selectedAvailableStock} ${selectedLinkedStock.unit}.`}</small></span><AdvisorProductFavoriteButton favorite={favoriteIds.has(selectedCartProduct.id)} onToggle={()=>toggleFavorite(selectedCartProduct.id)}/><button className="icon-button" type="button" aria-label="Quitar artículo seleccionado" onClick={()=>{setCartProductId('');setCartUnitPrice('');}}><X size={14}/></button></div>}
+            {selectedCartProduct&&<div className="pos-selected-product">
+              <POSProductVisual src={selectedCartProduct.image} alt={selectedCartProduct.name} className="pos-selected-image" iconSize={18}/>
+              <span>
+                <b>{selectedCartProduct.name}</b>
+                <small>{selectedCartProduct.sku||selectedCartProduct.id} · {selectedCartProduct.family} · {selectedCartProduct.unit||'unidad'}{cartPriceAvailable?' · tarifa lista para venta':' · tarifa pendiente de configurar'}{selectedCatalogLink?.location_code?` · Ubicación: ${selectedCatalogLink.location_code}`:''}</small>
+                <small className={`pos-selected-stock-line is-${stockMetaByProduct[selectedCartProduct.id]?.tone||'unlinked'}`}>
+                  {!selectedCatalogLink?'Sin vínculo: esta venta no descontará inventario.':!selectedLinkedStock||selectedLinkedStock.sourceStatus?'Vínculo activo; falta conteo físico para confirmar disponibilidad.':`Disponible en ${branchName}: ${selectedAvailableStock} ${selectedLinkedStock.unit}.`}
+                  {(!selectedCatalogLink||!selectedLinkedStock||selectedLinkedStock.sourceStatus)&&<> · <Link to="/operaciones/inventario?tab=pos" className="pos-inline-inv-link">Configurar en Inventario</Link></>}
+                </small>
+              </span>
+              <AdvisorProductFavoriteButton favorite={favoriteIds.has(selectedCartProduct.id)} onToggle={()=>toggleFavorite(selectedCartProduct.id)}/>
+              <button className="icon-button" type="button" aria-label="Quitar artículo seleccionado" onClick={()=>{setCartProductId('');setCartUnitPrice('');}}><X size={14}/></button>
+            </div>}
             {cartMode==='area'&&<POSMeasurementControls widthValue={cartWidthCm} heightValue={cartHeightCm} quantityValue={cartQuantity} widthCm={cartWidthNumber} heightCm={cartHeightNumber} quantity={cartQuantityNumber} onWidthChange={setCartWidthCm} onHeightChange={setCartHeightCm} onQuantityChange={setCartQuantity}/>}
-            {cartMode==='quantity'&&<div className="pos-cart-inputs"><label>Cantidad<input id="pos-cart-quantity" type="number" min="1" step="1" value={cartQuantity} onChange={(event)=>setCartQuantity(event.target.value)}/></label>{!selectedCartProduct&&<label>Precio acordado por unidad<div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartUnitPrice} onChange={(event)=>setCartUnitPrice(event.target.value)} placeholder="0,00"/></div></label>}</div>}
+            {cartMode==='quantity'&&<div className="pos-cart-inputs">
+              <div className="pos-qty-control-group">
+                <label htmlFor="pos-cart-quantity">Cantidad</label>
+                <div className="pos-qty-stepper-row">
+                  <button type="button" className="pos-qty-step-btn" aria-label="Reducir cantidad" onClick={()=>setCartQuantity(String(Math.max(1,(Number(cartQuantity)||1)-1)))}><Minus size={14}/></button>
+                  <input id="pos-cart-quantity" type="number" min="1" step="1" value={cartQuantity} onChange={(event)=>setCartQuantity(event.target.value)}/>
+                  <button type="button" className="pos-qty-step-btn" aria-label="Aumentar cantidad" onClick={()=>setCartQuantity(String(Math.max(1,(Number(cartQuantity)||0)+1)))}><Plus size={14}/></button>
+                </div>
+                <div className="pos-qty-presets" role="group" aria-label="Cantidades rápidas">
+                  {[1,2,5,10,25,50,100].map((preset)=><button key={preset} type="button" className={`pos-qty-preset${Number(cartQuantity)===preset?' is-active':''}`} onClick={()=>setCartQuantity(String(preset))}>×{preset}</button>)}
+                </div>
+              </div>
+              {!selectedCartProduct&&<label>Precio acordado por unidad<div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartUnitPrice} onChange={(event)=>setCartUnitPrice(event.target.value)} placeholder="0,00"/></div></label>}
+            </div>}
             {selectedCartProduct&&<>{selectedCartProduct.optionPrices?.length>0&&<label>Material / acabado<select value={cartOptionChoice} onChange={(event)=>setCartOptionChoice(event.target.value)}><option value="">Tarifa base</option>{selectedCartProduct.optionPrices.map(option=><option key={option.label} value={option.label}>{option.label}</option>)}</select></label>}<QuotePriceComparison product={selectedCartProduct} basis={cartPricingBasis} selectedTier={cartPriceTier} onSelect={setCartPriceTier} optionChoice={cartOptionChoice}/>{cartMode==='area'&&invalidMeasurementStockLink&&<p className="pos-calculation-warning">Este artículo descuenta inventario medido en “{measurementStockUnit}”. Asigna una existencia en m² antes de venderlo para evitar un descuento incorrecto.</p>}</>}
             {selectedCartProduct&&cartCalculation&&<div className="pos-calculation-total"><span>{cartMode==='area'?`${cartAreaPerPiece.toFixed(4)} m² por pieza × ${cartQuantityNumber} · ${cartCalculation.billedQuantity.toFixed(4)} m² en total`:`${cartQuantityNumber} ${selectedCartProduct.unit||'unidades'} · tarifa por ${selectedCartProduct.unit||'unidad'}`}</span><strong>{formatMoney(cartCalculation.total)}</strong></div>}
             <button className="button button-outline pos-add-item" type="button" onClick={addCartLine} disabled={Boolean(selectedCartProduct&&!cartPriceAvailable)||Boolean(invalidMeasurementStockLink)}><Plus size={15}/> Agregar al carrito</button>
@@ -888,30 +1204,76 @@ export function PosPage() {
           <div className="pos-stage-heading"><span className="eyebrow">ETAPA 3 DE 3</span><h3>Revisa la orden antes de confirmar</h3><p>Comprueba artículos, cliente, entrega y cobro. La venta se registra una sola vez.</p></div>
           <dl className="pos-review-grid"><div><dt>Cliente</dt><dd>{form.customer||'Venta de mostrador'}</dd></div><div><dt>Sucursal</dt><dd>{branchName}</dd></div><div><dt>Artículos</dt><dd>{form.quoteId?'Cotización '+(centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||''):cart.length+' '+(cart.length===1?'artículo':'artículos')}</dd></div><div><dt>Entrega</dt><dd>{fulfillment.deliveryAt?new Date(fulfillment.deliveryAt).toLocaleString('es-EC',{dateStyle:'medium',timeStyle:'short'}):'Sin fecha indicada'}</dd></div><div><dt>Instalación</dt><dd>{fulfillment.installationRequired?fulfillment.installationAddress||'Dirección pendiente':'No solicitada'}</dd></div><div><dt>Cobro</dt><dd>{chargeNow?'Aplicado '+formatMoney(paymentBreakdown.applied)+' · Saldo '+formatMoney(paymentBreakdown.balance):'Pendiente de cobro'}</dd></div></dl>
           {(form.quoteId||cart.length>0)&&<POSFinancialBreakdown subtotal={activeSubtotal} discount={activeDiscount} taxRate={activeTaxRate} taxAmount={activeTaxAmount} total={activeTotal} shipping={activeShipping} taxApplied={activeTaxApplied} taxLabel={activeTaxLabel} className="pos-review-financial"/>}
-          <div className="pos-review-actions"><button className="button button-outline" type="button" onClick={()=>void copyPOSWhatsApp()}><Copy size={15}/> Copiar WhatsApp</button><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('details')}>Editar detalles del trabajo</button></div>
+          <div className="pos-review-actions"><button className="button button-outline" type="button" onClick={()=>void copyPOSWhatsApp()}><Copy size={15}/> Copiar WhatsApp</button><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('details')}>Editar detalles del trabajo</button><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('order')}>Agregar más artículos</button></div>
         </section>}
         <aside className={`pos-order-summary${mobileSummaryOpen?' is-open':''}`} data-checkout-step={checkoutStep}>
           <div className="pos-mobile-summary-bar"><span><small>ORDEN ACTUAL</small><b>{formatMoney(activeTotal)}</b></span><button className="button button-dark" type="button" aria-expanded={mobileSummaryOpen} onClick={()=>setMobileSummaryOpen((open)=>!open)}>{mobileSummaryOpen?'Cerrar pedido':'Ver pedido y cobrar'}</button></div>
           {form.quoteId
             ? <section className="pos-cart pos-quote-cart" aria-label="Resumen de cotización"><div className="pos-cart-heading"><div><span className="eyebrow">COTIZACIÓN APROBADA</span><h3>{centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||'Pedido aprobado'}</h3></div><strong>{formatMoney(activeTotal)}</strong></div><p className="pos-cart-empty">{form.description||'Los conceptos y el total se conservarán como fueron aprobados.'}</p></section>
-            : <section className="pos-cart" aria-label="Carrito de venta"><div className="pos-cart-heading"><div><span className="eyebrow">ORDEN ACTUAL</span><h3>{cart.length} {cart.length===1?'artículo':'artículos'}</h3></div><strong>{formatMoney(cartTotal)}</strong></div>{cart.length===0?<p className="pos-cart-empty">Agrega productos del catálogo o registra un concepto libre con precio acordado.</p>:<div className="pos-cart-lines">{cart.map((line)=><POSCartLineEditor key={line.key} line={line} product={data.catalog.find((product)=>product.id===line.productId)} inventoryStatus={cartInventoryStatus(line)} onRemove={()=>{setCart(current=>current.filter(item=>item.key!==line.key));setMaterialRequestsByLine(current=>{const next={...current};delete next[line.key];return next;});}} onSave={(nextLine)=>setCart(current=>current.map(item=>item.key===line.key?nextLine:item))}/>)}</div>}</section>}
-          {!form.quoteId&&cart.length>0&&<section className="pos-discount-editor" aria-labelledby="pos-discount-title"><div className="pos-discount-heading"><div><span className="eyebrow">AJUSTE COMERCIAL</span><h3 id="pos-discount-title">Descuento de la venta</h3></div><strong>{manualDiscountPercent}%</strong></div><div className="pos-discount-slider-row"><label htmlFor="pos-discount-percent">Porcentaje de descuento <span>Hasta 40%</span></label><input id="pos-discount-percent" type="range" min="0" max="40" step="1" value={manualDiscountPercent} onChange={(event)=>setDiscountPercent(event.target.value)} aria-describedby="pos-discount-hint"/><div className="pos-discount-milestones">{[0,10,20,40].map((value)=><button key={value} type="button" className={manualDiscountPercent===value?'is-active':''} onClick={()=>setDiscountPercent(String(value))}>{value}%</button>)}</div></div>{manualDiscountAmount>0&&<label className="pos-discount-reason" htmlFor="pos-discount-reason">Motivo del descuento <span>Obligatorio · {discountReason.trim().length}/300</span><input id="pos-discount-reason" type="text" maxLength={300} value={discountReason} onChange={(event)=>setDiscountReason(event.target.value)} aria-invalid={!discountReasonValid} placeholder="Ej.: cliente frecuente, volumen acordado"/></label>}<p id="pos-discount-hint" className="pos-discount-hint">El descuento se registra en la venta y requiere un motivo. Las cotizaciones aprobadas conservan su desglose.</p></section>}
+            : <section className="pos-cart" aria-label="Carrito de venta">
+                <div className="pos-cart-heading">
+                  <div>
+                    <span className="eyebrow">ORDEN ACTUAL · {branchName.toUpperCase()}</span>
+                    <h3>{cart.length} {cart.length===1?'artículo':'artículos'}{cart.length>0?` · ${cart.reduce((s,l)=>s+(Number(l.quantity)||0),0)} pzs`:''}</h3>
+                  </div>
+                  <div className="pos-cart-heading-right">
+                    <strong>{formatMoney(cartTotal)}</strong>
+                    {cart.length>1&&!pendingSaleRecoveryMode&&<button type="button" className="pos-clear-cart-btn" onClick={()=>{setCart([]);setMaterialRequestsByLine({});setProductionByLine({});flash('Carrito vaciado.');}}>Vaciar</button>}
+                  </div>
+                </div>
+                {cart.length===0?<p className="pos-cart-empty">Agrega productos del catálogo (clic en “+ Agregar” o configura sus medidas) o registra un concepto libre con precio acordado.</p>:<div className="pos-cart-lines">{cart.map((line)=>{
+                  const routeCode=productionByLine[line.key]?.workflow_code||(line.productId?productWorkflowRoutes[line.productId]:undefined);
+                  const routeName=routeCode?workflowTemplates.find((t)=>t.code===routeCode)?.name||routeCode:undefined;
+                  return <POSCartLineEditor
+                    key={line.key}
+                    line={line}
+                    product={data.catalog.find((product)=>product.id===line.productId)}
+                    inventoryStatus={cartInventoryStatus(line)}
+                    inventoryTone={cartInventoryTone(line)}
+                    workflowLabel={routeName}
+                    onDuplicate={()=>duplicateCartLine(line)}
+                    onRemove={()=>{setCart(current=>current.filter(item=>item.key!==line.key));setMaterialRequestsByLine(current=>{const next={...current};delete next[line.key];return next;});}}
+                    onSave={(nextLine)=>setCart(current=>current.map(item=>item.key===line.key?nextLine:item))}
+                  />;
+                })}</div>}
+              </section>}
+          {!form.quoteId&&cart.length>0&&<section className="pos-discount-editor" aria-labelledby="pos-discount-title"><div className="pos-discount-heading"><div><span className="eyebrow">AJUSTE COMERCIAL</span><h3 id="pos-discount-title">Descuento de la venta</h3></div><strong>{manualDiscountPercent}%</strong></div><div className="pos-discount-slider-row"><label htmlFor="pos-discount-percent">Porcentaje de descuento <span>Hasta 40%</span></label><input id="pos-discount-percent" type="range" min="0" max="40" step="1" value={manualDiscountPercent} onChange={(event)=>setDiscountPercent(event.target.value)} aria-describedby="pos-discount-hint"/><div className="pos-discount-milestones">{[0,5,10,15,20,40].map((value)=><button key={value} type="button" className={manualDiscountPercent===value?'is-active':''} onClick={()=>setDiscountPercent(String(value))}>{value}%</button>)}</div></div>{manualDiscountAmount>0&&<label className="pos-discount-reason" htmlFor="pos-discount-reason">Motivo del descuento <span>Obligatorio · {discountReason.trim().length}/300</span><input id="pos-discount-reason" type="text" maxLength={300} value={discountReason} onChange={(event)=>setDiscountReason(event.target.value)} aria-invalid={!discountReasonValid} placeholder="Ej.: cliente frecuente, volumen acordado"/></label>}<p id="pos-discount-hint" className="pos-discount-hint">El descuento se registra en la venta y requiere un motivo. Las cotizaciones aprobadas conservan su desglose.</p></section>}
           {(form.quoteId||cart.length>0)&&<POSFinancialBreakdown subtotal={activeSubtotal} discount={activeDiscount} taxRate={activeTaxRate} taxAmount={activeTaxAmount} total={activeTotal} shipping={activeShipping} taxApplied={activeTaxApplied} taxLabel={activeTaxLabel} className="pos-sidebar-financial"/>}
         <section className="pos-payment-section" hidden={checkoutStep!=='payment'}>
-          <div className="pos-payment-title"><div><span className="eyebrow">COBRO</span><h3>Forma de pago</h3></div><label className="pos-charge-toggle"><input type="checkbox" checked={chargeNow} onChange={(event)=>setChargeNow(event.target.checked)}/> Cobrar ahora</label></div>
+          <div className="pos-payment-title"><div><span className="eyebrow">COBRO Y RECAUDACIÓN</span><h3>Forma de pago</h3></div><label className="pos-charge-toggle"><input type="checkbox" checked={chargeNow} onChange={(event)=>setChargeNow(event.target.checked)}/> Cobrar ahora</label></div>
           {chargeNow?<>
-            <div className="pos-payment-rows">{payments.map((payment)=><div className="pos-payment-row" key={payment.id}>
-              <label>Método<select value={payment.method} onChange={(event)=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,method:event.target.value}:row))}><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></label>
-              <label>{payment.method==='Efectivo'?'Entregado en efectivo':payments.length===1&&payment.amount===''?'Monto (vacío = total)':'Monto aplicado'}<div className="money-input"><span>$</span><input type="number" min={0.01} max={payment.method==='Efectivo'?undefined:activeTotal||undefined} step={0.01} value={payment.amount} onChange={(event)=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,amount:event.target.value}:row))} placeholder={payments.length===1?'Total de la venta':'0,00'}/></div></label>
-              {(payment.method==='Transferencia'||payment.method==='Tarjeta')&&<label className="pos-payment-reference">Referencia (opcional)<input value={payment.reference||''} onChange={(event)=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,reference:event.target.value}:row))} placeholder="Código o últimos dígitos"/></label>}
-              <label className="pos-payment-reference">Nota del pago (opcional)<input value={payment.note||''} onChange={(event)=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,note:event.target.value}:row))} placeholder="Detalle para identificar este pago"/></label>
-              <button className="icon-button danger" type="button" aria-label="Quitar forma de pago" title={payments.length===1?'Debe quedar al menos un método de pago':'Quitar forma de pago'} disabled={payments.length===1} onClick={()=>setPayments(current=>current.length>1?current.filter(row=>row.id!==payment.id):current)}><X size={14}/></button>
-            </div>)}</div>
-            <button type="button" className="button button-outline pos-add-payment" onClick={()=>setPayments(current=>[...current,{id:globalThis.crypto?.randomUUID?.()||`payment-${Date.now()}-${current.length}`,method:'Transferencia',amount:'',reference:'',note:''}])}><Plus size={14}/> Agregar otro método</button>
-            <div className="pos-payment-balance"><span>Recibido: <b>{formatMoney(paymentBreakdown.received)}</b></span><span>Aplicado: <b>{formatMoney(paymentBreakdown.applied)}</b></span>{paymentBreakdown.change>0&&<span className="pos-change-due">Vuelto: <b>{formatMoney(paymentBreakdown.change)}</b></span>}<span>Saldo pendiente: <b>{formatMoney(paymentBreakdown.balance)}</b></span></div>
+            <div className="pos-payment-rows">{payments.map((payment,idx)=>{
+              const otherApplied=payments.filter((r)=>r.id!==payment.id).reduce((s,r)=>s+(Number(r.amount)||0),0);
+              const remainingForRow=Math.max(0,roundMoney(activeTotal-otherApplied));
+              return <div className="pos-payment-row" key={payment.id}>
+                <label>Método<select value={payment.method} onChange={(event)=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,method:event.target.value}:row))}><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></label>
+                <label>{payment.method==='Efectivo'?'Entregado en efectivo':payments.length===1&&payment.amount===''?'Monto (vacío = total)':'Monto aplicado'}<div className="money-input"><span>$</span><input type="number" min={0.01} max={payment.method==='Efectivo'?undefined:activeTotal||undefined} step={0.01} value={payment.amount} onChange={(event)=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,amount:event.target.value}:row))} placeholder={payments.length===1?'Total de la venta':'0,00'}/></div></label>
+                <button className="icon-button danger" type="button" aria-label="Quitar forma de pago" title={payments.length===1?'Debe quedar al menos un método de pago':'Quitar forma de pago'} disabled={payments.length===1} onClick={()=>setPayments(current=>current.length>1?current.filter(row=>row.id!==payment.id):current)}><X size={14}/></button>
+                {payment.method==='Efectivo'&&activeTotal>0&&<div className="pos-cash-denominations" role="group" aria-label="Billetes rápidos en efectivo">
+                  <button type="button" className={`pos-denomination-pill${Number(payment.amount)===remainingForRow||payment.amount===''?' is-active':''}`} onClick={()=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,amount:remainingForRow.toFixed(2)}:row))}>Exacto ({formatMoney(remainingForRow)})</button>
+                  {quickCashDenominations.map((bill)=><button key={bill} type="button" className={`pos-denomination-pill${Number(payment.amount)===bill?' is-active':''}`} onClick={()=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,amount:String(bill)}:row))}>${bill}</button>)}
+                </div>}
+                {payment.method!=='Efectivo'&&payments.length>1&&remainingForRow>0&&<div className="pos-cash-denominations">
+                  <button type="button" className="pos-denomination-pill" onClick={()=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,amount:remainingForRow.toFixed(2)}:row))}>Completar saldo ({formatMoney(remainingForRow)})</button>
+                </div>}
+                {(payment.method==='Transferencia'||payment.method==='Tarjeta')&&<label className="pos-payment-reference">Referencia (opcional)<input value={payment.reference||''} onChange={(event)=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,reference:event.target.value}:row))} placeholder="Código comprobante o últimos dígitos"/></label>}
+                <label className="pos-payment-reference">Nota del pago (opcional)<input value={payment.note||''} onChange={(event)=>setPayments(current=>current.map(row=>row.id===payment.id?{...row,note:event.target.value}:row))} placeholder={idx===0?'Detalle para identificar este pago':'Detalle del segundo pago'}/></label>
+              </div>;
+            })}</div>
+            <button type="button" className="button button-outline pos-add-payment" onClick={()=>setPayments(current=>{
+              const currentAssigned=current.reduce((s,r)=>s+(Number(r.amount)||(current.length===1&&r.amount===''?activeTotal:0)),0);
+              const rem=Math.max(0,roundMoney(activeTotal-currentAssigned));
+              return [...current,{id:globalThis.crypto?.randomUUID?.()||`payment-${Date.now()}-${current.length}`,method:'Transferencia',amount:rem>0?rem.toFixed(2):'',reference:'',note:''}];
+            })}><Plus size={14}/> Dividir pago / Agregar otro método</button>
+            <div className="pos-payment-balance">
+              <span>Recibido: <b>{formatMoney(paymentBreakdown.received)}</b></span>
+              <span>Aplicado: <b>{formatMoney(paymentBreakdown.applied)}</b></span>
+              {paymentBreakdown.change>0&&<span className="pos-change-due">Vuelto a entregar: <b>{formatMoney(paymentBreakdown.change)}</b></span>}
+              <span className={paymentBreakdown.balance>0?'pos-balance-pending':''}>Saldo pendiente: <b>{formatMoney(paymentBreakdown.balance)}</b></span>
+            </div>
             {paymentBreakdown.nonCashOverpayment>0&&<p className="pos-checkout-guidance" role="alert">Los pagos con tarjeta o transferencia superan el total. Ajusta esos importes; el vuelto se calcula para efectivo.</p>}{paymentBreakdown.cashWithoutBalance&&<p className="pos-checkout-guidance" role="alert">Tarjeta o transferencia ya cubren el total. Quita el efectivo adicional.</p>}
-            {cashShiftUnavailable&&<p className="pos-checkout-guidance" role="status"><CircleHelp size={15}/><span>{cashierSession.error?'No se pudo verificar tu turno. Vuelve a cargar la página o revisa la sucursal.':'Para recibir efectivo, primero abre tu turno en Caja y producción.'}</span>{!cashierSession.error&&<Link to="/operaciones/flujos?tab=cash">Abrir turno</Link>}</p>}
-          </>:<p className="pos-credit-note">La orden se registrará con saldo pendiente y sin pagos recibidos.</p>}
+            {cashShiftUnavailable&&<div className="pos-checkout-guidance" role="status"><CircleHelp size={15}/><span>{cashierSession.error?'No se pudo verificar tu turno. Vuelve a cargar la página o revisa la sucursal.':'Para recibir efectivo, primero abre tu turno de caja.'}</span>{!cashierSession.error&&<div className="pos-guidance-actions"><button type="button" className="button button-outline" onClick={()=>{setShowQuickCashOpen(true);window.scrollTo({top:0,behavior:'smooth'});}}>Abrir turno aquí</button><Link to="/operaciones/flujos?tab=cash">Ir a Flujos</Link></div>}</div>}
+          </>:<p className="pos-credit-note">La orden se registrará como crédito / cuenta por cobrar con saldo pendiente ({formatMoney(activeTotal)}) y sin pagos iniciales.</p>}
         </section>
         {activeParkedOrderId&&<div className="pos-parked-active"><span>ORDEN RECUPERADA</span><b>Se conserva en espera hasta confirmar la venta.</b></div>}
         <div className="pos-submit-actions">
@@ -923,14 +1285,22 @@ export function PosPage() {
       </form>
       <section className="panel pos-parked-panel"><div className="panel-heading"><div><span className="eyebrow">ÓRDENES RECUPERABLES</span><h2>En espera</h2></div><span className="muted-count">{parkedOrders.length} órdenes</span></div>{parkedOrders.length===0?<EmptyState icon={ClipboardList} title="No hay órdenes en espera" text="Guarda aquí un carrito o cotización para continuarla desde esta sucursal. No reserva stock."/>:<div className="activity-list">{parkedOrders.map(order=>{const payload=order.payload||{};const customerName=payload.form?.customer||payload.form?.quoteId&&centralQuotes.find(quote=>quote.id===payload.form.quoteId)?.customer_name||'Sin cliente';return <article className="sale-activity pos-parked-card" key={order.id}><div className="sale-row"><span className="sale-icon"><ClipboardList size={17}/></span><span><b>{customerName}</b><small>{branchNames[order.branch_id]||'Sucursal'} · {new Date(order.created_at).toLocaleString('es-EC',{dateStyle:'short',timeStyle:'short'})}</small></span><strong>{formatMoney(order.total)}</strong></div><div className="sale-payment-summary"><span>{payload.cart?.length|| (payload.form?.quoteId?'Cotización aprobada':'')} artículo(s)</span><span>Guardada por <b>{order.created_by===user?.id?'ti':'el equipo'}</b></span></div><button className="button button-outline" type="button" onClick={()=>resumeParkedOrder(order)}>Recuperar orden</button></article>;})}</div>}</section>
       <section className="panel pos-recent-panel"><div className="panel-heading"><div><span className="eyebrow">CAJA DEL DÍA · {branchName}</span><h2>Ventas confirmadas</h2></div><span className="muted-count">{posSalesStatus==='ready'?`${salesToday.length} registros`:posSalesStatus==='loading'?'Consultando…':posSalesStatus==='restricted'?'Acceso limitado':'Error de consulta'}</span></div>
-        {posSalesStatus==='loading'?<div className="pos-sales-state" role="status">Consultando las ventas de hoy para {branchName}…</div>:posSalesStatus==='restricted'?<div className="pos-sales-state">Tu perfil no tiene permiso para consultar ventas.</div>:posSalesStatus==='error'?<div className="pos-sales-state" role="alert"><span>No se pudieron cargar las ventas de esta sucursal.</span><button className="button button-outline" type="button" onClick={()=>void refreshPOSDaySales()}>Reintentar</button></div>:salesToday.length===0?<EmptyState icon={Wallet} title="Todavía no hay ventas" text={`Las ventas confirmadas de hoy en ${branchName} aparecerán aquí.`}/>:<div className="activity-list">{salesToday.map((sale)=><article className="sale-activity" key={sale.id}><div className="sale-row"><span className="sale-icon"><ShoppingCart size={17}/></span><span><b>{sale.customer||sale.description||'Venta'}</b><small>{sale.method} · {new Date(sale.date).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})} · {sale.code}</small></span><strong>{formatMoney(sale.total)}</strong></div><div className="sale-payment-summary"><span>Abonado: <b>{formatMoney(sale.paid||0)}</b></span><span>Saldo: <b>{formatMoney(sale.balance||0)}</b></span>{sale.urgent&&<span className="inventory-status pending">Compra urgente pendiente</span>}</div><button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>setDetailTarget({kind:'sale',id:sale.id,code:sale.code})}>Ver ficha completa</button>{Number(sale.balance)>0&&<><button className="button button-outline" type="button" onClick={()=>{setPaymentTarget(paymentTarget===sale.id?null:sale.id);setPaymentForm({amount:String(sale.balance),method:'Efectivo',reference:'',note:''});}}>Registrar abono</button>{paymentTarget===sale.id&&<form className="payment-form" onSubmit={(event)=>registerBalancePayment(event,sale)}>
+        {posSalesStatus==='ready'&&salesToday.length>0&&<div className="pos-recent-toolbar">
+          <div className="search-input pos-recent-search"><Search size={14}/><input type="search" value={recentSalesQuery} onChange={(e)=>setRecentSalesQuery(e.target.value)} placeholder="Buscar cliente, código VEN o producto…" aria-label="Buscar en ventas de hoy"/></div>
+          <div className="pos-recent-filter-pills" role="group" aria-label="Filtrar ventas de hoy">
+            <button type="button" className={recentSalesFilter==='all'?'is-active':''} onClick={()=>setRecentSalesFilter('all')}>Todas ({salesToday.length})</button>
+            <button type="button" className={recentSalesFilter==='balance'?'is-active':''} onClick={()=>setRecentSalesFilter('balance')}>Con saldo ({salesToday.filter((s:any)=>Number(s.balance)>0).length})</button>
+            <button type="button" className={recentSalesFilter==='paid'?'is-active':''} onClick={()=>setRecentSalesFilter('paid')}>Pagadas ({salesToday.filter((s:any)=>!(Number(s.balance)>0)).length})</button>
+          </div>
+        </div>}
+        {posSalesStatus==='loading'?<div className="pos-sales-state" role="status">Consultando las ventas de hoy para {branchName}…</div>:posSalesStatus==='restricted'?<div className="pos-sales-state">Tu perfil no tiene permiso para consultar ventas.</div>:posSalesStatus==='error'?<div className="pos-sales-state" role="alert"><span>No se pudieron cargar las ventas de esta sucursal.</span><button className="button button-outline" type="button" onClick={()=>void refreshPOSDaySales()}>Reintentar</button></div>:salesToday.length===0?<EmptyState icon={Wallet} title="Todavía no hay ventas" text={`Las ventas confirmadas de hoy en ${branchName} aparecerán aquí.`}/>:filteredRecentSales.length===0?<div className="pos-sales-state"><span>No hay ventas que coincidan con el filtro actual.</span><button className="button button-outline" type="button" onClick={()=>{setRecentSalesQuery('');setRecentSalesFilter('all');}}>Ver todas</button></div>:<div className="activity-list">{filteredRecentSales.map((sale)=><article className="sale-activity" key={sale.id}><div className="sale-row"><span className="sale-icon"><ShoppingCart size={17}/></span><span><b>{sale.customer||sale.description||'Venta'}</b><small>{sale.method} · {new Date(sale.date).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})} · {sale.code}</small></span><strong>{formatMoney(sale.total)}</strong></div><div className="sale-payment-summary"><span>Abonado: <b>{formatMoney(sale.paid||0)}</b></span><span className={Number(sale.balance)>0?'pos-sale-balance-tag is-due':'pos-sale-balance-tag is-paid'}>Saldo: <b>{formatMoney(sale.balance||0)}</b></span>{sale.urgent&&<span className="inventory-status pending">Compra urgente pendiente</span>}</div><div className="pos-sale-card-actions"><button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>setDetailTarget({kind:'sale',id:sale.id,code:sale.code})}>Ver ficha completa</button>{Number(sale.balance)>0&&<button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>{setPaymentTarget(paymentTarget===sale.id?null:sale.id);setPaymentForm({amount:String(sale.balance),method:'Efectivo',reference:'',note:''});}}>Registrar abono</button>}</div>{Number(sale.balance)>0&&paymentTarget===sale.id&&<form className="payment-form" onSubmit={(event)=>registerBalancePayment(event,sale)}>
           <label>{paymentForm.method==='Efectivo'?'Monto recibido':'Monto aplicado'}<input type="number" min={0.01} max={paymentForm.method==='Efectivo'?undefined:sale.balance} step={0.01} required value={paymentForm.amount} onChange={(event)=>setPaymentForm({...paymentForm,amount:event.target.value})}/></label>
           {paymentForm.method==='Efectivo'&&<small className="pos-balance-change-preview">Se aplicará {formatMoney(Math.min(Number(paymentForm.amount)||0,Number(sale.balance)))} · Vuelto {formatMoney(Math.max(0,(Number(paymentForm.amount)||0)-Number(sale.balance)))}</small>}
           <label>Forma de pago<select value={paymentForm.method} onChange={(event)=>setPaymentForm({...paymentForm,method:event.target.value})}><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></label>
           {(paymentForm.method==='Transferencia'||paymentForm.method==='Tarjeta')&&<label>Referencia (opcional)<input value={paymentForm.reference} onChange={(event)=>setPaymentForm({...paymentForm,reference:event.target.value})} placeholder="Código o últimos dígitos"/></label>}
           <label>Nota (opcional)<input value={paymentForm.note} onChange={(event)=>setPaymentForm({...paymentForm,note:event.target.value})} placeholder="Detalle del abono"/></label>
           <button className="button button-dark" type="submit" disabled={savingBalancePayment===sale.id}>{savingBalancePayment===sale.id?'Guardando…':'Guardar abono'}</button>
-        </form>}</>}</article>)}</div>}
+        </form>}</article>)}</div>}
       </section>
     </div><div className="notice-box"><span><CircleHelp size={17}/></span><div><b>Antes de confirmar</b><p>Los vínculos conectan productos con variantes de inventario; la disponibilidad depende de un conteo físico registrado por sucursal. Si falta el conteo o la existencia no alcanza, el POS lo muestra como pendiente y permite marcar la compra urgente al confirmar. Las órdenes en espera no reservan existencias y esta pantalla no emite comprobantes tributarios.</p></div></div>
     <Sheet open={Boolean(detailTarget)} onOpenChange={(open)=>{if(!open)setDetailTarget(null);}} title={detailTarget ? `Ficha completa · ${detailTarget.code}` : 'Ficha completa'} description="Productos, imágenes, valores y pagos registrados en esta compra.">{detailTarget&&<CommercialDocumentDetails kind="sale" documentId={detailTarget.id}/>}</Sheet>
