@@ -126,3 +126,492 @@
 .personnel-new-account-heading>div{display:grid;gap:4px}.personnel-new-account-heading b{font-size:12px;color:#302d39}.personnel-new-account-heading small{font-size:10px;color:#747681;line-height:1.45}
 .personnel-new-account-heading .button{min-height:34px;padding:0 9px;font-size:10px;white-space:nowrap}
 @media(max-width:520px){.personnel-new-account-heading{align-items:flex-start;flex-direction:column}.personnel-new-account-heading .button{width:100%;justify-content:center}}
+
+/* === Mejoras Personal, Salarios, Descuentos, Asistencia y Métricas 2.0 === */
+.personnel-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.personnel-metrics-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.personnel-metric-icon.is-blue {
+  background: #eaf4fc;
+  color: #1d6d9e;
+}
+.personnel-metric-icon.is-amber {
+  background: #fef6e6;
+  color: #9e6514;
+}
+.personnel-mini-attendance {
+  display: inline-block;
+  width: max-content;
+  max-width: 100%;
+  margin-top: 2px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+}
+.personnel-mini-attendance.is-presente,
+.personnel-mini-attendance.is-remoto {
+  background: #e9f8ef;
+  color: #1f6b47;
+}
+.personnel-mini-attendance.is-tardanza {
+  background: #fef4e4;
+  color: #9c6212;
+}
+.personnel-mini-attendance.is-falta {
+  background: #fdeeed;
+  color: #9b2c2c;
+}
+.personnel-mini-attendance.is-permiso,
+.personnel-mini-attendance.is-vacaciones {
+  background: #eef4fc;
+  color: #235c91;
+}
+.personnel-linked-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #f5eff8;
+  color: #792271;
+  font-size: 10px;
+  font-weight: 700;
+}
+.personnel-tabs {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 12px 0 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--vc-line, #e8e7ee);
+}
+.personnel-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--vc-line, #e3e2ea);
+  border-radius: 10px;
+  background: var(--vc-bg, #f7f6fa);
+  color: var(--vc-muted, #656774);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.personnel-tabs button:hover {
+  border-color: #c8add0;
+  color: var(--vc-ink, #23222c);
+}
+.personnel-tabs button.active {
+  border-color: #8d117e;
+  background: #fbf2fa;
+  color: #8d117e;
+  font-weight: 750;
+  box-shadow: 0 2px 8px rgba(141, 17, 126, 0.1);
+}
+.personnel-tab-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #d97706;
+  color: #fff;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+}
+.personnel-netpay-banner {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid #dfd3e6;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fbf7fc 0%, #f4f8fc 100%);
+}
+.personnel-netpay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.personnel-netpay-header h3 {
+  margin: 3px 0 0;
+  font-size: 14px;
+}
+.personnel-month-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--vc-muted, #626472);
+}
+.personnel-month-picker input {
+  min-height: 34px;
+  padding: 4px 9px;
+  border: 1px solid var(--vc-line, #dcdbe4);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--vc-ink, #23222c);
+  font: inherit;
+  font-size: 11px;
+}
+.personnel-netpay-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.personnel-netpay-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--vc-line, #e6e4ee);
+  border-radius: 11px;
+  background: #fff;
+}
+.personnel-netpay-card small {
+  color: var(--vc-muted, #6d6f7c);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.personnel-netpay-card b {
+  color: var(--vc-ink, #21202a);
+  font-size: 19px;
+  letter-spacing: -0.03em;
+}
+.personnel-netpay-card span {
+  color: var(--vc-muted, #737582);
+  font-size: 10px;
+}
+.personnel-netpay-card.is-deduction b {
+  color: #b45309;
+}
+.personnel-netpay-card.is-net {
+  border-color: #b9e2cb;
+  background: #f2fbf6;
+}
+.personnel-netpay-card.is-net b {
+  color: #166534;
+}
+.personnel-current-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #e9f8ef;
+  color: #166534;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 750;
+}
+.personnel-deduction-form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 13px;
+  border: 1px solid var(--vc-line, #e6e4ee);
+  border-radius: 12px;
+  background: #faf9fc;
+}
+.personnel-deduction-presets,
+.personnel-dept-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.personnel-deduction-presets > span,
+.personnel-dept-chips > span {
+  color: var(--vc-muted, #6c6e7b);
+  font-size: 10px;
+  font-weight: 700;
+}
+.personnel-chip-btn {
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--vc-line, #dddbe6);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--vc-ink, #32313d);
+  font: inherit;
+  font-size: 9.5px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.personnel-chip-btn:hover {
+  border-color: #8d117e;
+  color: #8d117e;
+}
+.personnel-deduction-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  align-items: end;
+}
+.personnel-deduction-desc {
+  grid-column: 1 / -1;
+}
+.personnel-deduction-grid label,
+.personnel-attendance-form label {
+  display: grid;
+  gap: 5px;
+  color: #4f505c;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.personnel-deduction-grid input,
+.personnel-attendance-form input,
+.personnel-attendance-form select {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid var(--vc-line, #dedce6);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--vc-ink, #23222c);
+  font: inherit;
+  font-size: 11.5px;
+}
+.personnel-deduction-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.personnel-deduction-toolbar select {
+  min-height: 34px;
+  padding: 4px 10px;
+  border: 1px solid var(--vc-line, #dedce6);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--vc-ink, #23222c);
+  font: inherit;
+  font-size: 11px;
+}
+.personnel-deduction-actions {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+.personnel-deduction-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.personnel-deduction-btns .button {
+  min-height: 28px;
+  padding: 0 9px;
+  font-size: 10px;
+}
+.personnel-deduction-btns .is-danger-text {
+  color: #b91c1c;
+}
+.personnel-attendance-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 12px;
+}
+.personnel-att-kpi {
+  display: grid;
+  gap: 3px;
+  padding: 11px 13px;
+  border: 1px solid var(--vc-line, #e6e4ee);
+  border-radius: 11px;
+  background: #fff;
+}
+.personnel-att-kpi small {
+  color: var(--vc-muted, #6e707d);
+  font-size: 9px;
+  font-weight: 800;
+}
+.personnel-att-kpi b {
+  font-size: 17px;
+  color: var(--vc-ink, #22212b);
+}
+.personnel-att-kpi span {
+  font-size: 10px;
+  color: var(--vc-muted, #737582);
+}
+.personnel-quick-checkin-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--vc-line, #e5e3ed);
+  border-radius: 11px;
+  background: #faf9fc;
+  font-size: 11px;
+  font-weight: 650;
+}
+.personnel-quick-checkin-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.personnel-att-pill,
+.personnel-att-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.personnel-att-badge {
+  padding: 2px 8px;
+  font-size: 9.5px;
+  cursor: default;
+}
+.personnel-att-pill.is-presente,
+.personnel-att-badge.is-presente,
+.personnel-att-pill.is-remoto,
+.personnel-att-badge.is-remoto {
+  border-color: #b7e3c9;
+  background: #eaf9f0;
+  color: #166534;
+}
+.personnel-att-pill.is-tardanza,
+.personnel-att-badge.is-tardanza {
+  border-color: #f4d699;
+  background: #fef6e4;
+  color: #9a5b0f;
+}
+.personnel-att-pill.is-falta,
+.personnel-att-badge.is-falta {
+  border-color: #f3c2bf;
+  background: #fdeeed;
+  color: #991b1b;
+}
+.personnel-att-pill.is-permiso,
+.personnel-att-badge.is-permiso,
+.personnel-att-pill.is-vacaciones,
+.personnel-att-badge.is-vacaciones {
+  border-color: #bdd7f2;
+  background: #eef6fd;
+  color: #1e568a;
+}
+.personnel-attendance-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  align-items: end;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid var(--vc-line, #e6e4ee);
+  border-radius: 12px;
+  background: #fff;
+}
+.personnel-att-note-field {
+  grid-column: span 2;
+}
+.personnel-att-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.personnel-att-row-actions .button {
+  min-height: 28px;
+  padding: 0 9px;
+  font-size: 10px;
+}
+.personnel-perf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.personnel-perf-card {
+  display: grid;
+  gap: 5px;
+  padding: 13px;
+  border: 1px solid var(--vc-line, #e6e4ee);
+  border-radius: 12px;
+  background: #faf9fc;
+}
+.personnel-perf-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #8d117e;
+}
+.personnel-perf-head small {
+  color: var(--vc-muted, #6d6f7c);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.personnel-perf-card b {
+  font-size: 18px;
+  color: var(--vc-ink, #21202a);
+}
+.personnel-perf-card span {
+  font-size: 10px;
+  color: var(--vc-muted, #737582);
+  line-height: 1.4;
+}
+.personnel-perf-lists h4 {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  color: var(--vc-ink, #23222c);
+}
+
+@media (max-width: 1260px) {
+  .personnel-metrics-5 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .personnel-netpay-cards,
+  .personnel-perf-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .personnel-attendance-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .personnel-attendance-form,
+  .personnel-deduction-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .personnel-att-note-field {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 680px) {
+  .personnel-metrics-5,
+  .personnel-netpay-cards,
+  .personnel-perf-grid,
+  .personnel-attendance-kpis,
+  .personnel-attendance-form,
+  .personnel-deduction-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .personnel-deduction-actions {
+    justify-items: start;
+  }
+}
