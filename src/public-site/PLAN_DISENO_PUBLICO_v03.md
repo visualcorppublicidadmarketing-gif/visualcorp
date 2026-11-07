@@ -78,3 +78,13 @@ Ayudar a una persona que llega por primera vez a reconocer a Visual Corp, encont
 - Se cargan bajo demanda las áreas administrativas menos frecuentes y se separaron dependencias de React, Supabase, editor de texto, PDF y enrutador. El chunk de entrada pasó de 627.73 kB a 254.37 kB; el build ya no advierte sobre un chunk de más de 500 kB.
 - Se revisó la composición actual en escritorio y móvil. En el preview de producción respondieron Inicio, Servicios, Cotizador, Portafolio y Contacto a 390 y 1440 px, sin desbordamiento horizontal, imágenes rotas ni errores de consola.
 - `npm run build` y `git diff --check` terminaron correctamente. No se enviaron formularios, no se desplegó y no se publicó.
+
+## Continuación v09 — ejemplos prácticos en el portafolio
+
+**Fecha:** 7 de noviembre de 2026. **Estado:** implementado en el checkout local; pendiente revisión y publicación.
+
+- Se conectaron cinco ejemplos prácticos ya preparados en el sitio: ambientación de temporada, campaña en punto de venta, cuadernos corporativos, recuerdos en acrílico y exhibición para ferias.
+- Las tarjetas usan muestras conceptuales existentes y declaran que no representan proyectos de clientes ni trabajos ejecutados. Los casos reales quedan separados y requieren descripción, evidencia y autorización de publicación confirmadas.
+- Cada ejemplo enlaza a contacto; no se añadieron dependencias, activos nuevos, registros ni cambios de base de datos.
+- Se consultaron las guías oficiales de tarjetas de Magic UI, shadcn y HeroUI. Se mantuvieron las tarjetas propias del sitio porque el proyecto ya usa React, CSS y patrones visuales existentes; no se justificó incorporar otra biblioteca.
+- Pendiente: revisión visual local, compilación y sincronización de contexto. No se desplegó.

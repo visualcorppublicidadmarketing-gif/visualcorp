@@ -27,6 +27,9 @@ import { DatePicker } from '../../components/ui/Calendar';
 import { persistCommercialAssets, type CommercialAssetDraft } from '../../lib/commercialAssets';
 import { isGoogleMapsUrl, normalizeGoogleMapsUrl } from '../../lib/maps';
 import { ChatterDrawer360 } from '../../components/ui/ChatterDrawer360';
+import { ExecutiveQuotePdfModal, type QuoteData } from '../../components/ExecutiveQuotePdfModal';
+import { PaymentReceiptModal, type PaymentReceiptRecord } from '../../components/PaymentReceiptModal';
+import { calculateTieredPrice, getNextVolumeTierRecommendation } from '../../lib/volumePricing';
 import './operations-quote.css';
 
 const MAX_QUOTE_ITEMS = 40;
@@ -155,6 +158,9 @@ export function OperationsQuotePage() {
   const [quoteError, setQuoteError] = useState('');
   const [historyQuery, setHistoryQuery] = useState('');
   const [historyFilter, setHistoryFilter] = useState<'all' | 'quotes' | 'accepted' | 'sales'>('all');
+  const [selectedQuoteForPdf, setSelectedQuoteForPdf] = useState<QuoteData | null>(null);
+  const [isCurrentPdfOpen, setIsCurrentPdfOpen] = useState(false);
+  const [receiptModalTarget, setReceiptModalTarget] = useState<{ id: string; clientName: string; amount: number } | null>(null);
 
   useEffect(() => {
     if (!data.branches?.length) return;
@@ -1748,9 +1754,9 @@ export function OperationsQuotePage() {
             <button
               className="button button-outline operations-quote-print-button"
               type="button"
-              onClick={() => window.print()}
+              onClick={() => setIsCurrentPdfOpen(true)}
             >
-              <Printer size={16}/> Imprimir / PDF Proforma
+              <Printer size={16}/> Ver Proforma PDF Formal con QR
             </button>
           </div>
         </section>
@@ -1886,6 +1892,32 @@ export function OperationsQuotePage() {
                   >
                     <MessageSquare size={12}/> Chatter 360°
                   </button>
+                  <button
+                    className="operations-quote-detail-link"
+                    type="button"
+                    onClick={() => setSelectedQuoteForPdf({
+                      quote_code: document.documentCode || document.quote_code || document.id,
+                      customer_name: document.customerLabel || 'Cliente Visual Corp',
+                      total: document.total || 0,
+                      subtotal: document.subtotal || document.total || 0,
+                      tax: document.tax || 0,
+                      date: document.formattedDate || new Date().toISOString(),
+                      items: document.items || [],
+                    })}
+                  >
+                    <Printer size={12}/> Proforma PDF
+                  </button>
+                  <button
+                    className="operations-quote-detail-link is-receipt"
+                    type="button"
+                    onClick={() => setReceiptModalTarget({
+                      id: document.documentCode || document.id,
+                      clientName: document.customerLabel || 'Cliente',
+                      amount: document.total || 0,
+                    })}
+                  >
+                    <Wallet size={12}/> Comprobante
+                  </button>
                   {canRemove && (
                     <button
                       className="operations-quote-delete-link"
@@ -1931,6 +1963,58 @@ export function OperationsQuotePage() {
         recordSubtitle={chatterTarget.recordSubtitle}
         recordPhone={chatterTarget.recordPhone}
         recordStage={chatterTarget.recordStage}
+      />
+    )}
+
+    {isCurrentPdfOpen && (
+      <ExecutiveQuotePdfModal
+        isOpen={isCurrentPdfOpen}
+        onClose={() => setIsCurrentPdfOpen(false)}
+        quote={{
+          quote_code: `COT-${Date.now().toString().slice(-4)}`,
+          customer_name: customer.trim() || 'Consumidor / Por definir',
+          customer_ruc: customerDocument.trim(),
+          customer_phone: phone.trim(),
+          subtotal: selectedFinancials?.subtotal || 0,
+          discount_amount: selectedFinancials?.discount || 0,
+          discount_percent: discountRate,
+          taxable_base: selectedFinancials?.taxable || 0,
+          tax: applyIVA ? (selectedFinancials?.tax || 0) : 0,
+          shipping_cost: extraCost,
+          total: selectedTotal || 0,
+          deposit_amount: depositAmount || 0,
+          remaining_balance: remainingBalance || 0,
+          items: configuredLines.map((l) => ({
+            name: l.title,
+            description: l.option ? `Opción: ${l.option}` : l.additionalDescription || '',
+            unit: l.unit,
+            calcType: l.isAreaMode ? 'm2' : 'unit',
+            width_cm: l.width,
+            height_cm: l.height,
+            area_m2: l.totalArea,
+            quantity: l.pieceQuantity,
+            unit_price: l.unitPrice || 0,
+            line_total: l.totals[priceTier] || 0,
+          })),
+        }}
+      />
+    )}
+
+    {selectedQuoteForPdf && (
+      <ExecutiveQuotePdfModal
+        isOpen={Boolean(selectedQuoteForPdf)}
+        onClose={() => setSelectedQuoteForPdf(null)}
+        quote={selectedQuoteForPdf}
+      />
+    )}
+
+    {receiptModalTarget && (
+      <PaymentReceiptModal
+        isOpen={Boolean(receiptModalTarget)}
+        onClose={() => setReceiptModalTarget(null)}
+        saleOrOrderId={receiptModalTarget.id}
+        customerName={receiptModalTarget.clientName}
+        expectedAmount={receiptModalTarget.amount}
       />
     )}
 
