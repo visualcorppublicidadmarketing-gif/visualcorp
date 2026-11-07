@@ -424,3 +424,25 @@ html[data-public-theme="light"] .public-site .store-clear-filters { border-color
 html[data-public-theme="light"] .public-site .store-catalog-controls :is(.store-inline-search, .store-inline-search button, .store-clear-filters, .store-results-sort select):focus-visible,
 html[data-public-theme="light"] .public-site .store-catalog-controls .store-category-rail button:focus-visible { outline: 3px solid #8c236e; outline-offset: 2px; }
 html[data-public-theme="light"] .public-site .store-inline-search:focus-within { border-color: #8c236e; box-shadow: 0 0 0 3px rgb(140 35 110 / 14%); }
+
+/* Store card polish with light-theme contrast kept intact. */
+html[data-public-theme="light"] .public-site .store-category-card.is-active {
+  border-color: #a63d89;
+  background: linear-gradient(130deg, #fbf1fa, #f6edf8);
+  box-shadow: inset 0 0 0 1px rgb(140 35 110 / 10%), 0 12px 28px rgb(48 34 60 / 8%);
+}
+html[data-public-theme="light"] .public-site .store-category-card.is-active > svg { color: #84246c; }
+html[data-public-theme="light"] .public-site .store-product-compare { color: #5f5967; }
+html[data-public-theme="light"] .public-site .store-product-compare:hover,
+html[data-public-theme="light"] .public-site .store-product-compare.is-selected {
+  border-color: #d7afd0;
+  background: #fbf2f9;
+  color: #70235f;
+}
+html[data-public-theme="light"] .public-site .store-product-open:focus-visible,
+html[data-public-theme="light"] .public-site .store-product-copy h3 button:focus-visible,
+html[data-public-theme="light"] .public-site .store-product-add:focus-visible,
+html[data-public-theme="light"] .public-site .store-product-compare:focus-visible,
+html[data-public-theme="light"] .public-site .store-category-card:focus-visible {
+  outline-color: #8c236e;
+}
