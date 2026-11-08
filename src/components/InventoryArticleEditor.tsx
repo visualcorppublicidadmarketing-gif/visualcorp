@@ -14,6 +14,7 @@ import {
   Image as ImageIcon,
   Layers,
   MapPin,
+  MoreHorizontal,
   Package,
   PackageMinus,
   PackagePlus,
@@ -29,7 +30,6 @@ import { InventorySpecificationFields } from './InventorySpecificationFields';
 import { InventoryOptionPicker } from './InventoryOptionPicker';
 import { InventoryProductImageGallery } from './InventoryProductImageGallery';
 import type { InventoryGalleryImage } from './inventoryImageUtils';
-import { AnimatedList } from './ui/MagicComponents';
 import './InventoryArticleEditor.css';
 
 type ReferenceImage = { path: string; label: string; series?: string };
@@ -140,6 +140,8 @@ export function InventoryArticleEditor({
   const [activeSection, setActiveSection] = useState<EditorSectionFilter>('identity');
   const [copiedSku, setCopiedSku] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const overviewRef = useRef<HTMLDetailsElement>(null);
+  const sectionNavigationRef = useRef<HTMLDetailsElement>(null);
   const previousSectionRef = useRef(activeSection);
 
   useEffect(() => {
@@ -148,6 +150,8 @@ export function InventoryArticleEditor({
     setLibraryOpen(false);
     setLibraryTerm('');
     setActiveSection('identity');
+    overviewRef.current?.removeAttribute('open');
+    sectionNavigationRef.current?.removeAttribute('open');
   }, [value.remoteItemId, value.variantId]);
 
   useEffect(() => {
@@ -248,7 +252,7 @@ export function InventoryArticleEditor({
   const readiness = useMemo(() => {
     const specs = value.variantAttributes || {};
     const custom = value.customFields || {};
-    const hasIdentity = Boolean(value.name.trim() || value.category.trim() || value.itemType.trim() || value.tags.trim());
+    const hasIdentity = Boolean(value.name.trim());
     const hasSpecs = Boolean(
       value.variant.trim() ||
         value.description.trim() ||
@@ -259,6 +263,7 @@ export function InventoryArticleEditor({
     const hasPurchase = Boolean(
       String(specs.purchase_unit || '').trim() ||
         String(custom.preferred_supplier || '').trim() ||
+        String(custom.brand_model || '').trim() ||
         String(custom.purchase_notes || '').trim() ||
         sourceItem?.unitCost != null,
     );
@@ -266,8 +271,8 @@ export function InventoryArticleEditor({
     const steps: Array<{ id: EditorSectionFilter; label: string; done: boolean }> = [
       { id: 'identity', label: 'Identificación', done: hasIdentity },
       { id: 'specs', label: 'Medidas y ficha', done: hasSpecs },
-      { id: 'media', label: 'Imagen', done: hasMedia },
-      { id: 'stock', label: 'Stock contado', done: hasStock },
+      { id: 'media', label: 'Imágenes', done: hasMedia },
+      { id: 'stock', label: 'Sucursal y conteo', done: hasStock },
       { id: 'purchase', label: 'Datos de compra', done: hasPurchase },
     ];
     const doneCount = steps.filter((s) => s.done).length;
@@ -279,16 +284,45 @@ export function InventoryArticleEditor({
     };
   }, [value, galleryImages.length, hasCountedStock, sourceItem?.unitCost]);
 
-  const editorSteps: Array<{ id: Exclude<EditorSectionFilter, 'all'>; label: string; Icon: typeof Package; badge?: number }> = [
+  const editorSteps: Array<{ id: Exclude<EditorSectionFilter, 'all'>; label: string; Icon: typeof Package }> = [
     { id: 'identity', label: 'Identificación', Icon: Tag },
     { id: 'specs', label: 'Medidas y ficha', Icon: Ruler },
-    { id: 'media', label: 'Imágenes', Icon: ImageIcon, badge: galleryImages.length },
+    { id: 'media', label: 'Imágenes', Icon: ImageIcon },
     { id: 'stock', label: 'Sucursal y conteo', Icon: MapPin },
-    { id: 'purchase', label: 'Compra', Icon: ShoppingBag },
+    { id: 'purchase', label: 'Datos de compra', Icon: ShoppingBag },
   ];
 
   const activeStepIndex = readiness.steps.findIndex((step) => step.id === activeSection);
-  const goToSection = (section: EditorSectionFilter) => setActiveSection(section);
+  const activeStep = activeStepIndex >= 0 ? readiness.steps[activeStepIndex] : undefined;
+  const activeEditorStep = activeStepIndex >= 0 ? editorSteps[activeStepIndex] : undefined;
+  const ActiveStepIcon = activeEditorStep?.Icon || Layers;
+  const sectionStatus = (id: EditorSectionFilter, done: boolean) => {
+    if (id === 'stock') {
+      return hasCountedStock ? 'Conteo registrado' : sourceItem?.branchId ? 'Conteo pendiente' : 'Sucursal pendiente';
+    }
+    if (id === 'identity') return value.name.trim() ? 'Datos agregados' : 'Falta el nombre';
+    if (id === 'media') {
+      return galleryImages.length
+        ? galleryImages.length + (galleryImages.length === 1 ? ' imagen' : ' imágenes')
+        : 'Opcional';
+    }
+    return done ? 'Datos agregados' : 'Opcional';
+  };
+  const sectionTone = (id: EditorSectionFilter, done: boolean) => {
+    if (id === 'stock') return hasCountedStock ? 'complete' : 'pending';
+    if (id === 'identity') return value.name.trim() ? 'complete' : 'pending';
+    return done ? 'complete' : 'optional';
+  };
+  const activeStepStatus = activeStep
+    ? sectionStatus(activeStep.id, activeStep.done)
+    : 'Todas las secciones';
+  const activeStepTone = activeStep
+    ? sectionTone(activeStep.id, activeStep.done)
+    : 'complete';
+  const goToSection = (section: EditorSectionFilter) => {
+    sectionNavigationRef.current?.removeAttribute('open');
+    setActiveSection(section);
+  };
   const isVisible = (section: EditorSectionFilter) => activeSection === 'all' || activeSection === section;
 
   return (
@@ -320,7 +354,7 @@ export function InventoryArticleEditor({
           </div>
           <div className="inventory-editor-heading">
             <div className="inventory-editor-eyebrow-row">
-              <span className="eyebrow">FICHA MAESTRA DE INVENTARIO</span>
+              <span className="eyebrow">Ficha de inventario</span>
               <span className="inventory-editor-brand-pill">
                 {value.brandScope === 'giga' ? 'GigaPrint' : value.brandScope === 'general' ? 'General · Compartido' : 'Visual Corp'}
               </span>
@@ -332,7 +366,7 @@ export function InventoryArticleEditor({
             </div>
             <h2 id="inventory-editor-title">{value.name || 'Editar artículo'}</h2>
             <p id="inventory-editor-description">
-              Organiza identidad, ficha técnica, galería de referencia y abastecimiento. El stock se controla por sucursal con trazabilidad completa.
+              Edita los datos del artículo. Las existencias cambian solo con un conteo o movimiento.
             </p>
             <div className="inventory-editor-identifiers">
               <button
@@ -362,7 +396,17 @@ export function InventoryArticleEditor({
           </button>
         </header>
 
-        {/* Semiotic Stock Health & Completeness Strip */}
+        <details ref={overviewRef} className="inventory-editor-disclosure inventory-editor-overview">
+          <summary className="inventory-editor-disclosure-summary">
+            <span className="inventory-editor-disclosure-title">
+              <Boxes size={15} aria-hidden="true" /> Resumen
+            </span>
+            <span className={'inventory-editor-disclosure-status is-' + stockTone}>{stockStateLabel}</span>
+            <span className="inventory-editor-disclosure-count">
+              {readiness.doneCount} de {readiness.total} secciones con datos
+            </span>
+            <ChevronDown size={16} className="inventory-editor-disclosure-chevron" aria-hidden="true" />
+          </summary>
         <div className="inventory-editor-semiotic-strip">
           <div className={`inventory-editor-health-card is-${stockTone}`}>
             <div className="inventory-editor-health-top">
@@ -434,38 +478,51 @@ export function InventoryArticleEditor({
             <p>No necesitas llenar todo: agrega solo lo que usas. El conteo físico se registra por sucursal.</p>
           </div>
         </div>
+        </details>
 
-        <nav className="inventory-editor-section-nav" aria-label="Pasos de la ficha">
-          {editorSteps.map(({ id, label, Icon, badge }, index) => {
+        <details ref={sectionNavigationRef} className="inventory-editor-disclosure inventory-editor-section-disclosure">
+          <summary className="inventory-editor-disclosure-summary inventory-editor-section-summary" aria-controls="inventory-editor-section-nav">
+            <span className="inventory-editor-disclosure-step-number">
+              {activeStepIndex >= 0 ? activeStepIndex + 1 : <Layers size={15} aria-hidden="true" />}
+            </span>
+            <span className="inventory-editor-disclosure-current">
+              <strong><ActiveStepIcon size={14} aria-hidden="true" /> {activeEditorStep?.label || 'Ficha completa'}</strong>
+              <small className={'is-' + activeStepTone}>{activeStepStatus}</small>
+            </span>
+            <span className="inventory-editor-section-disclosure-prompt">
+              {activeSection === 'all' ? 'Mostrar secciones' : 'Cambiar sección'}
+            </span>
+            <ChevronDown size={16} className="inventory-editor-disclosure-chevron" aria-hidden="true" />
+          </summary>
+
+        <nav id="inventory-editor-section-nav" className="inventory-editor-section-nav" aria-label="Secciones de la ficha">
+          {editorSteps.map(({ id, label, Icon }, index) => {
             const step = readiness.steps[index];
-            const stepStatus = step.done
-              ? id === 'stock'
-                ? 'Conteo registrado'
-                : id === 'identity' && !value.name.trim() ? 'Nombre pendiente' : 'Con datos'
-              : id === 'identity' ? 'Nombre pendiente' : id === 'stock' ? 'Conteo pendiente' : 'Opcional';
+            const stepStatus = sectionStatus(id, step.done);
+            const stepTone = sectionTone(id, step.done);
             return (
               <button
                 key={id}
                 type="button"
-                className={`inventory-editor-step ${step.done ? 'is-done' : 'is-pending'} ${activeSection === id ? 'is-active' : ''}`}
+                className={['inventory-editor-step', 'is-' + stepTone, activeSection === id ? 'is-active' : ''].filter(Boolean).join(' ')}
                 aria-current={activeSection === id ? 'step' : undefined}
                 aria-controls="inventory-editor-content"
-                aria-label={`Paso ${index + 1}: ${label}. ${stepStatus}${activeSection === id ? ', actual' : ''}`}
+                aria-label={'Paso ' + (index + 1) + ': ' + label + '. ' + stepStatus + (activeSection === id ? ', actual' : '')}
                 onClick={() => goToSection(id)}
               >
                 <span className="inventory-editor-step-index">
                   {step.done ? <CheckCircle2 size={15} aria-hidden="true" /> : index + 1}
                 </span>
                 <span className="inventory-editor-step-copy">
-                  <strong><Icon size={13} aria-hidden="true" /> {label}{badge !== undefined ? ` · ${badge}` : ''}</strong>
-                  <small>{stepStatus}</small>
+                  <strong><Icon size={13} aria-hidden="true" /> {label}</strong>
+                  <small className={'inventory-editor-step-status is-' + stepTone}>{stepStatus}</small>
                 </span>
               </button>
             );
           })}
           <button
             type="button"
-            className={`inventory-editor-all-view ${activeSection === 'all' ? 'is-active' : ''}`}
+            className={['inventory-editor-all-view', activeSection === 'all' ? 'is-active' : ''].filter(Boolean).join(' ')}
             aria-pressed={activeSection === 'all'}
             aria-controls="inventory-editor-content"
             onClick={() => goToSection('all')}
@@ -473,9 +530,10 @@ export function InventoryArticleEditor({
             <Layers size={14} /> Ver ficha completa
           </button>
         </nav>
+        </details>
 
         <div className="inventory-editor-content" id="inventory-editor-content" ref={contentRef}>
-          <AnimatedList className="inventory-editor-sections" itemClassName="inventory-editor-section-wrap" stagger={0.035}>
+          <div className="inventory-editor-sections">
             {isVisible('identity') && (
               <section className="inventory-editor-section">
                 <div className="inventory-editor-section-title">
@@ -491,7 +549,7 @@ export function InventoryArticleEditor({
                   <label>
                     Nombre del producto
                     <input
-                      autoFocus
+                      autoFocus={activeSection === 'identity' && previousSectionRef.current === 'identity'}
                       required
                       maxLength={160}
                       value={value.name}
@@ -738,7 +796,12 @@ export function InventoryArticleEditor({
                         : sourceItem?.branchId
                           ? 'Sucursal del conteo pendiente'
                           : 'Asignar sucursal'}
-                      <select value={branchSelection} onChange={(event) => setBranchSelection(event.target.value)}>
+                      <select
+                        value={branchSelection}
+                        disabled={saving || !branches.length}
+                        aria-describedby="inventory-editor-branch-note"
+                        onChange={(event) => setBranchSelection(event.target.value)}
+                      >
                         <option value="">Selecciona una sucursal</option>
                         {branches
                           .filter((name) => !hasCountedStock || name !== sourceItem?.branch)
@@ -753,7 +816,14 @@ export function InventoryArticleEditor({
                       <button
                         type="button"
                         className="button button-outline"
-                        disabled={!branchSelection || branchSelection === sourceItem?.branch}
+                        disabled={saving || !branches.includes(branchSelection) || branchSelection === sourceItem?.branch}
+                        title={
+                          !branches.length
+                            ? 'Configura una sucursal para habilitar el traspaso.'
+                            : !branchSelection
+                              ? 'Selecciona una sucursal para habilitar el traspaso.'
+                              : undefined
+                        }
                         onClick={() => onTransfer(sourceItem, branchSelection)}
                       >
                         <ArrowLeftRight size={15} />
@@ -763,7 +833,14 @@ export function InventoryArticleEditor({
                       <button
                         type="button"
                         className="button button-outline"
-                        disabled={!branchSelection || branchSelection === sourceItem?.branch}
+                        disabled={saving || !branches.includes(branchSelection) || branchSelection === sourceItem?.branch}
+                        title={
+                          !branches.length
+                            ? 'Configura una sucursal para habilitar la asignación.'
+                            : !branchSelection
+                              ? 'Selecciona una sucursal para habilitar la asignación.'
+                              : undefined
+                        }
                         onClick={() => onAssignBranch(sourceItem, branchSelection)}
                       >
                         <MapPin size={15} />
@@ -771,11 +848,17 @@ export function InventoryArticleEditor({
                       </button>
                     )}
                   </div>
-                  <p className="inventory-editor-branch-note">
-                    {hasCountedStock
-                      ? 'El traspaso solicita cantidad, responsable y motivo. El historial queda registrado.'
-                      : 'La asignación no crea saldo. El artículo seguirá pendiente hasta contar sus existencias.'}
-                  </p>
+                  {!branches.length ? (
+                    <p className="inventory-editor-branch-note" id="inventory-editor-branch-note" role="status">
+                      No hay sucursales disponibles en el inventario. Configura una antes de asignar este artículo.
+                    </p>
+                  ) : (
+                    <p className="inventory-editor-branch-note" id="inventory-editor-branch-note">
+                      {hasCountedStock
+                        ? 'El traspaso solicita cantidad, responsable y motivo. El historial queda registrado.'
+                        : 'Elige una sucursal y asígnala. Esto no crea saldo: el conteo físico se registra después.'}
+                    </p>
+                  )}
                 </div>
                 {sourceItem?.branchId && (onMovement || (canEditCosts && onCost)) && (
                   <div className="inventory-editor-stock-actions">
@@ -843,8 +926,8 @@ export function InventoryArticleEditor({
                     <ShoppingBag size={16} />
                   </span>
                   <div>
-                    <h3 tabIndex={-1}>Información de compra y proveedor</h3>
-                    <p>Datos de referencia comercial para facilitar órdenes de compra y reposición.</p>
+                    <h3 tabIndex={-1}>Datos de compra y proveedor</h3>
+                    <p>Guarda proveedor, marca y empaque como referencia. Esta ficha no emite una orden de compra.</p>
                   </div>
                 </div>
                 <div className="inventory-editor-grid">
@@ -876,7 +959,7 @@ export function InventoryArticleEditor({
                 </div>
               </section>
             )}
-          </AnimatedList>
+          </div>
 
           <details className="inventory-editor-help">
             <summary>¿Qué ocurre al guardar?</summary>
@@ -912,13 +995,25 @@ export function InventoryArticleEditor({
         </div>
 
         <footer className="inventory-editor-footer">
-          <button type="button" className="inventory-editor-delete-link" onClick={() => setDeleteRequested(true)}>
-            <Trash2 size={14} />
-            Eliminar del catálogo
-          </button>
+          <details className="inventory-editor-more-actions">
+            <summary><MoreHorizontal size={15} aria-hidden="true" /> Más acciones</summary>
+            <div>
+              <button
+                type="button"
+                className="inventory-editor-delete-link"
+                disabled={saving}
+                onClick={(event) => {
+                  setDeleteRequested(true);
+                  event.currentTarget.closest('details')?.removeAttribute('open');
+                }}
+              >
+                <Trash2 size={14} /> Retirar del catálogo
+              </button>
+            </div>
+          </details>
           <div className="inventory-editor-footer-context" aria-live="polite">
             <span>{activeStepIndex >= 0 ? `Paso ${activeStepIndex + 1} de ${readiness.total} · ${readiness.steps[activeStepIndex].label}` : 'Vista completa · puedes editar todas las secciones'}</span>
-            <small>Los cambios se aplican al guardar. Las existencias solo cambian con un conteo o movimiento.</small>
+            <small>El stock cambia solo con un conteo o movimiento.</small>
           </div>
           <div className="inventory-editor-footer-actions">
             <div className="inventory-editor-step-actions">
