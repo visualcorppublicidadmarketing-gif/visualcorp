@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   ArrowLeftRight,
   Boxes,
@@ -6,8 +6,9 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ClipboardCheck,
-  ClipboardList,
   Copy,
   DollarSign,
   Image as ImageIcon,
@@ -136,16 +137,34 @@ export function InventoryArticleEditor({
   const [libraryTerm, setLibraryTerm] = useState('');
   const [branchSelection, setBranchSelection] = useState(value.sourceItem?.branch || '');
   const [deleteRequested, setDeleteRequested] = useState(false);
-  const [activeSection, setActiveSection] = useState<EditorSectionFilter>('all');
+  const [activeSection, setActiveSection] = useState<EditorSectionFilter>('identity');
   const [copiedSku, setCopiedSku] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const previousSectionRef = useRef(activeSection);
 
   useEffect(() => {
     setBranchSelection(value.sourceItem?.branch || '');
     setDeleteRequested(false);
     setLibraryOpen(false);
     setLibraryTerm('');
-    setActiveSection('all');
+    setActiveSection('identity');
   }, [value.remoteItemId, value.variantId]);
+
+  useEffect(() => {
+    if (previousSectionRef.current === activeSection) return;
+    previousSectionRef.current = activeSection;
+    const content = contentRef.current;
+    if (!content) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    content.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    const focusFrame = activeSection !== 'all'
+      ? window.requestAnimationFrame(() => content.querySelector('h3')?.focus({ preventScroll: true }))
+      : undefined;
+    return () => {
+      if (focusFrame !== undefined) window.cancelAnimationFrame(focusFrame);
+    };
+  }, [activeSection]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -225,11 +244,11 @@ export function InventoryArticleEditor({
         ? Math.min(100, Math.max(12, Math.round((available / (minQty * 2)) * 100)))
         : 100;
 
-  // Completeness / Ficha Quality Checklist
+  // Show which sections already contain useful information.
   const readiness = useMemo(() => {
     const specs = value.variantAttributes || {};
     const custom = value.customFields || {};
-    const hasIdentity = Boolean(value.name.trim() && value.category.trim() && value.itemType.trim());
+    const hasIdentity = Boolean(value.name.trim() || value.category.trim() || value.itemType.trim() || value.tags.trim());
     const hasSpecs = Boolean(
       value.variant.trim() ||
         value.description.trim() ||
@@ -260,15 +279,16 @@ export function InventoryArticleEditor({
     };
   }, [value, galleryImages.length, hasCountedStock, sourceItem?.unitCost]);
 
-  const navTabs: Array<{ id: EditorSectionFilter; label: string; Icon: typeof Package; badge?: number }> = [
-    { id: 'all', label: 'Ficha completa', Icon: Layers },
+  const editorSteps: Array<{ id: Exclude<EditorSectionFilter, 'all'>; label: string; Icon: typeof Package; badge?: number }> = [
     { id: 'identity', label: 'Identificación', Icon: Tag },
     { id: 'specs', label: 'Medidas y ficha', Icon: Ruler },
     { id: 'media', label: 'Imágenes', Icon: ImageIcon, badge: galleryImages.length },
-    { id: 'stock', label: 'Sucursal y stock', Icon: MapPin },
+    { id: 'stock', label: 'Sucursal y conteo', Icon: MapPin },
     { id: 'purchase', label: 'Compra', Icon: ShoppingBag },
   ];
 
+  const activeStepIndex = readiness.steps.findIndex((step) => step.id === activeSection);
+  const goToSection = (section: EditorSectionFilter) => setActiveSection(section);
   const isVisible = (section: EditorSectionFilter) => activeSection === 'all' || activeSection === section;
 
   return (
@@ -394,47 +414,67 @@ export function InventoryArticleEditor({
           <div className="inventory-editor-readiness-card">
             <div className="inventory-editor-readiness-head">
               <span>
-                <Sparkles size={13} /> Integridad de la ficha
+                <Sparkles size={13} /> Avance de la ficha
               </span>
               <b>
-                {readiness.doneCount}/{readiness.total} ({readiness.pct}%)
+                {readiness.doneCount} de {readiness.total} secciones con datos
               </b>
             </div>
-            <div className="inventory-editor-readiness-pills">
-              {readiness.steps.map((step) => (
-                <button
-                  key={step.id}
-                  type="button"
-                  className={`inventory-editor-readiness-pill ${step.done ? 'is-done' : 'is-pending'} ${activeSection === step.id ? 'is-active' : ''}`}
-                  onClick={() => setActiveSection(activeSection === step.id ? 'all' : step.id)}
-                  title={`Enfocar sección: ${step.label}`}
-                >
-                  {step.done ? <CheckCircle2 size={12} /> : <ClipboardList size={12} />}
-                  <span>{step.label}</span>
-                </button>
-              ))}
+            <div
+              className="inventory-editor-readiness-progress"
+              role="progressbar"
+              aria-label="Secciones de la ficha con información"
+              aria-valuemin={0}
+              aria-valuemax={readiness.total}
+              aria-valuenow={readiness.doneCount}
+              aria-valuetext={`${readiness.doneCount} de ${readiness.total} secciones con datos`}
+            >
+              <i style={{ width: `${readiness.pct}%` }} />
             </div>
+            <p>No necesitas llenar todo: agrega solo lo que usas. El conteo físico se registra por sucursal.</p>
           </div>
         </div>
 
-        {/* Quick Section Filter Bar */}
-        <nav className="inventory-editor-section-nav" aria-label="Navegación rápida de secciones">
-          {navTabs.map(({ id, label, Icon, badge }) => (
-            <button
-              key={id}
-              type="button"
-              className={activeSection === id ? 'is-active' : ''}
-              aria-pressed={activeSection === id}
-              onClick={() => setActiveSection(id)}
-            >
-              <Icon size={14} />
-              <span>{label}</span>
-              {badge !== undefined && <b>{badge}</b>}
-            </button>
-          ))}
+        <nav className="inventory-editor-section-nav" aria-label="Pasos de la ficha">
+          {editorSteps.map(({ id, label, Icon, badge }, index) => {
+            const step = readiness.steps[index];
+            const stepStatus = step.done
+              ? id === 'stock'
+                ? 'Conteo registrado'
+                : id === 'identity' && !value.name.trim() ? 'Nombre pendiente' : 'Con datos'
+              : id === 'identity' ? 'Nombre pendiente' : id === 'stock' ? 'Conteo pendiente' : 'Opcional';
+            return (
+              <button
+                key={id}
+                type="button"
+                className={`inventory-editor-step ${step.done ? 'is-done' : 'is-pending'} ${activeSection === id ? 'is-active' : ''}`}
+                aria-current={activeSection === id ? 'step' : undefined}
+                aria-controls="inventory-editor-content"
+                aria-label={`Paso ${index + 1}: ${label}. ${stepStatus}${activeSection === id ? ', actual' : ''}`}
+                onClick={() => goToSection(id)}
+              >
+                <span className="inventory-editor-step-index">
+                  {step.done ? <CheckCircle2 size={15} aria-hidden="true" /> : index + 1}
+                </span>
+                <span className="inventory-editor-step-copy">
+                  <strong><Icon size={13} aria-hidden="true" /> {label}{badge !== undefined ? ` · ${badge}` : ''}</strong>
+                  <small>{stepStatus}</small>
+                </span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            className={`inventory-editor-all-view ${activeSection === 'all' ? 'is-active' : ''}`}
+            aria-pressed={activeSection === 'all'}
+            aria-controls="inventory-editor-content"
+            onClick={() => goToSection('all')}
+          >
+            <Layers size={14} /> Ver ficha completa
+          </button>
         </nav>
 
-        <div className="inventory-editor-content">
+        <div className="inventory-editor-content" id="inventory-editor-content" ref={contentRef}>
           <AnimatedList className="inventory-editor-sections" itemClassName="inventory-editor-section-wrap" stagger={0.035}>
             {isVisible('identity') && (
               <section className="inventory-editor-section">
@@ -443,7 +483,7 @@ export function InventoryArticleEditor({
                     <Package size={16} />
                   </span>
                   <div>
-                    <h3>Identificación y clasificación</h3>
+                    <h3 tabIndex={-1}>Identificación y clasificación</h3>
                     <p>Clasifica el artículo por nombre, marca, categoría y etiquetas para encontrarlo al instante.</p>
                   </div>
                 </div>
@@ -557,7 +597,7 @@ export function InventoryArticleEditor({
                     <Boxes size={16} />
                   </span>
                   <div>
-                    <h3>Medidas y características</h3>
+                    <h3 tabIndex={-1}>Medidas y características</h3>
                     <p>Registra solo las especificaciones que correspondan al producto.</p>
                   </div>
                 </div>
@@ -577,7 +617,7 @@ export function InventoryArticleEditor({
                     <ImageIcon size={16} />
                   </span>
                   <div>
-                    <h3>Imagen de referencia</h3>
+                    <h3 tabIndex={-1}>Imagen de referencia</h3>
                     <p>Elige una foto de la biblioteca o añade una desde tu equipo o portapapeles.</p>
                   </div>
                   <span className="inventory-editor-library-count">
@@ -672,7 +712,7 @@ export function InventoryArticleEditor({
                     <MapPin size={16} />
                   </span>
                   <div>
-                    <h3>Sucursal y existencias</h3>
+                    <h3 tabIndex={-1}>Sucursal y existencias</h3>
                     <p>Asigna el artículo o registra un traspaso, entrada, salida o conteo con su responsable.</p>
                   </div>
                 </div>
@@ -803,7 +843,7 @@ export function InventoryArticleEditor({
                     <ShoppingBag size={16} />
                   </span>
                   <div>
-                    <h3>Información de compra y proveedor</h3>
+                    <h3 tabIndex={-1}>Información de compra y proveedor</h3>
                     <p>Datos de referencia comercial para facilitar órdenes de compra y reposición.</p>
                   </div>
                 </div>
@@ -876,15 +916,32 @@ export function InventoryArticleEditor({
             <Trash2 size={14} />
             Eliminar del catálogo
           </button>
-          <span>Las existencias y el historial se conservan.</span>
-          <div>
-            <button type="button" className="button button-outline" disabled={saving} onClick={onClose}>
-              Cancelar
-            </button>
-            <button type="submit" className="button button-dark" disabled={saving}>
-              <Check size={15} />
-              {saving ? 'Guardando…' : 'Guardar cambios'}
-            </button>
+          <div className="inventory-editor-footer-context" aria-live="polite">
+            <span>{activeStepIndex >= 0 ? `Paso ${activeStepIndex + 1} de ${readiness.total} · ${readiness.steps[activeStepIndex].label}` : 'Vista completa · puedes editar todas las secciones'}</span>
+            <small>Los cambios se aplican al guardar. Las existencias solo cambian con un conteo o movimiento.</small>
+          </div>
+          <div className="inventory-editor-footer-actions">
+            <div className="inventory-editor-step-actions">
+              {activeStepIndex > 0 && (
+                <button type="button" className="button button-outline" onClick={() => goToSection(readiness.steps[activeStepIndex - 1].id)}>
+                  <ChevronLeft size={15} /> Anterior
+                </button>
+              )}
+              {activeStepIndex >= 0 && activeStepIndex < readiness.total - 1 && (
+                <button type="button" className="button button-outline inventory-editor-next-step" onClick={() => goToSection(readiness.steps[activeStepIndex + 1].id)}>
+                  Siguiente <ChevronRight size={15} />
+                </button>
+              )}
+            </div>
+            <div className="inventory-editor-primary-actions">
+              <button type="button" className="button button-outline" disabled={saving} onClick={onClose}>
+                Cancelar
+              </button>
+              <button type="submit" className="button button-dark" disabled={saving}>
+                <Check size={15} />
+                {saving ? 'Guardando…' : 'Guardar cambios'}
+              </button>
+            </div>
           </div>
         </footer>
       </form>
