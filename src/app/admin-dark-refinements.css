@@ -1002,6 +1002,8 @@
 /* Marketing planning chooser, campaign children, and workflow dialogs. */
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.vc-marketing-plan-chooser, .vc-marketing-plan-choice,
   .vc-marketing-campaign-card, .vc-marketing-campaign-card-head,
+  .vc-marketing-campaign-pulse, .vc-marketing-campaign-pulse-grid>article,
+  .vc-marketing-campaign-metrics>div,
   .vc-marketing-campaign-children, .vc-marketing-campaign-post,
   .vc-marketing-campaign-task, .vc-marketing-campaign-no-children,
   .vc-marketing-standalone-tasks, .vc-marketing-planning-dialog,
@@ -1017,11 +1019,20 @@
 
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.vc-marketing-plan-chooser, .vc-marketing-plan-choice,
   .vc-marketing-campaign-card, .vc-marketing-campaign-children,
+  .vc-marketing-campaign-pulse, .vc-marketing-campaign-pulse-grid>article,
+  .vc-marketing-campaign-metrics>div,
   .vc-marketing-planning-dialog, .mk-dialog, .mk-panel-body, .mk-review-panel) :is(h2, h3, h4, b, strong, legend, label) { color: #f1f3f8; }
 
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.vc-marketing-plan-chooser, .vc-marketing-plan-choice,
   .vc-marketing-campaign-card, .vc-marketing-campaign-children,
+  .vc-marketing-campaign-pulse, .vc-marketing-campaign-pulse-grid>article,
+  .vc-marketing-campaign-metrics>div,
   .vc-marketing-planning-dialog, .mk-dialog, .mk-panel-body, .mk-review-panel) :is(p, small, .eyebrow, .vc-marketing-campaign-task-meta, .mk-preserve-text) { color: #b2b8c8; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-campaign-pulse-grid>article>span { color: #d6a5ef; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-campaign-progress { background: #363044; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-campaign-progress>span { background: #bd83dc; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-campaign-metrics dt { color: #b2b8c8; }
 
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.vc-marketing-planning-dialog, .mk-dialog,
   .vc-marketing-planning-fields, .vc-marketing-planning-fieldset) :is(input, select, textarea) {
@@ -3006,3 +3017,4 @@
     color: #fde68a;
   }
 }
+

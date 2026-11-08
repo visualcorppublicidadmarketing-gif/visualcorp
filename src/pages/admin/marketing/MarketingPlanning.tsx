@@ -42,6 +42,10 @@ export type MarketingCampaignPost = {
   scheduled_date?: string;
   platform?: string;
   owner?: string;
+  reach?: number | string | null;
+  interactions?: number | string | null;
+  clicks?: number | string | null;
+  leads?: number | string | null;
 };
 
 export type PlanningKind = 'campaign' | 'post' | 'task';
@@ -190,8 +194,58 @@ export function CampaignPlanningSection({ campaigns, tasks, posts, campaignArtwo
       {campaigns.map((campaign) => {
         const campaignTasks = tasks.filter((task) => task.campaign_id === campaign.id);
         const campaignPosts = posts.filter((post) => post.campaign_id === campaign.id);
+        const activeTasks = campaignTasks.filter((task) => !/cancelad/i.test(task.status));
+        const readyTasks = activeTasks.filter((task) => /^listo$/i.test(task.status.trim())).length;
+        const publishedPosts = campaignPosts.filter((post) => /^publicad[oa]$/i.test(post.status.trim())).length;
+        const metricPosts = campaignPosts.filter((post) => [post.reach, post.interactions, post.clicks, post.leads]
+          .some((value) => Number.isFinite(Number(value)) && Number(value) > 0));
+        const metricTotals = [
+          { key: 'reach' as const, label: 'Alcance acumulado' },
+          { key: 'interactions' as const, label: 'Interacciones informadas' },
+          { key: 'clicks' as const, label: 'Clics informados' },
+          { key: 'leads' as const, label: 'Leads informados' },
+        ].map(({ key, label }) => ({
+          label,
+          value: campaignPosts.reduce((sum, post) => {
+            const value = Number(post[key]);
+            return Number.isFinite(value) && value > 0 ? sum + value : sum;
+          }, 0),
+        })).filter((item) => item.value > 0);
+        const activityProgress = activeTasks.length ? Math.round((readyTasks / activeTasks.length) * 100) : 0;
+        const publicationProgress = campaignPosts.length ? Math.round((publishedPosts / campaignPosts.length) * 100) : 0;
         return <article className="vc-marketing-campaign-card" key={campaign.id}>
           <header className="vc-marketing-campaign-card-head"><div className="vc-marketing-campaign-art"><MarketingPostArtwork organizationId={organizationId} post={{ id: campaign.id, source_id: campaign.source_id, title: campaign.title, scheduled_date: campaign.start_date || '' }} association={{ kind: 'campaign', campaignId: campaign.id }} asset={campaignArtwork.get(campaign.id)} canEdit={canEdit} variant="compact" onSaved={onArtworkSaved}/></div><div className="vc-marketing-campaign-card-title"><span className="eyebrow">CAMPAÑA</span><h3>{campaign.title}</h3><StageBadge stage={campaign.status}/><p>{campaign.brief || 'Objetivo o brief pendiente.'}</p><small><CalendarDays size={13}/>{campaign.start_date || campaign.end_date ? `${campaign.start_date || 'Inicio pendiente'} — ${campaign.end_date || 'fin pendiente'}` : 'Periodo pendiente'}{campaign.owner ? ` · ${campaign.owner}` : ''}</small></div>{canEdit && <button type="button" className="icon-button" aria-label={`Editar campaña ${campaign.title}`} onClick={() => onEditCampaign(campaign)}><Pencil size={15}/></button>}</header>
+          <section className="vc-marketing-campaign-pulse" aria-label={`Pulso de la campaña ${campaign.title}`}>
+            <div className="vc-marketing-campaign-pulse-grid">
+              <article>
+                <span>ACTIVIDADES LISTAS</span>
+                <strong>{activeTasks.length ? readyTasks : '—'}{activeTasks.length > 0 && <small>/{activeTasks.length}</small>}</strong>
+                <small>{activeTasks.length ? 'de las actividades activas' : 'sin actividades asignadas'}</small>
+                {activeTasks.length > 0 && <div className="vc-marketing-campaign-progress" role="progressbar" aria-label={`Actividades listas en ${campaign.title}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={activityProgress}>
+                  <span style={{ width: `${activityProgress}%` }}/>
+                </div>}
+              </article>
+              <article>
+                <span>PUBLICACIONES</span>
+                <strong>{campaignPosts.length ? publishedPosts : '—'}{campaignPosts.length > 0 && <small>/{campaignPosts.length}</small>}</strong>
+                <small>marcadas como publicadas</small>
+                {campaignPosts.length > 0 && <div className="vc-marketing-campaign-progress" role="progressbar" aria-label={`Publicaciones marcadas como publicadas en ${campaign.title}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={publicationProgress}>
+                  <span style={{ width: `${publicationProgress}%` }}/>
+                </div>}
+              </article>
+              <article>
+                <span>MEDICIÓN</span>
+                <strong>{campaignPosts.length ? metricPosts.length : '—'}{campaignPosts.length > 0 && <small>/{campaignPosts.length}</small>}</strong>
+                <small>{campaignPosts.length ? 'piezas con resultados informados' : 'sin publicaciones vinculadas'}</small>
+              </article>
+            </div>
+            {metricTotals.length > 0 ? <>
+              <dl className="vc-marketing-campaign-metrics">
+                {metricTotals.map((metric) => <div key={metric.label}><dt>{metric.label}</dt><dd>{metric.value.toLocaleString('es-EC')}</dd></div>)}
+              </dl>
+              <small className="vc-marketing-campaign-measure-note">Datos cargados en publicaciones vinculadas. El alcance acumulado puede contar personas repetidas; los leads informados no prueban atribución ni ventas.</small>
+            </> : <p className="vc-marketing-campaign-no-metrics">{campaignPosts.length ? 'Aún no hay resultados cargados en las publicaciones asociadas.' : 'Vincula publicaciones para empezar a medir los resultados de esta campaña.'}</p>}
+          </section>
           <div className="vc-marketing-campaign-children" aria-label={`Actividades de ${campaign.title}`}>
             {campaignTasks.map((task) => <CampaignTaskRow key={task.id} task={task} asset={taskArtwork.get(task.id)} canEdit={canEdit} organizationId={organizationId} onArtworkSaved={onArtworkSaved} onEdit={() => onEditTask(task)} onOpen={() => onOpenTask(task.id)}/>)}
             {campaignPosts.map((post) => <button type="button" className="vc-marketing-campaign-post" key={post.id} onClick={() => onOpenPost(post.id)}><span><Megaphone size={15}/></span><div><b>{post.title}</b><small>{post.platform || 'Canal pendiente'} · {post.scheduled_date || 'Fecha pendiente'}{post.owner ? ` · ${post.owner}` : ''}</small></div><StageBadge stage={post.status}/></button>)}
@@ -227,4 +281,5 @@ export function PlanningDateLabel({ startDate, endDate }: { startDate?: string |
   if (!startDate && !endDate) return <>Periodo pendiente</>;
   return <>{startDate || 'Inicio pendiente'} — {endDate || 'fin pendiente'}</>;
 }
+
 

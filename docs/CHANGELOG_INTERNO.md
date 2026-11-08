@@ -24,6 +24,14 @@ La tabla tiene políticas RLS por organización, audiencia y rol. Usuarios inter
 
 Las futuras publicaciones las redacta el equipo desde el panel; la lista no se rellena automáticamente a partir de commits para evitar publicar cambios sin revisar su alcance o impacto.
 
+## 2026-11-08 — Pulso de avance y medición por campaña
+
+- Las fichas de campaña resumen actividades listas, publicaciones marcadas como publicadas y cobertura de resultados informados en las piezas vinculadas.
+- Cuando hay valores positivos, se muestran agregados del alcance, interacciones, clics y leads registrados. El alcance se identifica como acumulado y la interfaz aclara que puede repetir personas; los leads no se presentan como ventas atribuidas.
+- El resumen usa exclusivamente registros ya asociados a cada campaña; no añade integraciones sociales, tablas ni atribución automática.
+- La cuadrícula se adapta a anchos pequeños y al tema oscuro; los indicadores de avance exponen etiquetas y valores accesibles.
+- La publicación del resumen del equipo en `public.internal_change_log` sigue siendo una acción manual desde `/admin/cambios`, separada del despliegue del código.
+
 ## 2026-10-24 — Imágenes de referencia de catálogo e inventario
 
 - Se asignaron referencias visuales a los 70 SKU activos del inventario, combinando muestras reales de materiales de Visual Corp con referencias generadas etiquetadas claramente.
@@ -87,3 +95,4 @@ Las futuras publicaciones las redacta el equipo desde el panel; la lista no se r
   - `/servicios/:slug` (`ServiceDetailPage`): cada una de las 6 especialidades (`impresion`, `gran-formato`, `rotulos`, `textil`, `corte`, `eventos`) muestra ahora su propia vitrina visual (`ServiceVisualShowcase`) con tarjetas de doble imagen, modal de inspección técnica, ambiente destacado y beneficios clave.
   - `/portafolio` (`ShowcasePage`): integra la galería interactiva filtrable (`InteractiveCatalogGallery`), las tiras panorámicas y la matriz de espacios junto a las publicaciones del estudio.
   - `/nosotros` (`AboutPage`), `/como-trabajamos` (`ProcessPage`) e Inicio (`/`): conectan los beneficios estratégicos, la matriz de branding por espacios y las tiras panorámicas interactivas.
+
