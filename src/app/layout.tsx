@@ -14,6 +14,7 @@ import { Sidebar } from './Sidebar';
 import { ThemeSwitcher } from '../components/ui/ThemeSwitcher';
 import './admin-dark-theme.css';
 import './admin-dark-refinements.css';
+import './admin-glass-theme.css';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 const brandSymbol = '/brand/visualcorp-symbol.png';
