@@ -127,3 +127,9 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - En `main` local, el panel cuenta registros de inventario con consumo y muestra cantidades históricas separadas por unidad. Los saldos contados en cero aparecen bajo mínimo cuando el artículo tiene un mínimo positivo configurado; los saldos sin conteo siguen aparte.
 - El recorrido de conteo anticipa la diferencia frente al saldo de apertura y el detalle del calendario conserva esperado, observado y diferencia por variante y ubicación. Esa comparación no demuestra por sí sola una pérdida si hubo movimientos después de abrir la sesión.
 - Verificación previa a la publicación: `npm run build:checked`, 18 pruebas enfocadas y `git diff --check` correctos. No se aplicaron migraciones ni se verificaron saldos reales con una sesión autenticada. Siguiente paso: contrastar conteos y reposición con datos operativos reales.
+
+### Ficha de inventario guiada — 2026-11-08
+
+- La edición abre en Identificación y organiza la ficha en cinco pasos: identificación, medidas, imágenes, sucursal/conteo y compra. Se conserva “Ver ficha completa”, se distingue el avance con información de los datos obligatorios y el pie explica qué acciones cambian existencias.
+- El flujo conserva los manejadores de guardado, asignación, conteos y movimientos existentes; este cambio no agrega escrituras de stock ni migraciones.
+- Verificación local: `npm run build:checked` y navegación visual con un artículo sintético a 320, 390, 768, 950, 1280 y 1366 px, sin desbordamiento horizontal. No se usaron registros reales ni se confirmó el recorrido con una sesión autenticada.
