@@ -5,7 +5,7 @@ import { formatMoney } from '../../app/workspace';
 import { AppFrame, StatCard } from '../../app/layout';
 import { workspaceNavigation, workspaceNavGroups, canViewNavigationItem } from '../../app/navigation';
 import { ChangeLogPanel } from '../../components/ChangeLog';
-import { AnimatedList, SpotlightLayer, clearSpotlight, updateSpotlight } from '../../components/ui/MagicComponents';
+import { WorkspaceLauncher } from '../../components/workspace';
 import { LeadsTable } from './CRMPage';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
@@ -21,18 +21,30 @@ const metricCards = [
 
 const descriptions: Record<string, string> = {
   '/operaciones/pos': 'Registra ventas y administra la caja.',
+  '/operaciones/mi-semana': 'Revisa tus resultados comerciales de la semana.',
+  '/operaciones/rutas-productos': 'Consulta las etapas de trabajo de cada producto.',
+  '/operaciones/trabajos/asesoria': 'Da seguimiento a los trabajos del área comercial.',
+  '/operaciones/cajas-abiertas': 'Revisa los turnos de caja abiertos.',
+  '/operaciones/kiosk': 'Accede a las tareas desde la terminal del taller.',
+  '/operaciones/coordinacion-trabajos': 'Organiza responsables, fechas y avances de producción.',
+  '/operaciones/trabajos/diseno': 'Consulta los trabajos pendientes de diseño.',
+  '/operaciones/trabajos/impresion': 'Consulta la cola de impresión y sus avances.',
+  '/operaciones/trabajos/sublimacion': 'Consulta los trabajos del área de sublimación.',
+  '/operaciones/trabajos/laser': 'Consulta los trabajos de corte láser.',
+  '/operaciones/trabajos/taller': 'Revisa las tareas y entregables del taller.',
   '/operaciones/finanzas': 'Consulta ventas y pagos registrados.',
   '/operaciones/cotizador': 'Prepara propuestas con el catálogo compartido.',
   '/operaciones/crm': 'Da seguimiento a solicitudes y oportunidades.',
   '/operaciones/clientes': 'Consulta el directorio y las fichas 360° de clientes.',
-  '/operaciones/automatizaciones': 'Motor Autopilot: reglas Trigger → Action, receta BOM y alertas de stock/tintas.',
-  '/operaciones/archivos': 'Visual Corp Vault: artes CMYK, bocetos, logos vectoriales y evidencias de entrega.',
-  '/seguimiento': 'Portal web-to-print: seguimiento en vivo y aprobación digital de arte en 1 clic.',
+  '/operaciones/automatizaciones': 'Configura reglas de trabajo y alertas de materiales.',
+  '/operaciones/archivos': 'Encuentra diseños, bocetos y evidencias de entrega.',
+  '/seguimiento': 'Consulta el avance de pedidos y la aprobación de diseños.',
   '/operaciones/flujos': 'Coordina caja, producción, traslados y entregas.',
   '/operaciones/inventario': 'Revisa existencias, movimientos y reposición.',
   '/operaciones/compras': 'Organiza compras y registra recepciones.',
   '/operaciones/equipos': 'Consulta equipos y maquinaria por área.',
   '/operaciones/catalogo': 'Gestiona artículos y tarifas del catálogo.',
+  '/operaciones/equipo/horarios': 'Administra horarios laborales, excepciones y turnos de limpieza.',
   '/operaciones/marketing': 'Organiza campañas y calendario.',
   '/admin/sitio': 'Edita el contenido principal del sitio.',
   '/admin/servicios': 'Mantén la información de servicios.',
@@ -54,7 +66,7 @@ function metricValue(summary: any, key: string, loading: boolean, error: string)
 }
 
 export function UnifiedHome() {
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
   const canViewSummary = hasPermission('dashboard', 'view');
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(Boolean(supabase) && canViewSummary);
@@ -135,12 +147,12 @@ export function UnifiedHome() {
           <p>Revisa lo que requiere atención y abre tus herramientas de trabajo.</p>
         </div>
         <div className="unified-dashboard-hero-actions">
-          {(loading || updatedAt) && <div className="unified-summary-meta" role="status" aria-live="polite"><span className={`status-dot${error ? ' is-warning' : ''}`}/>{loading ? 'Actualizando información…' : `Información actualizada a las ${updatedAt}`}</div>}
+          {(loading || updatedAt) && <div className="unified-summary-meta" role="status" aria-live="polite"><span className={`status-dot${error ? ' is-warning' : ''}`}/>{loading ? 'Actualizando información…' : error ? `Última consulta: ${updatedAt} · sin actualizar` : `Información actualizada a las ${updatedAt}`}</div>}
           {primaryAction && <Link className="unified-dashboard-action" to={primaryAction.to}>Abrir {primaryAction.label} <ArrowUpRight size={17} aria-hidden="true"/></Link>}
         </div>
       </header>
     {error && <div className="unified-summary-error" role="alert"><span>{error}</span><button type="button" className="button button-outline" onClick={() => setRefreshKey((value) => value + 1)} disabled={loading}><RefreshCw size={14}/> {loading ? 'Actualizando…' : 'Reintentar'}</button></div>}
-    {visibleMetrics.length > 0 && <section className="unified-overview" aria-label="Resumen operativo"><div className="unified-overview-heading"><span className="eyebrow">RESUMEN OPERATIVO</span></div><div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, to, key, label, note, noteKey, icon, tone, money }) => {
+    {visibleMetrics.length > 0 && <section className="unified-overview" aria-label="Resumen operativo"><div className="unified-overview-heading"><span className="eyebrow">RESUMEN OPERATIVO</span><button type="button" className="unified-refresh" onClick={() => setRefreshKey(value => value + 1)} disabled={loading}><RefreshCw size={14} aria-hidden="true"/>{loading ? 'Actualizando…' : 'Actualizar resumen'}</button></div><div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, to, key, label, note, noteKey, icon, tone, money }) => {
       const value = metricValue(summary, key, loading, error);
       const displayValue = loading ? <Skeleton className="dashboard-metric-skeleton"/> : money && typeof value === 'number' ? formatMoney(value) : value;
       const detail = noteKey && !loading && !error && summary?.[noteKey] != null
@@ -152,15 +164,7 @@ export function UnifiedHome() {
       <div className="panel-heading"><div><span className="eyebrow">SIGUIENTE PASO</span><h2 id="unified-priority-heading">Pendientes que puedes atender</h2></div>{loading ? <span className="unified-priority-state">Actualizando</span> : error ? <span className="unified-priority-state">Sin actualizar</span> : priorities.length ? <span className="unified-priority-state has-items">{priorities.length} {priorities.length === 1 ? 'pendiente' : 'pendientes'}</span> : priorityDataComplete ? <span className="unified-priority-state is-clear"><CheckCircle2 size={15}/> Sin alertas</span> : <span className="unified-priority-state">Sin datos</span>}</div>
       {error ? <p className="unified-priority-empty">No se muestran pendientes hasta confirmar que la información está actualizada.</p> : loading ? <div className="unified-priority-loading" role="status"><span className="sr-only">Consultando los registros autorizados para tu perfil</span><Skeleton className="dashboard-priority-skeleton"/><Skeleton className="dashboard-priority-skeleton is-short"/></div> : priorities.length ? <div className="unified-priority-list">{priorities.map(({ key, to, icon: Icon, title, detail, count }) => <Link className="unified-priority-item" to={to} key={key}><span className={`unified-priority-icon ${key}`}><Icon size={18}/></span><span className="unified-priority-copy"><b>{title}</b><small>{detail}</small></span><span className="unified-priority-count">{count}</span><ArrowUpRight size={16} aria-hidden="true"/></Link>)}</div> : priorityDataComplete ? <p className="unified-priority-empty">No se detectan pendientes en los módulos visibles para tu perfil.</p> : <p className="unified-priority-empty">No se recibieron datos suficientes para confirmar si hay pendientes.</p>}
     </section> : null}
-    <section className="panel unified-launcher-panel">
-      <div className="panel-heading"><div><span className="eyebrow">TUS HERRAMIENTAS</span><h2>¿Qué necesitas hacer?</h2></div><ClipboardCheck size={19}/></div>
-      {visibleGroups.length
-        ? <div className="unified-module-groups">{visibleGroups.map(({ id, label, icon: GroupIcon, items }) => <section className="unified-module-group" key={id} aria-labelledby={`unified-module-group-${id}`}>
-          <header className="unified-module-group-heading"><span className="unified-module-group-icon"><GroupIcon size={16} aria-hidden="true"/></span><h3 id={`unified-module-group-${id}`}>{label}</h3><span className="unified-module-group-count"><span aria-hidden="true">{items.length}</span><span className="sr-only">{items.length} {items.length === 1 ? 'módulo visible' : 'módulos visibles'}</span></span></header>
-          <AnimatedList className="operations-launcher vc-bento-grid">{items.map(({ to, label: itemLabel, icon: Icon }) => <Link to={to} key={to} className="operation-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}><SpotlightLayer/><span className="operation-icon"><Icon size={20}/></span><span className="operation-copy"><b>{itemLabel}</b><small>{descriptions[to] || 'Abre este módulo para consultar sus registros.'}</small></span><ArrowUpRight size={17}/></Link>)}</AnimatedList>
-        </section>)}</div>
-        : <p className="unified-empty">No hay módulos visibles para este perfil. Solicita al propietario revisar tus permisos.</p>}
-    </section>
+    <WorkspaceLauncher key={user?.id || 'anonymous'} userId={user?.id || 'anonymous'} groups={visibleGroups} descriptions={descriptions}/>
     {hasPermission('crm', 'view') && <section className="panel unified-recent-panel"><div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO COMERCIAL</span><h2>Solicitudes recientes</h2></div><Link className="text-link" to="/operaciones/crm">Abrir CRM <ArrowUpRight size={14}/></Link></div><LeadsTable/></section>}
     {hasPermission('team', 'view') && <ChangeLogPanel area="operations" compact/>}
     </div>
