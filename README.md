@@ -134,3 +134,10 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - El flujo conserva los manejadores de guardado, asignación, conteos y movimientos existentes; este cambio no agrega escrituras de stock ni migraciones.
 - Verificación local: `npm run build:checked` y navegación visual con un artículo sintético a 320, 390, 768, 950, 1280 y 1366 px, sin desbordamiento horizontal. No se usaron registros reales ni se confirmó el recorrido con una sesión autenticada.
 - **Corrección de navegación:** las secciones cambiadas dejaban de verse porque dependían de una animación de entrada que solo se ejecutaba una vez. Ahora el contenido permanece visible; Resumen y selector de sección se despliegan al necesitarlos, y las acciones destructivas quedan bajo “Más acciones”. Se validaron edición de medidas, galería, asignación de sucursal, datos de compra y vista completa con callbacks sintéticos. Sin persistencia ni escrituras reales.
+
+### Encabezados de La empresa, Cómo trabajamos y Contacto — 2026-11-09
+
+- Composición inspirada en el estudio de diseño y producción: tipografía de marca, pliegos y marcas de registro; cada portada incorpora una interacción relacionada con su contenido.
+- La empresa permite explorar especialidades; el proceso comparte sus tres pasos con el detalle; Contacto enlaza a conversación, formulario y ubicación, conservando el servicio elegido en el mensaje preparado.
+- Temas claro/oscuro, foco de teclado y movimiento reducido. Validación local en 60 combinaciones entre 320 y 1920 px, además de navegación, estados y enlaces. La publicación se registra en el PR de esta entrega.
+- Investigación, decisiones y evidencia: [ficha de encabezados](docs/design/company-heroes-2026-11-09.md).
