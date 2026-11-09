@@ -460,6 +460,7 @@ export function InventoryInsights({ id, hidden, items, optionSourceItems = items
                   <span>{item.area || 'Sin área'}</span>
                 </small>
                 {item.variant && <small className="inventory-product-variant">Variante: {item.variant}</small>}
+                {item.customFields?.condition_status && <small className={`inventory-condition-chip is-${String(item.customFields.condition_status).toLowerCase().replaceAll(' ','-')}`}>Condición · {String(item.customFields.condition_status)}{item.customFields.condition_note ? ` · ${String(item.customFields.condition_note)}` : ''}</small>}
               </div>
             </div>
             <div className="inventory-product-tags">
@@ -475,6 +476,7 @@ export function InventoryInsights({ id, hidden, items, optionSourceItems = items
             </div>
             <div className="inventory-product-facts">
               <span className="is-fact-primary">Conteo físico<strong>{item.sourceStatus ? 'Pendiente' : `${item.quantity} ${item.unit}`}</strong></span>
+              {item.customFields?.source_reported_quantity !== undefined && <span className="is-fact-primary">Cantidad en hoja<strong>{item.customFields.source_reported_quantity} {item.unit} · sin confirmar</strong></span>}
               <span className={`is-fact-primary is-available-${inventoryStatusClass(item)}`}>Disponible<strong>{item.sourceStatus || item.availableQuantity === null ? '—' : `${item.availableQuantity} ${item.unit}`}</strong></span>
               <span>Reservado<strong>{item.sourceStatus ? '—' : `${item.reservedQuantity} ${item.unit}`}</strong></span>
               <span>Última entrada<strong>{days(item.lastRestockAt) === null ? 'Sin registro' : `${days(item.lastRestockAt)} días`}</strong></span>

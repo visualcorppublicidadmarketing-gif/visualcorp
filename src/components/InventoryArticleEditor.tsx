@@ -633,6 +633,16 @@ export function InventoryArticleEditor({
                     helpText="Busca un tipo existente o elige “Escribir” para agregar otro."
                     onChange={(next) => update({ itemType: String(next) })}
                   />
+                  <label>
+                    Condición física
+                    <select
+                      value={stringValue(value.customFields?.condition_status) || 'Sin revisar'}
+                      onChange={(event) => update({ customFields: { ...value.customFields, condition_status: event.target.value } })}
+                    >
+                      {['Sin revisar', 'Buen estado', 'Regular', 'Mal estado', 'En reparación', 'Retirado'].map((condition) => <option key={condition}>{condition}</option>)}
+                    </select>
+                    <small>Describe el estado observado; no cambia el saldo ni el estado de disponibilidad.</small>
+                  </label>
                   <label className="inventory-editor-wide">
                     Descripción y notas técnicas
                     <textarea
