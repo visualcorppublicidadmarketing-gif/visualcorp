@@ -1,7 +1,7 @@
 import {
   BookOpen, Boxes, BriefcaseBusiness, ChartNoAxesCombined,
-  CalendarClock, ClipboardList, Database, FileText, FolderOpen, Globe2, History, Image, LayoutDashboard, Megaphone,
-  Newspaper, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Truck, Users, Wallet, Radio, Workflow, type LucideIcon,
+  CalendarClock, CalendarDays, ClipboardList, Database, FileText, FolderOpen, Globe2, History, Image, LayoutDashboard, Megaphone,
+  Newspaper, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Target, Truck, Users, Wallet, Radio, Workflow, type LucideIcon,
 } from 'lucide-react';
 
 export type AppNavLink = {
@@ -42,7 +42,9 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/compras', label: 'Compras', icon: Truck, module: 'purchases' },
   { to: '/operaciones/equipos', label: 'Equipos', icon: BriefcaseBusiness, module: 'inventory' },
   { to: '/operaciones/catalogo', label: 'Catálogo y tarifas', icon: ShoppingBag, module: 'catalog_admin' },
-  { to: '/operaciones/marketing', label: 'Marketing', icon: Megaphone, module: 'marketing' },
+  { to: '/operaciones/marketing', label: 'Bandeja y flujo', icon: Megaphone, module: 'marketing' },
+  { to: '/operaciones/marketing/calendario', label: 'Calendario editorial', icon: CalendarDays, module: 'marketing' },
+  { to: '/operaciones/marketing/campanas', label: 'Campañas y estrategia', icon: Target, module: 'marketing' },
   { to: '/admin/sitio', label: 'Inicio del sitio', icon: Globe2, module: 'website' },
   { to: '/admin/servicios', label: 'Servicios', icon: BriefcaseBusiness, module: 'website' },
   { to: '/admin/tienda', label: 'Tienda web', icon: ShoppingBag, module: 'website' },
@@ -60,7 +62,7 @@ export const workspaceNavigation: AppNavLink[] = [
 export const workspaceNavGroups: AppNavGroup[] = [
   { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/mi-semana', '/operaciones/rutas-productos', '/operaciones/trabajos/asesoria', '/operaciones/finanzas', '/operaciones/cajas-abiertas', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes', '/operaciones/catalogo', '/seguimiento'] },
   { id: 'production', label: 'Producción y abastecimiento', icon: Boxes, paths: ['/operaciones/automatizaciones', '/operaciones/archivos', '/operaciones/flujos', '/operaciones/kiosk', '/operaciones/coordinacion-trabajos', '/operaciones/trabajos/diseno', '/operaciones/trabajos/impresion', '/operaciones/trabajos/sublimacion', '/operaciones/trabajos/laser', '/operaciones/trabajos/taller', '/operaciones/inventario', '/operaciones/compras', '/operaciones/equipos'] },
-  { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing'] },
+  { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing', '/operaciones/marketing/calendario', '/operaciones/marketing/campanas'] },
   { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
   { id: 'team', label: 'Equipo y sistema', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo', '/operaciones/equipo/horarios', '/operaciones/cambios', '/admin/respaldo'] },
 ];

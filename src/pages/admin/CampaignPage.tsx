@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Activity, AlertCircle, ArrowDownRight, ArrowUpRight, BarChart3, CalendarDays, Check,
   CheckCircle2, Clock3, Copy, FileImage, FileText, Filter, FolderOpen, Images, Lightbulb,
@@ -31,6 +32,7 @@ import {
   type CampaignTaskDraft, type CampaignDraft, type MarketingCampaign,
   type MarketingCampaignTask, type MarketingTaskRange, type PlanningKind,
 } from './marketing/MarketingPlanning';
+import './marketing/marketing-card-glass.css';
 
 type Post = Record<string, any> & { id: string; title: string; status: string; scheduled_date: string; platform: string };
 type Asset = Record<string, any> & { id: string; filename: string; rel_path: string; section: string; is_available: boolean; storage_status?: string; retention_enabled?: boolean; retention_months?: number };
@@ -91,7 +93,9 @@ const artworkMapForLinks = (assets: Asset[], links: any[], entityKey: 'campaign_
   return result;
 };
 
-export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations' }) {
+export function CampaignPage({ area = 'admin', initialSection }: { area?: 'admin' | 'operations'; initialSection?: Section }) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { organizationId, hasPermission, user } = useAuth();
   const confirm = useConfirm();
   const canView = hasPermission('marketing', 'view');
@@ -112,7 +116,25 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [notice, setNotice] = useState('');
-  const [activeSection, setActiveSection] = useState<Section>('overview');
+  const [activeSection, setActiveSection] = useState<Section>(() => initialSection || 'overview');
+
+  useEffect(() => {
+    if (initialSection && initialSection !== activeSection) {
+      setActiveSection(initialSection);
+    }
+  }, [initialSection]);
+
+  const handleSectionChange = (sectionId: Section) => {
+    setActiveSection(sectionId);
+    setQuery('');
+    if (sectionId === 'overview') {
+      navigate('/operaciones/marketing');
+    } else if (sectionId === 'calendar') {
+      navigate('/operaciones/marketing/calendario');
+    } else if (sectionId === 'campaigns') {
+      navigate('/operaciones/marketing/campanas');
+    }
+  };
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos los estados');
   const [tagFilter, setTagFilter] = useState('Todas las etiquetas');
@@ -670,7 +692,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
     { label: selectedPostIds.has(post.id) ? 'Quitar de seleccionadas' : 'Seleccionar publicación', icon: <Check size={14}/>, kind: 'checkbox', checked: selectedPostIds.has(post.id), onSelect: () => {}, onCheckedChange: () => togglePost(post.id), disabled: !(canEdit || canDelete) },
     { label: post.design_ready ? 'Diseño listo' : 'Marcar diseño listo', group: 'Producción', icon: <FileImage size={14}/>, kind: 'checkbox', checked: post.design_ready === true, onSelect: () => {}, onCheckedChange: (checked) => void changePostReadiness(post, 'design_ready', checked), disabled: !canEdit },
     { label: post.video_ready ? 'Vídeo listo' : 'Marcar vídeo listo', group: 'Producción', icon: <Film size={14}/>, kind: 'checkbox', checked: post.video_ready === true, onSelect: () => {}, onCheckedChange: (checked) => void changePostReadiness(post, 'video_ready', checked), disabled: !canEdit },
-    { label: 'Abrir calendario editorial', icon: <CalendarDays size={14}/>, onSelect: () => setActiveSection('calendar') },
+    { label: 'Abrir calendario editorial', icon: <CalendarDays size={14}/>, onSelect: () => handleSectionChange('calendar') },
     { kind: 'separator', label: '', onSelect: () => {} },
     { label: 'Eliminar publicación', icon: <Trash2 size={14}/>, onSelect: () => void deletePosts([post]), destructive: true, disabled: !canDelete },
   ];
@@ -679,7 +701,30 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
   const searchPlaceholder = activeSection === 'library' ? 'Buscar por archivo, carpeta o sección…' : 'Buscar publicaciones por tema, canal o responsable…';
 
   return <AppFrame area={area}>
-    <PageHeading eyebrow="MARKETING · CENTRO DE CONTENIDO" title="Marketing y contenido" description="Planifica, produce y revisa campañas, actividades, publicaciones y resultados en el espacio compartido de Visual Corp." action={<div className="vc-content-actions"><button className="button button-outline" type="button" onClick={() => void refresh()} disabled={loading}><RefreshCw size={15} className={loading ? 'vc-content-spin' : ''}/>Actualizar</button>{canEdit && <button className="button button-outline" type="button" onClick={()=>setShowDays(true)}>Días sin producción</button>}{canEdit && <button className="button button-dark vc-shimmer-button" type="button" onClick={() => setPlanningDialog('chooser')}><Plus size={16}/>Nueva planificación</button>}</div>} />
+    <PageHeading
+      eyebrow={
+        activeSection === 'calendar'
+          ? 'MARKETING · CALENDARIO EDITORIAL PANORÁMICO'
+          : activeSection === 'campaigns'
+          ? 'MARKETING · CAMPAÑAS Y ESTRATEGIA'
+          : 'MARKETING · CENTRO DE CONTENIDO'
+      }
+      title={
+        activeSection === 'calendar'
+          ? 'Calendario editorial'
+          : activeSection === 'campaigns'
+          ? 'Campañas y objetivos'
+          : 'Marketing y contenido'
+      }
+      description={
+        activeSection === 'calendar'
+          ? 'Vista panorámica de 360° con publicaciones, piezas visuales, estados de producción, feriados y canales sin perder contexto.'
+          : activeSection === 'campaigns'
+          ? 'Planifica objetivos macro, hitos estratégicos y campañas de marca para Visual Corp.'
+          : 'Planifica, produce y revisa campañas, actividades, publicaciones y resultados en el espacio compartido de Visual Corp.'
+      }
+      action={<div className="vc-content-actions"><button className="button button-outline" type="button" onClick={() => void refresh()} disabled={loading}><RefreshCw size={15} className={loading ? 'vc-content-spin' : ''}/>Actualizar</button>{canEdit && <button className="button button-outline" type="button" onClick={()=>setShowDays(true)}>Días sin producción</button>}{canEdit && <button className="button button-dark vc-shimmer-button" type="button" onClick={() => setPlanningDialog('chooser')}><Plus size={16}/>Nueva planificación</button>}</div>}
+    />
 
     <main className="vc-content-workspace" aria-label="Centro de gestión de marketing">
       <section className="vc-content-hero">
@@ -701,16 +746,16 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
       </section>
 
       <nav className="vc-content-tabs" aria-label="Áreas de marketing">
-        {sections.map(({ id, label, icon: Icon }) => <button key={id} type="button" className={activeSection === id ? 'is-active' : ''} onClick={() => { setActiveSection(id); setQuery(''); }} aria-current={activeSection === id ? 'page' : undefined}><Icon size={16}/>{label}{id === 'calendar' && <span>{data.posts.length + data.campaignItems.length}</span>}{id === 'campaigns' && <span>{data.campaigns.length}</span>}{id === 'library' && <span>{data.assets.length}</span>}</button>)}
+        {sections.map(({ id, label, icon: Icon }) => <button key={id} type="button" className={activeSection === id ? 'is-active' : ''} onClick={() => handleSectionChange(id)} aria-current={activeSection === id ? 'page' : undefined}><Icon size={16}/>{label}{id === 'calendar' && <span>{data.posts.length + data.campaignItems.length}</span>}{id === 'campaigns' && <span>{data.campaigns.length}</span>}{id === 'library' && <span>{data.assets.length}</span>}</button>)}
       </nav>
 
-      {(activeSection === 'overview'||activeSection === 'calendar')&&<WorkflowToolbar posts={data.posts} today={today} userId={user?.id} queue={queue} onQueue={setQueue} recordFilter={recordFilter} onRecordFilter={setRecordFilter} reviews={data.reviews}/>}
+      {activeSection === 'overview' && <WorkflowToolbar posts={data.posts} today={today} userId={user?.id} queue={queue} onQueue={setQueue} recordFilter={recordFilter} onRecordFilter={setRecordFilter} reviews={data.reviews}/>}
       {bulkReport.length>0&&<div className="mk-bulk-report" role="status"><b>Resultado de asignación</b><ul>{bulkReport.map((message,i)=><li key={i}>{message}</li>)}</ul><button type="button" onClick={()=>setBulkReport([])}>Cerrar resultado</button></div>}
-      {(activeSection === 'overview' || activeSection === 'calendar' || activeSection === 'library') && <div className="vc-content-toolbar"><div><span className="vc-content-section-icon"><FolderOpen size={16}/></span><div><b>{activeSection === 'overview' ? 'Flujo editorial' : sectionTitle}</b><small>{activeSection === 'library' ? `${data.assets.length} recursos catalogados · ${linkedAssets} vinculados` : `${filteredPosts.length} registros visibles · ${publications.length} publicaciones · ${data.posts.filter(isMonthlyPlan).length} planes`}</small></div></div><label className="vc-content-search"><Search size={15}/><input aria-label="Buscar" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder}/></label><SelectDropdown size="md" label={activeSection === 'library' ? 'Archivo' : 'Etapa'} ariaLabel="Filtrar resultados" icon={<Filter size={13}/>} value={activeSection === 'library' ? assetFilter : statusFilter} defaultValue={activeSection === 'library' ? 'Todos los archivos' : 'Todos los estados'} onChange={(val) => activeSection === 'library' ? setAssetFilter(val) : setStatusFilter(val)} options={activeSection === 'library' ? [{ value: 'Todos los archivos', label: 'Todos los archivos' }, { value: 'Disponibles en el equipo', label: 'Disponibles en el equipo' }, { value: 'Solo referencia de ruta', label: 'Solo referencia de ruta' }, { value: 'Eliminados por plazo', label: 'Eliminados por plazo' }] : statuses.map((status) => ({ value: status, label: status }))}/>{activeSection !== 'library' && <SelectDropdown size="md" label="Etiqueta" ariaLabel="Filtrar por etiqueta" icon={<Filter size={13}/>} value={tagFilter} defaultValue="Todas las etiquetas" onChange={(val) => setTagFilter(val)} options={[{ value: 'Todas las etiquetas', label: 'Todas las etiquetas' }, ...knownTags.map((tag) => ({ value: tag, label: tag }))]}/>}{activeSection === 'overview' && <div className="vc-marketing-view-toggle" aria-label="Modo de publicaciones"><button type="button" aria-pressed={postView==='cards'} className={postView==='cards'?'active':''} onClick={()=>setPostView('cards')}><LayoutGrid size={14}/>Tarjetas</button><button type="button" aria-pressed={postView==='table'} className={postView==='table'?'active':''} onClick={()=>setPostView('table')}><List size={14}/>Tabla</button></div>}</div>}
+      {(activeSection === 'overview' || activeSection === 'library') && <div className="vc-content-toolbar"><div><span className="vc-content-section-icon"><FolderOpen size={16}/></span><div><b>{activeSection === 'overview' ? 'Flujo editorial' : sectionTitle}</b><small>{activeSection === 'library' ? `${data.assets.length} recursos catalogados · ${linkedAssets} vinculados` : `${filteredPosts.length} registros visibles · ${publications.length} publicaciones · ${data.posts.filter(isMonthlyPlan).length} planes`}</small></div></div><label className="vc-content-search"><Search size={15}/><input aria-label="Buscar" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder}/></label><SelectDropdown size="md" label={activeSection === 'library' ? 'Archivo' : 'Etapa'} ariaLabel="Filtrar resultados" icon={<Filter size={13}/>} value={activeSection === 'library' ? assetFilter : statusFilter} defaultValue={activeSection === 'library' ? 'Todos los archivos' : 'Todos los estados'} onChange={(val) => activeSection === 'library' ? setAssetFilter(val) : setStatusFilter(val)} options={activeSection === 'library' ? [{ value: 'Todos los archivos', label: 'Todos los archivos' }, { value: 'Disponibles en el equipo', label: 'Disponibles en el equipo' }, { value: 'Solo referencia de ruta', label: 'Solo referencia de ruta' }, { value: 'Eliminados por plazo', label: 'Eliminados por plazo' }] : statuses.map((status) => ({ value: status, label: status }))}/>{activeSection !== 'library' && <SelectDropdown size="md" label="Etiqueta" ariaLabel="Filtrar por etiqueta" icon={<Filter size={13}/>} value={tagFilter} defaultValue="Todas las etiquetas" onChange={(val) => setTagFilter(val)} options={[{ value: 'Todas las etiquetas', label: 'Todas las etiquetas' }, ...knownTags.map((tag) => ({ value: tag, label: tag }))]}/>}{activeSection === 'overview' && <div className="vc-marketing-view-toggle" aria-label="Modo de publicaciones"><button type="button" aria-pressed={postView==='cards'} className={postView==='cards'?'active':''} onClick={()=>setPostView('cards')}><LayoutGrid size={14}/>Tarjetas</button><button type="button" aria-pressed={postView==='table'} className={postView==='table'?'active':''} onClick={()=>setPostView('table')}><List size={14}/>Tabla</button></div>}</div>}
 
       {(activeSection === 'overview' || activeSection === 'calendar') && (canEdit||canDelete) && <div className="vc-marketing-bulk-bar"><label><input type="checkbox" checked={filteredPosts.length > 0 && filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/> Seleccionar publicaciones visibles</label>{selectedPostIds.size > 0 && <><span>{selectedPostIds.size} seleccionadas</span>{canEdit&&<BulkAssignment assignees={data.assignees} busy={saving} onAssign={id=>void assignSelected(id)}/>}<button type="button" className="vc-small-danger" disabled={!canDelete||saving} title={!canDelete?"El perfil requiere permiso para eliminar publicaciones":undefined} onClick={()=>void deletePosts(data.posts.filter((post)=>selectedPostIds.has(post.id)))}><Trash2 size={13}/>Eliminar seleccionadas</button><button type="button" onClick={()=>setSelectedPostIds(new Set())}>Quitar selección</button></>}</div>}
 
-      {activeSection === 'calendar' && <MarketingCalendar posts={filteredPosts} tasks={data.campaignItems} campaigns={data.campaigns} organizationId={organizationId || ''} artworkByPost={artworkByPost} artworkByTask={artworkByCampaignTask} onArtworkSaved={() => void refresh()} canEdit={canEdit} canDelete={canDelete} selectedIds={selectedPostIds} onToggle={togglePost} onSelect={(post) => { void openPost(post as Post); }} onCreate={(date, time) => { void openPost(undefined, date, '', time); }} onReschedule={(post, date) => void reschedulePost(post as Post, date)} onQuickReschedule={(post, date, time) => void quickSchedulePost(post as Post, date, time)} onStatusChange={(post, status) => void changePostStatus(post as Post, status)} onReadinessChange={(post, field, checked) => void changePostReadiness(post as Post, field, checked)} onDuplicate={(post)=>void duplicatePost(post as Post)} onDelete={(post)=>void deletePosts([post as Post])} onTaskSelect={(task) => openCampaignTaskForm(task as MarketingCampaignTask)} onTaskReschedule={(task, date) => void rescheduleCampaignTask(task as MarketingCampaignTask, date)} onTaskQuickSchedule={(task, date, startTime, endTime) => void quickScheduleCampaignTask(task as MarketingCampaignTask, date, startTime, endTime)} onTaskStatusChange={(task, status) => void changeCampaignTaskStatus(task as MarketingCampaignTask, status)} onTaskCreate={(date) => openCampaignTaskForm(undefined, '', date ? { startDate: date, endDate: date } : undefined)} onTaskCreateRange={(range) => openCampaignTaskForm(undefined, '', range)} onTaskDelete={(task) => void deleteCampaignTask(task as MarketingCampaignTask)}/>}
+      {activeSection === 'calendar' && <MarketingCalendar posts={data.posts} days={data.days} tasks={data.campaignItems} campaigns={data.campaigns} organizationId={organizationId || ''} artworkByPost={artworkByPost} artworkByTask={artworkByCampaignTask} onArtworkSaved={() => void refresh()} canEdit={canEdit} canDelete={canDelete} selectedIds={selectedPostIds} onToggle={togglePost} onSelect={(post) => { void openPost(post as Post); }} onCreate={(date, time) => { void openPost(undefined, date, '', time); }} onReschedule={(post, date) => void reschedulePost(post as Post, date)} onQuickReschedule={(post, date, time) => void quickSchedulePost(post as Post, date, time)} onStatusChange={(post, status) => void changePostStatus(post as Post, status)} onReadinessChange={(post, field, checked) => void changePostReadiness(post as Post, field, checked)} onDuplicate={(post)=>void duplicatePost(post as Post)} onDelete={(post)=>void deletePosts([post as Post])} onTaskSelect={(task) => openCampaignTaskForm(task as MarketingCampaignTask)} onTaskReschedule={(task, date) => void rescheduleCampaignTask(task as MarketingCampaignTask, date)} onTaskQuickSchedule={(task, date, startTime, endTime) => void quickScheduleCampaignTask(task as MarketingCampaignTask, date, startTime, endTime)} onTaskStatusChange={(task, status) => void changeCampaignTaskStatus(task as MarketingCampaignTask, status)} onTaskCreate={(date) => openCampaignTaskForm(undefined, '', date ? { startDate: date, endDate: date } : undefined)} onTaskCreateRange={(range) => openCampaignTaskForm(undefined, '', range)} onTaskDelete={(task) => void deleteCampaignTask(task as MarketingCampaignTask)}/>}
 
       {activeSection === 'campaigns' && <CampaignPlanningSection campaigns={data.campaigns} tasks={data.campaignItems} posts={data.posts} campaignArtwork={artworkByCampaign} taskArtwork={artworkByCampaignTask} canEdit={canEdit} organizationId={organizationId || ''} onArtworkSaved={() => void refresh()} onNewCampaign={() => openCampaignForm()} onNewTask={(campaignId) => openCampaignTaskForm(undefined, campaignId || '')} onEditCampaign={(campaign) => openCampaignForm(campaign)} onEditTask={(task) => openCampaignTaskForm(task)} onAddPost={(campaignId) => { void openPost(undefined, '', campaignId); }} onOpenPost={(postId) => { const post = data.posts.find((item) => item.id === postId); if (post) void openPost(post); }} onOpenTask={(taskId) => { const task = data.campaignItems.find((item) => item.id === taskId); if (task) openCampaignTaskForm(task); }}/>}
 
@@ -733,7 +778,7 @@ export function CampaignPage({ area = 'admin' }: { area?: 'admin' | 'operations'
                   </article></ContextMenu>;
                 })}</AnimatedList>}
                 </div>
-                {activeSection === 'overview' && <aside className="vc-content-side-panel"><div className="vc-content-side-heading"><div><span className="eyebrow">PULSO EDITORIAL</span><h3>Lo que sigue</h3></div><Activity size={17}/></div><div className="vc-content-next-list">{publications.filter((post) => post.scheduled_date && post.scheduled_date >= today && !isTerminalMarketingStatus(post.status)).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)).slice(0,4).map((post) => <button type="button" key={post.id} onClick={() => { void openPost(post); }}><span className="vc-content-next-date">{formatDate(post.scheduled_date)}</span><b>{post.title}</b><small>{post.platform || 'Canal pendiente'}{post.owner ? ` · ${post.owner}` : ''}</small></button>)}{!publications.some((post) => post.scheduled_date && post.scheduled_date >= today && !isTerminalMarketingStatus(post.status)) && <p className="vc-content-side-empty">No hay publicaciones futuras con fecha asignada.</p>}</div><button className="vc-content-text-link" type="button" onClick={() => setActiveSection('calendar')}>Ver calendario completo <ArrowUpRight size={14}/></button><div className="vc-content-side-callout"><span><Lightbulb size={15}/></span><p><b>{overdue ? `${overdue} fichas necesitan atención` : 'El flujo está al día'}</b><br/>Define responsable, fecha límite y próximo paso para que las alertas tengan contexto.</p></div></aside>}
+                {activeSection === 'overview' && <aside className="vc-content-side-panel"><div className="vc-content-side-heading"><div><span className="eyebrow">PULSO EDITORIAL</span><h3>Lo que sigue</h3></div><Activity size={17}/></div><div className="vc-content-next-list">{publications.filter((post) => post.scheduled_date && post.scheduled_date >= today && !isTerminalMarketingStatus(post.status)).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)).slice(0,4).map((post) => <button type="button" key={post.id} onClick={() => { void openPost(post); }}><span className="vc-content-next-date">{formatDate(post.scheduled_date)}</span><b>{post.title}</b><small>{post.platform || 'Canal pendiente'}{post.owner ? ` · ${post.owner}` : ''}</small></button>)}{!publications.some((post) => post.scheduled_date && post.scheduled_date >= today && !isTerminalMarketingStatus(post.status)) && <p className="vc-content-side-empty">No hay publicaciones futuras con fecha asignada.</p>}</div><button className="vc-content-text-link" type="button" onClick={() => handleSectionChange('calendar')}>Ver calendario completo <ArrowUpRight size={14}/></button><div className="vc-content-side-callout"><span><Lightbulb size={15}/></span><p><b>{overdue ? `${overdue} fichas necesitan atención` : 'El flujo está al día'}</b><br/>Define responsable, fecha límite y próximo paso para que las alertas tengan contexto.</p></div></aside>}
               </div>}
       </>}
 

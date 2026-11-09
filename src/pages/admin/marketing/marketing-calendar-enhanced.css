@@ -676,3 +676,558 @@
 .work-app.theme-dark .vc-slot-choice-text small {
   color: #9ba0b4;
 }
+
+/* ==========================================================================
+   PANORAMIC PULSE BAR & SEMIOTIC ENHANCEMENTS
+   ========================================================================== */
+
+.vc-marketing-calendar-pulse {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  border: 1px solid #e5dfea;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fdfcfe 0%, #f7f1fb 100%);
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  box-shadow: 0 1px 4px rgba(40, 20, 60, 0.04);
+}
+
+.vc-marketing-pulse-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.vc-marketing-pulse-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.vc-pulse-label {
+  font-size: 9.5px;
+  font-weight: 750;
+  color: #7b6f84;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.vc-pulse-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+}
+
+.vc-pulse-val-row strong {
+  font-size: 17px;
+  font-weight: 800;
+  color: #2b2332;
+  line-height: 1;
+}
+
+.vc-pulse-sub {
+  font-size: 11px;
+  color: #6a5d74;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.vc-marketing-pulse-divider {
+  width: 1px;
+  height: 26px;
+  background: #e4daea;
+  flex-shrink: 0;
+}
+
+.vc-pulse-mix {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.vc-pulse-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.vc-pulse-chip.is-reel {
+  background: #fae8ff;
+  color: #86198f;
+  border: 1px solid #f0abfc;
+}
+
+.vc-pulse-chip.is-carousel {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.vc-pulse-chip.is-post {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.vc-pulse-alert {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.vc-pulse-alert.is-art {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.vc-pulse-alert.is-video {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.vc-pulse-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 650;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  white-space: nowrap;
+}
+
+.vc-marketing-pulse-channels {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.vc-pulse-channels-label {
+  font-size: 10.5px;
+  font-weight: 750;
+  color: #7b6f84;
+  white-space: nowrap;
+}
+
+.vc-channel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border: 1px solid #dcd3e2;
+  background: #fff;
+  color: #4b3d56;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.vc-channel-chip:hover {
+  border-color: #8b5cf6;
+  transform: translateY(-1px);
+}
+
+.vc-channel-chip.active {
+  background: #7c3aed;
+  color: #fff;
+  border-color: #6d28d9;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+}
+
+.vc-channel-chip .vc-chip-count {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.06);
+  font-weight: 800;
+}
+
+.vc-channel-chip.active .vc-chip-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.vc-channel-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  font-size: 7.5px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.vc-channel-logo.ig-logo {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  color: #fff;
+}
+
+.vc-channel-chip.is-ig.active {
+  background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+  border-color: transparent;
+}
+
+.vc-channel-logo.tt-logo {
+  background: #000;
+  color: #00f2fe;
+  box-shadow: 1px 1px 0 #fe2c55;
+}
+
+.vc-channel-chip.is-tt.active {
+  background: #111;
+  border-color: #00f2fe;
+  color: #fff;
+}
+
+.vc-channel-logo.fb-logo {
+  background: #1877f2;
+  color: #fff;
+}
+
+.vc-channel-chip.is-fb.active {
+  background: #1877f2;
+  border-color: #166fe5;
+  color: #fff;
+}
+
+/* Day non-production & holiday banners */
+.vc-cal-nonprod-strip {
+  margin: 2px 0 4px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: #fff8e6;
+  border: 1px dashed #f5c065;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.vc-cal-nonprod-badge {
+  font-size: 8.5px;
+  font-weight: 750;
+  color: #925c04;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vc-marketing-calendar-day.is-nonproduction {
+  background: repeating-linear-gradient(45deg, #fcfbff, #fcfbff 10px, #fefaf0 10px, #fefaf0 20px) !important;
+}
+
+/* Semiotic Badges in Calendar Pill */
+.vc-cal-channel-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  font-weight: 900;
+  padding: 1px 3px;
+  border-radius: 3px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.vc-cal-channel-badge.is-channel-ig {
+  background: #fae8ff;
+  color: #a21caf;
+  border: 1px solid #f0abfc;
+}
+
+.vc-cal-channel-badge.is-channel-tt {
+  background: #18181b;
+  color: #00f2fe;
+  border: 1px solid #27272a;
+}
+
+.vc-cal-channel-badge.is-channel-fb {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.vc-cal-channel-badge.is-channel-wa {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.vc-cal-channel-badge.is-channel-gen {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+.vc-cal-format-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.vc-cal-format-badge.is-format-reel {
+  color: #d946ef;
+}
+
+.vc-cal-format-badge.is-format-carousel {
+  color: #0ea5e9;
+}
+
+.vc-cal-format-badge.is-format-story {
+  color: #f59e0b;
+}
+
+.vc-cal-format-badge.is-format-post {
+  color: #6b7280;
+}
+
+/* 5-step deliverable pipeline dots */
+.vc-cal-pipeline-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5px;
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+
+.vc-cal-pdot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  font-size: 6.5px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.vc-cal-pdot.is-ready {
+  background: #10b981;
+  color: #fff;
+}
+
+.vc-cal-pdot.is-pending {
+  background: #f59e0b;
+  color: #fff;
+}
+
+.vc-cal-pdot.is-unconfirmed {
+  background: transparent;
+  border: 1px dashed #d97706;
+  color: #b45309;
+}
+
+.vc-cal-pdot.is-na {
+  background: #e5e7eb;
+  color: #9ca3af;
+}
+
+/* Dark Mode Overrides for Pulse Bar & Semiotic Indicators */
+:root[data-theme='dark'] .vc-marketing-calendar-pulse,
+.work-app.theme-dark .vc-marketing-calendar-pulse {
+  background: linear-gradient(135deg, #181926 0%, #151622 100%);
+  border-color: #2a2c3d;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme='dark'] .vc-pulse-val-row strong,
+.work-app.theme-dark .vc-pulse-val-row strong {
+  color: #f3f4f8;
+}
+
+:root[data-theme='dark'] .vc-pulse-label,
+.work-app.theme-dark .vc-pulse-label,
+:root[data-theme='dark'] .vc-pulse-channels-label,
+.work-app.theme-dark .vc-pulse-channels-label {
+  color: #9ba0b4;
+}
+
+:root[data-theme='dark'] .vc-pulse-sub,
+.work-app.theme-dark .vc-pulse-sub {
+  color: #c4c8d8;
+}
+
+:root[data-theme='dark'] .vc-marketing-pulse-divider,
+.work-app.theme-dark .vc-marketing-pulse-divider {
+  background: #262939;
+}
+
+:root[data-theme='dark'] .vc-pulse-chip.is-reel,
+.work-app.theme-dark .vc-pulse-chip.is-reel {
+  background: #3b113d;
+  color: #f0abfc;
+  border-color: #701a75;
+}
+
+:root[data-theme='dark'] .vc-pulse-chip.is-carousel,
+.work-app.theme-dark .vc-pulse-chip.is-carousel {
+  background: #082f49;
+  color: #7dd3fc;
+  border-color: #0369a1;
+}
+
+:root[data-theme='dark'] .vc-pulse-chip.is-post,
+.work-app.theme-dark .vc-pulse-chip.is-post {
+  background: #1f2937;
+  color: #d1d5db;
+  border-color: #374151;
+}
+
+:root[data-theme='dark'] .vc-pulse-alert.is-art,
+.work-app.theme-dark .vc-pulse-alert.is-art {
+  background: #3c2a07;
+  color: #fde68a;
+  border-color: #78350f;
+}
+
+:root[data-theme='dark'] .vc-pulse-alert.is-video,
+.work-app.theme-dark .vc-pulse-alert.is-video {
+  background: #3e1212;
+  color: #fecaca;
+  border-color: #7f1d1d;
+}
+
+:root[data-theme='dark'] .vc-pulse-ok,
+.work-app.theme-dark .vc-pulse-ok {
+  background: #063725;
+  color: #6ee7b7;
+  border-color: #065f46;
+}
+
+:root[data-theme='dark'] .vc-channel-chip,
+.work-app.theme-dark .vc-channel-chip {
+  background: #1c1e2b;
+  border-color: #2c2f42;
+  color: #d1d5db;
+}
+
+:root[data-theme='dark'] .vc-channel-chip:hover,
+.work-app.theme-dark .vc-channel-chip:hover {
+  border-color: #a855f7;
+  color: #fff;
+}
+
+:root[data-theme='dark'] .vc-channel-chip.active,
+.work-app.theme-dark .vc-channel-chip.active {
+  background: #7c3aed;
+  color: #fff;
+  border-color: #8b5cf6;
+}
+
+:root[data-theme='dark'] .vc-channel-chip .vc-chip-count,
+.work-app.theme-dark .vc-channel-chip .vc-chip-count {
+  background: rgba(255, 255, 255, 0.08);
+  color: #c4c8d8;
+}
+
+:root[data-theme='dark'] .vc-marketing-calendar-day.is-nonproduction,
+.work-app.theme-dark .vc-marketing-calendar-day.is-nonproduction {
+  background: repeating-linear-gradient(45deg, #151722, #151722 10px, #201a1d 10px, #201a1d 20px) !important;
+}
+
+:root[data-theme='dark'] .vc-cal-nonprod-strip,
+.work-app.theme-dark .vc-cal-nonprod-strip {
+  background: #2b2318;
+  border-color: #57401c;
+}
+
+:root[data-theme='dark'] .vc-cal-nonprod-badge,
+.work-app.theme-dark .vc-cal-nonprod-badge {
+  color: #fcd34d;
+}
+
+:root[data-theme='dark'] .vc-cal-channel-badge.is-channel-ig,
+.work-app.theme-dark .vc-cal-channel-badge.is-channel-ig {
+  background: #3b113d;
+  color: #f472b6;
+  border-color: #701a75;
+}
+
+:root[data-theme='dark'] .vc-cal-channel-badge.is-channel-tt,
+.work-app.theme-dark .vc-cal-channel-badge.is-channel-tt {
+  background: #09090b;
+  color: #00f2fe;
+  border-color: #27272a;
+}
+
+:root[data-theme='dark'] .vc-cal-channel-badge.is-channel-fb,
+.work-app.theme-dark .vc-cal-channel-badge.is-channel-fb {
+  background: #172554;
+  color: #60a5fa;
+  border-color: #1e40af;
+}
+
+:root[data-theme='dark'] .vc-cal-channel-badge.is-channel-wa,
+.work-app.theme-dark .vc-cal-channel-badge.is-channel-wa {
+  background: #064e3b;
+  color: #34d399;
+  border-color: #065f46;
+}
+
+:root[data-theme='dark'] .vc-cal-channel-badge.is-channel-gen,
+.work-app.theme-dark .vc-cal-channel-badge.is-channel-gen {
+  background: #1f2937;
+  color: #9ca3af;
+  border-color: #374151;
+}
+
+:root[data-theme='dark'] .vc-cal-pdot.is-na,
+.work-app.theme-dark .vc-cal-pdot.is-na {
+  background: #374151;
+  color: #6b7280;
+}
+
+@media (max-width: 900px) {
+  .vc-marketing-calendar-pulse {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .vc-marketing-pulse-stats {
+    gap: 10px;
+  }
+  .vc-marketing-pulse-divider {
+    display: none;
+  }
+}
