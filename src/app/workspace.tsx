@@ -118,6 +118,7 @@ function createInitialState() {
     legacyCatalog: [],
     customers: [],
     inventoryMovements: [],
+    inventoryGroups: [],
     leads: [],
     quotes: [],
     inventory: starterInventory,
@@ -219,8 +220,8 @@ export function WorkspaceProvider({ children }) {
         if ((page || []).length < pageSize) return { data: rows, error: null };
       }
     };
-    const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult, customerAvatarsResult] = await Promise.all([
-      readAllPages(() => supabase.from('inventory_items').select('id,category_id,area_id,sku,name,description,item_type,tags,reference_image_url,custom_fields,base_unit,minimum_quantity,active,created_at,updated_at').eq('organization_id', organizationId).order('id'),'inventory'),
+    const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult, customerAvatarsResult, groupsResult] = await Promise.all([
+      readAllPages(() => supabase.from('inventory_items').select('id,category_id,area_id,inventory_group_id,sku,name,description,item_type,tags,reference_image_url,custom_fields,base_unit,minimum_quantity,active,created_at,updated_at').eq('organization_id', organizationId).order('id'),'inventory'),
       readAllPages(() => supabase.from('inventory_variants').select('id,item_id,sku,label,attributes,active').eq('organization_id', organizationId).order('id'),'inventory'),
       readAllPages(() => supabase.from('inventory_stock').select('variant_id,branch_id,location_code,quantity,updated_at').eq('organization_id', organizationId).order('variant_id').order('branch_id').order('location_code'),'inventory'),
       readAllPages(() => supabase.from('areas').select('id,code,name').eq('organization_id', organizationId).order('name').order('id'),'workshop'),
@@ -233,8 +234,9 @@ export function WorkspaceProvider({ children }) {
       readAllPages(() => supabase.from('inventory_item_costs').select('variant_id,unit_cost,supplier_name,updated_at').eq('organization_id', organizationId).order('variant_id'),'inventory_costs','view_costs'),
       readAllPages(() => supabase.from('inventory_stock_metrics').select('variant_id,branch_id,location_code,quantity,reserved_quantity,available_quantity,reserved_percent,last_restock_at,lifetime_consumed,consumed_last_30_days,movement_count,last_movement_at').eq('organization_id', organizationId).order('variant_id').order('branch_id').order('location_code'),'inventory'),
       hasPermission('crm', 'view') ? supabase.rpc('list_visualcorp_customer_google_avatars') : Promise.resolve({ data: [], error: null }),
+      readAllPages(() => supabase.from('inventory_groups').select('id,organization_id,name,description,icon_key,color_key,show_in_main,display_order,archived_at,created_at,updated_at').eq('organization_id', organizationId).is('archived_at', null).order('display_order').order('name'),'inventory'),
     ]);
-    const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult].find((result) => result.error);
+    const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult, groupsResult].find((result) => result.error);
     if (failed) { setNotice(`No se pudieron sincronizar todos los datos operativos: ${failed.error.message}`); return; }
     const itemById = new Map<string, any>((itemsResult.data || []).map((row: any) => [row.id, row]));
     const inventoryImagePaths: string[] = [...new Set<string>((itemsResult.data || []).flatMap((row: any) => [inventoryReferenceStoragePath(row.reference_image_url), ...(Array.isArray(row.custom_fields?.product_image_paths) ? row.custom_fields.product_image_paths.map((value: unknown) => inventoryReferenceStoragePath(typeof value === 'string' ? value : '')) : [])]).filter((path: string | null): path is string => Boolean(path)))];
@@ -281,7 +283,7 @@ export function WorkspaceProvider({ children }) {
           return { path, storagePath, url: storagePath ? signedInventoryImages.get(storagePath) || '' : path, label: `Imagen ${index + 1}` };
         }).filter((image: any) => image.url);
         remoteInventory.push({
-          id: `${variant.id}:${branch?.id || 'unassigned'}:${location}`, remoteItemId: item.id, variantId: variant.id, sku: item.sku, variantSku: variant.sku,
+          id: `${variant.id}:${branch?.id || 'unassigned'}:${location}`, remoteItemId: item.id, variantId: variant.id, inventoryGroupId: item.inventory_group_id || null, sku: item.sku, variantSku: variant.sku,
           name: item.name, description: item.description || '', category: categoryById.get(item.category_id)?.name || '', variant: variant.label || '', variantAttributes: variant.attributes || {},
           itemType: item.item_type || '', tags: item.tags || [], referenceImageUrl: referenceImageStoragePath ? signedInventoryImages.get(referenceImageStoragePath) || '' : item.reference_image_url || inventoryImageForSku(item.sku), referenceImageStoragePath, productImages, customFields: item.custom_fields || {},
           area: areaById.get(item.area_id)?.name || 'Sin área', branch: branch?.name || 'Sucursal por asignar', branchId: branch?.id || null,
@@ -305,7 +307,7 @@ export function WorkspaceProvider({ children }) {
     const customerById = new Map<string, any>(remoteCustomers.map((row) => [row.id, row]));
     const paymentLabels = { cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', other: 'Otro' };
     const remoteSales = (salesResult.data || []).map((row) => { const paid = (row.sale_payments || []).reduce((sum, payment) => sum + Number(payment.amount), 0); const methods = [...new Set((row.sale_payments || []).map((payment) => payment.method))]; return { id: row.id, code: row.sale_code || row.id.slice(0, 8), total: Number(row.total), paid, balance: Math.max(0, Number(row.total) - paid), date: row.created_at, method: methods.length > 1 ? 'Pago dividido' : paymentLabels[methods[0] || row.payment_method] || 'Otro', customer: customerById.get(row.customer_id)?.name || '', description: (row.sale_lines || []).map((line) => line.description_snapshot).join(', '), quantity: (row.sale_lines || []).reduce((sum, line) => sum + Number(line.quantity), 0), urgent: row.urgent_backorder, status: row.status, note: row.note }; });
-    setData((current) => ({ ...current, branches: branchesResult.data || [], inventoryLocations, inventory: remoteInventory, inventoryMovements: remoteMovements, customers: remoteCustomers, sales: remoteSales }));
+    setData((current) => ({ ...current, branches: branchesResult.data || [], inventoryLocations, inventory: remoteInventory, inventoryGroups: (groupsResult.data || []).map((row: any) => ({ id: row.id, organizationId: row.organization_id, name: row.name, description: row.description || '', iconKey: row.icon_key, colorKey: row.color_key, showInMain: row.show_in_main, displayOrder: row.display_order || 0, archivedAt: row.archived_at || null })), inventoryMovements: remoteMovements, customers: remoteCustomers, sales: remoteSales }));
   }, [organizationId, user, hasPermission]);
   useEffect(() => { void refreshRemote(); }, [refreshRemote]);
   useEffect(() => {

@@ -30,6 +30,7 @@ import { InventorySpecificationFields } from './InventorySpecificationFields';
 import { InventoryOptionPicker } from './InventoryOptionPicker';
 import { InventoryProductImageGallery } from './InventoryProductImageGallery';
 import type { InventoryGalleryImage } from './inventoryImageUtils';
+import type { InventoryGroup } from './InventoryGroupsPanel';
 import './InventoryArticleEditor.css';
 
 type ReferenceImage = { path: string; label: string; series?: string };
@@ -71,6 +72,7 @@ type Draft = {
   productImages: InventoryGalleryImage[];
   customFields: Record<string, unknown>;
   brandScope: string;
+  inventoryGroupId: string;
   variantAttributes: InventorySpecificationDraft & Record<string, unknown>;
   sourceItem: ArticleSource;
 };
@@ -107,6 +109,7 @@ type Props = {
   itemTypeOptions: string[];
   tagOptions: string[];
   specificationOptions: Partial<Record<'finish' | 'color' | 'purchase_unit' | 'material', string[]>>;
+  inventoryGroups: InventoryGroup[];
 };
 
 const stringValue = (value: unknown) => (typeof value === 'string' ? value : value == null ? '' : String(value));
@@ -132,6 +135,7 @@ export function InventoryArticleEditor({
   itemTypeOptions,
   tagOptions,
   specificationOptions,
+  inventoryGroups,
 }: Props) {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryTerm, setLibraryTerm] = useState('');
@@ -567,6 +571,14 @@ export function InventoryArticleEditor({
                       <option value="giga">GigaPrint (Exclusivo)</option>
                       <option value="general">General / Compartido (Ambas marcas)</option>
                     </select>
+                  </label>
+                  <label>
+                    Colección
+                    <select value={value.inventoryGroupId || ''} onChange={(event) => update({ inventoryGroupId: event.target.value })}>
+                      <option value="">Inventario principal</option>
+                      {inventoryGroups.map((group) => <option key={group.id} value={group.id}>{group.name}{group.showInMain ? ' · visible en principal' : ''}</option>)}
+                    </select>
+                    <small>La ficha, sus variantes y todas sus sucursales permanecen juntas.</small>
                   </label>
                   <label className="inventory-editor-wide">
                     Categoría
