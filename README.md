@@ -67,6 +67,8 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ## Continuidad del trabajo
 
+- **Colecciones de inventario (9 de noviembre de 2026):** rama `codex/inventory-groups-20261109`. “Inventario principal” conserva los artículos operativos; las colecciones personalizadas agrupan artículos estacionales u ocasionales y se pueden mostrar u ocultar en la vista principal. La clasificación se guarda a nivel de ficha, por lo que las variantes, existencias por sucursal/ubicación y movimientos permanecen juntos. El panel permite crear, renombrar, cambiar identidad, mostrar/ocultar y archivar solo colecciones vacías. La migración `20261109173932_inventory_groups.sql` se aplicó y verificó en Supabase `visualcorp-suite`; typecheck y compilación pasaron. Publicación Vercel pendiente.
+
 - **Diálogos y avisos (5 de noviembre de 2026):** refinamiento aislado desde `origin/main` (`a447842`) en `codex/dialog-alert-refinement-20261105`. Las confirmaciones críticas usan efectos discretos por defecto; el aviso global ahora admite cierre manual, lectores de pantalla, tema oscuro/claro y espacio seguro móvil. Se corrigió el temporizador para que un aviso anterior no quite uno más reciente. `npm run build:checked` pasó; cambios locales sin publicación.
 
 - **Planificación de Marketing (4 de noviembre de 2026):** las campañas agrupan publicaciones y tareas; el calendario incorpora mes con selección de varios días, semana por horas y día actual en intervalos de 30 minutos. El arrastre abre la ficha con el periodo u horario seleccionado. Las tareas mantienen su propio plazo y no reciben canal ni formato social.
