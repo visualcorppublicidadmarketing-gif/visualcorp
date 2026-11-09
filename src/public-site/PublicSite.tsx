@@ -9,7 +9,9 @@ import { Avatar, getGoogleAvatarUrl } from '../components/ui/Avatar';
 import { getGoogleMapsEmbedUrl, getGoogleMapsOpenUrl, isGoogleMapsUrl } from '../lib/maps';
 import { multiProductQuoteService, publicAddress, publicServiceFamilies, serviceDeliverableTags, serviceDetailContent, serviceProjectPrompts, type PublicServiceId } from './content.ts';
 import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategoryStrips, ServiceVisualShowcase, StrategicBenefitsGrid } from './SolutionsComponents';
-import { Title3D, type Title3DKey } from './Title3D';
+import { Title3D } from './Title3D';
+import { AboutHero, ContactHero, ProcessHero } from './CompanyHeroes';
+import { companyProcessSteps } from './company-hero-content';
 import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
 import { AnimatedList, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight, PulsingBeacon, AnimatedShinyText } from '../components/ui/MagicComponents';
 import { FloatInput, FloatTextarea, FeedbackAlert } from '../components/ui/FormControls';
@@ -464,18 +466,13 @@ export function ServiceDetailPage() {
 
 export function AboutPage() {
   const { data } = useWorkspace();
-  return <><SiteTitle>La empresa</SiteTitle><PageHero eyebrow="VISUAL CORP" title={<>Ideas para marcas<br/>que quieren destacar.</>} description={`Somos una agencia de publicidad y marketing en ${data.settings.location}. Acompañamos ideas desde el diseño hasta soluciones visuales para marcas y espacios.`} primary={{ label: 'Conversemos', to: '/contacto' }} secondary={{ label: 'Explorar soluciones', to: '/soluciones' }}/><section className="site-about-section"><div className="about-mark"><img src="/brand/visualcorp-symbol.png" alt="Símbolo Visual Corp"/><span>VISUAL CORP<br/><small>AGENCIA CREATIVA</small></span></div><div><Eyebrow>QUIÉNES SOMOS</Eyebrow><h2>Hacemos visible<br/>lo que imaginas.</h2><p>En Visual Corp creemos que cada negocio tiene una historia que merece verse. Reunimos creatividad, publicidad y producción visual para ayudar a convertir ideas en proyectos concretos.</p><p>Estamos en Milagro, Ecuador. Cuéntanos qué estás pensando y encontraremos un primer paso contigo.</p><Link to="/como-trabajamos" className="site-text-link">Conoce nuestro proceso <ArrowRight size={16}/></Link></div></section><StrategicBenefitsGrid/><EnvironmentBrandingMatrix compact/><Callout data={data}/></>;
+  return <><SiteTitle>La empresa</SiteTitle><AboutHero location={data.settings.location}/><section className="site-about-section" id="el-estudio"><div className="about-mark"><img src="/brand/visualcorp-symbol.png" alt="Símbolo Visual Corp"/><span>VISUAL CORP<br/><small>AGENCIA CREATIVA</small></span></div><div><Eyebrow>QUIÉNES SOMOS</Eyebrow><h2>Hacemos visible<br/>lo que imaginas.</h2><p>En Visual Corp creemos que cada negocio tiene una historia que merece verse. Reunimos creatividad, publicidad y producción visual para ayudar a convertir ideas en proyectos concretos.</p><p>Estamos en Milagro, Ecuador. Cuéntanos qué estás pensando y encontraremos un primer paso contigo.</p><Link to="/como-trabajamos" className="site-text-link">Conoce nuestro proceso <ArrowRight size={16}/></Link></div></section><StrategicBenefitsGrid/><EnvironmentBrandingMatrix compact/><Callout data={data}/></>;
 }
 
 export function ProcessPage() {
   const { data } = useWorkspace();
-  const steps: Array<{ n: string; title: string; text: string; titleKey: Title3DKey }> = [
-    { n: '01', title: 'Nos cuentas la idea', text: 'Comparte el objetivo, el espacio o la necesidad que quieres resolver.', titleKey: 'disenando' },
-    { n: '02', title: 'Revisamos los detalles', text: 'Conversamos sobre referencias, medidas, cantidades y el alcance del proyecto.', titleKey: 'corporeos' },
-    { n: '03', title: 'Definimos el siguiente paso', text: 'Te orientamos sobre cómo avanzar. Valores, disponibilidad y tiempos se confirman según cada solicitud.', titleKey: 'instalacion' },
-  ];
-  return <><SiteTitle>Cómo trabajamos</SiteTitle><PageHero eyebrow="UN CAMINO CLARO" title={<>De la primera idea<br/>al siguiente paso.</>} description="Una conversación sencilla nos ayuda a entender lo que buscas y revisar cómo podemos ayudarte." primary={{ label: 'Iniciar una conversación', to: '/contacto' }} secondary={{ label: 'Explorar soluciones', to: '/soluciones' }}/><section className="site-process-section"><div className="process-intro"><Eyebrow>ASÍ EMPEZAMOS</Eyebrow><h2>Primero entendemos<br/>el proyecto.</h2><p>No necesitas tener todas las respuestas listas. Cuéntanos lo que tienes en mente y completamos la información contigo.</p><Link className="site-primary-button" to="/contacto">Iniciar una conversación <ArrowUpRight size={16}/></Link></div><AnimatedList className="process-list" stagger={0.1}>{steps.map((step) => (
-            <article key={step.n}>
+  return <><SiteTitle>Cómo trabajamos</SiteTitle><ProcessHero/><section className="site-process-section" id="como-empezamos"><div className="process-intro"><Eyebrow>ASÍ EMPEZAMOS</Eyebrow><h2>Primero entendemos<br/>el proyecto.</h2><p>No necesitas tener todas las respuestas listas. Cuéntanos lo que tienes en mente y completamos la información contigo.</p><Link className="site-primary-button" to="/contacto">Iniciar una conversación <ArrowUpRight size={16}/></Link></div><AnimatedList className="process-list" stagger={0.1}>{companyProcessSteps.map((step) => (
+            <article key={step.n} id={`proceso-${step.n}`} tabIndex={-1}>
               <b>{step.n}</b>
               <div>
                 <div className="process-step-3d">
@@ -530,17 +527,7 @@ export function ContactPage() {
   const googleMapsOpenUrl = getGoogleMapsOpenUrl('', publicAddress);
   const googleMapsEmbedUrl = getGoogleMapsEmbedUrl('', publicAddress);
   return <><SiteTitle>Contacto</SiteTitle>
-    <section className="contact-hero" ref={contactHeroRef} aria-labelledby="contact-page-title">
-      <div className="contact-hero-glow contact-hero-glow-pink"/><div className="contact-hero-glow contact-hero-glow-blue"/>
-      <div className="contact-hero-inner">
-        <div className="contact-hero-copy"><Eyebrow light>VISUAL CORP · MILAGRO, ECUADOR</Eyebrow><h1 id="contact-page-title">Tu próxima idea<br/>merece <em>verse.</em></h1><p>Cuéntanos qué quieres comunicar o crear. Te ayudamos a encontrar un primer paso para tu proyecto.</p>
-          <div className="contact-hero-actions"><a className="contact-whatsapp-cta" href={whatsapp} target="_blank" rel="noreferrer"><MessageCircle size={17}/> Hablar por WhatsApp <ArrowUpRight size={15}/></a><a className="contact-form-cta" href="#contacto-formulario">Escribir mi solicitud <ArrowDownRight size={16}/></a></div>
-          <div className="contact-hero-proof"><span><i/> Atención directa</span><span><i/> Diseño y producción</span><span><MapPin size={14}/> Milagro, Ecuador</span></div>
-        </div>
-        <div className="contact-hero-art" aria-hidden="true"><div className="contact-art-orbit orbit-one"/><div className="contact-art-orbit orbit-two"/><div className="contact-art-core"><img src="/brand/visualcorp-symbol.png" alt=""/><span>VISUAL CORP</span><small>IDEAS EN MOVIMIENTO</small></div><div className="contact-art-tag tag-top"><Sparkles size={14}/> UNA IDEA</div><div className="contact-art-tag tag-bottom"><span/> UN SIGUIENTE PASO</div><div className="contact-art-index">01 <i/> 03</div></div>
-      </div>
-      <a className="contact-scroll-cue" href="#contacto-opciones">BAJA PARA CONVERSAR <ArrowDownRight size={14}/></a>
-    </section>
+    <ContactHero sectionRef={contactHeroRef} whatsapp={whatsapp} address={publicAddress}/>
     <section className="contact-workspace" id="contacto-opciones" aria-label="Opciones para contactar a Visual Corp">
         <div className="contact-info-column"><div className="contact-section-heading"><Eyebrow>CONTACTO DIRECTO</Eyebrow><h2>Elige cómo<br/>empezar.</h2><p>Escríbenos directamente o déjanos los detalles y los revisaremos contigo.</p></div>
         <AnimatedList className="contact-channel-cards" stagger={0.075}>
@@ -551,9 +538,9 @@ export function ContactPage() {
         </AnimatedList>
         <div className="contact-service-picker"><div><small>¿YA SABES QUÉ BUSCAS?</small><span>Elige una opción para preparar tu mensaje.</span></div><div className="contact-service-chips" role="group" aria-label="Selecciona una familia de trabajo">{contactServices.map((service) => <button key={service.id} type="button" className={selectedService === service.name ? 'is-selected' : ''} aria-pressed={selectedService === service.name} onClick={() => setSelectedService((current) => current === service.name ? '' : service.name)}>{service.name}</button>)}</div><p className="contact-service-feedback" aria-live="polite">{selectedService ? `Listo: ${selectedService}. También prepararemos tu mensaje de WhatsApp.` : 'Puedes elegir una familia o pedir orientación.'}</p><a className="contact-service-link" href="#contacto-formulario">{selectedService ? `Formulario: ${selectedService}` : 'Prefiero que me orienten'} <ChevronRight size={14}/></a></div>
       </div>
-      <motion.div className="contact-form-column" ref={contactFormRef} id="contacto-formulario" initial={reduceMotion ? false : { opacity: 0, x: 18 }} whileInView={reduceMotion ? undefined : { opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.16 }} transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.08, ease: 'easeOut' }}><div className="contact-form-intro"><span className="contact-form-step">01 <i/> 01</span><span>FORMULARIO DE CONTACTO</span></div><LeadForm initialService={initialContactService} selectedService={selectedService} onServiceChange={setSelectedService}/></motion.div>
+      <motion.div className="contact-form-column" ref={contactFormRef} id="contacto-formulario" tabIndex={-1} initial={reduceMotion ? false : { opacity: 0, x: 18 }} whileInView={reduceMotion ? undefined : { opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.16 }} transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.08, ease: 'easeOut' }}><div className="contact-form-intro"><span className="contact-form-step">01 <i/> 01</span><span>FORMULARIO DE CONTACTO</span></div><LeadForm initialService={initialContactService} selectedService={selectedService} onServiceChange={setSelectedService}/></motion.div>
     </section>
-    <motion.section className="contact-location-section" ref={contactLocationRef} aria-labelledby="contact-location-title" initial={reduceMotion ? false : { opacity: 0, y: 16 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.5, ease: 'easeOut' }}>
+    <motion.section className="contact-location-section" id="contacto-ubicacion" tabIndex={-1} ref={contactLocationRef} aria-labelledby="contact-location-title" initial={reduceMotion ? false : { opacity: 0, y: 16 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.5, ease: 'easeOut' }}>
       <div className="contact-location-copy">
         <Eyebrow>VISÍTANOS EN MILAGRO</Eyebrow>
         <h2 id="contact-location-title">Encuéntranos<br/><em>en Milagro.</em></h2>
