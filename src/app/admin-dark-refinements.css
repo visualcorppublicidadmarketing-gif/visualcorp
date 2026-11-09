@@ -2322,6 +2322,43 @@
   box-shadow: none;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-entry-kind > button {
+  border-color: var(--vc-line, #2b3044);
+  background: #1d2130;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-entry-kind > button.is-active {
+  border-color: #a855f7;
+  background: #352044;
+  color: #f3e8ff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-entry-kind > button svg {
+  color: #d8b4fe;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-custom-quantity-box,
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-custom-area-box {
+  border-color: var(--vc-line, #2b3044);
+  background: #191c29;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-custom-quantity-box > label,
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-custom-area-box > label {
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-custom-quantity-box input {
+  border-color: var(--vc-line, #2b3044);
+  background: #11141d;
+  color: var(--vc-ink, #f1f2f6);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-entry-kind-note {
+  color: var(--vc-muted, #b2b8c8);
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .pos-calculation-total {
   border-color: rgba(168, 85, 247, 0.35);
   background: #1d2130;
