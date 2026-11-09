@@ -142,10 +142,24 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - Temas claro/oscuro, foco de teclado y movimiento reducido. Validación local en 60 combinaciones entre 320 y 1920 px, además de navegación, estados y enlaces. La publicación se registra en el PR de esta entrega.
 - Investigación, decisiones y evidencia: [ficha de encabezados](docs/design/company-heroes-2026-11-09.md).
 
-
 ### Panel administrativo y navegación pública — 2026-11-09
 
 - El inicio del panel integra buscador por tareas, filtros por área y accesos favoritos por usuario que mantienen el control de permisos. El resumen distingue los datos anteriores cuando falla la actualización.
 - La navegación pública gana comportamiento accesible con teclado, cierre previsible de paneles y un umbral responsive más adecuado a portátiles.
 - El panel administrativo y la navegación se validaron en un fixture local en temas claro/oscuro, con búsqueda, filtros, favoritos, aislamiento por cuenta y ocho anchos entre 320 y 1920 px. TypeScript pasa. La compilación final se detuvo por falta de memoria nativa; una compilación previa terminó antes de los ajustes finales. No se probó el panel con sesión autenticada.
 - No hay migración de datos. El PR #230 publica estos cambios; investigación y límites de verificación en [ficha del panel](docs/admin-home-refinement-20261109.md).
+
+### Tarjetas de publicaciones y Calendario de Marketing — 2026-11-09
+
+- Se estructuró el módulo de marketing en 3 subpáginas (/operaciones/marketing bandeja, /operaciones/marketing/calendario cronograma y /operaciones/marketing/campanas estrategia) con enlaces dedicados y sincronización de rutas.
+- Se agregó la barra de pulso mensual panorámica (vc-marketing-calendar-pulse) con métricas en tiempo real (total del mes, publicaciones vs listas, mix de formatos Reels/Carruseles/Estáticos, alertas de arte/video) y filtros rápidos por canal con contadores (Todos, Instagram, TikTok, Facebook).
+- Semiótica visual completa en celdas: insignias cromáticas de red social (IG, TT, FB), iconos de formato (Film, CopyPlus, FileImage, Smartphone), checklist semiótico de 5 pasos [P][A][C][V][T] y detección de feriados locales/días sin producción con banda descriptiva.
+- Verificación local: npm run typecheck y npm run build:checked completados con éxito sin errores. Paridad completa en tema claro y oscuro.
+
+### Catálogo, calendario y abastecimiento — 2026-11-09
+
+- El editor de tarifas del catálogo rechaza valores de cero para que coincidan con el cotizador; las modalidades vacías siguen heredando la tarifa base.
+- El calendario limita sus métricas al mes y a publicaciones sociales, conserva el formato explícito en TikTok y deja confirmaciones utilizables sobre el diálogo de revisión.
+- Operación permite conocer y limpiar los filtros aplicados; la tienda sincroniza `?familia=` sin perder otros parámetros ni el producto abierto.
+- Compras incorpora solicitudes de materiales por sucursal y área, cotizaciones comparables, borradores de órdenes y registro de unidades rechazadas sin ingresarlas al inventario. Supabase registra las migraciones `20261109172959_purchasing_command_center_2026_11_09.sql` y `20261109173159_purchasing_command_center_fk_indexes.sql`.
+- Verificación local de la integración: `npm run build:checked`, `npm run test:marketing` (14/14) y `npm run test:marketing:browser` (13 recorridos). La compilación informa el tamaño elevado de algunos paquetes, pero termina correctamente.

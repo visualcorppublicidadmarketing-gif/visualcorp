@@ -278,6 +278,7 @@ export function Dialog({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
         event.stopPropagation();
         if (closeOnEscape && !busy) {
           onOpenChangeRef.current(false);
@@ -411,7 +412,8 @@ export function Dialog({
     </div>
   );
 
-  return createPortal(node, document.body);
+  const openNativeDialog = document.querySelector<HTMLDialogElement>('dialog[open]');
+  return createPortal(node, openNativeDialog ?? document.body);
 }
 
 export function AlertDialog({

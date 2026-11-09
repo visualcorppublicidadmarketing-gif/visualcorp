@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye, CircleDot, Filter, FolderOpen, GripVertical, ListFilter, Megaphone, Film, Image as ImageIcon, CheckCircle2, Circle, Maximize2, Minimize2, UserRound } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CopyPlus, Pencil, X, Check, Eye, CircleDot, Filter, FolderOpen, GripVertical, ListFilter, Megaphone, Film, Image as ImageIcon, CheckCircle2, Circle, Maximize2, Minimize2, UserRound, Smartphone } from 'lucide-react';
 import { ContextMenu, type ContextMenuAction } from '../../../components/ui/ContextMenu';
 import { Badge } from '../../../components/ui/OperationalKit';
 import { DatePicker } from '../../../components/ui/Calendar';
@@ -8,7 +8,7 @@ import { AnimatedTabs } from '../../../components/ui/AnimatedTabs';
 import { MarketingPostArtwork, type MarketingArtworkAsset } from './MarketingPostArtwork';
 import { getMarketingCalendarColor, getMarketingTags } from './marketingColors';
 import { addMarketingDays, isTerminalMarketingStatus, marketingDateKey, marketingWeekStart } from './marketingScheduleRules';
-import { isPublication } from './marketingWorkflow';
+import { isPublication, type NonproductionDay } from './marketingWorkflow';
 import { MarketingTimeGrid } from './MarketingTimeGrid';
 import { taskStatuses, type MarketingCampaign, type MarketingCampaignTask, type MarketingTaskRange } from './MarketingPlanning';
 import './marketing-calendar.css';
@@ -23,6 +23,7 @@ export type MarketingCalendarPost = {
   source_id?: string; platform?: string; format?: string; owner?: string; content_line?: string; next_action?: string; tags?: string[]; calendar_color?: string;
   design_ready?: boolean; video_ready?: boolean; canvas_width?: number | null; canvas_height?: number | null;
   art_status?: string; video_status?: string;
+  cover_status?: string; caption_status?: string; voiceover_status?: string; tiktok_status?: string; caption?: string;
   record_kind?: string;
 };
 
@@ -30,6 +31,7 @@ export type MarketingCalendarTask = MarketingCampaignTask;
 
 type Props = {
   posts: MarketingCalendarPost[];
+  days?: NonproductionDay[];
   organizationId: string;
   artworkByPost: ReadonlyMap<string, MarketingArtworkAsset>;
   onArtworkSaved: () => void;
@@ -114,6 +116,37 @@ const weekOfMonth = (date: Date) => {
 };
 const isWeekCalendarView = (value: string) => value === 'week';
 
+export const getFormatBadge = (format?: string, platform?: string) => {
+  const norm = (format || '').toLowerCase();
+  const plat = (platform || '').toLowerCase();
+  if (norm.includes('reel') || norm.includes('video') || (!norm && plat.includes('tiktok'))) {
+    return { label: 'Reel', icon: Film, className: 'is-format-reel' };
+  }
+  if (norm.includes('carrusel') || norm.includes('carousel')) {
+    return { label: 'Carrusel', icon: CopyPlus, className: 'is-format-carousel' };
+  }
+  if (norm.includes('historia') || norm.includes('story')) {
+    return { label: 'Story', icon: Smartphone, className: 'is-format-story' };
+  }
+  return { label: 'Post', icon: ImageIcon, className: 'is-format-post' };
+};
+
+export const getChannelBadge = (platform?: string) => {
+  const norm = (platform || '').toLowerCase();
+  if (norm.includes('instagram')) return { code: 'IG', name: 'Instagram', className: 'is-channel-ig' };
+  if (norm.includes('tiktok')) return { code: 'TT', name: 'TikTok', className: 'is-channel-tt' };
+  if (norm.includes('facebook')) return { code: 'FB', name: 'Facebook', className: 'is-channel-fb' };
+  if (norm.includes('whatsapp')) return { code: 'WA', name: 'WhatsApp', className: 'is-channel-wa' };
+  return { code: (platform || 'GEN').slice(0, 2).toUpperCase(), name: platform || 'General', className: 'is-channel-gen' };
+};
+
+export const getDeliverableState = (status?: string, fallbackReady?: boolean) => {
+  if (status === 'Sí' || (!status && fallbackReady === true)) return 'ready';
+  if (status === 'No aplica') return 'na';
+  if (status === 'No') return 'pending';
+  return 'unconfirmed';
+};
+
 export function MarketingReadinessIndicators({ post, compact = false, onChange, disabled = false }: { post: MarketingCalendarPost; compact?: boolean; onChange?: (field: 'design_ready' | 'video_ready', checked: boolean) => void; disabled?: boolean }) {
   if (!isPublication(post)) return null;
   const items = [
@@ -169,7 +202,7 @@ function readCalendarPreferences(organizationId: string): MarketingCalendarPrefe
   }
 }
 
-export function MarketingCalendar({ posts, tasks, campaigns, organizationId, artworkByPost, artworkByTask, onArtworkSaved, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onQuickReschedule, onStatusChange, onReadinessChange, onDuplicate, onDelete, onTaskSelect, onTaskReschedule, onTaskQuickSchedule, onTaskStatusChange, onTaskCreate, onTaskCreateRange, onTaskDelete }: Props) {
+export function MarketingCalendar({ posts, days = [], tasks, campaigns, organizationId, artworkByPost, artworkByTask, onArtworkSaved, canEdit, canDelete, selectedIds, onToggle, onSelect, onCreate, onReschedule, onQuickReschedule, onStatusChange, onReadinessChange, onDuplicate, onDelete, onTaskSelect, onTaskReschedule, onTaskQuickSchedule, onTaskStatusChange, onTaskCreate, onTaskCreateRange, onTaskDelete }: Props) {
   const [anchor, setAnchor] = useState(() => new Date());
   const [view, setView] = useState<MarketingCalendarView>('month');
   const [monthDensity, setMonthDensity] = useState<'compact' | 'detailed'>('compact');
@@ -181,6 +214,38 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
   const [channelFilter, setChannelFilter] = useState('Todos los canales');
   const [ownerFilter, setOwnerFilter] = useState('Todos los responsables');
   const [kanbanStateFilter, setKanbanStateFilter] = useState<MarketingStateFilter>('all');
+
+  const monthPosts = useMemo(() => {
+    const currentMonth = anchor.getMonth();
+    const currentYear = anchor.getFullYear();
+    return posts.filter(isPublication).filter((p) => {
+      if (!p.scheduled_date) return false;
+      const d = new Date(`${p.scheduled_date.slice(0, 10)}T12:00:00`);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+  }, [posts, anchor]);
+
+  const pulseMetrics = useMemo(() => {
+    const total = monthPosts.length;
+    const published = monthPosts.filter((p) => /publicad/i.test(p.status)).length;
+    const ready = monthPosts.filter((p) => /aprobad|programad/i.test(p.status)).length;
+    const pendingArt = monthPosts.filter((p) => !isTerminalMarketingStatus(p.status) && getDeliverableState(p.art_status, p.design_ready) !== 'ready' && getDeliverableState(p.art_status, p.design_ready) !== 'na').length;
+    const isVideo = (post: MarketingCalendarPost) => {
+      const format = (post.format || '').toLowerCase();
+      const platform = (post.platform || '').toLowerCase();
+      return format.includes('reel') || format.includes('video') || (!format && platform.includes('tiktok'));
+    };
+    const pendingVideo = monthPosts.filter((p) => !isTerminalMarketingStatus(p.status) && isVideo(p) && getDeliverableState(p.video_status, p.video_ready) !== 'ready' && getDeliverableState(p.video_status, p.video_ready) !== 'na').length;
+    const reels = monthPosts.filter(isVideo).length;
+    const carousels = monthPosts.filter((p) => (p.format || '').toLowerCase().includes('carrusel') || (p.format || '').toLowerCase().includes('carousel')).length;
+    const statics = monthPosts.filter((p) => !isVideo(p) && !((p.format || '').toLowerCase().includes('carrusel') || (p.format || '').toLowerCase().includes('carousel'))).length;
+
+    const igCount = monthPosts.filter((p) => (p.platform || '').toLowerCase().includes('instagram')).length;
+    const ttCount = monthPosts.filter((p) => (p.platform || '').toLowerCase().includes('tiktok')).length;
+    const fbCount = monthPosts.filter((p) => (p.platform || '').toLowerCase().includes('facebook')).length;
+
+    return { total, published, ready, pendingArt, pendingVideo, reels, carousels, statics, igCount, ttCount, fbCount };
+  }, [monthPosts]);
   const [recordTypeFilter, setRecordTypeFilter] = useState<MarketingRecordTypeFilter>('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [showEmptyKanbanLanes, setShowEmptyKanbanLanes] = useState(false);
@@ -550,6 +615,77 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
         </div>
       </div>
     </header>
+
+    <section className="vc-marketing-calendar-pulse" aria-label="Pulso editorial del calendario">
+      <div className="vc-marketing-pulse-stats">
+        <div className="vc-marketing-pulse-item">
+          <span className="vc-pulse-label">Publicaciones de {monthHeading.split(' ')[0]}</span>
+          <div className="vc-pulse-val-row">
+            <strong>{pulseMetrics.total}</strong>
+            <span className="vc-pulse-sub">{pulseMetrics.published} publicadas · {pulseMetrics.ready} listas</span>
+          </div>
+        </div>
+        <div className="vc-marketing-pulse-divider" />
+        <div className="vc-marketing-pulse-item">
+          <span className="vc-pulse-label">Mix de formatos</span>
+          <div className="vc-pulse-mix">
+            <span className="vc-pulse-chip is-reel" title="Reels y videos en el mes"><Film size={11} /> {pulseMetrics.reels} Reels</span>
+            <span className="vc-pulse-chip is-carousel" title="Carruseles en el mes"><CopyPlus size={11} /> {pulseMetrics.carousels} Carruseles</span>
+            <span className="vc-pulse-chip is-post" title="Posts estáticos en el mes"><ImageIcon size={11} /> {pulseMetrics.statics} Estáticos</span>
+          </div>
+        </div>
+        <div className="vc-marketing-pulse-divider" />
+        <div className="vc-marketing-pulse-item">
+          <span className="vc-pulse-label">Atención requerida</span>
+          <div className="vc-pulse-mix">
+            {pulseMetrics.pendingArt > 0 ? (
+              <span className="vc-pulse-alert is-art" title="Publicaciones pendientes de diseño o arte">🎨 {pulseMetrics.pendingArt} sin arte</span>
+            ) : (
+              <span className="vc-pulse-ok" title="Todas las publicaciones cuentan con arte confirmado">✓ Arte al día</span>
+            )}
+            {pulseMetrics.pendingVideo > 0 && (
+              <span className="vc-pulse-alert is-video" title="Reels o videos pendientes de producción">🎬 {pulseMetrics.pendingVideo} sin video</span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="vc-marketing-pulse-channels" role="group" aria-label="Filtro rápido por red social">
+        <span className="vc-pulse-channels-label">Canal:</span>
+        <button
+          type="button"
+          className={`vc-channel-chip is-all ${channelFilter === 'Todos los canales' ? 'active' : ''}`}
+          onClick={() => setChannelFilter('Todos los canales')}
+        >
+          Todos <span className="vc-chip-count">{posts.length}</span>
+        </button>
+        <button
+          type="button"
+          className={`vc-channel-chip is-ig ${channelFilter === 'Instagram' ? 'active' : ''}`}
+          onClick={() => setChannelFilter(channelFilter === 'Instagram' ? 'Todos los canales' : 'Instagram')}
+        >
+          <span className="vc-channel-logo ig-logo">IG</span>
+          Instagram <span className="vc-chip-count">{pulseMetrics.igCount}</span>
+        </button>
+        <button
+          type="button"
+          className={`vc-channel-chip is-tt ${channelFilter === 'TikTok' ? 'active' : ''}`}
+          onClick={() => setChannelFilter(channelFilter === 'TikTok' ? 'Todos los canales' : 'TikTok')}
+        >
+          <span className="vc-channel-logo tt-logo">TT</span>
+          TikTok <span className="vc-chip-count">{pulseMetrics.ttCount}</span>
+        </button>
+        {pulseMetrics.fbCount > 0 && (
+          <button
+            type="button"
+            className={`vc-channel-chip is-fb ${channelFilter === 'Facebook' ? 'active' : ''}`}
+            onClick={() => setChannelFilter(channelFilter === 'Facebook' ? 'Todos los canales' : 'Facebook')}
+          >
+            <span className="vc-channel-logo fb-logo">FB</span>
+            Facebook <span className="vc-chip-count">{pulseMetrics.fbCount}</span>
+          </button>
+        )}
+      </div>
+    </section>
     <div className="vc-marketing-kanban-filters" aria-label={`Filtros del calendario · ${view}`}>
       <div className="vc-marketing-filters-group">
         <SelectDropdown
@@ -703,6 +839,7 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
       {cells.map((date,cellIndex)=>{
         const key=dateKey(date), items=byDate.get(key)||[];
         const dayTasks = calendarTasks.filter((task) => String(task.start_date || task.due_date || '').slice(0, 10) <= key && String(task.due_date || task.start_date || '').slice(0, 10) >= key);
+        const nonprodDay = days.find((d) => d.day === key);
         const inMonth=date.getMonth()===anchor.getMonth();
         const rowSize = hideSunday ? 6 : 7;
         const firstDateOfRow = cells.slice(cellIndex - (cellIndex % rowSize), cellIndex - (cellIndex % rowSize) + rowSize);
@@ -713,20 +850,24 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
         const visibleTasks=dayTasks.slice(0,Math.max(0,maxVisible-visible.length));
         const remaining=items.length+dayTasks.length-visible.length-visibleTasks.length;
         const isSelectedRange=Boolean(monthSelection && key>=monthSelectionStart && key<=monthSelectionEnd);
-        return <React.Fragment key={key}>{cellIndex % rowSize === 0 && <div className="vc-marketing-calendar-week-number" role="rowheader" aria-label={`Semana ${weekLabel}`}>{weekLabel}</div>}<ContextMenu displayContents trigger={false} className="vc-calendar-day-scope vc-marketing-context-menu" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" data-calendar-date={key} aria-label={`${key}, ${items.length} publicaciones y ${dayTasks.length} actividades`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${dragging?' can-drop':''}${expandedDate===key?' is-expanded':''}${isSelectedRange?' is-selected-range':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
+        return <React.Fragment key={key}>{cellIndex % rowSize === 0 && <div className="vc-marketing-calendar-week-number" role="rowheader" aria-label={`Semana ${weekLabel}`}>{weekLabel}</div>}<ContextMenu displayContents trigger={false} className="vc-calendar-day-scope vc-marketing-context-menu" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" data-calendar-date={key} aria-label={`${key}, ${items.length} publicaciones y ${dayTasks.length} actividades`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${nonprodDay?' is-nonproduction':''}${dragging?' can-drop':''}${expandedDate===key?' is-expanded':''}${isSelectedRange?' is-selected-range':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
           onPointerDown={(event)=>startMonthSelection(event,key)}
           onDragOver={(event)=>{if(canEdit&&dragging)event.preventDefault();}}
           onDrop={(event)=>{event.preventDefault();event.currentTarget.classList.remove('is-drop-target');const rawId=event.dataTransfer.getData('text/plain')||dragging;if(!rawId)return;const post=posts.find((item)=>item.id===rawId);if(post){if(post.scheduled_date.slice(0,10)!==key){if(onQuickReschedule){onQuickReschedule(post,key,post.scheduled_time);}else{onReschedule(post,key);}}setDragging(null);return;}const task=calendarTasks.find((item)=>item.id===rawId);if(task){if(onTaskQuickSchedule){onTaskQuickSchedule(task,key,task.start_time||undefined,task.end_time||undefined);}else{onTaskReschedule(task,key);}setDragging(null);return;}setDragging(null);}}
           onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))event.currentTarget.classList.remove('is-drop-target');}}
           onDragEnter={(event)=>{if(dragging)event.currentTarget.classList.add('is-drop-target');}}>
           <div className="vc-marketing-calendar-day-head"><span>{date.getDate()}</span>{items.length>0&&<button type="button" className="vc-marketing-calendar-day-agenda-toggle" aria-label={`Abrir agenda del ${key}`} onClick={()=>setExpandedDate(expandedDate===key?null:key)}>{items.length}</button>}{canEdit&&<button type="button" aria-label={`Crear publicación el ${key}`} onClick={()=>onCreate(key)}><Plus size={13}/></button>}</div>
+          {nonprodDay && <div className="vc-cal-nonprod-strip" title={`Día sin producción: ${nonprodDay.reason || 'Sin producción'}`}><span className="vc-cal-nonprod-badge">🏖️ {nonprodDay.reason || 'Sin producción'}</span></div>}
           <div className="vc-marketing-calendar-events">{visible.map((post)=>{
             const color=getMarketingCalendarColor(post.calendar_color,post.tags);
             const tags=getMarketingTags(post.tags);
             const artworkProps={organizationId,post,asset:artworkByPost.get(post.id),canEdit,canDelete,onSaved:onArtworkSaved};
-              const postAsset = artworkByPost.get(post.id);
-              const hasAsset = Boolean(postAsset?.rel_path || postAsset?.filename);
-              return <div className={`vc-marketing-event-row${canEdit||canDelete?' is-selectable':''}${isWeekCalendarView(view)?' is-week-card':''}${monthDensity==='compact'?' is-compact-row':''}`} key={post.id}>
+            const postAsset = artworkByPost.get(post.id);
+            const hasAsset = Boolean(postAsset?.rel_path || postAsset?.filename);
+            const formatInfo = getFormatBadge(post.format, post.platform);
+            const channelInfo = getChannelBadge(post.platform);
+            const FormatIcon = formatInfo.icon;
+            return <div className={`vc-marketing-event-row${canEdit||canDelete?' is-selectable':''}${isWeekCalendarView(view)?' is-week-card':''}${monthDensity==='compact'?' is-compact-row':''}`} key={post.id}>
               {(canEdit||canDelete)&&<input className="vc-marketing-event-select" type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={()=>onToggle(post.id)}/>}
               {isWeekCalendarView(view) ? <ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><article className={`vc-marketing-week-card tone-${statusClass(post)}`} style={color?{'--event-color':color,'--event-tint':`${color}18`} as React.CSSProperties:undefined}>
                 <div className="vc-marketing-week-card-head"><div>{post.scheduled_time?<time>{post.scheduled_time}</time>:<span>Hora pendiente</span>}<small>{post.platform||'Canal pendiente'}{post.format?` · ${post.format}`:''}</small></div><span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status||'Por iniciar'}</span></div>
@@ -740,9 +881,15 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
                   <div
                     className={`vc-marketing-calendar-event tone-${statusClass(post)}${monthDensity === 'compact' ? ' is-compact-pill' : ' is-detailed-card'}`}
                     style={color ? { '--event-color': color, '--event-tint': `${color}18` } as React.CSSProperties : undefined}
-                    title={`${post.title} · ${post.status}${tags.length ? ` · ${tags.join(', ')}` : ''}`}
+                    title={`${post.title} · ${post.status}${post.platform ? ` · ${post.platform}` : ''}${post.format ? ` · ${post.format}` : ''}${tags.length ? ` · ${tags.join(', ')}` : ''}`}
                   >
                     <div className="vc-marketing-compact-top">
+                      <span className={`vc-cal-channel-badge ${channelInfo.className}`} title={channelInfo.name}>
+                        {channelInfo.code}
+                      </span>
+                      <span className={`vc-cal-format-badge ${formatInfo.className}`} title={`Formato: ${post.format || formatInfo.label}`}>
+                        <FormatIcon size={10} />
+                      </span>
                       {color && <span className="vc-marketing-pill-indicator" style={{ backgroundColor: color }} aria-hidden="true" />}
                       {post.scheduled_time && <time>{post.scheduled_time}</time>}
                       <button
@@ -765,10 +912,19 @@ export function MarketingCalendar({ posts, tasks, campaigns, organizationId, art
                       <span className={`vc-marketing-event-status tone-${statusClass(post)}`}>{post.status || 'Por iniciar'}</span>
                       <span className="vc-marketing-compact-icons">
                         {hasAsset && (
-                          <span className="vc-marketing-has-asset-badge" title="Tiene arte vinculado">
+                          <span className="vc-marketing-has-asset-badge" title="Tiene pieza gráfica vinculada">
                             <ImageIcon size={10} className="vc-marketing-has-asset-icon" />
                           </span>
                         )}
+                        <div className="vc-cal-pipeline-dots" aria-label="Entregables: Portada, Arte, Copy, Video, TikTok">
+                          <span className={`vc-cal-pdot is-${getDeliverableState(post.cover_status)}`} title={`Portada: ${post.cover_status || 'Por confirmar'}`}>P</span>
+                          <span className={`vc-cal-pdot is-${getDeliverableState(post.art_status, post.design_ready)}`} title={`Arte: ${post.art_status || (post.design_ready ? 'Listo' : 'Por confirmar')}`}>A</span>
+                          <span className={`vc-cal-pdot is-${getDeliverableState(post.caption_status, Boolean(post.caption))}`} title={`Copy: ${post.caption_status || (post.caption ? 'Listo' : 'Por confirmar')}`}>C</span>
+                          <span className={`vc-cal-pdot is-${getDeliverableState(post.video_status, post.video_ready)}`} title={`Video: ${post.video_status || (post.video_ready ? 'Listo' : 'Por confirmar')}`}>V</span>
+                          {(post.platform || '').toLowerCase().includes('tiktok') && (
+                            <span className={`vc-cal-pdot is-${getDeliverableState(post.tiktok_status)}`} title={`TikTok: ${post.tiktok_status || 'Por confirmar'}`}>T</span>
+                          )}
+                        </div>
                         <MarketingReadinessIndicators
                           post={post}
                           compact

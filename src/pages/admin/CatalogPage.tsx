@@ -1,5 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BadgeCheck, Check, CircleHelp, FileText, Grid2X2, Layers3, List, Plus, ScanLine, Search, SlidersHorizontal, Table2, Trash2 } from 'lucide-react';
+import {
+  ArrowRight,
+  BadgeCheck,
+  Check,
+  ChevronLeft,
+  CircleHelp,
+  FileText,
+  Grid2X2,
+  Layers3,
+  List,
+  PackageSearch,
+  Plus,
+  ScanLine,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Table2,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { formatMoney, useWorkspace } from '../../app/workspace';
 import { useAuth } from '../../auth/AuthProvider';
@@ -36,7 +55,7 @@ function makePricingDraft(item: any): PricingDraft {
 function amount(value: string, required = false) {
   if (!value.trim()) return required ? NaN : null;
   const result = Number(value);
-  return Number.isFinite(result) && result >= 0 ? result : NaN;
+  return Number.isFinite(result) && result > 0 ? result : NaN;
 }
 
 export function CatalogPricingEditor({ item, editable, onSave }: { item: any; editable: boolean; onSave: (draft: PricingDraft) => Promise<boolean> }) {
@@ -68,14 +87,14 @@ export function CatalogPricingEditor({ item, editable, onSave }: { item: any; ed
     setSaved(false); setError('');
   };
   const save = async () => {
-    if (!validBase || invalidTier) { setError(invalidTier ? 'Revisa los umbrales: deben ser mayores que cero, únicos y con tarifas válidas.' : 'El precio normal debe ser mayor o igual que cero; los otros pueden quedar vacíos.'); return; }
+    if (!validBase || invalidTier) { setError(invalidTier ? 'Revisa los umbrales y tarifas: deben ser mayores que cero, únicos; deja vacías las modalidades que heredan el precio base.' : 'El precio normal debe ser mayor que cero; las otras modalidades pueden quedar vacías o ser mayores que cero.'); return; }
     setSaving(true); setError('');
     try { const ok = await onSave(draft); if (ok) setSaved(true); }
     catch (saveError: any) { setError(saveError?.message || 'No se pudo guardar la lista de precios.'); }
     finally { setSaving(false); }
   };
 
-  const input = (label: string, value: string, onChange: (value: string) => void) => <label className="catalog-rate-field"><span>{label}</span><span className="catalog-rate-input"><span>$</span><input aria-label={`${label} · ${item.name}`} type="number" min="0" step="0.0001" value={value} onChange={(event) => onChange(event.target.value)} placeholder="Sin tarifa" disabled={!editable} /></span></label>;
+  const input = (label: string, value: string, onChange: (value: string) => void) => <label className="catalog-rate-field"><span>{label}</span><span className="catalog-rate-input"><span>$</span><input aria-label={`${label} · ${item.name}`} type="number" min="0.0001" step="0.0001" value={value} onChange={(event) => onChange(event.target.value)} placeholder="Sin tarifa" disabled={!editable} /></span></label>;
 
   return <div className="catalog-pricing-editor">
     <div className="catalog-product-prices">
@@ -89,9 +108,9 @@ export function CatalogPricingEditor({ item, editable, onSave }: { item: any; ed
         <div className="catalog-tier-table-wrap"><table className="catalog-tier-table"><thead><tr><th>Desde ({unit})</th><th>Normal</th><th>Con instalación</th><th>Corporativo</th><th><span className="sr-only">Quitar escala</span></th></tr></thead><tbody>
           {draft.tiers.map((tier, index) => <tr key={`${item.id}-tier-${index}`}>
             <td><input aria-label={`Cantidad mínima de escala ${index + 1} para ${item.name}`} type="number" min="0.0001" step="any" value={tier.min_qty} onChange={(event) => setTier(index, 'min_qty', event.target.value)} /></td>
-            <td><input aria-label={`Precio normal desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0" step="0.0001" value={tier.normal} onChange={(event) => setTier(index, 'normal', event.target.value)} placeholder="Base" /></td>
-            <td><input aria-label={`Precio con instalación desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0" step="0.0001" value={tier.installation} onChange={(event) => setTier(index, 'installation', event.target.value)} placeholder="Base" /></td>
-            <td><input aria-label={`Precio corporativo desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0" step="0.0001" value={tier.corporate} onChange={(event) => setTier(index, 'corporate', event.target.value)} placeholder="Base" /></td>
+            <td><input aria-label={`Precio normal desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0.0001" step="0.0001" value={tier.normal} onChange={(event) => setTier(index, 'normal', event.target.value)} placeholder="Base" /></td>
+            <td><input aria-label={`Precio con instalación desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0.0001" step="0.0001" value={tier.installation} onChange={(event) => setTier(index, 'installation', event.target.value)} placeholder="Base" /></td>
+            <td><input aria-label={`Precio corporativo desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0.0001" step="0.0001" value={tier.corporate} onChange={(event) => setTier(index, 'corporate', event.target.value)} placeholder="Base" /></td>
             <td><button className="catalog-tier-remove" type="button" aria-label={`Eliminar escala ${index + 1} para ${item.name}`} onClick={() => setDraft((current) => ({ ...current, tiers: current.tiers.filter((_, row) => row !== index) }))}><Trash2 size={14}/></button></td>
           </tr>)}
           {!draft.tiers.length && <tr><td colSpan={5} className="catalog-tier-empty">Todavía no hay escalas. Agrega una para configurar descuentos o modalidades por volumen/medida.</td></tr>}
@@ -110,7 +129,7 @@ export function CatalogPage() {
   const { data, update, setData } = useWorkspace();
   const { organizationId, hasPermission } = useAuth();
   const [search, setSearch] = useState('');
-  const [familyFilter, setFamilyFilter] = useState('Todas');
+  const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState('name');
   const [groupByFamily, setGroupByFamily] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
@@ -124,6 +143,7 @@ export function CatalogPage() {
   });
   const canEditPrices = hasPermission('catalog_admin', 'edit_prices');
   const canEditProducts = hasPermission('catalog_admin', 'edit');
+
   useEffect(() => {
     let active = true;
     if (!supabase || !organizationId || !canEditProducts) {
@@ -143,10 +163,43 @@ export function CatalogPage() {
     });
     return () => { active = false; };
   }, [organizationId, canEditProducts]);
+
   const families = useMemo(() => [...new Set<string>(data.catalog.map((item) => item.family?.trim() || 'General'))].sort((a, b) => a.localeCompare(b, 'es')), [data.catalog]);
+
+  // Information cards for category-first view
+  const categoryCards = useMemo(() => {
+    return families.map((fam) => {
+      const items = data.catalog.filter((item) => (item.family?.trim() || 'General') === fam);
+      const sampleItem = items.find((i) => i.image) || items[0];
+      const prices = items.map((i) => Number(i.price)).filter((p) => Number.isFinite(p) && p > 0);
+      const minPrice = prices.length ? Math.min(...prices) : 0;
+      const hasArea = items.some((i) => i.mode === 'area' || i.calc_type === 'm2');
+      return {
+        family: fam,
+        count: items.length,
+        image: sampleItem?.image || '',
+        minPrice,
+        unit: hasArea ? 'm²' : (items[0]?.unit || 'u.'),
+      };
+    });
+  }, [data.catalog, families]);
+
+  // Determine if we are in category drilldown, active search, or showing all
+  const isSearchActive = search.trim().length > 0;
+  const isViewingCategory = selectedFamily !== null;
+  const showCategoryGrid = !isSearchActive && !isViewingCategory;
+
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('es');
-    const matches = data.catalog.filter((item) => `${item.name} ${item.family} ${item.description || ''} ${item.unit || ''} ${item.sku || item.id || ''}`.toLocaleLowerCase('es').includes(query) && (familyFilter === 'Todas' || (item.family?.trim() || 'General') === familyFilter));
+    const matches = data.catalog.filter((item) => {
+      const itemFamily = item.family?.trim() || 'General';
+      if (selectedFamily && selectedFamily !== 'Todas' && itemFamily !== selectedFamily) {
+        return false;
+      }
+      if (!query) return true;
+      return `${item.name} ${item.family} ${item.description || ''} ${item.unit || ''} ${item.sku || item.id || ''}`.toLocaleLowerCase('es').includes(query);
+    });
+
     return matches.sort((a, b) => {
       if (sortBy === 'family') return (a.family || 'General').localeCompare(b.family || 'General', 'es') || a.name.localeCompare(b.name, 'es');
       if (sortBy === 'price-low' || sortBy === 'price-high') {
@@ -155,13 +208,15 @@ export function CatalogPage() {
       }
       return a.name.localeCompare(b.name, 'es');
     });
-  }, [data.catalog, search, familyFilter, sortBy]);
+  }, [data.catalog, search, selectedFamily, sortBy]);
+
   const grouped = useMemo<Array<[string, any[]]>>(() => {
-    if (!groupByFamily) return [['Catálogo completo', filtered]];
+    if (!groupByFamily) return [['Resultados del catálogo', filtered]];
     const groups = new Map<string, any[]>();
     for (const item of filtered) { const family = item.family?.trim() || 'General'; groups.set(family, [...(groups.get(family) || []), item]); }
     return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b, 'es'));
   }, [filtered, groupByFamily]);
+
   const setCatalogView = (next: CatalogView) => { setView(next); try { window.localStorage.setItem('visualcorp.catalog.view.v1', next); } catch { /* Storage can be unavailable in private browsing. */ } };
 
   const assignShortProductCodes = async () => {
@@ -220,7 +275,13 @@ export function CatalogPage() {
 
   return <AppFrame area="operations">
     <div className="catalog-page">
-      <PageHeading eyebrow="CATÁLOGO DE VISUAL CORP" title="Productos y tarifas" description="Edita las tres modalidades y sus escalas por cantidad o medida; los cambios alimentan el cotizador." action={<span className="rate-pending"><BadgeCheck size={15}/> {data.catalog.length} productos</span>} />
+      <PageHeading
+        eyebrow="CATÁLOGO DE OPERACIONES"
+        title="Catálogo de productos y tarifas"
+        description="Navega por categorías para gestionar productos, tarifas base (Normal, Instalación, Corporativo) y escalas por cantidad o medida."
+        action={<span className="rate-pending"><BadgeCheck size={15}/> {data.catalog.length} productos en catálogo</span>}
+      />
+
       {skuStatus !== 'hidden' && <section className={`catalog-sku-panel panel${legacySkuCount ? ' has-pending' : ''}`} aria-label="Códigos de identificación del catálogo">
         <span className="catalog-sku-panel-icon"><ScanLine size={18}/></span>
         <div className="catalog-sku-panel-copy">
@@ -230,34 +291,246 @@ export function CatalogPage() {
         </div>
         {legacySkuCount > 0 && <button className="button button-outline catalog-sku-assign" type="button" disabled={skuStatus === 'saving' || skuStatus === 'loading'} onClick={() => void assignShortProductCodes()}><ScanLine size={15}/> Asignar códigos a {legacySkuCount}</button>}
       </section>}
+
       <StandardCustomProducts key={standardProductsRevision} editable={canEditProducts} editablePrices={canEditPrices} />
+
       <section className="catalog-overview" aria-label="Resumen del catálogo">
-        <article className="panel"><span><Layers3 size={17}/></span><div><small>FAMILIAS</small><b><NumberTicker value={families.length}/></b><small>Grupos del catálogo</small></div></article>
-        <article className="panel"><span><Grid2X2 size={17}/></span><div><small>PRODUCTOS EN VISTA</small><b><NumberTicker value={filtered.length}/></b><small>{data.catalog.length} en total</small></div></article>
-        <article className="panel"><span><BadgeCheck size={17}/></span><div><small>MODALIDADES DE PRECIO</small><b>3</b><small>Normal · Instalación · Corporativo</small></div></article>
+        <article className="panel"><span><Layers3 size={17}/></span><div><small>FAMILIAS DISPONIBLES</small><b><NumberTicker value={families.length}/></b><small>Categorías organizadas</small></div></article>
+        <article className="panel"><span><Grid2X2 size={17}/></span><div><small>{isViewingCategory ? `PRODUCTOS EN ${selectedFamily?.toUpperCase()}` : 'PRODUCTOS REGISTRADOS'}</small><b><NumberTicker value={showCategoryGrid ? data.catalog.length : filtered.length}/></b><small>{showCategoryGrid ? 'Total en 29 familias' : `${filtered.length} de ${data.catalog.length}`}</small></div></article>
+        <article className="panel"><span><BadgeCheck size={17}/></span><div><small>MODALIDADES DE TARIFA</small><b>3</b><small>Normal · Instalación · Corporativo</small></div></article>
       </section>
-      <section className="catalog-browser panel" aria-label="Buscar y filtrar catálogo">
-        <div className="catalog-toolbar"><label className="search-box"><Search size={17}/><input aria-label="Buscar en el catálogo" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Busca por nombre, SKU, familia o descripción"/>{search && <button type="button" onClick={() => setSearch('')} aria-label="Limpiar búsqueda">×</button>}</label><span><SlidersHorizontal size={15}/>{filtered.length} de {data.catalog.length} productos</span></div>
-        <div className="catalog-controls">
-          <div className="catalog-family-filters" role="group" aria-label="Filtrar por familia"><button type="button" className={familyFilter === 'Todas' ? 'active' : ''} aria-pressed={familyFilter === 'Todas'} onClick={() => setFamilyFilter('Todas')}>Todas <i>{data.catalog.length}</i></button>{families.map((family) => <button type="button" key={family} className={familyFilter === family ? 'active' : ''} aria-pressed={familyFilter === family} onClick={() => setFamilyFilter(family)}>{family}<i>{data.catalog.filter((item) => (item.family?.trim() || 'General') === family).length}</i></button>)}</div>
-          <div className="catalog-view-tools">
-            <label className="catalog-sort">Ordenar por<select aria-label="Ordenar productos" value={sortBy} onChange={(event) => setSortBy(event.target.value)}><option value="name">Nombre A–Z</option><option value="family">Familia y nombre</option><option value="price-low">Precio: menor primero</option><option value="price-high">Precio: mayor primero</option></select></label>
-            <div className="catalog-view-switch" role="group" aria-label="Modo de visualización">{catalogViewOptions.map(({ id, label, Icon }) => <button key={id} type="button" aria-label={`Vista ${label.toLocaleLowerCase('es')}`} aria-pressed={view === id} className={view === id ? 'active' : ''} onClick={() => setCatalogView(id)}><Icon size={15}/><span>{label}</span></button>)}</div>
-            <button className={`catalog-group-toggle${groupByFamily ? ' active' : ''}`} type="button" aria-pressed={groupByFamily} onClick={() => setGroupByFamily((current) => !current)}><Layers3 size={15}/>{groupByFamily ? 'Agrupado por familia' : 'Sin agrupar'}</button>
+
+      {/* Main Exploration Section */}
+      <section className="catalog-browser panel" aria-label="Exploración por categorías y búsqueda">
+        <div className="catalog-toolbar">
+          <label className="search-box">
+            <Search size={17}/>
+            <input
+              aria-label="Buscar en el catálogo"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={selectedFamily ? `Buscar en ${selectedFamily} o escribe para filtrar…` : "Buscar producto por nombre, SKU, familia o descripción…"}
+            />
+            {search && <button type="button" onClick={() => setSearch('')} aria-label="Limpiar búsqueda"><X size={16}/></button>}
+          </label>
+          <div className="catalog-toolbar-actions">
+            {!showCategoryGrid && (
+              <button
+                type="button"
+                className="catalog-back-to-categories"
+                onClick={() => { setSelectedFamily(null); setSearch(''); }}
+              >
+                <Layers3 size={14}/> Todas las categorías
+              </button>
+            )}
+            <span><SlidersHorizontal size={14}/>{showCategoryGrid ? `${families.length} categorías` : `${filtered.length} productos`}</span>
           </div>
         </div>
+
+        {/* Category Pills Quick Strip (shown when inside a category or searching) */}
+        {!showCategoryGrid && (
+          <div className="catalog-family-chips-scroll" role="group" aria-label="Cambiar de categoría">
+            <button
+              type="button"
+              className={selectedFamily === null ? 'active' : ''}
+              onClick={() => setSelectedFamily(null)}
+            >
+              Ver todas <i>{data.catalog.length}</i>
+            </button>
+            {families.map((fam) => (
+              <button
+                type="button"
+                key={fam}
+                className={selectedFamily === fam ? 'active' : ''}
+                onClick={() => setSelectedFamily(fam)}
+              >
+                {fam}
+                <i>{data.catalog.filter((i) => (i.family?.trim() || 'General') === fam).length}</i>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* View Tools & Sorting (visible when viewing products) */}
+        {!showCategoryGrid && (
+          <div className="catalog-view-tools">
+            <label className="catalog-sort">
+              Ordenar por
+              <select aria-label="Ordenar productos" value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+                <option value="name">Nombre A–Z</option>
+                <option value="family">Familia y nombre</option>
+                <option value="price-low">Precio: menor primero</option>
+                <option value="price-high">Precio: mayor primero</option>
+              </select>
+            </label>
+            <div className="catalog-view-switch" role="group" aria-label="Modo de visualización">
+              {catalogViewOptions.map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-label={`Vista ${label.toLocaleLowerCase('es')}`}
+                  aria-pressed={view === id}
+                  className={view === id ? 'active' : ''}
+                  onClick={() => setCatalogView(id)}
+                >
+                  <Icon size={14}/>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              className={`catalog-group-toggle${groupByFamily ? ' active' : ''}`}
+              type="button"
+              aria-pressed={groupByFamily}
+              onClick={() => setGroupByFamily((current) => !current)}
+            >
+              <Layers3 size={14}/>
+              {groupByFamily ? 'Agrupado por familia' : 'Sin agrupar'}
+            </button>
+          </div>
+        )}
       </section>
-      {grouped.length ? grouped.map(([family, items]) => <section className={`panel catalog-family catalog-view-${view}`} key={family}>
-        {groupByFamily && <header><div><span className="catalog-family-icon"><Layers3 size={17}/></span><span><h2>{family}</h2><small>{items.length} {items.length === 1 ? 'producto' : 'productos'}</small></span></div></header>}
-        <div className="catalog-products">{items.map((item) => <article className="catalog-product-card" key={item.id}>
-          <div className="catalog-product-identity"><img src={item.image} alt={`Referencia de ${item.name}`} loading="lazy"/><div className="catalog-product-title-block"><b>{item.name}</b><small>{item.mode === 'area' ? 'Tarifa por m²' : `Tarifa por ${item.unit || 'unidad'}`}{item.description ? ` · ${item.description}` : ''}</small><span className="catalog-product-row-actions"><CatalogProductCode value={item.sku || item.id} showBarcode barcodeValue={item.sku || ''}/><button className="catalog-product-details-button" type="button" onClick={() => setSelectedProduct(item)}><FileText size={13}/> Ver ficha</button></span></div></div>
-          <CatalogPricingEditor item={item} editable={canEditPrices} onSave={(draft) => savePricing(item, draft)}/>
-        </article>)}</div>
-      </section>) : <section className="panel catalog-no-results"><Search size={23}/><b>{data.catalog.length ? 'No hay productos que coincidan' : 'El catálogo está vacío'}</b><span>{data.catalog.length ? 'Prueba otra búsqueda o selecciona otra familia.' : 'Los productos disponibles aparecerán aquí cuando cargue el catálogo.'}</span>{(search || familyFilter !== 'Todas') && <button className="button button-outline" type="button" onClick={() => { setSearch(''); setFamilyFilter('Todas'); }}>Quitar filtros</button>}</section>}
-      <div className="notice-box"><span><CircleHelp size={17}/></span><div><b>Cómo editar tarifas</b><p>Escribe el precio base normal, con instalación o corporativo y pulsa Guardar tarifas. En “Editar escalas” añade umbrales de cantidad o m²; deja en blanco una modalidad de la escala para que herede el precio base. No se cambian precios hasta que guardes.</p></div></div>
+
+      {/* 1. CATEGORY GRID VIEW (Default / Category-First Landing) */}
+      {showCategoryGrid && (
+        <section className="catalog-categories-section" aria-label="Selecciona una categoría">
+          <div className="catalog-categories-heading">
+            <div className="catalog-categories-heading-copy">
+              <span className="eyebrow">NAVEGACIÓN POR CATEGORÍA</span>
+              <h3>Explora los productos por familia</h3>
+              <p>Selecciona una categoría para ver y editar sus productos y tarifas sin sobrecargar la pantalla.</p>
+            </div>
+            <button
+              type="button"
+              className="button button-outline catalog-view-all-btn"
+              onClick={() => setSelectedFamily('Todas')}
+            >
+              <Grid2X2 size={14}/> Ver catálogo completo ({data.catalog.length})
+            </button>
+          </div>
+
+          <div className="catalog-categories-grid">
+            {categoryCards.map((cat) => (
+              <button
+                key={cat.family}
+                type="button"
+                className="catalog-category-card"
+                onClick={() => setSelectedFamily(cat.family)}
+              >
+                <div className="catalog-category-thumb">
+                  {cat.image ? (
+                    <img src={cat.image} alt={cat.family} loading="lazy" />
+                  ) : (
+                    <Layers3 size={24}/>
+                  )}
+                </div>
+                <div className="catalog-category-info">
+                  <div className="catalog-category-name-row">
+                    <b>{cat.family}</b>
+                    <ArrowRight size={14} className="catalog-category-arrow"/>
+                  </div>
+                  <div className="catalog-category-meta">
+                    <span className="catalog-category-badge">{cat.count} {cat.count === 1 ? 'producto' : 'productos'}</span>
+                    {cat.minPrice > 0 && (
+                      <span className="catalog-category-price">Desde {formatMoney(cat.minPrice)}</span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 2. CATEGORY DRILLDOWN / SEARCH RESULTS VIEW */}
+      {!showCategoryGrid && (
+        <>
+          {selectedFamily && selectedFamily !== 'Todas' && (
+            <div className="catalog-active-family-header">
+              <button
+                type="button"
+                className="catalog-back-button"
+                onClick={() => { setSelectedFamily(null); setSearch(''); }}
+              >
+                <ChevronLeft size={16}/> Volver a categorías
+              </button>
+              <div className="catalog-active-family-title">
+                <span className="catalog-family-icon"><Layers3 size={18}/></span>
+                <div>
+                  <h2>{selectedFamily}</h2>
+                  <small>{filtered.length} {filtered.length === 1 ? 'producto disponible en esta categoría' : 'productos disponibles en esta categoría'}</small>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {grouped.length ? grouped.map(([family, items]) => (
+            <section className={`panel catalog-family catalog-view-${view}`} key={family}>
+              {(groupByFamily || selectedFamily === null || selectedFamily === 'Todas') && (
+                <header>
+                  <div>
+                    <span className="catalog-family-icon"><Layers3 size={17}/></span>
+                    <span>
+                      <h2>{family}</h2>
+                      <small>{items.length} {items.length === 1 ? 'producto' : 'productos'}</small>
+                    </span>
+                  </div>
+                </header>
+              )}
+              <div className="catalog-products">
+                {items.map((item) => (
+                  <article className="catalog-product-card" key={item.id}>
+                    <div className="catalog-product-identity">
+                      <img src={item.image} alt={`Referencia de ${item.name}`} loading="lazy"/>
+                      <div className="catalog-product-title-block">
+                        <b>{item.name}</b>
+                        <small>
+                          {item.mode === 'area' ? 'Tarifa por m²' : `Tarifa por ${item.unit || 'unidad'}`}
+                          {item.description ? ` · ${item.description}` : ''}
+                        </small>
+                        <span className="catalog-product-row-actions">
+                          <CatalogProductCode value={item.sku || item.id} showBarcode barcodeValue={item.sku || ''}/>
+                          <button
+                            className="catalog-product-details-button"
+                            type="button"
+                            onClick={() => setSelectedProduct(item)}
+                          >
+                            <FileText size={13}/> Ver ficha
+                          </button>
+                        </span>
+                      </div>
+                    </div>
+                    <CatalogPricingEditor item={item} editable={canEditPrices} onSave={(draft) => savePricing(item, draft)}/>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )) : (
+            <section className="panel catalog-no-results">
+              <Search size={23}/>
+              <b>No hay productos que coincidan</b>
+              <span>{search ? `No encontramos coincidencias para "${search}". Prueba otro término o regresa a las categorías.` : 'Esta categoría no tiene productos disponibles actualmente.'}</span>
+              <button
+                className="button button-outline"
+                type="button"
+                onClick={() => { setSearch(''); setSelectedFamily(null); }}
+              >
+                Volver a todas las categorías
+              </button>
+            </section>
+          )}
+        </>
+      )}
+
+      <div className="notice-box">
+        <span><CircleHelp size={17}/></span>
+        <div>
+          <b>Cómo editar tarifas y modalidades</b>
+          <p>Escribe el precio base normal, con instalación o corporativo y pulsa “Guardar tarifas”. En “Editar escalas” añade umbrales de cantidad o m²; deja en blanco una modalidad de la escala para que herede el precio base. Ningún cambio afecta al cotizador hasta que guardes.</p>
+        </div>
+      </div>
+
       <CatalogProductDetailDialog product={selectedProduct} onClose={() => setSelectedProduct(null)}/>
     </div>
   </AppFrame>;
 }
-
-
