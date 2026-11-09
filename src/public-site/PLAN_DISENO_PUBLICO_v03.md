@@ -101,3 +101,13 @@ Ayudar a una persona que llega por primera vez a reconocer a Visual Corp, encont
 - En el navegador local se revisó la página Contacto y se probó el cambio entre Google Maps y el mapa ilustrado. No se envió el formulario.
 - `npm run build:checked` y `git diff --check` terminaron correctamente. Vite mantiene el aviso de chunk principal de 630.12 kB.
 - La sincronización del contexto terminó correctamente. El despliegue se verifica por separado en Vercel.
+
+## Continuidad · navegación refinada · 7 de noviembre de 2026
+
+Pedido: mejorar funcionamiento y estética del menú público después de publicar la agrupación de rutas.
+
+Implementado en `codex/public-nav-refine-20261107`: paneles con contraste específico para claro/oscuro, jerarquía tipográfica más legible, enlaces de empresa sin numeración decorativa y cierre visible persistente. El menú de escritorio se conserva por encima de 1100 px; tabletas y móviles usan la barra inferior. Flechas izquierda/derecha y Home/End recorren la navegación; flecha abajo entra al panel; Escape restaura el foco; salir con Tab cierra el panel.
+
+Comprobado: compilación, TypeScript, anchos 320–1920 px sin overflow, apertura/cierre con teclado y ratón, seis servicios y tres enlaces de empresa, tema claro mediante el control real. Capturas locales en `artifacts/navigation/`. Sigue pendiente de publicación esta nueva iteración.
+
+Referencias consultadas: shadcn Navigation Menu, HeroUI Dropdown, Magic UI Dock y W3C Disclosure Navigation. Se conserva la implementación nativa sin dependencias nuevas; el Dock con magnificación no encaja en una navegación estable. MCP de esos catálogos y guía de Obsidian no disponibles en esta sesión; se consultó documentación oficial. Siguiente paso: publicar la iteración preparada cuando se solicite.

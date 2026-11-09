@@ -28,7 +28,7 @@ export function MobileBottomNavigation({ services }: { services: ServiceLink[] }
   useEffect(() => { setOpenGroup(null); }, [location.pathname]);
 
   useEffect(() => {
-    const desktopLayout = window.matchMedia('(min-width: 1401px)');
+    const desktopLayout = window.matchMedia('(min-width: 1101px)');
     const closeOnDesktop = () => { if (desktopLayout.matches) setOpenGroup(null); };
     desktopLayout.addEventListener('change', closeOnDesktop);
     return () => desktopLayout.removeEventListener('change', closeOnDesktop);
@@ -85,9 +85,9 @@ export function MobileBottomNavigation({ services }: { services: ServiceLink[] }
     </>}
     <nav className="mobile-bottom-navigation" aria-label="Navegación móvil">
       <NavLink to="/" end className={({ isActive }) => `mobile-bottom-item${isActive ? ' is-active' : ''}`}><Home size={20} aria-hidden="true"/><span>Inicio</span></NavLink>
-      <button ref={(node) => { triggerRefs.current.services = node; }} type="button" className={`mobile-bottom-item${isServicesActive || openGroup === 'services' ? ' is-active' : ''}`} aria-expanded={openGroup === 'services'} aria-controls="mobile-bottom-sheet" onClick={() => toggle('services')}><Layers3 size={20} aria-hidden="true"/><span>Servicios</span></button>
-      <button ref={(node) => { triggerRefs.current.company = node; }} type="button" className={`mobile-bottom-item${isCompanyActive || openGroup === 'company' ? ' is-active' : ''}`} aria-expanded={openGroup === 'company'} aria-controls="mobile-bottom-sheet" onClick={() => toggle('company')}><BriefcaseBusiness size={20} aria-hidden="true"/><span>Empresa</span></button>
-      <button ref={(node) => { triggerRefs.current.explore = node; }} type="button" className={`mobile-bottom-item${isExploreActive || openGroup === 'explore' ? ' is-active' : ''}`} aria-expanded={openGroup === 'explore'} aria-controls="mobile-bottom-sheet" onClick={() => toggle('explore')}><Compass size={20} aria-hidden="true"/><span>Explorar</span></button>
+      <button ref={(node) => { triggerRefs.current.services = node; }} type="button" className={`mobile-bottom-item${isServicesActive || openGroup === 'services' ? ' is-active' : ''}`} aria-expanded={openGroup === 'services'} aria-haspopup="dialog" aria-controls="mobile-bottom-sheet" onClick={() => toggle('services')}><Layers3 size={20} aria-hidden="true"/><span>Servicios</span></button>
+      <button ref={(node) => { triggerRefs.current.company = node; }} type="button" className={`mobile-bottom-item${isCompanyActive || openGroup === 'company' ? ' is-active' : ''}`} aria-expanded={openGroup === 'company'} aria-haspopup="dialog" aria-controls="mobile-bottom-sheet" onClick={() => toggle('company')}><BriefcaseBusiness size={20} aria-hidden="true"/><span>Empresa</span></button>
+      <button ref={(node) => { triggerRefs.current.explore = node; }} type="button" className={`mobile-bottom-item${isExploreActive || openGroup === 'explore' ? ' is-active' : ''}`} aria-expanded={openGroup === 'explore'} aria-haspopup="dialog" aria-controls="mobile-bottom-sheet" onClick={() => toggle('explore')}><Compass size={20} aria-hidden="true"/><span>Explorar</span></button>
       <NavLink to="/cotizador" className={({ isActive }) => `mobile-bottom-item mobile-bottom-quote${isActive ? ' is-active' : ''}`}><ArrowUpRight size={20} aria-hidden="true"/><span>Cotizar</span></NavLink>
     </nav>
   </>;

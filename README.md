@@ -141,3 +141,11 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - La empresa permite explorar especialidades; el proceso comparte sus tres pasos con el detalle; Contacto enlaza a conversación, formulario y ubicación, conservando el servicio elegido en el mensaje preparado.
 - Temas claro/oscuro, foco de teclado y movimiento reducido. Validación local en 60 combinaciones entre 320 y 1920 px, además de navegación, estados y enlaces. La publicación se registra en el PR de esta entrega.
 - Investigación, decisiones y evidencia: [ficha de encabezados](docs/design/company-heroes-2026-11-09.md).
+
+
+### Panel administrativo y navegación pública — 2026-11-09
+
+- El inicio del panel integra buscador por tareas, filtros por área y accesos favoritos por usuario que mantienen el control de permisos. El resumen distingue los datos anteriores cuando falla la actualización.
+- La navegación pública gana comportamiento accesible con teclado, cierre previsible de paneles y un umbral responsive más adecuado a portátiles.
+- El panel administrativo y la navegación se validaron en un fixture local en temas claro/oscuro, con búsqueda, filtros, favoritos, aislamiento por cuenta y ocho anchos entre 320 y 1920 px. TypeScript pasa. La compilación final se detuvo por falta de memoria nativa; una compilación previa terminó antes de los ajustes finales. No se probó el panel con sesión autenticada.
+- No hay migración de datos. El PR #230 publica estos cambios; investigación y límites de verificación en [ficha del panel](docs/admin-home-refinement-20261109.md).
