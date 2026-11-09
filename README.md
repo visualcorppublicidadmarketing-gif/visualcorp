@@ -166,3 +166,9 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - Operación permite conocer y limpiar los filtros aplicados; la tienda sincroniza `?familia=` sin perder otros parámetros ni el producto abierto.
 - Compras incorpora solicitudes de materiales por sucursal y área, cotizaciones comparables, borradores de órdenes y registro de unidades rechazadas sin ingresarlas al inventario. Supabase registra las migraciones `20261109172959_purchasing_command_center_2026_11_09.sql` y `20261109173159_purchasing_command_center_fk_indexes.sql`.
 - Verificación local de la integración: `npm run build:checked`, `npm run test:marketing` (14/14) y `npm run test:marketing:browser` (13 recorridos). La compilación informa el tamaño elevado de algunos paquetes, pero termina correctamente.
+
+### Impresión de cotizaciones — 2026-11-09
+
+- La hoja de impresión adopta una jerarquía A4 y muestra datos del cliente y proyecto, fecha y vigencia, la tarifa seleccionada, precio por unidad o por m², entrega e instalación.
+- Se conservan subtotal bruto, descuento, base imponible, IVA aplicado o no aplicado, cargos, total, anticipo y saldo. Los conceptos personalizados por área usan la misma modalidad y superficie calculadas por la cotización.
+- No se modifican el cálculo ni la persistencia de cotizaciones. `npm run build:checked` pasa; se revisaron PDFs sintéticos A4 de una y cuatro páginas en Chromium, sin datos de clientes. Las líneas repiten encabezado en la tabla y el resumen queda completo al final.
