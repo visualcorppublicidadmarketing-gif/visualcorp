@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowDownRight, ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, Check, CheckCircle2, ChevronRight, CircleHelp, ClipboardList, Copy, Database, FileText, Globe2, History, Image, LayoutDashboard, Link2, LogOut, Megaphone, Menu, Minus, Package, Pencil, Plus, Route, Search, Settings2, ShoppingBag, ShoppingCart, Sparkles, Store, TriangleAlert, Truck, Users, Wallet, X } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, Check, CheckCircle2, ChevronRight, CircleHelp, ClipboardList, Copy, Database, FileText, Globe2, History, Image, LayoutDashboard, Link2, LogOut, Megaphone, Menu, Minus, Package, Pencil, Plus, Route, Ruler, Search, Settings2, ShoppingBag, ShoppingCart, Sparkles, Store, TriangleAlert, Truck, Users, Wallet, X } from 'lucide-react';
 import { AppFrame, PageHeading, StatCard } from '../../app/layout';
 import { EmptyState, StageBadge } from '../../components/feedback';
 import { formatDate, formatMoney, useWorkspace } from '../../app/workspace';
@@ -33,6 +33,7 @@ import './pos-material-usage.css';
 
 const trackedAccessoryProductIds = new Set(['prod-extras-ojal-peque-o-c-u','prod-extras-ojales-grande-c-u']);
 const roundMoney = (value:number) => Math.round((value + Number.EPSILON) * 100) / 100;
+const pluralizePOSUnit = (unit:string) => /^(?:m|mm|cm|km|m2|m²|cm2|cm²|m3|m³|cm3|cm³|kg|g|mg|l|lt|ml|hz)$/i.test(unit.trim())||/s$/i.test(unit)||/[^\p{L}]$/u.test(unit) ? unit : /[aeiouáéó]$/i.test(unit) ? `${unit}s` : `${unit}es`;
 const normalizeCustomerPhone = (value) => { const digits=String(value||'').replace(/\D/g,'');return digits.startsWith('593')&&digits.length===12?`0${digits.slice(3)}`:digits; };
 type POSMaterialRequestDraft = { recipeId: string; quantity: string };
 const sanitizePOSMaterialRequests = (value: unknown): POSMaterialRequestDraft[] => {
@@ -235,9 +236,11 @@ function POSCartLineEditor({
       }
       const effectivePrice = cleanDiscount > 0 ? Number((nextUnitPrice * (1 - cleanDiscount / 100)).toFixed(4)) : nextUnitPrice;
       const total = roundMoney(billingQuantity * effectivePrice);
+      const displayUnit = String(line.unit || 'unidad').trim() || 'unidad';
+      const quantityUnit = nextQty === 1 ? displayUnit : pluralizePOSUnit(displayUnit);
       const desc = nextDescription.trim() ? nextDescription : (line.mode === 'area'
-        ? `${nextName || line.name} · ${nextWidthCm} × ${nextHeightCm} cm · ${nextQty} pzs · ${billingQuantity} m² · $${effectivePrice.toFixed(2)}/m²`
-        : `${nextName || line.name} · ${nextQty} und · $${effectivePrice.toFixed(2)} c/u`);
+        ? `${nextName || line.name} · ${nextWidthCm} × ${nextHeightCm} cm · ${nextQty} ${nextQty === 1 ? 'pieza' : 'piezas'} · ${billingQuantity} m² · $${effectivePrice.toFixed(2)}/m²`
+        : `${nextName || line.name} · ${nextQty} ${quantityUnit} · $${effectivePrice.toFixed(2)} c/u`);
 
       onSave({
         ...line,
@@ -405,10 +408,12 @@ export function PosPage() {
   const [workflowTemplates,setWorkflowTemplates]=useState<Array<{code:string;name:string}>>([]);
   const [workflowRouteStatus,setWorkflowRouteStatus]=useState<'loading'|'ready'|'unavailable'>('loading');
   const [cartMode,setCartMode]=useState<'quantity'|'area'>('quantity');
+  const [cartEntryType,setCartEntryType]=useState<'catalog'|'custom-quantity'|'custom-area'>('catalog');
   const [cartProductId,setCartProductId]=useState('');
   const [cartSearch,setCartSearch]=useState('');
   const [cartFamily,setCartFamily]=useState('Todas');
   const [cartItemName,setCartItemName]=useState('');
+  const [cartCustomUnit,setCartCustomUnit]=useState('unidad');
   const [cartQuantity,setCartQuantity]=useState('1');
   const [cartUnitPrice,setCartUnitPrice]=useState('');
   const [cartWidthCm,setCartWidthCm]=useState('100');
@@ -816,6 +821,13 @@ export function PosPage() {
   const quoteDiscount=quoteHasFinancial?Number(quoteFinancial.discount_amount)||0:0;
   const quoteShipping=quoteHasFinancial?Number(quoteFinancial.shipping_cost)||0:0;
   const cartTotal=Math.round(cart.reduce((sum,line)=>sum+(Number(line.total)||Number(line.quantity)*Number(line.unitPrice)),0)*100)/100;
+  const cartQuantitySummary=[...cart.reduce((summary,line)=>{
+    const key=line.mode==='area'?'piezas':String(line.unit||'unidad').trim().toLocaleLowerCase('es');
+    const current=summary.get(key)||{label:line.mode==='area'?'piezas':String(line.unit||'unidad').trim(),quantity:0};
+    current.quantity+=Number(line.quantity)||0;
+    summary.set(key,current);
+    return summary;
+  },new Map<string,{label:string;quantity:number}>()).values()].map((item)=>`${item.quantity} ${item.quantity===1?item.label:pluralizePOSUnit(item.label)}`).join(' · ');
   const manualDiscountPercent=Math.min(40,Math.max(0,Math.round(Number(discountPercent)||0)));
   const manualDiscountAmount=roundMoney(cartTotal*manualDiscountPercent/100);
   const discountedSubtotal=roundMoney(Math.max(0,cartTotal-manualDiscountAmount));
@@ -1149,7 +1161,7 @@ export function PosPage() {
       requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
       return;
     }
-    if(cartMode==='area'){
+    if(cartEntryType==='custom-area'){
       if(!cartItemName.trim()){flash('Escribe el concepto libre por m².');return;}
       if(!Number.isFinite(cartWidthNumber)||!Number.isFinite(cartHeightNumber)||cartWidthNumber<=0||cartHeightNumber<=0){flash('Ingresa el ancho y alto en centímetros para calcular los m².');return;}
       const unitPrice=Number(cartUnitPrice);
@@ -1172,10 +1184,13 @@ export function PosPage() {
       return;
     }
     const unitPrice=Number(cartUnitPrice);
-    if(!cartItemName.trim()){flash('Elige un producto o escribe un concepto de venta.');return;}
+    if(cartEntryType!=='custom-quantity'){flash('Selecciona un producto del catálogo o elige el tipo de concepto libre.');return;}
+    if(!cartItemName.trim()){flash('Escribe el concepto libre por unidad.');return;}
     if(!Number.isFinite(unitPrice)||unitPrice<=0){flash('Ingresa el precio acordado para el concepto libre.');return;}
     const name=cartItemName.trim();
-    const line={key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:'',sku:'LIBRE',name,family:'Concepto libre',image:'',mode:'quantity',quantity,billingQuantity:quantity,unit:'unidad',unitPrice,total:Math.round(quantity*unitPrice*100)/100,customUnitPriceApplied:true,description:`${name} · ${quantity} unidades · $${unitPrice.toFixed(2)} c/u`};
+    const unit=cartCustomUnit.trim().slice(0,40)||'unidad';
+    const quantityLabel=quantity===1?unit:pluralizePOSUnit(unit);
+    const line={key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:'',sku:'LIBRE',name,family:'Concepto libre',image:'',mode:'quantity',quantity,billingQuantity:quantity,unit,unitPrice,total:Math.round(quantity*unitPrice*100)/100,customUnitPriceApplied:true,description:`${name} · ${quantity} ${quantityLabel} · $${unitPrice.toFixed(2)} c/u`};
     setCart(current=>[...current,line]);
     setCartItemName('');setCartQuantity('1');setCartUnitPrice('');setCartCustomUnitPrice('');
     requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
@@ -1457,6 +1472,13 @@ export function PosPage() {
         {form.quoteId?<div className="pos-quote-total"><span>Total aprobado en cotización</span><strong>{formatMoney(form.total)}</strong><small>El total se conserva igual al aprobado.</small></div>:<>
           <section className="pos-cart-builder" aria-label="Agregar artículos">
             <div className="pos-cart-builder-heading"><span className="eyebrow">CATÁLOGO Y CONCEPTOS CONECTADOS</span><span>Precios en USD · IVA {configuredTaxRate}%</span></div>
+            <div className="pos-entry-kind" role="group" aria-label="Tipo de artículo que deseas añadir">
+              <button type="button" className={cartEntryType==='catalog'?'is-active':''} aria-pressed={cartEntryType==='catalog'} onClick={()=>{setCartEntryType('catalog');setCartProductId('');setCartUnitPrice('');setCartCustomUnitPrice('');}}><Package size={15}/> Añadir producto del catálogo</button>
+              <button type="button" className={cartEntryType==='custom-quantity'?'is-active':''} aria-pressed={cartEntryType==='custom-quantity'} onClick={()=>{setCartEntryType('custom-quantity');setCartMode('quantity');setCartProductId('');setCartUnitPrice('');setCartCustomUnitPrice('');}}><Plus size={15}/> Añadir concepto libre (unidad)</button>
+              <button type="button" className={cartEntryType==='custom-area'?'is-active':''} aria-pressed={cartEntryType==='custom-area'} onClick={()=>{setCartEntryType('custom-area');setCartMode('area');setCartProductId('');setCartUnitPrice('');setCartCustomUnitPrice('');}}><Ruler size={15}/> Añadir concepto libre por medidas (m²)</button>
+            </div>
+            {cartEntryType!=='catalog'&&<p className="pos-entry-kind-note">Concepto manual · no descuenta inventario · precio confirmado por el asesor.</p>}
+            {cartEntryType==='catalog'&&<>
             <div className="pos-mode-switch" role="group" aria-label="Forma de calcular el producto">
               <button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>{setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por cantidad ({data.catalog.filter(p=>p.mode!=='area').length})</button>
               <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>{setCartMode('area');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por medidas m² ({data.catalog.filter(p=>p.mode==='area').length})</button>
@@ -1473,8 +1495,12 @@ export function PosPage() {
               onQuickAdd={cartMode==='quantity'?quickAddProductToCart:undefined}
             />
             {favoriteStorageStatus==='local'&&<small className="pos-favorite-storage-note">Las estrellas se guardan en este navegador hasta conectar el almacenamiento del equipo.</small>}
-            {!cartProductId&&cartMode==='quantity'&&<label>Concepto libre<input value={cartItemName} onChange={(event)=>setCartItemName(event.target.value)} placeholder="Producto o servicio acordado"/></label>}
-            {!cartProductId&&cartMode==='area'&&<div className="pos-custom-area-box">
+            </>}
+            {cartEntryType==='custom-quantity'&&<div className="pos-custom-quantity-box">
+              <label>Concepto o producto personalizado<input value={cartItemName} onChange={(event)=>setCartItemName(event.target.value)} placeholder="Ej.: instalación, diseño especial, servicio…" maxLength={160}/></label>
+              <label>Unidad de medida<input value={cartCustomUnit} onChange={(event)=>setCartCustomUnit(event.target.value)} placeholder="unidad, servicio, rollo, metro…" maxLength={40}/></label>
+            </div>}
+            {cartEntryType==='custom-area'&&<div className="pos-custom-area-box">
               <label><span>Concepto libre por m²</span><input value={cartItemName} onChange={(event)=>setCartItemName(event.target.value)} placeholder="Ej.: Lona banner medida especial, Rotulación libre"/></label>
               <POSMeasurementControls widthValue={cartWidthCm} heightValue={cartHeightCm} quantityValue={cartQuantity} widthCm={cartWidthNumber} heightCm={cartHeightNumber} quantity={cartQuantityNumber} onWidthChange={setCartWidthCm} onHeightChange={setCartHeightCm} onQuantityChange={setCartQuantity}/>
               <label><span>Precio acordado por m² ($)</span><div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartUnitPrice} onChange={(event)=>setCartUnitPrice(event.target.value)} placeholder="Ej.: 12.00"/></div></label>
@@ -1494,7 +1520,7 @@ export function PosPage() {
               <button className="icon-button" type="button" aria-label="Quitar artículo seleccionado" onClick={()=>{setCartProductId('');setCartUnitPrice('');setCartCustomUnitPrice('');}}><X size={14}/></button>
             </div>}
             {cartMode==='area'&&selectedCartProduct&&<POSMeasurementControls widthValue={cartWidthCm} heightValue={cartHeightCm} quantityValue={cartQuantity} widthCm={cartWidthNumber} heightCm={cartHeightNumber} quantity={cartQuantityNumber} onWidthChange={setCartWidthCm} onHeightChange={setCartHeightCm} onQuantityChange={setCartQuantity}/>}
-            {cartMode==='quantity'&&<div className="pos-cart-inputs">
+            {(cartMode==='quantity'||cartEntryType==='custom-quantity')&&<div className="pos-cart-inputs">
               <div className="pos-qty-control-group">
                 <label htmlFor="pos-cart-quantity">Cantidad</label>
                 <div className="pos-qty-stepper-row">
@@ -1506,8 +1532,9 @@ export function PosPage() {
                   {[1,2,5,10,25,50,100].map((preset)=><button key={preset} type="button" className={`pos-qty-preset${Number(cartQuantity)===preset?' is-active':''}`} onClick={()=>setCartQuantity(String(preset))}>×{preset}</button>)}
                 </div>
               </div>
-              {!selectedCartProduct&&<label>Precio acordado por unidad<div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartUnitPrice} onChange={(event)=>setCartUnitPrice(event.target.value)} placeholder="0,00"/></div></label>}
+              {cartEntryType==='custom-quantity'&&<label>Precio acordado por {cartCustomUnit.trim()||'unidad'}<div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartUnitPrice} onChange={(event)=>setCartUnitPrice(event.target.value)} placeholder="0,00"/></div></label>}
             </div>}
+            {cartEntryType==='custom-quantity'&&cartQuantityNumber>0&&Number(cartUnitPrice)>0&&<div className="pos-calculation-total"><span>{cartQuantityNumber} {cartQuantityNumber===1?(cartCustomUnit.trim()||'unidad'):pluralizePOSUnit(cartCustomUnit.trim()||'unidad')} · precio acordado por unidad</span><strong>{formatMoney(cartQuantityNumber*Number(cartUnitPrice))}</strong></div>}
             {selectedCartProduct&&<div className="pos-agreed-price-wrap">
               <label><span>Precio acordado ($) · <small>Opcional: sobrescribe PVP unitario/m²</small></span><div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartCustomUnitPrice} onChange={(event)=>setCartCustomUnitPrice(event.target.value)} placeholder={cartCalculation?cartCalculation.unitPrice.toFixed(2):'0.00'}/></div></label>
               {hasCustomAgreedPrice&&<button type="button" className="button button-outline pos-reset-agreed-btn" onClick={()=>setCartCustomUnitPrice('')}>Usar catálogo</button>}
@@ -1544,7 +1571,7 @@ export function PosPage() {
                 <div className="pos-cart-heading">
                   <div>
                     <span className="eyebrow">ORDEN ACTUAL · {branchName.toUpperCase()}</span>
-                    <h3>{cart.length} {cart.length===1?'artículo':'artículos'}{cart.length>0?` · ${cart.reduce((s,l)=>s+(Number(l.quantity)||0),0)} pzs`:''}</h3>
+                    <h3>{cart.length} {cart.length===1?'artículo':'artículos'}{cartQuantitySummary?` · ${cartQuantitySummary}`:''}</h3>
                   </div>
                   <div className="pos-cart-heading-right">
                     <strong>{formatMoney(cartTotal)}</strong>
