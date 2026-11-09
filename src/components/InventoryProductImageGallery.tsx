@@ -6,6 +6,8 @@ import './inventory-product-image-gallery.css';
 type Props = {
   images: InventoryGalleryImage[];
   onChange: (images: InventoryGalleryImage[]) => void;
+  libraryImages?: Array<{ path: string; label: string }>;
+  onSelectLibraryImage?: (image: { path: string; label: string }) => void;
   disabled?: boolean;
   title?: string;
 };
@@ -19,14 +21,38 @@ function clipboardFiles(data: DataTransfer): File[] {
   return Array.from(data.items || []).filter((item) => acceptedTypes.has(item.type)).map((item) => item.getAsFile()).filter((file): file is File => Boolean(file));
 }
 
-export function InventoryProductImageGallery({ images, onChange, disabled = false, title = 'Imágenes del producto' }: Props) {
+export function InventoryProductImageGallery({ images, onChange, libraryImages = [], onSelectLibraryImage, disabled = false, title = 'Imágenes del producto' }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const replaceInput = useRef<HTMLInputElement>(null);
   const previewUrls = useRef(new Set<string>());
   const [active, setActive] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [librarySelection, setLibrarySelection] = useState('');
   const activeImage = images[active];
+
+  const addLibraryImage = (path: string) => {
+    const source = libraryImages.find((image) => image.path === path);
+    setLibrarySelection('');
+    if (!source) return;
+    const existingIndex = images.findIndex((image) => image.path === source.path || image.src === source.path);
+    if (existingIndex === 0) { setActive(0); setFeedback('Esta imagen ya está en la galería y es la portada.'); onSelectLibraryImage?.(source); return; }
+    if (existingIndex > 0) {
+      const next = [...images];
+      const [existing] = next.splice(existingIndex, 1);
+      next.unshift(existing);
+      onChange(next);
+      setActive(0);
+      setFeedback('Imagen de biblioteca asignada como portada.');
+      onSelectLibraryImage?.(source);
+      return;
+    }
+    if (images.length >= 12) { setFeedback('La galería admite hasta 12 imágenes. Quita una antes de añadir otra.'); return; }
+    onChange([{ key: `library-${makeKey()}`, src: source.path, path: source.path, label: source.label }, ...images]);
+    setActive(0);
+    setFeedback('Imagen de biblioteca añadida como portada.');
+    onSelectLibraryImage?.(source);
+  };
 
   const addFiles = (files: File[]) => {
     const accepted = files.filter((file) => acceptedTypes.has(file.type) && file.size <= 80 * 1024 * 1024);
@@ -81,7 +107,7 @@ export function InventoryProductImageGallery({ images, onChange, disabled = fals
         <div className="inventory-product-gallery-image-actions"><button type="button" disabled={disabled} onClick={() => replaceInput.current?.click()} title="Reemplazar esta imagen"><Upload size={13}/> Reemplazar</button><button type="button" disabled={disabled || active === 0} onClick={() => move(-1)} title="Mover antes"><ArrowLeft size={13}/> Subir</button><button type="button" disabled={disabled || active >= images.length - 1} onClick={() => move(1)} title="Mover después"><ArrowRight size={13}/> Bajar</button><button type="button" disabled={disabled || active === 0} onClick={() => { const next = [...images]; const [cover] = next.splice(active, 1); next.unshift(cover); onChange(next); setActive(0); }} title="Usar como portada"><Star size={13}/> Hacer portada</button><button type="button" disabled={disabled} onClick={removeActive} title="Quitar imagen"><Trash2 size={13}/> Eliminar</button></div>
       </> : <div className="inventory-product-gallery-empty"><ImagePlus size={25}/><b>Añade fotos para mostrar el producto</b><span>Sube desde el dispositivo o copia y pega con Ctrl + V.</span><button type="button" className="button button-dark" disabled={disabled || images.length >= 12} onClick={() => input.current?.click()}><Upload size={14}/> Elegir imágenes</button></div>}
     </div>
-    <div className="inventory-product-gallery-toolbar"><input ref={input} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden disabled={disabled || images.length >= 12} onChange={(event) => { if (event.currentTarget.files) addFiles(Array.from(event.currentTarget.files)); event.currentTarget.value = ''; }}/><input ref={replaceInput} type="file" accept="image/png,image/jpeg,image/webp" hidden disabled={disabled || !activeImage} onChange={(event) => { const file=event.currentTarget.files?.[0];if(file&&activeImage){const src=URL.createObjectURL(file);previewUrls.current.add(src);if(activeImage.file){URL.revokeObjectURL(activeImage.src);previewUrls.current.delete(activeImage.src);}const next=[...images];next[active]={key:makeKey(),src,file,label:file.name};onChange(next);setFeedback('Imagen lista para reemplazar; guarda el producto para aplicar el cambio.');}event.currentTarget.value='';}}/>{images.length > 0 && <button type="button" className="button button-outline" disabled={disabled || images.length >= 12} onClick={() => input.current?.click()}><Upload size={14}/> Añadir imágenes</button>}<button type="button" className="button button-outline" disabled={disabled || images.length >= 12} onClick={() => { const zone = input.current?.closest('.inventory-product-gallery')?.querySelector('.inventory-product-gallery-stage') as HTMLElement | null; zone?.focus(); setFeedback('Haz clic dentro de la galería y pega con Ctrl + V.'); }}><ClipboardPaste size={14}/> Pegar imagen</button><small>PNG, JPG o WebP · optimización WebP al guardar · máx. 5 MB por imagen optimizada</small></div>
+    <div className="inventory-product-gallery-toolbar"><input ref={input} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden disabled={disabled || images.length >= 12} onChange={(event) => { if (event.currentTarget.files) addFiles(Array.from(event.currentTarget.files)); event.currentTarget.value = ''; }}/><input ref={replaceInput} type="file" accept="image/png,image/jpeg,image/webp" hidden disabled={disabled || !activeImage} onChange={(event) => { const file=event.currentTarget.files?.[0];if(file&&activeImage){const src=URL.createObjectURL(file);previewUrls.current.add(src);if(activeImage.file){URL.revokeObjectURL(activeImage.src);previewUrls.current.delete(activeImage.src);}const next=[...images];next[active]={key:makeKey(),src,file,label:file.name};onChange(next);setFeedback('Imagen lista para reemplazar; guarda el producto para aplicar el cambio.');}event.currentTarget.value='';}}/>{images.length > 0 && <button type="button" className="button button-outline" disabled={disabled || images.length >= 12} onClick={() => input.current?.click()}><Upload size={14}/> Añadir imágenes</button>}<button type="button" className="button button-outline" disabled={disabled || images.length >= 12} onClick={() => { const zone = input.current?.closest('.inventory-product-gallery')?.querySelector('.inventory-product-gallery-stage') as HTMLElement | null; zone?.focus(); setFeedback('Haz clic dentro de la galería y pega con Ctrl + V.'); }}><ClipboardPaste size={14}/> Pegar imagen</button>{libraryImages.length>0&&<label className="inventory-product-gallery-library"><span>Añadir desde biblioteca</span><select aria-label="Añadir una imagen desde la biblioteca de referencias" value={librarySelection} disabled={disabled||images.length>=12} onChange={event=>addLibraryImage(event.target.value)}><option value="">Seleccionar imagen…</option>{libraryImages.map((image,index)=><option key={`${image.path}-${index}`} value={image.path}>{image.label}</option>)}</select></label>}<small>PNG, JPG o WebP · imágenes de referencia reutilizables · máx. 12 imágenes</small></div>
     {images.length > 1 && <div className="inventory-product-gallery-thumbnails" role="list" aria-label="Seleccionar imagen de la galería">{images.map((image, index) => <button type="button" role="listitem" key={image.key} className={index === active ? 'is-active' : ''} aria-label={`${index === 0 ? 'Portada, ' : ''}imagen ${index + 1}: ${image.label || 'sin nombre'}`} aria-pressed={index === active} onClick={() => setActive(index)}><img src={image.src} alt=""/>{index === 0 && <i><Check size={10}/></i>}</button>)}</div>}
     {feedback && <div className="inventory-product-gallery-feedback" role="status">{feedback}<button type="button" aria-label="Cerrar aviso" onClick={() => setFeedback('')}><X size={12}/></button></div>}
   </section>;
