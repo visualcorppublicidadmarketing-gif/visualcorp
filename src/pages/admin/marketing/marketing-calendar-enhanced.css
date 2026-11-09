@@ -860,6 +860,11 @@
   transform: translateY(-1px);
 }
 
+.vc-channel-chip:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
+
 .vc-channel-chip.active {
   background: #7c3aed;
   color: #fff;
@@ -1229,5 +1234,15 @@
   }
   .vc-marketing-pulse-divider {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-channel-chip {
+    transition: none;
+  }
+
+  .vc-channel-chip:hover {
+    transform: none;
   }
 }

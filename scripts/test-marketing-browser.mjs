@@ -156,7 +156,12 @@ try {
       exact: true,
     })
     .check();
-  await page.getByLabel("Asignar seleccionadas").selectOption(USERS.editor);
+  await page
+    .getByRole("button", {
+      name: "Asignar publicaciones seleccionadas a",
+    })
+    .click();
+  await page.getByRole("option", { name: "editor", exact: true }).click();
   api.failNextSave();
   await page.getByRole("button", { name: "Asignar", exact: true }).click();
   await expect(page.locator(".mk-bulk-report")).toContainText(
@@ -189,7 +194,7 @@ try {
     .getByRole("button", { name: /Calendario/ })
     .first()
     .click();
-  await page.getByRole("button", { name: "Kanban", exact: true }).click();
+  await page.getByRole("tab", { name: "Semana", exact: true }).click();
   await page.reload();
   expect(
     (
@@ -236,17 +241,16 @@ try {
     .first()
     .click();
   await page.getByRole("dialog").getByLabel("Etapa").selectOption("Programada");
-  let warningShown = false;
-  page.once("dialog", async (d) => {
-    warningShown = d.message().includes("sin aprobación");
-    await d.accept();
-  });
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "Guardar ficha" })
     .click();
+  const warning = page.getByRole("alertdialog");
+  await expect(warning).toContainText("pendiente");
+  await warning
+    .getByRole("button", { name: "Registrar como Programada" })
+    .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  expect(warningShown).toBeTruthy();
   expect(
     (await api.db.query("select count(*)::int n from marketing_reviews"))
       .rows[0].n,
@@ -261,6 +265,13 @@ try {
   await managerCard.getByRole("button", { name: "Revisar pieza" }).click();
   await manager.page
     .getByRole("button", { name: "Aprobar versión", exact: true })
+    .click();
+  await expect(manager.page.getByRole("alertdialog")).toContainText(
+    "pendientes",
+  );
+  await manager.page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Aprobar esta versión" })
     .click();
   await expect(manager.page.getByRole("dialog")).toHaveCount(0);
   await expect(managerCard.getByText(/aprobada por manager/)).toBeVisible();

@@ -119,7 +119,7 @@ const isWeekCalendarView = (value: string) => value === 'week';
 export const getFormatBadge = (format?: string, platform?: string) => {
   const norm = (format || '').toLowerCase();
   const plat = (platform || '').toLowerCase();
-  if (norm.includes('reel') || norm.includes('video') || plat.includes('tiktok')) {
+  if (norm.includes('reel') || norm.includes('video') || (!norm && plat.includes('tiktok'))) {
     return { label: 'Reel', icon: Film, className: 'is-format-reel' };
   }
   if (norm.includes('carrusel') || norm.includes('carousel')) {
@@ -218,7 +218,7 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
   const monthPosts = useMemo(() => {
     const currentMonth = anchor.getMonth();
     const currentYear = anchor.getFullYear();
-    return posts.filter((p) => {
+    return posts.filter(isPublication).filter((p) => {
       if (!p.scheduled_date) return false;
       const d = new Date(`${p.scheduled_date.slice(0, 10)}T12:00:00`);
       return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
@@ -228,20 +228,24 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
   const pulseMetrics = useMemo(() => {
     const total = monthPosts.length;
     const published = monthPosts.filter((p) => /publicad/i.test(p.status)).length;
-    const inWork = monthPosts.filter((p) => /diseñ|producc|revisi/i.test(p.status)).length;
     const ready = monthPosts.filter((p) => /aprobad|programad/i.test(p.status)).length;
-    const pendingArt = monthPosts.filter((p) => !/publicad|complet/i.test(p.status) && !p.design_ready && p.art_status !== 'Sí').length;
-    const pendingVideo = monthPosts.filter((p) => !/publicad|complet/i.test(p.status) && (p.format?.toLowerCase().includes('reel') || p.format?.toLowerCase().includes('video')) && !p.video_ready && p.video_status !== 'Sí').length;
-    const reels = monthPosts.filter((p) => (p.format || '').toLowerCase().includes('reel') || (p.format || '').toLowerCase().includes('video') || (p.platform || '').toLowerCase().includes('tiktok')).length;
+    const pendingArt = monthPosts.filter((p) => !isTerminalMarketingStatus(p.status) && getDeliverableState(p.art_status, p.design_ready) !== 'ready' && getDeliverableState(p.art_status, p.design_ready) !== 'na').length;
+    const isVideo = (post: MarketingCalendarPost) => {
+      const format = (post.format || '').toLowerCase();
+      const platform = (post.platform || '').toLowerCase();
+      return format.includes('reel') || format.includes('video') || (!format && platform.includes('tiktok'));
+    };
+    const pendingVideo = monthPosts.filter((p) => !isTerminalMarketingStatus(p.status) && isVideo(p) && getDeliverableState(p.video_status, p.video_ready) !== 'ready' && getDeliverableState(p.video_status, p.video_ready) !== 'na').length;
+    const reels = monthPosts.filter(isVideo).length;
     const carousels = monthPosts.filter((p) => (p.format || '').toLowerCase().includes('carrusel') || (p.format || '').toLowerCase().includes('carousel')).length;
-    const statics = monthPosts.filter((p) => !((p.format || '').toLowerCase().includes('reel') || (p.format || '').toLowerCase().includes('video') || (p.platform || '').toLowerCase().includes('tiktok') || (p.format || '').toLowerCase().includes('carrusel') || (p.format || '').toLowerCase().includes('carousel'))).length;
+    const statics = monthPosts.filter((p) => !isVideo(p) && !((p.format || '').toLowerCase().includes('carrusel') || (p.format || '').toLowerCase().includes('carousel'))).length;
 
-    const igCount = posts.filter((p) => (p.platform || '').toLowerCase().includes('instagram')).length;
-    const ttCount = posts.filter((p) => (p.platform || '').toLowerCase().includes('tiktok')).length;
-    const fbCount = posts.filter((p) => (p.platform || '').toLowerCase().includes('facebook')).length;
+    const igCount = monthPosts.filter((p) => (p.platform || '').toLowerCase().includes('instagram')).length;
+    const ttCount = monthPosts.filter((p) => (p.platform || '').toLowerCase().includes('tiktok')).length;
+    const fbCount = monthPosts.filter((p) => (p.platform || '').toLowerCase().includes('facebook')).length;
 
-    return { total, published, inWork, ready, pendingArt, pendingVideo, reels, carousels, statics, igCount, ttCount, fbCount };
-  }, [monthPosts, posts]);
+    return { total, published, ready, pendingArt, pendingVideo, reels, carousels, statics, igCount, ttCount, fbCount };
+  }, [monthPosts]);
   const [recordTypeFilter, setRecordTypeFilter] = useState<MarketingRecordTypeFilter>('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [showEmptyKanbanLanes, setShowEmptyKanbanLanes] = useState(false);
@@ -612,7 +616,7 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
       </div>
     </header>
 
-    <div className="vc-marketing-calendar-pulse" aria-label="Pulso editorial y filtros de canal">
+    <section className="vc-marketing-calendar-pulse" aria-label="Pulso editorial del calendario">
       <div className="vc-marketing-pulse-stats">
         <div className="vc-marketing-pulse-item">
           <span className="vc-pulse-label">Publicaciones de {monthHeading.split(' ')[0]}</span>
@@ -681,7 +685,7 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
           </button>
         )}
       </div>
-    </div>
+    </section>
     <div className="vc-marketing-kanban-filters" aria-label={`Filtros del calendario · ${view}`}>
       <div className="vc-marketing-filters-group">
         <SelectDropdown

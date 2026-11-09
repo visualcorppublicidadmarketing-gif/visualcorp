@@ -1,12 +1,15 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Archive, ArchiveRestore, ArrowRight, CalendarDays, Check, ChevronDown, CircleAlert, ClipboardList, Clock3, Mail, PackageCheck, Pencil, Plus, RefreshCw, Search, Send, ShoppingCart, Truck, Users, X } from 'lucide-react';
+import { Archive, ArchiveRestore, ArrowRight, CalendarDays, Check, ChevronDown, CircleAlert, ClipboardCheck, ClipboardList, Clock3, Mail, PackageCheck, Pencil, Plus, RefreshCw, Search, Send, ShoppingCart, Truck, Users, X } from 'lucide-react';
 import { useWorkspace, formatMoney } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { NumberTicker } from './ui/MagicComponents';
 import { AlertDialog, Dialog, DialogCallout } from './ui/OperationalKit';
 import { supabase } from '../lib/supabaseClient';
 import './PurchasingWorkspace.css';
+
+const PurchasingDashboard = React.lazy(() => import('./PurchasingDashboard').then((module) => ({ default: module.PurchasingDashboard })));
+const PurchasingSourcing = React.lazy(() => import('./PurchasingSourcing').then((module) => ({ default: module.PurchasingSourcing })));
 
 const blankSupplier = () => ({ name: '', contact_name: '', phone: '', email: '', tax_id: '', address: '', notes: '' });
 const blankLine = () => ({ variant_id: '', quantity_ordered: '', unit_cost: '' });
@@ -15,6 +18,12 @@ const states: Record<string, string> = { draft: 'Borrador', ordered: 'Enviada', 
 const orderPageSize = 50;
 const normalize = (value: unknown) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
 const quantity = (value: unknown) => new Intl.NumberFormat('es-EC', { maximumFractionDigits: 3 }).format(Number(value) || 0);
+const orderProgress = (lines: any[]) => {
+  if (!lines.length) return 0;
+  const orderedValue = lines.reduce((sum, line) => sum + Number(line.quantity_ordered) * Number(line.unit_cost), 0);
+  if (orderedValue > 0) return Math.round(lines.reduce((sum, line) => sum + Number(line.quantity_received) * Number(line.unit_cost), 0) / orderedValue * 100);
+  return Math.round(lines.reduce((sum, line) => sum + Math.min(1, Number(line.quantity_received) / Math.max(0.001, Number(line.quantity_ordered))), 0) / lines.length * 100);
+};
 
 function VariantPicker({ itemId, variants, selectedId, excludedIds, onSelect }: { itemId: string; variants: any[]; selectedId: string; excludedIds: Set<string>; onSelect: (id: string) => void }) {
   const listId = useId();
@@ -70,7 +79,8 @@ export function PurchasingWorkspace() {
   const [modalError, setModalError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todas');
-  const [activeView, setActiveView] = useState<'overview' | 'orders' | 'suppliers'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'requests' | 'orders' | 'suppliers'>('overview');
+  const [dashboardRefreshVersion, setDashboardRefreshVersion] = useState(0);
   const [supplierDraft, setSupplierDraft] = useState<any>(blankSupplier());
   const [supplierEditTarget, setSupplierEditTarget] = useState<any>(null);
   const [supplierFormOpen, setSupplierFormOpen] = useState(false);
@@ -81,7 +91,7 @@ export function PurchasingWorkspace() {
   const [receiveOrder, setReceiveOrder] = useState<any>(null);
   const [cancelOrderTarget, setCancelOrderTarget] = useState<any>(null);
   const [cancelReason, setCancelReason] = useState('');
-  const [receiveDraft, setReceiveDraft] = useState<any>({ quantities: {}, reference: '', note: '', location: 'MAIN', idempotencyKey: '' });
+  const [receiveDraft, setReceiveDraft] = useState<any>({ quantities: {}, rejected: {}, discrepancyNotes: {}, reference: '', note: '', location: 'MAIN', idempotencyKey: '' });
   const requestVersion = useRef(0);
 
   const canManage = hasPermission('purchases', 'edit');
@@ -133,7 +143,7 @@ export function PurchasingWorkspace() {
       const orderIds = nextOrders.map((order) => order.id);
       const [lineResult, receiptResult] = orderIds.length ? await Promise.all([
         supabase.from('purchase_order_lines').select('id,purchase_order_id,variant_id,description_snapshot,sku_snapshot,unit_snapshot,quantity_ordered,quantity_received,unit_cost,organization_id').eq('organization_id', organizationId).in('purchase_order_id', orderIds),
-        supabase.from('purchase_receipts').select('id,purchase_order_id,reference,note,received_by,received_at').eq('organization_id', organizationId).in('purchase_order_id', orderIds).order('received_at', { ascending: false }),
+        supabase.from('purchase_receipts').select('id,purchase_order_id,reference,note,received_by,received_at,purchase_receipt_lines(quantity_received,quantity_rejected,discrepancy_note)').eq('organization_id', organizationId).in('purchase_order_id', orderIds).order('received_at', { ascending: false }),
       ]) : [{ data: [], error: null }, { data: [], error: null }];
       if (lineResult.error || receiptResult.error) throw lineResult.error || receiptResult.error;
       if (version !== requestVersion.current) return;
@@ -188,7 +198,7 @@ export function PurchasingWorkspace() {
     setActiveView('orders');
   }, [routeParams.toString()]);
 
-  const refreshAfterChange = async () => { await Promise.all([refresh(), loadOrderCounts()]); };
+  const refreshAfterChange = async () => { await Promise.all([refresh(), loadOrderCounts()]); setDashboardRefreshVersion((value) => value + 1); };
   const openSupplierForm = (supplier: any = null) => {
     setModalError(''); setSupplierEditTarget(supplier);
     setSupplierFormOpen(true);
@@ -282,23 +292,29 @@ export function PurchasingWorkspace() {
     const lines = orderLines[order.id] || [];
     const locations = (data.inventoryLocations || []).filter((location) => location.active && location.branchId === order.branch_id);
     setModalError('');
-    setReceiveDraft({ quantities: Object.fromEntries(lines.map((line) => [line.id, ''])), reference: '', note: '', location: locations.find((location) => location.code === 'MAIN')?.code || locations[0]?.code || 'MAIN', idempotencyKey: idempotencyKey() });
+    setReceiveDraft({ quantities: Object.fromEntries(lines.map((line) => [line.id, ''])), rejected: Object.fromEntries(lines.map((line) => [line.id, ''])), discrepancyNotes: Object.fromEntries(lines.map((line) => [line.id, ''])), reference: '', note: '', location: locations.find((location) => location.code === 'MAIN')?.code || locations[0]?.code || 'MAIN', idempotencyKey: idempotencyKey() });
     setReceiveOrder(order);
   };
 
   const recordReceipt = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!receiveOrder || !canReceive || !user || !supabase) return;
-    const lines = (orderLines[receiveOrder.id] || []).filter((line) => receiveDraft.quantities[line.id] !== '' && Number(receiveDraft.quantities[line.id]) > 0).map((line) => ({ purchase_order_line_id: line.id, quantity_received: Number(receiveDraft.quantities[line.id]), location_code: receiveDraft.location.trim() || 'MAIN' }));
-    if (!lines.length) { setModalError('Indica al menos una cantidad realmente recibida.'); return; }
-    if (lines.some((line) => !Number.isFinite(line.quantity_received) || line.quantity_received <= 0)) { setModalError('Revisa las cantidades recibidas; cada una debe ser mayor que cero.'); return; }
+    const lines = (orderLines[receiveOrder.id] || []).map((line) => ({
+      purchase_order_line_id: line.id,
+      quantity_received: Number(receiveDraft.quantities[line.id]) || 0,
+      quantity_rejected: Number(receiveDraft.rejected[line.id]) || 0,
+      discrepancy_note: String(receiveDraft.discrepancyNotes[line.id] || '').trim(),
+      location_code: receiveDraft.location.trim() || 'MAIN',
+    })).filter((line) => line.quantity_received + line.quantity_rejected > 0);
+    if (!lines.length) { setModalError('Indica una cantidad aceptada o rechazada para continuar.'); return; }
+    if (lines.some((line) => !Number.isFinite(line.quantity_received) || !Number.isFinite(line.quantity_rejected) || line.quantity_received < 0 || line.quantity_rejected < 0)) { setModalError('Revisa las cantidades aceptadas y rechazadas.'); return; }
+    if (lines.some((line) => line.quantity_received + line.quantity_rejected > Math.max(0, Number((orderLines[receiveOrder.id] || []).find((row) => row.id === line.purchase_order_line_id)?.quantity_ordered) - Number((orderLines[receiveOrder.id] || []).find((row) => row.id === line.purchase_order_line_id)?.quantity_received)))) { setModalError('La cantidad aceptada y rechazada no puede superar lo pendiente.'); return; }
+    if (lines.some((line) => line.quantity_rejected > 0 && line.discrepancy_note.length < 3)) { setModalError('Describe el motivo de cada cantidad rechazada antes de guardar.'); return; }
     setSaving(true); setModalError('');
     try {
       const { error: saveError } = await supabase.rpc('receive_purchase_order', { p_order_id: receiveOrder.id, p_lines: lines, p_idempotency_key: receiveDraft.idempotencyKey, p_reference: receiveDraft.reference, p_note: receiveDraft.note });
       if (saveError) throw saveError;
-      const number = receiveOrder.order_number; setReceiveOrder(null); setModalError(''); await refreshAfterChange(); flash(canEditInventoryCosts
-        ? `Recepción de ${number} guardada. Solo lo recibido se refleja en inventario.`
-        : `Recepción de ${number} guardada. El costo vigente no se actualizó; solicita su revisión a un perfil autorizado para editar costos.`);
+      const number = receiveOrder.order_number; const rejected = lines.reduce((sum, line) => sum + line.quantity_rejected, 0); setReceiveOrder(null); setModalError(''); await refreshAfterChange(); flash(`${number}: recepción registrada. Lo aceptado se reflejó en inventario${rejected ? `; ${quantity(rejected)} unidad(es) rechazadas quedaron auditadas y pendientes de solución` : ''}.${canEditInventoryCosts ? '' : ' El costo vigente no se actualizó; solicita su revisión a un perfil autorizado.'}`);
     } catch (saveError: any) { setModalError(`No se registró la recepción: ${saveError?.message || 'la clave de reintento se mantiene para evitar duplicados.'}`); }
     finally { setSaving(false); }
   };
@@ -323,10 +339,18 @@ export function PurchasingWorkspace() {
     setShowArchivedSuppliers(false);
     setActiveView('suppliers');
   };
+  const openOrderByNumber = (orderNumber: string) => {
+    const next = new URLSearchParams(routeParams);
+    next.set('order', orderNumber);
+    setRouteParams(next);
+    setSearch(orderNumber);
+    setStatusFilter('Todas');
+    setActiveView('orders');
+  };
 
   return <div className="purchasing-workspace">
     <section className="purchasing-hero panel">
-      <div className="purchasing-hero-copy"><span className="purchasing-kicker"><Truck size={14}/> ABASTECIMIENTO</span><h2>Del pedido a la recepción, en un solo lugar</h2><p>Organiza proveedores y órdenes. El inventario cambia cuando registras lo que realmente llegó.</p></div>
+      <div className="purchasing-hero-copy"><span className="purchasing-kicker"><Truck size={14}/> ABASTECIMIENTO</span><h2>De la necesidad a la recepción, con trazabilidad</h2><p>Solicitudes por área, ofertas comparables, órdenes y recepción auditada en un mismo flujo.</p></div>
       <div className="purchasing-hero-actions"><button className="button button-outline" type="button" onClick={() => { setError(''); void refresh(); void loadOrderCounts(); }} disabled={loading || loadingMore}><RefreshCw size={15}/> Actualizar</button>{canManage && <button className="button button-outline" type="button" onClick={() => { openSupplierForm(); setActiveView('suppliers'); }}><Plus size={15}/> Proveedor</button>}{canManage && <button className="button button-dark" type="button" onClick={() => startOrder()} disabled={!suppliers.some((supplier) => supplier.active) || !variants.length || !branches.length}><ShoppingCart size={15}/> Nueva orden</button>}</div>
     </section>
 
@@ -339,17 +363,20 @@ export function PurchasingWorkspace() {
 
     <nav className="purchasing-nav" aria-label="Secciones de compras">
       <button type="button" className={activeView === 'overview' ? 'active' : ''} aria-pressed={activeView === 'overview'} onClick={() => setActiveView('overview')}><ClipboardList size={16}/><span>Resumen</span></button>
+      {(canManage || canApprove || hasPermission('workshop', 'view') || hasPermission('sales', 'view')) && <button type="button" className={activeView === 'requests' ? 'active' : ''} aria-pressed={activeView === 'requests'} onClick={() => setActiveView('requests')}><ClipboardCheck size={16}/><span>Solicitudes</span></button>}
       <button type="button" className={activeView === 'orders' ? 'active' : ''} aria-pressed={activeView === 'orders'} aria-label={orderCountsStatus === 'ready' ? `Órdenes, ${orderCounts.total} en total` : `Órdenes, conteo ${orderCountsStatus === 'loading' ? 'cargando' : 'no disponible'}`} onClick={() => setActiveView('orders')}><ShoppingCart size={16}/><span>Órdenes</span><i>{orderCountsStatus === 'ready' ? orderCounts.total : '—'}</i></button>
       <button type="button" className={activeView === 'suppliers' ? 'active' : ''} aria-pressed={activeView === 'suppliers'} onClick={() => setActiveView('suppliers')}><Users size={16}/><span>Proveedores</span><i>{suppliers.filter((supplier) => supplier.active).length}</i></button>
     </nav>
 
     {error && <div className="purchasing-alert" role="alert"><CircleAlert size={17}/><span>{error}</span><button aria-label="Cerrar aviso" type="button" onClick={() => setError('')}><X size={16}/></button></div>}
 
-    {activeView === 'overview' && <div className="purchasing-overview-grid">
+    {activeView === 'requests' && <React.Suspense fallback={<div className="purchasing-empty" role="status">Cargando solicitudes…</div>}><PurchasingSourcing organizationId={organizationId} refreshVersion={dashboardRefreshVersion} onOpenOrder={openOrderByNumber}/></React.Suspense>}
+
+    {activeView === 'overview' && <><React.Suspense fallback={<div className="purchasing-empty" role="status">Cargando métricas de compras…</div>}><PurchasingDashboard organizationId={organizationId} refreshVersion={dashboardRefreshVersion}/></React.Suspense><div className="purchasing-overview-grid">
       <section className="panel purchase-overview-attention"><div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO</span><h2>Órdenes que requieren atención</h2><p>Revisa entregas pendientes y su avance por artículo.</p></div><button className="button button-outline" type="button" onClick={() => setActiveView('orders')}>Ver órdenes <ArrowRight size={14}/></button></div>
         {loading ? <div className="purchasing-empty">Cargando órdenes…</div> : priorityOrders.length ? <div className="purchase-priority-list">{priorityOrders.map((order) => {
           const lines = orderLines[order.id] || [];
-          const progress = lines.length ? Math.round(lines.reduce((sum, line) => sum + Math.min(1, Number(line.quantity_received) / Math.max(1, Number(line.quantity_ordered))), 0) / lines.length * 100) : 0;
+          const progress = orderProgress(lines);
           return <button className="purchase-priority-row" type="button" key={order.id} onClick={() => { const next = new URLSearchParams(routeParams); next.set('order', order.order_number); setRouteParams(next); setSearch(order.order_number); setStatusFilter('Todas'); setActiveView('orders'); }}><span className={`purchase-status status-${order.status}`}>{states[order.status]}</span><span className="purchase-priority-main"><b>{order.order_number}</b><small>{supplierById[order.supplier_id]?.name || 'Proveedor archivado'}{order.expected_date ? ` · Prevista ${new Date(`${order.expected_date}T12:00:00`).toLocaleDateString('es-EC')}` : ''}</small></span><span className="purchase-priority-progress"><b>{progress}%</b><small>{lines.length} {lines.length === 1 ? 'artículo' : 'artículos'}</small></span><ArrowRight size={15}/></button>;
         })}</div> : <div className="purchasing-empty"><PackageCheck size={20}/><span>No hay órdenes enviadas con recepción pendiente.</span></div>}
       </section>
@@ -357,7 +384,7 @@ export function PurchasingWorkspace() {
         {shortages.length ? <div className="purchase-suggestion-list">{shortages.slice(0, 8).map((item) => <article key={`${item.variantId}-${item.branchId}`}><span><b>{item.name}{item.variant ? ` · ${item.variant}` : ''}</b><small>{item.branch} · {quantity(item.quantity)} de mínimo {quantity(item.minimum)} {item.unit}</small></span>{canManage && <button className="button button-outline" type="button" onClick={() => startOrder({ branch_id: item.branchId, note: 'Reposición sugerida desde stock confirmado; revisa la cantidad y el costo antes de enviar.', lines: [{ variant_id: item.variantId, quantity_ordered: String(Math.max(Number(item.minimum) - Number(item.quantity), 0.001)), unit_cost: '' }] })}>Preparar borrador <ArrowRight size={14}/></button>}</article>)}</div> : <div className="purchasing-empty"><Check size={19}/><span>No hay artículos bajo el mínimo confirmado.</span></div>}
       </section>
       <div className="purchasing-footnote"><CircleAlert size={16}/><span>Los costos, cantidades, proveedores y condiciones se confirman manualmente. Las sugerencias no generan compras automáticamente.</span></div>
-    </div>}
+    </div></>}
 
     {activeView === 'orders' && <section className="panel purchasing-orders">
       <div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO Y RECEPCIÓN</span><h2>Órdenes de compra</h2><p>Busca en órdenes, referencias y proveedores; abre cada pedido para revisar artículos, costos capturados y recepciones.</p></div>{canManage && <button className="button button-dark" type="button" onClick={() => startOrder()} disabled={!suppliers.some((supplier) => supplier.active) || !variants.length || !branches.length}><Plus size={15}/> Crear orden</button>}</div>
@@ -366,15 +393,15 @@ export function PurchasingWorkspace() {
       {loading ? <div className="purchasing-empty"><RefreshCw size={18}/>Cargando órdenes…</div> : !orders.length ? <div className="purchasing-empty"><ClipboardList size={21}/><span>{orderCount ? 'No hay órdenes que coincidan con estos filtros.' : 'Aún no hay órdenes para mostrar.'}</span>{(search || statusFilter !== 'Todas') && <button className="button button-outline" type="button" onClick={() => { setSearch(''); setStatusFilter('Todas'); const next = new URLSearchParams(routeParams); next.delete('order'); setRouteParams(next); }}>Quitar filtros</button>}</div> : <div className="purchase-order-list">{orders.map((order) => {
         const lines = orderLines[order.id] || [];
         const value = lines.reduce((sum, line) => sum + Number(line.quantity_ordered) * Number(line.unit_cost), 0);
-        const progress = lines.length ? Math.round(lines.reduce((sum, line) => sum + Math.min(1, Number(line.quantity_received) / Math.max(1, Number(line.quantity_ordered))), 0) / lines.length * 100) : 0;
+        const progress = orderProgress(lines);
         return <article className="purchase-order-card" key={order.id}>
           <header><div><span className={`purchase-status status-${order.status}`}>{states[order.status] || order.status}</span><h3>{order.order_number}</h3><p>{supplierById[order.supplier_id]?.name || 'Proveedor archivado'} · {branches.find((branch) => branch.id === order.branch_id)?.name || 'Sucursal'}</p></div><div className="purchase-order-total"><b>{formatMoney(value)}</b><small>USD según costos capturados · {lines.length} líneas</small></div></header>
-          <div className="purchase-progress"><div><span>Avance promedio de artículos</span><b>{progress}%</b></div><span className="purchase-progress-track" role="progressbar" aria-label={`Avance promedio de artículos de ${order.order_number}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><i style={{ width: `${progress}%` }}/></span>{order.expected_date && <small><CalendarDays size={13}/> Prevista {new Date(`${order.expected_date}T12:00:00`).toLocaleDateString('es-EC')}</small>}</div>
+          <div className="purchase-progress"><div><span>{lines.some((line) => Number(line.unit_cost) > 0) ? 'Avance ponderado por costo registrado' : 'Avance promedio por artículo · sin costo'}</span><b>{progress}%</b></div><span className="purchase-progress-track" role="progressbar" aria-label={`Avance de recepción de ${order.order_number}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><i style={{ width: `${progress}%` }}/></span>{order.expected_date && <small><CalendarDays size={13}/> Prevista {new Date(`${order.expected_date}T12:00:00`).toLocaleDateString('es-EC')}</small>}</div>
           <details className="purchase-order-details"><summary><span>{lines.length} {lines.length === 1 ? 'artículo' : 'artículos'} · <b>Ver detalle de la orden</b></span><ChevronDown size={15}/></summary><div className="purchase-lines">{lines.map((line) => {
             const pending = Math.max(0, Number(line.quantity_ordered) - Number(line.quantity_received));
             return <div className="purchase-line" key={line.id}><span><b>{line.description_snapshot}</b><small>{line.sku_snapshot || 'Sin SKU'} · {line.unit_snapshot || 'unidad'} · {formatMoney(line.unit_cost)} c/u</small></span><strong>{quantity(line.quantity_received)} / {quantity(line.quantity_ordered)} {line.unit_snapshot || ''}</strong><small>{pending > 0 ? `Pendiente ${quantity(pending)} ${line.unit_snapshot || ''}` : 'Completo'}</small></div>;
           })}</div>
-          {!!(receipts[order.id] || []).length && <details className="purchase-receipt-history"><summary>Historial de recepciones ({receipts[order.id].length}) <ChevronDown size={14}/></summary>{receipts[order.id].map((receipt) => <div key={receipt.id}><span>{receipt.reference || 'Sin referencia'} · {new Date(receipt.received_at).toLocaleString('es-EC')}</span><small>{receipt.note || 'Sin nota'}</small></div>)}</details>}
+          {!!(receipts[order.id] || []).length && <details className="purchase-receipt-history"><summary>Historial de recepciones ({receipts[order.id].length}) <ChevronDown size={14}/></summary>{receipts[order.id].map((receipt) => { const accepted = (receipt.purchase_receipt_lines || []).reduce((sum: number, row: any) => sum + Number(row.quantity_received || 0), 0); const rejected = (receipt.purchase_receipt_lines || []).reduce((sum: number, row: any) => sum + Number(row.quantity_rejected || 0), 0); const reasons = (receipt.purchase_receipt_lines || []).map((row: any) => row.discrepancy_note).filter(Boolean); return <div key={receipt.id}><span>{receipt.reference || 'Sin referencia'} · {new Date(receipt.received_at).toLocaleString('es-EC')} · {quantity(accepted)} aceptadas{rejected ? ` · ${quantity(rejected)} rechazadas` : ''}</span><small>{[receipt.note, ...reasons].filter(Boolean).join(' · ') || 'Sin nota'}</small></div>; })}</details>}
           {(order.note || order.cancellation_reason) && <p className="purchase-order-note">{order.cancellation_reason ? `Cancelada el ${new Date(order.cancelled_at).toLocaleString('es-EC')} · motivo: ${order.cancellation_reason}` : order.note}</p>}</details>
           <footer>{order.status === 'draft' && canApprove && <button className="button button-outline" type="button" onClick={() => void submitOrder(order)} disabled={saving}><Send size={14}/> Marcar enviada</button>}{order.status === 'draft' && canCancel && <button className="button button-quiet" type="button" onClick={() => { setModalError(''); setCancelReason(''); setCancelOrderTarget(order); }} disabled={saving}>Cancelar orden</button>}{canReceive && ['ordered', 'partially_received'].includes(order.status) && <button className="button button-dark" type="button" onClick={() => beginReceipt(order)} disabled={saving}><Truck size={15}/> Registrar recepción</button>}</footer>
         </article>;
@@ -419,9 +446,9 @@ export function PurchasingWorkspace() {
     {receiveOrder && <div className="purchasing-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setReceiveOrder(null); }}><form className="purchasing-modal purchasing-receive-modal" onSubmit={recordReceipt} role="dialog" aria-modal="true" aria-labelledby="receive-purchase-title">
       <header><div><span className="eyebrow">RECEPCIÓN AUDITADA</span><h2 id="receive-purchase-title">Registrar recepción · {receiveOrder.order_number}</h2><p>Introduce solo lo que recibiste y verificaste. Si se reintenta el guardado, se reutiliza la misma clave para no duplicar movimientos.</p></div><button type="button" className="icon-button" aria-label="Cerrar" onClick={() => { setReceiveOrder(null); setModalError(''); }} disabled={saving}><X size={18}/></button></header>
       <label className="receipt-location">Ubicación de recepción<select required value={receiveDraft.location} onChange={(event) => setReceiveDraft({ ...receiveDraft, location: event.target.value })}>{activeReceiptLocations.map((location) => <option key={location.id} value={location.code}>{location.code} · {location.name}</option>)}{!activeReceiptLocations.some((location) => location.code === 'MAIN') && <option value="MAIN">MAIN · Ubicación principal</option>}</select></label>
-      <div className="receipt-line-editor">{(orderLines[receiveOrder.id] || []).map((line) => { const pending = Math.max(0, Number(line.quantity_ordered) - Number(line.quantity_received)); return <label className="receipt-line" key={line.id}><span><b>{line.description_snapshot}</b><small>{line.sku_snapshot || 'Sin SKU'} · Pendiente {quantity(pending)} {line.unit_snapshot}</small></span><span className="receipt-line-quantity"><input aria-label={`Cantidad recibida de ${line.description_snapshot}`} type="number" min="0" max={pending} step="0.001" value={receiveDraft.quantities[line.id]} onChange={(event) => setReceiveDraft({ ...receiveDraft, quantities: { ...receiveDraft.quantities, [line.id]: event.target.value } })}/><small>{line.unit_snapshot || 'unidad'}</small></span></label>; })}</div>
+      <div className="receipt-line-editor">{(orderLines[receiveOrder.id] || []).map((line) => { const pending = Math.max(0, Number(line.quantity_ordered) - Number(line.quantity_received)); return <article className="receipt-line receipt-line-audit" key={line.id}><span className="receipt-line-material"><b>{line.description_snapshot}</b><small>{line.sku_snapshot || 'Sin SKU'} · Pendiente {quantity(pending)} {line.unit_snapshot}</small></span><label><span>Aceptadas · inventario</span><span className="receipt-line-quantity"><input aria-label={`Cantidad aceptada de ${line.description_snapshot}`} type="number" min="0" max={pending} step="0.001" value={receiveDraft.quantities[line.id]} onChange={(event) => setReceiveDraft({ ...receiveDraft, quantities: { ...receiveDraft.quantities, [line.id]: event.target.value } })}/><small>{line.unit_snapshot || 'unidad'}</small></span></label><label><span>Rechazadas · quedan pendientes</span><span className="receipt-line-quantity"><input aria-label={`Cantidad rechazada de ${line.description_snapshot}`} type="number" min="0" max={pending} step="0.001" value={receiveDraft.rejected[line.id]} onChange={(event) => setReceiveDraft({ ...receiveDraft, rejected: { ...receiveDraft.rejected, [line.id]: event.target.value } })}/><small>{line.unit_snapshot || 'unidad'}</small></span></label>{Number(receiveDraft.rejected[line.id]) > 0 && <label className="receipt-discrepancy-field">Motivo de rechazo<input required minLength={3} maxLength={600} value={receiveDraft.discrepancyNotes[line.id]} onChange={(event) => setReceiveDraft({ ...receiveDraft, discrepancyNotes: { ...receiveDraft.discrepancyNotes, [line.id]: event.target.value } })} placeholder="Daño, medida incorrecta…"/></label>}</article>; })}</div>
       <div className="purchasing-form purchasing-receipt-fields"><label>Factura, guía o referencia<input maxLength={180} value={receiveDraft.reference} onChange={(event) => setReceiveDraft({ ...receiveDraft, reference: event.target.value })} placeholder="Opcional"/></label><label className="purchasing-wide">Observaciones<textarea rows={2} maxLength={2000} value={receiveDraft.note} onChange={(event) => setReceiveDraft({ ...receiveDraft, note: event.target.value })} placeholder="Novedades de la recepción, si las hay"/></label></div>
-      <div className="purchasing-footnote"><CircleAlert size={16}/><span>Solo las cantidades registradas actualizan inventario. La base de datos vuelve a validar el saldo pendiente.</span></div>
+      <div className="purchasing-footnote"><CircleAlert size={16}/><span>Solo lo aceptado entra al inventario. Lo rechazado queda auditado y conserva saldo pendiente para seguimiento o reposición.</span></div>
       {modalError && <div className="purchasing-modal-error" role="alert">{modalError}</div>}
       <footer><button type="button" className="button button-outline" onClick={() => { setReceiveOrder(null); setModalError(''); }} disabled={saving}>Volver</button><button className="button button-dark" disabled={saving}>{saving ? 'Registrando…' : 'Confirmar recepción'} <Check size={15}/></button></footer>
     </form></div>}

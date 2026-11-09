@@ -36,3 +36,8 @@
 .op-overview-unavailable button:hover{background:#f8f3fa}
 .op-overview-unavailable button:focus-visible{outline:3px solid #a66a9c;outline-offset:2px}
 @media(max-width:560px){.op-overview-unavailable{align-items:stretch;flex-direction:column}.op-overview-unavailable button{width:100%}}
+.op-overview-results{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:30px;padding:0 1px;color:#777985;font-size:10px}
+.op-overview-results button{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 9px;border:1px solid #e3d9e9;border-radius:8px;background:#faf7fc;color:#624477;font:inherit;font-weight:700;cursor:pointer;transition:background .16s ease,border-color .16s ease}
+.op-overview-results button:hover{border-color:#cbb7d7;background:#f4edf8}
+.op-overview-results button:focus-visible{outline:3px solid #a66a9c55;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.op-overview-results button{transition:none}}

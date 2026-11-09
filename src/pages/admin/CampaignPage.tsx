@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Activity, AlertCircle, ArrowDownRight, ArrowUpRight, BarChart3, CalendarDays, Check,
   CheckCircle2, Clock3, Copy, FileImage, FileText, Filter, FolderOpen, Images, Lightbulb,
@@ -95,7 +95,6 @@ const artworkMapForLinks = (assets: Asset[], links: any[], entityKey: 'campaign_
 
 export function CampaignPage({ area = 'admin', initialSection }: { area?: 'admin' | 'operations'; initialSection?: Section }) {
   const navigate = useNavigate();
-  const location = useLocation();
   const { organizationId, hasPermission, user } = useAuth();
   const confirm = useConfirm();
   const canView = hasPermission('marketing', 'view');
@@ -119,7 +118,7 @@ export function CampaignPage({ area = 'admin', initialSection }: { area?: 'admin
   const [activeSection, setActiveSection] = useState<Section>(() => initialSection || 'overview');
 
   useEffect(() => {
-    if (initialSection && initialSection !== activeSection) {
+    if (initialSection) {
       setActiveSection(initialSection);
     }
   }, [initialSection]);

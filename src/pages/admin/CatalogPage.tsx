@@ -55,7 +55,7 @@ function makePricingDraft(item: any): PricingDraft {
 function amount(value: string, required = false) {
   if (!value.trim()) return required ? NaN : null;
   const result = Number(value);
-  return Number.isFinite(result) && result >= 0 ? result : NaN;
+  return Number.isFinite(result) && result > 0 ? result : NaN;
 }
 
 export function CatalogPricingEditor({ item, editable, onSave }: { item: any; editable: boolean; onSave: (draft: PricingDraft) => Promise<boolean> }) {
@@ -87,14 +87,14 @@ export function CatalogPricingEditor({ item, editable, onSave }: { item: any; ed
     setSaved(false); setError('');
   };
   const save = async () => {
-    if (!validBase || invalidTier) { setError(invalidTier ? 'Revisa los umbrales: deben ser mayores que cero, únicos y con tarifas válidas.' : 'El precio normal debe ser mayor o igual que cero; los otros pueden quedar vacíos.'); return; }
+    if (!validBase || invalidTier) { setError(invalidTier ? 'Revisa los umbrales y tarifas: deben ser mayores que cero, únicos; deja vacías las modalidades que heredan el precio base.' : 'El precio normal debe ser mayor que cero; las otras modalidades pueden quedar vacías o ser mayores que cero.'); return; }
     setSaving(true); setError('');
     try { const ok = await onSave(draft); if (ok) setSaved(true); }
     catch (saveError: any) { setError(saveError?.message || 'No se pudo guardar la lista de precios.'); }
     finally { setSaving(false); }
   };
 
-  const input = (label: string, value: string, onChange: (value: string) => void) => <label className="catalog-rate-field"><span>{label}</span><span className="catalog-rate-input"><span>$</span><input aria-label={`${label} · ${item.name}`} type="number" min="0" step="0.0001" value={value} onChange={(event) => onChange(event.target.value)} placeholder="Sin tarifa" disabled={!editable} /></span></label>;
+  const input = (label: string, value: string, onChange: (value: string) => void) => <label className="catalog-rate-field"><span>{label}</span><span className="catalog-rate-input"><span>$</span><input aria-label={`${label} · ${item.name}`} type="number" min="0.0001" step="0.0001" value={value} onChange={(event) => onChange(event.target.value)} placeholder="Sin tarifa" disabled={!editable} /></span></label>;
 
   return <div className="catalog-pricing-editor">
     <div className="catalog-product-prices">
@@ -108,9 +108,9 @@ export function CatalogPricingEditor({ item, editable, onSave }: { item: any; ed
         <div className="catalog-tier-table-wrap"><table className="catalog-tier-table"><thead><tr><th>Desde ({unit})</th><th>Normal</th><th>Con instalación</th><th>Corporativo</th><th><span className="sr-only">Quitar escala</span></th></tr></thead><tbody>
           {draft.tiers.map((tier, index) => <tr key={`${item.id}-tier-${index}`}>
             <td><input aria-label={`Cantidad mínima de escala ${index + 1} para ${item.name}`} type="number" min="0.0001" step="any" value={tier.min_qty} onChange={(event) => setTier(index, 'min_qty', event.target.value)} /></td>
-            <td><input aria-label={`Precio normal desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0" step="0.0001" value={tier.normal} onChange={(event) => setTier(index, 'normal', event.target.value)} placeholder="Base" /></td>
-            <td><input aria-label={`Precio con instalación desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0" step="0.0001" value={tier.installation} onChange={(event) => setTier(index, 'installation', event.target.value)} placeholder="Base" /></td>
-            <td><input aria-label={`Precio corporativo desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0" step="0.0001" value={tier.corporate} onChange={(event) => setTier(index, 'corporate', event.target.value)} placeholder="Base" /></td>
+            <td><input aria-label={`Precio normal desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0.0001" step="0.0001" value={tier.normal} onChange={(event) => setTier(index, 'normal', event.target.value)} placeholder="Base" /></td>
+            <td><input aria-label={`Precio con instalación desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0.0001" step="0.0001" value={tier.installation} onChange={(event) => setTier(index, 'installation', event.target.value)} placeholder="Base" /></td>
+            <td><input aria-label={`Precio corporativo desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0.0001" step="0.0001" value={tier.corporate} onChange={(event) => setTier(index, 'corporate', event.target.value)} placeholder="Base" /></td>
             <td><button className="catalog-tier-remove" type="button" aria-label={`Eliminar escala ${index + 1} para ${item.name}`} onClick={() => setDraft((current) => ({ ...current, tiers: current.tiers.filter((_, row) => row !== index) }))}><Trash2 size={14}/></button></td>
           </tr>)}
           {!draft.tiers.length && <tr><td colSpan={5} className="catalog-tier-empty">Todavía no hay escalas. Agrega una para configurar descuentos o modalidades por volumen/medida.</td></tr>}

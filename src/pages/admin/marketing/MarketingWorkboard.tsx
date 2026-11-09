@@ -823,9 +823,9 @@ export function BulkAssignment({
   return (
     <div className="mk-bulk-assignment">
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 550, color: 'inherit' }}>Asignar seleccionadas</span>
         <SelectDropdown
           size="sm"
+          ariaLabel="Asignar publicaciones seleccionadas a"
           disabled={busy}
           value={owner}
           options={[

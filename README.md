@@ -155,3 +155,11 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - Se agregó la barra de pulso mensual panorámica (vc-marketing-calendar-pulse) con métricas en tiempo real (total del mes, publicaciones vs listas, mix de formatos Reels/Carruseles/Estáticos, alertas de arte/video) y filtros rápidos por canal con contadores (Todos, Instagram, TikTok, Facebook).
 - Semiótica visual completa en celdas: insignias cromáticas de red social (IG, TT, FB), iconos de formato (Film, CopyPlus, FileImage, Smartphone), checklist semiótico de 5 pasos [P][A][C][V][T] y detección de feriados locales/días sin producción con banda descriptiva.
 - Verificación local: npm run typecheck y npm run build:checked completados con éxito sin errores. Paridad completa en tema claro y oscuro.
+
+### Catálogo, calendario y abastecimiento — 2026-11-09
+
+- El editor de tarifas del catálogo rechaza valores de cero para que coincidan con el cotizador; las modalidades vacías siguen heredando la tarifa base.
+- El calendario limita sus métricas al mes y a publicaciones sociales, conserva el formato explícito en TikTok y deja confirmaciones utilizables sobre el diálogo de revisión.
+- Operación permite conocer y limpiar los filtros aplicados; la tienda sincroniza `?familia=` sin perder otros parámetros ni el producto abierto.
+- Compras incorpora solicitudes de materiales por sucursal y área, cotizaciones comparables, borradores de órdenes y registro de unidades rechazadas sin ingresarlas al inventario. Supabase registra las migraciones `20261109172959_purchasing_command_center_2026_11_09.sql` y `20261109173159_purchasing_command_center_fk_indexes.sql`.
+- Verificación local de la integración: `npm run build:checked`, `npm run test:marketing` (14/14) y `npm run test:marketing:browser` (13 recorridos). La compilación informa el tamaño elevado de algunos paquetes, pero termina correctamente.
