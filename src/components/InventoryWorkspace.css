@@ -342,3 +342,27 @@
   overflow-y: hidden;
   overscroll-behavior-x: contain;
 }
+
+.vc-dialog.theme-dark.inventory-create-article-dialog .inventory-form-grid label,
+.vc-dialog.theme-dark.inventory-create-article-dialog .inventory-specifications legend {
+  color: #d5d9e7;
+}
+
+.vc-dialog.theme-dark.inventory-create-article-dialog .inventory-form-grid input,
+.vc-dialog.theme-dark.inventory-create-article-dialog .inventory-form-grid select,
+.vc-dialog.theme-dark.inventory-create-article-dialog .inventory-form-grid textarea {
+  border-color: #34394f;
+  background: #151826;
+  color: #edf0f8;
+  color-scheme: dark;
+}
+
+.vc-dialog.theme-dark.inventory-create-article-dialog .inventory-specifications {
+  border-color: #34394f;
+  background: #171a29;
+}
+
+.vc-dialog.theme-dark.inventory-create-article-dialog .inventory-specifications-note,
+.vc-dialog.theme-dark.inventory-create-article-dialog .inventory-specifications label small {
+  color: #9ba3ba;
+}

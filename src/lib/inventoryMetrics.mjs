@@ -3,6 +3,26 @@ const positiveAmount = (value) => {
   return Number.isFinite(amount) && amount > 0 ? amount : 0;
 };
 
+export function inventoryHealthState(item) {
+  if (item.archived) return 'archived';
+  if (item.sourceStatus) return 'uncounted';
+  if (Number(item.quantity) <= 0) return 'outOfStock';
+
+  const available = Number(item.availableQuantity ?? (Number(item.quantity) - Number(item.reservedQuantity || 0)));
+  return available <= Number(item.minimum) ? 'replenish' : 'inStock';
+}
+
+export function summarizeInventoryHealth(items) {
+  const summary = { total: 0, inStock: 0, replenish: 0, outOfStock: 0, uncounted: 0 };
+  for (const item of items) {
+    const state = inventoryHealthState(item);
+    if (state === 'archived') continue;
+    summary.total += 1;
+    summary[state] += 1;
+  }
+  return summary;
+}
+
 export function inventoryNeedsReplenishment(item) {
   if (item.archived || item.sourceStatus || item.quantity == null) return false;
   const minimum = Number(item.minimum);
