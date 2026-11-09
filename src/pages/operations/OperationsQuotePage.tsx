@@ -498,6 +498,11 @@ export function OperationsQuotePage() {
   const pricesConfirmed = configuredLines.every((line) => line.custom || line.product?.confirmed || line.product?.published === true);
   const selectedTotal = tierTotals[priceTier];
   const selectedFinancials = tierFinancials[priceTier];
+  const selectedTierLabel = quoteTiers.find((tier) => tier.id === priceTier)?.label || 'Normal';
+  const printIssuedAt = new Intl.DateTimeFormat('es-EC', { dateStyle: 'long' }).format(new Date());
+  const printDeliveryDate = deliveryDate
+    ? new Intl.DateTimeFormat('es-EC', { dateStyle: 'long' }).format(new Date(`${deliveryDate}T12:00:00`))
+    : '';
 
   // Per-line financial distribution (Subtotal, Discount, IVA, Total per line)
   const lineFinancials = useMemo(() => {
@@ -2026,83 +2031,61 @@ export function OperationsQuotePage() {
       </div>
     </div>
 
-    {/* PROFORMA IMPRESA / PDF EJECUTIVA */}
+    {/* Propuesta comercial con datos financieros y condiciones de la cotización. */}
     <section className="operations-quote-print-sheet" aria-hidden="true">
-      <header>
-        <div>
-          <h1>Visual Corp</h1>
-          <p>Agencia de Publicidad, Impresión Gran Formato y Marketing · Milagro, Ecuador</p>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <strong>PROFORMA / COTIZACIÓN</strong>
-          <p>Fecha: {new Date().toLocaleDateString('es-EC')} · Validez: {validityDays} días</p>
-        </div>
+      <header className="quote-print-header">
+        <img src="/brand/visualcorp-wordmark.png" alt="Visual Corp" />
+        <div><span>PROPUESTA COMERCIAL</span><b>Preparada el {printIssuedAt}</b><small>Milagro · Ecuador</small></div>
       </header>
-      <h2>Cliente: {customer.trim() || 'Consumidor / Por definir'}</h2>
-      {jobName.trim() && <p><b>Proyecto / Referencia:</b> {jobName}</p>}
-      {[phone, customerEmail, customerDocument].filter(Boolean).length > 0 && (
-        <p>{[phone && `Contacto: ${phone}`, customerEmail && `Correo: ${customerEmail}`, customerDocument && `Cédula / RUC: ${customerDocument}`].filter(Boolean).join(' · ')}</p>
-      )}
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Artículo / Concepto</th>
-            <th>Medidas y Especificaciones</th>
-            <th>Cant. / Área</th>
-            <th>P. Unitario</th>
-            <th>Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          {configuredLines.map((line, index) => (
-            <tr key={line.id}>
-              <td>{String(index + 1).padStart(2, '0')}</td>
-              <td>{line.title || `Artículo ${index + 1}`}</td>
-              <td>
-                {line.custom ? 'Concepto personalizado' : line.product ? `${line.product.family}${line.option ? ` · ${line.option}` : ''}` : 'Producto'}
-                {line.isAreaMode ? ` · Medidas: ${line.width} × ${line.height} cm (${line.area.toFixed(2)} m² c/u)` : ''}
-                {line.additionalDescription ? ` · ${line.additionalDescription}` : ''}
-              </td>
-              <td>
-                {line.isAreaMode
-                  ? `${line.pieceQuantity} pza(s) (${line.totalArea.toFixed(2)} m²)`
-                  : `${line.pieceQuantity} ${line.unit}`}
-              </td>
-              <td>{line.unitPrice === null ? '—' : formatMoney(line.unitPrice)}</td>
-              <td>{line.totals[priceTier] === null ? 'Por cotizar' : formatMoney(line.totals[priceTier])}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="oq-print-totals">
-        <p>Subtotal bruto: <b>{selectedFinancials ? formatMoney(selectedFinancials.subtotal) : 'Por confirmar'}</b></p>
-        {selectedFinancials && selectedFinancials.discount > 0 && (
-          <p>Descuento comercial ({selectedFinancials.discountPercent}%): <b>−{formatMoney(selectedFinancials.discount)}</b> ({discountReason})</p>
-        )}
-        <p>Subtotal neto / Base imponible: <b>{selectedFinancials ? formatMoney(selectedFinancials.taxable) : 'Por confirmar'}</b></p>
-        <p>{applyIVA ? `IVA (${taxRate}%):` : 'IVA (No aplicado):'} <b>{applyIVA && selectedFinancials ? formatMoney(selectedFinancials.tax) : '$0,00'}</b></p>
-        {selectedFinancials && selectedFinancials.shipping > 0 && (
-          <p>Envío / otros cargos: <b>{formatMoney(selectedFinancials.shipping)}</b></p>
-        )}
-        <h3>TOTAL ({quoteTiers.find((tier) => tier.id === priceTier)?.label.toUpperCase()}): {selectedTotal === null ? 'Por cotizar' : formatMoney(selectedTotal)}</h3>
-        {selectedTotal !== null && depositAmount !== null && remainingBalance !== null && (
-          <p>Condición de pago: <b>Anticipo ({depositRate}%): {formatMoney(depositAmount)}</b> · Saldo contra entrega: <b>{formatMoney(remainingBalance)}</b></p>
-        )}
-      </div>
-      {deliveryDate && <p>Fecha de entrega estimada: {deliveryDate}</p>}
-      {priceTier === 'instalacion' && (
-        <section>
-          <h3>Datos de instalación</h3>
-          <p>{installAddress}</p>
-          <p>{installFloor && `Nivel: ${installFloor} · `}{installHeight && `Altura: ${installHeight}`}</p>
-          {installMapUrl && <p>Google Maps: {installMapUrl}</p>}
-          <p>{installAccess}</p>
-        </section>
-      )}
-      <p className="operations-quote-print-disclaimer">
-        Valores expresados en dólares americanos (USD). Sujetos a confirmación de disponibilidad, revisión técnica de artes y condiciones comerciales con Visual Corp.
-      </p>
+
+      <section className="quote-print-title">
+        <div><span className="quote-print-kicker">COTIZACIÓN</span><h1>{jobName.trim() || 'Propuesta de cotización'}</h1><p>Preparada para <strong>{customer.trim() || 'Cliente por definir'}</strong></p></div>
+        <div className={`quote-print-rate${pricesConfirmed ? '' : ' is-pending'}`}><span>TARIFA SELECCIONADA</span><b>{selectedTierLabel}</b><small>{pricesConfirmed ? 'Valores de referencia confirmados' : 'Valores pendientes de validación'}</small></div>
+      </section>
+
+      <section className="quote-print-client" aria-label="Datos del cliente">
+        <div><span>CLIENTE</span><b>{customer.trim() || 'Por definir'}</b></div>
+        {phone.trim() && <div><span>TELÉFONO</span><b>{phone}</b></div>}
+        {customerEmail.trim() && <div><span>CORREO</span><b>{customerEmail}</b></div>}
+        {customerDocument.trim() && <div><span>CÉDULA / RUC</span><b>{customerDocument}</b></div>}
+        {printDeliveryDate && <div><span>ENTREGA ESTIMADA</span><b>{printDeliveryDate}</b></div>}
+        <div><span>VIGENCIA DE LA PROPUESTA</span><b>{validityDays} días desde su emisión</b></div>
+      </section>
+
+      <section className="quote-print-items">
+        <div className="quote-print-section-heading"><div><span>DETALLE</span><h2>Productos y servicios</h2></div><small>{configuredLines.length} {configuredLines.length === 1 ? 'artículo' : 'artículos'}</small></div>
+        <table>
+          <thead><tr><th>Descripción</th><th>Cantidad y medidas</th><th>Valor unitario</th><th>Importe</th></tr></thead>
+          <tbody>{configuredLines.map((line, index) => {
+            const lineTotal = line.totals[priceTier];
+            const flatPrice = !line.custom && line.product?.priceBasis === 'total';
+            return <tr key={line.id}>
+              <td><span className="quote-print-item-index">ARTÍCULO {String(index + 1).padStart(2, '0')}</span><b className="quote-print-item-name">{line.title || `Artículo ${index + 1}`}</b><span className="quote-print-item-meta">{line.custom ? 'Concepto personalizado' : line.product?.family || 'Producto pendiente'}{line.option ? ` · ${line.option}` : ''}</span>{line.additionalDescription && <p className="quote-print-item-description">{line.additionalDescription}</p>}</td>
+              <td><b>{line.isAreaMode ? `${line.pieceQuantity} ${line.pieceQuantity === 1 ? 'pieza' : 'piezas'}` : `${line.pieceQuantity} ${line.unit}`}</b>{line.isAreaMode && (line.hasValidSize && line.hasValidQuantity ? <span className="quote-print-cell-note">{line.width} × {line.height} cm por pieza<br/>{line.area.toLocaleString('es-EC', { maximumFractionDigits: 2 })} m² por pieza · {line.totalArea.toLocaleString('es-EC', { maximumFractionDigits: 2 })} m² en total</span> : <span className="quote-print-cell-note">Medidas pendientes de confirmar</span>)}</td>
+              <td>{lineTotal === null ? 'Por cotizar' : flatPrice ? <>Precio global<span className="quote-print-cell-note">por este conjunto</span></> : line.unitPrice === null ? 'Por cotizar' : <>{formatMoney(line.unitPrice)}<span className="quote-print-cell-note">por {line.isAreaMode ? 'm²' : line.unit}</span></>}</td>
+              <td className="quote-print-amount">{lineTotal === null ? 'Por cotizar' : formatMoney(lineTotal)}</td>
+            </tr>;
+          })}</tbody>
+        </table>
+      </section>
+
+      <section className="quote-print-bottom">
+        {priceTier === 'instalacion' && (installAddress.trim() || installFloor.trim() || installHeight.trim() || installAccess.trim() || installMapUrl.trim()) && <div className="quote-print-install"><span>ALCANCE DE INSTALACIÓN</span>{installAddress.trim() && <b>{installAddress}</b>}{(installFloor.trim() || installHeight.trim()) && <p>{[installFloor && `Nivel: ${installFloor}`, installHeight && `Altura: ${installHeight}`].filter(Boolean).join(' · ')}</p>}{installAccess.trim() && <p>{installAccess}</p>}{isGoogleMapsUrl(installMapUrl) && <a href={normalizeGoogleMapsUrl(installMapUrl)} target="_blank" rel="noreferrer">Abrir ubicación en Google Maps</a>}</div>}
+        <div className="quote-print-totals">
+          <div><span>Subtotal bruto</span><b>{selectedFinancials ? formatMoney(selectedFinancials.subtotal) : 'Por confirmar'}</b></div>
+          {selectedFinancials?.discount ? <div><span>Descuento comercial ({selectedFinancials.discountPercent}%){discountReason.trim() && <small>{discountReason}</small>}</span><b>−{formatMoney(selectedFinancials.discount)}</b></div> : null}
+          <div><span>Base imponible</span><b>{selectedFinancials ? formatMoney(selectedFinancials.taxable) : 'Por confirmar'}</b></div>
+          <div><span>{applyIVA ? `IVA (${taxRate}%)` : 'IVA no aplicado'}</span><b>{applyIVA && selectedFinancials ? formatMoney(selectedFinancials.tax) : '$0,00'}</b></div>
+          {selectedFinancials?.shipping ? <div><span>Envío / otros cargos</span><b>{formatMoney(selectedFinancials.shipping)}</b></div> : null}
+          <div className="quote-print-grand-total"><span>Total · {selectedTierLabel}</span><b>{selectedTotal === null ? 'Por cotizar' : formatMoney(selectedTotal)}</b></div>
+          {selectedTotal !== null && depositAmount !== null && remainingBalance !== null && <div className="quote-print-payment"><span>Condición de pago · anticipo ({depositRate}%)<small>Saldo contra entrega</small></span><b>{formatMoney(depositAmount)}<small>{formatMoney(remainingBalance)}</small></b></div>}
+        </div>
+      </section>
+
+      <footer className="quote-print-footer">
+        <p className="operations-quote-print-disclaimer">Valores expresados en dólares americanos (USD). Sujetos a confirmación de disponibilidad, revisión técnica de artes y condiciones comerciales con Visual Corp.</p>
+        <div><span>VISUAL CORP</span><span>Propuesta preparada para revisión del cliente</span></div>
+      </footer>
     </section>
   </AppFrame>;
 }
