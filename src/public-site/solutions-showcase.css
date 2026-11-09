@@ -505,7 +505,7 @@
   line-height: 1.25;
 }
 
-.vc-sol-slice-cta {
+.public-site .vc-sol-slice-cta {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -520,7 +520,7 @@
   transition: opacity 0.2s, transform 0.2s;
 }
 
-.vc-sol-slice-cta:hover {
+.public-site .vc-sol-slice-cta:hover {
   opacity: 1;
   transform: translateY(-1px);
 }
