@@ -7,7 +7,7 @@ import { ContextMenu, type ContextMenuAction } from './ui/ContextMenu';
 import { BorderBeam, NumberTicker } from './ui/MagicComponents';
 import { Dialog, useConfirm } from './ui/OperationalKit';
 import { inventorySpecificationSuggestions, inventoryTagSuggestions, inventoryTypeSuggestions } from '../lib/inventoryProductMetadata.mjs';
-import { inventoryNeedsReplenishment, summarizeInventoryUsage } from '../lib/inventoryMetrics.mjs';
+import { inventoryHealthState, summarizeInventoryHealth, summarizeInventoryUsage } from '../lib/inventoryMetrics.mjs';
 import './InventoryInsights.css';
 
 const referenceProducts = referenceLibrary.products as Array<{ id: string; name: string; tags: string[]; images: Array<{ path: string; label: string; series: string }> }>;
@@ -17,8 +17,14 @@ const viewModes: Array<{ key: 'table' | 'cards' | 'analytics'; Icon: React.Compo
 ];
 
 const modeNames: Record<string, string> = { table: 'Tabla', cards: 'Tarjetas', analytics: 'Métricas' };
-const inventoryState = (item) => item.sourceStatus ? 'Sin conteo' : Number(item.quantity) <= 0 ? 'Agotado' : Number(item.availableQuantity ?? (Number(item.quantity) - Number(item.reservedQuantity || 0))) <= Number(item.minimum) ? 'Reponer' : 'En stock';
-const inventoryStatusClass = (item) => item.sourceStatus ? 'pending' : Number(item.quantity) <= 0 || Number(item.availableQuantity ?? (Number(item.quantity) - Number(item.reservedQuantity || 0))) <= Number(item.minimum) ? 'low' : 'ok';
+const inventoryState = (item) => ({
+  archived: 'Archivado',
+  uncounted: 'Sin conteo',
+  outOfStock: 'Agotado',
+  replenish: 'Reponer',
+  inStock: 'En stock',
+})[inventoryHealthState(item)];
+const inventoryStatusClass = (item) => item.sourceStatus ? 'pending' : ['outOfStock', 'replenish'].includes(inventoryHealthState(item)) ? 'low' : 'ok';
 const normalized = (value) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 const suggestedReference = (item) => {
   const query = normalized(`${item.name} ${item.category} ${item.itemType} ${(item.tags || []).join(' ')}`);
@@ -116,7 +122,8 @@ export function InventoryInsights({ id, hidden, items, optionSourceItems = items
   ];
   const usage = summarizeInventoryUsage(filtered);
   const physical = filtered.filter((item) => !item.sourceStatus);
-  const replenishmentCount = filtered.filter(inventoryNeedsReplenishment).length;
+  const health = summarizeInventoryHealth(filtered);
+  const replenishmentCount = health.replenish;
   const valued = physical.filter((item) => item.unitCost !== null);
   const stockValue = valued.reduce((sum, item) => sum + item.quantity * item.unitCost, 0);
   const days = (date) => date ? Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)) : null;
@@ -124,16 +131,11 @@ export function InventoryInsights({ id, hidden, items, optionSourceItems = items
   const statusOptions = ['Todos', 'En stock', 'Reponer', 'Agotado', 'Sin conteo'];
   const statusCount = (value) => value === 'Todos' ? items.filter((item) => !item.archived).length : items.filter((item) => !item.archived && inventoryState(item) === value).length;
 
-  const totalFilteredCount = filtered.length;
-  const inStockItems = filtered.filter((item) => !item.sourceStatus && Number(item.quantity) > 0 && Number(item.availableQuantity ?? (Number(item.quantity) - Number(item.reservedQuantity || 0))) > Number(item.minimum));
-  const replenishItems = filtered.filter((item) => !item.sourceStatus && Number(item.quantity) > 0 && Number(item.availableQuantity ?? (Number(item.quantity) - Number(item.reservedQuantity || 0))) <= Number(item.minimum));
-  const outOfStockItems = filtered.filter((item) => !item.sourceStatus && Number(item.quantity) <= 0);
-  const uncountedItems = filtered.filter((item) => item.sourceStatus);
-
-  const inStockPct = totalFilteredCount ? Math.round((inStockItems.length / totalFilteredCount) * 100) : 0;
-  const replenishPct = totalFilteredCount ? Math.round((replenishItems.length / totalFilteredCount) * 100) : 0;
-  const outOfStockPct = totalFilteredCount ? Math.round((outOfStockItems.length / totalFilteredCount) * 100) : 0;
-  const uncountedPct = totalFilteredCount ? Math.max(0, 100 - inStockPct - replenishPct - outOfStockPct) : 0;
+  const totalFilteredCount = health.total;
+  const inStockPct = totalFilteredCount ? Math.round((health.inStock / totalFilteredCount) * 100) : 0;
+  const replenishPct = totalFilteredCount ? Math.round((health.replenish / totalFilteredCount) * 100) : 0;
+  const outOfStockPct = totalFilteredCount ? Math.round((health.outOfStock / totalFilteredCount) * 100) : 0;
+  const uncountedPct = totalFilteredCount ? Math.round((health.uncounted / totalFilteredCount) * 100) : 0;
 
   const branchMetrics = useMemo(() => {
     const map = new Map();
@@ -142,9 +144,7 @@ export function InventoryInsights({ id, hidden, items, optionSourceItems = items
       const cur = map.get(b) || { total: 0, inStock: 0, replenish: 0, outOfStock: 0, uncounted: 0, value: 0 };
       cur.total += 1;
       if (item.sourceStatus) cur.uncounted += 1;
-      else if (Number(item.quantity) <= 0) cur.outOfStock += 1;
-      else if (Number(item.availableQuantity ?? (Number(item.quantity) - Number(item.reservedQuantity || 0))) <= Number(item.minimum)) cur.replenish += 1;
-      else cur.inStock += 1;
+      else cur[inventoryHealthState(item)] += 1;
       if (!item.sourceStatus && item.unitCost !== null) {
         cur.value += (Number(item.quantity) || 0) * Number(item.unitCost);
       }
@@ -159,7 +159,8 @@ export function InventoryInsights({ id, hidden, items, optionSourceItems = items
       const a = item.area || 'Sin área';
       const cur = map.get(a) || { total: 0, alerts: 0, value: 0 };
       cur.total += 1;
-      if (!item.sourceStatus && (Number(item.quantity) <= 0 || Number(item.availableQuantity ?? (Number(item.quantity) - Number(item.reservedQuantity || 0))) <= Number(item.minimum))) {
+      const state = inventoryHealthState(item);
+      if (state === 'outOfStock' || state === 'replenish') {
         cur.alerts += 1;
       }
       if (!item.sourceStatus && item.unitCost !== null) {
@@ -189,7 +190,7 @@ export function InventoryInsights({ id, hidden, items, optionSourceItems = items
       <nav className="inventory-insights-modes" aria-label="Modo de vista">{viewModes.map(({ key, Icon }) => <button type="button" key={key} className={mode === key ? 'active' : ''} onClick={() => setMode(key)} title={`Vista ${modeNames[key]}`} aria-pressed={mode === key}><Icon size={16}/><span>{modeNames[key]}</span></button>)}</nav>
     </header>
     <nav className="inventory-quick-status" aria-label="Filtrar artículos por estado">{statusOptions.map((value) => <button type="button" key={value} className={`${status === value ? 'active' : ''} ${value === 'Reponer' || value === 'Agotado' ? 'attention' : ''}`} onClick={() => setStatus(value)} aria-pressed={status === value}><span>{value}</span><b>{statusCount(value)}</b></button>)}</nav>
-    <div className="inventory-insights-filters"><label className="inventory-insights-search"><Search size={15}/><input value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Buscar nombre, ID o tag"/></label>
+    <div className="inventory-insights-filters"><label className="inventory-insights-search"><Search size={15} aria-hidden="true"/><input aria-label="Buscar artículos por nombre, ID o etiqueta" value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Buscar nombre, ID o tag"/></label>
       {[
         { label: 'Sucursal', value: branch, setValue: setBranch, choices: branches },
         { label: 'Área', value: area, setValue: setArea, choices: areas },
@@ -223,7 +224,7 @@ export function InventoryInsights({ id, hidden, items, optionSourceItems = items
               <span className="kpi-label">Artículos en stock activo</span>
               <span className="kpi-icon-badge green"><CheckCircle2 size={14}/></span>
             </div>
-            <b className="kpi-value"><NumberTicker value={inStockItems.length}/> <span className="kpi-pct green">({inStockPct}%)</span></b>
+            <b className="kpi-value"><NumberTicker value={health.inStock}/> <span className="kpi-pct green">({inStockPct}%)</span></b>
             <small className="kpi-subtext">Existencias seguras por encima del mínimo</small>
           </article>
 
@@ -237,12 +238,12 @@ export function InventoryInsights({ id, hidden, items, optionSourceItems = items
             <small className="kpi-subtext">Artículos que requieren reposición prioritaria</small>
           </article>
 
-          <article className={`inventory-analytics-kpi-card ${outOfStockItems.length > 0 ? 'kpi-card-danger' : ''}`}>
+          <article className={`inventory-analytics-kpi-card ${health.outOfStock > 0 ? 'kpi-card-danger' : ''}`}>
             <div className="kpi-card-header">
               <span className="kpi-label">Artículos agotados</span>
               <span className="kpi-icon-badge red"><Package size={14}/></span>
             </div>
-            <b className="kpi-value danger-text"><NumberTicker value={outOfStockItems.length}/> <span className="kpi-pct red">({outOfStockPct}%)</span></b>
+            <b className="kpi-value danger-text"><NumberTicker value={health.outOfStock}/> <span className="kpi-pct red">({outOfStockPct}%)</span></b>
             <small className="kpi-subtext">Existencia física en 0 unidades</small>
           </article>
 
@@ -251,7 +252,7 @@ export function InventoryInsights({ id, hidden, items, optionSourceItems = items
               <span className="kpi-label">Pendientes de conteo</span>
               <span className="kpi-icon-badge blue"><Clock size={14}/></span>
             </div>
-            <b className="kpi-value"><NumberTicker value={uncountedItems.length}/> <span className="kpi-pct purple">({uncountedPct}%)</span></b>
+            <b className="kpi-value"><NumberTicker value={health.uncounted}/> <span className="kpi-pct purple">({uncountedPct}%)</span></b>
             <small className="kpi-subtext">En catálogo, pendiente de inventario físico</small>
           </article>
 
@@ -272,38 +273,38 @@ export function InventoryInsights({ id, hidden, items, optionSourceItems = items
               <p>Composición de los {totalFilteredCount} artículos filtrados según su estado operativo actual</p>
             </div>
             <div className="analytics-strip-meta">
-              <span>{inStockItems.length + replenishItems.length + outOfStockItems.length} contados ({Math.round(((inStockItems.length + replenishItems.length + outOfStockItems.length) / (totalFilteredCount || 1)) * 100)}%)</span>
+              <span>{health.inStock + health.replenish + health.outOfStock} contados ({Math.round(((health.inStock + health.replenish + health.outOfStock) / (totalFilteredCount || 1)) * 100)}%)</span>
             </div>
           </div>
           <div className="inventory-health-progress-bar" role="progressbar" aria-label="Distribución de salud del inventario">
-            {inStockPct > 0 && <div className="bar-segment bar-ok" style={{ width: `${inStockPct}%` }} title={`En stock: ${inStockItems.length} (${inStockPct}%)`} />}
-            {replenishPct > 0 && <div className="bar-segment bar-warning" style={{ width: `${replenishPct}%` }} title={`Reponer: ${replenishItems.length} (${replenishPct}%)`} />}
-            {outOfStockPct > 0 && <div className="bar-segment bar-danger" style={{ width: `${outOfStockPct}%` }} title={`Agotado: ${outOfStockItems.length} (${outOfStockPct}%)`} />}
-            {uncountedPct > 0 && <div className="bar-segment bar-uncounted" style={{ width: `${uncountedPct}%` }} title={`Sin conteo: ${uncountedItems.length} (${uncountedPct}%)`} />}
+            {inStockPct > 0 && <div className="bar-segment bar-ok" style={{ width: `${inStockPct}%` }} title={`En stock: ${health.inStock} (${inStockPct}%)`} />}
+            {replenishPct > 0 && <div className="bar-segment bar-warning" style={{ width: `${replenishPct}%` }} title={`Reponer: ${health.replenish} (${replenishPct}%)`} />}
+            {outOfStockPct > 0 && <div className="bar-segment bar-danger" style={{ width: `${outOfStockPct}%` }} title={`Agotado: ${health.outOfStock} (${outOfStockPct}%)`} />}
+            {uncountedPct > 0 && <div className="bar-segment bar-uncounted" style={{ width: `${uncountedPct}%` }} title={`Sin conteo: ${health.uncounted} (${uncountedPct}%)`} />}
           </div>
           <div className="inventory-health-legend">
             <button type="button" className="legend-item" onClick={() => setStatus('En stock')}>
               <span className="legend-dot dot-ok" />
               <span className="legend-title">En stock</span>
-              <b>{inStockItems.length}</b>
+              <b>{health.inStock}</b>
               <small>({inStockPct}%)</small>
             </button>
             <button type="button" className="legend-item" onClick={() => setStatus('Reponer')}>
               <span className="legend-dot dot-warning" />
               <span className="legend-title">Reponer</span>
-              <b>{replenishItems.length}</b>
+              <b>{health.replenish}</b>
               <small>({replenishPct}%)</small>
             </button>
             <button type="button" className="legend-item" onClick={() => setStatus('Agotado')}>
               <span className="legend-dot dot-danger" />
               <span className="legend-title">Agotado</span>
-              <b>{outOfStockItems.length}</b>
+              <b>{health.outOfStock}</b>
               <small>({outOfStockPct}%)</small>
             </button>
             <button type="button" className="legend-item" onClick={() => setStatus('Sin conteo')}>
               <span className="legend-dot dot-uncounted" />
               <span className="legend-title">Sin conteo</span>
-              <b>{uncountedItems.length}</b>
+              <b>{health.uncounted}</b>
               <small>({uncountedPct}%)</small>
             </button>
           </div>

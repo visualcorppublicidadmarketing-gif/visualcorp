@@ -58,17 +58,36 @@
 }
 
 .inventory-section-nav {
+  max-width: 100%;
+  min-width: 0;
   gap: 6px;
   padding: 8px;
   border-color: #e5e0ea;
   border-radius: 14px;
   background: #ffffff;
   box-shadow: 0 4px 18px rgba(32, 20, 44, 0.04);
-  scrollbar-width: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-color: #9a7ba9 transparent;
+  scrollbar-width: thin;
 }
 
 .inventory-section-nav::-webkit-scrollbar {
-  display: none;
+  height: 5px;
+}
+
+.inventory-section-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.inventory-section-nav::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: #9a7ba9;
+}
+
+.inventory-section-nav > button,
+.inventory-section-nav > a {
+  flex: 0 0 auto;
 }
 
 .inventory-section-nav button {
@@ -1226,4 +1245,30 @@
   background: rgba(239, 68, 68, 0.22) !important;
   color: #ffffff !important;
   border-color: #ef4444 !important;
+}
+
+/* Search controls stay in one row even when generic labels use grid layouts. */
+.inventory-insights-search {
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+}
+
+.inventory-insights-search > svg,
+.inventory-import-toolbar .search-box > svg {
+  flex: 0 0 auto;
+}
+
+.inventory-insights-search input,
+.inventory-import-toolbar .search-box input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+}
+
+.inventory-import-toolbar .search-box {
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
 }

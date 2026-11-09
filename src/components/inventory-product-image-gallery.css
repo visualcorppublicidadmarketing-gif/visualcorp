@@ -5,3 +5,66 @@
 @media(max-width:560px){.inventory-product-gallery{padding:9px}.inventory-product-gallery-stage{min-height:175px}.inventory-product-gallery-main{height:175px}.inventory-product-gallery-controls{left:12px;right:12px}.inventory-product-gallery-controls span{bottom:-87px}.inventory-product-gallery-toolbar>small{flex-basis:100%}}
 @media(prefers-reduced-motion:reduce){.inventory-product-gallery-stage{transition:none}}
 .inventory-image-lightbox-view{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:8px;min-height:0;padding:8px}.inventory-image-lightbox-view>img{width:100%;max-height:min(68vh,720px);object-fit:contain}.inventory-image-lightbox-view>button{display:grid;width:38px;height:38px;place-items:center;border:1px solid #e5dfe8;border-radius:50%;background:#fff;color:#51485a;cursor:pointer}.inventory-image-lightbox-view>button:disabled{opacity:.42;cursor:not-allowed}.inventory-image-lightbox-thumbnails{display:flex;justify-content:center;gap:7px;max-width:100%;overflow-x:auto;padding:4px 6px 8px}.inventory-image-lightbox-thumbnails button{flex:none;width:54px;height:48px;padding:2px;border:1px solid #e5e0e9;border-radius:7px;background:#fff;cursor:pointer}.inventory-image-lightbox-thumbnails button.is-active{border:2px solid #9153ab}.inventory-image-lightbox-thumbnails img{width:100%;height:100%;object-fit:cover;border-radius:4px}
+
+.inventory-product-gallery-empty > .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  margin-top: 5px;
+  padding: 0 12px;
+  font-size: 10px;
+}
+
+.vc-dialog.theme-dark .inventory-product-gallery {
+  border-color: #34394f;
+  background: #141827;
+}
+
+.vc-dialog.theme-dark .inventory-product-gallery > header b,
+.vc-dialog.theme-dark .inventory-product-gallery-empty b {
+  color: #e7e9f2;
+}
+
+.vc-dialog.theme-dark .inventory-product-gallery > header small,
+.vc-dialog.theme-dark .inventory-product-gallery-toolbar > small,
+.vc-dialog.theme-dark .inventory-product-gallery-empty span {
+  color: #9ba3ba;
+}
+
+.vc-dialog.theme-dark .inventory-product-gallery > header > span,
+.vc-dialog.theme-dark .inventory-product-gallery-stage,
+.vc-dialog.theme-dark .inventory-product-gallery-image-actions button,
+.vc-dialog.theme-dark .inventory-product-gallery-thumbnails button {
+  border-color: #34394f;
+  background: #1a1e2d;
+  color: #d3d7e5;
+}
+
+.vc-dialog.theme-dark .inventory-product-gallery-stage.is-dragging,
+.vc-dialog.theme-dark .inventory-product-gallery-stage:focus-visible {
+  border-color: #c084fc;
+  background: #211a31;
+}
+
+.vc-dialog.theme-dark .inventory-product-gallery-main {
+  background: #111522;
+}
+
+.vc-dialog.theme-dark .inventory-product-gallery-controls button {
+  border-color: #454b62;
+  background: #202538ed;
+  color: #eef0f8;
+}
+
+.vc-dialog.theme-dark .inventory-product-gallery-toolbar .button-outline {
+  border-color: #454b62;
+  background: #1a1e2d;
+  color: #d3d7e5;
+}
+
+.vc-dialog.theme-dark .inventory-product-gallery-feedback {
+  background: #241d34;
+  color: #d7c5f4;
+}
