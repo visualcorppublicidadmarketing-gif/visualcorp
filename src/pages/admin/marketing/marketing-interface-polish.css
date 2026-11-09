@@ -268,3 +268,48 @@
   .vc-marketing-canvas-ratio{grid-column:1/-1}
   .vc-marketing-readiness-options>label{flex:1 1 100%;min-width:0}
 }
+
+/* Month cells show a concise publication summary; detailed production controls
+   stay in the week view and the publication ficha, where they have room. */
+.vc-marketing-calendar.is-month .vc-marketing-calendar-grid,
+.vc-marketing-calendar.is-month .vc-marketing-calendar-day,
+.vc-marketing-calendar.is-month .vc-marketing-calendar-events,
+.vc-marketing-calendar.is-month .vc-marketing-event-row,
+.vc-marketing-calendar.is-month .vc-marketing-event-context,
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event{
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-events{gap:5px;overflow:hidden}
+.vc-marketing-calendar.is-month .vc-marketing-event-row{position:relative;display:block}
+.vc-marketing-calendar.is-month .vc-marketing-event-select{position:absolute;top:5px;right:5px;z-index:4;width:15px;height:15px;margin:0;opacity:0}
+.vc-marketing-calendar.is-month .vc-marketing-event-row:hover .vc-marketing-event-select,
+.vc-marketing-calendar.is-month .vc-marketing-event-select:focus-visible,
+.vc-marketing-calendar.is-month .vc-marketing-event-select:checked{opacity:1}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card{display:grid;align-content:start;gap:5px;min-height:0;overflow:hidden;padding:6px 7px;border:1px solid color-mix(in srgb,var(--event-color,#8660ad) 20%,#e9e3ed);border-left:3px solid var(--event-color,#8660ad);border-radius:9px;background:linear-gradient(145deg,var(--event-tint,#f8f3fb),#fff 90%);color:#453c4b}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-top{display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:center;gap:4px;width:100%;min-width:0}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-cal-channel-badge,
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-cal-format-badge{max-width:28px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-pill-indicator{display:none}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-top time{justify-self:end;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-event-label{grid-column:1/-1;display:-webkit-box;width:100%;min-width:0;max-height:2.65em;overflow:hidden;padding:0;border:0;background:transparent;color:#332b38;font-size:10px;font-weight:780;line-height:1.32;text-align:left;text-overflow:ellipsis;white-space:normal;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-foot{display:flex;align-items:center;gap:4px;min-width:0}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-foot .vc-marketing-event-status{max-width:100%;padding:2px 5px;border-radius:999px;background:#ffffffb8;font-size:8px;line-height:1.2}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-cal-pipeline-dots,
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-readiness-indicators{display:none!important}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-icons{margin-left:auto}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-task{max-width:100%;overflow:hidden;padding:6px 7px;border-radius:9px}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-task .vc-marketing-event-label{max-width:100%;overflow-wrap:anywhere}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-more{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-color:#d9cce2;background:#faf7fc;color:#704787}
+.work-app.theme-dark .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card{border-color:color-mix(in srgb,var(--event-color,#a77ac1) 42%,#353047);border-left-color:var(--event-color,#a77ac1);background:linear-gradient(145deg,#211d2d,#191a25 92%);color:#ded9e7}
+.work-app.theme-dark .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-event-label{color:#f1edf6}
+.work-app.theme-dark .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-foot .vc-marketing-event-status{background:#2a2635;color:#e5d9ee}
+.work-app.theme-dark .vc-marketing-calendar.is-month .vc-marketing-calendar-more{border-color:#494054;background:#211d2b;color:#d3b6e4}
+@media(max-width:760px){
+  .vc-marketing-calendar.is-month .vc-marketing-event-select{opacity:1}
+  .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card{padding:5px}
+}
+@media(prefers-reduced-motion:reduce){
+  .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card{transition:none}
+}

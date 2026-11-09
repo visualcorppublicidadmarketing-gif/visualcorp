@@ -845,7 +845,7 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
         const firstDateOfRow = cells.slice(cellIndex - (cellIndex % rowSize), cellIndex - (cellIndex % rowSize) + rowSize);
         const monthRepresentative = firstDateOfRow.find((rowDate) => rowDate.getMonth() === anchor.getMonth() && rowDate.getFullYear() === anchor.getFullYear());
         const weekLabel = weekOfMonth(view === 'month' ? monthRepresentative || date : date);
-        const maxVisible=6;
+        const maxVisible=monthDensity==='compact'?5:4;
         const visible=items.slice(0,maxVisible);
         const visibleTasks=dayTasks.slice(0,Math.max(0,maxVisible-visible.length));
         const remaining=items.length+dayTasks.length-visible.length-visibleTasks.length;
@@ -876,7 +876,7 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
                 <MarketingReadinessIndicators post={post} onChange={(field, checked) => onReadinessChange(post, field, checked)} disabled={!canEdit}/>
                 <div className="vc-marketing-week-card-foot"><span>{post.owner||'Responsable pendiente'}</span>{tags.length>0&&<div>{tags.slice(0,2).map((tag)=><Badge key={tag} color={color||undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>)}</div>}</div>
               </article></ContextMenu> : <>
-                {monthDensity === 'detailed' && <MarketingPostArtwork {...artworkProps} variant="compact"/>}
+                {monthDensity === 'detailed' && view !== 'month' && <MarketingPostArtwork {...artworkProps} variant="compact"/>}
                 <ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}>
                   <div
                     className={`vc-marketing-calendar-event tone-${statusClass(post)}${monthDensity === 'compact' ? ' is-compact-pill' : ' is-detailed-card'}`}

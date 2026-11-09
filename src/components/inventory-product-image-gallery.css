@@ -68,3 +68,9 @@
   background: #241d34;
   color: #d7c5f4;
 }
+.inventory-product-gallery-library{display:grid;gap:3px;min-width:min(250px,100%);max-width:100%;color:#655d6b;font-size:9px;font-weight:700}
+.inventory-product-gallery-library select{width:100%;min-width:0;min-height:32px;padding:0 9px;border:1px solid #e8e2eb;border-radius:8px;background:#fff;color:#51485a;font:inherit;font-size:9px}
+.inventory-product-gallery-library select:disabled{opacity:.55;cursor:not-allowed}
+.vc-dialog.theme-dark .inventory-product-gallery-library{color:#9ba3ba}
+.vc-dialog.theme-dark .inventory-product-gallery-library select{border-color:#34394f;background:#1a1e2d;color:#d3d7e5}
+@media(max-width:560px){.inventory-product-gallery-library{flex:1 1 100%;min-width:100%}}
