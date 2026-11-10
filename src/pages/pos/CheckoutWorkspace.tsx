@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowDownRight, ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Copy, Database, FileText, Globe2, History, Image, LayoutDashboard, Link2, LogOut, Megaphone, Menu, Minus, Package, Pencil, Plus, Route, Ruler, Search, Settings2, ShoppingBag, ShoppingCart, Sparkles, Store, TriangleAlert, Truck, Users, Wallet, X } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Copy, Database, FileText, Globe2, History, Image, LayoutDashboard, Link2, LogOut, Megaphone, Menu, Minus, Package, Pencil, Plus, Route, Ruler, Search, Settings2, ShoppingBag, ShoppingCart, Sparkles, Store, Trash2, TriangleAlert, Truck, Users, Wallet, X } from 'lucide-react';
 import { AppFrame, PageHeading, StatCard } from '../../app/layout';
 import { EmptyState, StageBadge } from '../../components/feedback';
 import { formatDate, formatMoney, useWorkspace } from '../../app/workspace';
@@ -384,7 +384,7 @@ function POSMaterialUsage({ lines, recipes, inventory, branchId, values, status,
 export function PosPage() {
   const confirmDialog=useConfirm();
   const { data, add, update, flash, refreshRemote }=useWorkspace();
-  const { organizationId, user, hasPermission }=useAuth();
+  const { organizationId, user, roles, hasPermission }=useAuth();
   const { favoriteIds, toggleFavorite, status: favoriteStorageStatus }=useAdvisorProductFavorites(organizationId, user?.id);
   const [form,setForm]=useState({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
   const [fulfillment,setFulfillment]=useState({installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});
@@ -435,6 +435,7 @@ export function PosPage() {
   const [branchNames,setBranchNames]=useState({});
   const [activeParkedOrderId,setActiveParkedOrderId]=useState('');
   const [parking,setParking]=useState(false);
+  const [deletingParkedOrderId,setDeletingParkedOrderId]=useState('');
   const [cashierSession,setCashierSession]=useState({loading:true,session:null,branch:null,error:''});
   const [chargeNow,setChargeNow]=useState(true);
   const [payments,setPayments]=useState<Array<{id:string;method:string;amount:string;reference?:string;note?:string}>>([{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}]);
@@ -758,6 +759,7 @@ export function PosPage() {
   };
   useEffect(()=>{let active=true;if(!supabase||!organizationId)return undefined;refreshParkedOrders().catch(error=>{if(active)flash(`No se pudieron cargar las órdenes en espera: ${error.message}`);});return()=>{active=false;};},[organizationId]);
   const canSearchCustomers=hasPermission('crm','view');
+  const canManageAnyParkedOrder=roles.some(role=>['owner','admin','manager'].includes(role));
   useEffect(()=>{
     let active=true;
     if(!supabase||!organizationId){setMaterialRecipes([]);setMaterialRecipesStatus('error');return()=>{active=false;};}
@@ -1107,6 +1109,24 @@ export function PosPage() {
       flash(`Orden guardada en espera · ${String(parkedId).slice(0,8).toUpperCase()}. No se reservó ni descontó inventario.`);
     }catch(error){flash(`No se pudo guardar la orden en espera: ${error.message}`);}
     finally{setParking(false);}
+  };
+  const deleteParkedOrder=async(order)=>{
+    if(!supabase)return;
+    if(activeParkedOrderId===order.id){flash('No se puede eliminar una orden recuperada que está abierta en el POS.');return;}
+    const isOwnOrder=order.created_by===user?.id;
+    if(!isOwnOrder&&!canManageAnyParkedOrder){flash('Solo puedes eliminar órdenes que guardaste tú.');return;}
+    const payload=order.payload||{};
+    const customerName=payload.form?.customer||payload.form?.quoteId&&centralQuotes.find(quote=>quote.id===payload.form.quoteId)?.customer_name||'Sin cliente';
+    const accepted=await confirmDialog({eyebrow:'ÓRDENES RECUPERABLES',title:'¿Eliminar esta orden en espera?',description:'La orden se quitará de la lista y no se podrá recuperar después.',tone:'danger',destructive:true,confirmLabel:'Eliminar orden',cancelLabel:'Conservar orden',summaryItems:[{label:'Cliente',value:customerName},{label:'Sucursal',value:branchNames[order.branch_id]||'Sucursal'},{label:'Total',value:formatMoney(order.total)}],consequences:['Esta orden todavía no es una venta y no descontó inventario.','La eliminación es permanente.']});
+    if(!accepted)return;
+    setDeletingParkedOrderId(order.id);
+    try{
+      const {error}=await supabase.rpc('delete_parked_pos_order',{p_parked_order:order.id});
+      if(error)throw error;
+      await refreshParkedOrders();
+      flash('Orden en espera eliminada.');
+    }catch(error){flash(`No se pudo eliminar la orden: ${error.message}`);}
+    finally{setDeletingParkedOrderId('');}
   };
   const resumeParkedOrder=async(order)=>{
     const payload=order.payload||{};
@@ -1642,7 +1662,7 @@ export function PosPage() {
         {submitBlockReason&&<p className="pos-submit-guidance" role="status">{submitBlockReason}</p>}
         </aside>
       </form>
-      <section className="panel pos-parked-panel"><div className="panel-heading"><div><span className="eyebrow">ÓRDENES RECUPERABLES</span><h2>En espera</h2></div><span className="muted-count">{parkedOrders.length} órdenes</span></div>{parkedOrders.length===0?<EmptyState icon={ClipboardList} title="No hay órdenes en espera" text="Guarda aquí un carrito o cotización para continuarla desde esta sucursal. No reserva stock."/>:<div className="activity-list">{parkedOrders.map(order=>{const payload=order.payload||{};const customerName=payload.form?.customer||payload.form?.quoteId&&centralQuotes.find(quote=>quote.id===payload.form.quoteId)?.customer_name||'Sin cliente';return <article className="sale-activity pos-parked-card" key={order.id}><div className="sale-row"><span className="sale-icon"><ClipboardList size={17}/></span><span><b>{customerName}</b><small>{branchNames[order.branch_id]||'Sucursal'} · {new Date(order.created_at).toLocaleString('es-EC',{dateStyle:'short',timeStyle:'short'})}</small></span><strong>{formatMoney(order.total)}</strong></div><div className="sale-payment-summary"><span>{payload.cart?.length|| (payload.form?.quoteId?'Cotización aprobada':'')} artículo(s)</span><span>Guardada por <b>{order.created_by===user?.id?'ti':'el equipo'}</b></span></div><button className="button button-outline" type="button" onClick={()=>resumeParkedOrder(order)}>Recuperar orden</button></article>;})}</div>}</section>
+      <section className="panel pos-parked-panel"><div className="panel-heading"><div><span className="eyebrow">ÓRDENES RECUPERABLES</span><h2>En espera</h2></div><span className="muted-count">{parkedOrders.length} órdenes</span></div>{parkedOrders.length===0?<EmptyState icon={ClipboardList} title="No hay órdenes en espera" text="Guarda aquí un carrito o cotización para continuarla desde esta sucursal. No reserva stock."/>:<div className="activity-list">{parkedOrders.map(order=>{const payload=order.payload||{};const customerName=payload.form?.customer||payload.form?.quoteId&&centralQuotes.find(quote=>quote.id===payload.form.quoteId)?.customer_name||'Sin cliente';const orderIsOpen=activeParkedOrderId===order.id;const canDeleteOrder=order.created_by===user?.id||canManageAnyParkedOrder;return <article className="sale-activity pos-parked-card" key={order.id}><div className="sale-row"><span className="sale-icon"><ClipboardList size={17}/></span><span><b>{customerName}</b><small>{branchNames[order.branch_id]||'Sucursal'} · {new Date(order.created_at).toLocaleString('es-EC',{dateStyle:'short',timeStyle:'short'})}</small></span><strong>{formatMoney(order.total)}</strong></div><div className="sale-payment-summary"><span>{payload.cart?.length|| (payload.form?.quoteId?'Cotización aprobada':'')} artículo(s)</span><span>Guardada por <b>{order.created_by===user?.id?'ti':'el equipo'}</b></span></div><div className="pos-parked-actions"><button className="button button-outline" type="button" disabled={Boolean(deletingParkedOrderId)} onClick={()=>resumeParkedOrder(order)}>Recuperar orden</button>{canDeleteOrder&&(orderIsOpen?<span className="pos-parked-open-badge" title="Confirma la venta o descarta esta orden abierta antes de eliminarla">Abierta en el POS</span>:<button className="button button-outline pos-parked-delete" type="button" disabled={Boolean(deletingParkedOrderId)} aria-label={`Eliminar orden de ${customerName}`} onClick={()=>deleteParkedOrder(order)}><Trash2 size={14} aria-hidden="true"/>{deletingParkedOrderId===order.id?'Eliminando…':'Eliminar orden'}</button>)}</div></article>;})}</div>}</section>
       <section className="panel pos-recent-panel"><div className="panel-heading"><div><span className="eyebrow">CAJA DEL DÍA · {branchName}</span><h2>Ventas confirmadas</h2></div><span className="muted-count">{posSalesStatus==='ready'?`${salesToday.length} registros`:posSalesStatus==='loading'?'Consultando…':posSalesStatus==='restricted'?'Acceso limitado':'Error de consulta'}</span></div>
         {posSalesStatus==='ready'&&salesToday.length>0&&<div className="pos-recent-toolbar">
           <div className="search-input pos-recent-search"><Search size={14}/><input type="search" value={recentSalesQuery} onChange={(e)=>setRecentSalesQuery(e.target.value)} placeholder="Buscar cliente, código VEN o producto…" aria-label="Buscar en ventas de hoy"/></div>
