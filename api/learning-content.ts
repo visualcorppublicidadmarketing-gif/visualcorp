@@ -1,5 +1,5 @@
-import { learningAreas, learningGuides, learningPractices, learningChecklists } from '../server/learning/learning-content';
-import { learningQuestions } from '../server/learning/learning-quiz';
+import { learningAreas, learningGuides, learningPractices, learningChecklists } from '../server/learning/learning-content.js';
+import { learningQuestions } from '../server/learning/learning-quiz.js';
 import pantoneCatalog from '../server/learning/pantone-catalog.js';
 import { createLearningContentHandler } from '../server/learning/learning-content-handler.js';
 
