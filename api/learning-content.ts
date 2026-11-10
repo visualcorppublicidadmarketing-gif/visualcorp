@@ -1,6 +1,6 @@
 import { learningAreas, learningGuides, learningPractices, learningChecklists } from '../server/learning/learning-content';
 import { learningQuestions } from '../server/learning/learning-quiz';
-import pantoneCatalog from '../server/learning/pantone-catalog.json';
+import pantoneCatalog from '../server/learning/pantone-catalog.js';
 import { createLearningContentHandler } from '../server/learning/learning-content-handler.js';
 
 declare const process: { env: Record<string, string | undefined> };
