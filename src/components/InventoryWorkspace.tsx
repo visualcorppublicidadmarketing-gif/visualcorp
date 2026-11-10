@@ -29,6 +29,9 @@ import { normalizeInventoryImagePath } from '../lib/inventoryImageReference.mjs'
 import { inventoryBaseUnitSuggestions, inventorySpecificationSuggestions, inventoryTagSuggestions, inventoryTypeSuggestions, inventoryVariantSpecificationValues, normalizeInventoryCategoryName, normalizeInventoryProductMetadata } from '../lib/inventoryProductMetadata.mjs';
 import { inventoryCountDifference, inventoryNeedsReplenishment } from '../lib/inventoryMetrics.mjs';
 import { InventoryGroupsPanel, type InventoryGroup } from './InventoryGroupsPanel';
+import { InventoryReplenishment } from './InventoryReplenishment';
+import { InventoryItemDetail } from './InventoryItemDetail';
+import { getInventoryPriority } from '../lib/inventoryModel';
 
 const areas = ['Impresión', 'Sublimación', 'Troquelado', 'Láser', 'Taller', 'Neones', 'Bodega general'];
 const blankItem = { name:'', category:'', itemType:'', tags:'', referenceImageUrl:'', variant:'', area:'Taller', branch:'Visual Corp', location:'MAIN', unit:'unidad', quantity:'', minimum:'0', sku:'', notes:'', inventoryGroupId:'', condition:'Sin revisar' };
@@ -59,6 +62,7 @@ export function InventoryWorkspace() {
   const [navidadImportMessage,setNavidadImportMessage]=useState('');
   const [showCmykBatchModal, setShowCmykBatchModal] = useState(false);
   const [activeSection,setActiveSection]=useState('catalog');
+  const [detailItemId,setDetailItemId]=useState<string|null>(null);
   const [collectionFilter,setCollectionFilter]=useState('main');
   const [groupSaving,setGroupSaving]=useState<string|null>(null);
   const [showQuickPad, setShowQuickPad] = useState(false);
@@ -140,6 +144,8 @@ export function InventoryWorkspace() {
   const brandOf=(item:any)=>String(item.customFields?.brand_scope||'visual').toLowerCase()==='giga'?'giga':'visual';
   const scopedItems=useMemo(()=>items.filter(item=>inventoryBrandScope==='general'||brandOf(item)===inventoryBrandScope),[items,inventoryBrandScope]);
   const mainScopedItems=useMemo(()=>collectionFilter==='all'?scopedItems:collectionFilter==='main'?scopedItems.filter(item=>!item.inventoryGroupId||inventoryGroups.find(group=>group.id===item.inventoryGroupId)?.showInMain):scopedItems.filter(item=>item.inventoryGroupId===collectionFilter),[scopedItems,collectionFilter,inventoryGroups]);
+  const detailItem=items.find(item=>item.id===detailItemId)||null;
+  const replenishmentAttentionCount=mainScopedItems.filter(item=>!item.archived&&getInventoryPriority(item)!=='healthy').length;
   const scopedEvents=useMemo(()=>{const variants=new Set(scopedItems.map(item=>item.variantId).filter(Boolean));return events.filter(event=>variants.has(event.itemId));},[scopedItems,events]);
   const visible=useMemo(()=>mainScopedItems.filter(i=>{const available=Number(i.availableQuantity??(Number(i.quantity)-Number(i.reservedQuantity||0)));const state=i.sourceStatus?'Sin conteo':Number(i.quantity)<=0?'Agotado':available<=Number(i.minimum)?'Reponer':'En stock';return (area==='Todas'||i.area===area)&&(branch==='Todas'||i.branch===branch)&&(category==='Todas'||i.category===category)&&(typeFilter==='Todos'||i.itemType===typeFilter)&&(statusFilter==='Todos'||state===statusFilter)&&(tagFilter==='Todos'||(i.tags||[]).includes(tagFilter))&&`${i.name} ${i.category} ${i.itemType} ${(i.tags||[]).join(' ')} ${i.variant} ${i.sku}`.toLowerCase().includes(term.toLowerCase());}),[mainScopedItems,area,branch,category,term,typeFilter,statusFilter,tagFilter]);
   const groupedInventory=useMemo(()=>{
@@ -742,6 +748,10 @@ export function InventoryWorkspace() {
       <button type="button" aria-pressed={activeSection === 'stock'} onClick={() => setActiveSection('stock')}>
         <PackageCheck size={14} /> Existencias
       </button>
+      <button type="button" aria-pressed={activeSection === 'replenishment'} onClick={() => setActiveSection('replenishment')}>
+        <ClipboardList size={14} /> Reposición
+        {replenishmentAttentionCount > 0 && <span className="inventory-nav-badge">{replenishmentAttentionCount}</span>}
+      </button>
       <button type="button" aria-pressed={activeSection === 'calendar'} onClick={() => setActiveSection('calendar')}>
         <CalendarDays size={14} /> Calendario
       </button>
@@ -829,8 +839,19 @@ export function InventoryWorkspace() {
     </div>
       {activeSection==='live-rolls'&&<InventoryLiveRollMonitor organizationId={organizationId} branches={data.branches||[]} canEdit={canManageInventory} onNotice={flash} operatorDefaultName={user?.email?.split('@')[0]||'Taller'} inventoryItems={items} onRefreshInventory={refreshRemote} availableMachines={['Plotter Gran Formato 3.20m', 'Plotter Impresión y Corte', 'Plotter Roland 1.60m', 'Plotter Sublimación / Calandra']} />}
       {activeSection==='live-inks'&&<InventoryLiveInkMonitor organizationId={organizationId} branches={data.branches||[]} canEdit={canManageInventory} onNotice={flash} operatorDefaultName={user?.email?.split('@')[0]||'Taller'} inventoryItems={items} onRefreshInventory={refreshRemote} categories={data.inventoryCategories||[]} areas={data.areas||[]} />}
-    <InventoryInsights id="inventory-catalog" hidden={activeSection!=='catalog'} items={mainScopedItems} optionSourceItems={items} inventoryGroups={inventoryGroups} canSeeCosts={canSeeCosts} canEditCosts={canEditCosts} canEdit={canManageInventory} canReserve={canManageLinks} canMove={canManageInventory} canRequestTransfer={false} onTransfer={(item,branchName)=>item.branchId?openTransferRequest(item,branchName||branches.find(value=>value!==item.branch)):flash('Asigna una sucursal antes de solicitar un traspaso.')} onEdit={(item)=>{const productImages=Array.isArray(item.productImages)&&item.productImages.length?item.productImages.map((image,index)=>({key:`stored-${item.remoteItemId}-${index}`,src:image.url,path:image.path,label:image.label})):item.referenceImageUrl?[{key:`legacy-${item.remoteItemId}`,src:item.referenceImageUrl,path:item.referenceImageStoragePath||item.referenceImageUrl,label:'Imagen de referencia'}]:[];setMetadataEdit({remoteItemId:item.remoteItemId,variantId:item.variantId,name:String(item.name||""),category:String(item.category||""),variant:String(item.variant||""),minimum:String(item.minimum??0),itemType:item.itemType||'',tags:(item.tags||[]).join(', '),referenceImageUrl:item.referenceImageUrl||'',productImages,customFields:item.customFields||{},brandScope:brandOf(item),inventoryGroupId:item.inventoryGroupId||'',variantAttributes:inventoryVariantSpecificationValues(item.variantAttributes,item.customFields),description:item.description||'',sourceItem:item});}} onReserve={(item)=>item.branchId?setReservationEdit({itemId:item.id,quantity:String(item.reservedQuantity||0),note:''}):flash('Asigna una sucursal antes de reservar existencias.')} onMovement={(item,type)=>item.branchId?(type==='transferencia'?openTransferRequest(item,branches.find(value=>value!==item.branch)):setMovement({itemId:item.id,type,quantity:'',actor:'',reason:'',reference:''})):flash('Asigna una sucursal antes de registrar movimientos.')} onCost={(item)=>setCostEdit({variantId:item.variantId,unitCost:item.unitCost??'',supplierName:item.supplierName||'',name:item.name})} onArchive={removeItem} onArchiveMany={removeItems} branchOptions={branches} onAssignBranch={assignInventoryBranch} onAssignBranchMany={assignInventoryBranchMany} onDuplicate={duplicateItem} formatDate={formatDate} formatMoney={formatMoney} metadataEdit={metadataEdit} setMetadataEdit={setMetadataEdit} reservationEdit={reservationEdit} setReservationEdit={setReservationEdit} onSaveMetadata={saveMetadata} onSaveReservation={saveReservation} metadataSaveBusy={metadataSaveBusy}/>
+    <InventoryInsights id="inventory-catalog" hidden={activeSection!=='catalog'} items={mainScopedItems} optionSourceItems={items} inventoryGroups={inventoryGroups} canSeeCosts={canSeeCosts} canEditCosts={canEditCosts} canEdit={canManageInventory} canReserve={canManageLinks} canMove={canManageInventory} canRequestTransfer={false} onInspect={item=>setDetailItemId(item.id)} onTransfer={(item,branchName)=>item.branchId?openTransferRequest(item,branchName||branches.find(value=>value!==item.branch)):flash('Asigna una sucursal antes de solicitar un traspaso.')} onEdit={(item)=>{const productImages=Array.isArray(item.productImages)&&item.productImages.length?item.productImages.map((image,index)=>({key:`stored-${item.remoteItemId}-${index}`,src:image.url,path:image.path,label:image.label})):item.referenceImageUrl?[{key:`legacy-${item.remoteItemId}`,src:item.referenceImageUrl,path:item.referenceImageStoragePath||item.referenceImageUrl,label:'Imagen de referencia'}]:[];setMetadataEdit({remoteItemId:item.remoteItemId,variantId:item.variantId,name:String(item.name||""),category:String(item.category||""),variant:String(item.variant||""),minimum:String(item.minimum??0),itemType:item.itemType||'',tags:(item.tags||[]).join(', '),referenceImageUrl:item.referenceImageUrl||'',productImages,customFields:item.customFields||{},brandScope:brandOf(item),inventoryGroupId:item.inventoryGroupId||'',variantAttributes:inventoryVariantSpecificationValues(item.variantAttributes,item.customFields),description:item.description||'',sourceItem:item});}} onReserve={(item)=>item.branchId?setReservationEdit({itemId:item.id,quantity:String(item.reservedQuantity||0),note:''}):flash('Asigna una sucursal antes de reservar existencias.')} onMovement={(item,type)=>item.branchId?(type==='transferencia'?openTransferRequest(item,branches.find(value=>value!==item.branch)):setMovement({itemId:item.id,type,quantity:'',actor:'',reason:'',reference:''})):flash('Asigna una sucursal antes de registrar movimientos.')} onCost={(item)=>setCostEdit({variantId:item.variantId,unitCost:item.unitCost??'',supplierName:item.supplierName||'',name:item.name})} onArchive={removeItem} onArchiveMany={removeItems} branchOptions={branches} onAssignBranch={assignInventoryBranch} onAssignBranchMany={assignInventoryBranchMany} onDuplicate={duplicateItem} formatDate={formatDate} formatMoney={formatMoney} metadataEdit={metadataEdit} setMetadataEdit={setMetadataEdit} reservationEdit={reservationEdit} setReservationEdit={setReservationEdit} onSaveMetadata={saveMetadata} onSaveReservation={saveReservation} metadataSaveBusy={metadataSaveBusy}/>
     {activeSection==='standard-products'&&canViewStandardProducts&&<div className="inventory-standard-products"><div className="inventory-standard-products-note"><Boxes size={16}/><span><b>Plantillas para vender, separadas del stock físico</b><small>Define modelos, precios, materiales, colores, medidas y datos que cambiarán en cada pedido. Crear una plantilla no suma existencias.</small></span></div><StandardCustomProducts editable={canEditStandardProducts} editablePrices={canEditStandardPrices}/></div>}
+    {activeSection==='replenishment'&&<InventoryReplenishment
+      items={mainScopedItems}
+      onInspect={item=>setDetailItemId(item.id)}
+      onCounts={()=>setActiveSection('counts')}
+      onAssign={item=>{
+        setCollectionFilter('all'); setTerm(item.sku||item.name); setArea('Todas'); setBranch('Todas');
+        setCategory('Todas'); setTypeFilter('Todos'); setStatusFilter('Todos'); setTagFilter('Todos');
+        setActiveSection('stock');
+        flash('Selecciona la sucursal del artículo en la tabla de existencias para iniciar su conteo.');
+      }}
+    />}
     <InventoryLocations id="inventory-locations" hidden={activeSection!=='locations'} canManage={canManageLinks} catalogLinks={catalogLinks}/>
     <section id="inventory-integrations" hidden={activeSection!=='integrations'} className="panel inventory-list-panel">
       <div className="panel-heading"><div><span className="eyebrow">CONEXIÓN POS · INVENTARIO</span><h3>Productos de venta vinculados a stock</h3><p>Los productos sin vínculo explícito se registran como conceptos sin control de stock. No se deduce la variante por coincidencia de nombres.</p></div></div>
@@ -898,6 +919,19 @@ export function InventoryWorkspace() {
         locationsForBranch={locationsForBranch}
       />
     )}
+    {detailItem && <InventoryItemDetail
+      item={detailItem}
+      organizationId={organizationId}
+      userId={user?.id}
+      canManage={canManageInventory}
+      canSeeCosts={canSeeCosts}
+      onClose={()=>setDetailItemId(null)}
+      onMovement={(item,type)=>{
+        if(!canManageInventory||!item.branchId)return;
+        setDetailItemId(null);
+        setMovement({itemId:item.id,type,quantity:'',actor:user?.email?.split('@')[0]||'',reason:'',reference:''});
+      }}
+    />}
     <div className="notice-box"><span><CircleAlert size={17}/></span><div><b>Stock registrado entre sucursales</b><p>Los artículos nuevos quedan con ID único y conteo físico auditado. Los costos solo aparecen para propietario, administración POS y gerencia. Las filas importadas pendientes aún deben revisarse antes de tomarlas como existencia real.</p></div></div>
     {canManageInventory&&<button type="button" className="inventory-mobile-fab" onClick={()=>setShowQuickPad(true)} aria-label="Operación rápida de inventario"><Zap size={17}/> Operación rápida</button>}
     <InventoryQuickMobilePad isOpen={showQuickPad} onClose={()=>setShowQuickPad(false)} items={items} branches={data.branches||[]} canEdit={canManageInventory} onDone={refreshRemote} onNotice={flash} defaultActor={user?.email?.split('@')[0]||'Taller'} />

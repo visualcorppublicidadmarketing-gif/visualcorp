@@ -229,6 +229,13 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
     const total = monthPosts.length;
     const published = monthPosts.filter((p) => /publicad/i.test(p.status)).length;
     const ready = monthPosts.filter((p) => /aprobad|programad/i.test(p.status)).length;
+    const inProduction = monthPosts.filter((p) => String(p.status || '').trim().toLocaleLowerCase('es') === 'en producción').length;
+    const monthKey = `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}`;
+    const nonproductionDays = new Set(
+      days
+        .map((day) => String(day.day || '').slice(0, 10))
+        .filter((day) => day.slice(0, 7) === monthKey),
+    ).size;
     const pendingArt = monthPosts.filter((p) => !isTerminalMarketingStatus(p.status) && getDeliverableState(p.art_status, p.design_ready) !== 'ready' && getDeliverableState(p.art_status, p.design_ready) !== 'na').length;
     const isVideo = (post: MarketingCalendarPost) => {
       const format = (post.format || '').toLowerCase();
@@ -244,8 +251,8 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
     const ttCount = monthPosts.filter((p) => (p.platform || '').toLowerCase().includes('tiktok')).length;
     const fbCount = monthPosts.filter((p) => (p.platform || '').toLowerCase().includes('facebook')).length;
 
-    return { total, published, ready, pendingArt, pendingVideo, reels, carousels, statics, igCount, ttCount, fbCount };
-  }, [monthPosts]);
+    return { total, published, ready, inProduction, nonproductionDays, pendingArt, pendingVideo, reels, carousels, statics, igCount, ttCount, fbCount };
+  }, [monthPosts, days, anchor]);
   const [recordTypeFilter, setRecordTypeFilter] = useState<MarketingRecordTypeFilter>('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [showEmptyKanbanLanes, setShowEmptyKanbanLanes] = useState(false);
@@ -627,6 +634,22 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
         </div>
         <div className="vc-marketing-pulse-divider" />
         <div className="vc-marketing-pulse-item">
+          <span className="vc-pulse-label">En producción</span>
+          <div className="vc-pulse-val-row">
+            <strong>{pulseMetrics.inProduction}</strong>
+            <span className="vc-pulse-sub">publicaciones · {monthHeading}</span>
+          </div>
+        </div>
+        <div className="vc-marketing-pulse-divider" />
+        <div className="vc-marketing-pulse-item">
+          <span className="vc-pulse-label">Días sin producción</span>
+          <div className="vc-pulse-val-row">
+            <strong>{pulseMetrics.nonproductionDays}</strong>
+            <span className="vc-pulse-sub">registrados en calendario · {monthHeading}</span>
+          </div>
+        </div>
+        <div className="vc-marketing-pulse-divider" />
+        <div className="vc-marketing-pulse-item">
           <span className="vc-pulse-label">Mix de formatos</span>
           <div className="vc-pulse-mix">
             <span className="vc-pulse-chip is-reel" title="Reels y videos en el mes"><Film size={11} /> {pulseMetrics.reels} Reels</span>
@@ -864,6 +887,9 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
             const artworkProps={organizationId,post,asset:artworkByPost.get(post.id),canEdit,canDelete,onSaved:onArtworkSaved};
             const postAsset = artworkByPost.get(post.id);
             const hasAsset = Boolean(postAsset?.rel_path || postAsset?.filename);
+            const canPreviewArtwork = Boolean(
+              postAsset?.storage_status === 'supabase_storage' && postAsset.rel_path.startsWith('storage://marketing-assets/'),
+            );
             const formatInfo = getFormatBadge(post.format, post.platform);
             const channelInfo = getChannelBadge(post.platform);
             const FormatIcon = formatInfo.icon;
@@ -879,10 +905,11 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
                 {monthDensity === 'detailed' && view !== 'month' && <MarketingPostArtwork {...artworkProps} variant="compact"/>}
                 <ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}>
                   <div
-                    className={`vc-marketing-calendar-event tone-${statusClass(post)}${monthDensity === 'compact' ? ' is-compact-pill' : ' is-detailed-card'}`}
+                    className={`vc-marketing-calendar-event tone-${statusClass(post)}${monthDensity === 'compact' ? ' is-compact-pill' : ' is-detailed-card'}${view === 'month' && canPreviewArtwork ? ' has-month-artwork' : ''}`}
                     style={color ? { '--event-color': color, '--event-tint': `${color}18` } as React.CSSProperties : undefined}
                     title={`${post.title} · ${post.status}${post.platform ? ` · ${post.platform}` : ''}${post.format ? ` · ${post.format}` : ''}${tags.length ? ` · ${tags.join(', ')}` : ''}`}
                   >
+                    {view === 'month' && canPreviewArtwork && <MarketingPostArtwork {...artworkProps} variant="month" displayOnly/>}
                     <div className="vc-marketing-compact-top">
                       <span className={`vc-cal-channel-badge ${channelInfo.className}`} title={channelInfo.name}>
                         {channelInfo.code}
@@ -911,7 +938,7 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
                     <div className="vc-marketing-compact-foot">
                       <span className={`vc-marketing-event-status tone-${statusClass(post)}`}>{post.status || 'Por iniciar'}</span>
                       <span className="vc-marketing-compact-icons">
-                        {hasAsset && (
+                        {hasAsset && !canPreviewArtwork && (
                           <span className="vc-marketing-has-asset-badge" title="Tiene pieza gráfica vinculada">
                             <ImageIcon size={10} className="vc-marketing-has-asset-icon" />
                           </span>
