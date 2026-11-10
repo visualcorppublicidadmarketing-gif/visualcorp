@@ -42,8 +42,8 @@ test('bounds checklist progress and wraps roving tab focus with arrow keys', () 
   assert.equal(nextRovingTabIndex(0, 'ArrowRight', 0), null);
 });
 
-test('keeps the inherited Pantone palette complete and shaped for lookup', async () => {
-  const colors = JSON.parse(await readFile(new URL('../server/learning/pantone-catalog.json', import.meta.url), 'utf8'));
+test('loads the Pantone server catalog with Node ESM JSON import attributes', async () => {
+  const { default: colors } = await import('../server/learning/pantone-catalog.js');
   assert.equal(colors.length, 728);
   assert.ok(colors.every((color) => /^#[0-9A-F]{6}$/i.test(color.hex) && color.name && color.pantone));
 });
