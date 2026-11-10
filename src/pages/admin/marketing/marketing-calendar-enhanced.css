@@ -719,11 +719,13 @@
   color: #7b6f84;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  white-space: nowrap;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .vc-pulse-val-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 7px;
   min-width: 0;
@@ -740,7 +742,8 @@
   font-size: 11px;
   color: #6a5d74;
   font-weight: 600;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .vc-marketing-pulse-divider {
@@ -1244,5 +1247,74 @@
 
   .vc-channel-chip:hover {
     transform: none;
+  }
+}
+
+/* The monthly overview uses a static, non-interactive signed-URL thumbnail. */
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.has-month-artwork {
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: 6px;
+  row-gap: 3px;
+  align-items: center;
+}
+
+.vc-marketing-calendar.is-month .has-month-artwork > .vc-marketing-post-artwork.is-month {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: stretch;
+  width: 32px;
+  min-height: 26px;
+  height: auto;
+  border: 1px solid #dfd5e7;
+  border-radius: 5px;
+  background: #f7f3fa;
+  color: #84619a;
+  pointer-events: none;
+  transition: none;
+}
+
+.vc-marketing-calendar.is-month .has-month-artwork > .vc-marketing-post-artwork.is-month > img {
+  object-fit: cover;
+  background: #f7f3fa;
+}
+
+.vc-marketing-calendar.is-month .has-month-artwork > .vc-marketing-post-artwork.is-month .vc-marketing-post-artwork-empty {
+  gap: 0;
+  padding: 0;
+}
+
+.vc-marketing-calendar.is-month .has-month-artwork > .vc-marketing-compact-top,
+.vc-marketing-calendar.is-month .has-month-artwork > .vc-marketing-compact-foot {
+  grid-column: 2;
+  min-width: 0;
+}
+
+:root[data-theme='dark'] .vc-marketing-calendar.is-month .has-month-artwork > .vc-marketing-post-artwork.is-month,
+.work-app.theme-dark .vc-marketing-calendar.is-month .has-month-artwork > .vc-marketing-post-artwork.is-month {
+  border-color: #393447;
+  background: #1c1b27;
+  color: #c0a6d3;
+}
+
+:root[data-theme='dark'] .vc-marketing-calendar.is-month .has-month-artwork > .vc-marketing-post-artwork.is-month > img,
+.work-app.theme-dark .vc-marketing-calendar.is-month .has-month-artwork > .vc-marketing-post-artwork.is-month > img {
+  background: #1c1b27;
+}
+
+@media (max-width: 760px) {
+  .vc-marketing-calendar.is-month .vc-marketing-calendar-event.has-month-artwork {
+    grid-template-columns: 23px minmax(0, 1fr);
+    column-gap: 4px;
+  }
+
+  .vc-marketing-calendar.is-month .has-month-artwork > .vc-marketing-post-artwork.is-month {
+    width: 23px;
+    min-height: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-marketing-calendar.is-month .has-month-artwork > .vc-marketing-post-artwork.is-month {
+    transition: none;
   }
 }

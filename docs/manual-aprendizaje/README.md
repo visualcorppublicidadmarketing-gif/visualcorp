@@ -1,12 +1,14 @@
 # Manual / aprendizaje
 
-Biblioteca interna añadida a la Suite para consultar formación y practicar herramientas desde **Operaciones → Aprendizaje** o **Administración → Administración → Manual/aprendizaje**. Ambas rutas reutilizan la sesión y el control de acceso existente. Las páginas React quedan protegidas por el inicio de sesión, pero los 43 archivos fuente servidos desde `public/manual-aprendizaje/fuente/` tienen URL directa y son accesibles públicamente al conocerla. No se deben copiar allí secretos ni datos personales.
+Biblioteca interna de la Suite para consultar formación y practicar herramientas desde **Operaciones → Equipo y sistema → Aprendizaje** o **Administración → Manual/aprendizaje**. La experiencia nativa organiza áreas, guías y prácticas como páginas React; las lecturas se marcan en el navegador.
 
 ## Cobertura del manual fuente
 
 La biblioteca reúne nueve guías (Inducción, Seguridad Industrial, Fundamentos gráficos, Asesores, Diseñadores, Impresores, Corte Láser, Taller y Marketing), seis mini aplicaciones (Calculadora de áreas, Distancia Visual, Catálogo Pantone, Color Match, Trivia y Checklist Preimpresión) y el folleto PDF. La búsqueda considera título, descripción, área y términos relacionados; los filtros permiten explorar por tema.
 
-Las guías y herramientas se abren dentro del espacio de trabajo para conservar su contenido, recursos e interacciones originales. El botón **Abrir aparte** permite consultar la versión fuente completa. Las solicitudes a `/manual-aprendizaje/fuente/*` pasan por el middleware de Vercel, que comprueba una sesión vigente y un rol interno mediante `get_my_visualcorp_access`; las respuestas usan `Cache-Control: private, no-store`. El catálogo no altera precios ni convierte las referencias del manual en datos comerciales confirmados. Las guías de seguridad se presentan como material de consulta del equipo.
+Las guías, listas, preguntas y colores de la experiencia nativa no se importan desde el cliente. La app los pide a `GET /api/learning-content?resource=library|quiz|pantone`, enviando la sesión Supabase. El endpoint vuelve a verificar el token y el rol con `get_my_visualcorp_access`; solo después entrega el recurso y envía `Cache-Control: private, no-store`. Las listas de apoyo y avances se guardan localmente en el navegador. Los cálculos no inventan precios, y las referencias de color o distancia no sustituyen una prueba física ni los procedimientos vigentes.
+
+Los 43 archivos fuente siguen en `public/manual-aprendizaje/fuente/` por procedencia. El middleware de Vercel comprueba sesión y rol interno para las solicitudes en el sitio y evita caché compartida, pero esos archivos también aparecen en el historial del repositorio público. El control del sitio no revoca las copias de GitHub ni del repositorio fuente público.
 
 ## Copia de referencia
 
@@ -19,7 +21,8 @@ Para refrescar la biblioteca tras cambios del manual, vuelve a copiar sus págin
 
 ## Implementación
 
-- Página React/Vite en `src/pages/learning/ManualLearningPage.tsx`, estilos responsive en `manual-learning.css` y dos rutas protegidas del área correspondiente.
-- Usa `motion`, Lucide y utilidades Tailwind con prefijo `mltw:`. Tailwind se limita a utilidades de la sección; no carga Preflight ni modifica los estilos globales existentes. Reduce animaciones con `prefers-reduced-motion`.
-- El middleware niega solicitudes anónimas y perfiles sin rol interno. La cookie de sesión se limita al directorio del manual, se renueva durante una sesión activa y caduca en un máximo de dos minutos. Para validar acceso tras cada cambio, probar rutas sin cookie, con rol autorizado y con rol sin acceso en el preview de Vercel.
-- **Límite de procedencia:** el repositorio `visualcorppublicidadmarketing-gif/visualcorp` es público y el manual también está en `estebanico10/VisualCorp-Manual`, público. La copia quedó en el historial público al integrar PR #96; este middleware protege el sitio desplegado, pero no elimina ese historial ni las copias públicas ya existentes. La exposición por GitHub requiere una acción de saneamiento independiente.
+- Página React/Vite en `src/pages/learning/ManualLearningPage.tsx`, prácticas en `LearningTools.tsx` y estilos responsive en `manual-learning.css`. Las rutas conservan la protección existente de Operaciones y Administración.
+- `api/learning-content.ts` usa la sesión Bearer para consultar `get_my_visualcorp_access` y solo devuelve los recursos permitidos. Los datos que alimentan los módulos se mantienen en `server/learning/`; no entran en los chunks Vite del navegador. Las respuestas no se guardan en caché compartida.
+- El middleware de `/manual-aprendizaje/fuente/*` se mantiene. Comprueba la cookie de sesión limitada a esa ruta y el rol interno; AuthProvider la renueva durante una sesión activa y caduca en un máximo de dos minutos.
+- La validación local incluye pruebas de autorización del endpoint, acceso de perfiles, recursos, navegación con flechas/Home/End y una comprobación del build que falla si aparecen textos de guía, preguntas, listas o colores en los chunks públicos.
+- **Límite de procedencia:** `visualcorppublicidadmarketing-gif/visualcorp` y `estebanico10/VisualCorp-Manual` son repositorios públicos. Los archivos fuente históricos siguen accesibles desde esos repositorios; el middleware protege las rutas desplegadas, no las copias públicas. Los datos nuevos bajo `server/learning/` también formarían parte del código fuente si esta worktree se sube al repositorio. Mantenerlos fuera de Git requiere moverlos a una fuente privada (por ejemplo, Supabase con RLS) antes de publicar cambios en el repositorio público.

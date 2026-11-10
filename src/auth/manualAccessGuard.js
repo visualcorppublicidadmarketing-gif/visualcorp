@@ -1,4 +1,5 @@
 const MANUAL_ACCESS_ROLES = new Set([
+  'owner',
   'admin',
   'manager',
   'advisor',
@@ -8,12 +9,17 @@ const MANUAL_ACCESS_ROLES = new Set([
   'website_admin',
 ]);
 
-export async function checkManualAccess({ cookieHeader, supabaseUrl, publishableKey, fetcher = fetch }) {
-  const token = cookieHeader
+export async function checkManualAccess({ cookieHeader, authorization, supabaseUrl, publishableKey, fetcher = fetch }) {
+  const bearerToken = /^Bearer\s+([^\s]+)$/i.exec(String(authorization || ''))?.[1];
+  const encodedCookieToken = cookieHeader
     ?.split(';')
     .map((cookie) => cookie.trim())
     .find((cookie) => cookie.startsWith('vc-manual-session='))
     ?.slice('vc-manual-session='.length);
+  let token = bearerToken || '';
+  if (!token && encodedCookieToken) {
+    try { token = decodeURIComponent(encodedCookieToken); } catch { return { allowed: false, status: 401 }; }
+  }
 
   if (!token) return { allowed: false, status: 401 };
   if (!supabaseUrl || !publishableKey) return { allowed: false, status: 503 };
@@ -23,7 +29,7 @@ export async function checkManualAccess({ cookieHeader, supabaseUrl, publishable
       method: 'POST',
       headers: {
         apikey: publishableKey,
-        authorization: `Bearer ${decodeURIComponent(token)}`,
+        authorization: `Bearer ${token}`,
         'content-type': 'application/json',
       },
       body: '{}',

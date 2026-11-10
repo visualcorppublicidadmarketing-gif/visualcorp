@@ -207,12 +207,14 @@ export function PersonnelPage() {
   const [compensation, setCompensation] = useState<Compensation[]>([]);
   const [payrollDeductions, setPayrollDeductions] = useState<PayrollDeduction[]>([]);
   const [googleAccounts, setGoogleAccounts] = useState<GoogleAccount[]>([]);
+  const [googleAccountsLoaded, setGoogleAccountsLoaded] = useState(false);
   const [accessProfiles, setAccessProfiles] = useState<any[]>([]);
   const [accountUserId, setAccountUserId] = useState('');
   const [accountProfileId, setAccountProfileId] = useState('');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [googleLinkFilter, setGoogleLinkFilter] = useState<'all' | 'linked' | 'unlinked'>('all');
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -342,8 +344,11 @@ export function PersonnelPage() {
     if (!supabase || !canLinkAccount) {
       setGoogleAccounts([]);
       setAccessProfiles([]);
+      setGoogleAccountsLoaded(false);
+      setGoogleLinkFilter('all');
       return;
     }
+    setGoogleAccountsLoaded(false);
     setAccountListLoading(true);
     try {
       const [accountsResult, profilesResult] = await Promise.all([
@@ -366,6 +371,9 @@ export function PersonnelPage() {
         })),
       );
       setAccessProfiles(profilesResult.data || []);
+      setGoogleAccountsLoaded(true);
+    } catch (loadError) {
+      setError(errorText(loadError));
     } finally {
       setAccountListLoading(false);
     }
@@ -488,21 +496,39 @@ export function PersonnelPage() {
     () => [...new Set(records.map((record) => record.department.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')),
     [records],
   );
+  const linkedGooglePersonnelIds = useMemo(
+    () => new Set(googleAccounts.flatMap((account) => (account.linked_personnel_id ? [account.linked_personnel_id] : []))),
+    [googleAccounts],
+  );
+  const canFilterGoogleAccounts = canLinkAccount && googleAccountsLoaded;
+  const effectiveGoogleLinkFilter = canFilterGoogleAccounts ? googleLinkFilter : 'all';
   const filteredRecords = useMemo(
     () =>
       records.filter((record) => {
         const matchesQuery = `${record.full_name} ${record.email} ${record.phone} ${record.department} ${record.job_title}`
           .toLocaleLowerCase('es')
           .includes(query.trim().toLocaleLowerCase('es'));
+        const hasGoogleLink = linkedGooglePersonnelIds.has(record.id);
         return (
           matchesQuery &&
           (statusFilter === 'all' || record.status === statusFilter) &&
-          (departmentFilter === 'all' || record.department === departmentFilter)
+          (departmentFilter === 'all' || record.department === departmentFilter) &&
+          (effectiveGoogleLinkFilter === 'all' || (effectiveGoogleLinkFilter === 'linked' ? hasGoogleLink : !hasGoogleLink))
         );
       }),
-    [records, query, statusFilter, departmentFilter],
+    [records, query, statusFilter, departmentFilter, effectiveGoogleLinkFilter, linkedGooglePersonnelIds],
   );
-  const selected = filteredRecords.find((record) => record.id === selectedId) || records.find((record) => record.id === selectedId) || null;
+  useEffect(() => {
+    if (!canFilterGoogleAccounts || effectiveGoogleLinkFilter === 'all' || !filteredRecords.length) return;
+    if (!filteredRecords.some((record) => record.id === selectedId)) setSelectedId(filteredRecords[0].id);
+  }, [canFilterGoogleAccounts, effectiveGoogleLinkFilter, filteredRecords, selectedId]);
+  const hasActivePersonnelFilters = Boolean(
+    query.trim() || statusFilter !== 'all' || departmentFilter !== 'all' || googleLinkFilter !== 'all',
+  );
+  const selected =
+    filteredRecords.find((record) => record.id === selectedId) ||
+    (effectiveGoogleLinkFilter === 'all' ? records.find((record) => record.id === selectedId) : null) ||
+    null;
   const activeCount = records.filter((record) => record.status === 'active').length;
   const linkedAccount = googleAccounts.find((account) => account.linked_personnel_id === selected?.id) || null;
   const chosenAccount = googleAccounts.find((account) => account.user_id === accountUserId) || null;
@@ -1120,7 +1146,7 @@ export function PersonnelPage() {
               </div>
               <span className="muted-count">{filteredRecords.length} resultados</span>
             </div>
-            <div className="personnel-filters">
+            <div className={`personnel-filters${canFilterGoogleAccounts ? ' has-google-filter' : ''}`}>
               <label className="personnel-search">
                 <Search size={16} />
                 <input
@@ -1153,6 +1179,20 @@ export function PersonnelPage() {
                   ))}
                 </select>
               </label>
+              {canFilterGoogleAccounts && (
+                <label>
+                  <span className="sr-only">Vinculación de Google</span>
+                  <select
+                    aria-label="Filtrar por vínculo de Google"
+                    value={googleLinkFilter}
+                    onChange={(event) => setGoogleLinkFilter(event.target.value as typeof googleLinkFilter)}
+                  >
+                    <option value="all">Todas las cuentas</option>
+                    <option value="linked">Con Google vinculado</option>
+                    <option value="unlinked">Sin Google vinculado</option>
+                  </select>
+                </label>
+              )}
             </div>
 
             {loading ? (
@@ -1162,10 +1202,34 @@ export function PersonnelPage() {
             ) : !filteredRecords.length ? (
               <div className="personnel-empty">
                 <CircleUserRound size={25} />
-                <b>{records.length ? 'No encontramos personal con estos filtros.' : 'Aún no hay fichas de personal.'}</b>
+                <b>
+                  {records.length
+                    ? effectiveGoogleLinkFilter === 'linked'
+                      ? 'No hay fichas vinculadas a una cuenta Google con estos filtros.'
+                      : effectiveGoogleLinkFilter === 'unlinked'
+                        ? 'Todo el personal visible tiene una cuenta Google vinculada.'
+                        : 'No encontramos personal con estos filtros.'
+                    : 'Aún no hay fichas de personal.'}
+                </b>
                 <span>
-                  {records.length ? 'Prueba otra búsqueda o cambia los filtros.' : 'Crea la primera ficha cuando tengas los datos confirmados.'}
+                  {records.length
+                    ? 'Prueba otra búsqueda o restablece los filtros para volver a ver el directorio.'
+                    : 'Crea la primera ficha cuando tengas los datos confirmados.'}
                 </span>
+                {records.length > 0 && hasActivePersonnelFilters && (
+                  <button
+                    className="button button-outline"
+                    type="button"
+                    onClick={() => {
+                      setQuery('');
+                      setStatusFilter('all');
+                      setDepartmentFilter('all');
+                      setGoogleLinkFilter('all');
+                    }}
+                  >
+                    <RefreshCw size={14} /> Restablecer filtros
+                  </button>
+                )}
                 {!records.length && canEdit && (
                   <button className="button button-outline" type="button" onClick={openNew}>
                     <Plus size={15} /> Crear ficha
@@ -1176,7 +1240,7 @@ export function PersonnelPage() {
               <div className="personnel-list">
                 {filteredRecords.map((record) => {
                   const todayEntry = attendanceEntries.find((e) => e.personnel_id === record.id && e.date === todayIso());
-                  const hasGoogle = googleAccounts.some((account) => account.linked_personnel_id === record.id);
+                  const hasGoogle = linkedGooglePersonnelIds.has(record.id);
                   return (
                     <button
                       type="button"

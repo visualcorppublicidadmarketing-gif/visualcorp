@@ -34,7 +34,8 @@ type Props = {
   asset?: MarketingArtworkAsset;
   canEdit: boolean;
   canDelete?: boolean;
-  variant: 'overview' | 'week' | 'compact' | 'detail' | 'editor' | 'kanban';
+  variant: 'overview' | 'week' | 'compact' | 'month' | 'detail' | 'editor' | 'kanban';
+  displayOnly?: boolean;
   draftFile?: File | null;
   isDraft?: boolean;
   onDraftFileChange?: (file: File | null) => void;
@@ -84,7 +85,7 @@ function imageFolder(date?: string) {
   return `Campanas_y_publicaciones/${month ? `${month.slice(0, 4)}/${month}` : 'Por_programar'}`;
 }
 
-export function MarketingPostArtwork({ organizationId, post, association = { kind: 'post' }, asset, canEdit, canDelete, variant, draftFile = null, isDraft = false, onDraftFileChange, onSaved }: Props) {
+export function MarketingPostArtwork({ organizationId, post, association = { kind: 'post' }, asset, canEdit, canDelete, variant, displayOnly = false, draftFile = null, isDraft = false, onDraftFileChange, onSaved }: Props) {
   const confirm = useConfirm();
   const id = useId();
   const zoneRef = useRef<HTMLDivElement>(null);
@@ -98,10 +99,10 @@ export function MarketingPostArtwork({ organizationId, post, association = { kin
   const [dragOver, setDragOver] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const canUpload = Boolean(supabase && canEdit && organizationId);
+  const canUpload = Boolean(!displayOnly && supabase && canEdit && organizationId);
   const usableAsset = asset?.storage_status === 'supabase_storage' && asset.rel_path.startsWith(BUCKET_PREFIX);
-  const canRemoveAsset = Boolean(supabase && canDelete && usableAsset && asset);
-  const canRemoveImage = canRemoveAsset || Boolean(draftFile && onDraftFileChange);
+  const canRemoveAsset = Boolean(!displayOnly && supabase && canDelete && usableAsset && asset);
+  const canRemoveImage = !displayOnly && (canRemoveAsset || Boolean(draftFile && onDraftFileChange));
   const entityTypeLabel = association.kind === 'post' ? 'publicación' : association.kind === 'campaign' ? 'campaña' : 'actividad';
   const linkTable = association.kind === 'post' ? 'marketing_post_assets' : association.kind === 'campaign' ? 'marketing_campaign_assets' : 'marketing_campaign_item_assets';
   const linkColumn = association.kind === 'post' ? 'post_id' : association.kind === 'campaign' ? 'campaign_id' : 'item_id';
@@ -457,11 +458,11 @@ export function MarketingPostArtwork({ organizationId, post, association = { kin
 
   return <div
     ref={zoneRef}
-    className={`vc-marketing-post-artwork is-${variant}${dragOver ? ' is-drag-over' : ''}${preview ? ' has-image' : ''}${pendingDraft ? ' has-pending-upload' : ''}${canRemoveImage ? ' has-remove-control' : ''}${!canUpload ? ' is-readonly' : ''}`}
-    role="group"
-    aria-label={`Imagen de ${post.title || `la ${entityTypeLabel}`}`}
-    aria-keyshortcuts="Control+V"
-    tabIndex={canUpload ? 0 : -1}
+    className={`vc-marketing-post-artwork is-${variant}${displayOnly ? ' is-display-only' : ''}${dragOver ? ' is-drag-over' : ''}${preview ? ' has-image' : ''}${pendingDraft ? ' has-pending-upload' : ''}${canRemoveImage ? ' has-remove-control' : ''}${!canUpload ? ' is-readonly' : ''}`}
+    role={displayOnly ? 'img' : 'group'}
+    aria-label={displayOnly ? `${previewFailed ? 'No se pudo cargar la miniatura de' : previewLoading ? 'Cargando miniatura de' : 'Miniatura de'} ${post.title || `la ${entityTypeLabel}`}` : `Imagen de ${post.title || `la ${entityTypeLabel}`}`}
+    aria-keyshortcuts={displayOnly ? undefined : 'Control+V'}
+    tabIndex={displayOnly || !canUpload ? -1 : 0}
     onPaste={handlePaste}
     onClick={(event) => {
       if (!canUpload || busy || (event.target as HTMLElement).closest('button')) return;
@@ -472,12 +473,12 @@ export function MarketingPostArtwork({ organizationId, post, association = { kin
     onDragOver={(event) => { if (canUpload) { event.preventDefault(); setDragOver(true); } }}
     onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragOver(false); }}
     onDrop={handleDrop}
-    title={canUpload ? 'Enfoca este espacio y pega con Ctrl+V, arrastra una imagen o selecciónala' : asset?.filename || 'Sin imagen asociada'}
+    title={displayOnly ? undefined : canUpload ? 'Enfoca este espacio y pega con Ctrl+V, arrastra una imagen o selecciónala' : asset?.filename || 'Sin imagen asociada'}
   >
     <input ref={inputRef} id={id} type="file" accept="image/*" hidden disabled={!canUpload || busy} onChange={(event) => { if (event.target.files) handleFiles(Array.from(event.target.files)); event.target.value = ''; }}/>
-    {preview ? <img src={imageUrl} alt={draftFile ? `Vista previa pendiente: ${draftFile.name}` : `Imagen asociada: ${asset?.filename || post.title}`} loading="lazy" decoding="async" onError={() => { if (!draftPreviewUrl) setPreviewFailed(true); }}/> : <div className="vc-marketing-post-artwork-empty">
-      {busy || previewLoading ? <LoaderCircle size={variant === 'compact' ? 13 : 22} className="vc-content-spin"/> : previewFailed ? <FileImage size={variant === 'compact' ? 13 : 22}/> : <ImagePlus size={variant === 'compact' ? 13 : 22}/>}
-      {variant !== 'compact' && variant !== 'kanban' && <><b>{busy ? 'Procesando y subiendo…' : previewLoading ? 'Cargando imagen…' : previewFailed ? 'No se pudo abrir la imagen' : canUpload ? `Añade una imagen a esta ${entityTypeLabel}` : 'Sin imagen asociada'}</b><span>{previewLoading ? 'Preparando la vista previa de la biblioteca privada.' : canUpload ? 'Elige una imagen, arrástrala o pégala con Ctrl+V.' : 'Las imágenes vinculadas aparecerán en esta ficha'}</span></>}
+    {preview ? <img src={imageUrl} alt={displayOnly ? '' : draftFile ? `Vista previa pendiente: ${draftFile.name}` : `Imagen asociada: ${asset?.filename || post.title}`} loading="lazy" decoding="async" onError={() => { if (!draftPreviewUrl) setPreviewFailed(true); }}/> : <div className="vc-marketing-post-artwork-empty">
+      {displayOnly ? <FileImage size={12}/> : busy || previewLoading ? <LoaderCircle size={variant === 'compact' ? 13 : 22} className="vc-content-spin"/> : previewFailed ? <FileImage size={variant === 'compact' ? 13 : 22}/> : <ImagePlus size={variant === 'compact' ? 13 : 22}/>}
+      {!displayOnly && variant !== 'compact' && variant !== 'month' && variant !== 'kanban' && <><b>{busy ? 'Procesando y subiendo…' : previewLoading ? 'Cargando imagen…' : previewFailed ? 'No se pudo abrir la imagen' : canUpload ? `Añade una imagen a esta ${entityTypeLabel}` : 'Sin imagen asociada'}</b><span>{previewLoading ? 'Preparando la vista previa de la biblioteca privada.' : canUpload ? 'Elige una imagen, arrástrala o pégala con Ctrl+V.' : 'Las imágenes vinculadas aparecerán en esta ficha'}</span></>}
       {variant === 'kanban' && !preview && <span className="vc-marketing-kanban-empty-cue">{canUpload ? 'Añadir imagen · Ctrl+V' : 'Sin imagen'}</span>}
     </div>}
     {canUpload && !previewLoading && variant !== 'compact' && <button

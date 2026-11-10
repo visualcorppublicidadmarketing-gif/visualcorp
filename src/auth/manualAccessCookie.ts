@@ -1,7 +1,7 @@
 const COOKIE_NAME = 'vc-manual-session';
 const COOKIE_PATH = '/manual-aprendizaje/fuente';
 const COOKIE_MAX_AGE_SECONDS = 120;
-const INTERNAL_ROLES = new Set(['admin', 'manager', 'advisor', 'warehouse', 'production', 'marketing', 'website_admin']);
+const INTERNAL_ROLES = new Set(['owner', 'admin', 'manager', 'advisor', 'warehouse', 'production', 'marketing', 'website_admin']);
 
 function clearManualAccessCookie() {
   document.cookie = `${COOKIE_NAME}=; Path=${COOKIE_PATH}; Max-Age=0; SameSite=Strict; Secure`;
