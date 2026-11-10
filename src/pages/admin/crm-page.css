@@ -1,0 +1,52 @@
+.crm-data-state {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0 0 14px;
+  padding: 11px 13px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.crm-data-state.is-error {
+  border-color: #e3b1b1;
+  background: #fff6f6;
+  color: #642b2b;
+}
+
+.crm-data-state.is-error .button {
+  flex: 0 0 auto;
+}
+
+.crm-data-state.is-loading,
+.crm-data-state.is-denied {
+  justify-content: flex-start;
+  padding: 0;
+  border: 0;
+  color: var(--muted, #716d78);
+}
+
+.work-app.theme-dark .crm-data-state.is-error {
+  border-color: #704949;
+  background: #2b1e22;
+  color: #f0c3c3;
+}
+
+@media (max-width: 520px) {
+  .crm-data-state.is-error {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .crm-data-state.is-error .button {
+    align-self: flex-start;
+  }
+}

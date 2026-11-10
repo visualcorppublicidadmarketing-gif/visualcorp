@@ -258,6 +258,11 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
   const [showEmptyKanbanLanes, setShowEmptyKanbanLanes] = useState(false);
   const [restoredPreferencesFor, setRestoredPreferencesFor] = useState('');
   const [dragging, setDragging] = useState<string | null>(null);
+  const [dropTargetDate, setDropTargetDate] = useState<string | null>(null);
+  const [pointerDrag, setPointerDrag] = useState<{ postId: string; pointerId: number; startX: number; startY: number; active: boolean } | null>(null);
+  const [dragAnnouncement, setDragAnnouncement] = useState('');
+  const draggingPostRef = useRef<string | null>(null);
+  const suppressPostDragClickRef = useRef(false);
   const [draggingKanban, setDraggingKanban] = useState<string | null>(null);
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [monthSelection, setMonthSelection] = useState<{ anchor: string; focus: string } | null>(null);
@@ -275,6 +280,70 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
     if ((event.target as Element).closest('button,input,select,textarea,a,[role="button"],.vc-context-trigger')) return;
     event.preventDefault();
     setActiveMonthSelection({ anchor: date, focus: date });
+  };
+
+  const startCalendarPostDrag = (event: React.DragEvent<HTMLButtonElement>, post: MarketingCalendarPost) => {
+    if (!canEdit) { event.preventDefault(); return; }
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', post.id);
+    event.dataTransfer.setData('application/x-visualcorp-marketing-post', post.id);
+    draggingPostRef.current = post.id;
+    setDragging(post.id);
+    setDropTargetDate(null);
+    setDragAnnouncement(`Arrastrando ${post.title || 'publicación'}. Suéltala sobre otro día para cambiar la fecha.`);
+  };
+
+  const finishCalendarPostDrag = () => {
+    draggingPostRef.current = null;
+    setDragging(null);
+    setDropTargetDate(null);
+    setPointerDrag(null);
+  };
+
+  const moveCalendarPostToDate = (post: MarketingCalendarPost, date: string) => {
+    if (post.scheduled_date.slice(0, 10) === date) {
+      setDragAnnouncement('La publicación ya está en esa fecha. No se hicieron cambios.');
+      return;
+    }
+    if (onQuickReschedule) onQuickReschedule(post, date, post.scheduled_time);
+    else onReschedule(post, date);
+    setDragAnnouncement(`Fecha de ${post.title || 'la publicación'} actualizada. La hora se conserva.`);
+  };
+
+  const startPointerCalendarPostDrag = (event: React.PointerEvent<HTMLButtonElement>, post: MarketingCalendarPost) => {
+    if (!canEdit || view !== 'month' || event.pointerType === 'mouse' || !event.isPrimary || event.button !== 0) return;
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setPointerDrag({ postId: post.id, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, active: false });
+  };
+
+  const movePointerCalendarPostDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!pointerDrag || event.pointerId !== pointerDrag.pointerId) return;
+    const active = pointerDrag.active || Math.hypot(event.clientX - pointerDrag.startX, event.clientY - pointerDrag.startY) > 8;
+    if (!active) return;
+    if (!pointerDrag.active) {
+      draggingPostRef.current = pointerDrag.postId;
+      suppressPostDragClickRef.current = true;
+      setDragging(pointerDrag.postId);
+      const post = posts.find((item) => item.id === pointerDrag.postId);
+      setDragAnnouncement(`Arrastrando ${post?.title || 'publicación'}. Suéltala sobre otro día para cambiar la fecha.`);
+      setPointerDrag({ ...pointerDrag, active: true });
+    }
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-calendar-date]')?.dataset.calendarDate || null;
+    setDropTargetDate((current) => current === target ? current : target);
+  };
+
+  const finishPointerCalendarPostDrag = (event: React.PointerEvent<HTMLButtonElement>, cancelled = false) => {
+    if (!pointerDrag || event.pointerId !== pointerDrag.pointerId) return;
+    if (pointerDrag.active && !cancelled) {
+      const date = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-calendar-date]')?.dataset.calendarDate;
+      const post = posts.find((item) => item.id === pointerDrag.postId);
+      if (post && date) moveCalendarPostToDate(post, date);
+      else setDragAnnouncement('No se cambió la fecha. Suelta la publicación sobre un día del calendario.');
+    } else if (pointerDrag.active) {
+      setDragAnnouncement('Arrastre cancelado. La publicación conserva su fecha.');
+    }
+    finishCalendarPostDrag();
   };
 
   useEffect(() => {
@@ -857,6 +926,7 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
         })}</tbody>
       </table>
     </div> : <>
+      {view === 'month' && dragAnnouncement && <div className={`vc-marketing-calendar-drag-status${dragging ? ' is-active' : ''}`} role="status" aria-live="polite">{dragAnnouncement}</div>}
       <div ref={isWeekCalendarView(view) ? weekGridRef : undefined} onScroll={isWeekCalendarView(view) ? updateWeekScrollPosition : undefined} tabIndex={isWeekCalendarView(view) ? 0 : undefined} className={`vc-marketing-calendar-grid${hideSunday ? ' hide-sunday' : ''}`} role="grid" aria-label={monthHeading} style={{'--calendar-cols': hideSunday ? 7 : 8} as React.CSSProperties}>
       {view === 'month' && <div className="vc-marketing-calendar-weekday vc-marketing-calendar-week-number-heading" role="columnheader" aria-label="Semana del mes">Sem.</div>}{(hideSunday ? weekdays.slice(0, 6) : weekdays).map((day)=><div key={day} className="vc-marketing-calendar-weekday" role="columnheader">{day}</div>)}
       {cells.map((date,cellIndex)=>{
@@ -873,12 +943,12 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
         const visibleTasks=dayTasks.slice(0,Math.max(0,maxVisible-visible.length));
         const remaining=items.length+dayTasks.length-visible.length-visibleTasks.length;
         const isSelectedRange=Boolean(monthSelection && key>=monthSelectionStart && key<=monthSelectionEnd);
-        return <React.Fragment key={key}>{cellIndex % rowSize === 0 && <div className="vc-marketing-calendar-week-number" role="rowheader" aria-label={`Semana ${weekLabel}`}>{weekLabel}</div>}<ContextMenu displayContents trigger={false} className="vc-calendar-day-scope vc-marketing-context-menu" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" data-calendar-date={key} aria-label={`${key}, ${items.length} publicaciones y ${dayTasks.length} actividades`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${nonprodDay?' is-nonproduction':''}${dragging?' can-drop':''}${expandedDate===key?' is-expanded':''}${isSelectedRange?' is-selected-range':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
+        return <React.Fragment key={key}>{cellIndex % rowSize === 0 && <div className="vc-marketing-calendar-week-number" role="rowheader" aria-label={`Semana ${weekLabel}`}>{weekLabel}</div>}<ContextMenu displayContents trigger={false} className="vc-calendar-day-scope vc-marketing-context-menu" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" data-calendar-date={key} aria-label={`${key}, ${items.length} publicaciones y ${dayTasks.length} actividades${dropTargetDate === key ? ', destino de reprogramación' : ''}`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${nonprodDay?' is-nonproduction':''}${dragging?' can-drop':''}${dropTargetDate===key?' is-drop-target':''}${expandedDate===key?' is-expanded':''}${isSelectedRange?' is-selected-range':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
           onPointerDown={(event)=>startMonthSelection(event,key)}
-          onDragOver={(event)=>{if(canEdit&&dragging)event.preventDefault();}}
-          onDrop={(event)=>{event.preventDefault();event.currentTarget.classList.remove('is-drop-target');const rawId=event.dataTransfer.getData('text/plain')||dragging;if(!rawId)return;const post=posts.find((item)=>item.id===rawId);if(post){if(post.scheduled_date.slice(0,10)!==key){if(onQuickReschedule){onQuickReschedule(post,key,post.scheduled_time);}else{onReschedule(post,key);}}setDragging(null);return;}const task=calendarTasks.find((item)=>item.id===rawId);if(task){if(onTaskQuickSchedule){onTaskQuickSchedule(task,key,task.start_time||undefined,task.end_time||undefined);}else{onTaskReschedule(task,key);}setDragging(null);return;}setDragging(null);}}
-          onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))event.currentTarget.classList.remove('is-drop-target');}}
-          onDragEnter={(event)=>{if(dragging)event.currentTarget.classList.add('is-drop-target');}}>
+          onDragOver={(event)=>{if(canEdit&&(draggingPostRef.current||dragging)){event.preventDefault();setDropTargetDate((current)=>current===key?current:key);}}}
+          onDrop={(event)=>{event.preventDefault();const rawId=event.dataTransfer.getData('application/x-visualcorp-marketing-post')||event.dataTransfer.getData('text/plain')||draggingPostRef.current||dragging;if(!rawId){finishCalendarPostDrag();return;}const post=posts.find((item)=>item.id===rawId);if(post){moveCalendarPostToDate(post,key);finishCalendarPostDrag();return;}const task=calendarTasks.find((item)=>item.id===rawId);if(task){const taskDate=String(task.start_date||task.due_date||'').slice(0,10);if(taskDate!==key){if(onTaskQuickSchedule){onTaskQuickSchedule(task,key,task.start_time||undefined,task.end_time||undefined);}else{onTaskReschedule(task,key);}}finishCalendarPostDrag();return;}finishCalendarPostDrag();}}
+          onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node)&&dropTargetDate===key)setDropTargetDate(null);}}
+          onDragEnter={()=>{if(draggingPostRef.current||dragging)setDropTargetDate(key);}}>
           <div className="vc-marketing-calendar-day-head"><span>{date.getDate()}</span>{items.length>0&&<button type="button" className="vc-marketing-calendar-day-agenda-toggle" aria-label={`Abrir agenda del ${key}`} onClick={()=>setExpandedDate(expandedDate===key?null:key)}>{items.length}</button>}{canEdit&&<button type="button" aria-label={`Crear publicación el ${key}`} onClick={()=>onCreate(key)}><Plus size={13}/></button>}</div>
           {nonprodDay && <div className="vc-cal-nonprod-strip" title={`Día sin producción: ${nonprodDay.reason || 'Sin producción'}`}><span className="vc-cal-nonprod-badge">🏖️ {nonprodDay.reason || 'Sin producción'}</span></div>}
           <div className="vc-marketing-calendar-events">{visible.map((post)=>{
@@ -917,17 +987,35 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
                       <span className={`vc-cal-format-badge ${formatInfo.className}`} title={`Formato: ${post.format || formatInfo.label}`}>
                         <FormatIcon size={10} />
                       </span>
+                      {view === 'month' && canEdit && <button
+                        type="button"
+                        draggable
+                        onDragStart={(event) => startCalendarPostDrag(event, post)}
+                        onDragEnd={finishCalendarPostDrag}
+                        onPointerDown={(event) => startPointerCalendarPostDrag(event, post)}
+                        onPointerMove={movePointerCalendarPostDrag}
+                        onPointerUp={(event) => finishPointerCalendarPostDrag(event)}
+                        onPointerCancel={(event) => finishPointerCalendarPostDrag(event, true)}
+                        onClick={(event) => {
+                          if (suppressPostDragClickRef.current) {
+                            suppressPostDragClickRef.current = false;
+                            event.preventDefault();
+                            event.stopPropagation();
+                            return;
+                          }
+                          onSelect(post);
+                        }}
+                        className="vc-marketing-post-drag-handle vc-marketing-post-drag-handle-compact"
+                        aria-label={`Abrir ficha de ${post.title || 'publicación'}; también puedes arrastrar este control a otro día para cambiar la fecha`}
+                        title="Abre la ficha o arrastra el asa a otro día"
+                      ><GripVertical size={13}/></button>}
                       {color && <span className="vc-marketing-pill-indicator" style={{ backgroundColor: color }} aria-hidden="true" />}
                       {post.scheduled_time && <time>{post.scheduled_time}</time>}
                       <button
                         type="button"
                         draggable={canEdit}
-                        onDragStart={(event) => {
-                          event.dataTransfer.setData('text/plain', post.id);
-                          event.dataTransfer.effectAllowed = 'move';
-                          setDragging(post.id);
-                        }}
-                        onDragEnd={() => setDragging(null)}
+                        onDragStart={(event) => startCalendarPostDrag(event, post)}
+                        onDragEnd={finishCalendarPostDrag}
                         onClick={() => onSelect(post)}
                         className="vc-marketing-event-label"
                         title="Abrir ficha de publicación"
