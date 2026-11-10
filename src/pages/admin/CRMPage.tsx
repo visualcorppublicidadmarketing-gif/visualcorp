@@ -4,9 +4,10 @@ import { ArrowUpRight, BadgeCheck, Check, FileText, MessageCircle, Search, Trend
 import { AppFrame, PageHeading, StatCard } from '../../app/layout';
 import { formatDate, formatMoney, useWorkspace } from '../../app/workspace';
 import { useAuth } from '../../auth/AuthProvider';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase, supabaseConfigured } from '../../lib/supabaseClient';
 import { EmptyState, StageBadge } from '../../components/feedback';
 import { useAlert } from '../../components/ui/OperationalKit';
+import './crm-page.css';
 
 function QuoteRequestDetails({ quote }: { quote: any }) {
   const mode = quote.calculationMode;
@@ -180,23 +181,37 @@ export function LeadsPage({ area = 'admin' }: { area?: 'admin' | 'operations' })
   const alert = useAlert();
   const canViewCRM = hasPermission('crm', 'view');
   const [remoteLeads, setRemoteLeads] = useState<any[] | null>(null);
+  const [remoteLeadStatus, setRemoteLeadStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [remoteLeadUserId, setRemoteLeadUserId] = useState<string | null>(null);
+  const [remoteLeadError, setRemoteLeadError] = useState('');
+  const [remoteLeadRetry, setRemoteLeadRetry] = useState(0);
   const [leadQuery, setLeadQuery] = useState('');
   const [stageFilter, setStageFilter] = useState('all');
 
   useEffect(() => {
-    if (!supabase || !user || !canViewCRM) return;
+    if (!supabaseConfigured || !supabase || !user || !canViewCRM) {
+      setRemoteLeads(null);
+      setRemoteLeadStatus('idle');
+      setRemoteLeadUserId(null);
+      setRemoteLeadError('');
+      return;
+    }
     let active = true;
-    supabase
-      .from('public_requests')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(300)
-      .then(({ data: rows, error }) => {
+    const userId = user.id;
+    setRemoteLeads(null);
+    setRemoteLeadStatus('loading');
+    setRemoteLeadUserId(userId);
+    setRemoteLeadError('');
+
+    const loadLeads = async () => {
+      try {
+        const { data: rows, error } = await supabase
+          .from('public_requests')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(300);
         if (!active) return;
-        if (error) {
-          window.console.error(error);
-          return;
-        }
+        if (error) throw error;
         const stages: Record<string, string> = {
           new: 'Nuevo',
           contacted: 'Contactado',
@@ -222,13 +237,34 @@ export function LeadsPage({ area = 'admin' }: { area?: 'admin' | 'operations' })
             customerId: row.customer_id,
           })),
         );
-      });
+        setRemoteLeadStatus('ready');
+      } catch (error) {
+        if (!active) return;
+        window.console.error('No se pudieron cargar las solicitudes del CRM.', error);
+        setRemoteLeads([]);
+        setRemoteLeadError('No pudimos cargar las solicitudes de la base compartida. Revisa la conexión y vuelve a intentarlo.');
+        setRemoteLeadStatus('error');
+      }
+    };
+
+    void loadLeads();
     return () => {
       active = false;
     };
-  }, [user, canViewCRM]);
+  }, [user?.id, canViewCRM, remoteLeadRetry]);
 
-  const leads = remoteLeads ?? data.leads;
+  const remoteLeadSourceStatus = !supabaseConfigured
+    ? 'local'
+    : !user || !canViewCRM
+      ? 'denied'
+      : remoteLeadUserId !== user.id || remoteLeadStatus === 'loading'
+        ? 'loading'
+        : remoteLeadStatus;
+  const leads = remoteLeadSourceStatus === 'local'
+    ? data.leads
+    : remoteLeadSourceStatus === 'ready'
+      ? remoteLeads ?? []
+      : [];
 
   const filteredLeads = useMemo(() => {
     const q = leadQuery.trim().toLowerCase();
@@ -250,7 +286,7 @@ export function LeadsPage({ area = 'admin' }: { area?: 'admin' | 'operations' })
   }, [leads]);
 
   const updateRemote = async (item: any, next: string) => {
-    if (!hasPermission('crm', 'edit') || !supabase) return;
+    if (remoteLeadSourceStatus !== 'ready' || !hasPermission('crm', 'edit') || !supabase) return;
     const map: Record<string, string> = {
       Nuevo: 'new',
       Contactado: 'contacted',
@@ -273,7 +309,7 @@ export function LeadsPage({ area = 'admin' }: { area?: 'admin' | 'operations' })
   };
 
   const convertLead = async (item: any) => {
-    if (!hasPermission('crm', 'edit') || !supabase) return;
+    if (remoteLeadSourceStatus !== 'ready' || !hasPermission('crm', 'edit') || !supabase) return;
     const { data: customerId, error } = await supabase.rpc('convert_visualcorp_request_to_customer', { p_request_id: item.id });
     if (error) {
       await alert({ eyebrow: 'SOLICITUDES Y CRM', title: 'No se creó la ficha', description: error.message, tone: 'danger' });
@@ -295,12 +331,32 @@ export function LeadsPage({ area = 'admin' }: { area?: 'admin' | 'operations' })
             <Link className="button button-outline" to="/operaciones/clientes">
               <Users size={15} /> Directorio de Clientes 360°
             </Link>
-            <span className="local-badge">
-              <span className="status-dot" /> {remoteLeads ? 'Base compartida' : 'Cargando solicitudes'}
+            <span className="local-badge" role="status" aria-live="polite">
+              <span className="status-dot" />
+              {remoteLeadSourceStatus === 'local' ? 'Datos locales' : remoteLeadSourceStatus === 'ready' ? 'Base compartida' : remoteLeadSourceStatus === 'error' ? 'Error de conexión' : remoteLeadSourceStatus === 'denied' ? 'Acceso no disponible' : 'Conectando base'}
             </span>
           </div>
         }
       />
+
+      {remoteLeadSourceStatus === 'error' && (
+        <div className="crm-data-state is-error" role="alert">
+          <span>{remoteLeadError}</span>
+          <button className="button button-outline" type="button" onClick={() => setRemoteLeadRetry((count) => count + 1)}>
+            Reintentar
+          </button>
+        </div>
+      )}
+      {remoteLeadSourceStatus === 'denied' && supabaseConfigured && (
+        <p className="crm-data-state is-denied" role="status">
+          No se muestran solicitudes porque no hay una sesión activa o el perfil no tiene acceso al CRM.
+        </p>
+      )}
+      {remoteLeadSourceStatus === 'loading' && (
+        <p className="crm-data-state is-loading" role="status">
+          Cargando solicitudes de la base compartida…
+        </p>
+      )}
 
       <div className="stat-grid compact-stats">
         <StatCard
@@ -401,8 +457,8 @@ export function LeadsPage({ area = 'admin' }: { area?: 'admin' | 'operations' })
 
         <LeadsTable
           remoteItems={filteredLeads}
-          onStatusChange={remoteLeads ? updateRemote : undefined}
-          onConvertToCustomer={remoteLeads ? convertLead : undefined}
+          onStatusChange={remoteLeadSourceStatus === 'ready' ? updateRemote : undefined}
+          onConvertToCustomer={remoteLeadSourceStatus === 'ready' ? convertLead : undefined}
         />
       </section>
 
