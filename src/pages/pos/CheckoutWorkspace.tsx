@@ -433,6 +433,7 @@ export function PosPage() {
   const [paymentForm,setPaymentForm]=useState({amount:'',method:'Efectivo',reference:'',note:''});
   const [parkedOrders,setParkedOrders]=useState([]);
   const [branchNames,setBranchNames]=useState({});
+  const [parkedManagerAccess,setParkedManagerAccess]=useState({all:false,branchIds:[] as string[]});
   const [activeParkedOrderId,setActiveParkedOrderId]=useState('');
   const [parking,setParking]=useState(false);
   const [deletingParkedOrderId,setDeletingParkedOrderId]=useState('');
@@ -748,18 +749,20 @@ export function PosPage() {
   };
   const refreshParkedOrders=async()=>{
     if(!supabase||!organizationId)return;
-    const [{data:orders,error:ordersError},{data:branches,error:branchesError}]=await Promise.all([
+    const [{data:orders,error:ordersError},{data:branches,error:branchesError},{data:memberships,error:membershipsError}]=await Promise.all([
       supabase.from('parked_pos_orders').select('id,branch_id,created_by,payload,total,idempotency_key,created_at').eq('organization_id',organizationId).eq('status','parked').order('created_at',{ascending:false}).limit(50),
       supabase.from('branches').select('id,code,name').eq('organization_id',organizationId),
+      user?.id?supabase.from('organization_memberships').select('branch_id,role').eq('organization_id',organizationId).eq('user_id',user.id).eq('active',true):Promise.resolve({data:[],error:null}),
     ]);
     if(ordersError)throw ordersError;
     if(branchesError)throw branchesError;
     setParkedOrders(orders||[]);
     setBranchNames(Object.fromEntries((branches||[]).map(branch=>[branch.id,branch.name||branch.code])));
+    const managerMemberships=membershipsError?[]:(memberships||[]).filter(membership=>['owner','admin','manager'].includes(membership.role));
+    setParkedManagerAccess({all:managerMemberships.some(membership=>!membership.branch_id),branchIds:managerMemberships.map(membership=>membership.branch_id).filter(Boolean)});
   };
   useEffect(()=>{let active=true;if(!supabase||!organizationId)return undefined;refreshParkedOrders().catch(error=>{if(active)flash(`No se pudieron cargar las órdenes en espera: ${error.message}`);});return()=>{active=false;};},[organizationId]);
   const canSearchCustomers=hasPermission('crm','view');
-  const canManageAnyParkedOrder=roles.some(role=>['owner','admin','manager'].includes(role));
   useEffect(()=>{
     let active=true;
     if(!supabase||!organizationId){setMaterialRecipes([]);setMaterialRecipesStatus('error');return()=>{active=false;};}
@@ -1114,7 +1117,8 @@ export function PosPage() {
     if(!supabase)return;
     if(activeParkedOrderId===order.id){flash('No se puede eliminar una orden recuperada que está abierta en el POS.');return;}
     const isOwnOrder=order.created_by===user?.id;
-    if(!isOwnOrder&&!canManageAnyParkedOrder){flash('Solo puedes eliminar órdenes que guardaste tú.');return;}
+    const canManageOrderBranch=parkedManagerAccess.all||parkedManagerAccess.branchIds.includes(order.branch_id);
+    if(!isOwnOrder&&!canManageOrderBranch){flash('Solo puedes eliminar órdenes que guardaste tú o que pertenecen a una sucursal que administras.');return;}
     const payload=order.payload||{};
     const customerName=payload.form?.customer||payload.form?.quoteId&&centralQuotes.find(quote=>quote.id===payload.form.quoteId)?.customer_name||'Sin cliente';
     const accepted=await confirmDialog({eyebrow:'ÓRDENES RECUPERABLES',title:'¿Eliminar esta orden en espera?',description:'La orden se quitará de la lista y no se podrá recuperar después.',tone:'danger',destructive:true,confirmLabel:'Eliminar orden',cancelLabel:'Conservar orden',summaryItems:[{label:'Cliente',value:customerName},{label:'Sucursal',value:branchNames[order.branch_id]||'Sucursal'},{label:'Total',value:formatMoney(order.total)}],consequences:['Esta orden todavía no es una venta y no descontó inventario.','La eliminación es permanente.']});
@@ -1122,10 +1126,19 @@ export function PosPage() {
     setDeletingParkedOrderId(order.id);
     try{
       const {error}=await supabase.rpc('delete_parked_pos_order',{p_parked_order:order.id});
-      if(error)throw error;
-      await refreshParkedOrders();
+      if(error){
+        const message=String(error.message||'');
+        if(/no tienes acceso|solo quien guardó|responsable de la sucursal/i.test(message)){
+          flash('No tienes permiso para eliminar esta orden. Solo quien la guardó o un responsable de esa sucursal puede hacerlo.');
+          return;
+        }
+        throw error;
+      }
+      setParkedOrders(current=>current.filter(item=>item.id!==order.id));
       flash('Orden en espera eliminada.');
-    }catch(error){flash(`No se pudo eliminar la orden: ${error.message}`);}
+      try{await refreshParkedOrders();}
+      catch{flash('Orden eliminada. No se pudo actualizar la lista; vuelve a cargarla para ver los cambios.');}
+    }catch(error){flash(`No se pudo eliminar la orden: ${error.message||'Revisa tu conexión e inténtalo de nuevo.'}`);}
     finally{setDeletingParkedOrderId('');}
   };
   const resumeParkedOrder=async(order)=>{
@@ -1662,7 +1675,7 @@ export function PosPage() {
         {submitBlockReason&&<p className="pos-submit-guidance" role="status">{submitBlockReason}</p>}
         </aside>
       </form>
-      <section className="panel pos-parked-panel"><div className="panel-heading"><div><span className="eyebrow">ÓRDENES RECUPERABLES</span><h2>En espera</h2></div><span className="muted-count">{parkedOrders.length} órdenes</span></div>{parkedOrders.length===0?<EmptyState icon={ClipboardList} title="No hay órdenes en espera" text="Guarda aquí un carrito o cotización para continuarla desde esta sucursal. No reserva stock."/>:<div className="activity-list">{parkedOrders.map(order=>{const payload=order.payload||{};const customerName=payload.form?.customer||payload.form?.quoteId&&centralQuotes.find(quote=>quote.id===payload.form.quoteId)?.customer_name||'Sin cliente';const orderIsOpen=activeParkedOrderId===order.id;const canDeleteOrder=order.created_by===user?.id||canManageAnyParkedOrder;return <article className="sale-activity pos-parked-card" key={order.id}><div className="sale-row"><span className="sale-icon"><ClipboardList size={17}/></span><span><b>{customerName}</b><small>{branchNames[order.branch_id]||'Sucursal'} · {new Date(order.created_at).toLocaleString('es-EC',{dateStyle:'short',timeStyle:'short'})}</small></span><strong>{formatMoney(order.total)}</strong></div><div className="sale-payment-summary"><span>{payload.cart?.length|| (payload.form?.quoteId?'Cotización aprobada':'')} artículo(s)</span><span>Guardada por <b>{order.created_by===user?.id?'ti':'el equipo'}</b></span></div><div className="pos-parked-actions"><button className="button button-outline" type="button" disabled={Boolean(deletingParkedOrderId)} onClick={()=>resumeParkedOrder(order)}>Recuperar orden</button>{canDeleteOrder&&(orderIsOpen?<span className="pos-parked-open-badge" title="Confirma la venta o descarta esta orden abierta antes de eliminarla">Abierta en el POS</span>:<button className="button button-outline pos-parked-delete" type="button" disabled={Boolean(deletingParkedOrderId)} aria-label={`Eliminar orden de ${customerName}`} onClick={()=>deleteParkedOrder(order)}><Trash2 size={14} aria-hidden="true"/>{deletingParkedOrderId===order.id?'Eliminando…':'Eliminar orden'}</button>)}</div></article>;})}</div>}</section>
+      <section className="panel pos-parked-panel"><div className="panel-heading"><div><span className="eyebrow">ÓRDENES RECUPERABLES</span><h2>En espera</h2></div><span className="muted-count">{parkedOrders.length} órdenes</span></div>{parkedOrders.length===0?<EmptyState icon={ClipboardList} title="No hay órdenes en espera" text="Guarda aquí un carrito o cotización para continuarla desde esta sucursal. No reserva stock."/>:<div className="activity-list">{parkedOrders.map(order=>{const payload=order.payload||{};const customerName=payload.form?.customer||payload.form?.quoteId&&centralQuotes.find(quote=>quote.id===payload.form.quoteId)?.customer_name||'Sin cliente';const orderIsOpen=activeParkedOrderId===order.id;const canManageOrderBranch=parkedManagerAccess.all||parkedManagerAccess.branchIds.includes(order.branch_id);const canDeleteOrder=order.created_by===user?.id||canManageOrderBranch;return <article className="sale-activity pos-parked-card" key={order.id}><div className="sale-row"><span className="sale-icon"><ClipboardList size={17}/></span><span><b>{customerName}</b><small>{branchNames[order.branch_id]||'Sucursal'} · {new Date(order.created_at).toLocaleString('es-EC',{dateStyle:'short',timeStyle:'short'})}</small></span><strong>{formatMoney(order.total)}</strong></div><div className="sale-payment-summary"><span>{payload.cart?.length|| (payload.form?.quoteId?'Cotización aprobada':'')} artículo(s)</span><span>Guardada por <b>{order.created_by===user?.id?'ti':'el equipo'}</b></span></div><div className="pos-parked-actions"><button className="button button-outline" type="button" disabled={Boolean(deletingParkedOrderId)} onClick={()=>resumeParkedOrder(order)}>Recuperar orden</button>{canDeleteOrder&&(orderIsOpen?<span className="pos-parked-open-badge" title="Confirma la venta o descarta esta orden abierta antes de eliminarla">Abierta en el POS</span>:<button className="button button-outline pos-parked-delete" type="button" disabled={Boolean(deletingParkedOrderId)} aria-label={`Eliminar orden de ${customerName}`} onClick={()=>deleteParkedOrder(order)}><Trash2 size={14} aria-hidden="true"/>{deletingParkedOrderId===order.id?'Eliminando…':'Eliminar orden'}</button>)}</div></article>;})}</div>}</section>
       <section className="panel pos-recent-panel"><div className="panel-heading"><div><span className="eyebrow">CAJA DEL DÍA · {branchName}</span><h2>Ventas confirmadas</h2></div><span className="muted-count">{posSalesStatus==='ready'?`${salesToday.length} registros`:posSalesStatus==='loading'?'Consultando…':posSalesStatus==='restricted'?'Acceso limitado':'Error de consulta'}</span></div>
         {posSalesStatus==='ready'&&salesToday.length>0&&<div className="pos-recent-toolbar">
           <div className="search-input pos-recent-search"><Search size={14}/><input type="search" value={recentSalesQuery} onChange={(e)=>setRecentSalesQuery(e.target.value)} placeholder="Buscar cliente, código VEN o producto…" aria-label="Buscar en ventas de hoy"/></div>
