@@ -190,6 +190,46 @@ function getPOSCartLinePresentation(line: any) {
       || (line.mode === 'area' && description.includes(` · ${quantity.toLocaleString('es-EC')} piezas ·`) && description.includes('m² · $')));
   return { metadata, description: isGeneratedDescription ? '' : description };
 }
+
+function POSApprovedQuoteSummary({ lines, quoteCode, total, emptyDescription }: {
+  lines: any[];
+  quoteCode: string;
+  total: number;
+  emptyDescription?: string;
+}) {
+  return <section className="pos-cart pos-quote-cart" aria-label="Resumen de cotización">
+    <div className="pos-cart-heading">
+      <div><span className="eyebrow">COTIZACIÓN APROBADA</span><h3>{quoteCode}</h3></div>
+      <strong>{formatMoney(total)}</strong>
+    </div>
+    {lines.length ? <div className="pos-quote-approved-lines">{lines.map((line, index) => {
+      const hasAdjustments = line.discount_amount > 0 || line.tax_amount > 0 || line.shipping_share > 0;
+      return <article className="pos-quote-approved-card" key={line.line_key}>
+        <div className="pos-quote-approved-item">
+          <div><small>ARTÍCULO {String(index + 1).padStart(2, '0')}</small><b>{line.name || 'Artículo cotizado'}</b></div>
+          <strong>{formatMoney(line.line_total)}</strong>
+        </div>
+        <small className="pos-quote-approved-meta">
+          {line.pieceQuantity || line.quantity} {(line.pieceQuantity || line.quantity) === 1 ? 'pieza' : 'piezas'}
+          {line.widthCm && line.heightCm ? ` · ${line.widthCm} × ${line.heightCm} cm` : ''}
+          {line.totalArea ? ` · ${Number(line.totalArea).toLocaleString('es-EC', { maximumFractionDigits: 2 })} m²` : ''}
+          {line.base_unit_price !== null ? ` · ${formatMoney(line.base_unit_price)}/${line.unit || 'unidad'}` : ''}
+          {line.optionChoice ? ` · ${line.optionChoice}` : ''}
+        </small>
+        {line.description && <small className="pos-quote-approved-description" title={line.description}>{line.description}</small>}
+        <dl className="pos-quote-approved-breakdown">
+          <div><dt>Material</dt><dd>{formatMoney(line.base_subtotal)}</dd></div>
+          {line.unit === 'm²' && <div><dt>Ojales · {line.eyelet_label}</dt><dd>{line.eyelet_total > 0 ? `+${formatMoney(line.eyelet_total)}` : 'Sin costo'}</dd></div>}
+          {line.design_label && <div><dt>Diseño · {line.design_label}</dt><dd>{line.design_total > 0 ? `+${formatMoney(line.design_total)}` : 'Sin costo'}</dd></div>}
+          {hasAdjustments && <div className="is-subtotal"><dt>Subtotal</dt><dd>{formatMoney(line.subtotal)}</dd></div>}
+          {line.discount_amount > 0 && <div className="is-discount"><dt>Descuento</dt><dd>−{formatMoney(line.discount_amount)}</dd></div>}
+          {line.tax_amount > 0 && <div><dt>IVA</dt><dd>+{formatMoney(line.tax_amount)}</dd></div>}
+          {line.shipping_share > 0 && <div><dt>Envío / otros</dt><dd>+{formatMoney(line.shipping_share)}</dd></div>}
+        </dl>
+      </article>;
+    })}</div> : <p className="pos-cart-empty">{emptyDescription || 'Los conceptos y el total se conservarán como fueron aprobados.'}</p>}
+  </section>;
+}
 const pendingSaleSignature = (snapshot: any) => JSON.stringify({
     form: {
     total:String(snapshot?.form?.total||''),amountPaid:String(snapshot?.form?.amountPaid||''),method:String(snapshot?.form?.method||''),customer:String(snapshot?.form?.customer||''),customerId:String(snapshot?.form?.customerId||''),customerPhone:String(snapshot?.form?.customerPhone||''),customerEmail:String(snapshot?.form?.customerEmail||''),customerDocumentReference:String(snapshot?.form?.customerDocumentReference||''),description:String(snapshot?.form?.description||''),productId:String(snapshot?.form?.productId||''),branchCode:String(snapshot?.form?.branchCode||''),quantity:String(snapshot?.form?.quantity||''),quoteId:String(snapshot?.form?.quoteId||''),
@@ -504,29 +544,6 @@ function POSCartLineEditor({
       </div>
     </div>
     <dl className="pos-line-financial-breakdown" aria-label={`Desglose de ${line.name}`}>
-      {line.mode === 'area' ? <>
-        <div>
-          <dt>Dimensiones</dt>
-          <dd>{line.widthCm} × {line.heightCm} cm</dd>
-        </div>
-        <div>
-          <dt>Cantidad · área total</dt>
-          <dd>{line.quantity} {Number(line.quantity) === 1 ? 'pieza' : 'piezas'} · {Number(line.areaTotal || line.billingQuantity || 0).toLocaleString('es-EC')} m²</dd>
-        </div>
-        <div>
-          <dt>Tarifa por m²</dt>
-          <dd>{formatMoney(Number(line.baseUnitPrice ?? line.unitPrice) || 0)} / m²</dd>
-        </div>
-      </> : <>
-        <div>
-          <dt>Cantidad</dt>
-          <dd>{line.quantity} {String(line.unit || 'unidad')}</dd>
-        </div>
-        <div>
-          <dt>Tarifa unitaria</dt>
-          <dd>{formatMoney(Number(line.baseUnitPrice ?? line.unitPrice) || 0)} / {String(line.unit || 'unidad')}</dd>
-        </div>
-      </>}
       <div>
         <dt>{line.mode === 'area' ? 'Material' : 'Producto / servicio'}</dt>
         <dd>{formatMoney(baseSubtotal)}</dd>
@@ -1895,7 +1912,7 @@ export function PosPage() {
         <aside className={`pos-order-summary${mobileSummaryOpen?' is-open':''}`} data-checkout-step={checkoutStep}>
           <div className="pos-mobile-summary-bar"><span><small>ORDEN ACTUAL</small><b>{formatMoney(activeTotal)}</b></span><button className="button button-dark" type="button" aria-expanded={mobileSummaryOpen} onClick={()=>setMobileSummaryOpen((open)=>!open)}>{mobileSummaryOpen?'Cerrar pedido':'Ver pedido y cobrar'}</button></div>
           {form.quoteId
-            ? <section className="pos-cart pos-quote-cart" aria-label="Resumen de cotización"><div className="pos-cart-heading"><div><span className="eyebrow">COTIZACIÓN APROBADA</span><h3>{centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||'Pedido aprobado'}</h3></div><strong>{formatMoney(activeTotal)}</strong></div>{currentQuoteLines.length>0?<div className="pos-quote-approved-lines">{currentQuoteLines.map((line,index)=>{const hasAdjustments=line.discount_amount>0||line.tax_amount>0||line.shipping_share>0;return <article className="pos-quote-approved-card" key={line.line_key}><div className="pos-quote-approved-item"><div><small>ARTÍCULO {String(index+1).padStart(2,'0')}</small><b>{line.name||'Artículo cotizado'}</b></div><strong>{formatMoney(line.line_total)}</strong></div><small className="pos-quote-approved-meta">{line.pieceQuantity||line.quantity} {(line.pieceQuantity||line.quantity)===1?'pieza':'piezas'}{line.widthCm&&line.heightCm?` · ${line.widthCm} × ${line.heightCm} cm`:''}{line.totalArea?` · ${Number(line.totalArea).toLocaleString('es-EC',{maximumFractionDigits:2})} m²`:''} · {formatMoney(line.base_unit_price)}/{line.unit||'unidad'}{line.optionChoice?` · ${line.optionChoice}`:''}</small>{line.description&&<small className="pos-quote-approved-description" title={line.description}>{line.description}</small>}<dl className="pos-quote-approved-breakdown"><div><dt>Material</dt><dd>{formatMoney(line.base_subtotal)}</dd></div>{line.eyelet_total>0&&<div><dt>Ojales · {line.eyelet_label}</dt><dd>+{formatMoney(line.eyelet_total)}</dd></div>}{line.design_total>0&&<div><dt>Diseño · {line.design_label}</dt><dd>+{formatMoney(line.design_total)}</dd></div>}{hasAdjustments&&<div className="is-subtotal"><dt>Subtotal</dt><dd>{formatMoney(line.subtotal)}</dd></div>}{line.discount_amount>0&&<div className="is-discount"><dt>Descuento</dt><dd>−{formatMoney(line.discount_amount)}</dd></div>}{line.tax_amount>0&&<div><dt>IVA</dt><dd>+{formatMoney(line.tax_amount)}</dd></div>}{line.shipping_share>0&&<div><dt>Envío / otros</dt><dd>+{formatMoney(line.shipping_share)}</dd></div>}</dl></article>})}</div>:<p className="pos-cart-empty">{form.description||'Los conceptos y el total se conservarán como fueron aprobados.'}</p>}</section>
+            ? <POSApprovedQuoteSummary lines={currentQuoteLines} quoteCode={quotePreview?.quote_code || 'Pedido aprobado'} total={activeTotal} emptyDescription={form.description}/>
             : <section className="pos-cart" aria-label="Carrito de venta">
                 <div className="pos-cart-heading">
                   <div>
