@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Activity, AlertTriangle, Eye, ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Building2, ChartNoAxesCombined, CheckCircle2, ChevronLeft, ChevronRight, Clock, Copy, DollarSign, Image as ImageIcon, LayoutGrid, List, Lock, MapPin, Package, Search, SlidersHorizontal, Store, Trash2, TrendingUp, X } from 'lucide-react';
 import referenceLibrary from '../data/inventory-reference-index.json';
-import inventoryImages from '../data/inventory-product-images.json';
+import { inventoryImageRecordForSku, inventoryRollMaterialImageRecord } from '../data/inventoryProductImages';
 import { InventoryArticleEditor } from './InventoryArticleEditor';
 import { ContextMenu, type ContextMenuAction } from './ui/ContextMenu';
 import { BorderBeam, NumberTicker } from './ui/MagicComponents';
@@ -11,7 +11,6 @@ import { inventoryHealthState, summarizeInventoryHealth, summarizeInventoryUsage
 import './InventoryInsights.css';
 
 const referenceProducts = referenceLibrary.products as Array<{ id: string; name: string; tags: string[]; images: Array<{ path: string; label: string; series: string }> }>;
-const inventoryImageProducts = inventoryImages.products as Record<string, { name: string; source: string }>;
 const viewModes: Array<{ key: 'table' | 'cards' | 'analytics'; Icon: React.ComponentType<{ size?: number }> }> = [
   { key: 'table', Icon: List }, { key: 'cards', Icon: LayoutGrid }, { key: 'analytics', Icon: ChartNoAxesCombined },
 ];
@@ -36,15 +35,27 @@ const suggestedReference = (item) => {
     .sort((a, b) => b.name.length - a.name.length)[0]?.images[0];
 };
 const productImage = (item) => {
-  const assigned = inventoryImageProducts[item.sku];
-  const assignedPath = assigned ? `/inventory/${item.sku}.webp` : '';
-  const suggested = !item.referenceImageUrl && !assignedPath ? suggestedReference(item) : null;
-  const customImage = item.referenceImageUrl && item.referenceImageUrl !== assignedPath;
-  const label = customImage ? 'Referencia asignada' : assigned?.source === 'generated' ? 'Referencia generada' : assigned?.source === 'company-sample' ? 'Muestra gráfica' : assigned?.source === 'company-photo' ? 'Foto Visual Corp' : suggested?.label || '';
+  const materialImage = inventoryRollMaterialImageRecord(item);
+  const assigned = inventoryImageRecordForSku(item.sku);
+  const assignedPath = assigned?.path || '';
+  const directPath = item.referenceImageUrl || '';
+  const suggested = !materialImage && !directPath && !assignedPath ? suggestedReference(item) : null;
+  const primaryPath = materialImage?.path || directPath || assignedPath || suggested?.path || '';
+  const label = materialImage?.label || (directPath && directPath !== assignedPath ? 'Referencia asignada' : assigned?.label || suggested?.label || '');
   const gallery = Array.isArray(item.productImages) ? item.productImages.map((image) => ({ path: image.url, label: image.label || 'Imagen del producto' })).filter((image) => image.path) : [];
-  const path = item.referenceImageUrl || assignedPath || suggested?.path || '';
-  if (path && !gallery.some((image) => image.path === path)) gallery.unshift({ path, label });
-  return { path: gallery[0]?.path || path, label, gallery };
+  const addImage = (path, imageLabel) => {
+    if (path && !gallery.some((image) => image.path === path)) gallery.unshift({ path, label: imageLabel });
+  };
+  if (materialImage) {
+    addImage(directPath, directPath === assignedPath ? assigned?.label || 'Referencia anterior' : 'Referencia asignada');
+    addImage(assignedPath, assigned?.label || 'Referencia de catálogo');
+    addImage(materialImage.path, materialImage.label);
+  } else {
+    addImage(assignedPath, assigned?.label || 'Referencia de catálogo');
+    addImage(directPath, directPath !== assignedPath ? 'Referencia asignada' : assigned?.label || 'Referencia generada');
+    addImage(suggested?.path || '', suggested?.label || '');
+  }
+  return { path: primaryPath, label, gallery };
 };
 
 export function InventoryInsights({ id, hidden, items, optionSourceItems = items, inventoryGroups = [], canSeeCosts, canEditCosts = false, canEdit, canReserve, canMove, canRequestTransfer, onTransfer, onEdit, onReserve, onMovement, onCost, onArchive, onArchiveMany, onDuplicate, formatDate, formatMoney, metadataEdit, setMetadataEdit, reservationEdit, setReservationEdit, onSaveMetadata, onSaveReservation, metadataSaveBusy = false, branchOptions = [], onAssignBranch, onAssignBranchMany, onInspect }) {
