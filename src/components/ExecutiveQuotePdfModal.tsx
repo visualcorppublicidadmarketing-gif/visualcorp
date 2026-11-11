@@ -11,6 +11,7 @@ import {
   Printer,
   Share2,
   User,
+  WalletCards,
   X,
 } from 'lucide-react';
 import { useWorkspace, formatMoney } from '../app/workspace';
@@ -309,6 +310,7 @@ export function ExecutiveQuotePdfModal({
   const statusClass = status.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const isPublicQuote = variant === 'quote' && Boolean(activeDoc.id && quoteCode);
   const verificationUrl = `${window.location.origin}/seguimiento/${encodeURIComponent(quoteCode)}`;
+  const paymentOptionsUrl = `${window.location.origin}/pagos`;
 
   // Acciones: Imprimir / Guardar como PDF
   const handlePrint = useCallback(() => {
@@ -381,6 +383,9 @@ export function ExecutiveQuotePdfModal({
     if (isPublicQuote) {
       lines.push(`*Ver proforma y aprobar en línea:*`);
       lines.push(verificationUrl);
+      lines.push(``);
+      lines.push(`*Medios de pago:*`);
+      lines.push(paymentOptionsUrl);
     }
     lines.push(``);
     lines.push(`_Visual Corp · Milagro, Guayas, Ecuador_`);
@@ -402,6 +407,7 @@ export function ExecutiveQuotePdfModal({
     normalizedItems,
     quoteCode,
     verificationUrl,
+    paymentOptionsUrl,
   ]);
 
   if (!visible || !Array.isArray(activeDoc.items) || activeDoc.items.length === 0) return null;
@@ -642,6 +648,10 @@ export function ExecutiveQuotePdfModal({
                 <div className="eq-pdf-portal-card">
                   <ExternalLink size={15} aria-hidden="true" />
                   <div><strong>Consulta y aprobación en línea</strong><a href={verificationUrl} target="_blank" rel="noopener noreferrer">{window.location.host}/seguimiento/{quoteCode}</a></div>
+                </div>
+                <div className="eq-pdf-portal-card eq-pdf-payment-link">
+                  <WalletCards size={15} aria-hidden="true" />
+                  <div><strong>Transferencia o pago con Deuna</strong><a href={paymentOptionsUrl} target="_blank" rel="noopener noreferrer">{window.location.host}/pagos</a></div>
                 </div>
               </div>}
               {/* Liquidación con los valores de IVA guardados en el documento */}

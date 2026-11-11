@@ -645,6 +645,23 @@
   gap: 12px;
 }
 
+.eq-pdf-portal-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #d7dce8;
+  border-radius: 9px;
+  background: #f7f8fb;
+  color: #364152;
+}
+
+.eq-pdf-portal-card > svg { flex: none; margin-top: 1px; color: #712b92; }
+.eq-pdf-portal-card > div { min-width: 0; display: grid; gap: 4px; }
+.eq-pdf-portal-card strong { font-size: 10px; }
+.eq-pdf-portal-card a { color: #5f247f; font-size: 9px; font-weight: 700; overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 2px; }
+.eq-pdf-payment-link { border-color: #eadced; background: linear-gradient(110deg, #fff8fd, #f5f1fb); }
+
 .eq-pdf-bank-accounts {
   background: #f8fafc;
   border: 1px solid #cbd5e1;
