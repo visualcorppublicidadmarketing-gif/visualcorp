@@ -19,7 +19,7 @@ En Inventario → Integraciones, “Cortar lona de 310 cm” requiere un conteo 
 
 ## Referencias visuales
 
-Las ilustraciones SVG bajo `public/inventory/catalog-materials/` son referencias generadas para identificar familias y medidas. No prueban marca, lote, composición, acabado exacto ni existencia física.
+Las ilustraciones SVG y WebP bajo `public/inventory/catalog-materials/` son referencias generadas para identificar familias y medidas. No prueban marca, lote, composición, acabado exacto ni existencia física. El detalle de los ocho nuevos materiales de lona y vinil, su correspondencia con SKU y la procedencia está en el [README de referencias visuales](README.md).
 
 ## Pendientes para completar con recepción real
 
