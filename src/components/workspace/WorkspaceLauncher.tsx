@@ -8,11 +8,12 @@ export type WorkspaceLauncherProps = {
   userId: string;
   groups: (AppNavGroup & { items: AppNavLink[] })[];
   descriptions: Record<string, string>;
+  heading?: string;
 };
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 /** Receives only permission-filtered routes. Favorites never grant access. */
-export function WorkspaceLauncher({ userId, groups, descriptions }: WorkspaceLauncherProps) {
+export function WorkspaceLauncher({ userId, groups, descriptions, heading }: WorkspaceLauncherProps) {
   const searchId = useId();
   const storageKey = `vc-workspace-favorites-v1:${userId}`;
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -44,7 +45,7 @@ export function WorkspaceLauncher({ userId, groups, descriptions }: WorkspaceLau
   };
   const reset = () => { setQuery(''); setArea('all'); setOnlyFavorites(false); };
   return <section className="workspace-launcher" aria-labelledby={`${searchId}-heading`}>
-    <header className="workspace-launcher-heading"><div><span>Tu espacio de trabajo</span><h2 id={`${searchId}-heading`}>Encuentra tu siguiente herramienta</h2><p>Marca con una estrella los accesos que más utilizas. Se guardan para tu cuenta en este navegador.</p></div><span className="workspace-launcher-total">{groups.reduce((sum, group) => sum + group.items.length, 0)} herramientas</span></header>
+    <header className="workspace-launcher-heading"><div><span>Tu espacio de trabajo</span><h2 id={`${searchId}-heading`}>{heading || 'Encuentra tu siguiente herramienta'}</h2><p>Marca con una estrella los accesos que más utilizas. Se guardan para tu cuenta en este navegador.</p></div><span className="workspace-launcher-total">{groups.reduce((sum, group) => sum + group.items.length, 0)} herramientas</span></header>
     {allowedFavorites.length > 0 && <nav className="workspace-favorites" aria-label="Tus accesos favoritos"><span><Star size={15} aria-hidden="true"/> A mano</span>{allowedFavorites.map(({to,label,icon:Icon}) => <Link key={to} to={to}><Icon size={15} aria-hidden="true"/>{label}<ArrowUpRight size={13} aria-hidden="true"/></Link>)}</nav>}
     <div className="workspace-launcher-controls">
       <div className="workspace-tool-search"><label className="sr-only" htmlFor={searchId}>Buscar herramientas</label><Search size={19} aria-hidden="true"/><input id={searchId} type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Busca una herramienta o tarea…"/>{query && <button type="button" aria-label="Limpiar búsqueda" onClick={() => {setQuery(''); document.getElementById(searchId)?.focus();}}><X size={17}/></button>}</div>
