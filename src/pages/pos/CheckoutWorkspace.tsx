@@ -53,7 +53,43 @@ const sanitizePOSMaterialRequestMap = (value: unknown): Record<string, POSMateri
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return Object.fromEntries(Object.entries(value as Record<string, unknown>).slice(0, 100).map(([lineKey, requests]) => [String(lineKey), sanitizePOSMaterialRequests(requests)]).filter(([lineKey, requests]) => Boolean(lineKey) && (requests as POSMaterialRequestDraft[]).length > 0));
 };
-const sanitizePOSCart = (lines: unknown) => Array.isArray(lines)?lines.slice(0,100).filter((line)=>line&&typeof line.name==='string'&&Number.isFinite(Number(line.quantity))&&Number(line.quantity)>0&&Number.isFinite(Number(line.unitPrice))&&Number(line.unitPrice)>0).map((line,index)=>({key:String(line.key||`restored-${line.productId||'custom'}-${index}`),productId:String(line.productId||''),name:String(line.name),family:String(line.family||''),image:String(line.image||''),mode:line.mode==='area'?'area':'quantity',quantity:Number(line.quantity),billingQuantity:Number(line.billingQuantity)||Number(line.quantity),unit:String(line.unit||'unidad'),unitPrice:Number(line.unitPrice),baseUnitPrice:Number(line.baseUnitPrice??line.unitPrice),total:Number(line.total)||Number(line.quantity)*Number(line.unitPrice),widthCm:line.widthCm??null,heightCm:line.heightCm??null,areaPerPiece:line.areaPerPiece??null,areaTotal:line.areaTotal??null,pricingTier:line.pricingTier||'pvp',pricingTierLabel:String(line.pricingTierLabel||'Normal'),optionChoice:String(line.optionChoice||''),finishing:sanitizeCommercialFinishing(line.finishing),description:String(line.description||line.name)})):[];
+const sanitizePOSCart = (lines: unknown) => {
+  if (!Array.isArray(lines)) return [];
+  return lines
+    .slice(0, 100)
+    .filter((line) => {
+      if (!line || typeof line.name !== 'string') return false;
+      const quantity = Number(line.quantity);
+      const unitPrice = Number(line.unitPrice);
+      const baseUnitPrice = Number(line.baseUnitPrice ?? line.unitPrice);
+      return Number.isFinite(quantity) && quantity > 0 && Number.isFinite(unitPrice) && unitPrice >= 0 && Number.isFinite(baseUnitPrice) && baseUnitPrice > 0;
+    })
+    .map((line, index) => ({
+      key: String(line.key || `restored-${line.productId || 'custom'}-${index}`),
+      productId: String(line.productId || ''),
+      name: String(line.name),
+      family: String(line.family || ''),
+      image: String(line.image || ''),
+      mode: line.mode === 'area' ? 'area' : 'quantity',
+      quantity: Number(line.quantity),
+      billingQuantity: Number(line.billingQuantity) || Number(line.quantity),
+      unit: String(line.unit || 'unidad'),
+      unitPrice: Number(line.unitPrice),
+      baseUnitPrice: Number(line.baseUnitPrice ?? line.unitPrice),
+      total: Number(line.total) || Number(line.quantity) * Number(line.unitPrice),
+      widthCm: line.widthCm ?? null,
+      heightCm: line.heightCm ?? null,
+      areaPerPiece: line.areaPerPiece ?? null,
+      areaTotal: line.areaTotal ?? null,
+      pricingTier: line.pricingTier || 'pvp',
+      pricingTierLabel: String(line.pricingTierLabel || 'Normal'),
+      optionChoice: String(line.optionChoice || ''),
+      lineDiscountPercent: Math.min(100, Math.max(0, Number(line.lineDiscountPercent) || 0)),
+      customUnitPriceApplied: Boolean(line.customUnitPriceApplied),
+      finishing: sanitizeCommercialFinishing(line.finishing),
+      description: String(line.description || line.name),
+    }));
+};
 const sanitizePOSPayments = (rows: unknown) => {
   const validMethods = new Set(['Efectivo','Transferencia','Tarjeta','Otro']);
   if (!Array.isArray(rows)) return [{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}];
@@ -101,14 +137,34 @@ const sanitizeProductionDetails = (value: unknown): Record<string, ProductionDet
   return Object.fromEntries(Object.entries(value).slice(0,100).filter(([key,entry])=>key.length<=150&&entry&&typeof entry==='object').map(([key,entry]:[string,any])=>[key,{workflow_code:isProductionWorkflowCode(entry.workflow_code)?entry.workflow_code:'review',specifications:entry.specifications&&typeof entry.specifications==='object'&&!Array.isArray(entry.specifications)?entry.specifications:{}}]));
 };
 const posSaleLinesSignature = (lines: unknown) => JSON.stringify(sanitizePOSSaleLines(lines).map(({ material_requests: _requests, ...line }) => line));
-function POSFinancialBreakdown({ subtotal, discount, taxRate, taxAmount, total, shipping = 0, taxApplied = true, taxLabel = 'No aplicado', className = '' }: { subtotal:number; discount:number; taxRate:number; taxAmount:number; total:number; shipping?:number; taxApplied?:boolean; taxLabel?:string; className?:string }) {
+function POSFinancialBreakdown({ subtotal, lineDiscount = 0, discount, discountLabel = 'Descuento', taxRate, taxAmount, total, shipping = 0, taxApplied = true, taxLabel = 'No aplicado', className = '' }: { subtotal:number; lineDiscount?:number; discount:number; discountLabel?:string; taxRate:number; taxAmount:number; total:number; shipping?:number; taxApplied?:boolean; taxLabel?:string; className?:string }) {
+  const safeLineDiscount = Math.max(0, roundMoney(lineDiscount));
+  const subtotalAfterLineDiscount = Math.max(0, roundMoney(subtotal - safeLineDiscount));
+  const taxableSubtotal = Math.max(0, roundMoney(subtotalAfterLineDiscount - discount));
   return <dl className={`pos-order-financial-breakdown ${className}`} aria-label="Desglose del total de la orden">
-    <div><dt>Subtotal</dt><dd>{formatMoney(subtotal)}</dd></div>
-    {discount>0&&<div><dt>Descuento</dt><dd>−{formatMoney(discount)}</dd></div>}
+    <div><dt>{safeLineDiscount > 0 ? 'Subtotal bruto' : 'Subtotal'}</dt><dd>{formatMoney(subtotal)}</dd></div>
+    {safeLineDiscount > 0 && <>
+      <div className="is-discount"><dt>Descuentos de línea</dt><dd>−{formatMoney(safeLineDiscount)}</dd></div>
+      <div className="is-subtotal"><dt>Subtotal neto</dt><dd>{formatMoney(subtotalAfterLineDiscount)}</dd></div>
+    </>}
+    {discount>0&&<div className="is-discount"><dt>{discountLabel}</dt><dd>−{formatMoney(discount)}</dd></div>}
+    <div className="is-taxable"><dt>Base imponible</dt><dd>{formatMoney(taxableSubtotal)}</dd></div>
     {taxApplied?<div className="pos-tax-line"><dt>IVA ({taxRate}%)</dt><dd>+{formatMoney(taxAmount)}</dd></div>:<div className="pos-tax-line"><dt>IVA</dt><dd>{taxLabel}</dd></div>}
     {shipping>0&&<div><dt>Envío / otros cargos</dt><dd>{formatMoney(shipping)}</dd></div>}
     <div className="is-total"><dt>Total por cobrar</dt><dd>{formatMoney(total)}</dd></div>
   </dl>;
+}
+
+function getPOSCartLineFinancials(line: any, prices: Record<string, number> = {}) {
+  const quantity = Math.max(0, Number(line.quantity) || 0);
+  const billingQuantity = Math.max(0, Number(line.billingQuantity) || quantity);
+  const finishing = calculateCommercialFinishing(line.finishing, quantity, prices);
+  const baseSubtotal = roundMoney(Math.max(0, Number(line.baseUnitPrice ?? line.unitPrice) || 0) * billingQuantity);
+  const subtotal = roundMoney(baseSubtotal + finishing.total);
+  const rawTotal = Number(line.total ?? quantity * Number(line.unitPrice));
+  const total = roundMoney(Math.max(0, Number.isFinite(rawTotal) ? rawTotal : 0));
+  const discount = roundMoney(Math.max(0, subtotal - total));
+  return { finishing, billingQuantity, baseSubtotal, subtotal, discount, total };
 }
 const pendingSaleSignature = (snapshot: any) => JSON.stringify({
     form: {
@@ -250,6 +306,11 @@ function POSCartLineEditor({
       finishing: sanitizeCommercialFinishing(line.finishing),
     });
   }, [line.key, line.name, line.description, line.quantity, line.widthCm, line.heightCm, line.unitPrice, line.pricingTier, line.lineDiscountPercent]);
+
+  const lineFinancials = getPOSCartLineFinancials(line, finishingPrices);
+  const { finishing: finishingBreakdown, baseSubtotal, subtotal: itemSubtotal, discount: itemDiscount, total: itemTotal } = lineFinancials;
+  const allowEyelets = line.mode === 'area' && product?.customOptions?.allow_eyelets !== false;
+  const allowDesign = product?.customOptions?.allow_design !== false;
 
   const applyLineUpdate = (
     nextName: string,
@@ -417,7 +478,55 @@ function POSCartLineEditor({
         </div>
       </div>
     </div>
-    {(calculateCommercialFinishing(line.finishing, Number(line.quantity)||0, finishingPrices).summary.length>0)&&<small className="pos-line-finishing-summary">{calculateCommercialFinishing(line.finishing, Number(line.quantity)||0, finishingPrices).summary.join(' · ')}</small>}
+    <dl className="pos-line-financial-breakdown" aria-label={`Desglose de ${line.name}`}>
+      {line.mode === 'area' ? <>
+        <div>
+          <dt>Dimensiones</dt>
+          <dd>{line.widthCm} × {line.heightCm} cm</dd>
+        </div>
+        <div>
+          <dt>Cantidad · área total</dt>
+          <dd>{line.quantity} {Number(line.quantity) === 1 ? 'pieza' : 'piezas'} · {Number(line.areaTotal || line.billingQuantity || 0).toLocaleString('es-EC')} m²</dd>
+        </div>
+        <div>
+          <dt>Tarifa por m²</dt>
+          <dd>{formatMoney(Number(line.baseUnitPrice ?? line.unitPrice) || 0)} / m²</dd>
+        </div>
+      </> : <>
+        <div>
+          <dt>Cantidad</dt>
+          <dd>{line.quantity} {String(line.unit || 'unidad')}</dd>
+        </div>
+        <div>
+          <dt>Tarifa unitaria</dt>
+          <dd>{formatMoney(Number(line.baseUnitPrice ?? line.unitPrice) || 0)} / {String(line.unit || 'unidad')}</dd>
+        </div>
+      </>}
+      <div>
+        <dt>{line.mode === 'area' ? 'Material impreso' : 'Producto / servicio'}</dt>
+        <dd>{formatMoney(baseSubtotal)}</dd>
+      </div>
+      {allowEyelets && <div>
+        <dt>Ojales · {finishingBreakdown.eyeletType === 'none' ? 'Sin ojales' : `${finishingBreakdown.eyeletType === 'small' ? 'pequeños' : 'grandes'} · ${finishingBreakdown.eyeletsPerPiece} por pieza × ${line.quantity}`}</dt>
+        <dd>{finishingBreakdown.eyeletTotal > 0 ? `+${formatMoney(finishingBreakdown.eyeletTotal)}` : formatMoney(0)}</dd>
+      </div>}
+      {allowDesign && <div>
+        <dt>Diseño · {finishingBreakdown.designLabel}{finishingBreakdown.designService === 'custom' ? ' · concepto libre' : ''}</dt>
+        <dd>{finishingBreakdown.designTotal > 0 ? `+${formatMoney(finishingBreakdown.designTotal)}` : 'Sin costo'}</dd>
+      </div>}
+      <div className="is-subtotal">
+        <dt>Subtotal del artículo</dt>
+        <dd>{formatMoney(itemSubtotal)}</dd>
+      </div>
+      {itemDiscount > 0 && <div className="is-discount">
+        <dt>Descuento de línea{Number(line.lineDiscountPercent) > 0 ? ` (${Number(line.lineDiscountPercent)}%)` : ''}</dt>
+        <dd>−{formatMoney(itemDiscount)}</dd>
+      </div>}
+      <div className="is-total">
+        <dt>Total del artículo</dt>
+        <dd>{formatMoney(itemTotal)}</dd>
+      </div>
+    </dl>
     <button type="button" className="pos-line-edit-toggle" aria-expanded={editing} onClick={() => setEditing((value) => !value)}><Pencil size={13}/>{editing ? 'Cerrar edición' : 'Editar artículo, precio, acabados o medidas'}</button>
     {editing && <div className="pos-line-editor">
       <label className="pos-line-editor-span-2">Nombre / Concepto<input type="text" value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}/></label>
@@ -427,7 +536,7 @@ function POSCartLineEditor({
       {line.productId && <label>Tarifa<select value={draft.pricingTier} onChange={(event) => setDraft((current) => ({ ...current, pricingTier: event.target.value as 'pvp' | 'instalacion' | 'corporativo' }))}><option value="pvp">Normal (PVP)</option><option value="instalacion">Con instalación</option><option value="corporativo">Corporativo</option></select></label>}
       <label>Desc. línea (%)<input type="number" min="0" max="100" step="1" value={draft.lineDiscountPercent} onChange={(event) => setDraft((current) => ({ ...current, lineDiscountPercent: event.target.value }))}/></label>
       {line.mode === 'area' && <><label>Ancho (cm)<input type="number" min="0.01" step="0.01" value={draft.widthCm} onChange={(event) => setDraft((current) => ({ ...current, widthCm: event.target.value }))}/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" value={draft.heightCm} onChange={(event) => setDraft((current) => ({ ...current, heightCm: event.target.value }))}/></label></>}
-      <div className="pos-line-editor-span-2"><CommercialFinishingControls value={draft.finishing} onChange={(finishing) => setDraft((current) => ({ ...current, finishing }))} quantity={Number(draft.quantity)||1} prices={finishingPrices} allowEyelets={line.mode==='area'&&product?.customOptions?.allow_eyelets!==false} allowDesign={product?.customOptions?.allow_design!==false} idPrefix={`pos-${line.key}`}/></div>
+      <div className="pos-line-editor-span-2"><CommercialFinishingControls value={draft.finishing} onChange={(finishing) => setDraft((current) => ({ ...current, finishing }))} quantity={Number(draft.quantity)||1} prices={finishingPrices} allowEyelets={allowEyelets} allowDesign={allowDesign} idPrefix={`pos-${line.key}`}/></div>
       <button type="button" className="button button-outline" onClick={save}>Guardar cambios</button>
     </div>}
   </article>;
@@ -941,7 +1050,9 @@ export function PosPage() {
   const quoteSubtotal=quoteHasFinancial?Number(quoteFinancial.subtotal)||0:currentQuoteLines.reduce((sum,line)=>sum+Number(line.subtotal??(Number(line.quantity)*Number(line.unit_price))),0);
   const quoteDiscount=quoteHasFinancial?Number(quoteFinancial.discount_amount)||0:0;
   const quoteShipping=quoteHasFinancial?Number(quoteFinancial.shipping_cost)||0:0;
-  const cartTotal=Math.round(cart.reduce((sum,line)=>sum+(Number(line.total)||Number(line.quantity)*Number(line.unitPrice)),0)*100)/100;
+  const cartTotal=roundMoney(cart.reduce((sum,line)=>sum+(Number(line.total)||Number(line.quantity)*Number(line.unitPrice)),0));
+  const cartGrossSubtotal=roundMoney(cart.reduce((sum,line)=>sum+getPOSCartLineFinancials(line,data.calculatorSettings||{}).subtotal,0));
+  const cartLineDiscountTotal=roundMoney(Math.max(0,cartGrossSubtotal-cartTotal));
   const cartQuantitySummary=[...cart.reduce((summary,line)=>{
     const key=line.mode==='area'?'piezas':String(line.unit||'unidad').trim().toLocaleLowerCase('es');
     const current=summary.get(key)||{label:line.mode==='area'?'piezas':String(line.unit||'unidad').trim(),quantity:0};
@@ -955,7 +1066,8 @@ export function PosPage() {
   const manualTaxAmount=roundMoney(discountedSubtotal*configuredTaxRate/100);
   const discountReasonValid=Boolean(form.quoteId||manualDiscountAmount===0||(discountReason.trim().length>=3&&discountReason.trim().length<=300));
   const activeTotal=form.quoteId?Number(form.total)||0:roundMoney(discountedSubtotal+manualTaxAmount);
-  const activeSubtotal=form.quoteId?quoteSubtotal:cartTotal;
+  const activeSubtotal=form.quoteId?quoteSubtotal:cartGrossSubtotal;
+  const activeLineDiscount=form.quoteId?0:cartLineDiscountTotal;
   const activeDiscount=form.quoteId?quoteDiscount:manualDiscountAmount;
   const activeTaxRate=form.quoteId?quoteTaxRate:configuredTaxRate;
   const activeTaxAmount=form.quoteId?quoteTaxAmount:manualTaxAmount;
@@ -1747,7 +1859,7 @@ export function PosPage() {
         {checkoutStep==='payment'&&<section className="pos-checkout-review" aria-label="Revisión antes de confirmar">
           <div className="pos-stage-heading"><span className="eyebrow">ETAPA 3 DE 3</span><h3>Revisa la orden antes de confirmar</h3><p>Comprueba artículos, cliente, entrega y cobro. La venta se registra una sola vez.</p></div>
           <dl className="pos-review-grid"><div><dt>Cliente</dt><dd>{form.customer||'Venta de mostrador'}</dd></div><div><dt>Sucursal</dt><dd>{branchName}</dd></div><div><dt>Artículos</dt><dd>{form.quoteId?'Cotización '+(centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||''):cart.length+' '+(cart.length===1?'artículo':'artículos')}</dd></div><div><dt>Entrega</dt><dd>{fulfillment.deliveryAt?new Date(fulfillment.deliveryAt).toLocaleString('es-EC',{dateStyle:'medium',timeStyle:'short'}):'Sin fecha indicada'}</dd></div><div><dt>Instalación</dt><dd>{fulfillment.installationRequired?fulfillment.installationAddress||'Dirección pendiente':'No solicitada'}</dd></div><div><dt>Cobro</dt><dd>{chargeNow?'Aplicado '+formatMoney(paymentBreakdown.applied)+' · Saldo '+formatMoney(paymentBreakdown.balance):'Pendiente de cobro'}</dd></div></dl>
-          {(form.quoteId||cart.length>0)&&<POSFinancialBreakdown subtotal={activeSubtotal} discount={activeDiscount} taxRate={activeTaxRate} taxAmount={activeTaxAmount} total={activeTotal} shipping={activeShipping} taxApplied={activeTaxApplied} taxLabel={activeTaxLabel} className="pos-review-financial"/>}
+          {(form.quoteId||cart.length>0)&&<POSFinancialBreakdown subtotal={activeSubtotal} lineDiscount={activeLineDiscount} discount={activeDiscount} discountLabel={form.quoteId?'Descuento':'Descuento de la venta'} taxRate={activeTaxRate} taxAmount={activeTaxAmount} total={activeTotal} shipping={activeShipping} taxApplied={activeTaxApplied} taxLabel={activeTaxLabel} className="pos-review-financial"/>}
           {previewConfigurationIssues.length>0&&<div className="pos-material-availability-note is-blocking" role="alert"><b>Corrige la configuración del inventario</b><ul>{previewConfigurationIssues.map((issue:any,index:number)=><li key={`${issue.recipe?.id||issue.line?.line_key||issue.line?.catalog_product_id||'config'}:${index}`}>{issue.message}</li>)}</ul><small>Resuelve los vínculos, anchos o unidades pendientes en <Link to="/operaciones/inventario?tab=pos">Inventario</Link> antes de cobrar.</small></div>}
           {allPreviewShortages.length>0&&<div className="pos-material-availability-note" role="status"><b>Existencias que requieren revisión</b><ul>{allPreviewShortages.slice(0,8).map((issue:any,index:number)=><li key={`${issue.recipe?.id||issue.line?.line_key||index}:${index}`}>{issue.message}</li>)}</ul>{allPreviewShortages.length>8&&<small>Y {allPreviewShortages.length-8} faltante(s) más.</small>}<small>Las necesidades de rollos son aproximadas. La medición física del impresor concilia el saldo después del trabajo.</small></div>}
           <div className="pos-review-actions"><button className="button button-outline" type="button" onClick={()=>void copyPOSWhatsApp()}><Copy size={15}/> Copiar WhatsApp</button><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('details')}>Editar detalles del trabajo</button><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('order')}>Agregar más artículos</button></div>
@@ -1786,7 +1898,7 @@ export function PosPage() {
                 })}</div>}
               </section>}
           {!form.quoteId&&cart.length>0&&<section className="pos-discount-editor" aria-labelledby="pos-discount-title"><div className="pos-discount-heading"><div><span className="eyebrow">AJUSTE COMERCIAL</span><h3 id="pos-discount-title">Descuento de la venta</h3></div><div className="pos-discount-heading-actions"><strong>{manualDiscountPercent}%</strong><button className="pos-discount-visibility-toggle" type="button" aria-expanded={discountControlsVisible} aria-controls="pos-discount-controls" aria-label={`${discountControlsVisible?'Ocultar':'Mostrar'} controles de descuento`} onClick={()=>setDiscountControlsVisible(visible=>!visible)}>{discountControlsVisible?'Ocultar':'Mostrar'}<ChevronDown size={13} aria-hidden="true"/></button></div></div><div id="pos-discount-controls" className="pos-discount-controls" hidden={!discountControlsVisible}><div className="pos-discount-slider-row"><label htmlFor="pos-discount-percent">Porcentaje de descuento <span>Hasta 40%</span></label><input id="pos-discount-percent" type="range" min="0" max="40" step="1" value={manualDiscountPercent} onChange={(event)=>setDiscountPercent(event.target.value)} aria-describedby="pos-discount-hint"/><div className="pos-discount-milestones">{[0,5,10,15,20,40].map((value)=><button key={value} type="button" className={manualDiscountPercent===value?'is-active':''} onClick={()=>setDiscountPercent(String(value))}>{value}%</button>)}</div></div>{manualDiscountAmount>0&&<label className="pos-discount-reason" htmlFor="pos-discount-reason">Motivo del descuento <span>Obligatorio · {discountReason.trim().length}/300</span><input id="pos-discount-reason" type="text" maxLength={300} value={discountReason} onChange={(event)=>setDiscountReason(event.target.value)} aria-invalid={!discountReasonValid} placeholder="Ej.: cliente frecuente, volumen acordado"/></label>}<p id="pos-discount-hint" className="pos-discount-hint">El descuento se registra en la venta y requiere un motivo. Las cotizaciones aprobadas conservan su desglose.</p></div></section>}
-          {(form.quoteId||cart.length>0)&&<POSFinancialBreakdown subtotal={activeSubtotal} discount={activeDiscount} taxRate={activeTaxRate} taxAmount={activeTaxAmount} total={activeTotal} shipping={activeShipping} taxApplied={activeTaxApplied} taxLabel={activeTaxLabel} className="pos-sidebar-financial"/>}
+          {(form.quoteId||cart.length>0)&&<POSFinancialBreakdown subtotal={activeSubtotal} lineDiscount={activeLineDiscount} discount={activeDiscount} discountLabel={form.quoteId?'Descuento':'Descuento de la venta'} taxRate={activeTaxRate} taxAmount={activeTaxAmount} total={activeTotal} shipping={activeShipping} taxApplied={activeTaxApplied} taxLabel={activeTaxLabel} className="pos-sidebar-financial"/>}
         <section className="pos-payment-section" hidden={checkoutStep!=='payment'}>
           <div className="pos-payment-title"><div><span className="eyebrow">COBRO Y RECAUDACIÓN</span><h3>Forma de pago</h3></div><label className="pos-charge-toggle"><input type="checkbox" checked={chargeNow} onChange={(event)=>setChargeNow(event.target.checked)}/> Cobrar ahora</label></div>
           {chargeNow?<>

@@ -87,6 +87,9 @@
 .pos-order-financial-breakdown .pos-tax-line dd{color:color-mix(in srgb,#258352 78%,var(--ink))}
 .pos-order-financial-breakdown .is-total{align-items:center;margin-top:2px;padding-top:9px;border-top:1px solid var(--line);color:var(--ink);font-size:12px;font-weight:800}
 .pos-order-financial-breakdown .is-total dd{font-size:19px;letter-spacing:-.02em}
+.pos-order-financial-breakdown .is-discount,.pos-order-financial-breakdown .is-discount dd{color:#a3323d}
+.pos-order-financial-breakdown .is-subtotal,.pos-order-financial-breakdown .is-taxable{color:var(--ink);font-weight:750}
+.pos-order-financial-breakdown .is-subtotal{padding-top:5px;border-top:1px solid var(--line)}
 .pos-review-financial{max-width:560px}
 .pos-material-availability-note{display:grid;gap:6px;padding:11px 12px;border:1px solid #ecd6a8;border-radius:10px;background:#fff9e9;color:#765514;font-size:10px;line-height:1.45}
 .pos-material-availability-note.is-blocking{border-color:#e8b8bd;background:#fff2f3;color:#8d2d39}
@@ -1181,4 +1184,12 @@
     grid-column: 1 / -1;
   }
 }
-.pos-line-finishing-summary{display:block;color:var(--text-muted,#6f6878);font-size:12px;line-height:1.45;margin:4px 0 6px}.pos-line-editor-span-2>.commercial-finishing-controls{width:100%}
+.pos-line-financial-breakdown{display:grid;gap:6px;margin:8px 0 10px;padding:9px 11px;border:1px solid var(--line,#ded9e7);border-radius:10px;background:var(--surface-soft,#faf8fc)}
+.pos-line-financial-breakdown>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;color:var(--text-muted,#6f6878);font-size:11px;line-height:1.35}
+.pos-line-financial-breakdown dt{min-width:0;overflow-wrap:anywhere}
+.pos-line-financial-breakdown dd{flex:none;max-width:45%;margin:0;color:var(--text,#25212c);font-weight:650;text-align:right;white-space:nowrap}
+.pos-line-financial-breakdown .is-subtotal{margin-top:2px;padding-top:6px;border-top:1px solid var(--line,#ded9e7);color:var(--text,#25212c);font-weight:750}
+.pos-line-financial-breakdown .is-subtotal dd,.pos-line-financial-breakdown .is-total dd{color:var(--text,#25212c);font-weight:800}
+.pos-line-financial-breakdown .is-discount dd{color:#a3323d}
+.pos-line-financial-breakdown .is-total{margin-top:2px;padding-top:6px;border-top:1px solid var(--line,#ded9e7);color:var(--text,#25212c);font-size:12px;font-weight:800}
+.pos-line-editor-span-2>.commercial-finishing-controls{width:100%}
