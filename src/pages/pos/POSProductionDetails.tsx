@@ -51,12 +51,13 @@ type Props = {
   lines: ProductionLine[];
   values: Record<string, ProductionDetailsValue>;
   routeByProduct: Record<string, ProductionWorkflowCode>;
+  routeSourceByProduct?: Record<string, 'product' | 'family'>;
   onChange: (lineKey: string, value: ProductionDetailsValue) => void;
   routeStatus: 'loading' | 'ready' | 'unavailable';
   templates: Array<{ code: string; name: string }>;
 };
 
-export function POSProductionDetails({ lines, values, routeByProduct, onChange, routeStatus, templates }: Props) {
+export function POSProductionDetails({ lines, values, routeByProduct, routeSourceByProduct = {}, onChange, routeStatus, templates }: Props) {
   if (!lines.length) return null;
   const routesToDefine = lines.filter((line) => !values[line.line_key]?.workflow_code && (!line.productId || !routeByProduct[line.productId])).length;
 
@@ -83,7 +84,7 @@ export function POSProductionDetails({ lines, values, routeByProduct, onChange, 
       return <details className="pos-production-line" key={line.line_key}>
         <summary><span className="pos-production-line-number">{String(index + 1).padStart(2, '0')}</span><span className="pos-production-line-title"><b>{line.name}</b><small>{option?.name || fallbackPath}</small></span><span className="pos-production-line-toggle">Detalles</span></summary>
         <div className="pos-production-line-fields">
-          <label className="pos-production-line-route">Ruta de trabajo<select value={value.workflow_code} onChange={(event) => onChange(line.line_key, { ...value, workflow_code: event.target.value })}>{templates.map((route) => <option key={route.code} value={route.code}>{route.name}</option>)}</select><small>{mappedRoute && !values[line.line_key]?.workflow_code ? 'Sugerida por la configuración del producto.' : 'Puedes ajustarla para este pedido.'}</small></label>
+          <label className="pos-production-line-route">Ruta de trabajo<select value={value.workflow_code} onChange={(event) => onChange(line.line_key, { ...value, workflow_code: event.target.value })}>{templates.map((route) => <option key={route.code} value={route.code}>{route.name}</option>)}</select><small>{mappedRoute && !values[line.line_key]?.workflow_code ? routeSourceByProduct[line.productId || ''] === 'family' ? 'Sugerida por coincidencia de rutas de la familia. Puedes cambiarla para este pedido.' : 'Sugerida por la configuración de este producto. Puedes cambiarla para este pedido.' : 'Puedes ajustarla para este pedido.'}</small></label>
           {value.workflow_code !== 'review' && value.workflow_code !== 'none' && <fieldset className="pos-production-fieldset"><legend>Datos que recibirá el equipo</legend>
             {line.widthCm && line.heightCm ? <p className="pos-production-measure-note">Medida vendida: <b>{line.widthCm} × {line.heightCm} cm</b>. Se toma del artículo para evitar diferencias con el precio.</p> : <div className="pos-production-field-grid"><label>Ancho (cm)<input type="number" min="0.01" step="0.01" inputMode="decimal" value={String(spec.width_cm ?? '')} onChange={(event) => patch('width_cm', event.target.value)} placeholder="Por confirmar"/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" inputMode="decimal" value={String(spec.height_cm ?? '')} onChange={(event) => patch('height_cm', event.target.value)} placeholder="Por confirmar"/></label></div>}
             {showMaterial && <label>Material o soporte<input maxLength={180} value={String(spec.material ?? '')} onChange={(event) => patch('material', event.target.value)} placeholder={value.workflow_code === 'laser' ? 'Ej. acrílico, MDF' : value.workflow_code === 'sublimation' ? 'Ej. camiseta, taza, almohada' : 'Ej. lona, vinil, acrílico'}/></label>}
