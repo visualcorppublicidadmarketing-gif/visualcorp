@@ -18,7 +18,7 @@ import { useAdvisorProductFavorites } from '../../hooks/useAdvisorProductFavorit
 import { buildOperationalQuoteWhatsAppMessage, copyTextToClipboard, normalizeWhatsAppNumber } from '../../lib/whatsapp';
 import { calculateQuotePrice, getQuoteBasis, quoteTiers } from '../../lib/quotePricing';
 import { supabase } from '../../lib/supabaseClient';
-import { buildProductWorkflowRecommendations } from '../../lib/productWorkflowRoutes';
+import { buildProductWorkflowRecommendations, type FamilyWorkflowRouteRule } from '../../lib/productWorkflowRoutes';
 import { CommercialDocumentDetails } from '../../components/CommercialDocumentDetails';
 import { Sheet, useConfirm } from '../../components/ui/OperationalKit';
 import { CommercialAssetsEditor } from '../../components/commercial/CommercialAssetsEditor';
@@ -147,9 +147,10 @@ export function OperationsQuotePage() {
   const [catalogLinks, setCatalogLinks] = useState<any[]>([]);
   const [materialRecipes, setMaterialRecipes] = useState<any[]>([]);
   const [productWorkflowRoutes, setProductWorkflowRoutes] = useState<Record<string, string>>({});
+  const [familyWorkflowRoutes, setFamilyWorkflowRoutes] = useState<FamilyWorkflowRouteRule[]>([]);
   const [workflowTemplates, setWorkflowTemplates] = useState<Array<{ code: string; name: string }>>([]);
   const explicitWorkflowRouteRows = useMemo(() => Object.entries(productWorkflowRoutes).map(([catalog_product_id, workflow_code]) => ({ catalog_product_id, workflow_code, active: true })), [productWorkflowRoutes]);
-  const productWorkflowRecommendations = useMemo(() => buildProductWorkflowRecommendations(data.catalog || [], explicitWorkflowRouteRows, { activeWorkflowCodes: new Set(workflowTemplates.map((template) => template.code)) }), [data.catalog, explicitWorkflowRouteRows, workflowTemplates]);
+  const productWorkflowRecommendations = useMemo(() => buildProductWorkflowRecommendations(data.catalog || [], explicitWorkflowRouteRows, { activeWorkflowCodes: new Set(workflowTemplates.map((template) => template.code)), familyRules: familyWorkflowRoutes }), [data.catalog, explicitWorkflowRouteRows, workflowTemplates, familyWorkflowRoutes]);
   const [customerSummary, setCustomerSummary] = useState<any | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
   const [chatterTarget, setChatterTarget] = useState<{
@@ -192,7 +193,8 @@ export function OperationsQuotePage() {
       supabase.from('catalog_material_recipes').select('catalog_product_id,inventory_variant_id,branch_id,location_code,calculation_mode,quantity_per_basis,waste_percent,fulfillment_stage,active').eq('organization_id',organizationId).eq('active',true),
       supabase.from('catalog_product_workflow_routes').select('catalog_product_id,workflow_code').eq('organization_id', organizationId).eq('active', true),
       supabase.from('production_workflow_templates').select('code,name').eq('organization_id', organizationId).eq('active', true).order('name'),
-    ]).then(([taxRes, linksRes, recipesRes, routesRes, templatesRes]) => {
+      supabase.from('catalog_family_workflow_routes').select('id,family_name,workflow_code,active').eq('organization_id', organizationId).eq('active', true),
+    ]).then(([taxRes, linksRes, recipesRes, routesRes, templatesRes, familyRes]) => {
       if (!active) return;
       const rate = Number(taxRes.data?.tax_rate);
       if (Number.isFinite(rate) && rate >= 0 && rate <= 100) setConfiguredTaxRate(rate);
@@ -204,6 +206,7 @@ export function OperationsQuotePage() {
         );
       }
       if (!templatesRes.error) setWorkflowTemplates(templatesRes.data || []);
+      if (!familyRes.error) setFamilyWorkflowRoutes((familyRes.data || []) as FamilyWorkflowRouteRule[]);
     });
     return () => { active = false; };
   }, [organizationId]);
@@ -516,7 +519,7 @@ export function OperationsQuotePage() {
       workflowLabel,
       title: line.custom ? line.concept.trim() : line.concept.trim() || product?.name || '',
     };
-  }), [lines, data.catalog, data.calculatorSettings, priceTier, catalogLinks, materialRecipes, selectedBranch.id, data.inventory, productWorkflowRoutes, workflowTemplates]);
+  }), [lines, data.catalog, data.calculatorSettings, priceTier, catalogLinks, materialRecipes, selectedBranch.id, data.inventory, productWorkflowRoutes, familyWorkflowRoutes, productWorkflowRecommendations, workflowTemplates]);
 
   const rawTierTotals = useMemo(() => Object.fromEntries(quoteTiers.map((tier) => {
     const complete = configuredLines.length > 0 && configuredLines.every((line) => (line.custom ? line.title : line.product) && line.hasValidSize && line.hasValidQuantity && line.totals[tier.id] !== null);
@@ -1742,25 +1745,24 @@ export function OperationsQuotePage() {
                 <span>{String(index + 1).padStart(2, '0')}</span>
                 <div>
                   <b>{line.title || 'Selecciona una referencia'}</b>
-                  <small>
+                  <small className="oq-summary-item-meta">
                     {line.isAreaMode && line.hasValidSize
-                      ? `${line.pieceQuantity} pza(s) × ${line.width}×${line.height} cm (${line.totalArea.toFixed(2)} m²)`
+                      ? `${line.pieceQuantity} ${line.pieceQuantity === 1 ? 'pieza' : 'piezas'} · ${line.width} × ${line.height} cm · ${line.totalArea.toLocaleString('es-EC', { maximumFractionDigits: 2 })} m²`
                       : `${line.pieceQuantity} ${line.unit}`}
-                    {line.baseUnitPrice !== null ? ` · Tarifa ${formatMoney(line.baseUnitPrice)}/${line.unit}` : ''}
                     {line.option ? ` · ${line.option}` : ''}
-                    {line.additionalDescription ? ` · ${line.additionalDescription}` : ''}
                   </small>
+                  {line.additionalDescription && <small className="oq-summary-item-description" title={line.additionalDescription}>{line.additionalDescription}</small>}
                   <div className="oq-summary-cost-breakdown">
-                    <small>Material impreso <b>{line.baseTotals[priceTier] === null ? '—' : formatMoney(line.baseTotals[priceTier])}</b></small>
+                    <small>Material <b>{line.baseTotals[priceTier] === null ? '—' : formatMoney(line.baseTotals[priceTier])}</b></small>
                     {line.isAreaMode && (line.custom || line.product?.customOptions?.allow_eyelets !== false) && <small>Ojales · {line.finishing.eyeletType === 'none' ? 'Sin ojales' : `${line.finishing.eyeletTotalCount} · ${line.finishing.eyeletType === 'small' ? 'pequeños' : 'grandes'}`} <b>{line.finishing.eyeletTotal > 0 ? `+${formatMoney(line.finishing.eyeletTotal)}` : formatMoney(0)}</b></small>}
                     {line.product?.customOptions?.allow_design !== false && <small>Diseño · {line.finishing.designLabel} <b>{line.finishing.designTotal > 0 ? `+${formatMoney(line.finishing.designTotal)}` : 'Sin costo'}</b></small>}
-                    <small className="is-subtotal">Subtotal artículo <b>{line.totals[priceTier] === null ? '—' : formatMoney(line.totals[priceTier])}</b></small>
+                    {(lineFinancials[index]?.discount > 0 || lineFinancials[index]?.tax > 0 || lineFinancials[index]?.shipping > 0) && <small className="is-subtotal">Subtotal <b>{line.totals[priceTier] === null ? '—' : formatMoney(line.totals[priceTier])}</b></small>}
                     {lineFinancials[index]?.discount > 0 && <small>Descuento asignado <b>−{formatMoney(lineFinancials[index].discount)}</b></small>}
                     {applyIVA && lineFinancials[index]?.tax > 0 && <small>IVA asignado <b>+{formatMoney(lineFinancials[index].tax)}</b></small>}
-                    {line.totals[priceTier] !== null && <small className="is-total">Total artículo <b>{formatMoney(lineFinancials[index]?.total ?? line.totals[priceTier])}</b></small>}
+                    {lineFinancials[index]?.shipping > 0 && <small>Envío asignado <b>+{formatMoney(lineFinancials[index].shipping)}</b></small>}
                   </div>
                 </div>
-                <strong>
+                <strong className="oq-summary-line-total" aria-label="Total del artículo">
                   {line.custom || line.product
                     ? line.totals[priceTier] === null ? '—' : formatMoney(lineFinancials[index]?.total ?? line.totals[priceTier])
                     : '—'}

@@ -6,7 +6,7 @@ import { EmptyState, StageBadge } from '../../components/feedback';
 import { formatDate, formatMoney, useWorkspace } from '../../app/workspace';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
-import { buildProductWorkflowRecommendations } from '../../lib/productWorkflowRoutes';
+import { buildProductWorkflowRecommendations, type FamilyWorkflowRouteRule } from '../../lib/productWorkflowRoutes';
 import { QuotePriceComparison } from '../../components/QuotePriceComparison';
 import { calculateQuotePrice, getQuoteBasis } from '../../lib/quotePricing';
 import { calculatePOSLine, formatPOSLineDescription } from '../../lib/posPricing';
@@ -121,7 +121,7 @@ const getPOSQuoteSaleLines = (quote: any) => {
     const baseUnitPrice = Number(item.unit_price??(quantity>0?lineSubtotal/quantity:0))||0;
     return {
       line_key:`quote-${quote.id}-${index}`,catalog_product_id:item.product_id||null,sku:item.sku||item.product_id||'',
-      description:[item.name||item.product_name||'Artículo cotizado',item.width_cm&&item.height_cm?`${item.width_cm} × ${item.height_cm} cm`:null,item.unit||null].filter(Boolean).join(' · '),
+      name:item.name||item.product_name||'Artículo cotizado',description:String(item.description||''),
       quantity,pieceQuantity:Number(item.piece_quantity)||quantity,totalArea:item.unit==='m²'?quantity:null,
       unit_price:quantity>0?lineSubtotal/quantity:0,widthCm:item.width_cm||null,heightCm:item.height_cm||null,unit:item.unit||'unidad',optionChoice:item.option_choice||'',finishing_options:item.finishing||{},
       base_unit_price:baseUnitPrice,base_subtotal:Math.max(0,roundMoney(lineSubtotal-finishing.total)),
@@ -165,6 +165,27 @@ function getPOSCartLineFinancials(line: any, prices: Record<string, number> = {}
   const total = roundMoney(Math.max(0, Number.isFinite(rawTotal) ? rawTotal : 0));
   const discount = roundMoney(Math.max(0, subtotal - total));
   return { finishing, billingQuantity, baseSubtotal, subtotal, discount, total };
+}
+
+function getPOSCartLinePresentation(line: any) {
+  const quantity = Math.max(0, Number(line.quantity) || 0);
+  const unit = String(line.unit || 'unidad');
+  const unitPrice = Math.max(0, Number(line.baseUnitPrice ?? line.unitPrice) || 0);
+  const quantityLabel = `${quantity.toLocaleString('es-EC')} ${quantity === 1 ? unit : pluralizePOSUnit(unit)}`;
+  const metadata = line.mode === 'area'
+    ? [
+        line.widthCm && line.heightCm ? `${line.widthCm} × ${line.heightCm} cm` : '',
+        `${quantity.toLocaleString('es-EC')} ${quantity === 1 ? 'pieza' : 'piezas'}`,
+        `${Number(line.areaTotal || line.billingQuantity || 0).toLocaleString('es-EC', { maximumFractionDigits: 2 })} m²`,
+        `${formatMoney(unitPrice)}/m²`,
+        line.optionChoice,
+      ].filter(Boolean).join(' · ')
+    : [quantityLabel, `${formatMoney(unitPrice)}/${unit}`, line.optionChoice].filter(Boolean).join(' · ');
+  const description = String(line.description || '').trim();
+  const generatedSuffix = ` · ${unit} ${Number(line.unitPrice || 0).toFixed(4)}`;
+  const isGeneratedDescription = description.startsWith(`${String(line.name || '').trim()} ·`)
+    && (description.endsWith(generatedSuffix) || description.includes(' c/u'));
+  return { metadata, description: isGeneratedDescription ? '' : description };
 }
 const pendingSaleSignature = (snapshot: any) => JSON.stringify({
     form: {
@@ -309,6 +330,7 @@ function POSCartLineEditor({
 
   const lineFinancials = getPOSCartLineFinancials(line, finishingPrices);
   const { finishing: finishingBreakdown, baseSubtotal, subtotal: itemSubtotal, discount: itemDiscount, total: itemTotal } = lineFinancials;
+  const linePresentation = getPOSCartLinePresentation(line);
   const allowEyelets = line.mode === 'area' && product?.customOptions?.allow_eyelets !== false;
   const allowDesign = product?.customOptions?.allow_design !== false;
 
@@ -459,13 +481,13 @@ function POSCartLineEditor({
         <b>{line.name}</b>
         <span className="pos-line-badges">
           {line.pricingTierLabel && <span className="pos-line-badge is-tier">{line.pricingTierLabel}</span>}
-          {line.mode === 'area' && line.widthCm && line.heightCm && <span className="pos-line-badge is-measure">{line.widthCm}×{line.heightCm} cm · {Number(line.areaTotal || 0).toFixed(2)} m²</span>}
           {Number(line.lineDiscountPercent) > 0 && <span className="pos-line-badge is-discount">−{line.lineDiscountPercent}% desc</span>}
           {line.customUnitPriceApplied && <span className="pos-line-badge is-custom">Precio acordado</span>}
           {workflowLabel && <span className="pos-line-badge is-workflow"><Route size={10} aria-hidden="true"/> {workflowLabel}</span>}
         </span>
-        <small>{line.description||`${line.quantity} × ${formatMoney(line.unitPrice)}`}</small>
-        <small className={`pos-line-stock-note is-${inventoryTone}`}>{inventoryStatus}</small>
+        <small className="pos-line-meta">{linePresentation.metadata}</small>
+        {linePresentation.description && <small className="pos-line-description" title={linePresentation.description}>{linePresentation.description}</small>}
+        <small className={`pos-line-stock-note is-${inventoryTone}`} title={inventoryStatus}>{inventoryStatus}</small>
       </span>
       <div className="pos-line-right-col">
         <strong>{formatMoney(line.total||line.quantity*line.unitPrice)}</strong>
@@ -503,7 +525,7 @@ function POSCartLineEditor({
         </div>
       </>}
       <div>
-        <dt>{line.mode === 'area' ? 'Material impreso' : 'Producto / servicio'}</dt>
+        <dt>{line.mode === 'area' ? 'Material' : 'Producto / servicio'}</dt>
         <dd>{formatMoney(baseSubtotal)}</dd>
       </div>
       {allowEyelets && <div>
@@ -514,10 +536,10 @@ function POSCartLineEditor({
         <dt>Diseño · {finishingBreakdown.designLabel}{finishingBreakdown.designService === 'custom' ? ' · concepto libre' : ''}</dt>
         <dd>{finishingBreakdown.designTotal > 0 ? `+${formatMoney(finishingBreakdown.designTotal)}` : 'Sin costo'}</dd>
       </div>}
-      <div className="is-subtotal">
+      {itemDiscount > 0 && <div className="is-subtotal">
         <dt>Subtotal del artículo</dt>
         <dd>{formatMoney(itemSubtotal)}</dd>
-      </div>
+      </div>}
       {itemDiscount > 0 && <div className="is-discount">
         <dt>Descuento de línea{Number(line.lineDiscountPercent) > 0 ? ` (${Number(line.lineDiscountPercent)}%)` : ''}</dt>
         <dd>−{formatMoney(itemDiscount)}</dd>
@@ -625,6 +647,7 @@ export function PosPage() {
   const [materialRequestsByLine,setMaterialRequestsByLine]=useState<Record<string,POSMaterialRequestDraft[]>>({});
   const [productionByLine,setProductionByLine]=useState<Record<string, ProductionDetailsValue>>({});
   const [productWorkflowRoutes,setProductWorkflowRoutes]=useState<Record<string, ProductionWorkflowCode>>({});
+  const [familyWorkflowRoutes,setFamilyWorkflowRoutes]=useState<FamilyWorkflowRouteRule[]>([]);
   const [workflowTemplates,setWorkflowTemplates]=useState<Array<{code:string;name:string}>>([]);
   const [workflowRouteStatus,setWorkflowRouteStatus]=useState<'loading'|'ready'|'unavailable'>('loading');
   const [cartMode,setCartMode]=useState<'quantity'|'area'>('quantity');
@@ -677,7 +700,7 @@ export function PosPage() {
   const [recentSalesFilter,setRecentSalesFilter]=useState<'all'|'balance'|'paid'>('all');
   const [cartCustomUnitPrice,setCartCustomUnitPrice]=useState('');
   const explicitWorkflowRouteRows=useMemo(()=>Object.entries(productWorkflowRoutes).map(([catalog_product_id,workflow_code])=>({catalog_product_id,workflow_code,active:true})),[productWorkflowRoutes]);
-  const productWorkflowRecommendations=useMemo(()=>buildProductWorkflowRecommendations(data.catalog||[],explicitWorkflowRouteRows,{activeWorkflowCodes:new Set(workflowTemplates.map((template)=>template.code))}),[data.catalog,explicitWorkflowRouteRows,workflowTemplates]);
+  const productWorkflowRecommendations=useMemo(()=>buildProductWorkflowRecommendations(data.catalog||[],explicitWorkflowRouteRows,{activeWorkflowCodes:new Set(workflowTemplates.map((template)=>template.code)),familyRules:familyWorkflowRoutes}),[data.catalog,explicitWorkflowRouteRows,workflowTemplates,familyWorkflowRoutes]);
   const recommendedWorkflowByProduct=useMemo(()=>Object.fromEntries([...productWorkflowRecommendations].map(([id,recommendation])=>[id,recommendation.workflow_code])) as Record<string,ProductionWorkflowCode>,[productWorkflowRecommendations]);
   const workflowSourceByProduct=useMemo(()=>Object.fromEntries([...productWorkflowRecommendations].map(([id,recommendation])=>[id,recommendation.source])) as Record<string,'product'|'family'>,[productWorkflowRecommendations]);
   const [showEditBaseModal,setShowEditBaseModal]=useState(false);
@@ -723,18 +746,20 @@ export function PosPage() {
    }catch{pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('No se pudo recuperar una venta pendiente. Revisa las ventas antes de volver a cobrar.');flash('Hay una operación pendiente que no se pudo restaurar. No vuelvas a cobrarla hasta revisar las ventas de hoy.');}
   },[organizationId,user?.id,pendingSaleStorageKey,pendingSaleSnapshotStorageKey,posDraftStorageKey]);
   useEffect(()=>{
-    if(!supabase||!organizationId){setProductWorkflowRoutes({});setWorkflowTemplates([]);setWorkflowRouteStatus('unavailable');return;}
+    if(!supabase||!organizationId){setProductWorkflowRoutes({});setFamilyWorkflowRoutes([]);setWorkflowTemplates([]);setWorkflowRouteStatus('unavailable');return;}
     let active=true;
     setWorkflowRouteStatus('loading');
     Promise.all([
       supabase.from('catalog_product_workflow_routes').select('catalog_product_id,workflow_code').eq('organization_id',organizationId).eq('active',true),
       supabase.from('production_workflow_templates').select('code,name').eq('organization_id',organizationId).eq('active',true).order('name'),
-    ]).then(([routeResult,templateResult])=>{
+      supabase.from('catalog_family_workflow_routes').select('id,family_name,workflow_code,active').eq('organization_id',organizationId).eq('active',true),
+    ]).then(([routeResult,templateResult,familyResult])=>{
       if(!active)return;
-      if(routeResult.error||templateResult.error){setProductWorkflowRoutes({});setWorkflowTemplates([]);setWorkflowRouteStatus('unavailable');return;}
+      if(routeResult.error||templateResult.error){setProductWorkflowRoutes({});setFamilyWorkflowRoutes([]);setWorkflowTemplates([]);setWorkflowRouteStatus('unavailable');return;}
       const rows=routeResult.data||[];
       setWorkflowTemplates((templateResult.data||[]).filter((row)=>isProductionWorkflowCode(row.code)));
       setProductWorkflowRoutes(Object.fromEntries(rows.filter((row)=>isProductionWorkflowCode(row.workflow_code)).map((row)=>[row.catalog_product_id,row.workflow_code as ProductionWorkflowCode])));
+      setFamilyWorkflowRoutes(!familyResult.error?(familyResult.data||[]) as FamilyWorkflowRouteRule[]:[]);
       setWorkflowRouteStatus('ready');
     });
     return()=>{active=false;};
@@ -1207,16 +1232,16 @@ export function PosPage() {
   const selectedAvailableStock=selectedLinkedStock?Number(selectedLinkedStock.availableQuantity??(Number(selectedLinkedStock.quantity||0)-Number(selectedLinkedStock.reservedQuantity||0))):0;
   const cartInventoryStatus=(line)=>{
     if(catalogLinkStatus==='checking')return 'Comprobando vínculo de inventario…';
-    if(catalogLinkStatus==='error')return 'No se pudo verificar el vínculo; confirma después de recargar.';
-    if(!line.productId)return 'Concepto libre: no controla existencias.';
+    if(catalogLinkStatus==='error')return 'Inventario sin verificar · recarga antes de confirmar';
+    if(!line.productId)return 'Concepto libre · sin control de stock';
     if(!selectedBranchId)return 'Verificando sucursal e inventario…';
     const link=catalogLinks.find(item=>item.active&&item.branch_id===selectedBranchId&&item.catalog_product_id===line.productId);
-    if(!link)return trackedAccessoryProductIds.has(line.productId)?'Ojales sin vínculo en esta sucursal; no se puede confirmar la venta.':'Sin vínculo de inventario: esta línea no descontará stock.';
+    if(!link)return trackedAccessoryProductIds.has(line.productId)?'Ojal sin vínculo · no se puede confirmar':'Sin vínculo · no descuenta stock';
     const stock=data.inventory.find(item=>item.variantId===link.inventory_variant_id&&item.branchId===link.branch_id);
-    if(!stock||stock.sourceStatus)return 'Conteo físico pendiente; al confirmar, el sistema registrará el faltante como compra urgente.';
+    if(!stock||stock.sourceStatus)return 'Conteo pendiente · el faltante puede generar compra urgente';
     const available=Number(stock.availableQuantity??(Number(stock.quantity||0)-Number(stock.reservedQuantity||0)));
     const required=Number(line.billingQuantity)||Number(line.quantity)||0;
-    return available<required?`Faltan ${Math.max(0,required-available)} ${stock.unit||'unidades'}; el faltante quedará como compra urgente.`:`Se descontarán ${required} ${stock.unit||'unidades'} al confirmar.`;
+    return available<required?`Faltan ${Math.max(0,required-available)} ${stock.unit||'unidades'} · compra urgente`:`Descontará ${required} ${stock.unit||'unidades'} de inventario`;
   };
   const cartInventoryTone=(line): 'available'|'warning'|'neutral' => {
     if(!line.productId||catalogLinkStatus!=='ready'||!selectedBranchId)return 'neutral';
@@ -1867,7 +1892,7 @@ export function PosPage() {
         <aside className={`pos-order-summary${mobileSummaryOpen?' is-open':''}`} data-checkout-step={checkoutStep}>
           <div className="pos-mobile-summary-bar"><span><small>ORDEN ACTUAL</small><b>{formatMoney(activeTotal)}</b></span><button className="button button-dark" type="button" aria-expanded={mobileSummaryOpen} onClick={()=>setMobileSummaryOpen((open)=>!open)}>{mobileSummaryOpen?'Cerrar pedido':'Ver pedido y cobrar'}</button></div>
           {form.quoteId
-            ? <section className="pos-cart pos-quote-cart" aria-label="Resumen de cotización"><div className="pos-cart-heading"><div><span className="eyebrow">COTIZACIÓN APROBADA</span><h3>{centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||'Pedido aprobado'}</h3></div><strong>{formatMoney(activeTotal)}</strong></div>{currentQuoteLines.length>0?<div className="pos-quote-approved-lines" style={{display:'grid',gap:10,marginTop:12}}>{currentQuoteLines.map((line,index)=><article key={line.line_key} style={{display:'grid',gap:8,padding:12,border:'1px solid var(--line)',borderRadius:12,background:'var(--paper)'}}><div className="pos-quote-approved-item" style={{display:'grid',gap:4,minWidth:0}}><b style={{fontSize:11,lineHeight:1.45,overflowWrap:'anywhere'}}>{String(index+1).padStart(2,'0')} · {line.description||'Artículo cotizado'}</b><small style={{color:'var(--muted)',fontSize:10}}>{line.quantity} {line.unit||'unidad'} · Tarifa base {formatMoney(line.base_unit_price)}/{line.unit||'unidad'}</small></div><dl style={{display:'grid',gap:6,margin:0,paddingTop:8,borderTop:'1px solid var(--line)'}}><div style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:10}}><dt>Material impreso</dt><dd style={{margin:0,fontWeight:700}}>{formatMoney(line.base_subtotal)}</dd></div>{line.eyelet_total>0&&<div style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:10}}><dt>Ojales · {line.eyelet_label}</dt><dd style={{margin:0,fontWeight:700}}>+{formatMoney(line.eyelet_total)}</dd></div>}{line.design_total>0&&<div style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:10}}><dt>Diseño · {line.design_label}</dt><dd style={{margin:0,fontWeight:700}}>+{formatMoney(line.design_total)}</dd></div>}<div style={{display:'flex',justifyContent:'space-between',gap:10,paddingTop:5,borderTop:'1px solid var(--line)',fontSize:10,fontWeight:750}}><dt>Subtotal del artículo</dt><dd style={{margin:0,fontWeight:750}}>{formatMoney(line.subtotal)}</dd></div>{line.discount_amount>0&&<div style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:10}}><dt>Descuento</dt><dd style={{margin:0,fontWeight:750}}>−{formatMoney(line.discount_amount)}</dd></div>}{line.tax_amount>0&&<div style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:10}}><dt>IVA</dt><dd style={{margin:0,fontWeight:750}}>+{formatMoney(line.tax_amount)}</dd></div>}{line.shipping_share>0&&<div style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:10}}><dt>Envío / otros</dt><dd style={{margin:0,fontWeight:750}}>+{formatMoney(line.shipping_share)}</dd></div>}<div style={{display:'flex',justifyContent:'space-between',gap:10,paddingTop:7,borderTop:'1px solid var(--line)',fontSize:10,fontWeight:800}}><dt>Total del artículo</dt><dd style={{margin:0,fontWeight:800}}>{formatMoney(line.line_total)}</dd></div></dl></article>)}</div>:<p className="pos-cart-empty">{form.description||'Los conceptos y el total se conservarán como fueron aprobados.'}</p>}</section>
+            ? <section className="pos-cart pos-quote-cart" aria-label="Resumen de cotización"><div className="pos-cart-heading"><div><span className="eyebrow">COTIZACIÓN APROBADA</span><h3>{centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||'Pedido aprobado'}</h3></div><strong>{formatMoney(activeTotal)}</strong></div>{currentQuoteLines.length>0?<div className="pos-quote-approved-lines">{currentQuoteLines.map((line,index)=>{const hasAdjustments=line.discount_amount>0||line.tax_amount>0||line.shipping_share>0;return <article className="pos-quote-approved-card" key={line.line_key}><div className="pos-quote-approved-item"><div><small>ARTÍCULO {String(index+1).padStart(2,'0')}</small><b>{line.name||'Artículo cotizado'}</b></div><strong>{formatMoney(line.line_total)}</strong></div><small className="pos-quote-approved-meta">{line.pieceQuantity||line.quantity} {(line.pieceQuantity||line.quantity)===1?'pieza':'piezas'}{line.widthCm&&line.heightCm?` · ${line.widthCm} × ${line.heightCm} cm`:''}{line.totalArea?` · ${Number(line.totalArea).toLocaleString('es-EC',{maximumFractionDigits:2})} m²`:''} · {formatMoney(line.base_unit_price)}/{line.unit||'unidad'}{line.optionChoice?` · ${line.optionChoice}`:''}</small>{line.description&&<small className="pos-quote-approved-description" title={line.description}>{line.description}</small>}<dl className="pos-quote-approved-breakdown"><div><dt>Material</dt><dd>{formatMoney(line.base_subtotal)}</dd></div>{line.eyelet_total>0&&<div><dt>Ojales · {line.eyelet_label}</dt><dd>+{formatMoney(line.eyelet_total)}</dd></div>}{line.design_total>0&&<div><dt>Diseño · {line.design_label}</dt><dd>+{formatMoney(line.design_total)}</dd></div>}{hasAdjustments&&<div className="is-subtotal"><dt>Subtotal</dt><dd>{formatMoney(line.subtotal)}</dd></div>}{line.discount_amount>0&&<div className="is-discount"><dt>Descuento</dt><dd>−{formatMoney(line.discount_amount)}</dd></div>}{line.tax_amount>0&&<div><dt>IVA</dt><dd>+{formatMoney(line.tax_amount)}</dd></div>}{line.shipping_share>0&&<div><dt>Envío / otros</dt><dd>+{formatMoney(line.shipping_share)}</dd></div>}</dl></article>})}</div>:<p className="pos-cart-empty">{form.description||'Los conceptos y el total se conservarán como fueron aprobados.'}</p>}</section>
             : <section className="pos-cart" aria-label="Carrito de venta">
                 <div className="pos-cart-heading">
                   <div>
@@ -1881,7 +1906,7 @@ export function PosPage() {
                   </div>
                 </div>
                 {cart.length===0?<p className="pos-cart-empty">Agrega productos del catálogo (clic en “+ Agregar” o configura sus medidas) o registra un concepto libre con precio acordado.</p>:<div className="pos-cart-lines">{cart.map((line)=>{
-                  const routeCode=productionByLine[line.key]?.workflow_code||(line.productId?productWorkflowRoutes[line.productId]:undefined);
+                  const routeCode=productionByLine[line.key]?.workflow_code||(line.productId?recommendedWorkflowByProduct[line.productId]||productWorkflowRoutes[line.productId]:undefined);
                   const routeName=routeCode?workflowTemplates.find((t)=>t.code===routeCode)?.name||routeCode:undefined;
                   return <POSCartLineEditor
                     key={line.key}
