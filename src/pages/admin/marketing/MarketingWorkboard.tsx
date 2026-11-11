@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   AlertCircle,
   CalendarDays,
@@ -249,6 +249,7 @@ export function WorkDetails({
   onReschedule,
   onOpen,
   canEdit,
+  compact = false,
 }: {
   post: WorkflowPost;
   today: string;
@@ -258,6 +259,7 @@ export function WorkDetails({
   onReschedule: () => void;
   onOpen?: () => void;
   canEdit: boolean;
+  compact?: boolean;
 }) {
   const progress = checklistProgress(post);
   const publication = isPublication(post);
@@ -267,7 +269,14 @@ export function WorkDetails({
   const approvalText = approvalLabel(post, reviews);
   const isApproved = /aprobada/i.test(approvalText) && !/sin|pendiente/i.test(approvalText);
   const hasChangesReq = /cambios/i.test(approvalText);
-  const applicableDeliverables = DELIVERABLES.filter(([key]) => post[key] !== "No aplica");
+  const applicableDeliverables = DELIVERABLES.filter(([key]) => {
+    if (post[key] === "No aplica") return false;
+    if (compact && (key === "art_status" || key === "video_status")) return false;
+    return true;
+  });
+  const showNextAction = compact
+    ? Boolean(post.caption && post.next_action)
+    : true;
 
   return (
     <section
@@ -283,14 +292,18 @@ export function WorkDetails({
               ? `${post.owner} · sin cuenta vinculada`
               : "Sin responsable"}
         </span>
-        <span>
-          <CalendarDays size={13} />
-          Entrega: {post.due_date || "sin fecha"}
-        </span>
-        <span>
-          Publicación: {post.scheduled_date || "sin fecha"}{" "}
-          {post.scheduled_time || "· sin hora"}
-        </span>
+        {(!compact || post.due_date) && (
+          <span>
+            <CalendarDays size={13} />
+            Entrega: {post.due_date || "sin fecha"}
+          </span>
+        )}
+        {!compact && (
+          <span>
+            Publicación: {post.scheduled_date || "sin fecha"}{" "}
+            {post.scheduled_time || "· sin hora"}
+          </span>
+        )}
       </div>
       {productionOverdue(post, today) && (
         <strong className="mk-danger">Producción vencida</strong>
@@ -300,7 +313,13 @@ export function WorkDetails({
           Publicación pendiente de confirmar
         </strong>
       )}
-      <p className="mk-work-next-action">{post.next_action || "Define el siguiente paso de esta pieza."}</p>
+      {showNextAction && (
+        <p className="mk-work-next-action">
+          {compact
+            ? `Próximo paso: ${post.next_action}`
+            : post.next_action || "Define el siguiente paso de esta pieza."}
+        </p>
+      )}
       {publication && (
         <>
           <div className="mk-progress-header">
@@ -365,7 +384,7 @@ export function WorkDetails({
         <p className="mk-danger">Bloqueo: {post.blocked_reason}</p>
       )}
       <div className="mk-work-actions">
-        {onOpen && (
+        {onOpen && !compact && (
           <button type="button" className="mk-action-primary" onClick={onOpen}>
             <Pencil size={14} />
             Abrir ficha
@@ -843,6 +862,52 @@ export function BulkAssignment({
         onClick={() => onAssign(owner)}
       >
         Asignar
+      </button>
+    </div>
+  );
+}
+
+export function BulkStageChange({
+  busy,
+  onStageChange,
+  statuses,
+}: {
+  busy: boolean;
+  onStageChange: (stage: string) => void;
+  statuses?: string[];
+}) {
+  const [stage, setStage] = useState("");
+  const availableStatuses = useMemo(() => {
+    const canonical = ['Por iniciar', 'En diseño', 'En producción', 'En revisión', 'Programada', 'Publicada'];
+    const extra = (statuses || []).filter((s) => s && s !== 'Todos los estados');
+    const merged = [...new Set([...canonical, ...extra])];
+    return [
+      { value: '', label: 'Cambiar etapa a…' },
+      ...merged.map((s) => ({ value: s, label: s })),
+    ];
+  }, [statuses]);
+
+  return (
+    <div className="mk-bulk-stage-change" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <SelectDropdown
+        size="sm"
+        ariaLabel="Cambiar etapa de publicaciones seleccionadas"
+        disabled={busy}
+        value={stage}
+        options={availableStatuses}
+        onChange={(val) => setStage(val)}
+      />
+      <button
+        type="button"
+        disabled={busy || !stage}
+        onClick={() => {
+          if (stage) {
+            onStageChange(stage);
+            setStage("");
+          }
+        }}
+      >
+        Cambiar etapa
       </button>
     </div>
   );

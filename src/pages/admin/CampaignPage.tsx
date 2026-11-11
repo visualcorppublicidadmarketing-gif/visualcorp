@@ -24,7 +24,7 @@ import './marketing/marketing-interface-polish.css';
 import { DEFAULT_MARKETING_TAGS, PublicationEditorSections, type PublicationDraft, type PublicationEditorTab } from './marketing/PublicationEditorSections';
 import { getMarketingCalendarColor, getMarketingTags, MARKETING_COLORS } from './marketing/marketingColors';
 import { isTerminalMarketingStatus, marketingDateKey } from './marketing/marketingScheduleRules';
-import { WorkflowToolbar, WorkDetails, ReviewPanel, DateProposal, NonproductionSettings, BulkAssignment } from './marketing/MarketingWorkboard';
+import { WorkflowToolbar, WorkDetails, ReviewPanel, DateProposal, NonproductionSettings, BulkAssignment, BulkStageChange } from './marketing/MarketingWorkboard';
 import { CHECKLIST_STATES, DELIVERABLES, compareWork, isMonthlyPlan, isPublication, matchesQueue, publicationWarnings, type Assignee, type MarketingReview, type NonproductionDay, type WorkQueue, type RecordFilter } from './marketing/marketingWorkflow';
 import { saveMarketingPost } from './marketing/marketingWorkflowApi';
 import {
@@ -682,6 +682,44 @@ export function CampaignPage({ area = 'admin', initialSection }: { area?: 'admin
     }
     setBulkReport(report);setSelectedPostIds(current=>new Set([...current].filter(id=>!successful.has(id))));await refresh();setSaving(false);
   };
+  const changeSelectedStatus = async (status: string) => {
+    if (!canEdit || !organizationId || !status) return;
+    const selected = data.posts.filter((p) => selectedPostIds.has(p.id) && p.status !== status);
+    if (!selected.length) return;
+    if (/programad|publicad/i.test(status)) {
+      const withWarnings = selected.filter((p) => publicationWarnings(p, data.reviews, materialsFor(p)).length > 0);
+      if (
+        withWarnings.length > 0 &&
+        !(await confirm({
+          eyebrow: 'REVISIÓN MASIVA DE ETAPA',
+          title: `${withWarnings.length} ${withWarnings.length === 1 ? 'pieza tiene' : 'piezas tienen'} pendientes`,
+          description: `Hay pendientes en: ${withWarnings.slice(0, 3).map((p) => `«${p.title || 'Sin título'}»`).join(', ')}${withWarnings.length > 3 ? ` y ${withWarnings.length - 3} más` : ''}.`,
+          tone: 'warning',
+          confirmLabel: `Cambiar ${selected.length} a ${status}`,
+          cancelLabel: 'Cancelar',
+          callout: 'Este cambio registra la etapa en el calendario; no publica en redes ni crea aprobaciones.',
+        }))
+      ) {
+        return;
+      }
+    }
+    setSaving(true);
+    const report: string[] = [];
+    const successful = new Set<string>();
+    for (const post of selected) {
+      try {
+        await saveMarketingPost(organizationId, post, { status });
+        report.push(`${post.title || 'Sin título'}: etapa → ${status}`);
+        successful.add(post.id);
+      } catch (error: any) {
+        report.push(`${post.title || 'Sin título'}: ${error.message}`);
+      }
+    }
+    setBulkReport(report);
+    setSelectedPostIds((current) => new Set([...current].filter((id) => !successful.has(id))));
+    await refresh();
+    setSaving(false);
+  };
   const postActions = (post: Post): ContextMenuAction[] => [
     { kind: 'label', label: 'Publicación', onSelect: () => {} },
     { label: 'Revisar pieza', icon: <CheckCircle2 size={14}/>, onSelect: () => setReviewPost(post), disabled: !isPublication(post) },
@@ -691,6 +729,14 @@ export function CampaignPage({ area = 'admin', initialSection }: { area?: 'admin
     { label: selectedPostIds.has(post.id) ? 'Quitar de seleccionadas' : 'Seleccionar publicación', icon: <Check size={14}/>, kind: 'checkbox', checked: selectedPostIds.has(post.id), onSelect: () => {}, onCheckedChange: () => togglePost(post.id), disabled: !(canEdit || canDelete) },
     { label: post.design_ready ? 'Diseño listo' : 'Marcar diseño listo', group: 'Producción', icon: <FileImage size={14}/>, kind: 'checkbox', checked: post.design_ready === true, onSelect: () => {}, onCheckedChange: (checked) => void changePostReadiness(post, 'design_ready', checked), disabled: !canEdit },
     { label: post.video_ready ? 'Vídeo listo' : 'Marcar vídeo listo', group: 'Producción', icon: <Film size={14}/>, kind: 'checkbox', checked: post.video_ready === true, onSelect: () => {}, onCheckedChange: (checked) => void changePostReadiness(post, 'video_ready', checked), disabled: !canEdit },
+    ...['Por iniciar', 'En diseño', 'En producción', 'En revisión', 'Programada', 'Publicada']
+      .filter((stage) => stage !== (post.status || 'Por iniciar'))
+      .map((stage) => ({
+        label: `Pasar a ${stage}`,
+        group: 'Etapa',
+        onSelect: () => void changePostStatus(post, stage),
+        disabled: !canEdit || saving,
+      })),
     { label: 'Abrir calendario editorial', icon: <CalendarDays size={14}/>, onSelect: () => handleSectionChange('calendar') },
     { kind: 'separator', label: '', onSelect: () => {} },
     { label: 'Eliminar publicación', icon: <Trash2 size={14}/>, onSelect: () => void deletePosts([post]), destructive: true, disabled: !canDelete },
@@ -726,10 +772,9 @@ export function CampaignPage({ area = 'admin', initialSection }: { area?: 'admin
     />
 
     <main className="vc-content-workspace" aria-label="Centro de gestión de marketing">
-      <section className="vc-content-hero">
-        <div className="vc-content-hero-glow" aria-hidden="true" />
-        <div className="vc-content-hero-copy"><span className="vc-content-brand"><span><Sparkles size={16}/></span> VISUAL CONTENT STUDIO <i>·</i> ESPACIO CENTRAL</span><h2>Tu equipo, tus piezas,<br/><em>el siguiente paso claro.</em></h2><p>El calendario y los registros de Tracking ya viven en la suite, con acceso por perfil, biblioteca catalogada y seguimiento de cambios.</p></div>
-        <div className="vc-content-hero-stat"><span><Megaphone size={17}/></span><strong>{data.posts.length}</strong><small>registros centralizados</small><div className="vc-content-sparkline" aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div></div>
+      <section className="vc-content-hero is-compact">
+        <div className="vc-content-hero-copy"><span className="vc-content-brand"><span><Sparkles size={14}/></span> VISUAL CONTENT STUDIO <i>·</i> ESPACIO CENTRAL</span><h2>Flujo editorial y producción</h2><p>Supervisión de publicaciones, calendario multicanal y piezas aprobadas en tiempo real.</p></div>
+        <div className="vc-content-hero-stat"><span><Megaphone size={15}/></span><strong>{data.posts.length}</strong><small>registros centralizados</small></div>
       </section>
 
       {!supabase && <div className="vc-content-alert"><AlertCircle size={18}/><div><b>Falta conectar la suite a su base de datos</b><span>La biblioteca migrada está en Supabase; configura la conexión del entorno para cargarla.</span></div></div>}
@@ -749,10 +794,10 @@ export function CampaignPage({ area = 'admin', initialSection }: { area?: 'admin
       </nav>
 
       {activeSection === 'overview' && <WorkflowToolbar posts={data.posts} today={today} userId={user?.id} queue={queue} onQueue={setQueue} recordFilter={recordFilter} onRecordFilter={setRecordFilter} reviews={data.reviews}/>}
-      {bulkReport.length>0&&<div className="mk-bulk-report" role="status"><b>Resultado de asignación</b><ul>{bulkReport.map((message,i)=><li key={i}>{message}</li>)}</ul><button type="button" onClick={()=>setBulkReport([])}>Cerrar resultado</button></div>}
+      {bulkReport.length>0&&<div className="mk-bulk-report" role="status"><b>Resultado de acción masiva</b><ul>{bulkReport.map((message,i)=><li key={i}>{message}</li>)}</ul><button type="button" onClick={()=>setBulkReport([])}>Cerrar resultado</button></div>}
       {(activeSection === 'overview' || activeSection === 'library') && <div className="vc-content-toolbar"><div><span className="vc-content-section-icon"><FolderOpen size={16}/></span><div><b>{activeSection === 'overview' ? 'Flujo editorial' : sectionTitle}</b><small>{activeSection === 'library' ? `${data.assets.length} recursos catalogados · ${linkedAssets} vinculados` : `${filteredPosts.length} registros visibles · ${publications.length} publicaciones · ${data.posts.filter(isMonthlyPlan).length} planes`}</small></div></div><label className="vc-content-search"><Search size={15}/><input aria-label="Buscar" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder}/></label><SelectDropdown size="md" label={activeSection === 'library' ? 'Archivo' : 'Etapa'} ariaLabel="Filtrar resultados" icon={<Filter size={13}/>} value={activeSection === 'library' ? assetFilter : statusFilter} defaultValue={activeSection === 'library' ? 'Todos los archivos' : 'Todos los estados'} onChange={(val) => activeSection === 'library' ? setAssetFilter(val) : setStatusFilter(val)} options={activeSection === 'library' ? [{ value: 'Todos los archivos', label: 'Todos los archivos' }, { value: 'Disponibles en el equipo', label: 'Disponibles en el equipo' }, { value: 'Solo referencia de ruta', label: 'Solo referencia de ruta' }, { value: 'Eliminados por plazo', label: 'Eliminados por plazo' }] : statuses.map((status) => ({ value: status, label: status }))}/>{activeSection !== 'library' && <SelectDropdown size="md" label="Etiqueta" ariaLabel="Filtrar por etiqueta" icon={<Filter size={13}/>} value={tagFilter} defaultValue="Todas las etiquetas" onChange={(val) => setTagFilter(val)} options={[{ value: 'Todas las etiquetas', label: 'Todas las etiquetas' }, ...knownTags.map((tag) => ({ value: tag, label: tag }))]}/>}{activeSection === 'overview' && <div className="vc-marketing-view-toggle" aria-label="Modo de publicaciones"><button type="button" aria-pressed={postView==='cards'} className={postView==='cards'?'active':''} onClick={()=>setPostView('cards')}><LayoutGrid size={14}/>Tarjetas</button><button type="button" aria-pressed={postView==='table'} className={postView==='table'?'active':''} onClick={()=>setPostView('table')}><List size={14}/>Tabla</button></div>}</div>}
 
-      {(activeSection === 'overview' || activeSection === 'calendar') && (canEdit||canDelete) && <div className="vc-marketing-bulk-bar"><label><input type="checkbox" checked={filteredPosts.length > 0 && filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/> Seleccionar publicaciones visibles</label>{selectedPostIds.size > 0 && <><span>{selectedPostIds.size} seleccionadas</span>{canEdit&&<BulkAssignment assignees={data.assignees} busy={saving} onAssign={id=>void assignSelected(id)}/>}<button type="button" className="vc-small-danger" disabled={!canDelete||saving} title={!canDelete?"El perfil requiere permiso para eliminar publicaciones":undefined} onClick={()=>void deletePosts(data.posts.filter((post)=>selectedPostIds.has(post.id)))}><Trash2 size={13}/>Eliminar seleccionadas</button><button type="button" onClick={()=>setSelectedPostIds(new Set())}>Quitar selección</button></>}</div>}
+      {(activeSection === 'overview' || activeSection === 'calendar') && (canEdit||canDelete) && <div className="vc-marketing-bulk-bar"><label><input type="checkbox" checked={filteredPosts.length > 0 && filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/> Seleccionar publicaciones visibles</label>{selectedPostIds.size > 0 && <><span>{selectedPostIds.size} seleccionadas</span>{canEdit&&<BulkAssignment assignees={data.assignees} busy={saving} onAssign={id=>void assignSelected(id)}/>}{canEdit&&<BulkStageChange busy={saving} onStageChange={(st)=>void changeSelectedStatus(st)} statuses={statuses}/>}<button type="button" className="vc-small-danger" disabled={!canDelete||saving} title={!canDelete?"El perfil requiere permiso para eliminar publicaciones":undefined} onClick={()=>void deletePosts(data.posts.filter((post)=>selectedPostIds.has(post.id)))}><Trash2 size={13}/>Eliminar seleccionadas</button><button type="button" onClick={()=>setSelectedPostIds(new Set())}>Quitar selección</button></>}</div>}
 
       {activeSection === 'calendar' && <MarketingCalendar posts={data.posts} days={data.days} tasks={data.campaignItems} campaigns={data.campaigns} organizationId={organizationId || ''} artworkByPost={artworkByPost} artworkByTask={artworkByCampaignTask} onArtworkSaved={() => void refresh()} canEdit={canEdit} canDelete={canDelete} selectedIds={selectedPostIds} onToggle={togglePost} onSelect={(post) => { void openPost(post as Post); }} onCreate={(date, time) => { void openPost(undefined, date, '', time); }} onReschedule={(post, date) => void reschedulePost(post as Post, date)} onQuickReschedule={(post, date, time) => void quickSchedulePost(post as Post, date, time)} onStatusChange={(post, status) => void changePostStatus(post as Post, status)} onReadinessChange={(post, field, checked) => void changePostReadiness(post as Post, field, checked)} onDuplicate={(post)=>void duplicatePost(post as Post)} onDelete={(post)=>void deletePosts([post as Post])} onTaskSelect={(task) => openCampaignTaskForm(task as MarketingCampaignTask)} onTaskReschedule={(task, date) => void rescheduleCampaignTask(task as MarketingCampaignTask, date)} onTaskQuickSchedule={(task, date, startTime, endTime) => void quickScheduleCampaignTask(task as MarketingCampaignTask, date, startTime, endTime)} onTaskStatusChange={(task, status) => void changeCampaignTaskStatus(task as MarketingCampaignTask, status)} onTaskCreate={(date) => openCampaignTaskForm(undefined, '', date ? { startDate: date, endDate: date } : undefined)} onTaskCreateRange={(range) => openCampaignTaskForm(undefined, '', range)} onTaskDelete={(task) => void deleteCampaignTask(task as MarketingCampaignTask)}/>}
 
@@ -771,7 +816,7 @@ export function CampaignPage({ area = 'admin', initialSection }: { area?: 'admin
                     <header className="vc-marketing-post-card-top">{(canEdit||canDelete)&&<label className="vc-marketing-select-post"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></label>}<div className="vc-content-date" style={getMarketingCalendarColor(post.calendar_color, post.tags)?{borderColor:getMarketingCalendarColor(post.calendar_color, post.tags),color:getMarketingCalendarColor(post.calendar_color, post.tags)}:undefined}><strong>{post.scheduled_date ? post.scheduled_date.slice(8,10) : '—'}</strong><span>{post.scheduled_date ? new Intl.DateTimeFormat('es-EC',{month:'short'}).format(new Date(`${post.scheduled_date.slice(0,10)}T12:00:00`)) : 'PEND.'}</span></div><div className="vc-content-post-end"><span className={`vc-marketing-channel-pill is-${platformClass}`}>{post.platform || 'Canal'} · {post.format || 'Post'}</span><StageBadge stage={post.status || 'Por iniciar'}/><span className={`vc-content-dot is-${statusTone(post.status)}`}/></div></header>
                     <MarketingPostArtwork organizationId={organizationId || ''} post={post} asset={artworkByPost.get(post.id)} canEdit={canEdit} variant="overview" onSaved={() => void refresh()}/>
                     <button className="vc-content-post-main" type="button" onClick={() => { void openPost(post); }}><span className="vc-content-post-eyebrow">{post.content_line || post.platform || 'Contenido'} <i>·</i> {post.format || 'Formato pendiente'}</span><strong>{post.title || 'Sin título'}</strong><span className="vc-content-post-caption">{post.caption || post.next_action || 'Copy y siguiente paso por completar.'}</span><span className="vc-content-post-meta"><span><Megaphone size={13}/>{post.platform || 'Canal pendiente'}{post.scheduled_time ? ` · ${post.scheduled_time}` : ''}</span><span><Images size={13}/>{linked} piezas</span></span></button>
-                    <WorkDetails post={post} today={today} reviews={data.reviews} materials={materialsFor(post)} canEdit={canEdit} onOpen={() => { void openPost(post); }} onReview={()=>setReviewPost(post)} onReschedule={()=>reschedulePost(post)}/>
+                    <WorkDetails post={post} today={today} reviews={data.reviews} materials={materialsFor(post)} canEdit={canEdit} compact onOpen={() => { void openPost(post); }} onReview={()=>setReviewPost(post)} onReschedule={()=>reschedulePost(post)}/>
                     <MarketingReadinessIndicators post={post} onChange={(field, checked) => void changePostReadiness(post, field, checked)} disabled={!canEdit||saving}/>
                     {getMarketingTags(post.tags).length>0&&<div className="vc-marketing-post-tags">{getMarketingTags(post.tags).map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div>}
                   </article></ContextMenu>;
