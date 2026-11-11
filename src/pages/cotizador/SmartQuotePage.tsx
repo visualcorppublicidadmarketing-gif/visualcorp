@@ -20,6 +20,7 @@ import { ArtworkUploader } from './components/ArtworkUploader';
 import { QuoteFinishingModal, FinishingHelpButton } from './components/QuoteFinishingTooltips';
 import { DeliverySpeedSelector, DELIVERY_SPEEDS } from './components/DeliverySpeedSelector';
 import { generateQuotePDF } from '../../lib/quotePDF';
+import './smart-quote-custom-design.css';
 
 export const SHIPPING_OPTIONS = [
   { id: 'pickup', name: 'Retiro en Matriz Milagro', price: 0, desc: 'Listo en nuestro local principal sin costo.' },
@@ -47,6 +48,8 @@ export function SmartQuotePage() {
   const [quantity, setQuantity] = useState(1);
 
   const [designLevel, setDesignLevel] = useState('none');
+  const [customDesignDescription, setCustomDesignDescription] = useState('');
+  const [customDesignAmount, setCustomDesignAmount] = useState('');
   const [artwork, setArtwork] = useState(null);
   const [finishing, setFinishing] = useState('none'); // 'none' | 'corte_al_ras' | 'small' | 'large' | 'bolsillo'
   const [eyeletPreset, setEyeletPreset] = useState('corners'); // 'corners' | 'every50' | 'every30' | 'custom'
@@ -162,7 +165,9 @@ export function SmartQuotePage() {
     ? Number(calcSettings.designAdaptationPrice || 5)
     : designLevel === 'full'
       ? Number(calcSettings.designFromScratchPrice || 15)
-      : 0;
+      : designLevel === 'custom'
+        ? Math.max(0, Number(customDesignAmount) || 0)
+        : 0;
 
   const installationCost = installation && isArea && selectedProduct?.price_inst
     ? Math.max(0, (Number(selectedProduct.price_inst) - Number(selectedProduct.price || 0)) * ((widthCm / 100) * (heightCm / 100)) * effectiveQuantity)
@@ -258,6 +263,8 @@ export function SmartQuotePage() {
     setCustomEyelets(4);
     setInstallation(false);
     setDesignLevel('none');
+    setCustomDesignDescription('');
+    setCustomDesignAmount('');
     setArtwork(null);
     setIsDropdownOpen(false);
     setQuantity(nextMode === 'medidas' ? 1 : nextMode === 'lotes' ? 1000 : 12);
@@ -268,6 +275,8 @@ export function SmartQuotePage() {
     setSelection({});
     setQuantity(Math.max(1, Number(product.minQuantity || 1), mode === 'lotes' ? 1000 : mode === 'unidades' ? 12 : 1));
     setDesignLevel('none');
+    setCustomDesignDescription('');
+    setCustomDesignAmount('');
     setArtwork(null);
     setFinishing('none');
     setEyeletPreset('corners');
@@ -284,11 +293,15 @@ export function SmartQuotePage() {
   const readableDimensions = isArea
     ? `${widthCm} × ${heightCm} cm (${quote.area.toFixed(2)} m²)`
     : `${effectiveQuantity} ${selectedProduct?.pricingMode === 'tier-total' ? 'unidades (lote)' : selectedProduct?.unit || 'unidades'}`;
+  const customDesignComplete = designLevel !== 'custom'
+    || (Boolean(customDesignDescription.trim()) && customDesignAmount !== '' && Number.isFinite(Number(customDesignAmount)) && Number(customDesignAmount) >= 0);
 
   const readableDesign = designLevel === 'adaptation'
     ? 'Adaptación / Ajuste de medidas'
     : designLevel === 'full'
       ? 'Diseño profesional desde cero'
+      : designLevel === 'custom'
+        ? `Concepto de diseño libre${customDesignDescription.trim() ? `: ${customDesignDescription.trim()}` : ''}`
       : artwork
         ? `Arte listo adjunto: ${artwork.name}`
         : 'Arte listo del cliente';
@@ -304,6 +317,7 @@ export function SmartQuotePage() {
           : 'Estándar con margen blanco';
 
   const add = () => {
+    if (!customDesignComplete) return;
     if (!selectedProduct) return;
     const readableVariant = [
       selectionText,
@@ -322,6 +336,8 @@ export function SmartQuotePage() {
       heightCm: isArea ? heightCm : null,
       quantity: effectiveQuantity,
       designLevel,
+      customDesignDescription: designLevel === 'custom' ? customDesignDescription.trim() : null,
+      customDesignAmount: designLevel === 'custom' ? designCost : null,
       finishing,
       installation,
       deliverySpeed,
@@ -371,6 +387,17 @@ export function SmartQuotePage() {
       tierLabel: quote.tier?.label || 'PVP',
       material: quote.material,
       design: quote.design,
+      designService: designLevel === 'custom' ? {
+        type: 'custom',
+        label: 'Concepto de diseño libre',
+        description: customDesignDescription.trim(),
+        amount: designCost,
+      } : {
+        type: designLevel,
+        label: readableDesign,
+        description: '',
+        amount: designCost,
+      },
       extras: extrasList.map((extra) => ({ name: extra.name, amount: extra.price })),
       subtotal: quote.subtotal,
     },
@@ -1033,6 +1060,30 @@ export function SmartQuotePage() {
                     </div>
                     <span className="design-option-price">+{money(Number(calcSettings.designFromScratchPrice || 15))}</span>
                   </label>
+
+                  <label className={`design-option-card ${designLevel === 'custom' ? 'active' : ''} smart-quote-custom-design-option`}>
+                    <input
+                      type="radio"
+                      name="designLevel"
+                      checked={designLevel === 'custom'}
+                      onChange={() => setDesignLevel('custom')}
+                    />
+                    <div className="design-option-copy">
+                      <b>Concepto de diseño libre</b>
+                      <small>Describe el trabajo y registra el importe acordado.</small>
+                    </div>
+                    <span className="design-option-price">+{money(designCost)}</span>
+                  </label>
+
+                  {designLevel === 'custom' && <div className="smart-quote-custom-design-fields">
+                    <label htmlFor="smart-quote-custom-design-description">Descripción del concepto de diseño
+                      <input id="smart-quote-custom-design-description" type="text" maxLength={180} value={customDesignDescription} onChange={(event) => setCustomDesignDescription(event.target.value)} placeholder="Ej.: ilustración, retoque o composición especial"/>
+                    </label>
+                    <label htmlFor="smart-quote-custom-design-amount">Importe del diseño (USD)
+                      <input id="smart-quote-custom-design-amount" type="number" min="0" step="0.01" inputMode="decimal" value={customDesignAmount} onChange={(event) => setCustomDesignAmount(event.target.value)} placeholder="0.00"/>
+                    </label>
+                    {!customDesignComplete && <small className="smart-quote-custom-design-error" role="alert">Completa el concepto y el importe del servicio para incluirlo en la cotización.</small>}
+                  </div>}
                 </div>
 
                 {/* Upload Component with DPI Preflight Check */}
@@ -1141,10 +1192,10 @@ export function SmartQuotePage() {
               <b>{money(quote.material)}</b>
             </div>
 
-            {designCost > 0 && (
+            {(designCost > 0 || designLevel === 'custom') && (
               <div className="summary-line">
-                <span>Diseño gráfico</span>
-                <b>+{money(designCost)}</b>
+                <span>{designLevel === 'custom' ? `Diseño: ${customDesignDescription.trim() || 'Concepto libre'}` : 'Diseño gráfico'}</span>
+                <b>{designCost > 0 ? `+${money(designCost)}` : 'Por definir'}</b>
               </div>
             )}
 
@@ -1194,11 +1245,13 @@ export function SmartQuotePage() {
               type="button"
               className="button button-primary full-button"
               onClick={add}
+              disabled={!customDesignComplete}
+              title={!customDesignComplete ? 'Completa el concepto y el importe del diseño.' : undefined}
             >
               Agregar al carrito de cotizaciones <ArrowRight size={16} />
             </button>
 
-            <button type="button" className="whatsapp-action-btn" onClick={() => setQuoteDialogOpen(true)}>
+            <button type="button" className="whatsapp-action-btn" disabled={!customDesignComplete} onClick={() => setQuoteDialogOpen(true)}>
               <MessageCircle size={17} /> Cotizar directo por WhatsApp
             </button>
 
@@ -1207,6 +1260,7 @@ export function SmartQuotePage() {
               type="button"
               className="pdf-download-action-btn"
               onClick={handleDownloadPDF}
+              disabled={!customDesignComplete}
               title="Descargar proforma formal en PDF con membrete y validez de 15 días"
             >
               <Download size={16} /> Descargar Proforma en PDF (B2B)
@@ -1227,10 +1281,10 @@ export function SmartQuotePage() {
           {quote.savingsPercent > 0 && <span className="mobile-savings-tag">-{quote.savingsPercent}%</span>}
         </div>
         <div className="mobile-sticky-actions">
-          <button type="button" className="button button-primary compact-btn" onClick={add} title="Agregar al carrito">
+          <button type="button" className="button button-primary compact-btn" onClick={add} disabled={!customDesignComplete} title={!customDesignComplete ? 'Completa el concepto y el importe del diseño.' : 'Agregar al carrito'}>
             <Plus size={16} /> Carrito
           </button>
-          <button type="button" className="whatsapp-sticky-btn" onClick={() => setQuoteDialogOpen(true)} aria-label="Cotizar por WhatsApp">
+          <button type="button" className="whatsapp-sticky-btn" onClick={() => setQuoteDialogOpen(true)} disabled={!customDesignComplete} aria-label="Cotizar por WhatsApp">
             <MessageCircle size={18} /> WhatsApp
           </button>
         </div>

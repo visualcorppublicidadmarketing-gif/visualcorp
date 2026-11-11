@@ -88,6 +88,11 @@
 .pos-order-financial-breakdown .is-total{align-items:center;margin-top:2px;padding-top:9px;border-top:1px solid var(--line);color:var(--ink);font-size:12px;font-weight:800}
 .pos-order-financial-breakdown .is-total dd{font-size:19px;letter-spacing:-.02em}
 .pos-review-financial{max-width:560px}
+.pos-material-availability-note{display:grid;gap:6px;padding:11px 12px;border:1px solid #ecd6a8;border-radius:10px;background:#fff9e9;color:#765514;font-size:10px;line-height:1.45}
+.pos-material-availability-note.is-blocking{border-color:#e8b8bd;background:#fff2f3;color:#8d2d39}
+.pos-material-availability-note b{font-size:11px}
+.pos-material-availability-note ul{display:grid;gap:3px;margin:0;padding-left:18px}
+.pos-material-availability-note small{color:inherit;font-size:9px}
 .pos-line-edit-toggle{display:inline-flex;align-items:center;gap:5px;margin:7px 0 0 48px;padding:5px 7px;border:0;border-radius:7px;background:transparent;color:#75418d;font:inherit;font-size:10px;font-weight:750;cursor:pointer}
 .pos-line-edit-toggle:hover{background:#f7f1fa}
 .pos-line-editor{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:8px;margin:7px 0 0 48px;padding:10px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--paper) 92%,#f3eef7)}
@@ -1176,3 +1181,4 @@
     grid-column: 1 / -1;
   }
 }
+.pos-line-finishing-summary{display:block;color:var(--text-muted,#6f6878);font-size:12px;line-height:1.45;margin:4px 0 6px}.pos-line-editor-span-2>.commercial-finishing-controls{width:100%}
