@@ -12,6 +12,7 @@ const exploreLinks = [
   { to: '/blog', label: 'Blog' },
   { to: '/tienda', label: 'Tienda' },
   { to: '/tienda/promociones', label: 'Promociones y sorteos' },
+  { to: '/pagos', label: 'Medios de pago' },
 ];
 
 export function MobileBottomNavigation({ services }: { services: ServiceLink[] }) {

@@ -638,12 +638,29 @@
   align-items: start;
 }
 
-/* Banking & QR Module */
+/* Public proposal access card */
 .eq-pdf-banking-block {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+
+.eq-pdf-portal-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #d7dce8;
+  border-radius: 9px;
+  background: #f7f8fb;
+  color: #364152;
+}
+
+.eq-pdf-portal-card > svg { flex: none; margin-top: 1px; color: #712b92; }
+.eq-pdf-portal-card > div { min-width: 0; display: grid; gap: 4px; }
+.eq-pdf-portal-card strong { font-size: 10px; }
+.eq-pdf-portal-card a { color: #5f247f; font-size: 9px; font-weight: 700; overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 2px; }
+.eq-pdf-payment-link { border-color: #eadced; background: linear-gradient(110deg, #fff8fd, #f5f1fb); }
 
 .eq-pdf-bank-accounts {
   background: #f8fafc;
@@ -702,7 +719,7 @@
   letter-spacing: 0.05em;
 }
 
-/* QR Code Display */
+/* Kept for legacy styles; current proposal view does not render a QR block. */
 .eq-pdf-qr-card {
   display: flex;
   align-items: center;
@@ -1151,5 +1168,355 @@
 
   .eq-pdf-toolbar-actions .eq-btn {
     width: 100%;
+  }
+}
+
+/* Visual refinement: calm, branded document canvas and native modal behavior. */
+dialog.eq-pdf-overlay {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 16px 12px 44px;
+  border: 0;
+  color: inherit;
+  background: var(--eq-bg-overlay);
+  box-shadow: none;
+  overscroll-behavior: contain;
+}
+
+dialog.eq-pdf-overlay::backdrop {
+  background: transparent;
+}
+
+.eq-pdf-overlay:focus-visible,
+.eq-pdf-overlay :focus-visible {
+  outline: 3px solid #f0abfc;
+  outline-offset: 3px;
+}
+
+.eq-pdf-modal {
+  max-width: 960px;
+  gap: 12px;
+}
+
+.eq-pdf-toolbar {
+  top: 8px;
+  padding: 10px 14px;
+  background: rgba(20, 25, 42, 0.96);
+  border-color: rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  box-shadow: 0 16px 36px rgba(2, 6, 23, 0.3);
+}
+
+.eq-pdf-toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.eq-pdf-toolbar-actions .eq-btn,
+.eq-btn-icon-close {
+  min-height: 40px;
+}
+
+.eq-pdf-sheet {
+  max-width: 860px;
+  padding: 38px 42px 32px;
+  border: 1px solid #e7e9f1;
+  border-radius: 10px;
+  box-shadow: 0 30px 80px rgba(2, 6, 23, 0.34);
+  overflow: hidden;
+}
+
+.eq-pdf-brand-strip {
+  height: 4px;
+}
+
+.eq-pdf-header {
+  gap: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #d9deea;
+}
+
+.eq-pdf-brand-col {
+  min-width: 0;
+  gap: 6px;
+}
+
+.eq-pdf-wordmark {
+  display: block;
+  width: min(100%, 340px);
+  height: 88px;
+  object-fit: cover;
+  object-position: center;
+  background: #fff;
+}
+
+.eq-pdf-fiscal-info {
+  gap: 3px;
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: #556078;
+}
+
+.eq-pdf-fiscal-info strong {
+  color: #34405b;
+  font-weight: 650;
+}
+
+.eq-pdf-meta-box {
+  border-color: #d9d7ea;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #fbfaff 0%, #f5f6fb 100%);
+  padding: 14px 15px;
+}
+
+.eq-pdf-meta-header {
+  align-items: flex-start;
+  border-bottom-color: #e2e1ec;
+}
+
+.eq-pdf-meta-title {
+  color: #4d5870;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.025em;
+  text-transform: none;
+}
+
+.eq-pdf-meta-code {
+  margin-top: 3px;
+  font-size: 20px;
+  letter-spacing: -0.035em;
+}
+
+.eq-pdf-meta-row {
+  gap: 12px;
+  font-size: 10.5px;
+}
+
+.eq-pdf-meta-label {
+  flex-shrink: 0;
+}
+
+.eq-pdf-meta-val {
+  overflow-wrap: anywhere;
+}
+
+.eq-pdf-client-card {
+  margin-top: 18px;
+  margin-bottom: 14px;
+  border-color: #e0e4ed;
+  border-radius: 9px;
+  background: #fcfcfe;
+}
+
+.eq-pdf-card-heading {
+  border-bottom: 1px solid #e5e8f0;
+}
+
+.eq-pdf-card-title,
+.eq-pdf-terms-title {
+  color: #39445f;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.015em;
+  text-transform: none;
+}
+
+.eq-pdf-client-grid {
+  column-gap: 20px;
+  row-gap: 12px;
+}
+
+.eq-pdf-field.is-wide {
+  grid-column: span 2;
+}
+
+.eq-pdf-field dt {
+  font-size: 9px;
+  letter-spacing: 0.035em;
+}
+
+.eq-pdf-field dd {
+  overflow-wrap: anywhere;
+}
+
+.eq-pdf-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.eq-pdf-table thead th {
+  color: #46516b;
+  font-size: 9px;
+  letter-spacing: 0.025em;
+  text-transform: none;
+}
+
+.eq-pdf-table tbody td {
+  vertical-align: top;
+}
+
+.eq-pdf-item-title {
+  color: #18213a;
+  font-size: 12px;
+}
+
+.eq-pdf-item-desc {
+  color: #69748c;
+}
+
+.eq-pdf-bottom-grid.is-full-width {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.eq-pdf-financial-card {
+  border-color: #dce1eb;
+  border-radius: 10px;
+  background: #fbfcfe;
+}
+
+.eq-pdf-fin-title {
+  color: #39445f;
+  font-size: 11px;
+  letter-spacing: 0.025em;
+  text-transform: none;
+}
+
+.eq-pdf-grand-total {
+  background: linear-gradient(120deg, #18213a 0%, #101728 100%);
+  border-radius: 8px;
+}
+
+.eq-pdf-grand-label {
+  font-size: 11px;
+  letter-spacing: 0.045em;
+  text-transform: none;
+}
+
+.eq-pdf-grand-amount {
+  font-size: 20px;
+}
+
+.eq-pdf-terms-block {
+  border-style: solid;
+  border-color: #e4e6ed;
+  border-radius: 9px;
+}
+
+.eq-pdf-signature-sub {
+  line-height: 1.45;
+}
+
+.eq-pdf-footer {
+  color: #778197;
+  font-size: 9px;
+}
+
+.eq-pdf-sheet.is-pos .eq-pdf-signatures {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  dialog.eq-pdf-overlay {
+    padding: 10px 8px 28px;
+  }
+
+  .eq-pdf-sheet {
+    padding: 28px 24px;
+  }
+}
+
+@media (max-width: 580px) {
+  dialog.eq-pdf-overlay {
+    padding: 8px 6px 20px;
+  }
+
+  .eq-pdf-toolbar {
+    top: 4px;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .eq-pdf-toolbar-info {
+    justify-content: flex-start;
+  }
+
+  .eq-pdf-toolbar-actions {
+    flex-direction: row;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .eq-pdf-toolbar-actions .eq-btn {
+    flex: 1 1 42%;
+    width: auto;
+    min-width: 0;
+    padding-inline: 9px;
+  }
+
+  .eq-btn-icon-close {
+    flex: 0 0 42px;
+  }
+
+  .eq-pdf-sheet {
+    padding: 22px 16px;
+    border-radius: 8px;
+  }
+
+  .eq-pdf-wordmark {
+    width: min(100%, 320px);
+    height: 82px;
+  }
+
+  .eq-pdf-client-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .eq-pdf-field.is-wide {
+    grid-column: 1 / -1;
+  }
+
+  .eq-pdf-table {
+    min-width: 690px;
+  }
+
+  .eq-pdf-grand-total {
+    gap: 10px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .eq-pdf-grand-amount {
+    font-size: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eq-pdf-overlay {
+    animation: none;
+    scroll-behavior: auto;
+  }
+}
+
+@media print {
+  dialog.eq-pdf-overlay {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    border: 0 !important;
+  }
+
+  .eq-pdf-sheet.is-pos .eq-pdf-signatures {
+    display: none !important;
   }
 }
