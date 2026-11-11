@@ -27,7 +27,7 @@ Los perfiles de Asesoras, Coordinador de Taller, Coordinador de Ventas, Diseñad
 - **Revisar sugerencia** limita la lista a productos de esa familia que aún no tienen ruta y prepara los cambios pendientes. La persona autorizada revisa y aplica el lote desde el panel de selección; los productos con ruta explícita quedan intactos.
 - POS y cotizador priorizan la ruta explícita del producto. Si no existe, aceptan la sugerencia familiar que cumple el mismo umbral y señalan ese origen; si no hay evidencia suficiente, se conserva la revisión de Asesoría. El POS permite cambiar la recomendación por artículo antes de confirmar.
 - Estas recomendaciones solo sirven para ventas o trabajos nuevos; no reescriben órdenes existentes. La implementación no requiere migración de base de datos.
-- Estado: cambios locales en `codex/product-routes-ux-20261111`, pendientes de publicar. Compilación Vite y TypeScript completadas; todavía falta revisión visual autenticada y prueba con permisos reales.
+- Estado: la configuración por producto/familia y las sugerencias revisables ya están en `origin/main`. La migración `20261111153749_catalog_family_workflow_routes` ya está aplicada en Supabase. Este repaso no requiere otra migración: el commit `e5b2c3b` parte de una versión anterior y reemplaza la interfaz actual por otra más limitada, así que solo se conservan ajustes de accesibilidad que faltaban. No se hizo despliegue; sigue pendiente validar el flujo con perfiles reales.
 
 ## Plantillas iniciales
 
