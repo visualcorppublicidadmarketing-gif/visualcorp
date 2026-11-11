@@ -159,6 +159,7 @@ html[data-public-theme="light"] .public-site .site-quote-workspace{
 .quote-check-option b{color:var(--quote-ink);font-size:11px}
 .quote-check-option small{color:var(--quote-muted);font-size:10px;font-weight:450;line-height:1.5}
 .quote-grommet-fields{padding-top:11px;border-top:1px solid var(--quote-line)}
+.quote-design-service-fields{margin-top:14px}
 .quote-installation-option{margin-top:14px}
 .quote-item-price{display:grid;gap:8px;margin-top:14px;padding:13px;border:1px solid var(--quote-line);border-radius:11px;background:var(--quote-soft)}
 .quote-item-price>.site-eyebrow{font-size:9px}
@@ -188,6 +189,12 @@ html[data-public-theme="light"] .public-site .site-quote-workspace{
 .quote-summary-item{display:grid;gap:6px;padding:12px 0;border-top:1px solid var(--quote-line)}
 .quote-summary-item>b{color:var(--quote-strong);font-size:11px;line-height:1.45;overflow-wrap:anywhere}
 .quote-summary-item>small{color:var(--quote-muted);font-size:10px;line-height:1.55}
+.quote-summary-item>.quote-summary-item-prices{color:var(--quote-ink);font-weight:650}
+.quote-summary-item>.quote-summary-item-extras{color:var(--quote-accent);font-weight:750}
+.quote-summary-totals{display:grid;gap:8px;margin:0 0 16px;padding:12px;border:1px solid var(--quote-border);border-radius:11px;background:var(--quote-soft)}
+.quote-summary-totals>b{color:var(--quote-strong);font-size:10px}
+.quote-summary-totals>div{display:flex;justify-content:space-between;gap:12px;color:var(--quote-muted);font-size:10px}
+.quote-summary-totals strong{color:var(--quote-ink);text-align:right}
 .quote-summary-location{display:flex;align-items:flex-start;gap:9px;margin:0 0 16px;padding:12px;border:1px solid var(--quote-border);border-radius:11px;background:var(--quote-soft);color:var(--quote-accent)}
 .quote-summary-location>svg{flex:none;margin-top:1px}
 .quote-summary-location>span{display:grid;gap:5px;min-width:0}

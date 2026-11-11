@@ -8,6 +8,7 @@ import { multiProductQuoteService } from '../content';
 export type QuoteService = { id: string; name: string };
 export type QuoteCalculationMode = 'unknown' | 'area' | 'units';
 export type QuoteDesignSupport = 'ready' | 'adapt' | 'create' | 'unknown';
+export type QuoteDesignService = 'none' | 'adaptation' | 'creation' | 'custom';
 export type QuoteLineItemDraft = {
   id: string;
   service: string;
@@ -25,7 +26,13 @@ export type QuoteLineItemDraft = {
   grommets: boolean;
   grommetSize: 'small' | 'large' | '';
   grommetCount: number | null;
+  grommetUnitAmount: string | number;
+  designService: QuoteDesignService;
+  designDescription: string;
+  designAmount: string | number;
   installation: boolean;
+  extras?: Array<{ code: string; label: string; quantity: number; unitAmount: number; amount: number }>;
+  extrasTotal?: number;
   pricingMode?: PricingMode;
   pricePreview?: { normal: number | null; installation: number | null; corporate: number | null };
   priceStatus?: 'pending-validation';
@@ -80,6 +87,12 @@ const designLabels: Record<QuoteDesignSupport, string> = {
   create: 'Necesito crear el diseño',
   unknown: 'Aún no lo sé',
 };
+const designServiceLabels: Record<QuoteDesignService, string> = {
+  none: 'Sin servicio de diseño',
+  adaptation: 'Adaptación de arte',
+  creation: 'Diseño desde cero',
+  custom: 'Otro servicio de diseño',
+};
 
 const quantityFromRange = (range: string) => {
   const first = range.match(/[\d]+(?:[.,][\d]+)?/)?.[0];
@@ -96,7 +109,8 @@ function makeItem(service = '', project = '', quantity = 1): QuoteLineItemDraft 
   return {
     id: makeId(), service, project, calculationMode: 'unknown', measurementUnit: 'cm',
     width: 100, height: 100, area: 0, quantity, designSupport: 'unknown', finishing: '',
-    grommets: false, grommetSize: '', grommetCount: null, installation: false,
+    grommets: false, grommetSize: '', grommetCount: null, grommetUnitAmount: '',
+    designService: 'none', designDescription: '', designAmount: '', installation: false,
   };
 }
 
@@ -112,6 +126,36 @@ function formatPrice(value: number) {
   return new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(value);
 }
 
+function amountValue(value: unknown) {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? Math.max(0, amount) : 0;
+}
+
+function itemExtras(item: QuoteLineItemDraft) {
+  const extras: Array<{ code: string; label: string; quantity: number; unitAmount: number; amount: number }> = [];
+  if (item.grommets) {
+    const quantity = item.grommetCount ? item.grommetCount * Math.max(1, item.quantity) : 0;
+    const unitAmount = amountValue(item.grommetUnitAmount);
+    if (quantity || unitAmount) extras.push({
+      code: 'grommets',
+      label: `Ojales ${item.grommetSize === 'small' ? 'pequeños' : item.grommetSize === 'large' ? 'grandes' : 'por definir'}`,
+      quantity,
+      unitAmount,
+      amount: quantity * unitAmount,
+    });
+  }
+  if (item.designService !== 'none') extras.push({
+    code: 'design',
+    label: item.designService === 'custom' && item.designDescription.trim()
+      ? `${designServiceLabels[item.designService]}: ${item.designDescription.trim()}`
+      : designServiceLabels[item.designService],
+    quantity: 1,
+    unitAmount: amountValue(item.designAmount),
+    amount: amountValue(item.designAmount),
+  });
+  return extras;
+}
+
 function hasLona(item: QuoteLineItemDraft) {
   return /\blonas?\b/i.test(`${item.project} ${item.productName || ''}`);
 }
@@ -125,6 +169,10 @@ function itemSummary(item: QuoteLineItemDraft) {
   const details = [measurements, `Diseño: ${designLabels[item.designSupport]}`];
   if (item.finishing.trim()) details.push(`Acabados: ${item.finishing.trim()}`);
   if (item.grommets) details.push(`Ojales ${item.grommetSize === 'small' ? 'pequeños' : item.grommetSize === 'large' ? 'grandes' : 'por definir'}${item.grommetCount ? ` · ${item.grommetCount}` : ''}`);
+  for (const extra of itemExtras(item)) {
+    const amountLabel = extra.amount > 0 ? formatPrice(extra.amount) : 'valor por confirmar';
+    details.push(`${extra.label}: ${extra.code === 'grommets' && extra.quantity ? `${extra.quantity} ojales · ` : ''}${amountLabel}`);
+  }
   if (item.installation) details.push('Instalación solicitada');
   return details.join(' · ');
 }
@@ -181,10 +229,16 @@ function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate,
     });
     setProductSearch('');
   };
-  const pricePreview = selectedProduct && item.calculationMode !== 'unknown' ? {
+  const basePricePreview = selectedProduct && item.calculationMode !== 'unknown' ? {
     normal: calculateScenario(selectedProduct, 'normal', basisOf(item)),
     installation: calculateScenario(selectedProduct, 'installation', basisOf(item)),
     corporate: calculateScenario(selectedProduct, 'corporate', basisOf(item)),
+  } : null;
+  const extraAmount = itemExtras(item).reduce((total, extra) => total + extra.amount, 0);
+  const pricePreview = basePricePreview ? {
+    normal: basePricePreview.normal === null ? null : basePricePreview.normal + extraAmount,
+    installation: basePricePreview.installation === null ? null : basePricePreview.installation + extraAmount,
+    corporate: basePricePreview.corporate === null ? null : basePricePreview.corporate + extraAmount,
   } : null;
 
   return <article className="quote-item-card" aria-labelledby={`quote-item-title-${item.id}`}>
@@ -259,7 +313,7 @@ function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate,
     </div>
 
     {hasLona(item) && <div className="quote-grommet-card">
-      <label className="quote-check-option"><input type="checkbox" checked={item.grommets} onChange={(event) => update({ grommets: event.target.checked, grommetSize: event.target.checked ? item.grommetSize : '', grommetCount: event.target.checked ? item.grommetCount : null })}/><span><b>Agregar ojales a esta lona</b><small>La cantidad y el tamaño se revisan con el equipo; no se suman al estimado automático.</small></span></label>
+      <label className="quote-check-option"><input type="checkbox" checked={item.grommets} onChange={(event) => update({ grommets: event.target.checked, grommetSize: event.target.checked ? item.grommetSize : '', grommetCount: event.target.checked ? item.grommetCount : null })}/><span><b>Agregar ojales a esta lona</b><small>Indica cantidad y valor unitario si los conoces. El equipo confirmará el acabado.</small></span></label>
       {item.grommets && <div className="quote-step-fields quote-grommet-fields">
         <label>Tamaño del ojal
           <select id={`quote-item-grommet-${item.id}`} required value={item.grommetSize} onChange={(event) => update({ grommetSize: event.target.value as QuoteLineItemDraft['grommetSize'] })}>
@@ -269,8 +323,25 @@ function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate,
         <label>Cantidad de ojales <span>(si la conoces)</span>
           <input type="number" inputMode="numeric" min={1} step={1} value={item.grommetCount ?? ''} onChange={(event) => update({ grommetCount: event.target.value ? Math.max(1, Math.floor(Number(event.target.value) || 1)) : null })} placeholder="Por definir"/>
         </label>
+        <label>Valor por ojal <span>(opcional · $)</span>
+          <input type="number" inputMode="decimal" min={0} step="0.01" value={item.grommetUnitAmount} onChange={(event) => update({ grommetUnitAmount: event.target.value })} aria-label={`Valor por ojal del artículo ${index + 1}`}/>
+        </label>
       </div>}
     </div>}
+
+    <div className="quote-step-fields quote-design-service-fields">
+      <label>Servicio de diseño <span>(opcional)</span>
+        <select value={item.designService} onChange={(event) => update({ designService: event.target.value as QuoteDesignService })}>
+          {Object.entries(designServiceLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}
+        </select>
+      </label>
+      {item.designService === 'custom' && <label className="quote-design-description">Concepto de diseño libre
+        <input maxLength={180} value={item.designDescription} onChange={(event) => update({ designDescription: event.target.value })} placeholder="Ej. vectorización, retoque o composición especial" aria-label={`Concepto de diseño del artículo ${index + 1}`}/>
+      </label>}
+      {item.designService !== 'none' && <label>Valor del diseño para este artículo <span>(editable · $)</span>
+        <input type="number" inputMode="decimal" min={0} step="0.01" value={item.designAmount} onChange={(event) => update({ designAmount: event.target.value })} aria-label={`Valor del diseño del artículo ${index + 1}`}/>
+      </label>}
+    </div>
 
     <label className="quote-installation-option"><input type="checkbox" checked={item.installation} onChange={(event) => update({ installation: event.target.checked })}/><span><Wrench size={17}/><span><b>Quiero consultar instalación para este artículo</b><small>El valor se confirma según el lugar, altura y condiciones del trabajo.</small></span></span></label>
 
@@ -342,13 +413,24 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
         installation: calculateScenario(selectedProduct, 'installation', basisOf(item)),
         corporate: calculateScenario(selectedProduct, 'corporate', basisOf(item)),
       } : undefined;
+      const extras = itemExtras(item);
+      const extrasTotal = extras.reduce((total, extra) => total + extra.amount, 0);
+      const withExtras = pricePreview ? {
+        normal: pricePreview.normal === null ? null : pricePreview.normal + extrasTotal,
+        installation: pricePreview.installation === null ? null : pricePreview.installation + extrasTotal,
+        corporate: pricePreview.corporate === null ? null : pricePreview.corporate + extrasTotal,
+      } : undefined;
       return {
         ...item,
+        grommetUnitAmount: amountValue(item.grommetUnitAmount),
+        designAmount: amountValue(item.designAmount),
         productId: selectedProduct?.source_key,
         productName: selectedProduct?.name || item.productName,
         area,
         pricingMode: selectedProduct?.mode === 'area' ? 'area' as const : selectedProduct ? 'quantity' as const : undefined,
-        pricePreview,
+        extras,
+        extrasTotal,
+        pricePreview: withExtras,
         priceStatus: selectedProduct ? 'pending-validation' as const : undefined,
       };
     });
@@ -388,6 +470,13 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
 
   const installItems = items.filter((item) => item.installation);
   const mapLink = quoteLocationUrl(location);
+  const summaryTotals = (['normal', 'installation', 'corporate'] as const).map((tier) => ({
+    tier,
+    label: tier === 'normal' ? 'Normal' : tier === 'installation' ? 'Instalación' : 'Corporativo',
+    amount: normalizedDraft.items.every((item) => item.pricePreview?.[tier] != null)
+      ? normalizedDraft.items.reduce((sum, item) => sum + (item.pricePreview?.[tier] || 0), 0)
+      : null,
+  }));
   const mapsUrlInvalid = location.mapsUrl.trim().length > 0 && !isGoogleMapsUrl(location.mapsUrl.trim());
 
   const printSummary = () => {
@@ -451,7 +540,13 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
           <b>{String(index + 1).padStart(2, '0')} · {item.project.trim() || 'Artículo por definir'}</b>
           <small>{item.service || 'Familia por seleccionar'} · {item.productName || 'Producto por definir'}</small>
           <small>{itemSummary(item)}</small>
+          {item.pricePreview && <small className="quote-summary-item-prices">Estimado por artículo · Normal {item.pricePreview.normal == null ? 'pendiente' : formatPrice(item.pricePreview.normal)} · Instalación {item.pricePreview.installation == null ? 'pendiente' : formatPrice(item.pricePreview.installation)} · Corporativo {item.pricePreview.corporate == null ? 'pendiente' : formatPrice(item.pricePreview.corporate)}</small>}
+          {(item.extrasTotal || 0) > 0 && <small className="quote-summary-item-extras">Extras incluidos: {formatPrice(item.extrasTotal || 0)}</small>}
         </section>)}
+      </div>
+      <div className="quote-summary-totals" aria-label="Totales estimados de la cotización">
+        <b>Totales estimados · incluyen extras</b>
+        {summaryTotals.map((total) => <div key={total.tier}><span>{total.label}</span><strong>{total.amount == null ? 'Pendiente de revisión' : formatPrice(total.amount)}</strong></div>)}
       </div>
       {installItems.length > 0 && <div className="quote-summary-location"><MapPin size={15}/><span><b>Instalación solicitada</b><small>{location.locationUnknown ? 'Lugar por definir con el equipo' : location.address || 'Añade la dirección del sitio'}</small>{location.floor && <small>Piso/nivel: {location.floor}</small>}{location.workHeight && <small>Altura: {location.workHeight} m</small>}{mapLink && !mapsUrlInvalid && <a href={mapLink} target="_blank" rel="noopener noreferrer">Ver ubicación en Google Maps <ArrowUpRight size={12}/></a>}</span></div>}
       <div className="quote-summary-price"><CircleHelp size={17}/><span><b>Estimado sujeto a validación</b><small>Los valores por artículo son referenciales. La instalación y los acabados se confirman según el lugar y el alcance.</small></span></div>

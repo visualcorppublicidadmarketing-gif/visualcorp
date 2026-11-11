@@ -25,6 +25,7 @@ import './commercial-quote-detail.css';
 import { CommercialAssetsGallery } from './commercial/CommercialAssetsGallery';
 import { GoogleMapsPreview } from './commercial/GoogleMapsPreview';
 import { RichTextContent } from './commercial/RichTextContent';
+import { snapshotCommercialFinishing } from '../lib/commercialFinishing';
 
 export type CommercialDocumentKind = 'quote' | 'sale';
 
@@ -82,6 +83,27 @@ function optionalMoney(record: Record<string, any>, keys: string[]) {
   return null;
 }
 
+function commercialFinishingDetails(value: unknown, quantity: number | null) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+  const finishing = value as Record<string, any>;
+  if (!Object.keys(finishing).length) return [];
+  const rows: string[] = [];
+  const pieces = Math.max(0, Number(quantity) || 0);
+  const eyeletType = String(finishing.eyeletType ?? finishing.eyelet_type ?? 'none');
+  const eyeletsPerPiece = Math.max(0, Number(finishing.eyeletCount ?? finishing.eyelet_count ?? 0) || 0);
+  const eyeletCount = Math.max(0, Number(finishing.eyelet_total_count ?? finishing.eyeletTotalCount ?? eyeletsPerPiece * pieces) || 0);
+  const eyeletUnitPrice = Math.max(0, Number(finishing.eyelet_unit_price ?? finishing.eyeletUnitPriceSnapshot ?? finishing.eyeletUnitPrice) || 0);
+  const eyeletTotal = Math.max(0, Number(finishing.eyelet_total ?? finishing.eyeletTotal ?? eyeletCount * eyeletUnitPrice) || 0);
+  if (eyeletType !== 'none' && eyeletCount > 0) {
+    rows.push(`${eyeletType === 'small' ? 'Ojales pequeños' : 'Ojales grandes'}: ${eyeletsPerPiece} por pieza × ${pieces} = ${eyeletCount} · ${formatMoney(eyeletUnitPrice)} c/u · ${formatMoney(eyeletTotal)}`);
+  }
+  const designService = String(finishing.designService ?? finishing.design_service ?? 'ready');
+  const designLabel = String(finishing.design_label ?? finishing.designLabel ?? (designService === 'adaptation' ? 'Adaptación de arte' : designService === 'from_scratch' ? 'Diseño desde cero' : designService === 'custom' ? 'Diseño personalizado' : 'Archivo listo'));
+  const designTotal = Math.max(0, Number(finishing.design_total ?? finishing.designAmountSnapshot ?? finishing.designAmount) || 0);
+  rows.push(`${designLabel}${designService === 'custom' ? ' · concepto libre' : ''}: ${designTotal > 0 ? formatMoney(designTotal) : 'sin costo'}`);
+  return rows;
+}
+
 function imageFromProduct(product: Record<string, any> | undefined) {
   if (!product) return '';
   const image = typeof product.image === 'string' ? product.image : typeof product.image_url === 'string' ? product.image_url : '';
@@ -132,6 +154,8 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
     sku_snapshot?: string;
     catalog_product_id?: string;
     variant_id?: string;
+    finishing_options?: Record<string, unknown>;
+    material_requests?: unknown[];
   }>>([]);
   const [saleDiscount, setSaleDiscount] = useState<number>(0);
   const [saleDiscountReason, setSaleDiscountReason] = useState<string>('');
@@ -165,7 +189,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
     try {
       const result = isQuote
         ? await supabase.from('central_quotes').select('*').eq('organization_id', organizationId).eq('id', documentId).maybeSingle()
-        : await supabase.from('sales').select('*,branches(name),customers(full_name,phone),sale_lines(id,sku_snapshot,description_snapshot,quantity,fulfilled_quantity,backordered_quantity,returned_quantity,unit_price,line_total,catalog_product_id,variant_id),sale_payments(id,method,amount,reference,note,created_at),sale_fulfillment_details(installation_required,installation_address,installation_maps_url,installation_latitude,installation_longitude,installation_estimated_at,delivery_due_at)').eq('organization_id', organizationId).eq('id', documentId).maybeSingle();
+        : await supabase.from('sales').select('*,branches(name),customers(full_name,phone),sale_lines(id,sku_snapshot,description_snapshot,quantity,fulfilled_quantity,backordered_quantity,returned_quantity,unit_price,line_total,catalog_product_id,variant_id,finishing_options,material_requests),sale_payments(id,method,amount,reference,note,created_at),sale_fulfillment_details(installation_required,installation_address,installation_maps_url,installation_latitude,installation_longitude,installation_estimated_at,delivery_due_at)').eq('organization_id', organizationId).eq('id', documentId).maybeSingle();
       if (result.error) throw result.error;
       if (result.data) {
         setDocument(result.data);
@@ -194,7 +218,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
       try {
         const result = isQuote
           ? await supabase.from('central_quotes').select('*').eq('organization_id', organizationId).eq('id', documentId).maybeSingle()
-          : await supabase.from('sales').select('*,branches(name),customers(full_name,phone),sale_lines(id,sku_snapshot,description_snapshot,quantity,fulfilled_quantity,backordered_quantity,returned_quantity,unit_price,line_total,catalog_product_id,variant_id),sale_payments(id,method,amount,reference,note,created_at),sale_fulfillment_details(installation_required,installation_address,installation_maps_url,installation_latitude,installation_longitude,installation_estimated_at,delivery_due_at)').eq('organization_id', organizationId).eq('id', documentId).maybeSingle();
+          : await supabase.from('sales').select('*,branches(name),customers(full_name,phone),sale_lines(id,sku_snapshot,description_snapshot,quantity,fulfilled_quantity,backordered_quantity,returned_quantity,unit_price,line_total,catalog_product_id,variant_id,finishing_options,material_requests),sale_payments(id,method,amount,reference,note,created_at),sale_fulfillment_details(installation_required,installation_address,installation_maps_url,installation_latitude,installation_longitude,installation_estimated_at,delivery_due_at)').eq('organization_id', organizationId).eq('id', documentId).maybeSingle();
         if (result.error) throw result.error;
         if (!result.data) throw new Error('No se encontró la ficha o tu perfil no tiene acceso a ella.');
         if (active) setDocument(result.data);
@@ -241,6 +265,8 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
         sku_snapshot: l.sku_snapshot || '',
         catalog_product_id: l.catalog_product_id || '',
         variant_id: l.variant_id || '',
+        finishing_options: l.finishing_options && typeof l.finishing_options === 'object' ? l.finishing_options : {},
+        material_requests: Array.isArray(l.material_requests) ? l.material_requests : [],
       })));
       setSaleDiscount(Number(document.discount_total) || 0);
       setSaleDiscountReason(document.discount_reason || '');
@@ -307,6 +333,8 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
           line_total: Math.round(qty * price * 100) / 100,
           catalog_product_id: l.catalog_product_id || null,
           variant_id: l.variant_id || null,
+          finishing_options: snapshotCommercialFinishing(l.finishing_options, qty),
+          material_requests: Array.isArray(l.material_requests) ? l.material_requests : [],
         };
       });
 
@@ -427,6 +455,8 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
           showBilledQuantity: pieceQuantity !== null && isMeasuredArea && billedQuantity !== null,
           unitPrice: numberOrNull(line.unit_price) ?? (lineTotal !== null && billedQuantity ? lineTotal / billedQuantity : null),
           lineTotal,
+          finishingOptions: line.finishing || {},
+          finishingDetails: commercialFinishingDetails(line.finishing || line.finishing_options, pieceQuantity ?? billedQuantity),
           discount: numberOrNull(line.discount_amount),
           taxAmount: numberOrNull(line.tax_amount),
           shipping: numberOrNull(line.shipping_share),
@@ -455,6 +485,8 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
           showBilledQuantity: false,
           unitPrice: numberOrNull(line.unit_price),
           lineTotal: numberOrNull(line.line_total),
+          finishingOptions: line.finishing_options || {},
+          finishingDetails: commercialFinishingDetails(line.finishing_options, quantity),
           measurement: '',
           option: '',
           estimated: false,
@@ -737,6 +769,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
                     <span className="commercial-detail-line-quantity"><b>Cantidad:</b> {line.quantity ?? '—'} {line.unit}</span>
                     {line.showBilledQuantity && <span className="commercial-detail-line-quantity"><b>Área facturada:</b> {line.billedQuantity} {line.billedUnit}</span>}
                     <small>Unitario base: {line.unitPrice === null ? '—' : formatMoney(line.unitPrice)}</small>
+                    {line.finishingDetails?.map((detail: string, index: number) => <small key={`${line.key}-finish-${index}`}>{detail}</small>)}
                     {isQuote && line.discount > 0 && <small>Descuento asignado: −{formatMoney(line.discount)}</small>}
                     {isQuote && line.taxAmount > 0 && <small>IVA asignado: {formatMoney(line.taxAmount)}</small>}
                     {isQuote && line.shipping > 0 && <small>Envío / cargo asignado: {formatMoney(line.shipping)}</small>}

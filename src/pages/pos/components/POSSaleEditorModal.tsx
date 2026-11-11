@@ -19,6 +19,7 @@ import {
 import { Dialog } from '../../../components/ui/OperationalKit';
 import { supabase } from '../../../lib/supabaseClient';
 import { formatMoney } from '../../../app/workspace';
+import { snapshotCommercialFinishing } from '../../../lib/commercialFinishing';
 
 export interface POSSaleEditorModalProps {
   open: boolean;
@@ -36,6 +37,8 @@ interface EditableLine {
   description: string;
   quantity: number | string;
   unit_price: number | string;
+  finishing_options?: Record<string, unknown>;
+  material_requests?: unknown[];
 }
 
 interface EditablePayment {
@@ -140,7 +143,7 @@ export function POSSaleEditorModal({
         // Lines
         const { data: saleLines, error: linesErr } = await supabase
           .from('sale_lines')
-          .select('id, catalog_product_id, sku, description_snapshot, quantity, unit_price')
+          .select('id, catalog_product_id, sku, description_snapshot, quantity, unit_price, finishing_options, material_requests')
           .eq('sale_id', saleId)
           .order('id', { ascending: true });
 
@@ -154,6 +157,8 @@ export function POSSaleEditorModal({
               description: l.description_snapshot || '',
               quantity: l.quantity,
               unit_price: l.unit_price,
+              finishing_options: l.finishing_options && typeof l.finishing_options === 'object' ? l.finishing_options : {},
+              material_requests: Array.isArray(l.material_requests) ? l.material_requests : [],
             })),
           );
         }
@@ -259,6 +264,8 @@ export function POSSaleEditorModal({
         description: 'Nuevo concepto acordado',
         quantity: 1,
         unit_price: 10,
+        finishing_options: {},
+        material_requests: [],
       },
     ]);
   };
@@ -334,6 +341,8 @@ export function POSSaleEditorModal({
         description: l.description.trim(),
         quantity: Number(l.quantity),
         unit_price: roundMoney(Number(l.unit_price)),
+        finishing_options: snapshotCommercialFinishing(l.finishing_options, Number(l.quantity)),
+        material_requests: Array.isArray(l.material_requests) ? l.material_requests : [],
       }));
 
       const sanitizedPayments = payments.map((p) => ({
@@ -407,6 +416,8 @@ export function POSSaleEditorModal({
             description_snapshot: l.description,
             quantity: l.quantity,
             unit_price: l.unit_price,
+            finishing_options: l.finishing_options || {},
+            material_requests: Array.isArray(l.material_requests) ? l.material_requests : [],
             organization_id: organizationId,
           })),
         );

@@ -1,0 +1,65 @@
+.smart-quote-custom-design-option {
+  margin-top: 2px;
+}
+
+.smart-quote-custom-design-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(150px, 0.7fr);
+  gap: 12px;
+  margin: 0 0 2px 28px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+}
+
+.smart-quote-custom-design-fields label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.smart-quote-custom-design-fields input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.smart-quote-custom-design-fields input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--orange) 25%, transparent);
+  border-color: var(--orange);
+}
+
+.smart-quote-custom-design-error {
+  grid-column: 1 / -1;
+  color: #b42318;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+[data-theme="dark"] .smart-quote-custom-design-fields {
+  border-color: rgba(245, 242, 233, 0.14);
+  background: #1b1b18;
+}
+
+[data-theme="dark"] .smart-quote-custom-design-fields input {
+  border-color: rgba(245, 242, 233, 0.18);
+  background: #11110f;
+  color: #f5f2e9;
+}
+
+@media (max-width: 560px) {
+  .smart-quote-custom-design-fields {
+    grid-template-columns: 1fr;
+    margin-left: 0;
+  }
+}

@@ -138,6 +138,12 @@ export function buildPOSWhatsAppMessage({ advisor, customer, branch, reference, 
       ? `${item.pieceQuantity} ${item.pieceUnit || 'piezas'}${item.totalArea ? ` · ${Number(item.totalArea).toLocaleString('es-EC')} m² total` : ''}`
       : `${item.quantity} ${item.unit || 'unidad(es)'}`;
     lines.push(`   Cantidad: ${quantityLabel} · ${amount(item.lineTotal ?? item.unitPrice * item.quantity)}`);
+    if (Array.isArray(item.finishingSummary)) {
+      item.finishingSummary.forEach((detail: unknown) => {
+        const value = String(detail || '').trim();
+        if (value) lines.push(`   Acabado / diseño: ${value}`);
+      });
+    }
   });
   if (quoteFinancial && Number.isFinite(Number(quoteFinancial.subtotal))) {
     lines.push('', `*Subtotal:* ${amount(quoteFinancial.subtotal)}`);

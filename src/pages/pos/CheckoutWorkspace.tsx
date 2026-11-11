@@ -9,6 +9,8 @@ import { supabase } from '../../lib/supabaseClient';
 import { QuotePriceComparison } from '../../components/QuotePriceComparison';
 import { calculateQuotePrice, getQuoteBasis } from '../../lib/quotePricing';
 import { calculatePOSLine, formatPOSLineDescription } from '../../lib/posPricing';
+import { CommercialFinishingControls } from '../../components/CommercialFinishingControls';
+import { calculateCommercialFinishing, emptyCommercialFinishing, sanitizeCommercialFinishing, snapshotCommercialFinishing, type CommercialFinishingValue } from '../../lib/commercialFinishing';
 import { calculatePOSPaymentBreakdown } from '../../lib/posPayments';
 import { CommercialDocumentDetails, type CommercialDocumentKind } from '../../components/CommercialDocumentDetails';
 import { Sheet, useConfirm } from '../../components/ui/OperationalKit';
@@ -50,14 +52,14 @@ const sanitizePOSMaterialRequestMap = (value: unknown): Record<string, POSMateri
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return Object.fromEntries(Object.entries(value as Record<string, unknown>).slice(0, 100).map(([lineKey, requests]) => [String(lineKey), sanitizePOSMaterialRequests(requests)]).filter(([lineKey, requests]) => Boolean(lineKey) && (requests as POSMaterialRequestDraft[]).length > 0));
 };
-const sanitizePOSCart = (lines: unknown) => Array.isArray(lines)?lines.slice(0,100).filter((line)=>line&&typeof line.name==='string'&&Number.isFinite(Number(line.quantity))&&Number(line.quantity)>0&&Number.isFinite(Number(line.unitPrice))&&Number(line.unitPrice)>0).map((line,index)=>({key:String(line.key||`restored-${line.productId||'custom'}-${index}`),productId:String(line.productId||''),name:String(line.name),family:String(line.family||''),image:String(line.image||''),mode:line.mode==='area'?'area':'quantity',quantity:Number(line.quantity),billingQuantity:Number(line.billingQuantity)||Number(line.quantity),unit:String(line.unit||'unidad'),unitPrice:Number(line.unitPrice),total:Number(line.total)||Number(line.quantity)*Number(line.unitPrice),widthCm:line.widthCm??null,heightCm:line.heightCm??null,areaPerPiece:line.areaPerPiece??null,areaTotal:line.areaTotal??null,pricingTier:line.pricingTier||'pvp',pricingTierLabel:String(line.pricingTierLabel||'Normal'),optionChoice:String(line.optionChoice||''),description:String(line.description||line.name)})):[];
+const sanitizePOSCart = (lines: unknown) => Array.isArray(lines)?lines.slice(0,100).filter((line)=>line&&typeof line.name==='string'&&Number.isFinite(Number(line.quantity))&&Number(line.quantity)>0&&Number.isFinite(Number(line.unitPrice))&&Number(line.unitPrice)>0).map((line,index)=>({key:String(line.key||`restored-${line.productId||'custom'}-${index}`),productId:String(line.productId||''),name:String(line.name),family:String(line.family||''),image:String(line.image||''),mode:line.mode==='area'?'area':'quantity',quantity:Number(line.quantity),billingQuantity:Number(line.billingQuantity)||Number(line.quantity),unit:String(line.unit||'unidad'),unitPrice:Number(line.unitPrice),baseUnitPrice:Number(line.baseUnitPrice??line.unitPrice),total:Number(line.total)||Number(line.quantity)*Number(line.unitPrice),widthCm:line.widthCm??null,heightCm:line.heightCm??null,areaPerPiece:line.areaPerPiece??null,areaTotal:line.areaTotal??null,pricingTier:line.pricingTier||'pvp',pricingTierLabel:String(line.pricingTierLabel||'Normal'),optionChoice:String(line.optionChoice||''),finishing:sanitizeCommercialFinishing(line.finishing),description:String(line.description||line.name)})):[];
 const sanitizePOSPayments = (rows: unknown) => {
   const validMethods = new Set(['Efectivo','Transferencia','Tarjeta','Otro']);
   if (!Array.isArray(rows)) return [{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}];
   const sanitized = rows.slice(0,4).filter((row)=>row&&typeof row==='object').map((row,index)=>({id:String(row.id||`payment-${index+1}`),method:validMethods.has(String(row.method))?String(row.method):'Efectivo',amount:String(row.amount??''),reference:String(row.reference||''),note:String(row.note||'')}));
   return sanitized.length?sanitized:[{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}];
 };
-const sanitizePOSSaleLines = (lines: unknown) => Array.isArray(lines)?lines.slice(0,100).filter((line)=>line&&typeof line==='object'&&Number.isFinite(Number(line.quantity))&&Number(line.quantity)>0&&Number.isFinite(Number(line.unit_price))&&Number(line.unit_price)>=0).map((line,index)=>({line_key:String(line.line_key||`legacy-${index}`),catalog_product_id:line.catalog_product_id||null,sku:String(line.sku||''),description:String(line.description||'Artículo cotizado'),quantity:Number(line.quantity),unit_price:Number(line.unit_price),material_requests:sanitizePOSMaterialRequests(line.material_requests||line.materialRequests).map((request)=>({recipe_id:request.recipeId,quantity:request.quantity}))})):[];
+const sanitizePOSSaleLines = (lines: unknown) => Array.isArray(lines)?lines.slice(0,100).filter((line)=>line&&typeof line==='object'&&Number.isFinite(Number(line.quantity))&&Number(line.quantity)>0&&Number.isFinite(Number(line.unit_price))&&Number(line.unit_price)>=0).map((line,index)=>({line_key:String(line.line_key||`legacy-${index}`),catalog_product_id:line.catalog_product_id||null,sku:String(line.sku||''),description:String(line.description||'Artículo cotizado'),quantity:Number(line.quantity),unit_price:Number(line.unit_price),finishing_options:sanitizeCommercialFinishing(line.finishing_options||line.finishingOptions||line.finishing),material_requests:sanitizePOSMaterialRequests(line.material_requests||line.materialRequests).map((request)=>({recipe_id:request.recipeId,quantity:request.quantity}))})):[];
 const getPOSQuoteFinancial = (quote: any) => quote?.items?.find((item:any)=>item?.document_details?.financial)?.document_details?.financial||null;
 const getPOSQuoteSaleLines = (quote: any) => {
   const financial = getPOSQuoteFinancial(quote);
@@ -67,11 +69,29 @@ const getPOSQuoteSaleLines = (quote: any) => {
     const lineSubtotal=financial
       ? Number(item.subtotal ?? (finalLineTotal-(Number(item.discount_amount)||0)-(Number(item.tax_amount)||0)-(Number(item.shipping_share)||0)))||0
       : finalLineTotal;
+    const lineDiscount = financial ? Number(item.discount_amount)||0 : 0;
+    const lineTax = financial ? Number(item.tax_amount)||0 : 0;
+    const lineShipping = financial ? Number(item.shipping_share)||0 : 0;
+    const persistedFinishing = item.finishing && typeof item.finishing === 'object' ? item.finishing : {};
+    const persistedEyeletUnitPrice = Number(persistedFinishing.eyelet_unit_price ?? persistedFinishing.eyeletUnitPrice);
+    const persistedDesignTotal = Number(persistedFinishing.design_total ?? persistedFinishing.designTotal);
+    const finishing = calculateCommercialFinishing(item.finishing, Number(item.piece_quantity)||quantity, {
+      eyeletSmallPrice: persistedFinishing.eyelet_type === 'small' ? persistedEyeletUnitPrice : undefined,
+      eyeletLargePrice: persistedFinishing.eyelet_type === 'large' ? persistedEyeletUnitPrice : undefined,
+      designAdaptationPrice: persistedFinishing.design_service === 'adaptation' ? persistedDesignTotal : undefined,
+      designFromScratchPrice: persistedFinishing.design_service === 'from_scratch' ? persistedDesignTotal : undefined,
+    });
+    const baseUnitPrice = Number(item.unit_price??(quantity>0?lineSubtotal/quantity:0))||0;
     return {
       line_key:`quote-${quote.id}-${index}`,catalog_product_id:item.product_id||null,sku:item.sku||item.product_id||'',
       description:[item.name||item.product_name||'Artículo cotizado',item.width_cm&&item.height_cm?`${item.width_cm} × ${item.height_cm} cm`:null,item.unit||null].filter(Boolean).join(' · '),
       quantity,pieceQuantity:Number(item.piece_quantity)||quantity,totalArea:item.unit==='m²'?quantity:null,
-      unit_price:quantity>0?lineSubtotal/quantity:0,widthCm:item.width_cm||null,heightCm:item.height_cm||null,unit:item.unit||'unidad',optionChoice:item.option_choice||'',
+      unit_price:quantity>0?lineSubtotal/quantity:0,widthCm:item.width_cm||null,heightCm:item.height_cm||null,unit:item.unit||'unidad',optionChoice:item.option_choice||'',finishing_options:item.finishing||{},
+      base_unit_price:baseUnitPrice,base_subtotal:Math.max(0,roundMoney(lineSubtotal-finishing.total)),
+      eyelet_total:finishing.eyeletTotal,eyelet_label:finishing.eyeletType==='none'?'Sin ojales':`${finishing.eyeletTotalCount} ${finishing.eyeletType==='small'?'ojales pequeños':'ojales grandes'}`,
+      design_total:finishing.designTotal,design_label:finishing.designLabel,
+      subtotal:lineSubtotal,discount_amount:lineDiscount,tax_amount:lineTax,shipping_share:lineShipping,
+      line_total:financial?Number(item.total??(lineSubtotal-lineDiscount+lineTax+lineShipping))||0:finalLineTotal,
     };
   }) : [];
 };
@@ -97,15 +117,80 @@ const pendingSaleSignature = (snapshot: any) => JSON.stringify({
   fulfillment:{installationRequired:Boolean(snapshot?.fulfillment?.installationRequired),installationAddress:String(snapshot?.fulfillment?.installationAddress||''),latitude:String(snapshot?.fulfillment?.latitude||''),longitude:String(snapshot?.fulfillment?.longitude||''),installationAt:String(snapshot?.fulfillment?.installationAt||''),deliveryAt:String(snapshot?.fulfillment?.deliveryAt||'')},
     mapLink:String(snapshot?.mapLink||''),payments:sanitizePOSPayments(snapshot?.payments),chargeNow:snapshot?.chargeNow!==false,activeParkedOrderId:String(snapshot?.activeParkedOrderId||''),allowBackorder:typeof snapshot?.allowBackorder==='boolean'?snapshot.allowBackorder:null,productionByLine:sanitizeProductionDetails(snapshot?.productionByLine),
 });
-const findPOSStockShortages = (lines: any[], catalogLinks: any[], branchId: string, inventory: any[]) => lines.flatMap((line)=>{
+const findPOSStockShortages = (lines: any[], catalogLinks: any[], branchId: string, inventory: any[]) => {
+  const demandByStock=new Map<string,any>();
+  const issues:any[]=[];
+  lines.forEach((line)=>{
+    if(!line.catalog_product_id)return;
+    const links=catalogLinks.filter((link)=>link.active&&link.catalog_product_id===line.catalog_product_id&&link.branch_id===branchId);
+    if(!links.length)return;
+    if(links.length>1){
+      issues.push({line,kind:'configuration',message:`${line.description||line.name||'Producto'}: tiene varios vínculos de inventario activos en esta sucursal; deja uno solo antes de vender.`});
+      return;
+    }
+    const linked=links[0];
+    const location=linked.location_code||'MAIN';
+    const key=`${linked.inventory_variant_id}:${branchId}:${location}`;
+    const stock=inventory.find((row)=>row.variantId===linked.inventory_variant_id&&row.branchId===branchId&&row.location===location&&!row.archived);
+    const entry=demandByStock.get(key)||{line,lines:[],linked,stock,location,requested:0};
+    entry.lines.push(line);
+    entry.requested+=Number(line.quantity)||0;
+    demandByStock.set(key,entry);
+  });
+  for(const entry of demandByStock.values()){
+    const {line,lines:stockLines,stock,requested,linked,location}=entry;
+    const available=stock&&!stock.sourceStatus?Number(stock.availableQuantity??(Number(stock.quantity||0)-Number(stock.reservedQuantity||0))):null;
+    const productNames=[...new Set(stockLines.map((item)=>item.description||item.name||'Producto'))];
+    if(!stock||stock.sourceStatus){
+      issues.push({line,lines:stockLines,linked,stock,requested,available,kind:'pending',message:`${productNames.join(', ')}: conteo físico pendiente para ${requested} ${stock?.unit||'unidad(es)'} en ${location}.`});
+    }else if(available<requested){
+      issues.push({line,lines:stockLines,linked,stock,requested,available,kind:'shortage',message:`${productNames.join(', ')}: se solicitan ${requested} ${stock.unit||'unidad(es)'} y quedan ${available}.`});
+    }
+  }
+  return issues;
+};
+const findPOSRecipeLinkConflicts = (lines:any[],catalogLinks:any[],recipes:any[],branchId:string) => lines.flatMap((line)=>{
   if(!line.catalog_product_id)return [];
-  const linked=catalogLinks.find((link)=>link.active&&link.catalog_product_id===line.catalog_product_id&&link.branch_id===branchId);
-  if(!linked)return [];
-  const stock=inventory.find((row)=>row.variantId===linked.inventory_variant_id&&row.branchId===linked.branch_id);
-  const quantity=Number(line.quantity)||0;
-  const available=stock?Number(stock.availableQuantity??(Number(stock.quantity||0)-Number(stock.reservedQuantity||0))):0;
-  return !stock||stock.sourceStatus||available<quantity?[line]:[];
+  const links=catalogLinks.filter((link)=>link.active&&link.catalog_product_id===line.catalog_product_id&&link.branch_id===branchId);
+  const conflicts=recipes.filter((recipe)=>recipe.active&&recipe.branch_id===branchId&&recipe.catalog_product_id===line.catalog_product_id&&links.some((link)=>link.inventory_variant_id===recipe.inventory_variant_id));
+  return conflicts.map((recipe)=>({line,recipe,kind:'configuration',message:`${line.description||line.name||'Producto'}: la misma variante de inventario está vinculada como producto vendido y como material de su receta. Corrige el vínculo o la receta en Inventario.`}));
 });
+const calculatePOSRecipeRequirement = (line:any,recipe:any,stock:any,materialRequestsByLine:Record<string,POSMaterialRequestDraft[]>={}) => {
+  if(recipe.calculation_mode==='explicit_quantity'){
+    const entered=Number((materialRequestsByLine[line.line_key]||[]).find((request)=>request.recipeId===recipe.id)?.quantity);
+    return Number.isFinite(entered)&&entered>0?{quantity:Math.ceil(entered*1000)/1000}: {quantity:null};
+  }
+  const basis=Number(line.quantity)||0;
+  const rate=Number(recipe.quantity_per_basis)||0;
+  if(basis<=0||rate<=0)return {quantity:0};
+  if(recipe.calculation_mode==='area_to_linear'){
+    const width=Number(stock?.variantAttributes?.width_cm);
+    if(!Number.isFinite(width)||width<=0)return {quantity:null,configurationIssue:'Ancho del rollo sin confirmar'};
+    const unit=String(stock?.unit||'').trim().toLocaleLowerCase('es');
+    if(!/^(m|metro|metros|m lineal|metro lineal|metros lineales)$/.test(unit))return {quantity:null,configurationIssue:'La variante no está medida en metros lineales'};
+    const waste=Math.max(0,Number(recipe.waste_percent)||0);
+    return {quantity:Math.ceil((basis/(width/100)*rate*(1+waste/100))*1000)/1000};
+  }
+  return {quantity:Math.ceil((basis*rate)*1000)/1000};
+};
+const findPOSRecipeShortages = (lines:any[],recipes:any[],branchId:string,inventory:any[],materialRequestsByLine:Record<string,POSMaterialRequestDraft[]>={}) => {
+  const usedByStock=new Map<string,number>();
+  return lines.flatMap((line)=>recipes.filter((recipe)=>recipe.active&&recipe.branch_id===branchId&&recipe.catalog_product_id===line.catalog_product_id).map((recipe)=>{
+    const location=recipe.location_code||'MAIN';
+    const stock=inventory.find((row)=>row.variantId===recipe.inventory_variant_id&&row.branchId===branchId&&row.location===location&&!row.archived);
+    const required=calculatePOSRecipeRequirement(line,recipe,stock,materialRequestsByLine);
+    if(required.configurationIssue)return {line,recipe,stock,required:null,available:null,kind:'configuration',message:`${stock?.name||'Material'}: ${required.configurationIssue}.`};
+    if(required.quantity===null||required.quantity<=0)return null;
+    const key=`${recipe.inventory_variant_id}:${branchId}:${location}`;
+    const alreadyUsed=usedByStock.get(key)||0;
+    const available=stock&&!stock.sourceStatus?Number(stock.availableQuantity??(Number(stock.quantity||0)-Number(stock.reservedQuantity||0))):null;
+    const remaining=available===null?null:Math.max(0,available-alreadyUsed);
+    usedByStock.set(key,alreadyUsed+required.quantity);
+    if(!stock||stock.sourceStatus)return {line,recipe,stock,required:required.quantity,available,kind:'pending',message:`${stock?.name||'Material'}: conteo físico pendiente; consumo estimado ${required.quantity} ${stock?.unit||''}.`};
+    if(remaining===null||remaining<required.quantity)return {line,recipe,stock,required:required.quantity,available:remaining,kind:'shortage',message:`${stock.name}: se estiman ${required.quantity} ${stock.unit||''}; quedan ${remaining??0} ${stock.unit||''}.`};
+    return null;
+  }).filter(Boolean));
+};
 const coordinatesFromMapLink=(value:string)=>{try{const decoded=decodeURIComponent(value);const point=decoded.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/)||decoded.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/)||decoded.match(/[?&](?:q|query|ll)=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);return point?{latitude:point[1],longitude:point[2]}:null;}catch{return null;}};
 
 function mostFrequent(values: string[]) { return values.sort((a,b)=>values.filter((item)=>item===b).length-values.filter((item)=>item===a).length)[0]; }
@@ -123,6 +208,7 @@ function POSCartLineEditor({
   inventoryStatus,
   inventoryTone = 'neutral',
   workflowLabel,
+  finishingPrices = {},
   onRemove,
   onSave,
   onDuplicate,
@@ -132,6 +218,7 @@ function POSCartLineEditor({
   inventoryStatus: string;
   inventoryTone?: 'available' | 'warning' | 'neutral';
   workflowLabel?: string;
+  finishingPrices?: Record<string, number>;
   onRemove: () => void;
   onSave: (nextLine: any) => void;
   onDuplicate?: () => void;
@@ -143,9 +230,10 @@ function POSCartLineEditor({
     quantity: String(line.quantity),
     widthCm: String(line.widthCm || ''),
     heightCm: String(line.heightCm || ''),
-    unitPrice: String(line.unitPrice),
+    unitPrice: String(line.baseUnitPrice ?? line.unitPrice),
     pricingTier: (line.pricingTier || 'pvp') as 'pvp' | 'instalacion' | 'corporativo',
     lineDiscountPercent: String(line.lineDiscountPercent || '0'),
+    finishing: sanitizeCommercialFinishing(line.finishing),
   });
 
   useEffect(() => {
@@ -155,9 +243,10 @@ function POSCartLineEditor({
       quantity: String(line.quantity),
       widthCm: String(line.widthCm || ''),
       heightCm: String(line.heightCm || ''),
-      unitPrice: String(line.unitPrice),
+      unitPrice: String(line.baseUnitPrice ?? line.unitPrice),
       pricingTier: (line.pricingTier || 'pvp') as 'pvp' | 'instalacion' | 'corporativo',
       lineDiscountPercent: String(line.lineDiscountPercent || '0'),
+      finishing: sanitizeCommercialFinishing(line.finishing),
     });
   }, [line.key, line.name, line.description, line.quantity, line.widthCm, line.heightCm, line.unitPrice, line.pricingTier, line.lineDiscountPercent]);
 
@@ -170,9 +259,13 @@ function POSCartLineEditor({
     nextTier: 'pvp' | 'instalacion' | 'corporativo',
     nextUnitPrice: number,
     nextLineDiscount: number,
+    nextFinishing: CommercialFinishingValue,
   ) => {
     if (!Number.isFinite(nextQty) || nextQty <= 0) return false;
     const cleanDiscount = Math.min(100, Math.max(0, nextLineDiscount || 0));
+    const normalizedFinishing = sanitizeCommercialFinishing(nextFinishing);
+    const finishing = calculateCommercialFinishing(normalizedFinishing, nextQty, finishingPrices);
+    if (!finishing.valid) return false;
 
     if (line.productId && product) {
       if (line.mode === 'area' && (!Number.isFinite(nextWidthCm) || !Number.isFinite(nextHeightCm) || nextWidthCm <= 0 || nextHeightCm <= 0)) return false;
@@ -195,7 +288,7 @@ function POSCartLineEditor({
         mode: line.mode,
         quantity: calculation.quantity,
         unit: calculation.unit,
-        unitPrice: calculation.unitPrice,
+        unitPrice: Number(((calculation.baseUnitPrice * calculation.billedQuantity + finishing.total) * (1 - cleanDiscount / 100) / calculation.billedQuantity).toFixed(8)),
         pricingTierLabel: tierLabel,
         widthCm: line.mode === 'area' ? nextWidthCm : undefined,
         heightCm: line.mode === 'area' ? nextHeightCm : undefined,
@@ -211,8 +304,10 @@ function POSCartLineEditor({
         name: nextName || line.name,
         quantity: calculation.quantity,
         billingQuantity: calculation.billedQuantity,
-        unitPrice: calculation.unitPrice,
-        total: calculation.total,
+        baseUnitPrice: calculation.baseUnitPrice,
+        unitPrice: Number(((calculation.baseUnitPrice * calculation.billedQuantity + finishing.total) * (1 - cleanDiscount / 100) / calculation.billedQuantity).toFixed(8)),
+        total: roundMoney((calculation.baseUnitPrice * calculation.billedQuantity + finishing.total) * (1 - cleanDiscount / 100)),
+        finishing: snapshotCommercialFinishing(normalizedFinishing, nextQty, finishingPrices),
         pricingTier: nextTier,
         pricingTierLabel: tierLabel,
         widthCm: line.mode === 'area' ? nextWidthCm : null,
@@ -221,7 +316,7 @@ function POSCartLineEditor({
         areaTotal: calculation.areaTotal || null,
         lineDiscountPercent: cleanDiscount,
         customUnitPriceApplied: calculation.customUnitPriceApplied,
-        description: nextDescription.trim() ? nextDescription : formattedDesc,
+        description: nextDescription.trim() && nextDescription !== String(line.description||'') ? nextDescription : formattedDesc,
       };
       onSave(nextLine);
       return true;
@@ -234,13 +329,14 @@ function POSCartLineEditor({
         areaPerPiece = Math.round((nextWidthCm * nextHeightCm / 10000) * 10000) / 10000;
         billingQuantity = Math.round((areaPerPiece * nextQty) * 10000) / 10000;
       }
-      const effectivePrice = cleanDiscount > 0 ? Number((nextUnitPrice * (1 - cleanDiscount / 100)).toFixed(4)) : nextUnitPrice;
-      const total = roundMoney(billingQuantity * effectivePrice);
+      const effectivePrice = Number(((billingQuantity * nextUnitPrice + finishing.total) * (1 - cleanDiscount / 100) / billingQuantity).toFixed(8));
+      const total = roundMoney((billingQuantity * nextUnitPrice + finishing.total) * (1 - cleanDiscount / 100));
       const displayUnit = String(line.unit || 'unidad').trim() || 'unidad';
       const quantityUnit = nextQty === 1 ? displayUnit : pluralizePOSUnit(displayUnit);
-      const desc = nextDescription.trim() ? nextDescription : (line.mode === 'area'
+      const generatedDescription = line.mode === 'area'
         ? `${nextName || line.name} · ${nextWidthCm} × ${nextHeightCm} cm · ${nextQty} ${nextQty === 1 ? 'pieza' : 'piezas'} · ${billingQuantity} m² · $${effectivePrice.toFixed(2)}/m²`
-        : `${nextName || line.name} · ${nextQty} ${quantityUnit} · $${effectivePrice.toFixed(2)} c/u`);
+        : `${nextName || line.name} · ${nextQty} ${quantityUnit} · $${effectivePrice.toFixed(2)} c/u`;
+      const desc = nextDescription.trim() && nextDescription !== String(line.description||'') ? nextDescription : generatedDescription;
 
       onSave({
         ...line,
@@ -248,7 +344,9 @@ function POSCartLineEditor({
         quantity: nextQty,
         billingQuantity,
         unitPrice: effectivePrice,
+        baseUnitPrice: nextUnitPrice,
         total,
+        finishing: snapshotCommercialFinishing(normalizedFinishing, nextQty, finishingPrices),
         widthCm: line.mode === 'area' ? nextWidthCm : null,
         heightCm: line.mode === 'area' ? nextHeightCm : null,
         areaPerPiece: line.mode === 'area' ? areaPerPiece : null,
@@ -271,8 +369,9 @@ function POSCartLineEditor({
       Number(line.widthCm || 0),
       Number(line.heightCm || 0),
       line.pricingTier || 'pvp',
-      Number(line.unitPrice || 0),
+      Number((line.baseUnitPrice ?? line.unitPrice) || 0),
       Number(line.lineDiscountPercent || 0),
+      sanitizeCommercialFinishing(line.finishing),
     );
   };
 
@@ -286,6 +385,7 @@ function POSCartLineEditor({
       draft.pricingTier,
       Number(draft.unitPrice),
       Number(draft.lineDiscountPercent),
+      draft.finishing,
     );
     if (ok) setEditing(false);
   };
@@ -316,7 +416,8 @@ function POSCartLineEditor({
         </div>
       </div>
     </div>
-    <button type="button" className="pos-line-edit-toggle" aria-expanded={editing} onClick={() => setEditing((value) => !value)}><Pencil size={13}/>{editing ? 'Cerrar edición' : 'Editar concepto, cantidad, precio o medidas'}</button>
+    {(calculateCommercialFinishing(line.finishing, Number(line.quantity)||0, finishingPrices).summary.length>0)&&<small className="pos-line-finishing-summary">{calculateCommercialFinishing(line.finishing, Number(line.quantity)||0, finishingPrices).summary.join(' · ')}</small>}
+    <button type="button" className="pos-line-edit-toggle" aria-expanded={editing} onClick={() => setEditing((value) => !value)}><Pencil size={13}/>{editing ? 'Cerrar edición' : 'Editar artículo, precio, acabados o medidas'}</button>
     {editing && <div className="pos-line-editor">
       <label className="pos-line-editor-span-2">Nombre / Concepto<input type="text" value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}/></label>
       <label className="pos-line-editor-span-2">Descripción visible<input type="text" value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}/></label>
@@ -325,6 +426,7 @@ function POSCartLineEditor({
       {line.productId && <label>Tarifa<select value={draft.pricingTier} onChange={(event) => setDraft((current) => ({ ...current, pricingTier: event.target.value as 'pvp' | 'instalacion' | 'corporativo' }))}><option value="pvp">Normal (PVP)</option><option value="instalacion">Con instalación</option><option value="corporativo">Corporativo</option></select></label>}
       <label>Desc. línea (%)<input type="number" min="0" max="100" step="1" value={draft.lineDiscountPercent} onChange={(event) => setDraft((current) => ({ ...current, lineDiscountPercent: event.target.value }))}/></label>
       {line.mode === 'area' && <><label>Ancho (cm)<input type="number" min="0.01" step="0.01" value={draft.widthCm} onChange={(event) => setDraft((current) => ({ ...current, widthCm: event.target.value }))}/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" value={draft.heightCm} onChange={(event) => setDraft((current) => ({ ...current, heightCm: event.target.value }))}/></label></>}
+      <div className="pos-line-editor-span-2"><CommercialFinishingControls value={draft.finishing} onChange={(finishing) => setDraft((current) => ({ ...current, finishing }))} quantity={Number(draft.quantity)||1} prices={finishingPrices} allowEyelets={line.mode==='area'&&product?.customOptions?.allow_eyelets!==false} allowDesign={product?.customOptions?.allow_design!==false} idPrefix={`pos-${line.key}`}/></div>
       <button type="button" className="button button-outline" onClick={save}>Guardar cambios</button>
     </div>}
   </article>;
@@ -349,33 +451,40 @@ function POSMaterialUsage({ lines, recipes, inventory, branchId, values, status,
     </section>;
   }
   const rows = saleLines.flatMap((line) => recipes
-    .filter((recipe) => recipe.active && recipe.branch_id === branchId && recipe.catalog_product_id === line.catalog_product_id && recipe.calculation_mode === 'explicit_quantity')
+    .filter((recipe) => recipe.active && recipe.branch_id === branchId && recipe.catalog_product_id === line.catalog_product_id)
     .map((recipe) => ({ line, recipe })));
   if (!rows.length) return null;
   return <section className="pos-material-usage" aria-label="Consumo de materiales por orden">
     <div className="pos-material-usage-heading">
-      <div><span className="eyebrow">CANTIDAD REAL POR ORDEN</span><b>Acabados y materiales variables</b></div>
-      <small>Ingresa lo utilizado en este pedido; no se calcula automáticamente.</small>
+      <div><span className="eyebrow">CONTROL DE MATERIALES</span><b>Consumo por artículo</b></div>
+      <small>Los rollos y planchas muestran una estimación. El impresor confirma el saldo físico al terminar.</small>
     </div>
     <div className="pos-material-usage-list">
       {rows.map(({ line, recipe }) => {
-        const stock = inventory.find((item) => item.variantId === recipe.inventory_variant_id && item.branchId === recipe.branch_id);
+        const stock = inventory.find((item) => item.variantId === recipe.inventory_variant_id && item.branchId === recipe.branch_id && item.location === (recipe.location_code||'MAIN'));
         const request = (values[line.line_key] || []).find((entry) => entry.recipeId === recipe.id);
         const quantity = request?.quantity || '';
         const available = stock ? Number(stock.availableQuantity ?? (Number(stock.quantity || 0) - Number(stock.reservedQuantity || 0))) : null;
+        const requirement = calculatePOSRecipeRequirement(line,recipe,stock,values);
+        const isExplicit = recipe.calculation_mode === 'explicit_quantity';
         const materialName = stock?.name || 'Material vinculado';
         const lineName = line.description || line.name || 'Artículo de la orden';
-        return <label className="pos-material-usage-row" key={`${line.line_key}:${recipe.id}`}>
+        const availabilityLabel = !stock ? 'Material aún no asignado al inventario' : stock.sourceStatus ? 'Conteo físico pendiente · disponibilidad sin confirmar' : available === null || !Number.isFinite(available) ? 'Existencia no disponible para consulta' : `Disponible: ${available} ${stock.unit || ''}`;
+        const estimateLabel = requirement.configurationIssue ? requirement.configurationIssue : requirement.quantity!==null&&!isExplicit ? `Consumo estimado: ≈ ${requirement.quantity} ${stock?.unit||'unidades'} · el rendimiento depende del acomodo y la merma.` : '';
+        const enteredLabel = isExplicit&&quantity&&available!==null&&Number(quantity)>available ? `Cantidad indicada superior al saldo disponible (${available} ${stock?.unit||''}).` : '';
+        return <div className="pos-material-usage-row" key={`${line.line_key}:${recipe.id}`}>
           <span className="pos-material-usage-copy">
             <b>{lineName}</b>
             <small>{materialName}{stock?.variant ? ` · ${stock.variant}` : ''} · {stock?.unit || 'unidad'} · {recipe.fulfillment_stage === 'production' ? 'se reserva para producción' : 'se descuenta al confirmar'}</small>
-            <small className={stock?.sourceStatus ? 'pos-material-stock-pending' : undefined}>{!stock ? 'Material aún no asignado al inventario' : stock.sourceStatus ? 'Conteo físico pendiente · disponibilidad sin confirmar' : available === null || !Number.isFinite(available) ? 'Existencia no disponible para consulta' : `Disponible: ${available} ${stock.unit || ''}`}</small>
+            <small className={stock?.sourceStatus||requirement.configurationIssue||enteredLabel?'pos-material-stock-pending':undefined}>{estimateLabel||availabilityLabel}</small>
+            {estimateLabel&&<small className={stock?.sourceStatus?'pos-material-stock-pending':undefined}>{availabilityLabel}</small>}
+            {enteredLabel&&<small className="pos-material-stock-pending">{enteredLabel}</small>}
           </span>
-          <span className="pos-material-usage-input">
+          {isExplicit?<label className="pos-material-usage-input">
             <span>Cantidad total usada ({stock?.unit || 'unidad'})</span>
             <input type="number" min="0.001" max="1000000" step="0.001" inputMode="decimal" value={quantity} aria-label={`Cantidad total de ${materialName} usada para ${lineName}`} onChange={(event) => onChange(line.line_key, recipe.id, event.target.value)} />
-          </span>
-        </label>;
+          </label>:<div className="pos-material-usage-input"><span>Consumo aproximado</span><b>{requirement.quantity===null?'Por confirmar':`≈ ${requirement.quantity} ${stock?.unit||'unidades'}`}</b></div>}
+        </div>;
       })}
     </div>
   </section>;
@@ -421,6 +530,7 @@ export function PosPage() {
   const [cartHeightCm,setCartHeightCm]=useState('100');
   const [cartPriceTier,setCartPriceTier]=useState<'pvp'|'instalacion'|'corporativo'>('pvp');
   const [cartOptionChoice,setCartOptionChoice]=useState('');
+  const [cartFinishing,setCartFinishing]=useState<CommercialFinishingValue>({...emptyCommercialFinishing});
   const [catalogLinks,setCatalogLinks]=useState([]);
   const [catalogLinkStatus,setCatalogLinkStatus]=useState<'checking'|'ready'|'error'>('checking');
   const [materialRecipes,setMaterialRecipes]=useState<any[]>([]);
@@ -767,7 +877,7 @@ export function PosPage() {
     let active=true;
     if(!supabase||!organizationId){setMaterialRecipes([]);setMaterialRecipesStatus('error');return()=>{active=false;};}
     setMaterialRecipesStatus('checking');
-    void supabase.from('catalog_material_recipes').select('id,catalog_product_id,inventory_variant_id,branch_id,location_code,calculation_mode,fulfillment_stage,active').eq('organization_id',organizationId).eq('active',true).then(({data:rows,error})=>{
+    void supabase.from('catalog_material_recipes').select('id,catalog_product_id,inventory_variant_id,branch_id,location_code,calculation_mode,fulfillment_stage,quantity_per_basis,waste_percent,active').eq('organization_id',organizationId).eq('active',true).then(({data:rows,error})=>{
       if(!active)return;
       if(error){setMaterialRecipes([]);setMaterialRecipesStatus('error');return;}
       setMaterialRecipes(rows||[]);setMaterialRecipesStatus('ready');
@@ -823,7 +933,7 @@ export function PosPage() {
   const quoteTaxApplied=quoteHasFinancial&&quoteFinancial.iva_applied===true;
   const quoteTaxRate=quoteHasFinancial?Number(quoteFinancial.iva_rate)||0:0;
   const quoteTaxAmount=quoteTaxApplied?Number(quoteFinancial.iva_amount)||0:0;
-  const quoteSubtotal=quoteHasFinancial?Number(quoteFinancial.subtotal)||0:currentQuoteLines.reduce((sum,line)=>sum+Number(line.quantity)*Number(line.unit_price),0);
+  const quoteSubtotal=quoteHasFinancial?Number(quoteFinancial.subtotal)||0:currentQuoteLines.reduce((sum,line)=>sum+Number(line.subtotal??(Number(line.quantity)*Number(line.unit_price))),0);
   const quoteDiscount=quoteHasFinancial?Number(quoteFinancial.discount_amount)||0:0;
   const quoteShipping=quoteHasFinancial?Number(quoteFinancial.shipping_cost)||0:0;
   const cartTotal=Math.round(cart.reduce((sum,line)=>sum+(Number(line.total)||Number(line.quantity)*Number(line.unitPrice)),0)*100)/100;
@@ -858,7 +968,7 @@ export function PosPage() {
   const hasPendingBackorderAuthorization=Boolean(pendingSaleRecoveryMode&&pendingSaleSnapshotRef.current?.allowBackorder===true);
   const advisorDisplayName=user?.user_metadata?.full_name||user?.user_metadata?.name||user?.email||'Visual Corp';
   const copyPOSWhatsApp=async()=>{
-    const messageItems=form.quoteId?currentQuoteLines.map((line:any)=>({name:line.description,quantity:line.quantity,pieceQuantity:line.pieceQuantity,pieceUnit:'piezas',totalArea:line.totalArea,unit:line.unit,dimensions:line.widthCm&&line.heightCm?`${line.widthCm} × ${line.heightCm} cm`:undefined,unitPrice:line.unit_price,lineTotal:line.unit_price*line.quantity})):cart.map((line:any)=>({name:line.name,quantity:line.mode==='area'?line.billingQuantity:line.quantity,pieceQuantity:line.mode==='area'?line.quantity:undefined,pieceUnit:'piezas',totalArea:line.mode==='area'?line.areaTotal:undefined,unit:line.mode==='area'?'m²':line.unit,dimensions:line.widthCm&&line.heightCm?`${line.widthCm} × ${line.heightCm} cm`:undefined,unitPrice:line.unitPrice,lineTotal:line.total}));
+    const messageItems=form.quoteId?currentQuoteLines.map((line:any)=>{const pieces=Number(line.pieceQuantity)||Number(line.quantity)||0;const finishing=calculateCommercialFinishing(line.finishing_options,pieces,data.calculatorSettings||{});return{name:line.description,quantity:line.quantity,pieceQuantity:line.pieceQuantity,pieceUnit:'piezas',totalArea:line.totalArea,unit:line.unit,dimensions:line.widthCm&&line.heightCm?`${line.widthCm} × ${line.heightCm} cm`:undefined,unitPrice:line.unit_price,lineTotal:line.line_total??line.unit_price*line.quantity,finishingSummary:finishing.summary};}):cart.map((line:any)=>{const finishing=calculateCommercialFinishing(line.finishing,line.quantity,data.calculatorSettings||{});return{name:line.name,quantity:line.mode==='area'?line.billingQuantity:line.quantity,pieceQuantity:line.mode==='area'?line.quantity:undefined,pieceUnit:'piezas',totalArea:line.mode==='area'?line.areaTotal:undefined,unit:line.mode==='area'?'m²':line.unit,dimensions:line.widthCm&&line.heightCm?`${line.widthCm} × ${line.heightCm} cm`:undefined,unitPrice:line.unitPrice,lineTotal:line.total,finishingSummary:finishing.summary};});
     if(!messageItems.length){flash('Agrega un artículo o una cotización antes de copiar.');return;}
     const message=buildPOSWhatsAppMessage({advisor:advisorDisplayName,customer:form.customer,branch:branchName,reference:quotePreview?.quote_code,items:messageItems,total:activeTotal,quoteFinancial,subtotal:form.quoteId?undefined:cartTotal,discountAmount:manualDiscountAmount,discountPercent:manualDiscountPercent,discountReason,taxRate:configuredTaxRate,taxAmount:manualTaxAmount});
     try{await copyTextToClipboard(message);flash('Resumen de la orden copiado para WhatsApp.');}catch(error:any){flash(error?.message||'No se pudo copiar el mensaje.');}
@@ -872,9 +982,13 @@ export function PosPage() {
   const requiresWorkDetails=fulfillment.installationRequired||productionLines.some((line)=>line.productId&&isProductionWorkflowCode(productWorkflowRoutes[line.productId]))||saleMaterialLines.some((line)=>line.catalog_product_id&&(materialRecipesStatus!=='ready'||materialRecipes.some((recipe)=>recipe.active&&recipe.branch_id===selectedBranchId&&recipe.catalog_product_id===line.catalog_product_id&&recipe.calculation_mode==='explicit_quantity')));
   const pendingQuoteSnapshotChanged=Boolean(pendingSaleRecoveryMode&&form.quoteId&&Array.isArray(pendingSaleSnapshotRef.current?.saleLines)&&pendingSaleSnapshotRef.current.saleLines.length&&posSaleLinesSignature(pendingSaleSnapshotRef.current.saleLines)!==posSaleLinesSignature(currentQuoteLines));
   const pendingOperationChanged=pendingSaleChanged||pendingQuoteSnapshotChanged;
-  const previewLines=form.quoteId?currentQuoteLines.map((line)=>({catalog_product_id:line.catalog_product_id,quantity:line.quantity})):cart.map((line)=>({catalog_product_id:line.productId||null,quantity:Number(line.billingQuantity)||Number(line.quantity)}));
+  const previewLines=form.quoteId?currentQuoteLines.map((line)=>({line_key:line.line_key,catalog_product_id:line.catalog_product_id,quantity:line.quantity})):cart.map((line)=>({line_key:line.key,catalog_product_id:line.productId||null,quantity:Number(line.billingQuantity)||Number(line.quantity)}));
   const previewShortages=findPOSStockShortages(previewLines,catalogLinks,selectedBranchId,data.inventory);
-  const backorderPermissionMissing=Boolean(previewShortages.length&&!canManageBackorders&&!hasPendingBackorderAuthorization);
+  const previewRecipeShortages=findPOSRecipeShortages(saleMaterialLines,materialRecipes,selectedBranchId,data.inventory,materialRequestsByLine);
+  const previewRecipeConfigurationIssues=previewRecipeShortages.filter((issue)=>issue.kind==='configuration');
+  const previewConfigurationIssues=[...previewShortages.filter((issue)=>issue.kind==='configuration'),...previewRecipeConfigurationIssues,...findPOSRecipeLinkConflicts(saleMaterialLines,catalogLinks,materialRecipes,selectedBranchId)];
+  const allPreviewShortages=[...previewShortages.filter((issue)=>issue.kind!=='configuration'),...previewRecipeShortages.filter((issue)=>issue.kind!=='configuration')];
+  const backorderPermissionMissing=Boolean(allPreviewShortages.length&&!canManageBackorders&&!hasPendingBackorderAuthorization);
   const refreshPOSDaySales=useCallback(async()=>{
     if(!supabase||!organizationId||!selectedBranchId){setPosDaySales([]);setPosSalesStatus('loading');return;}
     if(!canViewPOSSales){setPosDaySales([]);setPosSalesStatus('restricted');return;}
@@ -954,8 +1068,8 @@ export function PosPage() {
   const cashShiftPending=needsCashShift&&!pendingSaleRecoveryMode&&cashierSession.loading;
   const cashShiftUnavailable=needsCashShift&&!pendingSaleRecoveryMode&&!cashierSession.loading&&!cashierSession.session;
   const missingCartAccessoryLink=cart.some(line=>trackedAccessoryProductIds.has(line.productId)&&!catalogLinks.some(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.productId));
-  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&catalogLinkStatus==='ready'&&workflowRouteStatus==='ready'&&(form.quoteId||taxConfigurationStatus==='ready')&&(!saleMaterialLines.some((line)=>line.catalog_product_id)||materialRecipesStatus==='ready')&&!missingCartAccessoryLink&&!backorderPermissionMissing&&!pendingSaleRecoveryError&&!pendingOperationChanged&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&discountReasonValid&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
-  const submitBlockReason=pendingSaleRecoveryError||(pendingOperationChanged?'Los datos de la operación o de la cotización cambiaron mientras la venta estaba pendiente. Recarga para restaurar la versión original antes de reintentar.':savingSale?'Guardando la venta…':!discountReasonValid?'Escribe el motivo del descuento (mínimo 3 y máximo 300 caracteres).':!form.quoteId&&taxConfigurationStatus==='loading'?'Consultando la tasa de IVA de la organización…':!form.quoteId&&taxConfigurationStatus==='error'?'No se pudo verificar la tasa de IVA. Recarga antes de confirmar la venta.':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando los vínculos de inventario…':catalogLinkStatus==='error'?'No se pudieron consultar los vínculos de inventario. Recarga antes de confirmar.':saleMaterialLines.some((line)=>line.catalog_product_id)&&materialRecipesStatus!=='ready'?(materialRecipesStatus==='checking'?'Comprobando las recetas de materiales de esta sucursal…':'No se pudieron verificar las recetas. Vuelve a Detalles del trabajo y reintenta la consulta.'):missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':backorderPermissionMissing?'Hay artículos sin conteo o con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.':duplicateCustomer?`Ya existe ${duplicateCustomer.name} con ese teléfono, correo o identificación. Selecciónalo para evitar crear un duplicado.`:customerLookupFailed?'No se pudo verificar si el cliente ya existe. Reintenta la búsqueda antes de confirmar.':customerLookupPending?'Buscando coincidencias del cliente…':customerNameMissing?'Completa el nombre del cliente o limpia la búsqueda si será una venta de mostrador.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'');
+  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&catalogLinkStatus==='ready'&&workflowRouteStatus==='ready'&&(form.quoteId||taxConfigurationStatus==='ready')&&(!saleMaterialLines.some((line)=>line.catalog_product_id)||materialRecipesStatus==='ready')&&!previewConfigurationIssues.length&&!missingCartAccessoryLink&&!backorderPermissionMissing&&!pendingSaleRecoveryError&&!pendingOperationChanged&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&discountReasonValid&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
+  const submitBlockReason=pendingSaleRecoveryError||(pendingOperationChanged?'Los datos de la operación o de la cotización cambiaron mientras la venta estaba pendiente. Recarga para restaurar la versión original antes de reintentar.':savingSale?'Guardando la venta…':!discountReasonValid?'Escribe el motivo del descuento (mínimo 3 y máximo 300 caracteres).':!form.quoteId&&taxConfigurationStatus==='loading'?'Consultando la tasa de IVA de la organización…':!form.quoteId&&taxConfigurationStatus==='error'?'No se pudo verificar la tasa de IVA. Recarga antes de confirmar la venta.':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando los vínculos de inventario…':catalogLinkStatus==='error'?'No se pudieron consultar los vínculos de inventario. Recarga antes de confirmar.':saleMaterialLines.some((line)=>line.catalog_product_id)&&materialRecipesStatus!=='ready'?(materialRecipesStatus==='checking'?'Comprobando las recetas de materiales de esta sucursal…':'No se pudieron verificar las recetas. Vuelve a Detalles del trabajo y reintenta la consulta.'):previewConfigurationIssues.length?'Corrige los vínculos y datos de inventario indicados antes de cobrar.':missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':backorderPermissionMissing?'Hay artículos sin conteo o materiales con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.':duplicateCustomer?`Ya existe ${duplicateCustomer.name} con ese teléfono, correo o identificación. Selecciónalo para evitar crear un duplicado.`:customerLookupFailed?'No se pudo verificar si el cliente ya existe. Reintenta la búsqueda antes de confirmar.':customerLookupPending?'Buscando coincidencias del cliente…':customerNameMissing?'Completa el nombre del cliente o limpia la búsqueda si será una venta de mostrador.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'');
   const cartQuantityNumber=Number(cartQuantity);
   const cartWidthNumber=Number(cartWidthCm);
   const cartHeightNumber=Number(cartHeightCm);
@@ -964,6 +1078,7 @@ export function PosPage() {
   const customAgreedPriceNumber = Number(cartCustomUnitPrice);
   const hasCustomAgreedPrice = Number.isFinite(customAgreedPriceNumber) && customAgreedPriceNumber > 0;
   const cartCalculation=selectedCartProduct?calculatePOSLine({product:selectedCartProduct,mode:cartMode,quantity:cartQuantityNumber,widthCm:cartWidthNumber,heightCm:cartHeightNumber,tier:cartPriceTier,optionChoice:cartOptionChoice,customUnitPrice:hasCustomAgreedPrice?customAgreedPriceNumber:undefined}):null;
+  const cartFinishingEstimate=calculateCommercialFinishing(cartFinishing,cartQuantityNumber,data.calculatorSettings||{});
   const cartPriceAvailable=Boolean(hasCustomAgreedPrice ? cartCalculation : (selectedCartProduct?.confirmed||selectedCartProduct?.published===true)&&cartCalculation);
   const measurementStockLink=selectedCartProduct&&catalogLinks.find(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===selectedCartProduct.id);
   const measurementStock=measurementStockLink&&data.inventory.find(row=>row.variantId===measurementStockLink.inventory_variant_id&&row.branchId===measurementStockLink.branch_id);
@@ -1000,7 +1115,7 @@ export function PosPage() {
     if(!product||product.mode==='area')return;
     const calc=calculatePOSLine({product,mode:'quantity',quantity:1,tier:'pvp',optionChoice:''});
     if(!calc||!(product.confirmed||product.published)){chooseCartProduct(product);return;}
-    const existing=cart.find((item:any)=>item.productId===product.id&&item.mode==='quantity'&&(item.pricingTier||'pvp')==='pvp'&&!item.optionChoice);
+    const existing=cart.find((item:any)=>item.productId===product.id&&item.mode==='quantity'&&(item.pricingTier||'pvp')==='pvp'&&!item.optionChoice&&sanitizeCommercialFinishing(item.finishing).eyeletType==='none'&&sanitizeCommercialFinishing(item.finishing).designService==='ready');
     if(existing){
       const nextQty=Number(existing.quantity||1)+1;
       const nextCalc=calculatePOSLine({product,mode:'quantity',quantity:nextQty,tier:'pvp',optionChoice:''});
@@ -1020,7 +1135,7 @@ export function PosPage() {
     const line={
       key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       productId:product.id,sku:product.sku||product.id,name:product.name,family:product.family||'General',image:product.image||'',
-      mode:'quantity',quantity:1,billingQuantity:calc.billedQuantity,unit:calc.unit,unitPrice:calc.unitPrice,total:calc.total,
+      mode:'quantity',quantity:1,billingQuantity:calc.billedQuantity,unit:calc.unit,unitPrice:calc.unitPrice,baseUnitPrice:calc.unitPrice,total:calc.total,finishing:{...emptyCommercialFinishing},
       widthCm:null,heightCm:null,areaPerPiece:null,areaTotal:null,
       pricingTier:'pvp',pricingTierLabel:'Normal',optionChoice:'',
       description:formatPOSLineDescription({name:product.name,mode:'quantity',quantity:1,unit:calc.unit,unitPrice:calc.unitPrice,pricingTierLabel:'Normal'}),
@@ -1037,7 +1152,7 @@ export function PosPage() {
     flash(`Se duplicó “${line.name}” en el carrito. Puedes editar su medida o tarifa.`);
   };
   const chooseCartProduct=(product)=>{
-    setCartMode(product.mode==='area'?'area':'quantity');setCartFamily(product.family||'Todas');setCartProductId(product.id);setCartItemName('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartPriceTier('pvp');setCartOptionChoice('');setCartSearch('');
+    setCartMode(product.mode==='area'?'area':'quantity');setCartFamily(product.family||'Todas');setCartProductId(product.id);setCartItemName('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartPriceTier('pvp');setCartOptionChoice('');setCartFinishing({...emptyCommercialFinishing});setCartSearch('');
     requestAnimationFrame(()=>document.getElementById(product.mode==='area'?'pos-cart-width':'pos-cart-quantity')?.focus());
   };
   const handleCartScan=(query:string,highlightedProduct?:any)=>{
@@ -1178,20 +1293,25 @@ export function PosPage() {
   const addCartLine=()=>{
     const quantity=cartQuantityNumber;
     if(!Number.isSafeInteger(quantity)||quantity<1){flash('La cantidad debe ser un número entero mayor que cero.');return;}
+    const finishing=calculateCommercialFinishing(cartFinishing,quantity,data.calculatorSettings||{});
+    if(!finishing.valid){flash('Completa el concepto y el monto del servicio de diseño libre.');return;}
     if(selectedCartProduct){
       if(!cartPriceAvailable){flash('Este producto no tiene tarifa disponible para esta cantidad o medida. Ingresa un precio acordado o completa el catálogo.');return;}
       if(cartMode==='area'&&(!Number.isFinite(cartWidthNumber)||!Number.isFinite(cartHeightNumber)||cartWidthNumber<=0||cartHeightNumber<=0)){flash('Ingresa el ancho y el alto en centímetros para calcular la superficie.');return;}
       if(invalidMeasurementStockLink){flash(`El producto por medidas está vinculado a inventario en “${measurementStockUnit||'unidad no identificada'}”. Cambia ese vínculo a una existencia medida en m² antes de venderlo.`);return;}
       const pricingTierLabel={pvp:'Normal',instalacion:'Con instalación',corporativo:'Corporativo'}[cartPriceTier]||'Normal';
+      const baseTotal=cartCalculation.baseUnitPrice*cartCalculation.billedQuantity;
+      const lineTotal=roundMoney(baseTotal+finishing.total);
+      const effectiveUnitPrice=Number((lineTotal/cartCalculation.billedQuantity).toFixed(8));
       const line={
         key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         productId:selectedCartProduct.id,sku:selectedCartProduct.sku||selectedCartProduct.id,name:selectedCartProduct.name,family:selectedCartProduct.family||'General',image:selectedCartProduct.image||'',
-        mode:cartMode,quantity,billingQuantity:cartCalculation.billedQuantity,unit:cartCalculation.unit,unitPrice:cartCalculation.unitPrice,total:cartCalculation.total,
+        mode:cartMode,quantity,billingQuantity:cartCalculation.billedQuantity,unit:cartCalculation.unit,unitPrice:effectiveUnitPrice,baseUnitPrice:cartCalculation.baseUnitPrice,total:lineTotal,finishing:snapshotCommercialFinishing(cartFinishing,quantity,data.calculatorSettings||{}),
         widthCm:cartMode==='area'?cartWidthNumber:null,heightCm:cartMode==='area'?cartHeightNumber:null,areaPerPiece:cartCalculation.areaPerPiece||null,areaTotal:cartCalculation.areaTotal||null,
-        pricingTier:cartPriceTier,pricingTierLabel,optionChoice:cartOptionChoice||'',customUnitPriceApplied:Boolean(hasCustomAgreedPrice),description:formatPOSLineDescription({name:selectedCartProduct.name,mode:cartMode,quantity,unit:cartCalculation.unit,unitPrice:cartCalculation.unitPrice,pricingTierLabel,widthCm:cartMode==='area'?cartWidthNumber:undefined,heightCm:cartMode==='area'?cartHeightNumber:undefined,areaPerPiece:cartCalculation.areaPerPiece||undefined,areaTotal:cartCalculation.areaTotal||undefined,optionChoice:cartOptionChoice||undefined,customUnitPriceApplied:Boolean(hasCustomAgreedPrice)}),
+        pricingTier:cartPriceTier,pricingTierLabel,optionChoice:cartOptionChoice||'',customUnitPriceApplied:Boolean(hasCustomAgreedPrice),description:formatPOSLineDescription({name:selectedCartProduct.name,mode:cartMode,quantity,unit:cartCalculation.unit,unitPrice:effectiveUnitPrice,pricingTierLabel,widthCm:cartMode==='area'?cartWidthNumber:undefined,heightCm:cartMode==='area'?cartHeightNumber:undefined,areaPerPiece:cartCalculation.areaPerPiece||undefined,areaTotal:cartCalculation.areaTotal||undefined,optionChoice:cartOptionChoice||undefined,customUnitPriceApplied:Boolean(hasCustomAgreedPrice)}),
       };
       setCart(current=>[...current,line]);
-      setCartProductId('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartUnitPrice('');setCartCustomUnitPrice('');
+      setCartProductId('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});
       requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
       return;
     }
@@ -1203,17 +1323,18 @@ export function PosPage() {
       const name=cartItemName.trim();
       const areaPerPiece=Math.round((cartWidthNumber*cartHeightNumber/10000)*10000)/10000;
       const billedArea=Math.round((areaPerPiece*quantity)*10000)/10000;
-      const total=roundMoney(billedArea*unitPrice);
+      const total=roundMoney(billedArea*unitPrice+finishing.total);
+      const effectiveUnitPrice=Number((total/billedArea).toFixed(8));
       const line={
         key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         productId:'',sku:'LIBRE-M2',name,family:'Concepto libre por m²',image:'',mode:'area',
-        quantity,billingQuantity:billedArea,unit:'m²',unitPrice,total,
+        quantity,billingQuantity:billedArea,unit:'m²',unitPrice:effectiveUnitPrice,baseUnitPrice:unitPrice,total,finishing:snapshotCommercialFinishing(cartFinishing,quantity,data.calculatorSettings||{}),
         widthCm:cartWidthNumber,heightCm:cartHeightNumber,areaPerPiece,areaTotal:billedArea,
         pricingTier:'pvp',pricingTierLabel:'Precio acordado',optionChoice:'',customUnitPriceApplied:true,
         description:`${name} · ${cartWidthNumber} × ${cartHeightNumber} cm · ${quantity} ${quantity===1?'pieza':'piezas'} · ${billedArea} m² · $${unitPrice.toFixed(2)}/m²`,
       };
       setCart(current=>[...current,line]);
-      setCartItemName('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartUnitPrice('');setCartCustomUnitPrice('');
+      setCartItemName('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});
       requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
       return;
     }
@@ -1224,9 +1345,11 @@ export function PosPage() {
     const name=cartItemName.trim();
     const unit=cartCustomUnit.trim().slice(0,40)||'unidad';
     const quantityLabel=quantity===1?unit:pluralizePOSUnit(unit);
-    const line={key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:'',sku:'LIBRE',name,family:'Concepto libre',image:'',mode:'quantity',quantity,billingQuantity:quantity,unit,unitPrice,total:Math.round(quantity*unitPrice*100)/100,customUnitPriceApplied:true,description:`${name} · ${quantity} ${quantityLabel} · $${unitPrice.toFixed(2)} c/u`};
+    const total=roundMoney(quantity*unitPrice+finishing.total);
+    const effectiveUnitPrice=Number((total/quantity).toFixed(8));
+    const line={key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:'',sku:'LIBRE',name,family:'Concepto libre',image:'',mode:'quantity',quantity,billingQuantity:quantity,unit,unitPrice:effectiveUnitPrice,baseUnitPrice:unitPrice,total,finishing:snapshotCommercialFinishing(cartFinishing,quantity,data.calculatorSettings||{}),customUnitPriceApplied:true,description:`${name} · ${quantity} ${quantityLabel} · $${unitPrice.toFixed(2)} c/u`};
     setCart(current=>[...current,line]);
-    setCartItemName('');setCartQuantity('1');setCartUnitPrice('');setCartCustomUnitPrice('');
+    setCartItemName('');setCartQuantity('1');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});
     requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
   };
   const save=async(event)=>{
@@ -1265,14 +1388,38 @@ export function PosPage() {
     const missingMaterialUsage=saleMaterialLines.flatMap((line)=>materialRecipes.filter((recipe)=>recipe.active&&recipe.branch_id===selectedBranchId&&recipe.catalog_product_id===line.catalog_product_id&&recipe.calculation_mode==='explicit_quantity').filter((recipe)=>{const entry=(materialRequestsByLine[line.line_key]||[]).find((request)=>request.recipeId===recipe.id);const quantity=Number(entry?.quantity);return !Number.isFinite(quantity)||quantity<=0||quantity>1000000;}).map((recipe)=>({line,recipe})));
     if(missingMaterialUsage.length){flash(`Ingresa la cantidad total usada de cada acabado variable antes de confirmar (${missingMaterialUsage.length} pendiente${missingMaterialUsage.length===1?'':'s'}).`);return;}
     const requestsForLine=(line)=>({ ...line,material_requests:(materialRequestsByLine[line.line_key]||[]).filter((request)=>materialRecipes.some((recipe)=>recipe.id===request.recipeId&&recipe.active&&recipe.branch_id===selectedBranchId&&recipe.catalog_product_id===line.catalog_product_id&&recipe.calculation_mode==='explicit_quantity')).map((request)=>({recipe_id:request.recipeId,quantity:Number(request.quantity)})) });
-    const lines=form.quoteId?sanitizePOSSaleLines(quoteLines).map(line=>({ ...requestsForLine(line),sku:data.catalog.find(product=>product.id===line.catalog_product_id)?.sku||line.sku||line.catalog_product_id||'' })):cart.map(line=>requestsForLine({line_key:line.key,catalog_product_id:line.productId||null,sku:line.sku||line.productId||'',description:line.description||line.name,quantity:Number(line.billingQuantity)||line.quantity,unit_price:line.unitPrice}));
+    const lines=form.quoteId?sanitizePOSSaleLines(quoteLines).map((line,index)=>{
+      const sourceLine=quoteLines[index];
+      const pieces=Number(sourceLine.pieceQuantity)||line.quantity;
+      const finishing=calculateCommercialFinishing(sourceLine.finishing_options,pieces);
+      const finishingSnapshot={...snapshotCommercialFinishing(sourceLine.finishing_options,pieces),eyelet_total_count:finishing.eyeletTotalCount,eyelet_unit_price:finishing.eyeletUnitPrice,eyelet_total:finishing.eyeletTotal,design_label:finishing.designLabel,design_total:finishing.designTotal,total:finishing.total};
+      return { ...requestsForLine({...line,description:[line.description,...finishing.summary].filter(Boolean).join(' · '),finishing_options:finishingSnapshot}),sku:data.catalog.find(product=>product.id===line.catalog_product_id)?.sku||line.sku||line.catalog_product_id||'' };
+    }):cart.map(line=>{
+      const finishing=calculateCommercialFinishing(line.finishing,line.quantity,data.calculatorSettings||{});
+      return requestsForLine({
+        line_key:line.key,
+        catalog_product_id:line.productId||null,
+        sku:line.sku||line.productId||'',
+        description:[line.description||line.name,...finishing.summary].filter(Boolean).join(' · '),
+        quantity:Number(line.billingQuantity)||line.quantity,
+        unit_price:line.unitPrice,
+        finishing_options:{...snapshotCommercialFinishing(line.finishing,line.quantity,data.calculatorSettings||{}),eyelet_total_count:finishing.eyeletTotalCount,eyelet_unit_price:finishing.eyeletUnitPrice,eyelet_total:finishing.eyeletTotal,design_label:finishing.designLabel,design_total:finishing.designTotal,total:finishing.total},
+      });
+    });
     const saleNote=pendingSaleRecoveryMode&&pendingSaleKey.current&&typeof pendingSaleSnapshotRef.current?.saleNote==='string'?pendingSaleSnapshotRef.current.saleNote:[form.description,quote?`Cotización ${quote.quote_code}`:cart.map(line=>`${line.name} × ${line.quantity}`).join(' · ')].filter(Boolean).join(' · ');
     const discountAuditNote=!form.quoteId&&manualDiscountAmount>0?`Descuento comercial (${manualDiscountPercent}%): ${discountReason.trim()}`:'';
     const quoteDiscountAuditNote=form.quoteId&&quoteDiscount>0?`Descuento comercial (${Math.round(Number(quoteFinancial?.discount_percent)||0)}%): ${String(quoteFinancial?.discount_reason||'Descuento aprobado en cotización').trim()}`:'';
     const saleNoteWithDiscount=[discountAuditNote,quoteDiscountAuditNote,saleNote].filter(Boolean).join('\n');
-    const shortages=findPOSStockShortages(lines,catalogLinks,selectedBranchId,data.inventory);
+    const recipeShortages=findPOSRecipeShortages(lines,materialRecipes,selectedBranchId,data.inventory,materialRequestsByLine);
+    const directStockIssues=findPOSStockShortages(lines,catalogLinks,selectedBranchId,data.inventory);
+    const configurationIssues=[...directStockIssues.filter((issue)=>issue.kind==='configuration'),...recipeShortages.filter((issue)=>issue.kind==='configuration'),...findPOSRecipeLinkConflicts(lines,catalogLinks,materialRecipes,selectedBranchId)];
+    if(configurationIssues.length){flash(configurationIssues[0].message||'Corrige los vínculos y datos de inventario antes de cobrar.');return;}
+    const shortages=[
+      ...directStockIssues,
+      ...recipeShortages,
+    ];
     if(shortages.length&&!canManageBackorders&&!hasPendingBackorderAuthorization){flash('Hay productos sin conteo o con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.');return;}
-    if(shortages.length){const accepted=await confirmDialog({eyebrow:'VENTA CON FALTANTE DE INVENTARIO',title:'¿Confirmar la orden como compra urgente?',description:`${shortages.length} artículo(s) tienen conteo pendiente o existencias insuficientes en esta sucursal.`,tone:'warning',confirmLabel:'Confirmar y solicitar compra',cancelLabel:'Volver a revisar',summaryItems:[{label:'Artículos con faltante',value:String(shortages.length)}],consequences:['La venta continuará y el faltante quedará señalado para compra urgente.','No se inventará una disponibilidad: el registro conservará el detalle del faltante.']});if(!accepted)return;}
+    if(shortages.length){const accepted=await confirmDialog({eyebrow:'VENTA CON FALTANTE DE INVENTARIO',title:'¿Confirmar la orden como compra urgente?',description:`${shortages.length} producto(s) o material(es) tienen conteo pendiente o existencias insuficientes en esta sucursal.`,tone:'warning',confirmLabel:'Confirmar y solicitar compra',cancelLabel:'Volver a revisar',summaryItems:[{label:'Faltantes estimados',value:String(shortages.length)},...shortages.slice(0,4).map((issue:any,index:number)=>({label:`Detalle ${index+1}`,value:issue.message}))],consequences:['La venta continuará y los faltantes quedarán señalados para compra urgente.','Los metros consumidos se estiman por área y ancho; el impresor ajustará el saldo con la medición física del rollo.']});if(!accepted)return;}
     const hadPendingSaleKey=Boolean(pendingSaleKey.current);
     let saleRequestStarted=false;
     let quoteAlreadyLinked=false;
@@ -1538,7 +1685,7 @@ export function PosPage() {
               <label><span>Concepto libre por m²</span><input value={cartItemName} onChange={(event)=>setCartItemName(event.target.value)} placeholder="Ej.: Lona banner medida especial, Rotulación libre"/></label>
               <POSMeasurementControls widthValue={cartWidthCm} heightValue={cartHeightCm} quantityValue={cartQuantity} widthCm={cartWidthNumber} heightCm={cartHeightNumber} quantity={cartQuantityNumber} onWidthChange={setCartWidthCm} onHeightChange={setCartHeightCm} onQuantityChange={setCartQuantity}/>
               <label><span>Precio acordado por m² ($)</span><div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartUnitPrice} onChange={(event)=>setCartUnitPrice(event.target.value)} placeholder="Ej.: 12.00"/></div></label>
-              {cartAreaPerPiece>0&&Number(cartUnitPrice)>0&&<div className="pos-calculation-total"><span>{cartAreaPerPiece.toFixed(4)} m² c/u × {cartQuantityNumber} · {(cartAreaPerPiece*cartQuantityNumber).toFixed(4)} m² en total</span><strong>{formatMoney((cartAreaPerPiece*cartQuantityNumber)*Number(cartUnitPrice))}</strong></div>}
+              {cartAreaPerPiece>0&&Number(cartUnitPrice)>0&&<div className="pos-calculation-total"><span>{cartAreaPerPiece.toFixed(4)} m² c/u × {cartQuantityNumber} · {(cartAreaPerPiece*cartQuantityNumber).toFixed(4)} m² en total</span><strong>{formatMoney((cartAreaPerPiece*cartQuantityNumber)*Number(cartUnitPrice)+cartFinishingEstimate.total)}</strong></div>}
             </div>}
             {selectedCartProduct&&<div className="pos-selected-product">
               <POSProductVisual src={selectedCartProduct.image} alt={selectedCartProduct.name} className="pos-selected-image" iconSize={18}/>
@@ -1568,13 +1715,14 @@ export function PosPage() {
               </div>
               {cartEntryType==='custom-quantity'&&<label>Precio acordado por {cartCustomUnit.trim()||'unidad'}<div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartUnitPrice} onChange={(event)=>setCartUnitPrice(event.target.value)} placeholder="0,00"/></div></label>}
             </div>}
-            {cartEntryType==='custom-quantity'&&cartQuantityNumber>0&&Number(cartUnitPrice)>0&&<div className="pos-calculation-total"><span>{cartQuantityNumber} {cartQuantityNumber===1?(cartCustomUnit.trim()||'unidad'):pluralizePOSUnit(cartCustomUnit.trim()||'unidad')} · precio acordado por unidad</span><strong>{formatMoney(cartQuantityNumber*Number(cartUnitPrice))}</strong></div>}
+            {cartEntryType==='custom-quantity'&&cartQuantityNumber>0&&Number(cartUnitPrice)>0&&<div className="pos-calculation-total"><span>{cartQuantityNumber} {cartQuantityNumber===1?(cartCustomUnit.trim()||'unidad'):pluralizePOSUnit(cartCustomUnit.trim()||'unidad')} · precio acordado por unidad</span><strong>{formatMoney(cartQuantityNumber*Number(cartUnitPrice)+cartFinishingEstimate.total)}</strong></div>}
             {selectedCartProduct&&<div className="pos-agreed-price-wrap">
               <label><span>Precio acordado ($) · <small>Opcional: sobrescribe PVP unitario/m²</small></span><div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartCustomUnitPrice} onChange={(event)=>setCartCustomUnitPrice(event.target.value)} placeholder={cartCalculation?cartCalculation.unitPrice.toFixed(2):'0.00'}/></div></label>
               {hasCustomAgreedPrice&&<button type="button" className="button button-outline pos-reset-agreed-btn" onClick={()=>setCartCustomUnitPrice('')}>Usar catálogo</button>}
             </div>}
             {selectedCartProduct&&<>{selectedCartProduct.optionPrices?.length>0&&<label>Material / acabado<select value={cartOptionChoice} onChange={(event)=>setCartOptionChoice(event.target.value)}><option value="">Tarifa base</option>{selectedCartProduct.optionPrices.map(option=><option key={option.label} value={option.label}>{option.label}</option>)}</select></label>}<QuotePriceComparison product={selectedCartProduct} basis={cartPricingBasis} selectedTier={cartPriceTier} onSelect={setCartPriceTier} optionChoice={cartOptionChoice}/>{cartMode==='area'&&invalidMeasurementStockLink&&<p className="pos-calculation-warning">Este artículo descuenta inventario medido en “{measurementStockUnit}”. Asigna una existencia en m² antes de venderlo para evitar un descuento incorrecto.</p>}</>}
-            {selectedCartProduct&&cartCalculation&&<div className="pos-calculation-total"><span>{cartMode==='area'?`${cartAreaPerPiece.toFixed(4)} m² por pieza × ${cartQuantityNumber} · ${cartCalculation.billedQuantity.toFixed(4)} m² en total`:`${cartQuantityNumber} ${selectedCartProduct.unit||'unidades'} · tarifa por ${selectedCartProduct.unit||'unidad'}`}</span><strong>{formatMoney(cartCalculation.total)}</strong></div>}
+            {(selectedCartProduct||cartEntryType==='custom-area'||cartEntryType==='custom-quantity')&&<CommercialFinishingControls value={cartFinishing} onChange={setCartFinishing} quantity={cartQuantityNumber} prices={data.calculatorSettings||{}} allowEyelets={cartMode==='area'&&(cartEntryType!=='catalog'||selectedCartProduct?.customOptions?.allow_eyelets!==false)} allowDesign={selectedCartProduct?.customOptions?.allow_design!==false} idPrefix="pos-cart-finishing"/>}
+            {selectedCartProduct&&cartCalculation&&<div className="pos-calculation-total"><span>{cartMode==='area'?`${cartAreaPerPiece.toFixed(4)} m² por pieza × ${cartQuantityNumber} · ${cartCalculation.billedQuantity.toFixed(4)} m² en total`:`${cartQuantityNumber} ${selectedCartProduct.unit||'unidades'} · tarifa por ${selectedCartProduct.unit||'unidad'}`}</span><strong>{formatMoney(cartCalculation.total+cartFinishingEstimate.total)}</strong></div>}
             <button className="button button-outline pos-add-item" type="button" onClick={addCartLine} disabled={Boolean(selectedCartProduct&&!cartPriceAvailable)||Boolean(invalidMeasurementStockLink)}><Plus size={15}/> Agregar al carrito</button>
            </section>
          </>}
@@ -1595,12 +1743,14 @@ export function PosPage() {
           <div className="pos-stage-heading"><span className="eyebrow">ETAPA 3 DE 3</span><h3>Revisa la orden antes de confirmar</h3><p>Comprueba artículos, cliente, entrega y cobro. La venta se registra una sola vez.</p></div>
           <dl className="pos-review-grid"><div><dt>Cliente</dt><dd>{form.customer||'Venta de mostrador'}</dd></div><div><dt>Sucursal</dt><dd>{branchName}</dd></div><div><dt>Artículos</dt><dd>{form.quoteId?'Cotización '+(centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||''):cart.length+' '+(cart.length===1?'artículo':'artículos')}</dd></div><div><dt>Entrega</dt><dd>{fulfillment.deliveryAt?new Date(fulfillment.deliveryAt).toLocaleString('es-EC',{dateStyle:'medium',timeStyle:'short'}):'Sin fecha indicada'}</dd></div><div><dt>Instalación</dt><dd>{fulfillment.installationRequired?fulfillment.installationAddress||'Dirección pendiente':'No solicitada'}</dd></div><div><dt>Cobro</dt><dd>{chargeNow?'Aplicado '+formatMoney(paymentBreakdown.applied)+' · Saldo '+formatMoney(paymentBreakdown.balance):'Pendiente de cobro'}</dd></div></dl>
           {(form.quoteId||cart.length>0)&&<POSFinancialBreakdown subtotal={activeSubtotal} discount={activeDiscount} taxRate={activeTaxRate} taxAmount={activeTaxAmount} total={activeTotal} shipping={activeShipping} taxApplied={activeTaxApplied} taxLabel={activeTaxLabel} className="pos-review-financial"/>}
+          {previewConfigurationIssues.length>0&&<div className="pos-material-availability-note is-blocking" role="alert"><b>Corrige la configuración del inventario</b><ul>{previewConfigurationIssues.map((issue:any,index:number)=><li key={`${issue.recipe?.id||issue.line?.line_key||issue.line?.catalog_product_id||'config'}:${index}`}>{issue.message}</li>)}</ul><small>Resuelve los vínculos, anchos o unidades pendientes en <Link to="/operaciones/inventario?tab=pos">Inventario</Link> antes de cobrar.</small></div>}
+          {allPreviewShortages.length>0&&<div className="pos-material-availability-note" role="status"><b>Existencias que requieren revisión</b><ul>{allPreviewShortages.slice(0,8).map((issue:any,index:number)=><li key={`${issue.recipe?.id||issue.line?.line_key||index}:${index}`}>{issue.message}</li>)}</ul>{allPreviewShortages.length>8&&<small>Y {allPreviewShortages.length-8} faltante(s) más.</small>}<small>Las necesidades de rollos son aproximadas. La medición física del impresor concilia el saldo después del trabajo.</small></div>}
           <div className="pos-review-actions"><button className="button button-outline" type="button" onClick={()=>void copyPOSWhatsApp()}><Copy size={15}/> Copiar WhatsApp</button><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('details')}>Editar detalles del trabajo</button><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('order')}>Agregar más artículos</button></div>
         </section>}
         <aside className={`pos-order-summary${mobileSummaryOpen?' is-open':''}`} data-checkout-step={checkoutStep}>
           <div className="pos-mobile-summary-bar"><span><small>ORDEN ACTUAL</small><b>{formatMoney(activeTotal)}</b></span><button className="button button-dark" type="button" aria-expanded={mobileSummaryOpen} onClick={()=>setMobileSummaryOpen((open)=>!open)}>{mobileSummaryOpen?'Cerrar pedido':'Ver pedido y cobrar'}</button></div>
           {form.quoteId
-            ? <section className="pos-cart pos-quote-cart" aria-label="Resumen de cotización"><div className="pos-cart-heading"><div><span className="eyebrow">COTIZACIÓN APROBADA</span><h3>{centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||'Pedido aprobado'}</h3></div><strong>{formatMoney(activeTotal)}</strong></div><p className="pos-cart-empty">{form.description||'Los conceptos y el total se conservarán como fueron aprobados.'}</p></section>
+            ? <section className="pos-cart pos-quote-cart" aria-label="Resumen de cotización"><div className="pos-cart-heading"><div><span className="eyebrow">COTIZACIÓN APROBADA</span><h3>{centralQuotes.find((quote)=>quote.id===form.quoteId)?.quote_code||'Pedido aprobado'}</h3></div><strong>{formatMoney(activeTotal)}</strong></div>{currentQuoteLines.length>0?<div className="pos-quote-approved-lines" style={{display:'grid',gap:10,marginTop:12}}>{currentQuoteLines.map((line,index)=><article key={line.line_key} style={{display:'grid',gap:8,padding:12,border:'1px solid var(--line)',borderRadius:12,background:'var(--paper)'}}><div className="pos-quote-approved-item" style={{display:'grid',gap:4,minWidth:0}}><b style={{fontSize:11,lineHeight:1.45,overflowWrap:'anywhere'}}>{String(index+1).padStart(2,'0')} · {line.description||'Artículo cotizado'}</b><small style={{color:'var(--muted)',fontSize:10}}>{line.quantity} {line.unit||'unidad'} · Tarifa base {formatMoney(line.base_unit_price)}/{line.unit||'unidad'}</small></div><dl style={{display:'grid',gap:6,margin:0,paddingTop:8,borderTop:'1px solid var(--line)'}}><div style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:10}}><dt>Material impreso</dt><dd style={{margin:0,fontWeight:700}}>{formatMoney(line.base_subtotal)}</dd></div>{line.eyelet_total>0&&<div style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:10}}><dt>Ojales · {line.eyelet_label}</dt><dd style={{margin:0,fontWeight:700}}>+{formatMoney(line.eyelet_total)}</dd></div>}{line.design_total>0&&<div style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:10}}><dt>Diseño · {line.design_label}</dt><dd style={{margin:0,fontWeight:700}}>+{formatMoney(line.design_total)}</dd></div>}<div style={{display:'flex',justifyContent:'space-between',gap:10,paddingTop:5,borderTop:'1px solid var(--line)',fontSize:10,fontWeight:750}}><dt>Subtotal del artículo</dt><dd style={{margin:0,fontWeight:750}}>{formatMoney(line.subtotal)}</dd></div>{line.discount_amount>0&&<div style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:10}}><dt>Descuento</dt><dd style={{margin:0,fontWeight:750}}>−{formatMoney(line.discount_amount)}</dd></div>}{line.tax_amount>0&&<div style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:10}}><dt>IVA</dt><dd style={{margin:0,fontWeight:750}}>+{formatMoney(line.tax_amount)}</dd></div>}{line.shipping_share>0&&<div style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:10}}><dt>Envío / otros</dt><dd style={{margin:0,fontWeight:750}}>+{formatMoney(line.shipping_share)}</dd></div>}<div style={{display:'flex',justifyContent:'space-between',gap:10,paddingTop:7,borderTop:'1px solid var(--line)',fontSize:10,fontWeight:800}}><dt>Total del artículo</dt><dd style={{margin:0,fontWeight:800}}>{formatMoney(line.line_total)}</dd></div></dl></article>)}</div>:<p className="pos-cart-empty">{form.description||'Los conceptos y el total se conservarán como fueron aprobados.'}</p>}</section>
             : <section className="pos-cart" aria-label="Carrito de venta">
                 <div className="pos-cart-heading">
                   <div>
@@ -1623,6 +1773,7 @@ export function PosPage() {
                     inventoryStatus={cartInventoryStatus(line)}
                     inventoryTone={cartInventoryTone(line)}
                     workflowLabel={routeName}
+                    finishingPrices={data.calculatorSettings||{}}
                     onDuplicate={()=>duplicateCartLine(line)}
                     onRemove={()=>{setCart(current=>current.filter(item=>item.key!==line.key));setMaterialRequestsByLine(current=>{const next={...current};delete next[line.key];return next;});}}
                     onSave={(nextLine)=>setCart(current=>current.map(item=>item.key===line.key?nextLine:item))}

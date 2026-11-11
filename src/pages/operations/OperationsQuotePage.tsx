@@ -30,6 +30,8 @@ import { ChatterDrawer360 } from '../../components/ui/ChatterDrawer360';
 import { ExecutiveQuotePdfModal, type QuoteData } from '../../components/ExecutiveQuotePdfModal';
 import { PaymentReceiptModal, type PaymentReceiptRecord } from '../../components/PaymentReceiptModal';
 import { calculateTieredPrice, getNextVolumeTierRecommendation } from '../../lib/volumePricing';
+import { CommercialFinishingControls } from '../../components/CommercialFinishingControls';
+import { calculateCommercialFinishing, emptyCommercialFinishing, sanitizeCommercialFinishing } from '../../lib/commercialFinishing';
 import './operations-quote.css';
 
 const MAX_QUOTE_ITEMS = 40;
@@ -42,6 +44,7 @@ export type QuoteDraftLine = {
   widthCm: string;
   heightCm: string;
   option: string;
+  finishing: ReturnType<typeof sanitizeCommercialFinishing>;
   concept: string;
   additionalDescription: string;
   additionalDescriptionHtml: string;
@@ -58,6 +61,7 @@ const createLine = (custom = false, customMode: 'quantity' | 'area' = 'quantity'
   widthCm: '100',
   heightCm: '100',
   option: '',
+  finishing: { ...emptyCommercialFinishing },
   concept: '',
   additionalDescription: '',
   additionalDescriptionHtml: '<p></p>',
@@ -140,6 +144,7 @@ export function OperationsQuotePage() {
   const [centralQuotes, setCentralQuotes] = useState<any[]>([]);
   const [centralSales, setCentralSales] = useState<any[]>([]);
   const [catalogLinks, setCatalogLinks] = useState<any[]>([]);
+  const [materialRecipes, setMaterialRecipes] = useState<any[]>([]);
   const [productWorkflowRoutes, setProductWorkflowRoutes] = useState<Record<string, string>>({});
   const [workflowTemplates, setWorkflowTemplates] = useState<Array<{ code: string; name: string }>>([]);
   const [customerSummary, setCustomerSummary] = useState<any | null>(null);
@@ -181,13 +186,15 @@ export function OperationsQuotePage() {
     Promise.all([
       supabase.from('calculator_settings').select('tax_rate').eq('organization_id', organizationId).eq('id', 'default').maybeSingle(),
       supabase.from('catalog_inventory_links').select('catalog_product_id,inventory_variant_id,branch_id,location_code,active').eq('organization_id', organizationId).eq('active', true),
+      supabase.from('catalog_material_recipes').select('catalog_product_id,inventory_variant_id,branch_id,location_code,calculation_mode,quantity_per_basis,waste_percent,fulfillment_stage,active').eq('organization_id',organizationId).eq('active',true),
       supabase.from('catalog_product_workflow_routes').select('catalog_product_id,workflow_code').eq('organization_id', organizationId).eq('active', true),
       supabase.from('production_workflow_templates').select('code,name').eq('organization_id', organizationId).eq('active', true).order('name'),
-    ]).then(([taxRes, linksRes, routesRes, templatesRes]) => {
+    ]).then(([taxRes, linksRes, recipesRes, routesRes, templatesRes]) => {
       if (!active) return;
       const rate = Number(taxRes.data?.tax_rate);
       if (Number.isFinite(rate) && rate >= 0 && rate <= 100) setConfiguredTaxRate(rate);
       if (!linksRes.error) setCatalogLinks(linksRes.data || []);
+      if (!recipesRes.error) setMaterialRecipes(recipesRes.data || []);
       if (!routesRes.error) {
         setProductWorkflowRoutes(
           Object.fromEntries((routesRes.data || []).map((row: any) => [row.catalog_product_id, row.workflow_code])),
@@ -252,9 +259,33 @@ export function OperationsQuotePage() {
   }, [organizationId, canViewQuotes, canViewSales]);
 
   // Stock & workflow helpers per catalog product (like POS)
-  const getProductStockMeta = (productId: string) => {
+  const getProductStockMeta = (productId: string, basis = 0) => {
     if (!productId) return { tone: 'neutral' as const, label: 'Concepto libre · no descuenta inventario' };
     const branchId = selectedBranch.id;
+    const recipes = materialRecipes.filter((recipe) => recipe.active && recipe.catalog_product_id === productId && (!branchId || recipe.branch_id === branchId));
+    if (recipes.length) {
+      const components = recipes.map((recipe) => {
+        const location = recipe.location_code || 'MAIN';
+        const stock = (data.inventory || []).find((row: any) => row.variantId === recipe.inventory_variant_id && row.branchId === recipe.branch_id && row.location === location && !row.archived);
+        const materialName = stock?.name || 'Material';
+        if (recipe.calculation_mode === 'explicit_quantity') return { tone: 'warning' as const, label: `${materialName}: cantidad real al cobrar` };
+        const rate = Number(recipe.quantity_per_basis) || 0;
+        let required = basis * rate;
+        if (recipe.calculation_mode === 'area_to_linear') {
+          const width = Number(stock?.variantAttributes?.width_cm);
+          if (!Number.isFinite(width) || width <= 0) return { tone: 'warning' as const, label: `${materialName}: ancho por confirmar` };
+          required = basis / (width / 100) * rate * (1 + Math.max(0, Number(recipe.waste_percent) || 0) / 100);
+        }
+        required = Math.ceil(required * 1000) / 1000;
+        const unit = stock?.unit || (recipe.calculation_mode === 'area_to_linear' ? 'm' : 'unidades');
+        if (!stock || stock.sourceStatus) return { tone: 'warning' as const, label: `${materialName}: ≈ ${required} ${unit} · conteo pendiente` };
+        const available = Number(stock.availableQuantity ?? (Number(stock.quantity || 0) - Number(stock.reservedQuantity || 0)));
+        if (available < required) return { tone: 'danger' as const, label: `${materialName}: faltan ≈ ${Math.ceil((required-available)*1000)/1000} ${unit}` };
+        return { tone: 'available' as const, label: `${materialName}: ≈ ${required} ${unit} · ${available} disponible` };
+      });
+      const tone = components.some((row) => row.tone === 'danger') ? 'danger' as const : components.some((row) => row.tone === 'warning') ? 'warning' as const : 'available' as const;
+      return { tone, label: components.map((row) => row.label).join(' · ') };
+    }
     const links = catalogLinks.filter((link) => link.active && link.catalog_product_id === productId && (!branchId || link.branch_id === branchId));
     if (!links.length) return { tone: 'neutral' as const, label: `Sin vínculo de stock en ${branchName}` };
     const primary = links[0];
@@ -359,6 +390,7 @@ export function OperationsQuotePage() {
             widthCm: String(item.width_cm || 100),
             heightCm: String(item.height_cm || 100),
             option: String(item.option || ''),
+            finishing: sanitizeCommercialFinishing(item.finishing),
             concept: String(item.name || item.product_name || ''),
             additionalDescription: String(item.description || ''),
             additionalDescriptionHtml: String(item.description_html || '<p></p>'),
@@ -417,6 +449,7 @@ export function OperationsQuotePage() {
     }
   };
 
+  const finishingPrices = data.calculatorSettings || {};
   const configuredLines = useMemo(() => lines.map((line) => {
     const product = data.catalog.find((item: any) => item.id === line.productId);
     const isAreaMode = line.custom ? line.customMode === 'area' : product?.mode === 'area';
@@ -432,7 +465,7 @@ export function OperationsQuotePage() {
       ? (isAreaMode ? totalArea : pieceQuantity)
       : getQuoteBasis(product, { quantity: pieceQuantity, area });
     const customPrice = Number(line.customUnitPrice);
-    const totals: Record<string, number | null> = Object.fromEntries(
+    const baseTotals: Record<string, number | null> = Object.fromEntries(
       quoteTiers.map((tier) => [
         tier.id,
         line.custom
@@ -444,12 +477,17 @@ export function OperationsQuotePage() {
             : null,
       ]),
     );
+    const finishing = calculateCommercialFinishing(line.finishing, pieceQuantity, finishingPrices);
+    const totals: Record<string, number | null> = Object.fromEntries(
+      quoteTiers.map((tier) => [tier.id, baseTotals[tier.id] === null ? null : roundMoney(Number(baseTotals[tier.id]) + finishing.total)]),
+    );
     const unit = line.custom
       ? (isAreaMode ? 'm²' : line.customUnit || 'unidad')
       : isAreaMode ? 'm²' : product?.unit || 'unidad';
     const selectedSubtotal = totals[priceTier];
     const unitPrice = selectedSubtotal !== null && basis > 0 ? roundMoney(selectedSubtotal / basis) : null;
-    const stockMeta = getProductStockMeta(line.custom ? '' : line.productId);
+    const baseUnitPrice = baseTotals[priceTier] !== null && basis > 0 ? roundMoney(Number(baseTotals[priceTier]) / basis) : null;
+    const stockMeta = getProductStockMeta(line.custom ? '' : line.productId, basis);
     const workflowLabel = getProductWorkflowLabel(line.custom ? '' : line.productId);
     return {
       ...line,
@@ -465,13 +503,16 @@ export function OperationsQuotePage() {
       totalArea,
       perimeter,
       totals,
+      baseTotals,
       unit,
       unitPrice,
+      baseUnitPrice,
+      finishing,
       stockMeta,
       workflowLabel,
       title: line.custom ? line.concept.trim() : line.concept.trim() || product?.name || '',
     };
-  }), [lines, data.catalog, priceTier, catalogLinks, selectedBranch.id, data.inventory, productWorkflowRoutes, workflowTemplates]);
+  }), [lines, data.catalog, data.calculatorSettings, priceTier, catalogLinks, materialRecipes, selectedBranch.id, data.inventory, productWorkflowRoutes, workflowTemplates]);
 
   const rawTierTotals = useMemo(() => Object.fromEntries(quoteTiers.map((tier) => {
     const complete = configuredLines.length > 0 && configuredLines.every((line) => (line.custom ? line.title : line.product) && line.hasValidSize && line.hasValidQuantity && line.totals[tier.id] !== null);
@@ -494,7 +535,7 @@ export function OperationsQuotePage() {
   })), [rawTierTotals, discountRate, taxRate, extraCost]);
 
   const tierTotals = useMemo(() => Object.fromEntries(quoteTiers.map((tier) => [tier.id, tierFinancials[tier.id]?.total ?? null])), [tierFinancials]);
-  const allItemsSelected = configuredLines.every((line) => (line.custom ? line.title : line.product) && line.hasValidSize && line.hasValidQuantity && (!line.custom || Number(line.customUnitPrice) > 0));
+  const allItemsSelected = configuredLines.every((line) => (line.custom ? line.title : line.product) && line.hasValidSize && line.hasValidQuantity && (!line.custom || Number(line.customUnitPrice) > 0) && line.finishing.valid);
   const pricesConfirmed = configuredLines.every((line) => line.custom || line.product?.confirmed || line.product?.published === true);
   const selectedTotal = tierTotals[priceTier];
   const selectedFinancials = tierFinancials[priceTier];
@@ -561,7 +602,10 @@ export function OperationsQuotePage() {
       customer,
       tierLabel: quoteTiers.find((tier) => tier.id === priceTier)?.label || 'Normal',
       items: configuredLines.map((line) => {
-        const baseTotal = !line.custom && line.product ? calculateQuotePrice(line.product, priceTier, line.basis, '') : line.totals[priceTier];
+        const baseTotal = line.baseTotals[priceTier];
+        const catalogBaseTotal = !line.custom && line.product
+          ? calculateQuotePrice(line.product, priceTier, line.basis, '')
+          : baseTotal;
         return {
           name: line.title,
           dimensions: line.isAreaMode ? `${line.width} × ${line.height} cm` : '',
@@ -572,8 +616,8 @@ export function OperationsQuotePage() {
           rate: line.basis > 0 ? Number(baseTotal || 0) / line.basis : null,
           rateUnit: line.unit,
           option: line.option,
-          optionAmount: Math.max(0, Number(line.totals[priceTier] || 0) - Number(baseTotal || 0)),
-          description: line.additionalDescription,
+          optionAmount: Math.max(0, Number(baseTotal || 0) - Number(catalogBaseTotal || 0)),
+          description: [line.additionalDescription, ...line.finishing.summary].filter(Boolean).join(' · '),
           lineTotal: line.totals[priceTier],
         };
       }),
@@ -667,10 +711,13 @@ export function OperationsQuotePage() {
     try {
       const chosen = tierAliases[priceTier] || 'normal';
       const chosenFinancials = selectedFinancials;
-      const chosenLineTotals = distributeMoney(chosenFinancials.total, configuredLines.map((line) => line.totals[priceTier] || 0));
-      const chosenDiscounts = distributeMoney(chosenFinancials.discount, configuredLines.map((line) => line.totals[priceTier] || 0));
+      const lineWeights = configuredLines.map((line) => line.totals[priceTier] || 0);
+      const chosenDiscounts = distributeMoney(chosenFinancials.discount, lineWeights);
       const chosenTaxes = distributeMoney(chosenFinancials.tax, configuredLines.map((line, index) => Math.max(0, (line.totals[priceTier] || 0) - (chosenDiscounts[index] || 0))));
-      const chosenShipping = distributeMoney(chosenFinancials.shipping, configuredLines.map((line) => line.totals[priceTier] || 0));
+      const chosenShipping = distributeMoney(chosenFinancials.shipping, lineWeights);
+      const chosenLineTotals = configuredLines.map((line, index) => roundMoney(
+        (line.totals[priceTier] || 0) - (chosenDiscounts[index] || 0) + (chosenTaxes[index] || 0) + (chosenShipping[index] || 0),
+      ));
       const itemPayload = configuredLines.map((line, index) => ({
         product_id: line.custom ? null : line.product.id,
         name: line.title,
@@ -680,7 +727,7 @@ export function OperationsQuotePage() {
         quantity: line.basis,
         piece_quantity: line.pieceQuantity,
         unit: line.unit,
-        unit_price: line.totals[priceTier] === null || line.basis <= 0 ? null : roundMoney((line.totals[priceTier] || 0) / line.basis),
+        unit_price: line.baseTotals[priceTier] === null || line.basis <= 0 ? null : roundMoney((line.baseTotals[priceTier] || 0) / line.basis),
         total: pricesConfirmed ? chosenLineTotals[index] : null,
         subtotal: line.totals[priceTier],
         discount_amount: chosenDiscounts[index],
@@ -692,6 +739,17 @@ export function OperationsQuotePage() {
         corporate_total: line.totals.corporativo,
         price_tier: priceTier,
         option: line.option || null,
+        finishing: {
+          eyelet_type: line.finishing.eyeletType,
+          eyelets_per_piece: line.finishing.eyeletsPerPiece,
+          eyelet_unit_price: line.finishing.eyeletUnitPrice,
+          eyelet_total_count: line.finishing.eyeletTotalCount,
+          eyelet_total: line.finishing.eyeletTotal,
+          design_service: line.finishing.designService,
+          design_label: line.finishing.designLabel,
+          design_total: line.finishing.designTotal,
+          total: line.finishing.total,
+        },
         width_cm: line.isAreaMode ? line.width : null,
         height_cm: line.isAreaMode ? line.height : null,
         sku: line.custom ? '' : line.product.sku || '',
@@ -1099,7 +1157,7 @@ export function OperationsQuotePage() {
                     idPrefix={`operations-quote-product-${line.id}`}
                     products={data.catalog}
                     selected={line.product}
-                    onSelect={(product) => updateLine(line.id, { productId: product?.id || '', option: '' })}
+                    onSelect={(product) => updateLine(line.id, { productId: product?.id || '', option: '', finishing: { ...emptyCommercialFinishing } })}
                     favoriteIds={favoriteIds}
                     onToggleFavorite={toggleFavorite}
                   />
@@ -1307,6 +1365,16 @@ export function OperationsQuotePage() {
                   </label>
                 )}
 
+                {(line.custom || line.product) && <CommercialFinishingControls
+                  idPrefix={`quote-${line.id}`}
+                  value={sanitizeCommercialFinishing(line.finishing)}
+                  onChange={(finishing) => updateLine(line.id, { finishing })}
+                  quantity={line.pieceQuantity}
+                  prices={finishingPrices}
+                  allowEyelets={line.isAreaMode && (line.custom || line.product?.customOptions?.allow_eyelets !== false)}
+                  allowDesign={line.product?.customOptions?.allow_design !== false}
+                />}
+
                 {/* Mini-comparador de las 3 tarifas y desglose financiero por renglón */}
                 {(line.custom || line.product) && (
                   <div className="oq-line-financial-footer">
@@ -1326,8 +1394,10 @@ export function OperationsQuotePage() {
 
                     <div className="oq-line-breakdown-chips">
                       <span>
-                        Tarifa unitaria: <b>{line.unitPrice === null ? '—' : `${formatMoney(line.unitPrice)} / ${line.unit}`}</b>
+                        Tarifa base: <b>{line.baseUnitPrice === null ? '—' : `${formatMoney(line.baseUnitPrice)} / ${line.unit}`}</b>
                       </span>
+                      {line.finishing.eyeletTotal > 0 && <span>Ojales ({line.finishing.eyeletTotalCount}): <b>+{formatMoney(line.finishing.eyeletTotal)}</b></span>}
+                      {line.finishing.designTotal > 0 && <span>Diseño · {line.finishing.designLabel}: <b>+{formatMoney(line.finishing.designTotal)}</b></span>}
                       <span>
                         Subtotal línea: <b>{lineFin?.subtotal === null ? '—' : formatMoney(lineFin?.subtotal)}</b>
                       </span>
@@ -1672,14 +1742,23 @@ export function OperationsQuotePage() {
                     {line.isAreaMode && line.hasValidSize
                       ? `${line.pieceQuantity} pza(s) × ${line.width}×${line.height} cm (${line.totalArea.toFixed(2)} m²)`
                       : `${line.pieceQuantity} ${line.unit}`}
-                    {line.unitPrice !== null ? ` · ${formatMoney(line.unitPrice)}/${line.unit}` : ''}
+                    {line.baseUnitPrice !== null ? ` · Tarifa ${formatMoney(line.baseUnitPrice)}/${line.unit}` : ''}
                     {line.option ? ` · ${line.option}` : ''}
                     {line.additionalDescription ? ` · ${line.additionalDescription}` : ''}
                   </small>
+                  <div className="oq-summary-cost-breakdown">
+                    <small>Material impreso <b>{line.baseTotals[priceTier] === null ? '—' : formatMoney(line.baseTotals[priceTier])}</b></small>
+                    {line.isAreaMode && (line.custom || line.product?.customOptions?.allow_eyelets !== false) && <small>Ojales · {line.finishing.eyeletType === 'none' ? 'Sin ojales' : `${line.finishing.eyeletTotalCount} · ${line.finishing.eyeletType === 'small' ? 'pequeños' : 'grandes'}`} <b>{line.finishing.eyeletTotal > 0 ? `+${formatMoney(line.finishing.eyeletTotal)}` : formatMoney(0)}</b></small>}
+                    {line.product?.customOptions?.allow_design !== false && <small>Diseño · {line.finishing.designLabel} <b>{line.finishing.designTotal > 0 ? `+${formatMoney(line.finishing.designTotal)}` : 'Sin costo'}</b></small>}
+                    <small className="is-subtotal">Subtotal artículo <b>{line.totals[priceTier] === null ? '—' : formatMoney(line.totals[priceTier])}</b></small>
+                    {lineFinancials[index]?.discount > 0 && <small>Descuento asignado <b>−{formatMoney(lineFinancials[index].discount)}</b></small>}
+                    {applyIVA && lineFinancials[index]?.tax > 0 && <small>IVA asignado <b>+{formatMoney(lineFinancials[index].tax)}</b></small>}
+                    {line.totals[priceTier] !== null && <small className="is-total">Total artículo <b>{formatMoney(lineFinancials[index]?.total ?? line.totals[priceTier])}</b></small>}
+                  </div>
                 </div>
                 <strong>
                   {line.custom || line.product
-                    ? line.totals[priceTier] === null ? '—' : formatMoney(line.totals[priceTier])
+                    ? line.totals[priceTier] === null ? '—' : formatMoney(lineFinancials[index]?.total ?? line.totals[priceTier])
                     : '—'}
                 </strong>
               </li>
@@ -2058,12 +2137,24 @@ export function OperationsQuotePage() {
           <thead><tr><th>Descripción</th><th>Cantidad y medidas</th><th>Valor unitario</th><th>Importe</th></tr></thead>
           <tbody>{configuredLines.map((line, index) => {
             const lineTotal = line.totals[priceTier];
+            const lineFinancial = lineFinancials[index];
             const flatPrice = !line.custom && line.product?.priceBasis === 'total';
             return <tr key={line.id}>
-              <td><span className="quote-print-item-index">ARTÍCULO {String(index + 1).padStart(2, '0')}</span><b className="quote-print-item-name">{line.title || `Artículo ${index + 1}`}</b><span className="quote-print-item-meta">{line.custom ? 'Concepto personalizado' : line.product?.family || 'Producto pendiente'}{line.option ? ` · ${line.option}` : ''}</span>{line.additionalDescription && <p className="quote-print-item-description">{line.additionalDescription}</p>}</td>
+              <td><span className="quote-print-item-index">ARTÍCULO {String(index + 1).padStart(2, '0')}</span><b className="quote-print-item-name">{line.title || `Artículo ${index + 1}`}</b><span className="quote-print-item-meta">{line.custom ? 'Concepto personalizado' : line.product?.family || 'Producto pendiente'}{line.option ? ` · ${line.option}` : ''}</span>{line.additionalDescription && <p className="quote-print-item-description">{line.additionalDescription}</p>}
+                <div className="quote-print-item-breakdown">
+                  <span>Material impreso <b>{line.baseTotals[priceTier] === null ? 'Por confirmar' : formatMoney(line.baseTotals[priceTier])}</b></span>
+                  {line.isAreaMode && (line.custom || line.product?.customOptions?.allow_eyelets !== false) && <span>Ojales · {line.finishing.eyeletType === 'none' ? 'Sin ojales' : `${line.finishing.eyeletTotalCount} · ${line.finishing.eyeletType === 'small' ? 'pequeños' : 'grandes'}`} <b>{line.finishing.eyeletTotal > 0 ? `+${formatMoney(line.finishing.eyeletTotal)}` : formatMoney(0)}</b></span>}
+                  {line.product?.customOptions?.allow_design !== false && <span>Diseño · {line.finishing.designLabel} <b>{line.finishing.designTotal > 0 ? `+${formatMoney(line.finishing.designTotal)}` : 'Sin costo'}</b></span>}
+                  <span className="is-subtotal">Subtotal artículo <b>{lineTotal === null ? 'Por confirmar' : formatMoney(lineTotal)}</b></span>
+                  {lineFinancial?.discount > 0 && <span>Descuento asignado <b>−{formatMoney(lineFinancial.discount)}</b></span>}
+                  {applyIVA && lineFinancial?.tax > 0 && <span>IVA asignado <b>+{formatMoney(lineFinancial.tax)}</b></span>}
+                  {lineFinancial?.shipping > 0 && <span>Envío asignado <b>+{formatMoney(lineFinancial.shipping)}</b></span>}
+                  {lineFinancial && <span className="is-total">Total artículo <b>{formatMoney(lineFinancial.total)}</b></span>}
+                </div>
+              </td>
               <td><b>{line.isAreaMode ? `${line.pieceQuantity} ${line.pieceQuantity === 1 ? 'pieza' : 'piezas'}` : `${line.pieceQuantity} ${line.unit}`}</b>{line.isAreaMode && (line.hasValidSize && line.hasValidQuantity ? <span className="quote-print-cell-note">{line.width} × {line.height} cm por pieza<br/>{line.area.toLocaleString('es-EC', { maximumFractionDigits: 2 })} m² por pieza · {line.totalArea.toLocaleString('es-EC', { maximumFractionDigits: 2 })} m² en total</span> : <span className="quote-print-cell-note">Medidas pendientes de confirmar</span>)}</td>
-              <td>{lineTotal === null ? 'Por cotizar' : flatPrice ? <>Precio global<span className="quote-print-cell-note">por este conjunto</span></> : line.unitPrice === null ? 'Por cotizar' : <>{formatMoney(line.unitPrice)}<span className="quote-print-cell-note">por {line.isAreaMode ? 'm²' : line.unit}</span></>}</td>
-              <td className="quote-print-amount">{lineTotal === null ? 'Por cotizar' : formatMoney(lineTotal)}</td>
+              <td>{lineTotal === null ? 'Por cotizar' : flatPrice ? <>Precio global<span className="quote-print-cell-note">por este conjunto</span></> : line.baseUnitPrice === null ? 'Por cotizar' : <>{formatMoney(line.baseUnitPrice)}<span className="quote-print-cell-note">por {line.isAreaMode ? 'm²' : line.unit}</span></>}</td>
+              <td className="quote-print-amount">{lineFinancial ? formatMoney(lineFinancial.total) : lineTotal === null ? 'Por cotizar' : formatMoney(lineTotal)}</td>
             </tr>;
           })}</tbody>
         </table>
