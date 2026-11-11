@@ -1,5 +1,8 @@
 -- Reorganize the existing vinyl/lona materials into a roll collection and add
 -- rigid sheet master data without asserting any uncounted physical quantity.
+-- Keep the privileged write-guard bypass scoped to this migration transaction.
+select set_config('app.pos_rpc_bypass', 'true', true);
+
 do $$
 declare
   v_org uuid;
@@ -90,8 +93,7 @@ begin
   -- their identifiers for audit/history, but remove them from active inventory.
   update public.inventory_variants v
      set active=false,
-         attributes=coalesce(v.attributes,'{}'::jsonb)||jsonb_build_object('source_status','archived_legacy_cut_piece','archived_at',now()),
-         updated_at=now()
+         attributes=coalesce(v.attributes,'{}'::jsonb)||jsonb_build_object('source_status','archived_legacy_cut_piece','archived_at',now())
     from public.inventory_items i
    where i.id=v.item_id and i.organization_id=v.organization_id
      and i.organization_id=v_org
