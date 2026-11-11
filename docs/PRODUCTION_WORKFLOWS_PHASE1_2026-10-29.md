@@ -20,6 +20,15 @@ Los perfiles de Asesoras, Coordinador de Taller, Coordinador de Ventas, Diseñad
 12. Si cambia una especificación cuando la producción ya empezó, la ficha muestra a coordinación qué valores cambiaron desde la versión que estaba vigente antes de la revisión, junto con los motivos registrados. La decisión exige una nota y funciona aunque no haya una etapa pendiente bloqueada. Al aceptar se liberan únicamente las etapas retenidas por esa revisión; un bloqueo manual conserva su motivo. Asesoría aún puede corregir la ficha mientras la revisión está pendiente, y la comparación incorpora esas correcciones.
 13. Coordinación también puede pedir una corrección de la ficha con una instrucción escrita. La orden permanece detenida, el mensaje se muestra a Asesoría y queda en el historial. Al recibir una nueva versión, la comparación se actualiza; coordinación decide entonces si acepta y reanuda.
 
+## Mejoras de rutas por producto — 11 de noviembre de 2026
+
+- La pantalla `/operaciones/rutas-productos` muestra para cada plantilla sus etapas en orden, áreas, dependencias y datos requeridos. Los detalles usan los nombres activos de las áreas; los códigos quedan como respaldo si alguna ya no está disponible.
+- Se preparan sugerencias por familia solo cuando existen al menos 3 rutas explícitas y no manuales (`review`) en esa familia, y al menos el 80% coincide en la misma plantilla. La propuesta se calcula desde las rutas de producto existentes; no crea ni guarda reglas nuevas.
+- **Revisar sugerencia** limita la lista a productos de esa familia que aún no tienen ruta y prepara los cambios pendientes. La persona autorizada revisa y aplica el lote desde el panel de selección; los productos con ruta explícita quedan intactos.
+- POS y cotizador priorizan la ruta explícita del producto. Si no existe, aceptan la sugerencia familiar que cumple el mismo umbral y señalan ese origen; si no hay evidencia suficiente, se conserva la revisión de Asesoría. El POS permite cambiar la recomendación por artículo antes de confirmar.
+- Estas recomendaciones solo sirven para ventas o trabajos nuevos; no reescriben órdenes existentes. La implementación no requiere migración de base de datos.
+- Estado: cambios locales en `codex/product-routes-ux-20261111`, pendientes de publicar. Compilación Vite y TypeScript completadas; todavía falta revisión visual autenticada y prueba con permisos reales.
+
 ## Plantillas iniciales
 
 | Ruta | Etapas |

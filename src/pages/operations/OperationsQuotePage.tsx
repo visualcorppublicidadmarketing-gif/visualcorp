@@ -18,6 +18,7 @@ import { useAdvisorProductFavorites } from '../../hooks/useAdvisorProductFavorit
 import { buildOperationalQuoteWhatsAppMessage, copyTextToClipboard, normalizeWhatsAppNumber } from '../../lib/whatsapp';
 import { calculateQuotePrice, getQuoteBasis, quoteTiers } from '../../lib/quotePricing';
 import { supabase } from '../../lib/supabaseClient';
+import { buildProductWorkflowRecommendations } from '../../lib/productWorkflowRoutes';
 import { CommercialDocumentDetails } from '../../components/CommercialDocumentDetails';
 import { Sheet, useConfirm } from '../../components/ui/OperationalKit';
 import { CommercialAssetsEditor } from '../../components/commercial/CommercialAssetsEditor';
@@ -147,6 +148,8 @@ export function OperationsQuotePage() {
   const [materialRecipes, setMaterialRecipes] = useState<any[]>([]);
   const [productWorkflowRoutes, setProductWorkflowRoutes] = useState<Record<string, string>>({});
   const [workflowTemplates, setWorkflowTemplates] = useState<Array<{ code: string; name: string }>>([]);
+  const explicitWorkflowRouteRows = useMemo(() => Object.entries(productWorkflowRoutes).map(([catalog_product_id, workflow_code]) => ({ catalog_product_id, workflow_code, active: true })), [productWorkflowRoutes]);
+  const productWorkflowRecommendations = useMemo(() => buildProductWorkflowRecommendations(data.catalog || [], explicitWorkflowRouteRows, { activeWorkflowCodes: new Set(workflowTemplates.map((template) => template.code)) }), [data.catalog, explicitWorkflowRouteRows, workflowTemplates]);
   const [customerSummary, setCustomerSummary] = useState<any | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
   const [chatterTarget, setChatterTarget] = useState<{
@@ -302,9 +305,10 @@ export function OperationsQuotePage() {
 
   const getProductWorkflowLabel = (productId: string) => {
     if (!productId) return '';
-    const code = productWorkflowRoutes[productId];
-    if (!code) return '';
-    return workflowTemplates.find((tpl) => tpl.code === code)?.name || code;
+    const recommendation = productWorkflowRecommendations.get(productId);
+    if (!recommendation) return '';
+    const name = workflowTemplates.find((tpl) => tpl.code === recommendation.workflow_code)?.name || recommendation.workflow_code;
+    return recommendation.source === 'family' ? `${name} · sugerida por familia` : name;
   };
 
   const historyItems = useMemo(() => [
