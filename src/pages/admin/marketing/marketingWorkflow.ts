@@ -39,6 +39,8 @@ export type MarketingReview = {
 };
 export type WorkQueue =
   | "all"
+  | "open"
+  | "published"
   | "today"
   | "week"
   | "overdue"
@@ -141,7 +143,9 @@ export function matchesQueue(
   reviews: MarketingReview[] = [],
 ): boolean {
   if (queue === "all") return true;
+  if (queue === "published") return /publicad/i.test(post.status || "");
   const open = !isTerminalMarketingStatus(post.status);
+  if (queue === "open") return open;
   if (!open) return false;
   const deadline = post.due_date || post.scheduled_date;
   if (queue === "today")
