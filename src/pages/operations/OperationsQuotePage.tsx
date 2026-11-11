@@ -1783,10 +1783,10 @@ export function OperationsQuotePage() {
                 <dd>{selectedFinancials ? `−${formatMoney(selectedFinancials.discount)}` : '—'}</dd>
               </div>
             )}
-            <div>
+            {discountRate > 0 && <div>
               <dt>Base imponible</dt>
               <dd>{selectedFinancials ? formatMoney(selectedFinancials.taxable) : '—'}</dd>
-            </div>
+            </div>}
             <div className="is-tax">
               <dt>
                 <label className="oq-sidebar-iva-toggle">

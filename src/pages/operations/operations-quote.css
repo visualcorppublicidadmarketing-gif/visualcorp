@@ -428,3 +428,19 @@
   .operations-quote-print-button{display:none!important}
 }
 .oq-summary-finishing{display:block;color:var(--text-muted,#665a70);line-height:1.45;margin-top:3px}
+
+/* More readable live quote summary with concise product metadata */
+.operations-quote-summary-lines li{grid-template-columns:24px minmax(0,1fr) auto;gap:9px;padding:11px 0}
+.operations-quote-summary-lines li>div{gap:4px}
+.operations-quote-summary-lines li>div>b{display:-webkit-box;overflow:hidden;line-height:1.35;white-space:normal;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.operations-quote-summary-lines li .oq-summary-item-meta{color:#676171;font-size:9px;font-weight:650;line-height:1.4}
+.operations-quote-summary-lines li .oq-summary-item-description{display:-webkit-box;overflow:hidden;color:#898492;font-size:9px;line-height:1.4;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.oq-summary-cost-breakdown{gap:4px;margin-top:2px;padding:7px 8px;border:1px solid #eee9f2;background:#fbf9fc}
+.operations-quote-summary-lines li .oq-summary-cost-breakdown small{align-items:baseline;font-size:9px;line-height:1.35}
+.operations-quote-summary-lines li .oq-summary-cost-breakdown b{font-size:9px;font-variant-numeric:tabular-nums}
+.operations-quote-summary-lines li .oq-summary-cost-breakdown .is-subtotal{margin-top:2px;padding-top:5px;border-top:1px solid #e9e4ed}
+.operations-quote-summary-lines li>.oq-summary-line-total{display:grid;justify-items:end;gap:3px;align-self:start;padding:6px 8px;border:1px solid #e7d9ef;border-radius:9px;background:#faf5fc;color:#57346c;font-size:11px;font-variant-numeric:tabular-nums}
+.operations-quote-summary-lines li>.oq-summary-line-total::before{content:'TOTAL';color:#8b7598;font-size:7px;font-weight:800;letter-spacing:.08em}
+[data-theme='dark'] .oq-summary-cost-breakdown,.work-app.theme-dark .oq-summary-cost-breakdown{border-color:#383044;background:#211c29}
+[data-theme='dark'] .operations-quote-summary-lines li .oq-summary-item-meta,.work-app.theme-dark .operations-quote-summary-lines li .oq-summary-item-meta{color:#d0c7d9}
+[data-theme='dark'] .operations-quote-summary-lines li>.oq-summary-line-total,.work-app.theme-dark .operations-quote-summary-lines li>.oq-summary-line-total{border-color:#4e3c5d;background:#2a2032;color:#f0dffa}
