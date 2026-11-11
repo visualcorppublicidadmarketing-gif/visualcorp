@@ -168,6 +168,8 @@ export function WorkflowToolbar({
 }) {
   const entries: [WorkQueue, string][] = [
     ["all", "Todas"],
+    ["open", "Abiertas"],
+    ["published", "Publicadas"],
     ["today", "Hoy"],
     ["week", "Esta semana"],
     ["overdue", "Vencidas"],
