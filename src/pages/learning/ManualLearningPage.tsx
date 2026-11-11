@@ -128,6 +128,13 @@ function sectionSearchHaystack(section: LearningSection): string {
   return normalizeSearch(parts.join(' '));
 }
 
+function matchesSearchText(normalizedHaystack: string, normalizedQuery: string): boolean {
+  if (!normalizedQuery) return true;
+  if (normalizedHaystack.includes(normalizedQuery)) return true;
+  const compactQuery = normalizedQuery.replace(/\s+/g, '');
+  return compactQuery.length > 0 && normalizedHaystack.replace(/\s+/g, '').includes(compactQuery);
+}
+
 function Breadcrumb({ basePath, items }: { basePath: string; items: { label: string; to?: string }[] }) {
   return (
     <div className="learning-breadcrumb">
@@ -263,9 +270,9 @@ function Home({
     const results: { guide: LearningGuide; area?: LearningArea; section: LearningSection; idx: number }[] = [];
     for (const guide of library.guides) {
       const area = library.areas.find((a) => a.id === guide.areaId);
-      const guideHits = normalizeSearch(`${guide.title} ${guide.subtitle} ${guide.outcome}`).includes(normalizedQuery);
+      const guideHits = matchesSearchText(normalizeSearch(`${guide.title} ${guide.subtitle} ${guide.outcome}`), normalizedQuery);
       guide.sections.forEach((section, idx) => {
-        if (guideHits || sectionSearchHaystack(section).includes(normalizedQuery)) {
+        if (guideHits || matchesSearchText(sectionSearchHaystack(section), normalizedQuery)) {
           results.push({ guide, area, section, idx });
         }
       });
@@ -276,7 +283,7 @@ function Home({
   const matchingPractices = useMemo(() => {
     if (!normalizedQuery) return [];
     return library.practices.filter((practice) =>
-      normalizeSearch(`${practice.title} ${practice.description} ${practice.category}`).includes(normalizedQuery)
+      matchesSearchText(normalizeSearch(`${practice.title} ${practice.description} ${practice.category}`), normalizedQuery)
     );
   }, [library.practices, normalizedQuery]);
 
@@ -685,7 +692,7 @@ function GuideReader({
   const normalizedFilter = normalizeSearch(sectionQuery);
   const visibleSections = useMemo(() => {
     if (!normalizedFilter) return guide.sections;
-    return guide.sections.filter((sec) => sectionSearchHaystack(sec).includes(normalizedFilter));
+    return guide.sections.filter((sec) => matchesSearchText(sectionSearchHaystack(sec), normalizedFilter));
   }, [guide.sections, normalizedFilter]);
 
   const guideIndex = library.guides.findIndex((g) => g.id === guide.id);

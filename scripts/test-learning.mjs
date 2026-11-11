@@ -154,3 +154,30 @@ test('all 9 guides expose structured blocks and existing local workshop imagery'
     }
   }
 });
+
+test('all ASCII block icon identifiers in guides are mapped in LearningBlockRenderer', async () => {
+  const renderer = await readFile(new URL('../src/pages/learning/LearningBlockRenderer.tsx', import.meta.url), 'utf8');
+  const mapBlock = renderer.match(/const ICON_MAP[\s\S]*?\};/);
+  assert.ok(mapBlock, 'ICON_MAP should exist in LearningBlockRenderer.tsx');
+  const mappedKeys = new Set([...mapBlock[0].matchAll(/^\s*([a-z0-9]+):/gm)].map((m) => m[1].toLowerCase()));
+
+  for (const guide of learningGuides) {
+    for (const section of guide.sections) {
+      for (const block of section.blocks || []) {
+        const candidates = [];
+        if ('items' in block && Array.isArray(block.items)) {
+          for (const item of block.items) {
+            if (typeof item?.icon === 'string') candidates.push(item.icon);
+          }
+        }
+        if ('left' in block && block.left?.icon) candidates.push(block.left.icon);
+        if ('right' in block && block.right?.icon) candidates.push(block.right.icon);
+        for (const icon of candidates) {
+          if (/^[a-z0-9_-]+$/i.test(icon)) {
+            assert.equal(mappedKeys.has(icon.toLowerCase()), true, `Unmapped ASCII icon "${icon}" in guide ${guide.id}`);
+          }
+        }
+      }
+    }
+  }
+});
