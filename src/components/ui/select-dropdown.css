@@ -391,30 +391,68 @@
 }
 
 :root[data-theme='dark'] .vc-select-trigger:hover:not(:disabled),
-.work-app.theme-dark .vc-select-trigger:hover:not(:disabled) {
+.work-app[data-theme='dark'] .vc-select-trigger:hover:not(:disabled),
+.work-app.theme-dark .vc-select-trigger:hover:not(:disabled),
+[data-theme='dark'] .vc-select-trigger:hover:not(:disabled) {
   background: #1f2336;
   border-color: #583e78;
 }
 
+:root[data-theme='dark'] .vc-select-trigger[aria-expanded="true"],
+.work-app[data-theme='dark'] .vc-select-trigger[aria-expanded="true"],
+.work-app.theme-dark .vc-select-trigger[aria-expanded="true"],
+[data-theme='dark'] .vc-select-trigger[aria-expanded="true"] {
+  background: #231e33;
+  border-color: #8a4caf;
+  box-shadow: 0 0 0 3px rgba(154, 96, 198, 0.2);
+}
+
 :root[data-theme='dark'] .vc-select-trigger.is-active-filter,
-.work-app.theme-dark .vc-select-trigger.is-active-filter {
+.work-app[data-theme='dark'] .vc-select-trigger.is-active-filter,
+.work-app.theme-dark .vc-select-trigger.is-active-filter,
+[data-theme='dark'] .vc-select-trigger.is-active-filter {
   background: linear-gradient(180deg, #271f35 0%, #1e182b 100%);
   border-color: #8a4caf;
   color: #e9d5ff;
 }
 
 :root[data-theme='dark'] .vc-select-trigger-label,
-.work-app.theme-dark .vc-select-trigger-label {
+.work-app[data-theme='dark'] .vc-select-trigger-label,
+.work-app.theme-dark .vc-select-trigger-label,
+[data-theme='dark'] .vc-select-trigger-label {
   color: #9ba0b4;
 }
 
+:root[data-theme='dark'] .vc-select-trigger-value,
+.work-app[data-theme='dark'] .vc-select-trigger-value,
+.work-app.theme-dark .vc-select-trigger-value,
+[data-theme='dark'] .vc-select-trigger-value {
+  color: #f1f2f6;
+}
+
+:root[data-theme='dark'] .vc-select-trigger.is-active-filter .vc-select-trigger-label,
+.work-app.theme-dark .vc-select-trigger.is-active-filter .vc-select-trigger-label,
+[data-theme='dark'] .vc-select-trigger.is-active-filter .vc-select-trigger-label {
+  color: #c8aae5;
+}
+
+:root[data-theme='dark'] .vc-select-trigger.is-active-filter .vc-select-trigger-value,
+.work-app.theme-dark .vc-select-trigger.is-active-filter .vc-select-trigger-value,
+[data-theme='dark'] .vc-select-trigger.is-active-filter .vc-select-trigger-value {
+  color: #f3e8ff;
+}
+
 :root[data-theme='dark'] .vc-select-trigger-icon,
-.work-app.theme-dark .vc-select-trigger-icon {
+.work-app[data-theme='dark'] .vc-select-trigger-icon,
+.work-app.theme-dark .vc-select-trigger-icon,
+[data-theme='dark'] .vc-select-trigger-icon {
   color: #c084fc;
 }
 
 :root[data-theme='dark'] .vc-select-trigger-chevron,
-.work-app.theme-dark .vc-select-trigger-chevron {
+.work-app[data-theme='dark'] .vc-select-trigger-chevron,
+.work-app.theme-dark .vc-select-trigger-chevron,
+[data-theme='dark'] .vc-select-trigger-chevron {
   color: #9ba0b4;
 }
 
@@ -422,16 +460,50 @@
 [data-theme='dark'] .vc-select-popover {
   background: #161824;
   border-color: #2f344d;
+  color: #e2e4f0;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.65);
 }
 
-:root[data-theme='dark'] .vc-select-search,
-[data-theme='dark'] .vc-select-search {
+:root[data-theme='dark'] .vc-select-popover-header,
+[data-theme='dark'] .vc-select-popover-header {
   border-bottom-color: #272a3d;
 }
 
-:root[data-theme='dark'] .vc-select-search input,
-[data-theme='dark'] .vc-select-search input {
+:root[data-theme='dark'] .vc-select-popover-title,
+[data-theme='dark'] .vc-select-popover-title {
+  color: #c79af0;
+}
+
+:root[data-theme='dark'] .vc-select-popover-reset,
+[data-theme='dark'] .vc-select-popover-reset {
+  background: #282038;
+  color: #dfbfff;
+}
+
+:root[data-theme='dark'] .vc-select-popover-reset:hover,
+[data-theme='dark'] .vc-select-popover-reset:hover {
+  background: #36294e;
+}
+
+:root[data-theme='dark'] .vc-select-search-wrap,
+[data-theme='dark'] .vc-select-search-wrap {
+  border-color: #2e334a;
+  background: #121420;
+}
+
+:root[data-theme='dark'] .vc-select-search-wrap:focus-within,
+[data-theme='dark'] .vc-select-search-wrap:focus-within {
+  border-color: #8a4caf;
+  background: #181b2a;
+}
+
+:root[data-theme='dark'] .vc-select-search-icon,
+[data-theme='dark'] .vc-select-search-icon {
+  color: #9ba0b4;
+}
+
+:root[data-theme='dark'] .vc-select-search-input,
+[data-theme='dark'] .vc-select-search-input {
   color: #f1f2f6;
 }
 

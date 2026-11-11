@@ -334,3 +334,189 @@
 @media(prefers-reduced-motion:reduce){
   .vc-marketing-post-drag-handle{transition:none}
 }
+
+/* Elon Musk Way Refinements: Compact Executive Strip, Horizontal Alignment Fixes, Bulk Actions & Dark Side Panel */
+.vc-content-hero.is-compact {
+  min-height: auto;
+  padding: 13px 20px;
+  gap: 16px;
+  border-radius: 14px;
+}
+.vc-content-hero.is-compact:after,
+.vc-content-hero.is-compact .vc-content-sparkline {
+  display: none;
+}
+.vc-content-hero.is-compact h2 {
+  margin: 4px 0 2px;
+  font-size: 18px;
+  line-height: 1.2;
+}
+.vc-content-hero.is-compact .vc-content-hero-copy > p {
+  font-size: 11px;
+  line-height: 1.45;
+}
+.vc-content-hero.is-compact .vc-content-hero-stat {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-width: auto;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 12px;
+}
+.vc-content-hero.is-compact .vc-content-hero-stat strong {
+  font-size: 20px;
+}
+.vc-content-hero.is-compact .vc-content-hero-stat small {
+  font-size: 10px;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .vc-content-hero.is-compact {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.work-app .vc-content-toolbar {
+  flex-wrap: wrap;
+}
+.work-app .vc-content-toolbar .vc-content-search {
+  flex: 1 1 230px;
+  width: auto;
+  min-width: 190px;
+  max-width: 340px;
+}
+.work-app .vc-content-toolbar .vc-select-wrap {
+  flex: 0 0 auto;
+}
+.work-app .vc-content-search {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+}
+.work-app .vc-content-search svg {
+  flex: none;
+}
+.work-app .vc-marketing-bulk-bar label {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+  margin: 0;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+}
+.work-app .vc-marketing-bulk-bar label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  margin: 0;
+  padding: 0;
+}
+.vc-marketing-bulk-bar .mk-bulk-assignment,
+.vc-marketing-bulk-bar .mk-bulk-stage-change {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.vc-marketing-bulk-bar .mk-bulk-assignment button,
+.vc-marketing-bulk-bar .mk-bulk-stage-change button {
+  min-height: 34px;
+  padding: 5px 11px;
+  border: 1px solid #d5c7e2;
+  border-radius: 8px;
+  background: #fff;
+  color: #553569;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+.vc-marketing-bulk-bar .mk-bulk-assignment button:hover:not(:disabled),
+.vc-marketing-bulk-bar .mk-bulk-stage-change button:hover:not(:disabled) {
+  background: #f5eefb;
+  border-color: #8c55b0;
+}
+.vc-marketing-bulk-bar .mk-bulk-assignment button:disabled,
+.vc-marketing-bulk-bar .mk-bulk-stage-change button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-bulk-bar .mk-bulk-assignment button,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-bulk-bar .mk-bulk-stage-change button {
+  background: #1a1d2b;
+  border-color: #3a3f57;
+  color: #e4dbf0;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-bulk-bar .mk-bulk-assignment button:hover:not(:disabled),
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-bulk-bar .mk-bulk-stage-change button:hover:not(:disabled) {
+  background: #27223a;
+  border-color: #8a4caf;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-side-panel {
+  border-color: #2b2f42;
+  background: linear-gradient(160deg, #161822, #12141d);
+  color: var(--vc-ink, #f1f2f6);
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-side-heading .eyebrow {
+  color: #c79af0;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-side-heading h3 {
+  color: #f5f3fa;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-next-list button {
+  border-bottom-color: #26293a;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-next-list button:hover b {
+  color: #deb0f4;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-next-date {
+  color: #c491e4;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-next-list b {
+  color: #eceaf3;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-next-list small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-side-empty {
+  color: #9ea3b8;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-text-link {
+  color: #cf9df2;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-side-callout {
+  border-color: #362e49;
+  background: #1d192b;
+  color: #d8c2ee;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-side-callout p {
+  color: #b7bcd0;
+}
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-side-callout p b {
+  color: #f0ecf8;
+}
+
+.work-app .vc-marketing-post-context .vc-marketing-post-artwork.is-overview:not(.has-image) {
+  min-height: 124px;
+  aspect-ratio: auto;
+}
+.work-app .vc-marketing-post-context .vc-marketing-post-artwork.is-overview:not(.has-image) .vc-marketing-post-artwork-empty {
+  gap: 5px;
+  padding: 12px 14px 48px;
+}
+.work-app .vc-marketing-post-context .mk-work-actions {
+  margin-top: 8px;
+}
+.work-app .vc-marketing-post-context .mk-work-actions button {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 11px;
+}
