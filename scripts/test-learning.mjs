@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
-import { readdir, readFile } from 'node:fs/promises';
+import { access, readdir, readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { createLearningContentHandler } from '../server/learning/learning-content-handler.js';
+import { learningAreas, learningChecklists, learningGuides, learningPractices } from '../server/learning/learning-content.ts';
 import { calculateArea, estimateVisibility, nextRovingTabIndex, normalizeSearch, progressPercent, resolveLearningRoute } from '../src/pages/learning/learning-utils.js';
 
 const base = { supabaseUrl: 'https://example.supabase.co', publishableKey: 'publishable-key' };
@@ -120,4 +121,36 @@ test('does not place lesson, quiz or catalog entries in public Vite chunks after
   assert.doesNotMatch(bundle, /¿Qué describe mejor un archivo vectorial\?/);
   assert.doesNotMatch(bundle, /Pantone 100 C/);
   assert.doesNotMatch(bundle, /Confirmar objetivo, medidas y cantidad/);
+  assert.doesNotMatch(bundle, /Galaxy CO₂ 60W/);
+  assert.doesNotMatch(bundle, /7 mm exactos/);
+  assert.doesNotMatch(bundle, /vn foto recuerdo/);
+  assert.doesNotMatch(bundle, /FlexiPRINT → Hosonsoft/);
+});
+
+test('all 9 guides expose structured blocks and existing local workshop imagery', async () => {
+  assert.equal(learningGuides.length, 9);
+  assert.equal(learningAreas.length, 6);
+  assert.equal(learningPractices.length, 6);
+  assert.equal(learningChecklists.length, 4);
+
+  const guideIds = new Set(learningGuides.map((g) => g.id));
+  const areaIds = new Set(learningAreas.map((a) => a.id));
+  for (const area of learningAreas) {
+    if (area.coverImage) await access(new URL(`../public${area.coverImage}`, import.meta.url));
+    for (const id of area.guideIds) assert.equal(guideIds.has(id), true, `Missing guide ${id}`);
+  }
+
+  for (const guide of learningGuides) {
+    assert.equal(areaIds.has(guide.areaId), true, `Unknown area ${guide.areaId}`);
+    if (guide.coverImage) await access(new URL(`../public${guide.coverImage}`, import.meta.url));
+    const totalBlocks = guide.sections.reduce((sum, s) => sum + (s.blocks?.length || 0), 0);
+    assert.ok(totalBlocks >= 3, `Guide ${guide.id} should include structured visual blocks`);
+    for (const section of guide.sections) {
+      for (const block of section.blocks || []) {
+        if (block.type === 'media') {
+          await access(new URL(`../public${block.src}`, import.meta.url));
+        }
+      }
+    }
+  }
 });

@@ -184,7 +184,10 @@ function getPOSCartLinePresentation(line: any) {
   const description = String(line.description || '').trim();
   const generatedSuffix = ` · ${unit} ${Number(line.unitPrice || 0).toFixed(4)}`;
   const isGeneratedDescription = description.startsWith(`${String(line.name || '').trim()} ·`)
-    && (description.endsWith(generatedSuffix) || description.includes(' c/u'));
+    && (description.endsWith(generatedSuffix)
+      || description.includes(' c/u')
+      || description.includes(` · ${quantityLabel} ·`)
+      || (line.mode === 'area' && description.includes(` · ${quantity.toLocaleString('es-EC')} piezas ·`) && description.includes('m² · $')));
   return { metadata, description: isGeneratedDescription ? '' : description };
 }
 const pendingSaleSignature = (snapshot: any) => JSON.stringify({
