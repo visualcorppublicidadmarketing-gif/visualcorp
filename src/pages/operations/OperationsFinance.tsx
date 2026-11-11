@@ -11,7 +11,10 @@ import {
   Clock3,
   Coins,
   Download,
+  Edit3,
+  Eye,
   Filter,
+  FlaskConical,
   Layers,
   LayoutDashboard,
   LoaderCircle,
@@ -21,6 +24,7 @@ import {
   RefreshCw,
   RotateCcw,
   ShieldAlert,
+  Trash2,
   TrendingUp,
   Users,
   Wallet,
@@ -42,6 +46,12 @@ import { FinanceCashRegisters } from './FinanceCashRegisters';
 import { AdvisorFinance } from './AdvisorFinance';
 import { netSaleAmount } from './financeSales';
 import { normalizePersonName } from '../../lib/personName';
+import { canAdminDeleteCash, canAdminDeleteSales, canManageCashControl } from '../../lib/adminCashSalesControl';
+import { AdminDeleteRecordModal, type AdminDeleteTarget } from '../../components/AdminDeleteRecordModal';
+import { CommercialDocumentDetails } from '../../components/CommercialDocumentDetails';
+import { POSSaleEditorModal } from '../pos/components/POSSaleEditorModal';
+import { CashSessionInspectorModal } from './cash-monitor/CashSessionInspectorModal';
+import { Sheet } from '../../components/ui/OperationalKit';
 import './operations-lifecycle.css';
 import './operations-finance-enhanced.css';
 
@@ -143,7 +153,7 @@ function FamilyIcon({ familyKey, size = 16 }: { familyKey: ProductFamilyKey; siz
 export function OperationsFinance() {
   const { organizationId, hasPermission, user, roles } = useAuth();
   const canManageFinance = hasPermission('finance', 'manage_finance');
-  const canManageCashRegisters = canManageFinance && roles.some((role) => ['owner', 'admin', 'manager'].includes(role));
+  const canManageCashRegisters = canManageCashControl(roles, hasPermission);
   const canManageTeam = hasPermission('team', 'manage_members');
   const canSeePayrollDeductions = hasPermission('personnel', 'view_compensation');
   const canSeeInventoryCosts = hasPermission('inventory_costs', 'view') && hasPermission('inventory_costs', 'view_costs');
@@ -151,6 +161,9 @@ export function OperationsFinance() {
   const canSeeCrm = hasPermission('crm', 'view');
   const canSeeQuotes = hasPermission('quotes', 'view');
   const canSeeCashReconciliation = hasPermission('cash', 'view');
+  const canEditSales = hasPermission('sales', 'edit');
+  const canDeleteSales = canAdminDeleteSales(roles, hasPermission);
+  const canDeleteCash = canAdminDeleteCash(roles, hasPermission);
   const [realtimeStatus, setRealtimeStatus] = useState('connecting');
   const [realtimeRevision, setRealtimeRevision] = useState({ sales: 0, cash: 0, expenses: 0, expensePayments: 0, inventoryCosts: 0, materialCosts: 0, catalogCosts: 0 });
   const realtimePending = useRef(new Set<string>());
@@ -219,6 +232,19 @@ export function OperationsFinance() {
   const [materialCostSummary, setMaterialCostSummary] = useState<MaterialCostSummary | null>(null);
   const [materialCostLoading, setMaterialCostLoading] = useState(false);
   const [materialCostError, setMaterialCostError] = useState('');
+  const [inspectorSessionId, setInspectorSessionId] = useState<string | null>(null);
+  const [docSaleTarget, setDocSaleTarget] = useState<{ id: string; code: string } | null>(null);
+  const [editingSaleTarget, setEditingSaleTarget] = useState<{ id: string; branchName: string } | null>(null);
+  const [adminDeleteTarget, setAdminDeleteTarget] = useState<AdminDeleteTarget | null>(null);
+  const [selectedTestSaleIds, setSelectedTestSaleIds] = useState<string[]>([]);
+  const [salesSearch, setSalesSearch] = useState('');
+  const [actionNotice, setActionNotice] = useState('');
+
+  const triggerFinanceRefresh = (message?: string) => {
+    if (message) setActionNotice(message);
+    setLoadAttempt((current) => current + 1);
+    setCashRefreshKey((current) => current + 1);
+  };
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -325,7 +351,7 @@ export function OperationsFinance() {
         const [salesRows, paymentRows, teamResult, branchResult, customersResult] = await Promise.all([
           readAllRows(() => supabase
             .from('sales')
-            .select(`id,sale_code,status,subtotal,discount_total,total,created_at,branch_id,advisor_id,created_by,customer_id${canSeeQuotes ? ',central_quote_id' : ''},customers(${canSeeCrm ? 'full_name,preferences' : 'full_name'})`)
+            .select(`id,sale_code,status,subtotal,discount_total,total,note,created_at,branch_id,advisor_id,created_by,customer_id${canSeeQuotes ? ',central_quote_id' : ''},customers(${canSeeCrm ? 'full_name,preferences' : 'full_name'})`)
             .eq('organization_id', organizationId)
             .order('created_at', { ascending: false })),
           readAllRows(() => supabase
@@ -562,6 +588,7 @@ export function OperationsFinance() {
             .from('cash_session_movements')
             .select('id,session_id,direction,amount,created_at')
             .eq('organization_id', organizationId)
+            .eq('voided', false)
             .in('session_id', openSessionIds)
             .order('created_at', { ascending: false })
             .order('id'));
@@ -823,6 +850,32 @@ export function OperationsFinance() {
     && (familyFilter === 'all' || saleMatchesFamily(sale, familyFilter))
   )), [sales, month, advisor, branch, familyFilter]);
   const selectedIds = useMemo(() => new Set(salesInPeriod.map((sale) => sale.id)), [salesInPeriod]);
+  const isProbableTestSaleRecord = (sale: any) => {
+    const lineText = (sale?.sale_lines || []).map((l: any) => l?.description_snapshot || '').join(' ');
+    const haystack = `${sale?.sale_code || ''} ${sale?.customers?.full_name || ''} ${sale?.note || ''} ${lineText}`.toLowerCase();
+    return (
+      haystack.includes('prueba')
+      || haystack.includes('test')
+      || haystack.includes('ejemplo')
+      || haystack.includes('demo')
+      || Number(sale?.total || 0) <= 1
+    );
+  };
+  const sortedPeriodSales = useMemo(() => {
+    const query = salesSearch.trim().toLowerCase();
+    return [...salesInPeriod]
+      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+      .filter((sale) => {
+        if (!query) return true;
+        const lineText = (sale.sale_lines || []).map((l: any) => l?.description_snapshot || '').join(' ');
+        const haystack = `${sale.sale_code || ''} ${sale.customers?.full_name || ''} ${sale.note || ''} ${lineText}`.toLowerCase();
+        return haystack.includes(query);
+      });
+  }, [salesInPeriod, salesSearch]);
+  const selectedBulkSales = useMemo(
+    () => salesInPeriod.filter((sale) => selectedTestSaleIds.includes(sale.id)),
+    [salesInPeriod, selectedTestSaleIds],
+  );
   const salesMatchingTeamAndBranch = useMemo(() => sales.filter((sale) => (
     sale.status === 'confirmed'
     && (advisor === 'all' || sale.advisor_id === advisor)
@@ -1318,6 +1371,88 @@ export function OperationsFinance() {
     </section>
 
     {error && <div className="op-flow-alert error" role="alert"><ShieldAlert size={16} />{error}</div>}
+    {actionNotice && <div className="op-flow-alert success" role="status"><CheckCircle2 size={16} /><span>{actionNotice}</span><button type="button" className="op-finance-notice-dismiss" aria-label="Cerrar aviso" onClick={() => setActionNotice('')}><X size={14} /></button></div>}
+
+    <CashSessionInspectorModal
+      open={Boolean(inspectorSessionId)}
+      sessionId={inspectorSessionId}
+      organizationId={organizationId || ''}
+      canManageCash={canManageCashRegisters}
+      canEditSales={canEditSales}
+      canDeleteSales={canDeleteSales}
+      canDeleteCash={canDeleteCash}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) setInspectorSessionId(null);
+      }}
+      onEditSession={() => {
+        window.location.href = '/operaciones/cajas-abiertas';
+      }}
+      onCloseOrReopenSession={() => {
+        window.location.href = '/operaciones/cajas-abiertas';
+      }}
+      onDeleteSession={(detail) => {
+        setInspectorSessionId(null);
+        setAdminDeleteTarget({
+          kind: 'session',
+          sessionId: detail.session.id,
+          registerName: detail.session.register_name || 'Caja sin asignar',
+          branchName: detail.session.branch_name || branchName(detail.session.branch_id),
+          advisorName: personName(detail.session.opened_by),
+          openingCash: detail.session.opening_cash,
+          status: detail.session.status,
+          salesCount: detail.live_totals.sales_count,
+          movementsCount: detail.movements.length,
+          openedAt: detail.session.opened_at,
+        });
+      }}
+      onDataChanged={(msg) => triggerFinanceRefresh(msg)}
+    />
+
+    <POSSaleEditorModal
+      open={Boolean(editingSaleTarget)}
+      saleId={editingSaleTarget?.id || null}
+      organizationId={organizationId || ''}
+      branchName={editingSaleTarget?.branchName || 'Sucursal'}
+      onSaved={() => triggerFinanceRefresh('Venta modificada y cuadre recalculado.')}
+      onDeleted={(msg) => {
+        setEditingSaleTarget(null);
+        triggerFinanceRefresh(msg);
+      }}
+      onClose={() => setEditingSaleTarget(null)}
+    />
+
+    <Sheet
+      open={Boolean(docSaleTarget)}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) setDocSaleTarget(null);
+      }}
+      title={docSaleTarget ? `Ficha completa · ${docSaleTarget.code}` : 'Ficha completa'}
+      description="Productos, cobros, documentos y acciones administrativas de esta venta."
+    >
+      {docSaleTarget && (
+        <CommercialDocumentDetails
+          kind="sale"
+          documentId={docSaleTarget.id}
+          onAmended={() => triggerFinanceRefresh('Venta actualizada.')}
+          onDeleted={(msg) => {
+            setDocSaleTarget(null);
+            triggerFinanceRefresh(msg);
+          }}
+        />
+      )}
+    </Sheet>
+
+    <AdminDeleteRecordModal
+      open={Boolean(adminDeleteTarget)}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) setAdminDeleteTarget(null);
+      }}
+      target={adminDeleteTarget}
+      onDeleted={(msg) => {
+        setSelectedTestSaleIds([]);
+        triggerFinanceRefresh(msg);
+      }}
+    />
 
     {/* Sub-Navigation Tab Bar */}
     <div className="op-finance-nav-wrap">
@@ -1731,11 +1866,11 @@ export function OperationsFinance() {
     {/* TAB: CAJAS OR TODO */}
     {(activeTab === 'cajas' || activeTab === 'todo') && (
       <>
-        <FinanceCashRegisters today={businessToday} organizationId={organizationId || ''} branches={branches} advisors={advisors} sales={sales} returnsBySale={returnsBySale} saleReturnsError={saleReturnsError} canManage={canManageCashRegisters} canManageTeam={canManageTeam} refreshKey={realtimeRevision.cash} onChanged={() => setRealtimeRevision((current) => ({ ...current, cash: current.cash + 1 }))} />
+        <FinanceCashRegisters today={businessToday} organizationId={organizationId || ''} branches={branches} advisors={advisors} sales={sales} returnsBySale={returnsBySale} saleReturnsError={saleReturnsError} canManage={canManageCashRegisters} canDeleteCash={canDeleteCash} canManageTeam={canManageTeam} refreshKey={realtimeRevision.cash} onChanged={() => triggerFinanceRefresh()} />
         {canSeeCashReconciliation && <section className="panel op-finance-cash-panel" aria-labelledby="op-finance-cash-title">
           <div className="panel-heading">
             <div><span className="eyebrow">CAJA → FINANZAS</span><h2 id="op-finance-cash-title">Conciliación de cierres de caja</h2><p className="op-finance-cost-note">Los cierres usan esperado y contado de Caja; las sesiones abiertas muestran el efectivo esperado al momento. Aplica mes de cierre y sucursal, no filtros de asesora o medio de pago.</p></div>
-            <div className="op-finance-cash-actions"><button className="button button-outline" onClick={() => setCashRefreshKey((value) => value + 1)} disabled={cashSessionLoading}><RefreshCw size={15}/> Actualizar</button><button className="button button-outline" onClick={downloadCashReconciliationCsv} disabled={cashSessionLoading || !cashReconciliationRows.length}><Download size={15}/> Exportar CSV</button><a className="button button-outline" href="/operaciones/flujos"><Banknote size={15}/> Abrir Caja <ArrowUpRight size={14}/></a></div>
+            <div className="op-finance-cash-actions"><button className="button button-outline" onClick={() => setCashRefreshKey((value) => value + 1)} disabled={cashSessionLoading}><RefreshCw size={15}/> Actualizar</button><button className="button button-outline" onClick={downloadCashReconciliationCsv} disabled={cashSessionLoading || !cashReconciliationRows.length}><Download size={15}/> Exportar CSV</button><a className="button button-outline" href="/operaciones/cajas-abiertas"><Coins size={15}/> Control cajas abiertas <ArrowUpRight size={14}/></a><a className="button button-outline" href="/operaciones/flujos"><Banknote size={15}/> Abrir Caja <ArrowUpRight size={14}/></a></div>
           </div>
           <div className="op-finance-cash-metrics">
             <article><span>Efectivo esperado en cajas abiertas</span><b>{cashSessionError || cashExpectedInOpenSessions === null ? '—' : money(cashExpectedInOpenSessions)}</b><small>{cashSessionError ? 'No disponible por error de carga' : `${openCashRows.length} sesiones abiertas · fuera del efectivo ya cerrado`}</small></article>
@@ -1743,7 +1878,7 @@ export function OperationsFinance() {
             <article className="is-shortfall"><span>Faltante registrado</span><b>{cashSessionError ? '—' : money(cashShortfall)}</b><small>{cashSessionError ? 'No disponible por error de carga' : 'Suma de diferencias negativas, sin compensarlas con sobrantes'}</small></article>
             <article className="is-surplus"><span>Sobrante registrado</span><b>{cashSessionError ? '—' : money(cashSurplus)}</b><small>{cashSessionError ? 'No disponible por error de carga' : 'Suma de diferencias positivas del periodo'}</small></article>
           </div>
-          {cashSessionError ? <p className="op-finance-cost-error" role="alert">{cashSessionError}</p> : cashSessionLoading ? <p className="muted">Cargando cierres y turnos abiertos…</p> : !cashReconciliationRows.length ? <div className="op-finance-cash-empty"><Banknote size={22}/><b>Sin cierres ni cajas abiertas para este filtro</b><span>Prueba otro mes o sucursal, o revisa los turnos en Caja.</span></div> : <div className="op-finance-table-wrap"><table className="op-finance-table op-finance-cash-table"><thead><tr><th>Estado</th><th>Apertura / cierre</th><th>Sucursal</th><th>Responsable</th><th>Esperado</th><th>Contado</th><th>Diferencia</th></tr></thead><tbody>{cashReconciliationRows.map((session) => <tr key={session.id}><td><span className={`op-finance-cash-status ${session.status === 'open' ? 'is-open' : 'is-closed'}`}>{session.status === 'open' ? 'Abierta' : 'Cerrada'}</span></td><td>{session.status === 'open' ? `Abierta ${timestamp(session.opened_at)}` : `Cerrada ${timestamp(session.closed_at)}`}</td><td>{branchName(session.branch_id)}</td><td>{personName(session.opened_by)}</td><td>{session.expected === null ? 'No disponible' : money(session.expected)}</td><td>{session.counted === null ? 'Pendiente' : money(session.counted)}</td><td className={session.difference < 0 ? 'is-negative' : session.difference > 0 ? 'is-positive' : ''}>{session.difference === null ? 'Pendiente' : money(session.difference)}</td></tr>)}</tbody></table></div>}
+          {cashSessionError ? <p className="op-finance-cost-error" role="alert">{cashSessionError}</p> : cashSessionLoading ? <p className="muted">Cargando cierres y turnos abiertos…</p> : !cashReconciliationRows.length ? <div className="op-finance-cash-empty"><Banknote size={22}/><b>Sin cierres ni cajas abiertas para este filtro</b><span>Prueba otro mes o sucursal, o revisa los turnos en Caja.</span></div> : <div className="op-finance-table-wrap"><table className="op-finance-table op-finance-cash-table"><thead><tr><th>Estado</th><th>Apertura / cierre</th><th>Sucursal</th><th>Responsable</th><th>Esperado</th><th>Contado</th><th>Diferencia</th><th>Acciones</th></tr></thead><tbody>{cashReconciliationRows.map((session) => <tr key={session.id}><td><span className={`op-finance-cash-status ${session.status === 'open' ? 'is-open' : 'is-closed'}`}>{session.status === 'open' ? 'Abierta' : 'Cerrada'}</span></td><td>{session.status === 'open' ? `Abierta ${timestamp(session.opened_at)}` : `Cerrada ${timestamp(session.closed_at)}`}</td><td>{branchName(session.branch_id)}</td><td>{personName(session.opened_by)}</td><td>{session.expected === null ? 'No disponible' : money(session.expected)}</td><td>{session.counted === null ? 'Pendiente' : money(session.counted)}</td><td className={session.difference < 0 ? 'is-negative' : session.difference > 0 ? 'is-positive' : ''}>{session.difference === null ? 'Pendiente' : money(session.difference)}</td><td><div className="op-finance-row-actions"><button type="button" className="op-finance-mini-btn" onClick={() => setInspectorSessionId(session.id)} title="Inspeccionar movimientos y ventas del turno"><Eye size={13}/> Inspeccionar</button>{canDeleteCash && <button type="button" className="op-finance-mini-btn is-danger" onClick={() => setAdminDeleteTarget({ kind: 'session', sessionId: session.id, branchName: branchName(session.branch_id), advisorName: personName(session.opened_by), openingCash: Number(session.opening_cash || 0), status: session.status, openedAt: session.opened_at })} title="Eliminar turno de caja permanentemente"><Trash2 size={13}/> Eliminar</button>}</div></td></tr>)}</tbody></table></div>}
           {cashMovementError && <p className="op-finance-cost-error" role="alert">No se pudieron cargar todos los movimientos de las cajas abiertas; se oculta su esperado para evitar mostrar un importe incompleto. {cashMovementError}</p>}
           <p className="op-finance-cost-note">El esperado en una caja abierta se calcula con efectivo inicial + pagos POS en efectivo + entradas y salidas manuales registradas. La diferencia es contado menos esperado. Este informe no vuelve a sumar los cobros ni los reembolsos en los KPIs de ingresos.</p>
         </section>}
@@ -1925,6 +2060,177 @@ export function OperationsFinance() {
           {!quoteSalesAnalysis.sales && <div className="op-finance-ledger-empty"><ChartNoAxesCombined size={22}/><b>Sin ventas vinculadas a cotizaciones en este alcance</b><span>Al confirmar en POS una venta que parte de una cotización, Finanzas podrá medir su valor en este periodo.</span></div>}
           <p className="op-finance-cost-note">La proporción mide ventas con un vínculo guardado en POS; no es una tasa de conversión del Cotizador porque no compara la cohorte completa de cotizaciones emitidas. El valor no es recaudo ni utilidad.</p>
         </section>}
+
+        <section className="panel op-finance-sales-control-panel" aria-labelledby="op-finance-sales-control-title">
+          <div className="panel-heading op-finance-sales-control-head">
+            <div>
+              <span className="eyebrow">CONTROL ADMINISTRATIVO · POS</span>
+              <h2 id="op-finance-sales-control-title">Ventas confirmadas del periodo ({sortedPeriodSales.length})</h2>
+              <p className="op-finance-cost-note">Revisa la ficha completa, corrige precios o pagos y elimina ventas duplicadas o de ejemplo con restitución atómica de inventario.</p>
+            </div>
+            <div className="op-finance-sales-toolbar">
+              <input
+                type="search"
+                className="op-finance-search-input"
+                value={salesSearch}
+                onChange={(event) => setSalesSearch(event.target.value)}
+                placeholder="Buscar código, cliente, producto o nota…"
+                aria-label="Buscar ventas confirmadas"
+              />
+              {canDeleteSales && (
+                <>
+                  <button
+                    type="button"
+                    className="button button-outline"
+                    onClick={() => {
+                      const detected = sortedPeriodSales.filter(isProbableTestSaleRecord).map((sale) => sale.id);
+                      if (!detected.length) {
+                        setActionNotice('No se detectaron ventas con palabras de prueba/ejemplo ni montos <= $1 en este periodo.');
+                        return;
+                      }
+                      setSelectedTestSaleIds(detected);
+                      setActionNotice(`${detected.length} ventas marcadas como candidatas de prueba o ejemplo para revisión.`);
+                    }}
+                  >
+                    <FlaskConical size={15} /> Detectar pruebas
+                  </button>
+                  {selectedBulkSales.length > 0 && (
+                    <>
+                      <button
+                        type="button"
+                        className="button button-outline op-finance-danger-btn"
+                        onClick={() => setAdminDeleteTarget({
+                          kind: 'bulk_test',
+                          saleIds: selectedBulkSales.map((sale) => sale.id),
+                          sessionIds: [],
+                          saleCodes: selectedBulkSales.map((sale) => sale.sale_code || sale.id.slice(0, 8)),
+                          totalAmount: selectedBulkSales.reduce((sum, sale) => sum + Number(sale.total || 0), 0),
+                        })}
+                      >
+                        <Trash2 size={15} /> Limpiar {selectedBulkSales.length}
+                      </button>
+                      <button
+                        type="button"
+                        className="button button-outline"
+                        onClick={() => setSelectedTestSaleIds([])}
+                      >
+                        Quitar selección
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="op-finance-table-wrap">
+            <table className="op-finance-table">
+              <thead>
+                <tr>
+                  {canDeleteSales && <th className="op-finance-col-check">Sel.</th>}
+                  <th>Fecha</th>
+                  <th>Venta</th>
+                  <th>Cliente</th>
+                  <th>Asesora / Sucursal</th>
+                  <th>Neto</th>
+                  <th>Cobrado</th>
+                  <th>Saldo</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedPeriodSales.slice(0, 80).map((sale) => {
+                  const netTotal = netSaleAmount(sale, returnsBySale);
+                  const collected = Number(paymentsBySale.get(sale.id) || 0) - Number(returnsBySale.get(sale.id)?.settledRefund || 0);
+                  const balance = Math.max(0, netTotal - collected);
+                  const probableTest = isProbableTestSaleRecord(sale);
+                  const checked = selectedTestSaleIds.includes(sale.id);
+                  return (
+                    <tr key={sale.id} className={probableTest ? 'is-probable-test' : ''}>
+                      {canDeleteSales && (
+                        <td className="op-finance-col-check">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            aria-label={`Seleccionar venta ${sale.sale_code || sale.id.slice(0, 8)}`}
+                            onChange={(event) => {
+                              setSelectedTestSaleIds((prev) => (
+                                event.target.checked
+                                  ? [...new Set([...prev, sale.id])]
+                                  : prev.filter((id) => id !== sale.id)
+                              ));
+                            }}
+                          />
+                        </td>
+                      )}
+                      <td>{timestamp(sale.created_at)}</td>
+                      <td>
+                        <div className="op-finance-sale-code-cell">
+                          <b>{sale.sale_code || sale.id.slice(0, 8)}</b>
+                          {probableTest && <span className="op-finance-test-pill"><FlaskConical size={11} /> Ejemplo/Test</span>}
+                        </div>
+                      </td>
+                      <td>{sale.customers?.full_name || 'Mostrador / Sin ficha'}</td>
+                      <td>{personName(sale.advisor_id)} · {branchName(sale.branch_id)}</td>
+                      <td>{money(netTotal)}</td>
+                      <td>{money(collected)}</td>
+                      <td>{money(balance)}</td>
+                      <td>
+                        <div className="op-finance-row-actions">
+                          <button
+                            type="button"
+                            className="op-finance-mini-btn"
+                            onClick={() => setDocSaleTarget({ id: sale.id, code: sale.sale_code || sale.id.slice(0, 8) })}
+                            title="Ver ficha completa de la venta"
+                          >
+                            <Eye size={13} /> Ficha
+                          </button>
+                          {canEditSales && (
+                            <button
+                              type="button"
+                              className="op-finance-mini-btn"
+                              onClick={() => setEditingSaleTarget({ id: sale.id, branchName: branchName(sale.branch_id) })}
+                              title="Editar venta confirmada"
+                            >
+                              <Edit3 size={13} /> Editar
+                            </button>
+                          )}
+                          {canDeleteSales && (
+                            <button
+                              type="button"
+                              className="op-finance-mini-btn is-danger"
+                              onClick={() => setAdminDeleteTarget({
+                                kind: 'sale',
+                                saleId: sale.id,
+                                saleCode: sale.sale_code || sale.id.slice(0, 8),
+                                customerName: sale.customers?.full_name || 'Mostrador',
+                                total: Number(sale.total || 0),
+                                status: sale.status,
+                                createdAt: sale.created_at,
+                                isLikelyTest: probableTest,
+                              })}
+                              title="Eliminar venta permanentemente y restituir stock"
+                            >
+                              <Trash2 size={13} /> Eliminar
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!sortedPeriodSales.length && (
+                  <tr>
+                    <td colSpan={canDeleteSales ? 9 : 8}>No hay ventas confirmadas que coincidan con estos filtros.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {sortedPeriodSales.length > 80 && (
+            <p className="op-finance-cost-note">Mostrando las 80 ventas confirmadas más recientes de {sortedPeriodSales.length} en este filtro.</p>
+          )}
+        </section>
 
         <section className="panel">
           <div className="panel-heading"><div><span className="eyebrow">MOVIMIENTOS REGISTRADOS</span><h2>Abonos recibidos</h2></div><button className="button button-outline" onClick={downloadCsv} disabled={!paymentsInPeriod.length}><Download size={15} /> Exportar CSV</button></div>

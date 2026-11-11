@@ -26,6 +26,11 @@
 .finance-cash-register-create h3 { margin: 4px 0 0; font-size: .98rem; }
 .finance-cash-register-create .finance-cash-register-form { margin-top: 2px; }
 .finance-cash-register-create > button, .finance-cash-register-card button { justify-self: start; }
+.finance-cash-register-head-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.finance-cash-register-card-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.finance-cash-register-delete-btn { color: #b42318 !important; border-color: rgba(180, 35, 24, 0.35) !important; }
+.finance-cash-register-delete-btn:hover { background: rgba(180, 35, 24, 0.08) !important; }
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .finance-cash-register-delete-btn { color: #fca5a5 !important; border-color: rgba(248, 113, 113, 0.35) !important; }
 .finance-cash-register-empty { display: grid; gap: 5px; padding: 14px; border-radius: 10px; background: color-mix(in srgb, var(--line) 32%, var(--paper)); font-size: .84rem; line-height: 1.45; }
 .finance-cash-register-empty > span { color: var(--muted); }
 .finance-cash-register-empty > .button { justify-self: start; margin-top: 5px; }

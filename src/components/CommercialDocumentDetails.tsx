@@ -26,6 +26,8 @@ import { CommercialAssetsGallery } from './commercial/CommercialAssetsGallery';
 import { GoogleMapsPreview } from './commercial/GoogleMapsPreview';
 import { RichTextContent } from './commercial/RichTextContent';
 import { snapshotCommercialFinishing } from '../lib/commercialFinishing';
+import { canAdminDeleteSales } from '../lib/adminCashSalesControl';
+import { AdminDeleteRecordModal } from './AdminDeleteRecordModal';
 
 export type CommercialDocumentKind = 'quote' | 'sale';
 
@@ -35,6 +37,7 @@ type Props = {
   initialDocument?: Record<string, any> | null;
   compact?: boolean;
   onAmended?: () => void;
+  onDeleted?: (message: string) => void;
 };
 
 const numberOrNull = (value: unknown): number | null => {
@@ -125,8 +128,8 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
   </div>;
 }
 
-export function CommercialDocumentDetails({ kind, documentId, initialDocument, compact = false, onAmended }: Props) {
-  const { organizationId, hasPermission } = useAuth();
+export function CommercialDocumentDetails({ kind, documentId, initialDocument, compact = false, onAmended, onDeleted }: Props) {
+  const { organizationId, roles, hasPermission } = useAuth();
   const { data } = useWorkspace();
   const [document, setDocument] = useState<Record<string, any> | null>(initialDocument || null);
   const [loading, setLoading] = useState(!initialDocument);
@@ -135,6 +138,8 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
 
   const isQuote = kind === 'quote';
   const canEdit = hasPermission(isQuote ? 'quotes' : 'sales', 'edit');
+  const canDeleteSale = !isQuote && canAdminDeleteSales(roles, hasPermission);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
@@ -326,7 +331,9 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
         const price = Number(l.unit_price) || 0;
         return {
           id: l.id,
+          sku: l.sku_snapshot || `ART-${index + 1}`,
           sku_snapshot: l.sku_snapshot || `ART-${index + 1}`,
+          description: l.description_snapshot.trim() || `Artículo ${index + 1}`,
           description_snapshot: l.description_snapshot.trim() || `Artículo ${index + 1}`,
           quantity: qty,
           unit_price: price,
@@ -617,6 +624,19 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
               >
                 {isEditing ? <X size={13} /> : <Edit3 size={13} />}
                 <span>{isEditing ? 'Cancelar edición' : 'Editar todo'}</span>
+              </button>
+            )}
+
+            {canDeleteSale && !isEditing && (
+              <button
+                type="button"
+                className="commercial-detail-action-btn"
+                style={{ color: '#dc2626', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                onClick={() => setDeleteModalOpen(true)}
+                title="Eliminar venta permanentemente (propietario / admin / encargado)"
+              >
+                <Trash2 size={13} />
+                <span>Eliminar venta</span>
               </button>
             )}
           </div>
@@ -1291,6 +1311,26 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
       <CommercialAssetsGallery kind={kind} documentId={documentId}/>
       {!isQuote && document.urgent_backorder && (
         <div className="commercial-detail-warning" role="status"><AlertCircle size={16}/>La venta tiene un artículo marcado para compra urgente.</div>
+      )}
+      {canDeleteSale && document && (
+        <AdminDeleteRecordModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          target={{
+            kind: 'sale',
+            saleId: String(document.id),
+            saleCode: String(document.sale_code || document.id).slice(0, 24),
+            customerName: customerName,
+            total: Number(document.total) || 0,
+            status: String(document.status || 'confirmed'),
+            paymentMethod: String(document.payment_method || ''),
+            createdAt: document.created_at,
+          }}
+          onDeleted={async (msg) => {
+            onAmended?.();
+            onDeleted?.(msg);
+          }}
+        />
       )}
     </div>
   );
