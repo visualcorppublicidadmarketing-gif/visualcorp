@@ -148,7 +148,7 @@ function POSFinancialBreakdown({ subtotal, lineDiscount = 0, discount, discountL
       <div className="is-subtotal"><dt>Subtotal neto</dt><dd>{formatMoney(subtotalAfterLineDiscount)}</dd></div>
     </>}
     {discount>0&&<div className="is-discount"><dt>{discountLabel}</dt><dd>−{formatMoney(discount)}</dd></div>}
-    <div className="is-taxable"><dt>Base imponible</dt><dd>{formatMoney(taxableSubtotal)}</dd></div>
+    {discount > 0 && <div className="is-taxable"><dt>{taxApplied ? 'Base imponible' : 'Subtotal tras descuentos'}</dt><dd>{formatMoney(taxableSubtotal)}</dd></div>}
     {taxApplied?<div className="pos-tax-line"><dt>IVA ({taxRate}%)</dt><dd>+{formatMoney(taxAmount)}</dd></div>:<div className="pos-tax-line"><dt>IVA</dt><dd>{taxLabel}</dd></div>}
     {shipping>0&&<div><dt>Envío / otros cargos</dt><dd>{formatMoney(shipping)}</dd></div>}
     <div className="is-total"><dt>Total por cobrar</dt><dd>{formatMoney(total)}</dd></div>
