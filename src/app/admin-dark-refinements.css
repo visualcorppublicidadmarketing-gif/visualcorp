@@ -336,10 +336,6 @@
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-order-card,
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-modal,
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-form,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-contact-card,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-linked-account,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-compensation-list article,
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-family,
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-product-card,
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-view-tools,
@@ -353,9 +349,6 @@
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-suggestion-list :is(b, strong),
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-order-card :is(h3, b, strong),
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-modal h2,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-detail-heading h2,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-copy b,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-detail-panel :is(h3, h4, b),
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-product-identity b {
   color: var(--vc-ink);
 }
@@ -363,15 +356,11 @@
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-suggestion-list small,
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-order-card :is(small, p),
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-modal > header p,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-detail-heading p,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-copy small,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-detail-panel :is(small, p, label),
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-product-identity small {
   color: var(--vc-muted);
 }
 
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-priority-row,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row,
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-product-card {
   border-bottom-color: var(--vc-line);
 }
@@ -387,8 +376,7 @@
   color: var(--vc-muted);
 }
 
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-status,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-status {
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchase-status {
   border: 1px solid #454258;
   background: #282437;
   color: #e7d5f5;
@@ -403,7 +391,6 @@
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .supplier-toolbar .search-box,
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-form :is(input, select, textarea),
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-modal :is(input, select, textarea),
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-page :is(input, select, textarea),
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-page :is(input, select, textarea),
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-rate-field input {
   border-color: var(--vc-line);
@@ -411,15 +398,11 @@
   color: var(--vc-ink);
 }
 
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row:hover,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row.selected,
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-family > header,
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .catalog-product-card:hover {
   background: #202333;
 }
 
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-heading h1 { color: var(--vc-ink); }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-heading p { color: var(--vc-muted); }
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .team-account-block,
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .team-account-remove,
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .team-account-reactivate,
@@ -892,51 +875,7 @@
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-alert:not(.is-error) { border-color: #67522d; background: #332817; color: #f1d28b; }
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .purchasing-backdrop { background: rgba(5, 7, 13, .78); }
 
-/* Personnel: empty states, records, and compensation details. */
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.personnel-first-record, .personnel-directory, .personnel-detail-panel,
-  .personnel-modal, .personnel-pay-form, .personnel-history, .personnel-compensation,
-  .personnel-empty, .personnel-detail-placeholder, .personnel-contact-grid > div,
-  .personnel-account-panel, .personnel-account-card, .personnel-linked-account,
-  .personnel-new-account, .personnel-compensation-list article,
-  .personnel-private-note, .personnel-inline-empty, .personnel-inline-loading,
-  .personnel-history-icon, .personnel-privacy-hint, .personnel-alert) {
-  border-color: #363a4d;
-  background: #171a25;
-  color: #e8ebf3;
-  box-shadow: none;
-}
-
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-page :is(h1, h2, h3, h4, b, strong, label, legend) { color: #f1f3f8; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-page :is(p, small, .eyebrow, .muted-count, time) { color: #b2b8c8; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.personnel-modal, .personnel-pay-form, .personnel-filters,
-  .personnel-search, .personnel-detail-panel) :is(input, select, textarea) {
-  border-color: #42475d;
-  background: #11141d;
-  color: #f1f3f8;
-  color-scheme: dark;
-}
-
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.personnel-first-record-icon, .personnel-metric-icon,
-  .personnel-avatar, .personnel-contact-card, .personnel-account-card) {
-  border-color: #3c4054;
-  background: #242839;
-  color: #dfc4f2;
-}
-
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row { border-color: #303447; background: #171a25; color: #e8ebf3; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row:hover,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-row.selected { background: #242033; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-copy :is(b, small) { color: inherit; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-list-copy small { color: #b2b8c8; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-modal-backdrop { background: rgba(5, 7, 13, .78); }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-private-note { border-color: #67522d; background: #332817; color: #f1d28b; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-new-account { border-color: #363a4d; background: #1d2130; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-detail-placeholder :is(small, b, p) { color: #b2b8c8; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-compensation-list article :is(small, span, time) { color: #b2b8c8; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-history-icon { border-color: #41465a; background: #202434; color: #dfc4f2; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-alert.is-success { border-color: #2e634a; background: #192d25; color: #b8ebcf; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-alert.is-warning { border-color: #67522d; background: #332817; color: #f1d28b; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .personnel-alert.is-error { border-color: #704147; background: #382326; color: #ffc0b8; }
+/* Personnel: dark tokens and states are owned natively by src/components/personnel.css. */
 
 /* Quotation product picker and catalog pricing editor. */
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .quote-product-picker {
@@ -2861,104 +2800,7 @@
     background: rgba(126, 34, 206, 0.2);
   }
 
-  /* PersonnelPage 2.0 */
-  & .personnel-metric-icon.is-blue {
-    background: #172e42;
-    color: #93cef5;
-  }
-  & .personnel-metric-icon.is-amber {
-    background: #382a16;
-    color: #fcd34d;
-  }
-  & .personnel-linked-pill {
-    background: rgba(168, 85, 247, 0.22);
-    color: #f3e8ff;
-  }
-  & .personnel-tabs {
-    border-bottom-color: #303446;
-  }
-  & .personnel-tabs button {
-    border-color: #363a4d;
-    background: #161925;
-    color: #b4bcd0;
-  }
-  & .personnel-tabs button:hover {
-    border-color: #7c3f76;
-    color: #f8fafc;
-  }
-  & .personnel-tabs button.active {
-    border-color: #c084fc;
-    background: rgba(147, 51, 234, 0.22);
-    color: #f3e8ff;
-    box-shadow: none;
-  }
-  & .personnel-netpay-banner {
-    border-color: #463858;
-    background: linear-gradient(135deg, #1d192b 0%, #16202e 100%);
-  }
-  & .personnel-netpay-card,
-  & .personnel-att-kpi,
-  & .personnel-perf-card,
-  & .personnel-deduction-form,
-  & .personnel-quick-checkin-bar,
-  & .personnel-attendance-form {
-    border-color: #363a4d;
-    background: #171a26;
-    color: #f1f3f9;
-  }
-  & .personnel-netpay-card.is-deduction b {
-    color: #fbbf24;
-  }
-  & .personnel-netpay-card.is-net {
-    border-color: rgba(16, 185, 129, 0.45);
-    background: rgba(6, 78, 59, 0.28);
-  }
-  & .personnel-netpay-card.is-net b {
-    color: #6ee7b7;
-  }
-  & .personnel-chip-btn {
-    border-color: #3c4257;
-    background: #131620;
-    color: #e2e8f0;
-  }
-  & .personnel-chip-btn:hover {
-    border-color: #c084fc;
-    color: #f0abfc;
-  }
-  & .personnel-att-pill.is-presente,
-  & .personnel-att-badge.is-presente,
-  & .personnel-att-pill.is-remoto,
-  & .personnel-att-badge.is-remoto,
-  & .personnel-mini-attendance.is-presente,
-  & .personnel-mini-attendance.is-remoto {
-    border-color: rgba(16, 185, 129, 0.4);
-    background: rgba(6, 95, 70, 0.35);
-    color: #a7f3d0;
-  }
-  & .personnel-att-pill.is-tardanza,
-  & .personnel-att-badge.is-tardanza,
-  & .personnel-mini-attendance.is-tardanza {
-    border-color: rgba(245, 158, 11, 0.4);
-    background: rgba(120, 53, 15, 0.38);
-    color: #fde68a;
-  }
-  & .personnel-att-pill.is-falta,
-  & .personnel-att-badge.is-falta,
-  & .personnel-mini-attendance.is-falta {
-    border-color: rgba(239, 68, 68, 0.4);
-    background: rgba(127, 29, 29, 0.38);
-    color: #fecaca;
-  }
-  & .personnel-att-pill.is-permiso,
-  & .personnel-att-badge.is-permiso,
-  & .personnel-att-pill.is-vacaciones,
-  & .personnel-att-badge.is-vacaciones,
-  & .personnel-mini-attendance.is-permiso,
-  & .personnel-mini-attendance.is-vacaciones {
-    border-color: rgba(56, 189, 248, 0.4);
-    background: rgba(12, 74, 110, 0.38);
-    color: #bae6fd;
-  }
+  /* Personnel dark mode tokens now live inside src/components/personnel.css */
 
   /* CustomerBook 2.0 */
   & .customer-directory-stat > span.is-amber {

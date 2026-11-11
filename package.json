@@ -14,6 +14,8 @@
     "test:inventory-metrics": "node --test scripts/test-inventory-metrics.mjs",
     "test:marketing": "node --test scripts/test-marketing-workflow.mjs",
     "test:marketing:browser": "node scripts/test-marketing-browser.mjs",
+    "test:personnel": "node --test scripts/test-personnel.mjs",
+    "test:personnel:browser": "node scripts/test-personnel-browser.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
