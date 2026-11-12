@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, CalendarClock, Check, CircleCheck, ClipboardCheck, ClipboardList, Clock3, Hammer, PackageCheck, PenTool, Play, Printer, RefreshCw, RotateCcw, ScanLine, Search, ShieldCheck, Shirt, UserRound } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CalendarClock, Check, CircleCheck, ClipboardCheck, ClipboardList, Clock3, Hammer, MapPin, PackageCheck, PenTool, Play, Printer, RefreshCw, RotateCcw, ScanLine, Search, ShieldCheck, Shirt, UserRound } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
 import { Sheet, useConfirm } from '../../components/ui/OperationalKit';
@@ -754,7 +754,7 @@ export function ProductionJobsPage() {
   const lotQuantityTotal = (statuses: string[]) => productionLots.filter((lot) => statuses.includes(lot.status)).reduce((sum, lot) => sum + Number(lot.quantity || 0), 0);
   const lotStatusLabel: Record<string, string> = { in_production: 'En producción', quality_check: 'Control de calidad', ready_for_delivery: 'Calidad aprobada', scheduled: 'Entrega programada', delivered: 'Entregado', installed: 'Instalado' };
   return <AppFrame area="operations"><main className="production-jobs">
-    <PageHeading eyebrow="OPERACIONES · TRABAJOS" title={area.name} description={area.intro} action={<button className="button button-outline" type="button" onClick={() => setRevision((value) => value + 1)} disabled={loading}><RefreshCw size={15}/> Actualizar</button>}/>
+    <PageHeading eyebrow="OPERACIONES · TRABAJOS" title={area.name} description={area.intro} action={<div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}><Link className="button button-outline" to="/operaciones/cartelera-taller"><MapPin size={15}/> Cartelera & Mapa</Link><button className="button button-outline" type="button" onClick={() => setRevision((value) => value + 1)} disabled={loading}><RefreshCw size={15}/> Actualizar</button></div>}/>
     <nav className="pj-area-nav" aria-label="Áreas de trabajo">{AREA_CONFIG.filter((entry) => entry.code === 'ASE' ? canSeeAdvisory : canSeeWorkshop).map((entry) => { const AreaIcon = entry.icon; return <Link key={entry.slug} to={`/operaciones/trabajos/${entry.slug}`} aria-current={entry.slug === area.slug ? 'page' : undefined}><AreaIcon size={15}/>{entry.name}</Link>; })}</nav>
     <p className="pj-intro">Organiza la carga de esta área por fecha, etapa o formato. Abre cada trabajo para consultar la solicitud, sus pasos y los cambios registrados.</p>
     <ProductionQueueSummary total={filterCounts.all} unassigned={filterCounts.unassigned} overdue={filterCounts.overdue} blocked={filterCounts.blocked} loading={loading}/>

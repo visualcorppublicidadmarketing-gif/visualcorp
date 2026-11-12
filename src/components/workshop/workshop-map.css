@@ -1,0 +1,365 @@
+/* workshop-map.css - Estilos visuales para el Mapa Interactivo de Taller de Visual Corp */
+
+.vc-workshop-map-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 440px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line, #e2e8f0);
+  background: var(--surface, #0f172a);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.vc-workshop-map-canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 440px;
+  z-index: 1;
+}
+
+/* Modo pantalla completa */
+.vc-workshop-map-container.is-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  border-radius: 0;
+}
+
+/* Barra flotante de controles sobre el mapa */
+.vc-map-top-bar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+  gap: 10px;
+}
+
+.vc-map-top-bar > * {
+  pointer-events: auto;
+}
+
+.vc-map-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vc-map-info-pill {
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  color: #f8fafc;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vc-map-info-pill.is-urgent {
+  background: rgba(220, 38, 38, 0.9);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fff;
+}
+
+.vc-map-info-pill.is-cluster {
+  background: rgba(217, 119, 6, 0.9);
+  border-color: rgba(251, 191, 36, 0.4);
+  color: #fff;
+}
+
+.vc-map-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vc-map-action-btn {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.vc-map-action-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.vc-map-action-btn.is-active {
+  background: #a51091;
+  color: #fff;
+  border-color: #f472b6;
+}
+
+/* Aviso de Modo Selección de Ubicación (Click-to-Pin) */
+.vc-map-picking-banner {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: rgba(26, 86, 219, 0.95);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 24px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(147, 197, 253, 0.5);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: vc-bounce 2s infinite ease-in-out;
+}
+
+@keyframes vc-bounce {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -6px); }
+}
+
+/* Custom Marker Pins en Leaflet */
+.vc-map-custom-pin {
+  background: none !important;
+  border: none !important;
+}
+
+.vc-pin-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transform: translate(-50%, -100%);
+  transition: transform 0.2s ease;
+}
+
+.vc-pin-wrapper:hover {
+  transform: translate(-50%, -105%) scale(1.1);
+  z-index: 9999 !important;
+}
+
+.vc-pin-head {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 900;
+  position: relative;
+}
+
+.vc-pin-head.is-urgent {
+  background: #dc2626;
+  border-color: #fecaca;
+}
+
+.vc-pin-head.is-cluster {
+  background: #d97706;
+  border-color: #fef3c7;
+}
+
+.vc-pin-head.is-selected {
+  background: #9333ea;
+  border-color: #f3e8ff;
+  box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.4), 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.vc-pin-head.is-completed {
+  background: #059669;
+  border-color: #a7f3d0;
+}
+
+.vc-pin-tip {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #2563eb;
+  margin-top: -1px;
+}
+
+.vc-pin-head.is-urgent + .vc-pin-tip {
+  border-top-color: #dc2626;
+}
+
+.vc-pin-head.is-cluster + .vc-pin-tip {
+  border-top-color: #d97706;
+}
+
+.vc-pin-head.is-selected + .vc-pin-tip {
+  border-top-color: #9333ea;
+}
+
+.vc-pin-head.is-completed + .vc-pin-tip {
+  border-top-color: #059669;
+}
+
+/* Pulso animado para pines de hoy / urgentes */
+.vc-pin-ping {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+}
+
+.vc-pin-ping-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #f59e0b;
+  opacity: 0.75;
+  animation: vc-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.vc-pin-ping-dot {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #f59e0b;
+  border: 1.5px solid #fff;
+}
+
+@keyframes vc-ping {
+  75%, 100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Tooltips y Popups de Leaflet */
+.leaflet-popup-content-wrapper {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-tip {
+  background: #0f172a !important;
+}
+
+.vc-map-popup-card {
+  padding: 12px 14px;
+  min-width: 220px;
+  max-width: 280px;
+  font-family: inherit;
+}
+
+.vc-map-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.vc-map-popup-code {
+  font-size: 11px;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.vc-map-popup-tag {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.vc-map-popup-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0 0 4px;
+  line-height: 1.3;
+}
+
+.vc-map-popup-client {
+  font-size: 11.5px;
+  color: #cbd5e1;
+  margin: 0 0 6px;
+}
+
+.vc-map-popup-address {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  line-height: 1.3;
+}
+
+.vc-map-popup-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.vc-map-popup-btn {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.vc-map-popup-btn.is-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.vc-map-popup-btn.is-whatsapp {
+  background: #16a34a;
+  color: #fff;
+}
+
+.vc-map-popup-btn:hover {
+  opacity: 0.9;
+}

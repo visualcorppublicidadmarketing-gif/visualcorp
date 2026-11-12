@@ -1,0 +1,455 @@
+/* workshop-billboard-calendar.css - Cartelera Inteligente y Calendario de Taller */
+
+.wbc-page {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Stat Cards de Cabecera */
+.wbc-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.wbc-stat-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.wbc-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wbc-stat-content h4 {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.wbc-stat-value {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--ink, #0f172a);
+  margin-top: 2px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.wbc-stat-note {
+  font-size: 11px;
+  color: var(--muted, #64748b);
+  margin-top: 2px;
+}
+
+/* Radar de Proximidad Inteligente */
+.wbc-proximity-radar {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.08), rgba(245, 158, 11, 0.03));
+  border: 1.5px solid rgba(245, 158, 11, 0.35);
+  border-radius: 14px;
+  padding: 16px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.wbc-radar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.wbc-radar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #b45309;
+}
+
+.wbc-radar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 10px;
+}
+
+.wbc-radar-item {
+  background: var(--surface, #ffffff);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.wbc-radar-item-info {
+  font-size: 12px;
+  color: var(--ink, #1e293b);
+  line-height: 1.4;
+}
+
+.wbc-radar-item-info b {
+  color: #b45309;
+}
+
+.wbc-radar-distance-badge {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.wbc-radar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Barra de Modos y Filtros */
+.wbc-toolbar {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.wbc-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wbc-view-tabs {
+  display: inline-flex;
+  background: var(--bg, #f1f5f9);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--line, #e2e8f0);
+}
+
+.wbc-view-tab {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.wbc-view-tab.is-active {
+  background: #ffffff;
+  color: var(--ink, #0f172a);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.wbc-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Grilla Semanal de Taller (Lunes a Sábado) */
+.wbc-weekly-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.wbc-day-column {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.wbc-day-column.is-today {
+  border: 2px solid #ea580c;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.12);
+}
+
+.wbc-day-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line, #e2e8f0);
+  background: #f8fafc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wbc-day-column.is-today .wbc-day-header {
+  background: #fff7ed;
+}
+
+.wbc-day-title {
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: capitalize;
+  color: var(--ink, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wbc-today-tag {
+  background: #ea580c;
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.wbc-day-metrics {
+  font-size: 11px;
+  color: var(--muted, #64748b);
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.wbc-day-cards {
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  flex: 1;
+  align-content: start;
+}
+
+.wbc-day-empty {
+  text-align: center;
+  padding: 40px 10px;
+  color: var(--muted, #94a3b8);
+  font-size: 12px;
+}
+
+/* Tarjeta de Trabajo (Job Card) */
+.wbc-job-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.wbc-job-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.wbc-job-card.is-urgent {
+  border-color: #f87171;
+  background: #fffafa;
+}
+
+.wbc-job-card.is-selected {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3);
+}
+
+.wbc-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.wbc-card-code {
+  font-size: 12.5px;
+  font-weight: 900;
+  color: var(--ink, #0f172a);
+}
+
+.wbc-card-area-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.wbc-card-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink, #0f172a);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.wbc-card-client {
+  font-size: 11.5px;
+  color: var(--muted, #64748b);
+  margin: 0;
+}
+
+.wbc-card-specs {
+  font-size: 11px;
+  background: #f8fafc;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: #334155;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wbc-installation-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: #166534;
+  display: grid;
+  gap: 4px;
+}
+
+.wbc-installation-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 800;
+}
+
+.wbc-proximity-indicator {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wbc-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 6px;
+  border-top: 1px solid var(--line, #f1f5f9);
+}
+
+.wbc-card-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.wbc-btn-icon {
+  background: transparent;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wbc-btn-icon:hover {
+  background: var(--bg, #f1f5f9);
+  color: var(--ink, #0f172a);
+}
+
+/* Vista Dividida de Mapa Logístico */
+.wbc-map-split-view {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 16px;
+  min-height: 600px;
+}
+
+@media (max-width: 1024px) {
+  .wbc-map-split-view {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wbc-map-sidebar {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 680px;
+  overflow-y: auto;
+}
+
+.wbc-map-sidebar-list {
+  display: grid;
+  gap: 8px;
+}
+
+.wbc-map-sidebar-card {
+  background: #f8fafc;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wbc-map-sidebar-card:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.wbc-map-sidebar-card.is-selected {
+  border-color: #9333ea;
+  background: #faf5ff;
+}

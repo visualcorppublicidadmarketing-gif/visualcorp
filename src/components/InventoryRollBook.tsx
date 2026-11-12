@@ -27,6 +27,13 @@ import {
 import { supabase } from '../lib/supabaseClient';
 import { Dialog } from './ui/OperationalKit';
 import './InventoryRollBook.css';
+import {
+  RollBranchLocationCard,
+  RollMaterialSelectorCard,
+  RollDimensionsCard,
+  RollTraceabilityCard,
+  RollReceptionFooter,
+} from './inventory/rolls';
 
 type Branch = { id: string; name: string };
 type InventoryItem = {
@@ -732,427 +739,77 @@ export function InventoryRollBook({
             <p className="roll-book__read-only">Tu perfil tiene acceso de consulta. Solicita permiso de edición para registrar y mover rollos.</p>
           )}
 
-          <form onSubmit={submitReceive} className="roll-book__form-v2">
-            {/* 1. Selector de Sucursal y Ubicación */}
-            <div className="roll-book__v2-card">
-              <div className="roll-book__v2-card-header">
-                <span className="roll-book__step-badge">1</span>
-                <div>
-                  <h3>Destino del rollo</h3>
-                  <small>Selecciona la sucursal y bodega de recepción (Visual Corp por defecto)</small>
-                </div>
-              </div>
+          <form onSubmit={submitReceive} className="roll-reception__form roll-book__form-v2">
+            <RollBranchLocationCard
+              branches={branches}
+              formBranchId={formBranchId}
+              onSelectBranch={setFormBranchId}
+              location={form.location}
+              onChangeLocation={(loc) => setForm((curr) => ({ ...curr, location: loc }))}
+              activeLocations={activeLocations}
+              disabled={!canEdit}
+            />
 
-              <div className="roll-book__branch-selector-row">
-                <span className="roll-book__field-label">Sucursal asignada:</span>
-                <div className="roll-book__branch-pills" role="radiogroup" aria-label="Sucursal de recepción">
-                  {branches.map((b) => {
-                    const isSelected = formBranchId === b.id;
-                    return (
-                      <button
-                        key={b.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={isSelected}
-                        className={`roll-book__branch-pill ${isSelected ? 'is-active' : ''}`}
-                        onClick={() => setFormBranchId(b.id)}
-                      >
-                        {b.name.toLowerCase().includes('visual') ? '🏢 Visual Corp' : '🖨️ ' + b.name}
-                        {isSelected && <Check size={14} className="roll-book__pill-check" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+            <RollMaterialSelectorCard
+              selectedMaterial={selectedMaterial}
+              isChangingMaterial={isChangingMaterial}
+              onToggleChangingMaterial={setIsChangingMaterial}
+              searchQuery={materialSearchQuery}
+              onSearchQueryChange={setMaterialSearchQuery}
+              activeTab={materialFilterTab}
+              onTabChange={setMaterialFilterTab}
+              candidates={filteredMaterialCandidates}
+              selectedVariantId={form.variantId}
+              onSelectMaterial={handleSelectMaterial}
+              width={form.width}
+              disabled={!canEdit}
+            />
 
-              <div className="roll-book__location-row">
-                <label className="roll-book__field">
-                  Ubicación interna en bodega
-                  <select
-                    required
-                    value={form.location}
-                    onChange={(event) => setForm({ ...form, location: event.target.value })}
-                    disabled={!canEdit || !activeLocations.length}
-                  >
-                    {activeLocations.map((loc) => (
-                      <option key={loc.code} value={loc.code}>
-                        {loc.name} · {loc.code}
-                      </option>
-                    ))}
-                    {!activeLocations.length && <option value="MAIN">MAIN · Bodega general</option>}
-                  </select>
-                </label>
-              </div>
-            </div>
+            <RollDimensionsCard
+              width={form.width}
+              onWidthChange={(w) => setForm((curr) => ({ ...curr, width: w }))}
+              nominalLength={form.nominal}
+              onNominalLengthChange={(l) =>
+                setForm((curr) => ({
+                  ...curr,
+                  nominal: l,
+                  remaining: rollCondition === 'full' ? l : curr.remaining,
+                }))
+              }
+              condition={rollCondition}
+              onConditionChange={setRollCondition}
+              remainingMeters={form.remaining}
+              onRemainingMetersChange={(m) => setForm((curr) => ({ ...curr, remaining: m }))}
+              disabled={!canEdit}
+            />
 
-            {/* 2. Selector Inteligente y Búsqueda de Material */}
-            <div className="roll-book__v2-card">
-              <div className="roll-book__v2-card-header">
-                <span className="roll-book__step-badge">2</span>
-                <div>
-                  <h3>Material y variante</h3>
-                  <small>Selecciona o busca el rollo específico (Lona, Vinil, Microperforado...)</small>
-                </div>
-              </div>
+            <RollTraceabilityCard
+              tag={form.tag}
+              onTagChange={(t) => setForm((curr) => ({ ...curr, tag: t }))}
+              onAutoGenerateTag={() => setForm((curr) => ({ ...curr, tag: generateAutoTag('ROL') }))}
+              batchCount={batchCount}
+              onBatchCountChange={setBatchCount}
+              operator={form.operator}
+              onOperatorChange={(op) => setForm((curr) => ({ ...curr, operator: op }))}
+              operatorDefaultName={operatorDefaultName}
+              reason={form.reason}
+              onReasonChange={(r) => setForm((curr) => ({ ...curr, reason: r }))}
+              reference={form.reference}
+              onReferenceChange={(ref) => setForm((curr) => ({ ...curr, reference: ref }))}
+              disabled={!canEdit}
+            />
 
-              {selectedMaterial && !isChangingMaterial ? (
-                /* Tarjeta de Material Seleccionado */
-                <div className="roll-book__selected-material-card">
-                  <div className="roll-book__selected-material-icon">
-                    <Disc3 size={24} />
-                  </div>
-                  <div className="roll-book__selected-material-body">
-                    <h4>{selectedMaterial.name}</h4>
-                    <div className="roll-book__selected-material-tags">
-                      {selectedMaterial.variant && <span className="roll-book__tag-chip finish">{selectedMaterial.variant}</span>}
-                      <span className="roll-book__tag-chip width">{form.width ? `${form.width} cm (${(Number(form.width) / 100).toFixed(2)}m)` : 'Ancho estándar'}</span>
-                      <span className="roll-book__tag-chip sku">{selectedMaterial.sku || selectedMaterial.variantSku}</span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="button button-outline button-small"
-                    onClick={() => setIsChangingMaterial(true)}
-                  >
-                    Cambiar material
-                  </button>
-                </div>
-              ) : (
-                /* Selector Inteligente con Filtros y Búsqueda */
-                <div className="roll-book__material-picker">
-                  <div className="roll-book__material-search-bar">
-                    <div className="roll-book__material-search-input">
-                      <Search size={15} />
-                      <input
-                        type="text"
-                        placeholder="Buscar por nombre, medida (127, 310...), color o código..."
-                        value={materialSearchQuery}
-                        onChange={(e) => setMaterialSearchQuery(e.target.value)}
-                        autoFocus
-                      />
-                      {materialSearchQuery && (
-                        <button type="button" onClick={() => setMaterialSearchQuery('')}>
-                          <X size={13} />
-                        </button>
-                      )}
-                    </div>
-                    <div className="roll-book__material-tabs">
-                      {(['todos', 'vinil', 'lona', 'micro', 'especial'] as const).map((tab) => (
-                        <button
-                          key={tab}
-                          type="button"
-                          className={materialFilterTab === tab ? 'is-active' : ''}
-                          onClick={() => setMaterialFilterTab(tab)}
-                        >
-                          {tab === 'todos' ? 'Todos' : tab === 'vinil' ? 'Vinilos' : tab === 'lona' ? 'Lonas' : tab === 'micro' ? 'Microperforados' : 'Especiales'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="roll-book__material-candidates-list">
-                    {filteredMaterialCandidates.length === 0 ? (
-                      <div className="roll-book__material-empty">
-                        <Boxes size={20} />
-                        <span>No se encontraron rollos con esa búsqueda. Ajusta el texto o el filtro.</span>
-                      </div>
-                    ) : (
-                      filteredMaterialCandidates.map((item) => {
-                        const isChosen = form.variantId === item.variantId;
-                        return (
-                          <button
-                            key={item.variantId}
-                            type="button"
-                            className={`roll-book__candidate-row ${isChosen ? 'is-selected' : ''}`}
-                            onClick={() => handleSelectMaterial(item)}
-                          >
-                            <div className="roll-book__candidate-info">
-                              <b>{item.name}</b>
-                              <small>{item.variant ? `${item.variant} · ` : ''}{item.sku || item.variantSku || ''}</small>
-                            </div>
-                            <span className="roll-book__candidate-select-pill">
-                              {isChosen ? <Check size={12} /> : 'Elegir'}
-                            </span>
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 3. Dimensiones y Metraje (Automatizado) */}
-            <div className="roll-book__v2-card">
-              <div className="roll-book__v2-card-header">
-                <span className="roll-book__step-badge">3</span>
-                <div>
-                  <h3>Dimensiones y Metros a Ingresar</h3>
-                  <small>Ancho en cm y largo en metros lineales</small>
-                </div>
-              </div>
-
-              <div className="roll-book__dimensions-grid">
-                {/* Ancho */}
-                <label className="roll-book__field">
-                  Ancho nominal
-                  <div className="roll-book__input-unit">
-                    <input
-                      required
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={form.width}
-                      onChange={(event) => setForm({ ...form, width: event.target.value })}
-                      placeholder="127"
-                      disabled={!canEdit}
-                    />
-                    <i>cm</i>
-                  </div>
-                  <div className="roll-book__quick-chips">
-                    {[107, 127, 152, 310].map((w) => (
-                      <button
-                        key={w}
-                        type="button"
-                        className={Number(form.width) === w ? 'is-active' : ''}
-                        onClick={() => setForm({ ...form, width: String(w) })}
-                      >
-                        {w} cm
-                      </button>
-                    ))}
-                  </div>
-                </label>
-
-                {/* Largo nominal */}
-                <label className="roll-book__field">
-                  Largo nominal total
-                  <div className="roll-book__input-unit">
-                    <input
-                      required
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={form.nominal}
-                      onChange={(event) => {
-                        const val = event.target.value;
-                        setForm((curr) => ({
-                          ...curr,
-                          nominal: val,
-                          remaining: rollCondition === 'full' ? val : curr.remaining,
-                        }));
-                      }}
-                      placeholder="50"
-                      disabled={!canEdit}
-                    />
-                    <i>m</i>
-                  </div>
-                  <div className="roll-book__quick-chips">
-                    {[30, 50, 100].map((l) => (
-                      <button
-                        key={l}
-                        type="button"
-                        className={Number(form.nominal) === l ? 'is-active' : ''}
-                        onClick={() => {
-                          setForm((curr) => ({
-                            ...curr,
-                            nominal: String(l),
-                            remaining: rollCondition === 'full' ? String(l) : curr.remaining,
-                          }));
-                        }}
-                      >
-                        {l} m
-                      </button>
-                    ))}
-                  </div>
-                </label>
-
-                {/* Condición: Rollo nuevo o Rollo empezado */}
-                <div className="roll-book__condition-box">
-                  <span className="roll-book__field-label">Condición del rollo:</span>
-                  <div className="roll-book__condition-toggle" role="group">
-                    <button
-                      type="button"
-                      className={rollCondition === 'full' ? 'is-active' : ''}
-                      onClick={() => {
-                        setRollCondition('full');
-                        setForm((curr) => ({
-                          ...curr,
-                          remainingMode: 'meters',
-                          remaining: curr.nominal || '50',
-                          percent: '100',
-                        }));
-                      }}
-                    >
-                      📦 Rollo Nuevo Completo (100%)
-                    </button>
-                    <button
-                      type="button"
-                      className={rollCondition === 'partial' ? 'is-active' : ''}
-                      onClick={() => setRollCondition('partial')}
-                    >
-                      ✂️ Rollo Empezado / Parcial
-                    </button>
-                  </div>
-
-                  {rollCondition === 'partial' && (
-                    <div className="roll-book__partial-inputs">
-                      <label className="roll-book__field">
-                        Metros restantes reales
-                        <div className="roll-book__input-unit">
-                          <input
-                            required
-                            type="number"
-                            min="0.001"
-                            step="0.001"
-                            value={form.remaining}
-                            onChange={(event) => setForm({ ...form, remaining: event.target.value })}
-                            placeholder="Ej. 35.5"
-                          />
-                          <i>m</i>
-                        </div>
-                      </label>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* 4. Lote, Operador y Recepción Múltiple (Automatización) */}
-            <div className="roll-book__v2-card">
-              <div className="roll-book__v2-card-header">
-                <span className="roll-book__step-badge">4</span>
-                <div>
-                  <h3>Identificación y Trazabilidad</h3>
-                  <small>Código de rollo único y registro del operador responsable</small>
-                </div>
-              </div>
-
-              <div className="roll-book__trace-grid">
-                {/* Lote / Tag */}
-                <label className="roll-book__field">
-                  Lote / Código único del rollo
-                  <div className="roll-book__tag-input-group">
-                    <input
-                      required
-                      value={form.tag}
-                      onChange={(event) => setForm({ ...form, tag: event.target.value })}
-                      placeholder="Ej. ROL-VIN-2611-001"
-                    />
-                    <button
-                      type="button"
-                      className="button button-outline"
-                      onClick={() => setForm({ ...form, tag: generateAutoTag('ROL') })}
-                      title="Generar código de lote aleatorio con fecha de hoy"
-                    >
-                      <Dices size={14} /> Auto
-                    </button>
-                  </div>
-                </label>
-
-                {/* Cantidad de rollos iguales (Recepción por lote) */}
-                <label className="roll-book__field">
-                  Cantidad de rollos iguales a recibir
-                  <div className="roll-book__batch-stepper">
-                    <button
-                      type="button"
-                      disabled={batchCount <= 1}
-                      onClick={() => setBatchCount((c) => Math.max(1, c - 1))}
-                    >
-                      −
-                    </button>
-                    <b>{batchCount}</b>
-                    <button
-                      type="button"
-                      disabled={batchCount >= 20}
-                      onClick={() => setBatchCount((c) => Math.min(20, c + 1))}
-                    >
-                      +
-                    </button>
-                    <span className="roll-book__batch-note">
-                      {batchCount > 1 ? `Genera ${batchCount} rollos con IDs secuenciales` : '1 unidad'}
-                    </span>
-                  </div>
-                </label>
-
-                {/* Operador */}
-                <label className="roll-book__field">
-                  Operador responsable
-                  <input
-                    value={form.operator}
-                    onChange={(event) => setForm({ ...form, operator: event.target.value })}
-                    placeholder={operatorDefaultName || 'Nombre del operador'}
-                  />
-                </label>
-
-                {/* Motivo con chips rápidos */}
-                <div className="roll-book__reason-group">
-                  <label className="roll-book__field">
-                    Motivo de recepción
-                    <input
-                      required
-                      value={form.reason}
-                      onChange={(event) => setForm({ ...form, reason: event.target.value })}
-                      placeholder="Motivo del ingreso"
-                    />
-                  </label>
-                  <div className="roll-book__quick-chips">
-                    {['📦 Compra nueva', '🔄 Devolución de máquina', '🔍 Inventario inicial'].map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => setForm({ ...form, reason: r })}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Referencia de trabajo */}
-                <label className="roll-book__field">
-                  Referencia de orden / factura (opcional)
-                  <input
-                    value={form.reference}
-                    onChange={(event) => setForm({ ...form, reference: event.target.value })}
-                    placeholder="Ej. Factura #4028 o OT #120"
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Botón Maestro de Envío */}
-            <div className="roll-book__form-v2-footer">
-              <div className="roll-book__footer-summary">
-                {selectedMaterial ? (
-                  <span>
-                    Recibiendo <b>{batchCount} rollo(s)</b> de <b>{selectedMaterial.name}</b> ({form.width}cm × {form.remaining}m) en <b>{branchName(formBranchId)}</b>.
-                  </span>
-                ) : (
-                  <span>Selecciona un material arriba para habilitar la recepción.</span>
-                )}
-              </div>
-              <div className="roll-book__footer-actions">
-                <button
-                  type="button"
-                  className="button button-outline"
-                  onClick={() => setShowReceive(false)}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="button button-dark roll-book__submit-btn-v2"
-                  disabled={!canEdit || busy === 'receive' || !form.variantId}
-                >
-                  {busy === 'receive' ? (
-                    <LoaderCircle className="roll-book__spin" size={16} />
-                  ) : (
-                    <Plus size={16} />
-                  )}
-                  {batchCount > 1 ? `Recibir ${batchCount} rollos en bodega` : 'Recibir rollo en bodega'}
-                </button>
-              </div>
-            </div>
+            <RollReceptionFooter
+              selectedMaterial={selectedMaterial}
+              batchCount={batchCount}
+              width={form.width}
+              remainingMeters={form.remaining}
+              branchName={branchName(formBranchId)}
+              busy={busy === 'receive'}
+              canEdit={canEdit}
+              hasMaterial={Boolean(form.variantId)}
+              onCancel={() => setShowReceive(false)}
+            />
           </form>
         </section>
       )}

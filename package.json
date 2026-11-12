@@ -16,6 +16,7 @@
     "test:marketing:browser": "node scripts/test-marketing-browser.mjs",
     "test:personnel": "node --test scripts/test-personnel.mjs",
     "test:personnel:browser": "node scripts/test-personnel-browser.mjs",
+    "test:geospatial": "node --experimental-strip-types scripts/test-geospatial-proximity.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -31,10 +32,12 @@
     "@tiptap/extension-underline": "^3.32.0",
     "@tiptap/react": "^3.32.0",
     "@tiptap/starter-kit": "^3.32.0",
+    "@types/leaflet": "^1.9.22",
     "@vercel/functions": "3.10.3",
     "@vitejs/plugin-react": "^6.1.2",
     "jsbarcode": "3.12.3",
     "jspdf": "^4.2.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.61.0",
     "motion": "^14.6.0",
     "react": "^19.3.1",

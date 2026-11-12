@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, ClipboardList, Clock3, FolderOpen, MessageSquare, Printer, RefreshCw, Search, ShieldCheck, Sparkles } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, ClipboardList, Clock3, FolderOpen, MapPin, MessageSquare, Printer, RefreshCw, Search, ShieldCheck, Sparkles } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
 import { EmptyState } from '../../components/feedback';
@@ -166,7 +166,7 @@ export function ProductionCoordinationPage() {
   if (!canView) return <AppFrame area="operations"><main className="pc-page"><EmptyState icon={ClipboardList} title="Acceso restringido" text="Tu perfil no tiene acceso a la coordinación de trabajos."/></main></AppFrame>;
 
   return <AppFrame area="operations"><main className="pc-page">
-    <PageHeading eyebrow="OPERACIONES · PRODUCCIÓN" title="Coordinación de trabajos" description="Vista compartida de Diseño, Asesoría, Impresión, Sublimación, Corte láser y Taller. Abre cada ficha para asignar, recibir, revisar calidad o registrar avances." action={<div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}><Link className="button button-outline" to="/operaciones/kiosk"><Printer size={15}/> Terminal Kiosk Taller</Link><Link className="button button-outline" to="/operaciones/automatizaciones"><Sparkles size={15}/> Autopilot</Link><Link className="button button-outline" to="/operaciones/archivos"><FolderOpen size={15}/> Vault de artes</Link><Link className="button button-outline" to="/seguimiento"><ShieldCheck size={15}/> Portal aprobación</Link><button className="button button-outline" type="button" onClick={() => void loadPage(0, true)} disabled={loading}><RefreshCw size={15}/> Actualizar</button></div>}/>
+    <PageHeading eyebrow="OPERACIONES · PRODUCCIÓN" title="Coordinación de trabajos" description="Vista compartida de Diseño, Asesoría, Impresión, Sublimación, Corte láser y Taller. Abre cada ficha para asignar, recibir, revisar calidad o registrar avances." action={<div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}><Link className="button button-dark" to="/operaciones/cartelera-taller"><MapPin size={15}/> Cartelera & Mapa</Link><Link className="button button-outline" to="/operaciones/kiosk"><Printer size={15}/> Terminal Kiosk Taller</Link><Link className="button button-outline" to="/operaciones/automatizaciones"><Sparkles size={15}/> Autopilot</Link><Link className="button button-outline" to="/operaciones/archivos"><FolderOpen size={15}/> Vault de artes</Link><Link className="button button-outline" to="/seguimiento"><ShieldCheck size={15}/> Portal aprobación</Link><button className="button button-outline" type="button" onClick={() => void loadPage(0, true)} disabled={loading}><RefreshCw size={15}/> Actualizar</button></div>}/>
     <section className="pc-summary" aria-label="Resumen del trabajo cargado">
       <div><span><ClipboardList size={15}/> En curso</span><b>{count}</b></div>
       <div data-tone="amber"><span><AlertTriangle size={15}/> Atención</span><b>{attentionCount}</b></div>
