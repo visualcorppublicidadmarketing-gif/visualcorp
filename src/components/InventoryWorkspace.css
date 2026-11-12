@@ -391,3 +391,5 @@
 .inventory-event-row>strong.is-neutral{color:#696b77}
 @media(max-width:900px){.inventory-movement-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-movement-search{grid-column:1/-1}}
 @media(max-width:560px){.inventory-movement-toolbar{grid-template-columns:minmax(0,1fr)}.inventory-movement-search{grid-column:auto}.inventory-event-row{grid-template-columns:26px minmax(0,1fr);align-items:start}.inventory-event-row>strong{grid-column:2;justify-self:start}.inventory-event-context span{font-size:8px}}
+.inventory-new-minimum-toggle{display:flex;align-items:center;gap:7px;min-height:30px;color:var(--vc-ink-muted,#6d7080);font-size:11px}.inventory-new-minimum-toggle input{width:16px;height:16px;accent-color:#8b2bb5}.inventory-new-minimum input:disabled{opacity:.58;cursor:not-allowed}.inventory-new-minimum small{color:var(--vc-ink-muted,#777b89);font-size:10px;line-height:1.45}.inventory-minimum-unconfigured{color:#71608c;font-size:11px;font-weight:650}
+[data-theme='dark'] .inventory-minimum-unconfigured,.work-app.theme-dark .inventory-minimum-unconfigured{color:#c9a5e8}

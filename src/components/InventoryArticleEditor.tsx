@@ -54,6 +54,7 @@ type ArticleSource = {
   availableQuantity?: number | null;
   reservedQuantity?: number | null;
   minimum?: number;
+  minimumConfigured?: boolean;
   unitCost?: number | null;
   supplierName?: string | null;
   unit?: string;
@@ -65,6 +66,7 @@ type Draft = {
   category: string;
   variant: string;
   minimum: string;
+  minimumConfigured: boolean;
   description: string;
   itemType: string;
   tags: string;
@@ -226,13 +228,16 @@ export function InventoryArticleEditor({
   const reserved = Number(sourceItem?.reservedQuantity ?? 0);
   const available = Number(sourceItem?.availableQuantity ?? Math.max(0, qty - reserved));
   const minQty = Number(value.minimum ?? sourceItem?.minimum ?? 0);
+  const minimumConfigured = value.minimumConfigured ?? sourceItem?.minimumConfigured ?? minQty > 0;
   const unitLabel = sourceItem?.unit || 'unidades';
 
   const stockTone: 'pending' | 'danger' | 'warning' | 'ok' = isUncounted
     ? 'pending'
     : qty <= 0
       ? 'danger'
-      : available <= minQty
+      : !minimumConfigured
+        ? 'warning'
+        : available <= minQty
         ? 'warning'
         : 'ok';
 
@@ -240,7 +245,9 @@ export function InventoryArticleEditor({
     ? 'Conteo físico pendiente'
     : qty <= 0
       ? 'Agotado en bodega'
-      : available <= minQty
+      : !minimumConfigured
+        ? 'Mínimo de reposición pendiente'
+        : available <= minQty
         ? 'Reponer pronto (bajo mínimo)'
         : 'En stock óptimo';
 
@@ -611,18 +618,19 @@ export function InventoryArticleEditor({
                     />
                     <small>Solo cambia esta variante; el código de variante se conserva.</small>
                   </label>
-                  <label>
-                    Mínimo para reponer
+                  <label className="inventory-editor-minimum-field">
+                    <span>Mínimo para reponer</span>
+                    <span className="inventory-editor-minimum-toggle"><input type="checkbox" checked={Boolean(minimumConfigured)} onChange={(event) => update({ minimumConfigured: event.target.checked, minimum: event.target.checked ? value.minimum : '0' })}/> Usar alerta de reposición</span>
                     <input
                       type="number"
                       min="0"
                       step="0.001"
-                      required
+                      disabled={!minimumConfigured}
                       value={value.minimum}
-                      onChange={(event) => update({ minimum: event.target.value })}
+                      onChange={(event) => update({ minimum: event.target.value, minimumConfigured: true })}
                       placeholder="0"
                     />
-                    <small>Alerta cuando las existencias lleguen a este nivel; no cambia el stock.</small>
+                    <small>{minimumConfigured ? 'La alerta compara el disponible con este nivel; no cambia el stock.' : 'Sin umbral definido. Activa la alerta para establecerlo o deja esta opción apagada si no aplica.'}</small>
                   </label>
                   <InventoryOptionPicker
                     label="Tipo de artículo"
