@@ -7,6 +7,11 @@ import {
   parseCoordinatesInput,
   formatDistance,
 } from '../src/lib/geospatialProximity.ts';
+import {
+  createGeoJsonCircle,
+  buildHalosFeatureCollection,
+  buildConnectionLinesFeatureCollection,
+} from '../src/lib/maplibreGeospatial.ts';
 
 test('calculateHaversineDistance computes accurate distance between Milagro landmarks', () => {
   // Parque Central (-2.1343, -79.5938) y Av. 17 de Septiembre y Colón (-2.1328, -79.5912)
@@ -124,4 +129,63 @@ test('formatDistance formats meters and blocks correctly', () => {
   assert.equal(formatDistance(180), '180 m (~2 cuadras)');
   assert.equal(formatDistance(100), '100 m (~1 cuadra)');
   assert.equal(formatDistance(1500), '1.5 km');
+});
+
+test('createGeoJsonCircle generates a valid closed polygon with 64 vertices', () => {
+  const circle = createGeoJsonCircle(-79.5938, -2.1343, 500, 64, { name: 'Milagro Central' });
+  assert.equal(circle.type, 'Feature');
+  assert.equal(circle.geometry.type, 'Polygon');
+  assert.equal(circle.geometry.coordinates.length, 1);
+  // 64 steps means 65 coordinates because the first and last point are identical (closed polygon)
+  assert.equal(circle.geometry.coordinates[0].length, 65);
+  const first = circle.geometry.coordinates[0][0];
+  const last = circle.geometry.coordinates[0][64];
+  assert.ok(Math.abs(first[0] - last[0]) < 1e-6);
+  assert.ok(Math.abs(first[1] - last[1]) < 1e-6);
+  assert.equal(circle.properties.radiusMeters, 500);
+  assert.equal(circle.properties.name, 'Milagro Central');
+});
+
+test('buildHalosFeatureCollection and buildConnectionLinesFeatureCollection produce valid GeoJSON', () => {
+  const jobs = [
+    {
+      id: 'job-1',
+      code: 'OT-101',
+      title: 'Lona',
+      clientName: 'Cliente A',
+      address: 'Centro 1',
+      scheduledDate: '2026-11-12',
+      status: 'ready',
+      priority: 'urgente',
+      requiresInstallation: true,
+      lat: -2.1343,
+      lng: -79.5938,
+    },
+    {
+      id: 'job-2',
+      code: 'OT-102',
+      title: 'Letrero',
+      clientName: 'Cliente B',
+      address: 'Centro 2',
+      scheduledDate: '2026-11-12',
+      status: 'ready',
+      priority: 'normal',
+      requiresInstallation: true,
+      lat: -2.1350,
+      lng: -79.5925,
+    },
+  ];
+
+  const halos = buildHalosFeatureCollection(jobs, 500);
+  assert.equal(halos.type, 'FeatureCollection');
+  assert.equal(halos.features.length, 2);
+  assert.equal(halos.features[0].properties.color, '#ef4444'); // Urgente es rojo
+  assert.equal(halos.features[1].properties.color, '#d97706'); // Normal es ámbar
+
+  const pairs = detectProximityPairs(jobs, 500);
+  const lines = buildConnectionLinesFeatureCollection(pairs);
+  assert.equal(lines.type, 'FeatureCollection');
+  assert.equal(lines.features.length, 1);
+  assert.equal(lines.features[0].geometry.type, 'LineString');
+  assert.equal(lines.features[0].geometry.coordinates.length, 2);
 });

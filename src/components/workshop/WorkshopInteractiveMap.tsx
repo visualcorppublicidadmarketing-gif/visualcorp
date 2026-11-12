@@ -1,15 +1,27 @@
 import React, { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import {
+  Map as MapLibreMap,
+  Marker as MapLibreMarker,
+  Popup as MapLibrePopup,
+  NavigationControl,
+  AttributionControl,
+  LngLatBounds,
+  setWorkerUrl,
+  type GeoJSONSource,
+} from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+import {
+  Box,
+  Compass,
+  Layers,
+  MapPin,
   Maximize2,
   Minimize2,
   Navigation,
-  Layers,
-  MapPin,
+  RotateCcw,
   Sparkles,
   Truck,
-  RotateCcw,
 } from 'lucide-react';
 import {
   type InstallationWorkOrder,
@@ -18,7 +30,38 @@ import {
   MILAGRO_CENTER,
   formatDistance,
 } from '../../lib/geospatialProximity';
+import {
+  buildHalosFeatureCollection,
+  buildConnectionLinesFeatureCollection,
+  registerProximityLayers,
+  enable3DBuildings,
+  toggle3DCameraView,
+} from '../../lib/maplibreGeospatial';
 import './workshop-map.css';
+
+// Registrar el worker de MapLibre empaquetado por Vite a nivel de módulo
+setWorkerUrl(workerUrl);
+
+export type OpenFreeMapStyleKey = 'liberty' | 'positron' | 'bright' | 'dark';
+
+export const OPENFREEMAP_STYLES: Record<OpenFreeMapStyleKey, { url: string; label: string }> = {
+  liberty: {
+    url: 'https://tiles.openfreemap.org/styles/liberty',
+    label: 'Liberty (Detallado)',
+  },
+  positron: {
+    url: 'https://tiles.openfreemap.org/styles/positron',
+    label: 'Positron (Dashboard)',
+  },
+  bright: {
+    url: 'https://tiles.openfreemap.org/styles/bright',
+    label: 'Bright (Contraste)',
+  },
+  dark: {
+    url: 'https://tiles.openfreemap.org/styles/dark',
+    label: 'Dark (Noche)',
+  },
+};
 
 interface WorkshopInteractiveMapProps {
   jobs: InstallationWorkOrder[];
@@ -31,26 +74,6 @@ interface WorkshopInteractiveMapProps {
   className?: string;
 }
 
-type MapTileStyle = 'carto-light' | 'carto-dark' | 'osm';
-
-const TILE_PROVIDERS: Record<MapTileStyle, { url: string; label: string; attribution: string }> = {
-  'carto-light': {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    label: 'Carto Claro',
-    attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap',
-  },
-  'carto-dark': {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    label: 'Carto Oscuro',
-    attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap',
-  },
-  'osm': {
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    label: 'OpenStreetMap',
-    attribution: '&copy; OpenStreetMap contributors',
-  },
-};
-
 export const WorkshopInteractiveMap: React.FC<WorkshopInteractiveMapProps> = ({
   jobs,
   clusters,
@@ -62,188 +85,127 @@ export const WorkshopInteractiveMap: React.FC<WorkshopInteractiveMapProps> = ({
   className = '',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const markersRef = useRef<MapLibreMarker[]>([]);
+  const pickMarkerRef = useRef<MapLibreMarker | null>(null);
 
-  const markersGroupRef = useRef<L.LayerGroup>(L.layerGroup());
-  const halosGroupRef = useRef<L.LayerGroup>(L.layerGroup());
-  const linesGroupRef = useRef<L.LayerGroup>(L.layerGroup());
-  const pickMarkerRef = useRef<L.Marker | null>(null);
-
-  const [tileStyle, setTileStyle] = useState<MapTileStyle>('carto-light');
+  const [activeStyle, setActiveStyle] = useState<OpenFreeMapStyleKey>('positron');
+  const [is3DMode, setIs3DMode] = useState(false);
   const [showHalos, setShowHalos] = useState(true);
   const [showLines, setShowLines] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // 1. Inicialización segura para React 19 (montaje único con cleanup estricto)
+  // 1. Inicialización de MapLibre GL JS con OpenFreeMap (Compatible con React 19)
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = L.map(containerRef.current, {
-      center: [MILAGRO_CENTER.lat, MILAGRO_CENTER.lng],
-      zoom: 14,
-      zoomControl: true,
+    const map = new MapLibreMap({
+      container: containerRef.current,
+      style: OPENFREEMAP_STYLES[activeStyle].url,
+      center: [MILAGRO_CENTER.lng, MILAGRO_CENTER.lat], // MapLibre usa [lng, lat]
+      zoom: 14.3,
+      pitch: 0,
+      bearing: 0,
       attributionControl: false,
     });
 
-    const tileInfo = TILE_PROVIDERS[tileStyle];
-    const initialTile = L.tileLayer(tileInfo.url, {
-      maxZoom: 19,
-      attribution: tileInfo.attribution,
-    }).addTo(map);
+    // Control de navegación interactiva (zoom, brújula y pitch)
+    map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
+    map.addControl(new AttributionControl({ compact: true }), 'bottom-right');
 
-    tileLayerRef.current = initialTile;
+    map.on('load', () => {
+      registerProximityLayers(map);
+      updateDataSources();
+    });
 
-    // Agregar capas en orden (halos abajo, líneas al centro, pines arriba)
-    halosGroupRef.current.addTo(map);
-    linesGroupRef.current.addTo(map);
-    markersGroupRef.current.addTo(map);
+    // Modo Click-to-Pin para georreferenciación
+    map.on('click', (e) => {
+      if (!pickingMode || !onLocationPick) return;
+      const { lng, lat } = e.lngLat;
+      onLocationPick({ lat, lng });
+
+      if (pickMarkerRef.current) {
+        pickMarkerRef.current.setLngLat([lng, lat]);
+      } else {
+        const el = document.createElement('div');
+        el.className = 'vc-pin-wrapper';
+        el.innerHTML = `
+          <div class="vc-pin-head is-selected" style="background:#0284c7; border-color:#bae6fd;">
+            🎯
+          </div>
+          <div class="vc-pin-tip" style="border-top-color:#0284c7;"></div>
+        `;
+        pickMarkerRef.current = new MapLibreMarker({ element: el, draggable: true })
+          .setLngLat([lng, lat])
+          .addTo(map);
+
+        pickMarkerRef.current.on('dragend', () => {
+          const pos = pickMarkerRef.current?.getLngLat();
+          if (pos) onLocationPick({ lat: pos.lat, lng: pos.lng });
+        });
+      }
+    });
 
     mapRef.current = map;
 
-    // Invalida tamaño para asegurar renderizado correcto al inicio
+    // Invalida tamaño para asegurar cálculo correcto en renderizado inicial
     setTimeout(() => {
-      map.invalidateSize();
-    }, 200);
+      map.resize();
+    }, 250);
 
     return () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+      if (pickMarkerRef.current) {
+        pickMarkerRef.current.remove();
+        pickMarkerRef.current = null;
+      }
       map.remove();
       mapRef.current = null;
     };
   }, []);
 
-  // 2. Cambio dinámico de proveedor de mapa (claro, oscuro, OSM)
+  // 2. Función para actualizar fuentes GeoJSON (Halos y Líneas de Proximidad)
+  const updateDataSources = () => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    // Capa de Halos (500m)
+    const halosSource = map.getSource('proximity-halos') as GeoJSONSource | undefined;
+    if (halosSource) {
+      halosSource.setData(
+        showHalos ? buildHalosFeatureCollection(jobs, 500) : { type: 'FeatureCollection', features: [] }
+      );
+    }
+
+    // Capa de Líneas Conectoras (<500m)
+    const linesSource = map.getSource('proximity-lines') as GeoJSONSource | undefined;
+    if (linesSource) {
+      linesSource.setData(
+        showLines ? buildConnectionLinesFeatureCollection(proximityPairs) : { type: 'FeatureCollection', features: [] }
+      );
+    }
+  };
+
+  // 3. Renderizado de Marcadores DOM personalizados y actualización GeoJSON
   useEffect(() => {
+    updateDataSources();
+
     const map = mapRef.current;
     if (!map) return;
 
-    if (tileLayerRef.current) {
-      map.removeLayer(tileLayerRef.current);
-    }
+    // Limpiar marcadores DOM previos
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
 
-    const tileInfo = TILE_PROVIDERS[tileStyle];
-    tileLayerRef.current = L.tileLayer(tileInfo.url, {
-      maxZoom: 19,
-      attribution: tileInfo.attribution,
-    }).addTo(map);
-  }, [tileStyle]);
+    const bounds = new LngLatBounds();
+    let hasCoords = false;
 
-  // 3. Manejo del modo de georreferenciación (Click-to-Pin)
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    const handleClick = (e: L.LeafletMouseEvent) => {
-      if (!pickingMode) return;
-      const { lat, lng } = e.latlng;
-
-      if (!pickMarkerRef.current) {
-        const pickIcon = L.divIcon({
-          className: 'vc-map-custom-pin',
-          iconSize: [36, 42],
-          iconAnchor: [18, 42],
-          html: `
-            <div class="vc-pin-wrapper">
-              <div class="vc-pin-head is-selected" style="background:#0284c7; border-color:#bae6fd;">
-                🎯
-              </div>
-              <div class="vc-pin-tip" style="border-top-color:#0284c7;"></div>
-            </div>
-          `,
-        });
-
-        pickMarkerRef.current = L.marker([lat, lng], { icon: pickIcon, draggable: true }).addTo(map);
-        pickMarkerRef.current.on('dragend', () => {
-          const pos = pickMarkerRef.current?.getLatLng();
-          if (pos) onLocationPick?.({ lat: pos.lat, lng: pos.lng });
-        });
-      } else {
-        pickMarkerRef.current.setLatLng([lat, lng]);
-      }
-
-      onLocationPick?.({ lat, lng });
-    };
-
-    if (pickingMode) {
-      map.on('click', handleClick);
-      map.getContainer().style.cursor = 'crosshair';
-    } else {
-      map.getContainer().style.cursor = '';
-      if (pickMarkerRef.current) {
-        map.removeLayer(pickMarkerRef.current);
-        pickMarkerRef.current = null;
-      }
-    }
-
-    return () => {
-      map.off('click', handleClick);
-    };
-  }, [pickingMode, onLocationPick]);
-
-  // 4. Renderizado inteligente de Halos, Líneas de Proximidad y Pines
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    markersGroupRef.current.clearLayers();
-    halosGroupRef.current.clearLayers();
-    linesGroupRef.current.clearLayers();
-
-    const bounds: L.LatLngTuple[] = [];
-
-    // --- HALOS DE PROXIMIDAD (Círculos de 500m / cluster) ---
-    if (showHalos) {
-      clusters.forEach((cluster) => {
-        const radius = Math.max(350, Math.min(cluster.maxDistanceMeters * 0.8, 600));
-        const circle = L.circle([cluster.center.lat, cluster.center.lng], {
-          radius,
-          color: '#d97706',
-          fillColor: '#fbbf24',
-          fillOpacity: 0.14,
-          weight: 2,
-          dashArray: '6, 6',
-        });
-
-        circle.bindTooltip(
-          `<b>${cluster.label}</b><br><small>${cluster.recommendedAction}</small>`,
-          { direction: 'top', className: 'vc-map-tooltip' }
-        );
-
-        halosGroupRef.current.addLayer(circle);
-      });
-    }
-
-    // --- LÍNEAS DE CONEXIÓN ENTRE TRABAJOS CERCANOS ---
-    if (showLines && proximityPairs.length > 0) {
-      proximityPairs.forEach((pair) => {
-        const isCritical = pair.distanceMeters <= 250;
-        const color = isCritical ? '#ef4444' : '#f59e0b';
-
-        const line = L.polyline(
-          [
-            [pair.jobA.lat, pair.jobA.lng],
-            [pair.jobB.lat, pair.jobB.lng],
-          ],
-          {
-            color,
-            weight: 2.5,
-            dashArray: '4, 6',
-            opacity: 0.85,
-          }
-        );
-
-        line.bindTooltip(
-          `<b>Proximidad: ${formatDistance(pair.distanceMeters)}</b><br>${pair.jobA.code} ↔ ${pair.jobB.code}<br><small>${pair.sameDay ? '✓ Mismo día' : 'Fechas distintas'}</small>`,
-          { sticky: true, className: 'vc-map-tooltip' }
-        );
-
-        linesGroupRef.current.addLayer(line);
-      });
-    }
-
-    // --- MARCADORES / PINES DE CADA TRABAJO ---
     jobs.forEach((job) => {
       if (!Number.isFinite(job.lat) || !Number.isFinite(job.lng) || (job.lat === 0 && job.lng === 0)) return;
+
+      hasCoords = true;
+      bounds.extend([job.lng, job.lat]);
 
       const isSelected = selectedJobId === job.id;
       const isUrgent = job.priority === 'urgente';
@@ -256,10 +218,12 @@ export const WorkshopInteractiveMap: React.FC<WorkshopInteractiveMapProps> = ({
       else if (inCluster) stateClass = 'is-cluster';
       else if (isCompleted) stateClass = 'is-completed';
 
-      // Código corto visible (ej "104" de "OT-2026-104")
       const shortCode = job.code.replace(/^(?:OT-|COT-)/i, '').slice(-4);
 
-      const html = `
+      // Elemento DOM interactivo
+      const el = document.createElement('div');
+      el.className = 'vc-map-custom-pin';
+      el.innerHTML = `
         <div class="vc-pin-wrapper">
           <div class="vc-pin-head ${stateClass}">
             ${(isUrgent || inCluster) && !isCompleted ? `
@@ -274,27 +238,13 @@ export const WorkshopInteractiveMap: React.FC<WorkshopInteractiveMapProps> = ({
         </div>
       `;
 
-      const customIcon = L.divIcon({
-        className: 'vc-map-custom-pin',
-        iconSize: [36, 42],
-        iconAnchor: [18, 42],
-        popupAnchor: [0, -38],
-        html,
-      });
-
-      const marker = L.marker([job.lat, job.lng], { icon: customIcon });
-
-      marker.on('click', () => {
-        onSelectJob?.(job);
-      });
-
-      // Contenido del Popup interactivo
+      // Popup informativo enriquecido con WhatsApp
       const tagBg = isUrgent ? '#dc2626' : inCluster ? '#d97706' : '#2563eb';
       const tagLabel = isUrgent ? '🚨 URGENTE' : inCluster ? '⚡ EN CLUSTER' : 'INSTALACIÓN';
 
       const whatsappUrl = job.clientPhone
         ? `https://wa.me/${job.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(
-            `Hola ${job.clientName}, te saluda el taller de Visual Corp. Nos comunicamos para coordinar la instalación de tu trabajo ${job.code} en ${job.address}.`
+            `Hola ${job.clientName}, te saluda el taller de Visual Corp para coordinar la instalación de tu trabajo ${job.code} en ${job.address}.`
           )}`
         : '';
 
@@ -324,49 +274,100 @@ export const WorkshopInteractiveMap: React.FC<WorkshopInteractiveMapProps> = ({
         </div>
       `;
 
-      marker.bindPopup(popupHtml);
+      const popup = new MapLibrePopup({
+        offset: [0, -36],
+        closeButton: true,
+        closeOnClick: false,
+      }).setHTML(popupHtml);
 
-      marker.on('popupopen', () => {
+      const marker = new MapLibreMarker({ element: el, anchor: 'bottom' })
+        .setLngLat([job.lng, job.lat])
+        .setPopup(popup)
+        .addTo(map);
+
+      el.addEventListener('click', () => {
+        onSelectJob?.(job);
+      });
+
+      popup.on('open', () => {
         const btn = document.getElementById(`btn-select-${job.id}`);
         if (btn) {
           btn.onclick = () => {
             onSelectJob?.(job);
-            marker.closePopup();
+            popup.remove();
           };
         }
       });
 
-      markersGroupRef.current.addLayer(marker);
-      bounds.push([job.lat, job.lng]);
+      markersRef.current.push(marker);
     });
 
-    // Encuadrar todos los pines en pantalla automáticamente si hay al menos uno
-    if (bounds.length > 0 && !pickingMode && !selectedJobId) {
-      map.fitBounds(bounds, { padding: [45, 45], maxZoom: 16 });
+    // Encuadrar todos los puntos en el primer render
+    if (hasCoords && !pickingMode && !selectedJobId) {
+      map.fitBounds(bounds, { padding: 50, maxZoom: 16 });
     }
   }, [jobs, clusters, proximityPairs, selectedJobId, showHalos, showLines, pickingMode, onSelectJob]);
 
-  // 5. Enfocar el mapa al cambiar la orden seleccionada
+  // 4. Enfocar trabajo seleccionado en el mapa
   useEffect(() => {
     if (!selectedJobId || !mapRef.current) return;
     const target = jobs.find((j) => j.id === selectedJobId);
     if (target && Number.isFinite(target.lat) && Number.isFinite(target.lng)) {
-      mapRef.current.setView([target.lat, target.lng], 16, { animate: true });
+      mapRef.current.flyTo({
+        center: [target.lng, target.lat],
+        zoom: 16,
+        duration: 900,
+        essential: true,
+      });
     }
   }, [selectedJobId, jobs]);
 
-  // Manejo de recentrado en Milagro
-  const handleRecenter = () => {
-    if (mapRef.current) {
-      mapRef.current.setView([MILAGRO_CENTER.lat, MILAGRO_CENTER.lng], 14, { animate: true });
+  // Cambio dinámico de estilo OpenFreeMap
+  const handleStyleChange = (styleKey: OpenFreeMapStyleKey) => {
+    if (styleKey === activeStyle || !mapRef.current) return;
+    setActiveStyle(styleKey);
+
+    const map = mapRef.current;
+    map.once('style.load', () => {
+      registerProximityLayers(map);
+      updateDataSources();
+      if (is3DMode) {
+        enable3DBuildings(map);
+      }
+    });
+
+    map.setStyle(OPENFREEMAP_STYLES[styleKey].url);
+  };
+
+  // Alternancia de vista 3D / 2D
+  const handleToggle3D = () => {
+    if (!mapRef.current) return;
+    const nextState = !is3DMode;
+    setIs3DMode(nextState);
+    toggle3DCameraView(mapRef.current, nextState);
+    if (nextState) {
+      enable3DBuildings(mapRef.current);
     }
   };
 
-  // Toggle de pantalla completa
+  // Recentrar en Milagro
+  const handleRecenter = () => {
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [MILAGRO_CENTER.lng, MILAGRO_CENTER.lat],
+        zoom: 14.3,
+        pitch: is3DMode ? 52 : 0,
+        bearing: 0,
+        duration: 800,
+      });
+    }
+  };
+
+  // Pantalla completa
   const handleToggleFullscreen = () => {
     setIsFullscreen((prev) => !prev);
     setTimeout(() => {
-      mapRef.current?.invalidateSize();
+      mapRef.current?.resize();
     }, 250);
   };
 
@@ -374,44 +375,57 @@ export const WorkshopInteractiveMap: React.FC<WorkshopInteractiveMapProps> = ({
 
   return (
     <div className={`vc-workshop-map-container ${isFullscreen ? 'is-fullscreen' : ''} ${className}`}>
-      {/* Barra superior de control e indicadores */}
+      {/* Barra superior de control OpenFreeMap */}
       <div className="vc-map-top-bar">
         <div className="vc-map-badge-group">
           <span className="vc-map-info-pill">
             <Truck size={13} style={{ color: '#38bdf8' }} />
-            <span>{validJobsCount} instalaciones georreferenciadas</span>
+            <span>OpenFreeMap · {validJobsCount} instalaciones</span>
           </span>
 
           {proximityPairs.length > 0 && (
             <span className="vc-map-info-pill is-cluster">
               <Sparkles size={13} />
-              <span>{proximityPairs.length} {proximityPairs.length === 1 ? 'par cercano' : 'pares cercanos'} (~cuadras)</span>
+              <span>{proximityPairs.length} {proximityPairs.length === 1 ? 'par cercano' : 'pares'} (&lt;500m)</span>
             </span>
           )}
         </div>
 
         <div className="vc-map-toolbar-actions">
-          {/* Selector de capa de mapa */}
+          {/* Selector de Estilo Vectorial OpenFreeMap */}
+          {(Object.keys(OPENFREEMAP_STYLES) as OpenFreeMapStyleKey[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              className={`vc-map-action-btn ${activeStyle === key ? 'is-active' : ''}`}
+              title={`Cambiar a estilo ${OPENFREEMAP_STYLES[key].label}`}
+              onClick={() => handleStyleChange(key)}
+            >
+              <span>{key.toUpperCase()}</span>
+            </button>
+          ))}
+
+          {/* Botón 3D / Isométrico */}
           <button
             type="button"
-            className="vc-map-action-btn"
-            title="Cambiar capa de mapa"
-            onClick={() => {
-              setTileStyle((curr) => (curr === 'carto-light' ? 'carto-dark' : curr === 'carto-dark' ? 'osm' : 'carto-light'));
-            }}
+            className={`vc-map-action-btn ${is3DMode ? 'is-active' : ''}`}
+            title="Activar vista isométrica 3D"
+            onClick={handleToggle3D}
           >
-            <Layers size={13} />
-            <span>{TILE_PROVIDERS[tileStyle].label}</span>
+            <Box size={13} />
+            <span>3D {is3DMode ? 'ON' : 'OFF'}</span>
           </button>
 
-          {/* Toggle de círculos de proximidad */}
+          {/* Toggle Halos 500m */}
           <button
             type="button"
             className={`vc-map-action-btn ${showHalos ? 'is-active' : ''}`}
-            title="Activar o desactivar halos de 500m"
-            onClick={() => setShowHalos((p) => !p)}
+            title="Activar o desactivar círculos de 500m"
+            onClick={() => {
+              setShowHalos((p) => !p);
+            }}
           >
-            <span>Halos 500m</span>
+            <span>Halos</span>
           </button>
 
           {/* Recentrar en Milagro */}
@@ -437,15 +451,15 @@ export const WorkshopInteractiveMap: React.FC<WorkshopInteractiveMapProps> = ({
         </div>
       </div>
 
-      {/* Banner de aviso cuando está activo el modo "Click-to-Pin" */}
+      {/* Banner de Modo "Click-to-Pin" */}
       {pickingMode && (
         <div className="vc-map-picking-banner">
           <MapPin size={15} />
-          <span>Haz clic en el mapa para marcar la ubicación exacta de instalación</span>
+          <span>Haz clic en el mapa vectorial para fijar las coordenadas exactas</span>
         </div>
       )}
 
-      {/* Canvas del mapa de Leaflet */}
+      {/* Contenedor del Canvas WebGL de MapLibre */}
       <div ref={containerRef} className="vc-workshop-map-canvas" />
     </div>
   );
