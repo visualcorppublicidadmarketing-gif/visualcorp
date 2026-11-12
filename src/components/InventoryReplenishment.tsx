@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowUpRight, CircleAlert, ClipboardCheck, Download, ListFilter, PackageCheck, Search } from 'lucide-react';
+import { ArrowUpRight, CircleAlert, ClipboardCheck, CircleHelp, Download, ListFilter, PackageCheck, Search } from 'lucide-react';
 import { compareInventoryPriority, formatInventoryQuantity, getInventoryBalance, getInventoryPriority, getInventoryStatus, inventoryReplenishmentCsv, inventoryReplenishmentReason, inventoryStatusTone, matchesInventorySearch } from '../lib/inventoryModel';
 import type { InventoryEntry, InventoryPriority } from '../lib/inventoryModel';
 import './inventory-control.css';
@@ -9,7 +9,7 @@ type Props = { items: InventoryEntry[]; onInspect: (item: InventoryEntry) => voi
 const priorityFilters: Array<{ key: Filter; label: string }> = [
   { key: 'attention', label: 'Requieren revisión' }, { key: 'all', label: 'Todos los registros' },
   { key: 'unavailable', label: 'Sin disponible' }, { key: 'below', label: 'Bajo mínimo' },
-  { key: 'minimum', label: 'En el mínimo' }, { key: 'unverified', label: 'Por verificar' }, { key: 'healthy', label: 'Sobre el mínimo' },
+  { key: 'minimum', label: 'En el mínimo' }, { key: 'minimum_unconfigured', label: 'Mínimo pendiente' }, { key: 'unverified', label: 'Por verificar' }, { key: 'healthy', label: 'Sobre el mínimo' },
 ];
 
 export function InventoryReplenishment({ items, onInspect, onCounts, onAssign }: Props) {
@@ -23,7 +23,7 @@ export function InventoryReplenishment({ items, onInspect, onCounts, onAssign }:
   const areas = useMemo(() => [...new Set(activeItems.map(item => item.area).filter(Boolean))].sort(), [activeItems]);
   const scoped = useMemo(() => activeItems.filter(item => (!branch || item.branch === branch) && (!area || item.area === area) && matchesInventorySearch(item, query)), [activeItems, branch, area, query]);
   const totals = useMemo(() => {
-    const counts: Record<InventoryPriority, number> = { unavailable: 0, below: 0, minimum: 0, unverified: 0, healthy: 0 };
+    const counts: Record<InventoryPriority, number> = { unavailable: 0, below: 0, minimum: 0, minimum_unconfigured: 0, unverified: 0, healthy: 0 };
     for (const item of scoped) counts[getInventoryPriority(item)]++;
     return counts;
   }, [scoped]);
@@ -41,11 +41,12 @@ export function InventoryReplenishment({ items, onInspect, onCounts, onAssign }:
   return <section className="panel inventory-control" aria-labelledby="inventory-control-title">
     <header className="inventory-control-heading"><div><span className="eyebrow">DECIDIR CON EXISTENCIAS REALES</span><h3 id="inventory-control-title">Control de reposición</h3><p>Revisa el disponible después de reservas y compáralo con el mínimo de la ficha.</p></div><button type="button" className="button button-outline" onClick={exportCsv} disabled={!filtered.length}><Download size={16}/>Exportar lista ({filtered.length})</button></header>
     <div className="inventory-control-summary" aria-label="Prioridades del alcance filtrado">
-      {([{ key: 'unavailable', label: 'Sin disponible', icon: CircleAlert }, { key: 'below', label: 'Bajo mínimo', icon: ListFilter }, { key: 'minimum', label: 'En el mínimo', icon: PackageCheck }, { key: 'unverified', label: 'Por verificar', icon: ClipboardCheck }] as const).map(({ key, label, icon: Icon }) => <button key={key} type="button" className={filter === key ? 'selected' : ''} aria-pressed={filter === key} onClick={() => chooseFilter(filter === key ? 'attention' : key)}><Icon size={18}/><span>{label}<strong>{totals[key]}</strong></span></button>)}
+      {([{ key: 'unavailable', label: 'Sin disponible', icon: CircleAlert }, { key: 'below', label: 'Bajo mínimo', icon: ListFilter }, { key: 'minimum', label: 'En el mínimo', icon: PackageCheck }, { key: 'minimum_unconfigured', label: 'Mínimo pendiente', icon: CircleHelp }, { key: 'unverified', label: 'Por verificar', icon: ClipboardCheck }] as const).map(({ key, label, icon: Icon }) => <button key={key} type="button" className={filter === key ? 'selected' : ''} aria-pressed={filter === key} onClick={() => chooseFilter(filter === key ? 'attention' : key)}><Icon size={18}/><span>{label}<strong>{totals[key]}</strong></span></button>)}
     </div>
     <div className="inventory-control-filters"><label className="inventory-control-search"><Search size={16}/><input aria-label="Buscar en reposición" value={query} onChange={event => { setQuery(event.target.value); setLimit(30); }} placeholder="Artículo, SKU, variante o ubicación"/></label><label><span>Sucursal</span><select value={branch} onChange={event => { setBranch(event.target.value); setLimit(30); }}><option value="">Todas las sucursales</option>{branches.map(value => <option key={value}>{value}</option>)}</select></label><label><span>Área</span><select value={area} onChange={event => { setArea(event.target.value); setLimit(30); }}><option value="">Todas las áreas</option>{areas.map(value => <option key={value}>{value}</option>)}</select></label><label><span>Prioridad</span><select value={filter} onChange={event => chooseFilter(event.target.value as Filter)}>{priorityFilters.map(option => <option value={option.key} key={option.key}>{option.label}</option>)}</select></label></div>
     <div className="inventory-control-caption"><span role="status">{filtered.length} de {scoped.length} registros en este alcance</span><button type="button" onClick={reset}>Limpiar filtros</button></div>
     {totals.unverified > 0 && <div className="inventory-control-notice"><ClipboardCheck size={18}/><div><b>{totals.unverified} registros necesitan verificación</b><p>Las cantidades sin conteo o sin disponibilidad confirmada no generan cantidades de reposición.</p></div><button type="button" className="button button-outline" onClick={onCounts}>Revisar conteos <ArrowUpRight size={14}/></button></div>}
+    {totals.minimum_unconfigured > 0 && <div className="inventory-control-minimum-notice"><CircleHelp size={18}/><div><b>{totals.minimum_unconfigured} registros aún no tienen una decisión de mínimo</b><p>Esto no significa que estén agotados. Abre cada ficha para definir un umbral o confirmar que no necesita alerta.</p></div></div>}
     <div className="inventory-replenishment-list">
       {filtered.slice(0, limit).map(item => {
         const balance = getInventoryBalance(item);

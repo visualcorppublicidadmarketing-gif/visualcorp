@@ -1321,6 +1321,7 @@
   font-size: 8.5px;
   font-weight: 700;
 }
+.inventory-card-min-hint.is-pending{background:#f1ecfa;color:#684b8e}
 
 .inventory-card-health-meter {
   grid-area: meter;
@@ -1413,6 +1414,7 @@
   background: #1a1e30 !important;
   color: #94a3b8 !important;
 }
+[data-theme='dark'] .inventory-card-min-hint.is-pending,.work-app.theme-dark .inventory-card-min-hint.is-pending{background:rgba(167,139,250,.16)!important;color:#d8b4fe!important}
 
 [data-theme='dark'] .inventory-product-tags em.is-type-tag,
 .work-app.theme-dark .inventory-product-tags em.is-type-tag {
