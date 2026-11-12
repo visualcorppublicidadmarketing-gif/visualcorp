@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, AlertTriangle, ArrowDownToLine, ArrowRightLeft, Check, CircleHelp, Clock3, Disc3, History, LoaderCircle, MapPin, Plus, RefreshCw, Ruler, Scissors, Search, Warehouse, X } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { Dialog } from './ui/OperationalKit';
@@ -85,7 +85,7 @@ export function InventoryRollBook({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [branchId, setBranchId] = useState('all');
-  const [stateFilter, setStateFilter] = useState<'todos' | 'bodega' | 'machine' | 'agotado' | 'bajo'>('todos');
+  const [stateFilter, setStateFilter] = useState<'todos' | 'bodega' | 'machine' | 'agotado' | 'bajo' | 'estimado'>('todos');
   const [search, setSearch] = useState('');
   const [machineFilter, setMachineFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
@@ -98,6 +98,9 @@ export function InventoryRollBook({
   const [historyRoll, setHistoryRoll] = useState<Roll | null>(null);
   const [historyRows, setHistoryRows] = useState<RollLog[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState('');
+  const [expandedToolsRollId, setExpandedToolsRollId] = useState<string | null>(null);
+  const measurementInputRef = useRef<HTMLInputElement>(null);
   const [replaceConfirmId, setReplaceConfirmId] = useState('');
   const [form, setForm] = useState({ variantId: '', width: '', nominal: '', remainingMode: 'meters' as 'meters' | 'percent', remaining: '', percent: '', location: 'MAIN', tag: '', operator: operatorDefaultName, reason: '', reference: '' });
   const [measurement, setMeasurement] = useState<Record<string, { meters: string; reason: string; reference: string }>>({});
@@ -188,6 +191,7 @@ export function InventoryRollBook({
     const percent = nominal > 0 ? Number(roll.remaining_m || 0) / nominal * 100 : null;
     if (stateFilter === 'agotado' && roll.status !== 'agotado') return false;
     if (stateFilter === 'bajo' && (roll.status === 'agotado' || percent === null || percent > LOW_ROLL_PERCENT)) return false;
+    if (stateFilter === 'estimado' && !roll.remaining_is_estimate) return false;
     if (stateFilter === 'bodega' && roll.roll_state !== 'bodega') return false;
     if (stateFilter === 'machine' && roll.roll_state !== 'machine') return false;
     const needle = search.trim().toLowerCase();
@@ -200,10 +204,15 @@ export function InventoryRollBook({
     return roll.standard_length_m !== null && Number(roll.standard_length_m) > 0 && Number(roll.remaining_m || 0) / Number(roll.standard_length_m) * 100 <= LOW_ROLL_PERCENT;
   });
   const exhaustedCount = scopedRolls.filter((roll) => roll.status === 'agotado' || Number(roll.remaining_m || 0) <= 0).length;
+  const estimatedCount = scopedRolls.filter((roll) => roll.remaining_is_estimate).length;
   const warehouseMeters = scopedRolls.filter((roll) => roll.roll_state === 'bodega').reduce((sum, roll) => sum + Number(roll.remaining_m || 0), 0);
   const machines = [...new Set(scopedRolls.map((roll) => roll.machine_name).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
   const availableMachineNames = [...new Set([...equipmentMachines, ...availableMachines, ...machines])].sort((a, b) => a.localeCompare(b, 'es'));
   const locations = [...new Set(scopedRolls.map((roll) => roll.location_code).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+
+  useEffect(() => {
+    if (expandedToolsRollId) measurementInputRef.current?.focus();
+  }, [expandedToolsRollId]);
 
   const submitReceive = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -279,11 +288,18 @@ export function InventoryRollBook({
 
   const openHistory = async (roll: Roll) => {
     if (!supabase) return;
-    setHistoryRoll(roll); setHistoryRows([]); setHistoryLoading(true);
-    const { data, error } = await supabase.from('inventory_roll_logs').select('id,event_type,previous_m,new_m,previous_state,new_state,reason,work_reference,operator_name,recorded_at,notes').eq('organization_id', organizationId).eq('roll_id', roll.id).order('recorded_at', { ascending: false }).limit(30);
-    if (error) onNotice?.(`No se pudo cargar el historial: ${error.message}`);
-    else setHistoryRows((data || []) as RollLog[]);
-    setHistoryLoading(false);
+    setHistoryRoll(roll); setHistoryRows([]); setHistoryError(''); setHistoryLoading(true);
+    try {
+      const { data, error } = await supabase.from('inventory_roll_logs').select('id,event_type,previous_m,new_m,previous_state,new_state,reason,work_reference,operator_name,recorded_at,notes').eq('organization_id', organizationId).eq('roll_id', roll.id).order('recorded_at', { ascending: false }).limit(30);
+      if (error) throw error;
+      setHistoryRows((data || []) as RollLog[]);
+    } catch (error) {
+      const message = errorMessage(error);
+      setHistoryError(message);
+      onNotice?.(`No se pudo cargar el historial: ${message}`);
+    } finally {
+      setHistoryLoading(false);
+    }
   };
 
   const replaceRoll = async (roll: Roll) => {
@@ -321,6 +337,12 @@ export function InventoryRollBook({
         <article className={lowRolls.length + exhaustedCount > 0 ? 'is-attention' : ''}><span className="roll-book__metric-icon is-amber"><AlertTriangle size={17}/></span><div><small>Necesitan atención</small><strong>{lowRolls.length + exhaustedCount}</strong><span>{lowRolls.length} bajo {LOW_ROLL_PERCENT}% · {exhaustedCount} agotados</span></div></article>
       </section>
 
+      {estimatedCount > 0 && <aside className="roll-book__estimate-notice" aria-label="Saldos estimados pendientes de medición">
+        <span className="roll-book__estimate-icon"><Ruler size={17}/></span>
+        <div><strong>{estimatedCount} {estimatedCount === 1 ? 'saldo estimado' : 'saldos estimados'} por confirmar</strong><p>El consumo registrado calcula el restante. Una medición física confirma el metraje real del rollo.</p></div>
+        <button type="button" onClick={() => setStateFilter('estimado')}>Revisar saldos <span aria-hidden="true">→</span></button>
+      </aside>}
+
       {realtimeState !== 'live' && <p className="roll-book__sync-note" role="status"><Clock3 size={14}/> {lastUpdatedAt ? `Última consulta ${new Date(lastUpdatedAt).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}.` : 'La conexión en vivo aún no está disponible.'} La pantalla se actualiza al recargar.</p>}
       {loadError && <div className="roll-book__error" role="alert"><CircleHelp size={17}/><span>No se pudieron actualizar los datos. Se conserva la última lectura disponible.</span><button type="button" onClick={() => void loadRolls()} disabled={loading}>Reintentar</button></div>}
 
@@ -344,7 +366,7 @@ export function InventoryRollBook({
 
       <section className="roll-book__inventory" aria-labelledby="roll-book-list-title">
         <div className="roll-book__section-heading roll-book__section-heading--list"><div><span className="roll-book__kicker">Trazabilidad física</span><h2 id="roll-book-list-title">Rollos por ubicación <small>{visibleRolls.length}</small></h2></div><div className="roll-book__filters"><label className="roll-book__search"><Search size={16}/><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar material, lote o máquina" aria-label="Buscar rollos"/>{search && <button type="button" aria-label="Limpiar búsqueda" onClick={() => setSearch('')}><X size={14}/></button>}</label><select value={machineFilter} onChange={(event) => setMachineFilter(event.target.value)} aria-label="Filtrar por máquina"><option value="all">Todas las máquinas</option>{machines.map((machine) => <option key={machine} value={machine}>{machine}</option>)}</select><select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} aria-label="Filtrar por ubicación de bodega"><option value="all">Todas las ubicaciones</option>{locations.map((location) => <option key={location} value={location}>{location}</option>)}</select></div></div>
-        <div className="roll-book__state-filters" role="group" aria-label="Filtrar rollos por estado">{([['todos', 'Todos', scopedRolls.length], ['bodega', 'En bodega', scopedRolls.filter((roll) => roll.roll_state === 'bodega').length], ['machine', 'En máquina', scopedRolls.filter((roll) => roll.roll_state === 'machine' && roll.status !== 'agotado').length], ['bajo', 'Bajo mínimo', lowRolls.length], ['agotado', 'Agotados', exhaustedCount]] as const).map(([key, label, count]) => <button key={key} type="button" className={stateFilter === key ? 'is-active' : ''} aria-pressed={stateFilter === key} onClick={() => setStateFilter(key)}>{label}<b>{count}</b></button>)}</div>
+        <div className="roll-book__state-filters" role="group" aria-label="Filtrar rollos por estado">{([['todos', 'Todos', scopedRolls.length], ['bodega', 'En bodega', scopedRolls.filter((roll) => roll.roll_state === 'bodega').length], ['machine', 'En máquina', scopedRolls.filter((roll) => roll.roll_state === 'machine' && roll.status !== 'agotado').length], ['estimado', 'Por confirmar', estimatedCount], ['bajo', 'Bajo mínimo', lowRolls.length], ['agotado', 'Agotados', exhaustedCount]] as const).map(([key, label, count]) => <button key={key} type="button" className={stateFilter === key ? 'is-active' : ''} aria-pressed={stateFilter === key} onClick={() => setStateFilter(key)}>{label}<b>{count}</b></button>)}</div>
         {loading && rolls.length === 0 ? <div className="roll-book__empty"><LoaderCircle className="roll-book__spin" size={20}/> Cargando rollos…</div> : visibleRolls.length ? <div className="roll-book__grid">{visibleRolls.map((roll) => {
           const remaining = Number(roll.remaining_m ?? (roll.standard_length_m ? Number(roll.standard_length_m) * Number(roll.remaining_percent || 0) / 100 : 0));
           const percent = roll.standard_length_m && Number(roll.standard_length_m) > 0 ? Math.max(0, Math.min(100, remaining / Number(roll.standard_length_m) * 100)) : null;
@@ -357,10 +379,11 @@ export function InventoryRollBook({
             <div className="roll-book__measure"><strong>{formatNumber(remaining, 3)} <small>m</small></strong><span>{percent === null ? 'Sin largo nominal' : `${formatNumber(percent, 1)}% restante`}</span></div>
             {percent !== null && <div className={`roll-book__bar${isLow ? ' is-low' : ''}`} role="progressbar" aria-label={`${formatNumber(remaining, 3)} metros restantes de ${roll.material_name}; ${formatNumber(percent, 1)} por ciento`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)}><i style={{ width: `${percent}%` }}/></div>}
             <div className="roll-book__data-line"><span>{roll.standard_length_m ? `Nominal ${formatNumber(Number(roll.standard_length_m))} m` : 'Largo nominal pendiente'}</span><span className={`roll-book__confidence${roll.remaining_is_estimate ? ' is-estimate' : ''}`}>{roll.remaining_is_estimate ? 'Saldo estimado' : 'Saldo medido'}</span></div>
+            {roll.remaining_is_estimate && canEdit && <button type="button" className="roll-book__measure-cta" onClick={() => { setMeasurement((current) => ({ ...current, [roll.id]: { ...(current[roll.id] || { meters: '', reason: '', reference: '' }), reason: current[roll.id]?.reason || 'Medición física' } })); setExpandedToolsRollId(roll.id); }}><Ruler size={14}/> Confirmar metraje físico</button>}
             <p className="roll-book__where"><MapPin size={14}/>{roll.roll_state === 'machine' ? `${roll.machine_name || 'Máquina sin especificar'} · ` : ''}{branchName(roll.branch_id)} · {roll.location_code}</p>
             <div className="roll-book__card-meta"><span><Clock3 size={12}/> Actualizado {roll.last_measured_at ? new Date(roll.last_measured_at).toLocaleString('es-EC', { dateStyle: 'short', timeStyle: 'short' }) : 'sin fecha'}</span>{roll.operator_name && <span>Por {roll.operator_name}</span>}</div>
-            {canEdit && <details className="roll-book__tools"><summary><span className="roll-book__tools-title"><Ruler size={15}/> Acciones del rollo</span><small>Medir · mover · intercambiar</small></summary>
-              <div className="roll-book__tool-block"><b>Medición física</b><div className="roll-book__tool-fields"><label>Metros restantes<input type="number" min="0" {...(roll.standard_length_m ? { max: roll.standard_length_m } : {})} step="0.001" value={draft.meters} onChange={(event) => setMeasurement({ ...measurement, [roll.id]: { ...draft, meters: event.target.value } })} placeholder={formatNumber(remaining, 3)}/></label><label>Motivo<input value={draft.reason} onChange={(event) => setMeasurement({ ...measurement, [roll.id]: { ...draft, reason: event.target.value } })} placeholder="Uso en orden…"/></label><label>Referencia<input value={draft.reference} onChange={(event) => setMeasurement({ ...measurement, [roll.id]: { ...draft, reference: event.target.value } })} placeholder="OT (opcional)"/></label></div><button type="button" className="roll-book__secondary-action" onClick={() => void saveMeasurement(roll)} disabled={busy === roll.id || !draft.meters || !draft.reason.trim()}>{busy === roll.id ? <LoaderCircle className="roll-book__spin" size={15}/> : <Ruler size={15}/>} Guardar medición</button></div>
+            {canEdit && <details className="roll-book__tools" open={expandedToolsRollId === roll.id} onToggle={(event) => { if (!event.currentTarget.open && expandedToolsRollId === roll.id) setExpandedToolsRollId(null); else if (event.currentTarget.open && expandedToolsRollId !== roll.id) setExpandedToolsRollId(roll.id); }}><summary><span className="roll-book__tools-title"><Ruler size={15}/> Acciones del rollo</span><small>Medir · mover · intercambiar</small></summary>
+              <div className="roll-book__tool-block"><b>Medición física</b><p className="roll-book__measurement-hint">Ingresa el metraje que ves en el rollo; al guardar quedará como saldo medido.</p><div className="roll-book__tool-fields"><label>Metros restantes<input ref={expandedToolsRollId === roll.id ? measurementInputRef : null} type="number" min="0" {...(roll.standard_length_m ? { max: roll.standard_length_m } : {})} step="0.001" value={draft.meters} onChange={(event) => setMeasurement({ ...measurement, [roll.id]: { ...draft, meters: event.target.value } })} placeholder={formatNumber(remaining, 3)}/></label><label>Motivo<input value={draft.reason} onChange={(event) => setMeasurement({ ...measurement, [roll.id]: { ...draft, reason: event.target.value } })} placeholder="Medición física"/></label><label>Referencia<input value={draft.reference} onChange={(event) => setMeasurement({ ...measurement, [roll.id]: { ...draft, reference: event.target.value } })} placeholder="OT (opcional)"/></label></div><button type="button" className="roll-book__secondary-action" onClick={() => void saveMeasurement(roll)} disabled={busy === roll.id || !draft.meters || !draft.reason.trim()}>{busy === roll.id ? <LoaderCircle className="roll-book__spin" size={15}/> : <Ruler size={15}/>} Guardar medición</button></div>
               <div className="roll-book__tool-block"><b>{roll.roll_state === 'bodega' ? 'Mover a máquina' : 'Devolver a bodega'}</b><div className="roll-book__tool-fields">{roll.roll_state === 'bodega' && <label>Máquina<input list={`roll-machines-${roll.id}`} value={action.machine} onChange={(event) => setActions({ ...actions, [roll.id]: { ...action, machine: event.target.value } })} placeholder="Busca o escribe el equipo"/><datalist id={`roll-machines-${roll.id}`}>{availableMachineNames.map((machine) => <option key={machine} value={machine}/>)}</datalist></label>}<label>Motivo<input value={action.reason} onChange={(event) => setActions({ ...actions, [roll.id]: { ...action, reason: event.target.value } })} placeholder="Asignación o devolución"/></label><label>Referencia<input value={action.reference} onChange={(event) => setActions({ ...actions, [roll.id]: { ...action, reference: event.target.value } })} placeholder="OT (opcional)"/></label></div><button type="button" className="roll-book__secondary-action" onClick={() => void moveRoll(roll, roll.roll_state === 'bodega' ? 'machine' : 'bodega')} disabled={busy === roll.id || !action.reason.trim() || (roll.roll_state === 'bodega' && !action.machine.trim())}><ArrowRightLeft size={15}/>{roll.roll_state === 'bodega' ? 'Mover a máquina' : 'Regresar a bodega'}</button><small>Trasladar un rollo no cambia el saldo global de inventario.</small></div>
               {roll.roll_state === 'machine' && <div className="roll-book__tool-block"><b>Intercambiar por un rollo disponible</b><p>{warehouseReplacementCount(roll) ? `${warehouseReplacementCount(roll)} rollo(s) de esta variante están en bodega.` : 'No hay un rollo compatible en bodega.'}</p>{replaceConfirmId === roll.id ? <div className="roll-book__confirm-replace"><span>El rollo usado volverá a bodega y el nuevo pasará a la máquina. El saldo total no cambia.</span><button type="button" className="roll-book__secondary-action" onClick={() => void replaceRoll(roll)} disabled={busy === roll.id || warehouseReplacementCount(roll) === 0}>{busy === roll.id ? 'Intercambiando…' : 'Confirmar intercambio'}</button><button type="button" className="roll-book__cancel-action" onClick={() => setReplaceConfirmId('')}>Cancelar</button></div> : <button type="button" className="roll-book__secondary-action" onClick={() => setReplaceConfirmId(roll.id)} disabled={!warehouseReplacementCount(roll)}><ArrowRightLeft size={15}/> Preparar intercambio</button>}</div>}
             </details>}
@@ -370,7 +393,7 @@ export function InventoryRollBook({
       </section>
 
       <Dialog open={Boolean(historyRoll)} onOpenChange={(open) => { if (!open) setHistoryRoll(null); }} eyebrow="Trazabilidad del rollo" title={historyRoll?.material_name || 'Historial'} description={historyRoll ? `${historyRoll.roll_tag || 'Sin lote'} · ${branchName(historyRoll.branch_id)}` : undefined} icon={<History size={18}/>} size="lg" tone="info" className="roll-book-history" footer={<button type="button" className="roll-book__refresh" onClick={() => setHistoryRoll(null)}>Cerrar historial</button>}>
-        {historyLoading ? <p className="roll-book__history-state"><LoaderCircle className="roll-book__spin" size={18}/> Cargando movimientos…</p> : historyRows.length ? <ol className="roll-book__history-list">{historyRows.map((row) => <li key={row.id}><span className="roll-book__history-marker"><Check size={13}/></span><div><strong>{row.event_type === 'receive' ? 'Recepción' : row.event_type === 'measurement' ? 'Medición física' : row.event_type === 'transfer' ? 'Traslado' : 'Registro anterior'}</strong><small>{new Date(row.recorded_at).toLocaleString('es-EC', { dateStyle: 'medium', timeStyle: 'short' })} · {row.operator_name || 'Sin responsable'}</small><p>{row.reason || row.notes || 'Sin motivo registrado'}{row.work_reference ? ` · Ref. ${row.work_reference}` : ''}</p>{(row.previous_m !== null || row.new_m !== null) && <span className="roll-book__history-values">{row.previous_m === null ? '—' : `${formatNumber(Number(row.previous_m), 3)} m`} → {row.new_m === null ? '—' : `${formatNumber(Number(row.new_m), 3)} m`}</span>}</div></li>)}</ol> : <p className="roll-book__history-state">No hay movimientos registrados para este rollo.</p>}
+        {historyLoading ? <p className="roll-book__history-state"><LoaderCircle className="roll-book__spin" size={18}/> Cargando movimientos…</p> : historyError ? <div className="roll-book__history-state" role="alert"><span>No se pudo cargar la trazabilidad.</span><button type="button" className="roll-book__history-action" onClick={() => historyRoll && void openHistory(historyRoll)}>Reintentar</button></div> : historyRows.length ? <ol className="roll-book__history-list">{historyRows.map((row) => <li key={row.id}><span className="roll-book__history-marker"><Check size={13}/></span><div><strong>{row.event_type === 'receive' ? 'Recepción' : row.event_type === 'measurement' ? 'Medición física' : row.event_type === 'transfer' ? 'Traslado' : 'Registro anterior'}</strong><small>{new Date(row.recorded_at).toLocaleString('es-EC', { dateStyle: 'medium', timeStyle: 'short' })} · {row.operator_name || 'Sin responsable'}</small><p>{row.reason || row.notes || 'Sin motivo registrado'}{row.work_reference ? ` · Ref. ${row.work_reference}` : ''}</p>{(row.previous_m !== null || row.new_m !== null) && <span className="roll-book__history-values">{row.previous_m === null ? '—' : `${formatNumber(Number(row.previous_m), 3)} m`} → {row.new_m === null ? '—' : `${formatNumber(Number(row.new_m), 3)} m`}</span>}</div></li>)}</ol> : <p className="roll-book__history-state">No hay movimientos registrados para este rollo.</p>}
       </Dialog>
     </main>
   );
