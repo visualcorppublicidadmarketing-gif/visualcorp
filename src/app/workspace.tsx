@@ -56,7 +56,7 @@ const starterInventory = inventoryStarterRows.map(([areaCode, name, category, va
   const sku = `VC-INV-${areaCode}-${serial}`;
   return {
     id: sku, sku, name, category, variant, unit, referenceImageUrl: inventoryImageForSku(sku), area: ({ IMP: 'Impresión', SUB: 'Sublimación', TRO: 'Troquelado', LAS: 'Láser', TAL: 'Taller', NEO: 'Neones', BOD: 'Bodega general' })[areaCode],
-    branch: 'Visual Corp', location: 'Pendiente de ubicar', quantity: 0, minimum: 0,
+    branch: 'Visual Corp', location: 'Pendiente de ubicar', quantity: 0, minimum: 0, minimumConfigured: false,
     sourceStatus: 'Catálogo sugerido · existencia por verificar',
     notes: `Registro sugerido para completar el catálogo. Confirmar especificación, unidad y existencia física. ${variant || 'Verificar presentación y variante antes de comprar.'}`,
     starterCatalog: true,
@@ -221,7 +221,7 @@ export function WorkspaceProvider({ children }) {
       }
     };
     const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult, customerAvatarsResult, groupsResult] = await Promise.all([
-      readAllPages(() => supabase.from('inventory_items').select('id,category_id,area_id,inventory_group_id,sku,name,description,item_type,tags,reference_image_url,custom_fields,base_unit,minimum_quantity,active,created_at,updated_at').eq('organization_id', organizationId).order('id'),'inventory'),
+      readAllPages(() => supabase.from('inventory_items').select('id,category_id,area_id,inventory_group_id,sku,name,description,item_type,tags,reference_image_url,custom_fields,base_unit,minimum_quantity,minimum_quantity_configured,active,created_at,updated_at').eq('organization_id', organizationId).order('id'),'inventory'),
       readAllPages(() => supabase.from('inventory_variants').select('id,item_id,sku,label,attributes,active').eq('organization_id', organizationId).order('id'),'inventory'),
       readAllPages(() => supabase.from('inventory_stock').select('variant_id,branch_id,location_code,quantity,updated_at').eq('organization_id', organizationId).order('variant_id').order('branch_id').order('location_code'),'inventory'),
       readAllPages(() => supabase.from('areas').select('id,code,name').eq('organization_id', organizationId).order('name').order('id'),'workshop'),
@@ -292,7 +292,7 @@ export function WorkspaceProvider({ children }) {
           reservedPercent: metrics?.reserved_percent == null ? null : Number(metrics.reserved_percent), lastRestockAt: metrics?.last_restock_at || null,
           lifetimeConsumed: metrics ? Number(metrics.lifetime_consumed) : null, consumedLast30Days: metrics ? Number(metrics.consumed_last_30_days) : null,
           movementCount: metrics ? Number(metrics.movement_count) : 0, lastMovementAt: metrics?.last_movement_at || null,
-          minimum: Number(item.minimum_quantity || 0), unitCost: costByVariant.has(variant.id) ? Number(costByVariant.get(variant.id).unit_cost) : null, supplierName: costByVariant.get(variant.id)?.supplier_name || '', sourceStatus: stock ? '' : 'Sin conteo físico', archived: !item.active || !variant.active,
+          minimum: Number(item.minimum_quantity || 0), minimumConfigured: item.minimum_quantity_configured == null ? Number(item.minimum_quantity || 0) > 0 : Boolean(item.minimum_quantity_configured), unitCost: costByVariant.has(variant.id) ? Number(costByVariant.get(variant.id).unit_cost) : null, supplierName: costByVariant.get(variant.id)?.supplier_name || '', sourceStatus: stock ? '' : 'Sin conteo físico', archived: !item.active || !variant.active,
           createdAt: item.created_at, updatedAt: stock?.updated_at || item.updated_at,
         });
       }
