@@ -1025,6 +1025,10 @@ export function CustomerBook() {
                         <option value="whatsapp">WhatsApp</option>
                         <option value="phone">Llamada</option>
                         <option value="email">Correo</option>
+                        {profileForm.preferredChannel &&
+                          !['whatsapp', 'phone', 'email'].includes(profileForm.preferredChannel) && (
+                            <option value={profileForm.preferredChannel}>{profileForm.preferredChannel}</option>
+                          )}
                       </select>
                     </label>
                   </div>
