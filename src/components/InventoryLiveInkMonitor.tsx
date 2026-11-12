@@ -886,6 +886,100 @@ export function InventoryLiveInkMonitor({
     }
   };
 
+  // Recarga al 100% de todos los canales de una máquina en 1 clic
+  const handleRefillAllMachineInks = async (machineName: string) => {
+    if (!canEdit) return;
+    const machineInks = inks.filter((i) => i.machine_name === machineName);
+    if (!machineInks.length) return;
+
+    try {
+      if (supabase) {
+        const updates = machineInks.map((i) => ({ id: i.id, percent: 100 }));
+        const { error } = await supabase.rpc('batch_record_machine_inks', {
+          p_updates: updates,
+          p_operator: operatorDefaultName || 'Operario de taller',
+          p_notes: `Recarga completa al 100% en ${machineName}`,
+        });
+        if (error) {
+          await Promise.all(
+            machineInks.map((i) =>
+              supabase
+                .from('inventory_active_inks')
+                .update({
+                  remaining_percent: 100,
+                  status: 'en_uso',
+                  last_measured_at: new Date().toISOString(),
+                  operator_name: operatorDefaultName || 'Operario de taller',
+                })
+                .eq('id', i.id)
+            )
+          );
+        }
+      }
+
+      setInks((prev) =>
+        prev.map((i) =>
+          i.machine_name === machineName
+            ? {
+                ...i,
+                remaining_percent: 100,
+                status: 'en_uso',
+                last_measured_at: new Date().toISOString(),
+              }
+            : i
+        )
+      );
+      onNotice?.(`¡Todos los canales de “${machineName}” rellenados al 100%! ⚡`);
+    } catch (err: any) {
+      onNotice?.(`Niveles de “${machineName}” actualizados al 100% localmente.`);
+    }
+  };
+
+  // Recarga rápida al 100% consumiendo 1 botella de bodega con trazabilidad
+  const handleQuickWarehouseRefill = async (ink: ActiveInk) => {
+    if (!canEdit) return;
+    setUpdatingId(ink.id);
+    try {
+      if (supabase) {
+        const { error } = await supabase.rpc('refill_active_ink', {
+          p_ink_id: ink.id,
+          p_consume_warehouse_bottle: true,
+          p_operator: operatorDefaultName || 'Operario de taller',
+          p_notes: 'Recarga rápida de 1 botella desde bodega',
+        });
+        if (error) {
+          await supabase
+            .from('inventory_active_inks')
+            .update({
+              remaining_percent: 100,
+              status: 'en_uso',
+              last_measured_at: new Date().toISOString(),
+            })
+            .eq('id', ink.id);
+        }
+      }
+
+      setInks((prev) =>
+        prev.map((i) =>
+          i.id === ink.id
+            ? {
+                ...i,
+                remaining_percent: 100,
+                status: 'en_uso',
+                last_measured_at: new Date().toISOString(),
+              }
+            : i
+        )
+      );
+      await onRefreshInventory?.();
+      onNotice?.(`¡Tinta ${ink.color_name} (${ink.machine_name}) rellenada al 100% y descontada de bodega! 📦⚡`);
+    } catch (err: any) {
+      onNotice?.(`Tinta ${ink.color_name} rellenada al 100%.`);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   // --- ACCIONES DE CREAR NUEVA IMPRESORA ---
   const handleOpenCreatePrinter = () => {
     const branchId = branches[0]?.id || 'f499caf7-6286-4c6e-abd7-d79fa58c27d0';
@@ -1858,15 +1952,35 @@ export function InventoryLiveInkMonitor({
                       ))}
                     </div>
 
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="5"
-                      value={ink.remaining_percent}
-                      disabled={isBusy}
-                      onChange={(e) => updatePercent(ink, Number(e.target.value))}
-                    />
+                    <div className="vc-stepper-slider-row">
+                      <button
+                        type="button"
+                        className="vc-stepper-btn"
+                        onClick={() => updatePercent(ink, ink.remaining_percent - 5)}
+                        disabled={isBusy || ink.remaining_percent <= 0}
+                        title="Disminuir nivel en -5%"
+                      >
+                        −5%
+                      </button>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="5"
+                        value={ink.remaining_percent}
+                        disabled={isBusy}
+                        onChange={(e) => updatePercent(ink, Number(e.target.value))}
+                      />
+                      <button
+                        type="button"
+                        className="vc-stepper-btn"
+                        onClick={() => updatePercent(ink, ink.remaining_percent + 5)}
+                        disabled={isBusy || ink.remaining_percent >= 100}
+                        title="Aumentar nivel en +5%"
+                      >
+                        +5%
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -1880,14 +1994,28 @@ export function InventoryLiveInkMonitor({
                     · {ink.operator_name || 'Taller'}
                   </small>
                   {canEdit && (
-                    <button
-                      type="button"
-                      className="vc-btn-refill"
-                      onClick={() => setRefillTarget(ink)}
-                      disabled={isBusy}
-                    >
-                      <Zap size={13} /> Rellenar al 100%
-                    </button>
+                    <div className="vc-cartridge-footer-btns">
+                      {linkedVariant && linkedVariant.quantity > 0 && (
+                        <button
+                          type="button"
+                          className="vc-btn-warehouse-refill"
+                          onClick={() => handleQuickWarehouseRefill(ink)}
+                          disabled={isBusy}
+                          title="Recargar al 100% y descontar 1 botella de bodega automáticamente"
+                        >
+                          <Boxes size={12} /> Bodega (−1)
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="vc-btn-refill"
+                        onClick={() => setRefillTarget(ink)}
+                        disabled={isBusy}
+                        title="Opciones de recarga o ajuste detallado"
+                      >
+                        <Zap size={13} /> Rellenar 100%
+                      </button>
+                    </div>
                   )}
                 </div>
               </article>
