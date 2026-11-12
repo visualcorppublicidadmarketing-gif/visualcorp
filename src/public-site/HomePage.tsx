@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useInView, useReducedMotion, useSpring } from 'motion/react';
 import {
@@ -179,6 +179,7 @@ function CreativeStudioSection({
   onOpenOrientator: (serviceId?: PublicServiceId) => void;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const pillarTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const reduceMotion = useReducedMotion();
   const activePillar = creativePillars[activeIndex] || creativePillars[0];
   const PillarIcon = pillarIcons[activePillar.id] || Palette;
@@ -187,6 +188,31 @@ function CreativeStudioSection({
     ? `/cotizador?servicio=${encodeURIComponent(matchedService.name)}`
     : '/cotizador';
   const tags = serviceDeliverableTags[activePillar.recommendedServiceId] || [];
+  const handlePillarKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const lastIndex = creativePillars.length - 1;
+    let nextIndex: number;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        nextIndex = (index + 1) % creativePillars.length;
+        break;
+      case 'ArrowUp':
+        nextIndex = (index - 1 + creativePillars.length) % creativePillars.length;
+        break;
+      case 'Home':
+        nextIndex = 0;
+        break;
+      case 'End':
+        nextIndex = lastIndex;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    setActiveIndex(nextIndex);
+    pillarTabRefs.current[nextIndex]?.focus();
+  };
 
   return (
     <section className="home-pillars home-section" aria-labelledby="home-pillars-title">
@@ -210,7 +236,7 @@ function CreativeStudioSection({
       </Reveal>
 
       <div className="home-pillars-layout">
-        <div className="home-pillars-tabs" role="tablist" aria-label="Pilares de trabajo de Visual Corp">
+        <div className="home-pillars-tabs" role="tablist" aria-orientation="vertical" aria-label="Pilares de trabajo de Visual Corp">
           {creativePillars.map((pillar, index) => {
             const Icon = pillarIcons[pillar.id] || Sparkles;
             const isSelected = index === activeIndex;
@@ -222,6 +248,11 @@ function CreativeStudioSection({
                 id={`home-pillar-tab-${pillar.id}`}
                 aria-selected={isSelected}
                 aria-controls={`home-pillar-panel-${pillar.id}`}
+                tabIndex={isSelected ? 0 : -1}
+                ref={(element) => {
+                  pillarTabRefs.current[index] = element;
+                }}
+                onKeyDown={(event) => handlePillarKeyDown(event, index)}
                 className={`home-pillar-tab${isSelected ? ' is-active' : ''}`}
                 onClick={() => setActiveIndex(index)}
               >
@@ -244,6 +275,7 @@ function CreativeStudioSection({
           role="tabpanel"
           id={`home-pillar-panel-${activePillar.id}`}
           aria-labelledby={`home-pillar-tab-${activePillar.id}`}
+          tabIndex={0}
           onPointerMove={updateSpotlight}
           onPointerLeave={clearSpotlight}
         >
@@ -386,6 +418,7 @@ export function PublicHomePage() {
 
   const [orientatorOpen, setOrientatorOpen] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string>(projectOrientatorGoals[0].id);
+  const goalRadioRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [previewServiceId, setPreviewServiceId] = useState<PublicServiceId | null>(null);
 
   useEffect(() => {
@@ -403,6 +436,27 @@ export function PublicHomePage() {
   const openOrientatorForGoal = (goalId: string) => {
     setSelectedGoalId(goalId);
     setOrientatorOpen(true);
+  };
+
+  const handleGoalKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex: number;
+
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        nextIndex = (index + 1) % projectOrientatorGoals.length;
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        nextIndex = (index - 1 + projectOrientatorGoals.length) % projectOrientatorGoals.length;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    setSelectedGoalId(projectOrientatorGoals[nextIndex].id);
+    goalRadioRefs.current[nextIndex]?.focus();
   };
 
   const activeGoal = projectOrientatorGoals.find((goal) => goal.id === selectedGoalId) || projectOrientatorGoals[0];
@@ -745,7 +799,7 @@ export function PublicHomePage() {
       >
         <div className="home-orientator-body">
           <div className="home-orientator-goals" role="radiogroup" aria-label="Selecciona el objetivo de tu proyecto">
-            {projectOrientatorGoals.map((goal) => {
+            {projectOrientatorGoals.map((goal, index) => {
               const isSelected = goal.id === activeGoal.id;
               return (
                 <button
@@ -753,6 +807,12 @@ export function PublicHomePage() {
                   type="button"
                   role="radio"
                   aria-checked={isSelected}
+                  data-autofocus={isSelected ? '' : undefined}
+                  tabIndex={isSelected ? 0 : -1}
+                  ref={(element) => {
+                    goalRadioRefs.current[index] = element;
+                  }}
+                  onKeyDown={(event) => handleGoalKeyDown(event, index)}
                   className={`home-orientator-goal${isSelected ? ' is-selected' : ''}`}
                   onClick={() => setSelectedGoalId(goal.id)}
                 >

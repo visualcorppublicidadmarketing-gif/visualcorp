@@ -117,6 +117,8 @@
 /* Sección 02: Servicios Bento Grid */
 .home-services{--home-text:#1e1c26;--home-muted:#615e6b;--home-line:#21202d20;--services-bg:#f6f5f7;--services-card:#fff;--services-card-text:#24202b;--services-card-border:#e4e0e7;--services-number:#766d7c;--services-arrow-border:#e9e4ec;--services-quickview-bg:#ffffffeb;--services-quickview-text:#523856;--services-quickview-border:#e3dbe8;--services-decoration-bg:#fff;--services-decoration-border:#e9dfed;--services-tag-bg:#f3eff6;--services-tag-border:#e6dfec;--services-tag-text:#4f4659;--services-card-muted:#6b6572;--services-divider:#eeeaf0;--services-note-link:#231925;--services-hover:#231925;--services-hover-foreground:#fff;--services-feature-aura:#edcde87d;--services-feature-from:#fff;--services-feature-to:#f8f2f8;--services-kicker:#8d2c6d;--services-heading-muted:#787481;--services-text-link:#8d2c6d;background:var(--services-bg);color:var(--home-text);scroll-margin-top:110px}
 html[data-public-theme="dark"] .home-services{--home-text:#f6f3f8;--home-muted:#c3bdca;--home-line:#ffffff2b;--services-bg:#101119;--services-card:#191a24;--services-card-text:#f6f3f8;--services-card-border:#ffffff25;--services-number:#b7adbd;--services-arrow-border:#ffffff32;--services-quickview-bg:#28202eeb;--services-quickview-text:#f5e7f2;--services-quickview-border:#f076bc55;--services-decoration-bg:#191a24;--services-decoration-border:#ffffff2b;--services-tag-bg:#25202d;--services-tag-border:#ffffff24;--services-tag-text:#eee8f2;--services-card-muted:#c9c2cf;--services-divider:#ffffff24;--services-note-link:#f3b2d8;--services-hover:#e5007e;--services-hover-foreground:#fff;--services-feature-aura:#e5007e24;--services-feature-from:#20202c;--services-feature-to:#161720;--services-kicker:#efa5d1;--services-heading-muted:#b5afbd;--services-text-link:#f0a1cf}
+.home-services{--services-art-base-from:#eee9f8;--services-art-base-to:#f9ecf4;--services-art-base-border:#e9deee;--services-art-base-icon:#985488;--services-art-cool-from:#e6f3f8;--services-art-cool-to:#f0edf7;--services-art-cool-border:#d9e7f0;--services-art-cool-icon:#317c9a;--services-art-warm-from:#f9e7ed;--services-art-warm-to:#faf1e7;--services-art-warm-border:#f0e0e6;--services-art-warm-icon:#aa5c79}
+html[data-public-theme="dark"] .home-services{--services-art-base-from:#292432;--services-art-base-to:#332536;--services-art-base-border:#ffffff2b;--services-art-base-icon:#e6b0d5;--services-art-cool-from:#1e2c36;--services-art-cool-to:#292937;--services-art-cool-border:#46535d;--services-art-cool-icon:#8fd4e9;--services-art-warm-from:#382530;--services-art-warm-to:#302b25;--services-art-warm-border:#54404a;--services-art-warm-icon:#f1aec5}
 .home-services .home-kicker{color:var(--services-kicker)}
 .home-services .home-section-heading h2 span{color:var(--services-heading-muted)}
 .home-services .home-text-button{color:var(--services-text-link)}
@@ -127,16 +129,16 @@ html[data-public-theme="dark"] .home-services{--home-text:#f6f3f8;--home-muted:#
 .home-service-top{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1}
 .home-service-number{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--services-number);font-variant-numeric:tabular-nums}
 .home-service-arrow{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--services-arrow-border);border-radius:50%;transition:background .3s,color .3s,transform .3s}
-.home-service-quickview{position:absolute;top:22px;right:68px;z-index:3;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--services-quickview-border);background:var(--services-quickview-bg);color:var(--services-quickview-text);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);transition:background .2s,border-color .2s,color .2s,transform .2s}
+.home-service-quickview{position:absolute;top:22px;right:68px;z-index:3;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 12px;border-radius:999px;border:1px solid var(--services-quickview-border);background:var(--services-quickview-bg);color:var(--services-quickview-text);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);transition:background .2s,border-color .2s,color .2s,transform .2s}
 .home-service-quickview:hover{background:var(--services-hover);border-color:var(--services-hover);color:var(--services-hover-foreground);transform:translateY(-1px)}
-.home-service-art{position:relative;display:grid;place-items:center;align-self:center;width:136px;height:118px;margin:6px 0 16px;color:#985488}
-.home-service-art i{position:absolute;inset:8px 20px 10px 7px;z-index:-1;border-radius:24px;background:linear-gradient(135deg,#eee9f8,#f9ecf4);border:1px solid #e9deee;transform:rotate(-12deg);transition:transform .45s}
+.home-service-art{position:relative;display:grid;place-items:center;align-self:center;width:136px;height:118px;margin:6px 0 16px;color:var(--services-art-base-icon)}
+.home-service-art i{position:absolute;inset:8px 20px 10px 7px;z-index:-1;border-radius:24px;background:linear-gradient(135deg,var(--services-art-base-from),var(--services-art-base-to));border:1px solid var(--services-art-base-border);transform:rotate(-12deg);transition:transform .45s}
 .home-service-art>svg{filter:drop-shadow(2px 5px 0 #a47db719);transition:transform .45s}
 .home-service-art>span{position:absolute;width:24px;height:24px;right:6px;top:10px;background:var(--services-decoration-bg);border:1px solid var(--services-decoration-border);border-radius:7px;transform:rotate(16deg);box-shadow:0 5px 10px #40305608;transition:transform .45s}
-.home-service-gran-formato .home-service-art,.home-service-eventos .home-service-art{color:#317c9a}
-.home-service-gran-formato .home-service-art i,.home-service-eventos .home-service-art i{background:linear-gradient(140deg,#e6f3f8,#f0edf7);border-color:#d9e7f0}
-.home-service-rotulos .home-service-art,.home-service-textil .home-service-art{color:#aa5c79}
-.home-service-rotulos .home-service-art i,.home-service-textil .home-service-art i{background:linear-gradient(140deg,#f9e7ed,#faf1e7);border-color:#f0e0e6}
+.home-service-gran-formato .home-service-art,.home-service-eventos .home-service-art{color:var(--services-art-cool-icon)}
+.home-service-gran-formato .home-service-art i,.home-service-eventos .home-service-art i{background:linear-gradient(140deg,var(--services-art-cool-from),var(--services-art-cool-to));border-color:var(--services-art-cool-border)}
+.home-service-rotulos .home-service-art,.home-service-textil .home-service-art{color:var(--services-art-warm-icon)}
+.home-service-rotulos .home-service-art i,.home-service-textil .home-service-art i{background:linear-gradient(140deg,var(--services-art-warm-from),var(--services-art-warm-to));border-color:var(--services-art-warm-border)}
 .vc-home .home-service h3{font-size:19px;font-weight:700;line-height:1.25;letter-spacing:-.025em}
 .vc-home .home-service p{margin-top:8px;color:var(--services-card-muted);font-size:13px;line-height:1.65}
 .home-service-copy{flex:1;display:flex;flex-direction:column}
@@ -326,7 +328,7 @@ html[data-public-theme="light"] .home-orientator-goal.is-selected{border-color:#
   .home-service-art{width:110px;height:105px;margin-bottom:14px}
   .home-service-art>svg{width:52px;height:52px}
   .home-service-art i{inset:9px 13px 5px 5px}
-  .home-service-quickview{top:18px;right:58px;height:30px;padding:0 10px;font-size:10px}
+  .home-service-quickview{top:18px;right:58px;min-height:44px;padding:6px 10px;font-size:10px}
   .home-service-link{font-size:10px;margin-top:18px}
   .home-service-link svg{width:14px}
   .home-services-note{align-items:flex-start;flex-direction:column;gap:8px;padding-top:16px;font-size:12px}
@@ -375,7 +377,7 @@ html[data-public-theme="light"] .home-orientator-goal.is-selected{border-color:#
   .home-hero-footer{flex-direction:column;justify-content:center;gap:0;padding:13px 0}
   .home-hero-footer>a{min-height:36px}
   .public-site .vc-home .home-service{min-height:290px;padding:22px!important}
-  .home-service-art{position:absolute;right:65px;top:48px;width:62px;height:62px;opacity:.9}
+  .home-service-art{position:absolute;right:65px;top:66px;width:62px;height:62px;opacity:.9}
   .home-service-copy{padding-top:26px;padding-right:0}
   .vc-home .home-service h3{font-size:20px}
   .vc-home .home-service p{font-size:13px}
