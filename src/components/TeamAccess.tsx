@@ -244,7 +244,7 @@ export function TeamAccess() {
       supabase.rpc('list_visualcorp_team_members'),
       supabase.rpc('list_visualcorp_team_accounts_with_avatars'),
       supabase.rpc('list_organization_access_invitations', { p_organization_id: organizationId }),
-      supabase.from('personnel_records').select('id,full_name,position_title,department,employment_status,google_account_email,membership_id').eq('organization_id', organizationId),
+      supabase.from('personnel_records').select('id,full_name,email,department,job_title,status').eq('organization_id', organizationId),
     ]);
     const profileRows = profileResult.data || [];
     const membershipRows = memberResult.data || [];
@@ -319,18 +319,16 @@ export function TeamAccess() {
     return map;
   }, [permissionRows]);
 
-  const personnelByEmailOrMembership = useMemo(() => {
+  const personnelLookup = useMemo(() => {
+    const byId = new Map<string, any>();
     const byEmail = new Map<string, any>();
-    const byMembership = new Map<string, any>();
     for (const rec of personnelRecords) {
-      if (rec.google_account_email) {
-        byEmail.set(String(rec.google_account_email).toLowerCase().trim(), rec);
-      }
-      if (rec.membership_id) {
-        byMembership.set(String(rec.membership_id), rec);
+      byId.set(String(rec.id), rec);
+      if (rec.email) {
+        byEmail.set(String(rec.email).toLowerCase().trim(), rec);
       }
     }
-    return { byEmail, byMembership };
+    return { byId, byEmail };
   }, [personnelRecords]);
 
   const memberAccounts = useMemo(() => {
@@ -374,8 +372,10 @@ export function TeamAccess() {
       .map((account) => {
         const emailLower = String(account.email || '').toLowerCase().trim();
         const linkedPersonnel =
-          personnelByEmailOrMembership.byEmail.get(emailLower) ||
-          account.memberships.map((m: any) => personnelByEmailOrMembership.byMembership.get(String(m.id))).find(Boolean) ||
+          (account.googleAccount?.linked_personnel_id
+            ? personnelLookup.byId.get(String(account.googleAccount.linked_personnel_id))
+            : null) ||
+          personnelLookup.byEmail.get(emailLower) ||
           null;
         const effectivePerms = new Set<string>();
         const isOwner = account.memberships.some((m: any) => m.active && m.role === 'owner');
@@ -394,7 +394,7 @@ export function TeamAccess() {
         };
       })
       .sort((a, b) => (a.full_name || a.email).localeCompare(b.full_name || b.email, 'es'));
-  }, [memberAccounts, googleAccounts, personnelByEmailOrMembership, permissionsByProfileId]);
+  }, [memberAccounts, googleAccounts, personnelLookup, permissionsByProfileId]);
 
   const activeMembers = useMemo(
     () => accountDirectory.filter((account) => account.memberships.some((membership: any) => membership.active)).length,
@@ -1106,7 +1106,7 @@ export function TeamAccess() {
                                     >
                                       <Briefcase size={11} />
                                       Ficha: {linkedWorker.full_name}
-                                      {linkedWorker.position_title ? ` · ${linkedWorker.position_title}` : ''}
+                                      {linkedWorker.job_title ? ` · ${linkedWorker.job_title}` : ''}
                                     </Link>
                                   ) : account.googleAccount?.linked_personnel_name ? (
                                     <Link className="team-meta-chip is-linked-worker" to="/operaciones/personal">

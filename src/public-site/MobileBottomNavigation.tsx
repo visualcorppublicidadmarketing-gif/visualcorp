@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, BriefcaseBusiness, Compass, Home, Layers3, X } from 'lucide-react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 type ServiceLink = { id: string; name: string };
 type NavigationGroup = 'services' | 'company' | 'explore';
@@ -12,6 +12,7 @@ const exploreLinks = [
   { to: '/blog', label: 'Blog' },
   { to: '/tienda', label: 'Tienda' },
   { to: '/tienda/promociones', label: 'Promociones y sorteos' },
+  { to: '/pagos', label: 'Medios de pago' },
 ];
 
 export function MobileBottomNavigation({ services }: { services: ServiceLink[] }) {
@@ -70,16 +71,16 @@ export function MobileBottomNavigation({ services }: { services: ServiceLink[] }
           <button type="button" className="mobile-bottom-sheet-close" onClick={close} aria-label="Cerrar menú"><X size={19}/></button>
         </div>
         {openGroup === 'services' && <nav className="mobile-bottom-sheet-grid" aria-label="Servicios">
-          <Link className="mobile-bottom-sheet-link mobile-bottom-sheet-feature" to="/servicios" onClick={() => setOpenGroup(null)}><Layers3 size={18}/><span>Todos los servicios</span><ArrowUpRight size={15}/></Link>
-          {services.map((service) => <Link className="mobile-bottom-sheet-link" key={service.id} to={`/servicios/${service.id}`} onClick={() => setOpenGroup(null)}><span>{service.name}</span><ArrowUpRight size={15}/></Link>)}
+          <NavLink className={({ isActive }) => `mobile-bottom-sheet-link mobile-bottom-sheet-feature${isActive ? ' is-active' : ''}`} to="/servicios" end onClick={() => setOpenGroup(null)}><Layers3 size={18}/><span>Todos los servicios</span><ArrowUpRight size={15}/></NavLink>
+          {services.map((service) => <NavLink className={({ isActive }) => `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`} key={service.id} to={`/servicios/${service.id}`} onClick={() => setOpenGroup(null)}><span>{service.name}</span><ArrowUpRight size={15}/></NavLink>)}
         </nav>}
         {openGroup === 'company' && <nav className="mobile-bottom-sheet-grid" aria-label="La empresa">
-          <Link className="mobile-bottom-sheet-link" to="/nosotros" onClick={() => setOpenGroup(null)}><span>Quiénes somos</span><ArrowUpRight size={15}/></Link>
-          <Link className="mobile-bottom-sheet-link" to="/como-trabajamos" onClick={() => setOpenGroup(null)}><span>Cómo trabajamos</span><ArrowUpRight size={15}/></Link>
-          <Link className="mobile-bottom-sheet-link" to="/contacto" onClick={() => setOpenGroup(null)}><span>Contacto</span><ArrowUpRight size={15}/></Link>
+          <NavLink className={({ isActive }) => `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`} to="/nosotros" onClick={() => setOpenGroup(null)}><span>Quiénes somos</span><ArrowUpRight size={15}/></NavLink>
+          <NavLink className={({ isActive }) => `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`} to="/como-trabajamos" onClick={() => setOpenGroup(null)}><span>Cómo trabajamos</span><ArrowUpRight size={15}/></NavLink>
+          <NavLink className={({ isActive }) => `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`} to="/contacto" onClick={() => setOpenGroup(null)}><span>Contacto</span><ArrowUpRight size={15}/></NavLink>
         </nav>}
         {openGroup === 'explore' && <nav className="mobile-bottom-sheet-grid" aria-label="Otras secciones">
-          {exploreLinks.map(({ to, label }) => <Link className="mobile-bottom-sheet-link" key={to} to={to} onClick={() => setOpenGroup(null)}><span>{label}</span><ArrowUpRight size={15}/></Link>)}
+          {exploreLinks.map(({ to, label }) => <NavLink className={({ isActive }) => `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`} key={to} to={to} onClick={() => setOpenGroup(null)}><span>{label}</span><ArrowUpRight size={15}/></NavLink>)}
         </nav>}
       </div>
     </>}

@@ -173,6 +173,7 @@ function SiteHeader({ theme, onThemeChange }) {
         <button ref={exploreRef} type="button" className={`site-nav-trigger${exploreIsActive || openMenu === 'explore' ? ' is-active' : ''}`} aria-expanded={openMenu === 'explore'} aria-controls="site-explore-panel" onClick={() => setOpenMenu((current) => current === 'explore' ? null : 'explore')}>Explorar<ChevronDown size={15} aria-hidden="true" /></button>
         <button ref={companyRef} type="button" className={`site-nav-trigger${companyIsActive || openMenu === 'company' ? ' is-active' : ''}`} aria-expanded={openMenu === 'company'} aria-controls="site-company-panel" onClick={() => setOpenMenu((current) => current === 'company' ? null : 'company')}>La empresa<ChevronDown size={15} aria-hidden="true" /></button>
         <Link to="/tienda" onClick={closeNavigation} className={`site-nav-link${storeIsActive ? ' is-active' : ''}`}>Tienda</Link>
+        <Link to="/pagos" onClick={closeNavigation} className={`site-nav-link${location.pathname === '/pagos' ? ' is-active' : ''}`}>Pagos</Link>
       </nav>
       <div className="site-header-actions">
         <AnimatedThemeToggler theme={theme} onThemeChange={onThemeChange} className="site-theme-toggle" aria-label={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}><span className="site-theme-toggle-icons" aria-hidden="true"><Sun className="theme-sun" size={17}/><Moon className="theme-moon" size={17}/></span></AnimatedThemeToggler>
@@ -225,7 +226,7 @@ function SiteFooter({ theme }: { theme: 'light' | 'dark' }) {
           <b>Explorar</b>
           <Link to="/">Inicio</Link><Link to="/soluciones">Soluciones y espacios</Link><Link to="/nosotros">La empresa</Link><Link to="/como-trabajamos">Cómo trabajamos</Link>
           <Link to="/portafolio">Portafolio</Link><Link to="/publicaciones">Publicaciones</Link><Link to="/blog">Blog</Link>
-          <Link to="/tienda">Tienda</Link><Link className="footer-sub-link" to="/tienda/promociones">Promociones y sorteos</Link><Link to="/contacto">Contacto</Link>
+          <Link to="/tienda">Tienda</Link><Link className="footer-sub-link" to="/tienda/promociones">Promociones y sorteos</Link><Link to="/pagos">Medios de pago</Link><Link to="/contacto">Contacto</Link>
         </nav>
         <nav className="footer-link-column" aria-label="Servicios">
           <b>Servicios</b>

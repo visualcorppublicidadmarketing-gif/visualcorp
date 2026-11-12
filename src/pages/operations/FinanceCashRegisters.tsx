@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Banknote, CircleAlert, LoaderCircle, Save, Wallet } from 'lucide-react';
+import { ArrowUpRight, Banknote, CircleAlert, LoaderCircle, Save, Trash2, Wallet } from 'lucide-react';
+import { useAuth } from '../../auth/AuthProvider';
+import { canAdminDeleteCash, formatAdminControlError, updateCashRegisterControl } from '../../lib/adminCashSalesControl';
+import { AdminDeleteRecordModal, type AdminDeleteTarget } from '../../components/AdminDeleteRecordModal';
 import { normalizePersonName } from '../../lib/personName';
 import { supabase } from '../../lib/supabaseClient';
 import { netSaleAmount } from './financeSales';
@@ -163,12 +166,15 @@ type Props = {
   returnsBySale: Map<string, { returnedValue?: number }>;
   saleReturnsError: string;
   canManage: boolean;
+  canDeleteCash?: boolean;
   canManageTeam: boolean;
   refreshKey: number;
   onChanged: () => void;
 };
 
-export function FinanceCashRegisters({ today, organizationId, branches, advisors, sales, returnsBySale, saleReturnsError, canManage, canManageTeam, refreshKey, onChanged }: Props) {
+export function FinanceCashRegisters({ today, organizationId, branches, advisors, sales, returnsBySale, saleReturnsError, canManage, canDeleteCash, canManageTeam, refreshKey, onChanged }: Props) {
+  const { roles, hasPermission } = useAuth();
+  const effectiveCanDeleteCash = canDeleteCash ?? canAdminDeleteCash(roles, hasPermission);
   const [registers, setRegisters] = useState<CashRegister[]>([]);
   const [goals, setGoals] = useState<WeeklyGoal[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
@@ -177,6 +183,7 @@ export function FinanceCashRegisters({ today, organizationId, branches, advisors
   const [branchAdvisorsBranchId, setBranchAdvisorsBranchId] = useState('');
   const [branchAdvisorsLoading, setBranchAdvisorsLoading] = useState(false);
   const [branchAdvisorsError, setBranchAdvisorsError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<AdminDeleteTarget | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -315,20 +322,19 @@ export function FinanceCashRegisters({ today, organizationId, branches, advisors
     try { validateGoalAmount(draft.goal_amount); } catch (cause: any) { setError(cause.message); return; }
     setBusy(true); setError(''); setNotice('');
     try {
-      const { error: updateError } = await supabase.rpc('update_cash_register_and_weekly_goal', {
-        p_organization_id: organizationId,
-        p_cash_register_id: register.id,
-        p_branch_id: draft.branch_id,
-        p_name: draft.name.trim(),
-        p_active: draft.active,
-        p_week_start: weekStart,
-        p_goal_amount: Number(draft.goal_amount),
+      await updateCashRegisterControl({
+        registerId: register.id,
+        name: draft.name.trim(),
+        branchId: draft.branch_id,
+        assignedAdvisorId: draft.assigned_advisor_id,
+        active: draft.active,
+        weekStart,
+        goalAmount: Number(draft.goal_amount),
       });
-      if (updateError) throw updateError;
-      setNotice('Caja y meta de la semana actual guardadas.');
+      setNotice('Caja, asignación y meta de la semana actual guardadas.');
       await load(); onChanged();
     } catch (cause: any) {
-      setError(registerErrorMessage(cause, 'No se pudo actualizar la caja.'));
+      setError(formatAdminControlError(cause, registerErrorMessage(cause, 'No se pudo actualizar la caja.')));
     } finally { setBusy(false); }
   };
 
@@ -336,6 +342,10 @@ export function FinanceCashRegisters({ today, organizationId, branches, advisors
     const advisor = advisors.find((person) => person.user_id === id);
     return normalizePersonName(advisor?.full_name) || advisor?.email || 'Asesora no disponible';
   };
+  const assignableAdvisors = useMemo(() => {
+    const list = advisors.filter((person) => person.active && (person.role === 'advisor' || person.access_profile_key === 'asesoras' || person.role === 'manager'));
+    return list.length ? list : advisors.filter((person) => person.active);
+  }, [advisors]);
   const branchName = (id: string) => branches.find((item) => item.id === id)?.name || 'Sucursal';
   const currentWeekSales = sales.filter((sale) => sale.status === 'confirmed' && (() => {
     const date = dateInBusinessZone(sale.created_at);
@@ -345,12 +355,30 @@ export function FinanceCashRegisters({ today, organizationId, branches, advisors
   const visibleRegisters = canManage ? registers : registers.filter((register) => register.active);
 
   return <section className="panel finance-cash-registers" aria-labelledby="finance-cash-registers-title">
-    <div className="panel-heading"><div><span className="eyebrow">CAJAS · METAS SEMANALES</span><h2 id="finance-cash-registers-title">Avance por caja y asesora</h2>
-      <p>Semana desde el lunes {weekStart}. El avance descuenta artículos devueltos y usa la fecha local de registro; los abonos se consultan por separado.</p></div><Wallet size={19} aria-hidden="true"/></div>
+    <div className="panel-heading">
+      <div><span className="eyebrow">CAJAS · METAS SEMANALES</span><h2 id="finance-cash-registers-title">Avance por caja y asesora</h2>
+        <p>Semana desde el lunes {weekStart}. El avance descuenta artículos devueltos y usa la fecha local de registro; los abonos se consultan por separado.</p></div>
+      <div className="finance-cash-register-head-actions">
+        {canManage && <a className="button button-outline" href="/operaciones/cajas-abiertas">Monitor cajas abiertas <ArrowUpRight size={14} aria-hidden="true"/></a>}
+        <Wallet size={19} aria-hidden="true"/>
+      </div>
+    </div>
     {error && <p className="finance-cash-register-alert" role="alert"><CircleAlert size={15}/>{error}</p>}
     {saleReturnsError && <p className="finance-cash-register-alert" role="alert">No se puede calcular el avance neto de metas porque no se pudieron cargar las devoluciones.</p>}
     {error && <button className="button button-outline" type="button" disabled={loading || busy} onClick={() => void load()}>Reintentar carga</button>}
     {notice && <p className="finance-cash-register-notice" role="status">{notice}</p>}
+    <AdminDeleteRecordModal
+      open={Boolean(deleteTarget)}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) setDeleteTarget(null);
+      }}
+      target={deleteTarget}
+      onDeleted={async (msg) => {
+        setNotice(msg);
+        await load();
+        onChanged();
+      }}
+    />
     {loading ? <p className="muted"><LoaderCircle className="spin" size={15}/> Cargando cajas y metas…</p> : <>
       {!error && !visibleRegisters.length && <div className="finance-cash-register-empty"><b>Todavía no hay cajas configuradas.</b><span>Al asignar una caja a una asesora, los nuevos turnos quedarán vinculados a esa caja y su meta semanal.</span></div>}
       <div className="finance-cash-register-list">
@@ -369,11 +397,14 @@ export function FinanceCashRegisters({ today, organizationId, branches, advisors
             {!returnAdjustedSalesUnavailable && target > 0 && <div className="finance-cash-register-progress" role="progressbar" aria-label={`Avance de ${register.name} para ${advisorName(register.assigned_advisor_id)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, percent || 0)} aria-valuetext={`${percent}% de ${money(target)}`}><i style={{ width: `${Math.min(100, Math.max(0, sold / target * 100))}%`}}/></div>}
             {canManage && draft && <div className="finance-cash-register-form">
               <label>Nombre de caja<input value={draft.name} onChange={(event) => setDrafts((current) => ({ ...current, [register.id]: { ...current[register.id], name: event.target.value } }))}/></label>
-              <label>Sucursal<input value={branchName(draft.branch_id)} disabled /></label>
-              <label>Asesora asignada<select value={draft.assigned_advisor_id} disabled><option value={draft.assigned_advisor_id}>{advisorName(draft.assigned_advisor_id)}</option></select></label>
+              <label>Sucursal<select value={draft.branch_id} onChange={(event) => setDrafts((current) => ({ ...current, [register.id]: { ...current[register.id], branch_id: event.target.value } }))}>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label>
+              <label>Asesora asignada<select value={draft.assigned_advisor_id} onChange={(event) => setDrafts((current) => ({ ...current, [register.id]: { ...current[register.id], assigned_advisor_id: event.target.value } }))}>{!assignableAdvisors.some((person) => person.user_id === draft.assigned_advisor_id) && <option value={draft.assigned_advisor_id}>{advisorName(draft.assigned_advisor_id)}</option>}{assignableAdvisors.map((person) => <option key={person.user_id} value={person.user_id}>{normalizePersonName(person.full_name) || person.email}</option>)}</select></label>
               <label>Meta semanal · USD<input type="number" min="0.01" step="0.01" required placeholder="Define la meta de esta semana" value={draft.goal_amount} onChange={(event) => setDrafts((current) => ({ ...current, [register.id]: { ...current[register.id], goal_amount: event.target.value } }))}/></label>
               <label className="finance-cash-register-active"><input type="checkbox" checked={draft.active} onChange={(event) => setDrafts((current) => ({ ...current, [register.id]: { ...current[register.id], active: event.target.checked } }))}/>Caja habilitada</label>
-              <button className="button button-outline" type="button" disabled={busy || !draft.name.trim() || !draft.branch_id || !draft.goal_amount.trim() || !draft.active} onClick={() => void saveRegister(register)}><Save size={14}/> Guardar caja y meta</button>
+              <div className="finance-cash-register-card-actions">
+                <button className="button button-outline" type="button" disabled={busy || !draft.name.trim() || !draft.branch_id || !draft.goal_amount.trim()} onClick={() => void saveRegister(register)}><Save size={14}/> Guardar caja y meta</button>
+                {effectiveCanDeleteCash && <button className="button button-outline finance-cash-register-delete-btn" type="button" disabled={busy} onClick={() => setDeleteTarget({ kind: 'register', registerId: register.id, registerName: register.name, branchName: branchName(register.branch_id), active: register.active })}><Trash2 size={14}/> Eliminar caja</button>}
+              </div>
             </div>}
             {canManage && <p className="finance-cash-register-note">La sucursal y la asesora quedan fijas al crear la caja. El nombre queda fijo después del primer turno. Para cambiar la asignación, desactívala y crea otra caja.</p>}
           </article>;

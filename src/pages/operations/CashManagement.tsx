@@ -12,6 +12,10 @@ import {
   LoaderCircle,
   X,
 } from 'lucide-react';
+import { useAuth } from '../../auth/AuthProvider';
+import { AdminDeleteRecordModal, type AdminDeleteTarget } from '../../components/AdminDeleteRecordModal';
+import { useConfirm } from '../../components/ui/DialogSystem';
+import { canAdminDeleteCash } from '../../lib/adminCashSalesControl';
 import { supabase } from '../../lib/supabaseClient';
 import './cash-management.css';
 
@@ -60,6 +64,8 @@ type CashManagementProps = {
   branchName: (id: string) => string;
   money: (val: number | string) => string;
   date: (val: string) => string;
+  canDeleteCash?: boolean;
+  onChanged?: () => void | Promise<void>;
 };
 
 export function CashManagement({
@@ -83,7 +89,13 @@ export function CashManagement({
   branchName,
   money,
   date,
+  canDeleteCash,
+  onChanged,
 }: CashManagementProps) {
+  const { roles, hasPermission } = useAuth();
+  const confirmDialog = useConfirm();
+  const effectiveCanDeleteCash = canDeleteCash ?? canAdminDeleteCash(roles, hasPermission);
+  const [deleteTarget, setDeleteTarget] = useState<AdminDeleteTarget | null>(null);
   // Estado de nuevo movimiento
   const [direction, setDirection] = useState<'in' | 'out'>('in');
   const [amount, setAmount] = useState('');
@@ -233,7 +245,20 @@ export function CashManagement({
   // Anular movimiento
   const voidMovement = async (move: CashMove) => {
     if (!supabase) return;
-    if (!window.confirm(`¿Confirmas la anulación de este movimiento de ${money(move.amount)}?`)) return;
+    const accepted = await confirmDialog({
+      eyebrow: 'MOVIMIENTO DE CAJA',
+      title: `¿Anular movimiento de ${money(move.amount)}?`,
+      description: 'El movimiento quedará anulado y dejará de sumar o restar al efectivo esperado.',
+      tone: 'warning',
+      confirmLabel: 'Sí, anular movimiento',
+      cancelLabel: 'Conservar',
+      summaryItems: [
+        { label: 'Tipo', value: move.direction === 'in' ? 'Entrada (+)' : 'Retiro (-)' },
+        { label: 'Monto', value: money(move.amount), tone: 'highlight' },
+        { label: 'Motivo', value: move.reason || 'Sin motivo' },
+      ],
+    });
+    if (!accepted) return;
     setLocalBusy(true);
     try {
       const { error: rpcErr } = await supabase.rpc('void_cash_session_movement', {
@@ -367,6 +392,17 @@ export function CashManagement({
 
   return (
     <div className="op-flow-grid cash-management-container">
+      <AdminDeleteRecordModal
+        open={Boolean(deleteTarget)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setDeleteTarget(null);
+        }}
+        target={deleteTarget}
+        onDeleted={async (msg) => {
+          setFeedback({ kind: 'success', message: msg });
+          await onChanged?.();
+        }}
+      />
       {feedback && (
         <div
           className={`cash-mgmt-feedback ${feedback.kind}`}
@@ -387,7 +423,12 @@ export function CashManagement({
             <span className="eyebrow">TURNO Y ARQUEO</span>
             <h2>Caja</h2>
           </div>
-          <Wallet size={19} />
+          <div className="cash-panel-head-actions">
+            <a className="button button-outline button-sm" href="/operaciones/cajas-abiertas">
+              Monitor cajas abiertas
+            </a>
+            <Wallet size={19} />
+          </div>
         </div>
 
         <label>
@@ -418,6 +459,25 @@ export function CashManagement({
               >
                 <Edit3 size={13} /> {editingOpening ? 'Cancelar edición' : 'Editar fondo'}
               </button>
+              {effectiveCanDeleteCash && (
+                <button
+                  type="button"
+                  className="button button-outline button-sm cash-history-delete-btn"
+                  disabled={isBusy}
+                  onClick={() => setDeleteTarget({
+                    kind: 'session',
+                    sessionId: activeCash.id,
+                    branchName: branchName(activeCash.branch_id),
+                    openingCash: Number(activeCash.opening_cash || 0),
+                    status: activeCash.status || 'open',
+                    movementsCount: movements.length,
+                    openedAt: activeCash.opened_at,
+                  })}
+                  title="Eliminar turno de caja"
+                >
+                  <Trash2 size={13} /> Eliminar turno
+                </button>
+              )}
             </div>
 
             {/* Formulario Inline para Editar Fondo Inicial */}
@@ -790,7 +850,7 @@ export function CashManagement({
                   </div>
                 )}
 
-                {/* Botones de acción: Editar arqueo y Reabrir turno */}
+                {/* Botones de acción: Editar arqueo, Reabrir y Eliminar turno */}
                 {!isEditing && !isReopening && (
                   <div className="cash-history-actions">
                     <button
@@ -817,6 +877,24 @@ export function CashManagement({
                     >
                       <RotateCcw size={13} /> Reabrir turno
                     </button>
+                    {effectiveCanDeleteCash && (
+                      <button
+                        type="button"
+                        className="button button-outline button-sm cash-history-delete-btn"
+                        disabled={isBusy}
+                        onClick={() => setDeleteTarget({
+                          kind: 'session',
+                          sessionId: session.id,
+                          branchName: branchName(session.branch_id),
+                          openingCash: Number(session.opening_cash || 0),
+                          status: session.status || 'closed',
+                          openedAt: session.opened_at,
+                        })}
+                        title="Eliminar cierre de caja permanentemente"
+                      >
+                        <Trash2 size={13} /> Eliminar
+                      </button>
+                    )}
                   </div>
                 )}
               </article>

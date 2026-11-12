@@ -1018,11 +1018,10 @@ export function ProductWorkflowRoutesPage() {
       )}
 
       {/* Segmented Navigation Tabs */}
-      <div className="pwr-tabs-bar" role="tablist" aria-label="Vistas de configuración de rutas">
+      <div className="pwr-tabs-bar" role="group" aria-label="Vistas de configuración de rutas">
         <button
           type="button"
-          role="tab"
-          aria-selected={activeTab === 'families'}
+          aria-pressed={activeTab === 'families'}
           className={`pwr-tab${activeTab === 'families' ? ' is-active' : ''}`}
           onClick={() => setActiveTab('families')}
         >
@@ -1032,8 +1031,7 @@ export function ProductWorkflowRoutesPage() {
         </button>
         <button
           type="button"
-          role="tab"
-          aria-selected={activeTab === 'products'}
+          aria-pressed={activeTab === 'products'}
           className={`pwr-tab${activeTab === 'products' ? ' is-active' : ''}`}
           onClick={() => setActiveTab('products')}
         >
@@ -1046,8 +1044,7 @@ export function ProductWorkflowRoutesPage() {
         </button>
         <button
           type="button"
-          role="tab"
-          aria-selected={activeTab === 'flows'}
+          aria-pressed={activeTab === 'flows'}
           className={`pwr-tab${activeTab === 'flows' ? ' is-active' : ''}`}
           onClick={() => setActiveTab('flows')}
         >
@@ -1141,6 +1138,7 @@ export function ProductWorkflowRoutesPage() {
                 <button
                   type="button"
                   className={familyStatusFilter === 'all' ? 'is-selected' : ''}
+                  aria-pressed={familyStatusFilter === 'all'}
                   onClick={() => setFamilyStatusFilter('all')}
                 >
                   Todas <span>{familyCards.length}</span>
@@ -1148,6 +1146,7 @@ export function ProductWorkflowRoutesPage() {
                 <button
                   type="button"
                   className={familyStatusFilter === 'with_pending' ? 'is-selected' : ''}
+                  aria-pressed={familyStatusFilter === 'with_pending'}
                   onClick={() => setFamilyStatusFilter('with_pending')}
                 >
                   Con pendientes{' '}
@@ -1156,6 +1155,7 @@ export function ProductWorkflowRoutesPage() {
                 <button
                   type="button"
                   className={familyStatusFilter === 'with_rule' ? 'is-selected' : ''}
+                  aria-pressed={familyStatusFilter === 'with_rule'}
                   onClick={() => setFamilyStatusFilter('with_rule')}
                 >
                   Con regla <span>{familyCards.filter((c) => Boolean(c.savedCode)).length}</span>
@@ -1163,6 +1163,7 @@ export function ProductWorkflowRoutesPage() {
                 <button
                   type="button"
                   className={familyStatusFilter === 'without_rule' ? 'is-selected' : ''}
+                  aria-pressed={familyStatusFilter === 'without_rule'}
                   onClick={() => setFamilyStatusFilter('without_rule')}
                 >
                   Sin regla <span>{familyCards.filter((c) => !c.savedCode).length}</span>
@@ -1445,6 +1446,7 @@ export function ProductWorkflowRoutesPage() {
               <button
                 type="button"
                 className={routeFilter === 'all' ? 'is-selected' : ''}
+                aria-pressed={routeFilter === 'all'}
                 onClick={() => {
                   setRouteFilter('all');
                   setPage(1);
@@ -1455,6 +1457,7 @@ export function ProductWorkflowRoutesPage() {
               <button
                 type="button"
                 className={routeFilter === 'explicit' ? 'is-selected' : ''}
+                aria-pressed={routeFilter === 'explicit'}
                 onClick={() => {
                   setRouteFilter('explicit');
                   setPage(1);
@@ -1465,6 +1468,7 @@ export function ProductWorkflowRoutesPage() {
               <button
                 type="button"
                 className={routeFilter === 'inherited' ? 'is-selected' : ''}
+                aria-pressed={routeFilter === 'inherited'}
                 onClick={() => {
                   setRouteFilter('inherited');
                   setPage(1);
@@ -1475,6 +1479,7 @@ export function ProductWorkflowRoutesPage() {
               <button
                 type="button"
                 className={routeFilter === 'unassigned' ? 'is-selected' : ''}
+                aria-pressed={routeFilter === 'unassigned'}
                 onClick={() => {
                   setRouteFilter('unassigned');
                   setPage(1);
@@ -1486,6 +1491,7 @@ export function ProductWorkflowRoutesPage() {
                 <button
                   type="button"
                   className={routeFilter === 'dirty' ? 'is-selected' : ''}
+                  aria-pressed={routeFilter === 'dirty'}
                   onClick={() => {
                     setRouteFilter('dirty');
                     setPage(1);
@@ -1816,6 +1822,7 @@ export function ProductWorkflowRoutesPage() {
                                 className="button button-outline"
                                 disabled={rowSaving}
                                 title="Deshacer cambio en esta fila"
+                                aria-label={`Deshacer el cambio de ruta de ${product.name}`}
                                 onClick={() =>
                                   setDrafts((prev) => ({
                                     ...prev,

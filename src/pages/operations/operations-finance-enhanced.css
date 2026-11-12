@@ -1281,3 +1281,142 @@
   background: #121420;
   color: #9da4b8;
 }
+
+/* Administrative Control Actions & Tables */
+.op-finance-notice-dismiss {
+  margin-left: auto;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.op-finance-notice-dismiss:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+.op-finance-sales-control-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.op-finance-sales-control-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.op-finance-sales-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+.op-finance-search-input {
+  min-width: 220px;
+  max-width: 100%;
+  flex: 1 1 240px;
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface, #fff);
+  color: var(--ink);
+  font-size: 0.82rem;
+  box-sizing: border-box;
+}
+.op-finance-danger-btn {
+  color: #b42318 !important;
+  border-color: rgba(180, 35, 24, 0.35) !important;
+}
+.op-finance-danger-btn:hover {
+  background: rgba(180, 35, 24, 0.08) !important;
+}
+.op-finance-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.op-finance-mini-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface, #fff);
+  color: var(--ink);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.op-finance-mini-btn:hover {
+  border-color: rgba(124, 58, 237, 0.45);
+  background: rgba(124, 58, 237, 0.06);
+}
+.op-finance-mini-btn.is-danger {
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.28);
+}
+.op-finance-mini-btn.is-danger:hover {
+  background: rgba(180, 35, 24, 0.08);
+  border-color: rgba(180, 35, 24, 0.55);
+}
+.op-finance-sale-code-cell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.op-finance-test-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.op-finance-col-check {
+  width: 38px;
+  text-align: center;
+}
+tr.is-probable-test td {
+  background: rgba(245, 158, 11, 0.04);
+}
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-search-input,
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-mini-btn {
+  background: #181b2a;
+  border-color: #2e334a;
+  color: #e2e8f0;
+}
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-mini-btn.is-danger,
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-danger-btn {
+  color: #fca5a5 !important;
+  border-color: rgba(248, 113, 113, 0.35) !important;
+}
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark) .op-finance-test-pill {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+}
+@media (max-width: 600px) {
+  .op-finance-sales-toolbar {
+    width: 100%;
+  }
+  .op-finance-search-input {
+    min-width: 0;
+    width: 100%;
+  }
+}

@@ -17,9 +17,12 @@ import {
   X,
 } from 'lucide-react';
 import { Dialog } from '../../../components/ui/OperationalKit';
+import { useAuth } from '../../../auth/AuthProvider';
 import { supabase } from '../../../lib/supabaseClient';
 import { formatMoney } from '../../../app/workspace';
 import { snapshotCommercialFinishing } from '../../../lib/commercialFinishing';
+import { canAdminDeleteSales, formatAdminControlError } from '../../../lib/adminCashSalesControl';
+import { AdminDeleteRecordModal } from '../../../components/AdminDeleteRecordModal';
 
 export interface POSSaleEditorModalProps {
   open: boolean;
@@ -27,12 +30,14 @@ export interface POSSaleEditorModalProps {
   organizationId: string;
   branchName: string;
   onSaved: () => void;
+  onDeleted?: (message: string) => void;
   onClose: () => void;
 }
 
 interface EditableLine {
   id?: string;
   catalog_product_id?: string | null;
+  variant_id?: string | null;
   sku?: string;
   description: string;
   quantity: number | string;
@@ -57,12 +62,21 @@ export function POSSaleEditorModal({
   organizationId,
   branchName,
   onSaved,
+  onDeleted,
   onClose,
 }: POSSaleEditorModalProps) {
+  const { roles, hasPermission } = useAuth();
+  const canDeleteSale = canAdminDeleteSales(roles, hasPermission);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saleCode, setSaleCode] = useState('');
+  const [saleStatus, setSaleStatus] = useState('confirmed');
+  const [saleTotal, setSaleTotal] = useState(0);
+  const [paymentMethodSummary, setPaymentMethodSummary] = useState('');
+  const [taxRate, setTaxRate] = useState(0);
+  const [shippingCost, setShippingCost] = useState(0);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   // Customer
   const [customerId, setCustomerId] = useState<string | null>(null);
@@ -99,7 +113,7 @@ export function POSSaleEditorModal({
       try {
         const { data: sale, error: saleErr } = await supabase
           .from('sales')
-          .select('id, sale_code, customer_id, discount, note, total, payment_method, branch_id, created_at')
+          .select('id, sale_code, status, customer_id, discount_total, discount_reason, tax_rate, tax_amount, shipping_cost, note, total, payment_method, branch_id, created_at')
           .eq('id', saleId)
           .single();
 
@@ -108,12 +122,18 @@ export function POSSaleEditorModal({
 
         if (!active) return;
         setSaleCode(sale.sale_code || sale.id.slice(0, 8));
+        setSaleStatus(sale.status || 'confirmed');
+        setSaleTotal(Number(sale.total) || 0);
+        setPaymentMethodSummary(sale.payment_method || '');
+        setTaxRate(Number(sale.tax_rate) || 0);
+        setShippingCost(Number(sale.shipping_cost) || 0);
         setCustomerId(sale.customer_id || null);
-        setDiscount(String(sale.discount || 0));
+        setDiscount(String(sale.discount_total || 0));
+        setDiscountReason(sale.discount_reason || '');
         setNote(sale.note || '');
 
-        // Extract discount reason from note if present
-        if (sale.note && sale.note.includes('Descuento comercial')) {
+        // Extract discount reason from note if present and column is empty
+        if (!sale.discount_reason && sale.note && sale.note.includes('Descuento comercial')) {
           const match = sale.note.match(/Descuento comercial(?:\s*\([^)]*\))?:\s*([^\n\r]+)/i);
           if (match && match[1]) {
             setDiscountReason(match[1].trim());
@@ -143,7 +163,7 @@ export function POSSaleEditorModal({
         // Lines
         const { data: saleLines, error: linesErr } = await supabase
           .from('sale_lines')
-          .select('id, catalog_product_id, sku, description_snapshot, quantity, unit_price, finishing_options, material_requests')
+          .select('id, catalog_product_id, variant_id, sku_snapshot, description_snapshot, quantity, unit_price, finishing_options, material_requests')
           .eq('sale_id', saleId)
           .order('id', { ascending: true });
 
@@ -152,8 +172,9 @@ export function POSSaleEditorModal({
           setLines(
             (saleLines || []).map((l: any) => ({
               id: l.id,
-              catalog_product_id: l.catalog_product_id,
-              sku: l.sku || '',
+              catalog_product_id: l.catalog_product_id || null,
+              variant_id: l.variant_id || null,
+              sku: l.sku_snapshot || '',
               description: l.description_snapshot || '',
               quantity: l.quantity,
               unit_price: l.unit_price,
@@ -221,9 +242,15 @@ export function POSSaleEditorModal({
     return Math.max(0, Math.min(linesSubtotal, roundMoney(d)));
   }, [linesSubtotal, discount]);
 
+  const computedTaxAmount = useMemo(() => {
+    const taxableBase = Math.max(0, roundMoney(linesSubtotal - discountAmount));
+    return roundMoney((taxableBase * (Number(taxRate) || 0)) / 100);
+  }, [linesSubtotal, discountAmount, taxRate]);
+
   const computedTotal = useMemo(() => {
-    return Math.max(0, roundMoney(linesSubtotal - discountAmount));
-  }, [linesSubtotal, discountAmount]);
+    const netBase = Math.max(0, roundMoney(linesSubtotal - discountAmount));
+    return Math.max(0, roundMoney(netBase + computedTaxAmount + (Number(shippingCost) || 0)));
+  }, [linesSubtotal, discountAmount, computedTaxAmount, shippingCost]);
 
   const paymentsTotal = useMemo(() => {
     return roundMoney(
@@ -337,8 +364,11 @@ export function POSSaleEditorModal({
       const sanitizedLines = lines.map((l) => ({
         id: l.id || null,
         catalog_product_id: l.catalog_product_id || null,
+        variant_id: l.variant_id || null,
         sku: l.sku || '',
+        sku_snapshot: l.sku || '',
         description: l.description.trim(),
+        description_snapshot: l.description.trim(),
         quantity: Number(l.quantity),
         unit_price: roundMoney(Number(l.unit_price)),
         finishing_options: snapshotCommercialFinishing(l.finishing_options, Number(l.quantity)),
@@ -353,8 +383,8 @@ export function POSSaleEditorModal({
         note: (p.note || '').trim(),
       }));
 
-      // Try amend_confirmed_pos_sale RPC first
-      const { data: rpcResult, error: rpcError } = await supabase.rpc('amend_confirmed_pos_sale', {
+      // Call authoritative amend_confirmed_pos_sale RPC (handles inventory + roll logs + closed cash session recalc)
+      const { error: rpcError } = await supabase.rpc('amend_confirmed_pos_sale', {
         p_sale_id: saleId,
         p_customer_id: customerId || null,
         p_customer_data: {
@@ -372,84 +402,20 @@ export function POSSaleEditorModal({
       });
 
       if (rpcError) {
-        // Fallback to direct supabase updates if RPC is not present
-        if (customerId) {
-          await supabase
-            .from('customers')
-            .update({
-              full_name: customerData.full_name.trim(),
-              phone: customerData.phone.trim() || null,
-              email: customerData.email.trim() || null,
-              document_reference: customerData.document_reference.trim() || null,
-            })
-            .eq('id', customerId);
-        }
-
-        const primaryPaymentMethod = sanitizedPayments[0]?.method || 'cash';
-        const noteWithAudit = [
-          note.trim(),
-          discountAmount > 0 && discountReason.trim() ? `Descuento comercial: ${discountReason.trim()}` : '',
-          `[Editado en POS]: ${amendmentReason.trim() || 'Ajuste de orden'} (${new Date().toLocaleTimeString('es-EC')})`,
-        ]
-          .filter(Boolean)
-          .join('\n');
-
-        const { error: saleUpdateErr } = await supabase
-          .from('sales')
-          .update({
-            discount: discountAmount,
-            total: computedTotal,
-            note: noteWithAudit,
-            payment_method: primaryPaymentMethod,
-          })
-          .eq('id', saleId);
-
-        if (saleUpdateErr) throw saleUpdateErr;
-
-        // Replace sale lines
-        await supabase.from('sale_lines').delete().eq('sale_id', saleId);
-        const { error: insertLinesErr } = await supabase.from('sale_lines').insert(
-          sanitizedLines.map((l) => ({
-            sale_id: saleId,
-            catalog_product_id: l.catalog_product_id,
-            sku: l.sku,
-            description_snapshot: l.description,
-            quantity: l.quantity,
-            unit_price: l.unit_price,
-            finishing_options: l.finishing_options || {},
-            material_requests: Array.isArray(l.material_requests) ? l.material_requests : [],
-            organization_id: organizationId,
-          })),
-        );
-        if (insertLinesErr) throw insertLinesErr;
-
-        // Replace sale payments
-        await supabase.from('sale_payments').delete().eq('sale_id', saleId);
-        if (sanitizedPayments.length > 0) {
-          const { error: insertPayErr } = await supabase.from('sale_payments').insert(
-            sanitizedPayments.map((p) => ({
-              sale_id: saleId,
-              method: p.method,
-              amount: p.amount,
-              reference: p.reference,
-              note: p.note,
-              organization_id: organizationId,
-            })),
-          );
-          if (insertPayErr) throw insertPayErr;
-        }
+        throw rpcError;
       }
 
       onSaved();
       onClose();
     } catch (err: any) {
-      setError(err?.message || 'Error al guardar las modificaciones.');
+      setError(formatAdminControlError(err, 'Error al guardar las modificaciones.'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
+    <>
     <Dialog
       open={open}
       onOpenChange={(isOpen) => {
@@ -460,7 +426,18 @@ export function POSSaleEditorModal({
       eyebrow={`MODIFICACIÓN POST-VENTA · ${branchName.toUpperCase()}`}
       description="Modifica cliente, descripción de artículos, cantidades, precios unitarios, descuentos y métodos de pago sin anular la venta."
       footer={
-        <div className="pos-editor-modal-footer">
+        <div className="pos-editor-modal-footer" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', width: '100%' }}>
+          {canDeleteSale && saleId && (
+            <button
+              type="button"
+              className="button button-outline"
+              style={{ color: '#dc2626', borderColor: 'rgba(239, 68, 68, 0.45)', marginRight: 'auto' }}
+              onClick={() => setDeleteModalOpen(true)}
+              disabled={saving || loading}
+            >
+              <Trash2 size={14} /> Eliminar venta
+            </button>
+          )}
           <button
             type="button"
             className="button button-outline"
@@ -762,6 +739,18 @@ export function POSSaleEditorModal({
                   <strong>−{formatMoney(discountAmount)}</strong>
                 </div>
               )}
+              {taxRate > 0 && (
+                <div className="pos-editor-financial-row">
+                  <span>IVA ({taxRate}%):</span>
+                  <strong>+{formatMoney(computedTaxAmount)}</strong>
+                </div>
+              )}
+              {shippingCost > 0 && (
+                <div className="pos-editor-financial-row">
+                  <span>Envío / instalación:</span>
+                  <strong>+{formatMoney(shippingCost)}</strong>
+                </div>
+              )}
               <div className="pos-editor-financial-row is-total">
                 <span>Total recalculado:</span>
                 <strong>{formatMoney(computedTotal)}</strong>
@@ -803,5 +792,28 @@ export function POSSaleEditorModal({
         )}
       </div>
     </Dialog>
+    <AdminDeleteRecordModal
+      open={deleteModalOpen}
+      onOpenChange={setDeleteModalOpen}
+      target={
+        saleId
+          ? {
+              kind: 'sale',
+              saleId,
+              saleCode: saleCode || saleId.slice(0, 8),
+              customerName: customerData.full_name,
+              total: computedTotal || saleTotal,
+              status: saleStatus,
+              paymentMethod: paymentMethodSummary,
+            }
+          : null
+      }
+      onDeleted={async (msg) => {
+        onClose();
+        onSaved();
+        onDeleted?.(msg);
+      }}
+    />
+    </>
   );
 }
