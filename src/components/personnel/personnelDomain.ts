@@ -313,6 +313,8 @@ export function evaluatePersonnelReadiness(
   const checksLegal: Array<[boolean, string]> = [
     [Boolean(person.full_name.trim() && (person.job_title.trim() || person.department.trim())), 'Cargo o área operativa'],
     [Boolean(person.start_date), 'Fecha de ingreso laboral'],
+    [Boolean(person.document_reference.trim()), 'Cédula / documento de identidad'],
+    [Boolean(person.home_address.trim()), 'Domicilio del colaborador'],
     [Boolean(latestComp), 'Salario base / compensación'],
     [Boolean(person.email.trim() || person.phone.trim()), 'Correo o teléfono de contacto'],
   ];

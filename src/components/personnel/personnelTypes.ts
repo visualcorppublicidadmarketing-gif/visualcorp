@@ -6,6 +6,12 @@ export interface PersonnelRecord {
   full_name: string;
   email: string;
   phone: string;
+  document_reference: string;
+  home_address: string;
+  home_city: string;
+  home_maps_url: string;
+  home_latitude: number | null;
+  home_longitude: number | null;
   department: string;
   job_title: string;
   status: PersonnelStatus;
@@ -17,10 +23,48 @@ export interface PersonnelRecord {
   updated_at: string;
 }
 
+export type PersonnelEmploymentExitType =
+  | 'resignation'
+  | 'dismissal'
+  | 'contract_end'
+  | 'mutual_agreement'
+  | 'abandonment'
+  | 'other'
+  | 'legacy';
+
+export type PersonnelEmploymentCompensationStatus =
+  | 'pending'
+  | 'with_compensation'
+  | 'without_compensation'
+  | 'not_applicable';
+
+export interface PersonnelEmploymentPeriod {
+  id: string;
+  organization_id: string;
+  personnel_id: string;
+  start_date: string | null;
+  end_date: string | null;
+  exit_type: PersonnelEmploymentExitType | null;
+  exit_reason: string;
+  source: 'manual' | 'legacy';
+  created_by: string;
+  created_at: string;
+}
+
+export interface PersonnelEmploymentCompensation {
+  period_id: string;
+  organization_id: string;
+  compensation_status: PersonnelEmploymentCompensationStatus;
+  exit_notes: string;
+  created_at: string;
+}
+
 export type PersonnelEventKey =
   | 'record_created'
   | 'record_updated'
   | 'compensation_changed'
+  | 'employment_period_started'
+  | 'employment_period_closed'
   | 'account_linked'
   | 'account_unlinked';
 

@@ -1790,3 +1790,213 @@
     min-height: 40px;
   }
 }
+
+.personnel-employment-history {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--pers-line);
+  border-radius: 14px;
+  background: var(--pers-surface);
+}
+
+.personnel-home-location {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--pers-line);
+  border-radius: 12px;
+  background: var(--pers-surface);
+}
+
+.personnel-home-location .personnel-section-header {
+  align-items: flex-start;
+}
+
+.personnel-home-location .personnel-section-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.personnel-home-location .personnel-section-header p {
+  margin: 5px 0 0;
+  color: var(--pers-muted);
+  font-size: 12px;
+}
+
+.personnel-employment-history .personnel-section-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.personnel-employment-history .personnel-section-header p {
+  margin: 5px 0 0;
+  color: var(--pers-muted);
+  font-size: 12px;
+}
+
+.personnel-employment-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 11px;
+  border: 1px solid var(--pers-line-strong);
+  border-radius: 9px;
+  background: var(--pers-surface);
+  color: var(--pers-ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.personnel-employment-action.is-exit {
+  border-color: var(--pers-danger-bd);
+  color: var(--pers-danger-fg);
+}
+
+.personnel-employment-action:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.personnel-employment-period-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.personnel-employment-period-card {
+  display: grid;
+  grid-template-columns: 34px minmax(0,1fr);
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid var(--pers-line);
+  border-radius: 11px;
+  background: var(--pers-surface-soft);
+}
+
+.personnel-employment-period-card.is-current {
+  border-color: var(--pers-pos-bd);
+}
+
+.personnel-employment-period-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--pers-neutral-bg);
+  color: var(--pers-neutral-fg);
+}
+
+.personnel-employment-period-card.is-current .personnel-employment-period-icon {
+  background: var(--pers-pos-bg);
+  color: var(--pers-pos-fg);
+}
+
+.personnel-employment-period-main {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.personnel-employment-period-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--pers-ink);
+  font-size: 13px;
+}
+
+.personnel-employment-period-heading small,
+.personnel-employment-period-main small {
+  color: var(--pers-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.personnel-employment-period-main p {
+  margin: 0;
+  color: var(--pers-ink);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.personnel-employment-compensation {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.personnel-history-inline-warning {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--pers-warn-bd);
+  border-radius: 9px;
+  background: var(--pers-warn-bg);
+  color: var(--pers-warn-fg);
+  font-size: 12px;
+}
+
+.personnel-employment-form {
+  display: grid;
+  gap: 13px;
+  padding: 14px;
+  border: 1px solid var(--pers-line-strong);
+  border-radius: 12px;
+  background: var(--pers-surface-elevated);
+}
+
+.personnel-employment-form-heading,
+.personnel-employment-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.personnel-employment-form-heading h4 {
+  margin: 0;
+  color: var(--pers-ink);
+  font-size: 14px;
+}
+
+.personnel-employment-cancel {
+  border: 0;
+  background: transparent;
+  color: var(--pers-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.personnel-employment-form-help {
+  margin: 0;
+  color: var(--pers-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.personnel-employment-form .personnel-alert {
+  margin: 0;
+}
+
+@media (max-width: 700px) {
+  .personnel-employment-history .personnel-section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .personnel-employment-action {
+    width: 100%;
+  }
+}

@@ -13,6 +13,7 @@ import {
   DollarSign,
   Download,
   Edit3,
+  ExternalLink,
   Eye,
   EyeOff,
   FileText,
@@ -20,6 +21,7 @@ import {
   Info,
   Link2,
   Mail,
+  MapPin,
   OctagonAlert,
   Phone,
   Plus,
@@ -75,6 +77,10 @@ import type {
   GoogleAccount,
   OperationalMetricsState,
   PayrollDeduction,
+  PersonnelEmploymentCompensation,
+  PersonnelEmploymentCompensationStatus,
+  PersonnelEmploymentExitType,
+  PersonnelEmploymentPeriod,
   PersonnelEvent,
   PersonnelRecord,
   ProfileReadinessBreakdown,
@@ -82,8 +88,11 @@ import type {
   TeamWorkException,
   TeamWorkHour,
 } from './personnelTypes';
+import { PersonnelEmploymentHistoryPanel } from './PersonnelEmploymentHistoryPanel';
+import { GoogleMapsPreview } from '../commercial/GoogleMapsPreview';
+import { getGoogleMapsOpenUrl } from '../../lib/maps';
 
-export type DetailTabKey = 'ficha' | 'salarios' | 'asistencia' | 'metricas';
+export type DetailTabKey = 'ficha' | 'historial' | 'salarios' | 'asistencia' | 'metricas';
 
 interface PersonnelDetailPanelProps {
   selected: PersonnelRecord | null;
@@ -95,6 +104,8 @@ interface PersonnelDetailPanelProps {
   accessProfiles: AccessProfile[];
   events: PersonnelEvent[];
   compensationHistory: CompensationEntry[];
+  employmentPeriods: PersonnelEmploymentPeriod[];
+  employmentCompensation: PersonnelEmploymentCompensation[];
   deductions: PayrollDeduction[];
   attendanceEntries: AttendanceEntry[];
   workHours: TeamWorkHour[];
@@ -107,11 +118,20 @@ interface PersonnelDetailPanelProps {
   canEditCompensation: boolean;
   canManageTeam: boolean;
   canViewSchedule: boolean;
+  employmentSaving: boolean;
   isOwner: boolean;
   periodMonth: string;
   onChangePeriodMonth: (month: string) => void;
   onBackToDirectory?: () => void;
   onEditSelected: () => void;
+  onCloseEmploymentPeriod: (values: {
+    endDate: string;
+    exitType: PersonnelEmploymentExitType;
+    exitReason: string;
+    compensationStatus: PersonnelEmploymentCompensationStatus;
+    exitNotes: string;
+  }) => Promise<boolean>;
+  onRehireEmployment: (startDate: string) => Promise<boolean>;
   onLinkGoogleAccount: (userId: string) => Promise<void>;
   onUnlinkGoogleAccount: () => Promise<void>;
   onInviteOrAssignProfile: (email: string, profileId: string) => Promise<boolean>;
@@ -148,6 +168,8 @@ export function PersonnelDetailPanel({
   accessProfiles,
   events,
   compensationHistory,
+  employmentPeriods,
+  employmentCompensation,
   deductions,
   attendanceEntries,
   workHours,
@@ -160,11 +182,14 @@ export function PersonnelDetailPanel({
   canEditCompensation,
   canManageTeam,
   canViewSchedule,
+  employmentSaving,
   isOwner,
   periodMonth,
   onChangePeriodMonth,
   onBackToDirectory,
   onEditSelected,
+  onCloseEmploymentPeriod,
+  onRehireEmployment,
   onLinkGoogleAccount,
   onUnlinkGoogleAccount,
   onInviteOrAssignProfile,
@@ -416,6 +441,12 @@ export function PersonnelDetailPanel({
     () => [
       { id: 'ficha', label: 'Ficha, cuenta y turnos', icon: <UserCheck size={14} /> },
       {
+        id: 'historial',
+        label: 'Historial laboral',
+        icon: <History size={14} />,
+        badge: employmentPeriods.length || undefined,
+      },
+      {
         id: 'salarios',
         label: 'Compensación y deducciones',
         icon: <BadgeDollarSign size={14} />,
@@ -429,7 +460,7 @@ export function PersonnelDetailPanel({
       },
       { id: 'metricas', label: 'Carga y rendimiento', icon: <TrendingUp size={14} /> },
     ],
-    [deductions, attendanceMonthSummary.lateCount, attendanceMonthSummary.absentCount],
+    [deductions, attendanceMonthSummary.lateCount, attendanceMonthSummary.absentCount, employmentPeriods.length],
   );
 
   if (!selected) {
@@ -702,6 +733,12 @@ export function PersonnelDetailPanel({
           <div className="personnel-contact-grid">
             <article className="personnel-contact-card">
               <span>
+                <FileText size={13} aria-hidden="true" /> Cédula / documento
+              </span>
+              <b>{selected.document_reference || 'Pendiente de registrar'}</b>
+            </article>
+            <article className="personnel-contact-card">
+              <span>
                 <Mail size={13} aria-hidden="true" /> Correo laboral / contacto
               </span>
               <b>{selected.email || 'Pendiente de registrar'}</b>
@@ -752,6 +789,44 @@ export function PersonnelDetailPanel({
               )}
             </article>
           </div>
+
+          <section className="personnel-home-location" aria-label="Domicilio del colaborador">
+            <header className="personnel-section-header">
+              <div>
+                <h3><MapPin size={15} aria-hidden="true" /> Domicilio y ubicación</h3>
+                <p>{[selected.home_address, selected.home_city].filter(Boolean).join(' · ') || 'Sin domicilio registrado'}</p>
+              </div>
+              {getGoogleMapsOpenUrl(
+                selected.home_maps_url,
+                selected.home_latitude != null && selected.home_longitude != null
+                  ? `${selected.home_latitude},${selected.home_longitude}`
+                  : [selected.home_address, selected.home_city].filter(Boolean).join(', '),
+              ) && (
+                <a
+                  className="site-secondary-button"
+                  href={getGoogleMapsOpenUrl(
+                    selected.home_maps_url,
+                    selected.home_latitude != null && selected.home_longitude != null
+                      ? `${selected.home_latitude},${selected.home_longitude}`
+                      : [selected.home_address, selected.home_city].filter(Boolean).join(', '),
+                  )}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MapPin size={13} /> Abrir Google Maps <ExternalLink size={12} />
+                </a>
+              )}
+            </header>
+            {(selected.home_maps_url || selected.home_address || selected.home_latitude != null) && (
+              <GoogleMapsPreview
+                url={selected.home_maps_url}
+                address={[selected.home_address, selected.home_city].filter(Boolean).join(', ')}
+                coordinates={selected.home_latitude != null && selected.home_longitude != null
+                  ? `${selected.home_latitude},${selected.home_longitude}`
+                  : ''}
+              />
+            )}
+          </section>
 
           {/* Account & Access Linking */}
           <section className="personnel-account-panel" aria-label="Cuenta Google y acceso a Visual Corp Suite">
@@ -954,6 +1029,23 @@ export function PersonnelDetailPanel({
       )}
 
       {/* TAB 2: COMPENSACIÓN Y DEDUCCIONES */}
+      {activeTab === 'historial' && (
+        <div className="personnel-tab-body" role="tabpanel">
+          <PersonnelEmploymentHistoryPanel
+            selected={selected}
+            periods={employmentPeriods}
+            compensation={employmentCompensation}
+            canEdit={canEdit}
+            canViewCompensation={canViewCompensation}
+            canEditCompensation={canEditCompensation}
+            saving={employmentSaving}
+            onClosePeriod={onCloseEmploymentPeriod}
+            onRehire={onRehireEmployment}
+          />
+        </div>
+      )}
+
+      {/* TAB 3: COMPENSACIÓN Y DEDUCCIONES */}
       {activeTab === 'salarios' && (
         <div className="personnel-tab-body" role="tabpanel">
           {!canViewCompensation ? (

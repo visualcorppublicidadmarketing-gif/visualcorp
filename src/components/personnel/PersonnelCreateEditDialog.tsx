@@ -3,18 +3,21 @@ import { AlertCircle, CheckCircle2, Link2, Shield, UserPlus, Users } from 'lucid
 import { Dialog, DialogCallout, DialogSection } from '../ui/DialogSystem';
 import { SelectDropdown, type SelectDropdownOption } from '../ui/SelectDropdown';
 import { Button } from '../ui/OperationalKit';
-import { DEPARTMENT_PRESETS } from './personnelDomain';
-import type { AccessProfile, GoogleAccount, PersonnelRecord, PersonnelStatus } from './personnelTypes';
+import { GoogleMapsLocationFields, type LocationDraft } from '../GoogleMapsLocationFields';
+import { normalizeGoogleMapsUrl } from '../../lib/maps';
+import { ecuadorTodayIso, DEPARTMENT_PRESETS } from './personnelDomain';
+import type { AccessProfile, GoogleAccount, PersonnelRecord } from './personnelTypes';
 
 export interface PersonnelFormValues {
   fullName: string;
   email: string;
   phone: string;
+  documentReference: string;
+  homeCity: string;
+  homeLocation: LocationDraft;
   department: string;
   jobTitle: string;
-  status: PersonnelStatus;
   startDate: string;
-  endDate: string;
   googleUserId: string;
   accessProfileId: string;
 }
@@ -54,11 +57,12 @@ export function PersonnelCreateEditDialog({
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [documentReference, setDocumentReference] = useState('');
+  const [homeCity, setHomeCity] = useState('');
+  const [homeLocation, setHomeLocation] = useState<LocationDraft>({ address: '', mapsUrl: '', latitude: '', longitude: '' });
   const [department, setDepartment] = useState('');
   const [jobTitle, setJobTitle] = useState('');
-  const [status, setStatus] = useState<PersonnelStatus>('active');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(ecuadorTodayIso());
   const [googleUserId, setGoogleUserId] = useState('');
   const [accessProfileId, setAccessProfileId] = useState('');
   const [localError, setLocalError] = useState('');
@@ -70,22 +74,29 @@ export function PersonnelCreateEditDialog({
       setFullName(editingRecord.full_name || '');
       setEmail(editingRecord.email || '');
       setPhone(editingRecord.phone || '');
+      setDocumentReference(editingRecord.document_reference || '');
+      setHomeCity(editingRecord.home_city || '');
+      setHomeLocation({
+        address: editingRecord.home_address || '',
+        mapsUrl: editingRecord.home_maps_url || '',
+        latitude: editingRecord.home_latitude == null ? '' : String(editingRecord.home_latitude),
+        longitude: editingRecord.home_longitude == null ? '' : String(editingRecord.home_longitude),
+      });
       setDepartment(editingRecord.department || '');
       setJobTitle(editingRecord.job_title || '');
-      setStatus(editingRecord.status || 'active');
       setStartDate(editingRecord.start_date || '');
-      setEndDate(editingRecord.end_date || '');
       setGoogleUserId('');
       setAccessProfileId('');
     } else {
       setFullName('');
       setEmail('');
       setPhone('');
+      setDocumentReference('');
+      setHomeCity('');
+      setHomeLocation({ address: '', mapsUrl: '', latitude: '', longitude: '' });
       setDepartment('');
       setJobTitle('');
-      setStatus('active');
-      setStartDate('');
-      setEndDate('');
+      setStartDate(ecuadorTodayIso());
       setGoogleUserId('');
       setAccessProfileId('');
     }
@@ -139,19 +150,43 @@ export function PersonnelCreateEditDialog({
       setLocalError('Ingresa el nombre completo del colaborador (mínimo 2 caracteres).');
       return;
     }
-    if (startDate && endDate && endDate < startDate) {
-      setLocalError('La fecha de salida no puede ser anterior a la fecha de ingreso.');
+    if (mode === 'create' && !startDate) {
+      setLocalError('Registra la fecha de ingreso del primer período laboral.');
+      return;
+    }
+    if (homeLocation.mapsUrl.trim() && !normalizeGoogleMapsUrl(homeLocation.mapsUrl)) {
+      setLocalError('Usa un enlace válido de Google Maps para guardar el pin.');
+      return;
+    }
+    const latitude = homeLocation.latitude.trim() ? Number(homeLocation.latitude) : null;
+    const longitude = homeLocation.longitude.trim() ? Number(homeLocation.longitude) : null;
+    if ((latitude == null) !== (longitude == null)) {
+      setLocalError('Ingresa latitud y longitud juntas para guardar el pin.');
+      return;
+    }
+    if (latitude != null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) {
+      setLocalError('La latitud debe estar entre −90 y 90.');
+      return;
+    }
+    if (longitude != null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180)) {
+      setLocalError('La longitud debe estar entre −180 y 180.');
       return;
     }
     await onSubmit({
       fullName: fullName.trim(),
       email: email.trim(),
       phone: phone.trim(),
+      documentReference: documentReference.trim(),
+      homeCity: homeCity.trim(),
+      homeLocation: {
+        address: homeLocation.address.trim(),
+        mapsUrl: normalizeGoogleMapsUrl(homeLocation.mapsUrl),
+        latitude: latitude == null ? '' : String(latitude),
+        longitude: longitude == null ? '' : String(longitude),
+      },
       department: department.trim(),
       jobTitle: jobTitle.trim(),
-      status,
       startDate,
-      endDate,
       googleUserId,
       accessProfileId,
     });
@@ -168,7 +203,7 @@ export function PersonnelCreateEditDialog({
       icon={mode === 'create' ? <UserPlus size={18} /> : <Users size={18} />}
       eyebrow={mode === 'create' ? 'ALTA DE COLABORADOR' : 'EDICIÓN DE FICHA LABORAL'}
       title={mode === 'create' ? 'Nueva ficha de personal' : `Editar ficha · ${editingRecord?.full_name || ''}`}
-      description="Registra identidad laboral, área operativa en Visual Corp y vigencia. Los datos laborales son independientes del acceso digital."
+      description="Registra identidad, domicilio y área laboral. Las salidas y reingresos se controlan desde el historial de períodos."
       busy={saving}
       footer={
         <>
@@ -181,7 +216,7 @@ export function PersonnelCreateEditDialog({
           </Button>
         </>
       }
-      footerHint="Los cambios de datos personales quedan auditados automáticamente en el historial de la ficha."
+      footerHint="Los cambios de identidad y domicilio quedan auditados sin copiar los valores sensibles al historial."
     >
       <form id={formId} className="personnel-dialog-form" onSubmit={handleSubmit}>
         <DialogSection
@@ -200,6 +235,19 @@ export function PersonnelCreateEditDialog({
                 value={fullName}
                 onChange={(event) => setFullName(event.target.value)}
                 data-autofocus
+              />
+            </label>
+
+            <label>
+              <span>Cédula / documento de identidad</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={40}
+                placeholder="Número de cédula"
+                value={documentReference}
+                onChange={(event) => setDocumentReference(event.target.value)}
               />
             </label>
 
@@ -233,7 +281,7 @@ export function PersonnelCreateEditDialog({
           </div>
         </DialogSection>
 
-        <DialogSection title="2. Contacto y vigencia contractual">
+        <DialogSection title="2. Contacto y domicilio">
           <div className="personnel-form-grid">
             <label>
               <span>Correo electrónico</span>
@@ -258,41 +306,35 @@ export function PersonnelCreateEditDialog({
             </label>
 
             <label>
-              <span>Estado de ficha</span>
-              <select
-                value={status}
-                onChange={(event) => setStatus(event.target.value as PersonnelStatus)}
-              >
-                <option value="active">Activo (vigente)</option>
-                <option value="inactive">Inactivo / baja</option>
-              </select>
+              <span>Ciudad o sector</span>
+              <input maxLength={120} placeholder="Ciudad, barrio o sector" value={homeCity} onChange={(event) => setHomeCity(event.target.value)} />
             </label>
-
-            <div className="personnel-date-pair">
-              <label>
-                <span>Fecha de ingreso</span>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(event) => setStartDate(event.target.value)}
-                />
-              </label>
-
-              <label>
-                <span>Fecha de salida</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(event) => setEndDate(event.target.value)}
-                />
-              </label>
+            <div className="personnel-span-2">
+              <GoogleMapsLocationFields
+                idPrefix="personnel-home"
+                addressLabel="Domicilio del colaborador"
+                mapSearchContext={homeCity}
+                location={homeLocation}
+                onChange={setHomeLocation}
+              />
             </div>
           </div>
         </DialogSection>
 
         {mode === 'create' && (
+          <DialogSection title="3. Primer período laboral" description="El ingreso inicial queda guardado como el primer período de esta ficha.">
+            <div className="personnel-form-grid">
+              <label>
+                <span>Fecha de ingreso *</span>
+                <input type="date" required value={startDate} onChange={(event) => setStartDate(event.target.value)} />
+              </label>
+            </div>
+          </DialogSection>
+        )}
+
+        {mode === 'create' && (
           <DialogSection
-            title="3. Acceso opcional a Visual Corp Suite"
+            title="4. Acceso opcional a Visual Corp Suite"
             description="Si el colaborador usa el sistema, puedes vincular su cuenta Google o invitarle con un perfil operativo."
           >
             {canManageTeam ? (

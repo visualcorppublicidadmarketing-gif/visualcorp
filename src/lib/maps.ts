@@ -34,11 +34,16 @@ export function extractGoogleMapsCoordinates(value) {
   if (!normalized) return null;
   const patterns = [
     /@(-?\d{1,3}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)/,
+    /!3d(-?\d{1,3}(?:\.\d+)?)!4d(-?\d{1,3}(?:\.\d+)?)/,
     /[?&](?:q|query|ll)=(-?\d{1,3}(?:\.\d+)?)(?:%2C|,)(-?\d{1,3}(?:\.\d+)?)/i,
   ];
   for (const pattern of patterns) {
     const match = normalized.match(pattern);
-    if (match) return { lat: Number(match[1]), lng: Number(match[2]) };
+    if (match) {
+      const lat = Number(match[1]);
+      const lng = Number(match[2]);
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) return { lat, lng };
+    }
   }
   return null;
 }
