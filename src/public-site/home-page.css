@@ -115,38 +115,39 @@
 .home-pillar-actions{display:flex;flex-wrap:wrap;gap:12px;padding-top:6px}
 
 /* Sección 02: Servicios Bento Grid */
-.home-services{--home-text:#1e1c26;--home-muted:#615e6b;--home-line:#21202d20;background:#f6f5f7;color:var(--home-text);scroll-margin-top:110px}
-.home-services .home-kicker{color:#8d2c6d}
-.home-services .home-section-heading h2 span{color:#787481}
-.home-services .home-text-button{color:#8d2c6d}
+.home-services{--home-text:#1e1c26;--home-muted:#615e6b;--home-line:#21202d20;--services-bg:#f6f5f7;--services-card:#fff;--services-card-text:#24202b;--services-card-border:#e4e0e7;--services-number:#766d7c;--services-arrow-border:#e9e4ec;--services-quickview-bg:#ffffffeb;--services-quickview-text:#523856;--services-quickview-border:#e3dbe8;--services-decoration-bg:#fff;--services-decoration-border:#e9dfed;--services-tag-bg:#f3eff6;--services-tag-border:#e6dfec;--services-tag-text:#4f4659;--services-card-muted:#6b6572;--services-divider:#eeeaf0;--services-note-link:#231925;--services-hover:#231925;--services-hover-foreground:#fff;--services-feature-aura:#edcde87d;--services-feature-from:#fff;--services-feature-to:#f8f2f8;--services-kicker:#8d2c6d;--services-heading-muted:#787481;--services-text-link:#8d2c6d;background:var(--services-bg);color:var(--home-text);scroll-margin-top:110px}
+html[data-public-theme="dark"] .home-services{--home-text:#f6f3f8;--home-muted:#c3bdca;--home-line:#ffffff2b;--services-bg:#101119;--services-card:#191a24;--services-card-text:#f6f3f8;--services-card-border:#ffffff25;--services-number:#b7adbd;--services-arrow-border:#ffffff32;--services-quickview-bg:#28202eeb;--services-quickview-text:#f5e7f2;--services-quickview-border:#f076bc55;--services-decoration-bg:#191a24;--services-decoration-border:#ffffff2b;--services-tag-bg:#25202d;--services-tag-border:#ffffff24;--services-tag-text:#eee8f2;--services-card-muted:#c9c2cf;--services-divider:#ffffff24;--services-note-link:#f3b2d8;--services-hover:#e5007e;--services-hover-foreground:#fff;--services-feature-aura:#e5007e24;--services-feature-from:#20202c;--services-feature-to:#161720;--services-kicker:#efa5d1;--services-heading-muted:#b5afbd;--services-text-link:#f0a1cf}
+.home-services .home-kicker{color:var(--services-kicker)}
+.home-services .home-section-heading h2 span{color:var(--services-heading-muted)}
+.home-services .home-text-button{color:var(--services-text-link)}
 .home-services-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}
 .home-services-grid>div{height:100%}
 .home-service-card-wrap{position:relative;height:100%}
-.public-site .vc-home .home-service{position:relative;display:flex;height:100%;min-height:380px;flex-direction:column;padding:25px 27px 22px;border:1px solid #e4e0e7;border-radius:16px;background:#fff;overflow:hidden;transition:transform .3s,border-color .3s,box-shadow .3s;color:#24202b;isolation:isolate}
+.public-site .vc-home .home-service{position:relative;display:flex;height:100%;min-height:380px;flex-direction:column;padding:25px 27px 22px;border:1px solid var(--services-card-border);border-radius:16px;background:var(--services-card);overflow:hidden;transition:transform .3s,border-color .3s,box-shadow .3s;color:var(--services-card-text);isolation:isolate}
 .home-service-top{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1}
-.home-service-number{font-size:11px;font-weight:700;letter-spacing:.12em;color:#766d7c;font-variant-numeric:tabular-nums}
-.home-service-arrow{display:grid;place-items:center;width:34px;height:34px;border:1px solid #e9e4ec;border-radius:50%;transition:background .3s,color .3s,transform .3s}
-.home-service-quickview{position:absolute;top:22px;right:68px;z-index:3;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;border:1px solid #e3dbe8;background:#ffffffeb;color:#523856;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);transition:background .2s,border-color .2s,color .2s,transform .2s}
-.home-service-quickview:hover{background:#231925;border-color:#231925;color:#fff;transform:translateY(-1px)}
+.home-service-number{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--services-number);font-variant-numeric:tabular-nums}
+.home-service-arrow{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--services-arrow-border);border-radius:50%;transition:background .3s,color .3s,transform .3s}
+.home-service-quickview{position:absolute;top:22px;right:68px;z-index:3;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--services-quickview-border);background:var(--services-quickview-bg);color:var(--services-quickview-text);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);transition:background .2s,border-color .2s,color .2s,transform .2s}
+.home-service-quickview:hover{background:var(--services-hover);border-color:var(--services-hover);color:var(--services-hover-foreground);transform:translateY(-1px)}
 .home-service-art{position:relative;display:grid;place-items:center;align-self:center;width:136px;height:118px;margin:6px 0 16px;color:#985488}
 .home-service-art i{position:absolute;inset:8px 20px 10px 7px;z-index:-1;border-radius:24px;background:linear-gradient(135deg,#eee9f8,#f9ecf4);border:1px solid #e9deee;transform:rotate(-12deg);transition:transform .45s}
 .home-service-art>svg{filter:drop-shadow(2px 5px 0 #a47db719);transition:transform .45s}
-.home-service-art>span{position:absolute;width:24px;height:24px;right:6px;top:10px;background:#fff;border:1px solid #e9dfed;border-radius:7px;transform:rotate(16deg);box-shadow:0 5px 10px #40305608;transition:transform .45s}
+.home-service-art>span{position:absolute;width:24px;height:24px;right:6px;top:10px;background:var(--services-decoration-bg);border:1px solid var(--services-decoration-border);border-radius:7px;transform:rotate(16deg);box-shadow:0 5px 10px #40305608;transition:transform .45s}
 .home-service-gran-formato .home-service-art,.home-service-eventos .home-service-art{color:#317c9a}
 .home-service-gran-formato .home-service-art i,.home-service-eventos .home-service-art i{background:linear-gradient(140deg,#e6f3f8,#f0edf7);border-color:#d9e7f0}
 .home-service-rotulos .home-service-art,.home-service-textil .home-service-art{color:#aa5c79}
 .home-service-rotulos .home-service-art i,.home-service-textil .home-service-art i{background:linear-gradient(140deg,#f9e7ed,#faf1e7);border-color:#f0e0e6}
 .vc-home .home-service h3{font-size:19px;font-weight:700;line-height:1.25;letter-spacing:-.025em}
-.vc-home .home-service p{margin-top:8px;color:#6b6572;font-size:13px;line-height:1.65}
+.vc-home .home-service p{margin-top:8px;color:var(--services-card-muted);font-size:13px;line-height:1.65}
 .home-service-copy{flex:1;display:flex;flex-direction:column}
 .home-service-tags{display:flex;flex-wrap:wrap;gap:6px;padding:0;margin:14px 0 0;list-style:none}
-.home-service-tags li{padding:4px 9px;border-radius:999px;background:#f3eff6;border:1px solid #e6dfec;color:#4f4659;font-size:11px;font-weight:600;line-height:1.3}
-.home-service-link{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:20px;padding-top:15px;border-top:1px solid #eeeaf0;font-size:11px;font-weight:700}
-@media(hover:hover){.public-site .vc-home .home-service-card-wrap:hover .home-service{transform:translateY(-6px);border-color:#cfa5c4;box-shadow:0 16px 30px #3020390c}.home-service-card-wrap:hover .home-service-art i{transform:rotate(0) scale(1.05)}.home-service-card-wrap:hover .home-service-art>svg{transform:translateY(-4px) rotate(-4deg)}.home-service-card-wrap:hover .home-service-art>span{transform:translate(4px,-6px) rotate(35deg)}.home-service-card-wrap:hover .home-service-arrow{background:#231925;color:white;transform:rotate(45deg)}}
+.home-service-tags li{padding:4px 9px;border-radius:999px;background:var(--services-tag-bg);border:1px solid var(--services-tag-border);color:var(--services-tag-text);font-size:11px;font-weight:600;line-height:1.3}
+.home-service-link{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:20px;padding-top:15px;border-top:1px solid var(--services-divider);font-size:11px;font-weight:700}
+@media(hover:hover){.public-site .vc-home .home-service-card-wrap:hover .home-service{transform:translateY(-6px);border-color:#cfa5c4;box-shadow:0 16px 30px #3020390c}.home-service-card-wrap:hover .home-service-art i{transform:rotate(0) scale(1.05)}.home-service-card-wrap:hover .home-service-art>svg{transform:translateY(-4px) rotate(-4deg)}.home-service-card-wrap:hover .home-service-art>span{transform:translate(4px,-6px) rotate(35deg)}.home-service-card-wrap:hover .home-service-arrow{background:var(--services-hover);color:var(--services-hover-foreground);transform:rotate(45deg)}}
 .home-services-note{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px;padding:28px 0 0;margin-top:12px;font-size:13px}
 .home-services-note span,.home-services-note a{display:flex;align-items:center;gap:10px;min-height:44px}
 .home-services-note-actions{display:flex;flex-wrap:wrap;align-items:center;gap:20px}
-.home-services-note a{font-weight:700;color:#231925}
+.home-services-note a{font-weight:700;color:var(--services-note-link)}
 
 /* Sección 03: Proceso */
 .home-process{background:radial-gradient(ellipse at 90% 50%,#51214220,transparent 60%),#0d0e15}
@@ -255,7 +256,7 @@ html[data-public-theme="light"] .home-orientator-goal.is-selected{border-color:#
 /* Bento rhythm para las 6 familias de servicio */
 .home-services-grid.is-bento{grid-template-columns:repeat(4,minmax(0,1fr))}
 .home-services-grid.is-bento .home-service-featured{grid-column:span 2;min-width:0}
-.home-services-grid.is-bento .home-service-featured .home-service{background:radial-gradient(circle at 82% 41%,#edcde87d,transparent 38%),linear-gradient(135deg,#fff,#f8f2f8)}
+.home-services-grid.is-bento .home-service-featured .home-service{background:radial-gradient(circle at 82% 41%,var(--services-feature-aura),transparent 38%),linear-gradient(135deg,var(--services-feature-from),var(--services-feature-to))}
 .home-services-grid.is-bento .home-service-featured .home-service-art{position:absolute;right:8%;top:22%;width:32%;height:42%;margin:0}
 .home-services-grid.is-bento .home-service-featured .home-service-art>svg{width:84px;height:84px}
 .home-services-grid.is-bento .home-service-featured .home-service-copy{display:flex;flex-direction:column;justify-content:flex-end;max-width:62%;min-height:220px}
