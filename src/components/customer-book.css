@@ -21,6 +21,7 @@
 .customer-add-more{border-top:1px solid #eeeef2;padding-top:12px}
 .customer-add-more summary{width:max-content;max-width:100%;color:#656776;font-size:11px;font-weight:650;cursor:pointer}
 .customer-add-extra-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:13px}
+.customer-add-location{margin-top:14px;padding-top:13px;border-top:1px solid var(--vc-line)}
 .customer-add-actions{display:flex;align-items:center;gap:8px}
 .customer-add-actions .button{min-height:40px}
 .customer-directory-panel{min-width:0}

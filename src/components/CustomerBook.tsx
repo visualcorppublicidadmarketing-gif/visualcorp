@@ -26,9 +26,11 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useWorkspace, formatDate, formatMoney } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
+import { normalizeGoogleMapsUrl } from '../lib/maps';
 import { Avatar } from './ui/Avatar';
 import { ChatterDrawer360 } from './ui/ChatterDrawer360';
 import { VisualCorpVault } from './VisualCorpVault';
+import { GoogleMapsLocationFields, type LocationDraft } from './GoogleMapsLocationFields';
 import './customer-book.css';
 
 type Customer = {
@@ -63,6 +65,7 @@ type CustomerProfileDraft = {
   source: string;
   preferredChannel: string;
   interests: string;
+  location: LocationDraft;
   tags: string;
   notes: string;
 };
@@ -101,6 +104,12 @@ function createCustomerProfileDraft(customer?: Customer): CustomerProfileDraft {
     source: value('source'),
     preferredChannel: value('preferredChannel'),
     interests: value('interests'),
+    location: {
+      address: String(preferences.address || ''),
+      mapsUrl: String(preferences.mapsUrl || ''),
+      latitude: preferences.latitude == null ? '' : String(preferences.latitude),
+      longitude: preferences.longitude == null ? '' : String(preferences.longitude),
+    },
     tags: Array.isArray(customer?.tags) ? customer.tags.join(', ') : String(customer?.tags || ''),
     notes: String(customer?.notes || ''),
   };
@@ -128,6 +137,22 @@ function normalizeCustomerSearch(value: unknown): string {
     .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase()
     .trim();
+}
+
+function validateLocationDraft(location: LocationDraft): string {
+  if (location.mapsUrl.trim() && !normalizeGoogleMapsUrl(location.mapsUrl)) {
+    return 'Pega un enlace válido de Google Maps para guardar el pin.';
+  }
+  const hasLatitude = Boolean(location.latitude.trim());
+  const hasLongitude = Boolean(location.longitude.trim());
+  if (hasLatitude !== hasLongitude) return 'Ingresa latitud y longitud juntas para guardar el pin.';
+  if (hasLatitude && hasLongitude) {
+    const latitude = Number(location.latitude);
+    const longitude = Number(location.longitude);
+    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) return 'La latitud debe estar entre −90 y 90.';
+    if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) return 'La longitud debe estar entre −180 y 180.';
+  }
+  return '';
 }
 
 function customerMatchesSearch(customer: Customer, term: string): boolean {
@@ -172,6 +197,10 @@ function customerPreferencesFromDraft(draft: CustomerProfileDraft, existing?: Re
     source: draft.source.trim(),
     preferredChannel: draft.preferredChannel,
     interests: draft.interests.trim(),
+    address: draft.location.address.trim(),
+    mapsUrl: normalizeGoogleMapsUrl(draft.location.mapsUrl),
+    latitude: draft.location.latitude.trim() ? Number(draft.location.latitude) : null,
+    longitude: draft.location.longitude.trim() ? Number(draft.location.longitude) : null,
   };
 }
 
@@ -230,21 +259,7 @@ export function CustomerBook() {
   const [interactionFilter, setInteractionFilter] = useState<'all' | InteractionType>('all');
   const [profileSaving, setProfileSaving] = useState(false);
   const [showChatter360, setShowChatter360] = useState(false);
-  const [form, setForm] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    documentReference: '',
-    customerType: '',
-    source: '',
-    notes: '',
-    interests: '',
-    tags: '',
-    company: '',
-    contactPerson: '',
-    city: '',
-    preferredChannel: '',
-  });
+  const [form, setForm] = useState<CustomerProfileDraft>(() => createCustomerProfileDraft());
   const [profileForm, setProfileForm] = useState<CustomerProfileDraft>(() => createCustomerProfileDraft());
 
   const selectCustomer = (id: string) => {
@@ -585,6 +600,11 @@ export function CustomerBook() {
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!canEdit || !form.name.trim()) return;
+    const locationError = validateLocationDraft(form.location);
+    if (locationError) {
+      flash(locationError);
+      return;
+    }
     const duplicate = customers.find(
       (c) => c.name.trim().toLowerCase() === form.name.trim().toLowerCase() && (c.phone || '') === form.phone.trim(),
     );
@@ -604,6 +624,7 @@ export function CustomerBook() {
       city: form.city.trim(),
       preferredChannel: form.preferredChannel,
       interests: form.interests.trim(),
+      location: form.location,
       tags: form.tags,
       notes: form.notes.trim(),
     };
@@ -647,21 +668,7 @@ export function CustomerBook() {
       const customer = add('customers', { ...values, preferences });
       selectCustomer(customer.id);
     }
-    setForm({
-      name: '',
-      phone: '',
-      email: '',
-      documentReference: '',
-      customerType: '',
-      source: '',
-      notes: '',
-      interests: '',
-      tags: '',
-      company: '',
-      contactPerson: '',
-      city: '',
-      preferredChannel: '',
-    });
+    setForm(createCustomerProfileDraft());
     setShowAddForm(false);
     flash(useSharedDatabase ? 'Cliente guardado en la base compartida.' : 'Cliente guardado localmente.');
   };
@@ -669,6 +676,11 @@ export function CustomerBook() {
   const saveCustomerProfile = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!canEdit || !selectedCustomer || !profileForm.name.trim()) return;
+    const locationError = validateLocationDraft(profileForm.location);
+    if (locationError) {
+      flash(locationError);
+      return;
+    }
     const values: CustomerProfileDraft = {
       ...profileForm,
       name: profileForm.name.trim(),
@@ -1065,6 +1077,17 @@ export function CustomerBook() {
                     />
                   </label>
                 </fieldset>
+                <fieldset className="customer-profile-section">
+                  <legend>Dirección y ubicación</legend>
+                  <GoogleMapsLocationFields
+                    idPrefix={`customer-profile-${selectedCustomer.id}`}
+                    addressLabel="Dirección del cliente"
+                    mapSearchContext={profileForm.city}
+                    location={profileForm.location}
+                    disabled={!canEdit}
+                    onChange={(location) => setProfileForm({ ...profileForm, location })}
+                  />
+                </fieldset>
                 {canEdit && (
                   <button className="button button-dark" type="submit" disabled={profileSaving}>
                     {profileSaving ? 'Guardando…' : 'Guardar ficha'}
@@ -1347,7 +1370,7 @@ export function CustomerBook() {
                 </label>
               </div>
               <details className="customer-add-more">
-                <summary>Agregar datos comerciales y de seguimiento</summary>
+                <summary>Agregar datos comerciales, ubicación y seguimiento</summary>
                 <div className="customer-add-extra-fields">
                   <label>
                     Cédula o RUC
@@ -1427,6 +1450,15 @@ export function CustomerBook() {
                     Notas
                     <textarea rows={3} maxLength={4000} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                   </label>
+                </div>
+                <div className="customer-add-location">
+                  <GoogleMapsLocationFields
+                    idPrefix="customer-new"
+                    addressLabel="Dirección del cliente"
+                    mapSearchContext={form.city}
+                    location={form.location}
+                    onChange={(location) => setForm({ ...form, location })}
+                  />
                 </div>
               </details>
               <div className="customer-add-actions">
@@ -1545,6 +1577,7 @@ export function CustomerBook() {
                             customer.phone,
                             customer.email,
                             customer.preferences?.city,
+                            customer.preferences?.address,
                           ]
                             .filter(Boolean)
                             .join(' · ') || 'Agrega un teléfono o correo a la ficha'}

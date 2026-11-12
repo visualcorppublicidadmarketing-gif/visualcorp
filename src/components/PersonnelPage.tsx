@@ -48,6 +48,10 @@ import type {
   GoogleAccount,
   OperationalMetricsState,
   PayrollDeduction,
+  PersonnelEmploymentCompensation,
+  PersonnelEmploymentCompensationStatus,
+  PersonnelEmploymentExitType,
+  PersonnelEmploymentPeriod,
   PersonnelEvent,
   PersonnelRecord,
   ProductionStepMetricRecord,
@@ -96,6 +100,8 @@ export function PersonnelPage() {
 
   const [allCompensation, setAllCompensation] = useState<CompensationEntry[]>([]);
   const [allDeductions, setAllDeductions] = useState<PayrollDeduction[]>([]);
+  const [employmentPeriods, setEmploymentPeriods] = useState<PersonnelEmploymentPeriod[]>([]);
+  const [employmentCompensation, setEmploymentCompensation] = useState<PersonnelEmploymentCompensation[]>([]);
   const [selectedEvents, setSelectedEvents] = useState<PersonnelEvent[]>([]);
 
   const [selectedId, setSelectedId] = useState(() => new URLSearchParams(locationSearch).get('ficha') || '');
@@ -114,6 +120,7 @@ export function PersonnelPage() {
   const [accountBusy, setAccountBusy] = useState(false);
   const [compSaving, setCompSaving] = useState(false);
   const [deductionSaving, setDeductionSaving] = useState(false);
+  const [employmentSaving, setEmploymentSaving] = useState(false);
 
   // Create / Edit Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -197,10 +204,24 @@ export function PersonnelPage() {
     const personnelPromise = supabase
       .from('personnel_records')
       .select(
-        'id,organization_id,full_name,email,phone,department,job_title,status,start_date,end_date,created_by,updated_by,created_at,updated_at',
+        'id,organization_id,full_name,email,phone,document_reference,home_address,home_city,home_maps_url,home_latitude,home_longitude,department,job_title,status,start_date,end_date,created_by,updated_by,created_at,updated_at',
       )
       .eq('organization_id', organizationId)
       .order('full_name', { ascending: true });
+
+    const employmentPeriodsPromise = supabase
+      .from('personnel_employment_periods')
+      .select('id,organization_id,personnel_id,start_date,end_date,exit_type,exit_reason,source,created_by,created_at')
+      .eq('organization_id', organizationId)
+      .order('start_date', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false });
+
+    const employmentCompensationPromise = canViewCompensation
+      ? supabase
+          .from('personnel_employment_compensation')
+          .select('period_id,organization_id,compensation_status,exit_notes,created_at')
+          .eq('organization_id', organizationId)
+      : Promise.resolve({ data: [] as PersonnelEmploymentCompensation[], error: null });
 
     const googlePromise =
       canManageTeam && canEdit
@@ -267,6 +288,8 @@ export function PersonnelPage() {
 
     const [
       personnelRes,
+      employmentPeriodsRes,
+      employmentCompensationRes,
       googleRes,
       profilesRes,
       compRes,
@@ -277,6 +300,8 @@ export function PersonnelPage() {
       rotationMembersRes,
     ] = await Promise.all([
       personnelPromise,
+      employmentPeriodsPromise,
+      employmentCompensationPromise,
       googlePromise,
       profilesPromise,
       compPromise,
@@ -289,6 +314,8 @@ export function PersonnelPage() {
 
     const errors: string[] = [];
     if (personnelRes.error) errors.push(`Personal: ${personnelRes.error.message}`);
+    if (employmentPeriodsRes.error) errors.push(`Historial laboral: ${employmentPeriodsRes.error.message}`);
+    if (employmentCompensationRes.error) errors.push(`Liquidaciones de salida: ${employmentCompensationRes.error.message}`);
     if (googleRes.error) errors.push(`Cuentas Google: ${googleRes.error.message}`);
     if (profilesRes.error) errors.push(`Perfiles: ${profilesRes.error.message}`);
     if (compRes.error) errors.push(`Compensación: ${compRes.error.message}`);
@@ -300,6 +327,8 @@ export function PersonnelPage() {
 
     const loadedRecords = (personnelRes.data || []) as PersonnelRecord[];
     setPersonnel(loadedRecords);
+    setEmploymentPeriods((employmentPeriodsRes.data || []) as PersonnelEmploymentPeriod[]);
+    setEmploymentCompensation((employmentCompensationRes.data || []) as PersonnelEmploymentCompensation[]);
     setGoogleAccounts((googleRes.data || []) as GoogleAccount[]);
     setAccessProfiles((profilesRes.data || []) as AccessProfile[]);
     setAllCompensation((compRes.data || []) as CompensationEntry[]);
@@ -643,7 +672,16 @@ export function PersonnelPage() {
       }
       if (departmentFilter !== 'all' && person.department !== departmentFilter) return false;
       if (!term) return true;
-      return [person.full_name, person.department, person.job_title, person.email, person.phone].some((val) =>
+      return [
+        person.full_name,
+        person.department,
+        person.job_title,
+        person.email,
+        person.phone,
+        person.document_reference,
+        person.home_address,
+        person.home_city,
+      ].some((val) =>
         val.toLowerCase().includes(term),
       );
     });
@@ -653,6 +691,15 @@ export function PersonnelPage() {
     () => personnel.find((item) => item.id === selectedId) || null,
     [personnel, selectedId],
   );
+
+  const selectedEmploymentPeriods = useMemo(
+    () => employmentPeriods.filter((period) => period.personnel_id === selectedId),
+    [employmentPeriods, selectedId],
+  );
+  const selectedEmploymentCompensation = useMemo(() => {
+    const selectedPeriodIds = new Set(selectedEmploymentPeriods.map((period) => period.id));
+    return employmentCompensation.filter((entry) => selectedPeriodIds.has(entry.period_id));
+  }, [employmentCompensation, selectedEmploymentPeriods]);
 
   // Actions
   const handleSelectPerson = (personId: string, preferredTab?: DetailTabKey) => {
@@ -686,11 +733,14 @@ export function PersonnelPage() {
       full_name: values.fullName,
       email: values.email,
       phone: values.phone,
+      document_reference: values.documentReference,
+      home_address: values.homeLocation.address,
+      home_city: values.homeCity,
+      home_maps_url: values.homeLocation.mapsUrl,
+      home_latitude: values.homeLocation.latitude ? Number(values.homeLocation.latitude) : null,
+      home_longitude: values.homeLocation.longitude ? Number(values.homeLocation.longitude) : null,
       department: values.department,
       job_title: values.jobTitle,
-      status: values.status,
-      start_date: values.startDate || null,
-      end_date: values.endDate || null,
     };
 
     try {
@@ -705,7 +755,7 @@ export function PersonnelPage() {
       } else {
         const { data, error } = await supabase
           .from('personnel_records')
-          .insert(payload)
+          .insert({ ...payload, status: 'active', start_date: values.startDate || null, end_date: null })
           .select('id')
           .single();
         if (error) throw error;
@@ -745,6 +795,62 @@ export function PersonnelPage() {
       setDialogError(cause instanceof Error ? cause.message : 'No se pudo guardar la ficha de personal.');
     } finally {
       setDialogSaving(false);
+    }
+  };
+
+  const handleCloseEmploymentPeriod = async (values: {
+    endDate: string;
+    exitType: PersonnelEmploymentExitType;
+    exitReason: string;
+    compensationStatus: PersonnelEmploymentCompensationStatus;
+    exitNotes: string;
+  }): Promise<boolean> => {
+    if (!supabase || !organizationId || !selected) return false;
+    const currentPeriod = selectedEmploymentPeriods.find((period) => period.end_date === null && period.exit_type === null);
+    if (!currentPeriod) throw new Error('Esta ficha no tiene un período laboral vigente para cerrar.');
+    setEmploymentSaving(true);
+    try {
+      const { error } = await supabase.rpc('close_visualcorp_personnel_employment_period', {
+        p_period_id: currentPeriod.id,
+        p_end_date: values.endDate,
+        p_exit_type: values.exitType,
+        p_exit_reason: values.exitReason.trim(),
+        p_compensation_status: canEditCompensation ? values.compensationStatus : null,
+        p_exit_notes: canEditCompensation ? values.exitNotes.trim() : null,
+      });
+      if (error) throw error;
+      await loadWorkspace();
+      await loadSelectedEvents();
+      setSuccessMessage('Salida laboral registrada. El período anterior quedó guardado en el historial.');
+      return true;
+    } finally {
+      setEmploymentSaving(false);
+    }
+  };
+
+  const handleRehireEmployment = async (startDate: string): Promise<boolean> => {
+    if (!supabase || !organizationId || !selected) return false;
+    const lastEndDate = selectedEmploymentPeriods.reduce<string | null>((latest, period) => {
+      if (!period.exit_type || !period.end_date) return latest;
+      return !latest || period.end_date > latest ? period.end_date : latest;
+    }, null);
+    if (lastEndDate && startDate <= lastEndDate) {
+      throw new Error('La fecha de reingreso debe ser posterior a la última salida registrada.');
+    }
+    setEmploymentSaving(true);
+    try {
+      const { error } = await supabase.from('personnel_employment_periods').insert({
+        organization_id: organizationId,
+        personnel_id: selected.id,
+        start_date: startDate,
+      });
+      if (error) throw error;
+      await loadWorkspace();
+      await loadSelectedEvents();
+      setSuccessMessage(`Reingreso de ${selected.full_name} registrado en un período nuevo.`);
+      return true;
+    } finally {
+      setEmploymentSaving(false);
     }
   };
 
@@ -1254,6 +1360,8 @@ export function PersonnelPage() {
             accessProfiles={accessProfiles}
             events={selectedEvents}
             compensationHistory={selected ? compensationByPersonnel.get(selected.id) || [] : []}
+            employmentPeriods={selectedEmploymentPeriods}
+            employmentCompensation={selectedEmploymentCompensation}
             deductions={selected ? deductionsByPersonnel.get(selected.id) || [] : []}
             attendanceEntries={selected ? attendanceByPersonnel[selected.id] || [] : []}
             workHours={workHours}
@@ -1266,11 +1374,14 @@ export function PersonnelPage() {
             canEditCompensation={canEditCompensation}
             canManageTeam={canManageTeam}
             canViewSchedule={canViewSchedule}
+            employmentSaving={employmentSaving}
             isOwner={isOwner}
             periodMonth={periodMonth}
             onChangePeriodMonth={setPeriodMonth}
             onBackToDirectory={() => setMobileDetailOpen(false)}
             onEditSelected={handleOpenEditDialog}
+            onCloseEmploymentPeriod={handleCloseEmploymentPeriod}
+            onRehireEmployment={handleRehireEmployment}
             onLinkGoogleAccount={handleLinkGoogleAccount}
             onUnlinkGoogleAccount={handleUnlinkGoogleAccount}
             onInviteOrAssignProfile={handleInviteOrAssignProfile}
