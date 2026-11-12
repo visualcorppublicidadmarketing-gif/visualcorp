@@ -20,4 +20,10 @@ Las páginas públicas de fabricantes se consultaron solo para entender las dife
 - [3M: película perforada para ventanas](https://www.3m.com/3M/en_US/p/dc/v000362122/) — patrón perforado y visibilidad unidireccional.
 - [Avery Dennison: películas translúcidas](https://graphics.averydennison.com/ap-en/home/graphics-products/screen-and-cut-materials/translucent-sign-cut-films.html) — material translúcido para aplicaciones iluminadas.
 
+## Libro operativo de rollos
+
+La vista activa permite filtrar por sucursal, estado, máquina y ubicación; registrar recepción, medición física, traslado a máquina y devolución a bodega; y consultar el historial de cada rollo. El saldo indica si procede de medición o estimación. Los traslados y el intercambio de rollos físicos no alteran el saldo agregado: cada cambio de existencias continúa pasando por las operaciones transaccionales de inventario.
+
+Cuando Supabase Realtime está disponible, la lista se actualiza tras cambios en rollos o su historial. Si no hay conexión en vivo, se informa la hora de la última consulta y queda disponible el botón **Actualizar**. La recepción exige sucursal y ubicación activas.
+
 La procedencia de los archivos de entrega y sus originales generados está registrada en `00_Guia_y_contexto/Inventarios/MAPA_DE_ARCHIVOS.csv`.

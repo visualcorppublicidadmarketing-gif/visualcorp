@@ -89,7 +89,9 @@
 .roll-book__where { display: flex; align-items: center; gap: 6px; overflow-wrap: anywhere; margin-top: 12px !important; color: #667371; font-size: 11px; }
 .roll-book__where svg { flex: 0 0 auto; color: #83928f; }
 .roll-book__tools { margin-top: 14px; border-top: 1px solid #edf0ef; }
-.roll-book__tools summary { padding: 11px 0 2px; color: #41635e; cursor: pointer; font-size: 12px; font-weight: 700; }
+.roll-book__tools summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 5px 10px; padding: 11px 0 2px; color: #41635e; cursor: pointer; font-size: 12px; font-weight: 700; }
+.roll-book__tools-title { display: inline-flex; align-items: center; gap: 6px; }
+.roll-book__tools summary small { color: #788581; font-size: 10px; font-weight: 600; }
 .roll-book__tool-block { padding-top: 12px; }
 .roll-book__tool-block + .roll-book__tool-block { margin-top: 12px; border-top: 1px dashed #dce4e2; }
 .roll-book__tool-block > b { display: block; margin-bottom: 8px; font-size: 12px; }
@@ -127,5 +129,124 @@
   .roll-book__grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .roll-book__spin { animation-duration: 2.5s; }
+  .roll-book__spin { animation: none; }
+}
+
+/* Roll inventory command view: clear hierarchy, resilient filters, and theme-aware surfaces. */
+.roll-book__eyebrow { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; color: #647574; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.roll-book__live-dot { width: 8px; height: 8px; border-radius: 50%; background: #a6a1ae; }
+.roll-book__live-dot.is-live { background: #15956f; box-shadow: 0 0 0 4px #15956f1c; }
+.roll-book__live-dot.is-connecting { background: #d99b2b; animation: roll-book-pulse 1.5s ease-in-out infinite; }
+.roll-book__live-dot.is-offline { background: #d16952; }
+@keyframes roll-book-pulse { 50% { box-shadow: 0 0 0 6px #d99b2b00; } }
+.roll-book__receive-toggle, .roll-book__clear-filters { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 0 14px; border: 1px solid var(--rb-green); border-radius: 9px; background: var(--rb-green); color: #fff; font-size: 12px; font-weight: 750; }
+.roll-book__receive-toggle:hover, .roll-book__clear-filters:hover { background: var(--rb-green-dark); }
+.roll-book__metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0 0 15px; }
+.roll-book__metrics article { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 14px; border: 1px solid #e1e8e6; border-radius: 13px; background: #fff; }
+.roll-book__metrics article.is-attention { border-color: #ecd7a8; background: #fffaf0; }
+.roll-book__metric-icon { display: grid; flex: 0 0 36px; width: 36px; height: 36px; place-items: center; border-radius: 11px; }
+.roll-book__metric-icon.is-violet { background: #f1eafa; color: #8053a1; }
+.roll-book__metric-icon.is-teal { background: #e4f3ef; color: #14786e; }
+.roll-book__metric-icon.is-blue { background: #e8f1fb; color: #3974aa; }
+.roll-book__metric-icon.is-amber { background: #fff0d0; color: #9a6910; }
+.roll-book__metrics article > div { display: grid; min-width: 0; gap: 2px; }
+.roll-book__metrics small { color: #737d7e; font-size: 10px; font-weight: 700; }
+.roll-book__metrics strong { color: #202b31; font-size: 22px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.roll-book__metrics article > div > span { overflow: hidden; color: #74807f; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.roll-book__sync-note, .roll-book__error { display: flex; align-items: center; gap: 8px; margin: 0 0 13px; padding: 9px 12px; border: 1px solid #e1e6e5; border-radius: 9px; color: #62706f; background: #f3f6f5; font-size: 11px; }
+.roll-book__error { border-color: #efc9c2; background: #fff3f0; color: #8f3e33; }
+.roll-book__error span { flex: 1; }
+.roll-book__error button { min-height: 30px; padding: 0 9px; border: 1px solid #e7b9b1; border-radius: 7px; background: #fff; color: #8f3e33; font-size: 10px; font-weight: 750; }
+.roll-book__state-filters { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 13px; }
+.roll-book__state-filters button { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 10px; border: 1px solid #dce4e2; border-radius: 9px; background: #fff; color: #586664; font-size: 10px; font-weight: 700; }
+.roll-book__state-filters button b { display: grid; min-width: 20px; height: 20px; padding: 0 5px; place-items: center; border-radius: 6px; background: #eef2f1; color: #586664; font-size: 9px; font-variant-numeric: tabular-nums; }
+.roll-book__state-filters button.is-active { border-color: #17776e; background: #e9f5f1; color: #145e56; }
+.roll-book__state-filters button.is-active b { background: #17776e; color: #fff; }
+.roll-book__filters { flex-wrap: wrap; }
+.roll-book__filters select { max-width: 200px; }
+.roll-book__search button { display: grid; flex: 0 0 24px; width: 24px; height: 24px; place-items: center; border: 0; border-radius: 6px; background: transparent; color: #697472; }
+.roll-book__material-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-top: 12px; }
+.roll-book__material-heading .roll-book__material-icon { display: grid; flex: 0 0 34px; width: 34px; height: 34px; place-items: center; border: 1px solid #e1e9e6; border-radius: 10px; background: #f5f8f7; color: #587873; }
+.roll-book__material-heading h3 { margin-top: 0; }
+.roll-book__card.is-low { border-color: #e6c783; }
+.roll-book__card.is-exhausted { border-color: #e8b4a8; background: linear-gradient(155deg, #fff8f5, #fff 58%); }
+.roll-book__status.is-low { background: #fff3d5; color: #875c12; }
+.roll-book__measure { margin-top: 14px; }
+.roll-book__bar.is-low i { background: linear-gradient(90deg, #e5b64d, #c78318); }
+.roll-book__bar.is-low { background: #f5e9cb; }
+.roll-book__data-line { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; margin-top: 8px; color: #6d7977; font-size: 10px; }
+.roll-book__confidence { display: inline-flex; align-items: center; gap: 4px; color: #17755d; font-weight: 750; }
+.roll-book__confidence::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ''; }
+.roll-book__confidence.is-estimate { color: #a16c1d; }
+.roll-book__card-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; margin-top: 9px; color: #7c8584; font-size: 9px; }
+.roll-book__card-meta > span:first-child { display: inline-flex; align-items: center; gap: 4px; }
+.roll-book__history-action { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 34px; margin-top: 9px; border: 1px solid #e0e7e4; border-radius: 8px; background: #f7f9f8; color: #4a625d; font-size: 10px; font-weight: 750; }
+.roll-book__history-action:hover { border-color: #a9c5bc; background: #eef6f3; }
+.roll-book__confirm-replace { display: grid; gap: 7px; margin-top: 8px; padding: 9px; border: 1px solid #ecd7a8; border-radius: 9px; background: #fffaf0; color: #68501d; font-size: 10px; line-height: 1.45; }
+.roll-book__cancel-action { min-height: 32px; border: 0; border-radius: 7px; background: transparent; color: #716b63; font-size: 10px; font-weight: 700; }
+.roll-book-history { max-height: min(80vh, 720px); }
+.roll-book-history .roll-book__history-list { max-height: min(52vh, 480px); }
+.roll-book__history-list { display: grid; gap: 0; overflow: auto; margin: 0; padding: 8px 20px; list-style: none; }
+.roll-book__history-list li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; padding: 13px 0; border-bottom: 1px solid #edf0ef; }
+.roll-book__history-marker { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 8px; background: #e5f3ee; color: #13765f; }
+.roll-book__history-list li > div { display: grid; gap: 4px; min-width: 0; }
+.roll-book__history-list strong { color: #263230; font-size: 12px; }
+.roll-book__history-list small, .roll-book__history-list p { color: #6d7977; font-size: 10px; line-height: 1.5; }
+.roll-book__history-values { color: #245b51; font-size: 10px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.roll-book__history-state { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 140px; padding: 20px; color: #6d7977; font-size: 12px; text-align: center; }
+
+.work-app.theme-dark .roll-book, [data-theme='dark'] .work-app .roll-book, .work-app[data-theme='dark'] .roll-book { --rb-ink: #f0f2f3; --rb-muted: #aab5b2; --rb-line: #343b43; --rb-paper: #171b22; --rb-green: #1c8b7c; --rb-green-dark: #167265; border-color: #303641; background: #13171d; color: #eff2f3; }
+.work-app.theme-dark .roll-book__receive, [data-theme='dark'] .work-app .roll-book__receive, .work-app[data-theme='dark'] .roll-book__receive { border-color: #31413f; background: linear-gradient(116deg, #172321, #171d22 58%, #1b2025); }
+.work-app.theme-dark .roll-book__metrics article, [data-theme='dark'] .work-app .roll-book__metrics article, .work-app[data-theme='dark'] .roll-book__metrics article, .work-app.theme-dark .roll-book__card, [data-theme='dark'] .work-app .roll-book__card, .work-app[data-theme='dark'] .roll-book__card { border-color: #303741; background: #191e25; }
+.work-app.theme-dark .roll-book__metrics article.is-attention, [data-theme='dark'] .work-app .roll-book__metrics article.is-attention, .work-app[data-theme='dark'] .roll-book__metrics article.is-attention { border-color: #65532e; background: #28241b; }
+.work-app.theme-dark .roll-book__metrics strong, [data-theme='dark'] .work-app .roll-book__metrics strong, .work-app[data-theme='dark'] .roll-book__metrics strong, .work-app.theme-dark .roll-book__card h3, [data-theme='dark'] .work-app .roll-book__card h3, .work-app[data-theme='dark'] .roll-book__card h3 { color: #f3f5f5; }
+.work-app.theme-dark .roll-book__metric-icon.is-violet { background: #322747; color: #c5a4e4; }
+.work-app.theme-dark .roll-book__metric-icon.is-teal { background: #1d3834; color: #8fd0c1; }
+.work-app.theme-dark .roll-book__metric-icon.is-blue { background: #223448; color: #9dc3e8; }
+.work-app.theme-dark .roll-book__metric-icon.is-amber { background: #40341f; color: #e8c27a; }
+.work-app.theme-dark .roll-book__sync-note, [data-theme='dark'] .work-app .roll-book__sync-note { border-color: #303741; background: #1a2027; color: #afb9b7; }
+.work-app.theme-dark .roll-book__error, [data-theme='dark'] .work-app .roll-book__error { border-color: #66403d; background: #2b201f; color: #e3a69b; }
+.work-app.theme-dark .roll-book__error button { border-color: #66403d; background: #211a1a; color: #e3a69b; }
+.work-app.theme-dark .roll-book__state-filters button, [data-theme='dark'] .work-app .roll-book__state-filters button, .work-app[data-theme='dark'] .roll-book__state-filters button { border-color: #343b43; background: #191e25; color: #c4ccca; }
+.work-app.theme-dark .roll-book__state-filters button b { background: #2a3038; color: #c4ccca; }
+.work-app.theme-dark .roll-book__state-filters button.is-active { border-color: #287e72; background: #1d3531; color: #a3e1d4; }
+.work-app.theme-dark .roll-book__state-filters button.is-active b { background: #287e72; color: #fff; }
+.work-app.theme-dark .roll-book__status, [data-theme='dark'] .work-app .roll-book__status { background: #203932; color: #9ed9c7; }
+.work-app.theme-dark .roll-book__status.is-low { background: #47391f; color: #f1cf83; }
+.work-app.theme-dark .roll-book__status.is-empty { background: #452a29; color: #f1aaa0; }
+.work-app.theme-dark .roll-book__material-heading .roll-book__material-icon { border-color: #343b43; background: #20262e; color: #b2c6c1; }
+.work-app.theme-dark .roll-book__measure strong { color: #f1f5f4; }
+.work-app.theme-dark .roll-book__card.is-low { border-color: #625130; }
+.work-app.theme-dark .roll-book__card.is-exhausted { border-color: #623b37; background: #241b1d; }
+.work-app.theme-dark .roll-book__history-action, [data-theme='dark'] .work-app .roll-book__history-action { border-color: #343b43; background: #20262e; color: #c2d4cf; }
+.work-app.theme-dark .roll-book__history-action:hover { border-color: #3f796d; background: #1d3531; }
+.work-app.theme-dark .roll-book__tools summary { color: #a6d5ca; }
+.work-app.theme-dark .roll-book__tools summary small { color: #aab5b2; }
+.work-app.theme-dark .roll-book__confirm-replace { border-color: #625130; background: #292419; color: #dfc788; }
+.work-app.theme-dark .roll-book__cancel-action { color: #b7bfbd; }
+.work-app.theme-dark .roll-book__history-list li { border-color: #303741; }
+.work-app.theme-dark .roll-book__history-list strong { color: #f0f3f2; }
+.work-app.theme-dark .roll-book__history-marker { background: #1d3834; color: #8fd0c1; }
+.work-app.theme-dark .roll-book__history-values { color: #a2d9cc; }
+
+@media (max-width: 1100px) { .roll-book__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) {
+  .roll-book__header-actions { width: 100%; }
+  .roll-book__header-actions > * { flex: 1 1 150px; }
+  .roll-book__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .roll-book__filters { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; }
+  .roll-book__filters select, .roll-book__search { width: 100%; max-width: none; }
+  .roll-book__state-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .roll-book__state-filters button { justify-content: space-between; }
+}
+@media (max-width: 420px) {
+  .roll-book__metrics { grid-template-columns: minmax(0, 1fr); }
+  .roll-book__metrics article { padding: 11px; }
+  .roll-book__metrics strong { font-size: 20px; }
+  .roll-book-history { max-height: 90vh; }
+  .roll-book__history-list { padding: 6px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .roll-book__live-dot.is-connecting, .roll-book__spin { animation: none; }
+  .roll-book__receive-toggle, .roll-book__state-filters button, .roll-book__history-action { transition: none; }
 }
