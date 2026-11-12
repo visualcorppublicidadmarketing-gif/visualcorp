@@ -1,4 +1,4 @@
-.customer-book{display:grid;gap:14px}
+.customer-book{display:grid;gap:14px;width:100%;max-width:100%;min-width:0}
 .customer-book>.page-heading{align-items:flex-end}
 .customer-book>.page-heading>.button{flex:none}
 .customer-directory-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
@@ -14,7 +14,7 @@
 .customer-add-panel .panel-heading h2,.customer-directory-panel .panel-heading h2{margin:5px 0 0}
 .customer-add-panel .panel-heading p{margin:5px 0 0;color:var(--vc-muted);font-size:11px}
 .customer-add-primary-fields{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:12px}
-.customer-add-panel label,.customer-profile-form>label,.customer-interaction-form>label{display:grid;gap:6px;color:#555762;font-size:11px;font-weight:650}
+.customer-add-panel label,.customer-profile-form>label,.customer-profile-section label,.customer-interaction-form>label{display:grid;gap:6px;min-width:0;color:#555762;font-size:11px;font-weight:650}
 .customer-add-panel input,.customer-add-panel textarea,.customer-profile-form input,.customer-profile-form textarea,.customer-interaction-form textarea{width:100%;min-height:40px;padding:9px 11px;border:1px solid var(--vc-line);border-radius:var(--vc-radius-control);background:#fff;color:var(--vc-ink);font:inherit;font-size:12px}
 .customer-add-panel textarea,.customer-profile-form textarea,.customer-interaction-form textarea{resize:vertical}
 .customer-add-panel input:focus,.customer-add-panel textarea:focus,.customer-profile-form input:focus,.customer-profile-form textarea:focus,.customer-interaction-form textarea:focus,.customer-sort-control select:focus{outline:3px solid color-mix(in srgb,var(--vc-focus) 20%,transparent);border-color:var(--vc-focus)}
@@ -25,7 +25,7 @@
 .customer-add-actions .button{min-height:40px}
 .customer-directory-panel{min-width:0}
 .customer-result-count{flex:none;color:var(--vc-muted);font-size:10px}
-.customer-directory-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px}
+.customer-directory-toolbar{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,auto) minmax(150px,auto);align-items:center;gap:12px;min-width:0}
 .customer-book .search-box{display:flex;align-items:center;gap:9px;min-height:43px;padding:0 12px;border:1px solid var(--vc-line);border-radius:var(--vc-radius-control);background:#fff;color:#777b87}
 .customer-book .search-box:focus-within{border-color:var(--vc-focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--vc-focus) 13%,transparent)}
 .customer-book .search-box input{flex:1;min-width:0;min-height:39px;padding:7px 0;border:0;outline:0;background:transparent;color:var(--vc-ink);font:inherit;font-size:12px}
@@ -64,6 +64,9 @@
 .customer-detail-card{display:grid;gap:14px}
 .customer-profile-form{display:grid;gap:12px}
 .customer-profile-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.customer-profile-section{display:grid;gap:12px;min-width:0;margin:0;padding:13px;border:1px solid var(--vc-line);border-radius:12px}
+.customer-profile-section legend{padding:0 6px;color:var(--vc-ink);font-size:12px;font-weight:750}
+.customer-profile-help{margin:-6px 0 0;color:var(--vc-muted);font-size:11px;line-height:1.45}
 .customer-profile-form select,.customer-add-panel select{width:100%;min-height:40px;padding:8px 10px;border:1px solid var(--vc-line);border-radius:var(--vc-radius-control);background:#fff;color:var(--vc-ink);font:inherit;font-size:12px}
 .customer-contact-summary{display:grid;gap:6px;padding:13px;border:1px solid #eeedf2;border-radius:12px;background:#faf9fb;font-size:11px}
 .customer-contact-summary>b{margin-bottom:2px;color:var(--vc-ink);font-size:13px}
@@ -83,7 +86,7 @@
 .customer-history-list strong{text-align:right;white-space:nowrap}
 .customer-history-loading{margin:0;color:var(--vc-muted);font-size:11px}
 @media(max-width:900px){.customer-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.customer-detail-grid{grid-template-columns:1fr}}
-@media(max-width:760px){.customer-book>.page-heading{align-items:flex-start}.customer-book>.page-heading>.button{width:100%;justify-content:center}.customer-add-primary-fields{grid-template-columns:1fr}.customer-directory-toolbar{grid-template-columns:1fr}.customer-sort-control{justify-content:space-between}.customer-sort-control select{flex:1}.customer-row{grid-template-columns:36px minmax(0,1fr)}.customer-row-open{grid-column:2;display:flex;justify-content:space-between;justify-items:initial;width:100%}.customer-row-open>small{white-space:normal}.customer-row-open>b{align-self:center}.customer-add-extra-fields,.customer-profile-fields{grid-template-columns:1fr}.customer-directory-stat{min-height:73px;padding:12px}.customer-directory-stat>span{width:32px;height:32px}.customer-summary-card{padding:12px}.customer-summary-card b{font-size:14px}.customer-history-list article{align-items:flex-start}}
+@media(max-width:760px){.customer-book>.page-heading{align-items:flex-start}.customer-book>.page-heading>.button{width:100%;justify-content:center}.customer-add-primary-fields{grid-template-columns:1fr}.customer-directory-toolbar{grid-template-columns:minmax(0,1fr)}.customer-directory-toolbar>*{width:100%;min-width:0}.customer-sort-control{justify-content:space-between}.customer-sort-control select{flex:1;min-width:0}.customer-row{grid-template-columns:36px minmax(0,1fr)}.customer-row-open{grid-column:2;display:flex;justify-content:space-between;justify-items:initial;width:100%}.customer-row-open>small{white-space:normal}.customer-row-open>b{align-self:center}.customer-add-extra-fields,.customer-profile-fields{grid-template-columns:minmax(0,1fr)}.customer-directory-stat{min-height:73px;padding:12px}.customer-directory-stat>span{width:32px;height:32px}.customer-summary-card{padding:12px}.customer-summary-card b{font-size:14px}.customer-history-list article{align-items:flex-start}}
 @media(max-width:430px){.customer-directory-stats{gap:7px}.customer-directory-stat{align-items:flex-start;flex-direction:column;gap:7px;padding:10px}.customer-directory-stat>span{width:28px;height:28px;border-radius:9px}.customer-directory-stat>div{gap:2px}.customer-directory-stat small{font-size:9px}.customer-directory-stat b{font-size:17px}.customer-result-count{font-size:9px}.customer-contact-filters{gap:5px}.customer-contact-filters button{gap:5px;padding:0 8px;font-size:9px}.customer-row{gap:9px;padding:12px 2px}.customer-row-details>b{font-size:11px}.customer-row-details>small{white-space:normal}.customer-add-actions{align-items:stretch;flex-direction:column}.customer-add-actions .button{justify-content:center}}
 
 /* === Mejoras CRM 360°, Segmentación y Métricas de Clientes 2.0 === */

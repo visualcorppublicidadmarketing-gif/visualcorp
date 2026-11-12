@@ -42,7 +42,138 @@ type Customer = {
   createdAt: string;
   preferences?: Record<string, any>;
   tags?: string[];
+  source?: string;
+  customerType?: string;
+  company?: string;
+  contactPerson?: string;
+  city?: string;
+  preferredChannel?: string;
+  interests?: string;
 };
+
+type CustomerProfileDraft = {
+  name: string;
+  phone: string;
+  email: string;
+  documentReference: string;
+  customerType: string;
+  company: string;
+  contactPerson: string;
+  city: string;
+  source: string;
+  preferredChannel: string;
+  interests: string;
+  tags: string;
+  notes: string;
+};
+
+const CUSTOMER_TYPE_OPTIONS = [
+  { value: 'person', label: 'Persona' },
+  { value: 'business', label: 'Negocio o emprendimiento' },
+  { value: 'organization', label: 'Empresa o institución' },
+  { value: 'reseller', label: 'Agencia o revendedor' },
+  { value: 'other', label: 'Otro' },
+] as const;
+
+function customerTypeLabel(value: unknown): string {
+  const type = String(value || '').trim();
+  return CUSTOMER_TYPE_OPTIONS.find((option) => option.value === type)?.label || type;
+}
+
+function customerTypeValue(customer: Customer): string {
+  return String(customer.preferences?.customerType || customer.customerType || '').trim();
+}
+
+function createCustomerProfileDraft(customer?: Customer): CustomerProfileDraft {
+  const preferences = customer?.preferences || {};
+  const value = (
+    key: 'customerType' | 'company' | 'contactPerson' | 'city' | 'source' | 'preferredChannel' | 'interests',
+  ) => String(preferences[key] || customer?.[key] || '');
+  return {
+    name: String(customer?.name || ''),
+    phone: String(customer?.phone || ''),
+    email: String(customer?.email || ''),
+    documentReference: String(customer?.documentReference || ''),
+    customerType: value('customerType'),
+    company: value('company'),
+    contactPerson: value('contactPerson'),
+    city: value('city'),
+    source: value('source'),
+    preferredChannel: value('preferredChannel'),
+    interests: value('interests'),
+    tags: Array.isArray(customer?.tags) ? customer.tags.join(', ') : String(customer?.tags || ''),
+    notes: String(customer?.notes || ''),
+  };
+}
+
+function parseCustomerTags(value: string): string[] {
+  const tags: string[] = [];
+  const seen = new Set<string>();
+  value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .forEach((tag) => {
+      const key = tag.toLocaleLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      tags.push(tag);
+    });
+  return tags;
+}
+
+function normalizeCustomerSearch(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase()
+    .trim();
+}
+
+function customerMatchesSearch(customer: Customer, term: string): boolean {
+  const normalizedTerm = normalizeCustomerSearch(term);
+  if (!normalizedTerm) return true;
+  const compactTerm = normalizedTerm.replace(/[^a-z0-9]/g, '');
+  const preferenceValues = Object.values(customer.preferences || {}).filter(
+    (value) => typeof value === 'string' || typeof value === 'number',
+  );
+  const searchableValues = [
+    customer.name,
+    customer.phone,
+    customer.email,
+    customer.documentReference,
+    customer.notes,
+    customer.source,
+    customer.customerType,
+    customer.company,
+    customer.contactPerson,
+    customer.city,
+    customer.interests,
+    customer.preferredChannel,
+    ...(customer.tags || []),
+    ...preferenceValues,
+  ];
+  return searchableValues.some((value) => {
+    const normalizedValue = normalizeCustomerSearch(value);
+    return (
+      normalizedValue.includes(normalizedTerm) ||
+      Boolean(compactTerm && normalizedValue.replace(/[^a-z0-9]/g, '').includes(compactTerm))
+    );
+  });
+}
+
+function customerPreferencesFromDraft(draft: CustomerProfileDraft, existing?: Record<string, any>) {
+  return {
+    ...(existing || {}),
+    customerType: draft.customerType.trim(),
+    company: draft.company.trim(),
+    contactPerson: draft.contactPerson.trim(),
+    city: draft.city.trim(),
+    source: draft.source.trim(),
+    preferredChannel: draft.preferredChannel,
+    interests: draft.interests.trim(),
+  };
+}
 
 type InteractionType = 'note' | 'call' | 'message' | 'meeting' | 'follow_up';
 
@@ -69,7 +200,7 @@ function buildWhatsAppHref(rawPhone: string | undefined, customerName: string): 
 }
 
 export function CustomerBook() {
-  const { data, add, flash } = useWorkspace();
+  const { data, add, update, flash } = useWorkspace();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedCustomerId = searchParams.get('cliente') || '';
   const { organizationId, user, hasPermission } = useAuth();
@@ -81,6 +212,7 @@ export function CustomerBook() {
   const [contactFilter, setContactFilter] = useState<
     'all' | 'vip' | 'with_balance' | 'with_quotes' | 'corporate' | 'inactive' | 'phone' | 'email'
   >('all');
+  const [customerTypeFilter, setCustomerTypeFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'recent' | 'ltv' | 'purchases' | 'balance' | 'name'>('recent');
   const [showAddForm, setShowAddForm] = useState(false);
   const [remoteCustomers, setRemoteCustomers] = useState<Customer[] | null>(null);
@@ -103,6 +235,8 @@ export function CustomerBook() {
     phone: '',
     email: '',
     documentReference: '',
+    customerType: '',
+    source: '',
     notes: '',
     interests: '',
     tags: '',
@@ -111,6 +245,7 @@ export function CustomerBook() {
     city: '',
     preferredChannel: '',
   });
+  const [profileForm, setProfileForm] = useState<CustomerProfileDraft>(() => createCustomerProfileDraft());
 
   const selectCustomer = (id: string) => {
     setSelectedId(id);
@@ -183,6 +318,10 @@ export function CustomerBook() {
 
   const customers = remoteCustomers || data.customers || [];
   const selectedCustomer = customers.find((customer) => customer.id === selectedId);
+
+  React.useEffect(() => {
+    setProfileForm(createCustomerProfileDraft(selectedCustomer));
+  }, [selectedCustomer?.id]);
 
   // Per-customer metrics map computed from orgSales and orgQuotes
   const customerMetricsMap = useMemo(() => {
@@ -369,13 +508,8 @@ export function CustomerBook() {
   const visible = useMemo(() => {
     const sixtyDaysAgo = Date.now() - 60 * 24 * 60 * 60 * 1000;
     return customers
-      .filter((customer) =>
-        `${customer.name} ${customer.phone} ${customer.email} ${customer.documentReference || ''} ${customer.preferences?.company || ''} ${
-          customer.preferences?.contactPerson || ''
-        } ${customer.preferences?.city || ''} ${(customer.tags || []).join(' ')}`
-          .toLowerCase()
-          .includes(term.trim().toLowerCase()),
-      )
+      .filter((customer) => customerMatchesSearch(customer, term))
+      .filter((customer) => customerTypeFilter === 'all' || customerTypeValue(customer) === customerTypeFilter)
       .filter((customer) => {
         if (contactFilter === 'all') return true;
         if (contactFilter === 'phone') return Boolean(customer.phone?.trim());
@@ -399,7 +533,7 @@ export function CustomerBook() {
         if (sortBy === 'balance') return (mb?.balanceDue || 0) - (ma?.balanceDue || 0);
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
-  }, [customers, term, contactFilter, sortBy, customerMetricsMap]);
+  }, [customers, term, contactFilter, customerTypeFilter, sortBy, customerMetricsMap]);
 
   // Detailed metrics for selectedCustomer
   const selectedCustomerStats = useMemo(() => {
@@ -458,22 +592,24 @@ export function CustomerBook() {
       flash('Ese cliente ya está registrado.');
       return;
     }
-    const values = {
+    const profileDraft: CustomerProfileDraft = {
       name: form.name.trim(),
       phone: form.phone.trim(),
       email: form.email.trim(),
       documentReference: form.documentReference.trim(),
-      notes: form.notes.trim(),
-      interests: form.interests.trim(),
-      tags: form.tags
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
+      customerType: form.customerType,
+      source: form.source.trim(),
       company: form.company.trim(),
       contactPerson: form.contactPerson.trim(),
       city: form.city.trim(),
       preferredChannel: form.preferredChannel,
+      interests: form.interests.trim(),
+      tags: form.tags,
+      notes: form.notes.trim(),
     };
+    const values = { ...profileDraft, tags: parseCustomerTags(profileDraft.tags) };
+    const preferences = customerPreferencesFromDraft(profileDraft);
+    const useSharedDatabase = Boolean(supabase && organizationId && user);
     if (supabase && organizationId && user) {
       const { data: saved, error } = await supabase
         .from('customers')
@@ -484,13 +620,7 @@ export function CustomerBook() {
           email: values.email,
           document_reference: values.documentReference,
           notes: values.notes,
-          preferences: {
-            interests: values.interests,
-            company: values.company,
-            contactPerson: values.contactPerson,
-            city: values.city,
-            preferredChannel: values.preferredChannel,
-          },
+          preferences,
           tags: values.tags,
           created_by: user.id,
         })
@@ -513,12 +643,17 @@ export function CustomerBook() {
       };
       setRemoteCustomers((current) => [customer, ...(current || [])]);
       selectCustomer(customer.id);
-    } else add('customers', { ...values, source: 'Registro manual' });
+    } else {
+      const customer = add('customers', { ...values, preferences });
+      selectCustomer(customer.id);
+    }
     setForm({
       name: '',
       phone: '',
       email: '',
       documentReference: '',
+      customerType: '',
+      source: '',
       notes: '',
       interests: '',
       tags: '',
@@ -528,29 +663,99 @@ export function CustomerBook() {
       preferredChannel: '',
     });
     setShowAddForm(false);
-    flash(supabase ? 'Cliente guardado en la base compartida.' : 'Cliente guardado localmente.');
+    flash(useSharedDatabase ? 'Cliente guardado en la base compartida.' : 'Cliente guardado localmente.');
   };
 
   const saveCustomerProfile = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canEdit || !selectedCustomer || !supabase || !organizationId) return;
+    if (!canEdit || !selectedCustomer || !profileForm.name.trim()) return;
+    const values: CustomerProfileDraft = {
+      ...profileForm,
+      name: profileForm.name.trim(),
+      phone: profileForm.phone.trim(),
+      email: profileForm.email.trim(),
+      documentReference: profileForm.documentReference.trim(),
+      source: profileForm.source.trim(),
+      company: profileForm.company.trim(),
+      contactPerson: profileForm.contactPerson.trim(),
+      city: profileForm.city.trim(),
+      interests: profileForm.interests.trim(),
+      tags: profileForm.tags,
+      notes: profileForm.notes.trim(),
+    };
+    const tags = parseCustomerTags(values.tags);
+    const preferences = customerPreferencesFromDraft(values, selectedCustomer.preferences);
+    const localPatch = {
+      name: values.name,
+      phone: values.phone,
+      email: values.email,
+      documentReference: values.documentReference,
+      notes: values.notes,
+      preferences,
+      tags,
+      customerType: values.customerType,
+      company: values.company,
+      contactPerson: values.contactPerson,
+      city: values.city,
+      source: values.source,
+      preferredChannel: values.preferredChannel,
+      interests: values.interests,
+    };
     setProfileSaving(true);
-    const interests = String(selectedCustomer.preferences?.interests || '');
-    const { data: saved, error } = await supabase
-      .from('customers')
-      .update({
-        notes: selectedCustomer.notes,
-        preferences: { ...(selectedCustomer.preferences || {}), interests },
-        tags: selectedCustomer.tags || [],
-        updated_at: new Date().toISOString(),
-      })
-      .eq('organization_id', organizationId)
-      .eq('id', selectedCustomer.id)
-      .select('id')
-      .maybeSingle();
-    if (error) flash(`No se guardó la ficha: ${error.message}`);
-    else flash(saved ? 'Ficha del cliente actualizada.' : 'No se encontró el cliente para actualizar.');
-    setProfileSaving(false);
+    try {
+      if (supabase && organizationId) {
+        const { data: saved, error } = await supabase
+          .from('customers')
+          .update({
+            full_name: values.name,
+            phone: values.phone,
+            email: values.email,
+            document_reference: values.documentReference,
+            notes: values.notes,
+            preferences,
+            tags,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('organization_id', organizationId)
+          .eq('id', selectedCustomer.id)
+          .select('id,full_name,phone,email,document_reference,notes,created_at,preferences,tags')
+          .maybeSingle();
+        if (error) {
+          flash(`No se guardó la ficha: ${error.message}`);
+          return;
+        }
+        if (!saved) {
+          flash('No se encontró el cliente para actualizar.');
+          return;
+        }
+        const updatedCustomer: Customer = {
+          id: saved.id,
+          name: saved.full_name,
+          phone: saved.phone,
+          email: saved.email,
+          documentReference: saved.document_reference,
+          notes: saved.notes,
+          createdAt: saved.created_at,
+          preferences: saved.preferences || {},
+          tags: saved.tags || [],
+        };
+        setRemoteCustomers((current) =>
+          current
+            ? current.map((customer) => (customer.id === updatedCustomer.id ? updatedCustomer : customer))
+            : current,
+        );
+        update('customers', selectedCustomer.id, localPatch);
+        flash('Ficha del cliente actualizada en la base compartida.');
+      } else {
+        update('customers', selectedCustomer.id, localPatch);
+        flash('Ficha del cliente actualizada localmente.');
+      }
+      setProfileForm({ ...values, tags: tags.join(', ') });
+    } catch (error) {
+      flash(`No se guardó la ficha: ${error instanceof Error ? error.message : 'Error inesperado.'}`);
+    } finally {
+      setProfileSaving(false);
+    }
   };
 
   const addInteraction = async (event: React.FormEvent) => {
@@ -696,165 +901,170 @@ export function CustomerBook() {
                 </div>
               </div>
               <form className="customer-profile-form" onSubmit={saveCustomerProfile}>
-                <div className="customer-contact-summary">
-                  <b>{selectedCustomer.name}</b>
-                  {selectedCustomer.preferences?.company && <span>Empresa: {selectedCustomer.preferences.company}</span>}
-                  {selectedCustomer.preferences?.contactPerson && <span>Contacto: {selectedCustomer.preferences.contactPerson}</span>}
-                  <span>{selectedCustomer.phone || 'Sin teléfono'}</span>
-                  <span>{selectedCustomer.email || 'Sin correo'}</span>
-                  {selectedCustomer.preferences?.city && <span>Ciudad: {selectedCustomer.preferences.city}</span>}
-                  {selectedCustomer.preferences?.preferredChannel && (
-                    <span>
-                      Canal preferido:{' '}
-                      {({ whatsapp: 'WhatsApp', phone: 'Llamada', email: 'Correo' } as Record<string, string>)[
-                        selectedCustomer.preferences.preferredChannel
-                      ] || selectedCustomer.preferences.preferredChannel}
-                    </span>
-                  )}
-                  <span>
-                    {selectedCustomer.documentReference
-                      ? `Documento / RUC: ${selectedCustomer.documentReference}`
-                      : 'Sin documento o RUC registrado'}
-                  </span>
-                </div>
-                <div className="customer-profile-fields">
+                <fieldset className="customer-profile-section">
+                  <legend>Datos principales</legend>
+                  <div className="customer-profile-fields">
+                    <label>
+                      Nombre o razón social *
+                      <input
+                        required
+                        maxLength={160}
+                        autoComplete="name"
+                        value={profileForm.name}
+                        disabled={!canEdit}
+                        onChange={(event) => setProfileForm({ ...profileForm, name: event.target.value })}
+                      />
+                    </label>
+                    <label>
+                      Teléfono
+                      <input
+                        autoComplete="tel"
+                        maxLength={50}
+                        value={profileForm.phone}
+                        disabled={!canEdit}
+                        onChange={(event) => setProfileForm({ ...profileForm, phone: event.target.value })}
+                      />
+                    </label>
+                    <label>
+                      Correo electrónico
+                      <input
+                        type="email"
+                        autoComplete="email"
+                        maxLength={254}
+                        value={profileForm.email}
+                        disabled={!canEdit}
+                        onChange={(event) => setProfileForm({ ...profileForm, email: event.target.value })}
+                      />
+                    </label>
+                    <label>
+                      Cédula o RUC
+                      <input
+                        maxLength={40}
+                        autoComplete="off"
+                        placeholder="Documento de identificación"
+                        value={profileForm.documentReference}
+                        disabled={!canEdit}
+                        onChange={(event) => setProfileForm({ ...profileForm, documentReference: event.target.value })}
+                      />
+                    </label>
+                  </div>
+                </fieldset>
+                <fieldset className="customer-profile-section">
+                  <legend>Información comercial (opcional)</legend>
+                  <p className="customer-profile-help">
+                    Completa lo que ayude a atender y dar seguimiento a este cliente. Puedes dejarlo vacío.
+                  </p>
+                  <div className="customer-profile-fields">
+                    <label>
+                      Tipo de cliente
+                      <select
+                        value={profileForm.customerType}
+                        disabled={!canEdit}
+                        onChange={(event) => setProfileForm({ ...profileForm, customerType: event.target.value })}
+                      >
+                        <option value="">Sin clasificar</option>
+                        {CUSTOMER_TYPE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                        {profileForm.customerType &&
+                          !CUSTOMER_TYPE_OPTIONS.some((option) => option.value === profileForm.customerType) && (
+                            <option value={profileForm.customerType}>{customerTypeLabel(profileForm.customerType)}</option>
+                          )}
+                      </select>
+                    </label>
+                    <label>
+                      Empresa o institución
+                      <input
+                        maxLength={160}
+                        placeholder="Nombre de la organización"
+                        value={profileForm.company}
+                        disabled={!canEdit}
+                        onChange={(event) => setProfileForm({ ...profileForm, company: event.target.value })}
+                      />
+                    </label>
+                    <label>
+                      Persona de contacto
+                      <input
+                        maxLength={160}
+                        placeholder="Nombre de quien coordina"
+                        value={profileForm.contactPerson}
+                        disabled={!canEdit}
+                        onChange={(event) => setProfileForm({ ...profileForm, contactPerson: event.target.value })}
+                      />
+                    </label>
+                    <label>
+                      Ciudad
+                      <input
+                        maxLength={120}
+                        placeholder="Ciudad"
+                        value={profileForm.city}
+                        disabled={!canEdit}
+                        onChange={(event) => setProfileForm({ ...profileForm, city: event.target.value })}
+                      />
+                    </label>
+                    <label>
+                      Origen o referencia
+                      <input
+                        maxLength={160}
+                        placeholder="Referido, redes sociales, web…"
+                        value={profileForm.source}
+                        disabled={!canEdit}
+                        onChange={(event) => setProfileForm({ ...profileForm, source: event.target.value })}
+                      />
+                    </label>
+                    <label>
+                      Canal preferido
+                      <select
+                        value={profileForm.preferredChannel}
+                        disabled={!canEdit}
+                        onChange={(event) => setProfileForm({ ...profileForm, preferredChannel: event.target.value })}
+                      >
+                        <option value="">Sin especificar</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="phone">Llamada</option>
+                        <option value="email">Correo</option>
+                        {profileForm.preferredChannel &&
+                          !['whatsapp', 'phone', 'email'].includes(profileForm.preferredChannel) && (
+                            <option value={profileForm.preferredChannel}>{profileForm.preferredChannel}</option>
+                          )}
+                      </select>
+                    </label>
+                  </div>
                   <label>
-                    Empresa o institución
-                    <input
-                      value={selectedCustomer.preferences?.company || ''}
+                    Intereses y preferencias
+                    <textarea
+                      rows={3}
+                      maxLength={1000}
+                      placeholder="Productos, acabados, colores o necesidades que el cliente comentó"
+                      value={profileForm.interests}
                       disabled={!canEdit}
-                      placeholder="Nombre de la organización"
-                      onChange={(event) =>
-                        setRemoteCustomers(
-                          (current) =>
-                            current?.map((customer) =>
-                              customer.id === selectedId
-                                ? { ...customer, preferences: { ...(customer.preferences || {}), company: event.target.value } }
-                                : customer,
-                            ) || null,
-                        )
-                      }
+                      onChange={(event) => setProfileForm({ ...profileForm, interests: event.target.value })}
                     />
                   </label>
                   <label>
-                    Persona de contacto
+                    Etiquetas separadas por comas
                     <input
-                      value={selectedCustomer.preferences?.contactPerson || ''}
+                      maxLength={1200}
+                      placeholder="cliente frecuente, empresas, eventos"
+                      value={profileForm.tags}
                       disabled={!canEdit}
-                      placeholder="Nombre de quien coordina"
-                      onChange={(event) =>
-                        setRemoteCustomers(
-                          (current) =>
-                            current?.map((customer) =>
-                              customer.id === selectedId
-                                ? { ...customer, preferences: { ...(customer.preferences || {}), contactPerson: event.target.value } }
-                                : customer,
-                            ) || null,
-                        )
-                      }
+                      onChange={(event) => setProfileForm({ ...profileForm, tags: event.target.value })}
                     />
                   </label>
                   <label>
-                    Ciudad
-                    <input
-                      value={selectedCustomer.preferences?.city || ''}
+                    Notas internas
+                    <textarea
+                      rows={3}
+                      maxLength={4000}
+                      placeholder="Acuerdos, recomendaciones de atención u otra información pertinente"
+                      value={profileForm.notes}
                       disabled={!canEdit}
-                      placeholder="Ciudad"
-                      onChange={(event) =>
-                        setRemoteCustomers(
-                          (current) =>
-                            current?.map((customer) =>
-                              customer.id === selectedId
-                                ? { ...customer, preferences: { ...(customer.preferences || {}), city: event.target.value } }
-                                : customer,
-                            ) || null,
-                        )
-                      }
+                      onChange={(event) => setProfileForm({ ...profileForm, notes: event.target.value })}
                     />
                   </label>
-                  <label>
-                    Canal preferido
-                    <select
-                      value={selectedCustomer.preferences?.preferredChannel || ''}
-                      disabled={!canEdit}
-                      onChange={(event) =>
-                        setRemoteCustomers(
-                          (current) =>
-                            current?.map((customer) =>
-                              customer.id === selectedId
-                                ? { ...customer, preferences: { ...(customer.preferences || {}), preferredChannel: event.target.value } }
-                                : customer,
-                            ) || null,
-                        )
-                      }
-                    >
-                      <option value="">Sin especificar</option>
-                      <option value="whatsapp">WhatsApp</option>
-                      <option value="phone">Llamada</option>
-                      <option value="email">Correo</option>
-                    </select>
-                  </label>
-                </div>
-                <label>
-                  Intereses y preferencias
-                  <textarea
-                    rows={3}
-                    value={selectedCustomer.preferences?.interests || ''}
-                    disabled={!canEdit}
-                    placeholder="Productos, acabados, colores o necesidades que el cliente comentó"
-                    onChange={(event) =>
-                      setRemoteCustomers(
-                        (current) =>
-                          current?.map((customer) =>
-                            customer.id === selectedId
-                              ? { ...customer, preferences: { ...(customer.preferences || {}), interests: event.target.value } }
-                              : customer,
-                          ) || null,
-                      )
-                    }
-                  />
-                </label>
-                <label>
-                  Etiquetas separadas por comas
-                  <input
-                    value={(selectedCustomer.tags || []).join(', ')}
-                    disabled={!canEdit}
-                    placeholder="cliente frecuente, empresas, eventos"
-                    onChange={(event) =>
-                      setRemoteCustomers(
-                        (current) =>
-                          current?.map((customer) =>
-                            customer.id === selectedId
-                              ? {
-                                  ...customer,
-                                  tags: event.target.value
-                                    .split(',')
-                                    .map((tag) => tag.trim())
-                                    .filter(Boolean),
-                                }
-                              : customer,
-                          ) || null,
-                      )
-                    }
-                  />
-                </label>
-                <label>
-                  Notas internas
-                  <textarea
-                    rows={3}
-                    value={selectedCustomer.notes || ''}
-                    disabled={!canEdit}
-                    placeholder="Acuerdos, recomendaciones de atención u otra información pertinente"
-                    onChange={(event) =>
-                      setRemoteCustomers(
-                        (current) =>
-                          current?.map((customer) =>
-                            customer.id === selectedId ? { ...customer, notes: event.target.value } : customer,
-                          ) || null,
-                      )
-                    }
-                  />
-                </label>
+                </fieldset>
                 {canEdit && (
                   <button className="button button-dark" type="submit" disabled={profileSaving}>
                     {profileSaving ? 'Guardando…' : 'Guardar ficha'}
@@ -1130,6 +1340,7 @@ export function CustomerBook() {
                     autoComplete="email"
                     type="email"
                     value={form.email}
+                    maxLength={254}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     placeholder="correo@ejemplo.com"
                   />
@@ -1140,11 +1351,23 @@ export function CustomerBook() {
                 <div className="customer-add-extra-fields">
                   <label>
                     Cédula o RUC
-                    <input value={form.documentReference} onChange={(e) => setForm({ ...form, documentReference: e.target.value })} />
+                    <input maxLength={40} autoComplete="off" value={form.documentReference} onChange={(e) => setForm({ ...form, documentReference: e.target.value })} />
+                  </label>
+                  <label>
+                    Tipo de cliente
+                    <select value={form.customerType} onChange={(e) => setForm({ ...form, customerType: e.target.value })}>
+                      <option value="">Sin clasificar</option>
+                      {CUSTOMER_TYPE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label>
                     Empresa o institución
                     <input
+                      maxLength={160}
                       value={form.company}
                       onChange={(e) => setForm({ ...form, company: e.target.value })}
                       placeholder="Nombre de la organización"
@@ -1153,6 +1376,7 @@ export function CustomerBook() {
                   <label>
                     Persona de contacto
                     <input
+                      maxLength={160}
                       value={form.contactPerson}
                       onChange={(e) => setForm({ ...form, contactPerson: e.target.value })}
                       placeholder="Nombre de quien coordina"
@@ -1160,7 +1384,16 @@ export function CustomerBook() {
                   </label>
                   <label>
                     Ciudad
-                    <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Ciudad" />
+                    <input maxLength={120} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Ciudad" />
+                  </label>
+                  <label>
+                    Origen o referencia
+                    <input
+                      maxLength={160}
+                      value={form.source}
+                      onChange={(e) => setForm({ ...form, source: e.target.value })}
+                      placeholder="Referido, redes sociales, web…"
+                    />
                   </label>
                   <label>
                     Canal preferido
@@ -1175,6 +1408,7 @@ export function CustomerBook() {
                     Intereses y preferencias
                     <textarea
                       rows={2}
+                      maxLength={1000}
                       value={form.interests}
                       onChange={(e) => setForm({ ...form, interests: e.target.value })}
                       placeholder="Productos, colores, acabados o necesidades comentadas"
@@ -1183,6 +1417,7 @@ export function CustomerBook() {
                   <label>
                     Etiquetas
                     <input
+                      maxLength={1200}
                       value={form.tags}
                       onChange={(e) => setForm({ ...form, tags: e.target.value })}
                       placeholder="frecuente, empresa, eventos"
@@ -1190,7 +1425,7 @@ export function CustomerBook() {
                   </label>
                   <label>
                     Notas
-                    <textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                    <textarea rows={3} maxLength={4000} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                   </label>
                 </div>
               </details>
@@ -1220,8 +1455,19 @@ export function CustomerBook() {
                   aria-label="Buscar clientes"
                   value={term}
                   onChange={(e) => setTerm(e.target.value)}
-                  placeholder="Nombre, empresa, teléfono, correo, RUC o etiqueta"
+                  placeholder="Nombre, teléfono, cédula/RUC, empresa, correo, tipo o etiqueta"
                 />
+              </label>
+              <label className="customer-sort-control">
+                <span>Tipo de cliente</span>
+                <select value={customerTypeFilter} onChange={(event) => setCustomerTypeFilter(event.target.value)}>
+                  <option value="all">Todos</option>
+                  {CUSTOMER_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="customer-sort-control">
                 <span>Ordenar</span>
@@ -1293,6 +1539,7 @@ export function CustomerBook() {
                         </b>
                         <small>
                           {[
+                            customerTypeLabel(customerTypeValue(customer)),
                             customer.preferences?.company,
                             customer.documentReference ? `RUC/CI: ${customer.documentReference}` : '',
                             customer.phone,
@@ -1345,13 +1592,14 @@ export function CustomerBook() {
                     ? 'Prueba con otro término o cambia el segmento.'
                     : 'Puedes agregar una ficha aquí o registrar al cliente desde el POS.'}
                 </p>
-                {(term || contactFilter !== 'all') && (
+                {(term || contactFilter !== 'all' || customerTypeFilter !== 'all') && (
                   <button
                     type="button"
                     className="button button-outline"
                     onClick={() => {
                       setTerm('');
                       setContactFilter('all');
+                      setCustomerTypeFilter('all');
                     }}
                   >
                     Limpiar búsqueda y filtros
