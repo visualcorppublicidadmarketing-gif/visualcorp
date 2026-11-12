@@ -2171,3 +2171,292 @@
 .work-app.theme-dark .vc-nozzle-opt-btn small {
   color: #a89eb6 !important;
 }
+
+
+/* ==========================================================================
+   INVENTORY LIVE INK MONITOR V2 ENHANCEMENTS
+   Espectro CMYK vivo, Graduación interactiva, Steppers +-5%, Recarga de bodega
+   ========================================================================== */
+
+/* Espectro CMYK continuo en cabecera de máquina */
+.vc-station-cmyk-spectrum {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(241, 237, 247, 0.7);
+  border: 1px solid rgba(226, 217, 235, 0.9);
+  border-radius: 10px;
+  margin: 0 10px;
+}
+
+.vc-spectrum-channel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 24px;
+  height: 40px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.vc-spectrum-channel.is-critical {
+  border-color: #ef4444;
+  animation: vc-spectrum-pulse 1.5s infinite;
+}
+
+.vc-spectrum-channel.is-warning {
+  border-color: #f59e0b;
+}
+
+@keyframes vc-spectrum-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2); }
+}
+
+.vc-spectrum-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  opacity: 0.85;
+  transition: height 0.3s ease;
+}
+
+.vc-spectrum-code {
+  position: relative;
+  z-index: 2;
+  font-size: 9px;
+  font-weight: 850;
+  padding: 0 2px;
+  border-radius: 2px;
+  line-height: 1.1;
+  margin-bottom: 2px;
+}
+
+.vc-spectrum-val {
+  position: relative;
+  z-index: 2;
+  font-size: 7.5px;
+  font-weight: 750;
+  color: #1e293b;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 1px 2px;
+  border-radius: 2px;
+  margin-bottom: 2px;
+}
+
+/* Botón 1-clic 100% Todo en cabecera */
+.vc-btn-quick-refill-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 750 !important;
+  border-radius: 7px !important;
+  padding: 6px 11px !important;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25) !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vc-btn-quick-refill-all:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35) !important;
+}
+
+/* Marcas de graduación interactivas (Clic para nivel) */
+.vc-tank-mark-btn {
+  position: absolute;
+  left: 2px;
+  pointer-events: auto;
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 1px 3px;
+  border-radius: 3px;
+  font-size: 7.5px;
+  font-weight: 800;
+  color: #334155;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  z-index: 6;
+}
+
+.vc-tank-mark-btn:hover:not(:disabled) {
+  background: #10b981;
+  color: #ffffff;
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.35);
+}
+
+.vc-tank-mark-btn.is-active {
+  background: #047857;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.vc-tank-mark-btn.mark-100 { top: 2px; }
+.vc-tank-mark-btn.mark-75 { top: 25%; transform: translateY(-50%); }
+.vc-tank-mark-btn.mark-50 { top: 50%; transform: translateY(-50%); }
+.vc-tank-mark-btn.mark-25 { top: 75%; transform: translateY(-50%); }
+
+.vc-tank-mark-btn.mark-75:hover:not(:disabled) { transform: translateY(-50%) scale(1.1); }
+.vc-tank-mark-btn.mark-50:hover:not(:disabled) { transform: translateY(-50%) scale(1.1); }
+.vc-tank-mark-btn.mark-25:hover:not(:disabled) { transform: translateY(-50%) scale(1.1); }
+
+/* Fila de controles deslizantes con botones paso a paso +-5% */
+.vc-stepper-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.vc-stepper-slider-row input[type="range"] {
+  flex: 1;
+}
+
+.vc-stepper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #d8b4fe;
+  border-radius: 6px;
+  background: #fdfcff;
+  color: #7e22ce;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.vc-stepper-btn:hover:not(:disabled) {
+  background: #7e22ce;
+  border-color: #7e22ce;
+  color: #ffffff;
+}
+
+.vc-stepper-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Botones en el pie del cartucho / sub-tanque */
+.vc-cartridge-footer-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vc-btn-warehouse-refill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vc-btn-warehouse-refill:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(29, 78, 216, 0.25);
+}
+
+/* ==========================================================================
+   TEMA OSCURO (DARK MODE) PARA LIVE INK MONITOR V2
+   ========================================================================== */
+.work-app.theme-dark .vc-station-cmyk-spectrum,
+[data-theme='dark'] .work-app .vc-station-cmyk-spectrum,
+.work-app[data-theme='dark'] .vc-station-cmyk-spectrum {
+  background: rgba(30, 24, 38, 0.8);
+  border-color: #3b2d4c;
+}
+
+.work-app.theme-dark .vc-spectrum-channel,
+[data-theme='dark'] .work-app .vc-spectrum-channel,
+.work-app[data-theme='dark'] .vc-spectrum-channel {
+  background: #1a1622;
+  border-color: #342844;
+}
+
+.work-app.theme-dark .vc-spectrum-val,
+[data-theme='dark'] .work-app .vc-spectrum-val {
+  background: rgba(20, 16, 26, 0.9);
+  color: #e2e8f0;
+}
+
+.work-app.theme-dark .vc-tank-mark-btn,
+[data-theme='dark'] .work-app .vc-tank-mark-btn {
+  background: rgba(30, 24, 38, 0.85);
+  color: #cbd5e1;
+}
+
+.work-app.theme-dark .vc-tank-mark-btn:hover:not(:disabled),
+[data-theme='dark'] .work-app .vc-tank-mark-btn:hover:not(:disabled) {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.work-app.theme-dark .vc-stepper-btn,
+[data-theme='dark'] .work-app .vc-stepper-btn {
+  background: #241c30;
+  border-color: #4a3463;
+  color: #c084fc;
+}
+
+.work-app.theme-dark .vc-stepper-btn:hover:not(:disabled) {
+  background: #9333ea;
+  color: #ffffff;
+}
+
+.work-app.theme-dark .vc-btn-warehouse-refill,
+[data-theme='dark'] .work-app .vc-btn-warehouse-refill {
+  background: #172554;
+  border-color: #1e40af;
+  color: #93c5fd;
+}
+
+.work-app.theme-dark .vc-btn-warehouse-refill:hover:not(:disabled) {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .vc-station-cmyk-spectrum {
+    margin: 6px 0;
+    width: 100%;
+    justify-content: center;
+  }
+  .vc-cartridge-footer-btns {
+    flex-direction: column;
+    width: 100%;
+  }
+  .vc-cartridge-footer-btns button {
+    width: 100%;
+    justify-content: center;
+  }
+}
