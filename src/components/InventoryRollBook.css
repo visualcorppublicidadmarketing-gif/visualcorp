@@ -272,3 +272,914 @@
   .roll-book__live-dot.is-connecting, .roll-book__spin { animation: none; }
   .roll-book__receive-toggle, .roll-book__state-filters button, .roll-book__history-action, .roll-book__measure-cta { transition: none; }
 }
+
+
+.roll-book__receive-top-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.roll-book__quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.roll-book__reason-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ==========================================================================
+   INVENTORY ROLL BOOK V2 ENHANCEMENTS
+   Plantillas rápidas, Formulario inteligente por pasos, Trazabilidad en 1-clic
+   ========================================================================== */
+
+/* 1. Barra de Plantillas Rápidas (1-Clic Presets) */
+.roll-book__quick-presets-bar {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #f0fdf9 0%, #ffffff 60%, #f4fbf9 100%);
+  border: 1px solid #cce8e0;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(20, 120, 110, 0.04);
+}
+
+.roll-book__quick-presets-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #16655a;
+}
+
+.roll-book__quick-presets-icon {
+  color: #14786e;
+  flex-shrink: 0;
+}
+
+.roll-book__quick-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.roll-book__quick-preset-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #d4e7e2;
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.roll-book__quick-preset-btn:hover {
+  border-color: #14786e;
+  background: #f7fcfb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(20, 120, 110, 0.1);
+}
+
+.roll-book__quick-preset-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #e6f6f3;
+  border-radius: 8px;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.roll-book__quick-preset-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.roll-book__quick-preset-info b {
+  font-size: 12px;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roll-book__quick-preset-info small {
+  font-size: 11px;
+  color: #0d9488;
+  font-weight: 600;
+}
+
+/* 2. Formulario Rediseñado por Pasos (V2) */
+.roll-book__form-v2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.roll-book__v2-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #ffffff;
+  border: 1px solid #e2ece9;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.roll-book__v2-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f5f4;
+}
+
+.roll-book__step-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #14786e;
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.roll-book__v2-card-header h3 {
+  font-size: 14px;
+  font-weight: 750;
+  color: #1c3531;
+  margin: 0;
+}
+
+.roll-book__v2-card-header p {
+  font-size: 11.5px;
+  color: #6a7d7a;
+  margin: 2px 0 0;
+}
+
+/* Selector de Sucursal y Ubicación */
+.roll-book__branch-selector-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.roll-book__field-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #384c48;
+}
+
+.roll-book__branch-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.roll-book__branch-pills button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid #d4e2de;
+  border-radius: 8px;
+  background: #fbfdfc;
+  color: #4b635e;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.roll-book__branch-pills button:hover {
+  background: #f0f7f5;
+  border-color: #14786e;
+}
+
+.roll-book__branch-pills button.is-active {
+  background: #e6f6f2;
+  border-color: #14786e;
+  color: #0d5f57;
+  font-weight: 750;
+}
+
+.roll-book__pill-check {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #14786e;
+}
+
+.roll-book__location-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Tarjeta de Material Seleccionado */
+.roll-book__selected-material-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f0fdf9;
+  border: 1.5px solid #14786e;
+  border-radius: 10px;
+}
+
+.roll-book__selected-material-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #d1fae5;
+  color: #065f46;
+  flex-shrink: 0;
+}
+
+.roll-book__selected-material-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.roll-book__selected-material-body strong {
+  font-size: 13px;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roll-book__selected-material-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.roll-book__tag-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  background: #dcfce7;
+  color: #15803d;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.roll-book__tag-chip.is-sku {
+  background: #f1f5f9;
+  color: #475569;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Buscador y Pestañas de Materiales */
+.roll-book__material-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.roll-book__material-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: #f8fafc;
+  border: 1px solid #dce4e2;
+  border-radius: 8px;
+  min-height: 38px;
+}
+
+.roll-book__material-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 12.5px;
+  color: #1f2937;
+}
+
+.roll-book__material-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.roll-book__material-clear {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.roll-book__material-clear:hover {
+  color: #475569;
+  background: #e2e8f0;
+}
+
+.roll-book__material-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.roll-book__material-tab {
+  padding: 4px 9px;
+  border: 1px solid #e2ece9;
+  border-radius: 6px;
+  background: #f8fbfb;
+  color: #556c67;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.roll-book__material-tab:hover {
+  background: #eef6f4;
+  color: #14786e;
+}
+
+.roll-book__material-tab.is-active {
+  background: #14786e;
+  border-color: #14786e;
+  color: #ffffff;
+}
+
+.roll-book__material-candidates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #e5edea;
+  border-radius: 8px;
+  padding: 4px;
+  background: #ffffff;
+}
+
+.roll-book__candidate-select-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.roll-book__candidate-select-pill:hover {
+  background: #f0fdf9;
+  border-color: #a7f3d0;
+}
+
+.roll-book__candidate-select-pill.is-selected {
+  background: #e6f6f2;
+  border-color: #14786e;
+}
+
+.roll-book__candidate-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.roll-book__candidate-info strong {
+  font-size: 12px;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roll-book__candidate-info span {
+  font-size: 10.5px;
+  color: #64748b;
+}
+
+.roll-book__material-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* 3. Dimensiones y Condición de Ingreso */
+.roll-book__dimensions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.roll-book__condition-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f8faf9;
+  border: 1px solid #e2ece9;
+  border-radius: 8px;
+}
+
+.roll-book__condition-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #273b37;
+  cursor: pointer;
+}
+
+.roll-book__condition-toggle input[type="checkbox"] {
+  accent-color: #14786e;
+  width: 16px;
+  height: 16px;
+}
+
+.roll-book__partial-inputs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.roll-book__batch-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roll-book__batch-stepper button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d4e2de;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #14786e;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.roll-book__batch-stepper button:hover {
+  background: #f0f7f5;
+  border-color: #14786e;
+}
+
+.roll-book__batch-stepper strong {
+  font-size: 15px;
+  font-weight: 750;
+  min-width: 28px;
+  text-align: center;
+  color: #1c3531;
+}
+
+.roll-book__batch-note {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* 4. Trazabilidad y Metadatos */
+.roll-book__trace-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.roll-book__tag-input-group {
+  display: flex;
+  gap: 6px;
+}
+
+.roll-book__auto-tag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  border: 1px solid #cbdcd7;
+  border-radius: 8px;
+  background: #f0f7f5;
+  color: #14786e;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.roll-book__auto-tag-btn:hover {
+  background: #e2f2ee;
+  border-color: #14786e;
+}
+
+/* Pie del Formulario V2 */
+.roll-book__form-v2-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  background: #f8faf9;
+  border: 1px solid #dce8e5;
+  border-radius: 12px;
+}
+
+.roll-book__footer-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #4b635e;
+}
+
+.roll-book__footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.roll-book__submit-btn-v2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #14786e;
+  color: #ffffff;
+  border: none;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(20, 120, 110, 0.25);
+}
+
+.roll-book__submit-btn-v2:hover:not(:disabled) {
+  background: #0d5f57;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(20, 120, 110, 0.35);
+}
+
+/* 5. Acciones Rápidas en Tarjeta de Rollo (Carga 1-clic a Plotter) */
+.roll-book__quick-actions-bar {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #e2ece9;
+}
+
+.roll-book__quick-machine-dispatch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.roll-book__quick-action-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 750;
+  color: #14786e;
+}
+
+.roll-book__machine-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.roll-book__machine-dispatch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid #bce1d8;
+  border-radius: 7px;
+  background: #eef8f5;
+  color: #0d5f57;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.roll-book__machine-dispatch-btn:hover:not(:disabled) {
+  background: #14786e;
+  border-color: #14786e;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.roll-book__quick-return-box {
+  display: flex;
+  width: 100%;
+}
+
+.roll-book__quick-return-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.roll-book__quick-return-btn:hover:not(:disabled) {
+  background: #ffedd5;
+  border-color: #ea580c;
+  color: #9a3412;
+}
+
+/* 6. Timeline de Trazabilidad */
+.roll-book__timeline-wrap {
+  width: 100%;
+}
+
+.roll-book__history-item {
+  position: relative;
+  transition: background 0.12s ease;
+}
+
+.roll-book__history-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.roll-book__history-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.roll-book__history-title-row strong {
+  font-size: 12px;
+  color: #1f2937;
+}
+
+.roll-book__history-title-row small {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.roll-book__history-reason {
+  font-size: 11px;
+  color: #475569;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.roll-book__history-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.roll-book__history-actor {
+  color: #64748b;
+}
+
+.roll-book__history-actor b {
+  color: #1e293b;
+}
+
+/* ==========================================================================
+   TEMA OSCURO (DARK MODE) PARA ROLL BOOK V2
+   ========================================================================== */
+.work-app.theme-dark .roll-book__quick-presets-bar,
+[data-theme='dark'] .work-app .roll-book__quick-presets-bar,
+.work-app[data-theme='dark'] .roll-book__quick-presets-bar {
+  background: linear-gradient(135deg, #132421 0%, #151b21 60%, #172220 100%);
+  border-color: #26433e;
+}
+
+.work-app.theme-dark .roll-book__quick-preset-btn,
+[data-theme='dark'] .work-app .roll-book__quick-preset-btn,
+.work-app[data-theme='dark'] .roll-book__quick-preset-btn {
+  background: #1b2129;
+  border-color: #2b363e;
+}
+
+.work-app.theme-dark .roll-book__quick-preset-btn:hover,
+[data-theme='dark'] .work-app .roll-book__quick-preset-btn:hover {
+  background: #202c31;
+  border-color: #2dd4bf;
+}
+
+.work-app.theme-dark .roll-book__quick-preset-info b,
+[data-theme='dark'] .work-app .roll-book__quick-preset-info b {
+  color: #f1f5f9;
+}
+
+.work-app.theme-dark .roll-book__v2-card,
+[data-theme='dark'] .work-app .roll-book__v2-card {
+  background: #181d24;
+  border-color: #2c353d;
+}
+
+.work-app.theme-dark .roll-book__v2-card-header,
+[data-theme='dark'] .work-app .roll-book__v2-card-header {
+  border-color: #262e36;
+}
+
+.work-app.theme-dark .roll-book__v2-card-header h3,
+[data-theme='dark'] .work-app .roll-book__v2-card-header h3 {
+  color: #f8fafc;
+}
+
+.work-app.theme-dark .roll-book__field-label,
+[data-theme='dark'] .work-app .roll-book__field-label {
+  color: #cbd5e1;
+}
+
+.work-app.theme-dark .roll-book__branch-pills button,
+[data-theme='dark'] .work-app .roll-book__branch-pills button {
+  background: #1f2630;
+  border-color: #313d49;
+  color: #cbd5e1;
+}
+
+.work-app.theme-dark .roll-book__branch-pills button.is-active,
+[data-theme='dark'] .work-app .roll-book__branch-pills button.is-active {
+  background: #1b3834;
+  border-color: #2dd4bf;
+  color: #5eead4;
+}
+
+.work-app.theme-dark .roll-book__selected-material-card,
+[data-theme='dark'] .work-app .roll-book__selected-material-card {
+  background: #142a26;
+  border-color: #2dd4bf;
+}
+
+.work-app.theme-dark .roll-book__selected-material-body strong,
+[data-theme='dark'] .work-app .roll-book__selected-material-body strong {
+  color: #f8fafc;
+}
+
+.work-app.theme-dark .roll-book__material-search-bar,
+[data-theme='dark'] .work-app .roll-book__material-search-bar {
+  background: #13171d;
+  border-color: #2e3742;
+}
+
+.work-app.theme-dark .roll-book__material-search-input,
+[data-theme='dark'] .work-app .roll-book__material-search-input {
+  color: #f1f5f9;
+}
+
+.work-app.theme-dark .roll-book__material-candidates-list,
+[data-theme='dark'] .work-app .roll-book__material-candidates-list {
+  background: #151a21;
+  border-color: #2c353f;
+}
+
+.work-app.theme-dark .roll-book__candidate-select-pill,
+[data-theme='dark'] .work-app .roll-book__candidate-select-pill {
+  background: #151a21;
+}
+
+.work-app.theme-dark .roll-book__candidate-select-pill:hover,
+[data-theme='dark'] .work-app .roll-book__candidate-select-pill:hover {
+  background: #1b2c28;
+}
+
+.work-app.theme-dark .roll-book__candidate-info strong,
+[data-theme='dark'] .work-app .roll-book__candidate-info strong {
+  color: #f1f5f9;
+}
+
+.work-app.theme-dark .roll-book__condition-box,
+[data-theme='dark'] .work-app .roll-book__condition-box {
+  background: #13171d;
+  border-color: #2a333d;
+}
+
+.work-app.theme-dark .roll-book__condition-toggle,
+[data-theme='dark'] .work-app .roll-book__condition-toggle {
+  color: #e2e8f0;
+}
+
+.work-app.theme-dark .roll-book__batch-stepper button,
+[data-theme='dark'] .work-app .roll-book__batch-stepper button {
+  background: #1e2631;
+  border-color: #313d4b;
+  color: #5eead4;
+}
+
+.work-app.theme-dark .roll-book__batch-stepper strong,
+[data-theme='dark'] .work-app .roll-book__batch-stepper strong {
+  color: #f8fafc;
+}
+
+.work-app.theme-dark .roll-book__auto-tag-btn,
+[data-theme='dark'] .work-app .roll-book__auto-tag-btn {
+  background: #1b3531;
+  border-color: #28544d;
+  color: #5eead4;
+}
+
+.work-app.theme-dark .roll-book__form-v2-footer,
+[data-theme='dark'] .work-app .roll-book__form-v2-footer {
+  background: #161b22;
+  border-color: #2c3640;
+}
+
+.work-app.theme-dark .roll-book__machine-dispatch-btn,
+[data-theme='dark'] .work-app .roll-book__machine-dispatch-btn {
+  background: #18312d;
+  border-color: #23544c;
+  color: #5eead4;
+}
+
+.work-app.theme-dark .roll-book__machine-dispatch-btn:hover,
+[data-theme='dark'] .work-app .roll-book__machine-dispatch-btn:hover {
+  background: #14786e;
+  color: #ffffff;
+}
+
+.work-app.theme-dark .roll-book__quick-return-btn,
+[data-theme='dark'] .work-app .roll-book__quick-return-btn {
+  background: #362218;
+  border-color: #63331b;
+  color: #fdba74;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .roll-book__form-v2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .roll-book__dimensions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .roll-book__quick-presets-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .roll-book__dimensions-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .roll-book__trace-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .roll-book__form-v2-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .roll-book__submit-btn-v2 {
+    width: 100%;
+    justify-content: center;
+  }
+}
