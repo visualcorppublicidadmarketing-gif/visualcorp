@@ -1,0 +1,1384 @@
+/* ==========================================================================
+   VISUAL CORP SUITE — ROLL INTAKE & RECEPTION WORKFLOW (MODULAR SYSTEM)
+   Zero overflow, full light/dark theme calibration, accessible touch targets
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Base Variables & Box Sizing
+   -------------------------------------------------------------------------- */
+.roll-reception,
+.roll-reception * {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+:root {
+  --rr-ink-main: #1f2937;
+  --rr-ink-sub: #4b635e;
+  --rr-ink-muted: #64748b;
+  --rr-surface: #ffffff;
+  --rr-surface-sub: #f8faf9;
+  --rr-surface-hover: #f0fdf9;
+  --rr-border: #e2ece9;
+  --rr-border-sub: #d4e2de;
+  --rr-brand: #14786e;
+  --rr-brand-dark: #0d5f57;
+  --rr-brand-light: #e6f6f2;
+  --rr-brand-accent: #2dd4bf;
+  --rr-badge-bg: #e6f6f2;
+  --rr-badge-text: #0d5f57;
+  --rr-danger: #ef4444;
+  --rr-danger-light: #fef2f2;
+  --rr-warning-bg: #fffbeb;
+  --rr-warning-border: #fde68a;
+  --rr-warning-text: #92400e;
+  --rr-radius-sm: 8px;
+  --rr-radius-md: 12px;
+  --rr-radius-lg: 16px;
+  --rr-shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --rr-shadow-card: 0 2px 8px rgba(20, 120, 110, 0.04), 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+/* --------------------------------------------------------------------------
+   2. Main Container & Grid Form
+   -------------------------------------------------------------------------- */
+.roll-reception__form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* --------------------------------------------------------------------------
+   3. Modular Card Surface
+   -------------------------------------------------------------------------- */
+.roll-reception__card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--rr-surface);
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-md);
+  padding: 16px 18px;
+  box-shadow: var(--rr-shadow-card);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+}
+
+.roll-reception__card:hover {
+  border-color: #ccdcd6;
+}
+
+/* Card Header */
+.roll-reception__card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--rr-border);
+}
+
+.roll-reception__step-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: var(--rr-brand);
+  color: #ffffff;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(20, 120, 110, 0.25);
+}
+
+.roll-reception__card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.roll-reception__card-title-group h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--rr-ink-main);
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+.roll-reception__card-title-group p {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--rr-ink-muted);
+  line-height: 1.35;
+}
+
+/* Card Body */
+.roll-reception__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   4. Common Form Fields & Resets (No Raw Buttons)
+   -------------------------------------------------------------------------- */
+.roll-reception__field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.roll-reception__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.roll-reception__field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--rr-ink-sub);
+}
+
+.roll-reception__field-label-icon {
+  color: var(--rr-brand);
+  flex-shrink: 0;
+}
+
+/* Inputs & Selects */
+.roll-reception__input,
+.roll-reception__select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--rr-ink-main);
+  background: var(--rr-surface);
+  border: 1px solid var(--rr-border-sub);
+  border-radius: var(--rr-radius-sm);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.roll-reception__input:focus,
+.roll-reception__select:focus {
+  border-color: var(--rr-brand);
+  box-shadow: 0 0 0 3px rgba(20, 120, 110, 0.18);
+}
+
+.roll-reception__input:disabled,
+.roll-reception__select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f1f5f4;
+}
+
+/* Input with Unit Suffix */
+.roll-reception__input-unit-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.roll-reception__input-unit {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 38px 8px 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+  color: var(--rr-ink-main);
+  background: var(--rr-surface);
+  border: 1px solid var(--rr-border-sub);
+  border-radius: var(--rr-radius-sm);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.roll-reception__input-unit:focus {
+  border-color: var(--rr-brand);
+  box-shadow: 0 0 0 3px rgba(20, 120, 110, 0.18);
+}
+
+.roll-reception__unit-suffix {
+  position: absolute;
+  right: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--rr-ink-muted);
+  pointer-events: none;
+}
+
+/* Select wrapper with prefix icon */
+.roll-reception__select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.roll-reception__select-prefix-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--rr-brand);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.roll-reception__select {
+  padding-left: 36px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234b635e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* --------------------------------------------------------------------------
+   5. Card 1: Branch & Location Elements
+   -------------------------------------------------------------------------- */
+.roll-reception__branch-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.roll-reception__branch-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 6px 13px;
+  border: 1px solid var(--rr-border-sub);
+  border-radius: var(--rr-radius-sm);
+  background: var(--rr-surface);
+  color: var(--rr-ink-sub);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.roll-reception__branch-pill:hover:not(:disabled) {
+  background: var(--rr-surface-hover);
+  border-color: var(--rr-brand);
+  transform: translateY(-1px);
+}
+
+.roll-reception__branch-pill.is-active {
+  background: var(--rr-brand-light);
+  border-color: var(--rr-brand);
+  color: var(--rr-brand-dark);
+  font-weight: 750;
+  box-shadow: 0 1px 3px rgba(20, 120, 110, 0.12);
+}
+
+.roll-reception__branch-icon {
+  font-size: 14px;
+}
+
+.roll-reception__pill-check {
+  color: var(--rr-brand);
+  stroke-width: 2.5;
+}
+
+/* --------------------------------------------------------------------------
+   6. Card 2: Material Selector, Search & Zero-Overlap Tabs
+   -------------------------------------------------------------------------- */
+/* Selected material summary */
+.roll-reception__selected-material-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+  background: var(--rr-surface-hover);
+  border: 1.5px solid var(--rr-brand);
+  border-radius: var(--rr-radius-md);
+  box-shadow: 0 1px 4px rgba(20, 120, 110, 0.08);
+}
+
+.roll-reception__selected-material-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #d1fae5;
+  color: #065f46;
+  flex-shrink: 0;
+}
+
+.roll-reception__selected-material-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.roll-reception__selected-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rr-brand);
+}
+
+.roll-reception__selected-name {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 750;
+  color: var(--rr-ink-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roll-reception__selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.roll-reception__tag-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  background: #dcfce7;
+  color: #15803d;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.roll-reception__tag-chip.finish {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.roll-reception__tag-chip.sku {
+  background: #f1f5f9;
+  color: #475569;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.roll-reception__btn-change-material {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--rr-border-sub);
+  border-radius: var(--rr-radius-sm);
+  background: var(--rr-surface);
+  color: var(--rr-brand-dark);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.roll-reception__btn-change-material:hover:not(:disabled) {
+  border-color: var(--rr-brand);
+  background: var(--rr-surface-hover);
+}
+
+/* Material Toolbar: Stacked to prevent horizontal squashing/overlap */
+.roll-reception__material-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.roll-reception__search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.roll-reception__search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--rr-ink-muted);
+  pointer-events: none;
+}
+
+.roll-reception__search-input {
+  width: 100%;
+  min-height: 39px;
+  padding: 8px 36px 8px 36px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--rr-ink-main);
+  background: var(--rr-surface-sub);
+  border: 1px solid var(--rr-border-sub);
+  border-radius: var(--rr-radius-sm);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.roll-reception__search-input:focus {
+  border-color: var(--rr-brand);
+  background: var(--rr-surface);
+  box-shadow: 0 0 0 3px rgba(20, 120, 110, 0.18);
+}
+
+.roll-reception__search-clear-btn {
+  position: absolute;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--rr-ink-muted);
+  cursor: pointer;
+}
+
+.roll-reception__search-clear-btn:hover {
+  background: #e2e8f0;
+  color: var(--rr-ink-main);
+}
+
+/* Category Filter Tabs (Zero Overlap with flex-wrap) */
+.roll-reception__category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+
+.roll-reception__category-tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid var(--rr-border-sub);
+  border-radius: 6px;
+  background: var(--rr-surface);
+  color: var(--rr-ink-sub);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.roll-reception__category-tab:hover:not(:disabled) {
+  border-color: var(--rr-brand);
+  background: var(--rr-surface-hover);
+  color: var(--rr-brand-dark);
+}
+
+.roll-reception__category-tab.is-active {
+  background: var(--rr-brand);
+  border-color: var(--rr-brand);
+  color: #ffffff;
+  font-weight: 750;
+  box-shadow: 0 1px 3px rgba(20, 120, 110, 0.2);
+}
+
+.roll-reception__cancel-change-row {
+  display: flex;
+  width: 100%;
+}
+
+.roll-reception__btn-revert {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--rr-brand-dark);
+  background: transparent;
+  border: 0;
+  padding: 4px 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.roll-reception__btn-revert:hover {
+  color: var(--rr-brand);
+}
+
+/* Candidate list and cards */
+.roll-reception__candidates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 230px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-sm);
+  padding: 6px;
+  background: var(--rr-surface);
+}
+
+.roll-reception__candidates-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--rr-ink-muted);
+}
+
+.roll-reception__empty-icon {
+  color: var(--rr-ink-muted);
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+.roll-reception__candidates-empty p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--rr-ink-main);
+}
+
+.roll-reception__candidates-empty small {
+  font-size: 11px;
+  color: var(--rr-ink-muted);
+}
+
+.roll-reception__candidate-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--rr-border);
+  border-radius: 7px;
+  background: var(--rr-surface);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.roll-reception__candidate-card:hover:not(:disabled) {
+  background: var(--rr-surface-hover);
+  border-color: #a7f3d0;
+  transform: translateX(2px);
+}
+
+.roll-reception__candidate-card.is-selected {
+  background: var(--rr-brand-light);
+  border-color: var(--rr-brand);
+}
+
+.roll-reception__candidate-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: var(--rr-brand);
+  flex-shrink: 0;
+}
+
+.roll-reception__candidate-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.roll-reception__candidate-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--rr-ink-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roll-reception__candidate-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--rr-ink-muted);
+}
+
+.roll-reception__candidate-variant {
+  font-weight: 650;
+  color: var(--rr-brand-dark);
+}
+
+.roll-reception__candidate-sku {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.roll-reception__select-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 5px;
+  background: #f1f5f9;
+  color: var(--rr-ink-sub);
+  font-size: 10.5px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.12s ease;
+}
+
+.roll-reception__select-badge.is-active {
+  background: var(--rr-brand);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   7. Card 3: Dimensions, Segment Pills & 2-Card Condition Selector
+   -------------------------------------------------------------------------- */
+.roll-reception__dimensions-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.roll-reception__segment-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.roll-reception__segment-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 3px 9px;
+  border: 1px solid var(--rr-border-sub);
+  border-radius: 6px;
+  background: var(--rr-surface-sub);
+  color: var(--rr-ink-sub);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.roll-reception__segment-pill:hover:not(:disabled) {
+  border-color: var(--rr-brand);
+  background: var(--rr-surface-hover);
+  color: var(--rr-brand-dark);
+}
+
+.roll-reception__segment-pill.is-active {
+  background: var(--rr-brand);
+  border-color: var(--rr-brand);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(20, 120, 110, 0.25);
+}
+
+/* Visual 2-Card Condition Selector */
+.roll-reception__condition-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding-top: 4px;
+  border-top: 1px dashed var(--rr-border);
+}
+
+.roll-reception__condition-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.roll-reception__condition-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--rr-border);
+  border-radius: var(--rr-radius-md);
+  background: var(--rr-surface);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.roll-reception__condition-card:hover:not(:disabled) {
+  border-color: #a7f3d0;
+  background: var(--rr-surface-hover);
+  transform: translateY(-1px);
+}
+
+.roll-reception__condition-card.is-active {
+  background: var(--rr-surface-hover);
+  border-color: var(--rr-brand);
+  box-shadow: 0 2px 8px rgba(20, 120, 110, 0.1);
+}
+
+.roll-reception__condition-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.roll-reception__condition-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: var(--rr-brand);
+}
+
+.roll-reception__condition-icon.is-partial {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.roll-reception__condition-badge {
+  font-size: 10px;
+  font-weight: 750;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.roll-reception__condition-badge.is-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.roll-reception__condition-content strong {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 750;
+  color: var(--rr-ink-main);
+  line-height: 1.25;
+}
+
+.roll-reception__condition-content p {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: var(--rr-ink-muted);
+  line-height: 1.35;
+}
+
+.roll-reception__condition-selection-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--rr-border-sub);
+  background: var(--rr-surface);
+  color: #ffffff;
+}
+
+.roll-reception__condition-card.is-active .roll-reception__condition-selection-indicator {
+  border-color: var(--rr-brand);
+  background: var(--rr-brand);
+}
+
+/* Dynamic Partial Inputs Panel */
+.roll-reception__partial-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--rr-radius-sm);
+  animation: rr-fade-in 0.2s ease-out;
+}
+
+@keyframes rr-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.roll-reception__partial-input-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.roll-reception__partial-meter-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.roll-reception__meter-stats {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 11.5px;
+}
+
+.roll-reception__meter-title {
+  color: var(--rr-warning-text);
+  font-weight: 650;
+}
+
+.roll-reception__meter-value {
+  color: var(--rr-warning-text);
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.roll-reception__meter-bar {
+  width: 100%;
+  height: 6px;
+  background: #fde68a;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.roll-reception__meter-bar-fill {
+  height: 100%;
+  background: #d97706;
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+
+.roll-reception__meter-bar-fill.is-low {
+  background: #ef4444;
+}
+
+.roll-reception__alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.roll-reception__alert.is-warning {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* --------------------------------------------------------------------------
+   8. Card 4: Traceability, Dice Auto, Stepper & Reason Chips
+   -------------------------------------------------------------------------- */
+.roll-reception__trace-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.roll-reception__tag-input-group {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.roll-reception__tag-input {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.roll-reception__auto-dice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--rr-border-sub);
+  border-radius: var(--rr-radius-sm);
+  background: var(--rr-surface-sub);
+  color: var(--rr-brand);
+  font-size: 11.5px;
+  font-weight: 750;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.roll-reception__auto-dice-btn:hover:not(:disabled) {
+  background: var(--rr-brand-light);
+  border-color: var(--rr-brand);
+  color: var(--rr-brand-dark);
+  transform: translateY(-1px);
+}
+
+.roll-reception__dice-icon {
+  color: var(--rr-brand);
+}
+
+/* Batch Stepper with Round +- Buttons */
+.roll-reception__batch-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.roll-reception__stepper-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roll-reception__stepper-round-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--rr-border-sub);
+  background: var(--rr-surface);
+  color: var(--rr-brand);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.roll-reception__stepper-round-btn:hover:not(:disabled) {
+  border-color: var(--rr-brand);
+  background: var(--rr-brand-light);
+  transform: scale(1.05);
+}
+
+.roll-reception__stepper-round-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.roll-reception__stepper-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  min-width: 64px;
+  padding: 6px 10px;
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-sm);
+  background: var(--rr-surface-sub);
+}
+
+.roll-reception__stepper-count {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--rr-ink-main);
+  font-variant-numeric: tabular-nums;
+}
+
+.roll-reception__stepper-unit {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rr-ink-muted);
+}
+
+.roll-reception__batch-note {
+  font-size: 10.5px;
+  color: var(--rr-ink-muted);
+}
+
+/* Reason chips */
+.roll-reception__reason-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.roll-reception__reason-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 3px 9px;
+  border: 1px solid var(--rr-border-sub);
+  border-radius: 6px;
+  background: var(--rr-surface-sub);
+  color: var(--rr-ink-sub);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.roll-reception__reason-chip:hover:not(:disabled) {
+  background: var(--rr-surface-hover);
+  border-color: var(--rr-brand);
+  color: var(--rr-brand-dark);
+}
+
+.roll-reception__reason-chip.is-active {
+  background: var(--rr-brand-light);
+  border-color: var(--rr-brand);
+  color: var(--rr-brand-dark);
+  font-weight: 750;
+}
+
+/* --------------------------------------------------------------------------
+   9. Footer: Summary & Action Buttons
+   -------------------------------------------------------------------------- */
+.roll-reception__footer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  background: var(--rr-surface-sub);
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-md);
+  box-shadow: var(--rr-shadow-subtle);
+  width: 100%;
+}
+
+.roll-reception__footer-summary {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+
+.roll-reception__summary-ready {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--rr-ink-sub);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.roll-reception__summary-ready-icon {
+  color: var(--rr-brand);
+  flex-shrink: 0;
+}
+
+.roll-reception__highlight-qty {
+  color: var(--rr-brand-dark);
+}
+
+.roll-reception__highlight-mat {
+  color: var(--rr-ink-main);
+}
+
+.roll-reception__highlight-branch {
+  color: var(--rr-brand-dark);
+}
+
+.roll-reception__summary-prompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--rr-ink-muted);
+  font-size: 12px;
+}
+
+.roll-reception__summary-prompt-icon {
+  color: var(--rr-ink-muted);
+  flex-shrink: 0;
+}
+
+.roll-reception__footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.roll-reception__btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--rr-border-sub);
+  border-radius: var(--rr-radius-sm);
+  background: var(--rr-surface);
+  color: var(--rr-ink-sub);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.roll-reception__btn-cancel:hover:not(:disabled) {
+  background: #f1f5f4;
+  color: var(--rr-ink-main);
+}
+
+.roll-reception__btn-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--rr-radius-sm);
+  background: var(--rr-brand);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(20, 120, 110, 0.28);
+  transition: all 0.15s ease;
+}
+
+.roll-reception__btn-submit:hover:not(:disabled) {
+  background: var(--rr-brand-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(20, 120, 110, 0.38);
+}
+
+.roll-reception__btn-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.roll-reception__spin {
+  animation: rr-spin 0.9s linear infinite;
+}
+
+@keyframes rr-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------------------------
+   10. Dark Mode Support (.work-app.theme-dark and [data-theme='dark'])
+   -------------------------------------------------------------------------- */
+.work-app.theme-dark .roll-reception,
+[data-theme='dark'] .roll-reception,
+.work-app[data-theme='dark'] .roll-reception {
+  --rr-ink-main: #f8fafc;
+  --rr-ink-sub: #cbd5e1;
+  --rr-ink-muted: #94a3b8;
+  --rr-surface: #181d24;
+  --rr-surface-sub: #13171d;
+  --rr-surface-hover: #192b27;
+  --rr-border: #2c353f;
+  --rr-border-sub: #343f4b;
+  --rr-brand: #1c8b7c;
+  --rr-brand-dark: #147265;
+  --rr-brand-light: #18332f;
+  --rr-brand-accent: #2dd4bf;
+  --rr-badge-bg: #18332f;
+  --rr-badge-text: #5eead4;
+  --rr-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --rr-shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.work-app.theme-dark .roll-reception__candidate-avatar,
+[data-theme='dark'] .roll-reception__candidate-avatar {
+  background: #202731;
+  color: #5eead4;
+}
+
+.work-app.theme-dark .roll-reception__selected-material-card,
+[data-theme='dark'] .roll-reception__selected-material-card {
+  background: #142a26;
+  border-color: #2dd4bf;
+}
+
+.work-app.theme-dark .roll-reception__selected-material-icon,
+[data-theme='dark'] .roll-reception__selected-material-icon {
+  background: #1c3833;
+  color: #5eead4;
+}
+
+.work-app.theme-dark .roll-reception__tag-chip.finish,
+[data-theme='dark'] .roll-reception__tag-chip.finish {
+  background: #3b2f15;
+  color: #fcd34d;
+}
+
+.work-app.theme-dark .roll-reception__tag-chip.sku,
+[data-theme='dark'] .roll-reception__tag-chip.sku {
+  background: #202731;
+  color: #cbd5e1;
+}
+
+.work-app.theme-dark .roll-reception__partial-panel,
+[data-theme='dark'] .roll-reception__partial-panel {
+  background: #252014;
+  border-color: #52401f;
+}
+
+.work-app.theme-dark .roll-reception__meter-stats strong,
+[data-theme='dark'] .roll-reception__meter-stats strong {
+  color: #fde68a;
+}
+
+.work-app.theme-dark .roll-reception__meter-title,
+[data-theme='dark'] .roll-reception__meter-title {
+  color: #fbbf24;
+}
+
+.work-app.theme-dark .roll-reception__condition-card.is-active,
+[data-theme='dark'] .roll-reception__condition-card.is-active {
+  background: #172d28;
+  border-color: #2dd4bf;
+}
+
+.work-app.theme-dark .roll-reception__condition-icon,
+[data-theme='dark'] .roll-reception__condition-icon {
+  background: #1c3833;
+  color: #5eead4;
+}
+
+.work-app.theme-dark .roll-reception__condition-icon.is-partial,
+[data-theme='dark'] .roll-reception__condition-icon.is-partial {
+  background: #3f2e14;
+  color: #f59e0b;
+}
+
+.work-app.theme-dark .roll-reception__condition-badge,
+[data-theme='dark'] .roll-reception__condition-badge {
+  background: #1c3833;
+  color: #5eead4;
+}
+
+.work-app.theme-dark .roll-reception__condition-badge.is-warning,
+[data-theme='dark'] .roll-reception__condition-badge.is-warning {
+  background: #3f2e14;
+  color: #fde68a;
+}
+
+.work-app.theme-dark .roll-reception__stepper-round-btn,
+[data-theme='dark'] .roll-reception__stepper-round-btn {
+  background: #1f2732;
+  border-color: #354251;
+  color: #5eead4;
+}
+
+.work-app.theme-dark .roll-reception__stepper-display,
+[data-theme='dark'] .roll-reception__stepper-display {
+  background: #13171d;
+  border-color: #2c353f;
+}
+
+.work-app.theme-dark .roll-reception__btn-cancel,
+[data-theme='dark'] .roll-reception__btn-cancel {
+  background: #1c232d;
+  border-color: #313d4b;
+  color: #cbd5e1;
+}
+
+.work-app.theme-dark .roll-reception__btn-cancel:hover:not(:disabled),
+[data-theme='dark'] .roll-reception__btn-cancel:hover:not(:disabled) {
+  background: #252e3b;
+  color: #f8fafc;
+}
+
+/* --------------------------------------------------------------------------
+   11. Strict Responsive Rules (Visual Corp Zero-Overflow Standard)
+   -------------------------------------------------------------------------- */
+@media (max-width: 960px) {
+  .roll-reception__form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .roll-reception__dimensions-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .roll-reception__trace-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .roll-reception__footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .roll-reception__footer-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .roll-reception__btn-cancel,
+  .roll-reception__btn-submit {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .roll-reception__partial-input-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .roll-reception__condition-cards-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .roll-reception__card {
+    padding: 14px 12px;
+  }
+
+  .roll-reception__branch-pills button {
+    flex: 1 1 calc(50% - 8px);
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roll-reception__spin {
+    animation: none;
+  }
+  .roll-reception__branch-pill,
+  .roll-reception__candidate-card,
+  .roll-reception__condition-card,
+  .roll-reception__btn-submit {
+    transition: none;
+  }
+}
