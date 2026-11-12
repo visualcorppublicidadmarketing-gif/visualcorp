@@ -599,6 +599,11 @@ export function InventoryWorkspace() {
       const lines=result?.lines||[];
       const sessionItems=lines.map(line=>items.find(item=>item.variantId===line.variant_id&&item.branchId===line.branch_id&&item.location===(line.location_code||'MAIN')));
       if(!lines.length||sessionItems.some(item=>!item))throw new Error('No se pudieron relacionar todos los artículos de la sesión con el inventario cargado.');
+      if(result.reused&&result.scope_matches===false){
+        const preview=sessionItems.slice(0,3).map(item=>`${item.name}${item.variant?` · ${item.variant}`:''}`).join(', ');
+        const accepted=await confirm({eyebrow:'CONTEO ABIERTO EN ESTA SUCURSAL',title:'La sesión abierta tiene otro alcance',description:'Ya tienes un conteo en curso, pero la selección actual es distinta. Puedes reanudar la sesión existente o volver y terminar/cerrar ese conteo antes de iniciar otro.',tone:'warning',confirmLabel:'Reanudar sesión existente',cancelLabel:'Volver a la selección',summaryItems:[{label:'Selección actual',value:`${selected.length} artículo(s) · ${area}`},{label:'Sesión abierta',value:`${lines.length} artículo(s)${preview?` · ${preview}${lines.length>3?'…':''}`:''}`}],consequences:['Se conservarán las líneas y el avance ya registrados.','No se agregarán los artículos de la selección actual a esta sesión.']});
+        if(!accepted){flash('La sesión abierta se conservó. Reanúdala desde su alcance original o ciérrala antes de iniciar otro conteo.');return;}
+      }
       const pendingIndex=lines.findIndex(line=>line.status==='pending');
       if(pendingIndex<0){await closeGuidedCount(result.session_id,'Sesión reanudada y cerrada');return;}
       setCountSession({sessionId:result.session_id,ids:sessionItems.map(item=>item.id),itemSnapshots:sessionItems,lineIds:lines.map(line=>line.id),statuses:lines.map(line=>line.status),expected:lines.map(line=>line.expected_quantity===null?null:Number(line.expected_quantity)),index:pendingIndex,skipped:lines.filter(line=>line.status==='skipped').length,quantity:'',reason:'Conteo físico inicial'});
