@@ -1678,3 +1678,43 @@
 [data-theme='dark'] .inventory-import-identity-header,.work-app.theme-dark .inventory-import-identity-header{border-color:#41414b;background:#292a31;color:#c9c9d2}
 [data-theme='dark'] .inventory-import-identity-missing,.work-app.theme-dark .inventory-import-identity-missing{border-color:#694040;background:#342124;color:#f2b7b7}
 @media(max-width:600px){.inventory-review-source-card dl{grid-template-columns:minmax(0,1fr)}}
+
+.inventory-catalog-integrity{display:grid;gap:12px;min-width:0;max-width:100%;padding:16px;border:1px solid #ead7ae;border-radius:14px;background:linear-gradient(135deg,#fffdf8,#fff8ea);color:#3b3441}
+.inventory-catalog-integrity.is-loading,.inventory-catalog-integrity.is-error{display:flex;align-items:center;gap:9px;padding:12px 14px;font-size:12px;line-height:1.45}
+.inventory-catalog-integrity.is-error{border-color:#edc7c7;background:#fff5f5;color:#923c3c}
+.inventory-catalog-integrity-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.inventory-catalog-integrity-heading>div{min-width:0}
+.inventory-catalog-integrity-heading h3{margin:3px 0 4px;color:#3b3441;font-size:15px;letter-spacing:-.02em}
+.inventory-catalog-integrity-heading p{margin:0;color:#726b7a;font-size:11px;line-height:1.45}
+.inventory-catalog-integrity-count{display:grid;flex:0 0 38px;width:38px;height:38px;place-items:center;border:1px solid #ead5a9;border-radius:12px;background:#fff2d6;color:#8f5d0d;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+.inventory-catalog-integrity-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.inventory-catalog-integrity-list article{display:flex;align-items:center;gap:10px;min-width:0;padding:10px;border:1px solid #eee5d3;border-radius:11px;background:rgba(255,255,255,.82)}
+.inventory-catalog-integrity-icon{display:grid;flex:0 0 34px;width:34px;height:34px;place-items:center;border:1px solid #eadcf2;border-radius:10px;background:#f8f1fc;color:#8650a3}
+.inventory-catalog-integrity-copy{display:grid;flex:1;gap:3px;min-width:0}
+.inventory-catalog-integrity-copy>b{color:#302a38;font-size:11px;overflow-wrap:anywhere}
+.inventory-catalog-integrity-copy>small{color:#797383;font-size:9px;line-height:1.35;overflow-wrap:anywhere}
+.inventory-catalog-integrity-list .button{flex:0 0 auto;min-width:0;max-width:100%;white-space:normal}
+.inventory-catalog-integrity-note{margin:0;color:#766b58;font-size:10px;line-height:1.45;overflow-wrap:anywhere}
+.inventory-variant-repair-form{display:grid;gap:12px;min-width:0}
+.inventory-variant-repair-parent{display:flex;align-items:center;gap:10px;min-width:0;padding:10px 11px;border:1px solid #e7deed;border-radius:11px;background:#faf7fc}
+.inventory-variant-repair-parent>div{display:grid;gap:3px;min-width:0}
+.inventory-variant-repair-parent b{font-size:12px;overflow-wrap:anywhere}
+.inventory-variant-repair-parent small{color:#777382;font-size:10px;overflow-wrap:anywhere}
+.inventory-variant-repair-form>label{display:grid;gap:6px;min-width:0;color:#494354;font-size:11px;font-weight:700}
+.inventory-variant-repair-form input,.inventory-variant-repair-form select{box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:40px;padding:9px 11px;border:1px solid #ded8e7;border-radius:9px;background:#fff;color:#302a38;font:inherit;font-weight:500}
+.inventory-variant-repair-notice{display:flex;align-items:flex-start;gap:8px;min-width:0;padding:10px;border:1px solid #d8e8db;border-radius:10px;background:#f2faf3;color:#3a6545;font-size:10px;line-height:1.45}
+.inventory-variant-repair-notice svg{flex:0 0 auto;margin-top:1px}
+.inventory-variant-repair-notice span{min-width:0;overflow-wrap:anywhere}
+[data-theme='dark'] .inventory-catalog-integrity,.work-app.theme-dark .inventory-catalog-integrity{border-color:#584529;background:linear-gradient(135deg,#211e1a,#282218);color:#eee8dc}
+[data-theme='dark'] .inventory-catalog-integrity-heading h3,.work-app.theme-dark .inventory-catalog-integrity-heading h3{color:#f2e9d7}
+[data-theme='dark'] .inventory-catalog-integrity-heading p,.work-app.theme-dark .inventory-catalog-integrity-heading p{color:#c0b6a4}
+[data-theme='dark'] .inventory-catalog-integrity-count,.work-app.theme-dark .inventory-catalog-integrity-count{border-color:#6b542e;background:#3a2d19;color:#f0ce84}
+[data-theme='dark'] .inventory-catalog-integrity-list article,.work-app.theme-dark .inventory-catalog-integrity-list article{border-color:#494132;background:#25221d}
+[data-theme='dark'] .inventory-catalog-integrity-copy>b,.work-app.theme-dark .inventory-catalog-integrity-copy>b{color:#f1edf7}
+[data-theme='dark'] .inventory-catalog-integrity-copy>small,.work-app.theme-dark .inventory-catalog-integrity-copy>small,[data-theme='dark'] .inventory-catalog-integrity-note,.work-app.theme-dark .inventory-catalog-integrity-note{color:#c1b9aa}
+[data-theme='dark'] .inventory-variant-repair-parent,.work-app.theme-dark .inventory-variant-repair-parent{border-color:#3e3749;background:#211e2a;color:#eeeaf5}
+[data-theme='dark'] .inventory-variant-repair-parent small,.work-app.theme-dark .inventory-variant-repair-parent small{color:#b7b0c4}
+[data-theme='dark'] .inventory-variant-repair-form>label,.work-app.theme-dark .inventory-variant-repair-form>label{color:#ddd6e8}
+[data-theme='dark'] .inventory-variant-repair-form input,.work-app.theme-dark .inventory-variant-repair-form input,[data-theme='dark'] .inventory-variant-repair-form select,.work-app.theme-dark .inventory-variant-repair-form select{border-color:#484253;background:#1b1924;color:#f1edf7}
+[data-theme='dark'] .inventory-variant-repair-notice,.work-app.theme-dark .inventory-variant-repair-notice{border-color:#344c3a;background:#1e2b22;color:#bad6bf}
+@media(max-width:760px){.inventory-catalog-integrity{padding:13px}.inventory-catalog-integrity-list{grid-template-columns:minmax(0,1fr)}.inventory-catalog-integrity-list article{align-items:flex-start;flex-wrap:wrap}.inventory-catalog-integrity-list .button{margin-left:44px;width:calc(100% - 44px)}}
