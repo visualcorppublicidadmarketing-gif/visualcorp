@@ -61,6 +61,14 @@ const inventoryImportSourceIdentity=(candidate:any={},raw:any={},sheet='')=>{
   }
   return {name:'Sin nombre reconocido',origin:'Revisar la hoja fuente',kind:'missing'};
 };
+const inventoryImportMatchFields=(row:any={})=>{
+  const candidate=row.candidate||{};const raw=row.raw_row||row.raw||{};const sheet=row.source_sheet||row.sourceSheet||'';
+  const identity=inventoryImportSourceIdentity(candidate,raw,sheet);
+  return {
+    name:identity.kind==='header'?'':identity.kind==='source'?identity.name:candidate.name||raw['Nombre del elemento']||row.source_reference||row.sourceReference||'',
+    code:candidate.legacyCode||raw.Id||''
+  };
+};
 const inventoryImportSourceFacts=(raw:any={},sheet='')=>[
   ...(normalizeImportLookup(sheet)==='herramientas'&&!(normalizeImportLookup(inventoryImportSourceValue(raw.col_1))==='recursos'&&normalizeImportLookup(inventoryImportSourceValue(raw.col_2))==='cantidad')?[
     {label:'Cantidad declarada',value:inventoryImportSourceValue(raw.col_2)},
@@ -85,6 +93,8 @@ export function InventoryWorkspace() {
   const [matchingImportCount, setMatchingImportCount] = useState(null);
   const [importSheets, setImportSheets] = useState<string[]>([]);
   const [importSheetCounts, setImportSheetCounts] = useState<Record<string,number>>({});
+  const [importTriageRows,setImportTriageRows]=useState<any[]>([]);
+  const [importTriageLoading,setImportTriageLoading]=useState(false);
   const [importPage, setImportPage] = useState(0);
   const [importSheet, setImportSheet] = useState('Todas');
   const [importBatchFilter, setImportBatchFilter] = useState('Todas');
@@ -172,28 +182,47 @@ export function InventoryWorkspace() {
     if(importSheet!=='Todas')importQuery=importQuery.eq('source_sheet',importSheet);
     const searchText=importSearchQuery.replace(/[.,%():"\\]/g,' ').trim();
     if(searchText)importQuery=importQuery.or(`candidate::text.ilike.%${searchText}%,raw_row::text.ilike.%${searchText}%,source_sheet.ilike.%${searchText}%,source_reference.ilike.%${searchText}%`);
-    let sheetQuery=supabase.from('inventory_import_rows').select('source_sheet,batch_id').eq('organization_id',organizationId).eq('mapping_status','pending_review').limit(1000);
-    if(importBatchFilter!=='Todas')sheetQuery=sheetQuery.eq('batch_id',importBatchFilter);
     Promise.all([
       importQuery.order('source_sheet').order('source_row').order('id').range(importPage * 50, importPage * 50 + 49),
-      sheetQuery,
       supabase.from('inventory_import_batches').select('id,source_file,branch_id,row_count,import_status,source_uri').eq('organization_id', organizationId),
       supabase.from('inventory_import_rows').select('id',{count:'exact',head:true}).eq('organization_id',organizationId).eq('mapping_status','pending_review'),
-    ]).then(([rowsResult,sheetsResult,batchesResult,pendingCountResult]) => {
+    ]).then(([rowsResult,batchesResult,pendingCountResult]) => {
       if (!active) return;
-      if (rowsResult.error || sheetsResult.error || batchesResult.error || pendingCountResult.error) { setReviewContinuation(null); flash(`No se pudo leer la cola de importación: ${(rowsResult.error || sheetsResult.error || batchesResult.error || pendingCountResult.error).message}`); return; }
+      if (rowsResult.error || batchesResult.error || pendingCountResult.error) { setReviewContinuation(null); flash(`No se pudo leer la cola de importación: ${(rowsResult.error || batchesResult.error || pendingCountResult.error).message}`); return; }
       setImportRows(rowsResult.data || []);
       setMatchingImportCount(rowsResult.count || 0);
       setPendingImportCount(pendingCountResult.count || 0);
-      const sheetCounts=new Map<string,number>();
-      for(const row of sheetsResult.data||[])if(row.source_sheet)sheetCounts.set(row.source_sheet,(sheetCounts.get(row.source_sheet)||0)+1);
-      setImportSheetCounts(Object.fromEntries(sheetCounts));
-      setImportSheets([...sheetCounts.keys()].sort((a,b)=>(sheetCounts.get(b)||0)-(sheetCounts.get(a)||0)||a.localeCompare(b,'es')));
       setImportBatches(Object.fromEntries((batchesResult.data || []).map((batch) => [batch.id, batch])));
       setImportDataRevision(importReloadKey);
     });
     return () => { active = false; };
   }, [organizationId, importPage, importBatchFilter, importSheet, importSearchQuery, importReloadKey]);
+  React.useEffect(()=>{
+    if(!supabase||!organizationId){setImportTriageLoading(false);return;}
+    let active=true;
+    setImportTriageLoading(true);
+    const load=async()=>{
+      const collected:any[]=[];let offset=0;
+      while(active){
+        let query=supabase.from('inventory_import_rows').select('id,batch_id,source_sheet,source_reference,candidate,raw_row').eq('organization_id',organizationId).eq('mapping_status','pending_review');
+        if(importBatchFilter!=='Todas')query=query.eq('batch_id',importBatchFilter);
+        const {data,error}=await query.order('id').range(offset,offset+999);
+        if(error)throw error;
+        const page=data||[];collected.push(...page);
+        if(page.length<1000)break;
+        offset+=1000;
+      }
+      if(!active)return;
+      const counts=new Map<string,number>();
+      for(const row of collected)if(row.source_sheet)counts.set(row.source_sheet,(counts.get(row.source_sheet)||0)+1);
+      setImportTriageRows(collected);
+      setImportSheetCounts(Object.fromEntries(counts));
+      setImportSheets([...counts.keys()].sort((a,b)=>(counts.get(b)||0)-(counts.get(a)||0)||a.localeCompare(b,'es')));
+      setImportTriageLoading(false);
+    };
+    void load().catch(error=>{if(active){setImportTriageLoading(false);flash(`No se pudo calcular el cotejo sugerido: ${error.message||'error de consulta'}`);}});
+    return()=>{active=false;};
+  },[organizationId,importBatchFilter,importReloadKey,flash]);
   React.useEffect(() => {
     if(!reviewContinuation||importDataRevision!==reviewContinuation.reloadKey)return;
     const row=importRows[reviewContinuation.targetIndex];
@@ -276,16 +305,46 @@ export function InventoryWorkspace() {
   const specificationOptions={finish:inventorySpecificationSuggestions(items,'finish'),color:inventorySpecificationSuggestions(items,'color'),purchase_unit:inventorySpecificationSuggestions(items,'purchase_unit'),material:inventorySpecificationSuggestions(items,'material')};
   const importRowsOnPage=importRows;
   const importPages=Math.max(1,Math.ceil(Number(matchingImportCount||0)/50));
-  const reviewVariantOptions=[...new Map<string, any>(items.filter(item=>!item.archived).map(item=>[item.variantId,item])).values()];
+  const reviewVariantOptions=useMemo(()=>[...new Map<string, any>(items.filter(item=>!item.archived&&item.variantId).map(item=>[item.variantId,item])).values()],[items]);
+  const importTriageMetricsBySheet=useMemo(()=>{
+    const metrics:Record<string,{pending:number;codeExact:number;nameUnique:number;ambiguous:number;noExact:number;noScopeCatalog:number;headers:number}>={};
+    const variants=reviewVariantOptions;
+    for(const row of importTriageRows){
+      const sheet=String(row.source_sheet||'Sin hoja');
+      const result=metrics[sheet]||(metrics[sheet]={pending:0,codeExact:0,nameUnique:0,ambiguous:0,noExact:0,noScopeCatalog:0,headers:0});
+      result.pending++;
+      if(inventoryImportSourceIdentity(row.candidate||{},row.raw_row||{},sheet).kind==='header'){result.headers++;continue;}
+      const batch=importBatches[row.batch_id];
+      const branchName=(data.branches||[]).find((value:any)=>value.id===batch?.branch_id)?.name||'';
+      const scope=/giga/i.test(`${branchName} ${batch?.source_file||''}`)?'giga':/visual/i.test(`${branchName} ${batch?.source_file||''}`)?'visual':'';
+      const scoped=scope?variants.filter(item=>brandOf(item)===scope):variants;
+      if(scope&&!scoped.length){result.noScopeCatalog++;continue;}
+      const {name,code}=inventoryImportMatchFields(row);
+      const codeKey=normalizeImportLookup(code);
+      const nameKey=normalizeImportLookup(name);
+      const codeMatches=codeKey?scoped.filter(item=>[item.sku,item.variantSku].some(value=>normalizeImportLookup(value)===codeKey)):[];
+      if(codeMatches.length===1){result.codeExact++;continue;}
+      if(codeMatches.length>1){result.ambiguous++;continue;}
+      const nameMatches=nameKey?scoped.filter(item=>normalizeImportLookup(item.name)===nameKey):[];
+      if(nameMatches.length===1)result.nameUnique++;
+      else if(nameMatches.length>1)result.ambiguous++;
+      else result.noExact++;
+    }
+    return metrics;
+  },[importTriageRows,importBatches,reviewVariantOptions,data.branches,items]);
+  const selectedImportTriage=useMemo(()=>{
+    if(importSheet!=='Todas')return importTriageMetricsBySheet[importSheet]||{pending:0,codeExact:0,nameUnique:0,ambiguous:0,noExact:0,noScopeCatalog:0,headers:0};
+    return Object.values(importTriageMetricsBySheet).reduce((sum,value)=>({pending:sum.pending+value.pending,codeExact:sum.codeExact+value.codeExact,nameUnique:sum.nameUnique+value.nameUnique,ambiguous:sum.ambiguous+value.ambiguous,noExact:sum.noExact+value.noExact,noScopeCatalog:sum.noScopeCatalog+value.noScopeCatalog,headers:sum.headers+value.headers}),{pending:0,codeExact:0,nameUnique:0,ambiguous:0,noExact:0,noScopeCatalog:0,headers:0});
+  },[importSheet,importTriageMetricsBySheet]);
   const reviewImportBatch=reviewEditor?importBatches[reviewEditor.batchId]:null;
   const reviewImportBranchName=(data.branches||[]).find((row:any)=>row.id===reviewImportBatch?.branch_id)?.name||'';
   const reviewSourceScope=/giga/i.test(`${reviewImportBranchName} ${reviewImportBatch?.source_file||''}`)?'giga':/visual/i.test(`${reviewImportBranchName} ${reviewImportBatch?.source_file||''}`)?'visual':'';
   const reviewScopedVariants=reviewSourceScope?reviewVariantOptions.filter(item=>brandOf(item)===reviewSourceScope):reviewVariantOptions;
   const reviewVariantSearchKey=normalizeImportLookup(reviewVariantSearch);
   const reviewVisibleVariants=reviewScopedVariants.filter(item=>!reviewVariantSearchKey||normalizeImportLookup(`${item.name} ${item.variant} ${item.sku} ${item.variantSku} ${item.area}`).includes(reviewVariantSearchKey));
-  const reviewSourceIdentity=inventoryImportSourceIdentity(reviewEditor?.candidate,reviewEditor?.raw,reviewEditor?.sourceSheet);
-  const reviewSourceName=normalizeImportLookup(reviewSourceIdentity.kind==='header'?'':reviewSourceIdentity.kind==='source'?reviewSourceIdentity.name:reviewEditor?.candidate?.name||reviewEditor?.raw?.['Nombre del elemento']||reviewEditor?.sourceReference);
-  const reviewSourceCode=normalizeImportLookup(reviewEditor?.candidate?.legacyCode||reviewEditor?.raw?.Id);
+  const reviewMatchFields=inventoryImportMatchFields(reviewEditor||{});
+  const reviewSourceName=normalizeImportLookup(reviewMatchFields.name);
+  const reviewSourceCode=normalizeImportLookup(reviewMatchFields.code);
   const reviewSuggestedVariants=reviewScopedVariants.filter(item=>(reviewSourceCode&&[item.sku,item.variantSku].some(value=>normalizeImportLookup(value)===reviewSourceCode))||(reviewSourceName&&normalizeImportLookup(item.name)===reviewSourceName)).slice(0,4);
   const daysSince=(value)=>value?Math.max(0,Math.floor((Date.now()-new Date(value).getTime())/86400000)):null;
   const assignInventoryBranch=async(item,branchName)=>{if(!branchName||!canManageInventory||!supabase||!organizationId||!item.variantId)return;try{const {data:branchRow,error:branchError}=await supabase.from('branches').select('id').eq('organization_id',organizationId).eq('name',branchName).single();if(branchError)throw branchError;const nextAttributes={...(item.variantAttributes||{}),initial_branch_id:branchRow.id};const {data:updatedVariant,error}=await supabase.from('inventory_variants').update({attributes:nextAttributes}).eq('id',item.variantId).eq('organization_id',organizationId).select('id').single();if(error)throw error;if(!updatedVariant)throw new Error('La variante no existe o tu perfil no tiene acceso para actualizarla.');setMetadataEdit(current=>current?.variantId===item.variantId?{...current,variantAttributes:nextAttributes,sourceItem:{...current.sourceItem,branch:branchName,branchId:branchRow.id,variantAttributes:nextAttributes}}:current);await refreshRemote();flash(`${item.name} · ${item.variant||'variante'} asignado a ${branchName}. Ya puedes iniciar el conteo físico.`);}catch(error){flash(`No se pudo asignar la sucursal: ${error.message}`);}};
