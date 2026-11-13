@@ -1448,3 +1448,119 @@
 .work-app.theme-dark .inventory-product-facts > span.is-fact-cost strong {
   color: #c084fc !important;
 }
+
+/* Mobile inventory catalog: make the table read as labeled, touch-friendly cards. */
+@media (max-width: 700px) {
+  .inventory-insights {
+    min-width: 0;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .inventory-insights-header { align-items: stretch; }
+  .inventory-insights-modes { width: 100%; }
+  .inventory-insights-modes button { flex: 1 1 0; min-width: 0; }
+
+  .inventory-insights-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .inventory-insights-search,
+  .inventory-insights-filters > span {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .inventory-insights-filters select { width: 100%; max-width: none; min-width: 0; }
+  .inventory-insights-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inventory-insights-metrics .inventory-insights-top { grid-column: 1 / -1 !important; }
+  .inventory-insights-table-wrap { overflow: visible; border: 0; }
+  .inventory-insights-table { display: block; width: 100%; min-width: 0; }
+  .inventory-insights-table thead { display: none; }
+  .inventory-insights-table tbody { display: grid; gap: 9px; }
+
+  .inventory-insights-table tbody > .inventory-insights-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #e7e3ec;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 3px 10px #25213708;
+  }
+
+  .inventory-insights-table .inventory-insights-row > td {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    min-width: 0;
+    padding: 9px 10px;
+    border-top: 1px solid #efedf2;
+    overflow-wrap: anywhere;
+  }
+
+  .inventory-insights-table .inventory-insights-row > td::before {
+    color: #85808e;
+    content: attr(data-label);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .055em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  .inventory-insights-table .inventory-insights-row > td:first-child,
+  .inventory-insights-table .inventory-insights-row > td:last-child { grid-column: 1 / -1; }
+  .inventory-insights-table .inventory-insights-row > td:first-child { border-top: 0; }
+  .inventory-insights-table .inventory-insights-row > td:first-child::before { display: none; }
+  .inventory-insights-identity { min-width: 0; }
+  .inventory-insights-identity b,
+  .inventory-insights-identity small { min-width: 0; overflow-wrap: anywhere; }
+
+  .inventory-insights-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .inventory-insights-actions button { width: 100%; min-width: 0; min-height: 40px; }
+
+  .inventory-insights-table tbody > tr:not(.inventory-insights-row) {
+    display: block;
+    padding: 12px;
+    border: 1px solid #e7e3ec;
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .inventory-insights-table tbody > tr:not(.inventory-insights-row) > td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .inventory-insights-filters,
+  .inventory-insights-metrics { grid-template-columns: minmax(0, 1fr); }
+  .inventory-insights-metrics .inventory-insights-top { grid-column: auto !important; }
+}
+
+[data-theme='dark'] .inventory-insights-table tbody > .inventory-insights-row,
+.work-app.theme-dark .inventory-insights-table tbody > .inventory-insights-row,
+[data-theme='dark'] .inventory-insights-table tbody > tr:not(.inventory-insights-row),
+.work-app.theme-dark .inventory-insights-table tbody > tr:not(.inventory-insights-row) {
+  border-color: #2a2f44;
+  background: #151827;
+  box-shadow: 0 4px 14px #0003;
+}
+
+[data-theme='dark'] .inventory-insights-table .inventory-insights-row > td,
+.work-app.theme-dark .inventory-insights-table .inventory-insights-row > td { border-top-color: #252a3e; }
+
+[data-theme='dark'] .inventory-insights-table .inventory-insights-row > td::before,
+.work-app.theme-dark .inventory-insights-table .inventory-insights-row > td::before { color: #a3abc0; }
