@@ -1662,6 +1662,10 @@
 .inventory-review-source-card dt{color:#797383;font-size:9px;font-weight:650}
 .inventory-review-source-card dd{margin:3px 0 0;color:#2c2932;font-size:11px;font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere}
 .inventory-review-source-card>p,.inventory-review-source-card>small{margin:0;color:#777382;font-size:10px;line-height:1.45}
+.inventory-import-identity{display:inline-flex;align-items:center;width:max-content;max-width:100%;margin:4px 0;padding:3px 7px;border:1px solid #ded4ec;border-radius:999px;background:#f7f2fc;color:#63328d;font-size:9px;font-weight:700;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
+.inventory-import-identity-source{border-color:#edd9a7;background:#fff8e8;color:#77520a}
+.inventory-import-identity-header{border-color:#d9dde5;background:#f1f3f6;color:#5d6470}
+.inventory-import-identity-missing{border-color:#efc9c9;background:#fff1f1;color:#9d3939}
 [data-theme='dark'] .inventory-import-source-facts,.work-app.theme-dark .inventory-import-source-facts{color:#c7c1d1}
 [data-theme='dark'] .inventory-import-source-facts b,.work-app.theme-dark .inventory-import-source-facts b{color:#f0ebf7}
 [data-theme='dark'] .inventory-import-source-note,.work-app.theme-dark .inventory-import-source-note{color:#aaa4b6}
@@ -1669,4 +1673,8 @@
 [data-theme='dark'] .inventory-review-source-card dl>div,.work-app.theme-dark .inventory-review-source-card dl>div{border-color:#393646;background:#24212e}
 [data-theme='dark'] .inventory-review-source-card dt,.work-app.theme-dark .inventory-review-source-card dt,[data-theme='dark'] .inventory-review-source-card>p,.work-app.theme-dark .inventory-review-source-card>p,[data-theme='dark'] .inventory-review-source-card>small,.work-app.theme-dark .inventory-review-source-card>small{color:#b7b0c4}
 [data-theme='dark'] .inventory-review-source-card dd,.work-app.theme-dark .inventory-review-source-card dd{color:#f1edf7}
+[data-theme='dark'] .inventory-import-identity,.work-app.theme-dark .inventory-import-identity{border-color:#4b3a5d;background:#292236;color:#dcc4f5}
+[data-theme='dark'] .inventory-import-identity-source,.work-app.theme-dark .inventory-import-identity-source{border-color:#66512a;background:#30291b;color:#f3d28a}
+[data-theme='dark'] .inventory-import-identity-header,.work-app.theme-dark .inventory-import-identity-header{border-color:#41414b;background:#292a31;color:#c9c9d2}
+[data-theme='dark'] .inventory-import-identity-missing,.work-app.theme-dark .inventory-import-identity-missing{border-color:#694040;background:#342124;color:#f2b7b7}
 @media(max-width:600px){.inventory-review-source-card dl{grid-template-columns:minmax(0,1fr)}}
