@@ -3,11 +3,12 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { CalendarDays, ClipboardList, MapPin, RefreshCw, Search, Truck } from 'lucide-react';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
+import { LocationEditorModal } from '../../components/workshop/LocationEditorModal';
 import { WorkshopScheduleCalendar } from '../../components/workshop/WorkshopScheduleCalendar';
-import type { InstallationWorkOrder } from '../../lib/geospatialProximity';
-import { hasWorkshopMapLocation } from '../../components/workshop/workshopTypes';
+import type { GeoCoordinates, InstallationWorkOrder } from '../../lib/geospatialProximity';
+import { getWorkshopTodayKey, hasWorkshopMapLocation } from '../../components/workshop/workshopTypes';
 import { useWorkshopSchedule } from '../../components/workshop/useWorkshopSchedule';
-import { dateToKey } from '../../components/ui/Calendar';
+import { supabase } from '../../lib/supabaseClient';
 import type { WorkshopScheduleEvent } from '../../components/workshop/workshopTypes';
 import './workshop-billboard-calendar.css';
 
@@ -20,15 +21,19 @@ function normalizeView(value: string | null): ViewMode {
 }
 
 export function WorkshopBillboardCalendarPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, organizationId } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const schedule = useWorkshopSchedule();
   const [viewMode, setViewMode] = useState<ViewMode>(() => normalizeView(searchParams.get('tab')));
-  const [selectedDate, setSelectedDate] = useState(() => dateToKey(new Date()));
+  const [selectedDate, setSelectedDate] = useState(getWorkshopTodayKey);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [installationOnly, setInstallationOnly] = useState(false);
+  const [locationDraftJob, setLocationDraftJob] = useState<InstallationWorkOrder | null>(null);
+  const [pickingLocationFor, setPickingLocationFor] = useState<string | null>(null);
+  const [pickedCoordinates, setPickedCoordinates] = useState<GeoCoordinates | null>(null);
   const canViewSales = hasPermission('sales', 'view');
+  const canEditLocations = hasPermission('workshop', 'edit');
 
   useEffect(() => {
     setSearchParams((current) => {
@@ -57,7 +62,7 @@ export function WorkshopBillboardCalendarPage() {
   const unmappedJobs = installationJobs.filter((job) => !hasWorkshopMapLocation(job));
   const undatedJobs = visibleJobs.filter((job) => !schedule.events.some((event) => event.jobId === job.id));
   const eventCount = visibleEvents.length;
-  const todayKey = dateToKey(new Date());
+  const todayKey = getWorkshopTodayKey();
   const todayEvents = visibleEvents.filter((event) => event.date === todayKey).length;
 
   const chooseEvent = (event: WorkshopScheduleEvent) => setSelectedJobId(event.jobId);
@@ -66,10 +71,40 @@ export function WorkshopBillboardCalendarPage() {
     setSelectedJobId(jobId);
     setViewMode('map');
   };
+  const openLocationEditor = useCallback((job: InstallationWorkOrder) => {
+    setSelectedJobId(job.id);
+    setPickedCoordinates(null);
+    setPickingLocationFor(null);
+    setLocationDraftJob(job);
+    setViewMode('map');
+  }, []);
+  const requestMapPick = useCallback(() => {
+    if (!locationDraftJob) return;
+    setPickingLocationFor(locationDraftJob.id);
+    setViewMode('map');
+  }, [locationDraftJob]);
+  const receiveMapPick = useCallback((coordinates: GeoCoordinates) => {
+    setPickedCoordinates(coordinates);
+    setPickingLocationFor(null);
+  }, []);
+  const saveLocation = useCallback(async (jobId: string, data: { address: string; lat: number; lng: number; mapsUrl: string }) => {
+    if (!supabase || !organizationId) throw new Error('No hay una sesión de trabajo disponible. Actualiza la página e inténtalo de nuevo.');
+    const { error } = await supabase.rpc('update_workshop_installation_location', {
+      p_job_id: jobId,
+      p_address: data.address,
+      p_maps_url: data.mapsUrl || null,
+      p_latitude: data.lat,
+      p_longitude: data.lng,
+    });
+    if (error) throw error;
+    setLocationDraftJob(null);
+    setPickedCoordinates(null);
+    await schedule.reload();
+  }, [organizationId, schedule.reload]);
 
-  const title = schedule.isWorkshopView ? 'Cartelera del taller' : 'Calendario de mis trabajos';
+  const title = schedule.isWorkshopView ? 'Agenda del taller' : 'Calendario de mis trabajos';
   const description = schedule.isWorkshopView
-    ? 'Consulta fechas de producción, entrega e instalación. El mapa usa únicamente ubicaciones guardadas en los trabajos.'
+    ? 'Consulta fechas de producción, entrega e instalación. El equipo con permiso de taller puede registrar y corregir ubicaciones.'
     : 'Consulta el calendario y las ubicaciones de los trabajos vinculados a tus ventas. El acceso se limita a tus propios trabajos.';
 
   return (
@@ -95,7 +130,7 @@ export function WorkshopBillboardCalendarPage() {
             <b>{schedule.isWorkshopView ? 'Vista según permisos de taller' : 'Vista personal de asesoría'}</b>
             <p>{schedule.isWorkshopView
               ? 'Se muestran trabajos de las sucursales habilitadas para tu perfil.'
-              : 'Solo se cargan trabajos asignados a tu cuenta. Esta vista no permite cambiar etapas ni ubicaciones.'}</p>
+                : 'Solo se cargan trabajos asignados a tu cuenta. Esta vista no permite cambiar etapas ni ubicaciones.'}</p>
           </div>
         </section>
 
@@ -136,6 +171,10 @@ export function WorkshopBillboardCalendarPage() {
                 onSelectDate={setSelectedDate}
                 onSelectEvent={chooseEvent}
                 onShowOnMap={showOnMap}
+                onRequestLocationEdit={canEditLocations ? (jobId) => {
+                  const job = visibleJobs.find((candidate) => candidate.id === jobId);
+                  if (job) openLocationEditor(job);
+                } : undefined}
               />
             )}
 
@@ -147,6 +186,10 @@ export function WorkshopBillboardCalendarPage() {
                       jobs={installationJobs}
                       selectedJobId={selectedJobId}
                       onSelectJob={selectMapJob}
+                      onEditLocation={canEditLocations ? openLocationEditor : undefined}
+                      pickingMode={Boolean(pickingLocationFor)}
+                      onLocationPick={receiveMapPick}
+                      onCancelLocationPick={() => setPickingLocationFor(null)}
                       className="ws-map"
                     />
                   </Suspense>
@@ -159,6 +202,7 @@ export function WorkshopBillboardCalendarPage() {
                         <li key={job.id}>
                           <div><b>{job.code} · {job.title}</b><span>{job.clientName} · {job.address}</span></div>
                           {job.mapsUrl && <a href={job.mapsUrl} target="_blank" rel="noreferrer">Abrir referencia del mapa</a>}
+                          {canEditLocations && <button type="button" className="button button-outline" onClick={() => openLocationEditor(job)}>Registrar ubicación</button>}
                         </li>
                       ))}
                     </ul>
@@ -180,6 +224,15 @@ export function WorkshopBillboardCalendarPage() {
           </>
         )}
       </main>
+      <LocationEditorModal
+        isOpen={Boolean(locationDraftJob)}
+        isPickingLocation={Boolean(pickingLocationFor)}
+        job={locationDraftJob}
+        pickedCoordinates={pickedCoordinates}
+        onClose={() => { setLocationDraftJob(null); setPickingLocationFor(null); setPickedCoordinates(null); }}
+        onRequestMapPick={requestMapPick}
+        onSaveLocation={saveLocation}
+      />
     </AppFrame>
   );
 }

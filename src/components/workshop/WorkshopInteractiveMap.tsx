@@ -49,7 +49,9 @@ export interface WorkshopInteractiveMapProps {
   proximityPairs?: readonly ProximityPair[];
   selectedJobId?: string | null;
   onSelectJob?: (job: InstallationWorkOrder) => void;
+  onEditLocation?: (job: InstallationWorkOrder) => void;
   onLocationPick?: (coords: GeoCoordinates) => void;
+  onCancelLocationPick?: () => void;
   pickingMode?: boolean;
   initialCenter?: GeoCoordinates;
   initialZoom?: number;
@@ -67,6 +69,7 @@ type MapData = {
   pickingMode: boolean;
   onLocationPick?: (coords: GeoCoordinates) => void;
   onSelectJob?: (job: InstallationWorkOrder) => void;
+  onEditLocation?: (job: InstallationWorkOrder) => void;
 };
 
 function appendText(parent: HTMLElement, tag: 'div' | 'span' | 'h3' | 'p', className: string, value: string) {
@@ -77,7 +80,11 @@ function appendText(parent: HTMLElement, tag: 'div' | 'span' | 'h3' | 'p', class
   return element;
 }
 
-function makePopup(job: InstallationWorkOrder, onSelectJob?: (job: InstallationWorkOrder) => void) {
+function makePopup(
+  job: InstallationWorkOrder,
+  onSelectJob?: (job: InstallationWorkOrder) => void,
+  onEditLocation?: (job: InstallationWorkOrder) => void,
+) {
   const content = document.createElement('div');
   content.className = 'vc-map-popup-card';
   const header = document.createElement('div');
@@ -91,15 +98,25 @@ function makePopup(job: InstallationWorkOrder, onSelectJob?: (job: InstallationW
   appendText(content, 'div', 'vc-map-popup-address', job.address || 'Ubicación sin dirección detallada');
   const date = job.executionDate || job.scheduledDate;
   if (date) appendText(content, 'div', 'vc-map-popup-date', `Fecha registrada: ${date}`);
-  if (onSelectJob) {
+  if (onSelectJob || onEditLocation) {
     const actions = document.createElement('div');
     actions.className = 'vc-map-popup-actions';
-    const openButton = document.createElement('button');
-    openButton.type = 'button';
-    openButton.className = 'vc-map-popup-btn is-primary';
-    openButton.textContent = 'Seleccionar trabajo';
-    openButton.addEventListener('click', () => onSelectJob(job));
-    actions.append(openButton);
+    if (onSelectJob) {
+      const openButton = document.createElement('button');
+      openButton.type = 'button';
+      openButton.className = 'vc-map-popup-btn is-primary';
+      openButton.textContent = 'Seleccionar trabajo';
+      openButton.addEventListener('click', () => onSelectJob(job));
+      actions.append(openButton);
+    }
+    if (onEditLocation) {
+      const editButton = document.createElement('button');
+      editButton.type = 'button';
+      editButton.className = 'vc-map-popup-btn';
+      editButton.textContent = 'Editar ubicación';
+      editButton.addEventListener('click', () => onEditLocation(job));
+      actions.append(editButton);
+    }
     content.append(actions);
   }
   return content;
@@ -119,7 +136,9 @@ export function WorkshopInteractiveMap({
   proximityPairs,
   selectedJobId = null,
   onSelectJob,
+  onEditLocation,
   onLocationPick,
+  onCancelLocationPick,
   pickingMode = false,
   initialCenter = MILAGRO_CENTER,
   initialZoom = 14.3,
@@ -147,11 +166,11 @@ export function WorkshopInteractiveMap({
   );
   const dataRef = useRef<MapData>({
     jobs, clusters: derivedClusters, pairs: derivedPairs, showHalos, showLines, is3DMode,
-    pickingMode, onLocationPick, onSelectJob,
+    pickingMode, onLocationPick, onSelectJob, onEditLocation,
   });
   dataRef.current = {
     jobs, clusters: derivedClusters, pairs: derivedPairs, showHalos, showLines, is3DMode,
-    pickingMode, onLocationPick, onSelectJob,
+    pickingMode, onLocationPick, onSelectJob, onEditLocation,
   };
 
   const updateDataSources = () => {
@@ -228,6 +247,12 @@ export function WorkshopInteractiveMap({
   }, []);
 
   useEffect(() => {
+    if (pickingMode) return;
+    pickMarkerRef.current?.remove();
+    pickMarkerRef.current = null;
+  }, [pickingMode]);
+
+  useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const currentJobs = jobs.filter(hasGeoCoordinates);
@@ -261,7 +286,7 @@ export function WorkshopInteractiveMap({
         dataRef.current.onSelectJob?.(job);
       });
       const popup = new MapLibrePopup({ offset: [0, -36], closeButton: true, closeOnClick: false })
-        .setDOMContent(makePopup(job, onSelectJob));
+        .setDOMContent(makePopup(job, onSelectJob, onEditLocation));
       const marker = new MapLibreMarker({ element: markerButton, anchor: 'bottom' })
         .setLngLat([job.lng, job.lat]).setPopup(popup).addTo(map);
       markersRef.current.push(marker);
@@ -271,7 +296,7 @@ export function WorkshopInteractiveMap({
       map.fitBounds(bounds, { padding: 64, maxZoom: 16, duration: 0 });
       hasFitInitialBoundsRef.current = true;
     }
-  }, [jobs, derivedClusters, derivedPairs, selectedJobId, showHalos, showLines, pickingMode, onSelectJob, proximityThresholdMeters]);
+  }, [jobs, derivedClusters, derivedPairs, selectedJobId, showHalos, showLines, pickingMode, onSelectJob, onEditLocation, proximityThresholdMeters]);
 
   useEffect(() => {
     if (!selectedJobId || !mapRef.current) return;
@@ -353,7 +378,7 @@ export function WorkshopInteractiveMap({
           </button>
         </div>
       </div>
-      {pickingMode && onLocationPick && <div className="vc-map-picking-banner"><MapPin size={15} aria-hidden="true" /><span>Haz clic para fijar la ubicación. Usa el pin del mapa para moverla.</span></div>}
+      {pickingMode && onLocationPick && <div className="vc-map-picking-banner"><MapPin size={15} aria-hidden="true" /><span>Haz clic para fijar la ubicación. Usa el pin del mapa para moverla.</span>{onCancelLocationPick && <button className="vc-map-picking-cancel" type="button" onClick={onCancelLocationPick}>Cancelar</button>}</div>}
       <div ref={containerRef} className="vc-workshop-map-canvas" aria-label="Mapa interactivo de instalaciones" />
       {validJobs.length === 0 && (
         <div className="vc-map-empty-overlay" role="status">
