@@ -61,6 +61,14 @@ const inventoryImportSourceIdentity=(candidate:any={},raw:any={},sheet='')=>{
   }
   return {name:'Sin nombre reconocido',origin:'Revisar la hoja fuente',kind:'missing'};
 };
+const inventoryImportMatchFields=(row:any={})=>{
+  const candidate=row.candidate||{};const raw=row.raw_row||row.raw||{};const sheet=row.source_sheet||row.sourceSheet||'';
+  const identity=inventoryImportSourceIdentity(candidate,raw,sheet);
+  return {
+    name:identity.kind==='header'?'':identity.kind==='source'?identity.name:candidate.name||raw['Nombre del elemento']||row.source_reference||row.sourceReference||'',
+    code:candidate.legacyCode||raw.Id||''
+  };
+};
 const inventoryImportSourceFacts=(raw:any={},sheet='')=>[
   ...(normalizeImportLookup(sheet)==='herramientas'&&!(normalizeImportLookup(inventoryImportSourceValue(raw.col_1))==='recursos'&&normalizeImportLookup(inventoryImportSourceValue(raw.col_2))==='cantidad')?[
     {label:'Cantidad declarada',value:inventoryImportSourceValue(raw.col_2)},
@@ -85,6 +93,8 @@ export function InventoryWorkspace() {
   const [matchingImportCount, setMatchingImportCount] = useState(null);
   const [importSheets, setImportSheets] = useState<string[]>([]);
   const [importSheetCounts, setImportSheetCounts] = useState<Record<string,number>>({});
+  const [importTriageRows,setImportTriageRows]=useState<any[]>([]);
+  const [importTriageLoading,setImportTriageLoading]=useState(false);
   const [importPage, setImportPage] = useState(0);
   const [importSheet, setImportSheet] = useState('Todas');
   const [importBatchFilter, setImportBatchFilter] = useState('Todas');
@@ -172,28 +182,47 @@ export function InventoryWorkspace() {
     if(importSheet!=='Todas')importQuery=importQuery.eq('source_sheet',importSheet);
     const searchText=importSearchQuery.replace(/[.,%():"\\]/g,' ').trim();
     if(searchText)importQuery=importQuery.or(`candidate::text.ilike.%${searchText}%,raw_row::text.ilike.%${searchText}%,source_sheet.ilike.%${searchText}%,source_reference.ilike.%${searchText}%`);
-    let sheetQuery=supabase.from('inventory_import_rows').select('source_sheet,batch_id').eq('organization_id',organizationId).eq('mapping_status','pending_review').limit(1000);
-    if(importBatchFilter!=='Todas')sheetQuery=sheetQuery.eq('batch_id',importBatchFilter);
     Promise.all([
       importQuery.order('source_sheet').order('source_row').order('id').range(importPage * 50, importPage * 50 + 49),
-      sheetQuery,
       supabase.from('inventory_import_batches').select('id,source_file,branch_id,row_count,import_status,source_uri').eq('organization_id', organizationId),
       supabase.from('inventory_import_rows').select('id',{count:'exact',head:true}).eq('organization_id',organizationId).eq('mapping_status','pending_review'),
-    ]).then(([rowsResult,sheetsResult,batchesResult,pendingCountResult]) => {
+    ]).then(([rowsResult,batchesResult,pendingCountResult]) => {
       if (!active) return;
-      if (rowsResult.error || sheetsResult.error || batchesResult.error || pendingCountResult.error) { setReviewContinuation(null); flash(`No se pudo leer la cola de importación: ${(rowsResult.error || sheetsResult.error || batchesResult.error || pendingCountResult.error).message}`); return; }
+      if (rowsResult.error || batchesResult.error || pendingCountResult.error) { setReviewContinuation(null); flash(`No se pudo leer la cola de importación: ${(rowsResult.error || batchesResult.error || pendingCountResult.error).message}`); return; }
       setImportRows(rowsResult.data || []);
       setMatchingImportCount(rowsResult.count || 0);
       setPendingImportCount(pendingCountResult.count || 0);
-      const sheetCounts=new Map<string,number>();
-      for(const row of sheetsResult.data||[])if(row.source_sheet)sheetCounts.set(row.source_sheet,(sheetCounts.get(row.source_sheet)||0)+1);
-      setImportSheetCounts(Object.fromEntries(sheetCounts));
-      setImportSheets([...sheetCounts.keys()].sort((a,b)=>(sheetCounts.get(b)||0)-(sheetCounts.get(a)||0)||a.localeCompare(b,'es')));
       setImportBatches(Object.fromEntries((batchesResult.data || []).map((batch) => [batch.id, batch])));
       setImportDataRevision(importReloadKey);
     });
     return () => { active = false; };
   }, [organizationId, importPage, importBatchFilter, importSheet, importSearchQuery, importReloadKey]);
+  React.useEffect(()=>{
+    if(!supabase||!organizationId){setImportTriageLoading(false);return;}
+    let active=true;
+    setImportTriageLoading(true);
+    const load=async()=>{
+      const collected:any[]=[];let offset=0;
+      while(active){
+        let query=supabase.from('inventory_import_rows').select('id,batch_id,source_sheet,source_reference,candidate,raw_row').eq('organization_id',organizationId).eq('mapping_status','pending_review');
+        if(importBatchFilter!=='Todas')query=query.eq('batch_id',importBatchFilter);
+        const {data,error}=await query.order('id').range(offset,offset+999);
+        if(error)throw error;
+        const page=data||[];collected.push(...page);
+        if(page.length<1000)break;
+        offset+=1000;
+      }
+      if(!active)return;
+      const counts=new Map<string,number>();
+      for(const row of collected)if(row.source_sheet)counts.set(row.source_sheet,(counts.get(row.source_sheet)||0)+1);
+      setImportTriageRows(collected);
+      setImportSheetCounts(Object.fromEntries(counts));
+      setImportSheets([...counts.keys()].sort((a,b)=>(counts.get(b)||0)-(counts.get(a)||0)||a.localeCompare(b,'es')));
+      setImportTriageLoading(false);
+    };
+    void load().catch(error=>{if(active){setImportTriageLoading(false);flash(`No se pudo calcular el cotejo sugerido: ${error.message||'error de consulta'}`);}});
+    return()=>{active=false;};
+  },[organizationId,importBatchFilter,importReloadKey,flash]);
   React.useEffect(() => {
     if(!reviewContinuation||importDataRevision!==reviewContinuation.reloadKey)return;
     const row=importRows[reviewContinuation.targetIndex];
@@ -276,16 +305,46 @@ export function InventoryWorkspace() {
   const specificationOptions={finish:inventorySpecificationSuggestions(items,'finish'),color:inventorySpecificationSuggestions(items,'color'),purchase_unit:inventorySpecificationSuggestions(items,'purchase_unit'),material:inventorySpecificationSuggestions(items,'material')};
   const importRowsOnPage=importRows;
   const importPages=Math.max(1,Math.ceil(Number(matchingImportCount||0)/50));
-  const reviewVariantOptions=[...new Map<string, any>(items.filter(item=>!item.archived).map(item=>[item.variantId,item])).values()];
+  const reviewVariantOptions=useMemo(()=>[...new Map<string, any>(items.filter(item=>!item.archived&&item.variantId).map(item=>[item.variantId,item])).values()],[items]);
+  const importTriageMetricsBySheet=useMemo(()=>{
+    const metrics:Record<string,{pending:number;codeExact:number;nameUnique:number;ambiguous:number;noExact:number;noScopeCatalog:number;headers:number}>={};
+    const variants=reviewVariantOptions;
+    for(const row of importTriageRows){
+      const sheet=String(row.source_sheet||'Sin hoja');
+      const result=metrics[sheet]||(metrics[sheet]={pending:0,codeExact:0,nameUnique:0,ambiguous:0,noExact:0,noScopeCatalog:0,headers:0});
+      result.pending++;
+      if(inventoryImportSourceIdentity(row.candidate||{},row.raw_row||{},sheet).kind==='header'){result.headers++;continue;}
+      const batch=importBatches[row.batch_id];
+      const branchName=(data.branches||[]).find((value:any)=>value.id===batch?.branch_id)?.name||'';
+      const scope=/giga/i.test(`${branchName} ${batch?.source_file||''}`)?'giga':/visual/i.test(`${branchName} ${batch?.source_file||''}`)?'visual':'';
+      const scoped=scope?variants.filter(item=>brandOf(item)===scope):variants;
+      if(scope&&!scoped.length){result.noScopeCatalog++;continue;}
+      const {name,code}=inventoryImportMatchFields(row);
+      const codeKey=normalizeImportLookup(code);
+      const nameKey=normalizeImportLookup(name);
+      const codeMatches=codeKey?scoped.filter(item=>[item.sku,item.variantSku].some(value=>normalizeImportLookup(value)===codeKey)):[];
+      if(codeMatches.length===1){result.codeExact++;continue;}
+      if(codeMatches.length>1){result.ambiguous++;continue;}
+      const nameMatches=nameKey?scoped.filter(item=>normalizeImportLookup(item.name)===nameKey):[];
+      if(nameMatches.length===1)result.nameUnique++;
+      else if(nameMatches.length>1)result.ambiguous++;
+      else result.noExact++;
+    }
+    return metrics;
+  },[importTriageRows,importBatches,reviewVariantOptions,data.branches,items]);
+  const selectedImportTriage=useMemo(()=>{
+    if(importSheet!=='Todas')return importTriageMetricsBySheet[importSheet]||{pending:0,codeExact:0,nameUnique:0,ambiguous:0,noExact:0,noScopeCatalog:0,headers:0};
+    return Object.values(importTriageMetricsBySheet).reduce((sum,value)=>({pending:sum.pending+value.pending,codeExact:sum.codeExact+value.codeExact,nameUnique:sum.nameUnique+value.nameUnique,ambiguous:sum.ambiguous+value.ambiguous,noExact:sum.noExact+value.noExact,noScopeCatalog:sum.noScopeCatalog+value.noScopeCatalog,headers:sum.headers+value.headers}),{pending:0,codeExact:0,nameUnique:0,ambiguous:0,noExact:0,noScopeCatalog:0,headers:0});
+  },[importSheet,importTriageMetricsBySheet]);
   const reviewImportBatch=reviewEditor?importBatches[reviewEditor.batchId]:null;
   const reviewImportBranchName=(data.branches||[]).find((row:any)=>row.id===reviewImportBatch?.branch_id)?.name||'';
   const reviewSourceScope=/giga/i.test(`${reviewImportBranchName} ${reviewImportBatch?.source_file||''}`)?'giga':/visual/i.test(`${reviewImportBranchName} ${reviewImportBatch?.source_file||''}`)?'visual':'';
   const reviewScopedVariants=reviewSourceScope?reviewVariantOptions.filter(item=>brandOf(item)===reviewSourceScope):reviewVariantOptions;
   const reviewVariantSearchKey=normalizeImportLookup(reviewVariantSearch);
   const reviewVisibleVariants=reviewScopedVariants.filter(item=>!reviewVariantSearchKey||normalizeImportLookup(`${item.name} ${item.variant} ${item.sku} ${item.variantSku} ${item.area}`).includes(reviewVariantSearchKey));
-  const reviewSourceIdentity=inventoryImportSourceIdentity(reviewEditor?.candidate,reviewEditor?.raw,reviewEditor?.sourceSheet);
-  const reviewSourceName=normalizeImportLookup(reviewSourceIdentity.kind==='header'?'':reviewSourceIdentity.kind==='source'?reviewSourceIdentity.name:reviewEditor?.candidate?.name||reviewEditor?.raw?.['Nombre del elemento']||reviewEditor?.sourceReference);
-  const reviewSourceCode=normalizeImportLookup(reviewEditor?.candidate?.legacyCode||reviewEditor?.raw?.Id);
+  const reviewMatchFields=inventoryImportMatchFields(reviewEditor||{});
+  const reviewSourceName=normalizeImportLookup(reviewMatchFields.name);
+  const reviewSourceCode=normalizeImportLookup(reviewMatchFields.code);
   const reviewSuggestedVariants=reviewScopedVariants.filter(item=>(reviewSourceCode&&[item.sku,item.variantSku].some(value=>normalizeImportLookup(value)===reviewSourceCode))||(reviewSourceName&&normalizeImportLookup(item.name)===reviewSourceName)).slice(0,4);
   const daysSince=(value)=>value?Math.max(0,Math.floor((Date.now()-new Date(value).getTime())/86400000)):null;
   const assignInventoryBranch=async(item,branchName)=>{if(!branchName||!canManageInventory||!supabase||!organizationId||!item.variantId)return;try{const {data:branchRow,error:branchError}=await supabase.from('branches').select('id').eq('organization_id',organizationId).eq('name',branchName).single();if(branchError)throw branchError;const nextAttributes={...(item.variantAttributes||{}),initial_branch_id:branchRow.id};const {data:updatedVariant,error}=await supabase.from('inventory_variants').update({attributes:nextAttributes}).eq('id',item.variantId).eq('organization_id',organizationId).select('id').single();if(error)throw error;if(!updatedVariant)throw new Error('La variante no existe o tu perfil no tiene acceso para actualizarla.');setMetadataEdit(current=>current?.variantId===item.variantId?{...current,variantAttributes:nextAttributes,sourceItem:{...current.sourceItem,branch:branchName,branchId:branchRow.id,variantAttributes:nextAttributes}}:current);await refreshRemote();flash(`${item.name} · ${item.variant||'variante'} asignado a ${branchName}. Ya puedes iniciar el conteo físico.`);}catch(error){flash(`No se pudo asignar la sucursal: ${error.message}`);}};
@@ -1140,7 +1199,6 @@ export function InventoryWorkspace() {
 
     </section>}
 
-    {activeSection==='imports'&&pendingImportCount>0&&<section id="inventory-imports" className="panel inventory-import-review"><div className="panel-heading"><div><span className="eyebrow">IMPORTACIÓN CON PROCEDENCIA</span><h3>Conciliar inventario fuente</h3><p>Revisa los artículos importados, enlázalos con una variante real o exclúyelos con motivo. Las filas se limitan a la marca de la sucursal de origen; nunca convierten cantidades fuente en saldo.</p></div><span className="muted-count">{pendingImportCount} pendientes totales</span></div><div className="inventory-import-toolbar"><label>Archivo de origen<select value={importBatchFilter} onChange={event=>{setImportBatchFilter(event.target.value);setImportSheet("Todas");setImportPage(0);}}><option value="Todas">Todos los archivos</option>{Object.values(importBatches).map((batch:any)=><option key={batch.id} value={batch.id}>{batch.source_file}</option>)}</select></label><label className="search-box"><Search size={16} aria-hidden="true"/><input aria-label="Buscar en las filas importadas" value={importSearch} onChange={event=>{setImportSearch(event.target.value);setImportPage(0);}} placeholder="Buscar por nombre, código, stock, estado o nota fuente"/></label><span role="status">{matchingImportCount} resultados · página {Math.min(importPage+1,importPages)} de {importPages}</span></div><nav className="inventory-import-sheet-breakdown" aria-label="Filtrar pendientes por hoja de origen"><span>Pendientes por hoja</span><button type="button" aria-pressed={importSheet==="Todas"} onClick={()=>{setImportSheet("Todas");setImportPage(0);}}>Todas las hojas <b>{Object.values(importSheetCounts).reduce((sum,count)=>sum+count,0)}</b></button>{importSheets.map(sheet=><button type="button" key={sheet} aria-pressed={importSheet===sheet} onClick={()=>{setImportSheet(sheet);setImportPage(0);}}>{sheet}<b>{importSheetCounts[sheet]||0}</b></button>)}</nav><div className="table-wrap inventory-import-table-wrap"><table><thead><tr><th>Archivo fuente</th><th>Hoja / fila</th><th>ID anterior</th><th>Artículo fuente</th><th>Datos fuente</th><th>Revisión</th></tr></thead><tbody>{importRowsOnPage.map(row=>{const candidate=row.candidate||{};const raw=row.raw_row||{};const identity=inventoryImportSourceIdentity(candidate,raw,row.source_sheet);const sourceFacts=inventoryImportSourceFacts(raw,row.source_sheet);return <tr key={row.id} className="inventory-import-row"><td data-label="Archivo fuente">{importBatches[row.batch_id]?.source_file||'Inventario importado'}</td><td data-label="Hoja / fila">{row.source_sheet}<small>Fila {row.source_row}</small></td><td data-label="ID anterior">{candidate.legacyCode||raw.Id||'—'}</td><td data-label="Artículo fuente"><b>{identity.name}</b><small className={`inventory-import-identity inventory-import-identity-${identity.kind}`}>{identity.origin}</small><small>{candidate.category||candidate.areaCandidate||raw.Tipo||''}</small></td><td data-label="Datos fuente"><div className="inventory-import-source-facts">{sourceFacts.length?sourceFacts.slice(0,4).map(fact=><span key={fact.label}><b>{fact.label}:</b> {fact.value}</span>):<span>Sin cifras reconocidas en esta fila</span>}</div><small className="inventory-import-source-note">Dato de origen · no actualiza existencias</small>{sourceFacts.length>4&&<small className="inventory-import-source-note">+{sourceFacts.length-4} datos en la ficha</small>}</td><td data-label="Revisión"><button className="button button-outline" type="button" disabled={!canReviewImports} onClick={()=>openImportReview(row)}>Revisar fila</button></td></tr>;})}{!importRowsOnPage.length&&<tr><td colSpan={6}>{matchingImportCount===0?'No hay coincidencias con estos filtros. Cambia la hoja o limpia la búsqueda.':'No hay filas en esta página; vuelve a la primera o ajusta los filtros.'}</td></tr>}</tbody></table><div className="inventory-import-pagination"><button className="button button-outline" type="button" disabled={importPage===0} onClick={()=>setImportPage(page=>Math.max(0,page-1))}>Anterior</button><span>Mostrando {importRows.length} de {matchingImportCount} resultados{importSheet!=='Todas'?` en ${importSheet}`:''} · {pendingImportCount} pendientes en total.</span><button className="button button-outline" type="button" disabled={importPage+1>=importPages} onClick={()=>setImportPage(page=>Math.min(importPages-1,page+1))}>Siguiente</button></div></div></section>}
     {activeSection==='counts'&&canManageInventory&&<section id="inventory-counts" className="panel inventory-guided-count"><div className="panel-heading"><div><span className="eyebrow">CONCILIACIÓN FÍSICA</span><h3>Conteos físicos</h3><p>{pendingPhysicalCount} artículos siguen pendientes de su primer conteo. Las diferencias o movimientos posteriores se revisan antes de actualizar existencias; las coincidencias sin movimientos se guardan directamente.</p></div>{!countSession&&<button type="button" className="button button-dark" onClick={startGuidedCount} disabled={!countQueue.length||branch==='Todas'||countBusy}><ClipboardCheck size={16}/> {pendingPhysicalCount?'Iniciar conteo':'Nuevo conteo'} ({countQueue.length})</button>}</div>{countSession&&countItem&&<form className="guided-count-card" onSubmit={saveGuidedCount}><div className="guided-count-progress"><div className="guided-count-progress-meta"><b>Avance del conteo</b><small>{countCompleted} de {countSession.ids.length} revisados · {Math.max(0,countSession.ids.length-countCompleted)} pendientes</small></div><div className="guided-count-progress-bar" role="progressbar" aria-label="Avance del conteo físico" aria-valuemin={0} aria-valuemax={countSession.ids.length} aria-valuenow={countCompleted} aria-valuetext={`${countCompleted} de ${countSession.ids.length} revisados`}><i style={{width:`${countProgress}%`}}/></div><button type="button" className="text-link" onClick={cancelGuidedCount} disabled={countBusy}>Cerrar recorrido</button></div><div className="guided-count-product">{countItem.referenceImageUrl?<img src={countItem.referenceImageUrl} alt={`Referencia de ${countItem.name}`}/>:<span className="guided-count-placeholder"><Boxes size={22}/></span>}<div><h4>{countItem.name}{countItem.variant?` · ${countItem.variant}`:''}</h4><p>{countItem.sku||countItem.variantSku||countItem.id} · {countItem.area} · {countItem.branch}</p><small>{countItem.location||'Ubicación sin registrar'} · {countItem.unit}</small><small>{countSession.expected[countSession.index]===null?'Sin saldo registrado al abrir; este es el primer conteo para la ubicación.':`Saldo registrado al abrir: ${countSession.expected[countSession.index]} ${countItem.unit}`}</small></div><span className="inventory-status pending">Conteo físico</span></div><p className="guided-count-actor" role="status">El conteo se registrará automáticamente a nombre de <strong>{countActorLabel}</strong>.</p><aside className="guided-count-movement-context" aria-labelledby="guided-count-movement-title"><div className="guided-count-movement-heading"><div><span className="eyebrow">TRAZABILIDAD DE ESTA UBICACIÓN</span><h4 id="guided-count-movement-title">Movimientos desde que se abrió el conteo</h4><p>{countItem.branch} · {countItem.location||'MAIN'} · {countMovementContext.openedAt?new Intl.DateTimeFormat('es-EC',{dateStyle:'medium',timeStyle:'short'}).format(new Date(countMovementContext.openedAt)):countMovementContext.status==='loading'?'Consultando fecha de apertura…':'Sesión de conteo'}</p></div><button type="button" className="button button-outline" onClick={()=>setCountMovementRefresh(value=>value+1)} disabled={countMovementContext.status==='loading'}>Actualizar</button></div>{countMovementContext.status==='loading'?<p className="guided-count-movement-state" role="status">Buscando cambios de stock posteriores a la apertura…</p>:countMovementContext.status==='error'?<p className="guided-count-movement-state is-error" role="status">No se pudo consultar la bitácora. El conteo sigue disponible. {countMovementContext.error}</p>:countMovementContext.total===0?<p className="guided-count-movement-state">No hay movimientos registrados para este artículo desde la apertura.</p>:<><p className="guided-count-movement-summary">{countMovementContext.total} movimiento{countMovementContext.total===1?'':'s'} registrado{countMovementContext.total===1?'':'s'} · mostrando los más recientes</p><ul className="guided-count-movement-list">{countMovementContext.events.map((event:any)=><li key={event.id}><span className="guided-count-movement-kind">{countMovementLabels[event.movement_type]||event.movement_type}</span><b className={Number(event.quantity_delta)>0?'is-in':'is-out'}>{Number(event.quantity_delta)>0?'+':''}{Number(event.quantity_delta).toLocaleString('es-EC',{maximumFractionDigits:3})} {countItem.unit}</b><small>{event.reason||event.reference_type||'Movimiento de inventario'} · {new Intl.DateTimeFormat('es-EC',{dateStyle:'short',timeStyle:'short'}).format(new Date(event.created_at))}</small></li>)}</ul><p className="guided-count-movement-note">El saldo de apertura no descuenta estos movimientos automáticamente. Considera cuándo ocurrió cada uno respecto al conteo físico.</p></>}</aside><div className="guided-count-fields"><label>Cantidad observada<input autoFocus required type="number" min="0" step="any" value={countSession.quantity} onChange={event=>setCountSession({...countSession,quantity:event.target.value})} placeholder="Incluye 0 si está agotado"/></label><label>{countDelta!==null&&countDelta!==0?'Motivo de la diferencia (obligatorio)':'Nota de conteo (opcional)'}<input value={countSession.reason} onChange={event=>setCountSession({...countSession,reason:event.target.value})} required={countDelta!==null&&countDelta!==0} minLength={countDelta!==null&&countDelta!==0?8:undefined} maxLength={1000} placeholder={countDelta!==null&&countDelta!==0?'Ej. consumo durante el conteo, material dañado, error de ubicación…':'Puedes añadir un detalle del conteo'}/></label>{countDelta!==null&&<p className={'guided-count-variance '+(countDelta===0?'is-match':countDelta<0?'is-short':'is-over')} role="status" aria-live="polite">{countDelta===0?'Coincide con el saldo al abrir':(countDelta<0?'Faltan ':'Sobran ')+Math.abs(countDelta).toLocaleString('es-EC',{maximumFractionDigits:3})+' '+(countItem.unit||'')+' frente al saldo al abrir'+(countDelta!==0?'. Explica la diferencia antes de guardar.':'')}</p>}<button type="submit" className="button button-dark" disabled={countBusy}>{countBusy?'Guardando…':(countDelta===null||countDelta!==0||countMovementContext.total>0||countMovementContext.status==='error')?'Revisar y aplicar':countSession.index+1===countSession.ids.length?'Guardar y terminar':'Guardar y siguiente'}</button><button type="button" className="button button-outline" onClick={advanceGuidedCount} disabled={countBusy}>Omitir por ahora</button></div></form>}</section>}
     {activeSection==='stock'&&low.length>0&&<div className="inventory-alert"><CircleAlert size={17}/><div><b>{low.length} saldos requieren atención</b><small>{low.slice(0,4).map(i=>`${i.name}${i.variant?` · ${i.variant}`:''}`).join(' · ')}{low.length>4?' · y más':''}</small></div></div>}
     {activeSection==='catalog'&&<Dialog className="inventory-create-article-dialog" open={showForm} onOpenChange={(open)=>open?setShowForm(true):closeNewItemForm()} title="Nuevo artículo" description="Se asigna el siguiente ID del área. El saldo queda pendiente hasta registrar el conteo físico." footer={<><button type="button" className="button button-outline" onClick={closeNewItemForm}>Cancelar</button><button className="button button-dark" type="submit" form="inventory-create-form" disabled={savingItem}>{savingItem?'Guardando…':'Guardar artículo'}</button></>}><form id="inventory-create-form" className="inventory-form inventory-create-form" onSubmit={saveItem}>
