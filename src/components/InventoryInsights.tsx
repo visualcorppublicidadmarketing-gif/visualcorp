@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Activity, AlertTriangle, Eye, ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Building2, ChartNoAxesCombined, CheckCircle2, ChevronLeft, ChevronRight, Clock, Copy, DollarSign, Image as ImageIcon, LayoutGrid, List, Lock, MapPin, Package, Search, SlidersHorizontal, Store, Trash2, TrendingUp, X } from 'lucide-react';
 import referenceLibrary from '../data/inventory-reference-index.json';
 import { inventoryImageRecordForSku, inventoryRollMaterialImageRecord } from '../data/inventoryProductImages';
@@ -63,7 +63,7 @@ const productImage = (item) => {
   return { path: primaryPath, label, gallery };
 };
 
-export function InventoryInsights({ id, hidden, items, optionSourceItems = items, inventoryGroups = [], canSeeCosts, canEditCosts = false, canEdit, canReserve, canMove, canRequestTransfer, onTransfer, onEdit, onReserve, onMovement, onCost, onArchive, onArchiveMany, onDuplicate, formatDate, formatMoney, metadataEdit, setMetadataEdit, reservationEdit, setReservationEdit, onSaveMetadata, onSaveReservation, metadataSaveBusy = false, branchOptions = [], onAssignBranch, onAssignBranchMany, onInspect }) {
+export function InventoryInsights({ id, hidden, items, optionSourceItems = items, inventoryGroups = [], canSeeCosts, canEditCosts = false, canEdit, canReserve, canMove, canRequestTransfer, onTransfer, onEdit, onReserve, onMovement, onCost, onArchive, onArchiveMany, onDuplicate, formatDate, formatMoney, metadataEdit, setMetadataEdit, reservationEdit, setReservationEdit, onSaveMetadata, onSaveReservation, metadataSaveBusy = false, branchOptions = [], onAssignBranch, onAssignBranchMany, onInspect, assignmentRequest = null }) {
   const confirm = useConfirm();
   const [term, setTerm] = useState('');
   const [area, setArea] = useState('Todas');
@@ -79,6 +79,18 @@ export function InventoryInsights({ id, hidden, items, optionSourceItems = items
   const [bulkBranch, setBulkBranch] = useState('');
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkFeedback, setBulkFeedback] = useState('');
+  useEffect(() => {
+    if (!assignmentRequest) return;
+    const unassignedIds = assignmentRequest.remoteItemIds || [];
+    setTerm('');
+    setArea('Todas');
+    setBranch('Sucursal por asignar');
+    setType('Todos');
+    setStatus('Todos');
+    setTag('Todos');
+    setSelectedIds(new Set(unassignedIds));
+    setBulkFeedback(unassignedIds.length ? `Seleccionados ${unassignedIds.length} artículos sin sucursal. Elige la sucursal para continuar.` : 'No quedan artículos sin sucursal en esta colección.');
+  }, [assignmentRequest]);
   const trackProductSpotlight = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'mouse' || !(event.target instanceof Element)) return;
     const card = event.target.closest<HTMLElement>('.inventory-product-card');
