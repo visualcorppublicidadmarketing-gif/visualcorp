@@ -1,466 +1,369 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Map as MapLibreMap,
-  Marker as MapLibreMarker,
-  Popup as MapLibrePopup,
-  NavigationControl,
   AttributionControl,
   LngLatBounds,
+  Map as MapLibreMap,
+  Marker as MapLibreMarker,
+  NavigationControl,
+  Popup as MapLibrePopup,
   setWorkerUrl,
   type GeoJSONSource,
 } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+import { Box, Layers, MapPin, Maximize2, Minimize2, Navigation, Sparkles, Truck } from 'lucide-react';
 import {
-  Box,
-  Compass,
-  Layers,
-  MapPin,
-  Maximize2,
-  Minimize2,
-  Navigation,
-  RotateCcw,
-  Sparkles,
-  Truck,
-} from 'lucide-react';
-import {
+  type GeoCoordinates,
   type InstallationWorkOrder,
   type ProximityCluster,
   type ProximityPair,
   MILAGRO_CENTER,
+  clusterJobsByProximity,
+  detectProximityPairs,
   formatDistance,
+  hasGeoCoordinates,
 } from '../../lib/geospatialProximity';
 import {
-  buildHalosFeatureCollection,
   buildConnectionLinesFeatureCollection,
-  registerProximityLayers,
+  buildHalosFeatureCollection,
   enable3DBuildings,
+  registerProximityLayers,
   toggle3DCameraView,
 } from '../../lib/maplibreGeospatial';
 import './workshop-map.css';
 
-// Registrar el worker de MapLibre empaquetado por Vite a nivel de módulo
 setWorkerUrl(workerUrl);
 
 export type OpenFreeMapStyleKey = 'liberty' | 'positron' | 'bright' | 'dark';
 
 export const OPENFREEMAP_STYLES: Record<OpenFreeMapStyleKey, { url: string; label: string }> = {
-  liberty: {
-    url: 'https://tiles.openfreemap.org/styles/liberty',
-    label: 'Liberty (Detallado)',
-  },
-  positron: {
-    url: 'https://tiles.openfreemap.org/styles/positron',
-    label: 'Positron (Dashboard)',
-  },
-  bright: {
-    url: 'https://tiles.openfreemap.org/styles/bright',
-    label: 'Bright (Contraste)',
-  },
-  dark: {
-    url: 'https://tiles.openfreemap.org/styles/dark',
-    label: 'Dark (Noche)',
-  },
+  liberty: { url: 'https://tiles.openfreemap.org/styles/liberty', label: 'Liberty' },
+  positron: { url: 'https://tiles.openfreemap.org/styles/positron', label: 'Positron' },
+  bright: { url: 'https://tiles.openfreemap.org/styles/bright', label: 'Bright' },
+  dark: { url: 'https://tiles.openfreemap.org/styles/dark', label: 'Oscuro' },
 };
 
-interface WorkshopInteractiveMapProps {
-  jobs: InstallationWorkOrder[];
-  clusters: ProximityCluster[];
-  proximityPairs: ProximityPair[];
+export interface WorkshopInteractiveMapProps {
+  jobs: readonly InstallationWorkOrder[];
+  clusters?: readonly ProximityCluster[];
+  proximityPairs?: readonly ProximityPair[];
   selectedJobId?: string | null;
   onSelectJob?: (job: InstallationWorkOrder) => void;
-  onLocationPick?: (coords: { lat: number; lng: number }) => void;
+  onLocationPick?: (coords: GeoCoordinates) => void;
   pickingMode?: boolean;
+  initialCenter?: GeoCoordinates;
+  initialZoom?: number;
+  proximityThresholdMeters?: number;
   className?: string;
 }
 
-export const WorkshopInteractiveMap: React.FC<WorkshopInteractiveMapProps> = ({
+type MapData = {
+  jobs: readonly InstallationWorkOrder[];
+  clusters: readonly ProximityCluster[];
+  pairs: readonly ProximityPair[];
+  showHalos: boolean;
+  showLines: boolean;
+  is3DMode: boolean;
+  pickingMode: boolean;
+  onLocationPick?: (coords: GeoCoordinates) => void;
+  onSelectJob?: (job: InstallationWorkOrder) => void;
+};
+
+function appendText(parent: HTMLElement, tag: 'div' | 'span' | 'h3' | 'p', className: string, value: string) {
+  const element = document.createElement(tag);
+  element.className = className;
+  element.textContent = value;
+  parent.append(element);
+  return element;
+}
+
+function makePopup(job: InstallationWorkOrder, onSelectJob?: (job: InstallationWorkOrder) => void) {
+  const content = document.createElement('div');
+  content.className = 'vc-map-popup-card';
+  const header = document.createElement('div');
+  header.className = 'vc-map-popup-header';
+  appendText(header, 'span', 'vc-map-popup-code', job.code);
+  const state = appendText(header, 'span', 'vc-map-popup-tag', job.status.replaceAll('_', ' '));
+  state.dataset.status = job.status;
+  content.append(header);
+  appendText(content, 'h3', 'vc-map-popup-title', job.title);
+  appendText(content, 'p', 'vc-map-popup-client', job.clientName || 'Cliente pendiente');
+  appendText(content, 'div', 'vc-map-popup-address', job.address || 'Ubicación sin dirección detallada');
+  const date = job.executionDate || job.scheduledDate;
+  if (date) appendText(content, 'div', 'vc-map-popup-date', `Fecha registrada: ${date}`);
+  if (onSelectJob) {
+    const actions = document.createElement('div');
+    actions.className = 'vc-map-popup-actions';
+    const openButton = document.createElement('button');
+    openButton.type = 'button';
+    openButton.className = 'vc-map-popup-btn is-primary';
+    openButton.textContent = 'Seleccionar trabajo';
+    openButton.addEventListener('click', () => onSelectJob(job));
+    actions.append(openButton);
+    content.append(actions);
+  }
+  return content;
+}
+
+function markerStateClass(job: InstallationWorkOrder, selected: boolean, clustered: boolean) {
+  if (selected) return 'is-selected';
+  if (job.priority === 'urgente') return 'is-urgent';
+  if (clustered) return 'is-cluster';
+  if (job.status === 'completed') return 'is-completed';
+  return '';
+}
+
+export function WorkshopInteractiveMap({
   jobs,
   clusters,
   proximityPairs,
-  selectedJobId,
+  selectedJobId = null,
   onSelectJob,
   onLocationPick,
   pickingMode = false,
+  initialCenter = MILAGRO_CENTER,
+  initialZoom = 14.3,
+  proximityThresholdMeters = 500,
   className = '',
-}) => {
+}: WorkshopInteractiveMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<MapLibreMarker[]>([]);
   const pickMarkerRef = useRef<MapLibreMarker | null>(null);
-
+  const hasFitInitialBoundsRef = useRef(false);
   const [activeStyle, setActiveStyle] = useState<OpenFreeMapStyleKey>('positron');
   const [is3DMode, setIs3DMode] = useState(false);
   const [showHalos, setShowHalos] = useState(true);
   const [showLines, setShowLines] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // 1. Inicialización de MapLibre GL JS con OpenFreeMap (Compatible con React 19)
-  useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+  const derivedPairs = useMemo(
+    () => proximityPairs || detectProximityPairs([...jobs], proximityThresholdMeters),
+    [jobs, proximityPairs, proximityThresholdMeters],
+  );
+  const derivedClusters = useMemo(
+    () => clusters || clusterJobsByProximity([...jobs], proximityThresholdMeters),
+    [jobs, clusters, proximityThresholdMeters],
+  );
+  const dataRef = useRef<MapData>({
+    jobs, clusters: derivedClusters, pairs: derivedPairs, showHalos, showLines, is3DMode,
+    pickingMode, onLocationPick, onSelectJob,
+  });
+  dataRef.current = {
+    jobs, clusters: derivedClusters, pairs: derivedPairs, showHalos, showLines, is3DMode,
+    pickingMode, onLocationPick, onSelectJob,
+  };
 
+  const updateDataSources = () => {
+    const map = mapRef.current;
+    if (!map?.isStyleLoaded()) return;
+    const current = dataRef.current;
+    const halos = map.getSource('proximity-halos') as GeoJSONSource | undefined;
+    halos?.setData(current.showHalos
+      ? buildHalosFeatureCollection([...current.jobs].filter(hasGeoCoordinates), proximityThresholdMeters)
+      : { type: 'FeatureCollection', features: [] });
+    const lines = map.getSource('proximity-lines') as GeoJSONSource | undefined;
+    lines?.setData(current.showLines
+      ? buildConnectionLinesFeatureCollection([...current.pairs])
+      : { type: 'FeatureCollection', features: [] });
+  };
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || mapRef.current) return undefined;
     const map = new MapLibreMap({
-      container: containerRef.current,
+      container,
       style: OPENFREEMAP_STYLES[activeStyle].url,
-      center: [MILAGRO_CENTER.lng, MILAGRO_CENTER.lat], // MapLibre usa [lng, lat]
-      zoom: 14.3,
+      center: [initialCenter.lng, initialCenter.lat],
+      zoom: initialZoom,
       pitch: 0,
       bearing: 0,
       attributionControl: false,
     });
-
-    // Control de navegación interactiva (zoom, brújula y pitch)
     map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
     map.addControl(new AttributionControl({ compact: true }), 'bottom-right');
-
     map.on('load', () => {
       registerProximityLayers(map);
       updateDataSources();
+      requestAnimationFrame(() => map.resize());
     });
-
-    // Modo Click-to-Pin para georreferenciación
-    map.on('click', (e) => {
-      if (!pickingMode || !onLocationPick) return;
-      const { lng, lat } = e.lngLat;
-      onLocationPick({ lat, lng });
-
+    map.on('style.load', () => {
+      registerProximityLayers(map);
+      updateDataSources();
+      if (dataRef.current.is3DMode) enable3DBuildings(map);
+    });
+    map.on('click', (event) => {
+      const current = dataRef.current;
+      if (!current.pickingMode || !current.onLocationPick) return;
+      const point = { lat: event.lngLat.lat, lng: event.lngLat.lng };
+      current.onLocationPick(point);
       if (pickMarkerRef.current) {
-        pickMarkerRef.current.setLngLat([lng, lat]);
-      } else {
-        const el = document.createElement('div');
-        el.className = 'vc-pin-wrapper';
-        el.innerHTML = `
-          <div class="vc-pin-head is-selected" style="background:#0284c7; border-color:#bae6fd;">
-            🎯
-          </div>
-          <div class="vc-pin-tip" style="border-top-color:#0284c7;"></div>
-        `;
-        pickMarkerRef.current = new MapLibreMarker({ element: el, draggable: true })
-          .setLngLat([lng, lat])
-          .addTo(map);
-
-        pickMarkerRef.current.on('dragend', () => {
-          const pos = pickMarkerRef.current?.getLngLat();
-          if (pos) onLocationPick({ lat: pos.lat, lng: pos.lng });
-        });
+        pickMarkerRef.current.setLngLat([point.lng, point.lat]);
+        return;
       }
+      const pin = document.createElement('span');
+      pin.className = 'vc-map-pick-pin';
+      pin.setAttribute('aria-hidden', 'true');
+      pin.textContent = '•';
+      pickMarkerRef.current = new MapLibreMarker({ element: pin, draggable: true })
+        .setLngLat([point.lng, point.lat]).addTo(map);
+      pickMarkerRef.current.on('dragend', () => {
+        const currentPosition = pickMarkerRef.current?.getLngLat();
+        if (currentPosition) dataRef.current.onLocationPick?.({ lat: currentPosition.lat, lng: currentPosition.lng });
+      });
     });
-
     mapRef.current = map;
-
-    // Invalida tamaño para asegurar cálculo correcto en renderizado inicial
-    setTimeout(() => {
-      map.resize();
-    }, 250);
-
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(() => map.resize());
+    observer?.observe(container);
     return () => {
-      markersRef.current.forEach((m) => m.remove());
+      observer?.disconnect();
+      markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
-      if (pickMarkerRef.current) {
-        pickMarkerRef.current.remove();
-        pickMarkerRef.current = null;
-      }
+      pickMarkerRef.current?.remove();
+      pickMarkerRef.current = null;
       map.remove();
       mapRef.current = null;
+      hasFitInitialBoundsRef.current = false;
     };
   }, []);
 
-  // 2. Función para actualizar fuentes GeoJSON (Halos y Líneas de Proximidad)
-  const updateDataSources = () => {
-    const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
-
-    // Capa de Halos (500m)
-    const halosSource = map.getSource('proximity-halos') as GeoJSONSource | undefined;
-    if (halosSource) {
-      halosSource.setData(
-        showHalos ? buildHalosFeatureCollection(jobs, 500) : { type: 'FeatureCollection', features: [] }
-      );
-    }
-
-    // Capa de Líneas Conectoras (<500m)
-    const linesSource = map.getSource('proximity-lines') as GeoJSONSource | undefined;
-    if (linesSource) {
-      linesSource.setData(
-        showLines ? buildConnectionLinesFeatureCollection(proximityPairs) : { type: 'FeatureCollection', features: [] }
-      );
-    }
-  };
-
-  // 3. Renderizado de Marcadores DOM personalizados y actualización GeoJSON
   useEffect(() => {
-    updateDataSources();
-
     const map = mapRef.current;
     if (!map) return;
-
-    // Limpiar marcadores DOM previos
-    markersRef.current.forEach((m) => m.remove());
+    const currentJobs = jobs.filter(hasGeoCoordinates);
+    updateDataSources();
+    markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
-
     const bounds = new LngLatBounds();
-    let hasCoords = false;
 
-    jobs.forEach((job) => {
-      if (!Number.isFinite(job.lat) || !Number.isFinite(job.lng) || (job.lat === 0 && job.lng === 0)) return;
-
-      hasCoords = true;
+    currentJobs.forEach((job) => {
       bounds.extend([job.lng, job.lat]);
-
-      const isSelected = selectedJobId === job.id;
-      const isUrgent = job.priority === 'urgente';
-      const inCluster = clusters.some((c) => c.jobs.some((j) => j.id === job.id));
-      const isCompleted = job.status === 'completed';
-
-      let stateClass = '';
-      if (isSelected) stateClass = 'is-selected';
-      else if (isUrgent) stateClass = 'is-urgent';
-      else if (inCluster) stateClass = 'is-cluster';
-      else if (isCompleted) stateClass = 'is-completed';
-
-      const shortCode = job.code.replace(/^(?:OT-|COT-)/i, '').slice(-4);
-
-      // Elemento DOM interactivo
-      const el = document.createElement('div');
-      el.className = 'vc-map-custom-pin';
-      el.innerHTML = `
-        <div class="vc-pin-wrapper">
-          <div class="vc-pin-head ${stateClass}">
-            ${(isUrgent || inCluster) && !isCompleted ? `
-              <div class="vc-pin-ping">
-                <div class="vc-pin-ping-ring"></div>
-                <div class="vc-pin-ping-dot"></div>
-              </div>
-            ` : ''}
-            <span>${shortCode}</span>
-          </div>
-          <div class="vc-pin-tip"></div>
-        </div>
-      `;
-
-      // Popup informativo enriquecido con WhatsApp
-      const tagBg = isUrgent ? '#dc2626' : inCluster ? '#d97706' : '#2563eb';
-      const tagLabel = isUrgent ? '🚨 URGENTE' : inCluster ? '⚡ EN CLUSTER' : 'INSTALACIÓN';
-
-      const whatsappUrl = job.clientPhone
-        ? `https://wa.me/${job.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(
-            `Hola ${job.clientName}, te saluda el taller de Visual Corp para coordinar la instalación de tu trabajo ${job.code} en ${job.address}.`
-          )}`
-        : '';
-
-      const popupHtml = `
-        <div class="vc-map-popup-card">
-          <div class="vc-map-popup-header">
-            <span class="vc-map-popup-code">${job.code}</span>
-            <span class="vc-map-popup-tag" style="background:${tagBg}; color:#fff;">${tagLabel}</span>
-          </div>
-          <h4 class="vc-map-popup-title">${job.title}</h4>
-          <p class="vc-map-popup-client">👤 <b>${job.clientName}</b> ${job.clientPhone ? `· 📞 ${job.clientPhone}` : ''}</p>
-          <div class="vc-map-popup-address">
-            <span>📍</span>
-            <span>${job.address || 'Ubicación sin dirección detallada'}</span>
-          </div>
-          ${job.scheduledDate ? `<div style="font-size:11px; color:#38bdf8; margin-bottom:8px;">📅 Fecha: <b>${job.scheduledDate}</b></div>` : ''}
-          <div class="vc-map-popup-actions">
-            ${whatsappUrl ? `
-              <a href="${whatsappUrl}" target="_blank" rel="noreferrer" class="vc-map-popup-btn is-whatsapp">
-                WhatsApp
-              </a>
-            ` : ''}
-            <button type="button" class="vc-map-popup-btn is-primary" id="btn-select-${job.id}">
-              Ver en cartelera
-            </button>
-          </div>
-        </div>
-      `;
-
-      const popup = new MapLibrePopup({
-        offset: [0, -36],
-        closeButton: true,
-        closeOnClick: false,
-      }).setHTML(popupHtml);
-
-      const marker = new MapLibreMarker({ element: el, anchor: 'bottom' })
-        .setLngLat([job.lng, job.lat])
-        .setPopup(popup)
-        .addTo(map);
-
-      el.addEventListener('click', () => {
-        onSelectJob?.(job);
+      const clustered = derivedClusters.some((cluster) => cluster.jobs.some((item) => item.id === job.id));
+      const selected = selectedJobId === job.id;
+      const stateClass = markerStateClass(job, selected, clustered);
+      const shortCode = job.code.replace(/^(?:OT-|COT-)/i, '').slice(-4) || 'OT';
+      const markerButton = document.createElement('button');
+      markerButton.type = 'button';
+      markerButton.className = 'vc-map-custom-pin vc-map-marker-button';
+      markerButton.setAttribute('aria-label', `${job.code}: ${job.title}. ${job.address || 'Ubicación de instalación'}`);
+      const wrapper = document.createElement('span');
+      wrapper.className = 'vc-pin-wrapper';
+      wrapper.setAttribute('aria-hidden', 'true');
+      const head = document.createElement('span');
+      head.className = `vc-pin-head ${stateClass}`.trim();
+      head.textContent = shortCode;
+      const tip = document.createElement('span');
+      tip.className = 'vc-pin-tip';
+      wrapper.append(head, tip);
+      markerButton.append(wrapper);
+      markerButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        dataRef.current.onSelectJob?.(job);
       });
-
-      popup.on('open', () => {
-        const btn = document.getElementById(`btn-select-${job.id}`);
-        if (btn) {
-          btn.onclick = () => {
-            onSelectJob?.(job);
-            popup.remove();
-          };
-        }
-      });
-
+      const popup = new MapLibrePopup({ offset: [0, -36], closeButton: true, closeOnClick: false })
+        .setDOMContent(makePopup(job, onSelectJob));
+      const marker = new MapLibreMarker({ element: markerButton, anchor: 'bottom' })
+        .setLngLat([job.lng, job.lat]).setPopup(popup).addTo(map);
       markersRef.current.push(marker);
     });
 
-    // Encuadrar todos los puntos en el primer render
-    if (hasCoords && !pickingMode && !selectedJobId) {
-      map.fitBounds(bounds, { padding: 50, maxZoom: 16 });
+    if (currentJobs.length && !hasFitInitialBoundsRef.current && !selectedJobId && !pickingMode) {
+      map.fitBounds(bounds, { padding: 64, maxZoom: 16, duration: 0 });
+      hasFitInitialBoundsRef.current = true;
     }
-  }, [jobs, clusters, proximityPairs, selectedJobId, showHalos, showLines, pickingMode, onSelectJob]);
+  }, [jobs, derivedClusters, derivedPairs, selectedJobId, showHalos, showLines, pickingMode, onSelectJob, proximityThresholdMeters]);
 
-  // 4. Enfocar trabajo seleccionado en el mapa
   useEffect(() => {
     if (!selectedJobId || !mapRef.current) return;
-    const target = jobs.find((j) => j.id === selectedJobId);
-    if (target && Number.isFinite(target.lat) && Number.isFinite(target.lng)) {
-      mapRef.current.flyTo({
-        center: [target.lng, target.lat],
-        zoom: 16,
-        duration: 900,
-        essential: true,
-      });
+    const target = jobs.find((job) => job.id === selectedJobId);
+    if (target && hasGeoCoordinates(target)) {
+      mapRef.current.flyTo({ center: [target.lng, target.lat], zoom: 16, duration: 650, essential: false });
     }
   }, [selectedJobId, jobs]);
 
-  // Cambio dinámico de estilo OpenFreeMap
+  useEffect(() => {
+    const resizeFrame = requestAnimationFrame(() => mapRef.current?.resize());
+    if (!isFullscreen) return () => cancelAnimationFrame(resizeFrame);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsFullscreen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      cancelAnimationFrame(resizeFrame);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isFullscreen]);
+
   const handleStyleChange = (styleKey: OpenFreeMapStyleKey) => {
     if (styleKey === activeStyle || !mapRef.current) return;
     setActiveStyle(styleKey);
-
-    const map = mapRef.current;
-    map.once('style.load', () => {
-      registerProximityLayers(map);
-      updateDataSources();
-      if (is3DMode) {
-        enable3DBuildings(map);
-      }
-    });
-
-    map.setStyle(OPENFREEMAP_STYLES[styleKey].url);
+    mapRef.current.setStyle(OPENFREEMAP_STYLES[styleKey].url);
   };
 
-  // Alternancia de vista 3D / 2D
   const handleToggle3D = () => {
-    if (!mapRef.current) return;
-    const nextState = !is3DMode;
-    setIs3DMode(nextState);
-    toggle3DCameraView(mapRef.current, nextState);
-    if (nextState) {
-      enable3DBuildings(mapRef.current);
-    }
+    const map = mapRef.current;
+    if (!map) return;
+    const next = !is3DMode;
+    setIs3DMode(next);
+    toggle3DCameraView(map, next);
+    if (next) enable3DBuildings(map);
   };
 
-  // Recentrar en Milagro
-  const handleRecenter = () => {
-    if (mapRef.current) {
-      mapRef.current.flyTo({
-        center: [MILAGRO_CENTER.lng, MILAGRO_CENTER.lat],
-        zoom: 14.3,
-        pitch: is3DMode ? 52 : 0,
-        bearing: 0,
-        duration: 800,
-      });
-    }
-  };
+  const handleRecenter = () => mapRef.current?.flyTo({
+    center: [initialCenter.lng, initialCenter.lat],
+    zoom: initialZoom,
+    pitch: is3DMode ? 52 : 0,
+    bearing: 0,
+    duration: 650,
+  });
 
-  // Pantalla completa
-  const handleToggleFullscreen = () => {
-    setIsFullscreen((prev) => !prev);
-    setTimeout(() => {
-      mapRef.current?.resize();
-    }, 250);
-  };
-
-  const validJobsCount = jobs.filter((j) => Number.isFinite(j.lat) && Number.isFinite(j.lng)).length;
+  const validJobs = jobs.filter(hasGeoCoordinates);
+  const installationJobs = jobs.filter((job) => job.requiresInstallation);
+  const unmappedCount = installationJobs.filter((job) => !hasGeoCoordinates(job)).length;
 
   return (
-    <div className={`vc-workshop-map-container ${isFullscreen ? 'is-fullscreen' : ''} ${className}`}>
-      {/* Barra superior de control OpenFreeMap */}
+    <section className={`vc-workshop-map-container ${isFullscreen ? 'is-fullscreen' : ''} ${className}`.trim()} aria-label="Mapa de ubicaciones de trabajo">
       <div className="vc-map-top-bar">
-        <div className="vc-map-badge-group">
-          <span className="vc-map-info-pill">
-            <Truck size={13} style={{ color: '#38bdf8' }} />
-            <span>OpenFreeMap · {validJobsCount} instalaciones</span>
-          </span>
-
-          {proximityPairs.length > 0 && (
-            <span className="vc-map-info-pill is-cluster">
-              <Sparkles size={13} />
-              <span>{proximityPairs.length} {proximityPairs.length === 1 ? 'par cercano' : 'pares'} (&lt;500m)</span>
-            </span>
-          )}
+        <div className="vc-map-badge-group" aria-live="polite">
+          <span className="vc-map-info-pill"><Truck size={14} aria-hidden="true" /><span>{validJobs.length} {validJobs.length === 1 ? 'pin' : 'pines'}</span></span>
+          {unmappedCount > 0 && <span className="vc-map-info-pill is-warning"><MapPin size={14} aria-hidden="true" /><span>{unmappedCount} {unmappedCount === 1 ? 'instalación sin pin' : 'instalaciones sin pin'}</span></span>}
+          {derivedPairs.length > 0 && <span className="vc-map-info-pill is-cluster"><Sparkles size={14} aria-hidden="true" /><span>{derivedPairs.length} {derivedPairs.length === 1 ? 'ubicación cercana' : 'ubicaciones cercanas'} (&lt;{proximityThresholdMeters} m)</span></span>}
         </div>
-
-        <div className="vc-map-toolbar-actions">
-          {/* Selector de Estilo Vectorial OpenFreeMap */}
-          {(Object.keys(OPENFREEMAP_STYLES) as OpenFreeMapStyleKey[]).map((key) => (
-            <button
-              key={key}
-              type="button"
-              className={`vc-map-action-btn ${activeStyle === key ? 'is-active' : ''}`}
-              title={`Cambiar a estilo ${OPENFREEMAP_STYLES[key].label}`}
-              onClick={() => handleStyleChange(key)}
-            >
-              <span>{key.toUpperCase()}</span>
-            </button>
-          ))}
-
-          {/* Botón 3D / Isométrico */}
-          <button
-            type="button"
-            className={`vc-map-action-btn ${is3DMode ? 'is-active' : ''}`}
-            title="Activar vista isométrica 3D"
-            onClick={handleToggle3D}
-          >
-            <Box size={13} />
-            <span>3D {is3DMode ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* Toggle Halos 500m */}
-          <button
-            type="button"
-            className={`vc-map-action-btn ${showHalos ? 'is-active' : ''}`}
-            title="Activar o desactivar círculos de 500m"
-            onClick={() => {
-              setShowHalos((p) => !p);
-            }}
-          >
-            <span>Halos</span>
-          </button>
-
-          {/* Recentrar en Milagro */}
-          <button
-            type="button"
-            className="vc-map-action-btn"
-            title="Recentrar en Milagro"
-            onClick={handleRecenter}
-          >
-            <Navigation size={13} />
-            <span>Milagro</span>
-          </button>
-
-          {/* Pantalla completa */}
-          <button
-            type="button"
-            className="vc-map-action-btn"
-            title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-            onClick={handleToggleFullscreen}
-          >
-            {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+        <div className="vc-map-toolbar-actions" role="group" aria-label="Controles del mapa">
+          <div className="vc-map-style-tools" role="group" aria-label="Estilo del mapa">
+            {(Object.keys(OPENFREEMAP_STYLES) as OpenFreeMapStyleKey[]).map((key) => (
+              <button key={key} type="button" className={`vc-map-action-btn ${activeStyle === key ? 'is-active' : ''}`}
+                aria-pressed={activeStyle === key} title={`Usar estilo ${OPENFREEMAP_STYLES[key].label}`} onClick={() => handleStyleChange(key)}>
+                <span>{OPENFREEMAP_STYLES[key].label}</span>
+              </button>
+            ))}
+          </div>
+          <button type="button" className={`vc-map-action-btn ${is3DMode ? 'is-active' : ''}`} aria-pressed={is3DMode}
+            title="Cambiar vista 2D o 3D" onClick={handleToggle3D}><Box size={14} aria-hidden="true" /><span>3D</span></button>
+          <button type="button" className={`vc-map-action-btn ${showHalos ? 'is-active' : ''}`} aria-pressed={showHalos}
+            title="Mostrar u ocultar radios de proximidad" onClick={() => setShowHalos((value) => !value)}><MapPin size={14} aria-hidden="true" /><span>Radios</span></button>
+          <button type="button" className={`vc-map-action-btn ${showLines ? 'is-active' : ''}`} aria-pressed={showLines}
+            title="Mostrar u ocultar líneas de proximidad" onClick={() => setShowLines((value) => !value)}><Layers size={14} aria-hidden="true" /><span>Líneas</span></button>
+          <button type="button" className="vc-map-action-btn" title="Volver al centro del mapa" onClick={handleRecenter}>
+            <Navigation size={14} aria-hidden="true" /><span>Recentrar</span></button>
+          <button type="button" className="vc-map-action-btn" aria-pressed={isFullscreen}
+            aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Abrir mapa en pantalla completa'}
+            title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'} onClick={() => setIsFullscreen((value) => !value)}>
+            {isFullscreen ? <Minimize2 size={14} aria-hidden="true" /> : <Maximize2 size={14} aria-hidden="true" />}
           </button>
         </div>
       </div>
-
-      {/* Banner de Modo "Click-to-Pin" */}
-      {pickingMode && (
-        <div className="vc-map-picking-banner">
-          <MapPin size={15} />
-          <span>Haz clic en el mapa vectorial para fijar las coordenadas exactas</span>
+      {pickingMode && onLocationPick && <div className="vc-map-picking-banner"><MapPin size={15} aria-hidden="true" /><span>Haz clic para fijar la ubicación. Usa el pin del mapa para moverla.</span></div>}
+      <div ref={containerRef} className="vc-workshop-map-canvas" aria-label="Mapa interactivo de instalaciones" />
+      {validJobs.length === 0 && (
+        <div className="vc-map-empty-overlay" role="status">
+          <MapPin size={17} aria-hidden="true" />
+          <span>{installationJobs.length ? 'No hay pines guardados para estas instalaciones.' : 'No hay instalaciones registradas para mostrar en el mapa.'}</span>
         </div>
       )}
-
-      {/* Contenedor del Canvas WebGL de MapLibre */}
-      <div ref={containerRef} className="vc-workshop-map-canvas" />
-    </div>
+      <ul className="vc-map-accessible-list" aria-label="Ubicaciones del mapa">
+        {validJobs.map((job) => <li key={job.id}><button type="button" onClick={() => onSelectJob?.(job)}>{job.code} · {job.title} · {job.address || 'Ubicación guardada'}</button></li>)}
+      </ul>
+    </section>
   );
-};
+}

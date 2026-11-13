@@ -5,7 +5,7 @@
 
 import type { Feature, FeatureCollection, Polygon, LineString } from 'geojson';
 import type { Map as MapLibreMap } from 'maplibre-gl';
-import type { InstallationWorkOrder, ProximityPair } from './geospatialProximity';
+import { hasGeoCoordinates, type InstallationWorkOrder, type ProximityPair } from './geospatialProximity';
 
 const EARTH_RADIUS_METERS = 6371000;
 
@@ -73,7 +73,7 @@ export function buildHalosFeatureCollection(
   radiusMeters = 500
 ): FeatureCollection<Polygon> {
   const features = jobs
-    .filter((j) => typeof j.lat === 'number' && typeof j.lng === 'number' && (j.lat !== 0 || j.lng !== 0))
+    .filter(hasGeoCoordinates)
     .map((job) =>
       createGeoJsonCircle(job.lng, job.lat, radiusMeters, 64, {
         jobId: job.id,

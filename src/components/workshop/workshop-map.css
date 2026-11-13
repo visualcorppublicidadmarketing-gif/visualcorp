@@ -396,3 +396,54 @@
 .vc-map-popup-btn:hover {
   opacity: 0.9;
 }
+
+/* Controls shared by the workshop and advisor maps. */
+.vc-workshop-map-container,
+.vc-workshop-map-container * { box-sizing: border-box; min-width: 0; }
+.vc-workshop-map-container { max-width: 100%; }
+.vc-workshop-map-container.is-fullscreen { width: 100vw; height: 100dvh; max-width: none; }
+.vc-workshop-map-canvas { position: relative; width: 100%; height: 100%; max-width: 100%; }
+.vc-map-top-bar { align-items: flex-start; flex-direction: column; }
+.vc-map-toolbar-actions,.vc-map-style-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; max-width: 100%; }
+.vc-map-toolbar-actions { justify-content: flex-start; }
+.vc-map-style-tools { padding: 3px; border-radius: 10px; background: rgba(15, 23, 42, 0.76); }
+.vc-map-action-btn { min-height: 34px; max-width: 100%; white-space: nowrap; }
+.vc-map-action-btn:focus-visible,
+.vc-map-marker-button:focus-visible,
+.vc-map-popup-btn:focus-visible,
+.vc-map-accessible-list button:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+.vc-map-marker-button { display: block; width: 36px; height: 44px; margin: 0; padding: 0; border: 0; background: transparent !important; cursor: pointer; }
+.vc-map-marker-button .vc-pin-wrapper { width: 36px; transform: none; transition: transform .16s ease; }
+.vc-map-marker-button:hover .vc-pin-wrapper { transform: scale(1.12); }
+.vc-map-marker-button .vc-pin-head { flex: none; width: 34px; height: 34px; }
+.vc-map-marker-button .vc-pin-tip { flex: none; }
+.vc-map-popup-date { margin-top: 5px; color: #cbd5e1; font-size: 10.5px; }
+.vc-map-popup-tag[data-status="completed"] { background: #047857; color: #fff; }
+.vc-map-popup-tag[data-status="blocked"] { background: #b91c1c; color: #fff; }
+.vc-map-popup-tag:not([data-status="completed"]):not([data-status="blocked"]) { background: #334155; color: #fff; }
+.vc-map-empty-overlay { position: absolute; z-index: 4; bottom: 20px; left: 14px; display: flex; align-items: center; gap: 8px; max-width: min(440px, calc(100% - 28px)); padding: 10px 13px; border: 1px solid rgba(255,255,255,.25); border-radius: 10px; background: rgba(15,23,42,.9); color: #f8fafc; font-size: 12px; line-height: 1.4; pointer-events: none; }
+.vc-map-empty-overlay svg { flex: none; color: #7dd3fc; }
+.vc-map-info-pill.is-warning { background: rgba(133, 77, 14, .94); border-color: rgba(253, 230, 138, .4); }
+.vc-map-accessible-list { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.vc-map-accessible-list:focus-within { z-index: 1002; width: min(380px, calc(100% - 24px)); height: auto; max-height: 45%; overflow: auto; clip-path: none; white-space: normal; top: 58px; left: 12px; margin: 0; padding: 8px; list-style: none; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; }
+.vc-map-accessible-list button { width: 100%; padding: 9px; border: 0; border-radius: 6px; background: #fff; color: #172033; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.vc-map-accessible-list button:hover { background: #f1f5f9; }
+.vc-map-picking-banner { max-width: calc(100% - 28px); text-align: center; animation: none; }
+
+@media (max-width: 720px) {
+  .vc-map-top-bar { top: 8px; left: 8px; right: 8px; gap: 7px; }
+  .vc-map-badge-group { gap: 5px; }
+  .vc-map-info-pill { padding: 5px 8px; font-size: 10px; }
+  .vc-map-toolbar-actions { gap: 4px; }
+  .vc-map-style-tools { gap: 3px; }
+  .vc-map-action-btn { min-height: 32px; padding: 5px 7px; font-size: 10px; }
+  .vc-map-action-btn span { white-space: normal; }
+  .vc-map-empty-overlay { bottom: 10px; left: 8px; font-size: 11px; }
+  .vc-workshop-map-container { min-height: 420px; }
+  .vc-workshop-map-canvas { min-height: 420px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-map-marker-button .vc-pin-wrapper { transition: none; }
+  .vc-pin-ping-ring { animation: none; }
+}
