@@ -1,0 +1,17 @@
+.inventory-collection-card-copy{min-width:0;overflow-wrap:anywhere}
+.inventory-collection-readiness{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;min-width:0}
+.inventory-collection-readiness span{display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:4px 7px;border:1px solid #e7e1eb;border-radius:999px;background:#fff;color:#5f5868;font-size:9px;font-weight:700;line-height:1.2}
+.inventory-collection-readiness .is-unassigned{border-color:#f0dcaa;background:#fff8e8;color:#895a08}
+.inventory-collection-readiness .is-pending{border-color:#ddd3ec;background:#f7f2fb;color:#704291}
+.inventory-collection-readiness .is-ready{border-color:#cce6d4;background:#eff9f1;color:#267344}
+.inventory-collection-actions{min-width:0;flex-wrap:wrap;align-items:flex-end}
+.inventory-collection-primary-actions{display:flex;flex-wrap:wrap;gap:7px;min-width:0}
+.inventory-collection-prepare{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;max-width:100%;padding:0 10px;border:1px solid color-mix(in srgb,var(--collection) 38%,#ded6e5);border-radius:9px;background:var(--collection-soft);color:var(--collection);font:inherit;font-size:10px;font-weight:750;cursor:pointer}
+.inventory-collection-prepare:hover{border-color:var(--collection);filter:saturate(1.08)}
+.inventory-collection-prepare:focus-visible{outline:3px solid color-mix(in srgb,var(--collection) 28%,transparent);outline-offset:2px}
+[data-theme='dark'] .inventory-collection-readiness span,.work-app.theme-dark .inventory-collection-readiness span{border-color:#40384a;background:#211e29;color:#c9c0d3}
+[data-theme='dark'] .inventory-collection-readiness .is-unassigned,.work-app.theme-dark .inventory-collection-readiness .is-unassigned{border-color:#594625;background:#2a2318;color:#edcb78}
+[data-theme='dark'] .inventory-collection-readiness .is-pending,.work-app.theme-dark .inventory-collection-readiness .is-pending{border-color:#4b385d;background:#271f30;color:#d2b5ec}
+[data-theme='dark'] .inventory-collection-readiness .is-ready,.work-app.theme-dark .inventory-collection-readiness .is-ready{border-color:#31513b;background:#1b2a1f;color:#a8ddb4}
+[data-theme='dark'] .inventory-collection-prepare,.work-app.theme-dark .inventory-collection-prepare{border-color:#554264;background:#292132;color:#e1c6f5}
+@media(max-width:680px){.inventory-collection-primary-actions{width:100%}.inventory-collection-primary-actions>*{flex:1 1 100%;justify-content:center}.inventory-collection-actions{align-items:stretch}}
