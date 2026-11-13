@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { Archive, Box, Check, Eye, EyeOff, FolderHeart, Package, Paintbrush, Pencil, Plus, Shield, Sparkles, TreePine, X } from 'lucide-react';
+import { Archive, Box, Check, ClipboardCheck, Eye, EyeOff, FolderHeart, MapPin, Package, Paintbrush, Pencil, Plus, Shield, Sparkles, TreePine, X } from 'lucide-react';
 import './InventoryGroupsPanel.css';
+import './InventoryGroupsPanelReadiness.css';
 
 export type InventoryGroup = {
   id: string;
@@ -16,7 +17,7 @@ const symbols = { package: Package, sparkles: Sparkles, tree: TreePine, pumpkin:
 const palettes = ['violet', 'emerald', 'amber', 'rose', 'sky', 'slate'];
 const icons = Object.keys(symbols);
 
-export function InventoryGroupsPanel({ groups, items, canEdit, saving, onCreate, onUpdate, onArchive, onOpen }: {
+export function InventoryGroupsPanel({ groups, items, canEdit, saving, onCreate, onUpdate, onArchive, onOpen, onPrepareAssignment }: {
   groups: InventoryGroup[];
   items: any[];
   canEdit: boolean;
@@ -25,6 +26,7 @@ export function InventoryGroupsPanel({ groups, items, canEdit, saving, onCreate,
   onUpdate: (id: string, patch: Partial<InventoryGroup>) => Promise<boolean | void>;
   onArchive: (group: InventoryGroup) => Promise<void>;
   onOpen: (id: string | null) => void;
+  onPrepareAssignment?: (id: string) => void;
 }) {
   const [showCreate, setShowCreate] = useState(false);
   const [draft, setDraft] = useState({ name: '', description: '', iconKey: 'package', colorKey: 'violet', showInMain: false });
@@ -38,6 +40,23 @@ export function InventoryGroupsPanel({ groups, items, canEdit, saving, onCreate,
       counts.set(item.inventoryGroupId, ids);
     }
     return new Map([...counts].map(([id, ids]) => [id, ids.size]));
+  }, [items]);
+  const readinessByGroup = useMemo(() => {
+    const rows = new Map<string, Map<string, any>>();
+    for (const item of items) {
+      if (!item.inventoryGroupId || item.archived) continue;
+      const articles = rows.get(item.inventoryGroupId) || new Map<string, any>();
+      articles.set(item.remoteItemId || item.id, item);
+      rows.set(item.inventoryGroupId, articles);
+    }
+    return new Map([...rows].map(([id, articles]) => {
+      const values = [...articles.values()];
+      const unassignedVariants = new Set(items.filter(item => item.inventoryGroupId === id && !item.archived && !item.branchId && item.variantId).map(item => item.variantId));
+      return [id, {
+        unassignedVariants: unassignedVariants.size,
+        pendingCount: values.filter(item => item.sourceStatus && item.customFields?.inventory_model !== 'roll').length,
+      }];
+    }));
   }, [items]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -80,10 +99,17 @@ export function InventoryGroupsPanel({ groups, items, canEdit, saving, onCreate,
       {groups.map(group => {
         const Icon = symbols[group.iconKey] || Package;
         const count = articleCounts.get(group.id) || 0;
+        const readiness = readinessByGroup.get(group.id) || { unassignedVariants: 0, pendingCount: 0 };
         return <article key={group.id} className={`inventory-collection-card tone-${group.colorKey}`}>
           <div className="inventory-collection-symbol"><Icon size={22}/></div>
-          <div className="inventory-collection-card-copy"><span className="inventory-collection-kicker">COLECCIÓN</span><h3>{group.name}</h3><p>{group.description || 'Artículos agrupados para encontrarlos sin mezclar el catálogo principal.'}</p><small>{count} {count === 1 ? 'artículo' : 'artículos'} · {group.showInMain ? 'visible en el principal' : 'oculta del principal'}</small></div>
-          <div className="inventory-collection-actions"><button type="button" className="inventory-collection-open" onClick={() => onOpen(group.id)}>Ver artículos <span>→</span></button>{canEdit && <div className="inventory-collection-tools"><button type="button" disabled={saving === group.id} aria-label={group.showInMain ? `Ocultar ${group.name} del inventario principal` : `Mostrar ${group.name} en el inventario principal`} title={group.showInMain ? 'Ocultar del inventario principal' : 'Mostrar en el inventario principal'} onClick={() => void onUpdate(group.id, { showInMain: !group.showInMain })}>{group.showInMain ? <Eye size={15}/> : <EyeOff size={15}/>}<span>{group.showInMain ? 'Visible en principal' : 'Oculta del principal'}</span></button><button type="button" disabled={saving === group.id} aria-label={`Editar ${group.name}`} title="Editar nombre, descripción e identidad" onClick={() => { setEditingId(editingId === group.id ? null : group.id); setEditDraft({ name: group.name, description: group.description, iconKey: group.iconKey, colorKey: group.colorKey }); }}><Pencil size={14}/></button><button type="button" disabled={saving === group.id} aria-label={`Archivar ${group.name}`} title={count ? `Reasigna los ${count} artículos antes de archivar` : 'Archivar colección vacía'} onClick={() => void onArchive(group)}><Archive size={15}/></button></div>}</div>
+          <div className="inventory-collection-card-copy"><span className="inventory-collection-kicker">COLECCIÓN</span><h3>{group.name}</h3><p>{group.description || 'Artículos agrupados para encontrarlos sin mezclar el catálogo principal.'}</p><small>{count} {count === 1 ? 'artículo' : 'artículos'} · {group.showInMain ? 'visible en el principal' : 'oculta del principal'}</small>
+            <div className="inventory-collection-readiness" aria-label={`Preparación de ${group.name}`}>
+              {readiness.unassignedVariants > 0 && <span className="is-unassigned"><MapPin size={12}/>{readiness.unassignedVariants} variantes sin sucursal</span>}
+              {readiness.pendingCount > 0 && <span className="is-pending"><ClipboardCheck size={12}/>{readiness.pendingCount} por contar</span>}
+              {!readiness.unassignedVariants && !readiness.pendingCount && <span className="is-ready"><Check size={12}/>Sin pendientes de preparación</span>}
+            </div>
+          </div>
+          <div className="inventory-collection-actions"><div className="inventory-collection-primary-actions"><button type="button" className="inventory-collection-open" onClick={() => onOpen(group.id)}>Ver artículos <span>→</span></button>{canEdit && readiness.unassignedVariants > 0 && onPrepareAssignment && <button type="button" className="inventory-collection-prepare" onClick={() => onPrepareAssignment(group.id)}><MapPin size={14}/> Asignar sucursal en bloque</button>}</div>{canEdit && <div className="inventory-collection-tools"><button type="button" disabled={saving === group.id} aria-label={group.showInMain ? `Ocultar ${group.name} del inventario principal` : `Mostrar ${group.name} en el inventario principal`} title={group.showInMain ? 'Ocultar del inventario principal' : 'Mostrar en el inventario principal'} onClick={() => void onUpdate(group.id, { showInMain: !group.showInMain })}>{group.showInMain ? <Eye size={15}/> : <EyeOff size={15}/>}<span>{group.showInMain ? 'Visible en principal' : 'Oculta del principal'}</span></button><button type="button" disabled={saving === group.id} aria-label={`Editar ${group.name}`} title="Editar nombre, descripción e identidad" onClick={() => { setEditingId(editingId === group.id ? null : group.id); setEditDraft({ name: group.name, description: group.description, iconKey: group.iconKey, colorKey: group.colorKey }); }}><Pencil size={14}/></button><button type="button" disabled={saving === group.id} aria-label={`Archivar ${group.name}`} title={count ? `Reasigna los ${count} artículos antes de archivar` : 'Archivar colección vacía'} onClick={() => void onArchive(group)}><Archive size={15}/></button></div>}</div>
           {editingId === group.id && <form className="inventory-collection-edit" onSubmit={async event => { event.preventDefault(); if (!editDraft.name.trim()) return; const saved = await onUpdate(group.id, editDraft); if (saved !== false) setEditingId(null); }}><label>Nombre<input required maxLength={80} value={editDraft.name} onChange={event => setEditDraft({ ...editDraft, name: event.target.value })}/></label><label>Descripción<input maxLength={500} value={editDraft.description} onChange={event => setEditDraft({ ...editDraft, description: event.target.value })}/></label><div className="inventory-collection-edit-row"><label>Icono<select value={editDraft.iconKey} onChange={event => setEditDraft({ ...editDraft, iconKey: event.target.value })}>{icons.map(icon => <option key={icon} value={icon}>{icon}</option>)}</select></label><label>Color<select value={editDraft.colorKey} onChange={event => setEditDraft({ ...editDraft, colorKey: event.target.value })}>{palettes.map(color => <option key={color} value={color}>{color}</option>)}</select></label></div><button className="button button-outline" type="submit" disabled={saving === group.id}>Guardar cambios</button></form>}
         </article>;
       })}
