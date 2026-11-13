@@ -12,7 +12,7 @@ export interface GeoCoordinates {
   lng: number;
 }
 
-export interface InstallationWorkOrder extends GeoCoordinates {
+export interface InstallationWorkOrder extends Partial<GeoCoordinates> {
   id: string;
   code: string;                 // ej. "OT-2026-104", "COT-842"
   title: string;                // ej. "Lona translúcida con estructura 3x2m"
@@ -24,15 +24,17 @@ export interface InstallationWorkOrder extends GeoCoordinates {
   executionDate?: string;
   status: string;               // 'waiting' | 'ready' | 'in_progress' | 'quality_check' | 'ready_for_delivery' | 'completed'
   priority?: 'normal' | 'alta' | 'urgente';
-  area?: 'taller' | 'impresion' | 'sublimacion' | 'laser' | 'asesoria';
+  area?: 'taller' | 'diseno' | 'impresion' | 'sublimacion' | 'laser' | 'asesoria';
   technician?: string;
   requiresInstallation: boolean;
   specifications?: Record<string, unknown>;
 }
 
+export type LocatedInstallationWorkOrder = InstallationWorkOrder & GeoCoordinates;
+
 export interface ProximityPair {
-  jobA: InstallationWorkOrder;
-  jobB: InstallationWorkOrder;
+  jobA: LocatedInstallationWorkOrder;
+  jobB: LocatedInstallationWorkOrder;
   distanceMeters: number;
   distanceBlocks: number;       // Estimado en cuadras estándar ecuatorianas (~100m)
   sameDay: boolean;
@@ -44,11 +46,18 @@ export interface ProximityCluster {
   id: string;
   date: string;
   center: GeoCoordinates;
-  jobs: InstallationWorkOrder[];
+  jobs: LocatedInstallationWorkOrder[];
   maxDistanceMeters: number;
   count: number;
   label: string;
   recommendedAction: string;
+}
+
+export function hasGeoCoordinates(job: InstallationWorkOrder): job is InstallationWorkOrder & GeoCoordinates {
+  return Number.isFinite(job.lat) && Number.isFinite(job.lng)
+    && Math.abs(job.lat as number) <= 90
+    && Math.abs(job.lng as number) <= 180
+    && (job.lat !== 0 || job.lng !== 0);
 }
 
 // Radio medio de la Tierra en metros
@@ -101,9 +110,10 @@ export function calculateHaversineDistance(pointA: GeoCoordinates, pointB: GeoCo
   const sinDLat2 = Math.sin(dLat / 2);
   const sinDLng2 = Math.sin(dLng / 2);
 
-  const a =
+  const a = Math.min(1, Math.max(0,
     sinDLat2 * sinDLat2 +
-    Math.cos(lat1) * Math.cos(lat2) * sinDLng2 * sinDLng2;
+    Math.cos(lat1) * Math.cos(lat2) * sinDLng2 * sinDLng2,
+  ));
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return Math.round(EARTH_RADIUS_METERS * c);
@@ -136,7 +146,7 @@ export function detectProximityPairs(
   jobs: InstallationWorkOrder[],
   thresholdMeters = 500
 ): ProximityPair[] {
-  const validJobs = jobs.filter((j) => Number.isFinite(j.lat) && Number.isFinite(j.lng) && (j.lat !== 0 || j.lng !== 0));
+  const validJobs = jobs.filter(hasGeoCoordinates);
   const pairs: ProximityPair[] = [];
 
   for (let i = 0; i < validJobs.length; i++) {
@@ -146,7 +156,8 @@ export function detectProximityPairs(
       const distance = calculateHaversineDistance(jobA, jobB);
 
       if (distance <= thresholdMeters) {
-        const sameDay = jobA.scheduledDate === jobB.scheduledDate;
+        const hasBothDates = Boolean(jobA.scheduledDate && jobB.scheduledDate);
+        const sameDay = hasBothDates && jobA.scheduledDate === jobB.scheduledDate;
         const blocks = metersToBlocks(distance);
 
         let priorityLevel: ProximityPair['priorityLevel'] = 'info';
@@ -155,6 +166,8 @@ export function detectProximityPairs(
         if (sameDay) {
           priorityLevel = distance <= 250 ? 'critical' : 'warning';
           recommendation = `Mismo día (${jobA.scheduledDate}) a solo ${formatDistance(distance)}. Asignar la misma cuadrilla de montaje evita 1 viaje de ida y vuelta.`;
+        } else if (!hasBothDates) {
+          recommendation = `Las ubicaciones están a ${formatDistance(distance)}. Una o ambas fechas están pendientes; confirma la programación antes de agrupar la visita.`;
         } else {
           recommendation = `Están a ${formatDistance(distance)} pero en fechas distintas (${jobA.scheduledDate} y ${jobB.scheduledDate}). Si la producción lo permite, considera coordinar ambas instalaciones el mismo día.`;
         }
@@ -183,12 +196,12 @@ export function clusterJobsByProximity(
   jobs: InstallationWorkOrder[],
   thresholdMeters = 500
 ): ProximityCluster[] {
-  const validJobs = jobs.filter((j) => Number.isFinite(j.lat) && Number.isFinite(j.lng) && (j.lat !== 0 || j.lng !== 0));
+  const validJobs = jobs.filter(hasGeoCoordinates);
   const clusters: ProximityCluster[] = [];
   const visited = new Set<string>();
 
   // Agrupar por fecha programada
-  const jobsByDate = validJobs.reduce<Record<string, InstallationWorkOrder[]>>((acc, job) => {
+  const jobsByDate = validJobs.reduce<Record<string, LocatedInstallationWorkOrder[]>>((acc, job) => {
     const key = job.scheduledDate || 'sin-fecha';
     (acc[key] = acc[key] || []).push(job);
     return acc;
@@ -198,8 +211,8 @@ export function clusterJobsByProximity(
     for (const job of dayJobs) {
       if (visited.has(job.id)) continue;
 
-      const clusterJobs: InstallationWorkOrder[] = [];
-      const queue: InstallationWorkOrder[] = [job];
+      const clusterJobs: LocatedInstallationWorkOrder[] = [];
+      const queue: LocatedInstallationWorkOrder[] = [job];
       visited.add(job.id);
 
       while (queue.length > 0) {
@@ -236,8 +249,12 @@ export function clusterJobsByProximity(
           jobs: clusterJobs,
           maxDistanceMeters: maxDist,
           count: clusterJobs.length,
-          label: `Cluster ${date}: ${clusterJobs.length} trabajos (${codes})`,
-          recommendedAction: `Asignar misma cuadrilla a los ${clusterJobs.length} trabajos (${codes}). Radio máximo entre puntos: ${formatDistance(maxDist)}.`,
+          label: date === 'sin-fecha'
+            ? `${clusterJobs.length} ubicaciones cercanas · fecha pendiente`
+            : `${clusterJobs.length} trabajos cercanos · ${date}`,
+          recommendedAction: date === 'sin-fecha'
+            ? `Hay ${clusterJobs.length} ubicaciones próximas (${codes}), pero sus fechas están pendientes. Confirma la programación antes de unificar la cuadrilla.`
+            : `Asignar la misma cuadrilla a los ${clusterJobs.length} trabajos (${codes}). Radio máximo entre puntos: ${formatDistance(maxDist)}.`,
         });
       }
     }

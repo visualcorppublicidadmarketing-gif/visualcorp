@@ -1,0 +1,67 @@
+.vc-workshop-calendar,
+.vc-workshop-calendar * { box-sizing: border-box; min-width: 0; }
+.vc-workshop-calendar { width: 100%; max-width: 100%; }
+.vc-workshop-calendar-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 390px) minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+  width: 100%;
+}
+.vc-workshop-calendar .ok-calendar { width: 100%; max-width: 100%; }
+.vc-workshop-agenda {
+  min-height: 100%;
+  padding: 18px;
+  border: 1px solid var(--line, #e5e0ea);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  color: var(--ink, #191522);
+}
+.vc-workshop-agenda-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line, #e5e0ea); }
+.vc-workshop-agenda-kicker { display: inline-flex; align-items: center; gap: 6px; color: var(--muted, #5e566b); font-size: 11px; font-weight: 700; }
+.vc-workshop-agenda-kicker svg { color: var(--purple, #8d2c86); }
+.vc-workshop-agenda-head h2 { margin: 6px 0 0; font-size: clamp(17px, 2vw, 22px); line-height: 1.25; text-transform: capitalize; }
+.vc-workshop-agenda-count { display: grid; place-items: center; flex: none; min-width: 32px; height: 32px; padding: 0 7px; border-radius: 9px; background: color-mix(in srgb, var(--purple, #8d2c86) 10%, var(--surface, #fff)); color: var(--purple, #8d2c86); font-size: 12px; font-weight: 800; }
+.vc-workshop-agenda-empty { display: grid; place-items: center; min-height: 220px; margin: 0; color: var(--muted, #5e566b); text-align: center; font-size: 13px; }
+.vc-workshop-agenda-list { display: grid; gap: 9px; max-height: 520px; overflow: auto; margin: 12px 0 0; padding: 0 4px 0 0; list-style: none; }
+.vc-workshop-event { display: grid; grid-template-columns: 74px minmax(0, 1fr) 34px; gap: 10px; align-items: start; padding: 12px; border: 1px solid var(--line, #e5e0ea); border-left: 3px solid #8d2c86; border-radius: 10px; background: var(--surface, #fff); }
+.vc-workshop-event[data-kind="installation"] { border-left-color: #148ed0; }
+.vc-workshop-event[data-kind="delivery"] { border-left-color: #15936e; }
+.vc-workshop-event[data-kind="deadline"] { border-left-color: #ed9b12; }
+.vc-workshop-event.is-selected { box-shadow: 0 0 0 2px color-mix(in srgb, var(--purple, #8d2c86) 30%, transparent); }
+.vc-workshop-event-time { padding-top: 2px; color: var(--muted, #5e566b); font-size: 11px; font-weight: 700; }
+.vc-workshop-event-main { display: grid; gap: 4px; min-width: 0; }
+.vc-workshop-event-kind { color: var(--muted, #5e566b); font-size: 10px; font-weight: 750; }
+.vc-workshop-event-title { display: block; margin: 0; padding: 0; border: 0; background: transparent; color: var(--ink, #191522); font: inherit; font-size: 13px; font-weight: 750; line-height: 1.35; text-align: left; overflow-wrap: anywhere; }
+button.vc-workshop-event-title { cursor: pointer; }
+button.vc-workshop-event-title:hover { color: var(--purple, #8d2c86); text-decoration: underline; }
+.vc-workshop-event-client,.vc-workshop-event-meta,.vc-workshop-event-address { color: var(--muted, #5e566b); font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+.vc-workshop-event-address { display: flex; align-items: flex-start; gap: 4px; }
+.vc-workshop-event-address svg { flex: none; margin-top: 1px; color: #148ed0; }
+.vc-workshop-event-location-pending { color: #8a5b08; font-size: 10px; font-weight: 700; }
+.vc-workshop-event-map { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--line, #e5e0ea); border-radius: 8px; background: var(--surface, #fff); color: #148ed0; cursor: pointer; }
+.vc-workshop-event-map:hover { background: color-mix(in srgb, #148ed0 9%, var(--surface, #fff)); }
+.vc-workshop-calendar button:focus-visible { outline: 3px solid color-mix(in srgb, var(--purple, #8d2c86) 55%, transparent); outline-offset: 2px; }
+
+.work-app.theme-dark .vc-workshop-calendar .ok-calendar,
+[data-theme="dark"] .vc-workshop-calendar .ok-calendar { border-color: var(--line, #303447); background: var(--surface, #171a25); color: var(--ink, #f1f3f8); }
+.work-app.theme-dark .vc-workshop-calendar .ok-calendar .rdp-day_button,
+[data-theme="dark"] .vc-workshop-calendar .ok-calendar .rdp-day_button { color: var(--ink, #f1f3f8); }
+.work-app.theme-dark .vc-workshop-calendar .ok-calendar .rdp-weekday,
+[data-theme="dark"] .vc-workshop-calendar .ok-calendar .rdp-weekday { color: var(--muted, #b2b8c8); }
+.work-app.theme-dark .vc-workshop-calendar .ok-calendar .ok-calendar-selectors select,
+[data-theme="dark"] .vc-workshop-calendar .ok-calendar .ok-calendar-selectors select { color: var(--ink, #f1f3f8); }
+.work-app.theme-dark .vc-workshop-calendar .ok-calendar .ok-calendar-nav,
+[data-theme="dark"] .vc-workshop-calendar .ok-calendar .ok-calendar-nav { color: var(--muted, #b2b8c8); }
+.work-app.theme-dark .vc-workshop-calendar .ok-calendar .ok-calendar-presets button,
+[data-theme="dark"] .vc-workshop-calendar .ok-calendar .ok-calendar-presets button { border-color: var(--line, #303447); background: var(--surface, #171a25); color: var(--muted, #b2b8c8); }
+.work-app.theme-dark .vc-workshop-event-location-pending,
+[data-theme="dark"] .vc-workshop-event-location-pending { color: #f3d48c; }
+
+@media (max-width: 900px) { .vc-workshop-calendar-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) {
+  .vc-workshop-agenda { padding: 13px; }
+  .vc-workshop-event { grid-template-columns: minmax(0, 1fr) 34px; gap: 5px 9px; }
+  .vc-workshop-event-time { grid-column: 1 / -1; }
+  .vc-workshop-event-map { grid-column: 2; grid-row: 2; }
+}
