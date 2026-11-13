@@ -203,3 +203,11 @@ Objetivo: mejorar control de inventario, POS y operación conectada. Propuesta v
 - Se añadió una validación en `review_inventory_import_row` para rechazar cruces Visual/GigaPrint también cuando se invoca el RPC directamente. Se conserva la autorización por rol, auditoría, idempotencia de estados y permisos del RPC.
 - No hay variantes Giga activas en el catálogo, por lo que las 74 filas de GigaPrint no se pueden vincular todavía. Siguiente paso operativo: registrar el catálogo Giga confirmado y luego cotejar esas filas; no asociarlas a Visual como atajo.
 - Validación local: `npm run build:checked` pasó. Validación de producción: definición del RPC confirma la regla de marca; `authenticated` mantiene `EXECUTE` y `anon` no lo tiene.
+
+### Revisión operativa de inventario · 13 nov 2026
+
+- Consulta de producción: 749 filas de procedencia siguen pendientes desde el 22 de octubre (675 Visual Corp y 74 GigaPrint); no hay coincidencias marcadas ni excluidas. No hay variantes Giga activas, así que esas 74 filas requieren crear primero el catálogo Giga confirmado.
+- Otros datos de producción: 170 artículos activos, 221 variantes activas, 43 filas de saldo (22 con cantidad positiva), 26 movimientos y cero sesiones de conteo. Los 170 artículos tienen el mínimo sin configurar; esos mínimos no se deben inferir automáticamente.
+- Mejora de flujo en curso: filtro explícito por archivo fuente para trabajar un lote a la vez, manteniendo el contador global y el filtro por hoja; filtros y búsqueda consultan la página exacta en servidor.
+- Recomendaciones siguientes, en orden: (1) cargar/confirmar catálogo de GigaPrint antes de conciliar su lote; (2) realizar y cerrar conteos iniciales por sucursal/ubicación; (3) configurar mínimos con criterio de responsables; (4) ampliar alertas y reposición cuando haya historial suficiente. Con 26 movimientos y sin sesiones de conteo, pronosticar consumo sería poco fiable.
+- Referencia de diseño operativo: Odoo separa el conteo físico de la aplicación final del ajuste, lo que permite revisar diferencias antes de afectar saldos. Aplicar este control gradualmente al flujo actual, conservando su registro de movimientos.
