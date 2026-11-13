@@ -1189,9 +1189,8 @@
 .pos-line-financial-breakdown dt{min-width:0;overflow-wrap:anywhere}
 .pos-line-financial-breakdown dd{flex:none;max-width:45%;margin:0;color:var(--text,#25212c);font-weight:650;text-align:right;white-space:nowrap}
 .pos-line-financial-breakdown .is-subtotal{margin-top:2px;padding-top:6px;border-top:1px solid var(--line,#ded9e7);color:var(--text,#25212c);font-weight:750}
-.pos-line-financial-breakdown .is-subtotal dd,.pos-line-financial-breakdown .is-total dd{color:var(--text,#25212c);font-weight:800}
+.pos-line-financial-breakdown .is-subtotal dd{color:var(--text,#25212c);font-weight:800}
 .pos-line-financial-breakdown .is-discount dd{color:#a3323d}
-.pos-line-financial-breakdown .is-total{margin-top:2px;padding-top:6px;border-top:1px solid var(--line,#ded9e7);color:var(--text,#25212c);font-size:12px;font-weight:800}
 .pos-line-editor-span-2>.commercial-finishing-controls{width:100%}
 
 /* Compact, scannable POS article summaries */
@@ -1204,14 +1203,14 @@
 .pos-line-main .pos-line-stock-note.is-available{border-color:#cce8d7;background:#f0faf4}
 .pos-line-main .pos-line-stock-note.is-warning{border-color:#f0ddb7;background:#fff8e9}
 .pos-line-right-col{min-width:0;padding-top:1px}
-.pos-line-right-col>strong{color:var(--ink);font-size:15px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.pos-line-total-value{display:grid;justify-items:end;gap:1px}
+.pos-line-total-value>small{color:var(--muted);font-size:7px;font-weight:800;letter-spacing:.08em}
+.pos-line-total-value>strong{color:var(--ink);font-size:15px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .pos-line-financial-breakdown{gap:5px;margin:7px 0 8px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--paper) 93%,#f4f0f7)}
 .pos-line-financial-breakdown>div{font-size:10px;line-height:1.35}
 .pos-line-financial-breakdown dt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pos-line-financial-breakdown dd{max-width:48%;font-variant-numeric:tabular-nums}
 .pos-line-financial-breakdown .is-subtotal{margin-top:2px;padding-top:5px}
-.pos-line-financial-breakdown .is-total{margin-top:1px;padding:7px 8px;border:0;border-radius:8px;background:color-mix(in srgb,#8342a4 8%,var(--paper));font-size:11px}
-.pos-line-financial-breakdown .is-total dd{color:#70408b;font-size:12px}
 .pos-quote-approved-lines{display:grid;gap:9px;margin-top:12px}
 .pos-quote-approved-card{display:grid;gap:7px;min-width:0;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
 .pos-quote-approved-item{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
@@ -1219,6 +1218,7 @@
 .pos-quote-approved-item small{color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.07em}
 .pos-quote-approved-item b{color:var(--ink);font-size:12px;line-height:1.35;overflow-wrap:anywhere}
 .pos-quote-approved-item>strong{flex:none;padding:5px 8px;border-radius:8px;background:color-mix(in srgb,#8342a4 9%,var(--paper));color:#70408b;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pos-quote-approved-item>strong::before{display:block;margin-bottom:2px;color:var(--muted);content:'TOTAL';font-size:7px;font-weight:800;letter-spacing:.08em;text-align:right}
 .pos-quote-approved-meta{color:var(--muted);font-size:9px;line-height:1.45}
 .pos-quote-approved-description{display:-webkit-box;overflow:hidden;color:var(--muted);font-size:9px;line-height:1.4;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 .pos-quote-approved-breakdown{display:grid;gap:5px;margin:2px 0 0;padding-top:7px;border-top:1px solid var(--line)}
@@ -1227,4 +1227,4 @@
 .pos-quote-approved-breakdown dd{flex:none;margin:0;color:var(--ink);font-variant-numeric:tabular-nums;font-weight:700;text-align:right}
 .pos-quote-approved-breakdown .is-subtotal{padding-top:5px;border-top:1px solid var(--line);color:var(--ink);font-weight:750}
 .pos-quote-approved-breakdown .is-discount dd{color:#a3323d}
-@media(max-width:640px){.pos-cart-line-wrap .pos-cart-line{grid-template-columns:36px minmax(0,1fr) auto;gap:7px}.pos-cart-line-wrap .pos-cart-line>.pos-cart-image,.pos-cart-line-wrap .pos-cart-line>.pos-line-placeholder{width:36px;height:36px}.pos-line-right-col>strong{font-size:13px}.pos-line-quick-controls{gap:2px}.pos-line-quick-controls>.icon-button{width:27px;height:27px}}
+@media(max-width:640px){.pos-cart-line-wrap .pos-cart-line{grid-template-columns:36px minmax(0,1fr) auto;gap:7px}.pos-cart-line-wrap .pos-cart-line>.pos-cart-image,.pos-cart-line-wrap .pos-cart-line>.pos-line-placeholder{width:36px;height:36px}.pos-line-total-value>strong{font-size:13px}.pos-line-quick-controls{gap:2px}.pos-line-quick-controls>.icon-button{width:27px;height:27px}}

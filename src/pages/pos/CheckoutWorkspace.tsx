@@ -210,7 +210,7 @@ function POSApprovedQuoteSummary({ lines, quoteCode, total, emptyDescription }: 
       return <article className="pos-quote-approved-card" key={line.line_key}>
         <div className="pos-quote-approved-item">
           <div><small>ARTÍCULO {String(index + 1).padStart(2, '0')}</small><b>{line.name || 'Artículo cotizado'}</b></div>
-          <strong>{formatMoney(line.line_total)}</strong>
+          <strong aria-label={`Total del artículo: ${formatMoney(line.line_total)}`}>{formatMoney(line.line_total)}</strong>
         </div>
         <small className="pos-quote-approved-meta">
           {line.pieceQuantity || line.quantity} {(line.pieceQuantity || line.quantity) === 1 ? 'pieza' : 'piezas'}
@@ -536,7 +536,10 @@ function POSCartLineEditor({
         <small className={`pos-line-stock-note is-${inventoryTone}`} title={inventoryStatus}>{inventoryStatus}</small>
       </span>
       <div className="pos-line-right-col">
-        <strong>{formatMoney(line.total||line.quantity*line.unitPrice)}</strong>
+        <span className="pos-line-total-value">
+          <small>TOTAL</small>
+          <strong aria-label={`Total del artículo: ${formatMoney(itemTotal)}`}>{formatMoney(itemTotal)}</strong>
+        </span>
         <div className="pos-line-quick-controls" role="group" aria-label={`Cantidad y acciones de ${line.name}`}>
           <button type="button" className="pos-line-step-btn" disabled={Number(line.quantity) <= 1} aria-label={`Reducir cantidad de ${line.name}`} onClick={() => stepQuantity(-1)}><Minus size={12}/></button>
           <span className="pos-line-qty-pill" title="Cantidad de piezas/unidades">{line.quantity}</span>
@@ -567,10 +570,6 @@ function POSCartLineEditor({
         <dt>Descuento de línea{Number(line.lineDiscountPercent) > 0 ? ` (${Number(line.lineDiscountPercent)}%)` : ''}</dt>
         <dd>−{formatMoney(itemDiscount)}</dd>
       </div>}
-      <div className="is-total">
-        <dt>Total del artículo</dt>
-        <dd>{formatMoney(itemTotal)}</dd>
-      </div>
     </dl>
     <button type="button" className="pos-line-edit-toggle" aria-expanded={editing} onClick={() => setEditing((value) => !value)}><Pencil size={13}/>{editing ? 'Cerrar edición' : 'Editar artículo, precio, acabados o medidas'}</button>
     {editing && <div className="pos-line-editor">
