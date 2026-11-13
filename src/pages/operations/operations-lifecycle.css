@@ -168,3 +168,5 @@
 .op-flow-detail-trigger{justify-self:start;min-height:38px;margin-top:3px}.op-flow-detail-trigger:focus-visible{outline:3px solid #6f3fc0;outline-offset:2px}
 .op-flow-head-actions,.op-flow-actions-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .op-flow-actions-row{margin-top:10px}
+.op-flow-transfer-line{min-width:0;flex-wrap:wrap}.op-flow-transfer-line>span{min-width:0;overflow-wrap:anywhere}.op-transfer-inputs{display:flex;flex:0 1 280px;flex-wrap:wrap;gap:8px;min-width:0}.op-transfer-inputs label{flex:1 1 112px;min-width:0;margin:0!important}.op-transfer-inputs input{max-width:none!important;min-width:0}.op-transfer-inputs input::placeholder{font-size:11px}
+@media(max-width:620px){.op-transfer-inputs{width:100%;flex-basis:100%}.op-transfer-inputs label{flex:1 1 120px}}
