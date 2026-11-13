@@ -195,3 +195,11 @@ Para cada caso comprobar saldo, venta, actor, referencia, estado, mensajes y rec
 ## Continuidad
 
 Objetivo: mejorar control de inventario, POS y operación conectada. Propuesta v01 basada en la estructura observada de `InventoryWorkspace.jsx`, `POSPage.jsx` y rutas de la suite. Fase vigente: plan. No se validaron políticas contables, reglas de operación ni cantidades importadas. Próximo paso: acordar procesos reales de caja y almacén, y luego priorizar P0 con el responsable de operación.
+
+### Auditoría de procedencia y conciliación · 13 nov 2026
+
+- La cola conserva 749 filas fuente pendientes: 675 de Visual Corp y 74 de GigaPrint. No se convierten cantidades importadas en saldos físicos.
+- La revisión detectó que la interfaz permitía proponer cualquier variante activa de la organización, incluso una de otra marca. La conciliación ahora limita la búsqueda al alcance de la sucursal, permite buscar por nombre/variante/SKU y presenta coincidencias exactas como sugerencias que la persona revisora debe confirmar.
+- Se añadió una validación en `review_inventory_import_row` para rechazar cruces Visual/GigaPrint también cuando se invoca el RPC directamente. Se conserva la autorización por rol, auditoría, idempotencia de estados y permisos del RPC.
+- No hay variantes Giga activas en el catálogo, por lo que las 74 filas de GigaPrint no se pueden vincular todavía. Siguiente paso operativo: registrar el catálogo Giga confirmado y luego cotejar esas filas; no asociarlas a Visual como atajo.
+- Validación local: `npm run build:checked` pasó. Validación de producción: definición del RPC confirma la regla de marca; `authenticated` mantiene `EXECUTE` y `anon` no lo tiene.
