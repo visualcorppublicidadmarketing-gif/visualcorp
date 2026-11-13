@@ -128,29 +128,36 @@ function eventFor(
   kind: WorkshopScheduleEvent['kind'],
   dateTime: string | null | undefined,
   title: string,
+  identity = dateTime || kind,
+  areaLabel = job.areaLabel || 'Taller',
+  status = job.status,
 ) {
   const date = dateKey(dateTime);
   if (!date) return undefined;
   return {
-    id: `${job.id}:${kind}:${date}`,
+    id: `${job.id}:${kind}:${identity}`,
     jobId: job.id,
     date,
     title,
     kind,
     code: job.code,
     clientName: job.clientName,
-    areaLabel: job.areaLabel || 'Taller',
-    status: job.status,
+    areaLabel,
+    status,
     time: timeLabel(dateTime),
     address: job.requiresInstallation ? job.address : undefined,
     hasMapLocation: hasWorkshopMapLocation(job),
   } satisfies WorkshopScheduleEvent;
 }
 
-function createEvents(job: WorkshopScheduleJob, step?: StepRow, fulfillment?: FulfillmentRow): WorkshopScheduleEvent[] {
+function createEvents(job: WorkshopScheduleJob, steps: StepRow[], fulfillment?: FulfillmentRow): WorkshopScheduleEvent[] {
   const events: WorkshopScheduleEvent[] = [];
-  const stepEvent = eventFor(job, 'production', step?.due_at, step?.title || 'Etapa de producción');
-  if (stepEvent) events.push(stepEvent);
+  for (const step of steps) {
+    if (!['waiting', 'ready', 'in_progress', 'blocked'].includes(step.status)) continue;
+    const area = areaForStep(step);
+    const stepEvent = eventFor(job, 'production', step.due_at, step.title || 'Etapa de producción', step.id, area.name, step.status);
+    if (stepEvent) events.push(stepEvent);
+  }
 
   const installationDate = fulfillment?.installation_estimated_at || job.installationAt;
   if (job.requiresInstallation) {
@@ -163,7 +170,7 @@ function createEvents(job: WorkshopScheduleJob, step?: StepRow, fulfillment?: Fu
   if (deliveryEvent) events.push(deliveryEvent);
 
   const deadlineEvent = eventFor(job, 'deadline', job.workDueAt, 'Fecha de trabajo');
-  if (deadlineEvent && !events.some((event) => event.date === deadlineEvent.date)) events.push(deadlineEvent);
+  if (deadlineEvent) events.push(deadlineEvent);
   return events;
 }
 
@@ -256,7 +263,9 @@ export function useWorkshopSchedule(): WorkshopScheduleData {
         const requiresInstallation = detail?.installation_required === true
           || specs.installation_required === true
           || specs.requires_installation === true;
-        const scheduledAt = installationAt || step?.due_at || deliveryDueAt || row.due_at;
+        const scheduledAt = requiresInstallation
+          ? installationAt || deliveryDueAt || step?.due_at || row.due_at
+          : step?.due_at || deliveryDueAt || row.due_at;
         const status = step?.status || row.fulfillment_status || row.status;
         return {
           id: row.id,
@@ -280,10 +289,7 @@ export function useWorkshopSchedule(): WorkshopScheduleData {
       });
       const nextEvents = nextJobs.flatMap((job) => createEvents(
         job,
-        stepsByJob.get(job.id)?.find((step) => step.status === 'in_progress')
-          || stepsByJob.get(job.id)?.find((step) => step.status === 'blocked')
-          || stepsByJob.get(job.id)?.find((step) => step.status === 'ready')
-          || stepsByJob.get(job.id)?.find((step) => step.status === 'waiting'),
+        stepsByJob.get(job.id) || [],
         fulfillmentBySale.get(jobRowById.get(job.id)?.sale_id || ''),
       ));
       nextEvents.sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || '') || a.code.localeCompare(b.code));

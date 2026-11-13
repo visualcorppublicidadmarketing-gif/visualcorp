@@ -1,379 +1,144 @@
-import React, { useState } from 'react';
-import {
-  X,
-  MapPin,
-  Compass,
-  Check,
-  Search,
-  ExternalLink,
-  Sparkles,
-} from 'lucide-react';
-import {
-  type InstallationWorkOrder,
-  MILAGRO_LANDMARKS,
-  MILAGRO_CENTER,
-  parseCoordinatesInput,
-} from '../../lib/geospatialProximity';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { MapPin, X } from 'lucide-react';
+import { parseCoordinatesInput, type GeoCoordinates, type InstallationWorkOrder } from '../../lib/geospatialProximity';
+import './workshop-location-editor.css';
 
 interface LocationEditorModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  isPickingLocation?: boolean;
   job: InstallationWorkOrder | null;
-  onSaveLocation: (
-    jobId: string,
-    data: {
-      address: string;
-      lat: number;
-      lng: number;
-      referenceNotes: string;
-    }
-  ) => void;
+  pickedCoordinates?: GeoCoordinates | null;
+  onClose: () => void;
+  onRequestMapPick?: () => void;
+  onSaveLocation: (jobId: string, data: { address: string; lat: number; lng: number; mapsUrl: string }) => Promise<void>;
 }
 
-export const LocationEditorModal: React.FC<LocationEditorModalProps> = ({
-  isOpen,
-  onClose,
-  job,
-  onSaveLocation,
-}) => {
+function acceptedGoogleMapsUrl(value: string) {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    const isFullMap = ['google.com', 'www.google.com'].includes(host) && url.pathname.startsWith('/maps/');
+    const isShortMap = host === 'maps.app.goo.gl' || (host === 'goo.gl' && url.pathname.startsWith('/maps/'));
+    return url.protocol === 'https:' && (isFullMap || isShortMap) ? url.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
+export function LocationEditorModal(props: LocationEditorModalProps) {
+  const { isOpen, job } = props;
   if (!isOpen || !job) return null;
+  return <LocationEditorDialog key={job.id} {...props} job={job} />;
+}
 
-  const [address, setAddress] = useState(job.address || '');
-  const [lat, setLat] = useState(job.lat && Number.isFinite(job.lat) ? String(job.lat) : String(MILAGRO_CENTER.lat));
-  const [lng, setLng] = useState(job.lng && Number.isFinite(job.lng) ? String(job.lng) : String(MILAGRO_CENTER.lng));
-  const [referenceNotes, setReferenceNotes] = useState(job.referenceNotes || '');
-  const [mapsUrlInput, setMapsUrlInput] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+function LocationEditorDialog({ job, pickedCoordinates, isPickingLocation = false, onClose, onRequestMapPick, onSaveLocation }: LocationEditorModalProps & { job: InstallationWorkOrder }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [address, setAddress] = useState(job.address === 'Dirección pendiente' ? '' : job.address || '');
+  const [latitude, setLatitude] = useState(() => pickedCoordinates?.lat ?? job.lat ?? '');
+  const [longitude, setLongitude] = useState(() => pickedCoordinates?.lng ?? job.lng ?? '');
+  const [mapsUrlInput, setMapsUrlInput] = useState(pickedCoordinates ? '' : ('mapsUrl' in job && typeof job.mapsUrl === 'string' ? job.mapsUrl : ''));
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  // Manejador al pegar enlace de Google Maps o coordenadas directas
-  const handleParseMapsInput = (inputVal: string) => {
-    setMapsUrlInput(inputVal);
-    setErrorMsg('');
-    const parsed = parseCoordinatesInput(inputVal);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (isPickingLocation) {
+      if (dialog.open) dialog.close();
+    } else if (!dialog.open) dialog.showModal();
+  }, [isPickingLocation]);
+
+  useEffect(() => () => {
+    const dialog = dialogRef.current;
+    if (dialog?.open) dialog.close();
+  }, []);
+
+  useEffect(() => {
+    if (!pickedCoordinates) return;
+    setLatitude(String(pickedCoordinates.lat));
+    setLongitude(String(pickedCoordinates.lng));
+    setMapsUrlInput('');
+  }, [pickedCoordinates?.lat, pickedCoordinates?.lng]);
+
+  const handleMapsChange = (value: string) => {
+    setMapsUrlInput(value);
+    setError('');
+    const parsed = parseCoordinatesInput(value);
     if (parsed) {
-      setLat(String(parsed.lat));
-      setLng(String(parsed.lng));
+      setLatitude(String(parsed.lat));
+      setLongitude(String(parsed.lng));
+    } else if (value.trim()) {
+      setLatitude('');
+      setLongitude('');
     }
   };
 
-  // Manejador al seleccionar un punto de referencia de Milagro
-  const handleSelectLandmark = (landmark: typeof MILAGRO_LANDMARKS[0]) => {
-    setLat(String(landmark.lat));
-    setLng(String(landmark.lng));
-    if (!address.trim()) {
-      setAddress(landmark.name);
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || latitude === '' || longitude === '') {
+      setError('Selecciona un punto en el mapa o ingresa latitud y longitud.');
+      return;
     }
-  };
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    const numLat = Number(lat);
-    const numLng = Number(lng);
-
-    if (!Number.isFinite(numLat) || !Number.isFinite(numLng)) {
-      setErrorMsg('Las coordenadas deben ser números válidos.');
+    if (Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) {
+      setError('Las coordenadas deben estar dentro del rango válido y señalar una ubicación real.');
+      return;
+    }
+    const mapsUrl = acceptedGoogleMapsUrl(mapsUrlInput);
+    if (mapsUrlInput.trim() && !mapsUrl && !parseCoordinatesInput(mapsUrlInput)) {
+      setError('Usa un enlace HTTPS de Google Maps o pega coordenadas en formato latitud, longitud.');
       return;
     }
 
-    if (Math.abs(numLat) > 90 || Math.abs(numLng) > 180) {
-      setErrorMsg('Latitud (-90 a 90) o Longitud (-180 a 180) fuera de rango.');
-      return;
+    setSaving(true);
+    try {
+      await onSaveLocation(job.id, { address: address.trim(), lat, lng, mapsUrl });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'No se pudo guardar la ubicación. Inténtalo de nuevo.');
+    } finally {
+      setSaving(false);
     }
-
-    onSaveLocation(job.id, {
-      address: address.trim(),
-      lat: numLat,
-      lng: numLng,
-      referenceNotes: referenceNotes.trim(),
-    });
-
-    onClose();
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 10000,
-        background: 'rgba(15, 23, 42, 0.75)',
-        backdropFilter: 'blur(6px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px',
-      }}
-      onClick={onClose}
+    <dialog
+      ref={dialogRef}
+      className="ws-location-dialog"
+      aria-labelledby="ws-location-title"
+      onCancel={(event) => { event.preventDefault(); onClose(); }}
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
     >
-      <div
-        style={{
-          background: '#0f172a',
-          color: '#f8fafc',
-          borderRadius: '16px',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
-          width: '100%',
-          maxWidth: '560px',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          padding: '24px',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Cabecera del Modal */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
-                background: '#2563eb',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-              }}
-            >
-              <MapPin size={20} />
-            </div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800 }}>
-                Georreferenciar Instalación
-              </h3>
-              <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#94a3b8' }}>
-                {job.code} · {job.title}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#94a3b8',
-              cursor: 'pointer',
-              padding: '6px',
-            }}
-          >
-            <X size={20} />
-          </button>
+      <header className="ws-location-head">
+        <div className="ws-location-icon"><MapPin size={18} aria-hidden="true" /></div>
+        <div><span>INSTALACIÓN</span><h2 id="ws-location-title">Ubicación del trabajo</h2><p>{job.code} · {job.title}</p></div>
+        <button className="ws-location-close" type="button" onClick={onClose} aria-label="Cerrar ubicación"><X size={18} /></button>
+      </header>
+
+      <form className="ws-location-form" onSubmit={(event) => void save(event)}>
+        <label className="ws-location-field">
+          <span>Dirección o referencia <b aria-hidden="true">*</b></span>
+          <input autoFocus required maxLength={300} value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Calle, sector y referencia para encontrar el lugar" />
+        </label>
+        <label className="ws-location-field">
+          <span>Enlace de Google Maps o coordenadas</span>
+          <input value={mapsUrlInput} onChange={(event) => handleMapsChange(event.target.value)} placeholder="https://maps.app.goo.gl/... o -2.1343, -79.5938" />
+          <small>Las coordenadas detectadas se pueden revisar antes de guardarlas.</small>
+        </label>
+
+        <div className="ws-location-coordinates">
+          <label className="ws-location-field"><span>Latitud <b aria-hidden="true">*</b></span><input required inputMode="decimal" value={latitude} onChange={(event) => { setLatitude(event.target.value); setMapsUrlInput(''); }} placeholder="-2.1343" /></label>
+          <label className="ws-location-field"><span>Longitud <b aria-hidden="true">*</b></span><input required inputMode="decimal" value={longitude} onChange={(event) => { setLongitude(event.target.value); setMapsUrlInput(''); }} placeholder="-79.5938" /></label>
         </div>
 
-        <form onSubmit={handleSave} style={{ display: 'grid', gap: '16px' }}>
-          {/* Pegar enlace de Google Maps o Coordenadas rápidas */}
-          <div
-            style={{
-              background: 'rgba(30, 41, 59, 0.6)',
-              border: '1px dashed rgba(59, 130, 246, 0.4)',
-              borderRadius: '10px',
-              padding: '12px 14px',
-            }}
-          >
-            <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, color: '#38bdf8', marginBottom: '6px' }}>
-              Pegar enlace de Google Maps o Coordenadas GPS
-            </label>
-            <input
-              type="text"
-              placeholder="Ej. https://maps.app.goo.gl/... o -2.1343, -79.5938"
-              value={mapsUrlInput}
-              onChange={(e) => handleParseMapsInput(e.target.value)}
-              style={{
-                width: '100%',
-                background: '#020617',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                color: '#fff',
-                fontSize: '12.5px',
-                boxSizing: 'border-box',
-              }}
-            />
-            <span style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px', display: 'block' }}>
-              Detecta automáticamente latitud y longitud desde cualquier enlace de Google Maps o chat de WhatsApp.
-            </span>
-          </div>
-
-          {/* Dirección en texto */}
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#e2e8f0', marginBottom: '6px' }}>
-              Dirección de Instalación / Referencia Física
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Ej. Av. 17 de Septiembre y Colón, frente a la farmacia"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              style={{
-                width: '100%',
-                background: '#020617',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '8px',
-                padding: '9px 12px',
-                color: '#fff',
-                fontSize: '13px',
-                boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          {/* Coordenadas Decimales Exactas */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: '#cbd5e1', marginBottom: '4px' }}>
-                Latitud (GPS)
-              </label>
-              <input
-                type="text"
-                required
-                value={lat}
-                onChange={(e) => setLat(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: '#020617',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  borderRadius: '8px',
-                  padding: '8px 10px',
-                  color: '#fff',
-                  fontSize: '12.5px',
-                  fontFamily: 'monospace',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: '#cbd5e1', marginBottom: '4px' }}>
-                Longitud (GPS)
-              </label>
-              <input
-                type="text"
-                required
-                value={lng}
-                onChange={(e) => setLng(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: '#020617',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  borderRadius: '8px',
-                  padding: '8px 10px',
-                  color: '#fff',
-                  fontSize: '12.5px',
-                  fontFamily: 'monospace',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Puntos de Referencia Frecuentes en Milagro */}
-          <div>
-            <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
-              <Compass size={12} style={{ display: 'inline', marginRight: '4px' }} />
-              Zonas y Referencias Frecuentes en Milagro (clic para asignar):
-            </label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {MILAGRO_LANDMARKS.slice(0, 8).map((lm) => (
-                <button
-                  key={lm.id}
-                  type="button"
-                  onClick={() => handleSelectLandmark(lm)}
-                  style={{
-                    background: 'rgba(30, 41, 59, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '6px',
-                    padding: '4px 8px',
-                    fontSize: '11px',
-                    color: '#e2e8f0',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#2563eb';
-                    e.currentTarget.style.color = '#fff';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)';
-                    e.currentTarget.style.color = '#e2e8f0';
-                  }}
-                >
-                  {lm.name.split('/')[0].trim()}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Notas de Cuadrilla e Instalación */}
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#e2e8f0', marginBottom: '6px' }}>
-              Notas Técnicas para la Cuadrilla (Herramientas, andamio, persona de contacto)
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Ej. Llevar escalera de 4 cuerpos y taladro percutor. Contactar a Don Luis al llegar."
-              value={referenceNotes}
-              onChange={(e) => setReferenceNotes(e.target.value)}
-              style={{
-                width: '100%',
-                background: '#020617',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                color: '#fff',
-                fontSize: '12.5px',
-                boxSizing: 'border-box',
-                resize: 'vertical',
-              }}
-            />
-          </div>
-
-          {errorMsg && (
-            <div style={{ background: '#7f1d1d', color: '#fecaca', padding: '8px 12px', borderRadius: '6px', fontSize: '12px' }}>
-              {errorMsg}
-            </div>
-          )}
-
-          {/* Botones de Acción */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                background: 'transparent',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: '#cbd5e1',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontSize: '12.5px',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              style={{
-                background: '#2563eb',
-                border: 'none',
-                color: '#fff',
-                padding: '8px 18px',
-                borderRadius: '8px',
-                fontSize: '12.5px',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <Check size={16} />
-              Guardar Ubicación
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {onRequestMapPick && <button className="ws-location-pick" type="button" disabled={saving} onClick={onRequestMapPick}><MapPin size={15} /> Seleccionar punto directamente en el mapa</button>}
+        {error && <p className="ws-location-error" role="alert">{error}</p>}
+        <footer className="ws-location-actions">
+          <button type="button" className="button button-outline" onClick={onClose} disabled={saving}>Cancelar</button>
+          <button type="submit" className="button button-dark" disabled={saving}>{saving ? 'Guardando…' : 'Guardar ubicación'}</button>
+        </footer>
+      </form>
+    </dialog>
   );
-};
+}

@@ -1,0 +1,38 @@
+.ws-location-dialog {
+  width: min(560px, calc(100vw - 24px));
+  max-width: 100%;
+  max-height: min(90dvh, 760px);
+  overflow: auto;
+  padding: 0;
+  border: 1px solid var(--line, #e5e0ea);
+  border-radius: 16px;
+  background: var(--surface, #fff);
+  color: var(--ink, #191522);
+  box-shadow: 0 24px 80px #16132333;
+}
+.ws-location-dialog::backdrop { background: #17122280; backdrop-filter: blur(4px); }
+.ws-location-dialog:focus-visible { outline: 3px solid color-mix(in srgb, #8d2c86 50%, transparent); outline-offset: 3px; }
+.ws-location-head { display: flex; align-items: flex-start; gap: 11px; padding: 18px; border-bottom: 1px solid var(--line, #e5e0ea); }
+.ws-location-icon { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 11px; background: color-mix(in srgb, #8d2c86 11%, var(--surface, #fff)); color: #8d2c86; }
+.ws-location-head>div:nth-child(2) { min-width: 0; flex: 1; }
+.ws-location-head span { color: #8d2c86; font-size: 9px; font-weight: 800; letter-spacing: .08em; }
+.ws-location-head h2 { margin: 2px 0 0; font-size: 18px; line-height: 1.25; }
+.ws-location-head p { margin: 4px 0 0; color: var(--muted, #5e566b); font-size: 11px; overflow-wrap: anywhere; }
+.ws-location-close { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border: 1px solid var(--line, #e5e0ea); border-radius: 9px; background: var(--surface, #fff); color: var(--muted, #5e566b); cursor: pointer; }
+.ws-location-form { display: grid; gap: 14px; padding: 18px; }
+.ws-location-field { display: grid; gap: 6px; min-width: 0; color: var(--ink, #191522); font-size: 11px; font-weight: 700; }
+.ws-location-field>span b { color: #a31331; }
+.ws-location-field input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line, #ded8e4); border-radius: 9px; background: var(--surface, #fff); color: var(--ink, #191522); font: inherit; font-weight: 500; }
+.ws-location-field input:focus-visible,.ws-location-close:focus-visible,.ws-location-pick:focus-visible { outline: 3px solid color-mix(in srgb, #8d2c86 48%, transparent); outline-offset: 2px; }
+.ws-location-field small { color: var(--muted, #5e566b); font-size: 10px; font-weight: 450; line-height: 1.4; }
+.ws-location-coordinates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ws-location-pick { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 8px 12px; border: 1px solid color-mix(in srgb, #8d2c86 35%, var(--line, #e5e0ea)); border-radius: 9px; background: color-mix(in srgb, #8d2c86 7%, var(--surface, #fff)); color: #762270; font: inherit; font-size: 11px; font-weight: 750; cursor: pointer; }
+.ws-location-error { margin: 0; padding: 10px 12px; border: 1px solid #efc5cb; border-radius: 9px; background: #fff5f6; color: #9f1931; font-size: 11px; line-height: 1.45; }
+.ws-location-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding-top: 3px; }
+.work-app.theme-dark .ws-location-dialog,.work-app.theme-dark .ws-location-close,[data-theme="dark"] .ws-location-dialog,[data-theme="dark"] .ws-location-close { background: var(--surface, #171a25); color: var(--ink, #f1f3f8); }
+.work-app.theme-dark .ws-location-field,[data-theme="dark"] .ws-location-field { color: var(--ink, #f1f3f8); }
+.work-app.theme-dark .ws-location-field input,[data-theme="dark"] .ws-location-field input { background: #10131c; color: #f1f3f8; }
+.work-app.theme-dark .ws-location-pick,[data-theme="dark"] .ws-location-pick { color: #f1c3ef; }
+.work-app.theme-dark .ws-location-error,[data-theme="dark"] .ws-location-error { border-color: #65313d; background: #291920; color: #ffbdc9; }
+@media (max-width: 480px) { .ws-location-head,.ws-location-form { padding: 14px; } .ws-location-coordinates { grid-template-columns: minmax(0, 1fr); } .ws-location-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } .ws-location-actions button { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .ws-location-dialog *, .ws-location-dialog *::before, .ws-location-dialog *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }

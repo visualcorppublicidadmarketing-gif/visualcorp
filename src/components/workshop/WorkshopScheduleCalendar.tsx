@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { CalendarDays, MapPin } from 'lucide-react';
 import { Calendar, dateFromKey, dateToKey } from '../ui/Calendar';
-import type { WorkshopScheduleEvent } from './workshopTypes';
+import { getWorkshopTodayKey, type WorkshopScheduleEvent } from './workshopTypes';
 import './workshop-schedule-calendar.css';
 
 export interface WorkshopScheduleCalendarProps {
@@ -11,6 +11,7 @@ export interface WorkshopScheduleCalendarProps {
   onSelectDate?: (date: string) => void;
   onSelectEvent?: (event: WorkshopScheduleEvent) => void;
   onShowOnMap?: (jobId: string) => void;
+  onRequestLocationEdit?: (jobId: string) => void;
   className?: string;
 }
 
@@ -25,9 +26,10 @@ export function WorkshopScheduleCalendar({
   onSelectDate,
   onSelectEvent,
   onShowOnMap,
+  onRequestLocationEdit,
   className = '',
 }: WorkshopScheduleCalendarProps) {
-  const [internalDate, setInternalDate] = useState(() => dateToKey(new Date()));
+  const [internalDate, setInternalDate] = useState(getWorkshopTodayKey);
   const activeDate = selectedDate || internalDate;
   const eventsByDate = useMemo(() => {
     const result = new Map<string, WorkshopScheduleEvent[]>();
@@ -106,6 +108,16 @@ export function WorkshopScheduleCalendar({
                         type="button"
                         aria-label={`Ver ubicación de ${event.code} en el mapa`}
                         onClick={() => onShowOnMap(event.jobId)}
+                      >
+                        <MapPin size={16} />
+                      </button>
+                    )}
+                    {event.kind === 'installation' && !event.hasMapLocation && onRequestLocationEdit && (
+                      <button
+                        className="vc-workshop-event-map"
+                        type="button"
+                        aria-label={`Agregar ubicación para ${event.code}`}
+                        onClick={() => onRequestLocationEdit(event.jobId)}
                       >
                         <MapPin size={16} />
                       </button>
