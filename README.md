@@ -186,3 +186,14 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - No se modifican el cálculo ni la persistencia de cotizaciones. `npm run build:checked` pasa; se revisaron PDFs sintéticos A4 de una y cuatro páginas en Chromium, sin datos de clientes. Las líneas repiten encabezado en la tabla y el resumen queda completo al final.
 
 - **Conciliación del inventario (13 de noviembre de 2026):** se añadió filtro por archivo fuente y se confirmó en producción la cola de 749 filas pendientes (675 Visual Corp, 74 GigaPrint; 22 días). La interfaz permite revisar cada lote por sucursal; ningún dato fuente cambia saldos. Estado y siguientes prioridades en [docs/PLAN_MEJORA_INVENTARIO_POS_OPERACIONES_2026-10-22.md](docs/PLAN_MEJORA_INVENTARIO_POS_OPERACIONES_2026-10-22.md).
+
+## Continuidad del trabajo
+
+- **Actualización:** 16 de noviembre de 2026. Mejora local del catálogo de operaciones y del POS.
+- **Resultado buscado:** gestionar artículos y servicios configurables en una sola fuente de catálogo, con escritura reservada a propietarios y administradores; seleccionar paquetes de servicios en el POS.
+- **Versión de trabajo:** cambios en `src/pages/admin/CatalogPage.tsx`, `src/pages/admin/StandardCustomProducts.tsx`, `src/pages/admin/ServiceCatalog.tsx`, `src/pages/pos/CheckoutWorkspace.tsx` y `src/app/workspace.tsx`.
+- **Decisiones confirmadas:** el usuario pidió paquetes de logos de $30 (Básico), $100 (Completo), $500 (Universo Visual) y $10 por cambio adicional. No indicó tarifas para publicidad digital. Los precios indicados se guardan en una plantilla de logo en borrador; publicidad digital permanece sin precio y sin publicar.
+- **Correcciones aplicadas:** vistas y tarjetas de servicios, ficha editable con brief/entregables/condiciones/paquetes, selector de servicios en POS, cargo automático de cambios de logo en una línea separada, y políticas de escritura RLS/storage limitadas a owner/admin. La migración local `supabase/migrations/20261116151811_catalog_services_admin_only.sql` amplía tipos de producto, ajusta la lectura pública necesaria y crea plantillas en borrador.
+- **Pendientes:** revisión del alcance contractual, entregables y tiempos con administración; definir tarifas/paquetes de publicidad digital. La migración aún no está aplicada a Supabase y estos cambios no se han publicado.
+- **Revisión y aprobación:** typecheck y build local pasan; no se realizó una venta ni se comprobó con una sesión autenticada. Sin aprobación de publicación en esta solicitud.
+- **Siguiente acción:** aplicar la migración de forma controlada y publicar cuando se solicite.

@@ -98,6 +98,27 @@ const catalog = (sourceCatalog.products || []).map((product, index) => {
   return { ...normalized, image: images[0] || normalized.image, images: images.length ? images : [normalized.image].filter(Boolean) };
 });
 
+function mapRemoteCatalogProduct(row: any) {
+  const standardDetails = row.custom_options?.standard_details || {};
+  const standardDetailLines = [
+    standardDetails.materials ? 'Materiales: ' + standardDetails.materials : '',
+    standardDetails.colors ? 'Colores: ' + standardDetails.colors : '',
+    standardDetails.dimensions ? 'Medidas: ' + standardDetails.dimensions : '',
+    standardDetails.personalization ? 'Personalización: ' + standardDetails.personalization : '',
+  ].filter(Boolean);
+  const product = {
+    id: row.id, sku: row.sku || row.id, name: row.name, slug: row.slug, family: row.category || 'General', mode: row.calc_type === 'm2' ? 'area' : 'quantity', productKind: row.product_kind || 'catalog',
+    priceBasis: 'unit', priceScales: row.price_scales || [],
+    tiers: (row.price_scales || []).filter((scale: any) => scale.option == null && scale.qty != null && (scale.pvp != null || scale.price != null || scale.price_inst != null || scale.price_corp != null)).map((scale: any) => ({ min_qty: Number(scale.qty), unit_price: scale.pvp == null && scale.price == null ? null : Number(scale.pvp ?? scale.price), install_unit_price: scale.price_inst == null ? null : Number(scale.price_inst), corporate_unit_price: scale.price_corp == null ? null : Number(scale.price_corp) })),
+    optionPrices: (row.price_scales || []).filter((scale: any) => scale.option != null && scale.price != null).map((scale: any) => ({ label: String(scale.option), price: Number(scale.price) })),
+    unit: row.calc_type === 'm2' ? 'm²' : 'unidad', price: Number(row.price) || 0, installPrice: row.price_inst == null ? null : Number(row.price_inst),
+    corporatePrice: row.price_corp == null ? null : Number(row.price_corp), image: row.image || '', images: row.images || [],
+    confirmed: Number(row.price) > 0, published: true, description: [row.description || '', ...standardDetailLines].filter(Boolean).join(' · '), features: row.features || [], customOptions: row.custom_options || {}, source: 'Supabase · Visual Corp',
+  };
+  const images = catalogImagesForProduct(product);
+  return { ...product, image: images[0] || product.image, images: images.length ? images : [product.image].filter(Boolean) };
+}
+
 function createInitialState() {
   return {
     schemaVersion: 1,
@@ -174,25 +195,7 @@ export function WorkspaceProvider({ children }) {
       if (!active || settingsResult.error || servicesResult.error || catalogResult.error) return;
       const settings = settingsResult.data;
       const services = (servicesResult.data || []).map((row) => ({ id: row.id, name: row.name, description: row.short || row.detail || '', enabled: row.is_published }));
-      const remoteCatalog = (catalogResult.data || []).map((row) => {
-        const standardDetails = row.custom_options?.standard_details || {};
-        const standardDetailLines = [
-          standardDetails.materials ? 'Materiales: ' + standardDetails.materials : '',
-          standardDetails.colors ? 'Colores: ' + standardDetails.colors : '',
-          standardDetails.dimensions ? 'Medidas: ' + standardDetails.dimensions : '',
-          standardDetails.personalization ? 'Personalización: ' + standardDetails.personalization : '',
-        ].filter(Boolean);
-        return {
-        id: row.id, sku: row.sku || row.id, name: row.name, slug: row.slug, family: row.category || 'General', mode: row.calc_type === 'm2' ? 'area' : 'quantity',
-        priceBasis: 'unit', priceScales: row.price_scales || [], tiers: (row.price_scales || []).filter((scale) => scale.option == null && scale.qty != null && (scale.pvp != null || scale.price != null || scale.price_inst != null || scale.price_corp != null)).map((scale) => ({ min_qty: Number(scale.qty), unit_price: scale.pvp == null && scale.price == null ? null : Number(scale.pvp ?? scale.price), install_unit_price: scale.price_inst == null ? null : Number(scale.price_inst), corporate_unit_price: scale.price_corp == null ? null : Number(scale.price_corp) })),
-        optionPrices: (row.price_scales || []).filter((scale) => scale.option != null && scale.price != null).map((scale) => ({ label: String(scale.option), price: Number(scale.price) })),
-        unit: row.calc_type === 'm2' ? 'm²' : 'unidad', price: Number(row.price) || 0, installPrice: row.price_inst == null ? null : Number(row.price_inst),
-        corporatePrice: row.price_corp == null ? null : Number(row.price_corp), image: row.image || '', images: row.images || [],
-        confirmed: Number(row.price) > 0, published: true, description: [row.description || '', ...standardDetailLines].filter(Boolean).join(' · '), features: row.features || [], customOptions: row.custom_options || {}, source: 'Supabase · Visual Corp',
-      }; }).map((product) => {
-        const images = catalogImagesForProduct(product);
-        return { ...product, image: images[0] || product.image, images: images.length ? images : [product.image].filter(Boolean) };
-      });
+      const remoteCatalog = (catalogResult.data || []).map(mapRemoteCatalogProduct);
       setData((current) => ({ ...current,
         settings: settings ? { ...current.settings, name: settings.brand, location: settings.address, heroEyebrow: settings.hero_kicker, heroTitle: settings.hero_title, heroText: settings.hero_text, contactPhone: settings.phone || settings.whatsapp, whatsappSecondary: settings.whatsapp_secondary ?? current.settings.whatsappSecondary, instagram: settings.instagram ?? current.settings.instagram, facebook: settings.facebook ?? current.settings.facebook, tiktok: settings.tiktok ?? current.settings.tiktok, email: settings.email } : current.settings,
         services: servicesResult.data ? services : current.services,
@@ -220,7 +223,7 @@ export function WorkspaceProvider({ children }) {
         if ((page || []).length < pageSize) return { data: rows, error: null };
       }
     };
-    const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult, customerAvatarsResult, groupsResult] = await Promise.all([
+    const [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult, customerAvatarsResult, groupsResult, catalogResult] = await Promise.all([
       readAllPages(() => supabase.from('inventory_items').select('id,category_id,area_id,inventory_group_id,sku,name,description,item_type,tags,reference_image_url,custom_fields,base_unit,minimum_quantity,minimum_quantity_configured,active,created_at,updated_at').eq('organization_id', organizationId).order('id'),'inventory'),
       readAllPages(() => supabase.from('inventory_variants').select('id,item_id,sku,label,attributes,active').eq('organization_id', organizationId).order('id'),'inventory'),
       readAllPages(() => supabase.from('inventory_stock').select('variant_id,branch_id,location_code,quantity,updated_at').eq('organization_id', organizationId).order('variant_id').order('branch_id').order('location_code'),'inventory'),
@@ -235,6 +238,7 @@ export function WorkspaceProvider({ children }) {
       readAllPages(() => supabase.from('inventory_stock_metrics').select('variant_id,branch_id,location_code,quantity,reserved_quantity,available_quantity,reserved_percent,last_restock_at,lifetime_consumed,consumed_last_30_days,movement_count,last_movement_at').eq('organization_id', organizationId).order('variant_id').order('branch_id').order('location_code'),'inventory'),
       hasPermission('crm', 'view') ? supabase.rpc('list_visualcorp_customer_google_avatars') : Promise.resolve({ data: [], error: null }),
       readAllPages(() => supabase.from('inventory_groups').select('id,organization_id,name,description,icon_key,color_key,show_in_main,display_order,archived_at,created_at,updated_at').eq('organization_id', organizationId).is('archived_at', null).order('display_order').order('name'),'inventory'),
+      supabase.from('public_quote_catalog_products').select('*').order('sort_order'),
     ]);
     const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult, groupsResult].find((result) => result.error);
     if (failed) { setNotice(`No se pudieron sincronizar todos los datos operativos: ${failed.error.message}`); return; }
@@ -307,7 +311,7 @@ export function WorkspaceProvider({ children }) {
     const customerById = new Map<string, any>(remoteCustomers.map((row) => [row.id, row]));
     const paymentLabels = { cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', other: 'Otro' };
     const remoteSales = (salesResult.data || []).map((row) => { const paid = (row.sale_payments || []).reduce((sum, payment) => sum + Number(payment.amount), 0); const methods = [...new Set((row.sale_payments || []).map((payment) => payment.method))]; return { id: row.id, code: row.sale_code || row.id.slice(0, 8), total: Number(row.total), paid, balance: Math.max(0, Number(row.total) - paid), date: row.created_at, method: methods.length > 1 ? 'Pago dividido' : paymentLabels[methods[0] || row.payment_method] || 'Otro', customer: customerById.get(row.customer_id)?.name || '', description: (row.sale_lines || []).map((line) => line.description_snapshot).join(', '), quantity: (row.sale_lines || []).reduce((sum, line) => sum + Number(line.quantity), 0), urgent: row.urgent_backorder, status: row.status, note: row.note }; });
-    setData((current) => ({ ...current, branches: branchesResult.data || [], inventoryLocations, inventory: remoteInventory, inventoryGroups: (groupsResult.data || []).map((row: any) => ({ id: row.id, organizationId: row.organization_id, name: row.name, description: row.description || '', iconKey: row.icon_key, colorKey: row.color_key, showInMain: row.show_in_main, displayOrder: row.display_order || 0, archivedAt: row.archived_at || null })), inventoryMovements: remoteMovements, customers: remoteCustomers, sales: remoteSales }));
+    setData((current) => ({ ...current, branches: branchesResult.data || [], inventoryLocations, inventory: remoteInventory, catalog: catalogResult.error ? current.catalog : (catalogResult.data || []).map(mapRemoteCatalogProduct), inventoryGroups: (groupsResult.data || []).map((row: any) => ({ id: row.id, organizationId: row.organization_id, name: row.name, description: row.description || '', iconKey: row.icon_key, colorKey: row.color_key, showInMain: row.show_in_main, displayOrder: row.display_order || 0, archivedAt: row.archived_at || null })), inventoryMovements: remoteMovements, customers: remoteCustomers, sales: remoteSales }));
   }, [organizationId, user, hasPermission]);
   useEffect(() => { void refreshRemote(); }, [refreshRemote]);
   useEffect(() => {

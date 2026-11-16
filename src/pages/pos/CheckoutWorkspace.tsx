@@ -650,6 +650,8 @@ export function PosPage() {
   const { organizationId, user, roles, hasPermission }=useAuth();
   const { favoriteIds, toggleFavorite, status: favoriteStorageStatus }=useAdvisorProductFavorites(organizationId, user?.id);
   const [form,setForm]=useState({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
+  const [catalogKind,setCatalogKind]=useState<'product'|'service'>('product');
+  const [logoChangeCount,setLogoChangeCount]=useState('0');
   const [isExecutivePreviewOpen,setIsExecutivePreviewOpen]=useState(false);
   const [fulfillment,setFulfillment]=useState({installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});
   const [showLocationPicker,setShowLocationPicker]=useState(false);
@@ -1128,7 +1130,7 @@ export function PosPage() {
   const paymentBreakdown=calculatePOSPaymentBreakdown(activeTotal,payments);
   const paymentPreview=paymentBreakdown.applied;
   const selectedCartProduct=data.catalog.find((product)=>product.id===cartProductId);
-  const modeCatalog=useMemo(()=>data.catalog.filter(product=>(product.mode==='area'?'area':'quantity')===cartMode),[data.catalog,cartMode]);
+  const modeCatalog=useMemo(()=>data.catalog.filter(product=>(product.mode==='area'?'area':'quantity')===cartMode&&(catalogKind==='service'?product.productKind==='service':product.productKind!=='service')),[data.catalog,cartMode,catalogKind]);
   const cartFamilies=useMemo(()=>[...new Set<string>(modeCatalog.map(product=>String(product.family||'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[modeCatalog]);
   const selectedBranchId=cashierSession.branch?.code===form.branchCode?cashierSession.branch.id:data.branches.find((branch)=>branch.code===form.branchCode)?.id||'';
   const canViewPOSSales=hasPermission('sales','view');
@@ -1300,7 +1302,7 @@ export function PosPage() {
   const hasCustomAgreedPrice = Number.isFinite(customAgreedPriceNumber) && customAgreedPriceNumber > 0;
   const cartCalculation=selectedCartProduct?calculatePOSLine({product:selectedCartProduct,mode:cartMode,quantity:cartQuantityNumber,widthCm:cartWidthNumber,heightCm:cartHeightNumber,tier:cartPriceTier,optionChoice:cartOptionChoice,customUnitPrice:hasCustomAgreedPrice?customAgreedPriceNumber:undefined}):null;
   const cartFinishingEstimate=calculateCommercialFinishing(cartFinishing,cartQuantityNumber,data.calculatorSettings||{});
-  const cartPriceAvailable=Boolean(hasCustomAgreedPrice ? cartCalculation : (selectedCartProduct?.confirmed||selectedCartProduct?.published===true)&&cartCalculation);
+  const cartPriceAvailable=Boolean(hasCustomAgreedPrice ? cartCalculation : (selectedCartProduct?.confirmed||selectedCartProduct?.published===true)&&cartCalculation&&!(selectedCartProduct?.productKind==='service'&&selectedCartProduct.optionPrices?.length&&!cartOptionChoice));
   const measurementStockLink=selectedCartProduct&&catalogLinks.find(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===selectedCartProduct.id);
   const measurementStock=measurementStockLink&&data.inventory.find(row=>row.variantId===measurementStockLink.inventory_variant_id&&row.branchId===measurementStockLink.branch_id);
   const measurementStockUnit=String(measurementStock?.unit||'').trim().toLocaleLowerCase('es');
@@ -1517,6 +1519,7 @@ export function PosPage() {
     const finishing=calculateCommercialFinishing(cartFinishing,quantity,data.calculatorSettings||{});
     if(!finishing.valid){flash('Completa el concepto y el monto del servicio de diseño libre.');return;}
     if(selectedCartProduct){
+      if(selectedCartProduct.productKind==='service'&&selectedCartProduct.optionPrices?.length&&!cartOptionChoice){flash('Elige el paquete o concepto de servicio para usar su tarifa confirmada.');return;}
       if(!cartPriceAvailable){flash('Este producto no tiene tarifa disponible para esta cantidad o medida. Ingresa un precio acordado o completa el catálogo.');return;}
       if(cartMode==='area'&&(!Number.isFinite(cartWidthNumber)||!Number.isFinite(cartHeightNumber)||cartWidthNumber<=0||cartHeightNumber<=0)){flash('Ingresa el ancho y el alto en centímetros para calcular la superficie.');return;}
       if(invalidMeasurementStockLink){flash(`El producto por medidas está vinculado a inventario en “${measurementStockUnit||'unidad no identificada'}”. Cambia ese vínculo a una existencia medida en m² antes de venderlo.`);return;}
@@ -1531,8 +1534,14 @@ export function PosPage() {
         widthCm:cartMode==='area'?cartWidthNumber:null,heightCm:cartMode==='area'?cartHeightNumber:null,areaPerPiece:cartCalculation.areaPerPiece||null,areaTotal:cartCalculation.areaTotal||null,
         pricingTier:cartPriceTier,pricingTierLabel,optionChoice:cartOptionChoice||'',customUnitPriceApplied:Boolean(hasCustomAgreedPrice),description:formatPOSLineDescription({name:selectedCartProduct.name,mode:cartMode,quantity,unit:cartCalculation.unit,unitPrice:effectiveUnitPrice,pricingTierLabel,widthCm:cartMode==='area'?cartWidthNumber:undefined,heightCm:cartMode==='area'?cartHeightNumber:undefined,areaPerPiece:cartCalculation.areaPerPiece||undefined,areaTotal:cartCalculation.areaTotal||undefined,optionChoice:cartOptionChoice||undefined,customUnitPriceApplied:Boolean(hasCustomAgreedPrice)}),
       };
-      setCart(current=>[...current,line]);
-      setCartProductId('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});
+      const changeCount=Number(logoChangeCount);
+      const changeRate=Number(selectedCartProduct.customOptions?.service?.changeFee);
+      const changeOption=selectedCartProduct.optionPrices?.find((option)=>option.label==='Cambio adicional');
+      if(selectedCartProduct.productKind==='service'&&selectedCartProduct.customOptions?.service?.type==='logo'&&(!Number.isSafeInteger(changeCount)||changeCount<0||changeCount>100||(changeCount>0&&(!changeOption||!(changeRate>0))))){flash('Revisa la cantidad de cambios y confirma la tarifa de cambio adicional en el catálogo.');return;}
+      const extraChangeCalculation=selectedCartProduct.productKind==='service'&&changeCount>0&&changeOption?calculatePOSLine({product:selectedCartProduct,mode:'quantity',quantity:changeCount,tier:'pvp',optionChoice:changeOption.label}):null;
+      const extraChangeLine=extraChangeCalculation?{key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:selectedCartProduct.id,sku:selectedCartProduct.sku||selectedCartProduct.id,name:`${selectedCartProduct.name} · Cambio adicional`,family:selectedCartProduct.family||'Diseño de identidad',image:selectedCartProduct.image||'',mode:'quantity',quantity:changeCount,billingQuantity:changeCount,unit:'unidad',unitPrice:extraChangeCalculation.unitPrice,baseUnitPrice:extraChangeCalculation.unitPrice,total:extraChangeCalculation.total,finishing:{...emptyCommercialFinishing},widthCm:null,heightCm:null,areaPerPiece:null,areaTotal:null,pricingTier:'pvp',pricingTierLabel:'Precio acordado',optionChoice:changeOption.label,description:`${selectedCartProduct.name} · ${changeCount} ${changeCount===1?'cambio adicional':'cambios adicionales'} · ${formatMoney(changeOption.price)} c/u`}:null;
+      setCart(current=>[...current,line,...(extraChangeLine?[extraChangeLine]:[])]);
+      setCartProductId('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});setLogoChangeCount('0');
       requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
       return;
     }
@@ -1883,9 +1892,14 @@ export function PosPage() {
             </div>
             {cartEntryType!=='catalog'&&<p className="pos-entry-kind-note">Concepto manual · no descuenta inventario · precio confirmado por el asesor.</p>}
             {cartEntryType==='catalog'&&<>
+            <div className="pos-mode-switch" role="group" aria-label="Tipo de catálogo">
+              <button type="button" className={catalogKind==='product'?'active':''} aria-pressed={catalogKind==='product'} onClick={()=>{setCatalogKind('product');setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');setCartOptionChoice('');}}>Productos y artículos</button>
+              <button type="button" className={catalogKind==='service'?'active':''} aria-pressed={catalogKind==='service'} onClick={()=>{setCatalogKind('service');setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');setCartOptionChoice('');}}>Servicios ({data.catalog.filter((p)=>p.productKind==='service').length})</button>
+            </div>
             <div className="pos-mode-switch" role="group" aria-label="Forma de calcular el producto">
-              <button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>{setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por cantidad ({data.catalog.filter(p=>p.mode!=='area').length})</button>
-              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>{setCartMode('area');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por medidas m² ({data.catalog.filter(p=>p.mode==='area').length})</button>
+              {catalogKind==='product'&&<><button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>{setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por cantidad ({data.catalog.filter(p=>p.productKind!=='service'&&p.mode!=='area').length})</button>
+              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>{setCartMode('area');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por medidas m² ({data.catalog.filter(p=>p.productKind!=='service'&&p.mode==='area').length})</button></>}
+              {catalogKind==='service'&&<span className="pos-entry-kind-note">Servicios por unidad o paquete · no descuentan inventario</span>}
             </div>
             <POSProductSearch
               products={modeCatalog} query={cartSearch} onQueryChange={setCartSearch}
@@ -1896,7 +1910,7 @@ export function PosPage() {
               stockMetaByProduct={stockMetaByProduct}
               renderImage={(product)=><POSProductVisual src={product.image} className="pos-product-image"/>}
               favoriteIds={favoriteIds} onToggleFavorite={toggleFavorite}
-              onQuickAdd={cartMode==='quantity'?quickAddProductToCart:undefined}
+              onQuickAdd={catalogKind==='product'&&cartMode==='quantity'?quickAddProductToCart:undefined}
             />
             {favoriteStorageStatus==='local'&&<small className="pos-favorite-storage-note">Las estrellas se guardan en este navegador hasta conectar el almacenamiento del equipo.</small>}
             </>}
@@ -1923,6 +1937,8 @@ export function PosPage() {
               <AdvisorProductFavoriteButton favorite={favoriteIds.has(selectedCartProduct.id)} onToggle={()=>toggleFavorite(selectedCartProduct.id)}/>
               <button className="icon-button" type="button" aria-label="Quitar artículo seleccionado" onClick={()=>{setCartProductId('');setCartUnitPrice('');setCartCustomUnitPrice('');}}><X size={14}/></button>
             </div>}
+            {catalogKind==='service'&&selectedCartProduct?.customOptions?.service&&<div className="pos-entry-kind-note"><b>{selectedCartProduct.customOptions.service.brief||'Confirma el brief con el cliente.'}</b>{selectedCartProduct.customOptions.service.conditions&&<span> Condiciones: {selectedCartProduct.customOptions.service.conditions}</span>}{selectedCartProduct.customOptions.service.deliverables&&<span> Entregables: {selectedCartProduct.customOptions.service.deliverables}</span>}</div>}
+            {catalogKind==='service'&&selectedCartProduct?.customOptions?.service?.type==='logo'&&selectedCartProduct.customOptions.service.changeFee!=null&&<label className="pos-service-change-count">Cambios adicionales de logo · ${Number(selectedCartProduct.customOptions.service.changeFee).toFixed(2)} c/u<input type="number" min="0" max="100" step="1" value={logoChangeCount} onChange={(event)=>setLogoChangeCount(event.target.value)}/><small>Se añade una línea de venta por cada cambio indicado.</small></label>}
             {cartMode==='area'&&selectedCartProduct&&<POSMeasurementControls widthValue={cartWidthCm} heightValue={cartHeightCm} quantityValue={cartQuantity} widthCm={cartWidthNumber} heightCm={cartHeightNumber} quantity={cartQuantityNumber} onWidthChange={setCartWidthCm} onHeightChange={setCartHeightCm} onQuantityChange={setCartQuantity}/>}
             {(cartMode==='quantity'||cartEntryType==='custom-quantity')&&<div className="pos-cart-inputs">
               <div className="pos-qty-control-group">
@@ -1943,7 +1959,7 @@ export function PosPage() {
               <label><span>Precio acordado ($) · <small>Opcional: sobrescribe PVP unitario/m²</small></span><div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartCustomUnitPrice} onChange={(event)=>setCartCustomUnitPrice(event.target.value)} placeholder={cartCalculation?cartCalculation.unitPrice.toFixed(2):'0.00'}/></div></label>
               {hasCustomAgreedPrice&&<button type="button" className="button button-outline pos-reset-agreed-btn" onClick={()=>setCartCustomUnitPrice('')}>Usar catálogo</button>}
             </div>}
-            {selectedCartProduct&&<>{selectedCartProduct.optionPrices?.length>0&&<label>Material / acabado<select value={cartOptionChoice} onChange={(event)=>setCartOptionChoice(event.target.value)}><option value="">Tarifa base</option>{selectedCartProduct.optionPrices.map(option=><option key={option.label} value={option.label}>{option.label}</option>)}</select></label>}<QuotePriceComparison product={selectedCartProduct} basis={cartPricingBasis} selectedTier={cartPriceTier} onSelect={setCartPriceTier} optionChoice={cartOptionChoice}/>{cartMode==='area'&&invalidMeasurementStockLink&&<p className="pos-calculation-warning">Este artículo descuenta inventario medido en “{measurementStockUnit}”. Asigna una existencia en m² antes de venderlo para evitar un descuento incorrecto.</p>}</>}
+            {selectedCartProduct&&<>{selectedCartProduct.optionPrices?.length>0&&<label>{catalogKind==='service'?'Paquete de servicio':'Material / acabado'}<select value={cartOptionChoice} onChange={(event)=>setCartOptionChoice(event.target.value)}><option value="">{catalogKind==='service'?'Selecciona un paquete':'Tarifa base'}</option>{selectedCartProduct.optionPrices.filter((option)=>catalogKind!=='service'||option.label!=='Cambio adicional').map(option=><option key={option.label} value={option.label}>{option.label} · {formatMoney(option.price)}{catalogKind==='service'?' / unidad':''}</option>)}</select></label>}{catalogKind!=='service'&&<QuotePriceComparison product={selectedCartProduct} basis={cartPricingBasis} selectedTier={cartPriceTier} onSelect={setCartPriceTier} optionChoice={cartOptionChoice}/ >}{cartMode==='area'&&invalidMeasurementStockLink&&<p className="pos-calculation-warning">Este artículo descuenta inventario medido en “{measurementStockUnit}”. Asigna una existencia en m² antes de venderlo para evitar un descuento incorrecto.</p>}</>}
             {(selectedCartProduct||cartEntryType==='custom-area'||cartEntryType==='custom-quantity')&&<CommercialFinishingControls value={cartFinishing} onChange={setCartFinishing} quantity={cartQuantityNumber} prices={data.calculatorSettings||{}} allowEyelets={cartMode==='area'&&(cartEntryType!=='catalog'||selectedCartProduct?.customOptions?.allow_eyelets!==false)} allowDesign={selectedCartProduct?.customOptions?.allow_design!==false} idPrefix="pos-cart-finishing"/>}
             {selectedCartProduct&&cartCalculation&&<div className="pos-calculation-total"><span>{cartMode==='area'?`${cartAreaPerPiece.toFixed(4)} m² por pieza × ${cartQuantityNumber} · ${cartCalculation.billedQuantity.toFixed(4)} m² en total`:`${cartQuantityNumber} ${selectedCartProduct.unit||'unidades'} · tarifa por ${selectedCartProduct.unit||'unidad'}`}</span><strong>{formatMoney(cartCalculation.total+cartFinishingEstimate.total)}</strong></div>}
             <button className="button button-outline pos-add-item" type="button" onClick={addCartLine} disabled={Boolean(selectedCartProduct&&!cartPriceAvailable)||Boolean(invalidMeasurementStockLink)}><Plus size={15}/> Agregar al carrito</button>
