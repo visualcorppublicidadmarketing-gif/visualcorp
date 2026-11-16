@@ -1,42 +1,42 @@
 /* Shared glass surfaces for the authenticated Visual Corp workspaces. */
 .work-app {
-  --admin-glass-nav-fallback: #fff;
-  --admin-glass-nav: rgb(255 255 255 / 78%);
-  --admin-glass-card: #fff;
-  --admin-glass-panel: #fff;
-  --admin-glass-border: rgb(255 255 255 / 82%);
-  --admin-glass-line: rgb(77 62 97 / 14%);
-  --admin-glass-shadow: 0 18px 48px rgb(42 24 58 / 9%), inset 0 1px 0 rgb(255 255 255 / 76%);
-  --admin-glass-ink: #292533;
-  --admin-glass-muted: #5d5969;
-  --admin-glass-accent: #7e1977;
-  --admin-glass-accent-strong: #a51091;
-  --admin-glass-focus: #a51091;
-  --admin-glass-tint: #f3eaf9;
-  --admin-hero-ink: #292533;
-  --admin-hero-muted: #514c5d;
-  --admin-hero-action-bg: #a51091;
+  --admin-glass-nav-fallback: var(--vc-surface, #fff);
+  --admin-glass-nav: color-mix(in srgb, var(--vc-surface, #fff), transparent 22%);
+  --admin-glass-card: var(--vc-surface, #fff);
+  --admin-glass-panel: var(--vc-surface, #fff);
+  --admin-glass-border: var(--vc-glass-border, rgb(255 255 255 / 82%));
+  --admin-glass-line: var(--vc-line, rgb(77 62 97 / 14%));
+  --admin-glass-shadow: var(--vc-glass-shadow, 0 18px 48px rgb(42 24 58 / 9%), inset 0 1px 0 rgb(255 255 255 / 76%));
+  --admin-glass-ink: var(--vc-ink, #292533);
+  --admin-glass-muted: var(--vc-muted, #5d5969);
+  --admin-glass-accent: var(--vc-brand-strong, #7e1977);
+  --admin-glass-accent-strong: var(--vc-brand, #a51091);
+  --admin-glass-focus: var(--vc-focus, #a51091);
+  --admin-glass-tint: var(--vc-brand-soft, #f3eaf9);
+  --admin-hero-ink: var(--vc-ink, #292533);
+  --admin-hero-muted: var(--vc-muted, #514c5d);
+  --admin-hero-action-bg: var(--vc-brand, #a51091);
   --admin-hero-action-ink: #fff;
   --admin-glass-blur: 16px;
 }
 
 .work-app.theme-dark {
-  --admin-glass-nav-fallback: #10111a;
-  --admin-glass-nav: rgb(16 17 26 / 84%);
-  --admin-glass-card: #171a25;
-  --admin-glass-panel: #171a25;
-  --admin-glass-border: rgb(255 255 255 / 12%);
-  --admin-glass-line: rgb(217 204 235 / 15%);
-  --admin-glass-shadow: 0 20px 58px rgb(0 0 0 / 30%), inset 0 1px 0 rgb(255 255 255 / 7%);
-  --admin-glass-ink: #f2eff8;
-  --admin-glass-muted: #b9b4c8;
-  --admin-glass-accent: #e3bcff;
-  --admin-glass-accent-strong: #d093f0;
-  --admin-glass-focus: #d093f0;
-  --admin-glass-tint: #30223d;
-  --admin-hero-ink: #f5f1fa;
-  --admin-hero-muted: #d0c9db;
-  --admin-hero-action-bg: #d093f0;
+  --admin-glass-nav-fallback: var(--vc-surface-soft, #10111a);
+  --admin-glass-nav: color-mix(in srgb, var(--vc-surface-soft, #10111a), transparent 16%);
+  --admin-glass-card: var(--vc-surface, #171a25);
+  --admin-glass-panel: var(--vc-surface, #171a25);
+  --admin-glass-border: var(--vc-glass-border, rgb(255 255 255 / 12%));
+  --admin-glass-line: var(--vc-line, rgb(217 204 235 / 15%));
+  --admin-glass-shadow: var(--vc-glass-shadow, 0 20px 58px rgb(0 0 0 / 30%), inset 0 1px 0 rgb(255 255 255 / 7%));
+  --admin-glass-ink: var(--vc-ink, #f2eff8);
+  --admin-glass-muted: var(--vc-muted, #b9b4c8);
+  --admin-glass-accent: var(--vc-brand-strong, #e3bcff);
+  --admin-glass-accent-strong: var(--vc-brand, #d093f0);
+  --admin-glass-focus: var(--vc-focus, #d093f0);
+  --admin-glass-tint: var(--vc-brand-soft, #30223d);
+  --admin-hero-ink: var(--vc-ink, #f5f1fa);
+  --admin-hero-muted: var(--vc-muted, #d0c9db);
+  --admin-hero-action-bg: var(--vc-brand, #d093f0);
   --admin-hero-action-ink: #211329;
 }
 

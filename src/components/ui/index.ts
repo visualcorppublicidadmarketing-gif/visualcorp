@@ -8,3 +8,5 @@ export * from './ContextMenu';
 export * from './Avatar';
 export * from './AnimatedThemeToggler';
 export * from './ThemeSwitcher';
+export * from './DesignSystemPrimitives';
+export * from './motion-presets';

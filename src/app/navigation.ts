@@ -1,7 +1,7 @@
 import {
   BookOpen, Boxes, BriefcaseBusiness, ChartNoAxesCombined,
   CalendarClock, CalendarDays, ClipboardList, Database, FileText, FolderOpen, Globe2, History, Image, LayoutDashboard, Megaphone,
-  Newspaper, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Target, Truck, Users, Wallet, Radio, Workflow, MapPin, type LucideIcon,
+  Newspaper, Palette, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Target, Truck, Users, Wallet, Radio, Workflow, MapPin, type LucideIcon,
 } from 'lucide-react';
 
 export type AppNavLink = {
@@ -44,6 +44,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/solicitudes-compras', label: 'Solicitudes de materiales', icon: ClipboardList, module: 'purchases', anyOf: ['purchases', 'workshop', 'sales'] },
   { to: '/operaciones/equipos', label: 'Equipos', icon: BriefcaseBusiness, module: 'inventory' },
   { to: '/operaciones/catalogo', label: 'Catálogo y tarifas', icon: ShoppingBag, module: 'catalog_admin' },
+  { to: '/operaciones/equipo/biblioteca-ui', label: 'Biblioteca de interfaz', icon: Palette, module: 'team' },
   { to: '/operaciones/marketing', label: 'Bandeja y flujo', icon: Megaphone, module: 'marketing' },
   { to: '/operaciones/marketing/calendario', label: 'Calendario editorial', icon: CalendarDays, module: 'marketing' },
   { to: '/operaciones/marketing/campanas', label: 'Campañas y estrategia', icon: Target, module: 'marketing' },
@@ -67,7 +68,7 @@ export const workspaceNavGroups: AppNavGroup[] = [
   { id: 'production', label: 'Producción y abastecimiento', icon: Boxes, paths: ['/operaciones/automatizaciones', '/operaciones/archivos', '/operaciones/flujos', '/operaciones/kiosk', '/operaciones/coordinacion-trabajos', '/operaciones/cartelera-taller', '/operaciones/trabajos/diseno', '/operaciones/trabajos/impresion', '/operaciones/trabajos/sublimacion', '/operaciones/trabajos/laser', '/operaciones/trabajos/taller', '/operaciones/inventario', '/operaciones/compras', '/operaciones/solicitudes-compras', '/operaciones/equipos'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing', '/operaciones/marketing/calendario', '/operaciones/marketing/campanas'] },
   { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
-  { id: 'team', label: 'Equipo y sistema', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo', '/operaciones/equipo/horarios', '/operaciones/manual-aprendizaje', '/operaciones/cambios', '/admin/respaldo'] },
+  { id: 'team', label: 'Equipo y sistema', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo', '/operaciones/equipo/horarios', '/operaciones/equipo/biblioteca-ui', '/operaciones/manual-aprendizaje', '/operaciones/cambios', '/admin/respaldo'] },
 ];
 
 /**

@@ -4,5 +4,7 @@ import { MotionConfig } from 'motion/react';
 import App from './App';
 import './app.css';
 import './components/ui/magic-components.css';
+import './app/design-tokens.css';
+import './components/ui/design-system-primitives.css';
 
 createRoot(document.getElementById('root')).render(<React.StrictMode><MotionConfig reducedMotion="user"><App /></MotionConfig></React.StrictMode>);
