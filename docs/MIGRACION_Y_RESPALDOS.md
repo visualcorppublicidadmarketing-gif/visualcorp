@@ -11,11 +11,11 @@
 ## Flujo seguro para cambios de base de datos
 
 1. Actualiza la rama desde `main` y confirma que estás en el repositorio y proyecto Supabase correctos.
-2. Ejecuta `supabase migration list --linked` y compara todas las versiones locales con las remotas. Revisa también el esquema y las políticas RLS de las tablas afectadas.
+2. Ejecuta `supabase migration list --remote` y compara todas las versiones locales con las remotas. Revisa también el esquema y las políticas RLS de las tablas afectadas.
 3. Si hay una diferencia de versión o nombre, detente y coteja el SQL y el historial antes de corregirlo. No ejecutes `migration repair`, no renombres archivos aplicados y no borres filas del historial para forzar una coincidencia.
 4. Crea una migración nueva, pequeña y con marca de tiempo única. No edites una migración que ya se aplicó.
 5. Valida el SQL en una base local descartable o una rama aislada. Revisa el plan de cambios, las claves, restricciones e índices y prueba RLS con roles permitidos y denegados.
-6. Respaldar el destino y aplicar la migración pendiente solo después de revisar y confirmar el proyecto enlazado. Una sola persona debe ejecutar `supabase db push --linked` a la vez.
+6. Respalda el destino y aplica la migración pendiente solo después de revisar y confirmar el proyecto remoto. Una sola persona debe ejecutar `supabase db push --remote` a la vez y aceptar su confirmación interactiva; no añadas `--yes` al procedimiento manual.
 7. Comprueba el historial remoto y el comportamiento de la aplicación después del cambio. Registra la migración y su resultado en el pull request.
 
 Vercel despliega el código web; no debe ejecutar SQL automáticamente. Publicación web y cambio de esquema son pasos separados para que una vista previa o un build no alteren datos de producción.
@@ -36,7 +36,7 @@ npm run typecheck
 npm run build
 ```
 
-Para inspeccionar migraciones sin aplicarlas, usa `supabase migration list --linked` después de enlazar explícitamente el proyecto. Revisa la guía `docs/FLUJO_TRABAJO_EN_PARALELO_Y_PUBLICACION.md` antes de desplegar.
+Para inspeccionar migraciones sin aplicarlas, usa `supabase migration list --remote`; la configuración `project_id` identifica el proyecto enlazado. Revisa la guía `docs/FLUJO_TRABAJO_EN_PARALELO_Y_PUBLICACION.md` antes de desplegar. Supabase CLI 3 usa la pila local por defecto y requiere `--remote` para apuntar a la base alojada. Los cambios alojados solicitan confirmación y, en automatizaciones no interactivas previamente autorizadas, requieren `--yes` de forma explícita.
 
 ## Diferencias de historial observadas anteriormente
 
