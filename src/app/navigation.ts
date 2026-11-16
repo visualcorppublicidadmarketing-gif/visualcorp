@@ -1,6 +1,6 @@
 import {
   BookOpen, Boxes, BriefcaseBusiness, ChartNoAxesCombined,
-  CalendarClock, CalendarDays, ClipboardList, Database, FileText, FolderOpen, Globe2, History, Image, LayoutDashboard, Megaphone,
+  CalendarClock, CalendarDays, ClipboardList, Database, FileText, FolderOpen, Globe2, History, Image, Inbox, LayoutDashboard, Megaphone,
   Newspaper, Palette, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Target, Truck, Users, Wallet, Radio, Workflow, MapPin, type LucideIcon,
 } from 'lucide-react';
 
@@ -25,7 +25,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'finance' },
   { to: '/operaciones/cajas-abiertas', label: 'Cajas abiertas', icon: Radio, module: 'sales', anyOf: ['sales', 'cash'] },
   { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText, module: 'quotes' },
-  { to: '/operaciones/crm', label: 'Solicitudes', icon: Users, module: 'crm' },
+  { to: '/operaciones/crm', label: 'Solicitudes', icon: Inbox, module: 'crm' },
   { to: '/operaciones/clientes', label: 'Directorio de clientes', icon: Users, module: 'crm' },
   { to: '/operaciones/automatizaciones', label: 'Automatizaciones', icon: Sparkles, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
   { to: '/operaciones/archivos', label: 'Archivos y artes (Vault)', icon: FolderOpen, module: 'workshop', anyOf: ['sales', 'workshop', 'quotes', 'crm'] },
@@ -57,7 +57,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/admin/portafolio', label: 'Portafolio', icon: Image, module: 'website' },
   { to: '/admin/contacto', label: 'Contacto web', icon: Users, module: 'website' },
   { to: '/operaciones/personal', label: 'Personal', icon: Users, module: 'personnel' },
-  { to: '/operaciones/equipo', label: 'Usuarios, perfiles y permisos', icon: Users, module: 'team' },
+  { to: '/operaciones/equipo', label: 'Usuarios, perfiles y permisos', icon: ShieldCheck, module: 'team' },
   { to: '/operaciones/equipo/horarios', label: 'Horarios y turnos', icon: CalendarClock, module: 'team_schedule' },
   { to: '/operaciones/manual-aprendizaje', label: 'Aprendizaje', icon: BookOpen, module: 'dashboard' },
   { to: '/operaciones/cambios', label: 'Novedades', icon: History, module: 'team' },

@@ -278,14 +278,14 @@ export function Sidebar({
         {/* Píldora de estado de sesión */}
         <div
           className="sidebar-session-banner"
-          title={`Sesión segura · ${profileLabel}`}
-          onMouseEnter={(e) => showTooltip(`Sesión segura · ${profileLabel}`, e)}
+          title={profileLabel ? `Sesión segura · ${profileLabel}` : 'Sesión segura · En línea'}
+          onMouseEnter={(e) => showTooltip(profileLabel ? `Sesión segura · ${profileLabel}` : 'Sesión segura', e)}
           onMouseLeave={hideTooltip}
         >
           <PulsingBeacon size={7} color="#10b981" />
           <span className="sidebar-session-text">
             SESIÓN SEGURA
-            {profileLabel && <span className="sidebar-session-role"> · {profileLabel}</span>}
+            <span className="sidebar-session-role"> · En línea</span>
           </span>
         </div>
 
@@ -384,68 +384,70 @@ export function Sidebar({
           })}
         </nav>
 
-        {/* Selector de tema visual (Claro / Oscuro) */}
-        {toggleTheme && (
-          isCollapsed ? (
-            <div className="sidebar-collapsed-theme-wrapper" style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+        <div className="sidebar-footer-dock">
+          {/* Selector de tema visual (Claro / Oscuro) */}
+          {toggleTheme && (
+            isCollapsed ? (
+              <div className="sidebar-collapsed-theme-wrapper">
+                <ThemeSwitcher
+                  theme={theme || 'light'}
+                  onToggle={toggleTheme}
+                  variant="icon"
+                />
+              </div>
+            ) : (
               <ThemeSwitcher
                 theme={theme || 'light'}
                 onToggle={toggleTheme}
-                variant="icon"
+                variant="row"
               />
-            </div>
-          ) : (
-            <ThemeSwitcher
-              theme={theme || 'light'}
-              onToggle={toggleTheme}
-              variant="row"
-            />
-          )
-        )}
+            )
+          )}
 
-        {/* Tarjeta de perfil inferior */}
-        <div
-          className="sidebar-profile-card"
-          onMouseEnter={(e) => openProfileFlyout(e.currentTarget)}
-          onMouseLeave={hideTooltip}
-        >
-          {isCollapsed ? (
-            <button
-              ref={profileTriggerRef}
-              type="button"
-              className="sidebar-profile-trigger"
-              aria-label={`Perfil de ${userDisplayName}`}
-              aria-expanded={Boolean(profileFlyout)}
-              aria-controls={profileFlyout ? 'sidebar-profile-flyout' : undefined}
-              onMouseEnter={(e) => openProfileFlyout(e.currentTarget)}
-              onFocus={(e) => {
-                if (!suppressFocusOpenRef.current) openProfileFlyout(e.currentTarget);
-              }}
-              onBlur={(e) => {
-                if (!flyoutRef.current?.contains(e.relatedTarget as Node | null)) setProfileFlyout(null);
-              }}
-              onClick={(e) => openProfileFlyout(e.currentTarget)}
-            >
-              {profileAvatar}
-            </button>
-          ) : profileAvatar}
-          <div className="sidebar-profile-info">
-            <b className="sidebar-profile-name" title={userDisplayName}>
-              {userDisplayName}
-            </b>
-            <small className="sidebar-profile-role" title={userEmail || profileLabel}>
-              {profileLabel || userEmail}
-            </small>
-          </div>
-          <button
-            type="button"
-            className="sidebar-logout-btn"
-            aria-label="Cerrar sesión"
-            title="Cerrar sesión"
-            onClick={signOut}
+          {/* Tarjeta de perfil inferior */}
+          <div
+            className="sidebar-profile-card"
+            onMouseEnter={(e) => openProfileFlyout(e.currentTarget)}
+            onMouseLeave={hideTooltip}
           >
-            <LogOut size={16} />
-          </button>
+            {isCollapsed ? (
+              <button
+                ref={profileTriggerRef}
+                type="button"
+                className="sidebar-profile-trigger"
+                aria-label={`Perfil de ${userDisplayName}`}
+                aria-expanded={Boolean(profileFlyout)}
+                aria-controls={profileFlyout ? 'sidebar-profile-flyout' : undefined}
+                onMouseEnter={(e) => openProfileFlyout(e.currentTarget)}
+                onFocus={(e) => {
+                  if (!suppressFocusOpenRef.current) openProfileFlyout(e.currentTarget);
+                }}
+                onBlur={(e) => {
+                  if (!flyoutRef.current?.contains(e.relatedTarget as Node | null)) setProfileFlyout(null);
+                }}
+                onClick={(e) => openProfileFlyout(e.currentTarget)}
+              >
+                {profileAvatar}
+              </button>
+            ) : profileAvatar}
+            <div className="sidebar-profile-info">
+              <b className="sidebar-profile-name" title={userDisplayName}>
+                {userDisplayName}
+              </b>
+              <small className="sidebar-profile-role" title={profileLabel || userEmail}>
+                {profileLabel || userEmail}
+              </small>
+            </div>
+            <button
+              type="button"
+              className="sidebar-logout-btn"
+              aria-label="Cerrar sesión"
+              title="Cerrar sesión"
+              onClick={signOut}
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
         {isCollapsed && profileFlyout && (
           <div

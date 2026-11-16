@@ -128,7 +128,7 @@ body[data-vc-theme="dark"],
   color: var(--vc-ink);
 }
 
-.work-app :is(input, select, textarea, button) { font: inherit; }
+:where(.work-app) :where(input, select, textarea, button) { font: inherit; }
 .work-app :is(button, a, input, select, textarea):focus-visible {
   outline: 3px solid color-mix(in srgb, var(--vc-focus), transparent 58%);
   outline-offset: 2px;
