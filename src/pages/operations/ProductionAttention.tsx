@@ -207,11 +207,21 @@ export function ProductionAttention() {
 
   useEffect(() => {
     if (!enabled || !user?.id || !supabase) return;
-    const channel = supabase.channel(`production-notifications:${user.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'production_notifications', filter: `recipient_user_id=eq.${user.id}` }, () => {
-        window.dispatchEvent(new Event('visualcorp:production-changed'));
-      }).subscribe();
-    return () => { void supabase?.removeChannel(channel); };
+    const client = supabase;
+    // Each mount needs its own topic: supabase.channel() returns the already-subscribed
+    // channel for a repeated name (StrictMode remounts, several instances), and calling
+    // .on() on it throws and unmounts the whole React tree.
+    const uniqueSuffix = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    let channel: ReturnType<typeof client.channel> | null = null;
+    try {
+      channel = client.channel(`production-notifications:${user.id}:${uniqueSuffix}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'production_notifications', filter: `recipient_user_id=eq.${user.id}` }, () => {
+          window.dispatchEvent(new Event('visualcorp:production-changed'));
+        }).subscribe();
+    } catch {
+      channel = null; // Live notifications are optional; polling still refreshes the list.
+    }
+    return () => { if (channel) void client.removeChannel(channel); };
   }, [enabled, user?.id]);
 
   const openItem = async (item: Attention) => {

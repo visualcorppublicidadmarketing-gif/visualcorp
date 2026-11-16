@@ -72,7 +72,6 @@ import {
   ProductionQueueViews,
   type ProductionQueueViewItem,
 } from './ProductionQueueViews';
-import { ProductionAttention } from './ProductionAttention';
 
 import './production-coordination.css';
 
@@ -785,7 +784,6 @@ export function ProductionCoordinationPage() {
           description="Vista compartida de Diseño, Asesoría, Impresión, Sublimación, Corte láser y Taller. Abre cada ficha para asignar, recibir, revisar calidad o registrar avances sin salir del tablero."
           action={
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <ProductionAttention />
               <Link className="button button-dark" to="/operaciones/cartelera-taller">
                 <MapPin size={15} /> Cartelera & Mapa
               </Link>
