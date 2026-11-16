@@ -23,8 +23,8 @@ Permitir varios frentes de trabajo sin sobrescribir archivos y agrupar cambios p
 
 - Crear una migración nueva, pequeña y con timestamp único en `supabase/migrations/`; no editar una migración ya aplicada.
 - Validar primero en una base local o rama de Supabase aislada. Revisar el SQL y las políticas RLS; nunca incluir contraseñas ni claves de servicio en el navegador o en Git.
-- Antes de tocar producción, ejecutar `supabase migration list` y comparar versiones locales/remotas. Solo una persona opera `db push` a la vez, después de integrar el lote.
-- Aplicar únicamente migraciones pendientes con Supabase CLI después de confirmar el proyecto ligado; guardar el resultado y verificar el estado remoto.
+- Antes de tocar producción, ejecutar `supabase migration list --remote` y comparar versiones locales/remotas. Solo una persona opera `db push` a la vez, después de integrar el lote.
+- Aplicar únicamente migraciones pendientes con Supabase CLI después de confirmar el proyecto y destino remotos; conservar la confirmación interactiva de `--remote` (no añadir `--yes` al procedimiento manual), guardar el resultado y verificar el estado remoto.
 - No hacer que el despliegue de Vercel aplique SQL. Código web y esquema tienen pasos separados para que la vista previa no altere producción.
 - Una corrección de producción se entrega como una migración nueva. No fingir reversión eliminando del historial una migración aplicada.
 
@@ -54,10 +54,10 @@ npm run build
 Para estado de migraciones, una vez enlazado explícitamente el proyecto Visual Corp:
 
 ```text
-supabase migration list --linked
+supabase migration list --remote
 ```
 
-`supabase db push --linked` se ejecuta manualmente y solo cuando la lista está alineada, el destino fue comprobado y el SQL de la entrega fue revisado.
+`supabase db push --remote` se ejecuta manualmente y solo cuando la lista está alineada, el destino fue comprobado y el SQL de la entrega fue revisado. El CLI solicita confirmación antes de modificar la base remota. No uses `--yes` para omitir esa revisión manual.
 
 ## Estado de controles remotos
 
