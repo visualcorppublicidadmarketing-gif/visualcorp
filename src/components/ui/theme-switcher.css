@@ -91,67 +91,58 @@
 /* 2. Full Row Variant (Sidebar Footer) */
 .vc-theme-row-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px;
-  margin: 0 8px 10px;
-  border-radius: 12px;
-  background: rgba(246, 243, 250, 0.8);
+  padding: 6px 10px;
+  margin: 0 10px 8px;
+  border-radius: 10px;
+  background: rgba(246, 243, 250, 0.85);
   border: 1px solid #e7e2ee;
+  flex-shrink: 0;
   transition: all 0.2s ease;
 }
 
 [data-theme='dark'] .vc-theme-row-container,
 .theme-dark .vc-theme-row-container {
-  background: rgba(22, 24, 38, 0.7);
+  background: rgba(22, 24, 38, 0.78);
   border-color: #272a3e;
 }
 
 .vc-theme-row-label {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  gap: 6px;
+  min-width: 0;
 }
 
 .vc-theme-row-title {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 750;
   color: #554d63;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 [data-theme='dark'] .vc-theme-row-title,
 .theme-dark .vc-theme-row-title {
-  color: #8e95ae;
+  color: #9ba2bc;
 }
 
 .vc-theme-row-shortcut {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: #ffffff;
-  border: 1px solid #d9d4e2;
-  color: #7b738c;
-  font-family: inherit;
-}
-
-[data-theme='dark'] .vc-theme-row-shortcut,
-.theme-dark .vc-theme-row-shortcut {
-  background: #1c1f30;
-  border-color: #31364d;
-  color: #9ba0b4;
+  display: none;
 }
 
 .vc-theme-row-segmented {
-  display: grid;
+  display: inline-grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  padding: 3px;
-  border-radius: 9px;
+  gap: 3px;
+  padding: 2px;
+  border-radius: 8px;
   background: #ece8f2;
+  flex-shrink: 0;
 }
 
 [data-theme='dark'] .vc-theme-row-segmented,
@@ -163,14 +154,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  height: 28px;
+  gap: 5px;
+  height: 25px;
+  padding: 0 8px;
   border: none;
-  border-radius: 7px;
+  border-radius: 6px;
   background: transparent;
   color: #645c73;
-  font-size: 11.5px;
+  font-family: inherit;
+  font-size: 11px;
   font-weight: 650;
+  line-height: 1;
   cursor: pointer;
   transition: all 0.16s ease;
 }
