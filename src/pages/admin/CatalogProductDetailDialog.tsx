@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import JsBarcode from 'jsbarcode';
-import { Barcode, Check, Copy, Download, Image as ImageIcon, PackageSearch, Printer } from 'lucide-react';
+import { Barcode, Check, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, PackageSearch, Pencil, Printer } from 'lucide-react';
 import { formatMoney } from '../../app/workspace';
 import { Dialog } from '../../components/ui/OperationalKit';
 import './catalog-product-detail.css';
@@ -254,7 +254,7 @@ function BarcodeLabel({ sku, productName }: { sku: string; productName: string }
   </section>;
 }
 
-export function CatalogProductDetailDialog({ product, onClose }: { product: CatalogProduct | null; onClose: () => void }) {
+export function CatalogProductDetailDialog({ product, onClose, onEdit, onDuplicate }: { product: CatalogProduct | null; onClose: () => void; onEdit?: () => void; onDuplicate?: () => void }) {
   const images = useMemo(() => product ? getImages(product) : [], [product]);
   const [activeImage, setActiveImage] = useState(0);
   const selectedProduct = product?.id || product?.sku || '';
@@ -275,11 +275,11 @@ export function CatalogProductDetailDialog({ product, onClose }: { product: Cata
     ['Corporativo', product.corporatePrice ?? product.price_corp],
   ].filter(([, value]) => value != null && value !== '');
 
-  return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }} title={product.name || 'Producto'} description={`${category} · SKU ${sku}`} footer={<button className="button button-outline" type="button" onClick={onClose}>Cerrar ficha</button>}>
+  return <Dialog className="catalog-product-detail-dialog" open onOpenChange={(open) => { if (!open) onClose(); }} title={product.name || 'Producto'} description={`${category} · SKU ${sku}`} footer={<div className="catalog-detail-footer-actions">{onDuplicate && <button className="button button-outline" type="button" onClick={onDuplicate}><Copy size={14}/> Duplicar</button>}{onEdit && <button className="button button-dark" type="button" onClick={onEdit}><Pencil size={14}/> Editar producto</button>}<button className="button button-outline" type="button" onClick={onClose}>Cerrar ficha</button></div>}>
     <div className="catalog-detail-layout">
       <section className="catalog-detail-gallery" aria-label={`Galería de ${product.name}`}>
         {images.length ? <>
-          <div className="catalog-detail-image-frame"><img src={images[Math.min(activeImage, images.length - 1)]} alt={`${product.name} · imagen de referencia ${activeImage + 1}`} /></div>
+          <div className="catalog-detail-image-frame"><img src={images[Math.min(activeImage, images.length - 1)]} alt={`${product.name} · imagen de referencia ${activeImage + 1}`} />{images.length > 1 && <><button className="catalog-detail-image-nav previous" type="button" aria-label="Ver imagen anterior" onClick={() => setActiveImage((index) => (index - 1 + images.length) % images.length)}><ChevronLeft size={19}/></button><button className="catalog-detail-image-nav next" type="button" aria-label="Ver imagen siguiente" onClick={() => setActiveImage((index) => (index + 1) % images.length)}><ChevronRight size={19}/></button><span className="catalog-detail-image-count">{activeImage + 1} / {images.length}</span></>}</div>
           {images.length > 1 && <div className="catalog-detail-thumbnails" role="group" aria-label="Imágenes de referencia">
             {images.map((image, index) => <button key={`${image}-${index}`} type="button" className={activeImage === index ? 'active' : ''} aria-label={`Ver imagen ${index + 1} de ${product.name}`} aria-pressed={activeImage === index} onClick={() => setActiveImage(index)}>
               <img src={image} alt="" loading="lazy" />

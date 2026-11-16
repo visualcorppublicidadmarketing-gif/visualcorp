@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useInView, useReducedMotion, useSpring } from 'motion/react';
+import { motion, useInView, useReducedMotion } from 'motion/react';
 import {
   ArrowDown,
   ArrowRight,
@@ -23,13 +23,9 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
 import {
-  AnimatedShinyText,
   BorderBeam,
   DotPattern,
-  Marquee,
-  PulsingBeacon,
   SpotlightLayer,
-  WordRotate,
   clearSpotlight,
   updateSpotlight,
 } from '../components/ui/MagicComponents';
@@ -102,56 +98,25 @@ function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; 
   );
 }
 
-function VisualitoStage({ onOpenOrientator }: { onOpenOrientator: () => void }) {
-  const reduceMotion = useReducedMotion();
-  const rotateX = useSpring(0, { stiffness: 110, damping: 25 });
-  const rotateY = useSpring(0, { stiffness: 110, damping: 25 });
-  const reset = () => {
-    rotateX.set(0);
-    rotateY.set(0);
-  };
-  useEffect(() => {
-    if (reduceMotion) {
-      rotateX.jump(0);
-      rotateY.jump(0);
-    }
-  }, [reduceMotion, rotateX, rotateY]);
-
-  const move = (event: PointerEvent<HTMLDivElement>) => {
-    if (reduceMotion || event.pointerType !== 'mouse') return;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    rotateX.set((0.5 - (event.clientY - bounds.top) / bounds.height) * 5);
-    rotateY.set(((event.clientX - bounds.left) / bounds.width - 0.5) * 7);
-  };
-
+function VisualitoStage() {
   return (
-    <div className="home-stage" onPointerMove={move} onPointerLeave={reset} onPointerCancel={reset}>
-      <DotPattern width={26} height={26} className="home-stage-dots" glow />
+    <div className="home-stage">
+      <DotPattern width={26} height={26} className="home-stage-dots" />
       <div className="home-stage-glow" aria-hidden="true" />
-      <motion.div className="home-stage-scene" style={{ rotateX, rotateY }}>
+      <div className="home-stage-scene">
         <div className="home-stage-ring" aria-hidden="true" />
         <span className="home-stage-word" aria-hidden="true">
           CREA.
         </span>
         <div className="home-stage-floor" aria-hidden="true" />
-        <motion.img
+        <img
           className="home-visualito"
           src="/public-site/visualito-hero.webp"
           alt="Visualito, la mascota de Visual Corp"
           width={720}
           height={1080}
           fetchPriority="high"
-          initial={reduceMotion ? false : { opacity: 0, y: 28, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: reduceMotion ? 0 : 0.95, ease: [0.22, 1, 0.36, 1] }}
         />
-        <button type="button" className="home-stage-note home-stage-note-interactive" onClick={onOpenOrientator}>
-          <Sparkles size={17} aria-hidden="true" />
-          <span>
-            <strong>¿No sabes por dónde empezar?</strong>
-            <small>Usa el orientador rápido →</small>
-          </span>
-        </button>
         <span className="home-stage-label">
           <span className="home-color-dots" aria-hidden="true">
             <i />
@@ -160,7 +125,7 @@ function VisualitoStage({ onOpenOrientator }: { onOpenOrientator: () => void }) 
           </span>
           DISEÑO · PUBLICIDAD · PRODUCCIÓN
         </span>
-      </motion.div>
+      </div>
       <div className="home-stage-caption">
         <span>VISUALITO / ESTUDIO CREATIVO & TALLER</span>
         <span>
@@ -218,7 +183,7 @@ function CreativeStudioSection({
     <section className="home-pillars home-section" aria-labelledby="home-pillars-title">
       <Reveal className="home-section-heading">
         <div>
-          <span className="home-kicker">01 / DISEÑO GRÁFICO, PUBLICIDAD Y MARKETING</span>
+          <span className="home-kicker">02 / DISEÑO GRÁFICO, PUBLICIDAD Y MARKETING</span>
           <h2 id="home-pillars-title">
             Un solo equipo.
             <br />
@@ -478,91 +443,65 @@ export function PublicHomePage() {
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-inner">
           <div className="home-hero-copy">
-            <Reveal>
-              <span className="home-kicker">
-                <PulsingBeacon size={8} color="#27d5ec" />
-                <AnimatedShinyText shimmerWidth={120}>{data.settings.heroEyebrow}</AnimatedShinyText>
-              </span>
-            </Reveal>
-            <Reveal delay={0.05}>
-              <div className="home-discipline-rotator" aria-label="Especialidades principales de Visual Corp">
-                <span className="home-rotator-label">Especialistas en:</span>
-                <WordRotate
-                  words={[
-                    'Rótulos & Fachadas Comerciales',
-                    'Diseño Gráfico & Identidad',
-                    'Publicidad & Gran Formato',
-                    'Brandeo de Vehículos',
-                    'Stands & Eventos Corporativos',
-                    'Textil & Promocionales',
-                  ]}
-                  duration={2800}
-                  className="home-rotator-words"
-                />
-              </div>
-            </Reveal>
-            <Reveal delay={0.08}>
-              <h1 id="home-title">
-                {words.join(' ')} <span>{lastWord}</span>
-              </h1>
-            </Reveal>
-            <Reveal delay={0.16}>
-              <p className="home-hero-description">{data.settings.heroText}</p>
-              <div className="home-actions">
-                <Link className="home-button home-button-primary vc-shimmer-button" to="/cotizador">
-                  Cuéntanos tu idea <ArrowUpRight size={19} />
-                </Link>
-                <button
-                  type="button"
-                  className="home-button home-button-orientator"
-                  onClick={() => setOrientatorOpen(true)}
-                >
-                  <Compass size={17} aria-hidden="true" />
-                  Orientar mi proyecto
-                </button>
-                <a className="home-button home-button-secondary" href="#servicios">
-                  Explorar servicios <ArrowDown size={18} />
-                </a>
-              </div>
-            </Reveal>
-            <Reveal delay={0.22}>
-              <div className="home-goal-strip" aria-label="Accesos rápidos según tu objetivo">
+            <div className="home-hero-kicker home-kicker">
+              <span className="home-status-dot" aria-hidden="true" />
+              {data.settings.heroEyebrow}
+            </div>
+            <h1 id="home-title">
+              {words.join(' ')} <span>{lastWord}</span>
+            </h1>
+            <p className="home-hero-description">{data.settings.heroText}</p>
+            <div className="home-actions">
+              <Link className="home-button home-button-primary" to="/cotizador">
+                Solicitar cotización <ArrowUpRight size={19} />
+              </Link>
+              <a className="home-button home-button-secondary" href="#servicios">
+                Explorar servicios <ArrowDown size={18} />
+              </a>
+            </div>
+            <div className="home-goal-strip" role="group" aria-label="Accesos rápidos según tu objetivo">
+              <div className="home-goal-strip-heading">
                 <span className="home-goal-strip-label">
                   <Sparkles size={13} aria-hidden="true" /> ¿Qué necesita tu marca hoy?
                 </span>
-                <div className="home-goal-chips">
-                  {projectOrientatorGoals.slice(0, 4).map((goal) => (
-                    <button
-                      key={goal.id}
-                      type="button"
-                      className="home-goal-chip"
-                      onClick={() => openOrientatorForGoal(goal.id)}
-                    >
-                      {goal.label}
-                      <ArrowUpRight size={13} aria-hidden="true" />
-                    </button>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  className="home-hero-orientator"
+                  onClick={() => setOrientatorOpen(true)}
+                >
+                  <Compass size={15} aria-hidden="true" /> Orientar mi proyecto
+                </button>
               </div>
-            </Reveal>
-            <Reveal delay={0.26}>
-              <div className="home-hero-proof">
-                <span>
-                  <Check size={15} />
-                  Atención directa en Milagro
-                </span>
-                <span>
-                  <Check size={15} />
-                  Diseño y coordinación según proyecto
-                </span>
-                <span>
-                  <Check size={15} />
-                  Cotización guiada por proyecto
-                </span>
+              <div className="home-goal-chips">
+                {projectOrientatorGoals.slice(0, 4).map((goal) => (
+                  <button
+                    key={goal.id}
+                    type="button"
+                    className="home-goal-chip"
+                    onClick={() => openOrientatorForGoal(goal.id)}
+                  >
+                    {goal.label}
+                    <ArrowUpRight size={13} aria-hidden="true" />
+                  </button>
+                ))}
               </div>
-            </Reveal>
+            </div>
+            <div className="home-hero-proof">
+              <span>
+                <Check size={15} />
+                Atención directa en Milagro
+              </span>
+              <span>
+                <Check size={15} />
+                Diseño y coordinación según proyecto
+              </span>
+              <span>
+                <Check size={15} />
+                Cotización guiada por proyecto
+              </span>
+            </div>
           </div>
-          <VisualitoStage onOpenOrientator={() => setOrientatorOpen(true)} />
+          <VisualitoStage />
         </div>
         <div className="home-hero-footer">
           <span>
@@ -578,25 +517,24 @@ export function PublicHomePage() {
       </section>
 
       {services.length > 0 && (
-        <Marquee
-          items={[
-            ...services.map((service: { name: string }) => service.name),
-            'Diseño gráfico comercial',
-            'Identidad para negocios',
-            'Montaje o instalación según el alcance del proyecto',
-          ]}
-          label="Familias de trabajo disponibles"
-          className="home-service-marquee"
-          duration={38}
-        />
+        <div className="home-service-families">
+          <ul aria-label="Familias de trabajo disponibles">
+            {[
+              ...services.map((service: { name: string }) => service.name),
+              'Diseño gráfico comercial',
+              'Identidad para negocios',
+              'Montaje o instalación según el alcance del proyecto',
+            ].map((family, index) => (
+              <li key={`${index}-${family}`}>{family}</li>
+            ))}
+          </ul>
+        </div>
       )}
-
-      <CreativeStudioSection services={services} onOpenOrientator={openOrientatorForService} />
 
       <section className="home-services home-section" id="servicios" aria-labelledby="home-services-title">
         <Reveal className="home-section-heading">
           <div>
-            <span className="home-kicker">02 / LO QUE PODEMOS CREAR</span>
+            <span className="home-kicker">01 / LO QUE PODEMOS CREAR</span>
             <h2 id="home-services-title">
               Tu marca.
               <br />
@@ -695,6 +633,8 @@ export function PublicHomePage() {
           </div>
         </div>
       </section>
+
+      <CreativeStudioSection services={services} onOpenOrientator={openOrientatorForService} />
 
       <EnvironmentBrandingMatrix compact />
 

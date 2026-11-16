@@ -81,6 +81,7 @@ type Props = {
   initialProductSkus?: string[];
   initialItemServices?: string[];
   initialQuantityRanges?: string[];
+  validationMessage?: string;
   onChange: (quote: QuoteDraft) => void;
 };
 
@@ -366,7 +367,7 @@ function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate,
   </article>;
 }
 
-export function QuoteConfigurator({ services, initialService = '', initialProducts = [], initialProductSkus = [], initialItemServices = [], initialQuantityRanges = [], onChange }: Props) {
+export function QuoteConfigurator({ services, initialService = '', initialProducts = [], initialProductSkus = [], initialItemServices = [], initialQuantityRanges = [], validationMessage = '', onChange }: Props) {
   const initialProductsKey = initialProducts.join('\u001f');
   const initialProductSkusKey = initialProductSkus.join('\u001f');
   const initialItemServicesKey = initialItemServices.join('\u001f');
@@ -525,6 +526,7 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
 
   return <section className="quote-builder" aria-labelledby="quote-builder-title">
     <div className="quote-builder-panel">
+      {validationMessage && <div className="quote-validation-message" role="alert">{validationMessage}</div>}
       <div className="quote-builder-heading">
         <span className="site-eyebrow"><i/> COTIZADOR GUIADO</span>
         <h2 id="quote-builder-title">Arma tu solicitud</h2>
@@ -535,7 +537,7 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
       {quoteDataLoadError && <div className="quote-data-warning" role="alert"><span>La solicitud supera el límite de datos. Reduce texto o artículos antes de enviarla.</span></div>}
 
       <section className="quote-step quote-items-step" aria-labelledby="quote-items-title">
-        <div className="quote-step-heading"><span aria-hidden="true">01</span><div><h3 id="quote-items-title">Artículos de la cotización</h3><p>{items.length} {items.length === 1 ? 'artículo' : 'artículos'} · cada uno conserva sus propias opciones.</p></div></div>
+        <div className="quote-step-heading"><span aria-hidden="true">01</span><div><h3 id="quote-items-title" tabIndex={-1}>Artículos de la cotización</h3><p>{items.length} {items.length === 1 ? 'artículo' : 'artículos'} · cada uno conserva sus propias opciones.</p></div></div>
         <div className="quote-items-list">
           {items.map((item, index) => <QuoteItemEditor key={item.id} item={item} index={index} services={services} products={products} canRemove={items.length > 1} onUpdate={updateItem} onRemove={removeItem}/>) }
         </div>

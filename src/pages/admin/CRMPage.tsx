@@ -67,6 +67,7 @@ export function LeadsTable({ collection = 'leads', remoteItems, onStatusChange, 
   const { data, update } = useWorkspace();
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('crm', 'edit');
+  const canQuote = hasPermission('quotes', 'edit');
   const items = remoteItems ?? data[collection];
 
   if (items.length === 0) {
@@ -163,6 +164,15 @@ export function LeadsTable({ collection = 'leads', remoteItems, onStatusChange, 
                       >
                         <MessageCircle size={12} /> WhatsApp
                       </a>
+                    )}
+                    {canQuote && (
+                      <Link
+                        className="button button-outline"
+                        style={{ minHeight: '28px', padding: '0 8px', fontSize: '10px' }}
+                        to={`/operaciones/cotizador?fromRequest=${encodeURIComponent(item.id)}`}
+                      >
+                        Cotizar
+                      </Link>
                     )}
                   </div>
                 </td>

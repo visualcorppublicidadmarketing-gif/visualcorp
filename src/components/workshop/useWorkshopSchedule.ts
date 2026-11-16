@@ -2,7 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import { parseCoordinatesInput } from '../../lib/geospatialProximity';
+import type { AreaCode } from '../../lib/productionHub';
 import { hasWorkshopMapLocation, type WorkshopScheduleEvent, type WorkshopScheduleJob } from './workshopTypes';
+
+declare module './workshopTypes' {
+  interface WorkshopScheduleJob {
+    areaCode?: AreaCode;
+  }
+  interface WorkshopScheduleEvent {
+    areaCode?: AreaCode;
+  }
+}
 
 const PAGE_SIZE = 250;
 const CHUNK_SIZE = 100;
@@ -111,6 +121,16 @@ function areaFromCode(code: string) {
   return 'taller';
 }
 
+function areaCodeFromCode(code: string): AreaCode {
+  const normalized = code.trim().toUpperCase();
+  if (normalized === 'ASE' || normalized === 'ASESORIA') return 'ASE';
+  if (normalized === 'DIS' || normalized === 'DES') return 'DIS';
+  if (normalized === 'IMP') return 'IMP';
+  if (normalized === 'SUB') return 'SUB';
+  if (normalized === 'LAS') return 'LAS';
+  return 'TAL';
+}
+
 function areaForStep(step?: StepRow) {
   const area = Array.isArray(step?.areas) ? step.areas[0] : step?.areas;
   return { name: text(area?.name) || 'Taller', code: text(area?.code) };
@@ -131,6 +151,7 @@ function eventFor(
   identity = dateTime || kind,
   areaLabel = job.areaLabel || 'Taller',
   status = job.status,
+  areaCode: AreaCode = job.areaCode || 'TAL',
 ) {
   const date = dateKey(dateTime);
   if (!date) return undefined;
@@ -143,6 +164,7 @@ function eventFor(
     code: job.code,
     clientName: job.clientName,
     areaLabel,
+    areaCode,
     status,
     time: timeLabel(dateTime),
     address: job.requiresInstallation ? job.address : undefined,
@@ -155,7 +177,8 @@ function createEvents(job: WorkshopScheduleJob, steps: StepRow[], fulfillment?: 
   for (const step of steps) {
     if (!['waiting', 'ready', 'in_progress', 'blocked'].includes(step.status)) continue;
     const area = areaForStep(step);
-    const stepEvent = eventFor(job, 'production', step.due_at, step.title || 'Etapa de producción', step.id, area.name, step.status);
+    const stepAreaCode = areaCodeFromCode(area.code);
+    const stepEvent = eventFor(job, 'production', step.due_at, step.title || 'Etapa de producción', step.id, area.name, step.status, stepAreaCode);
     if (stepEvent) events.push(stepEvent);
   }
 
@@ -277,6 +300,7 @@ export function useWorkshopSchedule(): WorkshopScheduleData {
           executionDate: dateKey(step?.due_at || row.due_at),
           status,
           area: areaFromCode(area.code),
+          areaCode: areaCodeFromCode(area.code),
           areaLabel: area.name,
           currentStepTitle: step?.title,
           requiresInstallation,

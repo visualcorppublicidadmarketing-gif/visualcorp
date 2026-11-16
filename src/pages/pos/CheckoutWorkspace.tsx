@@ -14,7 +14,9 @@ import { CommercialFinishingControls } from '../../components/CommercialFinishin
 import { calculateCommercialFinishing, emptyCommercialFinishing, sanitizeCommercialFinishing, snapshotCommercialFinishing, type CommercialFinishingValue } from '../../lib/commercialFinishing';
 import { calculatePOSPaymentBreakdown } from '../../lib/posPayments';
 import { CommercialDocumentDetails, type CommercialDocumentKind } from '../../components/CommercialDocumentDetails';
-import { Sheet, useConfirm } from '../../components/ui/OperationalKit';
+import { Kbd, Sheet, useConfirm } from '../../components/ui/OperationalKit';
+import { UiBadge, UiNotice } from '../../components/ui/DesignSystemPrimitives';
+import { useTheme } from '../../app/ThemeProvider';
 import { CommercialAssetsEditor } from '../../components/commercial/CommercialAssetsEditor';
 import { CommercialAssetsGallery } from '../../components/commercial/CommercialAssetsGallery';
 import { GoogleMapsPreview } from '../../components/commercial/GoogleMapsPreview';
@@ -645,11 +647,15 @@ function POSMaterialUsage({ lines, recipes, inventory, branchId, values, status,
 }
 
 export function PosPage() {
+  const { theme } = useTheme();
   const confirmDialog=useConfirm();
   const { data, add, update, flash, refreshRemote }=useWorkspace();
   const { organizationId, user, roles, hasPermission }=useAuth();
+  const canManageCatalog = roles.includes('owner') || roles.includes('admin');
   const { favoriteIds, toggleFavorite, status: favoriteStorageStatus }=useAdvisorProductFavorites(organizationId, user?.id);
+  const productSearchInputRef = useRef<HTMLInputElement>(null);
   const [form,setForm]=useState({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
+  const [quoteSearchQuery, setQuoteSearchQuery] = useState('');
   const [catalogKind,setCatalogKind]=useState<'product'|'service'>('product');
   const [logoChangeCount,setLogoChangeCount]=useState('0');
   const [isExecutivePreviewOpen,setIsExecutivePreviewOpen]=useState(false);
@@ -827,7 +833,63 @@ export function PosPage() {
     setFulfillment({installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});setMapLink('');setClientBriefHtml('<p></p>');saleAssets.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl));setSaleAssets([]);setMobileSummaryOpen(false);setPaymentTarget(null);
     setCheckoutStep('order');
   };
-  useEffect(()=>{if(!supabase||!organizationId){setCatalogLinkStatus('error');return;}let active=true;setCatalogLinkStatus('checking');Promise.all([supabase.from('catalog_inventory_links').select('catalog_product_id,inventory_variant_id,branch_id,location_code,active').eq('organization_id',organizationId).eq('active',true),supabase.from('central_quotes').select('*').eq('organization_id',organizationId).order('created_at',{ascending:false}).limit(100)]).then(([links,quotes])=>{if(!active)return;if(links.error){setCatalogLinkStatus('error');flash(`No se pudieron verificar los vínculos de stock: ${links.error.message}`);}else{setCatalogLinks(links.data||[]);setCatalogLinkStatus('ready');}if(quotes.error)flash(`No se pudieron cargar cotizaciones centrales: ${quotes.error.message}`);else setCentralQuotes(quotes.data||[]);});return()=>{active=false;};},[organizationId]);
+  useEffect(()=>{
+    if(!supabase||!organizationId){setCatalogLinkStatus('error');return;}
+    let active=true;
+    setCatalogLinkStatus('checking');
+    Promise.all([
+      supabase.from('catalog_inventory_links').select('catalog_product_id,inventory_variant_id,branch_id,location_code,active').eq('organization_id',organizationId).eq('active',true),
+      supabase.from('central_quotes').select('*').eq('organization_id',organizationId).eq('status','accepted').eq('price_confirmed',true).order('updated_at',{ascending:false}).limit(200)
+    ]).then(async ([links,quotes])=>{
+      if(!active)return;
+      if(links.error){
+        setCatalogLinkStatus('error');
+        flash(`No se pudieron verificar los vínculos de stock: ${links.error.message}`);
+      }else{
+        setCatalogLinks(links.data||[]);
+        setCatalogLinkStatus('ready');
+      }
+      if(quotes.error){
+        flash(`No se pudieron cargar cotizaciones centrales: ${quotes.error.message}`);
+      }else{
+        let loadedQuotes = quotes.data || [];
+        if(form.quoteId && !loadedQuotes.some((q: any)=>q.id===form.quoteId)){
+          try{
+            const { data: specificQuote } = await supabase
+              .from('central_quotes')
+              .select('*')
+              .eq('organization_id', organizationId)
+              .eq('id', form.quoteId)
+              .maybeSingle();
+            if(specificQuote && active){
+              loadedQuotes = [specificQuote, ...loadedQuotes];
+            }
+          }catch{ /* ignorar fallo opcional */ }
+        }
+        if(active) setCentralQuotes(loadedQuotes);
+      }
+    });
+    return()=>{active=false;};
+  },[organizationId,form.quoteId]);
+  useEffect(()=>{
+    if(!supabase||!organizationId||!form.quoteId)return;
+    if(centralQuotes.some((q: any)=>q.id===form.quoteId))return;
+    let active=true;
+    void (async()=>{
+      try{
+        const { data: specificQuote, error } = await supabase
+          .from('central_quotes')
+          .select('*')
+          .eq('organization_id', organizationId)
+          .eq('id', form.quoteId)
+          .maybeSingle();
+        if(!error && specificQuote && active){
+          setCentralQuotes((prev: any)=>prev.some((q: any)=>q.id===specificQuote.id)?prev:[specificQuote,...prev]);
+        }
+      }catch{ /* noop */ }
+    })();
+    return()=>{active=false;};
+  },[organizationId,form.quoteId,centralQuotes]);
   useEffect(()=>{
     if(!supabase||!organizationId){setTaxConfigurationStatus('error');return;}
     let active=true;setTaxConfigurationStatus('loading');
@@ -1278,6 +1340,15 @@ export function PosPage() {
     return [product.id,{tone:'available',label:`En stock: ${available} ${unit}`,availableQuantity:available,unit,locationCode:primaryLink.location_code||'',linked:true}];
   })),[data.catalog,linksByProduct,inventoryByVariant]);
   const acceptedQuotes=useMemo(()=>centralQuotes.filter((quote)=>quote.status==='accepted'&&quote.price_confirmed&&quote.selected_total!==null),[centralQuotes]);
+  const filteredAcceptedQuotes=useMemo(()=>{
+    if(!quoteSearchQuery.trim())return acceptedQuotes;
+    const q=quoteSearchQuery.trim().toLocaleLowerCase('es');
+    return acceptedQuotes.filter((quote: any)=>
+      String(quote.quote_code||'').toLocaleLowerCase('es').includes(q) ||
+      String(quote.customer_name||'').toLocaleLowerCase('es').includes(q) ||
+      String(quote.title||'').toLocaleLowerCase('es').includes(q)
+    );
+  },[acceptedQuotes,quoteSearchQuery]);
   const filteredRecentSales=useMemo(()=>{
     const q=recentSalesQuery.trim().toLocaleLowerCase('es');
     return salesToday.filter((sale:any)=>{
@@ -1391,6 +1462,78 @@ export function PosPage() {
     chooseCartProduct(product);
     flash(`Artículo reconocido: ${product.name}. Revisa cantidad, medidas y tarifa del catálogo.`);
   };
+  useEffect(() => {
+    let scanBuffer = '';
+    let lastKeyTime = 0;
+    let resetTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && mobileSummaryOpen) {
+        event.preventDefault();
+        setMobileSummaryOpen(false);
+        return;
+      }
+
+      if (event.key === 'F2' || (event.altKey && (event.key === 'b' || event.key === 'B'))) {
+        event.preventDefault();
+        if (checkoutStep !== 'order') setCheckoutStep('order');
+        if (cartEntryType !== 'catalog') setCartEntryType('catalog');
+        window.setTimeout(() => {
+          productSearchInputRef.current?.focus();
+          productSearchInputRef.current?.select();
+        }, 30);
+        return;
+      }
+
+      const activeEl = document.activeElement;
+      const isInputActive = activeEl instanceof HTMLInputElement ||
+        activeEl instanceof HTMLTextAreaElement ||
+        activeEl instanceof HTMLSelectElement ||
+        activeEl?.getAttribute('contenteditable') === 'true' ||
+        Boolean(activeEl?.closest('[role="dialog"]'));
+
+      if (isInputActive) {
+        scanBuffer = '';
+        return;
+      }
+
+      const now = performance.now();
+      const interval = now - lastKeyTime;
+      lastKeyTime = now;
+
+      if (event.key === 'Enter') {
+        if (scanBuffer.length >= 3) {
+          event.preventDefault();
+          const code = scanBuffer;
+          scanBuffer = '';
+          if (resetTimer) clearTimeout(resetTimer);
+          if (checkoutStep !== 'order') setCheckoutStep('order');
+          if (cartEntryType !== 'catalog') setCartEntryType('catalog');
+          handleCartScan(code);
+        } else {
+          scanBuffer = '';
+        }
+        return;
+      }
+
+      if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+        if (scanBuffer.length > 0 && interval > 120) {
+          scanBuffer = '';
+        }
+        scanBuffer += event.key;
+        if (resetTimer) clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => {
+          scanBuffer = '';
+        }, 120);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+      if (resetTimer) clearTimeout(resetTimer);
+    };
+  }, [mobileSummaryOpen, checkoutStep, cartEntryType, handleCartScan]);
   const focusCheckoutField=(selector:string)=>requestAnimationFrame(()=>document.querySelector<HTMLInputElement>(selector)?.focus());
   const validateWorkDetails=()=>{
     if(fulfillment.installationRequired&&!fulfillment.installationAddress.trim()){
@@ -1736,14 +1879,22 @@ export function PosPage() {
   },[activeTotal]);
 
   return <AppFrame area="operations">
-     <PageHeading eyebrow="PUNTO DE VENTA · SISTEMA CONECTADO" title="Caja y ventas" description="Arma el pedido, verifica existencias en vivo, asigna rutas de producción y confirma el cobro." action={<div className="pos-heading-actions"><span className={`local-badge ${catalogLinkStatus==='ready'?'is-ready':catalogLinkStatus==='error'?'is-error':''}`}><span className="status-dot"/> {catalogLinkStatus==='ready'?`${linksByProduct.size} vínculos activos en ${branchName}`:catalogLinkStatus==='error'?'No se pudieron consultar los vínculos':'Consultando vínculos de inventario'}</span></div>}/>
-    {lastSaleConfirmation&&<section className="pos-sale-success" role="status" aria-live="polite"><span className="pos-sale-success-icon"><Check size={19}/></span><div className="pos-sale-success-copy"><small>VENTA REGISTRADA · {lastSaleConfirmation.branch}</small><h2>{lastSaleConfirmation.code}</h2><span>Total {formatMoney(lastSaleConfirmation.total)} · Aplicado {formatMoney(lastSaleConfirmation.paid)} · Saldo {formatMoney(lastSaleConfirmation.balance)}{lastSaleConfirmation.change>0?` · Vuelto ${formatMoney(lastSaleConfirmation.change)}`:''}</span></div><button className="icon-button" type="button" aria-label="Cerrar confirmación de venta" onClick={()=>setLastSaleConfirmation(null)}><X size={16}/></button></section>}
+    <div className="pos-workspace-shell" data-vc-theme={theme}>
+      <PageHeading
+        eyebrow="PUNTO DE VENTA · SISTEMA CONECTADO"
+        title="Caja y ventas"
+        description="Arma el pedido, verifica existencias en vivo, asigna rutas de producción y confirma el cobro."
+        action={<div className="pos-heading-actions">
+          <UiBadge tone={catalogLinkStatus==='ready'?'success':catalogLinkStatus==='error'?'danger':'neutral'} className="pos-heading-link-badge">
+            <span className="status-dot"/> {catalogLinkStatus==='ready'?`${linksByProduct.size} vínculos activos en ${branchName}`:catalogLinkStatus==='error'?'No se pudieron consultar los vínculos':'Consultando vínculos de inventario'}
+          </UiBadge>
+        </div>}
+      />
+      {lastSaleConfirmation&&<section className="pos-sale-success" role="status" aria-live="polite"><span className="pos-sale-success-icon"><Check size={19}/></span><div className="pos-sale-success-copy"><small>VENTA REGISTRADA · {lastSaleConfirmation.branch}</small><h2>{lastSaleConfirmation.code}</h2><span>Total {formatMoney(lastSaleConfirmation.total)} · Aplicado {formatMoney(lastSaleConfirmation.paid)} · Saldo {formatMoney(lastSaleConfirmation.balance)}{lastSaleConfirmation.change>0?` · Vuelto ${formatMoney(lastSaleConfirmation.change)}`:''}</span></div><button className="icon-button" type="button" aria-label="Cerrar confirmación de venta" onClick={()=>setLastSaleConfirmation(null)}><X size={16}/></button></section>}
 
-    <section className="pos-ecosystem-bar" aria-label="Conexiones operativas del Punto de Venta">
-      <div className="pos-eco-card is-branch">
-        <span className="pos-eco-icon"><Store size={16}/></span>
-        <div className="pos-eco-copy">
-          <small>SUCURSAL ACTIVA</small>
+      <section className="pos-counter-strip" aria-label="Cinta operativa de mostrador">
+        <div className="pos-counter-block pos-counter-branch">
+          <span className="pos-counter-block-label"><Store size={13} aria-hidden="true"/> SUCURSAL</span>
           <div className="pos-branch-pills" role="group" aria-label="Cambiar sucursal activa">
             {(data.branches.length?data.branches:[{id:'vis',code:'VIS',name:'Visual Corp'},{id:'giga',code:'GIGA',name:'Gigaprint'}]).map((branch)=><button
               key={branch.code}
@@ -1753,41 +1904,53 @@ export function PosPage() {
               onClick={()=>setForm((current)=>({...current,branchCode:branch.code}))}
             >{branch.name||branch.code}</button>)}
           </div>
+          <UiBadge tone={catalogLinkStatus==='ready'?'success':catalogLinkStatus==='error'?'danger':'neutral'} className="pos-counter-link-badge">
+            <span className="status-dot"/> {catalogLinkStatus==='ready'?`${linksByProduct.size} vínc. activos`:catalogLinkStatus==='error'?'Sin vínculos':'Comprobando…'}
+          </UiBadge>
         </div>
-      </div>
 
-      <div className="pos-eco-card">
-        <span className="pos-eco-icon is-violet"><ShoppingBag size={16}/></span>
-        <div className="pos-eco-copy">
-          <small>CATÁLOGO DE PRODUCTOS</small>
-          <b>{data.catalog.length} artículos ({data.catalog.filter(p=>p.mode!=='area').length} und · {data.catalog.filter(p=>p.mode==='area').length} m²)</b>
-          <Link to="/operaciones/catalogo" className="pos-eco-link">Abrir catálogo y tarifas <ArrowUpRight size={12}/></Link>
-        </div>
-      </div>
-
-      <div className="pos-eco-card">
-        <span className="pos-eco-icon is-emerald"><Boxes size={16}/></span>
-        <div className="pos-eco-copy">
-          <small>INVENTARIO · {branchName.toUpperCase()}</small>
-          <b>{linksByProduct.size} vinculados · {connectedStockCount} con stock listo</b>
-          <Link to="/operaciones/inventario?tab=pos" className="pos-eco-link">Vínculos POS y conteos <ArrowUpRight size={12}/></Link>
-        </div>
-      </div>
-
-      <div className="pos-eco-card">
-        <span className="pos-eco-icon is-blue"><FileText size={16}/></span>
-        <div className="pos-eco-copy">
-          <small>COTIZADOR CENTRAL</small>
-          <b>{acceptedQuotes.length} {acceptedQuotes.length===1?'aprobada lista':'aprobadas listas'} para cobrar</b>
-          <div className="pos-eco-inline-links">
-            <Link to="/operaciones/cotizador" className="pos-eco-link">Ir al cotizador <ArrowUpRight size={12}/></Link>
-            <Link to="/operaciones/clientes" className="pos-eco-link">Clientes ({data.customers?.length||0}) <ArrowUpRight size={12}/></Link>
+        <div className="pos-counter-block pos-counter-metrics">
+          <span className="pos-counter-block-label"><ChartNoAxesCombined size={13} aria-hidden="true"/> VENTAS DE HOY</span>
+          <div className="pos-counter-metric-group">
+            <div className="pos-counter-metric-item">
+              <small>Total confirmado</small>
+              <strong className="tabular-num">{posSalesStatus==='ready'?formatMoney(salesToday.reduce((sum,sale)=>sum+sale.total,0)):'—'}</strong>
+            </div>
+            <div className="pos-counter-metric-separator" aria-hidden="true"/>
+            <div className="pos-counter-metric-item">
+              <small>Transacciones</small>
+              <strong className="tabular-num">{posSalesStatus==='ready'?salesToday.length:'—'}</strong>
+            </div>
+            <div className="pos-counter-metric-separator" aria-hidden="true"/>
+            <div className="pos-counter-metric-item">
+              <small>Método común</small>
+              <strong>{posSalesStatus==='ready'&&salesToday.length?mostFrequent(salesToday.map((sale)=>sale.method)):'—'}</strong>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <div className="stat-grid compact-stats"><StatCard label="Venta confirmada hoy" value={posSalesStatus==='ready'?formatMoney(salesToday.reduce((sum,sale)=>sum+sale.total,0)):'—'} icon={Wallet} note={posSalesStatus==='ready'?branchName:posSalesStatus==='loading'?'Consultando esta sucursal':posSalesStatus==='restricted'?'Sin permiso para ver ventas':'No se pudo consultar'} tone="blue"/><StatCard label="Transacciones" value={posSalesStatus==='ready'?salesToday.length:'—'} icon={ShoppingCart} note={posSalesStatus==='ready'?'Hoy · sucursal seleccionada':'Conteo no disponible'} tone="violet"/><StatCard label="Método más común" value={posSalesStatus==='ready'&&salesToday.length?mostFrequent(salesToday.map((sale)=>sale.method)):'—'} icon={ArrowDownRight} note={posSalesStatus==='ready'?'En ventas confirmadas de hoy':'Sin datos de caja'} tone="amber"/></div>
+        <div className="pos-counter-block pos-counter-shortcuts">
+          <span className="pos-counter-block-label"><Route size={13} aria-hidden="true"/> ACCESOS RÁPIDOS</span>
+          <nav className="pos-counter-links" aria-label="Enlaces operativos rápidos">
+            <Link to="/operaciones/catalogo" className="pos-counter-quicklink" title="Abrir catálogo y tarifas">
+              <ShoppingBag size={12} aria-hidden="true"/>
+              <span>Catálogo <b>({data.catalog.length})</b></span>
+            </Link>
+            <Link to="/operaciones/inventario?tab=pos" className="pos-counter-quicklink" title="Vínculos POS y conteos físicos">
+              <Boxes size={12} aria-hidden="true"/>
+              <span>Inventario <b>({connectedStockCount})</b></span>
+            </Link>
+            <Link to="/operaciones/cotizador" className="pos-counter-quicklink" title="Cotizaciones aprobadas listas para cobrar">
+              <FileText size={12} aria-hidden="true"/>
+              <span>Cotizador <b>({acceptedQuotes.length})</b></span>
+            </Link>
+            <Link to="/operaciones/clientes" className="pos-counter-quicklink" title="Directorio de clientes">
+              <Users size={12} aria-hidden="true"/>
+              <span>Clientes <b>({data.customers?.length||0})</b></span>
+            </Link>
+          </nav>
+        </div>
+      </section>
 
     <section className="pos-cashier-card">
       <span className="pos-cashier-icon"><Users size={18}/></span>
@@ -1875,11 +2038,41 @@ export function PosPage() {
       <form className="panel form-panel pos-checkout-form" onSubmit={save}>
         <div className="panel-heading"><div><span className="eyebrow">NUEVA ORDEN</span><h2>{checkoutStep==='order'?'Agrega los productos':checkoutStep==='details'?'Prepara el trabajo':'Revisa y cobra'}</h2><p className="pos-step-caption">Elige del catálogo o carga una cotización aprobada. Revisa el total y el cobro antes de confirmar.</p></div><ShoppingCart size={19}/></div>
         <POSCheckoutSteps active={checkoutStep} onChange={chooseCheckoutStep} itemCount={form.quoteId?currentQuoteLines.length:cart.length} requiresDetails={requiresWorkDetails}/>
-        {pendingSaleRecoveryMode&&<div className={`pos-pending-sale-notice${pendingOperationChanged?' is-changed':''}`} role="status"><div><b>Operación protegida</b><p>{pendingOperationChanged?'Detecté cambios en los datos guardados o en los conceptos de la cotización. No enviaré una venta con la misma clave y contenido distinto. Recarga para recuperar la versión original.':'Si la respuesta anterior se interrumpió, puedes reintentar con esta misma clave y estos datos para evitar una venta duplicada.'}</p></div>{pendingOperationChanged&&<button className="button button-outline" type="button" onClick={()=>window.location.reload()}>Restaurar datos originales</button>}</div>}
+        {pendingSaleRecoveryMode&&<UiNotice tone={pendingOperationChanged?'warning':'info'} title="Operación protegida" className={`pos-pending-sale-notice${pendingOperationChanged?' is-changed':''}`}>
+          <p>{pendingOperationChanged?'Detecté cambios en los datos guardados o en los conceptos de la cotización. No enviaré una venta con la misma clave y contenido distinto. Recarga para recuperar la versión original.':'Si la respuesta anterior se interrumpió, puedes reintentar con esta misma clave y estos datos para evitar una venta duplicada.'}</p>
+          {pendingOperationChanged&&<button className="button button-outline" type="button" onClick={()=>window.location.reload()}>Restaurar datos originales</button>}
+        </UiNotice>}
         <div className="pos-checkout-main" hidden={checkoutStep!=='order'}>
         <div className="pos-origin-branch-row">
-          <label>Origen de la venta<select value={form.quoteId} onChange={(event)=>void handleQuoteSelection(event.target.value,event.currentTarget)}><option value="">Venta manual: catálogo y carrito</option>{acceptedQuotes.map((quote)=><option key={quote.id} value={quote.id}>{quote.quote_code} · {quote.customer_name||'Cliente'} · {formatMoney(quote.selected_total)}</option>)}</select><small className="pos-field-help">Puedes armar una venta nueva o cargar una cotización aprobada con su precio confirmado.</small></label>
-          <label className="pos-payment-fields pos-branch-selector">Sucursal<select value={form.branchCode} disabled={!data.branches.length} onChange={(event)=>setForm((current)=>({...current,branchCode:event.target.value}))}>{data.branches.length?data.branches.map((branch)=><option key={branch.id} value={branch.code}>{branch.name||branch.code}</option>):<option value={form.branchCode}>{branchName}</option>}</select><small className="pos-field-help">Define de qué inventario se descuenta y en qué caja ingresa.</small></label>
+          <label>
+            <span>Origen de la venta</span>
+            {acceptedQuotes.length > 6 && (
+              <div className="pos-quote-search-inline">
+                <Search size={13} aria-hidden="true"/>
+                <input
+                  type="search"
+                  value={quoteSearchQuery}
+                  onChange={(event) => setQuoteSearchQuery(event.target.value)}
+                  placeholder="Buscar cotización por código o cliente…"
+                  aria-label="Filtrar cotizaciones aprobadas"
+                />
+                {quoteSearchQuery && (
+                  <button type="button" className="pos-quote-search-clear" aria-label="Limpiar filtro de cotizaciones" onClick={() => setQuoteSearchQuery('')}>
+                    <X size={12}/>
+                  </button>
+                )}
+              </div>
+            )}
+            <select value={form.quoteId} onChange={(event)=>void handleQuoteSelection(event.target.value,event.currentTarget)}>
+              <option value="">Venta manual: catálogo y carrito</option>
+              {filteredAcceptedQuotes.map((quote)=><option key={quote.id} value={quote.id}>{quote.quote_code} · {quote.customer_name||'Cliente'} · {formatMoney(quote.selected_total)}</option>)}
+              {form.quoteId && !filteredAcceptedQuotes.some((q) => q.id === form.quoteId) && quotePreview && (
+                <option key={quotePreview.id} value={quotePreview.id}>{quotePreview.quote_code} · {quotePreview.customer_name||'Cliente'} · {formatMoney(quotePreview.selected_total)}</option>
+              )}
+            </select>
+            <small className="pos-field-help">Puedes armar una venta nueva o cargar una cotización aprobada con su precio confirmado.</small>
+          </label>
+          <label className="pos-payment-fields pos-branch-selector"><span>Sucursal</span><select value={form.branchCode} disabled={!data.branches.length} onChange={(event)=>setForm((current)=>({...current,branchCode:event.target.value}))}>{data.branches.length?data.branches.map((branch)=><option key={branch.id} value={branch.code}>{branch.name||branch.code}</option>):<option value={form.branchCode}>{branchName}</option>}</select><small className="pos-field-help">Define de qué inventario se descuenta y en qué caja ingresa.</small></label>
         </div>
         <POSCustomerPicker customers={data.customers||[]} remoteMatches={customerLookupActive&&canSearchCustomers&&!form.customerId&&customerSearch.results!==null&&!customerSearch.error?customerSearch.results:null} searchingCustomers={customerSearch.loading} searchError={customerSearch.error} onRetrySearch={()=>setCustomerSearchRequest((request)=>request+1)} canShowMore={Boolean(customerSearch.hasMore&&customerSearchLimit<20)} onShowMore={()=>setCustomerSearchLimit(20)} selectedCustomer={selectedCustomer} duplicateCustomer={duplicateCustomer} customerName={form.customer} onNewNameChange={(value)=>setForm((current)=>({...current,customer:value}))} query={customerQuery} onQueryChange={updateCustomerQuery} onSelect={choosePOSCustomer} phone={form.customerPhone} email={form.customerEmail} documentReference={form.customerDocumentReference} onContactChange={(field,value)=>setForm((current)=>({...current,[field==='phone'?'customerPhone':field==='email'?'customerEmail':'customerDocumentReference']:value}))} canViewSales={canViewCustomerHistory} historyLoading={customerHistory.loading} historyCount={customerHistory.count} historySummary={customerHistory.summary} recentPurchases={customerHistory.rows} onOpenPurchase={(purchase)=>setDetailTarget({kind:'sale',id:purchase.id,code:purchase.code})}/>
         {form.quoteId?<div className="pos-quote-total"><span>Total aprobado en cotización</span><strong>{formatMoney(form.total)}</strong><small>El total se conserva igual al aprobado.</small></div>:<>
@@ -1902,6 +2095,7 @@ export function PosPage() {
               {catalogKind==='service'&&<span className="pos-entry-kind-note">Servicios por unidad o paquete · no descuentan inventario</span>}
             </div>
             <POSProductSearch
+              inputRef={productSearchInputRef}
               products={modeCatalog} query={cartSearch} onQueryChange={setCartSearch}
               onChoose={chooseCartProduct} onEnter={handleCartScan} selectedId={cartProductId}
               disabled={!selectedBranchId} family={cartFamily} onFamilyChange={setCartFamily}
@@ -1909,8 +2103,12 @@ export function PosPage() {
               stockByProduct={stockByProduct}
               stockMetaByProduct={stockMetaByProduct}
               renderImage={(product)=><POSProductVisual src={product.image} className="pos-product-image"/>}
-              favoriteIds={favoriteIds} onToggleFavorite={toggleFavorite}
+              favoriteIds={catalogKind==='product'?favoriteIds:new Set<string>()} onToggleFavorite={catalogKind==='product'?toggleFavorite:undefined}
               onQuickAdd={catalogKind==='product'&&cartMode==='quantity'?quickAddProductToCart:undefined}
+              emptyStateTitle={catalogKind==='service'?'Aún no hay servicios disponibles para vender':'No hay artículos en esta modalidad'}
+              emptyStateDescription={catalogKind==='service'?'Publica un servicio con al menos un paquete y una tarifa confirmada para habilitarlo aquí.':'Pide a administración que complete el catálogo.'}
+              emptyStateAction={catalogKind==='service'&&canManageCatalog?<Link className="button button-outline pos-service-catalog-link" to="/operaciones/servicios">Administrar catálogo de servicios <ArrowUpRight size={14}/></Link>:undefined}
+              resultNoun={catalogKind==='service'?'servicio':'producto'} showInventoryFilters={catalogKind==='product'}
             />
             {favoriteStorageStatus==='local'&&<small className="pos-favorite-storage-note">Las estrellas se guardan en este navegador hasta conectar el almacenamiento del equipo.</small>}
             </>}
@@ -1987,8 +2185,32 @@ export function PosPage() {
           {allPreviewShortages.length>0&&<div className="pos-material-availability-note" role="status"><b>Existencias que requieren revisión</b><ul>{allPreviewShortages.slice(0,8).map((issue:any,index:number)=><li key={`${issue.recipe?.id||issue.line?.line_key||index}:${index}`}>{issue.message}</li>)}</ul>{allPreviewShortages.length>8&&<small>Y {allPreviewShortages.length-8} faltante(s) más.</small>}<small>Las necesidades de rollos son aproximadas. La medición física del impresor concilia el saldo después del trabajo.</small></div>}
           <div className="pos-review-actions"><button className="button button-outline" type="button" onClick={()=>void copyPOSWhatsApp()}><Copy size={15}/> Copiar WhatsApp</button><button className="button button-outline" type="button" onClick={()=>setIsExecutivePreviewOpen(true)} disabled={!hasPreviewItems}><FileText size={15}/> Ver documento</button><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('details')}>Editar detalles del trabajo</button><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('order')}>Agregar más artículos</button></div>
         </section>}
+        {mobileSummaryOpen && (checkoutStep === 'order' || checkoutStep === 'details') && (
+          <div
+            className="pos-mobile-summary-backdrop"
+            role="presentation"
+            aria-hidden="true"
+            onClick={() => setMobileSummaryOpen(false)}
+          />
+        )}
         <aside className={`pos-order-summary${mobileSummaryOpen?' is-open':''}`} data-checkout-step={checkoutStep}>
-          <div className="pos-mobile-summary-bar"><span><small>ORDEN ACTUAL</small><b>{formatMoney(activeTotal)}</b></span><button className="button button-dark" type="button" aria-expanded={mobileSummaryOpen} onClick={()=>setMobileSummaryOpen((open)=>!open)}>{mobileSummaryOpen?'Cerrar pedido':'Ver pedido y cobrar'}</button></div>
+          <div className="pos-mobile-summary-bar">
+            <span className="pos-mobile-summary-handle" aria-hidden="true"/>
+            <div className="pos-mobile-summary-info">
+              <small className="pos-mobile-summary-eyebrow">
+                ORDEN ACTUAL · {form.quoteId ? 'Cotización' : `${cart.length} ${cart.length === 1 ? 'artículo' : 'artículos'}`}
+              </small>
+              <b className="pos-mobile-summary-total tabular-num">{formatMoney(activeTotal)}</b>
+            </div>
+            <button
+              className="button button-dark pos-mobile-summary-toggle"
+              type="button"
+              aria-expanded={mobileSummaryOpen}
+              onClick={()=>setMobileSummaryOpen((open)=>!open)}
+            >
+              {mobileSummaryOpen ? 'Ocultar' : `Ver pedido (${form.quoteId ? (currentQuoteLines.length || 1) : cart.length})`}
+            </button>
+          </div>
           {form.quoteId
             ? <POSApprovedQuoteSummary lines={currentQuoteLines} quoteCode={quotePreview?.quote_code || 'Pedido aprobado'} total={activeTotal} emptyDescription={form.description}/>
             : <section className="pos-cart" aria-label="Carrito de venta">
@@ -2095,6 +2317,7 @@ export function PosPage() {
     <Sheet open={Boolean(detailTarget)} onOpenChange={(open)=>{if(!open)setDetailTarget(null);}} title={detailTarget ? `Ficha completa · ${detailTarget.code}` : 'Ficha completa'} description="Productos, imágenes, valores y pagos registrados en esta compra.">{detailTarget&&<CommercialDocumentDetails kind="sale" documentId={detailTarget.id} onAmended={()=>{void refreshPOSDaySales();void refreshRemote();}} onDeleted={(msg)=>{setDetailTarget(null);void refreshPOSDaySales();void refreshRemote();flash(msg);}}/>}</Sheet>
     <POSSaleEditorModal open={Boolean(editingSaleId)} saleId={editingSaleId} organizationId={organizationId} branchName={branchName} onSaved={()=>{void refreshPOSDaySales();void refreshRemote();flash('Venta modificada exitosamente.');}} onDeleted={(msg)=>{setEditingSaleId(null);void refreshPOSDaySales();void refreshRemote();flash(msg);}} onClose={()=>setEditingSaleId(null)}/>
     <AdminDeleteRecordModal open={Boolean(adminDeleteTarget)} onOpenChange={(open)=>{if(!open)setAdminDeleteTarget(null);}} target={adminDeleteTarget} onDeleted={(msg)=>{void refreshPOSDaySales();void refreshRemote();flash(msg);}}/>
+    </div>
   </AppFrame>;
 }
 

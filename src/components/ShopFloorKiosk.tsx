@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Play,
   Pause,
@@ -6,425 +7,114 @@ import {
   AlertTriangle,
   Clock,
   Printer,
-  Scissors,
-  Flame,
-  Shirt,
   Layers,
   Search,
-  Filter,
   ZoomIn,
   RefreshCw,
   FileText,
-  Sparkles,
   X,
-  Plus,
-  Minus,
-  Info
+  Info,
+  PenTool,
+  Hammer,
+  ScanLine,
+  Shirt,
+  ClipboardList,
+  UserRound,
+  ExternalLink,
+  ShieldAlert,
+  ShieldCheck,
+  Check,
+  ArrowRight,
+  RotateCcw,
+  Wrench,
+  HelpCircle,
 } from 'lucide-react';
+import { useAuth } from '../auth/AuthProvider';
+import { supabase } from '../lib/supabaseClient';
+import { useConfirm } from './ui/OperationalKit';
+import { ProductionJobDetailSheet } from '../pages/operations/ProductionJobDetailSheet';
+import {
+  type AreaCode,
+  type AreaSlug,
+  type ProductionAreaRow,
+  type ProductionJob,
+  type ProductionStep,
+  type ProductionStepCheck,
+  type StepStatus,
+  AREA_CODE_TO_SLUG,
+  AREA_SLUG_TO_CODE,
+  STEP_STATUS_LABELS,
+  priorityDetails,
+  isStepOpen,
+  isDateOverdue,
+  stamp,
+  safeDate,
+  dayKey,
+  todayKey,
+  resolveProductionPermissions,
+  getKioskUiPrefs,
+  setKioskUiPrefs,
+  useProductionSync,
+  emitProductionChanged,
+} from '../lib/productionHub';
 import './shop-floor-kiosk.css';
 
-// Safe optional access to Workspace Provider if mounted inside Visual Corp Suite
-import { useWorkspace } from '../app/workspace';
+/* ==========================================================================
+   1. TIPOS Y CONFIGURACIÓN DE ESTACIONES REALES
+   ========================================================================== */
 
-export type StationId = 'all' | 'plotter' | 'taller' | 'laser' | 'sublimacion' | 'dtf';
+export type StationCode = 'all' | 'IMP' | 'TAL' | 'LAS' | 'SUB' | 'DIS' | 'ASE';
+export type KioskStatusFilter = 'all' | 'in_progress' | 'ready' | 'blocked' | 'completed';
 
-export type MachineStatus = 'operational' | 'standby' | 'maintenance' | 'stopped';
-
-export interface CmykLevels {
-  c: number;
-  m: number;
-  y: number;
-  k: number;
-  w?: number;
+export interface EquipmentAssetRow {
+  id: string;
+  organization_id: string;
+  asset_code: string;
+  name: string;
+  equipment_type: string;
+  manufacturer: string;
+  model: string;
+  serial_number: string;
+  status: string;
+  condition: string;
+  location: string;
+  notes: string;
+  reference_image_url: string | null;
+  area_id: string | null;
+  branch_id: string | null;
+  custom_fields?: Record<string, unknown> | null;
 }
 
-export interface MachineInfo {
+export interface EquipmentAreaRow {
   id: string;
   name: string;
-  stationId: StationId;
-  status: MachineStatus;
-  statusLabel: string;
-  cmyk?: CmykLevels;
-  mountedRoll?: {
-    material: string;
-    width_m: number;
-    remaining_m: number;
-    total_m: number;
-  };
-  laserParams?: {
-    chillerTemp: string;
-    tubePower: number;
-    bedMaterial: string;
-  };
-  notes?: string;
+  code: string;
+  active?: boolean;
 }
 
-export type JobStatus = 'queued' | 'in_progress' | 'paused' | 'completed';
-export type JobSla = 'on_time' | 'urgent_today' | 'overdue';
-
-export interface WorkOrder {
-  id: string;
-  saleCode: string;
-  clientName: string;
-  clientPhone?: string;
-  title: string;
-  stationId: StationId;
-  machineId: string;
-  width_m: number;
-  height_m: number;
-  area_m2: number;
-  quantity: number;
-  unit: string;
-  material: string;
-  finishes: string[];
-  status: JobStatus;
-  sla: JobSla;
-  slaLabel: string;
-  dueTime: string;
-  prepressNotes: string;
-  colorMode: string;
-  resolution: string;
-  bleed_mm: number;
-  elapsedSeconds: number;
-  startedAt?: string;
-  pausedAt?: string;
-  pauseReason?: string;
-  completedAt?: string;
-  isTemplate: boolean;
+interface EnrichedStep {
+  step: ProductionStep;
+  job: ProductionJob;
+  area: ProductionAreaRow | null;
+  areaCode: AreaCode | string;
+  pendingChecksCount: number;
 }
 
-export interface ScrapRecord {
-  id: string;
-  jobId: string;
-  clientName: string;
-  stationId: StationId;
-  machineId: string;
-  machineName: string;
-  amount: number;
-  unit: 'm' | 'm2';
-  reason: string;
-  notes?: string;
-  operator: string;
-  createdAt: string;
-}
-
-const STORAGE_PRINTERS_KEY = 'visualcorp_inventory_printers';
-const STORAGE_JOBS_KEY = 'visualcorp_production_jobs';
-const STORAGE_SCRAPS_KEY = 'visualcorp_production_scraps';
-
-// Centros de trabajo oficiales de Visual Corp
-const STATIONS_CONFIG: Array<{
-  id: StationId;
+interface StationTabItem {
+  code: StationCode;
   name: string;
   shortName: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
-  category: string;
-}> = [
-  { id: 'all', name: 'Todos los Centros', shortName: 'Todos', icon: Layers, category: 'Planta Completa' },
-  { id: 'plotter', name: 'Plotter Gran Formato (Lona / Vinil)', shortName: 'Plotters', icon: Printer, category: 'Impresión Industrial' },
-  { id: 'taller', name: 'Taller y Acabados (Ojales / Bastidores / Rótulos)', shortName: 'Taller', icon: Scissors, category: 'Confección y Armado' },
-  { id: 'laser', name: 'Corte Láser & Grabado (Acrílico / MDF / Sintra)', shortName: 'Láser', icon: Flame, category: 'Corte CNC' },
-  { id: 'sublimacion', name: 'Sublimación & Confección (Uniformes / Tazas / Merch)', shortName: 'Sublimación', icon: Shirt, category: 'Textil & Regalos' },
-  { id: 'dtf', name: 'Impresión DTF Textil', shortName: 'DTF', icon: Sparkles, category: 'Transfer Textil' },
-];
+}
 
-// Parque de maquinaria oficial de Visual Corp (Milagro, Guayas)
-const DEFAULT_MACHINES: MachineInfo[] = [
-  {
-    id: 'CHALLENGER-3200',
-    name: 'Plotter Challenger FY-3200 (Gran Formato 3.20m Solvente)',
-    stationId: 'plotter',
-    status: 'operational',
-    statusLabel: '🟢 Operativa',
-    cmyk: { c: 88, m: 74, y: 92, k: 65 },
-    mountedRoll: {
-      material: 'Lona Frontlit 13oz Blanco Brillante',
-      width_m: 3.20,
-      remaining_m: 38.5,
-      total_m: 50.0,
-    },
-    notes: 'Cabezales Seiko 508GS purgados hoy 08:00',
-  },
-  {
-    id: 'ROLAND-SG540',
-    name: 'Plotter Roland TrueVIS SG-540 (Ecosolvente 1.37m)',
-    stationId: 'plotter',
-    status: 'standby',
-    statusLabel: '🟡 Standby',
-    cmyk: { c: 62, m: 81, y: 54, k: 48 },
-    mountedRoll: {
-      material: 'Vinil Arlon Adhesivo Brillante',
-      width_m: 1.52,
-      remaining_m: 24.0,
-      total_m: 50.0,
-    },
-    notes: 'Listo para corte y medio corte OPOS',
-  },
-  {
-    id: 'LASER-CO2-130',
-    name: 'Router Láser CNC CO2 130W (Mesa 1300×900mm)',
-    stationId: 'laser',
-    status: 'operational',
-    statusLabel: '🟢 Operativa',
-    laserParams: {
-      chillerTemp: '18.5 °C',
-      tubePower: 98,
-      bedMaterial: 'Acrílico Cristal 3mm 122×244cm',
-    },
-    notes: 'Espejos alineados, óptica limpia',
-  },
-  {
-    id: 'EPSON-F6370',
-    name: 'Plotter Epson SureColor F6370 (Sublimación 1.11m)',
-    stationId: 'sublimacion',
-    status: 'maintenance',
-    statusLabel: '🟠 En Mantenimiento',
-    cmyk: { c: 35, m: 18, y: 45, k: 22 },
-    mountedRoll: {
-      material: 'Papel Sublimación FastDry 100g',
-      width_m: 1.11,
-      remaining_m: 15.0,
-      total_m: 100.0,
-    },
-    notes: 'Mantenimiento preventivo de bomba de succión',
-  },
-  {
-    id: 'DTF-PRESTIGE',
-    name: 'Estación DTF Prestige A3+ (Doble Cabezal i1600)',
-    stationId: 'dtf',
-    status: 'standby',
-    statusLabel: '🟡 Standby',
-    cmyk: { c: 70, m: 75, y: 80, k: 68, w: 90 },
-    mountedRoll: {
-      material: 'Film DTF Pet Roll Premium',
-      width_m: 0.33,
-      remaining_m: 62.0,
-      total_m: 100.0,
-    },
-    notes: 'Sistema de agitación de tinta blanca activado',
-  },
-  {
-    id: 'MESA-ACABADOS-01',
-    name: 'Mesa Central de Acabados, Bastidores & Ojales',
-    stationId: 'taller',
-    status: 'operational',
-    statusLabel: '🟢 Operativa',
-    notes: 'Remachadora neumática troquel #3 y vulcanizadora térmica',
-  },
-];
-
-// Órdenes de trabajo realistas para Visual Corp (Milagro, Ecuador)
-const INITIAL_WORK_ORDERS: WorkOrder[] = [
-  {
-    id: 'OT-2026-0481',
-    saleCode: 'VEN-2026-0891',
-    clientName: 'Carnicería El Milagreño',
-    clientPhone: '0981234567',
-    title: 'Lona 13oz 3.20x2.00m con ojales c/50cm para fachada',
-    stationId: 'plotter',
-    machineId: 'CHALLENGER-3200',
-    width_m: 3.20,
-    height_m: 2.00,
-    area_m2: 6.40,
-    quantity: 1,
-    unit: 'unidad',
-    material: 'Lona Frontlit 13oz Blanco Brillante',
-    finishes: [
-      'Ojales metálicos reforzados cada 50cm',
-      'Dobladillo perimetral vulcanizado con cinta térmica',
-      'Refuerzo en 4 esquinas',
-    ],
-    status: 'in_progress',
-    sla: 'urgent_today',
-    slaLabel: '🟡 Entrega Hoy (Urgente)',
-    dueTime: 'Hoy 17:00',
-    prepressNotes: '300 DPI CMYK · Sangría perimetral 5cm para dobladillo · Ojales marcados',
-    colorMode: 'CMYK Fogra39',
-    resolution: '300 DPI (1:1)',
-    bleed_mm: 50,
-    elapsedSeconds: 2535, // 42 min 15 seg
-    isTemplate: true,
-  },
-  {
-    id: 'OT-2026-0485',
-    saleCode: 'VEN-2026-0895',
-    clientName: 'Farmacia San Alejo',
-    clientPhone: '0997654321',
-    title: 'Banner Roll Up 85x200cm con estructura de aluminio retráctil',
-    stationId: 'plotter',
-    machineId: 'ROLAND-SG540',
-    width_m: 0.85,
-    height_m: 2.00,
-    area_m2: 1.70,
-    quantity: 2,
-    unit: 'unidades',
-    material: 'Lona Mate 13oz Anti-curvatura (No-Curl)',
-    finishes: [
-      'Montaje en estructura Roll Up retráctil aluminio',
-      'Punteras cromadas reforzadas',
-      'Funda de transporte acolchada',
-    ],
-    status: 'queued',
-    sla: 'on_time',
-    slaLabel: '🟢 En tiempo',
-    dueTime: 'Mañana 12:00',
-    prepressNotes: '150 DPI escala 1:1 · Margen inferior ciego 10cm para mecanismo interno',
-    colorMode: 'CMYK Roland VersaWorks',
-    resolution: '150 DPI',
-    bleed_mm: 10,
-    elapsedSeconds: 0,
-    isTemplate: true,
-  },
-  {
-    id: 'OT-2026-0488',
-    saleCode: 'VEN-2026-0902',
-    clientName: 'Boutique Bella',
-    clientPhone: '0961122334',
-    title: 'Letras volumétricas en acrílico dorado 3mm con luz indirecta',
-    stationId: 'laser',
-    machineId: 'LASER-CO2-130',
-    width_m: 2.40,
-    height_m: 0.65,
-    area_m2: 1.56,
-    quantity: 1,
-    unit: 'juego completo',
-    material: 'Acrílico Espejo Dorado 3mm + Respaldo Sintra 10mm',
-    finishes: [
-      'Corte láser con borde pulido a la llama',
-      'Separadores de acero inoxidable 2cm',
-      'Módulos LED cálido 3000K IP65',
-    ],
-    status: 'queued',
-    sla: 'overdue',
-    slaLabel: '🔴 Demorado (+24h)',
-    dueTime: 'Ayer 18:00',
-    prepressNotes: 'Vector AI curvas · Offset de corte compensado 0.15mm · Plantilla papel kraft',
-    colorMode: 'Vectorial / DXF',
-    resolution: 'Vectores 1:1',
-    bleed_mm: 0,
-    elapsedSeconds: 0,
-    isTemplate: true,
-  },
-  {
-    id: 'OT-2026-0492',
-    saleCode: 'VEN-2026-0910',
-    clientName: 'Distribuidora Los Andes',
-    clientPhone: '0978899001',
-    title: 'Stickers troquelados en vinil brillante con laminado UV mate',
-    stationId: 'plotter',
-    machineId: 'ROLAND-SG540',
-    width_m: 0.08,
-    height_m: 0.08,
-    area_m2: 6.40,
-    quantity: 1000,
-    unit: 'stickers circulares',
-    material: 'Vinil Adhesivo Arlon Brillante + Laminado Frío UV',
-    finishes: [
-      'Laminado mate anti-rayas',
-      'Medio corte (Kiss Cut) con marcas OPOS',
-      'Despacho en planchas de 50 unidades',
-    ],
-    status: 'paused',
-    sla: 'urgent_today',
-    slaLabel: '🟡 Entrega Hoy (Urgente)',
-    dueTime: 'Hoy 16:30',
-    prepressNotes: 'Trazo de corte spot CutContour · Sangría perimetral 2mm · 300 DPI',
-    colorMode: 'CMYK + CutContour',
-    resolution: '300 DPI',
-    bleed_mm: 2,
-    elapsedSeconds: 1840,
-    pauseReason: 'Espera de laminado / Curado de tinta fresca',
-    isTemplate: true,
-  },
-  {
-    id: 'OT-2026-0496',
-    saleCode: 'VEN-2026-0914',
-    clientName: 'Club Deportivo Milagro',
-    clientPhone: '0955667788',
-    title: 'Camisetas sublimadas poliéster deportivo Dry-Fit institucional',
-    stationId: 'sublimacion',
-    machineId: 'EPSON-F6370',
-    width_m: 0.60,
-    height_m: 0.80,
-    area_m2: 12.00,
-    quantity: 25,
-    unit: 'camisetas',
-    material: 'Microfibra Poliéster Dry-Fit 160g',
-    finishes: [
-      'Sublimación total full print (frente, espalda y mangas)',
-      'Cuello en V tejido rib elástico',
-      'Numeración y nombres personalizados por jugador',
-    ],
-    status: 'queued',
-    sla: 'on_time',
-    slaLabel: '🟢 En tiempo',
-    dueTime: 'Viernes 14:00',
-    prepressNotes: 'Patrones escalados tallas S, M, L, XL · Sangría costura 1.5cm',
-    colorMode: 'CMYK Epson Sublimation',
-    resolution: '300 DPI',
-    bleed_mm: 15,
-    elapsedSeconds: 0,
-    isTemplate: true,
-  },
-  {
-    id: 'OT-2026-0501',
-    saleCode: 'VEN-2026-0922',
-    clientName: 'Ferretería La Central',
-    clientPhone: '0987654321',
-    title: 'Rótulo bastidor metálico 4.00x1.20m en lona translúcida con tubo estructural',
-    stationId: 'taller',
-    machineId: 'MESA-ACABADOS-01',
-    width_m: 4.00,
-    height_m: 1.20,
-    area_m2: 4.80,
-    quantity: 1,
-    unit: 'estructura metálica',
-    material: 'Lona Backlight Translúcida 15oz + Tubo Cuadrado 1" × 1.5mm',
-    finishes: [
-      'Estructura soldada MIG con fondo anticorrosivo negro',
-      'Tensado perimetral con grapa neumática y cantonera aluminio',
-      'Pernos de anclaje para montaje en pared exterior',
-    ],
-    status: 'in_progress',
-    sla: 'on_time',
-    slaLabel: '🟢 En tiempo',
-    dueTime: 'Hoy 18:30',
-    prepressNotes: 'Borde de tensado 10cm adicional por lado · Fondo translúcido',
-    colorMode: 'CMYK Fogra39',
-    resolution: '200 DPI',
-    bleed_mm: 100,
-    elapsedSeconds: 4320, // 1h 12m
-    isTemplate: true,
-  },
-  {
-    id: 'OT-2026-0504',
-    saleCode: 'VEN-2026-0928',
-    clientName: 'Colegio San José',
-    clientPhone: '0991122445',
-    title: 'DTF Textil 50 estampados escudo escolar pecho izquierdo 9x9cm',
-    stationId: 'dtf',
-    machineId: 'DTF-PRESTIGE',
-    width_m: 0.09,
-    height_m: 0.09,
-    area_m2: 0.45,
-    quantity: 50,
-    unit: 'estampados en film',
-    material: 'Film DTF Pet Premium + Poliamida termofusible fina blanca',
-    finishes: [
-      'Horneado y curado a 130°C por 120s',
-      'Corte individual en pliegos listo para plancha térmica (160°C 15s)',
-    ],
-    status: 'queued',
-    sla: 'on_time',
-    slaLabel: '🟢 En tiempo',
-    dueTime: 'Mañana 10:00',
-    prepressNotes: 'Base blanca al 80% con choke de 1px · Espejo activado para transfer',
-    colorMode: 'CMYK + White Layer',
-    resolution: '300 DPI',
-    bleed_mm: 1,
-    elapsedSeconds: 0,
-    isTemplate: true,
-  },
+const STATIONS: StationTabItem[] = [
+  { code: 'all', name: 'Todos los Centros', shortName: 'Todos', icon: Layers },
+  { code: 'IMP', name: 'Impresión Gran Formato', shortName: 'Impresión', icon: Printer },
+  { code: 'TAL', name: 'Taller & Acabados', shortName: 'Taller', icon: Hammer },
+  { code: 'LAS', name: 'Corte Láser CNC', shortName: 'Láser', icon: ScanLine },
+  { code: 'SUB', name: 'Sublimación Textil', shortName: 'Sublimación', icon: Shirt },
+  { code: 'DIS', name: 'Diseño Gráfico & Preprensa', shortName: 'Diseño', icon: PenTool },
+  { code: 'ASE', name: 'Asesoría & Recepción', shortName: 'Asesoría', icon: ClipboardList },
 ];
 
 const COMMON_SCRAP_CAUSES = [
@@ -435,6 +125,7 @@ const COMMON_SCRAP_CAUSES = [
   'Burbujas en laminado en frío',
   'Defecto de bobina / Material con falla de fábrica',
   'Medidas erradas de pedido / Ajuste de preprensa',
+  'Otro motivo / Incidente imprevisto',
 ];
 
 const COMMON_PAUSE_REASONS = [
@@ -444,101 +135,108 @@ const COMMON_PAUSE_REASONS = [
   'Espera de material o insumos en bodega',
   'Aprobación de prueba de color con el cliente',
   'Revisión mecánica o cambio de cuchilla',
+  'Observaciones técnicas en el archivo',
+  'Otro motivo de detención',
 ];
 
-const OPERATORS_LIST = [
-  'Esteban M. (Jefe de Taller)',
-  'Operador Plotter 1',
-  'Operador Láser y CNC',
-  'Técnico Sublimación & DTF',
-  'Operador Acabados y Rótulos',
-];
+const CONFIRMED_EQUIPMENT_STATUSES = [
+  'Operativo',
+  'Por verificar',
+  'En mantenimiento',
+  'Fuera de servicio',
+] as const;
+
+function normalizeStation(saved?: string): StationCode {
+  if (!saved || saved === 'all') return 'all';
+  if (['IMP', 'TAL', 'LAS', 'SUB', 'DIS', 'ASE'].includes(saved)) {
+    return saved as StationCode;
+  }
+  const slugCode = AREA_SLUG_TO_CODE[saved as AreaSlug];
+  if (slugCode && ['IMP', 'TAL', 'LAS', 'SUB', 'DIS', 'ASE'].includes(slugCode)) {
+    return slugCode as StationCode;
+  }
+  return 'all';
+}
+
+function formatElapsed(totalSec: number): string {
+  const hrs = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+  if (hrs > 0) {
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
 
 export interface ShopFloorKioskProps {
-  initialStation?: StationId;
+  initialStation?: string;
   onJobSelect?: (jobId: string) => void;
   className?: string;
 }
 
+/* ==========================================================================
+   2. COMPONENTE PRINCIPAL: SHOP FLOOR KIOSK
+   ========================================================================== */
+
 export function ShopFloorKiosk({
-  initialStation = 'all',
+  initialStation,
   onJobSelect,
   className = '',
 }: ShopFloorKioskProps) {
-  // Safe workspace reading
-  let workspaceData: any = null;
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    workspaceData = useWorkspace();
-  } catch {
-    workspaceData = null;
-  }
+  const auth = useAuth();
+  const { user, organizationId, roles, hasPermission } = auth;
+  const perms = useMemo(() => resolveProductionPermissions(auth), [auth]);
+  const confirm = useConfirm();
 
-  // State: Stations & Filters
-  const [selectedStation, setSelectedStation] = useState<StationId>(initialStation);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'queued' | 'in_progress' | 'paused' | 'completed'>('all');
+  // Preferencias visuales persistidas en localStorage exclusivamente
+  const initialPrefs = useMemo(() => getKioskUiPrefs(), []);
+  const [selectedStation, setSelectedStation] = useState<StationCode>(() =>
+    normalizeStation(initialStation || initialPrefs.stationArea)
+  );
+  const [statusFilter, setStatusFilter] = useState<KioskStatusFilter>(() => {
+    const saved = initialPrefs.statusFilter;
+    if (saved && ['all', 'in_progress', 'ready', 'blocked', 'completed'].includes(saved)) {
+      return saved as KioskStatusFilter;
+    }
+    return 'all';
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
 
-  // State: Machines
-  const [machines, setMachines] = useState<MachineInfo[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_PRINTERS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {
-      // fallback
-    }
-    return DEFAULT_MACHINES;
-  });
-  const [activeMachineId, setActiveMachineId] = useState<string>('CHALLENGER-3200');
+  // Estados de datos remotos reales de Supabase
+  const [jobs, setJobs] = useState<ProductionJob[]>([]);
+  const [steps, setSteps] = useState<ProductionStep[]>([]);
+  const [stepChecks, setStepChecks] = useState<ProductionStepCheck[]>([]);
+  const [areas, setAreas] = useState<ProductionAreaRow[]>([]);
+  const [machines, setMachines] = useState<EquipmentAssetRow[]>([]);
+  const [equipmentAreas, setEquipmentAreas] = useState<EquipmentAreaRow[]>([]);
 
-  // State: Work Orders
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_JOBS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {
-      // fallback
-    }
-    return INITIAL_WORK_ORDERS;
-  });
+  // Estados de carga y operaciones
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [activeMachineId, setActiveMachineId] = useState<string | null>(null);
 
-  // State: Scraps
-  const [scraps, setScraps] = useState<ScrapRecord[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_SCRAPS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch {
-      // fallback
-    }
-    return [];
-  });
-
-  // Shift & Clock
-  const [currentOperator, setCurrentOperator] = useState(OPERATORS_LIST[0]);
+  // Reloj en vivo de Ecuador y tick para cronómetros en vivo
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [nowMs, setNowMs] = useState(Date.now());
 
-  // Modals State
-  const [scrapModalJob, setScrapModalJob] = useState<WorkOrder | null>(null);
-  const [scrapAmount, setScrapAmount] = useState<number>(1.0);
-  const [scrapUnit, setScrapUnit] = useState<'m' | 'm2'>('m');
+  // Modales de operación
+  const [pauseModalStep, setPauseModalStep] = useState<ProductionStep | null>(null);
+  const [selectedPauseReason, setSelectedPauseReason] = useState<string>(COMMON_PAUSE_REASONS[0]);
+  const [pauseReasonCustom, setPauseReasonCustom] = useState<string>('');
+
+  const [scrapModalItem, setScrapModalItem] = useState<{ step: ProductionStep; job: ProductionJob } | null>(null);
   const [scrapReason, setScrapReason] = useState<string>(COMMON_SCRAP_CAUSES[0]);
   const [scrapNotes, setScrapNotes] = useState<string>('');
 
-  const [pauseModalJob, setPauseModalJob] = useState<WorkOrder | null>(null);
-  const [selectedPauseReason, setSelectedPauseReason] = useState<string>(COMMON_PAUSE_REASONS[0]);
+  const [prepressModalItem, setPrepressModalItem] = useState<{ step: ProductionStep; job: ProductionJob } | null>(null);
+  const [machineStatusModalMachine, setMachineStatusModalMachine] = useState<EquipmentAssetRow | null>(null);
 
-  const [prepressModalJob, setPrepressModalJob] = useState<WorkOrder | null>(null);
-  const [machineStatusModalMachine, setMachineStatusModalMachine] = useState<MachineInfo | null>(null);
-  const [showScrapsAudit, setShowScrapsAudit] = useState(false);
+  // Ficha técnica unificada (ProductionJobDetailSheet)
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailJobId, setDetailJobId] = useState<string | null>(null);
+  const [detailStepId, setDetailStepId] = useState<string | null>(null);
+  const [detailAreaCode, setDetailAreaCode] = useState<string | null>(null);
 
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<string>('');
@@ -556,276 +254,535 @@ export function ShopFloorKiosk({
     }
     toastTimeoutRef.current = window.setTimeout(() => {
       setToastMessage('');
-    }, 3800);
+    }, 4200);
   }, []);
 
-  // Sync to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_PRINTERS_KEY, JSON.stringify(machines));
-    } catch {
-      // ignore
+  /* ------------------------------------------------------------------------
+     Carga de Datos Reales desde Supabase
+     ------------------------------------------------------------------------ */
+  const reloadData = useCallback(async () => {
+    if (!supabase || !organizationId) {
+      setLoading(false);
+      return;
     }
-  }, [machines]);
+
+    try {
+      const [areasResult, eqAreasResult, assetsResult, jobsResult] = await Promise.all([
+        supabase.from('areas').select('*').eq('organization_id', organizationId),
+        supabase.from('equipment_areas').select('id, name, code').eq('organization_id', organizationId).eq('active', true),
+        supabase.from('equipment_assets').select('*').eq('organization_id', organizationId).neq('status', 'Retirado').order('name'),
+        supabase
+          .from('production_jobs')
+          .select('*')
+          .eq('organization_id', organizationId)
+          .neq('status', 'cancelled')
+          .order('created_at', { ascending: false })
+          .limit(200),
+      ]);
+
+      if (areasResult.error) throw areasResult.error;
+      if (eqAreasResult.error) throw eqAreasResult.error;
+      if (assetsResult.error) throw assetsResult.error;
+      if (jobsResult.error) throw jobsResult.error;
+
+      const jobsData = (jobsResult.data || []) as ProductionJob[];
+      setAreas((areasResult.data || []) as ProductionAreaRow[]);
+      setEquipmentAreas((eqAreasResult.data || []) as EquipmentAreaRow[]);
+      setMachines((assetsResult.data || []) as EquipmentAssetRow[]);
+      setJobs(jobsData);
+
+      const jobIds = jobsData.map((j) => j.id);
+      if (jobIds.length > 0) {
+        const [stepsResult, checksResult] = await Promise.all([
+          supabase
+            .from('production_job_steps')
+            .select('*')
+            .eq('organization_id', organizationId)
+            .in('job_id', jobIds)
+            .order('step_order', { ascending: true })
+            .limit(900),
+          supabase
+            .from('production_job_step_checks')
+            .select('*')
+            .eq('organization_id', organizationId)
+            .in('job_id', jobIds)
+            .limit(900),
+        ]);
+
+        if (stepsResult.error) throw stepsResult.error;
+        if (checksResult.error) throw checksResult.error;
+
+        setSteps((stepsResult.data || []) as ProductionStep[]);
+        setStepChecks((checksResult.data || []) as ProductionStepCheck[]);
+      } else {
+        setSteps([]);
+        setStepChecks([]);
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Error al consultar producción en Supabase');
+    } finally {
+      setLoading(false);
+    }
+  }, [organizationId, showToast]);
+
+  // Hook de sincronización en tiempo real
+  const { lastSyncedAt, refreshing, isStale, triggerRefresh, markSynced } = useProductionSync({
+    onRefresh: reloadData,
+    staleAfterMs: 180000,
+  });
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_JOBS_KEY, JSON.stringify(workOrders));
-    } catch {
-      // ignore
-    }
-  }, [workOrders]);
+    void reloadData().then(() => markSynced());
+  }, [reloadData, markSynced]);
 
+  // Reloj local y cronómetro continuo
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_SCRAPS_KEY, JSON.stringify(scraps));
-    } catch {
-      // ignore
-    }
-  }, [scraps]);
-
-  // Live Clock (1 second interval)
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
+    const timer = window.setInterval(() => {
+      const now = new Date();
+      setCurrentTime(now);
+      setNowMs(now.getTime());
     }, 1000);
-    return () => clearInterval(timer);
+    return () => window.clearInterval(timer);
   }, []);
 
-  // Live Production Chronometers for running orders
+  // Cierre de modales con tecla Escape
   useEffect(() => {
-    const interval = setInterval(() => {
-      setWorkOrders((prevOrders) => {
-        let changed = false;
-        const next = prevOrders.map((order) => {
-          if (order.status === 'in_progress') {
-            changed = true;
-            return {
-              ...order,
-              elapsedSeconds: (order.elapsedSeconds || 0) + 1,
-            };
-          }
-          return order;
-        });
-        return changed ? next : prevOrders;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Format Chronometer
-  const formatSeconds = (totalSec: number) => {
-    const hrs = Math.floor(totalSec / 3600);
-    const mins = Math.floor((totalSec % 3600) / 60);
-    const secs = totalSec % 60;
-    if (hrs > 0) {
-      return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    }
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
-
-  // Work order actions
-  const handleStartOrder = useCallback((jobId: string) => {
-    setWorkOrders((prev) =>
-      prev.map((order) => {
-        if (order.id === jobId) {
-          return {
-            ...order,
-            status: 'in_progress',
-            startedAt: order.startedAt || new Date().toISOString(),
-            pauseReason: undefined,
-          };
-        }
-        return order;
-      })
-    );
-    showToast(`▶ Orden ${jobId} iniciada. Cronómetro activo.`);
-    if (onJobSelect) onJobSelect(jobId);
-  }, [showToast, onJobSelect]);
-
-  const handleOpenPauseModal = useCallback((order: WorkOrder) => {
-    setPauseModalJob(order);
-    setSelectedPauseReason(order.pauseReason || COMMON_PAUSE_REASONS[0]);
-  }, []);
-
-  const handleConfirmPause = useCallback(() => {
-    if (!pauseModalJob) return;
-    const jobId = pauseModalJob.id;
-    setWorkOrders((prev) =>
-      prev.map((order) => {
-        if (order.id === jobId) {
-          return {
-            ...order,
-            status: 'paused',
-            pausedAt: new Date().toISOString(),
-            pauseReason: selectedPauseReason,
-          };
-        }
-        return order;
-      })
-    );
-    showToast(`⏸ Orden ${jobId} pausada: ${selectedPauseReason}`);
-    setPauseModalJob(null);
-  }, [pauseModalJob, selectedPauseReason, showToast]);
-
-  const handleCompleteOrder = useCallback((jobId: string) => {
-    const nowStr = new Intl.DateTimeFormat('es-EC', {
-      timeZone: 'America/Guayaquil',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date());
-
-    setWorkOrders((prev) =>
-      prev.map((order) => {
-        if (order.id === jobId) {
-          return {
-            ...order,
-            status: 'completed',
-            completedAt: new Date().toISOString(),
-          };
-        }
-        return order;
-      })
-    );
-    showToast(`✔ ¡Orden ${jobId} completada con éxito a las ${nowStr}!`);
-  }, [showToast]);
-
-  // Open Scrap Modal
-  const handleOpenScrapModal = useCallback((order: WorkOrder) => {
-    setScrapModalJob(order);
-    setScrapAmount(order.width_m > 1 ? 1.0 : 0.5);
-    setScrapUnit(order.width_m > 2 ? 'm' : 'm2');
-    setScrapReason(COMMON_SCRAP_CAUSES[0]);
-    setScrapNotes('');
-  }, []);
-
-  const handleSaveScrap = useCallback(() => {
-    if (!scrapModalJob || scrapAmount <= 0) return;
-
-    const currentMach = machines.find((m) => m.id === scrapModalJob.machineId) || machines[0];
-
-    const newRecord: ScrapRecord = {
-      id: `scrap-${Date.now()}`,
-      jobId: scrapModalJob.id,
-      clientName: scrapModalJob.clientName,
-      stationId: scrapModalJob.stationId,
-      machineId: currentMach.id,
-      machineName: currentMach.name,
-      amount: scrapAmount,
-      unit: scrapUnit,
-      reason: scrapReason,
-      notes: scrapNotes.trim(),
-      operator: currentOperator,
-      createdAt: new Date().toISOString(),
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setPauseModalStep(null);
+        setScrapModalItem(null);
+        setPrepressModalItem(null);
+        setMachineStatusModalMachine(null);
+      }
     };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
-    setScraps((prev) => [newRecord, ...prev]);
+  /* ------------------------------------------------------------------------
+     Mapeo y Enriquecimiento de Etapas
+     ------------------------------------------------------------------------ */
+  const areaById = useMemo(() => {
+    const map = new Map<string, ProductionAreaRow>();
+    areas.forEach((a) => map.set(a.id, a));
+    return map;
+  }, [areas]);
 
-    // Also deduct remaining meters from machine roll if applicable
-    if (scrapUnit === 'm' && currentMach.mountedRoll) {
-      setMachines((prev) =>
-        prev.map((m) => {
-          if (m.id === currentMach.id && m.mountedRoll) {
-            const nextRemaining = Math.max(0, m.mountedRoll.remaining_m - scrapAmount);
-            return {
-              ...m,
-              mountedRoll: {
-                ...m.mountedRoll,
-                remaining_m: Number(nextRemaining.toFixed(2)),
-              },
-            };
-          }
-          return m;
-        })
-      );
-    }
+  const jobById = useMemo(() => {
+    const map = new Map<string, ProductionJob>();
+    jobs.forEach((j) => map.set(j.id, j));
+    return map;
+  }, [jobs]);
 
-    showToast(`⚠ Merma registrada: ${scrapAmount} ${scrapUnit} (${scrapReason})`);
-    setScrapModalJob(null);
-  }, [scrapModalJob, scrapAmount, scrapUnit, scrapReason, scrapNotes, currentOperator, machines, showToast]);
+  const checksByStepId = useMemo(() => {
+    const map = new Map<string, ProductionStepCheck[]>();
+    stepChecks.forEach((c) => {
+      const list = map.get(c.step_id) || [];
+      list.push(c);
+      map.set(c.step_id, list);
+    });
+    return map;
+  }, [stepChecks]);
 
-  // Quick machine status update
-  const handleUpdateMachineStatus = useCallback((machineId: string, newStatus: MachineStatus) => {
-    const labels: Record<MachineStatus, string> = {
-      operational: '🟢 Operativa',
-      standby: '🟡 Standby',
-      maintenance: '🟠 En Mantenimiento',
-      stopped: '🔴 Parada Técnica',
-    };
+  const enrichedSteps = useMemo<EnrichedStep[]>(() => {
+    return steps
+      .map((step) => {
+        const job = jobById.get(step.job_id);
+        if (!job) return null;
+        const area = areaById.get(step.area_id) || null;
+        const areaCode = (area?.code || step.area_code || 'TAL').toUpperCase();
+        const checks = checksByStepId.get(step.id) || [];
+        const pendingChecksCount = checks.filter((c) => c.required && !c.completed_at).length;
+        return {
+          step,
+          job,
+          area,
+          areaCode,
+          pendingChecksCount,
+        };
+      })
+      .filter((item): item is EnrichedStep => item !== null);
+  }, [steps, jobById, areaById, checksByStepId]);
 
-    setMachines((prev) =>
-      prev.map((m) => (m.id === machineId ? { ...m, status: newStatus, statusLabel: labels[newStatus] } : m))
-    );
-    showToast(`Estado de máquina actualizado a: ${labels[newStatus]}`);
-    setMachineStatusModalMachine(null);
-  }, [showToast]);
-
-  // Station counts
+  // Conteos por centro de trabajo (estación)
   const stationCounts = useMemo(() => {
-    const counts: Record<StationId, number> = {
-      all: workOrders.filter((o) => o.status !== 'completed').length,
-      plotter: 0,
-      taller: 0,
-      laser: 0,
-      sublimacion: 0,
-      dtf: 0,
+    const counts: Record<StationCode, number> = {
+      all: 0,
+      IMP: 0,
+      TAL: 0,
+      LAS: 0,
+      SUB: 0,
+      DIS: 0,
+      ASE: 0,
     };
-    workOrders.forEach((o) => {
-      if (o.status !== 'completed' && counts[o.stationId] !== undefined) {
-        counts[o.stationId] += 1;
+
+    enrichedSteps.forEach(({ step, areaCode }) => {
+      if (isStepOpen(step.status)) {
+        counts.all += 1;
+        if (counts[areaCode as StationCode] !== undefined) {
+          counts[areaCode as StationCode] += 1;
+        }
       }
     });
-    return counts;
-  }, [workOrders]);
 
-  // Filtered orders
-  const filteredOrders = useMemo(() => {
-    return workOrders.filter((order) => {
-      // Station filter
-      if (selectedStation !== 'all' && order.stationId !== selectedStation) {
+    return counts;
+  }, [enrichedSteps]);
+
+  // Filtrado final de etapas para la vista
+  const filteredSteps = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+
+    return enrichedSteps.filter(({ step, job, areaCode }) => {
+      // Filtro de estación
+      if (selectedStation !== 'all' && areaCode !== selectedStation) {
         return false;
       }
-      // Status filter
-      if (statusFilter !== 'all' && order.status !== statusFilter) {
-        return false;
+
+      // Filtro de estado
+      if (statusFilter === 'all') {
+        if (!isStepOpen(step.status)) return false;
+      } else if (statusFilter === 'in_progress') {
+        if (step.status !== 'in_progress') return false;
+      } else if (statusFilter === 'ready') {
+        if (step.status !== 'ready') return false;
+      } else if (statusFilter === 'blocked') {
+        if (step.status !== 'blocked') return false;
+      } else if (statusFilter === 'completed') {
+        if (step.status !== 'completed') return false;
       }
-      // Query filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchId = order.id.toLowerCase().includes(q);
-        const matchClient = order.clientName.toLowerCase().includes(q);
-        const matchTitle = order.title.toLowerCase().includes(q);
-        const matchMaterial = order.material.toLowerCase().includes(q);
-        if (!matchId && !matchClient && !matchTitle && !matchMaterial) {
+
+      // Filtro de búsqueda
+      if (q) {
+        const code = (job.sale_code || job.id).toLowerCase();
+        const client = (job.customer_name || '').toLowerCase();
+        const title = (job.title || '').toLowerCase();
+        const stepTitle = (step.title || '').toLowerCase();
+        const material = String(job.specifications?.material || '').toLowerCase();
+
+        if (
+          !code.includes(q) &&
+          !client.includes(q) &&
+          !title.includes(q) &&
+          !stepTitle.includes(q) &&
+          !material.includes(q)
+        ) {
           return false;
         }
       }
+
       return true;
     });
-  }, [workOrders, selectedStation, statusFilter, searchQuery]);
+  }, [enrichedSteps, selectedStation, statusFilter, searchQuery]);
 
-  // Shift summary metrics
+  // Métricas del turno en vivo
   const shiftMetrics = useMemo(() => {
-    const running = workOrders.filter((o) => o.status === 'in_progress').length;
-    const queued = workOrders.filter((o) => o.status === 'queued').length;
-    const paused = workOrders.filter((o) => o.status === 'paused').length;
-    const completed = workOrders.filter((o) => o.status === 'completed').length;
-    const totalAreaM2 = workOrders
-      .filter((o) => o.status === 'completed' || o.status === 'in_progress')
-      .reduce((sum, o) => sum + (o.area_m2 || 0), 0);
-    const totalScrapM = scraps.reduce((sum, s) => (s.unit === 'm' ? sum + s.amount : sum), 0);
+    let running = 0;
+    let ready = 0;
+    let blocked = 0;
+    let completed = 0;
+    let totalM2 = 0;
+
+    enrichedSteps.forEach(({ step, job }) => {
+      if (step.status === 'in_progress') running += 1;
+      else if (step.status === 'ready') ready += 1;
+      else if (step.status === 'blocked') blocked += 1;
+      else if (step.status === 'completed') completed += 1;
+
+      if (step.status === 'in_progress' || step.status === 'completed') {
+        const w = Number(job.specifications?.width_cm) || 0;
+        const h = Number(job.specifications?.height_cm) || 0;
+        const qty = Number(job.specifications?.quantity) || 1;
+        if (w > 0 && h > 0) {
+          totalM2 += (w / 100) * (h / 100) * qty;
+        }
+      }
+    });
 
     return {
       running,
-      queued,
-      paused,
+      ready,
+      blocked,
       completed,
-      totalAreaM2: totalAreaM2.toFixed(1),
-      totalScrapM: totalScrapM.toFixed(1),
+      totalAreaM2: totalM2.toFixed(1),
     };
-  }, [workOrders, scraps]);
+  }, [enrichedSteps]);
 
-  // Formatted date and time strings for Ecuador
+  // Control de permisos de operador
+  const operatorName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Operador en Taller';
+  const roleLabel = perms.roleLabels[0] || 'Personal de Taller';
+  const canManageEquipment =
+    perms.canCoordinate ||
+    roles.some((r) => ['owner', 'admin', 'manager', 'warehouse', 'production'].includes(r)) ||
+    hasPermission('inventory', 'edit') ||
+    hasPermission('workshop', 'edit');
+
+  /* ------------------------------------------------------------------------
+     Acciones Operativas Reales sobre Etapas de Producción
+     ------------------------------------------------------------------------ */
+  const handleStationClick = (code: StationCode) => {
+    setSelectedStation(code);
+    setKioskUiPrefs({ stationArea: code });
+  };
+
+  const handleStatusFilterClick = (filter: KioskStatusFilter) => {
+    setStatusFilter(filter);
+    setKioskUiPrefs({ statusFilter: filter });
+  };
+
+  const openJobDetail = (jobId: string, stepId?: string, areaCode?: string) => {
+    setDetailJobId(jobId);
+    setDetailStepId(stepId || null);
+    setDetailAreaCode(areaCode || null);
+    setDetailOpen(true);
+    if (onJobSelect) onJobSelect(jobId);
+  };
+
+  // Recibir etapa
+  const handleReceiveStep = async (step: ProductionStep) => {
+    if (!supabase || busy) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc('receive_production_job_step', {
+        p_step_id: step.id,
+        p_note: 'Recepción confirmada en Terminal Kiosk de Taller',
+      });
+      if (error) throw error;
+      showToast(`📥 Etapa "${step.title}" recibida formalmente en taller.`);
+      emitProductionChanged();
+      await reloadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Error al recibir etapa');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Tomar o Iniciar etapa
+  const handleStartStep = async (step: ProductionStep) => {
+    if (!supabase || busy) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc('transition_production_job_step', {
+        p_step_id: step.id,
+        p_action: 'start',
+        p_note: 'Iniciado desde Terminal Kiosk',
+        p_assigned_to: step.assigned_to ? null : user?.id || null,
+      });
+      if (error) throw error;
+      showToast(`▶ Etapa "${step.title}" iniciada. Cronómetro en vivo activo.`);
+      emitProductionChanged();
+      await reloadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Error al iniciar etapa');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleTakeStep = async (step: ProductionStep) => {
+    if (!supabase || busy || !user?.id) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc('transition_production_job_step', {
+        p_step_id: step.id,
+        p_action: 'take',
+        p_note: 'Etapa tomada por operador en Terminal Kiosk',
+        p_assigned_to: user.id,
+      });
+      if (error) throw error;
+      showToast(`👤 Etapa asignada a tu usuario.`);
+      emitProductionChanged();
+      await reloadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Error al tomar etapa');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Terminar etapa con confirmación accesible
+  const handleCompleteStep = async (
+    step: ProductionStep,
+    job: ProductionJob,
+    pendingChecksCount: number
+  ) => {
+    if (!supabase || busy) return;
+
+    const ok = await confirm({
+      title: `¿Marcar como terminada la etapa "${step.title}"?`,
+      eyebrow: 'FINALIZACIÓN DE ETAPA',
+      description:
+        pendingChecksCount > 0
+          ? `⚠️ ATENCIÓN: Hay ${pendingChecksCount} control(es) de calidad requeridos pendientes en esta etapa. Si confirmas, la etapa se marcará como terminada y se habilitará la siguiente.`
+          : `Se registrará la finalización de la etapa "${step.title}" del trabajo ${job.sale_code || job.title}. La etapa subsiguiente quedará habilitada en el flujo.`,
+      tone: pendingChecksCount > 0 ? 'warning' : 'info',
+      confirmLabel: 'Sí, marcar terminada',
+      cancelLabel: 'Revisar etapa',
+      summaryItems: [
+        { label: 'Trabajo', value: job.sale_code || job.title },
+        { label: 'Etapa', value: step.title },
+        {
+          label: 'Controles pendientes',
+          value: pendingChecksCount > 0 ? `${pendingChecksCount} pendientes` : 'Completos',
+        },
+      ],
+    });
+    if (!ok) return;
+
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc('transition_production_job_step', {
+        p_step_id: step.id,
+        p_action: 'complete',
+        p_note: 'Terminada desde Terminal Kiosk',
+        p_assigned_to: null,
+      });
+      if (error) throw error;
+      showToast(`✔ Etapa "${step.title}" completada con éxito.`);
+      emitProductionChanged();
+      await reloadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Error al terminar etapa');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Reanudar etapa bloqueada
+  const handleUnblockStep = async (step: ProductionStep) => {
+    if (!supabase || busy) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc('transition_production_job_step', {
+        p_step_id: step.id,
+        p_action: 'unblock',
+        p_note: 'Reanudada desde Terminal Kiosk',
+        p_assigned_to: null,
+      });
+      if (error) throw error;
+      showToast(`▶ Etapa "${step.title}" reanudada. Lista para volver a producir.`);
+      emitProductionChanged();
+      await reloadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Error al reanudar etapa');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Confirmar pausa/bloqueo con motivo
+  const handleConfirmPause = async () => {
+    if (!pauseModalStep || busy) return;
+    const note = (pauseReasonCustom.trim() || selectedPauseReason).trim();
+    if (note.length < 3) {
+      showToast('Debes ingresar un motivo de pausa de al menos 3 caracteres.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc('transition_production_job_step', {
+        p_step_id: pauseModalStep.id,
+        p_action: 'block',
+        p_note: note,
+        p_assigned_to: null,
+      });
+      if (error) throw error;
+      showToast(`⏸ Etapa detenida/bloqueada: ${note}`);
+      setPauseModalStep(null);
+      setPauseReasonCustom('');
+      emitProductionChanged();
+      await reloadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Error al pausar etapa');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Acciones auditable del modal de merma / incidente
+  const handleScrapBlockStep = async () => {
+    if (!scrapModalItem || busy) return;
+    const fullNote = `Merma/Incidente: ${scrapReason}${scrapNotes.trim() ? ` · Detalle: ${scrapNotes.trim()}` : ''}`;
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc('transition_production_job_step', {
+        p_step_id: scrapModalItem.step.id,
+        p_action: 'block',
+        p_note: fullNote,
+        p_assigned_to: null,
+      });
+      if (error) throw error;
+      showToast(`⚠️ Merma reportada y etapa detenida: ${scrapReason}`);
+      setScrapModalItem(null);
+      emitProductionChanged();
+      await reloadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Error al reportar merma');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleScrapNoteJob = async () => {
+    if (!scrapModalItem || busy) return;
+    const fullNote = `Merma reportada en taller: ${scrapReason}${scrapNotes.trim() ? ` · Detalle: ${scrapNotes.trim()}` : ''}`;
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc('update_production_job', {
+        p_job_id: scrapModalItem.job.id,
+        p_expected_version: scrapModalItem.job.spec_version,
+        p_specifications: null,
+        p_note: fullNote,
+      });
+      if (error) throw error;
+      showToast(`📝 Merma registrada en la bitácora del trabajo.`);
+      setScrapModalItem(null);
+      emitProductionChanged();
+      await reloadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Error al registrar nota de merma');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Cambio de estado real en equipment_assets
+  const handleUpdateMachineStatus = async (asset: EquipmentAssetRow, newStatus: string) => {
+    if (!supabase || busy || !organizationId) return;
+    const ok = await confirm({
+      title: `¿Actualizar estado de "${asset.name}"?`,
+      eyebrow: 'PARQUE DE MAQUINARIA',
+      description: `El estado del equipo pasará de "${asset.status}" a "${newStatus}". Este cambio se sincronizará inmediatamente con el inventario de la planta.`,
+      tone: newStatus === 'Operativo' ? 'info' : 'warning',
+      confirmLabel: `Marcar como ${newStatus}`,
+      cancelLabel: 'Cancelar',
+      summaryItems: [
+        { label: 'Equipo', value: asset.name },
+        { label: 'Código', value: asset.asset_code },
+        { label: 'Nuevo Estado', value: newStatus },
+      ],
+    });
+    if (!ok) return;
+
+    setBusy(true);
+    try {
+      const { error } = await supabase
+        .from('equipment_assets')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', asset.id)
+        .eq('organization_id', organizationId);
+      if (error) throw error;
+      showToast(`🔧 Estado de ${asset.name} actualizado a "${newStatus}".`);
+      setMachineStatusModalMachine(null);
+      await reloadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Error al actualizar equipo');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Formatos de fecha y hora
   const formattedTime = useMemo(() => {
     return currentTime.toLocaleTimeString('es-EC', {
       timeZone: 'America/Guayaquil',
@@ -846,10 +803,12 @@ export function ShopFloorKiosk({
     });
   }, [currentTime]);
 
+  const todayStr = useMemo(() => todayKey(), []);
+
   return (
     <div className={`sf-kiosk ${className}`}>
       {/* ===================================================================
-          Cabecera Principal de Taller (Operador de Turno + Reloj de Ecuador)
+          Cabecera Principal de Taller (Operador Real + Reloj Guayaquil)
           =================================================================== */}
       <header className="sf-header">
         <div className="sf-brand-area">
@@ -859,188 +818,185 @@ export function ShopFloorKiosk({
           <div className="sf-brand-info">
             <h1>
               Visual Corp · Terminal de Taller
-              <span className="sf-brand-tag">MRP Kiosk v1.0</span>
+              <span className="sf-brand-tag">MRP Kiosk v2.0</span>
             </h1>
             <p className="sf-brand-location">
-              Planta de Producción · Milagro, Guayas, Ecuador · Odoo 18 MRP
+              Planta de Producción · Milagro, Guayas, Ecuador · Supabase Realtime
             </p>
           </div>
         </div>
 
         <div className="sf-header-controls">
           {/* Reloj Digital en Vivo (Hora Oficial Ecuador) */}
-          <div className="sf-live-clock" title="Hora de planta en Milagro, Ecuador">
+          <div className="sf-live-clock" title="Hora oficial de planta en Milagro, Ecuador">
             <Clock size={18} className="text-primary" />
             <span className="sf-clock-time">{formattedTime}</span>
             <span className="sf-clock-date">{formattedDate}</span>
           </div>
 
-          {/* Operador de Turno */}
+          {/* Operador de Turno Autenticado Real */}
           <div
             className="sf-operator-pill"
-            title="Hacer clic para cambiar operador de turno"
-            onClick={() => {
-              const nextIndex = (OPERATORS_LIST.indexOf(currentOperator) + 1) % OPERATORS_LIST.length;
-              setCurrentOperator(OPERATORS_LIST[nextIndex]);
-              showToast(`Operador de turno: ${OPERATORS_LIST[nextIndex]}`);
-            }}
+            title={`Sesión activa: ${user?.email || 'Autenticado'}`}
           >
+            <UserRound size={16} />
             <span className="sf-operator-label">Operador:</span>
-            <strong>{currentOperator.split(' ')[0]}</strong>
+            <strong>{operatorName}</strong>
+            <span className="sf-operator-role">({roleLabel})</span>
           </div>
 
-          {/* Botón de Auditoría de Mermas */}
-          <button
-            type="button"
-            className="sf-btn-icon-tactile"
-            title="Ver historial de mermas registradas en el turno"
-            onClick={() => setShowScrapsAudit(true)}
-            aria-label="Auditoría de mermas"
-          >
-            <AlertTriangle size={20} />
-          </button>
+          {/* Estado de sincronización en tiempo real */}
+          {isStale && (
+            <div
+              className="sf-sync-stale-badge"
+              title="La conexión local tiene datos desactualizados (más de 3 min)"
+            >
+              <ShieldAlert size={15} />
+              <span>Desactualizado</span>
+            </div>
+          )}
 
-          {/* Refresco Rápido */}
+          {/* Botón táctil de refresco */}
           <button
             type="button"
             className="sf-btn-icon-tactile"
-            title="Refrescar estado de órdenes y cola de máquinas"
-            onClick={() => showToast('Cola de taller sincronizada.')}
-            aria-label="Refrescar quiosco"
+            title={`Actualizar cola de taller (Última sinc: ${lastSyncedAt ? stamp(lastSyncedAt) : 'Pendiente'})`}
+            onClick={() => void triggerRefresh()}
+            disabled={refreshing}
+            aria-label="Actualizar datos de producción"
           >
-            <RefreshCw size={20} />
+            <RefreshCw size={20} className={refreshing ? 'sf-spin' : ''} />
           </button>
         </div>
       </header>
 
       {/* ===================================================================
-          Barra de Estado de Máquinas en Vivo (Plotters, Láser, Sublimación, DTF)
+          Barra de Maquinaria Real (equipment_assets de Supabase)
           =================================================================== */}
       <section className="sf-machines-bar">
         <div className="sf-machines-header">
           <div className="sf-machines-title">
             <Printer size={18} />
-            <span>Monitoreo de Maquinaria en Planta ({machines.length} equipos)</span>
+            <span>Monitoreo de Maquinaria en Planta ({machines.length} equipos reales)</span>
           </div>
-          <span className="sf-machines-summary">
-            Toque cualquier máquina para cambiar su estado o ver detalles de bobina y tintas
-          </span>
+          <div className="sf-machines-actions">
+            <span className="sf-machines-summary">
+              {machines.length === 0
+                ? 'Sin equipos cargados en base de datos'
+                : 'Toque cualquier equipo para cambiar su estado operativo'}
+            </span>
+            <Link
+              to="/operaciones/equipos"
+              className="sf-link-equipos"
+              title="Ir al Registro completo de Equipos y Activos"
+            >
+              <span>Ver Registro</span>
+              <ExternalLink size={13} />
+            </Link>
+          </div>
         </div>
 
-        <div className="sf-machines-grid">
-          {machines.map((machine) => {
-            const isSelected = activeMachineId === machine.id;
-            return (
-              <div
-                key={machine.id}
-                className={`sf-machine-card ${isSelected ? 'selected' : ''}`}
-                onClick={() => {
-                  setActiveMachineId(machine.id);
-                  if (machine.stationId !== 'all') {
-                    setSelectedStation(machine.stationId);
-                  }
-                }}
-              >
-                <div className="sf-machine-card-top">
-                  <div className="sf-machine-name-group">
-                    {machine.stationId === 'plotter' && <Printer size={16} />}
-                    {machine.stationId === 'laser' && <Flame size={16} />}
-                    {machine.stationId === 'sublimacion' && <Shirt size={16} />}
-                    {machine.stationId === 'dtf' && <Sparkles size={16} />}
-                    {machine.stationId === 'taller' && <Scissors size={16} />}
-                    <span>{machine.name.split('(')[0].trim()}</span>
-                  </div>
+        {machines.length === 0 ? (
+          <div className="sf-machines-empty">
+            <p>
+              <strong>Pendiente de configuración en Registro de Equipos:</strong> Aún no se han
+              registrado equipos ni maquinaria física en la organización.
+            </p>
+            <Link to="/operaciones/equipos" className="sf-btn-tactile sf-btn-finish">
+              Configurar Equipos en /operaciones/equipos
+            </Link>
+          </div>
+        ) : (
+          <div className="sf-machines-grid">
+            {machines.map((machine) => {
+              const isSelected = activeMachineId === machine.id;
+              const eqArea = equipmentAreas.find((a) => a.id === machine.area_id);
+              const statusClass =
+                machine.status === 'Operativo'
+                  ? 'operational'
+                  : machine.status === 'En mantenimiento'
+                  ? 'maintenance'
+                  : machine.status === 'Fuera de servicio'
+                  ? 'stopped'
+                  : 'standby';
 
-                  {/* Badge de Estado Táctil (Abre modal al tocar) */}
-                  <button
-                    type="button"
-                    className={`sf-status-badge ${machine.status}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMachineStatusModalMachine(machine);
-                    }}
-                    title="Toque para cambiar el estado operativo"
-                  >
-                    {machine.statusLabel}
-                  </button>
-                </div>
-
-                {/* Niveles CMYK para Plotters y DTF */}
-                {machine.cmyk && (
-                  <div className="sf-cmyk-gauge" title="Niveles de tinta de plotter">
-                    <span className="sf-cmyk-label">CMYK</span>
-                    <div className="sf-cmyk-bars">
-                      <div className="sf-cmyk-channel">
-                        <span className="sf-cmyk-letter c">C</span>
-                        <div className="sf-cmyk-bar-track">
-                          <div className="sf-cmyk-bar-fill c" style={{ width: `${machine.cmyk.c}%` }} />
-                        </div>
-                        <span className="sf-cmyk-bar-pct">{machine.cmyk.c}%</span>
-                      </div>
-                      <div className="sf-cmyk-channel">
-                        <span className="sf-cmyk-letter m">M</span>
-                        <div className="sf-cmyk-bar-track">
-                          <div className="sf-cmyk-bar-fill m" style={{ width: `${machine.cmyk.m}%` }} />
-                        </div>
-                        <span className="sf-cmyk-bar-pct">{machine.cmyk.m}%</span>
-                      </div>
-                      <div className="sf-cmyk-channel">
-                        <span className="sf-cmyk-letter y">Y</span>
-                        <div className="sf-cmyk-bar-track">
-                          <div className="sf-cmyk-bar-fill y" style={{ width: `${machine.cmyk.y}%` }} />
-                        </div>
-                        <span className="sf-cmyk-bar-pct">{machine.cmyk.y}%</span>
-                      </div>
-                      <div className="sf-cmyk-channel">
-                        <span className="sf-cmyk-letter k">K</span>
-                        <div className="sf-cmyk-bar-track">
-                          <div className="sf-cmyk-bar-fill k" style={{ width: `${machine.cmyk.k}%` }} />
-                        </div>
-                        <span className="sf-cmyk-bar-pct">{machine.cmyk.k}%</span>
-                      </div>
+              return (
+                <div
+                  key={machine.id}
+                  className={`sf-machine-card ${isSelected ? 'selected' : ''}`}
+                  onClick={() => setActiveMachineId(machine.id)}
+                >
+                  <div className="sf-machine-card-top">
+                    <div className="sf-machine-name-group">
+                      <Printer size={16} />
+                      <span title={machine.name}>{machine.name}</span>
                     </div>
-                  </div>
-                )}
 
-                {/* Parámetros de Router Láser */}
-                {machine.laserParams && (
-                  <div className="sf-roll-info">
-                    <span className="sf-roll-name">
-                      Chiller: <strong>{machine.laserParams.chillerTemp}</strong> · Potencia: <strong>{machine.laserParams.tubePower}%</strong>
-                    </span>
-                    <span className="sf-roll-meters">{machine.laserParams.bedMaterial.split(' ')[0]}</span>
+                    <button
+                      type="button"
+                      className={`sf-status-badge ${statusClass}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (canManageEquipment) {
+                          setMachineStatusModalMachine(machine);
+                        } else {
+                          showToast('Tu rol no tiene permiso para cambiar el estado operativo.');
+                        }
+                      }}
+                      title={
+                        canManageEquipment
+                          ? 'Toque para cambiar el estado operativo en Supabase'
+                          : 'Estado operativo actual'
+                      }
+                    >
+                      {machine.status}
+                    </button>
                   </div>
-                )}
 
-                {/* Bobina Montada */}
-                {machine.mountedRoll && (
-                  <div className="sf-roll-info">
-                    <span className="sf-roll-name" title={machine.mountedRoll.material}>
-                      Rollo: {machine.mountedRoll.material.split(' ')[0]} {machine.mountedRoll.width_m}m
+                  <div className="sf-machine-meta-strip">
+                    <span className="sf-machine-code-badge">{machine.asset_code}</span>
+                    <span className="sf-machine-area-label">
+                      {eqArea ? eqArea.name : 'Área no asignada'}
                     </span>
-                    <span className="sf-roll-meters">{machine.mountedRoll.remaining_m}m rest.</span>
+                    {machine.location && (
+                      <span className="sf-machine-location-label" title={machine.location}>
+                        📍 {machine.location}
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+
+                  {machine.notes && (
+                    <div className="sf-roll-info">
+                      <span className="sf-roll-name" title={machine.notes}>
+                        Nota: {machine.notes}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="sf-machine-telemetry-notice">
+                    <span>Telemetría: Pendiente de integración hardware</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* ===================================================================
           Selector Táctil de Centro de Trabajo (Estación)
           =================================================================== */}
       <nav className="sf-stations-bar" aria-label="Selector de estaciones de producción">
-        {STATIONS_CONFIG.map((station) => {
+        {STATIONS.map((station) => {
           const Icon = station.icon;
-          const isActive = selectedStation === station.id;
-          const count = stationCounts[station.id] || 0;
+          const isActive = selectedStation === station.code;
+          const count = stationCounts[station.code] || 0;
           return (
             <button
-              key={station.id}
+              key={station.code}
               type="button"
               className={`sf-station-tab ${isActive ? 'active' : ''}`}
-              onClick={() => setSelectedStation(station.id)}
+              onClick={() => handleStationClick(station.code)}
             >
               <Icon size={20} />
               <span>{station.name}</span>
@@ -1051,7 +1007,7 @@ export function ShopFloorKiosk({
       </nav>
 
       {/* ===================================================================
-          Métricas de Producción del Turno
+          Métricas de Producción del Turno (Derivadas de Datos Reales)
           =================================================================== */}
       <div className="sf-shift-metrics">
         <div className="sf-metric-card">
@@ -1069,8 +1025,8 @@ export function ShopFloorKiosk({
             <Clock size={20} />
           </div>
           <div className="sf-metric-data">
-            <span className="sf-metric-value">{shiftMetrics.queued}</span>
-            <span className="sf-metric-label">En Cola</span>
+            <span className="sf-metric-value">{shiftMetrics.ready}</span>
+            <span className="sf-metric-label">Listas p/ Iniciar</span>
           </div>
         </div>
 
@@ -1079,8 +1035,8 @@ export function ShopFloorKiosk({
             <Pause size={20} />
           </div>
           <div className="sf-metric-data">
-            <span className="sf-metric-value">{shiftMetrics.paused}</span>
-            <span className="sf-metric-label">Pausadas</span>
+            <span className="sf-metric-value">{shiftMetrics.blocked}</span>
+            <span className="sf-metric-label">Detenidas / Bloq.</span>
           </div>
         </div>
 
@@ -1100,7 +1056,7 @@ export function ShopFloorKiosk({
           </div>
           <div className="sf-metric-data">
             <span className="sf-metric-value">{shiftMetrics.totalAreaM2} m²</span>
-            <span className="sf-metric-label">Área Producida</span>
+            <span className="sf-metric-label">Área Calculada</span>
           </div>
         </div>
       </div>
@@ -1114,7 +1070,7 @@ export function ShopFloorKiosk({
           <input
             type="text"
             className="sf-search-input"
-            placeholder="Buscar por cliente, N° orden (OT-2026-...) o material..."
+            placeholder="Buscar por cliente, N° orden (VEN-...) o material..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -1124,6 +1080,7 @@ export function ShopFloorKiosk({
               className="sf-modal-close"
               style={{ position: 'absolute', right: 4, top: 4, width: 40, height: 40 }}
               onClick={() => setSearchQuery('')}
+              aria-label="Limpiar búsqueda"
             >
               <X size={16} />
             </button>
@@ -1134,35 +1091,35 @@ export function ShopFloorKiosk({
           <button
             type="button"
             className={`sf-filter-btn ${statusFilter === 'all' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('all')}
+            onClick={() => handleStatusFilterClick('all')}
           >
-            Todas ({workOrders.length})
+            Activas ({stationCounts[selectedStation]})
           </button>
           <button
             type="button"
             className={`sf-filter-btn ${statusFilter === 'in_progress' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('in_progress')}
+            onClick={() => handleStatusFilterClick('in_progress')}
           >
             <Play size={14} /> En Proceso ({shiftMetrics.running})
           </button>
           <button
             type="button"
-            className={`sf-filter-btn ${statusFilter === 'queued' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('queued')}
+            className={`sf-filter-btn ${statusFilter === 'ready' ? 'active' : ''}`}
+            onClick={() => handleStatusFilterClick('ready')}
           >
-            <Clock size={14} /> En Cola ({shiftMetrics.queued})
+            <Clock size={14} /> Listas ({shiftMetrics.ready})
           </button>
           <button
             type="button"
-            className={`sf-filter-btn ${statusFilter === 'paused' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('paused')}
+            className={`sf-filter-btn ${statusFilter === 'blocked' ? 'active' : ''}`}
+            onClick={() => handleStatusFilterClick('blocked')}
           >
-            <Pause size={14} /> Pausadas ({shiftMetrics.paused})
+            <Pause size={14} /> Bloqueadas ({shiftMetrics.blocked})
           </button>
           <button
             type="button"
             className={`sf-filter-btn ${statusFilter === 'completed' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('completed')}
+            onClick={() => handleStatusFilterClick('completed')}
           >
             <CheckCircle2 size={14} /> Terminadas ({shiftMetrics.completed})
           </button>
@@ -1170,34 +1127,28 @@ export function ShopFloorKiosk({
       </div>
 
       {/* ===================================================================
-          Rejilla de Tarjetas de Órdenes de Trabajo (Grandes y Táctiles)
+          Rejilla de Tarjetas de Etapas de Producción (Grandes y Táctiles)
           =================================================================== */}
       <main className="sf-orders-grid">
-        {filteredOrders.length === 0 ? (
-          <div
-            style={{
-              gridColumn: '1 / -1',
-              padding: '3rem 1.5rem',
-              textAlign: 'center',
-              backgroundColor: 'var(--sf-card-bg)',
-              borderRadius: 'var(--sf-radius-lg)',
-              border: '2px dashed var(--sf-card-border)',
-            }}
-          >
+        {loading ? (
+          <div className="sf-empty-state">
+            <RefreshCw size={36} className="sf-spin" style={{ margin: '0 auto 1rem' }} />
+            <h3>Cargando etapas de producción desde Supabase…</h3>
+          </div>
+        ) : filteredSteps.length === 0 ? (
+          <div className="sf-empty-state">
             <FileText size={48} style={{ color: 'var(--sf-text-subtle)', margin: '0 auto 1rem' }} />
-            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', fontWeight: 800 }}>
-              No hay órdenes de trabajo en este filtro
-            </h3>
-            <p style={{ color: 'var(--sf-text-muted)', margin: '0 auto 1.5rem', maxWidth: '420px' }}>
-              No se encontraron trabajos para la estación o término de búsqueda ingresado.
+            <h3>No hay etapas de producción en este filtro</h3>
+            <p>
+              No se encontraron trabajos activos para la estación seleccionada o el término de búsqueda ingresado.
             </p>
             <button
               type="button"
               className="sf-btn-tactile sf-btn-finish"
               style={{ display: 'inline-flex', margin: '0 auto' }}
               onClick={() => {
-                setSelectedStation('all');
-                setStatusFilter('all');
+                handleStationClick('all');
+                handleStatusFilterClick('all');
                 setSearchQuery('');
               }}
             >
@@ -1205,14 +1156,84 @@ export function ShopFloorKiosk({
             </button>
           </div>
         ) : (
-          filteredOrders.map((order) => {
-            const isRunning = order.status === 'in_progress';
-            const isPaused = order.status === 'paused';
-            const isCompleted = order.status === 'completed';
+          filteredSteps.map(({ step, job, area, areaCode, pendingChecksCount }) => {
+            const isRunning = step.status === 'in_progress';
+            const isPaused = step.status === 'blocked';
+            const isCompleted = step.status === 'completed';
+            const isReady = step.status === 'ready';
+            const isHandoffPending = step.handoff_status === 'pending';
+
+            const canActInThisArea = perms.canCoordinate || perms.canActInArea(areaCode);
+            const isAssignedToMe = step.assigned_to === user?.id;
+
+            // Medidas y especificaciones
+            const wCm = Number(job.specifications?.width_cm);
+            const hCm = Number(job.specifications?.height_cm);
+            const qty = Number(job.specifications?.quantity) || 1;
+            const hasDimensions = Number.isFinite(wCm) && wCm > 0 && Number.isFinite(hCm) && hCm > 0;
+            const wM = hasDimensions ? wCm / 100 : 0;
+            const hM = hasDimensions ? hCm / 100 : 0;
+            const areaM2 = hasDimensions ? (wM * hM * qty).toFixed(2) : null;
+            const materialStr = String(job.specifications?.material || 'Material en ficha');
+            const finishStr = job.specifications?.finish ? String(job.specifications.finish) : null;
+
+            // SLA y heurística operativa
+            const targetDue = step.due_at || job.due_at;
+            const isOverdue = isDateOverdue(targetDue, todayStr);
+            const isDueToday = targetDue && dayKey(targetDue) === todayStr;
+            const slaType = isOverdue ? 'overdue' : isDueToday ? 'urgent_today' : 'on_time';
+            const slaText = isOverdue
+              ? `🔴 Demorado (${stamp(targetDue)})`
+              : isDueToday
+              ? `🟡 Entrega Hoy (${stamp(targetDue)})`
+              : targetDue
+              ? `🟢 En tiempo (${stamp(targetDue)})`
+              : '⚪ Plazo por definir';
+
+            // Cronómetro calculado en vivo
+            let elapsedDisplay = '00:00';
+            let timerStatusText = 'LISTO PARA PRODUCIR';
+
+            if (isRunning) {
+              if (step.started_at) {
+                const startMs = Date.parse(step.started_at);
+                if (!Number.isNaN(startMs) && startMs > 0) {
+                  const sec = Math.max(0, Math.floor((nowMs - startMs) / 1000));
+                  elapsedDisplay = formatElapsed(sec);
+                  timerStatusText = 'EN PRODUCCIÓN VIVA';
+                } else {
+                  elapsedDisplay = '00:00';
+                  timerStatusText = 'EN PRODUCCIÓN (Fecha inicio sin registrar)';
+                }
+              } else {
+                elapsedDisplay = '00:00';
+                timerStatusText = 'EN PRODUCCIÓN (Sin started_at)';
+              }
+            } else if (isPaused) {
+              elapsedDisplay = '--:--';
+              timerStatusText = step.review_hold
+                ? 'DETENIDO: ESPERANDO REVISIÓN TÉCNICA'
+                : `PAUSADO: ${step.notes || 'Detenido con motivo'}`;
+            } else if (isCompleted) {
+              if (step.started_at && step.completed_at) {
+                const sMs = Date.parse(step.started_at);
+                const cMs = Date.parse(step.completed_at);
+                if (!Number.isNaN(sMs) && !Number.isNaN(cMs) && cMs >= sMs) {
+                  elapsedDisplay = formatElapsed(Math.floor((cMs - sMs) / 1000));
+                }
+              }
+              timerStatusText = `TERMINADA (${step.completed_at ? stamp(step.completed_at) : 'Hoy'})`;
+            } else if (isReady) {
+              elapsedDisplay = '00:00';
+              timerStatusText = 'LISTA PARA TOMAR O INICIAR';
+            } else {
+              elapsedDisplay = '--:--';
+              timerStatusText = 'EN ESPERA DE ETAPA PREVIA';
+            }
 
             return (
               <article
-                key={order.id}
+                key={step.id}
                 className={`sf-card ${isRunning ? 'running' : ''} ${isPaused ? 'paused' : ''} ${
                   isCompleted ? 'completed' : ''
                 }`}
@@ -1221,81 +1242,103 @@ export function ShopFloorKiosk({
                 <header className="sf-card-header">
                   <div className="sf-card-identity">
                     <div className="sf-card-code-row">
-                      <span className="sf-card-code">{order.id}</span>
-                      {order.isTemplate && (
-                        <span className="sf-card-ref-badge" title="Registro de plantilla operativa">
-                          📋 Referencia / Demo operativa
+                      <span className="sf-card-code">{job.sale_code || job.id.slice(0, 8)}</span>
+                      <span className="sf-card-area-badge">
+                        {area?.name || areaCode} · Etapa {step.step_order + 1}
+                      </span>
+                      {step.assigned_to && (
+                        <span className="sf-card-assigned-pill">
+                          👤 {isAssignedToMe ? 'Asignado a ti' : 'Asignado'}
                         </span>
                       )}
                     </div>
-                    <span className="sf-card-client">{order.clientName}</span>
-                    <span className="sf-card-title">{order.title}</span>
-                  </div>
-
-                  {/* Badge SLA */}
-                  <div className={`sf-sla-badge ${order.sla}`}>
-                    {order.sla === 'urgent_today' && <AlertTriangle size={15} />}
-                    {order.sla === 'overdue' && <AlertTriangle size={15} />}
-                    {order.sla === 'on_time' && <CheckCircle2 size={15} />}
-                    <span>{order.slaLabel}</span>
-                  </div>
-                </header>
-
-                {/* Banner Gigante de Medidas (Legible a 2 metros de distancia) */}
-                <div className="sf-measure-banner">
-                  <div className="sf-measure-main">
-                    <span className="sf-measure-label">Medidas de Producción</span>
-                    <span className="sf-measure-dimensions">
-                      {order.width_m.toFixed(2)} m × {order.height_m.toFixed(2)} m
+                    <span className="sf-card-client">{job.customer_name || 'Venta de Mostrador'}</span>
+                    <span className="sf-card-title">{job.title}</span>
+                    <span className="sf-card-step-name">
+                      <strong>Paso:</strong> {step.title}
                     </span>
                   </div>
 
-                  <div className="sf-measure-badges">
-                    <div className="sf-measure-chip">
-                      <span className="sf-measure-chip-label">Superficie Total</span>
-                      <span className="sf-measure-chip-val">{order.area_m2.toFixed(2)} m²</span>
-                    </div>
+                  {/* Badge SLA */}
+                  <div className={`sf-sla-badge ${slaType}`}>
+                    {isOverdue && <AlertTriangle size={15} />}
+                    {isDueToday && <AlertTriangle size={15} />}
+                    {!isOverdue && !isDueToday && <CheckCircle2 size={15} />}
+                    <span>{slaText}</span>
+                  </div>
+                </header>
 
+                {/* Banner de Medidas Reales Legible a Distancia */}
+                <div className="sf-measure-banner">
+                  <div className="sf-measure-main">
+                    <span className="sf-measure-label">Medidas de Producción</span>
+                    {hasDimensions ? (
+                      <span className="sf-measure-dimensions">
+                        {wM.toFixed(2)} m × {hM.toFixed(2)} m
+                      </span>
+                    ) : (
+                      <span className="sf-measure-dimensions sf-measure-text-auto">
+                        Ver ficha técnica
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="sf-measure-badges">
+                    {areaM2 && (
+                      <div className="sf-measure-chip">
+                        <span className="sf-measure-chip-label">Área Total</span>
+                        <span className="sf-measure-chip-val">{areaM2} m²</span>
+                      </div>
+                    )}
                     <div className="sf-measure-chip">
                       <span className="sf-measure-chip-label">Tiraje</span>
-                      <span className="sf-measure-chip-val">
-                        {order.quantity} {order.unit}
-                      </span>
+                      <span className="sf-measure-chip-val">{qty} un.</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Material y Acabados Requeridos */}
+                {/* Material y Acabados Requeridos de la Orden */}
                 <div className="sf-specs-box">
                   <div className="sf-material-badge">
                     <Layers size={16} />
-                    <span>{order.material}</span>
+                    <span>{materialStr}</span>
                   </div>
 
-                  <div className="sf-finishes-list">
-                    {order.finishes.map((finish, idx) => (
-                      <span key={idx} className="sf-finish-pill">
+                  {finishStr && (
+                    <div className="sf-finishes-list">
+                      <span className="sf-finish-pill">
                         <CheckCircle2 size={13} />
-                        {finish}
+                        {finishStr}
                       </span>
-                    ))}
-                  </div>
+                    </div>
+                  )}
+
+                  {pendingChecksCount > 0 && (
+                    <div className="sf-checks-warning-banner">
+                      <AlertTriangle size={14} />
+                      <span>{pendingChecksCount} control(es) de calidad requeridos pendientes</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Miniatura de Arte con Botón de Lupa/Zoom para Preprensa */}
+                {/* Vista Previa de Preprensa y Acceso Rápido a Ficha */}
                 <div className="sf-art-preview-strip">
                   <div className="sf-art-preview-diagram">
                     <div className="sf-art-canvas-box" title="Esquema técnico de preprensa">
                       <div className="sf-art-canvas-grommets" />
                       <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--sf-primary)' }}>
-                        {order.width_m.toFixed(1)}×{order.height_m.toFixed(1)}m
+                        {hasDimensions ? `${wM.toFixed(1)}×${hM.toFixed(1)}m` : 'Ficha'}
                       </span>
                     </div>
 
                     <div className="sf-art-details">
-                      <span className="sf-art-prepress-notes">{order.prepressNotes}</span>
+                      <span className="sf-art-prepress-notes">
+                        {job.artwork_reference
+                          ? `Arte: ${job.artwork_reference}`
+                          : 'Revisión técnica en proceso'}
+                      </span>
                       <span className="sf-art-profile">
-                        Modo: {order.colorMode} · Sangría: {order.bleed_mm}mm
+                        Estado arte: {job.artwork_review_status} · Revisión {job.artwork_revision}
                       </span>
                     </div>
                   </div>
@@ -1303,11 +1346,21 @@ export function ShopFloorKiosk({
                   <button
                     type="button"
                     className="sf-btn-zoom"
-                    onClick={() => setPrepressModalJob(order)}
-                    title="Ver detalles de preprensa y cotas a gran escala"
+                    onClick={() => setPrepressModalItem({ step, job })}
+                    title="Ver cotas de preprensa y especificaciones técnicas"
                   >
                     <ZoomIn size={16} />
-                    <span>Zoom Preprensa</span>
+                    <span>Preprensa</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sf-btn-zoom sf-btn-detail-trigger"
+                    onClick={() => openJobDetail(job.id, step.id, areaCode)}
+                    title="Abrir la ficha completa de producción en panel lateral"
+                  >
+                    <FileText size={16} />
+                    <span>Ficha 360°</span>
                   </button>
                 </div>
 
@@ -1319,36 +1372,98 @@ export function ShopFloorKiosk({
                     {isCompleted && <CheckCircle2 size={16} className="text-primary" />}
                     {!isRunning && !isPaused && !isCompleted && <Clock size={16} />}
 
-                    <span>
-                      {isRunning && 'EN PRODUCCIÓN VIVA'}
-                      {isPaused && `PAUSADO: ${order.pauseReason || 'En espera'}`}
-                      {isCompleted && `TERMINADO (${order.completedAt ? new Date(order.completedAt).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }) : 'Hoy'})`}
-                      {!isRunning && !isPaused && !isCompleted && 'LISTO PARA PRODUCIR'}
-                    </span>
+                    <span>{timerStatusText}</span>
                   </div>
 
-                  <span className="sf-timer-digits">{formatSeconds(order.elapsedSeconds || 0)}</span>
+                  <span className="sf-timer-digits">{elapsedDisplay}</span>
                 </div>
 
                 {/* Controles Táctiles de Acción (Botones Grandes) */}
                 <div className="sf-actions-grid">
-                  {/* Botón Iniciar */}
-                  <button
-                    type="button"
-                    className="sf-btn-tactile sf-btn-start"
-                    disabled={isRunning || isCompleted}
-                    onClick={() => handleStartOrder(order.id)}
-                  >
-                    <Play size={20} />
-                    <span>{isPaused ? 'Reanudar' : '▶ Iniciar'}</span>
-                  </button>
+                  {/* Botón Recibir etapa (si el handoff está pendiente) */}
+                  {isHandoffPending && (
+                    <button
+                      type="button"
+                      className="sf-btn-tactile sf-btn-finish"
+                      style={{ gridColumn: '1 / -1' }}
+                      disabled={busy || !canActInThisArea}
+                      onClick={() => void handleReceiveStep(step)}
+                      title={
+                        canActInThisArea
+                          ? 'Recibir la etapa transferida a este centro de trabajo'
+                          : 'No tienes autorización en esta área'
+                      }
+                    >
+                      <Check size={20} />
+                      <span>📥 Recibir Etapa en Taller</span>
+                    </button>
+                  )}
 
-                  {/* Botón Pausar */}
+                  {/* Botón Iniciar / Tomar */}
+                  {isReady && !step.assigned_to ? (
+                    <>
+                      <button
+                        type="button"
+                        className="sf-btn-tactile sf-btn-start"
+                        disabled={busy || !canActInThisArea}
+                        onClick={() => void handleStartStep(step)}
+                        title={
+                          canActInThisArea
+                            ? 'Iniciar inmediatamente el trabajo'
+                            : 'No tienes autorización en esta área'
+                        }
+                      >
+                        <Play size={20} />
+                        <span>▶ Iniciar Trabajo</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="sf-btn-tactile sf-btn-take"
+                        disabled={busy || !canActInThisArea}
+                        onClick={() => void handleTakeStep(step)}
+                        title="Tomar la etapa asignándola a tu usuario"
+                      >
+                        <UserRound size={18} />
+                        <span>👤 Tomar Etapa</span>
+                      </button>
+                    </>
+                  ) : isReady ? (
+                    <button
+                      type="button"
+                      className="sf-btn-tactile sf-btn-start"
+                      disabled={busy || !canActInThisArea}
+                      onClick={() => void handleStartStep(step)}
+                    >
+                      <Play size={20} />
+                      <span>▶ Iniciar Trabajo</span>
+                    </button>
+                  ) : null}
+
+                  {/* Botón Reanudar (si está bloqueada sin hold técnico) */}
+                  {isPaused && !step.review_hold && (
+                    <button
+                      type="button"
+                      className="sf-btn-tactile sf-btn-start"
+                      disabled={busy || !canActInThisArea}
+                      onClick={() => void handleUnblockStep(step)}
+                    >
+                      <Play size={20} />
+                      <span>▶ Reanudar Etapa</span>
+                    </button>
+                  )}
+
+                  {/* Botón Pausar / Bloquear */}
                   <button
                     type="button"
                     className="sf-btn-tactile sf-btn-pause"
-                    disabled={!isRunning}
-                    onClick={() => handleOpenPauseModal(order)}
+                    disabled={!isRunning || busy || !canActInThisArea}
+                    onClick={() => {
+                      setPauseModalStep(step);
+                      setSelectedPauseReason(COMMON_PAUSE_REASONS[0]);
+                      setPauseReasonCustom('');
+                    }}
+                    title="Pausar o detener la etapa indicando el motivo"
                   >
                     <Pause size={20} />
                     <span>⏸ Pausar</span>
@@ -1358,18 +1473,25 @@ export function ShopFloorKiosk({
                   <button
                     type="button"
                     className="sf-btn-tactile sf-btn-finish"
-                    disabled={isCompleted}
-                    onClick={() => handleCompleteOrder(order.id)}
+                    disabled={!isRunning || isCompleted || busy || !canActInThisArea}
+                    onClick={() => void handleCompleteStep(step, job, pendingChecksCount)}
+                    title="Marcar etapa como terminada para habilitar la siguiente"
                   >
                     <CheckCircle2 size={20} />
                     <span>✔ Terminado</span>
                   </button>
 
-                  {/* Botón Registrar Merma */}
+                  {/* Botón Registrar Merma / Incidente */}
                   <button
                     type="button"
                     className="sf-btn-tactile sf-btn-scrap"
-                    onClick={() => handleOpenScrapModal(order)}
+                    disabled={isCompleted || busy}
+                    onClick={() => {
+                      setScrapModalItem({ step, job });
+                      setScrapReason(COMMON_SCRAP_CAUSES[0]);
+                      setScrapNotes('');
+                    }}
+                    title="Reportar desperdicio o incidente técnico auditable"
                   >
                     <AlertTriangle size={20} />
                     <span>⚠ Registrar Merma</span>
@@ -1382,124 +1504,56 @@ export function ShopFloorKiosk({
       </main>
 
       {/* ===================================================================
-          Modal Táctil de Registro de Merma ("Scrap Tracking")
+          Modal Táctil de Registro de Merma / Incidente (Brecha de Esquema)
           =================================================================== */}
-      {scrapModalJob && (
-        <div className="sf-modal-overlay" onClick={() => setScrapModalJob(null)}>
+      {scrapModalItem && (
+        <div
+          className="sf-modal-overlay"
+          onClick={() => setScrapModalItem(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="scrap-modal-title"
+        >
           <div className="sf-modal" onClick={(e) => e.stopPropagation()}>
             <div className="sf-modal-header">
               <div className="sf-modal-title-group">
-                <h2 className="sf-modal-title">
+                <h2 id="scrap-modal-title" className="sf-modal-title">
                   <AlertTriangle size={24} style={{ color: '#ef4444' }} />
-                  Registro de Merma / Desperdicio
+                  Reporte Auditable de Merma / Incidente
                 </h2>
                 <span className="sf-modal-subtitle">
-                  {scrapModalJob.id} · {scrapModalJob.clientName} ({scrapModalJob.material})
+                  {scrapModalItem.job.sale_code || scrapModalItem.job.id} · {scrapModalItem.step.title} (
+                  {scrapModalItem.job.customer_name || 'Mostrador'})
                 </span>
               </div>
 
               <button
                 type="button"
                 className="sf-modal-close"
-                onClick={() => setScrapModalJob(null)}
+                onClick={() => setScrapModalItem(null)}
                 aria-label="Cerrar modal"
               >
                 <X size={20} />
               </button>
             </div>
 
-            {/* Display Numérico Gigante de la Cantidad de Merma */}
-            <div className="sf-scrap-display">
-              <span className="sf-scrap-number">
-                {scrapAmount.toFixed(2)} {scrapUnit}
-              </span>
-
-              <div className="sf-scrap-unit-toggle">
-                <button
-                  type="button"
-                  className={`sf-unit-btn ${scrapUnit === 'm' ? 'active' : ''}`}
-                  onClick={() => setScrapUnit('m')}
-                >
-                  Metros Lineales (m)
-                </button>
-                <button
-                  type="button"
-                  className={`sf-unit-btn ${scrapUnit === 'm2' ? 'active' : ''}`}
-                  onClick={() => setScrapUnit('m2')}
-                >
-                  Metros Cuadrados (m²)
-                </button>
+            {/* Explicación explícita de brecha de esquema */}
+            <div className="sf-scrap-schema-callout" role="alert">
+              <ShieldAlert size={20} />
+              <div>
+                <strong>Aviso de Base de Datos (Fase de Transición):</strong>
+                <p>
+                  La tabla estructurada de conteo físico de mermas (<code>production_scraps</code>) está
+                  pendiente de aprobación de migración SQL en Supabase. No se guardan registros falsos en{' '}
+                  <code>localStorage</code>. Puedes registrar este incidente de forma 100% auditable
+                  mediante las siguientes opciones autorizadas:
+                </p>
               </div>
             </div>
 
-            {/* Incrementadores Táctiles de Acceso Rápido */}
-            <div className="sf-stepper-grid">
-              <button
-                type="button"
-                className="sf-step-btn"
-                onClick={() => setScrapAmount((prev) => Math.max(0.1, Number((prev - 1.0).toFixed(2))))}
-              >
-                - 1.0 m
-              </button>
-              <button
-                type="button"
-                className="sf-step-btn"
-                onClick={() => setScrapAmount((prev) => Math.max(0.1, Number((prev - 0.5).toFixed(2))))}
-              >
-                - 0.5 m
-              </button>
-              <button
-                type="button"
-                className="sf-step-btn"
-                onClick={() => setScrapAmount((prev) => Number((prev + 0.5).toFixed(2)))}
-              >
-                + 0.5 m
-              </button>
-              <button
-                type="button"
-                className="sf-step-btn"
-                onClick={() => setScrapAmount((prev) => Number((prev + 1.0).toFixed(2)))}
-              >
-                + 1.0 m
-              </button>
-              <button
-                type="button"
-                className="sf-step-btn"
-                onClick={() => setScrapAmount((prev) => Number((prev + 2.0).toFixed(2)))}
-              >
-                + 2.0 m
-              </button>
-              <button
-                type="button"
-                className="sf-step-btn"
-                onClick={() => setScrapAmount((prev) => Number((prev + 5.0).toFixed(2)))}
-              >
-                + 5.0 m
-              </button>
-              <button
-                type="button"
-                className="sf-step-btn"
-                style={{ gridColumn: 'span 2', fontSize: '0.85rem' }}
-                onClick={() => setScrapAmount(0.5)}
-              >
-                Restablecer (0.5m)
-              </button>
-            </div>
-
-            {/* Selector Táctil de Causas de Merma */}
+            {/* Selector de Causa de la Merma */}
             <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '0.82rem',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  color: 'var(--sf-text-muted)',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                Causa del Desperdicio
-              </label>
+              <label className="sf-form-label">Causa del Desperdicio o Incidente</label>
               <div className="sf-causes-grid">
                 {COMMON_SCRAP_CAUSES.map((cause) => (
                   <div
@@ -1516,48 +1570,52 @@ export function ShopFloorKiosk({
               </div>
             </div>
 
-            {/* Observación Opcional */}
+            {/* Detalle del Operador */}
             <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '0.82rem',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  color: 'var(--sf-text-muted)',
-                  marginBottom: '0.4rem',
-                }}
-              >
-                Nota del Operador (Opcional)
-              </label>
+              <label className="sf-form-label">Detalle del Incidente (Obligatorio para auditoría)</label>
               <input
                 type="text"
                 className="sf-search-input"
-                placeholder="Ej. Inyectores cian fallaron a la mitad del paño..."
+                placeholder="Ej. Inyectores tapados a mitad de impresión; material descalibrado 1.5m..."
                 value={scrapNotes}
                 onChange={(e) => setScrapNotes(e.target.value)}
               />
             </div>
 
-            {/* Botón de Confirmación Táctil Grande */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <button
-                type="button"
-                className="sf-btn-tactile sf-btn-finish"
-                style={{ backgroundColor: 'var(--sf-card-border)', color: 'var(--sf-text-main)' }}
-                onClick={() => setScrapModalJob(null)}
-              >
-                Cancelar
-              </button>
+            {/* Opciones de Registro Real en Supabase */}
+            <div className="sf-scrap-actions-container">
+              {/* Opción 1: Bloquear la etapa activa con motivo de merma */}
+              {['ready', 'in_progress'].includes(scrapModalItem.step.status) && (
+                <button
+                  type="button"
+                  className="sf-btn-tactile sf-btn-scrap-block"
+                  disabled={busy}
+                  onClick={() => void handleScrapBlockStep()}
+                >
+                  <Pause size={18} />
+                  <span>1. Reportar y Detener/Bloquear Etapa Activa</span>
+                </button>
+              )}
+
+              {/* Opción 2: Registrar en bitácora de la ficha sin bloquear */}
+              {(perms.canCoordinate || perms.canEditSales) && (
+                <button
+                  type="button"
+                  className="sf-btn-tactile sf-btn-finish"
+                  disabled={busy}
+                  onClick={() => void handleScrapNoteJob()}
+                >
+                  <FileText size={18} />
+                  <span>2. Anotar en Bitácora del Trabajo (Sin detener flujo)</span>
+                </button>
+              )}
 
               <button
                 type="button"
-                className="sf-btn-tactile sf-btn-start"
-                style={{ background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)' }}
-                onClick={handleSaveScrap}
+                className="sf-btn-tactile sf-btn-outline"
+                onClick={() => setScrapModalItem(null)}
               >
-                <AlertTriangle size={20} />
-                <span>Confirmar Merma</span>
+                Cancelar
               </button>
             </div>
           </div>
@@ -1565,26 +1623,32 @@ export function ShopFloorKiosk({
       )}
 
       {/* ===================================================================
-          Modal Táctil de Pausa de Producción
+          Modal Táctil de Pausa / Bloqueo de Etapa
           =================================================================== */}
-      {pauseModalJob && (
-        <div className="sf-modal-overlay" onClick={() => setPauseModalJob(null)}>
+      {pauseModalStep && (
+        <div
+          className="sf-modal-overlay"
+          onClick={() => setPauseModalStep(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pause-modal-title"
+        >
           <div className="sf-modal" onClick={(e) => e.stopPropagation()}>
             <div className="sf-modal-header">
               <div className="sf-modal-title-group">
-                <h2 className="sf-modal-title">
+                <h2 id="pause-modal-title" className="sf-modal-title">
                   <Pause size={24} style={{ color: '#d97706' }} />
-                  Seleccionar Motivo de Pausa
+                  Pausar / Detener Etapa
                 </h2>
                 <span className="sf-modal-subtitle">
-                  {pauseModalJob.id} · {pauseModalJob.clientName}
+                  Etapa: {pauseModalStep.title} · Explica el motivo para el equipo
                 </span>
               </div>
 
               <button
                 type="button"
                 className="sf-modal-close"
-                onClick={() => setPauseModalJob(null)}
+                onClick={() => setPauseModalStep(null)}
                 aria-label="Cerrar modal"
               >
                 <X size={20} />
@@ -1596,22 +1660,33 @@ export function ShopFloorKiosk({
                 <div
                   key={reason}
                   className={`sf-pause-option ${selectedPauseReason === reason ? 'selected' : ''}`}
-                  onClick={() => setSelectedPauseReason(reason)}
+                  onClick={() => {
+                    setSelectedPauseReason(reason);
+                    setPauseReasonCustom('');
+                  }}
                 >
-                  <span style={{ fontSize: '1.1rem' }}>
-                    {selectedPauseReason === reason ? '✔' : '○'}
-                  </span>
+                  <span>{selectedPauseReason === reason ? '✔' : '○'}</span>
                   <span>{reason}</span>
                 </div>
               ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <div>
+              <label className="sf-form-label">O escribe un motivo específico (mínimo 3 caracteres)</label>
+              <input
+                type="text"
+                className="sf-search-input"
+                placeholder="Escribe el motivo de la detención..."
+                value={pauseReasonCustom}
+                onChange={(e) => setPauseReasonCustom(e.target.value)}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <button
                 type="button"
-                className="sf-btn-tactile"
-                style={{ backgroundColor: 'var(--sf-card-border)', color: 'var(--sf-text-main)' }}
-                onClick={() => setPauseModalJob(null)}
+                className="sf-btn-tactile sf-btn-outline"
+                onClick={() => setPauseModalStep(null)}
               >
                 Volver
               </button>
@@ -1619,7 +1694,8 @@ export function ShopFloorKiosk({
               <button
                 type="button"
                 className="sf-btn-tactile sf-btn-pause"
-                onClick={handleConfirmPause}
+                disabled={busy || (pauseReasonCustom.trim() || selectedPauseReason).length < 3}
+                onClick={() => void handleConfirmPause()}
               >
                 <Pause size={20} />
                 <span>Confirmar Pausa</span>
@@ -1630,26 +1706,33 @@ export function ShopFloorKiosk({
       )}
 
       {/* ===================================================================
-          Modal de Inspección de Preprensa (Zoom & Cotas Técnicas)
+          Modal de Inspección de Preprensa (Zoom y Cotas)
           =================================================================== */}
-      {prepressModalJob && (
-        <div className="sf-modal-overlay" onClick={() => setPrepressModalJob(null)}>
+      {prepressModalItem && (
+        <div
+          className="sf-modal-overlay"
+          onClick={() => setPrepressModalItem(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="prepress-modal-title"
+        >
           <div className="sf-modal large" onClick={(e) => e.stopPropagation()}>
             <div className="sf-modal-header">
               <div className="sf-modal-title-group">
-                <h2 className="sf-modal-title">
+                <h2 id="prepress-modal-title" className="sf-modal-title">
                   <ZoomIn size={24} style={{ color: 'var(--sf-primary)' }} />
                   Inspección de Preprensa & Cotas Técnicas
                 </h2>
                 <span className="sf-modal-subtitle">
-                  {prepressModalJob.id} · {prepressModalJob.title}
+                  {prepressModalItem.job.sale_code || prepressModalItem.job.id} ·{' '}
+                  {prepressModalItem.job.title}
                 </span>
               </div>
 
               <button
                 type="button"
                 className="sf-modal-close"
-                onClick={() => setPrepressModalJob(null)}
+                onClick={() => setPrepressModalItem(null)}
                 aria-label="Cerrar modal"
               >
                 <X size={20} />
@@ -1660,90 +1743,102 @@ export function ShopFloorKiosk({
               {/* Blueprint Técnico */}
               <div className="sf-prepress-blueprint">
                 <span className="sf-blueprint-dim-top">
-                  ↔ ANCHO: {prepressModalJob.width_m.toFixed(2)} m (
-                  {(prepressModalJob.width_m * 100).toFixed(0)} cm)
+                  ↔ ANCHO: {Number(prepressModalItem.job.specifications?.width_cm || 0)} cm (
+                  {(Number(prepressModalItem.job.specifications?.width_cm || 0) / 100).toFixed(2)} m)
                 </span>
                 <span className="sf-blueprint-dim-left">
-                  ↕ ALTO: {prepressModalJob.height_m.toFixed(2)} m (
-                  {(prepressModalJob.height_m * 100).toFixed(0)} cm)
+                  ↕ ALTO: {Number(prepressModalItem.job.specifications?.height_cm || 0)} cm (
+                  {(Number(prepressModalItem.job.specifications?.height_cm || 0) / 100).toFixed(2)} m)
                 </span>
 
                 <div className="sf-blueprint-art">
                   <div className="sf-blueprint-bleed-mark" />
-                  <span>ÁREA IMPRESA: {prepressModalJob.area_m2.toFixed(2)} m²</span>
+                  <span>
+                    Tiraje: {Number(prepressModalItem.job.specifications?.quantity || 1)} un.
+                  </span>
                 </div>
               </div>
 
-              {/* Especificaciones Técnicas de Preprensa */}
+              {/* Especificaciones Reales */}
               <div className="sf-prepress-meta-grid">
                 <div className="sf-prepress-meta-card">
-                  <span className="sf-prepress-meta-title">Perfil de Color</span>
-                  <span className="sf-prepress-meta-val">{prepressModalJob.colorMode}</span>
+                  <span className="sf-prepress-meta-title">Material</span>
+                  <span className="sf-prepress-meta-val">
+                    {String(prepressModalItem.job.specifications?.material || 'Por definir')}
+                  </span>
                 </div>
 
                 <div className="sf-prepress-meta-card">
-                  <span className="sf-prepress-meta-title">Resolución Escala</span>
-                  <span className="sf-prepress-meta-val">{prepressModalJob.resolution}</span>
+                  <span className="sf-prepress-meta-title">Acabado / Confección</span>
+                  <span className="sf-prepress-meta-val">
+                    {String(prepressModalItem.job.specifications?.finish || 'Estándar')}
+                  </span>
                 </div>
 
                 <div className="sf-prepress-meta-card">
-                  <span className="sf-prepress-meta-title">Sangría Perimetral</span>
-                  <span className="sf-prepress-meta-val">{prepressModalJob.bleed_mm} mm</span>
+                  <span className="sf-prepress-meta-title">Referencia de Arte</span>
+                  <span className="sf-prepress-meta-val">
+                    {prepressModalItem.job.artwork_reference || 'Sin archivo asignado'}
+                  </span>
                 </div>
 
                 <div className="sf-prepress-meta-card">
-                  <span className="sf-prepress-meta-title">SLA / Vencimiento</span>
-                  <span className="sf-prepress-meta-val">{prepressModalJob.dueTime}</span>
+                  <span className="sf-prepress-meta-title">Estado del Arte</span>
+                  <span className="sf-prepress-meta-val">
+                    {prepressModalItem.job.artwork_review_status} (Rev.{' '}
+                    {prepressModalItem.job.artwork_revision})
+                  </span>
                 </div>
               </div>
 
-              {/* Acabados requeridos */}
-              <div
-                style={{
-                  backgroundColor: 'var(--sf-bg)',
-                  padding: '1rem',
-                  borderRadius: 'var(--sf-radius-md)',
-                  border: '1px solid var(--sf-card-border)',
-                }}
-              >
-                <strong style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.9rem' }}>
-                  Acabados y Confección:
-                </strong>
-                <ul style={{ margin: 0, paddingLeft: '1.25rem', color: 'var(--sf-text-muted)' }}>
-                  {prepressModalJob.finishes.map((f, i) => (
-                    <li key={i} style={{ marginBottom: '0.25rem' }}>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <div className="sf-prepress-footer-actions">
+                <button
+                  type="button"
+                  className="sf-btn-tactile sf-btn-outline"
+                  onClick={() => setPrepressModalItem(null)}
+                >
+                  Cerrar Inspección
+                </button>
 
-              <button
-                type="button"
-                className="sf-btn-tactile sf-btn-finish"
-                onClick={() => setPrepressModalJob(null)}
-              >
-                Entendido / Cerrar Vista
-              </button>
+                <button
+                  type="button"
+                  className="sf-btn-tactile sf-btn-finish"
+                  onClick={() => {
+                    const jId = prepressModalItem.job.id;
+                    const sId = prepressModalItem.step.id;
+                    setPrepressModalItem(null);
+                    openJobDetail(jId, sId);
+                  }}
+                >
+                  <FileText size={18} />
+                  <span>Abrir Ficha Técnica Completa</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* ===================================================================
-          Modal de Cambio de Estado de Máquina
+          Modal de Cambio de Estado Operativo de Maquinaria Real
           =================================================================== */}
       {machineStatusModalMachine && (
-        <div className="sf-modal-overlay" onClick={() => setMachineStatusModalMachine(null)}>
+        <div
+          className="sf-modal-overlay"
+          onClick={() => setMachineStatusModalMachine(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="machine-status-modal-title"
+        >
           <div className="sf-modal" onClick={(e) => e.stopPropagation()}>
             <div className="sf-modal-header">
               <div className="sf-modal-title-group">
-                <h2 className="sf-modal-title">
+                <h2 id="machine-status-modal-title" className="sf-modal-title">
                   <Printer size={24} style={{ color: 'var(--sf-primary)' }} />
-                  Estado de {machineStatusModalMachine.name.split('(')[0].trim()}
+                  Estado de {machineStatusModalMachine.name}
                 </h2>
                 <span className="sf-modal-subtitle">
-                  Seleccione el estado operativo actual de la máquina
+                  Código: {machineStatusModalMachine.asset_code} · Seleccione el estado operativo en planta
                 </span>
               </div>
 
@@ -1758,145 +1853,84 @@ export function ShopFloorKiosk({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-              <button
-                type="button"
-                className="sf-btn-tactile"
-                style={{
-                  backgroundColor: 'var(--sf-success-soft)',
-                  color: 'var(--sf-success-text)',
-                  border: '1.5px solid rgba(22, 163, 74, 0.4)',
-                }}
-                onClick={() => handleUpdateMachineStatus(machineStatusModalMachine.id, 'operational')}
-              >
-                🟢 Operativa (Produciendo o lista para imprimir)
-              </button>
+              {CONFIRMED_EQUIPMENT_STATUSES.map((statusOption) => {
+                const isCurrent = machineStatusModalMachine.status === statusOption;
+                const statusColor =
+                  statusOption === 'Operativo'
+                    ? 'var(--sf-success-soft)'
+                    : statusOption === 'En mantenimiento'
+                    ? '#ffedd5'
+                    : statusOption === 'Fuera de servicio'
+                    ? 'var(--sf-danger-soft)'
+                    : 'var(--sf-warning-soft)';
 
-              <button
-                type="button"
-                className="sf-btn-tactile"
-                style={{
-                  backgroundColor: 'var(--sf-warning-soft)',
-                  color: 'var(--sf-warning-text)',
-                  border: '1.5px solid rgba(217, 119, 6, 0.4)',
-                }}
-                onClick={() => handleUpdateMachineStatus(machineStatusModalMachine.id, 'standby')}
-              >
-                🟡 Standby (En reposo / Esperando archivo)
-              </button>
+                const textColor =
+                  statusOption === 'Operativo'
+                    ? 'var(--sf-success-text)'
+                    : statusOption === 'En mantenimiento'
+                    ? '#c2410c'
+                    : statusOption === 'Fuera de servicio'
+                    ? 'var(--sf-danger-text)'
+                    : 'var(--sf-warning-text)';
 
-              <button
-                type="button"
-                className="sf-btn-tactile"
-                style={{
-                  backgroundColor: '#ffedd5',
-                  color: '#c2410c',
-                  border: '1.5px solid rgba(194, 65, 12, 0.4)',
-                }}
-                onClick={() => handleUpdateMachineStatus(machineStatusModalMachine.id, 'maintenance')}
-              >
-                🟠 En Mantenimiento (Purga, limpieza o calibración)
-              </button>
-
-              <button
-                type="button"
-                className="sf-btn-tactile"
-                style={{
-                  backgroundColor: 'var(--sf-danger-soft)',
-                  color: 'var(--sf-danger-text)',
-                  border: '1.5px solid rgba(220, 38, 38, 0.4)',
-                }}
-                onClick={() => handleUpdateMachineStatus(machineStatusModalMachine.id, 'stopped')}
-              >
-                🔴 Parada Técnica (Avería o falta de repuesto)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===================================================================
-          Modal de Auditoría de Mermas del Turno
-          =================================================================== */}
-      {showScrapsAudit && (
-        <div className="sf-modal-overlay" onClick={() => setShowScrapsAudit(false)}>
-          <div className="sf-modal large" onClick={(e) => e.stopPropagation()}>
-            <div className="sf-modal-header">
-              <div className="sf-modal-title-group">
-                <h2 className="sf-modal-title">
-                  <AlertTriangle size={24} style={{ color: '#ef4444' }} />
-                  Auditoría de Mermas Registradas ({scraps.length})
-                </h2>
-                <span className="sf-modal-subtitle">
-                  Registro para control de costos y calidad de Visual Corp
-                </span>
-              </div>
-
-              <button
-                type="button"
-                className="sf-modal-close"
-                onClick={() => setShowScrapsAudit(false)}
-                aria-label="Cerrar modal"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {scraps.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem' }}>
-                <CheckCircle2 size={40} style={{ color: 'var(--sf-success)', margin: '0 auto 0.75rem' }} />
-                <p style={{ margin: 0, fontWeight: 700 }}>¡Excelente! No hay mermas registradas en este turno.</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '420px', overflowY: 'auto' }}>
-                {scraps.map((s) => (
-                  <div
-                    key={s.id}
+                return (
+                  <button
+                    key={statusOption}
+                    type="button"
+                    className="sf-btn-tactile"
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.85rem 1rem',
-                      borderRadius: 'var(--sf-radius-md)',
-                      backgroundColor: 'var(--sf-bg)',
-                      border: '1px solid var(--sf-card-border)',
-                      gap: '0.75rem',
-                      flexWrap: 'wrap',
+                      backgroundColor: statusColor,
+                      color: textColor,
+                      border: isCurrent
+                        ? '2px solid currentColor'
+                        : '1.5px solid transparent',
                     }}
+                    onClick={() =>
+                      void handleUpdateMachineStatus(machineStatusModalMachine, statusOption)
+                    }
                   >
-                    <div>
-                      <strong style={{ fontSize: '1rem', color: '#ef4444', marginRight: '0.5rem' }}>
-                        {s.amount.toFixed(2)} {s.unit}
-                      </strong>
-                      <span style={{ fontWeight: 700 }}>{s.reason}</span>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--sf-text-muted)', marginTop: '0.2rem' }}>
-                        OT: {s.jobId} ({s.clientName}) · Operador: {s.operator}
-                        {s.notes && ` · Nota: "${s.notes}"`}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--sf-text-subtle)' }}>
-                      {new Date(s.createdAt).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}
+                    <span>
+                      {statusOption === 'Operativo' && '🟢 '}
+                      {statusOption === 'Por verificar' && '🟡 '}
+                      {statusOption === 'En mantenimiento' && '🟠 '}
+                      {statusOption === 'Fuera de servicio' && '🔴 '}
+                      {statusOption}
+                      {isCurrent ? ' (Actual)' : ''}
                     </span>
-                  </div>
-                ))}
-              </div>
-            )}
+                  </button>
+                );
+              })}
+            </div>
 
             <button
               type="button"
-              className="sf-btn-tactile sf-btn-finish"
-              onClick={() => setShowScrapsAudit(false)}
+              className="sf-btn-tactile sf-btn-outline"
+              style={{ marginTop: '0.5rem' }}
+              onClick={() => setMachineStatusModalMachine(null)}
             >
-              Cerrar Auditoría
+              Cerrar sin cambiar
             </button>
           </div>
         </div>
       )}
 
       {/* ===================================================================
-          Toast Feedback Táctil de Operación
+          Ficha Técnica Unificada (ProductionJobDetailSheet)
+          =================================================================== */}
+      <ProductionJobDetailSheet
+        open={detailOpen}
+        jobId={detailJobId}
+        stepId={detailStepId}
+        contextAreaCode={detailAreaCode}
+        onClose={() => setDetailOpen(false)}
+        onChanged={reloadData}
+      />
+
+      {/* ===================================================================
+          Toast Feedback Táctil
           =================================================================== */}
       {toastMessage && (
-        <div className="sf-toast" role="status">
+        <div className="sf-toast" role="status" aria-live="polite">
           <Info size={18} />
           <span>{toastMessage}</span>
         </div>
