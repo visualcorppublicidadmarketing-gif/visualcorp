@@ -1,7 +1,7 @@
 -- Persistent reference locations for the Workshop map.
 -- GigaPrint starts at a public-directory plus code; both pins remain unverified
 -- until the Visual Corp owner adjusts them in the map.
-create table public.organization_map_pins (
+create table if not exists public.organization_map_pins (
   organization_id uuid not null references public.organizations(id) on delete cascade,
   pin_key text not null check (pin_key in ('visual-corp', 'gigaprint')),
   name text not null,
@@ -19,14 +19,17 @@ alter table public.organization_map_pins enable row level security;
 revoke all on public.organization_map_pins from public, anon, authenticated;
 grant select, insert, update on public.organization_map_pins to authenticated;
 
+drop policy if exists organization_map_pins_read on public.organization_map_pins;
 create policy organization_map_pins_read
   on public.organization_map_pins for select to authenticated
   using (app_private.has_org_role(organization_id));
 
+drop policy if exists organization_map_pins_insert_owner on public.organization_map_pins;
 create policy organization_map_pins_insert_owner
   on public.organization_map_pins for insert to authenticated
   with check (app_private.has_org_role(organization_id, null, array['owner']));
 
+drop policy if exists organization_map_pins_update_owner on public.organization_map_pins;
 create policy organization_map_pins_update_owner
   on public.organization_map_pins for update to authenticated
   using (app_private.has_org_role(organization_id, null, array['owner']))
