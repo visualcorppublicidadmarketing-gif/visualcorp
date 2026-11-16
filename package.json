@@ -33,7 +33,7 @@
     "@tiptap/react": "^3.32.0",
     "@tiptap/starter-kit": "^3.32.0",
     "@types/leaflet": "^1.9.22",
-    "@vercel/functions": "3.10.3",
+    "@vercel/functions": "3.11.3",
     "@vitejs/plugin-react": "^6.1.2",
     "jsbarcode": "3.12.3",
     "jspdf": "^4.2.1",
@@ -48,16 +48,16 @@
     "vite": "^8.3.5"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.5.14",
-    "@types/geojson": "7946.0.16",
-    "@playwright/test": "1.64.1",
+    "@electric-sql/pglite": "0.5.16",
+    "@playwright/test": "1.65.1",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/geojson": "7946.0.16",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "sharp": "^0.35.3",
-    "supabase": "^2.121.0",
+    "supabase": "~2.122.1",
     "tailwindcss": "^4.3.3",
-    "typescript": "~5.9.3"
+    "typescript": "~7.0.2"
   },
   "overrides": {
     "zod": "4.6.7"
