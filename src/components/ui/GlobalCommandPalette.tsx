@@ -36,6 +36,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useWorkspace, formatMoney } from '../../app/workspace';
+import { useTheme } from '../../app/ThemeProvider';
 import { ChatterDrawer360 } from './ChatterDrawer360';
 import './global-command-palette.css';
 
@@ -251,6 +252,7 @@ export function GlobalCommandPalette({
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CommandCategory>('todos');
   const [activeIndex, setActiveIndex] = useState(0);
+  const { theme, isSuiteRoute, toggleTheme: toggleSuiteTheme } = useTheme();
 
   // Sucursal activa y Tema (Light / Dark)
   const [branch, setBranch] = useState<'Visual Corp' | 'Gigaprint'>(() => {
@@ -258,18 +260,6 @@ export function GlobalCommandPalette({
       return (localStorage.getItem('visualcorp_current_branch') as any) || 'Visual Corp';
     } catch {
       return 'Visual Corp';
-    }
-  });
-
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    try {
-      const docTheme = document.documentElement.getAttribute('data-theme');
-      if (docTheme === 'dark' || docTheme === 'light') return docTheme;
-      const saved = localStorage.getItem('vc-suite-theme');
-      if (saved === 'dark' || saved === 'light') return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } catch {
-      return 'light';
     }
   });
 
@@ -350,21 +340,6 @@ export function GlobalCommandPalette({
     }
   }, [open]);
 
-  // Sincronizar cambios de tema desde el documento
-  useEffect(() => {
-    const handleThemeEvent = (e: Event) => {
-      const customDetail = (e as CustomEvent).detail;
-      if (customDetail === 'dark' || customDetail === 'light') {
-        setTheme(customDetail);
-      } else {
-        const docTheme = document.documentElement.getAttribute('data-theme');
-        if (docTheme === 'dark' || docTheme === 'light') setTheme(docTheme);
-      }
-    };
-    window.addEventListener('theme_change', handleThemeEvent);
-    return () => window.removeEventListener('theme_change', handleThemeEvent);
-  }, []);
-
   // Sincronizar cambios de sucursal
   useEffect(() => {
     const handleBranchEvent = (e: Event) => {
@@ -401,17 +376,9 @@ export function GlobalCommandPalette({
 
   const toggleTheme = useCallback(() => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    try {
-      document.documentElement.setAttribute('data-theme', nextTheme);
-      document.body.setAttribute('data-theme', nextTheme);
-      localStorage.setItem('vc-suite-theme', nextTheme);
-      window.dispatchEvent(new CustomEvent('theme_change', { detail: nextTheme }));
-    } catch {
-      // Ignorar
-    }
+    toggleSuiteTheme();
     showFeedback(`Modo ${nextTheme === 'dark' ? 'Oscuro' : 'Claro'} activado`);
-  }, [theme, showFeedback]);
+  }, [theme, toggleSuiteTheme, showFeedback]);
 
   const copyToClipboard = useCallback((text: string, id: string, msg = 'Copiado al portapapeles') => {
     if (navigator?.clipboard?.writeText) {
@@ -735,19 +702,6 @@ export function GlobalCommandPalette({
         },
       },
       {
-        id: 'act-alternar-tema',
-        category: 'acciones',
-        title: `Alternar Modo Claro / Oscuro (Actual: ${theme === 'dark' ? 'Oscuro' : 'Claro'})`,
-        subtitle: 'Cambia la apariencia de la suite entre alto contraste claro y oscuro',
-        keywords: ['tema', 'dark', 'light', 'oscuro', 'claro', 'noche', 'contraste'],
-        icon: theme === 'dark' ? Sun : Moon,
-        badge: theme === 'dark' ? 'Modo Oscuro' : 'Modo Claro',
-        shortcut: 'TEMA',
-        onSelect: () => {
-          toggleTheme();
-        },
-      },
-      {
         id: 'act-abrir-vault',
         category: 'acciones',
         title: 'Abrir Vault DAM',
@@ -789,6 +743,20 @@ export function GlobalCommandPalette({
         },
       }
     );
+
+    if (isSuiteRoute) {
+      items.push({
+        id: 'act-alternar-tema',
+        category: 'acciones',
+        title: `Alternar Modo Claro / Oscuro (Actual: ${theme === 'dark' ? 'Oscuro' : 'Claro'})`,
+        subtitle: 'Cambia la apariencia de la suite entre alto contraste claro y oscuro',
+        keywords: ['tema', 'dark', 'light', 'oscuro', 'claro', 'noche', 'contraste'],
+        icon: theme === 'dark' ? Sun : Moon,
+        badge: theme === 'dark' ? 'Modo Oscuro' : 'Modo Claro',
+        shortcut: 'TEMA',
+        onSelect: toggleTheme,
+      });
+    }
 
     /* --- CLIENTES EN VIVO --- */
     customersList.forEach((c) => {
@@ -873,6 +841,7 @@ export function GlobalCommandPalette({
     branch,
     switchBranch,
     theme,
+    isSuiteRoute,
     toggleTheme,
     customersList,
     quotesList,
@@ -1097,7 +1066,7 @@ export function GlobalCommandPalette({
                     <span>{branch}</span>
                   </button>
 
-                  <button
+                  {isSuiteRoute && <button
                     type="button"
                     className="vc-palette-theme-badge"
                     onClick={toggleTheme}
@@ -1105,7 +1074,7 @@ export function GlobalCommandPalette({
                   >
                     {theme === 'dark' ? <Moon size={13} /> : <Sun size={13} />}
                     <span>{theme === 'dark' ? 'Oscuro' : 'Claro'}</span>
-                  </button>
+                  </button>}
 
                   <button
                     type="button"

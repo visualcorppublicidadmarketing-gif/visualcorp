@@ -9,16 +9,16 @@ body[data-theme='dark'],
 .work-app[data-theme='dark'],
 [data-theme='dark'] {
   color-scheme: dark;
-  --ink: #f1f2f6;
-  --muted: #9ba0b4;
-  --line: #262939;
-  --panel: #161824;
-  --bg: #0d0e15;
-  --purple: #c084fc;
-  --blue: #38bdf8;
-  --amber: #fbbf24;
-  --pink: #f472b6;
-  --shadow: 0 18px 46px rgba(0, 0, 0, 0.55);
+  --ink: var(--vc-ink, #f1f2f6);
+  --muted: var(--vc-muted, #9ba0b4);
+  --line: var(--vc-line, #262939);
+  --panel: var(--vc-surface, #161824);
+  --bg: var(--vc-canvas, #0d0e15);
+  --purple: var(--vc-brand-strong, #c084fc);
+  --blue: var(--vc-blue, #38bdf8);
+  --amber: var(--vc-state-warning, #fbbf24);
+  --pink: var(--vc-brand, #f472b6);
+  --shadow: var(--vc-elevation-2, 0 18px 46px rgba(0, 0, 0, 0.55));
 }
 
 /* App shell & canvas */

@@ -1,23 +1,16 @@
 /* Dark surfaces shared by the operational workspaces. Keep photographic and
    status colors intact; these overrides only replace light UI chrome. */
 :is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark, [data-theme="dark"]) {
-  --vc-surface: #171a25;
-  --vc-surface-raised: #1e2230;
-  --vc-surface-soft: #12151e;
-  --vc-line: #303447;
-  --vc-ink: #f1f3f8;
-  --vc-muted: #b2b8c8;
-  --vc-focus: #d08cf1;
-  --cream: #0d0e15;
-  --cream-2: #161824;
-  --paper: #171a25;
-  --surface: #171a25;
-  --surface-card: #1e2230;
-  --surface-soft: #1e2230;
-  --panel: #171a25;
-  --line: #303447;
-  --ink: #f1f3f8;
-  --muted: #b2b8c8;
+  --cream: var(--vc-canvas, #0d0e15);
+  --cream-2: var(--vc-surface, #161824);
+  --paper: var(--vc-surface, #171a25);
+  --surface: var(--vc-surface, #171a25);
+  --surface-card: var(--vc-surface-raised, #1e2230);
+  --surface-soft: var(--vc-surface-raised, #1e2230);
+  --panel: var(--vc-surface, #171a25);
+  --line: var(--vc-line, #303447);
+  --ink: var(--vc-ink, #f1f3f8);
+  --muted: var(--vc-muted, #b2b8c8);
   color-scheme: dark;
 }
 

@@ -1,0 +1,137 @@
+/* Visual Corp Suite semantic tokens. Primitive brand values stay stable; semantic
+   values change with the active Suite theme. */
+:root {
+  --vc-brand-magenta: #a51091;
+  --vc-brand-plum: #7e1977;
+  --vc-brand-blue: #069cdb;
+  --vc-state-success: #16805d;
+  --vc-state-warning: #9a5608;
+  --vc-state-danger: #bd4052;
+  --vc-state-info: #05749e;
+  --vc-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --vc-space-1: 4px;
+  --vc-space-2: 8px;
+  --vc-space-3: 12px;
+  --vc-space-4: 16px;
+  --vc-space-5: 20px;
+  --vc-space-6: 24px;
+  --vc-space-8: 32px;
+  --vc-radius-sm: 8px;
+  --vc-radius-md: 12px;
+  --vc-radius-lg: 18px;
+  --vc-radius-pill: 999px;
+  --vc-elevation-1: 0 2px 8px rgb(34 23 47 / 5%);
+  --vc-elevation-2: 0 14px 38px rgb(34 23 47 / 10%);
+  --vc-motion-fast: 140ms;
+  --vc-motion-normal: 220ms;
+}
+
+:root[data-vc-theme="light"],
+body[data-vc-theme="light"],
+.work-app,
+.vc-dialog:not(.theme-dark) {
+  color-scheme: light;
+  --vc-canvas: #f7f6fa;
+  --vc-surface: #fff;
+  --vc-surface-raised: #fff;
+  --vc-surface-soft: #fcfbfe;
+  --vc-ink: #191522;
+  --vc-muted: #5e566b;
+  --vc-line: #e5e0ea;
+  --vc-focus: #a51091;
+  --vc-brand: #a51091;
+  --vc-brand-strong: #7e1977;
+  --vc-brand-soft: #f5eefa;
+  --vc-brand-action: #a51091;
+  --vc-brand-action-hover: #7e1977;
+  --vc-blue: #069cdb;
+  --vc-state-success: #16805d;
+  --vc-state-warning: #9a5608;
+  --vc-state-danger: #bd4052;
+  --vc-state-info: #05749e;
+  --vc-glass-surface: rgb(255 255 255 / 74%);
+  --vc-glass-border: rgb(255 255 255 / 82%);
+  --vc-glass-shadow: 0 18px 48px rgb(42 24 58 / 9%), inset 0 1px 0 rgb(255 255 255 / 76%);
+  --vc-glass-blur: 16px;
+  --ink: var(--vc-ink);
+  --muted: var(--vc-muted);
+  --line: var(--vc-line);
+  --panel: var(--vc-surface);
+  --surface: var(--vc-surface);
+  --surface-soft: var(--vc-surface-soft);
+  --bg: var(--vc-canvas);
+  --purple: var(--vc-brand-strong);
+  --magenta: var(--vc-brand);
+  --blue: var(--vc-blue);
+  --amber: var(--vc-state-warning);
+  --pink: #bf4b9f;
+  --shadow: var(--vc-elevation-2);
+}
+
+:root[data-vc-theme="dark"],
+body[data-vc-theme="dark"],
+.work-app.theme-dark,
+.work-app[data-theme="dark"],
+.vc-dialog.theme-dark {
+  color-scheme: dark;
+  --vc-canvas: #0d0e15;
+  --vc-surface: #171a25;
+  --vc-surface-raised: #1e2230;
+  --vc-surface-soft: #12151e;
+  --vc-ink: #f1f3f8;
+  --vc-muted: #b2b8c8;
+  --vc-line: #303447;
+  --vc-focus: #d093f0;
+  --vc-brand: #d093f0;
+  --vc-brand-strong: #e3bcff;
+  --vc-brand-soft: #30223d;
+  --vc-brand-action: #78408e;
+  --vc-brand-action-hover: #603477;
+  --vc-blue: #62c8f0;
+  --vc-state-success: #6dd3a5;
+  --vc-state-warning: #ffc66d;
+  --vc-state-danger: #ff9ba6;
+  --vc-state-info: #62c8f0;
+  --vc-glass-surface: rgb(23 26 37 / 78%);
+  --vc-glass-border: rgb(255 255 255 / 12%);
+  --vc-glass-shadow: 0 20px 58px rgb(0 0 0 / 30%), inset 0 1px 0 rgb(255 255 255 / 7%);
+  --ink: var(--vc-ink);
+  --muted: var(--vc-muted);
+  --line: var(--vc-line);
+  --panel: var(--vc-surface);
+  --surface: var(--vc-surface);
+  --surface-soft: var(--vc-surface-raised);
+  --bg: var(--vc-canvas);
+  --purple: var(--vc-brand-strong);
+  --magenta: var(--vc-brand);
+  --blue: var(--vc-blue);
+  --amber: var(--vc-state-warning);
+  --pink: #f472b6;
+  --shadow: 0 18px 46px rgb(0 0 0 / 55%);
+}
+
+.work-app {
+  box-sizing: border-box;
+  min-width: 0;
+  background: var(--vc-canvas);
+  color: var(--vc-ink);
+  font-family: var(--vc-font-sans);
+}
+
+.work-app *,
+.work-app *::before,
+.work-app *::after { box-sizing: border-box; }
+
+.work-app.theme-dark,
+.work-app[data-theme="dark"] {
+  background: var(--vc-canvas);
+  color: var(--vc-ink);
+}
+
+.work-app :is(input, select, textarea, button) { font: inherit; }
+.work-app :is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--vc-focus), transparent 58%);
+  outline-offset: 2px;
+}
+
+.work-app .table-wrap { width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; }

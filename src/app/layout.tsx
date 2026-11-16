@@ -12,6 +12,7 @@ import { Avatar, getGoogleAvatarUrl } from '../components/ui/Avatar';
 import { ProductionAttention } from '../pages/operations/ProductionAttention';
 import { Sidebar } from './Sidebar';
 import { ThemeSwitcher } from '../components/ui/ThemeSwitcher';
+import { useTheme } from './ThemeProvider';
 import './admin-dark-theme.css';
 import './admin-dark-refinements.css';
 import './admin-glass-theme.css';
@@ -31,33 +32,11 @@ export function AppFrame({ area, children }: AppFrameProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
+  const { theme, toggleTheme } = useTheme();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return window.localStorage.getItem('vc-suite-sidebar-collapsed') === 'true'; } catch { return false; }
   });
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    try {
-      const saved = window.localStorage.getItem('vc-suite-theme');
-      if (saved === 'dark' || saved === 'light') return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } catch {
-      return 'light';
-    }
-  });
-
-  const toggleTheme = () => {
-    setTheme((curr) => {
-      const next = curr === 'dark' ? 'light' : 'dark';
-      try { window.localStorage.setItem('vc-suite-theme', next); } catch {}
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    document.body.setAttribute('data-theme', theme);
-  }, [theme]);
-
   const toggleSidebar = () => setSidebarCollapsed((collapsed) => {
     const next = !collapsed;
     try { window.localStorage.setItem('vc-suite-sidebar-collapsed', String(next)); } catch { /* Storage can be unavailable in private browsing. */ }
