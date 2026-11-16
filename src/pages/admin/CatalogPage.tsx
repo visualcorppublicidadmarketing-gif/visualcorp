@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   BadgeCheck,
@@ -26,7 +27,6 @@ import { useAuth } from '../../auth/AuthProvider';
 import { NumberTicker } from '../../components/ui/MagicComponents';
 import { supabase } from '../../lib/supabaseClient';
 import { StandardCustomProducts } from './StandardCustomProducts';
-import { ServiceCatalog } from './ServiceCatalog';
 import { CatalogProductCode, CatalogProductDetailDialog } from './CatalogProductDetailDialog';
 import './catalog-page.css';
 
@@ -282,9 +282,9 @@ export function CatalogPage() {
     <div className="catalog-page">
       <PageHeading
         eyebrow="CATÁLOGO DE OPERACIONES"
-        title="Catálogo de productos, artículos y servicios"
-        description="Organiza artículos por familia y administra servicios con paquetes, alcance y condiciones comerciales. Solo administración puede crear o modificar fichas y tarifas."
-        action={<span className="rate-pending"><BadgeCheck size={15}/> {productCatalog.length} productos · {serviceCount} servicios</span>}
+        title="Catálogo de productos y artículos"
+        description="Organiza artículos por familia y administra sus tarifas. El catálogo de servicios tiene su propia página, con paquetes y condiciones comerciales. Solo administración puede crear o modificar fichas y precios."
+        action={<div className="catalog-heading-actions"><span className="rate-pending"><BadgeCheck size={15}/> {productCatalog.length} productos · {serviceCount} servicios publicados</span><Link className="button button-outline" to="/operaciones/servicios"><BriefcaseBusiness size={15}/> Abrir servicios</Link></div>}
       />
 
       {skuStatus !== 'hidden' && <section className={`catalog-sku-panel panel${legacySkuCount ? ' has-pending' : ''}`} aria-label="Códigos de identificación del catálogo">
@@ -298,12 +298,10 @@ export function CatalogPage() {
       </section>}
 
       <StandardCustomProducts key={standardProductsRevision} editable={canEditProducts} editablePrices={canEditPrices} />
-      <ServiceCatalog canManage={canManageCatalog}/>
-
       <section className="catalog-overview" aria-label="Resumen del catálogo">
         <article className="panel"><span><Layers3 size={17}/></span><div><small>FAMILIAS DISPONIBLES</small><b><NumberTicker value={families.length}/></b><small>Categorías organizadas</small></div></article>
         <article className="panel"><span><Grid2X2 size={17}/></span><div><small>{isViewingCategory ? `PRODUCTOS EN ${selectedFamily?.toUpperCase()}` : 'ARTÍCULOS REGISTRADOS'}</small><b><NumberTicker value={showCategoryGrid ? productCatalog.length : filtered.length}/></b><small>{showCategoryGrid ? `En ${families.length} familias` : `${filtered.length} de ${productCatalog.length}`}</small></div></article>
-        <article className="panel"><span><BriefcaseBusiness size={17}/></span><div><small>SERVICIOS PUBLICADOS</small><b><NumberTicker value={serviceCount}/></b><small>Paquetes conectados con POS</small></div></article>
+        <article className="panel catalog-service-overview"><span><BriefcaseBusiness size={17}/></span><div><small>SERVICIOS PUBLICADOS</small><b><NumberTicker value={serviceCount}/></b><small>Paquetes conectados con POS</small></div><Link to="/operaciones/servicios" aria-label="Administrar catálogo de servicios"><ArrowRight size={15}/></Link></article>
       </section>
 
       {/* Main Exploration Section */}

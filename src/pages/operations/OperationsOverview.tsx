@@ -32,6 +32,10 @@ export type OperationsMetric = {
   value: number | null;
   icon: LucideIcon;
   tone: 'violet' | 'amber' | 'blue' | 'teal' | 'green';
+  breakdown?: {
+    jobs?: number | null;
+    legacy?: number | null;
+  };
 };
 
 type Props = {
@@ -123,10 +127,20 @@ export function OperationsOverview({ metrics, items, branches, hasData, onOpenFl
           const description = metric.value === null ? 'Conteo no confirmado por ahora' : metric.value === 0 ? metric.zeroDescription : metric.description;
           const clear = metric.value === 0;
           const valueLabel = metric.value === null ? 'sin conteo confirmado' : metric.value.toLocaleString('es-EC');
+          const hasLegacyBreakdown = metric.tab === 'production' && metric.breakdown && (metric.breakdown.legacy ?? 0) > 0;
           return <button className={`op-overview-metric ${metric.tone}${clear ? ' is-clear' : ''} vc-magic-card`} key={metric.tab} type="button" aria-label={`${metric.label}: ${valueLabel}, ${description}. Abrir.`} onClick={() => onOpenFlow(metric.tab)} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
             <SpotlightLayer/>
             <span className="op-overview-metric-icon"><Icon size={17}/></span>
-            <span className="op-overview-metric-copy"><span>{metric.label}</span><b>{metric.value === null ? '—' : <NumberTicker value={metric.value}/>}</b><small>{description}</small></span>
+            <span className="op-overview-metric-copy">
+              <span>{metric.label}</span>
+              <b>{metric.value === null ? '—' : <NumberTicker value={metric.value}/>}</b>
+              <small>{description}</small>
+              {hasLegacyBreakdown && (
+                <small style={{ color: '#8d5a00', fontWeight: 650 }}>
+                  ({metric.breakdown?.jobs ?? 0} vigentes + {metric.breakdown?.legacy} heredadas)
+                </small>
+              )}
+            </span>
             <ArrowUpRight className="op-overview-metric-arrow" size={15}/>
           </button>;
         })}

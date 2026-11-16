@@ -1844,6 +1844,72 @@
   background: #12141e;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-product-editor > :is(header, footer) {
+  background: var(--vc-surface, #171a25);
+  border-color: var(--vc-line, #303447);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-editor-section {
+  border-color: var(--vc-line, #303447);
+  background: var(--vc-surface-soft, #12151e);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-editor-section > header :is(h4, p) {
+  color: var(--vc-ink, #f1f3f8);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-editor-section > header > span {
+  border-color: var(--vc-line, #303447);
+  background: var(--vc-brand-soft, #30223d);
+  color: var(--vc-brand-strong, #e3bcff);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-image-grid figcaption :is(span, button) {
+  color: var(--vc-muted, #b2b8c8);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-image-grid figcaption button {
+  border-color: var(--vc-line, #303447);
+  background: var(--vc-surface-raised, #1e2230);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .standard-image-grid figcaption button.cover {
+  border-color: var(--vc-brand, #d093f0);
+  background: var(--vc-brand-soft, #30223d);
+  color: var(--vc-brand-strong, #e3bcff);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .catalog-detail-image-frame {
+  border-color: var(--vc-line, #303447);
+  background: var(--vc-surface-soft, #12151e);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .catalog-detail-image-nav,
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .catalog-detail-image-count {
+  border-color: var(--vc-line, #303447);
+  background: var(--vc-surface-raised, #1e2230);
+  color: var(--vc-ink, #f1f3f8);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(.catalog-detail-thumbnails button, .catalog-barcode-section, .catalog-barcode-preview, .catalog-barcode-controls :is(select, input), .catalog-barcode-actions button, .catalog-product-code button) {
+  border-color: var(--vc-line, #303447);
+  background: var(--vc-surface-raised, #1e2230);
+  color: var(--vc-ink, #f1f3f8);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(.catalog-detail-section, .catalog-detail-tiers p) {
+  border-color: var(--vc-line, #303447);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(.catalog-detail-section h3, .catalog-detail-facts dd, .catalog-detail-prices b, .catalog-detail-tiers strong, .catalog-barcode-section > header b, .catalog-barcode-preview > strong, .catalog-product-code, .catalog-product-code code) {
+  color: var(--vc-ink, #f1f3f8);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) :is(.catalog-detail-facts > div, .catalog-detail-prices > div, .catalog-detail-no-image) {
+  border-color: var(--vc-line, #303447);
+  background: var(--vc-surface-soft, #12151e);
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .catalog-toolbar .search-box {
   border-color: var(--vc-line, #262939);
   background: #191c28;

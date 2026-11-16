@@ -1,22 +1,64 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowDownToLine, ArrowUpFromLine, Boxes, Check, Clock3, Factory, FileText, LayoutDashboard, LoaderCircle, PackageCheck, RotateCcw, ShieldAlert, Trash2, Truck, Wallet } from 'lucide-react';
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Boxes,
+  Check,
+  Clock3,
+  Factory,
+  FileText,
+  LayoutDashboard,
+  LoaderCircle,
+  PackageCheck,
+  RotateCcw,
+  ShieldAlert,
+  Trash2,
+  Truck,
+  Wallet,
+} from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import './operations-lifecycle.css';
-import { OperationsOverview, type OperationsFlowTab, type OperationsMetric, type OperationsQueueItem, type OperationsQueueTab } from './OperationsOverview';
+import {
+  OperationsOverview,
+  type OperationsFlowTab,
+  type OperationsMetric,
+  type OperationsQueueItem,
+  type OperationsQueueTab,
+} from './OperationsOverview';
 import { ProductionOrderWorkspace } from './ProductionOrderWorkspace';
+import { ProductionJobDetailSheet } from './ProductionJobDetailSheet';
+import {
+  type JobStatus,
+  type ProductionJob,
+  type ProductionStep,
+  type StepStatus,
+  JOB_STATUS_LABELS,
+  STEP_STATUS_LABELS,
+  currentStage,
+  emitProductionChanged,
+  useProductionSync,
+} from '../../lib/productionHub';
 import { CommercialDocumentDetails } from '../../components/CommercialDocumentDetails';
 import { AdminDeleteRecordModal, type AdminDeleteTarget } from '../../components/AdminDeleteRecordModal';
 import { canAdminDeleteCash, canAdminDeleteSales } from '../../lib/adminCashSalesControl';
 import { Sheet, useConfirm } from '../../components/ui/OperationalKit';
 
 const tabs = [
-  ['cash','Caja',Wallet],['returns','Devoluciones',RotateCcw],['transfers','Transferencias',ArrowUpFromLine],
-  ['production','Producción',Factory],['quotes','Cotizaciones',FileText],
+  ['cash', 'Caja', Wallet],
+  ['returns', 'Devoluciones', RotateCcw],
+  ['transfers', 'Transferencias', ArrowUpFromLine],
+  ['production', 'Producción', Factory],
+  ['quotes', 'Cotizaciones', FileText],
 ] as const;
-const money = (v) => new Intl.NumberFormat('es-EC',{style:'currency',currency:'USD'}).format(Number(v)||0);
-const date = (v) => v ? new Date(v).toLocaleString('es-EC',{dateStyle:'short',timeStyle:'short'}) : '—';
+
+const money = (v: unknown) =>
+  new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(Number(v) || 0);
+
+const date = (v: unknown) =>
+  v ? new Date(v as string | number | Date).toLocaleString('es-EC', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+
 const transferAgeLabel = (value: string) => {
   const timestamp = new Date(value).getTime();
   if (!Number.isFinite(timestamp)) return 'Fecha de despacho no disponible';
@@ -27,18 +69,38 @@ const transferAgeLabel = (value: string) => {
   const elapsedDays = Math.floor(elapsedHours / 24);
   return `hace ${elapsedDays} ${elapsedDays === 1 ? 'día' : 'días'}`;
 };
-const errText = (e) => e?.message || 'No se pudo completar la acción.';
-const isMissingCashRegisterSchema = (error) => {
+
+const errText = (e: any) => e?.message || 'No se pudo completar la acción.';
+
+const isMissingCashRegisterSchema = (error: any) => {
   const code = String(error?.code || '');
   const detail = `${error?.message || ''} ${error?.details || ''}`;
   return ['PGRST205', '42P01'].includes(code) && /cash_registers/i.test(detail);
 };
-const mainLocation = 'MAIN';
+
 const operationPageSizes = { cash: 80, returns: 80, transfers: 80, production: 100, quotes: 100 } as const;
 const saleSelectionPageSize = 100;
 const productionOrderPageSize = 100;
-const transferStatusLabels: Record<string, string> = { requested: 'Solicitada', approved: 'Aprobada', dispatched: 'Despachada', partially_received: 'Recepción parcial', received: 'Recibida', rejected: 'Rechazada', cancelled: 'Cancelada' };
-const quoteStatusLabels: Record<string, string> = { draft: 'Borrador', sent: 'Enviada', accepted: 'Aceptada', rejected: 'Rechazada', expired: 'Vencida', converted: 'Convertida' };
+
+const transferStatusLabels: Record<string, string> = {
+  requested: 'Solicitada',
+  approved: 'Aprobada',
+  dispatched: 'Despachada',
+  partially_received: 'Recepción parcial',
+  received: 'Recibida',
+  rejected: 'Rechazada',
+  cancelled: 'Cancelada',
+};
+
+const quoteStatusLabels: Record<string, string> = {
+  draft: 'Borrador',
+  sent: 'Enviada',
+  accepted: 'Aceptada',
+  rejected: 'Rechazada',
+  expired: 'Vencida',
+  converted: 'Convertida',
+};
+
 const transferPayloadHash = (value: string) => {
   let first = 2166136261;
   let second = 0x9e3779b9;
@@ -49,287 +111,2694 @@ const transferPayloadHash = (value: string) => {
   }
   return `${(first >>> 0).toString(16).padStart(8, '0')}${(second >>> 0).toString(16).padStart(8, '0')}`;
 };
+
 type OperationsOverviewCounts = Record<OperationsQueueTab, number | null>;
 
 export function OperationsLifecycle() {
-  const {organizationId,user,roles,hasPermission}=useAuth();
-  const confirmDialog=useConfirm();
-  const navigate=useNavigate();
-  const [searchParams,setSearchParams] = useSearchParams();
-  const [tab,setTab]=useState(searchParams.get('tab')||'overview'); const [loading,setLoading]=useState(true); const [hasLoaded,setHasLoaded]=useState(false); const [refreshing,setRefreshing]=useState(false); const [refreshFailed,setRefreshFailed]=useState(false); const [busy,setBusy]=useState(false); const [error,setError]=useState(''); const [notice,setNotice]=useState('');
-  const [focusRequest,setFocusRequest]=useState(0);
-  const pendingFocusId=useRef('');
-  const loadedSalesPages=useRef(1);
-  const transferActionLocks=useRef(new Set<string>());
-  const transferRetryKeys=useRef(new Map<string,string>());
-  const [branches,setBranches]=useState([]); const [areas,setAreas]=useState([]); const [variants,setVariants]=useState([]); const [locations,setLocations]=useState([]); const [cash,setCash]=useState([]); const [cashRegisters,setCashRegisters]=useState([]); const [cashRegisterSchemaReady,setCashRegisterSchemaReady]=useState<boolean|null>(null); const [teamMembers,setTeamMembers]=useState([]); const [purchaseOrders,setPurchaseOrders]=useState([]); const [hasMoreProductionOrders,setHasMoreProductionOrders]=useState(false); const [loadingMoreProductionOrders,setLoadingMoreProductionOrders]=useState(false); const [hasMoreSales,setHasMoreSales]=useState(false); const [loadingMoreSales,setLoadingMoreSales]=useState(false);
-  const [flowPages,setFlowPages]=useState({cash:{hasMore:false,loading:false},returns:{hasMore:false,loading:false},transfers:{hasMore:false,loading:false},quotes:{hasMore:false,loading:false}});
-  const [overviewCounts,setOverviewCounts]=useState<OperationsOverviewCounts>({cash:null,returns:null,transfers:null,production:null,quotes:null,purchases:null}); const [overviewCountRevision,setOverviewCountRevision]=useState(0);
-  const [otherCloseForms,setOtherCloseForms]=useState<Record<string,{counted:string;note:string}>>({});
-  const [cashMovementForm,setCashMovementForm]=useState({direction:'in',amount:'',reason:''});
-  const [sales,setSales]=useState([]); const [saleLines,setSaleLines]=useState([]); const [loadingSaleLines,setLoadingSaleLines]=useState(false); const [saleLinesError,setSaleLinesError]=useState(''); const [saleLinesRetry,setSaleLinesRetry]=useState(0); const [returns,setReturns]=useState([]); const [refundSettlements,setRefundSettlements]=useState([]); const [refundSettlementRefs,setRefundSettlementRefs]=useState({}); const [transfers,setTransfers]=useState([]); const [transferLines,setTransferLines]=useState([]); const [orders,setOrders]=useState([]); const [productionEvents,setProductionEvents]=useState([]); const [quotes,setQuotes]=useState([]);
-  const [selectedQuote,setSelectedQuote]=useState<any>(null);
-  const [branchId,setBranchId]=useState(''); const [cashRegisterId,setCashRegisterId]=useState(''); const [opening,setOpening]=useState('0'); const [counted,setCounted]=useState(''); const [cashNote,setCashNote]=useState('');
-  const [saleId,setSaleId]=useState(''); const [returnQty,setReturnQty]=useState({}); const [returnDisposition,setReturnDisposition]=useState({}); const [refund,setRefund]=useState('0'); const [refundMethod,setRefundMethod]=useState('other'); const [returnNote,setReturnNote]=useState('');
-  const [transferForm,setTransferForm]=useState({from:'',to:'',variant:'',quantity:'',note:'',fromLocation:'MAIN',toLocation:'MAIN'}); const [transferQty,setTransferQty]=useState({}); const [transferNotes,setTransferNotes]=useState({});
-  const [orderForm,setOrderForm]=useState({branch:'',area:'',title:'',description:'',priority:'normal',due:'',sale:'',assignedTo:'',nextStep:''}); const [consumeForm,setConsumeForm]=useState({order:'',variant:'',quantity:'',note:'',location:''});
-  const visibleFlowTabs=tabs.filter(([id])=>id==='cash'
-    ? hasPermission('sales','view')&&(hasPermission('cash','view')||hasPermission('sales','edit'))
-    : hasPermission(id==='returns'?'sales':id==='transfers'?'inventory':id==='production'?'workshop':'quotes','view'));
-  const visibleTabs=[['overview','Resumen',LayoutDashboard] as const,...visibleFlowTabs];
-  const canManageCash=hasPermission('cash','manage_cash');
-  const canEditSales=hasPermission('sales','edit');
-  const canEditQuotes=hasPermission('quotes','edit');
-  const canSettleRefund=hasPermission('sales','settle_refund');
-  const canManageProduction=hasPermission('workshop','edit');
-  const canManageTransfers=hasPermission('inventory','edit');
-  const canCloseOtherCash=canManageCash;
-  const canDeleteCash=canAdminDeleteCash(roles,hasPermission);
-  const canDeleteSales=canAdminDeleteSales(roles,hasPermission);
-  const [adminDeleteTarget,setAdminDeleteTarget]=useState<AdminDeleteTarget|null>(null);
-  const readRelatedRows=async(table,select,foreignKey,ids:string[])=>{
-    if(!supabase||!organizationId||!ids.length)return[];
-    const client:any=supabase;const pageSize=500;const rows=[];
-    for(let from=0;;from+=pageSize){
-      const {data,error:e}=await client.from(table).select(select).eq('organization_id',organizationId).in(foreignKey,ids).order('id',{ascending:true}).range(from,from+pageSize-1);
-      if(e)throw e;
-      const page=data||[];rows.push(...page);
-      if(page.length<pageSize)break;
+  const { organizationId, user, roles, hasPermission } = useAuth();
+  const confirmDialog = useConfirm();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [tab, setTab] = useState(searchParams.get('tab') || 'overview');
+  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshFailed, setRefreshFailed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+
+  const [focusRequest, setFocusRequest] = useState(0);
+  const pendingFocusId = useRef('');
+  const loadedSalesPages = useRef(1);
+  const transferActionLocks = useRef(new Set<string>());
+  const transferRetryKeys = useRef(new Map<string, string>());
+
+  const [branches, setBranches] = useState<any[]>([]);
+  const [areas, setAreas] = useState<any[]>([]);
+  const [variants, setVariants] = useState<any[]>([]);
+  const [locations, setLocations] = useState<any[]>([]);
+  const [cash, setCash] = useState<any[]>([]);
+  const [cashRegisters, setCashRegisters] = useState<any[]>([]);
+  const [cashRegisterSchemaReady, setCashRegisterSchemaReady] = useState<boolean | null>(null);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
+  const [hasMoreProductionOrders, setHasMoreProductionOrders] = useState(false);
+  const [loadingMoreProductionOrders, setLoadingMoreProductionOrders] = useState(false);
+  const [hasMoreSales, setHasMoreSales] = useState(false);
+  const [loadingMoreSales, setLoadingMoreSales] = useState(false);
+
+  const [flowPages, setFlowPages] = useState({
+    cash: { hasMore: false, loading: false },
+    returns: { hasMore: false, loading: false },
+    transfers: { hasMore: false, loading: false },
+    quotes: { hasMore: false, loading: false },
+  });
+
+  const [overviewCounts, setOverviewCounts] = useState<OperationsOverviewCounts>({
+    cash: null,
+    returns: null,
+    transfers: null,
+    production: null,
+    quotes: null,
+    purchases: null,
+  });
+  const [productionCountDetails, setProductionCountDetails] = useState<{ jobs: number | null; legacy: number | null }>({
+    jobs: null,
+    legacy: null,
+  });
+  const [overviewCountRevision, setOverviewCountRevision] = useState(0);
+
+  const [otherCloseForms, setOtherCloseForms] = useState<Record<string, { counted: string; note: string }>>({});
+  const [cashMovementForm, setCashMovementForm] = useState({ direction: 'in', amount: '', reason: '' });
+
+  const [sales, setSales] = useState<any[]>([]);
+  const [saleLines, setSaleLines] = useState<any[]>([]);
+  const [loadingSaleLines, setLoadingSaleLines] = useState(false);
+  const [saleLinesError, setSaleLinesError] = useState('');
+  const [saleLinesRetry, setSaleLinesRetry] = useState(0);
+
+  const [returns, setReturns] = useState<any[]>([]);
+  const [refundSettlements, setRefundSettlements] = useState<any[]>([]);
+  const [refundSettlementRefs, setRefundSettlementRefs] = useState<Record<string, string>>({});
+
+  const [transfers, setTransfers] = useState<any[]>([]);
+  const [transferLines, setTransferLines] = useState<any[]>([]);
+
+  // Órdenes heredadas (production_orders)
+  const [orders, setOrders] = useState<any[]>([]);
+  const [productionEvents, setProductionEvents] = useState<any[]>([]);
+
+  // Trabajos de producción vigentes (production_jobs)
+  const [productionJobs, setProductionJobs] = useState<ProductionJob[]>([]);
+  const [productionJobSteps, setProductionJobSteps] = useState<ProductionStep[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+
+  const [quotes, setQuotes] = useState<any[]>([]);
+  const [selectedQuote, setSelectedQuote] = useState<any>(null);
+
+  const [branchId, setBranchId] = useState('');
+  const [cashRegisterId, setCashRegisterId] = useState('');
+  const [opening, setOpening] = useState('0');
+  const [counted, setCounted] = useState('');
+  const [cashNote, setCashNote] = useState('');
+
+  const [saleId, setSaleId] = useState('');
+  const [returnQty, setReturnQty] = useState<Record<string, string>>({});
+  const [returnDisposition, setReturnDisposition] = useState<Record<string, string>>({});
+  const [refund, setRefund] = useState('0');
+  const [refundMethod, setRefundMethod] = useState('other');
+  const [returnNote, setReturnNote] = useState('');
+
+  const [transferForm, setTransferForm] = useState({
+    from: '',
+    to: '',
+    variant: '',
+    quantity: '',
+    note: '',
+    fromLocation: 'MAIN',
+    toLocation: 'MAIN',
+  });
+  const [transferQty, setTransferQty] = useState<Record<string, string>>({});
+  const [transferNotes, setTransferNotes] = useState<Record<string, string>>({});
+
+  const [orderForm, setOrderForm] = useState({
+    branch: '',
+    area: '',
+    title: '',
+    description: '',
+    priority: 'normal',
+    due: '',
+    sale: '',
+    assignedTo: '',
+    nextStep: '',
+  });
+  const [consumeForm, setConsumeForm] = useState({
+    order: '',
+    variant: '',
+    quantity: '',
+    note: '',
+    location: '',
+  });
+
+  const visibleFlowTabs = tabs.filter(([id]) =>
+    id === 'cash'
+      ? hasPermission('sales', 'view') && (hasPermission('cash', 'view') || hasPermission('sales', 'edit'))
+      : hasPermission(
+          id === 'returns' ? 'sales' : id === 'transfers' ? 'inventory' : id === 'production' ? 'workshop' : 'quotes',
+          'view'
+        )
+  );
+  const visibleTabs = [['overview', 'Resumen', LayoutDashboard] as const, ...visibleFlowTabs];
+
+  const canManageCash = hasPermission('cash', 'manage_cash');
+  const canEditSales = hasPermission('sales', 'edit');
+  const canEditQuotes = hasPermission('quotes', 'edit');
+  const canSettleRefund = hasPermission('sales', 'settle_refund');
+  const canManageProduction = hasPermission('workshop', 'edit');
+  const canManageTransfers = hasPermission('inventory', 'edit');
+  const canCloseOtherCash = canManageCash;
+  const canDeleteCash = canAdminDeleteCash(roles, hasPermission);
+  const canDeleteSales = canAdminDeleteSales(roles, hasPermission);
+  const [adminDeleteTarget, setAdminDeleteTarget] = useState<AdminDeleteTarget | null>(null);
+
+  const readRelatedRows = async (table: string, select: string, foreignKey: string, ids: string[]) => {
+    if (!supabase || !organizationId || !ids.length) return [];
+    const client: any = supabase;
+    const pageSize = 500;
+    const rows = [];
+    for (let from = 0; ; from += pageSize) {
+      const { data, error: e } = await client
+        .from(table)
+        .select(select)
+        .eq('organization_id', organizationId)
+        .in(foreignKey, ids)
+        .order('id', { ascending: true })
+        .range(from, from + pageSize - 1);
+      if (e) throw e;
+      const page = data || [];
+      rows.push(...page);
+      if (page.length < pageSize) break;
     }
     return rows;
   };
-  const readTransferLines=(ids:string[])=>readRelatedRows('stock_transfer_lines','*','transfer_id',ids);
-  const readProductionEvents=async(ids:string[])=>{
-    const rows=await readRelatedRows('production_order_events','id,order_id,from_status,to_status,note,created_by,created_at','order_id',ids);
-    return rows.sort((a,b)=>new Date(b.created_at||0).getTime()-new Date(a.created_at||0).getTime());
+
+  const readTransferLines = (ids: string[]) => readRelatedRows('stock_transfer_lines', '*', 'transfer_id', ids);
+  const readProductionEvents = async (ids: string[]) => {
+    const rows = await readRelatedRows(
+      'production_order_events',
+      'id,order_id,from_status,to_status,note,created_by,created_at',
+      'order_id',
+      ids
+    );
+    return rows.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   };
-  useEffect(()=>{const requested=searchParams.get('tab');if(!requested){if(tab!=='overview')setTab('overview');return;}if(visibleTabs.some(([id])=>id===requested)){if(tab!==requested)setTab(requested);return;}setTab(visibleTabs[0]?.[0]||'overview');},[tab,searchParams.toString(),visibleTabs.map(([id])=>id).join('|')]);
-  const refresh=useCallback(async()=>{
-    if(!organizationId||!supabase)return; setOverviewCountRevision(value=>value+1);setError('');setRefreshing(true);
-    const read=async(table,query,allowed=true)=>{if(!allowed)return[];const {data,error:e}=await query;if(e)throw e;return data||[];};
-    let cashRegisterSchemaReadyForLoad=true;
-    const readCashRegisters=async()=>{
-      try{return await read('cash_registers',supabase.from('cash_registers').select('id,branch_id,name,assigned_advisor_id,active').eq('organization_id',organizationId).order('branch_id').order('name'),hasPermission('cash','view')||hasPermission('sales','edit'));}
-      catch(cause){if(!isMissingCashRegisterSchema(cause))throw cause;cashRegisterSchemaReadyForLoad=false;return[];}
+
+  useEffect(() => {
+    const requested = searchParams.get('tab');
+    if (!requested) {
+      if (tab !== 'overview') setTab('overview');
+      return;
+    }
+    if (visibleTabs.some(([id]) => id === requested)) {
+      if (tab !== requested) setTab(requested);
+      return;
+    }
+    setTab(visibleTabs[0]?.[0] || 'overview');
+  }, [tab, searchParams.toString(), visibleTabs.map(([id]) => id).join('|')]);
+
+  // Deep linking para abrir trabajo directamente
+  useEffect(() => {
+    const jobParam = searchParams.get('job');
+    if (jobParam && jobParam !== selectedJobId) {
+      setSelectedJobId(jobParam);
+    }
+  }, [searchParams, selectedJobId]);
+
+  const refresh = useCallback(async () => {
+    if (!organizationId || !supabase) return;
+    setOverviewCountRevision((value) => value + 1);
+    setError('');
+    setRefreshing(true);
+
+    const read = async (table: string, query: any, allowed = true) => {
+      if (!allowed) return [];
+      const { data, error: e } = await query;
+      if (e) throw e;
+      return data || [];
     };
-    try{
-      const [b,a,v,c,cr,s,r,rs,t,o,q,loc,tm,po]=await Promise.all([
-        read('branches',supabase.from('branches').select('id,code,name').eq('organization_id',organizationId).eq('active',true).order('name')),
-        read('areas',supabase.from('areas').select('id,code,name').eq('organization_id',organizationId).eq('active',true).order('name'),hasPermission('workshop','view')),
-        read('inventory_variants',supabase.from('inventory_variants').select('id,sku,label,item_id,inventory_items(name,base_unit)').eq('organization_id',organizationId).eq('active',true).order('sku'),hasPermission('inventory','view')||hasPermission('workshop','view')),
-        read('cash_sessions',supabase.from('cash_sessions').select('*').eq('organization_id',organizationId).order('opened_at',{ascending:false}).order('id',{ascending:false}).limit(operationPageSizes.cash),hasPermission('cash','view')||hasPermission('sales','edit')),
+
+    let cashRegisterSchemaReadyForLoad = true;
+    const readCashRegisters = async () => {
+      try {
+        return await read(
+          'cash_registers',
+          supabase
+            .from('cash_registers')
+            .select('id,branch_id,name,assigned_advisor_id,active')
+            .eq('organization_id', organizationId)
+            .order('branch_id')
+            .order('name'),
+          hasPermission('cash', 'view') || hasPermission('sales', 'edit')
+        );
+      } catch (cause) {
+        if (!isMissingCashRegisterSchema(cause)) throw cause;
+        cashRegisterSchemaReadyForLoad = false;
+        return [];
+      }
+    };
+
+    try {
+      const [b, a, v, c, cr, s, r, rs, t, o, q, loc, tm, po, jobs] = await Promise.all([
+        read(
+          'branches',
+          supabase.from('branches').select('id,code,name').eq('organization_id', organizationId).eq('active', true).order('name')
+        ),
+        read(
+          'areas',
+          supabase.from('areas').select('id,code,name').eq('organization_id', organizationId).eq('active', true).order('name'),
+          hasPermission('workshop', 'view')
+        ),
+        read(
+          'inventory_variants',
+          supabase
+            .from('inventory_variants')
+            .select('id,sku,label,item_id,inventory_items(name,base_unit)')
+            .eq('organization_id', organizationId)
+            .eq('active', true)
+            .order('sku'),
+          hasPermission('inventory', 'view') || hasPermission('workshop', 'view')
+        ),
+        read(
+          'cash_sessions',
+          supabase
+            .from('cash_sessions')
+            .select('*')
+            .eq('organization_id', organizationId)
+            .order('opened_at', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(operationPageSizes.cash),
+          hasPermission('cash', 'view') || hasPermission('sales', 'edit')
+        ),
         readCashRegisters(),
-        read('sales',supabase.from('sales').select('id,sale_code,status,total,created_at,branch_id,customer_id,customers(full_name)').eq('organization_id',organizationId).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(saleSelectionPageSize*loadedSalesPages.current),hasPermission('sales','view')),
-        read('sale_returns',supabase.from('sale_returns').select('*,sales(branch_id)').eq('organization_id',organizationId).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(operationPageSizes.returns),hasPermission('sales','view')),
-        read('sale_refund_settlements',supabase.from('sale_refund_settlements').select('id,return_id,return_code,sale_id,amount,method,reference,cash_session_id,settled_at').eq('organization_id',organizationId).order('settled_at',{ascending:false}).limit(120),hasPermission('sales','view')),
-        read('stock_transfers',supabase.from('stock_transfers').select('*').eq('organization_id',organizationId).order('requested_at',{ascending:false}).order('id',{ascending:false}).limit(operationPageSizes.transfers),hasPermission('inventory','view')),
-        read('production_orders',supabase.from('production_orders').select('*,branches(name),areas(name)').eq('organization_id',organizationId).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(productionOrderPageSize),hasPermission('workshop','view')),
-        read('central_quotes',supabase.from('central_quotes').select('*').eq('organization_id',organizationId).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(operationPageSizes.quotes),hasPermission('quotes','view')),
-        read('inventory_locations',supabase.from('inventory_locations').select('id,branch_id,code,name,active').eq('organization_id',organizationId).eq('active',true).order('name'),hasPermission('inventory','view')||hasPermission('workshop','view')),
-        read('team_members',supabase.rpc('list_visualcorp_team_members'),hasPermission('team','view')),
-        read('purchase_orders',supabase.from('purchase_orders').select('id,order_number,status,branch_id,supplier_id,expected_date,created_at,updated_at,suppliers(name),purchase_order_lines(quantity_ordered,quantity_received)').eq('organization_id',organizationId).in('status',['ordered','partially_received']).order('expected_date',{ascending:true,nullsFirst:false}).order('updated_at',{ascending:true}).limit(100),hasPermission('purchases','view')),
+        read(
+          'sales',
+          supabase
+            .from('sales')
+            .select('id,sale_code,status,total,created_at,branch_id,customer_id,customers(full_name)')
+            .eq('organization_id', organizationId)
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(saleSelectionPageSize * loadedSalesPages.current),
+          hasPermission('sales', 'view')
+        ),
+        read(
+          'sale_returns',
+          supabase
+            .from('sale_returns')
+            .select('*,sales(branch_id)')
+            .eq('organization_id', organizationId)
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(operationPageSizes.returns),
+          hasPermission('sales', 'view')
+        ),
+        read(
+          'sale_refund_settlements',
+          supabase
+            .from('sale_refund_settlements')
+            .select('id,return_id,return_code,sale_id,amount,method,reference,cash_session_id,settled_at')
+            .eq('organization_id', organizationId)
+            .order('settled_at', { ascending: false })
+            .limit(120),
+          hasPermission('sales', 'view')
+        ),
+        read(
+          'stock_transfers',
+          supabase
+            .from('stock_transfers')
+            .select('*')
+            .eq('organization_id', organizationId)
+            .order('requested_at', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(operationPageSizes.transfers),
+          hasPermission('inventory', 'view')
+        ),
+        read(
+          'production_orders',
+          supabase
+            .from('production_orders')
+            .select('*,branches(name),areas(name)')
+            .eq('organization_id', organizationId)
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(productionOrderPageSize),
+          hasPermission('workshop', 'view')
+        ),
+        read(
+          'central_quotes',
+          supabase
+            .from('central_quotes')
+            .select('*')
+            .eq('organization_id', organizationId)
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(operationPageSizes.quotes),
+          hasPermission('quotes', 'view')
+        ),
+        read(
+          'inventory_locations',
+          supabase
+            .from('inventory_locations')
+            .select('id,branch_id,code,name,active')
+            .eq('organization_id', organizationId)
+            .eq('active', true)
+            .order('name'),
+          hasPermission('inventory', 'view') || hasPermission('workshop', 'view')
+        ),
+        read('team_members', supabase.rpc('list_visualcorp_team_members'), hasPermission('team', 'view')),
+        read(
+          'purchase_orders',
+          supabase
+            .from('purchase_orders')
+            .select(
+              'id,order_number,status,branch_id,supplier_id,expected_date,created_at,updated_at,suppliers(name),purchase_order_lines(quantity_ordered,quantity_received)'
+            )
+            .eq('organization_id', organizationId)
+            .in('status', ['ordered', 'partially_received'])
+            .order('expected_date', { ascending: true, nullsFirst: false })
+            .order('updated_at', { ascending: true })
+            .limit(100),
+          hasPermission('purchases', 'view')
+        ),
+        read(
+          'production_jobs',
+          supabase
+            .from('production_jobs')
+            .select('*,branches(name)')
+            .eq('organization_id', organizationId)
+            .order('created_at', { ascending: false })
+            .limit(100),
+          hasPermission('workshop', 'view')
+        ),
       ]);
-      const [tl,oe]=await Promise.all([hasPermission('inventory','view')?readTransferLines(t.map(row=>row.id)):[],hasPermission('workshop','view')?readProductionEvents(o.map(row=>row.id)):[]]);
-      setBranches(b);setAreas(a);setVariants(v);setLocations(loc);setCash(c);setCashRegisters(cr);setCashRegisterSchemaReady(cashRegisterSchemaReadyForLoad);setTeamMembers(tm);setPurchaseOrders(po);setSales(s);setHasMoreSales(s.length===saleSelectionPageSize*loadedSalesPages.current);setReturns(r);setRefundSettlements(rs);setTransfers(t);setTransferLines(tl);setOrders(o);setHasMoreProductionOrders(o.length===productionOrderPageSize);setProductionEvents(oe);setQuotes(q);
-      setFlowPages({cash:{hasMore:c.length===operationPageSizes.cash,loading:false},returns:{hasMore:r.length===operationPageSizes.returns,loading:false},transfers:{hasMore:t.length===operationPageSizes.transfers,loading:false},quotes:{hasMore:q.length===operationPageSizes.quotes,loading:false}});
-       setBranchId(x=>x||b[0]?.id||'');setOrderForm(x=>({...x,branch:x.branch||b[0]?.id||'',area:x.area||a[0]?.id||''}));setTransferForm(x=>({...x,from:x.from||b[0]?.id||'',to:x.to||b.find(y=>y.id!==b[0]?.id)?.id||''}));setHasLoaded(true);setRefreshFailed(false);
-    }catch(e){setError(errText(e));setRefreshFailed(true);}finally{setLoading(false);setRefreshing(false);}
-  },[organizationId,hasPermission]);
-  useEffect(()=>{setLoading(true);setHasLoaded(false);void refresh();},[refresh]);
-  useEffect(()=>{
-    if(!organizationId||!supabase||!saleId||!hasPermission('sales','view')){setSaleLines([]);setLoadingSaleLines(false);setSaleLinesError('');return;}
-    let active=true;
-    setSaleLines([]);setLoadingSaleLines(true);setSaleLinesError('');
-    void (async()=>{try{const {data,error:e}=await supabase.from('sale_lines').select('id,sale_id,description_snapshot,quantity,fulfilled_quantity,returned_quantity,unit_price,line_total,variant_id').eq('organization_id',organizationId).eq('sale_id',saleId).order('id',{ascending:true});if(e)throw e;if(active)setSaleLines(data||[]);}catch(e){if(active)setSaleLinesError(errText(e));}finally{if(active)setLoadingSaleLines(false);}})();
-    return ()=>{active=false;};
-  },[organizationId,saleId,saleLinesRetry,overviewCountRevision,hasPermission]);
-  useEffect(()=>{
-    if(!organizationId||!supabase)return;
-    let current=true;
-    const exactCount=async(query)=>{const {count,error:e}=await query;if(e)return null;return count??null;};
-    const cashQuery=branchId&&user?.id&&(hasPermission('cash','view')||hasPermission('sales','edit'))&&hasPermission('sales','view')
-      ? supabase.from('cash_sessions').select('id',{count:'exact',head:true}).eq('organization_id',organizationId).eq('branch_id',branchId).eq('status','open')
-      : null;
-    if(cashQuery&&!canCloseOtherCash&&user?.id)cashQuery.eq('opened_by',user.id);
+
+      const [tl, oe, pjs] = await Promise.all([
+        hasPermission('inventory', 'view') ? readTransferLines(t.map((row: any) => row.id)) : [],
+        hasPermission('workshop', 'view') ? readProductionEvents(o.map((row: any) => row.id)) : [],
+        hasPermission('workshop', 'view') && jobs?.length
+          ? readRelatedRows(
+              'production_job_steps',
+              'id,job_id,step_key,step_order,area_id,title,status,assigned_to,due_at,updated_at,created_at',
+              'job_id',
+              jobs.map((row: any) => row.id)
+            )
+          : [],
+      ]);
+
+      setBranches(b);
+      setAreas(a);
+      setVariants(v);
+      setLocations(loc);
+      setCash(c);
+      setCashRegisters(cr);
+      setCashRegisterSchemaReady(cashRegisterSchemaReadyForLoad);
+      setTeamMembers(tm);
+      setPurchaseOrders(po);
+      setSales(s);
+      setHasMoreSales(s.length === saleSelectionPageSize * loadedSalesPages.current);
+      setReturns(r);
+      setRefundSettlements(rs);
+      setTransfers(t);
+      setTransferLines(tl);
+      setOrders(o);
+      setHasMoreProductionOrders(o.length === productionOrderPageSize);
+      setProductionEvents(oe);
+      setQuotes(q);
+      setProductionJobs((jobs || []) as ProductionJob[]);
+      setProductionJobSteps((pjs || []) as ProductionStep[]);
+
+      setFlowPages({
+        cash: { hasMore: c.length === operationPageSizes.cash, loading: false },
+        returns: { hasMore: r.length === operationPageSizes.returns, loading: false },
+        transfers: { hasMore: t.length === operationPageSizes.transfers, loading: false },
+        quotes: { hasMore: q.length === operationPageSizes.quotes, loading: false },
+      });
+
+      setBranchId((x) => x || b[0]?.id || '');
+      setOrderForm((x) => ({ ...x, branch: x.branch || b[0]?.id || '', area: x.area || a[0]?.id || '' }));
+      setTransferForm((x) => ({
+        ...x,
+        from: x.from || b[0]?.id || '',
+        to: x.to || b.find((y: any) => y.id !== b[0]?.id)?.id || '',
+      }));
+      setHasLoaded(true);
+      setRefreshFailed(false);
+    } catch (e) {
+      setError(errText(e));
+      setRefreshFailed(true);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [organizationId, hasPermission]);
+
+  useEffect(() => {
+    setLoading(true);
+    setHasLoaded(false);
+    void refresh();
+  }, [refresh]);
+
+  // Sincronización compartida con eventos del taller y producción
+  const prodSync = useProductionSync({
+    onRefresh: refresh,
+    staleAfterMs: 120_000,
+  });
+
+  useEffect(() => {
+    if (!organizationId || !supabase || !saleId || !hasPermission('sales', 'view')) {
+      setSaleLines([]);
+      setLoadingSaleLines(false);
+      setSaleLinesError('');
+      return;
+    }
+    let active = true;
+    setSaleLines([]);
+    setLoadingSaleLines(true);
+    setSaleLinesError('');
+    void (async () => {
+      try {
+        const { data, error: e } = await supabase
+          .from('sale_lines')
+          .select('id,sale_id,description_snapshot,quantity,fulfilled_quantity,returned_quantity,unit_price,line_total,variant_id')
+          .eq('organization_id', organizationId)
+          .eq('sale_id', saleId)
+          .order('id', { ascending: true });
+        if (e) throw e;
+        if (active) setSaleLines(data || []);
+      } catch (e) {
+        if (active) setSaleLinesError(errText(e));
+      } finally {
+        if (active) setLoadingSaleLines(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [organizationId, saleId, saleLinesRetry, overviewCountRevision, hasPermission]);
+
+  // Consulta de métricas exactas del servidor para el resumen
+  useEffect(() => {
+    if (!organizationId || !supabase) return;
+    let current = true;
+    const exactCount = async (query: any) => {
+      const { count, error: e } = await query;
+      if (e) return null;
+      return count ?? null;
+    };
+
+    const cashQuery =
+      branchId && user?.id && (hasPermission('cash', 'view') || hasPermission('sales', 'edit')) && hasPermission('sales', 'view')
+        ? supabase.from('cash_sessions').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('branch_id', branchId).eq('status', 'open')
+        : null;
+    if (cashQuery && !canCloseOtherCash && user?.id) cashQuery.eq('opened_by', user.id);
+
     void Promise.all([
-      cashQuery?exactCount(cashQuery):Promise.resolve(null),
-      hasPermission('sales','view')
-        ? exactCount(supabase.from('sale_returns').select('id',{count:'exact',head:true}).eq('organization_id',organizationId).eq('refund_status','pending'))
+      cashQuery ? exactCount(cashQuery) : Promise.resolve(null),
+      hasPermission('sales', 'view')
+        ? exactCount(
+            supabase.from('sale_returns').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('refund_status', 'pending')
+          )
         : Promise.resolve(null),
-      hasPermission('inventory','view')
-        ? exactCount(supabase.from('stock_transfers').select('id',{count:'exact',head:true}).eq('organization_id',organizationId).in('status',['requested','approved','dispatched','partially_received']))
+      hasPermission('inventory', 'view')
+        ? exactCount(
+            supabase
+              .from('stock_transfers')
+              .select('id', { count: 'exact', head: true })
+              .eq('organization_id', organizationId)
+              .in('status', ['requested', 'approved', 'dispatched', 'partially_received'])
+          )
         : Promise.resolve(null),
-      hasPermission('workshop','view')
-        ? exactCount(supabase.from('production_orders').select('id',{count:'exact',head:true}).eq('organization_id',organizationId).not('status','in','("completed","cancelled")'))
+      hasPermission('workshop', 'view')
+        ? Promise.all([
+            exactCount(
+              supabase
+                .from('production_jobs')
+                .select('id', { count: 'exact', head: true })
+                .eq('organization_id', organizationId)
+                .not('status', 'in', '("completed","cancelled")')
+            ),
+            exactCount(
+              supabase
+                .from('production_orders')
+                .select('id', { count: 'exact', head: true })
+                .eq('organization_id', organizationId)
+                .not('status', 'in', '("completed","cancelled")')
+            ),
+          ]).then(([jobsCount, legacyCount]) => {
+            if (current) setProductionCountDetails({ jobs: jobsCount, legacy: legacyCount });
+            if (jobsCount === null && legacyCount === null) return null;
+            return (jobsCount || 0) + (legacyCount || 0);
+          })
         : Promise.resolve(null),
-      hasPermission('quotes','view')
-        ? exactCount(supabase.from('central_quotes').select('id',{count:'exact',head:true}).eq('organization_id',organizationId).in('status',['sent','accepted']))
+      hasPermission('quotes', 'view')
+        ? exactCount(
+            supabase
+              .from('central_quotes')
+              .select('id', { count: 'exact', head: true })
+              .eq('organization_id', organizationId)
+              .in('status', ['sent', 'accepted'])
+          )
         : Promise.resolve(null),
-      hasPermission('purchases','view')
-        ? exactCount(supabase.from('purchase_orders').select('id',{count:'exact',head:true}).eq('organization_id',organizationId).in('status',['ordered','partially_received']))
+      hasPermission('purchases', 'view')
+        ? exactCount(
+            supabase
+              .from('purchase_orders')
+              .select('id', { count: 'exact', head: true })
+              .eq('organization_id', organizationId)
+              .in('status', ['ordered', 'partially_received'])
+          )
         : Promise.resolve(null),
-    ]).then(([cashCount,returnCount,transferCount,productionCount,quoteCount,purchaseCount])=>{
-      if(current)setOverviewCounts({cash:cashCount,returns:returnCount,transfers:transferCount,production:productionCount,quotes:quoteCount,purchases:purchaseCount});
+    ]).then(([cashCount, returnCount, transferCount, productionCount, quoteCount, purchaseCount]) => {
+      if (current) {
+        setOverviewCounts({
+          cash: cashCount,
+          returns: returnCount,
+          transfers: transferCount,
+          production: productionCount,
+          quotes: quoteCount,
+          purchases: purchaseCount,
+        });
+      }
     });
-    return()=>{current=false;};
-  },[organizationId,branchId,user?.id,canCloseOtherCash,hasPermission,overviewCountRevision]);
-  const locationsForBranch=(id)=>locations.filter(location=>location.active&&location.branch_id===id);
-  const defaultLocation=(id)=>{const available=locationsForBranch(id);return available.find(location=>location.code==='MAIN')?.code||available[0]?.code||'';};
-  const selectedConsumeOrder=orders.find(order=>order.id===consumeForm.order);
-  const refundSettlementByReturn=useMemo(()=>Object.fromEntries(refundSettlements.map(settlement=>[settlement.return_id,settlement])),[refundSettlements]);
-  const fromLocations=locationsForBranch(transferForm.from);
-  const toLocations=locationsForBranch(transferForm.to);
-  const consumeLocations=locationsForBranch(selectedConsumeOrder?.branch_id);
-  useEffect(()=>{
-    if(!branches.length)return;
-    setTransferForm(current=>{
-      const from=branches.some(branch=>branch.id===current.from)?current.from:branches[0]?.id||'';
-      const to=branches.some(branch=>branch.id===current.to&&branch.id!==from)?current.to:branches.find(branch=>branch.id!==from)?.id||'';
-      const fromAvailable=locationsForBranch(from);const toAvailable=locationsForBranch(to);
-      return {...current,from,to,fromLocation:fromAvailable.some(location=>location.code===current.fromLocation)?current.fromLocation:defaultLocation(from),toLocation:toAvailable.some(location=>location.code===current.toLocation)?current.toLocation:defaultLocation(to)};
-    });
-  },[branches,locations]);
-  useEffect(()=>{
-    if(!selectedConsumeOrder)return;
-    const available=locationsForBranch(selectedConsumeOrder.branch_id);
-    setConsumeForm(current=>available.some(location=>location.code===current.location)?current:{...current,location:defaultLocation(selectedConsumeOrder.branch_id)});
-  },[selectedConsumeOrder?.branch_id,locations]);
-  useEffect(()=>{
-    if(searchParams.get('tab')!=='transfers')return;
-    const variant=searchParams.get('variant');const from=searchParams.get('from');const location=searchParams.get('location');
-    setTab('transfers');
-    setTransferForm(current=>{
-      const selectedFrom=branches.some(row=>row.id===from)?from:current.from;
-      const selectedTo=branches.find(row=>row.id!==selectedFrom)?.id||current.to;
-      const sourceLocations=locationsForBranch(selectedFrom);const destinationLocations=locationsForBranch(selectedTo);
-      const fromLocation=sourceLocations.some(row=>row.code===location)?location:sourceLocations.some(row=>row.code===current.fromLocation)?current.fromLocation:defaultLocation(selectedFrom);
-      const toLocation=destinationLocations.some(row=>row.code===current.toLocation)?current.toLocation:defaultLocation(selectedTo);
-      return {...current,variant:variants.some(row=>row.id===variant)?variant:current.variant,from:selectedFrom,to:selectedTo,fromLocation,toLocation};
-    });
-  },[searchParams.toString(),branches,variants,locations]);
-  const run=async(action,success)=>{setBusy(true);setError('');setNotice('');try{const value=await action();setNotice(typeof success==='function'?success(value):success);await refresh();return value;}catch(e){setError(errText(e));return null;}finally{setBusy(false);}};
-  const loadMoreFlow=async(flow:'cash'|'returns'|'transfers'|'quotes')=>{if(!organizationId||!supabase||flowPages[flow].loading)return;setFlowPages(current=>({...current,[flow]:{...current[flow],loading:true}}));setError('');try{const from=flow==='cash'?cash.length:flow==='returns'?returns.length:flow==='transfers'?transfers.length:quotes.length;const pageSize=operationPageSizes[flow];let data=null;let error=null;if(flow==='cash'){({data,error}=await supabase.from('cash_sessions').select('*').eq('organization_id',organizationId).order('opened_at',{ascending:false}).order('id',{ascending:false}).range(from,from+pageSize-1));}else if(flow==='returns'){({data,error}=await supabase.from('sale_returns').select('*,sales(branch_id)').eq('organization_id',organizationId).order('created_at',{ascending:false}).order('id',{ascending:false}).range(from,from+pageSize-1));}else if(flow==='transfers'){({data,error}=await supabase.from('stock_transfers').select('*').eq('organization_id',organizationId).order('requested_at',{ascending:false}).order('id',{ascending:false}).range(from,from+pageSize-1));}else{({data,error}=await supabase.from('central_quotes').select('*').eq('organization_id',organizationId).order('created_at',{ascending:false}).order('id',{ascending:false}).range(from,from+pageSize-1));}if(error)throw error;const next=data||[];const related=flow==='transfers'&&next.length&&hasPermission('inventory','view')?await readTransferLines(next.map(row=>row.id)):[];const append=(current)=>{const seen=new Set(current.map(row=>row.id));return [...current,...next.filter(row=>!seen.has(row.id))];};if(flow==='cash')setCash(append);else if(flow==='returns')setReturns(append);else if(flow==='transfers'){setTransfers(append);setTransferLines(current=>{const seen=new Set(current.map(row=>row.id));return [...current,...related.filter(row=>!seen.has(row.id))];});}else setQuotes(append);setFlowPages(current=>({...current,[flow]:{hasMore:next.length===pageSize,loading:false}}));}catch(e){setError(errText(e));}finally{setFlowPages(current=>({...current,[flow]:{...current[flow],loading:false}}));}};
-  const loadMoreSales=async()=>{if(!organizationId||!supabase||loadingMoreSales||!hasMoreSales)return;setLoadingMoreSales(true);setError('');try{const from=sales.length;const {data,error:e}=await supabase.from('sales').select('id,sale_code,status,total,created_at,branch_id,customer_id,customers(full_name)').eq('organization_id',organizationId).order('created_at',{ascending:false}).order('id',{ascending:false}).range(from,from+saleSelectionPageSize-1);if(e)throw e;const next=data||[];setSales(current=>{const seen=new Set(current.map(row=>row.id));return [...current,...next.filter(row=>!seen.has(row.id))];});loadedSalesPages.current=Math.max(loadedSalesPages.current,Math.ceil((from+next.length)/saleSelectionPageSize));setHasMoreSales(next.length===saleSelectionPageSize);}catch(e){setError(errText(e));}finally{setLoadingMoreSales(false);}};
-  const renderFlowLoadMore=(flow:'cash'|'returns'|'transfers'|'quotes',label:string)=>{
-    if(!flowPages[flow].hasMore)return null;
-    return <div className="op-flow-load-more"><span role="status">Hay más registros disponibles en este historial.</span><button className="button button-outline" type="button" disabled={flowPages[flow].loading||busy||refreshing} onClick={()=>void loadMoreFlow(flow)}>{flowPages[flow].loading?<><LoaderCircle className="spin" size={15}/> Cargando…</>:label}</button></div>;
+    return () => {
+      current = false;
+    };
+  }, [organizationId, branchId, user?.id, canCloseOtherCash, hasPermission, overviewCountRevision]);
+
+  const locationsForBranch = (id: string) => locations.filter((location) => location.active && location.branch_id === id);
+  const defaultLocation = (id: string) => {
+    const available = locationsForBranch(id);
+    return available.find((location) => location.code === 'MAIN')?.code || available[0]?.code || '';
   };
-  const loadMoreProductionOrders=async()=>{if(!organizationId||!supabase||loadingMoreProductionOrders)return;setLoadingMoreProductionOrders(true);setError('');try{const from=orders.length;const {data,error:e}=await supabase.from('production_orders').select('*,branches(name),areas(name)').eq('organization_id',organizationId).order('created_at',{ascending:false}).order('id',{ascending:false}).range(from,from+productionOrderPageSize-1);if(e)throw e;const next=data||[];const related=next.length&&hasPermission('workshop','view')?await readProductionEvents(next.map(row=>row.id)):[];setOrders(current=>{const seen=new Set(current.map(row=>row.id));return [...current,...next.filter(row=>!seen.has(row.id))];});setProductionEvents(current=>{const seen=new Set(current.map(row=>row.id));return [...current,...related.filter(row=>!seen.has(row.id))];});setHasMoreProductionOrders(next.length===productionOrderPageSize);}catch(e){setError(errText(e));}finally{setLoadingMoreProductionOrders(false);}};
-  const activeCash=cash.find(s=>s.status==='open'&&s.branch_id===branchId&&s.opened_by===user?.id);
-  const activeCashRegister=cashRegisters.find(register=>register.id===activeCash?.cash_register_id);
-  const otherOpenCash=canCloseOtherCash?cash.filter(s=>s.status==='open'&&s.branch_id===branchId&&s.opened_by!==user?.id):[]; const recentClosedCash=cash.filter(s=>s.status==='closed'&&s.branch_id===branchId);
-  const selectedSale=sales.find(s=>s.id===saleId); const linesForSale=saleLines.filter(l=>l.sale_id===saleId); const returnableLines=linesForSale.filter(l=>Number(l.fulfilled_quantity)-Number(l.returned_quantity)>0); const validReturnLines=linesForSale.filter(l=>{const quantity=Number(returnQty[l.id]);return Number.isFinite(quantity)&&quantity>0&&quantity<=Math.max(0,Number(l.fulfilled_quantity)-Number(l.returned_quantity));}); const hasInvalidReturnQuantity=linesForSale.some(l=>{const raw=returnQty[l.id];if(raw===undefined||raw==='')return false;const quantity=Number(raw);return !Number.isFinite(quantity)||quantity<0||quantity>Math.max(0,Number(l.fulfilled_quantity)-Number(l.returned_quantity));});
-  const branchRegisters=cashRegisters.filter(register=>register.branch_id===branchId);
-  const activeBranchRegisters=branchRegisters.filter(register=>register.active);
-  const myBranchRegisters=activeBranchRegisters.filter(register=>register.assigned_advisor_id===user?.id);
-  const currentUserRegisterId=myBranchRegisters[0]?.id||'';
-  const canOpenCash=canManageCash||(canEditSales&&Boolean(myBranchRegisters.length));
-  const canCloseCash=canManageCash||(canEditSales&&activeCash?.opened_by===user?.id);
-  const requiresRegister=branchRegisters.length>0;
-  const cashAssignmentNotice=cashRegisterSchemaReady===false
-    ? 'La configuración de cajas asignadas aún no está disponible en este entorno. Solicita que se aplique la migración de cajas antes de operar con asignaciones.'
-    : !canManageCash&&!myBranchRegisters.length
-    ? 'No tienes una caja activa asignada a tu usuario en esta sucursal. Pide a administración que configure tu asignación.'
-    : !canManageCash&&!canEditSales
-    ? 'Tu perfil puede consultar la caja, pero no tiene permiso para operar el turno. Solicita el permiso de edición de ventas.'
-    : !requiresRegister
-    ? 'Aún no hay cajas asignadas en esta sucursal. El turno quedará vinculado a tu usuario y sucursal.'
-    : myBranchRegisters.length
+
+  const selectedConsumeOrder = orders.find((order) => order.id === consumeForm.order);
+  const refundSettlementByReturn = useMemo(
+    () => Object.fromEntries(refundSettlements.map((settlement) => [settlement.return_id, settlement])),
+    [refundSettlements]
+  );
+  const fromLocations = locationsForBranch(transferForm.from);
+  const toLocations = locationsForBranch(transferForm.to);
+  const consumeLocations = locationsForBranch(selectedConsumeOrder?.branch_id);
+
+  useEffect(() => {
+    if (!branches.length) return;
+    setTransferForm((current) => {
+      const from = branches.some((branch) => branch.id === current.from) ? current.from : branches[0]?.id || '';
+      const to = branches.some((branch) => branch.id === current.to && branch.id !== from)
+        ? current.to
+        : branches.find((branch) => branch.id !== from)?.id || '';
+      const fromAvailable = locationsForBranch(from);
+      const toAvailable = locationsForBranch(to);
+      return {
+        ...current,
+        from,
+        to,
+        fromLocation: fromAvailable.some((location) => location.code === current.fromLocation)
+          ? current.fromLocation
+          : defaultLocation(from),
+        toLocation: toAvailable.some((location) => location.code === current.toLocation)
+          ? current.toLocation
+          : defaultLocation(to),
+      };
+    });
+  }, [branches, locations]);
+
+  useEffect(() => {
+    if (!selectedConsumeOrder) return;
+    const available = locationsForBranch(selectedConsumeOrder.branch_id);
+    setConsumeForm((current) =>
+      available.some((location) => location.code === current.location)
+        ? current
+        : { ...current, location: defaultLocation(selectedConsumeOrder.branch_id) }
+    );
+  }, [selectedConsumeOrder?.branch_id, locations]);
+
+  useEffect(() => {
+    if (searchParams.get('tab') !== 'transfers') return;
+    const variant = searchParams.get('variant');
+    const from = searchParams.get('from');
+    const location = searchParams.get('location');
+    setTab('transfers');
+    setTransferForm((current) => {
+      const selectedFrom = branches.some((row) => row.id === from) ? from : current.from;
+      const selectedTo = branches.find((row) => row.id !== selectedFrom)?.id || current.to;
+      const sourceLocations = locationsForBranch(selectedFrom);
+      const destinationLocations = locationsForBranch(selectedTo);
+      const fromLocation = sourceLocations.some((row) => row.code === location)
+        ? location
+        : sourceLocations.some((row) => row.code === current.fromLocation)
+        ? current.fromLocation
+        : defaultLocation(selectedFrom);
+      const toLocation = destinationLocations.some((row) => row.code === current.toLocation)
+        ? current.toLocation
+        : defaultLocation(selectedTo);
+      return {
+        ...current,
+        variant: variants.some((row) => row.id === variant) ? variant : current.variant,
+        from: selectedFrom,
+        to: selectedTo,
+        fromLocation,
+        toLocation,
+      };
+    });
+  }, [searchParams.toString(), branches, variants, locations]);
+
+  const run = async (action: () => Promise<any>, success: string | ((v: any) => string)) => {
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const value = await action();
+      setNotice(typeof success === 'function' ? success(value) : success);
+      await refresh();
+      return value;
+    } catch (e) {
+      setError(errText(e));
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const loadMoreFlow = async (flow: 'cash' | 'returns' | 'transfers' | 'quotes') => {
+    if (!organizationId || !supabase || flowPages[flow].loading) return;
+    setFlowPages((current) => ({ ...current, [flow]: { ...current[flow], loading: true } }));
+    setError('');
+    try {
+      const from =
+        flow === 'cash' ? cash.length : flow === 'returns' ? returns.length : flow === 'transfers' ? transfers.length : quotes.length;
+      const pageSize = operationPageSizes[flow];
+      let data = null;
+      let error = null;
+      if (flow === 'cash') {
+        ({ data, error } = await supabase
+          .from('cash_sessions')
+          .select('*')
+          .eq('organization_id', organizationId)
+          .order('opened_at', { ascending: false })
+          .order('id', { ascending: false })
+          .range(from, from + pageSize - 1));
+      } else if (flow === 'returns') {
+        ({ data, error } = await supabase
+          .from('sale_returns')
+          .select('*,sales(branch_id)')
+          .eq('organization_id', organizationId)
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .range(from, from + pageSize - 1));
+      } else if (flow === 'transfers') {
+        ({ data, error } = await supabase
+          .from('stock_transfers')
+          .select('*')
+          .eq('organization_id', organizationId)
+          .order('requested_at', { ascending: false })
+          .order('id', { ascending: false })
+          .range(from, from + pageSize - 1));
+      } else {
+        ({ data, error } = await supabase
+          .from('central_quotes')
+          .select('*')
+          .eq('organization_id', organizationId)
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .range(from, from + pageSize - 1));
+      }
+      if (error) throw error;
+      const next = data || [];
+      const related =
+        flow === 'transfers' && next.length && hasPermission('inventory', 'view')
+          ? await readTransferLines(next.map((row: any) => row.id))
+          : [];
+      const append = (current: any[]) => {
+        const seen = new Set(current.map((row) => row.id));
+        return [...current, ...next.filter((row: any) => !seen.has(row.id))];
+      };
+      if (flow === 'cash') setCash(append);
+      else if (flow === 'returns') setReturns(append);
+      else if (flow === 'transfers') {
+        setTransfers(append);
+        setTransferLines((current) => {
+          const seen = new Set(current.map((row) => row.id));
+          return [...current, ...related.filter((row: any) => !seen.has(row.id))];
+        });
+      } else setQuotes(append);
+      setFlowPages((current) => ({ ...current, [flow]: { hasMore: next.length === pageSize, loading: false } }));
+    } catch (e) {
+      setError(errText(e));
+    } finally {
+      setFlowPages((current) => ({ ...current, [flow]: { ...current[flow], loading: false } }));
+    }
+  };
+
+  const loadMoreSales = async () => {
+    if (!organizationId || !supabase || loadingMoreSales || !hasMoreSales) return;
+    setLoadingMoreSales(true);
+    setError('');
+    try {
+      const from = sales.length;
+      const { data, error: e } = await supabase
+        .from('sales')
+        .select('id,sale_code,status,total,created_at,branch_id,customer_id,customers(full_name)')
+        .eq('organization_id', organizationId)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(from, from + saleSelectionPageSize - 1);
+      if (e) throw e;
+      const next = data || [];
+      setSales((current) => {
+        const seen = new Set(current.map((row) => row.id));
+        return [...current, ...next.filter((row) => !seen.has(row.id))];
+      });
+      loadedSalesPages.current = Math.max(loadedSalesPages.current, Math.ceil((from + next.length) / saleSelectionPageSize));
+      setHasMoreSales(next.length === saleSelectionPageSize);
+    } catch (e) {
+      setError(errText(e));
+    } finally {
+      setLoadingMoreSales(false);
+    }
+  };
+
+  const renderFlowLoadMore = (flow: 'cash' | 'returns' | 'transfers' | 'quotes', label: string) => {
+    if (!flowPages[flow].hasMore) return null;
+    return (
+      <div className="op-flow-load-more">
+        <span role="status">Hay más registros disponibles en este historial.</span>
+        <button
+          className="button button-outline"
+          type="button"
+          disabled={flowPages[flow].loading || busy || refreshing}
+          onClick={() => void loadMoreFlow(flow)}
+        >
+          {flowPages[flow].loading ? (
+            <>
+              <LoaderCircle className="spin" size={15} /> Cargando…
+            </>
+          ) : (
+            label
+          )}
+        </button>
+      </div>
+    );
+  };
+
+  const loadMoreProductionOrders = async () => {
+    if (!organizationId || !supabase || loadingMoreProductionOrders) return;
+    setLoadingMoreProductionOrders(true);
+    setError('');
+    try {
+      const from = orders.length;
+      const { data, error: e } = await supabase
+        .from('production_orders')
+        .select('*,branches(name),areas(name)')
+        .eq('organization_id', organizationId)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(from, from + productionOrderPageSize - 1);
+      if (e) throw e;
+      const next = data || [];
+      const related =
+        next.length && hasPermission('workshop', 'view') ? await readProductionEvents(next.map((row: any) => row.id)) : [];
+      setOrders((current) => {
+        const seen = new Set(current.map((row) => row.id));
+        return [...current, ...next.filter((row: any) => !seen.has(row.id))];
+      });
+      setProductionEvents((current) => {
+        const seen = new Set(current.map((row) => row.id));
+        return [...current, ...related.filter((row: any) => !seen.has(row.id))];
+      });
+      setHasMoreProductionOrders(next.length === productionOrderPageSize);
+    } catch (e) {
+      setError(errText(e));
+    } finally {
+      setLoadingMoreProductionOrders(false);
+    }
+  };
+
+  const activeCash = cash.find((s) => s.status === 'open' && s.branch_id === branchId && s.opened_by === user?.id);
+  const activeCashRegister = cashRegisters.find((register) => register.id === activeCash?.cash_register_id);
+  const otherOpenCash = canCloseOtherCash
+    ? cash.filter((s) => s.status === 'open' && s.branch_id === branchId && s.opened_by !== user?.id)
+    : [];
+  const recentClosedCash = cash.filter((s) => s.status === 'closed' && s.branch_id === branchId);
+
+  const selectedSale = sales.find((s) => s.id === saleId);
+  const linesForSale = saleLines.filter((l) => l.sale_id === saleId);
+  const returnableLines = linesForSale.filter((l) => Number(l.fulfilled_quantity) - Number(l.returned_quantity) > 0);
+  const validReturnLines = linesForSale.filter((l) => {
+    const quantity = Number(returnQty[l.id]);
+    return (
+      Number.isFinite(quantity) &&
+      quantity > 0 &&
+      quantity <= Math.max(0, Number(l.fulfilled_quantity) - Number(l.returned_quantity))
+    );
+  });
+  const hasInvalidReturnQuantity = linesForSale.some((l) => {
+    const raw = returnQty[l.id];
+    if (raw === undefined || raw === '') return false;
+    const quantity = Number(raw);
+    return (
+      !Number.isFinite(quantity) ||
+      quantity < 0 ||
+      quantity > Math.max(0, Number(l.fulfilled_quantity) - Number(l.returned_quantity))
+    );
+  });
+
+  const branchRegisters = cashRegisters.filter((register) => register.branch_id === branchId);
+  const activeBranchRegisters = branchRegisters.filter((register) => register.active);
+  const myBranchRegisters = activeBranchRegisters.filter((register) => register.assigned_advisor_id === user?.id);
+  const currentUserRegisterId = myBranchRegisters[0]?.id || '';
+  const canOpenCash = canManageCash || (canEditSales && Boolean(myBranchRegisters.length));
+  const canCloseCash = canManageCash || (canEditSales && activeCash?.opened_by === user?.id);
+  const requiresRegister = branchRegisters.length > 0;
+
+  const cashAssignmentNotice =
+    cashRegisterSchemaReady === false
+      ? 'La configuración de cajas asignadas aún no está disponible en este entorno. Solicita que se aplique la migración de cajas antes de operar con asignaciones.'
+      : !canManageCash && !myBranchRegisters.length
+      ? 'No tienes una caja activa asignada a tu usuario en esta sucursal. Pide a administración que configure tu asignación.'
+      : !canManageCash && !canEditSales
+      ? 'Tu perfil puede consultar la caja, pero no tiene permiso para operar el turno. Solicita el permiso de edición de ventas.'
+      : !requiresRegister
+      ? 'Aún no hay cajas asignadas en esta sucursal. El turno quedará vinculado a tu usuario y sucursal.'
+      : myBranchRegisters.length
       ? `Este turno se abrirá en ${myBranchRegisters[0].name}, asignada a tu usuario.`
       : activeBranchRegisters.length
-        ? 'Esta sucursal ya tiene cajas activas, pero no hay una asignada a tu usuario. Pide a administración que te asigne una caja.'
-        : 'Las cajas de esta sucursal están deshabilitadas. Pide a administración que configure una caja activa antes de abrir un turno.';
-  useEffect(()=>{if(cashRegisterId!==currentUserRegisterId)setCashRegisterId(currentUserRegisterId);},[cashRegisterId,currentUserRegisterId]);
-  const openCash=()=>{if(!canOpenCash)return;return run(async()=>{if(requiresRegister&&!myBranchRegisters.some(register=>register.id===cashRegisterId))throw new Error('No tienes una caja activa asignada para esta sucursal.');const {data:rpcData,error:rpcErr}=await supabase.rpc('open_pos_cash_session',{p_branch_id:branchId,p_opening_cash:Number(opening)||0,p_cash_register_id:requiresRegister?cashRegisterId:null});if(!rpcErr)return rpcData;const isMissing=rpcErr.code==='PGRST202'||rpcErr.code==='42883'||/open_pos_cash_session/i.test(rpcErr.message||'');if(!isMissing)throw rpcErr;const {data,error:e}=await supabase.from('cash_sessions').insert({organization_id:organizationId,branch_id:branchId,cash_register_id:requiresRegister?cashRegisterId:null,opening_cash:Number(opening)||0,opened_by:user.id,status:'open'}).select('id').single();if(e)throw e;return data;},'Turno de caja abierto.');};
-  const closeCash=()=>{if(!canCloseCash)return;return run(async()=>{const {data,error:e}=await supabase.rpc('close_cash_session',{p_session:activeCash.id,p_counted_cash:Number(counted),p_note:cashNote});if(e)throw e;return data;},v=>`Caja cerrada. Esperado ${money(v.expected_cash)} · diferencia ${money(v.difference)}.`);};
-  const closeOtherCash=async(session)=>{if(!canManageCash)return;const form=otherCloseForms[session.id]||{counted:'',note:''};const countedCash=Number(form.counted);if(form.counted===''||!Number.isFinite(countedCash)||countedCash<0){setError('Ingresa el efectivo contado para cerrar este turno.');return;}const opener=teamMembers.find(member=>member.user_id===session.opened_by)?.full_name||'otro usuario';const accepted=await confirmDialog({eyebrow:'ARQUEO Y CIERRE DE CAJA',title:`¿Cerrar el turno abierto por ${opener}?`,description:`Se cerrará el turno de ${branchName(session.branch_id)} con el efectivo contado ingresado.`,tone:'warning',confirmLabel:'Confirmar cierre de caja',cancelLabel:'Cancelar',summaryItems:[{label:'Responsable del turno',value:opener},{label:'Sucursal',value:branchName(session.branch_id)},{label:'Efectivo contado',value:money(countedCash),tone:'highlight'}],consequences:['Finanzas volverá a calcular el efectivo esperado directamente en el servidor.','El turno quedará cerrado con registro de auditoría.']});if(!accepted)return;run(async()=>{const {data,error:e}=await supabase.rpc('close_cash_session',{p_session:session.id,p_counted_cash:countedCash,p_note:form.note.trim()});if(e)throw e;return data;},v=>`Turno de ${opener} cerrado. Esperado ${money(v.expected_cash)} · diferencia ${money(v.difference)}.`).then(result=>{if(result)setOtherCloseForms(current=>{const next={...current};delete next[session.id];return next;});});};
-  const cashMovement=async()=>{if(!canManageCash)return;const saved=await run(async()=>{const amount=Number(cashMovementForm.amount);const reason=cashMovementForm.reason.trim();if(!activeCash?.id||!Number.isFinite(amount)||amount<=0||reason.length<3)throw new Error('Ingresa un monto mayor a cero y un motivo de al menos 3 caracteres.');const {data,error:e}=await supabase.rpc('record_cash_session_movement',{p_session:activeCash.id,p_direction:cashMovementForm.direction,p_amount:amount,p_reason:reason,p_key:crypto.randomUUID()});if(e)throw e;return data;},'Movimiento de caja registrado.');if(saved)setCashMovementForm({direction:'in',amount:'',reason:''});};
-  const submitReturn=()=>{if(!canEditSales)return;return run(async()=>{const items=validReturnLines.map(l=>({sale_line_id:l.id,quantity:Number(returnQty[l.id]),disposition:returnDisposition[l.id]||'inspection'}));const {data,error:e}=await supabase.rpc('process_sale_return',{p_sale:saleId,p_lines:items,p_kind:'return',p_refund:Number(refund)||0,p_refund_method:refundMethod,p_refund_status:Number(refund)>0?'pending':'not_refunded',p_note:returnNote});if(e)throw e;return data;},v=>`Devolución ${v.return_code} guardada; el reembolso quedó registrado como pendiente.`);};
-  const cancelSale=async()=>{if(!canEditSales)return;const accepted=await confirmDialog({eyebrow:'ANULACIÓN DE ORDEN',title:`¿Cancelar la orden ${selectedSale?.sale_code}?`,description:'Se registrará la cancelación formal de la venta seleccionada.',tone:'danger',destructive:true,confirmLabel:'Cancelar orden de venta',cancelLabel:'Conservar orden',summaryItems:[{label:'Orden',value:selectedSale?.sale_code||'—',tone:'danger'},{label:'Motivo registrado',value:returnNote||'Cancelación de orden'}],consequences:['Se restaurarán al stock las unidades atendidas que aún no se hayan devuelto.','El reembolso monetario se gestiona y liquida por separado.']});if(!accepted)return;run(async()=>{const {data,error:e}=await supabase.rpc('process_sale_return',{p_sale:saleId,p_lines:[],p_kind:'cancellation',p_refund:0,p_refund_method:'other',p_refund_status:'not_refunded',p_note:returnNote||'Cancelación de orden'});if(e)throw e;return data;},v=>`Orden cancelada (${v.return_code}).`);};
-  const createTransfer=()=>{if(!canManageTransfers)return;return run(async()=>{if(!transferForm.fromLocation||!transferForm.toLocation)throw new Error('Selecciona una ubicación activa para ambas sucursales.');const {data,error:e}=await supabase.rpc('create_stock_transfer_request',{p_from_branch:transferForm.from,p_to_branch:transferForm.to,p_variant:transferForm.variant,p_quantity:Number(transferForm.quantity),p_note:transferForm.note,p_from_location:transferForm.fromLocation,p_to_location:transferForm.toLocation});if(e)throw e;return data;},v=>`Solicitud ${v.transfer_code} creada.`);};
-  const transferAction=(transfer,status)=>{if(!canManageTransfers)return;return run(async()=>{const {error:e}=await supabase.rpc('update_stock_transfer_status',{p_transfer:transfer.id,p_status:status,p_note:transferNotes[transfer.id]||''});if(e)throw e;},`Transferencia ${transferStatusLabels[status]?.toLowerCase()||'actualizada'}.`);};
-  const transferQtyJson=(transfer,mode)=>transferLines.filter(l=>l.transfer_id===transfer.id).map(l=>({line_id:l.id,quantity:Number(transferQty[`${mode}-${l.id}`]||0)})).filter(x=>x.quantity>0);
-  const transferCanDispatch=(transfer)=>['approved','dispatched','partially_received'].includes(transfer.status)&&transferLines.some(line=>line.transfer_id===transfer.id&&Number(line.dispatched_quantity)<Number(line.requested_quantity));
-  const transferCanReceive=(transfer)=>['dispatched','partially_received'].includes(transfer.status)&&transferLines.some(line=>line.transfer_id===transfer.id&&Number(line.received_quantity)<Number(line.dispatched_quantity));
-  const transferActionLines=async(transfer,mode)=>{
-    if(!canManageTransfers)return;
-    const lockKey=`${mode}:${transfer.id}`;
-    if(transferActionLocks.current.has(lockKey))return;
-    transferActionLocks.current.add(lockKey);
-    try{
-      const lines=transferQtyJson(transfer,mode).sort((a,b)=>a.line_id.localeCompare(b.line_id));
-      if(!lines.length){setError('Ingresa al menos una cantidad mayor que cero para procesar.');setNotice('');return null;}
-      const note=mode==='receive'?(transferNotes[transfer.id]||''):'';
-      const signature=JSON.stringify({transferId:transfer.id,mode,lines,note});
-      const storageKey=`visualcorp:transfer-action:${mode}:${transfer.id}:${transferPayloadHash(signature)}`;
-      let idempotencyKey=transferRetryKeys.current.get(storageKey)||'';
-      try{
-        idempotencyKey=window.localStorage.getItem(storageKey)||idempotencyKey;
-        if(!idempotencyKey){idempotencyKey=globalThis.crypto.randomUUID();window.localStorage.setItem(storageKey,idempotencyKey);}
-      }catch{
-        if(!idempotencyKey){idempotencyKey=globalThis.crypto.randomUUID();}
+      ? 'Esta sucursal ya tiene cajas activas, pero no hay una asignada a tu usuario. Pide a administración que te asigne una caja.'
+      : 'Las cajas de esta sucursal están deshabilitadas. Pide a administración que configure una caja activa antes de abrir un turno.';
+
+  useEffect(() => {
+    if (cashRegisterId !== currentUserRegisterId) setCashRegisterId(currentUserRegisterId);
+  }, [cashRegisterId, currentUserRegisterId]);
+
+  const openCash = () => {
+    if (!canOpenCash) return;
+    return run(async () => {
+      if (requiresRegister && !myBranchRegisters.some((register) => register.id === cashRegisterId)) {
+        throw new Error('No tienes una caja activa asignada para esta sucursal.');
       }
-      transferRetryKeys.current.set(storageKey,idempotencyKey);
-      const result=await run(async()=>{
-        const {data,error:e}=await supabase.rpc(mode==='dispatch'?'dispatch_stock_transfer':'receive_stock_transfer',mode==='dispatch'
-          ?{p_transfer:transfer.id,p_lines:lines,p_idempotency_key:idempotencyKey}
-          :{p_transfer:transfer.id,p_lines:lines,p_idempotency_key:idempotencyKey,p_note:note});
-        if(e)throw e;
+      const { data: rpcData, error: rpcErr } = await supabase.rpc('open_pos_cash_session', {
+        p_branch_id: branchId,
+        p_opening_cash: Number(opening) || 0,
+        p_cash_register_id: requiresRegister ? cashRegisterId : null,
+      });
+      if (!rpcErr) return rpcData;
+      const isMissing = rpcErr.code === 'PGRST202' || rpcErr.code === '42883' || /open_pos_cash_session/i.test(rpcErr.message || '');
+      if (!isMissing) throw rpcErr;
+      const { data, error: e } = await supabase
+        .from('cash_sessions')
+        .insert({
+          organization_id: organizationId,
+          branch_id: branchId,
+          cash_register_id: requiresRegister ? cashRegisterId : null,
+          opening_cash: Number(opening) || 0,
+          opened_by: user!.id,
+          status: 'open',
+        })
+        .select('id')
+        .single();
+      if (e) throw e;
+      return data;
+    }, 'Turno de caja abierto.');
+  };
+
+  const closeCash = () => {
+    if (!canCloseCash) return;
+    return run(
+      async () => {
+        const { data, error: e } = await supabase.rpc('close_cash_session', {
+          p_session: activeCash.id,
+          p_counted_cash: Number(counted),
+          p_note: cashNote,
+        });
+        if (e) throw e;
         return data;
-      },mode==='dispatch'?'Salida parcial registrada; el stock salió de origen.':'Recepción parcial registrada; solo lo recibido aumenta el stock destino.');
-      if(result){
-        try{window.localStorage.removeItem(storageKey);transferRetryKeys.current.delete(storageKey);}catch{/* Conserva la clave para que el reintento siga siendo seguro. */}
-        setTransferQty(current=>{const next={...current};for(const line of lines)delete next[`${mode}-${line.line_id}`];return next;});
+      },
+      (v) => `Caja cerrada. Esperado ${money(v.expected_cash)} · diferencia ${money(v.difference)}.`
+    );
+  };
+
+  const closeOtherCash = async (session: any) => {
+    if (!canManageCash) return;
+    const form = otherCloseForms[session.id] || { counted: '', note: '' };
+    const countedCash = Number(form.counted);
+    if (form.counted === '' || !Number.isFinite(countedCash) || countedCash < 0) {
+      setError('Ingresa el efectivo contado para cerrar este turno.');
+      return;
+    }
+    const opener = teamMembers.find((member) => member.user_id === session.opened_by)?.full_name || 'otro usuario';
+    const accepted = await confirmDialog({
+      eyebrow: 'ARQUEO Y CIERRE DE CAJA',
+      title: `¿Cerrar el turno abierto por ${opener}?`,
+      description: `Se cerrará el turno de ${branchName(session.branch_id)} con el efectivo contado ingresado.`,
+      tone: 'warning',
+      confirmLabel: 'Confirmar cierre de caja',
+      cancelLabel: 'Cancelar',
+      summaryItems: [
+        { label: 'Responsable del turno', value: opener },
+        { label: 'Sucursal', value: branchName(session.branch_id) },
+        { label: 'Efectivo contado', value: money(countedCash), tone: 'highlight' },
+      ],
+      consequences: [
+        'Finanzas volverá a calcular el efectivo esperado directamente en el servidor.',
+        'El turno quedará cerrado con registro de auditoría.',
+      ],
+    });
+    if (!accepted) return;
+    run(
+      async () => {
+        const { data, error: e } = await supabase.rpc('close_cash_session', {
+          p_session: session.id,
+          p_counted_cash: countedCash,
+          p_note: form.note.trim(),
+        });
+        if (e) throw e;
+        return data;
+      },
+      (v) => `Turno de ${opener} cerrado. Esperado ${money(v.expected_cash)} · diferencia ${money(v.difference)}.`
+    ).then((result) => {
+      if (result)
+        setOtherCloseForms((current) => {
+          const next = { ...current };
+          delete next[session.id];
+          return next;
+        });
+    });
+  };
+
+  const cashMovement = async () => {
+    if (!canManageCash) return;
+    const saved = await run(async () => {
+      const amount = Number(cashMovementForm.amount);
+      const reason = cashMovementForm.reason.trim();
+      if (!activeCash?.id || !Number.isFinite(amount) || amount <= 0 || reason.length < 3)
+        throw new Error('Ingresa un monto mayor a cero y un motivo de al menos 3 caracteres.');
+      const { data, error: e } = await supabase.rpc('record_cash_session_movement', {
+        p_session: activeCash.id,
+        p_direction: cashMovementForm.direction,
+        p_amount: amount,
+        p_reason: reason,
+        p_key: crypto.randomUUID(),
+      });
+      if (e) throw e;
+      return data;
+    }, 'Movimiento de caja registrado.');
+    if (saved) setCashMovementForm({ direction: 'in', amount: '', reason: '' });
+  };
+
+  const submitReturn = () => {
+    if (!canEditSales) return;
+    return run(
+      async () => {
+        const items = validReturnLines.map((l) => ({
+          sale_line_id: l.id,
+          quantity: Number(returnQty[l.id]),
+          disposition: returnDisposition[l.id] || 'inspection',
+        }));
+        const { data, error: e } = await supabase.rpc('process_sale_return', {
+          p_sale: saleId,
+          p_lines: items,
+          p_kind: 'return',
+          p_refund: Number(refund) || 0,
+          p_refund_method: refundMethod,
+          p_refund_status: Number(refund) > 0 ? 'pending' : 'not_refunded',
+          p_note: returnNote,
+        });
+        if (e) throw e;
+        return data;
+      },
+      (v) => `Devolución ${v.return_code} guardada; el reembolso quedó registrado como pendiente.`
+    );
+  };
+
+  const cancelSale = async () => {
+    if (!canEditSales) return;
+    const accepted = await confirmDialog({
+      eyebrow: 'ANULACIÓN DE ORDEN',
+      title: `¿Cancelar la orden ${selectedSale?.sale_code}?`,
+      description: 'Se registrará la cancelación formal de la venta seleccionada.',
+      tone: 'danger',
+      destructive: true,
+      confirmLabel: 'Cancelar orden de venta',
+      cancelLabel: 'Conservar orden',
+      summaryItems: [
+        { label: 'Orden', value: selectedSale?.sale_code || '—', tone: 'danger' },
+        { label: 'Motivo registrado', value: returnNote || 'Cancelación de orden' },
+      ],
+      consequences: [
+        'Se restaurarán al stock las unidades atendidas que aún no se hayan devuelto.',
+        'El reembolso monetario se gestiona y liquida por separado.',
+      ],
+    });
+    if (!accepted) return;
+    run(
+      async () => {
+        const { data, error: e } = await supabase.rpc('process_sale_return', {
+          p_sale: saleId,
+          p_lines: [],
+          p_kind: 'cancellation',
+          p_refund: 0,
+          p_refund_method: 'other',
+          p_refund_status: 'not_refunded',
+          p_note: returnNote || 'Cancelación de orden',
+        });
+        if (e) throw e;
+        return data;
+      },
+      (v) => `Orden cancelada (${v.return_code}).`
+    );
+  };
+
+  const createTransfer = () => {
+    if (!canManageTransfers) return;
+    return run(
+      async () => {
+        if (!transferForm.fromLocation || !transferForm.toLocation)
+          throw new Error('Selecciona una ubicación activa para ambas sucursales.');
+        const { data, error: e } = await supabase.rpc('create_stock_transfer_request', {
+          p_from_branch: transferForm.from,
+          p_to_branch: transferForm.to,
+          p_variant: transferForm.variant,
+          p_quantity: Number(transferForm.quantity),
+          p_note: transferForm.note,
+          p_from_location: transferForm.fromLocation,
+          p_to_location: transferForm.toLocation,
+        });
+        if (e) throw e;
+        return data;
+      },
+      (v) => `Solicitud ${v.transfer_code} creada.`
+    );
+  };
+
+  const transferAction = (transfer: any, status: string) => {
+    if (!canManageTransfers) return;
+    return run(async () => {
+      const { error: e } = await supabase.rpc('update_stock_transfer_status', {
+        p_transfer: transfer.id,
+        p_status: status,
+        p_note: transferNotes[transfer.id] || '',
+      });
+      if (e) throw e;
+    }, `Transferencia ${transferStatusLabels[status]?.toLowerCase() || 'actualizada'}.`);
+  };
+
+  const transferQtyJson = (transfer: any, mode: string) =>
+    transferLines
+      .filter((l) => l.transfer_id === transfer.id)
+      .map((l) => ({ line_id: l.id, quantity: Number(transferQty[`${mode}-${l.id}`] || 0) }))
+      .filter((x) => x.quantity > 0);
+
+  const transferCanDispatch = (transfer: any) =>
+    ['approved', 'dispatched', 'partially_received'].includes(transfer.status) &&
+    transferLines.some(
+      (line) => line.transfer_id === transfer.id && Number(line.dispatched_quantity) < Number(line.requested_quantity)
+    );
+
+  const transferCanReceive = (transfer: any) =>
+    ['dispatched', 'partially_received'].includes(transfer.status) &&
+    transferLines.some(
+      (line) => line.transfer_id === transfer.id && Number(line.received_quantity) < Number(line.dispatched_quantity)
+    );
+
+  const transferActionLines = async (transfer: any, mode: string) => {
+    if (!canManageTransfers) return;
+    const lockKey = `${mode}:${transfer.id}`;
+    if (transferActionLocks.current.has(lockKey)) return;
+    transferActionLocks.current.add(lockKey);
+    try {
+      const lines = transferQtyJson(transfer, mode).sort((a, b) => a.line_id.localeCompare(b.line_id));
+      if (!lines.length) {
+        setError('Ingresa al menos una cantidad mayor que cero para procesar.');
+        setNotice('');
+        return null;
+      }
+      const note = mode === 'receive' ? transferNotes[transfer.id] || '' : '';
+      const signature = JSON.stringify({ transferId: transfer.id, mode, lines, note });
+      const storageKey = `visualcorp:transfer-action:${mode}:${transfer.id}:${transferPayloadHash(signature)}`;
+      let idempotencyKey = transferRetryKeys.current.get(storageKey) || '';
+      try {
+        idempotencyKey = window.localStorage.getItem(storageKey) || idempotencyKey;
+        if (!idempotencyKey) {
+          idempotencyKey = globalThis.crypto.randomUUID();
+          window.localStorage.setItem(storageKey, idempotencyKey);
+        }
+      } catch {
+        if (!idempotencyKey) {
+          idempotencyKey = globalThis.crypto.randomUUID();
+        }
+      }
+      transferRetryKeys.current.set(storageKey, idempotencyKey);
+      const result = await run(
+        async () => {
+          const { data, error: e } = await supabase.rpc(
+            mode === 'dispatch' ? 'dispatch_stock_transfer' : 'receive_stock_transfer',
+            mode === 'dispatch'
+              ? { p_transfer: transfer.id, p_lines: lines, p_idempotency_key: idempotencyKey }
+              : { p_transfer: transfer.id, p_lines: lines, p_idempotency_key: idempotencyKey, p_note: note }
+          );
+          if (e) throw e;
+          return data;
+        },
+        mode === 'dispatch'
+          ? 'Salida parcial registrada; el stock salió de origen.'
+          : 'Recepción parcial registrada; solo lo recibido aumenta el stock destino.'
+      );
+      if (result) {
+        try {
+          window.localStorage.removeItem(storageKey);
+          transferRetryKeys.current.delete(storageKey);
+        } catch {
+          /* Conserva la clave para que el reintento siga siendo seguro. */
+        }
+        setTransferQty((current) => {
+          const next = { ...current };
+          for (const line of lines) delete next[`${mode}-${line.line_id}`];
+          return next;
+        });
       }
       return result;
-    }finally{transferActionLocks.current.delete(lockKey);}
+    } finally {
+      transferActionLocks.current.delete(lockKey);
+    }
   };
-  const createOrder=()=>{if(!canManageProduction)return;return run(async()=>{const {data,error:e}=await supabase.from('production_orders').insert({organization_id:organizationId,branch_id:orderForm.branch,area_id:orderForm.area||null,sale_id:orderForm.sale||null,assigned_to:orderForm.assignedTo||null,order_code:`OP-${Date.now().toString(36).toUpperCase()}-${crypto.randomUUID().slice(0,5).toUpperCase()}`,title:orderForm.title.trim(),description:orderForm.description.trim(),next_step:orderForm.nextStep.trim(),priority:orderForm.priority,due_at:orderForm.due?new Date(`${orderForm.due}T12:00:00`).toISOString():null,created_by:user.id}).select().single();if(e)throw e;setOrderForm(current=>({...current,title:'',description:'',nextStep:'',sale:'',assignedTo:'',due:'',priority:'normal'}));return data;},'Orden de trabajo creada.');};
-  const updateOrder=async(order,status,note)=>{if(!canManageProduction)return;if(['blocked','quality_review','ready','completed','cancelled'].includes(status)&&note.trim().length<5){setError('Añade una nota de al menos 5 caracteres para documentar este cambio.');return;}return run(async()=>{const {error:e}=await supabase.rpc('update_production_status',{p_order:order.id,p_status:status,p_note:note.trim()});if(e)throw e;},`Estado actualizado a ${status}.`);};
-  const updateProductionHandoff=(order,draft)=>{if(!canManageProduction)return;return run(async()=>{const {error:e}=await supabase.rpc('update_production_order_handoff',{p_order:order.id,p_assigned_to:draft.assignedTo||null,p_area_id:draft.areaId||null,p_due_at:draft.due?new Date(`${draft.due}T12:00:00`).toISOString():null,p_description:draft.description.trim(),p_next_step:draft.nextStep.trim(),p_note:draft.note.trim()});if(e)throw e;},'Traspaso registrado en el historial de la orden.');};
-  const consumeMaterial=()=>{if(!canManageProduction)return;return run(async()=>{if(!consumeForm.location)throw new Error('Selecciona una ubicación activa de la sucursal de la orden.');const {data,error:e}=await supabase.rpc('consume_production_material',{p_order:consumeForm.order,p_variant:consumeForm.variant,p_quantity:Number(consumeForm.quantity),p_location:consumeForm.location,p_note:consumeForm.note});if(e)throw e;return data;},'Consumo real registrado en inventario.');};
-  const branchName=(id)=>branches.find(b=>b.id===id)?.name||'Sucursal';
-  const lineVariant=(id)=>variants.find(v=>v.id===id);
-  const chooseTab=(nextTab:string)=>{setTab(nextTab);const next=new URLSearchParams(searchParams);if(nextTab==='overview')next.delete('tab');else next.set('tab',nextTab);setSearchParams(next,{replace:false});};
-  const openFlow=(nextTab:OperationsQueueTab,itemId?:string)=>{if(nextTab==='purchases'){navigate(itemId?`/operaciones/compras?order=${encodeURIComponent(itemId)}`:'/operaciones/compras');return;}pendingFocusId.current=itemId?`op-${nextTab}-${itemId}`:'';setFocusRequest(value=>value+1);chooseTab(nextTab);};
-  useEffect(()=>{if(loading||!pendingFocusId.current)return;const target=document.getElementById(pendingFocusId.current);if(target){target.scrollIntoView({behavior:'smooth',block:'center'});target.focus({preventScroll:true});}pendingFocusId.current='';},[tab,loading,searchParams.toString(),focusRequest]);
-  const overviewMetrics=useMemo<OperationsMetric[]>(()=>{
-    const metrics:Record<OperationsFlowTab,OperationsMetric>={
-      cash:{tab:'cash',label:'Caja abierta',description:'turnos abiertos en esta sucursal',zeroDescription:'No hay turnos abiertos en esta sucursal',value:overviewCounts.cash,icon:Wallet,tone:'violet'},
-      returns:{tab:'returns',label:'Reembolsos pendientes',description:'devoluciones por liquidar',zeroDescription:'No hay reembolsos por liquidar',value:overviewCounts.returns,icon:RotateCcw,tone:'amber'},
-      transfers:{tab:'transfers',label:'Traslados en curso',description:'solicitudes por completar',zeroDescription:'No hay solicitudes por completar',value:overviewCounts.transfers,icon:Boxes,tone:'blue'},
-      production:{tab:'production',label:'Producción activa',description:'órdenes sin cerrar',zeroDescription:'No hay órdenes activas',value:overviewCounts.production,icon:Factory,tone:'teal'},
-      quotes:{tab:'quotes',label:'Cotizaciones por seguir',description:'enviadas o aceptadas',zeroDescription:'No hay cotizaciones en seguimiento',value:overviewCounts.quotes,icon:FileText,tone:'green'},
-    };
-    const visible=visibleFlowTabs.map(([id])=>metrics[id as OperationsFlowTab]);
-      if(hasPermission('purchases','view'))visible.push({tab:'purchases',label:'Compras por recibir',description:'órdenes abiertas al proveedor',zeroDescription:'No hay órdenes pendientes de recibir',value:overviewCounts.purchases,icon:Truck,tone:'amber'});
-    return visible;
-  },[overviewCounts,visibleFlowTabs.map(([id])=>id).join('|'),hasPermission]);
-  const overviewItems=useMemo<OperationsQueueItem[]>(()=>{
-    const items:OperationsQueueItem[]=[];
-    for(const row of cash.filter(item=>item.status==='open'&&item.branch_id===branchId&&(item.opened_by===user?.id||canCloseOtherCash)))items.push({id:row.id,tab:'cash',title:`Turno de caja · ${branchName(row.branch_id)}`,detail:`Abierto ${date(row.opened_at)}`,action:'Revisar',status:'open',statusLabel:'Abierta',updatedAt:row.opened_at||'',severity:4,branchId:row.branch_id});
-    for(const row of returns.filter(item=>item.refund_status==='pending')){const sale=sales.find(item=>item.id===row.sale_id);items.push({id:row.id,tab:'returns',title:`Reembolso pendiente · ${row.return_code}`,detail:`${money(row.refund_amount)} · ${row.refund_method||'método pendiente'}`,action:canSettleRefund?'Liquidar':'Consultar',status:'pending',statusLabel:'Pendiente',updatedAt:row.created_at||'',severity:5,branchId:row.sales?.branch_id||sale?.branch_id});}
-    for(const row of transfers.filter(item=>['requested','approved','dispatched','partially_received'].includes(item.status)))items.push({id:row.id,tab:'transfers',title:`${row.transfer_code} · ${branchName(row.from_branch_id)} → ${branchName(row.to_branch_id)}`,detail:row.note||'Traslado de inventario',action:row.status==='requested'?'Revisar':'Continuar',status:row.status,statusLabel:row.status.replaceAll('_',' '),updatedAt:row.requested_at||'',severity:row.status==='requested'?4:3,branchId:row.from_branch_id});
-    const today=new Date();today.setHours(0,0,0,0);
-    for(const row of orders.filter(item=>!['completed','cancelled'].includes(item.status))){const overdue=Boolean(row.due_at&&new Date(row.due_at).getTime()<today.getTime());const owner=teamMembers.find(member=>member.user_id===row.assigned_to)?.full_name||'Sin responsable';items.push({id:row.id,tab:'production',title:`${row.order_code} · ${row.title}`,detail:`${row.branches?.name||branchName(row.branch_id)} · ${row.areas?.name||'Área pendiente'} · ${owner} · ${row.next_step||'Siguiente paso pendiente'}`,action:'Abrir orden',status:row.status,statusLabel:row.status.replaceAll('_',' '),updatedAt:row.updated_at||row.created_at||'',severity:overdue||row.priority==='urgent'||row.status==='blocked'?5:row.priority==='high'?4:3,overdue,dueAt:row.due_at||undefined,branchId:row.branch_id});}
-    for(const row of quotes.filter(item=>['sent','accepted'].includes(item.status)))items.push({id:row.id,tab:'quotes',title:`${row.quote_code} · ${row.customer_name||'Sin cliente'}`,detail:`${money(row.selected_total)} · ${row.price_confirmed?'Tarifa confirmada':'Tarifa por confirmar'}`,action:'Revisar',status:row.status,statusLabel:row.status==='accepted'?'Aceptada':'Enviada',updatedAt:row.updated_at||row.created_at||'',severity:row.status==='accepted'&&!row.price_confirmed?4:2,branchIndependent:true});
-    for(const row of purchaseOrders){const lines=Array.isArray(row.purchase_order_lines)?row.purchase_order_lines:[];const pendingLines=lines.filter(line=>Number(line.quantity_ordered)>Number(line.quantity_received));const dueAt=row.expected_date?`${row.expected_date}T12:00:00`:undefined;const overdue=Boolean(dueAt&&new Date(dueAt).getTime()<today.getTime());items.push({id:row.order_number,tab:'purchases',title:`${row.order_number} · ${row.suppliers?.name||'Proveedor'}`,detail:`${branchName(row.branch_id)} · ${pendingLines.length} ${pendingLines.length===1?'línea pendiente':'líneas pendientes'}`,action:hasPermission('purchases','receive_purchase')?'Registrar recepción':'Revisar orden',status:row.status,statusLabel:row.status==='partially_received'?'Recepción parcial':'Enviada',updatedAt:row.updated_at||row.created_at||'',severity:overdue?5:row.status==='partially_received'?4:3,overdue,dueAt,branchId:row.branch_id});}
-    return items.sort((a,b)=>Number(Boolean(b.overdue))-Number(Boolean(a.overdue))||b.severity-a.severity||new Date(b.updatedAt||0).getTime()-new Date(a.updatedAt||0).getTime());
-  },[cash,returns,transfers,orders,quotes,sales,purchaseOrders,teamMembers,branches,user?.id,canCloseOtherCash,canSettleRefund,branchId,hasPermission]);
 
-  if(!supabase)return <div className="op-flow-error">Conecta Supabase para utilizar estos flujos.</div>;
-  return <section className="op-flow-page">
-      <header className="op-flow-header"><p>Caja, devoluciones, compras, traslados, producción y cotizaciones conectados a sus registros centrales.</p><div className="op-flow-header-actions">{hasLoaded&&refreshFailed&&<span className="op-flow-stale" role="status"><ShieldAlert size={14}/> Datos sin actualizar</span>}<button className="button button-outline" onClick={refresh} disabled={refreshing||busy}><LoaderCircle className={refreshing?'spin':''} size={16}/> {refreshing?'Actualizando…':'Actualizar'}</button></div></header>
-      <nav className="op-flow-tabs" aria-label="Flujos operativos">{visibleTabs.map(([id,label,Icon])=><button key={id} type="button" aria-current={tab===id?'page':undefined} className={tab===id?'active':''} onClick={()=>chooseTab(id)}><Icon size={16}/>{label}</button>)}</nav>
-      {error&&<div className="op-flow-alert error"><ShieldAlert size={17}/>{error}</div>}{notice&&<div className="op-flow-alert success"><Check size={17}/>{notice}</div>}
-      {loading?<div className="op-flow-loading"><LoaderCircle className="spin"/> Cargando información compartida…</div>:<>
-      {tab==='overview'&&<OperationsOverview metrics={overviewMetrics} items={overviewItems} branches={branches} hasData={hasLoaded} onOpenFlow={openFlow} onRetry={() => void refresh()}/>}
-      {tab==='cash'&&<div className="op-flow-grid"><section className="panel"><div className="panel-heading"><div><span className="eyebrow">TURNO Y ARQUEO</span><h2>Caja</h2></div><div className="op-flow-head-actions"><Link className="button button-outline" to="/operaciones/cajas-abiertas">Control cajas abiertas</Link><Wallet size={19}/></div></div><label>Sucursal<select value={branchId} onChange={e=>setBranchId(e.target.value)}>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label>{activeCash?<><div id={`op-cash-${activeCash.id}`} tabIndex={-1} className="op-flow-kpi"><span>Turno abierto desde {date(activeCash.opened_at)}{activeCashRegister?.name && <> · {activeCashRegister.name}</>}</span><b>{money(activeCash.opening_cash)} fondo inicial</b></div><div className="op-cash-blind-note"><ShieldAlert size={17}/><div><b>Arqueo ciego</b><span>Registra primero el efectivo físico. El esperado y la diferencia se muestran después de confirmar el cierre.</span></div></div>{canManageCash&&<section className="op-cash-movement"><div className="panel-heading"><div><span className="eyebrow">MOVIMIENTO AUDITADO</span><h3>Registrar entrada o retiro</h3></div></div><div className="op-flow-form-grid"><label>Tipo<select value={cashMovementForm.direction} onChange={e=>setCashMovementForm({...cashMovementForm,direction:e.target.value})}><option value="in">Entrada de efectivo</option><option value="out">Retiro de efectivo</option></select></label><label>Monto $<input type="number" inputMode="decimal" min="0.01" step="0.01" value={cashMovementForm.amount} onChange={e=>setCashMovementForm({...cashMovementForm,amount:e.target.value})}/></label></div><label>Motivo<input value={cashMovementForm.reason} onChange={e=>setCashMovementForm({...cashMovementForm,reason:e.target.value})} placeholder="Ej. cambio para caja / retiro autorizado"/></label><button className="button button-outline" disabled={busy||Number(cashMovementForm.amount)<=0||cashMovementForm.reason.trim().length<3} onClick={cashMovement}>Guardar movimiento</button></section>}<label>Efectivo contado al cierre<input type="number" inputMode="decimal" min="0" step="0.01" value={counted} onChange={e=>setCounted(e.target.value)}/></label><p className="op-cash-blind-hint">El arqueo se comparará en el servidor después de registrar el efectivo contado.</p><label>Nota de cierre<textarea value={cashNote} onChange={e=>setCashNote(e.target.value)} placeholder="Explica la diferencia si la hay"/></label><div className="op-flow-actions-row"><button className="button button-dark" disabled={busy||counted===''||!canCloseCash} onClick={closeCash}>Cerrar turno y conciliar</button>{canDeleteCash&&<button type="button" className="button button-outline op-flow-danger" disabled={busy} onClick={()=>setAdminDeleteTarget({kind:'session',sessionId:activeCash.id,registerName:activeCashRegister?.name||'Caja',branchName:branchName(activeCash.branch_id),openingCash:Number(activeCash.opening_cash||0),status:'open',openedAt:activeCash.opened_at})}><Trash2 size={15}/> Eliminar turno</button>}</div></>:<><p className="muted">Abre tu turno antes de cobrar en efectivo. Un turno abierto queda ligado a tu usuario y sucursal.</p><p className="muted">{cashAssignmentNotice}</p><label>Fondo inicial en efectivo<input type="number" inputMode="decimal" min="0" step="0.01" value={opening} onChange={e=>setOpening(e.target.value)}/></label><button className="button button-dark" disabled={busy||!branchId||!canOpenCash||(requiresRegister&&!myBranchRegisters.some(register=>register.id===cashRegisterId))} onClick={openCash}>Abrir caja</button></>}</section>{canManageCash&&otherOpenCash.length>0&&<section className="panel op-other-cash-panel"><div className="panel-heading"><div><span className="eyebrow">OTROS TURNOS ABIERTOS</span><h2>Cajas de esta sucursal</h2></div><Wallet size={18}/></div><p className="muted">Puedes cerrar turnos abiertos de esta sucursal. El servidor calcula el efectivo esperado y guarda el arqueo con tu usuario.</p><div className="op-flow-list">{otherOpenCash.map(session=>{const opener=teamMembers.find(member=>member.user_id===session.opened_by)?.full_name||'Turno de otro integrante';const form=otherCloseForms[session.id]||{counted:'',note:''};return <article id={`op-cash-${session.id}`} tabIndex={-1} key={session.id}><b>{opener} · {date(session.opened_at)}</b><small>{branchName(session.branch_id)} · Fondo inicial {money(session.opening_cash)}</small><div className="op-flow-form-grid"><label>Efectivo contado<input type="number" inputMode="decimal" min="0" step="0.01" value={form.counted} onChange={event=>setOtherCloseForms(current=>({...current,[session.id]:{...form,counted:event.target.value}}))}/></label><label>Nota de cierre<input maxLength={1000} value={form.note} onChange={event=>setOtherCloseForms(current=>({...current,[session.id]:{...form,note:event.target.value}}))} placeholder="Nota opcional"/></label></div><div className="op-flow-actions-row"><button className="button button-outline" type="button" disabled={busy||form.counted===''||!canManageCash} onClick={()=>closeOtherCash(session)}>Conciliar y cerrar turno</button>{canDeleteCash&&<button className="button button-outline op-flow-danger" type="button" disabled={busy} onClick={()=>setAdminDeleteTarget({kind:'session',sessionId:session.id,branchName:branchName(session.branch_id),advisorName:opener,openingCash:Number(session.opening_cash||0),status:'open',openedAt:session.opened_at})}><Trash2 size={14}/> Eliminar turno</button>}</div></article>;})}</div></section>}<section className="panel op-cash-history-panel" aria-labelledby="op-cash-history-title"><div className="panel-heading"><div><span className="eyebrow">CIERRES RECIENTES</span><h2 id="op-cash-history-title">Historial de caja</h2><p>{branchName(branchId)} · {recentClosedCash.length} cierres cargados{flowPages.cash.hasMore?' · hay más registros':''}</p></div><Clock3 size={19}/></div><div className="op-cash-history-list">{recentClosedCash.map(session=><article className={`op-cash-history-card ${Number(session.difference)<0?'is-shortfall':Number(session.difference)>0?'is-surplus':'is-balanced'}`} key={session.id}><div className="op-cash-history-heading"><b>{date(session.closed_at)}</b><span>{branchName(session.branch_id)}</span></div><div className="op-cash-history-metrics"><div><span>Esperado</span><b>{money(session.expected_cash)}</b></div><div><span>Contado</span><b>{money(session.counted_cash)}</b></div><div><span>Diferencia</span><b>{money(session.difference)}</b></div></div><p>Fondo inicial {money(session.opening_cash)} · {session.closing_note||'Sin nota de cierre'}</p>{canDeleteCash&&<button className="button button-outline op-flow-danger" type="button" disabled={busy} onClick={()=>setAdminDeleteTarget({kind:'session',sessionId:session.id,branchName:branchName(session.branch_id),openingCash:Number(session.opening_cash||0),status:'closed',openedAt:session.opened_at})}><Trash2 size={14}/> Eliminar cierre</button>}</article>)}{renderFlowLoadMore('cash','Cargar más sesiones')}{!recentClosedCash.length&&<p className="muted">Aún no hay cierres registrados en esta sucursal.</p>}</div></section></div>}
-      {tab==='returns'&&<div className="op-flow-grid"><section className="panel"><div className="panel-heading"><div><span className="eyebrow">VENTA ORIGINAL</span><h2>Devolver o cancelar</h2></div><RotateCcw size={19}/></div><label>Venta<select value={saleId} onChange={e=>{const nextSale=e.target.value;setSaleId(nextSale);setReturnQty({});setReturnDisposition({});setRefund('0');setRefundMethod('other');setReturnNote('');}}><option value="">Selecciona una venta</option>{sales.filter(s=>s.status==='confirmed').map(s=><option key={s.id} value={s.id}>{s.sale_code||s.id.slice(0,8)} · {s.customers?.full_name||'Cliente'} · {money(s.total)} · {date(s.created_at)}</option>)}</select></label>{hasMoreSales&&<div className="op-flow-load-more"><span role="status">Se muestran ventas recientes; carga más si la venta no aparece.</span><button className="button button-outline" type="button" disabled={loadingMoreSales||busy||refreshing} onClick={()=>void loadMoreSales()}>{loadingMoreSales?<><LoaderCircle className="spin" size={15}/> Cargando…</>:'Cargar otras 100 ventas'}</button></div>}{selectedSale&&<><div className="op-flow-list">{loadingSaleLines&&<p className="muted" role="status">Consultando artículos de la venta…</p>}{saleLinesError&&<p className="op-return-guidance" role="alert">No se pudieron cargar los artículos. {saleLinesError} <button type="button" className="button button-outline" onClick={()=>setSaleLinesRetry(value=>value+1)}>Reintentar</button></p>}{linesForSale.map(l=><article key={l.id}><b>{l.description_snapshot}</b><small>Atendido: {l.fulfilled_quantity} · Devuelto: {l.returned_quantity} · {money(l.unit_price)} c/u</small><div className="op-flow-inline"><input aria-label={`Cantidad a devolver de ${l.description_snapshot}`} type="number" min="0" max={Math.max(0,l.fulfilled_quantity-l.returned_quantity)} step="0.001" value={returnQty[l.id]||''} placeholder="Cantidad" onChange={e=>setReturnQty({...returnQty,[l.id]:e.target.value})}/><select aria-label={`Destino de devolución de ${l.description_snapshot}`} value={returnDisposition[l.id]||'inspection'} onChange={e=>setReturnDisposition({...returnDisposition,[l.id]:e.target.value})}><option value="restock">Reintegrar como vendible</option><option value="inspection">Separar para revisión</option><option value="scrap">Registrar como merma</option></select></div></article>)}</div>{loadingSaleLines||saleLinesError?null:!returnableLines.length?<p className="op-return-guidance">Esta venta no tiene unidades atendidas pendientes de devolución.</p>:hasInvalidReturnQuantity?<p className="op-return-guidance" role="alert">Corrige las cantidades: deben ser mayores o iguales a cero y no superar las unidades atendidas pendientes.</p>:!validReturnLines.length?<p className="op-return-guidance">Indica una cantidad mayor que cero para habilitar el registro.</p>:null}<label>Monto de reembolso solicitado<input type="number" min="0" step="0.01" value={refund} onChange={e=>setRefund(e.target.value)}/></label><label>Método de reembolso<select value={refundMethod} onChange={e=>setRefundMethod(e.target.value)}><option value="other">Otro / por confirmar</option><option value="cash">Efectivo</option><option value="transfer">Transferencia</option><option value="card">Tarjeta</option></select></label><label>Motivo / notas<textarea value={returnNote} onChange={e=>setReturnNote(e.target.value)}/></label><button className="button button-dark" disabled={!canEditSales||busy||loadingSaleLines||Boolean(saleLinesError)||!validReturnLines.length||hasInvalidReturnQuantity} onClick={submitReturn}>Registrar devolución parcial</button>{canEditSales&&<button className="button button-outline op-flow-danger" disabled={busy} onClick={cancelSale}>Cancelar orden completa</button>}{canDeleteSales&&<button type="button" className="button button-outline op-flow-danger" disabled={busy} onClick={()=>setAdminDeleteTarget({kind:'sale',saleId:selectedSale.id,saleCode:selectedSale.sale_code||selectedSale.id.slice(0,8),customerName:selectedSale.customers?.full_name||'Mostrador',total:Number(selectedSale.total||0),status:selectedSale.status,createdAt:selectedSale.created_at})}><Trash2 size={15}/> Eliminar venta</button>}</>}</section><section className="panel"><div className="panel-heading"><div><span className="eyebrow">REGISTRO AUDITABLE</span><h2>Devoluciones recientes</h2></div></div><div className="op-flow-list">{returns.map(r=><article id={`op-returns-${r.id}`} tabIndex={-1} key={r.id}><b>{r.return_code} · {r.kind==='cancellation'?'Anulación':'Devolución'} · {money(r.refund_amount)}</b><small>{date(r.created_at)} · Reembolso: {r.refund_status==='pending'?'Pendiente':r.refund_status==='refunded'?'Liquidado':'Sin reembolso'}</small>{refundSettlementByReturn[r.id]&&<small>Liquidado {date(refundSettlementByReturn[r.id].settled_at)} · {refundSettlementByReturn[r.id].method}{refundSettlementByReturn[r.id].cash_session_id? ` · Caja ${refundSettlementByReturn[r.id].cash_session_id.slice(0,8)}`:''}{refundSettlementByReturn[r.id].reference? ` · Ref. ${refundSettlementByReturn[r.id].reference}`:''}</small>}<span>{r.note||'Sin nota'}</span>{canSettleRefund&&r.refund_status==='pending'&&<><label>Referencia de liquidación<input maxLength={200} value={refundSettlementRefs[r.id]||''} placeholder={r.refund_method==='cash'?'Comprobante opcional · requiere caja abierta':'Transferencia o comprobante'} onChange={e=>setRefundSettlementRefs({...refundSettlementRefs,[r.id]:e.target.value})}/></label><button className="button button-outline" disabled={busy} onClick={()=>run(async()=>{const {error:e}=await supabase.rpc('settle_sale_refund',{p_return:r.id,p_reference:(refundSettlementRefs[r.id]||'').trim(),p_note:'Liquidación verificada desde Operaciones'});if(e)throw e;},'Reembolso liquidado; quedó vinculado a Finanzas y, si fue en efectivo, al cierre de caja.')}>Liquidar reembolso</button></>}</article>)}{renderFlowLoadMore('returns','Cargar más devoluciones')}{!returns.length&&<p className="muted">Sin devoluciones aún.</p>}</div></section></div>}
-      {tab==='transfers'&&<div className="op-flow-grid"><section className="panel"><div className="panel-heading"><div><span className="eyebrow">SOLICITUD DE TRASLADO</span><h2>Nuevo traspaso</h2></div><Boxes size={19}/></div><div className="op-flow-form-grid"><label>Desde<select value={transferForm.from} onChange={e=>{const branchId=e.target.value;setTransferForm(current=>({...current,from:branchId,fromLocation:defaultLocation(branchId)}));}}>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label><label>Hacia<select value={transferForm.to} onChange={e=>{const branchId=e.target.value;setTransferForm(current=>({...current,to:branchId,toLocation:defaultLocation(branchId)}));}}>{branches.filter(b=>b.id!==transferForm.from).map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label></div><div className="op-flow-form-grid"><label>Ubicación de origen<select required value={transferForm.fromLocation} onChange={e=>setTransferForm(current=>({...current,fromLocation:e.target.value}))}><option value="">Selecciona ubicación</option>{!fromLocations.length&&<option value="" disabled>No hay ubicaciones activas</option>}{fromLocations.map(location=><option key={location.id} value={location.code}>{location.code} · {location.name}</option>)}</select></label><label>Ubicación destino<select required value={transferForm.toLocation} onChange={e=>setTransferForm(current=>({...current,toLocation:e.target.value}))}><option value="">Selecciona ubicación</option>{!toLocations.length&&<option value="" disabled>No hay ubicaciones activas</option>}{toLocations.map(location=><option key={location.id} value={location.code}>{location.code} · {location.name}</option>)}</select></label></div><label>Artículo / variante<select value={transferForm.variant} onChange={e=>setTransferForm({...transferForm,variant:e.target.value})}><option value="">Selecciona artículo</option>{variants.map(v=><option key={v.id} value={v.id}>{v.sku} · {v.inventory_items?.name} {v.label}</option>)}</select></label><label>Cantidad solicitada<input type="number" min="0.001" step="0.001" value={transferForm.quantity} onChange={e=>setTransferForm({...transferForm,quantity:e.target.value})}/></label><label>Nota<input value={transferForm.note} onChange={e=>setTransferForm({...transferForm,note:e.target.value})}/></label><button className="button button-dark" disabled={busy||!canManageTransfers||!transferForm.variant||!transferForm.fromLocation||!transferForm.toLocation||transferForm.from===transferForm.to} onClick={createTransfer}>Crear solicitud</button></section><section className="panel"><div className="panel-heading"><div><span className="eyebrow">TRÁNSITO Y RECEPCIONES</span><h2>Transferencias</h2></div></div><div className="op-flow-list">{transfers.map(t=>{const lines=transferLines.filter(l=>l.transfer_id===t.id);const pendingLineCount=lines.filter(l=>Number(l.dispatched_quantity)>Number(l.received_quantity)).length;const showTransitAge=['dispatched','partially_received'].includes(t.status)&&Boolean(t.dispatched_at);return <article id={`op-transfers-${t.id}`} tabIndex={-1} className="op-flow-transfer" key={t.id}><b>{t.transfer_code} · {branchName(t.from_branch_id)} → {branchName(t.to_branch_id)}</b><div className="op-transfer-meta"><span className={`op-flow-status status-${t.status}`}>{transferStatusLabels[t.status]||t.status}</span><small>{date(t.requested_at)} · {t.note||'Sin nota de solicitud'}</small></div>{showTransitAge&&<div className="op-transfer-aging" role="status"><span><Clock3 size={14}/> Primer despacho {transferAgeLabel(t.dispatched_at)}</span>{pendingLineCount>0&&<span className="op-transfer-pending-count">{pendingLineCount} {pendingLineCount===1?'línea':'líneas'} por recibir</span>}</div>}{lines.map(l=>{const dispatchable=['approved','dispatched','partially_received'].includes(t.status)&&Number(l.dispatched_quantity)<Number(l.requested_quantity);const receivable=['dispatched','partially_received'].includes(t.status)&&Number(l.received_quantity)<Number(l.dispatched_quantity);const pendingQuantity=Math.max(0,Number(l.dispatched_quantity)-Number(l.received_quantity));const variant=lineVariant(l.variant_id);const unit=variant?.inventory_items?.base_unit;return <div className="op-flow-transfer-line" key={l.id}><span>{variant?.sku} · {variant?.inventory_items?.name||variant?.label}<small>Pedido {l.requested_quantity} · enviado {l.dispatched_quantity} · recibido {l.received_quantity}{pendingQuantity>0&&<> · <strong className="op-transfer-pending-quantity">Por recibir {pendingQuantity}{unit?` ${unit}`:''}</strong></>}</small></span><div className="op-transfer-inputs">{dispatchable&&<label>Despachar<input aria-label={`Cantidad a despachar de ${lineVariant(l.variant_id)?.sku||'artículo'}`} type="number" min="0" max={Number(l.requested_quantity)-Number(l.dispatched_quantity)} step="0.001" value={transferQty[`dispatch-${l.id}`]||''} placeholder={`Máx. ${Number(l.requested_quantity)-Number(l.dispatched_quantity)}`} onChange={e=>setTransferQty(current=>({...current,[`dispatch-${l.id}`]:e.target.value}))}/></label>}{receivable&&<label>Recibir<input aria-label={`Cantidad a recibir de ${lineVariant(l.variant_id)?.sku||'artículo'}`} type="number" min="0" max={pendingQuantity} step="0.001" value={transferQty[`receive-${l.id}`]||''} placeholder={`Máx. ${pendingQuantity}`} onChange={e=>setTransferQty(current=>({...current,[`receive-${l.id}`]:e.target.value}))}/></label>}</div></div>})}<label>Nota de movimiento<input value={transferNotes[t.id]||''} onChange={e=>setTransferNotes({...transferNotes,[t.id]:e.target.value})}/></label><div className="op-flow-actions">{t.status==='requested'&&canManageTransfers&&<><button type="button" disabled={busy} onClick={()=>transferAction(t,'approved')}>Aprobar</button><button type="button" disabled={busy} onClick={()=>transferAction(t,'rejected')}>Rechazar</button></>}{canManageTransfers&&transferCanDispatch(t)&&<button type="button" disabled={busy} onClick={()=>transferActionLines(t,'dispatch')}>Despachar cantidades ingresadas</button>}{canManageTransfers&&transferCanReceive(t)&&<button type="button" disabled={busy} onClick={()=>transferActionLines(t,'receive')}>Recibir cantidades ingresadas</button>}</div></article>})}{renderFlowLoadMore('transfers','Cargar más transferencias')}{!transfers.length&&<p className="muted">Sin transferencias.</p>}</div></section></div>}
-      {tab==='production'&&<div className="op-flow-grid"><ProductionOrderWorkspace branches={branches} areas={areas} sales={sales} orders={orders} events={productionEvents} teamMembers={teamMembers} orderForm={orderForm} setOrderForm={setOrderForm} busy={busy} canManage={canManageProduction} hasData={hasLoaded} hasMoreOrders={hasMoreProductionOrders} loadingMoreOrders={loadingMoreProductionOrders} onLoadMoreOrders={loadMoreProductionOrders} onRetry={() => void refresh()} onCreate={createOrder} onStatusChange={updateOrder} onSaveHandoff={updateProductionHandoff}/><section className="panel op-production-consumption"><div className="panel-heading"><div><span className="eyebrow">REGISTRO REAL</span><h2>Consumo de materiales</h2><p>Solo registra cantidades usadas que se observaron en la orden.</p></div><PackageCheck size={19}/></div><label>Orden abierta<select value={consumeForm.order} onChange={e=>{const order=orders.find(row=>row.id===e.target.value);setConsumeForm(current=>({...current,order:e.target.value,location:defaultLocation(order?.branch_id)}));}}><option value="">Selecciona orden</option>{orders.filter(order=>!['completed','cancelled'].includes(order.status)).map(order=><option key={order.id} value={order.id}>{order.order_code} · {order.title}</option>)}</select></label><label>Variante de inventario<select value={consumeForm.variant} onChange={e=>setConsumeForm({...consumeForm,variant:e.target.value})}><option value="">Selecciona material</option>{variants.map(variant=><option key={variant.id} value={variant.id}>{variant.sku} · {variant.inventory_items?.name} {variant.label}</option>)}</select></label><div className="op-flow-form-grid"><label>Ubicación<select required value={consumeForm.location} onChange={e=>setConsumeForm(current=>({...current,location:e.target.value}))}><option value="">Selecciona ubicación</option>{!consumeLocations.length&&<option value="" disabled>No hay ubicaciones activas</option>}{consumeLocations.map(location=><option key={location.id} value={location.code}>{location.code} · {location.name}</option>)}</select></label><label>Cantidad usada<input type="number" min="0.001" step="0.001" value={consumeForm.quantity} onChange={e=>setConsumeForm({...consumeForm,quantity:e.target.value})}/></label><label>Nota de consumo<input value={consumeForm.note} onChange={e=>setConsumeForm({...consumeForm,note:e.target.value})}/></label></div><button className="button button-outline" disabled={busy||!canManageProduction||!consumeForm.order||!consumeForm.variant||!consumeForm.quantity||!consumeForm.location} onClick={consumeMaterial}>Registrar consumo real</button></section></div>}{tab==='quotes'&&<div className="panel"><div className="panel-heading"><div><span className="eyebrow">BASE ÚNICA DE PROPUESTAS</span><h2>Cotizaciones centrales</h2></div><FileText size={19}/></div>{!canEditQuotes&&<p className="muted" role="status">Tu perfil puede consultar cotizaciones, pero no cambiar sus estados.</p>}<div className="op-flow-list">{quotes.map(q=><article id={`op-quotes-${q.id}`} tabIndex={-1} key={q.id}><b>{q.quote_code} · {q.customer_name||'Sin cliente'} · {money(q.selected_total)}</b><small>{date(q.created_at)} · {q.chosen_tier} · {q.price_confirmed?'Tarifa confirmada':'Tarifa por confirmar'}</small><span>{Array.isArray(q.items)?q.items.map(i=>`${i.name||i.product_name||'Ítem'} × ${i.quantity||1}`).join(' · '):''}</span><button className="button button-outline op-flow-detail-trigger" type="button" onClick={()=>setSelectedQuote(q)}>Ver ficha completa</button><div className="op-flow-inline"><span className={`op-flow-status status-${q.status}`}>{quoteStatusLabels[q.status]||q.status}</span>{!['rejected','expired','converted'].includes(q.status)&&canEditQuotes&&<select aria-label={`Cambiar estado de cotización ${q.quote_code}`} value={q.status} disabled={busy} onChange={e=>run(async()=>{const {error:e2}=await supabase.rpc('update_central_quote_status',{p_quote:q.id,p_status:e.target.value,p_note:''});if(e2)throw e2;},'Estado de cotización actualizado.')}><option value={q.status}>{quoteStatusLabels[q.status]||q.status}</option>{['sent','accepted','rejected','expired'].filter(s=>s!==q.status).map(s=><option key={s} value={s}>{quoteStatusLabels[s]||s}</option>)}</select>}</div></article>)}{renderFlowLoadMore('quotes','Cargar más cotizaciones')}{!quotes.length&&<p className="muted">Aún no hay propuestas centrales. Guarda una desde Cotizador para que aparezca aquí.</p>}</div></div>}
-      </>}
-      <aside className="op-flow-footnote"><PackageCheck size={16}/><span>Los saldos iniciales no se crean aquí. Solo los movimientos confirmados y vinculados modifican existencias. Precios, reglas tributarias y aprobaciones siguen su fuente autorizada.</span></aside>
-  <Sheet open={Boolean(selectedQuote)} onOpenChange={(open)=>{if(!open)setSelectedQuote(null);}} title={selectedQuote ? `Ficha completa · ${selectedQuote.quote_code}` : 'Cotización'} description="Productos, imágenes y valores registrados en esta propuesta.">{selectedQuote&&<CommercialDocumentDetails kind="quote" documentId={selectedQuote.id} initialDocument={selectedQuote}/>}</Sheet>
-  <AdminDeleteRecordModal open={Boolean(adminDeleteTarget)} onOpenChange={(open)=>{if(!open)setAdminDeleteTarget(null);}} target={adminDeleteTarget} onDeleted={(msg)=>{setNotice(msg);setSaleId('');void refresh();}}/></section>;
+  // Creación de orden heredada (con aviso a la red de producción)
+  const createOrder = () => {
+    if (!canManageProduction) return;
+    return run(async () => {
+      const { data, error: e } = await supabase
+        .from('production_orders')
+        .insert({
+          organization_id: organizationId,
+          branch_id: orderForm.branch,
+          area_id: orderForm.area || null,
+          sale_id: orderForm.sale || null,
+          assigned_to: orderForm.assignedTo || null,
+          order_code: `OP-${Date.now().toString(36).toUpperCase()}-${crypto.randomUUID().slice(0, 5).toUpperCase()}`,
+          title: orderForm.title.trim(),
+          description: orderForm.description.trim(),
+          next_step: orderForm.nextStep.trim(),
+          priority: orderForm.priority,
+          due_at: orderForm.due ? new Date(`${orderForm.due}T12:00:00`).toISOString() : null,
+          created_by: user!.id,
+        })
+        .select()
+        .single();
+      if (e) throw e;
+      setOrderForm((current) => ({
+        ...current,
+        title: '',
+        description: '',
+        nextStep: '',
+        sale: '',
+        assignedTo: '',
+        due: '',
+        priority: 'normal',
+      }));
+      emitProductionChanged();
+      return data;
+    }, 'Orden de trabajo creada.');
+  };
+
+  // Cambio de estado de orden heredada
+  const updateOrder = async (order: any, status: string, note: string) => {
+    if (!canManageProduction) return;
+    if (['blocked', 'quality_review', 'ready', 'completed', 'cancelled'].includes(status) && note.trim().length < 5) {
+      setError('Añade una nota de al menos 5 caracteres para documentar este cambio.');
+      return;
+    }
+    return run(async () => {
+      const { error: e } = await supabase.rpc('update_production_status', {
+        p_order: order.id,
+        p_status: status,
+        p_note: note.trim(),
+      });
+      if (e) throw e;
+      emitProductionChanged();
+    }, `Estado actualizado a ${status}.`);
+  };
+
+  // Traspaso de orden heredada
+  const updateProductionHandoff = (order: any, draft: any) => {
+    if (!canManageProduction) return;
+    return run(async () => {
+      const { error: e } = await supabase.rpc('update_production_order_handoff', {
+        p_order: order.id,
+        p_assigned_to: draft.assignedTo || null,
+        p_area_id: draft.areaId || null,
+        p_due_at: draft.due ? new Date(`${draft.due}T12:00:00`).toISOString() : null,
+        p_description: draft.description.trim(),
+        p_next_step: draft.nextStep.trim(),
+        p_note: draft.note.trim(),
+      });
+      if (e) throw e;
+      emitProductionChanged();
+    }, 'Traspaso registrado en el historial de la orden.');
+  };
+
+  // Consumo de material para órdenes heredadas
+  const consumeMaterial = () => {
+    if (!canManageProduction) return;
+    return run(async () => {
+      if (!consumeForm.location) throw new Error('Selecciona una ubicación activa de la sucursal de la orden.');
+      const { data, error: e } = await supabase.rpc('consume_production_material', {
+        p_order: consumeForm.order,
+        p_variant: consumeForm.variant,
+        p_quantity: Number(consumeForm.quantity),
+        p_location: consumeForm.location,
+        p_note: consumeForm.note,
+      });
+      if (e) throw e;
+      emitProductionChanged();
+      return data;
+    }, 'Consumo real registrado en inventario.');
+  };
+
+  const branchName = (id: string) => branches.find((b) => b.id === id)?.name || 'Sucursal';
+  const lineVariant = (id: string) => variants.find((v) => v.id === id);
+
+  const chooseTab = (nextTab: string) => {
+    setTab(nextTab);
+    const next = new URLSearchParams(searchParams);
+    if (nextTab === 'overview') next.delete('tab');
+    else next.set('tab', nextTab);
+    setSearchParams(next, { replace: false });
+  };
+
+  const openFlow = (nextTab: OperationsQueueTab, itemId?: string) => {
+    if (nextTab === 'purchases') {
+      navigate(itemId ? `/operaciones/compras?order=${encodeURIComponent(itemId)}` : '/operaciones/compras');
+      return;
+    }
+    if (nextTab === 'production' && itemId && productionJobs.some((j) => j.id === itemId)) {
+      setSelectedJobId(itemId);
+    }
+    pendingFocusId.current = itemId ? `op-${nextTab}-${itemId}` : '';
+    setFocusRequest((value) => value + 1);
+    chooseTab(nextTab);
+  };
+
+  useEffect(() => {
+    if (loading || !pendingFocusId.current) return;
+    const target = document.getElementById(pendingFocusId.current);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.focus({ preventScroll: true });
+    }
+    pendingFocusId.current = '';
+  }, [tab, loading, searchParams.toString(), focusRequest]);
+
+  // Métricas del Centro de Operaciones
+  const overviewMetrics = useMemo<OperationsMetric[]>(() => {
+    const metrics: Record<OperationsFlowTab, OperationsMetric> = {
+      cash: {
+        tab: 'cash',
+        label: 'Caja abierta',
+        description: 'turnos abiertos en esta sucursal',
+        zeroDescription: 'No hay turnos abiertos en esta sucursal',
+        value: overviewCounts.cash,
+        icon: Wallet,
+        tone: 'violet',
+      },
+      returns: {
+        tab: 'returns',
+        label: 'Reembolsos pendientes',
+        description: 'devoluciones por liquidar',
+        zeroDescription: 'No hay reembolsos por liquidar',
+        value: overviewCounts.returns,
+        icon: RotateCcw,
+        tone: 'amber',
+      },
+      transfers: {
+        tab: 'transfers',
+        label: 'Traslados en curso',
+        description: 'solicitudes por completar',
+        zeroDescription: 'No hay solicitudes por completar',
+        value: overviewCounts.transfers,
+        icon: Boxes,
+        tone: 'blue',
+      },
+      production: {
+        tab: 'production',
+        label: 'Producción activa',
+        description:
+          productionCountDetails.legacy && productionCountDetails.legacy > 0
+            ? `${productionCountDetails.jobs ?? 0} trabajos vigentes · ${productionCountDetails.legacy} órdenes heredadas`
+            : `${productionCountDetails.jobs ?? 0} trabajos en curso`,
+        zeroDescription: 'No hay trabajos ni órdenes activas',
+        value: overviewCounts.production,
+        icon: Factory,
+        tone: 'teal',
+        breakdown: {
+          jobs: productionCountDetails.jobs,
+          legacy: productionCountDetails.legacy,
+        },
+      },
+      quotes: {
+        tab: 'quotes',
+        label: 'Cotizaciones por seguir',
+        description: 'enviadas o aceptadas',
+        zeroDescription: 'No hay cotizaciones en seguimiento',
+        value: overviewCounts.quotes,
+        icon: FileText,
+        tone: 'green',
+      },
+    };
+    const visible = visibleFlowTabs.map(([id]) => metrics[id as OperationsFlowTab]);
+    if (hasPermission('purchases', 'view'))
+      visible.push({
+        tab: 'purchases',
+        label: 'Compras por recibir',
+        description: 'órdenes abiertas al proveedor',
+        zeroDescription: 'No hay órdenes pendientes de recibir',
+        value: overviewCounts.purchases,
+        icon: Truck,
+        tone: 'amber',
+      });
+    return visible;
+  }, [overviewCounts, productionCountDetails, visibleFlowTabs.map(([id]) => id).join('|'), hasPermission]);
+
+  // Ítems de la cola operativa combinada
+  const overviewItems = useMemo<OperationsQueueItem[]>(() => {
+    const items: OperationsQueueItem[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (const row of cash.filter(
+      (item) => item.status === 'open' && item.branch_id === branchId && (item.opened_by === user?.id || canCloseOtherCash)
+    )) {
+      items.push({
+        id: row.id,
+        tab: 'cash',
+        title: `Turno de caja · ${branchName(row.branch_id)}`,
+        detail: `Abierto ${date(row.opened_at)}`,
+        action: 'Revisar',
+        status: 'open',
+        statusLabel: 'Abierta',
+        updatedAt: row.opened_at || '',
+        severity: 4,
+        branchId: row.branch_id,
+      });
+    }
+
+    for (const row of returns.filter((item) => item.refund_status === 'pending')) {
+      const sale = sales.find((item) => item.id === row.sale_id);
+      items.push({
+        id: row.id,
+        tab: 'returns',
+        title: `Reembolso pendiente · ${row.return_code}`,
+        detail: `${money(row.refund_amount)} · ${row.refund_method || 'método pendiente'}`,
+        action: canSettleRefund ? 'Liquidar' : 'Consultar',
+        status: 'pending',
+        statusLabel: 'Pendiente',
+        updatedAt: row.created_at || '',
+        severity: 5,
+        branchId: row.sales?.branch_id || sale?.branch_id,
+      });
+    }
+
+    for (const row of transfers.filter((item) =>
+      ['requested', 'approved', 'dispatched', 'partially_received'].includes(item.status)
+    )) {
+      items.push({
+        id: row.id,
+        tab: 'transfers',
+        title: `${row.transfer_code} · ${branchName(row.from_branch_id)} → ${branchName(row.to_branch_id)}`,
+        detail: row.note || 'Traslado de inventario',
+        action: row.status === 'requested' ? 'Revisar' : 'Continuar',
+        status: row.status,
+        statusLabel: row.status.replaceAll('_', ' '),
+        updatedAt: row.requested_at || '',
+        severity: row.status === 'requested' ? 4 : 3,
+        branchId: row.from_branch_id,
+      });
+    }
+
+    // Trabajos modernos (production_jobs)
+    for (const job of productionJobs.filter((item) => !['completed', 'cancelled'].includes(item.status))) {
+      const stepsForJob = productionJobSteps.filter((s) => s.job_id === job.id);
+      const current = currentStage(stepsForJob);
+      const overdue = Boolean(job.due_at && new Date(job.due_at).getTime() < today.getTime());
+      const stepArea = areas.find((a) => a.id === current?.area_id);
+      const assigneeName = teamMembers.find((m) => m.user_id === current?.assigned_to)?.full_name || 'Sin asignar';
+      const stageLabel = current
+        ? `${current.title} (${STEP_STATUS_LABELS[current.status as StepStatus] || current.status})`
+        : JOB_STATUS_LABELS[job.status as JobStatus] || job.status;
+
+      items.push({
+        id: job.id,
+        tab: 'production',
+        title: `${job.sale_code ? `${job.sale_code} · ` : ''}${job.title}`,
+        detail: `${job.customer_name ? `${job.customer_name} · ` : ''}${stepArea?.name || current?.title || 'Etapa pendiente'} · ${assigneeName}`,
+        action: 'Abrir ficha',
+        status: current?.status || job.status,
+        statusLabel: stageLabel,
+        updatedAt: job.updated_at || job.created_at,
+        severity: overdue || current?.status === 'blocked' ? 5 : job.status === 'needs_review' ? 4 : 3,
+        overdue,
+        dueAt: job.due_at || undefined,
+        branchId: job.branch_id,
+      });
+    }
+
+    // Órdenes heredadas (production_orders)
+    for (const row of orders.filter((item) => !['completed', 'cancelled'].includes(item.status))) {
+      const overdue = Boolean(row.due_at && new Date(row.due_at).getTime() < today.getTime());
+      const owner = teamMembers.find((member) => member.user_id === row.assigned_to)?.full_name || 'Sin responsable';
+      items.push({
+        id: row.id,
+        tab: 'production',
+        title: `[Heredada] ${row.order_code} · ${row.title}`,
+        detail: `${row.branches?.name || branchName(row.branch_id)} · ${row.areas?.name || 'Área pendiente'} · ${owner} · ${row.next_step || 'Siguiente paso pendiente'}`,
+        action: 'Abrir orden',
+        status: row.status,
+        statusLabel: `${row.status.replaceAll('_', ' ')} (Heredada)`,
+        updatedAt: row.updated_at || row.created_at || '',
+        severity: overdue || row.priority === 'urgent' || row.status === 'blocked' ? 5 : row.priority === 'high' ? 4 : 3,
+        overdue,
+        dueAt: row.due_at || undefined,
+        branchId: row.branch_id,
+      });
+    }
+
+    for (const row of quotes.filter((item) => ['sent', 'accepted'].includes(item.status))) {
+      items.push({
+        id: row.id,
+        tab: 'quotes',
+        title: `${row.quote_code} · ${row.customer_name || 'Sin cliente'}`,
+        detail: `${money(row.selected_total)} · ${row.price_confirmed ? 'Tarifa confirmada' : 'Tarifa por confirmar'}`,
+        action: 'Revisar',
+        status: row.status,
+        statusLabel: row.status === 'accepted' ? 'Aceptada' : 'Enviada',
+        updatedAt: row.updated_at || row.created_at || '',
+        severity: row.status === 'accepted' && !row.price_confirmed ? 4 : 2,
+        branchIndependent: true,
+      });
+    }
+
+    for (const row of purchaseOrders) {
+      const lines = Array.isArray(row.purchase_order_lines) ? row.purchase_order_lines : [];
+      const pendingLines = lines.filter((line: any) => Number(line.quantity_ordered) > Number(line.quantity_received));
+      const dueAt = row.expected_date ? `${row.expected_date}T12:00:00` : undefined;
+      const overdue = Boolean(dueAt && new Date(dueAt).getTime() < today.getTime());
+      items.push({
+        id: row.order_number,
+        tab: 'purchases',
+        title: `${row.order_number} · ${row.suppliers?.name || 'Proveedor'}`,
+        detail: `${branchName(row.branch_id)} · ${pendingLines.length} ${
+          pendingLines.length === 1 ? 'línea pendiente' : 'líneas pendientes'
+        }`,
+        action: hasPermission('purchases', 'receive_purchase') ? 'Registrar recepción' : 'Revisar orden',
+        status: row.status,
+        statusLabel: row.status === 'partially_received' ? 'Recepción parcial' : 'Enviada',
+        updatedAt: row.updated_at || row.created_at || '',
+        severity: overdue ? 5 : row.status === 'partially_received' ? 4 : 3,
+        overdue,
+        dueAt,
+        branchId: row.branch_id,
+      });
+    }
+
+    return items.sort(
+      (a, b) =>
+        Number(Boolean(b.overdue)) - Number(Boolean(a.overdue)) ||
+        b.severity - a.severity ||
+        new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
+    );
+  }, [
+    cash,
+    returns,
+    transfers,
+    orders,
+    productionJobs,
+    productionJobSteps,
+    quotes,
+    sales,
+    purchaseOrders,
+    teamMembers,
+    branches,
+    areas,
+    user?.id,
+    canCloseOtherCash,
+    canSettleRefund,
+    branchId,
+  ]);
+
+  if (!supabase) return <div className="op-flow-error">Conecta Supabase para utilizar estos flujos.</div>;
+
+  return (
+    <section className="op-flow-page">
+      <header className="op-flow-header">
+        <p>Caja, devoluciones, compras, traslados, producción y cotizaciones conectados a sus registros centrales.</p>
+        <div className="op-flow-header-actions">
+          {hasLoaded && (refreshFailed || prodSync.isStale) && (
+            <span className="op-flow-stale" role="status">
+              <ShieldAlert size={14} /> {refreshFailed ? 'Error al actualizar datos' : 'Datos de producción desactualizados'}
+            </span>
+          )}
+          <button
+            className="button button-outline"
+            onClick={() => void prodSync.triggerRefresh()}
+            disabled={refreshing || prodSync.refreshing || busy}
+          >
+            <LoaderCircle className={refreshing || prodSync.refreshing ? 'spin' : ''} size={16} />{' '}
+            {refreshing || prodSync.refreshing ? 'Actualizando…' : 'Actualizar'}
+          </button>
+        </div>
+      </header>
+
+      <nav className="op-flow-tabs" aria-label="Flujos operativos">
+        {visibleTabs.map(([id, label, Icon]) => (
+          <button
+            key={id}
+            type="button"
+            aria-current={tab === id ? 'page' : undefined}
+            className={tab === id ? 'active' : ''}
+            onClick={() => chooseTab(id)}
+          >
+            <Icon size={16} />
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {error && (
+        <div className="op-flow-alert error">
+          <ShieldAlert size={17} />
+          {error}
+        </div>
+      )}
+      {notice && (
+        <div className="op-flow-alert success">
+          <Check size={17} />
+          {notice}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="op-flow-loading">
+          <LoaderCircle className="spin" /> Cargando información compartida…
+        </div>
+      ) : (
+        <>
+          {tab === 'overview' && (
+            <OperationsOverview
+              metrics={overviewMetrics}
+              items={overviewItems}
+              branches={branches}
+              hasData={hasLoaded}
+              onOpenFlow={openFlow}
+              onRetry={() => void prodSync.triggerRefresh()}
+            />
+          )}
+
+          {tab === 'cash' && (
+            <div className="op-flow-grid">
+              <section className="panel">
+                <div className="panel-heading">
+                  <div>
+                    <span className="eyebrow">TURNO Y ARQUEO</span>
+                    <h2>Caja</h2>
+                  </div>
+                  <div className="op-flow-head-actions">
+                    <Link className="button button-outline" to="/operaciones/cajas-abiertas">
+                      Control cajas abiertas
+                    </Link>
+                    <Wallet size={19} />
+                  </div>
+                </div>
+                <label>
+                  Sucursal
+                  <select value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {activeCash ? (
+                  <>
+                    <div id={`op-cash-${activeCash.id}`} tabIndex={-1} className="op-flow-kpi">
+                      <span>
+                        Turno abierto desde {date(activeCash.opened_at)}
+                        {activeCashRegister?.name && <> · {activeCashRegister.name}</>}
+                      </span>
+                      <b>{money(activeCash.opening_cash)} fondo inicial</b>
+                    </div>
+                    <div className="op-cash-blind-note">
+                      <ShieldAlert size={17} />
+                      <div>
+                        <b>Arqueo ciego</b>
+                        <span>Registra primero el efectivo físico. El esperado y la diferencia se muestran después de confirmar el cierre.</span>
+                      </div>
+                    </div>
+                    {canManageCash && (
+                      <section className="op-cash-movement">
+                        <div className="panel-heading">
+                          <div>
+                            <span className="eyebrow">MOVIMIENTO AUDITADO</span>
+                            <h3>Registrar entrada o retiro</h3>
+                          </div>
+                        </div>
+                        <div className="op-flow-form-grid">
+                          <label>
+                            Tipo
+                            <select
+                              value={cashMovementForm.direction}
+                              onChange={(e) => setCashMovementForm({ ...cashMovementForm, direction: e.target.value })}
+                            >
+                              <option value="in">Entrada de efectivo</option>
+                              <option value="out">Retiro de efectivo</option>
+                            </select>
+                          </label>
+                          <label>
+                            Monto $
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              min="0.01"
+                              step="0.01"
+                              value={cashMovementForm.amount}
+                              onChange={(e) => setCashMovementForm({ ...cashMovementForm, amount: e.target.value })}
+                            />
+                          </label>
+                        </div>
+                        <label>
+                          Motivo
+                          <input
+                            value={cashMovementForm.reason}
+                            onChange={(e) => setCashMovementForm({ ...cashMovementForm, reason: e.target.value })}
+                            placeholder="Ej. cambio para caja / retiro autorizado"
+                          />
+                        </label>
+                        <button
+                          className="button button-outline"
+                          disabled={busy || Number(cashMovementForm.amount) <= 0 || cashMovementForm.reason.trim().length < 3}
+                          onClick={cashMovement}
+                        >
+                          Guardar movimiento
+                        </button>
+                      </section>
+                    )}
+                    <label>
+                      Efectivo contado al cierre
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        value={counted}
+                        onChange={(e) => setCounted(e.target.value)}
+                      />
+                    </label>
+                    <p className="op-cash-blind-hint">El arqueo se comparará en el servidor después de registrar el efectivo contado.</p>
+                    <label>
+                      Nota de cierre
+                      <textarea
+                        value={cashNote}
+                        onChange={(e) => setCashNote(e.target.value)}
+                        placeholder="Explica la diferencia si la hay"
+                      />
+                    </label>
+                    <div className="op-flow-actions-row">
+                      <button className="button button-dark" disabled={busy || counted === '' || !canCloseCash} onClick={closeCash}>
+                        Cerrar turno y conciliar
+                      </button>
+                      {canDeleteCash && (
+                        <button
+                          type="button"
+                          className="button button-outline op-flow-danger"
+                          disabled={busy}
+                          onClick={() =>
+                            setAdminDeleteTarget({
+                              kind: 'session',
+                              sessionId: activeCash.id,
+                              registerName: activeCashRegister?.name || 'Caja',
+                              branchName: branchName(activeCash.branch_id),
+                              openingCash: Number(activeCash.opening_cash || 0),
+                              status: 'open',
+                              openedAt: activeCash.opened_at,
+                            })
+                          }
+                        >
+                          <Trash2 size={15} /> Eliminar turno
+                        </button>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="muted">Abre tu turno antes de cobrar en efectivo. Un turno abierto queda ligado a tu usuario y sucursal.</p>
+                    <p className="muted">{cashAssignmentNotice}</p>
+                    <label>
+                      Fondo inicial en efectivo
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        value={opening}
+                        onChange={(e) => setOpening(e.target.value)}
+                      />
+                    </label>
+                    <button
+                      className="button button-dark"
+                      disabled={
+                        busy ||
+                        !branchId ||
+                        !canOpenCash ||
+                        (requiresRegister && !myBranchRegisters.some((register) => register.id === cashRegisterId))
+                      }
+                      onClick={openCash}
+                    >
+                      Abrir caja
+                    </button>
+                  </>
+                )}
+              </section>
+
+              {canManageCash && otherOpenCash.length > 0 && (
+                <section className="panel op-other-cash-panel">
+                  <div className="panel-heading">
+                    <div>
+                      <span className="eyebrow">OTROS TURNOS ABIERTOS</span>
+                      <h2>Cajas de esta sucursal</h2>
+                    </div>
+                    <Wallet size={18} />
+                  </div>
+                  <p className="muted">
+                    Puedes cerrar turnos abiertos de esta sucursal. El servidor calcula el efectivo esperado y guarda el arqueo con tu usuario.
+                  </p>
+                  <div className="op-flow-list">
+                    {otherOpenCash.map((session) => {
+                      const opener =
+                        teamMembers.find((member) => member.user_id === session.opened_by)?.full_name || 'Turno de otro integrante';
+                      const form = otherCloseForms[session.id] || { counted: '', note: '' };
+                      return (
+                        <article id={`op-cash-${session.id}`} tabIndex={-1} key={session.id}>
+                          <b>
+                            {opener} · {date(session.opened_at)}
+                          </b>
+                          <small>
+                            {branchName(session.branch_id)} · Fondo inicial {money(session.opening_cash)}
+                          </small>
+                          <div className="op-flow-form-grid">
+                            <label>
+                              Efectivo contado
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                min="0"
+                                step="0.01"
+                                value={form.counted}
+                                onChange={(event) =>
+                                  setOtherCloseForms((current) => ({
+                                    ...current,
+                                    [session.id]: { ...form, counted: event.target.value },
+                                  }))
+                                }
+                              />
+                            </label>
+                            <label>
+                              Nota de cierre
+                              <input
+                                maxLength={1000}
+                                value={form.note}
+                                onChange={(event) =>
+                                  setOtherCloseForms((current) => ({
+                                    ...current,
+                                    [session.id]: { ...form, note: event.target.value },
+                                  }))
+                                }
+                                placeholder="Nota opcional"
+                              />
+                            </label>
+                          </div>
+                          <div className="op-flow-actions-row">
+                            <button
+                              className="button button-outline"
+                              type="button"
+                              disabled={busy || form.counted === '' || !canManageCash}
+                              onClick={() => closeOtherCash(session)}
+                            >
+                              Conciliar y cerrar turno
+                            </button>
+                            {canDeleteCash && (
+                              <button
+                                className="button button-outline op-flow-danger"
+                                type="button"
+                                disabled={busy}
+                                onClick={() =>
+                                  setAdminDeleteTarget({
+                                    kind: 'session',
+                                    sessionId: session.id,
+                                    branchName: branchName(session.branch_id),
+                                    advisorName: opener,
+                                    openingCash: Number(session.opening_cash || 0),
+                                    status: 'open',
+                                    openedAt: session.opened_at,
+                                  })
+                                }
+                              >
+                                <Trash2 size={14} /> Eliminar turno
+                              </button>
+                            )}
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              <section className="panel op-cash-history-panel" aria-labelledby="op-cash-history-title">
+                <div className="panel-heading">
+                  <div>
+                    <span className="eyebrow">CIERRES RECIENTES</span>
+                    <h2 id="op-cash-history-title">Historial de caja</h2>
+                    <p>
+                      {branchName(branchId)} · {recentClosedCash.length} cierres cargados
+                      {flowPages.cash.hasMore ? ' · hay más registros' : ''}
+                    </p>
+                  </div>
+                  <Clock3 size={19} />
+                </div>
+                <div className="op-cash-history-list">
+                  {recentClosedCash.map((session) => (
+                    <article
+                      className={`op-cash-history-card ${
+                        Number(session.difference) < 0
+                          ? 'is-shortfall'
+                          : Number(session.difference) > 0
+                          ? 'is-surplus'
+                          : 'is-balanced'
+                      }`}
+                      key={session.id}
+                    >
+                      <div className="op-cash-history-heading">
+                        <b>{date(session.closed_at)}</b>
+                        <span>{branchName(session.branch_id)}</span>
+                      </div>
+                      <div className="op-cash-history-metrics">
+                        <div>
+                          <span>Esperado</span>
+                          <b>{money(session.expected_cash)}</b>
+                        </div>
+                        <div>
+                          <span>Contado</span>
+                          <b>{money(session.counted_cash)}</b>
+                        </div>
+                        <div>
+                          <span>Diferencia</span>
+                          <b>{money(session.difference)}</b>
+                        </div>
+                      </div>
+                      <p>
+                        Fondo inicial {money(session.opening_cash)} · {session.closing_note || 'Sin nota de cierre'}
+                      </p>
+                      {canDeleteCash && (
+                        <button
+                          className="button button-outline op-flow-danger"
+                          type="button"
+                          disabled={busy}
+                          onClick={() =>
+                            setAdminDeleteTarget({
+                              kind: 'session',
+                              sessionId: session.id,
+                              branchName: branchName(session.branch_id),
+                              openingCash: Number(session.opening_cash || 0),
+                              status: 'closed',
+                              openedAt: session.opened_at,
+                            })
+                          }
+                        >
+                          <Trash2 size={14} /> Eliminar cierre
+                        </button>
+                      )}
+                    </article>
+                  ))}
+                  {renderFlowLoadMore('cash', 'Cargar más sesiones')}
+                  {!recentClosedCash.length && <p className="muted">Aún no hay cierres registrados en esta sucursal.</p>}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {tab === 'returns' && (
+            <div className="op-flow-grid">
+              <section className="panel">
+                <div className="panel-heading">
+                  <div>
+                    <span className="eyebrow">VENTA ORIGINAL</span>
+                    <h2>Devolver o cancelar</h2>
+                  </div>
+                  <RotateCcw size={19} />
+                </div>
+                <label>
+                  Venta
+                  <select
+                    value={saleId}
+                    onChange={(e) => {
+                      const nextSale = e.target.value;
+                      setSaleId(nextSale);
+                      setReturnQty({});
+                      setReturnDisposition({});
+                      setRefund('0');
+                      setRefundMethod('other');
+                      setReturnNote('');
+                    }}
+                  >
+                    <option value="">Selecciona una venta</option>
+                    {sales
+                      .filter((s) => s.status === 'confirmed')
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.sale_code || s.id.slice(0, 8)} · {s.customers?.full_name || 'Cliente'} · {money(s.total)} · {date(s.created_at)}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                {hasMoreSales && (
+                  <div className="op-flow-load-more">
+                    <span role="status">Se muestran ventas recientes; carga más si la venta no aparece.</span>
+                    <button
+                      className="button button-outline"
+                      type="button"
+                      disabled={loadingMoreSales || busy || refreshing}
+                      onClick={() => void loadMoreSales()}
+                    >
+                      {loadingMoreSales ? (
+                        <>
+                          <LoaderCircle className="spin" size={15} /> Cargando…
+                        </>
+                      ) : (
+                        'Cargar otras 100 ventas'
+                      )}
+                    </button>
+                  </div>
+                )}
+                {selectedSale && (
+                  <>
+                    <div className="op-flow-list">
+                      {loadingSaleLines && <p className="muted" role="status">Consultando artículos de la venta…</p>}
+                      {saleLinesError && (
+                        <p className="op-return-guidance" role="alert">
+                          No se pudieron cargar los artículos. {saleLinesError}{' '}
+                          <button type="button" className="button button-outline" onClick={() => setSaleLinesRetry((value) => value + 1)}>
+                            Reintentar
+                          </button>
+                        </p>
+                      )}
+                      {linesForSale.map((l) => (
+                        <article key={l.id}>
+                          <b>{l.description_snapshot}</b>
+                          <small>
+                            Atendido: {l.fulfilled_quantity} · Devuelto: {l.returned_quantity} · {money(l.unit_price)} c/u
+                          </small>
+                          <div className="op-flow-inline">
+                            <input
+                              aria-label={`Cantidad a devolver de ${l.description_snapshot}`}
+                              type="number"
+                              min="0"
+                              max={Math.max(0, l.fulfilled_quantity - l.returned_quantity)}
+                              step="0.001"
+                              value={returnQty[l.id] || ''}
+                              placeholder="Cantidad"
+                              onChange={(e) => setReturnQty({ ...returnQty, [l.id]: e.target.value })}
+                            />
+                            <select
+                              aria-label={`Destino de devolución de ${l.description_snapshot}`}
+                              value={returnDisposition[l.id] || 'inspection'}
+                              onChange={(e) => setReturnDisposition({ ...returnDisposition, [l.id]: e.target.value })}
+                            >
+                              <option value="restock">Reintegrar como vendible</option>
+                              <option value="inspection">Separar para revisión</option>
+                              <option value="scrap">Registrar como merma</option>
+                            </select>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                    {loadingSaleLines || saleLinesError ? null : !returnableLines.length ? (
+                      <p className="op-return-guidance">Esta venta no tiene unidades atendidas pendientes de devolución.</p>
+                    ) : hasInvalidReturnQuantity ? (
+                      <p className="op-return-guidance" role="alert">
+                        Corrige las cantidades: deben ser mayores o iguales a cero y no superar las unidades atendidas pendientes.
+                      </p>
+                    ) : !validReturnLines.length ? (
+                      <p className="op-return-guidance">Indica una cantidad mayor que cero para habilitar el registro.</p>
+                    ) : null}
+                    <label>
+                      Monto de reembolso solicitado
+                      <input type="number" min="0" step="0.01" value={refund} onChange={(e) => setRefund(e.target.value)} />
+                    </label>
+                    <label>
+                      Método de reembolso
+                      <select value={refundMethod} onChange={(e) => setRefundMethod(e.target.value)}>
+                        <option value="other">Otro / por confirmar</option>
+                        <option value="cash">Efectivo</option>
+                        <option value="transfer">Transferencia</option>
+                        <option value="card">Tarjeta</option>
+                      </select>
+                    </label>
+                    <label>
+                      Motivo / notas
+                      <textarea value={returnNote} onChange={(e) => setReturnNote(e.target.value)} />
+                    </label>
+                    <button
+                      className="button button-dark"
+                      disabled={
+                        !canEditSales ||
+                        busy ||
+                        loadingSaleLines ||
+                        Boolean(saleLinesError) ||
+                        !validReturnLines.length ||
+                        hasInvalidReturnQuantity
+                      }
+                      onClick={submitReturn}
+                    >
+                      Registrar devolución parcial
+                    </button>
+                    {canEditSales && (
+                      <button className="button button-outline op-flow-danger" disabled={busy} onClick={cancelSale}>
+                        Cancelar orden completa
+                      </button>
+                    )}
+                    {canDeleteSales && (
+                      <button
+                        type="button"
+                        className="button button-outline op-flow-danger"
+                        disabled={busy}
+                        onClick={() =>
+                          setAdminDeleteTarget({
+                            kind: 'sale',
+                            saleId: selectedSale.id,
+                            saleCode: selectedSale.sale_code || selectedSale.id.slice(0, 8),
+                            customerName: selectedSale.customers?.full_name || 'Mostrador',
+                            total: Number(selectedSale.total || 0),
+                            status: selectedSale.status,
+                            createdAt: selectedSale.created_at,
+                          })
+                        }
+                      >
+                        <Trash2 size={15} /> Eliminar venta
+                      </button>
+                    )}
+                  </>
+                )}
+              </section>
+
+              <section className="panel">
+                <div className="panel-heading">
+                  <div>
+                    <span className="eyebrow">REGISTRO AUDITABLE</span>
+                    <h2>Devoluciones recientes</h2>
+                  </div>
+                </div>
+                <div className="op-flow-list">
+                  {returns.map((r) => (
+                    <article id={`op-returns-${r.id}`} tabIndex={-1} key={r.id}>
+                      <b>
+                        {r.return_code} · {r.kind === 'cancellation' ? 'Anulación' : 'Devolución'} · {money(r.refund_amount)}
+                      </b>
+                      <small>
+                        {date(r.created_at)} · Reembolso:{' '}
+                        {r.refund_status === 'pending'
+                          ? 'Pendiente'
+                          : r.refund_status === 'refunded'
+                          ? 'Liquidado'
+                          : 'Sin reembolso'}
+                      </small>
+                      {refundSettlementByReturn[r.id] && (
+                        <small>
+                          Liquidado {date(refundSettlementByReturn[r.id].settled_at)} · {refundSettlementByReturn[r.id].method}
+                          {refundSettlementByReturn[r.id].cash_session_id
+                            ? ` · Caja ${refundSettlementByReturn[r.id].cash_session_id.slice(0, 8)}`
+                            : ''}
+                          {refundSettlementByReturn[r.id].reference ? ` · Ref. ${refundSettlementByReturn[r.id].reference}` : ''}
+                        </small>
+                      )}
+                      <span>{r.note || 'Sin nota'}</span>
+                      {canSettleRefund && r.refund_status === 'pending' && (
+                        <>
+                          <label>
+                            Referencia de liquidación
+                            <input
+                              maxLength={200}
+                              value={refundSettlementRefs[r.id] || ''}
+                              placeholder={
+                                r.refund_method === 'cash' ? 'Comprobante opcional · requiere caja abierta' : 'Transferencia o comprobante'
+                              }
+                              onChange={(e) => setRefundSettlementRefs({ ...refundSettlementRefs, [r.id]: e.target.value })}
+                            />
+                          </label>
+                          <button
+                            className="button button-outline"
+                            disabled={busy}
+                            onClick={() =>
+                              run(
+                                async () => {
+                                  const { error: e } = await supabase.rpc('settle_sale_refund', {
+                                    p_return: r.id,
+                                    p_reference: (refundSettlementRefs[r.id] || '').trim(),
+                                    p_note: 'Liquidación verificada desde Operaciones',
+                                  });
+                                  if (e) throw e;
+                                },
+                                'Reembolso liquidado; quedó vinculado a Finanzas y, si fue en efectivo, al cierre de caja.'
+                              )
+                            }
+                          >
+                            Liquidar reembolso
+                          </button>
+                        </>
+                      )}
+                    </article>
+                  ))}
+                  {renderFlowLoadMore('returns', 'Cargar más devoluciones')}
+                  {!returns.length && <p className="muted">Sin devoluciones aún.</p>}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {tab === 'transfers' && (
+            <div className="op-flow-grid">
+              <section className="panel">
+                <div className="panel-heading">
+                  <div>
+                    <span className="eyebrow">SOLICITUD DE TRASLADO</span>
+                    <h2>Nuevo traspaso</h2>
+                  </div>
+                  <Boxes size={19} />
+                </div>
+                <div className="op-flow-form-grid">
+                  <label>
+                    Desde
+                    <select
+                      value={transferForm.from}
+                      onChange={(e) => {
+                        const branchId = e.target.value;
+                        setTransferForm((current) => ({ ...current, from: branchId, fromLocation: defaultLocation(branchId) }));
+                      }}
+                    >
+                      {branches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Hacia
+                    <select
+                      value={transferForm.to}
+                      onChange={(e) => {
+                        const branchId = e.target.value;
+                        setTransferForm((current) => ({ ...current, to: branchId, toLocation: defaultLocation(branchId) }));
+                      }}
+                    >
+                      {branches
+                        .filter((b) => b.id !== transferForm.from)
+                        .map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                </div>
+                <div className="op-flow-form-grid">
+                  <label>
+                    Ubicación de origen
+                    <select
+                      required
+                      value={transferForm.fromLocation}
+                      onChange={(e) => setTransferForm((current) => ({ ...current, fromLocation: e.target.value }))}
+                    >
+                      <option value="">Selecciona ubicación</option>
+                      {!fromLocations.length && (
+                        <option value="" disabled>
+                          No hay ubicaciones activas
+                        </option>
+                      )}
+                      {fromLocations.map((location) => (
+                        <option key={location.id} value={location.code}>
+                          {location.code} · {location.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Ubicación destino
+                    <select
+                      required
+                      value={transferForm.toLocation}
+                      onChange={(e) => setTransferForm((current) => ({ ...current, toLocation: e.target.value }))}
+                    >
+                      <option value="">Selecciona ubicación</option>
+                      {!toLocations.length && (
+                        <option value="" disabled>
+                          No hay ubicaciones activas
+                        </option>
+                      )}
+                      {toLocations.map((location) => (
+                        <option key={location.id} value={location.code}>
+                          {location.code} · {location.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  Artículo / variante
+                  <select
+                    value={transferForm.variant}
+                    onChange={(e) => setTransferForm({ ...transferForm, variant: e.target.value })}
+                  >
+                    <option value="">Selecciona artículo</option>
+                    {variants.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.sku} · {v.inventory_items?.name} {v.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Cantidad solicitada
+                  <input
+                    type="number"
+                    min="0.001"
+                    step="0.001"
+                    value={transferForm.quantity}
+                    onChange={(e) => setTransferForm({ ...transferForm, quantity: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Nota
+                  <input value={transferForm.note} onChange={(e) => setTransferForm({ ...transferForm, note: e.target.value })} />
+                </label>
+                <button
+                  className="button button-dark"
+                  disabled={
+                    busy ||
+                    !canManageTransfers ||
+                    !transferForm.variant ||
+                    !transferForm.fromLocation ||
+                    !transferForm.toLocation ||
+                    transferForm.from === transferForm.to
+                  }
+                  onClick={createTransfer}
+                >
+                  Crear solicitud
+                </button>
+              </section>
+
+              <section className="panel">
+                <div className="panel-heading">
+                  <div>
+                    <span className="eyebrow">TRÁNSITO Y RECEPCIONES</span>
+                    <h2>Transferencias</h2>
+                  </div>
+                </div>
+                <div className="op-flow-list">
+                  {transfers.map((t) => {
+                    const lines = transferLines.filter((l) => l.transfer_id === t.id);
+                    const pendingLineCount = lines.filter(
+                      (l) => Number(l.dispatched_quantity) > Number(l.received_quantity)
+                    ).length;
+                    const showTransitAge = ['dispatched', 'partially_received'].includes(t.status) && Boolean(t.dispatched_at);
+                    return (
+                      <article id={`op-transfers-${t.id}`} tabIndex={-1} className="op-flow-transfer" key={t.id}>
+                        <b>
+                          {t.transfer_code} · {branchName(t.from_branch_id)} → {branchName(t.to_branch_id)}
+                        </b>
+                        <div className="op-transfer-meta">
+                          <span className={`op-flow-status status-${t.status}`}>
+                            {transferStatusLabels[t.status] || t.status}
+                          </span>
+                          <small>
+                            {date(t.requested_at)} · {t.note || 'Sin nota de solicitud'}
+                          </small>
+                        </div>
+                        {showTransitAge && (
+                          <div className="op-transfer-aging" role="status">
+                            <span>
+                              <Clock3 size={14} /> Primer despacho {transferAgeLabel(t.dispatched_at)}
+                            </span>
+                            {pendingLineCount > 0 && (
+                              <span className="op-transfer-pending-count">
+                                {pendingLineCount} {pendingLineCount === 1 ? 'línea' : 'líneas'} por recibir
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {lines.map((l) => {
+                          const dispatchable =
+                            ['approved', 'dispatched', 'partially_received'].includes(t.status) &&
+                            Number(l.dispatched_quantity) < Number(l.requested_quantity);
+                          const receivable =
+                            ['dispatched', 'partially_received'].includes(t.status) &&
+                            Number(l.received_quantity) < Number(l.dispatched_quantity);
+                          const pendingQuantity = Math.max(0, Number(l.dispatched_quantity) - Number(l.received_quantity));
+                          const variant = lineVariant(l.variant_id);
+                          const unit = variant?.inventory_items?.base_unit;
+                          return (
+                            <div className="op-flow-transfer-line" key={l.id}>
+                              <span>
+                                {variant?.sku} · {variant?.inventory_items?.name || variant?.label}
+                                <small>
+                                  Pedido {l.requested_quantity} · enviado {l.dispatched_quantity} · recibido {l.received_quantity}
+                                  {pendingQuantity > 0 && (
+                                    <>
+                                      {' '}
+                                      ·{' '}
+                                      <strong className="op-transfer-pending-quantity">
+                                        Por recibir {pendingQuantity}
+                                        {unit ? ` ${unit}` : ''}
+                                      </strong>
+                                    </>
+                                  )}
+                                </small>
+                              </span>
+                              <div className="op-transfer-inputs">
+                                {dispatchable && (
+                                  <label>
+                                    Despachar
+                                    <input
+                                      aria-label={`Cantidad a despachar de ${lineVariant(l.variant_id)?.sku || 'artículo'}`}
+                                      type="number"
+                                      min="0"
+                                      max={Number(l.requested_quantity) - Number(l.dispatched_quantity)}
+                                      step="0.001"
+                                      value={transferQty[`dispatch-${l.id}`] || ''}
+                                      placeholder={`Máx. ${Number(l.requested_quantity) - Number(l.dispatched_quantity)}`}
+                                      onChange={(e) =>
+                                        setTransferQty((current) => ({ ...current, [`dispatch-${l.id}`]: e.target.value }))
+                                      }
+                                    />
+                                  </label>
+                                )}
+                                {receivable && (
+                                  <label>
+                                    Recibir
+                                    <input
+                                      aria-label={`Cantidad a recibir de ${lineVariant(l.variant_id)?.sku || 'artículo'}`}
+                                      type="number"
+                                      min="0"
+                                      max={pendingQuantity}
+                                      step="0.001"
+                                      value={transferQty[`receive-${l.id}`] || ''}
+                                      placeholder={`Máx. ${pendingQuantity}`}
+                                      onChange={(e) =>
+                                        setTransferQty((current) => ({ ...current, [`receive-${l.id}`]: e.target.value }))
+                                      }
+                                    />
+                                  </label>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <label>
+                          Nota de movimiento
+                          <input
+                            value={transferNotes[t.id] || ''}
+                            onChange={(e) => setTransferNotes({ ...transferNotes, [t.id]: e.target.value })}
+                          />
+                        </label>
+                        <div className="op-flow-actions">
+                          {t.status === 'requested' && canManageTransfers && (
+                            <>
+                              <button type="button" disabled={busy} onClick={() => transferAction(t, 'approved')}>
+                                Aprobar
+                              </button>
+                              <button type="button" disabled={busy} onClick={() => transferAction(t, 'rejected')}>
+                                Rechazar
+                              </button>
+                            </>
+                          )}
+                          {canManageTransfers && transferCanDispatch(t) && (
+                            <button type="button" disabled={busy} onClick={() => transferActionLines(t, 'dispatch')}>
+                              Despachar cantidades ingresadas
+                            </button>
+                          )}
+                          {canManageTransfers && transferCanReceive(t) && (
+                            <button type="button" disabled={busy} onClick={() => transferActionLines(t, 'receive')}>
+                              Recibir cantidades ingresadas
+                            </button>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                  {renderFlowLoadMore('transfers', 'Cargar más transferencias')}
+                  {!transfers.length && <p className="muted">Sin transferencias.</p>}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {tab === 'production' && (
+            <div className="op-flow-grid">
+              <ProductionOrderWorkspace
+                branches={branches}
+                areas={areas}
+                sales={sales}
+                orders={orders}
+                events={productionEvents}
+                teamMembers={teamMembers}
+                orderForm={orderForm}
+                setOrderForm={setOrderForm}
+                busy={busy}
+                canManage={canManageProduction}
+                hasData={hasLoaded}
+                hasMoreOrders={hasMoreProductionOrders}
+                loadingMoreOrders={loadingMoreProductionOrders}
+                onLoadMoreOrders={loadMoreProductionOrders}
+                onRetry={() => void prodSync.triggerRefresh()}
+                onCreate={createOrder}
+                onStatusChange={updateOrder}
+                onSaveHandoff={updateProductionHandoff}
+                jobs={productionJobs}
+                jobSteps={productionJobSteps}
+                onOpenJobDetail={(id) => setSelectedJobId(id)}
+              />
+              <section className="panel op-production-consumption">
+                <div className="panel-heading">
+                  <div>
+                    <span className="eyebrow">REGISTRO REAL</span>
+                    <h2>Consumo de materiales</h2>
+                    <p>Solo registra cantidades usadas que se observaron en la orden.</p>
+                  </div>
+                  <PackageCheck size={19} />
+                </div>
+                <label>
+                  Orden abierta
+                  <select
+                    value={consumeForm.order}
+                    onChange={(e) => {
+                      const order = orders.find((row) => row.id === e.target.value);
+                      setConsumeForm((current) => ({
+                        ...current,
+                        order: e.target.value,
+                        location: defaultLocation(order?.branch_id),
+                      }));
+                    }}
+                  >
+                    <option value="">Selecciona orden</option>
+                    {orders
+                      .filter((order) => !['completed', 'cancelled'].includes(order.status))
+                      .map((order) => (
+                        <option key={order.id} value={order.id}>
+                          {order.order_code} · {order.title}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label>
+                  Variante de inventario
+                  <select
+                    value={consumeForm.variant}
+                    onChange={(e) => setConsumeForm({ ...consumeForm, variant: e.target.value })}
+                  >
+                    <option value="">Selecciona material</option>
+                    {variants.map((variant) => (
+                      <option key={variant.id} value={variant.id}>
+                        {variant.sku} · {variant.inventory_items?.name} {variant.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="op-flow-form-grid">
+                  <label>
+                    Ubicación
+                    <select
+                      required
+                      value={consumeForm.location}
+                      onChange={(e) => setConsumeForm((current) => ({ ...current, location: e.target.value }))}
+                    >
+                      <option value="">Selecciona ubicación</option>
+                      {!consumeLocations.length && (
+                        <option value="" disabled>
+                          No hay ubicaciones activas
+                        </option>
+                      )}
+                      {consumeLocations.map((location) => (
+                        <option key={location.id} value={location.code}>
+                          {location.code} · {location.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Cantidad usada
+                    <input
+                      type="number"
+                      min="0.001"
+                      step="0.001"
+                      value={consumeForm.quantity}
+                      onChange={(e) => setConsumeForm({ ...consumeForm, quantity: e.target.value })}
+                    />
+                  </label>
+                  <label>
+                    Nota de consumo
+                    <input
+                      value={consumeForm.note}
+                      onChange={(e) => setConsumeForm({ ...consumeForm, note: e.target.value })}
+                    />
+                  </label>
+                </div>
+                <button
+                  className="button button-outline"
+                  disabled={
+                    busy ||
+                    !canManageProduction ||
+                    !consumeForm.order ||
+                    !consumeForm.variant ||
+                    !consumeForm.quantity ||
+                    !consumeForm.location
+                  }
+                  onClick={consumeMaterial}
+                >
+                  Registrar consumo real
+                </button>
+              </section>
+            </div>
+          )}
+
+          {tab === 'quotes' && (
+            <div className="panel">
+              <div className="panel-heading">
+                <div>
+                  <span className="eyebrow">BASE ÚNICA DE PROPUESTAS</span>
+                  <h2>Cotizaciones centrales</h2>
+                </div>
+                <FileText size={19} />
+              </div>
+              {!canEditQuotes && <p className="muted" role="status">Tu perfil puede consultar cotizaciones, pero no cambiar sus estados.</p>}
+              <div className="op-flow-list">
+                {quotes.map((q) => (
+                  <article id={`op-quotes-${q.id}`} tabIndex={-1} key={q.id}>
+                    <b>
+                      {q.quote_code} · {q.customer_name || 'Sin cliente'} · {money(q.selected_total)}
+                    </b>
+                    <small>
+                      {date(q.created_at)} · {q.chosen_tier} · {q.price_confirmed ? 'Tarifa confirmada' : 'Tarifa por confirmar'}
+                    </small>
+                    <span>
+                      {Array.isArray(q.items)
+                        ? q.items.map((i: any) => `${i.name || i.product_name || 'Ítem'} × ${i.quantity || 1}`).join(' · ')
+                        : ''}
+                    </span>
+                    <button
+                      className="button button-outline op-flow-detail-trigger"
+                      type="button"
+                      onClick={() => setSelectedQuote(q)}
+                    >
+                      Ver ficha completa
+                    </button>
+                    <div className="op-flow-inline">
+                      <span className={`op-flow-status status-${q.status}`}>{quoteStatusLabels[q.status] || q.status}</span>
+                      {!['rejected', 'expired', 'converted'].includes(q.status) && canEditQuotes && (
+                        <select
+                          aria-label={`Cambiar estado de cotización ${q.quote_code}`}
+                          value={q.status}
+                          disabled={busy}
+                          onChange={(e) =>
+                            run(async () => {
+                              const { error: e2 } = await supabase.rpc('update_central_quote_status', {
+                                p_quote: q.id,
+                                p_status: e.target.value,
+                                p_note: '',
+                              });
+                              if (e2) throw e2;
+                            }, 'Estado de cotización actualizado.')
+                          }
+                        >
+                          <option value={q.status}>{quoteStatusLabels[q.status] || q.status}</option>
+                          {['sent', 'accepted', 'rejected', 'expired']
+                            .filter((s) => s !== q.status)
+                            .map((s) => (
+                              <option key={s} value={s}>
+                                {quoteStatusLabels[s] || s}
+                              </option>
+                            ))}
+                        </select>
+                      )}
+                    </div>
+                  </article>
+                ))}
+                {renderFlowLoadMore('quotes', 'Cargar más cotizaciones')}
+                {!quotes.length && (
+                  <p className="muted">Aún no hay propuestas centrales. Guarda una desde Cotizador para que aparezca aquí.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <aside className="op-flow-footnote">
+        <PackageCheck size={16} />
+        <span>
+          Los saldos iniciales no se crean aquí. Solo los movimientos confirmados y vinculados modifican existencias. Precios, reglas tributarias y aprobaciones siguen su fuente autorizada.
+        </span>
+      </aside>
+
+      <Sheet
+        open={Boolean(selectedQuote)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedQuote(null);
+        }}
+        title={selectedQuote ? `Ficha completa · ${selectedQuote.quote_code}` : 'Cotización'}
+        description="Productos, imágenes y valores registrados en esta propuesta."
+      >
+        {selectedQuote && (
+          <CommercialDocumentDetails kind="quote" documentId={selectedQuote.id} initialDocument={selectedQuote} />
+        )}
+      </Sheet>
+
+      {/* Montaje de la Ficha Unificada de Trabajo de Producción sin perder contexto */}
+      <ProductionJobDetailSheet
+        open={Boolean(selectedJobId)}
+        jobId={selectedJobId}
+        onClose={() => {
+          setSelectedJobId(null);
+          if (searchParams.get('job')) {
+            const next = new URLSearchParams(searchParams);
+            next.delete('job');
+            setSearchParams(next, { replace: true });
+          }
+        }}
+        onChanged={() => void prodSync.triggerRefresh()}
+      />
+
+      <AdminDeleteRecordModal
+        open={Boolean(adminDeleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setAdminDeleteTarget(null);
+        }}
+        target={adminDeleteTarget}
+        onDeleted={(msg) => {
+          setNotice(msg);
+          setSaleId('');
+          void refresh();
+        }}
+      />
+    </section>
+  );
 }

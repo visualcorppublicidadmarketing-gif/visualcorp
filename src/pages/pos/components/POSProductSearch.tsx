@@ -2,6 +2,7 @@ import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Boxes, CheckCircle2, Link2, Plus, Search, Star, TriangleAlert, X } from 'lucide-react';
 import { formatMoney } from '../../../app/workspace';
 import { rankPOSProducts, type POSSearchProduct } from '../../../lib/posProductSearch';
+import { Kbd } from '../../../components/ui/OperationalKit';
 
 export type POSStockSemanticMeta = {
   tone: 'available' | 'low' | 'shortage' | 'unlinked';
@@ -16,6 +17,8 @@ export type POSStockSemanticMeta = {
 export function POSProductSearch<T extends POSSearchProduct>({
   products, query, onQueryChange, onChoose, onEnter, selectedId, disabled, family, onFamilyChange, families,
   codesByProduct, stockByProduct, stockMetaByProduct = {}, renderImage, favoriteIds = new Set<string>(), onToggleFavorite, onQuickAdd,
+  emptyStateTitle, emptyStateDescription, emptyStateAction, resultNoun = 'producto', showInventoryFilters = true,
+  inputRef,
 }: {
   products: T[]; query: string; onQueryChange: (value: string) => void; onChoose: (product: T) => void;
   onEnter: (query: string, highlighted?: T) => void; selectedId: string; disabled: boolean;
@@ -25,9 +28,13 @@ export function POSProductSearch<T extends POSSearchProduct>({
   renderImage: (product: T) => React.ReactNode;
   favoriteIds?: Set<string>; onToggleFavorite?: (productId: string) => void;
   onQuickAdd?: (product: T) => void;
+  emptyStateTitle?: string; emptyStateDescription?: string; emptyStateAction?: React.ReactNode;
+  resultNoun?: string; showInventoryFilters?: boolean;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }) {
   const listId = useId();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const localInputRef = useRef<HTMLInputElement>(null);
+  const resolvedInputRef = (inputRef as React.RefObject<HTMLInputElement>) || localInputRef;
   const [activeIndex, setActiveIndex] = useState(-1);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [stockFilter, setStockFilter] = useState<'all' | 'available' | 'linked'>('all');
@@ -47,14 +54,14 @@ export function POSProductSearch<T extends POSSearchProduct>({
     products.filter((product) => {
       if (family !== 'Todas' && product.family !== family) return false;
       if (favoritesOnly && !favoriteIds.has(product.id)) return false;
-      if (stockFilter === 'available' && stockMetaByProduct[product.id]?.tone !== 'available') return false;
-      if (stockFilter === 'linked' && !stockMetaByProduct[product.id]?.linked) return false;
+      if (showInventoryFilters && stockFilter === 'available' && stockMetaByProduct[product.id]?.tone !== 'available') return false;
+      if (showInventoryFilters && stockFilter === 'linked' && !stockMetaByProduct[product.id]?.linked) return false;
       return true;
     }),
     query,
     codesByProduct,
   ).sort((a, b) => query.trim() ? 0 : Number(favoriteIds.has(b.id)) - Number(favoriteIds.has(a.id)) || a.name.localeCompare(b.name, 'es')),
-  [products, family, query, codesByProduct, favoritesOnly, favoriteIds, stockFilter, stockMetaByProduct]);
+  [products, family, query, codesByProduct, favoritesOnly, favoriteIds, stockFilter, stockMetaByProduct, showInventoryFilters]);
 
   const visible = filtered.slice(0, 24);
   useEffect(() => setActiveIndex(-1), [query, family, stockFilter, favoritesOnly]);
@@ -73,28 +80,32 @@ export function POSProductSearch<T extends POSSearchProduct>({
       onEnter(query, activeIndex >= 0 ? visible[activeIndex] : visible[0]);
     } else if (event.key === 'Escape') {
       setActiveIndex(-1);
-      inputRef.current?.blur();
+      resolvedInputRef.current?.blur();
     }
   };
 
   return <div className="pos-product-browser">
-    <label htmlFor="pos-product-search-input">Buscar o escanear SKU</label>
+    <label htmlFor="pos-product-search-input">
+      <span>Buscar o escanear SKU</span>
+      {!disabled && <span className="pos-search-kbd-hint" title="Atajo para buscar producto"><Kbd>F2</Kbd></span>}
+    </label>
     <div className="search-input">
       <Search size={15}/>
       <input
-        id="pos-product-search-input" ref={inputRef} role="combobox" aria-autocomplete="list"
+        id="pos-product-search-input" ref={resolvedInputRef} role="combobox" aria-autocomplete="list"
         aria-expanded={visible.length > 0} aria-controls={`${listId}-results`}
         aria-activedescendant={activeIndex >= 0 && visible[activeIndex] ? `${listId}-option-${activeIndex}` : undefined}
         value={query} onChange={(event) => onQueryChange(event.target.value)} onFocus={(event) => event.currentTarget.select()}
         onKeyDown={handleKeyDown} disabled={disabled} placeholder={disabled ? 'Cargando sucursal…' : 'Nombre, código PI001 o SKU de inventario · Enter'}
       />
-      {query && <button type="button" className="pos-search-clear-btn" aria-label="Limpiar búsqueda de producto" onClick={() => { onQueryChange(''); inputRef.current?.focus(); }}><X size={14}/></button>}
+      {query && <button type="button" className="pos-search-clear-btn" aria-label="Limpiar búsqueda de producto" onClick={() => { onQueryChange(''); resolvedInputRef.current?.focus(); }}><X size={14}/></button>}
     </div>
 
-    <div className="pos-filter-pills-row" role="group" aria-label="Filtros rápidos de catálogo e inventario">
+    <div className="pos-filter-pills-row" role="group" aria-label={showInventoryFilters ? 'Filtros rápidos de catálogo e inventario' : 'Filtros rápidos de catálogo'}>
       {onToggleFavorite && <button type="button" className={`pos-favorites-filter${favoritesOnly ? ' active' : ''}`} aria-pressed={favoritesOnly} onClick={() => { setFavoritesOnly((value) => !value); setActiveIndex(-1); }}>
         <Star size={13} aria-hidden="true"/> Mis productos estrella <span>{favoriteIds.size}</span>
       </button>}
+      {showInventoryFilters&&<>
       <button type="button" className={`pos-stock-filter-pill${stockFilter === 'all' ? ' active' : ''}`} aria-pressed={stockFilter === 'all'} onClick={() => setStockFilter('all')}>
         <Boxes size={12} aria-hidden="true"/> Todos <span>{products.length}</span>
       </button>
@@ -104,6 +115,7 @@ export function POSProductSearch<T extends POSSearchProduct>({
       <button type="button" className={`pos-stock-filter-pill is-linked${stockFilter === 'linked' ? ' active' : ''}`} aria-pressed={stockFilter === 'linked'} onClick={() => setStockFilter((curr) => curr === 'linked' ? 'all' : 'linked')}>
         <Link2 size={12} aria-hidden="true"/> Con vínculo <span>{stockCounts.linked}</span>
       </button>
+      </>}
     </div>
 
     <label>Familia<select value={family} onChange={(event) => onFamilyChange(event.target.value)}><option>Todas</option>{families.map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -115,7 +127,7 @@ export function POSProductSearch<T extends POSSearchProduct>({
 
     <small className="pos-scan-hint">Escribe para filtrar. Usa ↑ ↓ y Enter para elegir; el lector de SKU también funciona con Enter.</small>
     <div className="pos-catalog-count" aria-live="polite">
-      <span>{filtered.length} {filtered.length === 1 ? 'producto' : 'productos'} encontrados{filtered.length > 24 ? ' · mostrando los primeros 24' : ''}</span>
+      <span>{filtered.length} {resultNoun}{filtered.length === 1 ? '' : 's'} encontrados{filtered.length > 24 ? ' · mostrando los primeros 24' : ''}</span>
       {(family !== 'Todas' || favoritesOnly || stockFilter !== 'all' || query.trim()) && <button type="button" className="pos-reset-filters-btn" onClick={() => { onFamilyChange('Todas'); setFavoritesOnly(false); setStockFilter('all'); onQueryChange(''); }}>Restablecer filtros</button>}
     </div>
 
@@ -167,6 +179,6 @@ export function POSProductSearch<T extends POSSearchProduct>({
           </span>
         </div>;
       })}
-    </div> : <div id={`${listId}-results`} className="pos-catalog-empty" role="status"><Search size={19}/><b>{favoritesOnly && favoriteIds.size === 0 ? 'Aún no tienes estrellas' : products.length ? 'No encontramos productos' : 'No hay artículos en esta modalidad'}</b><span>{favoritesOnly && favoriteIds.size === 0 ? 'Selecciona un producto y márcalo con la estrella.' : products.length ? 'Prueba otras palabras, cambia la familia o limpia los filtros de stock.' : 'Pide a administración que complete el catálogo.'}</span></div>}
+    </div> : <div id={`${listId}-results`} className="pos-catalog-empty" role="status"><Search size={19}/><b>{favoritesOnly && favoriteIds.size === 0 ? 'Aún no tienes estrellas' : products.length ? `No encontramos ${resultNoun}${resultNoun.endsWith('s') ? '' : 's'}` : emptyStateTitle || 'No hay artículos en esta modalidad'}</b><span>{favoritesOnly && favoriteIds.size === 0 ? 'Selecciona un producto y márcalo con la estrella.' : products.length ? `Prueba otras palabras o limpia la búsqueda de ${resultNoun}${resultNoun.endsWith('s') ? '' : 's'}.` : emptyStateDescription || 'Pide a administración que complete el catálogo.'}</span>{!products.length&&emptyStateAction}</div>}
   </div>;
 }

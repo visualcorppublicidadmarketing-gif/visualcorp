@@ -1,17 +1,21 @@
 # Sistema visual compartido de Visual Corp Suite
 
-## Estado de la aplicación
+## Estado actual de la aplicación
 
-La entrada `src/main.jsx` importa `src/app.css`. `src/App.jsx` importa `src/app.css`, `src/public-site/deployment.css` y `src/design-system.css`. `src/public-site/PublicSite.jsx` importa `src/public-site/public-site.css`. Por tanto, las reglas compartidas nuevas viven en `design-system.css`, que forma parte del build actual. `src/theme.css`, `src/styles.css`, `src/smart.css` y `src/pos.css` no se importan desde las rutas activas; editarlos no cambiaría esta interfaz.
+La entrada activa es `src/main.tsx`: monta `src/App.tsx` e importa `src/app.css` y `src/components/ui/magic-components.css`. `src/App.tsx` importa además `src/public-site/deployment.css` y `src/design-system.css`; sus rutas públicas cargan `src/public-site/PublicSite.tsx`.
+
+`PublicSite.tsx` carga `public-site-v2.css`, `glass-system.css`, `public-navigation.css`, `public-footer.css`, `contact-page.css`, `home-hero.css`, `public-theme.css`, `service-detail.css`, `mobile-bottom-navigation.css` y `navigation-refinement.css`. `HomePage.tsx` añade `home-page.css`; `quote/QuoteConfigurator.tsx` añade `quote/quote-calculator.css`. `public-site.css` pertenece al módulo de referencia de migración y no está en la cadena activa del sitio.
+
+El sistema público usa `--site-*` en `glass-system.css`, `--home-*` en `home-page.css` y `--quote-*` en el cotizador. `public-site-v2.css` carga DM Sans desde `public/public-site/fonts/`; Bebas Kai se carga en `glass-system.css` y `app.css`. Las variantes de tema viven en `public-theme.css`, `home-page.css` y `quote-calculator.css`. Al cambiar una pantalla, confirma primero su cadena de imports; los nombres de archivo por sí solos no indican que una hoja CSS esté activa.
+
+Las reglas compartidas de administración y operaciones viven en `design-system.css`, dentro del build actual. `src/theme.css`, `src/styles.css`, `src/smart.css` y `src/pos.css` no se importan desde las rutas activas; editarlos no cambiaría esta interfaz.
 
 ## Alcance de esta revisión
 
-- Tokens `--vc-*` para tinta, líneas, acento, foco, radios y sombra.
-- Foco de teclado visible, controles táctiles de al menos 44 px y texto de formularios más legible.
-- Ajustes comunes de navegación, tarjetas, tablas y estados vacíos en los espacios de administración y operaciones.
-- Mejoras de lectura en el formulario público y en la pantalla compartida de acceso.
+- La capa compartida de administración y operaciones usa tokens `--vc-*` para tinta, líneas, acento, foco, radios y sombra, con foco visible y texto de formularios legible.
+- En el sitio público, la continuidad v11 reordena la entrada a servicios, el detalle y el cotizador con hojas y componentes existentes; añade una ruta para el destino `/soluciones` ya usado por la navegación. La intervención no cambia precios, cálculos, campos de envío ni datos de oferta.
 
-El sitio público conserva sus composiciones y los módulos de POS, inventario, CRM y contenido conservan sus flujos. Los estilos generales de `.work-app` pueden afectar la altura de algunos campos y filas de tabla; revisar esos puntos al integrar cambios de otros chats.
+Los módulos de POS, inventario, CRM y contenido conservan sus flujos. Los estilos generales de `.work-app` pueden afectar la altura de algunos campos y filas de tabla; revisar esos puntos al integrar cambios de otros chats.
 
 ## Verificación y continuidad
 

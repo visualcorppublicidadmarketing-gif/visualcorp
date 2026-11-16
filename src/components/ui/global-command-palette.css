@@ -537,6 +537,13 @@
   border-color: var(--vc-cmd-item-border-active);
 }
 
+.vc-palette-item:focus-visible {
+  outline: 2px solid var(--vc-cmd-accent, #793fa0);
+  outline-offset: 1px;
+  background: var(--vc-cmd-item-active);
+  border-color: var(--vc-cmd-item-border-active);
+}
+
 /* Iconos Tintados por Categoría */
 .vc-palette-item-icon {
   display: flex;

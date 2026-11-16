@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowDown, ArrowRight, ArrowUp, ArrowUpRight, Boxes, Calculator, Check, CheckCircle2,
   CircleHelp, ClipboardList, Copy, ExternalLink, FileCheck2, FileText, FolderOpen,
@@ -117,6 +117,10 @@ export function OperationsQuotePage() {
   const canViewSales = hasPermission('sales', 'view');
   const canDeleteSales = hasPermission('sales', 'delete_records');
 
+  const [searchParams] = useSearchParams();
+  const fromRequest = searchParams.get('fromRequest');
+  const loadedRequestRef = useRef<string>('');
+
   const [branchCode, setBranchCode] = useState('VIS');
   const [lines, setLines] = useState<QuoteDraftLine[]>([createLine()]);
   const [priceTier, setPriceTier] = useState('pvp');
@@ -170,6 +174,76 @@ export function OperationsQuotePage() {
   const [selectedQuoteForPdf, setSelectedQuoteForPdf] = useState<QuoteData | null>(null);
   const [isCurrentPdfOpen, setIsCurrentPdfOpen] = useState(false);
   const [receiptModalTarget, setReceiptModalTarget] = useState<{ id: string; clientName: string; amount: number } | null>(null);
+
+  useEffect(() => {
+    if (!fromRequest || !supabase || !organizationId) return;
+    if (loadedRequestRef.current === fromRequest) return;
+    loadedRequestRef.current = fromRequest;
+    let active = true;
+
+    (async () => {
+      try {
+        const { data: req, error } = await supabase
+          .from('public_requests')
+          .select('*')
+          .eq('id', fromRequest)
+          .maybeSingle();
+
+        if (!active || error || !req) return;
+
+        if (req.name) setCustomer(req.name);
+        if (req.phone) setPhone(req.phone);
+        if (req.email) setCustomerEmail(req.email);
+        if (req.company) setJobName(req.company);
+        if (req.message) setProposalNotes(req.message);
+
+        const quoteRequest = req.quote_data?.request || req.quote_data || null;
+        const rawItems = Array.isArray(quoteRequest?.items) && quoteRequest.items.length > 0
+          ? quoteRequest.items
+          : quoteRequest && (quoteRequest.productName || quoteRequest.productId || quoteRequest.service || quoteRequest.width || quoteRequest.height)
+            ? [quoteRequest]
+            : [];
+
+        if (rawItems.length > 0) {
+          const importedLines: QuoteDraftLine[] = rawItems.map((item: any) => {
+            const matchedProduct = (data.catalog || []).find((p: any) =>
+              (item.productId && (p.source_key === item.productId || p.id === item.productId)) ||
+              (item.productName && p.name?.toLowerCase().trim() === item.productName?.toLowerCase().trim())
+            );
+            const isCustom = !matchedProduct;
+            const widthCm = String(item.width || item.widthCm || 100);
+            const heightCm = String(item.height || item.heightCm || 100);
+            const qty = String(item.quantity || item.piece_quantity || 1);
+            const customMode: 'quantity' | 'area' = item.calculationMode === 'area' || (Number(widthCm) > 0 && Number(heightCm) > 0) ? 'area' : 'quantity';
+
+            return {
+              id: newLineId(),
+              productId: matchedProduct?.id || matchedProduct?.source_key || '',
+              quantity: qty,
+              widthCm,
+              heightCm,
+              option: String(item.option || ''),
+              finishing: sanitizeCommercialFinishing(item.finishing),
+              concept: String(item.productName || item.name || item.project || req.service || 'Ítem solicitado'),
+              additionalDescription: String(item.description || item.details || req.message || ''),
+              additionalDescriptionHtml: `<p>${String(item.description || item.details || req.message || '')}</p>`,
+              custom: isCustom,
+              customMode,
+              customUnit: customMode === 'area' ? 'm²' : 'unidad',
+              customUnitPrice: String(item.unitPrice || item.customUnitPrice || ''),
+            };
+          });
+          setLines(importedLines);
+        }
+
+        flash(`Solicitud de ${req.name || 'cliente'} importada como borrador. Revisa medidas, precios y condiciones antes de guardar.`);
+      } catch (err: any) {
+        console.error('Error al importar solicitud pública:', err);
+      }
+    })();
+
+    return () => { active = false; };
+  }, [fromRequest, organizationId, data.catalog, flash]);
 
   useEffect(() => {
     if (!data.branches?.length) return;
@@ -441,11 +515,11 @@ export function OperationsQuotePage() {
     if (!supabase || !organizationId || !canEditQuotes || updatingStatusId) return;
     setUpdatingStatusId(quoteDoc.id);
     try {
-      const { error } = await supabase
-        .from('central_quotes')
-        .update({ status: 'accepted', price_confirmed: true })
-        .eq('id', quoteDoc.id)
-        .eq('organization_id', organizationId);
+      const { error } = await supabase.rpc('update_central_quote_status', {
+        p_quote: quoteDoc.id,
+        p_status: 'accepted',
+        p_note: 'Aceptada y confirmada desde Cotizador Central',
+      });
       if (error) throw error;
       setCentralQuotes((rows) => rows.map((row) => row.id === quoteDoc.id ? { ...row, status: 'accepted', price_confirmed: true } : row));
       flash(`Cotización ${quoteDoc.quote_code} marcada como Aceptada. Ya está lista para cobrarse en el POS.`);

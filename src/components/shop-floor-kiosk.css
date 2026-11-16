@@ -1,7 +1,7 @@
 /* ==========================================================================
-   Shop Floor Kiosk - Terminal Táctil de Taller para Visual Corp
-   Inspirado en Odoo 18/19 MRP (mrp_workorder.py), ShopVOX y Linear Enterprise.
-   Optimizada para pantallas táctiles de taller, tablets y monitores industriales.
+   Shop Floor Kiosk - Terminal Táctil de Taller para Visual Corp (Fase 4)
+   Diseñado para pantallas industriales, tablets de operario y laptops de planta.
+   Conexión 100% real a Supabase, cero desbordamiento horizontal y accesibilidad completa.
    ========================================================================== */
 
 :root {
@@ -16,7 +16,7 @@
   --sf-text-main: #0f172a;
   --sf-text-muted: #64748b;
   --sf-text-subtle: #94a3b8;
-  
+
   --sf-primary: #0284c7;
   --sf-primary-hover: #0369a1;
   --sf-primary-soft: #e0f2fe;
@@ -57,7 +57,7 @@
   --sf-radius-xl: 20px;
 }
 
-/* Modo Oscuro Ultra Nítido para Taller con Luz Halógena o Reflejos */
+/* Modo Oscuro Ultra Nítido para Taller */
 [data-theme='dark'],
 .work-app.theme-dark,
 .theme-dark,
@@ -106,7 +106,7 @@ body.theme-dark {
 }
 
 /* ==========================================================================
-   Contenedor Principal Kiosk
+   Contenedor Principal Kiosk (Zero Overflow Garantizado)
    ========================================================================== */
 .sf-kiosk {
   box-sizing: border-box;
@@ -130,7 +130,22 @@ body.theme-dark {
 .sf-kiosk *::before,
 .sf-kiosk *::after {
   box-sizing: border-box;
+  max-width: 100%;
   min-width: 0;
+}
+
+/* Animación de rotación para sincronización */
+@keyframes sf-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sf-spin {
+  animation: sf-spin 1s linear infinite;
 }
 
 /* ==========================================================================
@@ -153,6 +168,7 @@ body.theme-dark {
   display: flex;
   align-items: center;
   gap: 0.85rem;
+  flex-wrap: wrap;
 }
 
 .sf-brand-badge {
@@ -165,6 +181,7 @@ body.theme-dark {
   background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+  flex-shrink: 0;
 }
 
 .sf-brand-info h1 {
@@ -176,6 +193,7 @@ body.theme-dark {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .sf-brand-tag {
@@ -211,6 +229,7 @@ body.theme-dark {
   border: 1px solid var(--sf-card-border);
   padding: 0.55rem 0.95rem;
   border-radius: var(--sf-radius-md);
+  min-height: 44px;
 }
 
 .sf-clock-time {
@@ -229,7 +248,7 @@ body.theme-dark {
   padding-left: 0.65rem;
 }
 
-/* Selector táctil de Operador de Turno */
+/* Operador de Turno Autenticado Real */
 .sf-operator-pill {
   display: flex;
   align-items: center;
@@ -241,21 +260,34 @@ body.theme-dark {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--sf-text-main);
-  cursor: pointer;
-  transition: all 0.15s ease;
+  min-height: 44px;
 }
 
-.sf-operator-pill:hover {
-  border-color: var(--sf-primary);
-  background-color: var(--sf-primary-soft);
+.sf-operator-role {
+  font-size: 0.76rem;
+  color: var(--sf-text-muted);
+  font-weight: 500;
+}
+
+.sf-sync-stale-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--sf-radius-sm);
+  background-color: var(--sf-warning-soft);
+  color: var(--sf-warning-text);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .sf-btn-icon-tactile {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--sf-radius-md);
   background-color: var(--sf-bg);
   border: 1px solid var(--sf-card-border);
@@ -264,16 +296,21 @@ body.theme-dark {
   transition: all 0.15s ease;
 }
 
-.sf-btn-icon-tactile:hover {
+.sf-btn-icon-tactile:hover:not(:disabled) {
   background-color: var(--sf-card-border);
 }
 
-.sf-btn-icon-tactile:active {
+.sf-btn-icon-tactile:active:not(:disabled) {
   transform: scale(0.95);
 }
 
+.sf-btn-icon-tactile:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 /* ==========================================================================
-   Barra de Estado de Máquinas en Vivo (Plotters, Láser, Sublimación, DTF)
+   Barra de Maquinaria Real (equipment_assets)
    ========================================================================== */
 .sf-machines-bar {
   background-color: var(--sf-card-bg);
@@ -303,9 +340,54 @@ body.theme-dark {
   color: var(--sf-text-main);
 }
 
+.sf-machines-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .sf-machines-summary {
   font-size: 0.8rem;
   color: var(--sf-text-muted);
+}
+
+.sf-link-equipos {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--sf-primary);
+  text-decoration: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--sf-radius-sm);
+  border: 1px solid var(--sf-primary-soft);
+  background-color: var(--sf-primary-soft);
+  transition: all 0.15s ease;
+}
+
+.sf-link-equipos:hover {
+  text-decoration: underline;
+}
+
+.sf-machines-empty {
+  padding: 1.5rem;
+  text-align: center;
+  background-color: var(--sf-bg);
+  border: 1.5px dashed var(--sf-card-border);
+  border-radius: var(--sf-radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.sf-machines-empty p {
+  margin: 0;
+  color: var(--sf-text-muted);
+  font-size: 0.9rem;
+  max-width: 540px;
 }
 
 .sf-machines-grid {
@@ -352,6 +434,50 @@ body.theme-dark {
   font-weight: 700;
   font-size: 0.88rem;
   color: var(--sf-text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sf-machine-name-group span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sf-machine-meta-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+}
+
+.sf-machine-code-badge {
+  font-family: var(--sf-font-mono);
+  font-weight: 800;
+  padding: 0.15rem 0.45rem;
+  background-color: var(--sf-card-bg);
+  border: 1px solid var(--sf-card-border);
+  border-radius: var(--sf-radius-sm);
+  color: var(--sf-text-main);
+}
+
+.sf-machine-area-label {
+  font-weight: 600;
+  color: var(--sf-text-muted);
+}
+
+.sf-machine-location-label {
+  color: var(--sf-text-subtle);
+}
+
+.sf-machine-telemetry-notice {
+  font-size: 0.72rem;
+  color: var(--sf-text-subtle);
+  font-style: italic;
+  border-top: 1px dotted var(--sf-card-border);
+  padding-top: 0.35rem;
 }
 
 /* Badges de Estado de Máquina */
@@ -361,113 +487,38 @@ body.theme-dark {
   gap: 0.35rem;
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 0.25rem 0.55rem;
+  padding: 0.3rem 0.65rem;
   border-radius: 9999px;
   white-space: nowrap;
+  border: 1px solid transparent;
+  cursor: pointer;
+  min-height: 32px;
 }
 
 .sf-status-badge.operational {
   background-color: var(--sf-success-soft);
   color: var(--sf-success-text);
-  border: 1px solid rgba(22, 163, 74, 0.25);
+  border-color: rgba(22, 163, 74, 0.25);
 }
 
 .sf-status-badge.standby {
   background-color: var(--sf-warning-soft);
   color: var(--sf-warning-text);
-  border: 1px solid rgba(217, 119, 6, 0.25);
+  border-color: rgba(217, 119, 6, 0.25);
 }
 
 .sf-status-badge.maintenance {
   background-color: #ffedd5;
   color: #c2410c;
-  border: 1px solid rgba(194, 65, 12, 0.25);
+  border-color: rgba(194, 65, 12, 0.25);
 }
 
 .sf-status-badge.stopped {
   background-color: var(--sf-danger-soft);
   color: var(--sf-danger-text);
-  border: 1px solid rgba(220, 38, 38, 0.25);
+  border-color: rgba(220, 38, 38, 0.25);
 }
 
-/* Medidor Mini CMYK */
-.sf-cmyk-gauge {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  background-color: var(--sf-card-bg);
-  border: 1px solid var(--sf-card-border);
-  padding: 0.45rem 0.65rem;
-  border-radius: var(--sf-radius-sm);
-}
-
-.sf-cmyk-label {
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: var(--sf-text-subtle);
-  margin-right: 0.2rem;
-}
-
-.sf-cmyk-bars {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.sf-cmyk-channel {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  flex: 1;
-}
-
-.sf-cmyk-letter {
-  font-family: var(--sf-font-mono);
-  font-size: 0.7rem;
-  font-weight: 900;
-  width: 14px;
-  text-align: center;
-}
-
-.sf-cmyk-letter.c { color: #00AEEF; }
-.sf-cmyk-letter.m { color: #EC008C; }
-.sf-cmyk-letter.y { color: #EAB308; }
-.sf-cmyk-letter.k { color: #18181B; }
-[data-theme='dark'] .sf-cmyk-letter.k { color: #E4E4E7; }
-
-.sf-cmyk-bar-track {
-  flex: 1;
-  height: 8px;
-  background-color: var(--sf-card-border);
-  border-radius: 9999px;
-  overflow: hidden;
-  position: relative;
-}
-
-.sf-cmyk-bar-fill {
-  height: 100%;
-  border-radius: 9999px;
-  transition: width 0.3s ease;
-}
-
-.sf-cmyk-bar-fill.c { background-color: #00AEEF; }
-.sf-cmyk-bar-fill.m { background-color: #EC008C; }
-.sf-cmyk-bar-fill.y { background-color: #FACC15; }
-.sf-cmyk-bar-fill.k { background-color: #18181B; }
-[data-theme='dark'] .sf-cmyk-bar-fill.k { background-color: #A1A1AA; }
-
-.sf-cmyk-bar-pct {
-  font-family: var(--sf-font-mono);
-  font-size: 0.68rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--sf-text-muted);
-  width: 26px;
-  text-align: right;
-}
-
-/* Indicador de Bobina / Rollo Montado */
 .sf-roll-info {
   display: flex;
   align-items: center;
@@ -489,41 +540,33 @@ body.theme-dark {
   text-overflow: ellipsis;
 }
 
-.sf-roll-meters {
-  font-family: var(--sf-font-mono);
-  font-weight: 800;
-  color: var(--sf-primary-text);
-  white-space: nowrap;
-}
-
 /* ==========================================================================
    Selector Táctil de Centro de Trabajo (Estaciones)
    ========================================================================== */
 .sf-stations-bar {
   display: flex;
   gap: 0.6rem;
-  overflow-x: auto;
-  padding-bottom: 0.35rem;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .sf-station-tab {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.65rem;
   background-color: var(--sf-card-bg);
   border: 1.5px solid var(--sf-card-border);
-  padding: 0.75rem 1.15rem;
+  padding: 0.75rem 1rem;
   border-radius: var(--sf-radius-lg);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--sf-text-main);
   cursor: pointer;
   transition: all 0.15s ease;
-  scroll-snap-align: start;
-  min-height: 52px;
+  min-height: 48px;
+  min-width: 140px;
 }
 
 .sf-station-tab:hover {
@@ -556,6 +599,63 @@ body.theme-dark {
   font-family: var(--sf-font-mono);
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+/* ==========================================================================
+   Métricas Rápidas de Turno
+   ========================================================================== */
+.sf-shift-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.85rem;
+}
+
+.sf-metric-card {
+  background-color: var(--sf-card-bg);
+  border: 1px solid var(--sf-card-border);
+  border-radius: var(--sf-radius-md);
+  padding: 0.85rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  box-shadow: var(--sf-shadow-sm);
+}
+
+.sf-metric-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--sf-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sf-metric-icon.blue { background-color: var(--sf-primary-soft); color: var(--sf-primary-text); }
+.sf-metric-icon.green { background-color: var(--sf-success-soft); color: var(--sf-success-text); }
+.sf-metric-icon.amber { background-color: var(--sf-warning-soft); color: var(--sf-warning-text); }
+.sf-metric-icon.purple { background-color: var(--sf-purple-soft); color: var(--sf-purple-text); }
+
+.sf-metric-data {
+  display: flex;
+  flex-direction: column;
+}
+
+.sf-metric-value {
+  font-family: var(--sf-font-mono);
+  font-size: 1.45rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--sf-text-main);
+  line-height: 1.1;
+}
+
+.sf-metric-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--sf-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 /* ==========================================================================
@@ -637,68 +737,38 @@ body.theme-dark {
 }
 
 /* ==========================================================================
-   Métricas Rápidas de Turno
-   ========================================================================== */
-.sf-shift-metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0.85rem;
-}
-
-.sf-metric-card {
-  background-color: var(--sf-card-bg);
-  border: 1px solid var(--sf-card-border);
-  border-radius: var(--sf-radius-md);
-  padding: 0.85rem 1.1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  box-shadow: var(--sf-shadow-sm);
-}
-
-.sf-metric-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--sf-radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sf-metric-icon.blue { background-color: var(--sf-primary-soft); color: var(--sf-primary-text); }
-.sf-metric-icon.green { background-color: var(--sf-success-soft); color: var(--sf-success-text); }
-.sf-metric-icon.amber { background-color: var(--sf-warning-soft); color: var(--sf-warning-text); }
-.sf-metric-icon.purple { background-color: var(--sf-purple-soft); color: var(--sf-purple-text); }
-
-.sf-metric-data {
-  display: flex;
-  flex-direction: column;
-}
-
-.sf-metric-value {
-  font-family: var(--sf-font-mono);
-  font-size: 1.45rem;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  color: var(--sf-text-main);
-  line-height: 1.1;
-}
-
-.sf-metric-label {
-  font-size: 0.76rem;
-  font-weight: 600;
-  color: var(--sf-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-/* ==========================================================================
    Rejilla de Tarjetas de Órdenes de Trabajo (Grandes y Táctiles)
    ========================================================================== */
 .sf-orders-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: 1.25rem;
+}
+
+.sf-empty-state {
+  grid-column: 1 / -1;
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+  background-color: var(--sf-card-bg);
+  border-radius: var(--sf-radius-lg);
+  border: 2px dashed var(--sf-card-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sf-empty-state h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--sf-text-main);
+}
+
+.sf-empty-state p {
+  margin: 0;
+  color: var(--sf-text-muted);
+  max-width: 440px;
 }
 
 .sf-card {
@@ -732,7 +802,7 @@ body.theme-dark {
 
 .sf-card.completed {
   border-color: var(--sf-primary);
-  opacity: 0.92;
+  opacity: 0.94;
 }
 
 /* Cabecera de la Tarjeta */
@@ -741,12 +811,14 @@ body.theme-dark {
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .sf-card-identity {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  flex: 1 1 240px;
 }
 
 .sf-card-code-row {
@@ -764,14 +836,24 @@ body.theme-dark {
   letter-spacing: 0.02em;
 }
 
-.sf-card-ref-badge {
-  font-size: 0.7rem;
+.sf-card-area-badge {
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 0.15rem 0.5rem;
+  border-radius: var(--sf-radius-sm);
+  background-color: var(--sf-primary-soft);
+  color: var(--sf-primary-text);
+  border: 1px solid rgba(2, 132, 199, 0.2);
+}
+
+.sf-card-assigned-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sf-text-muted);
+  background-color: var(--sf-bg);
+  border: 1px solid var(--sf-card-border);
+  padding: 0.15rem 0.45rem;
   border-radius: 9999px;
-  background-color: var(--sf-purple-soft);
-  color: var(--sf-purple-text);
-  border: 1px solid rgba(124, 58, 237, 0.25);
 }
 
 .sf-card-client {
@@ -785,6 +867,11 @@ body.theme-dark {
   font-size: 0.92rem;
   color: var(--sf-text-muted);
   font-weight: 500;
+}
+
+.sf-card-step-name {
+  font-size: 0.88rem;
+  color: var(--sf-text-main);
 }
 
 /* Badges SLA */
@@ -809,23 +896,22 @@ body.theme-dark {
   background-color: var(--sf-warning-soft);
   color: var(--sf-warning-text);
   border: 1px solid rgba(217, 119, 6, 0.3);
-  animation: pulse-border 2s infinite;
 }
 
 .sf-sla-badge.overdue {
   background-color: var(--sf-danger-soft);
   color: var(--sf-danger-text);
   border: 1px solid rgba(220, 38, 38, 0.3);
-  animation: pulse-border 1.5s infinite;
 }
 
-@keyframes pulse-border {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.03); }
+.sf-sla-badge.unset {
+  background-color: var(--sf-bg);
+  color: var(--sf-text-subtle);
+  border: 1px solid var(--sf-card-border);
 }
 
 /* ==========================================================================
-   Banner Gigante de Medidas (Legible a 2 metros)
+   Banner Gigante de Medidas
    ========================================================================== */
 .sf-measure-banner {
   background: var(--sf-measure-bg);
@@ -855,13 +941,17 @@ body.theme-dark {
 
 .sf-measure-dimensions {
   font-family: var(--sf-font-mono);
-  font-size: 2.3rem;
+  font-size: 2.2rem;
   font-weight: 900;
   color: #38bdf8;
   letter-spacing: 0.02em;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
   text-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+}
+
+.sf-measure-text-auto {
+  font-size: 1.4rem;
 }
 
 .sf-measure-badges {
@@ -937,8 +1027,21 @@ body.theme-dark {
   border: 1px solid rgba(2, 132, 199, 0.15);
 }
 
+.sf-checks-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--sf-radius-sm);
+  background-color: var(--sf-warning-soft);
+  color: var(--sf-warning-text);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 /* ==========================================================================
-   Miniatura de Arte con Botón de Lupa / Zoom
+   Miniatura de Arte y Acceso a Preprensa
    ========================================================================== */
 .sf-art-preview-strip {
   display: flex;
@@ -949,13 +1052,14 @@ body.theme-dark {
   border: 1px solid var(--sf-card-border);
   border-radius: var(--sf-radius-md);
   padding: 0.65rem 0.85rem;
+  flex-wrap: wrap;
 }
 
 .sf-art-preview-diagram {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex: 1;
+  flex: 1 1 200px;
 }
 
 .sf-art-canvas-box {
@@ -970,6 +1074,7 @@ body.theme-dark {
   justify-content: center;
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .sf-art-canvas-grommets {
@@ -982,12 +1087,16 @@ body.theme-dark {
 .sf-art-details {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .sf-art-prepress-notes {
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--sf-text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sf-art-profile {
@@ -1017,8 +1126,19 @@ body.theme-dark {
   color: #ffffff;
 }
 
+.sf-btn-detail-trigger {
+  color: var(--sf-purple-text);
+  border-color: rgba(124, 58, 237, 0.3);
+  background-color: var(--sf-purple-soft);
+}
+
+.sf-btn-detail-trigger:hover {
+  background-color: var(--sf-purple);
+  color: #ffffff;
+}
+
 /* ==========================================================================
-   Cronómetro en Vivo de la Orden
+   Cronómetro en Vivo de la Etapa
    ========================================================================== */
 .sf-timer-strip {
   display: flex;
@@ -1071,12 +1191,12 @@ body.theme-dark {
    ========================================================================== */
 .sf-actions-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.65rem;
 }
 
 .sf-btn-tactile {
-  min-height: 52px;
+  min-height: 48px;
   border-radius: var(--sf-radius-md);
   font-size: 0.95rem;
   font-weight: 800;
@@ -1088,12 +1208,13 @@ body.theme-dark {
   cursor: pointer;
   border: none;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 0.75rem 1.1rem;
+  padding: 0.75rem 1rem;
   box-shadow: var(--sf-shadow-sm);
   user-select: none;
+  text-decoration: none;
 }
 
-.sf-btn-tactile:active {
+.sf-btn-tactile:active:not(:disabled) {
   transform: scale(0.97);
 }
 
@@ -1102,8 +1223,19 @@ body.theme-dark {
   color: #ffffff;
 }
 
-.sf-btn-start:hover {
+.sf-btn-start:hover:not(:disabled) {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.sf-btn-take {
+  background-color: var(--sf-primary-soft);
+  color: var(--sf-primary-text);
+  border: 1.5px solid rgba(2, 132, 199, 0.3);
+}
+
+.sf-btn-take:hover:not(:disabled) {
+  background-color: var(--sf-primary);
+  color: #ffffff;
 }
 
 .sf-btn-pause {
@@ -1111,7 +1243,7 @@ body.theme-dark {
   color: #ffffff;
 }
 
-.sf-btn-pause:hover {
+.sf-btn-pause:hover:not(:disabled) {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
 
@@ -1120,7 +1252,7 @@ body.theme-dark {
   color: #ffffff;
 }
 
-.sf-btn-finish:hover {
+.sf-btn-finish:hover:not(:disabled) {
   background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
 }
 
@@ -1130,9 +1262,24 @@ body.theme-dark {
   border: 1.5px solid rgba(220, 38, 38, 0.3);
 }
 
-.sf-btn-scrap:hover {
+.sf-btn-scrap:hover:not(:disabled) {
   background-color: var(--sf-danger);
   color: #ffffff;
+}
+
+.sf-btn-scrap-block {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #ffffff;
+}
+
+.sf-btn-outline {
+  background-color: var(--sf-bg);
+  border: 1.5px solid var(--sf-card-border);
+  color: var(--sf-text-main);
+}
+
+.sf-btn-outline:hover:not(:disabled) {
+  background-color: var(--sf-card-border);
 }
 
 .sf-btn-tactile:disabled {
@@ -1142,7 +1289,7 @@ body.theme-dark {
 }
 
 /* ==========================================================================
-   Modales Táctiles (Merma, Preprensa, Pausa, etc.)
+   Modales Táctiles (Merma, Preprensa, Pausa, Estado Máquina)
    ========================================================================== */
 .sf-modal-overlay {
   position: fixed;
@@ -1161,7 +1308,7 @@ body.theme-dark {
   border: 1.5px solid var(--sf-card-border);
   border-radius: var(--sf-radius-xl);
   width: 100%;
-  max-width: 600px;
+  max-width: 620px;
   max-height: 92vh;
   overflow-y: auto;
   box-shadow: var(--sf-shadow-lg);
@@ -1169,22 +1316,10 @@ body.theme-dark {
   flex-direction: column;
   gap: 1.25rem;
   padding: 1.5rem;
-  animation: modal-enter 0.2s ease-out;
 }
 
 .sf-modal.large {
   max-width: 840px;
-}
-
-@keyframes modal-enter {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
 }
 
 .sf-modal-header {
@@ -1221,8 +1356,8 @@ body.theme-dark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--sf-radius-md);
   background-color: var(--sf-bg);
   border: 1px solid var(--sf-card-border);
@@ -1236,81 +1371,46 @@ body.theme-dark {
   background-color: var(--sf-card-border);
 }
 
-/* Controles de Entrada de Merma Táctil */
-.sf-scrap-display {
-  background: var(--sf-measure-bg);
-  border-radius: var(--sf-radius-md);
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  border: 1.5px solid rgba(239, 68, 68, 0.3);
-}
-
-.sf-scrap-number {
-  font-family: var(--sf-font-mono);
-  font-size: 3.2rem;
-  font-weight: 900;
-  color: #f87171;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.sf-scrap-unit-toggle {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.sf-unit-btn {
-  height: 36px;
-  padding: 0 0.85rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background-color: transparent;
-  color: #94a3b8;
+.sf-form-label {
+  display: block;
   font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.sf-unit-btn.active {
-  background-color: #ef4444;
-  border-color: #ef4444;
-  color: #ffffff;
-}
-
-/* Incrementadores Táctiles de Merma */
-.sf-stepper-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
-}
-
-.sf-step-btn {
-  min-height: 50px;
-  border-radius: var(--sf-radius-md);
-  border: 1.5px solid var(--sf-card-border);
-  background-color: var(--sf-bg);
-  color: var(--sf-text-main);
-  font-family: var(--sf-font-mono);
-  font-size: 1rem;
   font-weight: 800;
-  cursor: pointer;
-  transition: all 0.1s ease;
+  text-transform: uppercase;
+  color: var(--sf-text-muted);
+  margin-bottom: 0.4rem;
 }
 
-.sf-step-btn:hover {
-  border-color: var(--sf-primary);
-  background-color: var(--sf-primary-soft);
+/* Callout de brecha de esquema en merma */
+.sf-scrap-schema-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--sf-radius-md);
+  background-color: var(--sf-warning-soft);
+  color: var(--sf-warning-text);
+  border: 1.5px solid rgba(217, 119, 6, 0.3);
+  font-size: 0.85rem;
+  line-height: 1.45;
 }
 
-.sf-step-btn:active {
-  transform: scale(0.95);
+.sf-scrap-schema-callout strong {
+  display: block;
+  margin-bottom: 0.25rem;
 }
 
-/* Selector de Causas de Merma */
+.sf-scrap-schema-callout p {
+  margin: 0;
+}
+
+.sf-scrap-schema-callout code {
+  font-family: var(--sf-font-mono);
+  background-color: rgba(0, 0, 0, 0.08);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+}
+
 .sf-causes-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -1346,26 +1446,33 @@ body.theme-dark {
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
+.sf-scrap-actions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+}
+
 /* Motivos de Pausa */
 .sf-pause-options {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 .sf-pause-option {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  padding: 0.95rem 1.15rem;
+  padding: 0.85rem 1rem;
   border-radius: var(--sf-radius-md);
   border: 1.5px solid var(--sf-card-border);
   background-color: var(--sf-bg);
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--sf-text-main);
-  min-height: 52px;
+  min-height: 48px;
   transition: all 0.15s ease;
 }
 
@@ -1374,13 +1481,15 @@ body.theme-dark {
   background-color: var(--sf-warning-soft);
 }
 
-.sf-pause-option:active {
-  transform: scale(0.98);
+.sf-pause-option.selected {
+  border-color: var(--sf-warning);
+  background-color: var(--sf-warning-soft);
+  color: var(--sf-warning-text);
+  font-weight: 800;
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2);
 }
 
-/* ==========================================================================
-   Modal de Inspección de Preprensa
-   ========================================================================== */
+/* Modal de Inspección de Preprensa */
 .sf-prepress-view {
   display: flex;
   flex-direction: column;
@@ -1397,12 +1506,12 @@ body.theme-dark {
   align-items: center;
   justify-content: center;
   position: relative;
-  min-height: 280px;
+  min-height: 240px;
 }
 
 .sf-blueprint-art {
   width: 85%;
-  height: 180px;
+  height: 150px;
   border: 2px solid #38bdf8;
   background: repeating-linear-gradient(
     45deg,
@@ -1431,7 +1540,7 @@ body.theme-dark {
   position: absolute;
   top: 10px;
   font-family: var(--sf-font-mono);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 900;
   color: #38bdf8;
 }
@@ -1440,7 +1549,7 @@ body.theme-dark {
   position: absolute;
   left: 10px;
   font-family: var(--sf-font-mono);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 900;
   color: #38bdf8;
 }
@@ -1470,11 +1579,17 @@ body.theme-dark {
   font-weight: 800;
   color: var(--sf-text-main);
   margin-top: 0.2rem;
+  display: block;
 }
 
-/* ==========================================================================
-   Feedback Toast Táctil de Operación
-   ========================================================================== */
+.sf-prepress-footer-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* Feedback Toast Táctil */
 .sf-toast {
   position: fixed;
   bottom: 1.5rem;
@@ -1490,18 +1605,6 @@ body.theme-dark {
   font-size: 0.92rem;
   font-weight: 700;
   z-index: 10000;
-  animation: toast-enter 0.25s ease-out;
-}
-
-@keyframes toast-enter {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* ==========================================================================
@@ -1509,15 +1612,15 @@ body.theme-dark {
    ========================================================================== */
 @media (max-width: 1260px) {
   .sf-orders-grid {
-    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  }
+
+  .sf-shift-metrics {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 980px) {
-  .sf-orders-grid {
-    grid-template-columns: 1fr;
-  }
-
   .sf-header {
     flex-direction: column;
     align-items: stretch;
@@ -1526,37 +1629,78 @@ body.theme-dark {
   .sf-header-controls {
     justify-content: space-between;
   }
+
+  .sf-shift-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 600px) {
   .sf-kiosk {
     padding: 0.75rem;
     gap: 0.85rem;
   }
 
+  .sf-orders-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sf-machines-grid {
+    grid-template-columns: 1fr;
+  }
+
   .sf-measure-dimensions {
-    font-size: 1.85rem;
+    font-size: 1.7rem;
   }
 
   .sf-actions-grid {
     grid-template-columns: 1fr;
   }
 
-  .sf-stepper-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .sf-prepress-footer-actions {
+    grid-template-columns: 1fr;
   }
 
-  .sf-metric-card {
-    padding: 0.65rem 0.85rem;
+  .sf-shift-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .sf-live-clock {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sf-clock-date {
+    border-left: none;
+    padding-left: 0;
   }
 }
 
-/* Soporte para modo de alto contraste e impresión */
+/* ==========================================================================
+   Prefers Reduced Motion
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .sf-spin {
+    animation: none !important;
+  }
+}
+
+/* Impresión */
 @media print {
   .sf-header-controls,
   .sf-actions-grid,
   .sf-toolbar,
-  .sf-machines-bar {
+  .sf-machines-bar,
+  .sf-stations-bar {
     display: none !important;
   }
 

@@ -281,7 +281,7 @@ export function GlobalCommandPalette({
   // Referencias para focus y scroll
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsContainerRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   // Función para mostrar feedback temporal
   const showFeedback = useCallback((msg: string) => {
@@ -1162,19 +1162,25 @@ export function GlobalCommandPalette({
                           const IconComp = item.icon;
 
                           return (
-                            <button
+                            <div
                               key={item.id}
                               id={`vc-option-${item.id}`}
                               ref={(el) => {
                                 if (el) itemRefs.current.set(overallIndex, el);
                                 else itemRefs.current.delete(overallIndex);
                               }}
-                              type="button"
                               role="option"
+                              tabIndex={0}
                               aria-selected={isActive}
                               className={`vc-palette-item ${isActive ? 'active' : ''}`}
                               onMouseEnter={() => setActiveIndex(overallIndex)}
                               onClick={() => item.onSelect()}
+                              onKeyDown={(e) => {
+                                if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+                                  e.preventDefault();
+                                  item.onSelect();
+                                }
+                              }}
                             >
                               <div className={`vc-palette-item-icon vc-palette-icon-${item.category}`}>
                                 <IconComp size={17} />
@@ -1269,7 +1275,7 @@ export function GlobalCommandPalette({
                                   <CornerDownLeft size={13} />
                                 </div>
                               )}
-                            </button>
+                            </div>
                           );
                         })}
                       </div>

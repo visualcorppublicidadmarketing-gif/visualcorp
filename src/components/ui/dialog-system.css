@@ -16,13 +16,13 @@
   --vc-dlg-border-strong: rgba(15, 23, 42, 0.2);
   --vc-dlg-text: #0f172a;
   --vc-dlg-muted: #475569;
-  --vc-dlg-subtle: #64748b;
+  --vc-dlg-subtle: #475569;
   --vc-dlg-backdrop: rgba(15, 23, 42, 0.52);
   --vc-dlg-shadow: 0 26px 68px -14px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(15, 23, 42, 0.08);
   --vc-dlg-input-bg: #ffffff;
   --vc-dlg-input-border: rgba(15, 23, 42, 0.18);
-  --vc-dlg-brand: #ea580c;
-  --vc-dlg-brand-soft: rgba(234, 88, 12, 0.1);
+  --vc-dlg-brand: #a51091;
+  --vc-dlg-brand-soft: rgba(165, 16, 145, 0.1);
   --vc-dlg-info: #0284c7;
   --vc-dlg-info-soft: rgba(2, 132, 199, 0.1);
   --vc-dlg-success: #16a34a;
@@ -47,13 +47,13 @@ html:has(.public-site):not([data-public-theme='light']) .vc-dialog,
   --vc-dlg-border-strong: rgba(255, 255, 255, 0.2);
   --vc-dlg-text: #f8fafc;
   --vc-dlg-muted: #94a3b8;
-  --vc-dlg-subtle: #64748b;
+  --vc-dlg-subtle: #94a3b8;
   --vc-dlg-backdrop: rgba(6, 8, 15, 0.72);
   --vc-dlg-shadow: 0 28px 72px -12px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.08);
   --vc-dlg-input-bg: rgba(9, 11, 18, 0.85);
   --vc-dlg-input-border: rgba(255, 255, 255, 0.16);
-  --vc-dlg-brand: #f97316;
-  --vc-dlg-brand-soft: rgba(249, 115, 22, 0.14);
+  --vc-dlg-brand: #db2777;
+  --vc-dlg-brand-soft: rgba(219, 39, 119, 0.14);
   --vc-dlg-info: #38bdf8;
   --vc-dlg-info-soft: rgba(56, 189, 248, 0.14);
   --vc-dlg-success: #22c55e;
@@ -558,10 +558,10 @@ html:has(.public-site):not([data-public-theme='light']) .vc-dialog,
 
 .vc-dlg-btn.variant-primary,
 .vc-dialog-btn.vc-dialog-btn-primary {
-  background: #ea580c;
+  background: var(--vc-dlg-brand, #a51091);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 3px 10px -5px rgba(194, 65, 12, 0.48);
+  box-shadow: 0 3px 10px -5px color-mix(in srgb, var(--vc-dlg-brand, #a51091) 48%, transparent);
 }
 
 .vc-dlg-btn.variant-primary:hover:not(:disabled),
@@ -1075,15 +1075,15 @@ html:has(.public-site):not([data-public-theme='light']) .vc-app-toast {
   height: 2.5rem;
   display: grid;
   place-items: center;
-  border: 1px solid color-mix(in srgb, #ea580c 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--vc-dlg-brand, #a51091) 24%, transparent);
   border-radius: 0.75rem;
-  background: color-mix(in srgb, #ea580c 10%, var(--vc-toast-surface));
-  color: #c2410c;
+  background: color-mix(in srgb, var(--vc-dlg-brand, #a51091) 10%, var(--vc-toast-surface));
+  color: var(--vc-dlg-brand, #a51091);
 }
 
 html[data-theme='dark']:not(:has(.public-site)) .vc-app-toast-icon,
 html:has(.public-site):not([data-public-theme='light']) .vc-app-toast-icon {
-  color: #fb923c;
+  color: var(--vc-dlg-brand, #db2777);
 }
 
 .vc-app-toast p {
@@ -1116,7 +1116,7 @@ html:has(.public-site):not([data-public-theme='light']) .vc-app-toast-icon {
 }
 
 .vc-app-toast > button:focus-visible {
-  outline: 2px solid #ea580c;
+  outline: 2px solid var(--vc-dlg-brand, #a51091);
   outline-offset: 2px;
 }
 

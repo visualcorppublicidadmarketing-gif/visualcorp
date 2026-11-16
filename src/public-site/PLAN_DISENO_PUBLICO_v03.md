@@ -111,3 +111,29 @@ Implementado en `codex/public-nav-refine-20261107`: paneles con contraste espec�
 Comprobado: compilación, TypeScript, anchos 320–1920 px sin overflow, apertura/cierre con teclado y ratón, seis servicios y tres enlaces de empresa, tema claro mediante el control real. Capturas locales en `artifacts/navigation/`. Sigue pendiente de publicación esta nueva iteración.
 
 Referencias consultadas: shadcn Navigation Menu, HeroUI Dropdown, Magic UI Dock y W3C Disclosure Navigation. Se conserva la implementación nativa sin dependencias nuevas; el Dock con magnificación no encaja en una navegación estable. MCP de esos catálogos y guía de Obsidian no disponibles en esta sesión; se consultó documentación oficial. Siguiente paso: publicar la iteración preparada cuando se solicite.
+
+## Continuación v11 — recorrido Inicio → Servicios → detalle → Cotizador
+
+**Fecha:** 16 de noviembre de 2026. **Estado:** implementado y verificado en el checkout local; pendiente revisión estética del responsable; sin publicación.
+
+- Inicio presenta las seis familias de servicios inmediatamente después de la portada. Las acciones principales llevan a Servicios y al cotizador, y las pestañas del estudio creativo quedan después de las familias.
+- El destino `/soluciones`, que ya aparece en la navegación pública, ahora carga una página con `EnvironmentBrandingMatrix` y `PanoramicCategoryStrips` existentes. Se conservan sus notas de referencia; no se añadieron precios, servicios, clientes ni condiciones.
+- En detalle, la lista de preparación aparece después de la cabecera y se agrupan el contexto y las situaciones atendidas. Se conservaron los textos, las piezas de muestra, las relaciones entre servicios y las rutas de cotización.
+- El cotizador presenta dos accesos para saltar entre la descripción del proyecto y los datos. El servicio y producto seleccionados, los campos, cálculos y envío permanecen en los componentes existentes.
+- Se ajustó el ancho mínimo del `body` únicamente cuando está montado el sitio público para evitar overflow a 320 px, sin alterar el mínimo de las pantallas internas.
+- En el navegador local se recorrieron Inicio, Servicios, detalle de Rótulos, cotizador con esa familia preseleccionada y `/soluciones` a 320, 390, 768, 950, 1280 y 1440 px (30 combinaciones); no se observó overflow horizontal. Se revisaron los temas oscuro y claro; se dejó el tema oscuro activo. No se envió el formulario.
+- `npm run typecheck`, `npm run build` y `git diff --check` terminaron correctamente. Vite mantiene el aviso de chunks mayores de 500 kB.
+- Se consultaron documentación oficial y catálogos disponibles para Magic UI, shadcn y HeroUI; los MCP de catálogos no están disponibles en esta sesión. Ningún candidato justifica otra dependencia frente a las tarjetas, navegación y CSS ya integrados. No se instaló biblioteca.
+- No se desplegó ni se publicó. La sincronización de contexto del proyecto queda registrada al cerrar esta entrega.
+
+## Continuación v12 — jerarquía puntual de Inicio
+
+**Fecha:** 16 de noviembre de 2026. **Estado:** implementado y verificado en el checkout local; pendiente revisión; sin despliegue ni publicación.
+
+- Se mantiene el texto editable del titular y su acento degradado, la descripción, las tres notas de confianza y la escena actual de Visualito. El texto principal y la imagen conservan su papel; se atenuaron patrón, aro y brillos alrededor de la escena.
+- El acceso al cotizador ahora dice “Solicitar cotización” y es el botón principal; “Explorar servicios” conserva el ancla `#servicios`. El orientador y sus cuatro accesos rápidos por objetivo siguen disponibles con menos peso visual. La cotización sigue llevando a `/cotizador`.
+- La franja de familias conserva sus etiquetas y nota de alcance en presentación estática; se quitó el desplazamiento automático para reducir movimiento.
+- Se retiraron del primer plano el brillo animado del rótulo, el pulso decorativo, la entrada escalonada y el parallax con puntero. El orientador, los pilares, el proceso, sus acciones y las demás secciones se conservaron.
+- La portada se revisó en 320 × 740, 390 × 844, 950 × 900 y 1280 × 720 px, en oscuro y claro; no hubo desbordamiento horizontal. Con teclado, el foco llegó a “Solicitar cotización” con indicador visible de 3 px. Con `prefers-reduced-motion: reduce`, el hero permaneció estático y sus transiciones se desactivaron.
+- Se reutilizaron Motion y los estilos/componentes presentes; no se añadieron dependencias. No se cambiaron textos comerciales ni destinos de rutas.
+- Siguiente paso: revisión visual del responsable. No se publica sin una instrucción posterior.

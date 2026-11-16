@@ -243,3 +243,5 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .catalog-overview article>span{background:#2a2230}
 :is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .catalog-overview article:nth-child(2)>span{background:#1d2834}
 :is(html[data-theme="dark"], body[data-theme="dark"], .work-app.theme-dark, .vc-dialog.theme-dark) .catalog-overview article:nth-child(3)>span{background:#1c2d22}
+.catalog-heading-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;flex-wrap:wrap}.catalog-heading-actions .button{white-space:nowrap}.catalog-service-overview{position:relative}.catalog-service-overview>a{display:grid;place-items:center;flex:none;width:34px;height:34px;border:1px solid var(--vc-line,#e4e2e9);border-radius:9px;color:var(--vc-focus,#80217a)}
+@media(max-width:560px){.catalog-heading-actions{width:100%;justify-content:flex-start}.catalog-heading-actions .button{white-space:normal}}

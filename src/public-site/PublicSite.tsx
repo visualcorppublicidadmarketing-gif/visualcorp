@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Globe2, LogIn, MapPin, MessageCircle, Phone, Printer, ScanLine, Scissors, Shirt, Sparkles, Store, PanelsTopLeft, Sun, Moon } from 'lucide-react';
@@ -279,15 +279,33 @@ function SectionTitle({ eyebrow, title, description, light = false }) {
 function ServiceCard({ service, index = 0 }) {
   const info = familyInfo(service.id);
   const Icon = serviceIcons[service.id] || Sparkles;
-  return <Link className="site-service-card vc-magic-card" to={`/servicios/${service.id}`} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}><SpotlightLayer/><div className="site-service-card-topline"><span className="site-service-index">{info?.mark || String(index + 1).padStart(2, '0')}</span><span className="site-service-icon"><Icon size={20} aria-hidden="true"/></span></div><div className="site-service-card-3d-wrap"><Title3D serviceId={service.id as PublicServiceId} variant="badge" maxWidth={210} showAura={false} interactive={false} /></div><h3>{service.name}</h3><p>{service.description}</p>{(serviceDeliverableTags[service.id as PublicServiceId] || []).length > 0 && <ul className="site-service-tags" aria-label={`Piezas frecuentes en ${service.name}`}>{(serviceDeliverableTags[service.id as PublicServiceId] || []).map((tag) => <li key={tag}>{tag}</li>)}</ul>}<span className="site-card-link">Explorar servicio <ArrowUpRight size={15}/></span></Link>;
+  const examples = serviceDeliverableTags[service.id as PublicServiceId] || [];
+  return <Link className="site-service-card vc-magic-card" to={`/servicios/${service.id}`} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
+    <SpotlightLayer/>
+    <div className="site-service-card-topline"><span className="site-service-index">{info?.mark || String(index + 1).padStart(2, '0')}</span><span className="site-service-icon"><Icon size={20} aria-hidden="true"/></span></div>
+    <div className="site-service-card-3d-wrap"><Title3D serviceId={service.id as PublicServiceId} variant="badge" maxWidth={180} showAura={false} interactive={false} /></div>
+    <h3>{service.name}</h3>
+    <p>{service.description}</p>
+    {examples.length > 0 && <><span className="site-service-tags-label">Ejemplos de piezas</span><ul className="site-service-tags" aria-label={`Ejemplos de piezas para ${service.name}`}>{examples.map((tag) => <li key={tag}>{tag}</li>)}</ul></>}
+    <span className="site-card-link">Explorar servicio <ArrowUpRight size={15}/></span>
+  </Link>;
 }
 
-function LeadForm({ variant = 'contact', initialService = '', quoteData = null, selectedService = undefined, onServiceChange = undefined }) {
+function LeadForm({ variant = 'contact', initialService = '', quoteData = null, selectedService = undefined, onServiceChange = undefined, onQuoteValidationError = undefined }) {
   const { data, add } = useWorkspace();
   const [form, setForm] = useState({ name: '', phone: '', company: '', service: initialService, details: '' });
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const reportQuoteValidationError = (message, fieldId = '') => {
+    if (onQuoteValidationError) {
+      setError('');
+      onQuoteValidationError(message);
+    } else {
+      setError(message);
+    }
+    if (fieldId) document.getElementById(fieldId)?.focus();
+  };
   useEffect(() => setForm((current) => ({ ...current, service: initialService || current.service })), [initialService]);
   useEffect(() => { if (selectedService !== undefined) setForm((current) => ({ ...current, service: selectedService })); }, [selectedService]);
   const submit = async (event) => {
@@ -298,34 +316,31 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
       const missingService = items.find((item) => !item.service.trim());
       const missingProject = items.find((item) => !item.project.trim());
       if (!quoteData?.service || !items.length || missingService || missingProject) {
-        setError('Completa la familia de servicio y el nombre de cada artículo antes de continuar.');
+        const message = 'Completa la familia de servicio y el nombre de cada artículo antes de continuar.';
         const missingItem = missingService || missingProject || items[0];
         const fieldId = missingService ? `quote-item-service-${missingService.id}`
           : missingProject ? `quote-item-project-${missingProject.id}`
             : `quote-item-service-${missingItem.id}`;
-        document.getElementById(fieldId)?.focus();
+        reportQuoteValidationError(message, fieldId);
         return;
       }
       const itemMissingGrommetSize = items.find((item) => item.grommets && !item.grommetSize);
       if (itemMissingGrommetSize) {
-        setError('Selecciona el tamaño de los ojales o desactiva esa opción en el artículo correspondiente.');
-        document.getElementById(`quote-item-grommet-${itemMissingGrommetSize.id}`)?.focus();
+        reportQuoteValidationError('Selecciona el tamaño de los ojales o desactiva esa opción en el artículo correspondiente.', `quote-item-grommet-${itemMissingGrommetSize.id}`);
         return;
       }
       if (quoteData.installation && !quoteData.installationLocation?.locationUnknown && !quoteData.installationLocation?.address.trim()) {
-        setError('Indica el lugar de instalación o marca que aún no lo conoces.');
-        document.getElementById('quote-installation-address')?.focus();
+        reportQuoteValidationError('Indica el lugar de instalación o marca que aún no lo conoces.', 'quote-installation-address');
         return;
       }
       const mapsUrl = quoteData.installationLocation?.mapsUrl.trim() || '';
       if (mapsUrl && !isGoogleMapsUrl(mapsUrl)) {
-        setError('El enlace del pin debe ser un enlace HTTPS válido de Google Maps.');
-        document.getElementById('quote-installation-maps-url')?.focus();
+        reportQuoteValidationError('El enlace del pin debe ser un enlace HTTPS válido de Google Maps.', 'quote-installation-maps-url');
         return;
       }
       const requestBytes = new TextEncoder().encode(JSON.stringify({ details: form.details.trim(), service: quoteData.service, request: quoteData })).length;
       if (requestBytes > 19000) {
-        setError('La solicitud es demasiado extensa para guardarse. Reduce texto o artículos y vuelve a intentar.');
+        reportQuoteValidationError('La solicitud es demasiado extensa para guardarse. Reduce texto o artículos y vuelve a intentar.');
         return;
       }
     }
@@ -464,7 +479,16 @@ export { PublicHomePage } from './HomePage';
 export function ServicesIndexPage() {
   const { data } = useWorkspace();
   const services = data.services.filter((service) => service.enabled);
-  return <><SiteTitle>Servicios</SiteTitle><PageHero eyebrow="LO QUE HACEMOS" title={<>Ideas que encuentran<br/>su forma.</>} description="Explora las familias de trabajo de Visual Corp. Cada proyecto empieza con una conversación sobre lo que necesitas." primary={{ label: 'Cuéntanos tu proyecto', to: '/cotizador' }} secondary={{ label: 'Ver soluciones por espacio', to: '/soluciones' }}/><section className="site-page-section"><AnimatedList className="site-services-grid" stagger={0.075}>{services.map((service, index) => <ServiceCard key={service.id} service={service} index={index}/>)}</AnimatedList><p className="site-service-note">Cada solicitud se revisa según su alcance. Materiales, disponibilidad, valores y tiempos se confirman para cada proyecto.</p></section><EnvironmentBrandingMatrix/><StrategicBenefitsGrid/><PanoramicCategoryStrips/><Callout data={data}/></>;
+  return <><SiteTitle>Servicios</SiteTitle><PageHero eyebrow="LO QUE HACEMOS" title={<>Ideas que encuentran<br/>su forma.</>} description="Explora las familias de trabajo de Visual Corp. Cada proyecto empieza con una conversación sobre lo que necesitas." primary={{ label: 'Cuéntanos tu proyecto', to: '/cotizador' }} secondary={{ label: 'Ver soluciones por espacio', to: '/soluciones' }}/><section className="site-page-section site-services-index" aria-labelledby="site-services-index-title">
+    <div className="site-services-index-heading"><div><Eyebrow>FAMILIAS DE TRABAJO</Eyebrow><h2 id="site-services-index-title">Compara las familias.</h2></div><p>Revisa ejemplos de piezas y entra a la ficha que mejor se relaciona con tu idea.</p></div>
+    <AnimatedList className="site-services-grid" stagger={0.075}>{services.map((service, index) => <ServiceCard key={service.id} service={service} index={index}/>)}</AnimatedList>
+    <p className="site-service-note">Cada solicitud se revisa según su alcance. Materiales, disponibilidad, valores y tiempos se confirman para cada proyecto.</p>
+    <div className="site-services-next-step"><div><Eyebrow>EL SIGUIENTE PASO</Eyebrow><p>Comparte los detalles de tu proyecto para iniciar la solicitud.</p></div><Link className="site-primary-button" to="/cotizador">Cuéntanos tu proyecto <ArrowUpRight size={16} aria-hidden="true"/></Link></div>
+  </section><EnvironmentBrandingMatrix/><StrategicBenefitsGrid/><PanoramicCategoryStrips/><Callout data={data}/></>;
+}
+
+export function SolutionsIndexPage() {
+  return <><SiteTitle>Soluciones por espacio</SiteTitle><PageHero eyebrow="SOLUCIONES POR ESPACIO" title={<>Ideas de marca<br/>para cada espacio.</>} description="Explora referencias de piezas gráficas y señalización que podrías consultar según el espacio donde interactúas con tus clientes." primary={{ label: 'Ver servicios', to: '/servicios' }} secondary={{ label: 'Preparar mi cotización', to: '/cotizador' }}/><EnvironmentBrandingMatrix/><PanoramicCategoryStrips/></>;
 }
 
 export function ServiceDetailPage() {
@@ -486,13 +510,11 @@ export function ServiceDetailPage() {
           <div className="service-detail-visual" aria-hidden="true"><div className="service-detail-visual-orbit"/><span className="service-detail-visual-number">{details?.mark || 'VC'}</span><div className="service-detail-visual-icon"><Icon size={76} strokeWidth={1.2}/></div><span className="service-detail-visual-label"><i/> IDEAS QUE TOMAN FORMA</span></div>
         </div>
       </header>
-      <section className="service-detail-intro service-detail-section" aria-labelledby="service-detail-intro-title"><div><Eyebrow light>UNA FAMILIA, MUCHAS POSIBILIDADES</Eyebrow><h2 id="service-detail-intro-title">¿Para qué lo tienes<br/>en mente?</h2></div><p>Estas situaciones pueden ayudarte a ubicar tu idea. Cuéntanos qué resultado quieres conseguir; juntas revisaremos la pieza y los detalles que apliquen a tu proyecto.</p></section>
-      <section className="service-detail-situations service-detail-section" aria-label="Situaciones que esta familia puede ayudar a comunicar">{(page?.situations || [service.description, 'Comparte el objetivo que quieres alcanzar', 'Cuéntanos dónde se usará tu proyecto']).map((situation, index) => <article key={situation}><span>{String(index + 1).padStart(2, '0')}</span><Sparkles size={20} aria-hidden="true"/><h3>{situation}</h3><i aria-hidden="true"/></article>)}</section>
+      <section className="service-detail-brief service-detail-section" id="orientar-proyecto" tabIndex={-1} aria-labelledby="service-detail-brief-title"><div className="service-detail-brief-heading"><Eyebrow>PARA EMPEZAR</Eyebrow><h2 id="service-detail-brief-title">Cuéntanos un poco<br/>sobre tu idea.</h2><p>{serviceProjectPrompts[service.id] || 'Comparte el objetivo, el espacio o la necesidad que quieres resolver.'}</p><span>{page?.preparation}</span></div><div className="service-detail-checklist">{(page?.checklist || ['El objetivo que quieres conseguir', 'Las medidas o cantidad aproximadas, si las conoces', 'Una foto, diseño o referencia, si la tienes']).map((item, index) => <div key={item}><span>{String(index + 1).padStart(2, '0')}</span><p>{item}</p><Check size={17} aria-hidden="true"/></div>)}<Link className="site-primary-button" to={quoteUrl}>Continuar al cotizador <ArrowUpRight size={16} aria-hidden="true"/></Link></div></section>
+      <section className="service-detail-situations service-detail-section" aria-labelledby="service-detail-intro-title"><div className="service-detail-situations-heading"><div><Eyebrow light>UNA FAMILIA, MUCHAS POSIBILIDADES</Eyebrow><h2 id="service-detail-intro-title">¿Para qué lo tienes<br/>en mente?</h2></div><p>Estas situaciones pueden ayudarte a ubicar tu idea. Cuéntanos qué resultado quieres conseguir; juntas revisaremos la pieza y los detalles que apliquen a tu proyecto.</p></div>{(page?.situations || [service.description, 'Comparte el objetivo que quieres alcanzar', 'Cuéntanos dónde se usará tu proyecto']).map((situation, index) => <article key={situation}><span>{String(index + 1).padStart(2, '0')}</span><Sparkles size={20} aria-hidden="true"/><h3>{situation}</h3><i aria-hidden="true"/></article>)}</section>
       <ServiceVisualShowcase serviceId={service.id as PublicServiceId} serviceName={service.name}/>
-      <section className="service-detail-brief service-detail-section" id="orientar-proyecto" aria-labelledby="service-detail-brief-title"><div className="service-detail-brief-heading"><Eyebrow>PARA EMPEZAR</Eyebrow><h2 id="service-detail-brief-title">Cuéntanos un poco<br/>sobre tu idea.</h2><p>{serviceProjectPrompts[service.id] || 'Comparte el objetivo, el espacio o la necesidad que quieres resolver.'}</p><span>{page?.preparation}</span></div><div className="service-detail-checklist">{(page?.checklist || ['El objetivo que quieres conseguir', 'Las medidas o cantidad aproximadas, si las conoces', 'Una foto, diseño o referencia, si la tienes']).map((item, index) => <div key={item}><span>{String(index + 1).padStart(2, '0')}</span><p>{item}</p><Check size={17} aria-hidden="true"/></div>)}<Link className="site-primary-button" to={quoteUrl}>Compartir estos detalles <ArrowUpRight size={16}/></Link></div></section>
-      <section className="service-detail-process service-detail-section" aria-label="Cómo se revisa una solicitud"><div><span>01</span><h3>Nos compartes tu idea</h3><p>Cuéntanos qué necesitas y qué objetivo quieres lograr.</p></div><ArrowRight size={18} aria-hidden="true"/><div><span>02</span><h3>Revisamos el proyecto</h3><p>Conversamos sobre el formato y los detalles pertinentes.</p></div><ArrowRight size={18} aria-hidden="true"/><div><span>03</span><h3>Confirmamos contigo</h3><p>Materiales, disponibilidad, valores y tiempos se revisan para cada solicitud.</p></div></section>
       {relatedServices.length > 0 && <section className="service-detail-related service-detail-section" aria-labelledby="service-detail-related-title"><div className="service-detail-related-heading"><div><span className="service-detail-kicker">SIGUE EXPLORANDO</span><h2 id="service-detail-related-title">Tu proyecto puede<br/>tomar otra forma.</h2></div><Link to="/servicios">Ver todas las familias <ArrowRight size={16}/></Link></div><div className="service-detail-related-grid">{relatedServices.map((item, index) => { const RelatedIcon = serviceIcons[item.id] || Sparkles; return <Link to={`/servicios/${item.id}`} key={item.id}><span>{String(index + 1).padStart(2, '0')}</span><RelatedIcon size={22} aria-hidden="true"/><h3>{item.name}</h3><p>{item.description}</p><ArrowUpRight size={17} aria-hidden="true"/></Link>; })}</div></section>}
-      <section className="service-detail-cta service-detail-section"><div><span className="service-detail-kicker">{`VISUAL CORP · ${data.settings.location}`}</span><h2>Toda gran pieza<br/>empieza <em>con una idea.</em></h2><p>Cuéntanos qué imaginas y revisaremos contigo los detalles de tu solicitud.</p></div><Link className="site-primary-button" to={quoteUrl}>Empezar mi cotización <ArrowUpRight size={18}/></Link></section>
+      <section className="service-detail-cta service-detail-section" aria-labelledby="service-detail-cta-title"><div><span className="service-detail-kicker">{`VISUAL CORP · ${data.settings.location}`}</span><h2 id="service-detail-cta-title">Toda gran pieza<br/>empieza <em>con una idea.</em></h2><p>Cuéntanos qué imaginas y revisaremos contigo los detalles de tu solicitud.</p></div><Link className="site-primary-button" to={quoteUrl}>Empezar mi cotización <ArrowUpRight size={18} aria-hidden="true"/></Link></section>
     </article>
   </>;
 }
@@ -618,12 +640,17 @@ export function PublicQuotePage() {
   const requestedQuantityRanges = requestedLines.map((line) => line.range);
   const { data } = useWorkspace();
   const [quoteData, setQuoteData] = useState<QuoteDraft | null>(null);
+  const [quoteValidationError, setQuoteValidationError] = useState('');
+  const handleQuoteChange = useCallback((draft: QuoteDraft) => {
+    setQuoteData(draft);
+    setQuoteValidationError('');
+  }, []);
   const services = useMemo(() => data.services.filter((item) => item.enabled), [data.services]);
   const serviceName = (value: string) => services.find((item) => item.id === value || item.name.toLocaleLowerCase('es') === value.toLocaleLowerCase('es'))?.name || '';
   const service = serviceName(requestedService);
   const itemServices = requestedFamilies.length ? requestedLines.map((line) => serviceName(line.family)) : [];
   const requestKey = `${searchParams.toString()}|${service}|${itemServices.join('|')}`;
-  return <><SiteTitle>Solicitar cotización</SiteTitle><PageHero eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp"><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} onChange={setQuoteData}/><div className="site-quote-request" id="formulario-cotizacion"><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData}/></div></section></>;
+  return <><SiteTitle>Solicitar cotización</SiteTitle><PageHero eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp" tabIndex={-1}><nav className="site-quote-flow" aria-label="Etapas de la solicitud"><a href="#quote-items-title"><span className="site-quote-flow-index" aria-hidden="true">01</span><span><strong>Detalla tu proyecto</strong><small>Artículos y, si aplica, instalación.</small></span></a><a href="#formulario-cotizacion"><span className="site-quote-flow-index" aria-hidden="true">02</span><span><strong>Comparte tus datos</strong><small>Para que el equipo responda tu solicitud.</small></span></a></nav><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} validationMessage={quoteValidationError} onChange={handleQuoteChange}/><div className="site-quote-request" id="formulario-cotizacion" tabIndex={-1}><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData} onQuoteValidationError={setQuoteValidationError}/></div></section></>;
 }
 function PageHero({ eyebrow, title, description, compact = false, primary, secondary }) {
   const action = (item, className, Icon) => item.to.startsWith('#')
