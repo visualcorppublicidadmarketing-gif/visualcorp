@@ -1564,3 +1564,197 @@
 
 [data-theme='dark'] .inventory-insights-table .inventory-insights-row > td::before,
 .work-app.theme-dark .inventory-insights-table .inventory-insights-row > td::before { color: #a3abc0; }
+
+/* =========================================================================
+   Paso 5b: Catalog Cards Triad, Unconfirmed Import Provenance & Filters
+   ========================================================================= */
+
+.inventory-insights,
+.inventory-insights *,
+.inventory-insights *::before,
+.inventory-insights *::after {
+  box-sizing: border-box;
+}
+
+.inventory-insights,
+.inventory-insights-grid,
+.inventory-insights-metrics,
+.inventory-product-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.inventory-insights-table-wrap.table-wrap {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
+.inventory-product-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.inventory-product-facts > span {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.inventory-product-facts .is-fact-primary {
+  border-color: #dfd0e7;
+  background: #fbf7fd;
+}
+
+.inventory-product-facts .is-fact-primary strong {
+  color: #820c72;
+  font-size: 11px;
+}
+
+.inventory-product-facts .is-fact-reference {
+  grid-column: 1 / -1;
+  border-style: dashed;
+  border-color: #d6b66f;
+  background: #fff9eb;
+  color: #78530b;
+}
+
+.inventory-product-facts .is-fact-reference strong {
+  color: #674406;
+}
+
+.inventory-results-counter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #5f556b;
+}
+
+.inventory-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.inventory-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid #dccfe3;
+  border-radius: 999px;
+  background: #f8f3fb;
+  color: #432b4f;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.inventory-filter-chip:hover {
+  border-color: #a51091;
+  background: #f3e6f8;
+}
+
+.inventory-filter-chip:focus-visible {
+  outline: 2px solid #a51091;
+  outline-offset: 2px;
+}
+
+.inventory-filter-chip.is-reset {
+  border-color: #e4c6cb;
+  background: #fff5f6;
+  color: #9f1239;
+}
+
+.inventory-filter-chip.is-reset:hover {
+  border-color: #be123c;
+  background: #ffe4e8;
+}
+
+@media (max-width: 480px) {
+  .inventory-product-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .inventory-product-facts .is-fact-primary,
+  .inventory-product-facts .is-fact-reference {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-filter-chip,
+  .inventory-product-card {
+    transition: none;
+  }
+}
+
+[data-theme='dark'] .inventory-product-facts .is-fact-primary,
+.work-app.theme-dark .inventory-product-facts .is-fact-primary {
+  border-color: #543366;
+  background: #241931;
+}
+
+[data-theme='dark'] .inventory-product-facts .is-fact-primary strong,
+.work-app.theme-dark .inventory-product-facts .is-fact-primary strong {
+  color: #f0abfc;
+}
+
+[data-theme='dark'] .inventory-product-facts .is-fact-reference,
+.work-app.theme-dark .inventory-product-facts .is-fact-reference {
+  border-color: #7c5c22;
+  background: rgba(120, 83, 11, 0.22);
+  color: #f8d88e;
+}
+
+[data-theme='dark'] .inventory-product-facts .is-fact-reference strong,
+.work-app.theme-dark .inventory-product-facts .is-fact-reference strong {
+  color: #fde68a;
+}
+
+[data-theme='dark'] .inventory-results-counter,
+.work-app.theme-dark .inventory-results-counter {
+  color: #c2bad1;
+}
+
+[data-theme='dark'] .inventory-filter-chip,
+.work-app.theme-dark .inventory-filter-chip {
+  border-color: #43375a;
+  background: #241e34;
+  color: #e6def5;
+}
+
+[data-theme='dark'] .inventory-filter-chip:hover,
+.work-app.theme-dark .inventory-filter-chip:hover {
+  border-color: #da4bc4;
+  background: #322647;
+}
+
+[data-theme='dark'] .inventory-filter-chip.is-reset,
+.work-app.theme-dark .inventory-filter-chip.is-reset {
+  border-color: #6b2938;
+  background: #2f1921;
+  color: #fda4af;
+}
+
+[data-theme='dark'] .inventory-filter-chip.is-reset:hover,
+.work-app.theme-dark .inventory-filter-chip.is-reset:hover {
+  border-color: #f43f5e;
+  background: #3f1d28;
+}

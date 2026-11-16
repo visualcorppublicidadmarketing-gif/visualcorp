@@ -183,12 +183,14 @@ export function InventoryOperationsCalendar({
     setLoadError('');
     const startAt = isoStart(visibleRange.start);
     const endAt = isoEnd(visibleRange.end);
+    const currentDay = todayKey();
     const constrainBranch = (query: any) => branchFilter === 'all' ? query : query.eq('branch_id', branchFilter);
     try {
       let tasksQuery = supabase.from('inventory_count_tasks')
         .select('id,organization_id,branch_id,scheduled_for,scope_type,scope_label,assigned_to,note,status,session_id,created_by,created_at,updated_at,inventory_count_task_lines(id,variant_id,location_code,name_snapshot,sku_snapshot,unit_snapshot)')
-        .eq('organization_id', organizationId).gte('scheduled_for', visibleRange.start)
-        .lte('scheduled_for', visibleRange.end).order('scheduled_for').order('created_at');
+        .eq('organization_id', organizationId)
+        .or(`and(scheduled_for.gte.${visibleRange.start},scheduled_for.lte.${visibleRange.end}),and(status.eq.scheduled,scheduled_for.lt.${currentDay})`)
+        .order('scheduled_for').order('created_at');
       let sessionsQuery = supabase.from('inventory_count_sessions')
         .select('id,organization_id,branch_id,status,note,created_by,opened_at,completed_at,inventory_count_session_lines(id,variant_id,location_code,status,expected_quantity,counted_quantity)')
         .eq('organization_id', organizationId).gte('opened_at', startAt).lt('opened_at', endAt)
@@ -204,7 +206,7 @@ export function InventoryOperationsCalendar({
         ? constrainBranch(supabase.from('purchase_orders')
           .select('id,order_number,status,branch_id,expected_date,created_at,purchase_order_lines(variant_id,description_snapshot,sku_snapshot,unit_snapshot,quantity_ordered,quantity_received)')
           .eq('organization_id', organizationId).in('status', ['ordered', 'partially_received'])
-          .gte('expected_date', visibleRange.start).lte('expected_date', visibleRange.end)
+          .or(`and(expected_date.gte.${visibleRange.start},expected_date.lte.${visibleRange.end}),expected_date.lt.${currentDay}`)
           .order('expected_date').limit(1000))
         : Promise.resolve({ data: [], error: null } as any);
       const [tasks, sessions, movements, purchases] = await Promise.all([
@@ -319,17 +321,34 @@ export function InventoryOperationsCalendar({
     return true;
   }), [baseEvents, scopeFilter, branchFilter, locationFilter, typeFilter, statusFilter, itemByLine, items]);
   const eventsByDay = useMemo(() => {
+    const eventPriority: Record<EventType, number> = { count_task: 1, purchase_receipt: 2, count_session: 3, movement: 4 };
     const map = new Map<string, CalendarEvent[]>();
     for (const event of filteredEvents) map.set(event.date, [...(map.get(event.date) || []), event]);
-    for (const values of map.values()) values.sort((a, b) => a.type.localeCompare(b.type) || a.title.localeCompare(b.title, 'es'));
+    for (const values of map.values()) {
+      values.sort((a, b) => Number(b.overdue) - Number(a.overdue) || (eventPriority[a.type] - eventPriority[b.type]) || a.title.localeCompare(b.title, 'es'));
+    }
     return map;
   }, [filteredEvents]);
   const eventsForDay = (key: string) => eventsByDay.get(key) || [];
   const focusEvents = eventsForDay(focusDate);
-  const overdueCount = filteredEvents.filter(event => event.overdue).length;
+  const overdueEvents = filteredEvents.filter(event => event.overdue);
+  const overdueCount = overdueEvents.length;
+  const firstOverdueDate = overdueEvents.map(event => event.date).sort()[0] || '';
+  const agendaWeekDates = useMemo(() => {
+    const start = startOfWeek(focusDate);
+    return Array.from({ length: 7 }, (_, index) => shiftDate(start, index));
+  }, [focusDate]);
   const pendingCount = filteredEvents.filter(event => event.type === 'count_task' && event.status === 'scheduled').length;
   const receiptCount = filteredEvents.filter(event => event.type === 'purchase_receipt').length;
   const movementCount = filteredEvents.filter(event => event.type === 'movement').length;
+  const hasCalendarFilters = scopeFilter !== (brandScope || 'general') || branchFilter !== 'all' || locationFilter !== 'all' || typeFilter !== 'all' || statusFilter !== 'all';
+  const clearCalendarFilters = () => {
+    setScopeFilter(brandScope || 'general');
+    setBranchFilter('all');
+    setLocationFilter('all');
+    setTypeFilter('all');
+    setStatusFilter('all');
+  };
 
   const move = (amount: number) => setFocusDate(current =>
     view === 'month' ? shiftMonth(current, amount) : shiftDate(current, amount * (view === 'week' ? 7 : 1)),
@@ -533,9 +552,11 @@ export function InventoryOperationsCalendar({
 
   const renderDayCell = (key: string, index: number) => {
     const dateEvents = eventsForDay(key);
+    const dayOverdueCount = dateEvents.filter(event => event.overdue).length;
     const inMonth = key.slice(0, 7) === focusDate.slice(0, 7);
     const classes = 'inventory-calendar-day' + (inMonth ? '' : ' is-outside')
-      + (key === focusDate ? ' is-selected' : '') + (key === todayKey() ? ' is-today' : '');
+      + (key === focusDate ? ' is-selected' : '') + (key === todayKey() ? ' is-today' : '')
+      + (dayOverdueCount > 0 ? ' has-overdue' : '');
     const maxPreview = view === 'month' ? 3 : 6;
     const hasOverflow = dateEvents.length > maxPreview;
     return (
@@ -544,7 +565,7 @@ export function InventoryOperationsCalendar({
           <button
             type="button"
             className="inventory-calendar-day-select"
-            aria-label={dateLabel(key) + (dateEvents.length ? ', ' + dateEvents.length + ' eventos' : '')}
+            aria-label={dateLabel(key) + (dateEvents.length ? ', ' + dateEvents.length + ' eventos' : '') + (dayOverdueCount > 0 ? ', ' + dayOverdueCount + ' atrasados' : '')}
             onClick={() => {
               setFocusDate(key);
               if (dateEvents.length > 0) setDayOverviewKey(key);
@@ -553,6 +574,11 @@ export function InventoryOperationsCalendar({
             <span>{keyDate(key).getUTCDate()}</span>
             {dateEvents.length > 0 && <small>{dateEvents.length}</small>}
           </button>
+          {dayOverdueCount > 0 && (
+            <span className="inventory-calendar-day-overdue" title={`${dayOverdueCount} atrasado(s)`} aria-label={`${dayOverdueCount} atrasados`}>
+              <AlertTriangle size={11}/>
+            </span>
+          )}
           {view === 'week' && <span className="inventory-calendar-weekday">{weekdays[index]}</span>}
         </div>
         <div className="inventory-calendar-day-events">
@@ -635,6 +661,11 @@ export function InventoryOperationsCalendar({
         <option value="recorded">Registrado</option><option value="overdue">Atrasado</option><option value="cancelled">Cancelado</option>
       </select></label>
       <span className="inventory-calendar-result-count">{filteredEvents.length} eventos</span>
+      {hasCalendarFilters && (
+        <button type="button" className="button button-outline inventory-calendar-clear" onClick={clearCalendarFilters}>
+          Limpiar filtros
+        </button>
+      )}
     </div>
     <div className="inventory-calendar-summary">
       <article
@@ -642,6 +673,7 @@ export function InventoryOperationsCalendar({
         tabIndex={0}
         className={`inventory-summary-card${typeFilter === 'count_task' ? ' is-active' : ''}`}
         onClick={() => setTypeFilter(curr => curr === 'count_task' ? 'all' : 'count_task')}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTypeFilter(curr => curr === 'count_task' ? 'all' : 'count_task'); } }}
         title="Clic para filtrar conteos programados"
       >
         <span className="inventory-summary-icon" style={{ background: '#f3e8ff', color: '#7e22ce' }}>
@@ -659,6 +691,7 @@ export function InventoryOperationsCalendar({
           tabIndex={0}
           className={`inventory-summary-card${typeFilter === 'purchase_receipt' ? ' is-active' : ''}`}
           onClick={() => setTypeFilter(curr => curr === 'purchase_receipt' ? 'all' : 'purchase_receipt')}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTypeFilter(curr => curr === 'purchase_receipt' ? 'all' : 'purchase_receipt'); } }}
           title="Clic para filtrar recepciones previstas"
         >
           <span className="inventory-summary-icon" style={{ background: '#e0f2fe', color: '#0369a1' }}>
@@ -676,6 +709,7 @@ export function InventoryOperationsCalendar({
         tabIndex={0}
         className={`inventory-summary-card${typeFilter === 'movement' ? ' is-active' : ''}`}
         onClick={() => setTypeFilter(curr => curr === 'movement' ? 'all' : 'movement')}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTypeFilter(curr => curr === 'movement' ? 'all' : 'movement'); } }}
         title="Clic para filtrar movimientos del periodo"
       >
         <span className="inventory-summary-icon" style={{ background: '#e0f2fe', color: '#0284c7' }}>
@@ -693,6 +727,7 @@ export function InventoryOperationsCalendar({
           tabIndex={0}
           className={`inventory-summary-card is-overdue${statusFilter === 'overdue' ? ' is-active' : ''}`}
           onClick={() => setStatusFilter(curr => curr === 'overdue' ? 'all' : 'overdue')}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setStatusFilter(curr => curr === 'overdue' ? 'all' : 'overdue'); } }}
           title="Clic para filtrar eventos que requieren atención"
         >
           <span className="inventory-summary-icon" style={{ background: '#fee2e2', color: '#b91c1c' }}>
@@ -721,14 +756,60 @@ export function InventoryOperationsCalendar({
       <div className="inventory-calendar-week-grid">{visibleDates.map(renderDayCell)}</div>
     </div>}
     {view === 'agenda' && <div className="inventory-calendar-agenda">
+      <div className="inventory-calendar-week-strip" role="group" aria-label="Días de la semana seleccionada">
+        {agendaWeekDates.map((dayKey, index) => {
+          const dayList = eventsForDay(dayKey);
+          const dayHasOverdue = dayList.some(event => event.overdue);
+          return (
+            <button
+              key={dayKey}
+              type="button"
+              className={`inventory-week-strip-btn${dayKey === focusDate ? ' is-selected' : ''}${dayKey === todayKey() ? ' is-today' : ''}${dayHasOverdue ? ' has-overdue' : ''}`}
+              aria-pressed={dayKey === focusDate}
+              aria-label={`${dateLabel(dayKey)} (${dayList.length} eventos)`}
+              onClick={() => setFocusDate(dayKey)}
+            >
+              <span>{weekdays[index]}</span>
+              <b>{keyDate(dayKey).getUTCDate()}</b>
+              {dayList.length > 0 && <small>{dayList.length}</small>}
+            </button>
+          );
+        })}
+      </div>
       <h3><CalendarDays size={17}/><span>{dateLabel(focusDate)}</span><small>{focusEvents.length} eventos</small></h3>
       {focusEvents.length ? focusEvents.map(event => renderEvent(event)) : <div className="inventory-calendar-agenda-empty">No hay operaciones registradas para esta fecha.</div>}
     </div>}
     <div className="inventory-calendar-mobile-agenda">
+      <div className="inventory-calendar-week-strip" role="group" aria-label="Selector rápido de semana">
+        {agendaWeekDates.map((dayKey, index) => {
+          const dayList = eventsForDay(dayKey);
+          const dayHasOverdue = dayList.some(event => event.overdue);
+          return (
+            <button
+              key={dayKey}
+              type="button"
+              className={`inventory-week-strip-btn${dayKey === focusDate ? ' is-selected' : ''}${dayKey === todayKey() ? ' is-today' : ''}${dayHasOverdue ? ' has-overdue' : ''}`}
+              aria-pressed={dayKey === focusDate}
+              aria-label={`${dateLabel(dayKey)} (${dayList.length} eventos)`}
+              onClick={() => setFocusDate(dayKey)}
+            >
+              <span>{weekdays[index]}</span>
+              <b>{keyDate(dayKey).getUTCDate()}</b>
+              {dayList.length > 0 && <small>{dayList.length}</small>}
+            </button>
+          );
+        })}
+      </div>
       <h3><CalendarDays size={16}/><span>{dateLabel(focusDate)}</span><small>{focusEvents.length} eventos</small></h3>
+      {overdueCount > 0 && firstOverdueDate && firstOverdueDate !== focusDate && (
+        <div className="inventory-calendar-overdue-jump">
+          <span><AlertTriangle size={13}/> Hay {overdueCount} pendiente(s) atrasado(s).</span>
+          <button type="button" onClick={() => setFocusDate(firstOverdueDate)}>Ir al primer atraso</button>
+        </div>
+      )}
       {focusEvents.length ? focusEvents.map(event => renderEvent(event)) : <p>Sin eventos para este día.</p>}
     </div>
-    {overdueCount > 0 && <p className="inventory-calendar-rule"><Clock3 size={14}/> Los conteos vencidos y las recepciones atrasadas conservan su fecha original hasta que se reprogramen o registren.</p>}
+    {overdueCount > 0 && <div className="inventory-calendar-rule"><Clock3 size={14}/> <span>Los conteos vencidos y las recepciones atrasadas conservan su fecha original hasta que se reprogramen o registren.</span>{firstOverdueDate && firstOverdueDate !== focusDate && <button type="button" className="text-link" onClick={() => setFocusDate(firstOverdueDate)}>Ver primer atraso ({dateLabel(firstOverdueDate, { day: 'numeric', month: 'short' })})</button>}</div>}
 
     <Dialog open={showCreate} onOpenChange={setShowCreate} title="Programar conteo físico"
       description="Guarda el alcance ahora; al iniciar se tomará el saldo real como referencia. Programar no modifica existencias."

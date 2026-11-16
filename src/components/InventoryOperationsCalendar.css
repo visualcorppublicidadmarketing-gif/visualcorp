@@ -1815,3 +1815,283 @@
 .work-app.theme-dark .inventory-calendar-day-card .day-card-detail {
   color: #a89eb6 !important;
 }
+
+/* =========================================================================
+   Paso 5c: Calendar Clear CTA, Overdue Emphasis, Week Strip & Dark Mode
+   ========================================================================= */
+
+.inventory-calendar-panel,
+.inventory-calendar-panel *,
+.inventory-calendar-panel *::before,
+.inventory-calendar-panel *::after {
+  box-sizing: border-box;
+}
+
+.inventory-calendar-panel,
+.inventory-calendar-filters,
+.inventory-calendar-grid,
+.inventory-calendar-week,
+.inventory-calendar-agenda,
+.inventory-calendar-mobile-agenda {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.inventory-calendar-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #e4c6cb;
+  border-radius: 10px;
+  background: #fff5f6;
+  color: #9f1239;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.inventory-calendar-clear:hover {
+  border-color: #be123c;
+  background: #ffe4e8;
+}
+
+.inventory-calendar-day.has-overdue {
+  border-color: #e5a3b0;
+  background: linear-gradient(180deg, rgba(225, 29, 72, 0.05) 0%, transparent 52px);
+}
+
+.inventory-calendar-day-overdue {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #ffe4e8;
+  color: #be123c;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.inventory-calendar-rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.inventory-calendar-overdue-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #f43f5e;
+  border-radius: 999px;
+  background: #fff1f2;
+  color: #9f1239;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.inventory-calendar-overdue-jump:hover {
+  border-color: #be123c;
+  background: #ffe4e8;
+}
+
+.inventory-calendar-week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0 0 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.inventory-week-strip-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 6px 4px;
+  border: 1px solid #e3dae8;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #3a3147;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.inventory-week-strip-btn:hover {
+  border-color: #c83ab2;
+  background: #faf2fc;
+}
+
+.inventory-week-strip-btn.is-today {
+  border-color: #a51091;
+  background: #faf2fc;
+  color: #820c72;
+}
+
+.inventory-week-strip-btn.is-selected {
+  border-color: #a51091;
+  background: linear-gradient(135deg, #a51091 0%, #c83ab2 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(165, 16, 145, 0.25);
+}
+
+.inventory-week-strip-btn.has-overdue::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #e11d48;
+}
+
+.inventory-week-strip-btn.is-selected.has-overdue::after {
+  background: #ffffff;
+}
+
+.inventory-summary-card:focus-visible,
+.inventory-calendar-clear:focus-visible,
+.inventory-week-strip-btn:focus-visible,
+.inventory-calendar-overdue-jump:focus-visible {
+  outline: 2px solid #a51091;
+  outline-offset: 2px;
+}
+
+@media (max-width: 540px) {
+  .inventory-calendar-week-strip {
+    grid-template-columns: repeat(7, minmax(42px, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-calendar-clear,
+  .inventory-calendar-overdue-jump,
+  .inventory-week-strip-btn,
+  .inventory-summary-card {
+    transition: none;
+  }
+}
+
+[data-theme='dark'] .inventory-calendar-clear,
+.work-app.theme-dark .inventory-calendar-clear {
+  border-color: #6b2938;
+  background: #2f1921;
+  color: #fda4af;
+}
+
+[data-theme='dark'] .inventory-calendar-clear:hover,
+.work-app.theme-dark .inventory-calendar-clear:hover {
+  border-color: #f43f5e;
+  background: #3f1d28;
+}
+
+[data-theme='dark'] .inventory-calendar-day.has-overdue,
+.work-app.theme-dark .inventory-calendar-day.has-overdue {
+  border-color: #882940;
+  background: linear-gradient(180deg, rgba(225, 29, 72, 0.14) 0%, transparent 56px);
+}
+
+[data-theme='dark'] .inventory-calendar-day-overdue,
+.work-app.theme-dark .inventory-calendar-day-overdue {
+  background: rgba(225, 29, 72, 0.24);
+  color: #fda4af;
+}
+
+[data-theme='dark'] .inventory-calendar-event.status-overdue,
+.work-app.theme-dark .inventory-calendar-event.status-overdue {
+  border-color: #9f1239;
+  background: rgba(159, 18, 57, 0.24);
+  color: #fecdd3;
+}
+
+[data-theme='dark'] .inventory-calendar-overdue-jump,
+.work-app.theme-dark .inventory-calendar-overdue-jump {
+  border-color: #be123c;
+  background: #351824;
+  color: #fda4af;
+}
+
+[data-theme='dark'] .inventory-calendar-overdue-jump:hover,
+.work-app.theme-dark .inventory-calendar-overdue-jump:hover {
+  border-color: #f43f5e;
+  background: #471d2e;
+}
+
+[data-theme='dark'] .inventory-week-strip-btn,
+.work-app.theme-dark .inventory-week-strip-btn {
+  border-color: #352d48;
+  background: #1b1728;
+  color: #ded7ec;
+}
+
+[data-theme='dark'] .inventory-week-strip-btn:hover,
+.work-app.theme-dark .inventory-week-strip-btn:hover {
+  border-color: #da4bc4;
+  background: #29203d;
+}
+
+[data-theme='dark'] .inventory-week-strip-btn.is-today,
+.work-app.theme-dark .inventory-week-strip-btn.is-today {
+  border-color: #da4bc4;
+  background: #2b1d3d;
+  color: #f5b8f5;
+}
+
+[data-theme='dark'] .inventory-week-strip-btn.is-selected,
+.work-app.theme-dark .inventory-week-strip-btn.is-selected {
+  border-color: #da4bc4;
+  background: linear-gradient(135deg, #b81ca3 0%, #da4bc4 100%);
+  color: #ffffff;
+}
+
+[data-theme='dark'] .inventory-calendar-mobile-agenda,
+.work-app.theme-dark .inventory-calendar-mobile-agenda {
+  border-color: #2f2842;
+  background: #151220;
+  color: #efeaf8;
+}
+
+[data-theme='dark'] .inventory-calendar-empty,
+.work-app.theme-dark .inventory-calendar-empty {
+  border-color: #342c47;
+  background: #181425;
+  color: #bfb6cf;
+}
+
+[data-theme='dark'] .inventory-calendar-alert,
+.work-app.theme-dark .inventory-calendar-alert {
+  border-color: #6b542e;
+  background: #261e12;
+  color: #f6d58e;
+}
+
+[data-theme='dark'] .inventory-calendar-rule,
+.work-app.theme-dark .inventory-calendar-rule {
+  border-color: #352d48;
+  background: #1a1627;
+  color: #d6cfe4;
+}
