@@ -4,6 +4,8 @@ import { getGoogleMapsOpenUrl, isGoogleMapsUrl } from '../../lib/maps';
 import './quote-calculator.css';
 import { calculateScenario, loadQuoteProducts, type PricingMode, type QuoteProduct } from './pricing';
 import { multiProductQuoteService } from '../content';
+import { MAX_QUOTE_ITEMS } from './quoteConstants';
+import { getStorefrontQuoteSourceKey } from './storefrontQuoteAliases';
 
 export type QuoteService = { id: string; name: string };
 export type QuoteCalculationMode = 'unknown' | 'area' | 'units';
@@ -19,6 +21,7 @@ export type QuoteLineItemDraft = {
   height: number;
   area: number;
   quantity: number;
+  quantityRange?: string;
   designSupport: QuoteDesignSupport;
   finishing: string;
   productId?: string;
@@ -75,12 +78,12 @@ type Props = {
   services: QuoteService[];
   initialService?: string;
   initialProducts?: string[];
+  initialProductSkus?: string[];
   initialItemServices?: string[];
   initialQuantityRanges?: string[];
   onChange: (quote: QuoteDraft) => void;
 };
 
-const MAX_QUOTE_ITEMS = 12;
 const designLabels: Record<QuoteDesignSupport, string> = {
   ready: 'Ya tengo el arte listo',
   adapt: 'Necesito adaptar un diseño',
@@ -105,10 +108,10 @@ function makeId() {
   return globalThis.crypto?.randomUUID?.() || `quote-item-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function makeItem(service = '', project = '', quantity = 1): QuoteLineItemDraft {
+function makeItem(service = '', project = '', quantity = 1, quantityRange = ''): QuoteLineItemDraft {
   return {
     id: makeId(), service, project, calculationMode: 'unknown', measurementUnit: 'cm',
-    width: 100, height: 100, area: 0, quantity, designSupport: 'unknown', finishing: '',
+    width: 100, height: 100, area: 0, quantity, quantityRange: quantityRange || undefined, designSupport: 'unknown', finishing: '',
     grommets: false, grommetSize: '', grommetCount: null, grommetUnitAmount: '',
     designService: 'none', designDescription: '', designAmount: '', installation: false,
   };
@@ -161,10 +164,13 @@ function hasLona(item: QuoteLineItemDraft) {
 }
 
 function itemSummary(item: QuoteLineItemDraft) {
+  const quantitySummary = item.quantityRange
+    ? `Rango de catálogo ${item.quantityRange} · cantidad exacta por confirmar`
+    : `${item.quantity} ${item.quantity === 1 ? 'pieza' : 'piezas'}`;
   const measurements = item.calculationMode === 'area'
     ? `${item.width} × ${item.height} ${item.measurementUnit} · ${areaOf(item).toFixed(2)} m² por pieza · ${item.quantity} ${item.quantity === 1 ? 'pieza' : 'piezas'}`
     : item.calculationMode === 'units'
-      ? `${item.quantity} ${item.quantity === 1 ? 'pieza' : 'piezas'}`
+      ? quantitySummary
       : 'Medidas y cantidad por definir';
   const details = [measurements, `Diseño: ${designLabels[item.designSupport]}`];
   if (item.finishing.trim()) details.push(`Acabados: ${item.finishing.trim()}`);
@@ -201,29 +207,33 @@ function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate,
         : products;
     const query = normalize(productSearch);
     const filtered = query
-      ? compatible.filter((product) => normalize(`${product.name} ${product.family}`).includes(query))
+      ? compatible.filter((product) => normalize(`${product.name} ${product.family} ${product.search_text || ''}`).includes(query))
       : compatible;
     const selected = compatible.find((product) => product.source_key === item.productId);
     return selected && !filtered.some((product) => product.source_key === selected.source_key) ? [selected, ...filtered] : filtered;
   }, [item.calculationMode, item.productId, productSearch, products]);
   const selectedProduct = products.find((product) => product.source_key === item.productId);
-  const update = (patch: Partial<QuoteLineItemDraft>) => onUpdate(item.id, patch);
+  const update = (patch: Partial<QuoteLineItemDraft>) => onUpdate(item.id, {
+    ...patch,
+    ...(Object.prototype.hasOwnProperty.call(patch, 'quantity') && item.quantityRange ? { quantityRange: undefined } : {}),
+  });
   const chooseMode = (calculationMode: QuoteCalculationMode) => {
     const product = products.find((row) => row.source_key === item.productId);
     const compatible = !product || calculationMode === 'unknown'
       || (calculationMode === 'area' && product.mode === 'area')
       || (calculationMode === 'units' && (product.mode === 'quantity' || product.mode === 'fixed'));
-    update({ calculationMode, ...(!compatible ? { productId: undefined, productName: undefined } : {}) });
+    update({ calculationMode, ...(!compatible ? { productId: undefined, productName: undefined, quantityRange: undefined } : {}) });
   };
   const chooseProduct = (sourceKey: string) => {
     const product = products.find((row) => row.source_key === sourceKey);
     if (!product) {
-      update({ productId: undefined, productName: undefined });
+      update({ productId: undefined, productName: undefined, quantityRange: undefined });
       return;
     }
     update({
       productId: product.source_key,
       productName: product.name,
+      quantityRange: undefined,
       calculationMode: product.mode === 'area' ? 'area' : 'units',
       project: item.project.trim() ? item.project : product.name,
     });
@@ -295,9 +305,11 @@ function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate,
           <option value="">Solicitar revisión del equipo</option>
           {availableProducts.map((product) => <option key={product.source_key} value={product.source_key}>{product.name}</option>)}
         </select>
+        {selectedProduct?.quantity_tiers?.length ? <small className="quote-product-ranges">Rangos publicados en tienda: {selectedProduct.quantity_tiers.map((tier) => tier.replace(/(\d+)\.0\b/g, '$1')).join(' · ')}. La cantidad exacta se confirma en esta solicitud.</small> : null}
       </label>
       <label>Cantidad de piezas
         <input type="number" inputMode="numeric" min={1} step={1} value={item.quantity} onChange={(event) => update({ quantity: Math.max(1, Math.floor(Number(event.target.value) || 1)) })}/>
+        {item.quantityRange && <small className="quote-quantity-range-note">Rango elegido: {item.quantityRange}. La cantidad parte del mínimo; actualízala cuando conozcas el número exacto.</small>}
       </label>
     </div>}
 
@@ -354,15 +366,24 @@ function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate,
   </article>;
 }
 
-export function QuoteConfigurator({ services, initialService = '', initialProducts = [], initialItemServices = [], initialQuantityRanges = [], onChange }: Props) {
+export function QuoteConfigurator({ services, initialService = '', initialProducts = [], initialProductSkus = [], initialItemServices = [], initialQuantityRanges = [], onChange }: Props) {
   const initialProductsKey = initialProducts.join('\u001f');
+  const initialProductSkusKey = initialProductSkus.join('\u001f');
   const initialItemServicesKey = initialItemServices.join('\u001f');
   const initialQuantityRangesKey = initialQuantityRanges.join('\u001f');
-  const requestedProducts = initialProductsKey ? initialProductsKey.split('\u001f') : [];
-  const requestedServices = initialItemServicesKey ? initialItemServicesKey.split('\u001f') : [];
-  const requestedRanges = initialQuantityRangesKey ? initialQuantityRangesKey.split('\u001f') : [];
+  const hasItemServiceOverrides = initialItemServices.length > 0;
+  const requestedProducts = initialProductsKey ? initialProductsKey.split('\u001f').slice(0, MAX_QUOTE_ITEMS) : [];
+  const requestedProductSkus = initialProductSkusKey ? initialProductSkusKey.split('\u001f').slice(0, MAX_QUOTE_ITEMS) : [];
+  const requestedServices = hasItemServiceOverrides ? initialItemServicesKey.split('\u001f').slice(0, MAX_QUOTE_ITEMS) : [];
+  const requestedRanges = initialQuantityRangesKey ? initialQuantityRangesKey.split('\u001f').slice(0, MAX_QUOTE_ITEMS) : [];
+  const hasExtraRequestedProducts = initialProducts.length > MAX_QUOTE_ITEMS;
   const [items, setItems] = useState<QuoteLineItemDraft[]>(() => {
-    if (requestedProducts.length) return requestedProducts.map((product, index) => makeItem(requestedServices[index] || initialService, product, requestedRanges[index] ? quantityFromRange(requestedRanges[index]) : 1));
+    if (requestedProducts.length) return requestedProducts.map((product, index) => makeItem(
+      hasItemServiceOverrides ? requestedServices[index] || '' : initialService,
+      product,
+      requestedRanges[index] ? quantityFromRange(requestedRanges[index]) : 1,
+      requestedRanges[index] || '',
+    ));
     return [makeItem(initialService)];
   });
   const [location, setLocation] = useState<QuoteInstallationLocation>({ address: '', mapsUrl: '', locationUnknown: false, floor: '', workHeight: '', accessNotes: '' });
@@ -384,7 +405,21 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
     if (!requestedProducts.length || !products.length) return;
     setItems((current) => current.map((item, index) => {
       const target = normalize(requestedProducts[index] || '');
-      const match = products.find((product) => normalize(product.name) === target || normalize(product.source_key) === target);
+      const requestedSku = requestedProductSkus[index]?.trim().toLocaleUpperCase('es');
+      const aliasSourceKey = getStorefrontQuoteSourceKey(requestedProductSkus[index]);
+      const skuMatches = requestedSku
+        ? products.filter((product) => product.sku?.trim().toLocaleUpperCase('es') === requestedSku
+          || product.source_skus?.some((sku) => sku.trim().toLocaleUpperCase('es') === requestedSku))
+        : [];
+      const sourceKeyMatches = skuMatches.length
+        ? skuMatches
+        : aliasSourceKey
+          ? products.filter((product) => product.source_key === aliasSourceKey)
+          : products.filter((product) => normalize(product.source_key) === target);
+      const nameMatches = aliasSourceKey || sourceKeyMatches.length
+        ? []
+        : products.filter((product) => normalize(product.name) === target);
+      const match = sourceKeyMatches.length === 1 ? sourceKeyMatches[0] : nameMatches.length === 1 ? nameMatches[0] : undefined;
       if (!match) return item;
       return {
         ...item,
@@ -395,7 +430,7 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
         quantity: requestedRanges[index] ? quantityFromRange(requestedRanges[index]) : item.quantity,
       };
     }));
-  }, [initialProductsKey, initialQuantityRangesKey, products]);
+  }, [initialProductsKey, initialProductSkusKey, initialQuantityRangesKey, products]);
 
   const updateItem = (id: string, patch: Partial<QuoteLineItemDraft>) => setItems((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item));
   const removeItem = (id: string) => setItems((current) => current.length > 1 ? current.filter((item) => item.id !== id) : current);
@@ -453,7 +488,9 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
       productId: first.productId,
       productName: first.productName,
       requestedProducts: requestedProducts.length ? requestedProducts : undefined,
-      requestedQuantityRanges: requestedRanges.length ? requestedRanges : undefined,
+      requestedQuantityRanges: itemsWithPrice.some((item) => item.quantityRange)
+        ? itemsWithPrice.map((item) => item.quantityRange || '')
+        : undefined,
       pricingMode: first.pricingMode,
       pricePreview: first.pricePreview,
       priceStatus: first.priceStatus,
@@ -493,6 +530,7 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
         <h2 id="quote-builder-title">Arma tu solicitud</h2>
         <p>Añade cada artículo por separado. Puedes indicar medidas, cantidad, diseño, acabados y si requiere instalación.</p>
       </div>
+      {hasExtraRequestedProducts && <p className="quote-data-notice" role="status">El enlace incluía más de {MAX_QUOTE_ITEMS} artículos. Se cargaron los primeros {MAX_QUOTE_ITEMS}; revisa la lista antes de enviar.</p>}
       {productLoadError && <div className="quote-data-warning" role="alert"><span>No se cargó la matriz de tarifas. Puedes solicitar una revisión sin seleccionar tarifas.</span><button type="button" onClick={() => setProductLoadAttempt((attempt) => attempt + 1)}>Reintentar</button></div>}
       {quoteDataLoadError && <div className="quote-data-warning" role="alert"><span>La solicitud supera el límite de datos. Reduce texto o artículos antes de enviarla.</span></div>}
 

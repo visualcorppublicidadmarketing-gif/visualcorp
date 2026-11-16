@@ -13,6 +13,7 @@ import { Title3D } from './Title3D';
 import { AboutHero, ContactHero, ProcessHero } from './CompanyHeroes';
 import { companyProcessSteps } from './company-hero-content';
 import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
+import { STOREFRONT_SKU_PARAM } from './storefrontCatalog';
 import { AnimatedList, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight, PulsingBeacon, AnimatedShinyText } from '../components/ui/MagicComponents';
 import { FloatInput, FloatTextarea, FeedbackAlert } from '../components/ui/FormControls';
 import { SelectDropdown } from '../components/ui/SelectDropdown';
@@ -605,16 +606,24 @@ export function ContactPage() {
 export function PublicQuotePage() {
   const [searchParams] = useSearchParams();
   const requestedService = searchParams.get('servicio') || '';
-  const requestedProducts = searchParams.getAll('producto').map((product) => product.trim()).filter(Boolean);
-  const requestedQuantityRanges = searchParams.getAll('cantidad');
+  const requestedFamilies = searchParams.getAll('familia');
+  const requestedSkus = searchParams.getAll(STOREFRONT_SKU_PARAM);
+  const requestedRanges = searchParams.getAll('cantidad');
+  const requestedLines = searchParams.getAll('producto').flatMap((value, index) => {
+    const product = value.trim();
+    return product ? [{ product, sku: requestedSkus[index] || '', family: requestedFamilies[index] || '', range: requestedRanges[index] || '' }] : [];
+  });
+  const requestedProducts = requestedLines.map((line) => line.product);
+  const requestedProductSkus = requestedLines.map((line) => line.sku);
+  const requestedQuantityRanges = requestedLines.map((line) => line.range);
   const { data } = useWorkspace();
   const [quoteData, setQuoteData] = useState<QuoteDraft | null>(null);
   const services = useMemo(() => data.services.filter((item) => item.enabled), [data.services]);
   const serviceName = (value: string) => services.find((item) => item.id === value || item.name.toLocaleLowerCase('es') === value.toLocaleLowerCase('es'))?.name || '';
   const service = serviceName(requestedService);
-  const itemServices = searchParams.getAll('familia').map(serviceName);
+  const itemServices = requestedFamilies.length ? requestedLines.map((line) => serviceName(line.family)) : [];
   const requestKey = `${searchParams.toString()}|${service}|${itemServices.join('|')}`;
-  return <><SiteTitle>Solicitar cotización</SiteTitle><PageHero eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp"><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} onChange={setQuoteData}/><div className="site-quote-request" id="formulario-cotizacion"><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData}/></div></section></>;
+  return <><SiteTitle>Solicitar cotización</SiteTitle><PageHero eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp"><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} onChange={setQuoteData}/><div className="site-quote-request" id="formulario-cotizacion"><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData}/></div></section></>;
 }
 function PageHero({ eyebrow, title, description, compact = false, primary, secondary }) {
   const action = (item, className, Icon) => item.to.startsWith('#')
