@@ -15,8 +15,10 @@
 .inventory-location-copy b{overflow-wrap:anywhere;font-size:13px;color:var(--text,#18202d)}
 .inventory-location-copy small,.inventory-location-copy span{font-size:11px;line-height:1.4;color:var(--text-muted,#687080)}
 .inventory-location-card>.button{min-height:34px;padding:7px 9px;white-space:nowrap}
-@media(max-width:760px){.inventory-location-form{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-location-grid{grid-template-columns:1fr}}
-@media(max-width:480px){.inventory-location-form{grid-template-columns:1fr}.inventory-location-card{align-items:flex-start;flex-wrap:wrap}.inventory-location-card>.button{margin-left:48px}.inventory-location-toolbar{align-items:stretch;flex-direction:column}.inventory-location-toolbar span{padding:0}}
+@media(max-width:1180px){.inventory-location-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.inventory-location-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:560px){.inventory-location-form{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:480px){.inventory-location-card{align-items:flex-start;flex-wrap:wrap}.inventory-location-card>.button{margin-left:48px}.inventory-location-toolbar{align-items:stretch;flex-direction:column}.inventory-location-toolbar span{padding:0}}
 
 /* Mejoras de mapa de ubicaciones */
 .inventory-location-filters {
@@ -116,4 +118,116 @@
 .inventory-location-icon.type-quarantine {
   background: #fef2f2;
   color: #dc2626;
+}
+
+/* =========================================================================
+   Paso 5d: Safe Containers & Dark Mode Harmony for Inventory Locations
+   ========================================================================= */
+
+.inventory-location-form,
+.inventory-location-form *,
+.inventory-location-toolbar,
+.inventory-location-grid,
+.inventory-location-card,
+.inventory-location-copy {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.inventory-location-form input:focus-visible,
+.inventory-location-form select:focus-visible,
+.inventory-location-toolbar select:focus-visible,
+.inventory-location-search-box input:focus-visible {
+  outline: 2px solid #a51091;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-location-card,
+  .inventory-location-card button {
+    transition: none;
+  }
+}
+
+[data-theme='dark'] .inventory-location-note,
+.work-app.theme-dark .inventory-location-note {
+  border-color: #362e49;
+  background: #1a1627;
+  color: #cfc7dd;
+}
+
+[data-theme='dark'] .inventory-location-form input,
+.work-app.theme-dark .inventory-location-form input,
+[data-theme='dark'] .inventory-location-form select,
+.work-app.theme-dark .inventory-location-form select,
+[data-theme='dark'] .inventory-location-toolbar select,
+.work-app.theme-dark .inventory-location-toolbar select {
+  border-color: #413857;
+  background: #14111f;
+  color: #f4effb;
+}
+
+[data-theme='dark'] .inventory-location-card,
+.work-app.theme-dark .inventory-location-card {
+  border-color: #312a44;
+  background: #171424;
+  color: #f0ebf8;
+}
+
+[data-theme='dark'] .inventory-location-copy,
+.work-app.theme-dark .inventory-location-copy {
+  color: #e9e2f5;
+}
+
+[data-theme='dark'] .inventory-location-copy small,
+.work-app.theme-dark .inventory-location-copy small,
+[data-theme='dark'] .inventory-location-copy span,
+.work-app.theme-dark .inventory-location-copy span {
+  color: #b4acc4;
+}
+
+[data-theme='dark'] .inventory-location-search-box,
+.work-app.theme-dark .inventory-location-search-box {
+  border-color: #3c3352;
+  background: #14111f;
+  color: #f4effb;
+}
+
+[data-theme='dark'] .inventory-location-search-box input,
+.work-app.theme-dark .inventory-location-search-box input {
+  color: #f4effb;
+}
+
+[data-theme='dark'] .location-status-badge,
+.work-app.theme-dark .location-status-badge {
+  border-color: #3c5442;
+  background: #1c2e22;
+  color: #9ae6b4;
+}
+
+[data-theme='dark'] .location-system-badge,
+.work-app.theme-dark .location-system-badge {
+  border-color: #473964;
+  background: #251e39;
+  color: #d8c8f8;
+}
+
+[data-theme='dark'] .location-stock-pill,
+.work-app.theme-dark .location-stock-pill {
+  border-color: #3d3454;
+  background: #201b30;
+  color: #e6def5;
+}
+
+[data-theme='dark'] .inventory-location-icon,
+.work-app.theme-dark .inventory-location-icon {
+  background: #251f38;
+  color: #e9b2f5;
+}
+
+[data-theme='dark'] .inventory-location-icon.type-quarantine,
+.work-app.theme-dark .inventory-location-icon.type-quarantine {
+  background: rgba(220, 38, 38, 0.22);
+  color: #fca5a5;
 }
