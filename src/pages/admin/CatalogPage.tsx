@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   BadgeCheck,
+  BriefcaseBusiness,
   Check,
   ChevronLeft,
   CircleHelp,
@@ -25,6 +26,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { NumberTicker } from '../../components/ui/MagicComponents';
 import { supabase } from '../../lib/supabaseClient';
 import { StandardCustomProducts } from './StandardCustomProducts';
+import { ServiceCatalog } from './ServiceCatalog';
 import { CatalogProductCode, CatalogProductDetailDialog } from './CatalogProductDetailDialog';
 import './catalog-page.css';
 
@@ -127,7 +129,7 @@ export function CatalogPricingEditor({ item, editable, onSave }: { item: any; ed
 
 export function CatalogPage() {
   const { data, update, setData } = useWorkspace();
-  const { organizationId, hasPermission } = useAuth();
+  const { organizationId, hasPermission, roles } = useAuth();
   const [search, setSearch] = useState('');
   const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState('name');
@@ -141,8 +143,11 @@ export function CatalogPage() {
     try { const saved = window.localStorage.getItem('visualcorp.catalog.view.v1'); return catalogViewOptions.some((option) => option.id === saved) ? saved as CatalogView : 'table'; }
     catch { return 'table'; }
   });
-  const canEditPrices = hasPermission('catalog_admin', 'edit_prices');
-  const canEditProducts = hasPermission('catalog_admin', 'edit');
+  const canManageCatalog = roles.includes('owner') || roles.includes('admin');
+  const canEditPrices = canManageCatalog && hasPermission('catalog_admin', 'edit_prices');
+  const canEditProducts = canManageCatalog;
+  const productCatalog = useMemo(() => data.catalog.filter((item) => item.productKind !== 'service'), [data.catalog]);
+  const serviceCount = data.catalog.filter((item) => item.productKind === 'service').length;
 
   useEffect(() => {
     let active = true;
@@ -164,12 +169,12 @@ export function CatalogPage() {
     return () => { active = false; };
   }, [organizationId, canEditProducts]);
 
-  const families = useMemo(() => [...new Set<string>(data.catalog.map((item) => item.family?.trim() || 'General'))].sort((a, b) => a.localeCompare(b, 'es')), [data.catalog]);
+  const families = useMemo(() => [...new Set<string>(productCatalog.map((item) => item.family?.trim() || 'General'))].sort((a, b) => a.localeCompare(b, 'es')), [productCatalog]);
 
   // Information cards for category-first view
   const categoryCards = useMemo(() => {
     return families.map((fam) => {
-      const items = data.catalog.filter((item) => (item.family?.trim() || 'General') === fam);
+      const items = productCatalog.filter((item) => (item.family?.trim() || 'General') === fam);
       const sampleItem = items.find((i) => i.image) || items[0];
       const prices = items.map((i) => Number(i.price)).filter((p) => Number.isFinite(p) && p > 0);
       const minPrice = prices.length ? Math.min(...prices) : 0;
@@ -182,7 +187,7 @@ export function CatalogPage() {
         unit: hasArea ? 'm²' : (items[0]?.unit || 'u.'),
       };
     });
-  }, [data.catalog, families]);
+  }, [productCatalog, families]);
 
   // Determine if we are in category drilldown, active search, or showing all
   const isSearchActive = search.trim().length > 0;
@@ -191,7 +196,7 @@ export function CatalogPage() {
 
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('es');
-    const matches = data.catalog.filter((item) => {
+    const matches = productCatalog.filter((item) => {
       const itemFamily = item.family?.trim() || 'General';
       if (selectedFamily && selectedFamily !== 'Todas' && itemFamily !== selectedFamily) {
         return false;
@@ -208,7 +213,7 @@ export function CatalogPage() {
       }
       return a.name.localeCompare(b.name, 'es');
     });
-  }, [data.catalog, search, selectedFamily, sortBy]);
+  }, [productCatalog, search, selectedFamily, sortBy]);
 
   const grouped = useMemo<Array<[string, any[]]>>(() => {
     if (!groupByFamily) return [['Resultados del catálogo', filtered]];
@@ -277,9 +282,9 @@ export function CatalogPage() {
     <div className="catalog-page">
       <PageHeading
         eyebrow="CATÁLOGO DE OPERACIONES"
-        title="Catálogo de productos y tarifas"
-        description="Navega por categorías para gestionar productos, tarifas base (Normal, Instalación, Corporativo) y escalas por cantidad o medida."
-        action={<span className="rate-pending"><BadgeCheck size={15}/> {data.catalog.length} productos en catálogo</span>}
+        title="Catálogo de productos, artículos y servicios"
+        description="Organiza artículos por familia y administra servicios con paquetes, alcance y condiciones comerciales. Solo administración puede crear o modificar fichas y tarifas."
+        action={<span className="rate-pending"><BadgeCheck size={15}/> {productCatalog.length} productos · {serviceCount} servicios</span>}
       />
 
       {skuStatus !== 'hidden' && <section className={`catalog-sku-panel panel${legacySkuCount ? ' has-pending' : ''}`} aria-label="Códigos de identificación del catálogo">
@@ -293,11 +298,12 @@ export function CatalogPage() {
       </section>}
 
       <StandardCustomProducts key={standardProductsRevision} editable={canEditProducts} editablePrices={canEditPrices} />
+      <ServiceCatalog canManage={canManageCatalog}/>
 
       <section className="catalog-overview" aria-label="Resumen del catálogo">
         <article className="panel"><span><Layers3 size={17}/></span><div><small>FAMILIAS DISPONIBLES</small><b><NumberTicker value={families.length}/></b><small>Categorías organizadas</small></div></article>
-        <article className="panel"><span><Grid2X2 size={17}/></span><div><small>{isViewingCategory ? `PRODUCTOS EN ${selectedFamily?.toUpperCase()}` : 'PRODUCTOS REGISTRADOS'}</small><b><NumberTicker value={showCategoryGrid ? data.catalog.length : filtered.length}/></b><small>{showCategoryGrid ? 'Total en 29 familias' : `${filtered.length} de ${data.catalog.length}`}</small></div></article>
-        <article className="panel"><span><BadgeCheck size={17}/></span><div><small>MODALIDADES DE TARIFA</small><b>3</b><small>Normal · Instalación · Corporativo</small></div></article>
+        <article className="panel"><span><Grid2X2 size={17}/></span><div><small>{isViewingCategory ? `PRODUCTOS EN ${selectedFamily?.toUpperCase()}` : 'ARTÍCULOS REGISTRADOS'}</small><b><NumberTicker value={showCategoryGrid ? productCatalog.length : filtered.length}/></b><small>{showCategoryGrid ? `En ${families.length} familias` : `${filtered.length} de ${productCatalog.length}`}</small></div></article>
+        <article className="panel"><span><BriefcaseBusiness size={17}/></span><div><small>SERVICIOS PUBLICADOS</small><b><NumberTicker value={serviceCount}/></b><small>Paquetes conectados con POS</small></div></article>
       </section>
 
       {/* Main Exploration Section */}
@@ -335,7 +341,7 @@ export function CatalogPage() {
               className={selectedFamily === null ? 'active' : ''}
               onClick={() => setSelectedFamily(null)}
             >
-              Ver todas <i>{data.catalog.length}</i>
+              Ver todas <i>{productCatalog.length}</i>
             </button>
             {families.map((fam) => (
               <button
@@ -345,7 +351,7 @@ export function CatalogPage() {
                 onClick={() => setSelectedFamily(fam)}
               >
                 {fam}
-                <i>{data.catalog.filter((i) => (i.family?.trim() || 'General') === fam).length}</i>
+                <i>{productCatalog.filter((i) => (i.family?.trim() || 'General') === fam).length}</i>
               </button>
             ))}
           </div>
@@ -405,7 +411,7 @@ export function CatalogPage() {
               className="button button-outline catalog-view-all-btn"
               onClick={() => setSelectedFamily('Todas')}
             >
-              <Grid2X2 size={14}/> Ver catálogo completo ({data.catalog.length})
+              <Grid2X2 size={14}/> Ver catálogo completo ({productCatalog.length})
             </button>
           </div>
 
@@ -497,6 +503,12 @@ export function CatalogPage() {
                           >
                             <FileText size={13}/> Ver ficha
                           </button>
+                          {canManageCatalog && <button className="catalog-product-details-button" type="button" onClick={() => void (async () => {
+                            if (!supabase || !organizationId || !window.confirm(`¿Eliminar “${item.name}” del catálogo? Si tiene ventas o vínculos, la base conservará su historial.`)) return;
+                            const { error } = await supabase.from('catalog_products').delete().eq('id', item.id).eq('organization_id', organizationId);
+                            if (error) { window.alert(`No se pudo eliminar el artículo: ${error.message}`); return; }
+                            setData((current) => ({ ...current, catalog: current.catalog.filter((row) => row.id !== item.id) }));
+                          })()} aria-label={`Eliminar ${item.name}`} title="Eliminar artículo"><Trash2 size={13}/></button>}
                         </span>
                       </div>
                     </div>

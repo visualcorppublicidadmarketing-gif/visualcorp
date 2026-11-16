@@ -205,6 +205,13 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
     finally { setBusy(false); }
   };
 
+  const deleteProduct = async (product: any) => {
+    if (!canEdit || !supabase || !organizationId || !window.confirm(`¿Eliminar el producto estándar “${product.name}”? Las ventas existentes conservarán su descripción.`)) return;
+    const { error: deleteError } = await supabase.from('catalog_products').delete().eq('organization_id', organizationId).eq('id', product.id);
+    if (deleteError) { setError(`No se pudo eliminar. Si este producto está vinculado a operaciones, consérvalo como borrador. ${deleteError.message}`); return; }
+    setProducts((current) => current.filter((row) => row.id !== product.id)); setNotice('Producto estándar eliminado del catálogo.'); await refreshRemote();
+  };
+
   const saveTemplate = async (event: React.FormEvent) => {
     event.preventDefault(); if (!supabase || !organizationId) return;
     const name = templateName.trim(); const code = ('custom_' + slugify(name).replace(/-/g, '_')).slice(0, 48);
@@ -281,6 +288,7 @@ export function StandardCustomProducts({ editable, editablePrices }: { editable:
           <div className="standard-product-actions">
             <button className="button button-outline" type="button" onClick={() => setDetailProduct({ ...product, family: product.subcategory || product.category_id, workflowRoute })}><FileText size={14}/> Ficha</button>
             {canEdit && <button className="button button-outline" type="button" onClick={() => openEdit(product)}><Pencil size={14}/> Editar</button>}
+            {canEdit && <button className="button button-outline" type="button" aria-label={'Eliminar ' + product.name} title="Eliminar producto estándar" onClick={() => void deleteProduct(product)}><Trash2 size={14}/></button>}
           </div>
         </article>
       );
