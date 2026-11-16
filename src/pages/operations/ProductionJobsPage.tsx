@@ -55,7 +55,6 @@ import {
   ProductionQueueViews,
   type ProductionQueueViewItem,
 } from './ProductionQueueViews';
-import { ProductionAttention } from './ProductionAttention';
 
 import './production-jobs.css';
 import './production-queue-components.css';
@@ -621,7 +620,6 @@ export function ProductionJobsPage() {
           description={areaConfig.intro}
           action={
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <ProductionAttention />
               <Link className="button button-outline" to="/operaciones/cartelera-taller">
                 <MapPin size={15} /> Cartelera & Mapa
               </Link>
