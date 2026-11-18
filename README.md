@@ -189,6 +189,15 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ## Continuidad del trabajo
 
+- **Actualización:** 18 de noviembre de 2026. Iteración visual de la portada pública en una rama aislada.
+- **Resultado buscado:** presentar una experiencia más inmersiva con profundidad ligada al scroll y una respuesta sutil al puntero, manteniendo la identidad y los datos confirmados.
+- **Versión de trabajo:** `codex/home-interactive-premium-20261118`; `src/public-site/HomePage.tsx` y `src/public-site/home-page.css`.
+- **Decisiones aplicadas:** reutilizar Motion, la ilustración existente de Visualito y la paleta/tipografía actual. Se añadió parallax por capas, tilt con spring, halo para mouse y un rótulo glass; se limita el movimiento con `prefers-reduced-motion`.
+- **Investigación:** [dirección, fuentes y decisiones](docs/HOME_INTERACTIVE_PREMIUM_2026-11-18.md).
+- **Verificación:** `npm run typecheck` y `npm run build` pasan. Se revisó localmente el hero con scroll y puntero, y en un ancho de laptop y uno móvil sin desbordamiento horizontal visible. La vista previa está abierta en `http://127.0.0.1:5190/`.
+- **Estado:** propuesta local en una rama aislada, sin dependencias nuevas, cambios de datos ni publicación.
+- **Siguiente acción:** usar esta vista previa como base para decidir si extender el mismo lenguaje visual a las demás páginas públicas.
+
 - **Actualización:** 16 de noviembre de 2026. Mejora local del catálogo de operaciones y del POS.
 - **Resultado buscado:** gestionar artículos y servicios configurables en una sola fuente de catálogo, con escritura reservada a propietarios y administradores; seleccionar paquetes de servicios en el POS.
 - **Versión de trabajo:** cambios en `src/pages/admin/CatalogPage.tsx`, `src/pages/admin/StandardCustomProducts.tsx`, `src/pages/admin/ServiceCatalog.tsx`, `src/pages/pos/CheckoutWorkspace.tsx` y `src/app/workspace.tsx`.
