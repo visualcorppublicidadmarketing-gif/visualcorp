@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { inventoryUnitIsDiscrete } from '../lib/inventoryProductMetadata.mjs';
 import {
   AlertTriangle,
   ArrowDownToLine,
@@ -103,7 +104,7 @@ export function InventoryMovementModal({
   // Check if requested quantity exceeds available stock (for consumption, waste, or transfer)
   const isReduction = isConsumption || isWaste || isTransfer;
   const isOverAvailable = isReduction && numQty !== null && numQty > availableStock;
-  const isQtyValid = numQty !== null && numQty >= 0 && (isCount || numQty > 0);
+  const isQtyValid = numQty !== null && numQty >= 0 && (isCount || numQty > 0) && (!inventoryUnitIsDiscrete(unit) || Number.isSafeInteger(numQty));
 
   // Computed resulting stock preview
   const resultingStock = useMemo(() => {
@@ -326,10 +327,10 @@ export function InventoryMovementModal({
                 <input
                   autoFocus
                   type="number"
-                  inputMode="decimal"
+                  inputMode={inventoryUnitIsDiscrete(unit) ? 'numeric' : 'decimal'}
                   min="0"
                   max={isReduction ? availableStock : undefined}
-                  step="any"
+                  step={inventoryUnitIsDiscrete(unit) ? '1' : 'any'}
                   required
                   value={movement.quantity}
                   onChange={(e) => onChange({ ...movement, quantity: e.target.value })}
@@ -338,6 +339,7 @@ export function InventoryMovementModal({
                 />
                 <em>{unit}</em>
               </div>
+              {inventoryUnitIsDiscrete(unit) && numQty !== null && !Number.isSafeInteger(numQty) && <small role="alert">Ingresa un número entero de {unit}.</small>}
               <button
                 type="button"
                 className="inventory-movement-step-btn"

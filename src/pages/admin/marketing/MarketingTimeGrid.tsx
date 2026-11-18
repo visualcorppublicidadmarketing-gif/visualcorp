@@ -1,7 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Clock, Plus, Sun, Moon, ChevronDown, ChevronUp, X, Calendar, CheckSquare, Layers } from 'lucide-react';
 import { ContextMenu, type ContextMenuAction } from '../../../components/ui/ContextMenu';
-import type { MarketingCalendarPost, MarketingCalendarTask } from './MarketingCalendar';
+import {
+  getChannelBadge,
+  getFormatBadge,
+  getPlatformClassName,
+  MarketingReadinessIndicators,
+  renderDeliverableDots,
+  type MarketingCalendarPost,
+  type MarketingCalendarTask,
+} from './MarketingCalendar';
+import { MarketingPostArtwork, type MarketingArtworkAsset } from './MarketingPostArtwork';
 import type { MarketingTaskRange } from './MarketingPlanning';
 
 type Props = {
@@ -12,6 +21,10 @@ type Props = {
   tasks: MarketingCalendarTask[];
   campaignNames: ReadonlyMap<string, string>;
   canEdit: boolean;
+  artworkByPost?: ReadonlyMap<string, MarketingArtworkAsset>;
+  organizationId?: string;
+  onArtworkSaved?: () => void;
+  onReadinessChange?: (post: MarketingCalendarPost, field: 'design_ready' | 'video_ready', checked: boolean) => void;
   onPostSelect: (post: MarketingCalendarPost) => void;
   onTaskSelect: (task: MarketingCalendarTask) => void;
   postActions: (post: MarketingCalendarPost) => ContextMenuAction[];
@@ -43,6 +56,7 @@ type AllDayEntry = {
   kind: 'post' | 'task';
   title: string;
   subline: string;
+  timeLabel?: string;
   tone: string;
   overdue: boolean;
   post?: MarketingCalendarPost;
@@ -90,6 +104,10 @@ export function MarketingTimeGrid({
   tasks,
   campaignNames,
   canEdit,
+  artworkByPost,
+  organizationId,
+  onArtworkSaved,
+  onReadinessChange,
   onPostSelect,
   onTaskSelect,
   postActions,
@@ -260,11 +278,12 @@ export function MarketingTimeGrid({
 
     posts.filter((post) => post.scheduled_date.slice(0, 10) === date).forEach((post) => {
       const minute = parseTime(post.scheduled_time);
+      const durationMinutes = view === 'day' ? 60 : unitMinutes;
       const entry: TimedEntry = {
         key: `post:${post.id}`,
         kind: 'post',
         startMinute: minute ?? 0,
-        endMinute: Math.min(1440, (minute ?? 0) + unitMinutes),
+        endMinute: Math.min(1440, (minute ?? 0) + durationMinutes),
         title: post.title || 'Publicación sin título',
         subline: `${post.platform || 'Canal pendiente'} · ${post.status || 'Por iniciar'}`,
         timeLabel: minute === null ? '' : formatTime(minute),
@@ -398,6 +417,164 @@ export function MarketingTimeGrid({
 
   const isCurrentTimeInRange = nowMinute >= earliestMinute && nowMinute <= latestMinute;
   const nowPercent = isCurrentTimeInRange ? ((nowMinute - earliestMinute) / (latestMinute - earliestMinute)) * 100 : null;
+  const entriesByDate = new Map(dates.map((date) => {
+    const k = dateKey(date);
+    return [k, getEntries(k)] as const;
+  }));
+  const totalAllDayCount = Array.from(entriesByDate.values()).reduce((sum, group) => sum + group.allDay.length, 0);
+
+  const renderTimeEventContent = (entry: TimedEntry | AllDayEntry, isAllDay: boolean, cellDateKey: string) => {
+    const isPost = entry.kind === 'post' && Boolean(entry.post);
+    const post = entry.post;
+    const task = entry.task;
+    const asset = isPost && post ? artworkByPost?.get(post.id) : undefined;
+    const hasStorageArtwork = Boolean(
+      asset?.storage_status === 'supabase_storage' && asset.rel_path?.startsWith('storage://marketing-assets/'),
+    );
+    const channelInfo = isPost && post ? getChannelBadge(post.platform) : null;
+    const formatInfo = isPost && post ? getFormatBadge(post.format, post.platform) : null;
+    const FormatIcon = formatInfo?.icon || CheckSquare;
+
+    if (view === 'week') {
+      return (
+        <>
+          <div className="vc-time-event-head">
+            <time>{entry.timeLabel || 'Todo el día'}</time>
+            {isPost && channelInfo && formatInfo && (
+              <>
+                <span className={`vc-cal-channel-badge ${channelInfo.className}`} title={channelInfo.name}>
+                  {channelInfo.code}
+                </span>
+                <span className={`vc-cal-format-badge ${formatInfo.className}`} title={formatInfo.label}>
+                  <FormatIcon size={10} />
+                </span>
+              </>
+            )}
+          </div>
+          <div className="vc-time-event-body">
+            <div className="vc-time-event-text">
+              <b>{entry.title}</b>
+              <span>{entry.subline}</span>
+            </div>
+            {isPost && post && hasStorageArtwork && (
+              <div className="vc-time-event-thumb">
+                <MarketingPostArtwork
+                  organizationId={organizationId || ''}
+                  post={post}
+                  asset={asset}
+                  canEdit={false}
+                  displayOnly
+                  variant="compact"
+                  onSaved={onArtworkSaved || (() => {})}
+                />
+              </div>
+            )}
+          </div>
+          {isPost && post && (
+            <div className="vc-time-event-foot">
+              {renderDeliverableDots(post)}
+            </div>
+          )}
+        </>
+      );
+    }
+
+    const activityType = task
+      ? (task.activity_type === 'Otro' ? task.custom_activity_type || 'Otro' : task.activity_type)
+      : '';
+    const campaignName = task?.campaign_id ? campaignNames.get(task.campaign_id) : '';
+    const summary = isPost && post
+      ? (post.content_line || post.next_action || post.caption || entry.subline)
+      : (task?.brief || task?.next_action || entry.subline);
+    const owner = isPost && post
+      ? (post.owner || 'Sin responsable')
+      : (task?.owner || 'Sin responsable');
+    const DayIcon = isPost ? FormatIcon : CheckSquare;
+
+    return (
+      <div className="vc-time-event-day-layout">
+        <div className="vc-time-day-media">
+          <time>{entry.timeLabel || 'Todo el día'}</time>
+          {isPost && post && hasStorageArtwork ? (
+            <MarketingPostArtwork
+              organizationId={organizationId || ''}
+              post={post}
+              asset={asset}
+              canEdit={false}
+              displayOnly
+              variant="compact"
+              onSaved={onArtworkSaved || (() => {})}
+            />
+          ) : (
+            <span className="vc-time-day-format-icon">
+              <DayIcon size={16} />
+            </span>
+          )}
+        </div>
+        <div className="vc-time-day-info">
+          <div className="vc-time-day-badges">
+            {isPost && post && channelInfo && formatInfo ? (
+              <>
+                <span className={`vc-cal-channel-badge ${channelInfo.className}`} title={channelInfo.name}>
+                  {channelInfo.code}
+                </span>
+                <span className={`vc-cal-format-chip ${formatInfo.className}`} title={`Formato: ${post.format || formatInfo.label}`}>
+                  <FormatIcon size={10} />
+                  <span>{formatInfo.label}</span>
+                </span>
+                <span className={`vc-cal-stage-pill tone-${entry.tone}`}>{post.status || 'Por iniciar'}</span>
+              </>
+            ) : task ? (
+              <>
+                <span className="vc-cal-format-chip">
+                  <CheckSquare size={10} />
+                  <span>{activityType}</span>
+                </span>
+                {campaignName && <span className="vc-time-day-campaign">{campaignName}</span>}
+                <span className={`vc-cal-stage-pill tone-${entry.tone}`}>
+                  {task.status || 'Pendiente'}{entry.overdue ? ' · Atrasada' : ''}
+                </span>
+              </>
+            ) : null}
+          </div>
+          <b>{entry.title}</b>
+          <span className="vc-time-day-summary">{summary}</span>
+          <small className="vc-time-day-owner">{owner}</small>
+        </div>
+        {isPost && post && (
+          <div
+            className="vc-time-day-controls"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            {renderDeliverableDots(post)}
+            <MarketingReadinessIndicators
+              post={post}
+              compact
+              onChange={onReadinessChange ? (field, checked) => onReadinessChange(post, field, checked) : undefined}
+              disabled={!canEdit}
+            />
+            {isAllDay && canEdit && !allDayCollapsed && (
+              <div className="vc-marketing-day-quick-times" onClick={(e) => e.stopPropagation()}>
+                <span className="vc-marketing-quick-time-label">Fijar hora:</span>
+                {['09:00', '11:30', '15:00', '17:30'].map((time) => (
+                  <button
+                    key={time}
+                    type="button"
+                    className="vc-marketing-quick-time-btn"
+                    onClick={() => onPostSchedule?.(post, cellDateKey, time)}
+                    title={`Asignar ${time}`}
+                  >
+                    {time}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <section className={`vc-marketing-time-grid is-${view}`} aria-label={view === 'day' ? `Agenda diaria del ${firstDate}` : `Agenda semanal del ${firstDate} al ${lastDate}`}>
@@ -449,6 +626,11 @@ export function MarketingTimeGrid({
           <div className="vc-marketing-time-gutter vc-marketing-all-day-gutter">
             <div className="vc-marketing-all-day-meta">
               <span>Todo el día</span>
+              {totalAllDayCount > 0 && (
+                <span className="vc-marketing-all-day-count" title="Publicaciones o actividades sin hora asignada">
+                  {totalAllDayCount}
+                </span>
+              )}
               <button
                 type="button"
                 className="vc-marketing-all-day-toggle"
@@ -463,9 +645,9 @@ export function MarketingTimeGrid({
           </div>
           {dates.map((date) => {
             const key = dateKey(date);
-            const entries = getEntries(key).allDay;
+            const entries = entriesByDate.get(key)?.allDay || [];
             const isDropTarget = dragOverTarget?.date === key && dragOverTarget?.slot === undefined;
-            const maxAllDay = view === 'day' ? 2 : 1;
+            const maxAllDay = view === 'day' ? 4 : 2;
             const visibleEntries = allDayCollapsed ? entries.slice(0, maxAllDay) : entries;
             const hiddenCount = entries.length - visibleEntries.length;
 
@@ -516,37 +698,32 @@ export function MarketingTimeGrid({
                 )}
                 {entries.length ? (
                   <>
-                    {visibleEntries.map((entry) => (
-                      <ContextMenu key={entry.key} displayContents trigger={false} className="vc-marketing-time-event-context" label={`Acciones para ${entry.title}`} actions={entry.kind === 'post' && entry.post ? postActions(entry.post) : entry.task ? taskActions(entry.task) : []}>
-                        <button
-                          type="button"
-                          draggable={canEdit}
-                          onDragStart={(e) => handleDragStart(e, entry.kind, entry.post?.id || entry.task?.id || '', entry.title)}
-                          onDragEnd={() => { setDraggingItem(null); setDragOverTarget(null); }}
-                          className={`vc-marketing-time-event is-all-day tone-${entry.tone}${entry.overdue ? ' is-overdue' : ''}${draggingItem?.id === (entry.post?.id || entry.task?.id) ? ' is-dragging' : ''}`}
-                          onClick={() => createPostOrTask(entry)}
-                        >
-                          <b>{entry.title}</b>
-                          <span>{entry.subline}</span>
-                          {!allDayCollapsed && view === 'day' && canEdit && entry.kind === 'post' && entry.post && (
-                            <div className="vc-marketing-day-quick-times" onClick={(e) => e.stopPropagation()}>
-                              <span className="vc-marketing-quick-time-label">Fijar hora:</span>
-                              {['09:00', '11:30', '15:00', '17:30'].map((time) => (
-                                <button
-                                  key={time}
-                                  type="button"
-                                  className="vc-marketing-quick-time-btn"
-                                  onClick={() => onPostSchedule?.(entry.post!, key, time)}
-                                  title={`Asignar ${time}`}
-                                >
-                                  {time}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </button>
-                      </ContextMenu>
-                    ))}
+                    {visibleEntries.map((entry) => {
+                      const platformModifier = entry.kind === 'post' && entry.post
+                        ? ` is-platform-${getPlatformClassName(entry.post.platform)}`
+                        : '';
+                      return (
+                        <ContextMenu key={entry.key} displayContents trigger={false} className="vc-marketing-time-event-context" label={`Acciones para ${entry.title}`} actions={entry.kind === 'post' && entry.post ? postActions(entry.post) : entry.task ? taskActions(entry.task) : []}>
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            draggable={canEdit}
+                            onDragStart={(e) => handleDragStart(e, entry.kind, entry.post?.id || entry.task?.id || '', entry.title)}
+                            onDragEnd={() => { setDraggingItem(null); setDragOverTarget(null); }}
+                            className={`vc-marketing-time-event is-all-day is-${view}-entry tone-${entry.tone}${entry.overdue ? ' is-overdue' : ''}${entry.kind === 'task' ? ' is-task' : ' is-post'}${platformModifier}${draggingItem?.id === (entry.post?.id || entry.task?.id) ? ' is-dragging' : ''}`}
+                            onClick={() => createPostOrTask(entry)}
+                            onKeyDown={(e) => {
+                              if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                                e.preventDefault();
+                                createPostOrTask(entry);
+                              }
+                            }}
+                          >
+                            {renderTimeEventContent(entry, true, key)}
+                          </div>
+                        </ContextMenu>
+                      );
+                    })}
                     {hiddenCount > 0 && (
                       <button
                         type="button"
@@ -585,7 +762,7 @@ export function MarketingTimeGrid({
           {/* Day columns */}
           {dates.map((date) => {
             const key = dateKey(date);
-            const { timed } = getEntries(key);
+            const { timed } = entriesByDate.get(key) || { timed: [] };
             const dayStart = minutesForDate(key, firstDate);
             const selectStart = selection ? Math.max(activeStart, dayStart + earliestMinute) : 0;
             const selectEnd = selection ? Math.min(activeEnd, dayStart + latestMinute) : 0;
@@ -675,8 +852,12 @@ export function MarketingTimeGrid({
                   if (entry.endMinute <= earliestMinute || entry.startMinute >= latestMinute) return null;
                   const clampedStart = Math.max(earliestMinute, entry.startMinute);
                   const clampedEnd = Math.min(latestMinute, entry.endMinute);
+                  const minSpan = view === 'day' && entry.kind === 'post' ? 2 : 1;
                   const rowStart = Math.floor((clampedStart - earliestMinute) / unitMinutes) + 1;
-                  const rowEnd = Math.max(rowStart + 1, Math.ceil((clampedEnd - earliestMinute) / unitMinutes) + 1);
+                  const rowEnd = Math.max(rowStart + minSpan, Math.ceil((clampedEnd - earliestMinute) / unitMinutes) + 1);
+                  const platformModifier = entry.kind === 'post' && entry.post
+                    ? ` is-platform-${getPlatformClassName(entry.post.platform)}`
+                    : '';
 
                   return (
                     <ContextMenu
@@ -687,12 +868,13 @@ export function MarketingTimeGrid({
                       label={`Acciones para ${entry.title}`}
                       actions={entry.kind === 'post' && entry.post ? postActions(entry.post) : entry.task ? taskActions(entry.task) : []}
                     >
-                      <button
-                        type="button"
+                      <div
+                        role="button"
+                        tabIndex={0}
                         draggable={canEdit}
                         onDragStart={(e) => handleDragStart(e, entry.kind, entry.post?.id || entry.task?.id || '', entry.title)}
                         onDragEnd={() => { setDraggingItem(null); setDragOverTarget(null); }}
-                        className={`vc-marketing-time-event tone-${entry.tone}${entry.overdue ? ' is-overdue' : ''}${entry.kind === 'task' ? ' is-task' : ' is-post'}${draggingItem?.id === (entry.post?.id || entry.task?.id) ? ' is-dragging' : ''}`}
+                        className={`vc-marketing-time-event is-${view}-entry tone-${entry.tone}${entry.overdue ? ' is-overdue' : ''}${entry.kind === 'task' ? ' is-task' : ' is-post'}${platformModifier}${draggingItem?.id === (entry.post?.id || entry.task?.id) ? ' is-dragging' : ''}`}
                         style={{
                           gridRow: `${rowStart} / ${rowEnd}`,
                           gridColumn: 1,
@@ -701,12 +883,16 @@ export function MarketingTimeGrid({
                           boxSizing: 'border-box',
                         }}
                         onClick={() => createPostOrTask(entry)}
+                        onKeyDown={(e) => {
+                          if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                            e.preventDefault();
+                            createPostOrTask(entry);
+                          }
+                        }}
                         title={`${entry.timeLabel} · ${entry.title} · ${entry.subline} (Arrastra a otra hora o día)`}
                       >
-                        <time>{entry.timeLabel}</time>
-                        <b>{entry.title}</b>
-                        <span>{entry.subline}</span>
-                      </button>
+                        {renderTimeEventContent(entry, false, key)}
+                      </div>
                     </ContextMenu>
                   );
                 })}

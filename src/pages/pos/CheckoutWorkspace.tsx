@@ -42,6 +42,7 @@ import './pos-material-usage.css';
 const trackedAccessoryProductIds = new Set(['prod-extras-ojal-peque-o-c-u','prod-extras-ojales-grande-c-u']);
 const roundMoney = (value:number) => Math.round((value + Number.EPSILON) * 100) / 100;
 const pluralizePOSUnit = (unit:string) => /^(?:m|mm|cm|km|m2|m²|cm2|cm²|m3|m³|cm3|cm³|kg|g|mg|l|lt|ml|hz)$/i.test(unit.trim())||/s$/i.test(unit)||/[^\p{L}]$/u.test(unit) ? unit : /[aeiouáéó]$/i.test(unit) ? `${unit}s` : `${unit}es`;
+const isPOSServiceProduct = (product:any) => product?.productKind==='service'||String(product?.productType||'').trim().toLocaleLowerCase('es')==='service';
 const normalizeCustomerPhone = (value) => { const digits=String(value||'').replace(/\D/g,'');return digits.startsWith('593')&&digits.length===12?`0${digits.slice(3)}`:digits; };
 type POSMaterialRequestDraft = { recipeId: string; quantity: string };
 const sanitizePOSMaterialRequests = (value: unknown): POSMaterialRequestDraft[] => {
@@ -89,6 +90,7 @@ const sanitizePOSCart = (lines: unknown) => {
       pricingTier: line.pricingTier || 'pvp',
       pricingTierLabel: String(line.pricingTierLabel || 'Normal'),
       optionChoice: String(line.optionChoice || ''),
+      inventoryVariantId: String(line.inventoryVariantId || ''),
       lineDiscountPercent: Math.min(100, Math.max(0, Number(line.lineDiscountPercent) || 0)),
       customUnitPriceApplied: Boolean(line.customUnitPriceApplied),
       finishing: sanitizeCommercialFinishing(line.finishing),
@@ -101,7 +103,7 @@ const sanitizePOSPayments = (rows: unknown) => {
   const sanitized = rows.slice(0,4).filter((row)=>row&&typeof row==='object').map((row,index)=>({id:String(row.id||`payment-${index+1}`),method:validMethods.has(String(row.method))?String(row.method):'Efectivo',amount:String(row.amount??''),reference:String(row.reference||''),note:String(row.note||'')}));
   return sanitized.length?sanitized:[{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}];
 };
-const sanitizePOSSaleLines = (lines: unknown) => Array.isArray(lines)?lines.slice(0,100).filter((line)=>line&&typeof line==='object'&&Number.isFinite(Number(line.quantity))&&Number(line.quantity)>0&&Number.isFinite(Number(line.unit_price))&&Number(line.unit_price)>=0).map((line,index)=>({line_key:String(line.line_key||`legacy-${index}`),catalog_product_id:line.catalog_product_id||null,sku:String(line.sku||''),description:String(line.description||'Artículo cotizado'),quantity:Number(line.quantity),unit_price:Number(line.unit_price),finishing_options:sanitizeCommercialFinishing(line.finishing_options||line.finishingOptions||line.finishing),material_requests:sanitizePOSMaterialRequests(line.material_requests||line.materialRequests).map((request)=>({recipe_id:request.recipeId,quantity:request.quantity}))})):[];
+const sanitizePOSSaleLines = (lines: unknown) => Array.isArray(lines)?lines.slice(0,100).filter((line)=>line&&typeof line==='object'&&Number.isFinite(Number(line.quantity))&&Number(line.quantity)>0&&Number.isFinite(Number(line.unit_price))&&Number(line.unit_price)>=0).map((line,index)=>({line_key:String(line.line_key||`legacy-${index}`),catalog_product_id:line.catalog_product_id||null,variant_id:String(line.variant_id||'')||null,sku:String(line.sku||''),description:String(line.description||'Artículo cotizado'),quantity:Number(line.quantity),unit_price:Number(line.unit_price),finishing_options:sanitizeCommercialFinishing(line.finishing_options||line.finishingOptions||line.finishing),material_requests:sanitizePOSMaterialRequests(line.material_requests||line.materialRequests).map((request)=>({recipe_id:request.recipeId,quantity:request.quantity}))})):[];
 const getPOSQuoteFinancial = (quote: any) => quote?.items?.find((item:any)=>item?.document_details?.financial)?.document_details?.financial||null;
 const getPOSQuoteSaleLines = (quote: any) => {
   const financial = getPOSQuoteFinancial(quote);
@@ -125,7 +127,7 @@ const getPOSQuoteSaleLines = (quote: any) => {
     });
     const baseUnitPrice = Number(item.unit_price??(quantity>0?lineSubtotal/quantity:0))||0;
     return {
-      line_key:`quote-${quote.id}-${index}`,catalog_product_id:item.product_id||null,sku:item.sku||item.product_id||'',
+      line_key:`quote-${quote.id}-${index}`,catalog_product_id:item.product_id||null,variant_id:item.variant_id||null,sku:item.sku||item.product_id||'',
       name:item.name||item.product_name||'Artículo cotizado',description:String(item.description||''),
       quantity,pieceQuantity:Number(item.piece_quantity)||quantity,totalArea:item.unit==='m²'?quantity:null,
       unit_price:quantity>0?lineSubtotal/quantity:0,widthCm:item.width_cm||null,heightCm:item.height_cm||null,unit:item.unit||'unidad',optionChoice:item.option_choice||'',finishing_options:item.finishing||{},
@@ -196,11 +198,43 @@ function getPOSCartLinePresentation(line: any) {
   return { metadata, description: isGeneratedDescription ? '' : description };
 }
 
-function POSApprovedQuoteSummary({ lines, quoteCode, total, emptyDescription }: {
+const getPOSLinkedVariantStock = (link: any, inventory: any[]) => inventory.find((row) =>
+  row.variantId === link.inventory_variant_id
+  && row.branchId === link.branch_id
+  && row.location === (link.location_code || 'MAIN')
+  && !row.archived
+) || null;
+
+const getPOSLinkedVariantLabel = (link: any, inventory: any[]) => {
+  const stock = getPOSLinkedVariantStock(link, inventory);
+  const attributes = stock?.variantAttributes && typeof stock.variantAttributes === 'object' ? stock.variantAttributes : {};
+  const hiddenAttributes = new Set(['source_status','source_status_origin','stock_count_required','physical_count_confirmed_at','physical_count_confirmed_by','initial_branch_id','condition_status']);
+  const internalAttributePattern = /(^|_)(source|status|count|cost|price|supplier|branch|organization|user|created|updated|location|stock|reservation|reserved|email|phone)(_|$)/i;
+  const detail = Object.entries(attributes)
+    .filter(([key, value]) => !hiddenAttributes.has(key) && !internalAttributePattern.test(key) && ['string','number','boolean'].includes(typeof value) && value !== null && value !== undefined && String(value).trim())
+    .slice(0, 5)
+    .map(([key, value]) => `${key.replace(/_/g, ' ')} ${String(value)}`)
+    .join(' · ');
+  const label = [stock?.variant, detail].filter(Boolean).join(' · ')
+    || stock?.variantSku
+    || `Variante ${String(link.inventory_variant_id || '').slice(0, 8)}`;
+  const sku = stock?.variantSku || stock?.sku;
+  const available = stock && !stock.sourceStatus
+    ? Number(stock.availableQuantity ?? (Number(stock.quantity || 0) - Number(stock.reservedQuantity || 0)))
+    : null;
+  const availability = available === null ? 'conteo pendiente' : `${available} ${stock.unit || 'unidad(es)'}`;
+  return { stock, label, sku, availability, optionLabel: `${label}${sku ? ` · ${sku}` : ''} · ${availability}` };
+};
+
+function POSApprovedQuoteSummary({ lines, quoteCode, total, emptyDescription, variantLinks, branchId, inventory, onVariantChange }: {
   lines: any[];
   quoteCode: string;
   total: number;
   emptyDescription?: string;
+  variantLinks: any[];
+  branchId: string;
+  inventory: any[];
+  onVariantChange: (lineKey: string, variantId: string) => void;
 }) {
   return <section className="pos-cart pos-quote-cart" aria-label="Resumen de cotización">
     <div className="pos-cart-heading">
@@ -209,6 +243,8 @@ function POSApprovedQuoteSummary({ lines, quoteCode, total, emptyDescription }: 
     </div>
     {lines.length ? <div className="pos-quote-approved-lines">{lines.map((line, index) => {
       const hasAdjustments = line.discount_amount > 0 || line.tax_amount > 0 || line.shipping_share > 0;
+      const links = variantLinks.filter((link) => link.active && link.branch_id === branchId && link.catalog_product_id === line.catalog_product_id);
+      const selectedVariantId = String(line.variant_id || '');
       return <article className="pos-quote-approved-card" key={line.line_key}>
         <div className="pos-quote-approved-item">
           <div><small>ARTÍCULO {String(index + 1).padStart(2, '0')}</small><b>{line.name || 'Artículo cotizado'}</b></div>
@@ -222,6 +258,18 @@ function POSApprovedQuoteSummary({ lines, quoteCode, total, emptyDescription }: 
           {line.optionChoice ? ` · ${line.optionChoice}` : ''}
         </small>
         {line.description && <small className="pos-quote-approved-description" title={line.description}>{line.description}</small>}
+        {links.length > 0 && <div className="pos-quote-inventory-variant" style={{display:'grid',gap:'.35rem',minWidth:0,maxWidth:'100%'}}>
+          <label htmlFor={`quote-inventory-variant-${line.line_key}`} style={{display:'grid',gap:'.35rem',minWidth:0}}>Variante para descontar del inventario
+            <select style={{width:'100%',minWidth:0,maxWidth:'100%'}} id={`quote-inventory-variant-${line.line_key}`} value={selectedVariantId} onChange={(event) => onVariantChange(line.line_key, event.target.value)}>
+              {links.length > 1 && <option value="">Selecciona talla, color o variante</option>}
+              {links.map((link) => {
+                const option = getPOSLinkedVariantLabel(link, inventory);
+                return <option key={link.inventory_variant_id} value={link.inventory_variant_id}>{option.optionLabel}</option>;
+              })}
+            </select>
+          </label>
+          {links.length > 1 && !selectedVariantId && <small role="alert">Elige la variante física antes de confirmar la venta.</small>}
+        </div>}
         <dl className="pos-quote-approved-breakdown">
           <div><dt>Material</dt><dd>{formatMoney(line.base_subtotal)}</dd></div>
           {line.unit === 'm²' && <div><dt>Ojales · {line.eyelet_label}</dt><dd>{line.eyelet_total > 0 ? `+${formatMoney(line.eyelet_total)}` : 'Sin costo'}</dd></div>}
@@ -250,11 +298,16 @@ const findPOSStockShortages = (lines: any[], catalogLinks: any[], branchId: stri
     if(!line.catalog_product_id)return;
     const links=catalogLinks.filter((link)=>link.active&&link.catalog_product_id===line.catalog_product_id&&link.branch_id===branchId);
     if(!links.length)return;
-    if(links.length>1){
-      issues.push({line,kind:'configuration',message:`${line.description||line.name||'Producto'}: tiene varios vínculos de inventario activos en esta sucursal; deja uno solo antes de vender.`});
+    const requestedVariantId=String(line.variant_id||'');
+    if(links.length>1&&!requestedVariantId){
+      issues.push({line,kind:'configuration',message:`${line.description||line.name||'Producto'}: selecciona talla, color o variante de inventario antes de confirmar.`});
       return;
     }
-    const linked=links[0];
+    const linked=requestedVariantId?links.find((link)=>link.inventory_variant_id===requestedVariantId):links[0];
+    if(!linked){
+      issues.push({line,kind:'configuration',message:`${line.description||line.name||'Producto'}: la variante seleccionada ya no está vinculada al inventario de esta sucursal. Actualiza la selección.`});
+      return;
+    }
     const location=linked.location_code||'MAIN';
     const key=`${linked.inventory_variant_id}:${branchId}:${location}`;
     const stock=inventory.find((row)=>row.variantId===linked.inventory_variant_id&&row.branchId===branchId&&row.location===location&&!row.archived);
@@ -672,6 +725,8 @@ export function PosPage() {
   const [customerHistory,setCustomerHistory]=useState({loading:false,count:0,rows:[],summary:null});
   const [detailTarget,setDetailTarget]=useState<{kind:CommercialDocumentKind;id:string;code:string}|null>(null);
   const [cart,setCart]=useState([]);
+  const [cartVariantId,setCartVariantId]=useState('');
+  const [selectedQuoteVariants,setSelectedQuoteVariants]=useState<Record<string,string>>({});
   const [discountPercent,setDiscountPercent]=useState('0');
   const [discountReason,setDiscountReason]=useState('');
   const [discountControlsVisible,setDiscountControlsVisible]=useState(true);
@@ -771,7 +826,7 @@ export function PosPage() {
       const restoredSnapshot={form:restoredForm,cart:restoredCart,discountPercent:restoredDiscountPercent,discountReason:restoredDiscountReason,materialRequestsByLine:restoredMaterialRequests,fulfillment:snapshot.fulfillment,mapLink:snapshot.mapLink,payments:restoredPayments,chargeNow:snapshot.chargeNow,activeParkedOrderId:snapshot.activeParkedOrderId,allowBackorder:snapshot.allowBackorder,saleLines:Array.isArray(snapshot.saleLines)?sanitizePOSSaleLines(snapshot.saleLines):undefined,saleNote:String(snapshot.saleNote||''),productionByLine:restoredProductionByLine,productionJobs:Array.isArray(snapshot.productionJobs)?snapshot.productionJobs:undefined,clientBriefHtml:String(snapshot.clientBriefHtml||'<p></p>')};
       pendingSaleSnapshotRef.current=restoredSnapshot;setPendingSaleRecoveryMode(true);
       setForm((current)=>({...current,...restoredForm}));
-      setCart(restoredCart);setDiscountPercent(restoredDiscountPercent);setDiscountReason(restoredDiscountReason);setMaterialRequestsByLine(restoredMaterialRequests);setProductionByLine(restoredProductionByLine);setFulfillment(snapshot.fulfillment||{installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});setMapLink(String(snapshot.mapLink||''));setClientBriefHtml(String(snapshot.clientBriefHtml||'<p></p>'));
+      setCart(restoredCart);setSelectedQuoteVariants(restoredSnapshot.form.quoteId?Object.fromEntries((restoredSnapshot.saleLines||[]).map((line:any)=>[line.line_key,String(line.variant_id||'')])):{});setDiscountPercent(restoredDiscountPercent);setDiscountReason(restoredDiscountReason);setMaterialRequestsByLine(restoredMaterialRequests);setProductionByLine(restoredProductionByLine);setFulfillment(snapshot.fulfillment||{installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});setMapLink(String(snapshot.mapLink||''));setClientBriefHtml(String(snapshot.clientBriefHtml||'<p></p>'));
       setPayments(restoredPayments);
       setChargeNow(snapshot.chargeNow!==false);setActiveParkedOrderId(String(snapshot.activeParkedOrderId||''));setCustomerQuery(String(restoredForm.customer||''));setSelectedCustomerSnapshot(restoredForm.customerId?{id:String(restoredForm.customerId),name:String(restoredForm.customer||''),phone:String(restoredForm.customerPhone||''),email:String(restoredForm.customerEmail||''),documentReference:String(restoredForm.customerDocumentReference||'')}:null);setDraftLoadedKey(posDraftStorageKey);
       setPendingSaleRecoveryError('');
@@ -829,7 +884,7 @@ export function PosPage() {
   const resetCheckout=()=>{
     setForm((current)=>({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:current.branchCode,quantity:'1',quoteId:''}));
     setCustomerQuery('');setSelectedCustomerSnapshot(null);setCart([]);setDiscountPercent('0');setDiscountReason('');setMaterialRequestsByLine({});setProductionByLine({});setActiveParkedOrderId('');setChargeNow(true);setPayments([{id:'payment-1',method:'Efectivo',amount:'',reference:'',note:''}]);
-    setCartProductId('');setCartItemName('');setCartQuantity('1');setCartUnitPrice('');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartCustomUnitPrice('');
+    setCartProductId('');setCartVariantId('');setSelectedQuoteVariants({});setCartItemName('');setCartQuantity('1');setCartUnitPrice('');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartCustomUnitPrice('');
     setFulfillment({installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});setMapLink('');setClientBriefHtml('<p></p>');saleAssets.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl));setSaleAssets([]);setMobileSummaryOpen(false);setPaymentTarget(null);
     setCheckoutStep('order');
   };
@@ -1153,9 +1208,48 @@ export function PosPage() {
     });
     return()=>{active=false;};
   },[form.customerId,canViewCustomerHistory,organizationId]);
+  const selectedBranchId=cashierSession.branch?.code===form.branchCode?cashierSession.branch.id:data.branches.find((branch)=>branch.code===form.branchCode)?.id||'';
   const branchName=data.branches.find((branch)=>branch.code===form.branchCode)?.name||(form.branchCode==='GIGA'?'Gigaprint':form.branchCode==='VIS'?'Visual Corp':form.branchCode);
   const quotePreview=centralQuotes.find((quote)=>quote.id===form.quoteId);
-  const currentQuoteLines=getPOSQuoteSaleLines(quotePreview);
+  const recoveredQuoteLines=pendingSaleRecoveryMode&&pendingSaleSnapshotRef.current?.form?.quoteId===form.quoteId&&Array.isArray(pendingSaleSnapshotRef.current?.saleLines)?pendingSaleSnapshotRef.current.saleLines:[];
+  const currentQuoteLines=getPOSQuoteSaleLines(quotePreview).map((line)=>{
+    const links=catalogLinks.filter((link)=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.catalog_product_id);
+    const recoveredLine=recoveredQuoteLines.find((candidate:any)=>candidate.line_key===line.line_key);
+    const hasSelected=Object.prototype.hasOwnProperty.call(selectedQuoteVariants,line.line_key);
+    const requestedVariantId=String(hasSelected?selectedQuoteVariants[line.line_key]:recoveredLine?.variant_id||line.variant_id||'');
+    const matchingLink=links.find((link)=>link.inventory_variant_id===requestedVariantId);
+    const variantId=matchingLink?.inventory_variant_id||(links.length===1?links[0].inventory_variant_id:'');
+    return {...line,variant_id:variantId||null};
+  });
+  useEffect(()=>{
+    if(!form.quoteId){setSelectedQuoteVariants({});return;}
+    const quote=centralQuotes.find((row:any)=>row.id===form.quoteId);
+    const lines=getPOSQuoteSaleLines(quote);
+    setSelectedQuoteVariants((current)=>{
+      const next:Record<string,string>={};
+      lines.forEach((line)=>{
+        const links=catalogLinks.filter((link)=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.catalog_product_id);
+        const previous=Object.prototype.hasOwnProperty.call(current,line.line_key)?current[line.line_key]:String(line.variant_id||'');
+        next[line.line_key]=links.find((link)=>link.inventory_variant_id===previous)?.inventory_variant_id||(links.length===1?links[0].inventory_variant_id:'');
+      });
+      return next;
+    });
+  },[form.quoteId,selectedBranchId,catalogLinks,centralQuotes]);
+  useEffect(()=>{
+    if(!selectedBranchId||catalogLinkStatus!=='ready')return;
+    setCart((current)=>{
+      let changed=false;
+      const next=current.map((line:any)=>{
+        if(!line.productId)return line;
+        const links=catalogLinks.filter((link)=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.productId);
+        const stillLinked=links.some((link)=>link.inventory_variant_id===line.inventoryVariantId);
+        if(links.length===1&&line.inventoryVariantId!==links[0].inventory_variant_id){changed=true;return {...line,inventoryVariantId:links[0].inventory_variant_id};}
+        if(line.inventoryVariantId&&!stillLinked){changed=true;return {...line,inventoryVariantId:''};}
+        return line;
+      });
+      return changed?next:current;
+    });
+  },[catalogLinks,selectedBranchId,catalogLinkStatus]);
   const hasPreviewItems=Boolean(form.quoteId?currentQuoteLines.length:cart.length);
   const quoteFinancial=getPOSQuoteFinancial(quotePreview);
   const quoteHasFinancial=Boolean(quoteFinancial&&Number.isFinite(Number(quoteFinancial.subtotal)));
@@ -1192,9 +1286,8 @@ export function PosPage() {
   const paymentBreakdown=calculatePOSPaymentBreakdown(activeTotal,payments);
   const paymentPreview=paymentBreakdown.applied;
   const selectedCartProduct=data.catalog.find((product)=>product.id===cartProductId);
-  const modeCatalog=useMemo(()=>data.catalog.filter(product=>(product.mode==='area'?'area':'quantity')===cartMode&&(catalogKind==='service'?product.productKind==='service':product.productKind!=='service')),[data.catalog,cartMode,catalogKind]);
+  const modeCatalog=useMemo(()=>data.catalog.filter(product=>(product.mode==='area'?'area':'quantity')===cartMode&&(catalogKind==='service'?isPOSServiceProduct(product):!isPOSServiceProduct(product))),[data.catalog,cartMode,catalogKind]);
   const cartFamilies=useMemo(()=>[...new Set<string>(modeCatalog.map(product=>String(product.family||'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[modeCatalog]);
-  const selectedBranchId=cashierSession.branch?.code===form.branchCode?cashierSession.branch.id:data.branches.find((branch)=>branch.code===form.branchCode)?.id||'';
   const canViewPOSSales=hasPermission('sales','view');
   const canManageBackorders=hasPermission('purchases','edit');
   const hasPendingBackorderAuthorization=Boolean(pendingSaleRecoveryMode&&pendingSaleSnapshotRef.current?.allowBackorder===true);
@@ -1267,7 +1360,7 @@ export function PosPage() {
   const requiresWorkDetails=fulfillment.installationRequired||productionLines.some((line)=>line.productId&&isProductionWorkflowCode(recommendedWorkflowByProduct[line.productId]))||saleMaterialLines.some((line)=>line.catalog_product_id&&(materialRecipesStatus!=='ready'||materialRecipes.some((recipe)=>recipe.active&&recipe.branch_id===selectedBranchId&&recipe.catalog_product_id===line.catalog_product_id&&recipe.calculation_mode==='explicit_quantity')));
   const pendingQuoteSnapshotChanged=Boolean(pendingSaleRecoveryMode&&form.quoteId&&Array.isArray(pendingSaleSnapshotRef.current?.saleLines)&&pendingSaleSnapshotRef.current.saleLines.length&&posSaleLinesSignature(pendingSaleSnapshotRef.current.saleLines)!==posSaleLinesSignature(currentQuoteLines));
   const pendingOperationChanged=pendingSaleChanged||pendingQuoteSnapshotChanged;
-  const previewLines=form.quoteId?currentQuoteLines.map((line)=>({line_key:line.line_key,catalog_product_id:line.catalog_product_id,quantity:line.quantity})):cart.map((line)=>({line_key:line.key,catalog_product_id:line.productId||null,quantity:Number(line.billingQuantity)||Number(line.quantity)}));
+  const previewLines=form.quoteId?currentQuoteLines.map((line)=>({line_key:line.line_key,catalog_product_id:line.catalog_product_id,variant_id:line.variant_id||null,quantity:line.quantity})):cart.map((line)=>({line_key:line.key,catalog_product_id:line.productId||null,variant_id:line.inventoryVariantId||null,quantity:Number(line.billingQuantity)||Number(line.quantity)}));
   const previewShortages=findPOSStockShortages(previewLines,catalogLinks,selectedBranchId,data.inventory);
   const previewRecipeShortages=findPOSRecipeShortages(saleMaterialLines,materialRecipes,selectedBranchId,data.inventory,materialRequestsByLine);
   const previewRecipeConfigurationIssues=previewRecipeShortages.filter((issue)=>issue.kind==='configuration');
@@ -1305,40 +1398,43 @@ export function PosPage() {
     links.set(link.catalog_product_id,[...(links.get(link.catalog_product_id)||[]),link]);return links;
   },new Map<string,any[]>()),[catalogLinks,selectedBranchId]);
   const skuCodesByProduct=useMemo(()=>Object.fromEntries([...linksByProduct].map(([productId,links])=>{
-    const codes=links.flatMap(link=>(inventoryByVariant.get(link.inventory_variant_id)||[]).flatMap(stock=>[stock.sku,stock.variantSku].filter(Boolean)));
+    const codes=links.flatMap(link=>(inventoryByVariant.get(link.inventory_variant_id)||[]).filter(stock=>stock.location===(link.location_code||'MAIN')).flatMap(stock=>[stock.sku,stock.variantSku].filter(Boolean)));
     return [productId,[...new Set(codes)]];
   })),[linksByProduct,inventoryByVariant]);
   const stockByProduct=useMemo(()=>Object.fromEntries(modeCatalog.map(product=>{
     const links=linksByProduct.get(product.id)||[];
-    const stockRows=links.length===1?inventoryByVariant.get(links[0].inventory_variant_id)||[]:[];
-    const stock=stockRows.length===1?stockRows[0]:null;
-    return [product.id,!links.length?'Sin vínculo de inventario':links.length>1?'Varias existencias vinculadas · revisa la disponibilidad':!stock||stock.sourceStatus?'Disponibilidad por confirmar':`Disponible: ${Number(stock.availableQuantity ?? (Number(stock.quantity||0)-Number(stock.reservedQuantity||0)))} ${stock.unit||product.unit||'unidades'}`];
-  })),[modeCatalog,linksByProduct,inventoryByVariant]);
+    if(!links.length)return [product.id,'Sin vínculo de inventario'];
+    const stocks=links.map((link)=>getPOSLinkedVariantStock(link,data.inventory));
+    const counted=stocks.filter((stock)=>stock&&!stock.sourceStatus);
+    const available=counted.reduce((sum,stock)=>sum+Number(stock.availableQuantity??(Number(stock.quantity||0)-Number(stock.reservedQuantity||0))),0);
+    const unit=counted[0]?.unit||product.unit||'unidades';
+    if(!counted.length)return [product.id,links.length>1?`${links.length} variantes · conteo pendiente`:'Disponibilidad por confirmar'];
+    if(links.length>1&&counted.length<links.length)return [product.id,`Total parcial ${available} ${unit} · ${links.length-counted.length} variante(s) sin conteo`];
+    return [product.id,links.length>1?`Total por ${links.length} variantes: ${available} ${unit}`:`Disponible: ${available} ${unit}`];
+  })),[modeCatalog,linksByProduct,data.inventory]);
   const stockMetaByProduct=useMemo<Record<string,POSStockSemanticMeta>>(()=>Object.fromEntries(data.catalog.map(product=>{
     const links=linksByProduct.get(product.id)||[];
     if(!links.length){
       return [product.id,{tone:'unlinked',label:'Sin vínculo · no descuenta stock',linked:false}];
     }
+    const stocks=links.map((link)=>({link,...getPOSLinkedVariantLabel(link,data.inventory)}));
+    const counted=stocks.filter((entry)=>entry.stock&&!entry.stock.sourceStatus);
     const primaryLink=links[0];
-    const stockRows=inventoryByVariant.get(primaryLink.inventory_variant_id)||[];
-    const stock=stockRows[0]||null;
-    if(links.length>1){
-      return [product.id,{tone:'low',label:'Varias existencias vinculadas',locationCode:primaryLink.location_code||'',linked:true}];
-    }
-    if(!stock||stock.sourceStatus){
-      return [product.id,{tone:'low',label:'Conteo físico pendiente',locationCode:primaryLink.location_code||'',linked:true}];
-    }
-    const available=Number(stock.availableQuantity ?? (Number(stock.quantity||0)-Number(stock.reservedQuantity||0)));
-    const minStock=Number(stock.minStock||0);
-    const unit=stock.unit||product.unit||'unidades';
+    if(!counted.length)return [product.id,{tone:'low',label:links.length>1?`${links.length} variantes · conteo pendiente`:'Conteo físico pendiente',locationCode:primaryLink.location_code||'',linked:true}];
+    const available=counted.reduce((sum,entry)=>sum+Number(entry.stock.availableQuantity??(Number(entry.stock.quantity||0)-Number(entry.stock.reservedQuantity||0))),0);
+    const minStock=counted.reduce((sum,entry)=>sum+Number(entry.stock.minStock||0),0);
+    const unit=counted[0].stock.unit||product.unit||'unidades';
+    const variantSummary=links.length>1?` · ${links.length} variantes`:
+      (counted[0].label?` · ${counted[0].label}`:'');
+    if(counted.length<links.length)return [product.id,{tone:'low',label:`Total parcial: ${available} ${unit}${variantSummary} · conteo pendiente`,availableQuantity:available,unit,locationCode:primaryLink.location_code||'',linked:true}];
     if(available<=0){
-      return [product.id,{tone:'shortage',label:`Agotado (0 ${unit}) · Compra urgente`,availableQuantity:0,unit,locationCode:primaryLink.location_code||'',linked:true}];
+      return [product.id,{tone:'shortage',label:`Agotado (0 ${unit})${variantSummary} · Compra urgente`,availableQuantity:0,unit,locationCode:primaryLink.location_code||'',linked:true}];
     }
     if(minStock>0&&available<=minStock){
-      return [product.id,{tone:'low',label:`Stock bajo: ${available} ${unit}`,availableQuantity:available,unit,locationCode:primaryLink.location_code||'',linked:true}];
+      return [product.id,{tone:'low',label:`Stock bajo: ${available} ${unit}${variantSummary}`,availableQuantity:available,unit,locationCode:primaryLink.location_code||'',linked:true}];
     }
-    return [product.id,{tone:'available',label:`En stock: ${available} ${unit}`,availableQuantity:available,unit,locationCode:primaryLink.location_code||'',linked:true}];
-  })),[data.catalog,linksByProduct,inventoryByVariant]);
+    return [product.id,{tone:'available',label:`En stock: ${available} ${unit}${variantSummary}`,availableQuantity:available,unit,locationCode:primaryLink.location_code||'',linked:true}];
+  })),[data.catalog,linksByProduct,data.inventory]);
   const acceptedQuotes=useMemo(()=>centralQuotes.filter((quote)=>quote.status==='accepted'&&quote.price_confirmed&&quote.selected_total!==null),[centralQuotes]);
   const filteredAcceptedQuotes=useMemo(()=>{
     if(!quoteSearchQuery.trim())return acceptedQuotes;
@@ -1373,33 +1469,41 @@ export function PosPage() {
   const hasCustomAgreedPrice = Number.isFinite(customAgreedPriceNumber) && customAgreedPriceNumber > 0;
   const cartCalculation=selectedCartProduct?calculatePOSLine({product:selectedCartProduct,mode:cartMode,quantity:cartQuantityNumber,widthCm:cartWidthNumber,heightCm:cartHeightNumber,tier:cartPriceTier,optionChoice:cartOptionChoice,customUnitPrice:hasCustomAgreedPrice?customAgreedPriceNumber:undefined}):null;
   const cartFinishingEstimate=calculateCommercialFinishing(cartFinishing,cartQuantityNumber,data.calculatorSettings||{});
-  const cartPriceAvailable=Boolean(hasCustomAgreedPrice ? cartCalculation : (selectedCartProduct?.confirmed||selectedCartProduct?.published===true)&&cartCalculation&&!(selectedCartProduct?.productKind==='service'&&selectedCartProduct.optionPrices?.length&&!cartOptionChoice));
-  const measurementStockLink=selectedCartProduct&&catalogLinks.find(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===selectedCartProduct.id);
-  const measurementStock=measurementStockLink&&data.inventory.find(row=>row.variantId===measurementStockLink.inventory_variant_id&&row.branchId===measurementStockLink.branch_id);
+  const cartPriceAvailable=Boolean(hasCustomAgreedPrice ? cartCalculation : (selectedCartProduct?.confirmed||selectedCartProduct?.published===true)&&cartCalculation&&!(isPOSServiceProduct(selectedCartProduct)&&selectedCartProduct.optionPrices?.length&&!cartOptionChoice));
+  const selectedCartVariantLinks=selectedCartProduct?catalogLinks.filter(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===selectedCartProduct.id):[];
+  const cartVariantStillLinked=selectedCartVariantLinks.some(link=>link.inventory_variant_id===cartVariantId);
+  const effectiveCartVariantId=cartVariantStillLinked?cartVariantId:selectedCartVariantLinks.length===1?selectedCartVariantLinks[0].inventory_variant_id:'';
+  const selectedCatalogLink=selectedCartVariantLinks.find(link=>link.inventory_variant_id===effectiveCartVariantId)||null;
+  const measurementStockLink=selectedCatalogLink;
+  const measurementStock=measurementStockLink&&getPOSLinkedVariantStock(measurementStockLink,data.inventory);
   const measurementStockUnit=String(measurementStock?.unit||'').trim().toLocaleLowerCase('es');
   const measurementStockUnitIsArea=/^(m²|m2|m\^2|metro cuadrado|metros cuadrados)$/.test(measurementStockUnit);
   const invalidMeasurementStockLink=cartMode==='area'&&Boolean(measurementStockLink)&&!measurementStockUnitIsArea;
-  const selectedCatalogLink=selectedCartProduct&&catalogLinks.find(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===selectedCartProduct.id);
-  const selectedLinkedStock=selectedCatalogLink&&data.inventory.find(row=>row.variantId===selectedCatalogLink.inventory_variant_id&&row.branchId===selectedCatalogLink.branch_id);
+  const selectedLinkedStock=selectedCatalogLink&&getPOSLinkedVariantStock(selectedCatalogLink,data.inventory);
   const selectedAvailableStock=selectedLinkedStock?Number(selectedLinkedStock.availableQuantity??(Number(selectedLinkedStock.quantity||0)-Number(selectedLinkedStock.reservedQuantity||0))):0;
   const cartInventoryStatus=(line)=>{
     if(catalogLinkStatus==='checking')return 'Comprobando vínculo de inventario…';
     if(catalogLinkStatus==='error')return 'Inventario sin verificar · recarga antes de confirmar';
     if(!line.productId)return 'Concepto libre · sin control de stock';
     if(!selectedBranchId)return 'Verificando sucursal e inventario…';
-    const link=catalogLinks.find(item=>item.active&&item.branch_id===selectedBranchId&&item.catalog_product_id===line.productId);
-    if(!link)return trackedAccessoryProductIds.has(line.productId)?'Ojal sin vínculo · no se puede confirmar':'Sin vínculo · no descuenta stock';
-    const stock=data.inventory.find(item=>item.variantId===link.inventory_variant_id&&item.branchId===link.branch_id);
+    const links=catalogLinks.filter(item=>item.active&&item.branch_id===selectedBranchId&&item.catalog_product_id===line.productId);
+    if(!links.length)return trackedAccessoryProductIds.has(line.productId)?'Ojal sin vínculo · no se puede confirmar':'Sin vínculo · no descuenta stock';
+    const link=links.find(item=>item.inventory_variant_id===line.inventoryVariantId)||(links.length===1?links[0]:null);
+    if(!link)return 'Selecciona talla, color o variante de inventario antes de confirmar.';
+    const stock=getPOSLinkedVariantStock(link,data.inventory);
     if(!stock||stock.sourceStatus)return 'Conteo pendiente · el faltante puede generar compra urgente';
     const available=Number(stock.availableQuantity??(Number(stock.quantity||0)-Number(stock.reservedQuantity||0)));
     const required=Number(line.billingQuantity)||Number(line.quantity)||0;
-    return available<required?`Faltan ${Math.max(0,required-available)} ${stock.unit||'unidades'} · compra urgente`:`Descontará ${required} ${stock.unit||'unidades'} de inventario`;
+    const variant=getPOSLinkedVariantLabel(link,data.inventory);
+    return available<required?`Faltan ${Math.max(0,required-available)} ${stock.unit||'unidades'} · ${variant.label} · compra urgente`:`Descontará ${required} ${stock.unit||'unidades'} de ${variant.label}`;
   };
   const cartInventoryTone=(line): 'available'|'warning'|'neutral' => {
     if(!line.productId||catalogLinkStatus!=='ready'||!selectedBranchId)return 'neutral';
-    const link=catalogLinks.find(item=>item.active&&item.branch_id===selectedBranchId&&item.catalog_product_id===line.productId);
-    if(!link)return trackedAccessoryProductIds.has(line.productId)?'warning':'neutral';
-    const stock=data.inventory.find(item=>item.variantId===link.inventory_variant_id&&item.branchId===link.branch_id);
+    const links=catalogLinks.filter(item=>item.active&&item.branch_id===selectedBranchId&&item.catalog_product_id===line.productId);
+    if(!links.length)return trackedAccessoryProductIds.has(line.productId)?'warning':'neutral';
+    const link=links.find(item=>item.inventory_variant_id===line.inventoryVariantId)||(links.length===1?links[0]:null);
+    if(!link)return 'warning';
+    const stock=getPOSLinkedVariantStock(link,data.inventory);
     if(!stock||stock.sourceStatus)return 'warning';
     const available=Number(stock.availableQuantity??(Number(stock.quantity||0)-Number(stock.reservedQuantity||0)));
     const required=Number(line.billingQuantity)||Number(line.quantity)||0;
@@ -1407,9 +1511,12 @@ export function PosPage() {
   };
   const quickAddProductToCart=(product:any)=>{
     if(!product||product.mode==='area')return;
+    const variantLinks=catalogLinks.filter((link)=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===product.id);
+    if(variantLinks.length>1){chooseCartProduct(product);flash(`Selecciona la talla, el color o la variante de ${product.name} antes de agregarla.`);return;}
+    const inventoryVariantId=variantLinks.length===1?variantLinks[0].inventory_variant_id:'';
     const calc=calculatePOSLine({product,mode:'quantity',quantity:1,tier:'pvp',optionChoice:''});
     if(!calc||!(product.confirmed||product.published)){chooseCartProduct(product);return;}
-    const existing=cart.find((item:any)=>item.productId===product.id&&item.mode==='quantity'&&(item.pricingTier||'pvp')==='pvp'&&!item.optionChoice&&sanitizeCommercialFinishing(item.finishing).eyeletType==='none'&&sanitizeCommercialFinishing(item.finishing).designService==='ready');
+    const existing=cart.find((item:any)=>item.productId===product.id&&item.inventoryVariantId===inventoryVariantId&&item.mode==='quantity'&&(item.pricingTier||'pvp')==='pvp'&&!item.optionChoice&&sanitizeCommercialFinishing(item.finishing).eyeletType==='none'&&sanitizeCommercialFinishing(item.finishing).designService==='ready');
     if(existing){
       const nextQty=Number(existing.quantity||1)+1;
       const nextCalc=calculatePOSLine({product,mode:'quantity',quantity:nextQty,tier:'pvp',optionChoice:''});
@@ -1429,6 +1536,7 @@ export function PosPage() {
     const line={
       key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       productId:product.id,sku:product.sku||product.id,name:product.name,family:product.family||'General',image:product.image||'',
+      inventoryVariantId,
       mode:'quantity',quantity:1,billingQuantity:calc.billedQuantity,unit:calc.unit,unitPrice:calc.unitPrice,baseUnitPrice:calc.unitPrice,total:calc.total,finishing:{...emptyCommercialFinishing},
       widthCm:null,heightCm:null,areaPerPiece:null,areaTotal:null,
       pricingTier:'pvp',pricingTierLabel:'Normal',optionChoice:'',
@@ -1446,7 +1554,8 @@ export function PosPage() {
     flash(`Se duplicó “${line.name}” en el carrito. Puedes editar su medida o tarifa.`);
   };
   const chooseCartProduct=(product)=>{
-    setCartMode(product.mode==='area'?'area':'quantity');setCartFamily(product.family||'Todas');setCartProductId(product.id);setCartItemName('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartPriceTier('pvp');setCartOptionChoice('');setCartFinishing({...emptyCommercialFinishing});setCartSearch('');
+    const links=catalogLinks.filter((link)=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===product.id);
+    setCartVariantId(links.length===1?links[0].inventory_variant_id:'');setCartMode(product.mode==='area'?'area':'quantity');setCartFamily(product.family||'Todas');setCartProductId(product.id);setCartItemName('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartPriceTier('pvp');setCartOptionChoice('');setCartFinishing({...emptyCommercialFinishing});setCartSearch('');
     requestAnimationFrame(()=>document.getElementById(product.mode==='area'?'pos-cart-width':'pos-cart-quantity')?.focus());
   };
   const handleCartScan=(query:string,highlightedProduct?:any)=>{
@@ -1460,6 +1569,7 @@ export function PosPage() {
     const product=link&&data.catalog.find(item=>item.id===link.catalog_product_id);
     if(!product){flash(`El SKU ${scannedCode} existe, pero todavía no está vinculado a un producto vendible.`);return;}
     chooseCartProduct(product);
+    setCartVariantId(stock.variantId);
     flash(`Artículo reconocido: ${product.name}. Revisa cantidad, medidas y tarifa del catálogo.`);
   };
   useEffect(() => {
@@ -1654,7 +1764,7 @@ export function PosPage() {
     setSelectedCustomerSnapshot(knownCustomer||null);
     setForm({...form,quoteId:nextQuoteId,total:quote?.selected_total??'',amountPaid:quote?.selected_total??'',customerId:quote?.customer_id||knownCustomer?.id||'',customer:knownCustomer?.name||quote?.customer_name||'',customerPhone:knownCustomer?.phone||quote?.customer_phone||'',customerEmail:knownCustomer?.email||'',customerDocumentReference:knownCustomer?.documentReference||'',description:Array.isArray(quote?.items)?quote.items.map(item=>item.name||item.product_name).join(', '):''});
     if(nextQuoteId){setDiscountPercent('0');setDiscountReason('');}
-    setCustomerQuery(knownCustomer?.name||quote?.customer_name||'');setClientBriefHtml(quote?.client_brief_html||'<p></p>');if(nextQuoteId)setCart([]);
+    setSelectedQuoteVariants({});setCustomerQuery(knownCustomer?.name||quote?.customer_name||'');setClientBriefHtml(quote?.client_brief_html||'<p></p>');if(nextQuoteId)setCart([]);
   };
   const addCartLine=()=>{
     const quantity=cartQuantityNumber;
@@ -1662,7 +1772,11 @@ export function PosPage() {
     const finishing=calculateCommercialFinishing(cartFinishing,quantity,data.calculatorSettings||{});
     if(!finishing.valid){flash('Completa el concepto y el monto del servicio de diseño libre.');return;}
     if(selectedCartProduct){
-      if(selectedCartProduct.productKind==='service'&&selectedCartProduct.optionPrices?.length&&!cartOptionChoice){flash('Elige el paquete o concepto de servicio para usar su tarifa confirmada.');return;}
+      const productInventoryLinks=catalogLinks.filter((link)=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===selectedCartProduct.id);
+      const selectedInventoryLink=productInventoryLinks.find((link)=>link.inventory_variant_id===effectiveCartVariantId)||(productInventoryLinks.length===1?productInventoryLinks[0]:null);
+      if(productInventoryLinks.length>1&&!selectedInventoryLink){flash('Selecciona la talla, el color o la variante de inventario antes de agregar este producto.');return;}
+      if(effectiveCartVariantId&&!selectedInventoryLink){flash('La variante seleccionada ya no está vinculada en esta sucursal. Actualiza la selección antes de continuar.');return;}
+      if(isPOSServiceProduct(selectedCartProduct)&&selectedCartProduct.optionPrices?.length&&!cartOptionChoice){flash('Elige el paquete o concepto de servicio para usar su tarifa confirmada.');return;}
       if(!cartPriceAvailable){flash('Este producto no tiene tarifa disponible para esta cantidad o medida. Ingresa un precio acordado o completa el catálogo.');return;}
       if(cartMode==='area'&&(!Number.isFinite(cartWidthNumber)||!Number.isFinite(cartHeightNumber)||cartWidthNumber<=0||cartHeightNumber<=0)){flash('Ingresa el ancho y el alto en centímetros para calcular la superficie.');return;}
       if(invalidMeasurementStockLink){flash(`El producto por medidas está vinculado a inventario en “${measurementStockUnit||'unidad no identificada'}”. Cambia ese vínculo a una existencia medida en m² antes de venderlo.`);return;}
@@ -1673,6 +1787,7 @@ export function PosPage() {
       const line={
         key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         productId:selectedCartProduct.id,sku:selectedCartProduct.sku||selectedCartProduct.id,name:selectedCartProduct.name,family:selectedCartProduct.family||'General',image:selectedCartProduct.image||'',
+        inventoryVariantId:selectedInventoryLink?.inventory_variant_id||'',
         mode:cartMode,quantity,billingQuantity:cartCalculation.billedQuantity,unit:cartCalculation.unit,unitPrice:effectiveUnitPrice,baseUnitPrice:cartCalculation.baseUnitPrice,total:lineTotal,finishing:snapshotCommercialFinishing(cartFinishing,quantity,data.calculatorSettings||{}),
         widthCm:cartMode==='area'?cartWidthNumber:null,heightCm:cartMode==='area'?cartHeightNumber:null,areaPerPiece:cartCalculation.areaPerPiece||null,areaTotal:cartCalculation.areaTotal||null,
         pricingTier:cartPriceTier,pricingTierLabel,optionChoice:cartOptionChoice||'',customUnitPriceApplied:Boolean(hasCustomAgreedPrice),description:formatPOSLineDescription({name:selectedCartProduct.name,mode:cartMode,quantity,unit:cartCalculation.unit,unitPrice:effectiveUnitPrice,pricingTierLabel,widthCm:cartMode==='area'?cartWidthNumber:undefined,heightCm:cartMode==='area'?cartHeightNumber:undefined,areaPerPiece:cartCalculation.areaPerPiece||undefined,areaTotal:cartCalculation.areaTotal||undefined,optionChoice:cartOptionChoice||undefined,customUnitPriceApplied:Boolean(hasCustomAgreedPrice)}),
@@ -1680,11 +1795,11 @@ export function PosPage() {
       const changeCount=Number(logoChangeCount);
       const changeRate=Number(selectedCartProduct.customOptions?.service?.changeFee);
       const changeOption=selectedCartProduct.optionPrices?.find((option)=>option.label==='Cambio adicional');
-      if(selectedCartProduct.productKind==='service'&&selectedCartProduct.customOptions?.service?.type==='logo'&&(!Number.isSafeInteger(changeCount)||changeCount<0||changeCount>100||(changeCount>0&&(!changeOption||!(changeRate>0))))){flash('Revisa la cantidad de cambios y confirma la tarifa de cambio adicional en el catálogo.');return;}
-      const extraChangeCalculation=selectedCartProduct.productKind==='service'&&changeCount>0&&changeOption?calculatePOSLine({product:selectedCartProduct,mode:'quantity',quantity:changeCount,tier:'pvp',optionChoice:changeOption.label}):null;
-      const extraChangeLine=extraChangeCalculation?{key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:selectedCartProduct.id,sku:selectedCartProduct.sku||selectedCartProduct.id,name:`${selectedCartProduct.name} · Cambio adicional`,family:selectedCartProduct.family||'Diseño de identidad',image:selectedCartProduct.image||'',mode:'quantity',quantity:changeCount,billingQuantity:changeCount,unit:'unidad',unitPrice:extraChangeCalculation.unitPrice,baseUnitPrice:extraChangeCalculation.unitPrice,total:extraChangeCalculation.total,finishing:{...emptyCommercialFinishing},widthCm:null,heightCm:null,areaPerPiece:null,areaTotal:null,pricingTier:'pvp',pricingTierLabel:'Precio acordado',optionChoice:changeOption.label,description:`${selectedCartProduct.name} · ${changeCount} ${changeCount===1?'cambio adicional':'cambios adicionales'} · ${formatMoney(changeOption.price)} c/u`}:null;
+      if(isPOSServiceProduct(selectedCartProduct)&&selectedCartProduct.customOptions?.service?.type==='logo'&&(!Number.isSafeInteger(changeCount)||changeCount<0||changeCount>100||(changeCount>0&&(!changeOption||!(changeRate>0))))){flash('Revisa la cantidad de cambios y confirma la tarifa de cambio adicional en el catálogo.');return;}
+      const extraChangeCalculation=isPOSServiceProduct(selectedCartProduct)&&changeCount>0&&changeOption?calculatePOSLine({product:selectedCartProduct,mode:'quantity',quantity:changeCount,tier:'pvp',optionChoice:changeOption.label}):null;
+      const extraChangeLine=extraChangeCalculation?{key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:selectedCartProduct.id,inventoryVariantId:'',sku:selectedCartProduct.sku||selectedCartProduct.id,name:`${selectedCartProduct.name} · Cambio adicional`,family:selectedCartProduct.family||'Diseño de identidad',image:selectedCartProduct.image||'',mode:'quantity',quantity:changeCount,billingQuantity:changeCount,unit:'unidad',unitPrice:extraChangeCalculation.unitPrice,baseUnitPrice:extraChangeCalculation.unitPrice,total:extraChangeCalculation.total,finishing:{...emptyCommercialFinishing},widthCm:null,heightCm:null,areaPerPiece:null,areaTotal:null,pricingTier:'pvp',pricingTierLabel:'Precio acordado',optionChoice:changeOption.label,description:`${selectedCartProduct.name} · ${changeCount} ${changeCount===1?'cambio adicional':'cambios adicionales'} · ${formatMoney(changeOption.price)} c/u`}:null;
       setCart(current=>[...current,line,...(extraChangeLine?[extraChangeLine]:[])]);
-      setCartProductId('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});setLogoChangeCount('0');
+      setCartProductId('');setCartVariantId('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});setLogoChangeCount('0');
       requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
       return;
     }
@@ -1748,9 +1863,9 @@ export function PosPage() {
     if(chargeNow&&!salePayments.length){flash('Ingresa al menos un pago o marca que la orden queda pendiente de cobro.');return;}
     if(chargeNow&&paymentState.nonCashOverpayment>0){flash('Los pagos que no son en efectivo superan el total. Ajusta los importes; el vuelto solo se calcula para efectivo.');return;}
     if(chargeNow&&paymentState.cashWithoutBalance){flash('Tarjeta o transferencia ya cubren el total. Quita el efectivo adicional para no registrar un cobro innecesario.');return;}
-    const currentQuoteLines=getPOSQuoteSaleLines(quote);
+    const currentQuoteLinesForSale=form.quoteId===quote?.id?currentQuoteLines:getPOSQuoteSaleLines(quote);
     const recoveredSaleLines=pendingSaleRecoveryMode&&pendingSaleKey.current&&Array.isArray(pendingSaleSnapshotRef.current?.saleLines)&&pendingSaleSnapshotRef.current.saleLines.length?sanitizePOSSaleLines(pendingSaleSnapshotRef.current.saleLines):null;
-    const quoteLines=recoveredSaleLines||currentQuoteLines;
+    const quoteLines=recoveredSaleLines||currentQuoteLinesForSale;
     if(form.quoteId&&(!quoteLines.length||quoteLines.some(line=>!Number.isFinite(line.quantity)||line.quantity<=0||!Number.isFinite(line.unit_price)||line.unit_price<0))){flash('La cotización no tiene conceptos completos para crear la venta. Corrige sus artículos antes de cobrar.');return;}
     if(quoteLines.some(line=>line.catalog_product_id&&trackedAccessoryProductIds.has(line.catalog_product_id)&&!catalogLinks.some(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.catalog_product_id))){flash('La cotización incluye ojales sin vínculo de inventario en esta sucursal. Corrige el vínculo antes de confirmar para no registrar una venta sin descuento de stock.');return;}
     const quoteLinesTotal=roundMoney(quoteLines.reduce((sum,line)=>sum+line.quantity*line.unit_price,0));
@@ -1766,14 +1881,23 @@ export function PosPage() {
       const pieces=Number(sourceLine.pieceQuantity)||line.quantity;
       const finishing=calculateCommercialFinishing(sourceLine.finishing_options,pieces);
       const finishingSnapshot={...snapshotCommercialFinishing(sourceLine.finishing_options,pieces),eyelet_total_count:finishing.eyeletTotalCount,eyelet_unit_price:finishing.eyeletUnitPrice,eyelet_total:finishing.eyeletTotal,design_label:finishing.designLabel,design_total:finishing.designTotal,total:finishing.total};
-      return { ...requestsForLine({...line,description:[line.description,...finishing.summary].filter(Boolean).join(' · '),finishing_options:finishingSnapshot}),sku:data.catalog.find(product=>product.id===line.catalog_product_id)?.sku||line.sku||line.catalog_product_id||'' };
+      const linkedVariant=catalogLinks.find((link)=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.catalog_product_id&&link.inventory_variant_id===line.variant_id);
+      const variantLabel=linkedVariant?getPOSLinkedVariantLabel(linkedVariant,data.inventory):null;
+      const variantSnapshot=variantLabel?`Inventario: ${variantLabel.label}${variantLabel.sku?` · ${variantLabel.sku}`:''}`:'';
+      return { ...requestsForLine({...line,variant_id:line.variant_id||null,description:[line.description,...(variantSnapshot?[variantSnapshot]:[]),...finishing.summary].filter(Boolean).join(' · '),finishing_options:finishingSnapshot}),sku:data.catalog.find(product=>product.id===line.catalog_product_id)?.sku||line.sku||line.catalog_product_id||'' };
     }):cart.map(line=>{
       const finishing=calculateCommercialFinishing(line.finishing,line.quantity,data.calculatorSettings||{});
+      const productLinks=catalogLinks.filter((link)=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.productId);
+      const variantId=productLinks.find((link)=>link.inventory_variant_id===line.inventoryVariantId)?.inventory_variant_id||(productLinks.length===1?productLinks[0].inventory_variant_id:'');
+      const linkedVariant=catalogLinks.find((link)=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.productId&&link.inventory_variant_id===variantId);
+      const variantLabel=linkedVariant?getPOSLinkedVariantLabel(linkedVariant,data.inventory):null;
+      const variantSnapshot=variantLabel?`Inventario: ${variantLabel.label}${variantLabel.sku?` · ${variantLabel.sku}`:''}`:'';
       return requestsForLine({
         line_key:line.key,
         catalog_product_id:line.productId||null,
+        variant_id:variantId||null,
         sku:line.sku||line.productId||'',
-        description:[line.description||line.name,...finishing.summary].filter(Boolean).join(' · '),
+        description:[line.description||line.name,variantSnapshot,...finishing.summary].filter(Boolean).join(' · '),
         quantity:Number(line.billingQuantity)||line.quantity,
         unit_price:line.unitPrice,
         finishing_options:{...snapshotCommercialFinishing(line.finishing,line.quantity,data.calculatorSettings||{}),eyelet_total_count:finishing.eyeletTotalCount,eyelet_unit_price:finishing.eyeletUnitPrice,eyelet_total:finishing.eyeletTotal,design_label:finishing.designLabel,design_total:finishing.designTotal,total:finishing.total},
@@ -2087,11 +2211,11 @@ export function PosPage() {
             {cartEntryType==='catalog'&&<>
             <div className="pos-mode-switch" role="group" aria-label="Tipo de catálogo">
               <button type="button" className={catalogKind==='product'?'active':''} aria-pressed={catalogKind==='product'} onClick={()=>{setCatalogKind('product');setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');setCartOptionChoice('');}}>Productos y artículos</button>
-              <button type="button" className={catalogKind==='service'?'active':''} aria-pressed={catalogKind==='service'} onClick={()=>{setCatalogKind('service');setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');setCartOptionChoice('');}}>Servicios ({data.catalog.filter((p)=>p.productKind==='service').length})</button>
+              <button type="button" className={catalogKind==='service'?'active':''} aria-pressed={catalogKind==='service'} onClick={()=>{setCatalogKind('service');setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');setCartOptionChoice('');}}>Servicios ({data.catalog.filter(isPOSServiceProduct).length})</button>
             </div>
             <div className="pos-mode-switch" role="group" aria-label="Forma de calcular el producto">
-              {catalogKind==='product'&&<><button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>{setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por cantidad ({data.catalog.filter(p=>p.productKind!=='service'&&p.mode!=='area').length})</button>
-              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>{setCartMode('area');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por medidas m² ({data.catalog.filter(p=>p.productKind!=='service'&&p.mode==='area').length})</button></>}
+              {catalogKind==='product'&&<><button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>{setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por cantidad ({data.catalog.filter(p=>!isPOSServiceProduct(p)&&p.mode!=='area').length})</button>
+              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>{setCartMode('area');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por medidas m² ({data.catalog.filter(p=>!isPOSServiceProduct(p)&&p.mode==='area').length})</button></>}
               {catalogKind==='service'&&<span className="pos-entry-kind-note">Servicios por unidad o paquete · no descuentan inventario</span>}
             </div>
             <POSProductSearch
@@ -2128,13 +2252,20 @@ export function PosPage() {
                 <b>{selectedCartProduct.name}</b>
                 <small>{selectedCartProduct.sku||selectedCartProduct.id} · {selectedCartProduct.family} · {selectedCartProduct.unit||'unidad'}{cartPriceAvailable?' · tarifa lista para venta':' · tarifa pendiente de configurar'}{selectedCatalogLink?.location_code?` · Ubicación: ${selectedCatalogLink.location_code}`:''}</small>
                 <small className={`pos-selected-stock-line is-${stockMetaByProduct[selectedCartProduct.id]?.tone||'unlinked'}`}>
-                  {!selectedCatalogLink?'Sin vínculo: esta venta no descontará inventario.':!selectedLinkedStock||selectedLinkedStock.sourceStatus?'Vínculo activo; falta conteo físico para confirmar disponibilidad.':`Disponible en ${branchName}: ${selectedAvailableStock} ${selectedLinkedStock.unit}.`}
-                  {(!selectedCatalogLink||!selectedLinkedStock||selectedLinkedStock.sourceStatus)&&<> · <Link to="/operaciones/inventario?tab=pos" className="pos-inline-inv-link">Configurar en Inventario</Link></>}
+                  {!selectedCartVariantLinks.length?'Sin vínculo: esta venta no descontará inventario.':selectedCartVariantLinks.length>1&&!selectedCatalogLink?'Selecciona una talla, color o variante para ver su existencia.':!selectedLinkedStock||selectedLinkedStock.sourceStatus?'Variante vinculada; falta conteo físico para confirmar disponibilidad.':`Disponible en ${branchName}: ${selectedAvailableStock} ${selectedLinkedStock.unit}.`}
+                  {(!selectedCartVariantLinks.length||!selectedLinkedStock||selectedLinkedStock.sourceStatus)&&<> · <Link to="/operaciones/inventario?tab=pos" className="pos-inline-inv-link">Configurar en Inventario</Link></>}
                 </small>
               </span>
               <AdvisorProductFavoriteButton favorite={favoriteIds.has(selectedCartProduct.id)} onToggle={()=>toggleFavorite(selectedCartProduct.id)}/>
-              <button className="icon-button" type="button" aria-label="Quitar artículo seleccionado" onClick={()=>{setCartProductId('');setCartUnitPrice('');setCartCustomUnitPrice('');}}><X size={14}/></button>
+              <button className="icon-button" type="button" aria-label="Quitar artículo seleccionado" onClick={()=>{setCartProductId('');setCartVariantId('');setCartUnitPrice('');setCartCustomUnitPrice('');}}><X size={14}/></button>
             </div>}
+            {selectedCartProduct&&selectedCartVariantLinks.length>1&&<label className="pos-inventory-variant-select" style={{display:'grid',gap:'.35rem',minWidth:0,maxWidth:'100%'}}>Variante física · talla, color u opción registrada
+              <select style={{width:'100%',minWidth:0,maxWidth:'100%'}} value={effectiveCartVariantId} onChange={(event)=>setCartVariantId(event.target.value)}>
+                <option value="">Selecciona una variante</option>
+                {selectedCartVariantLinks.map((link)=>{const option=getPOSLinkedVariantLabel(link,data.inventory);return <option key={link.inventory_variant_id} value={link.inventory_variant_id}>{option.optionLabel}</option>;})}
+              </select>
+              <small>La venta descontará exactamente la variante elegida.</small>
+            </label>}
             {catalogKind==='service'&&selectedCartProduct?.customOptions?.service&&<div className="pos-entry-kind-note"><b>{selectedCartProduct.customOptions.service.brief||'Confirma el brief con el cliente.'}</b>{selectedCartProduct.customOptions.service.conditions&&<span> Condiciones: {selectedCartProduct.customOptions.service.conditions}</span>}{selectedCartProduct.customOptions.service.deliverables&&<span> Entregables: {selectedCartProduct.customOptions.service.deliverables}</span>}</div>}
             {catalogKind==='service'&&selectedCartProduct?.customOptions?.service?.type==='logo'&&selectedCartProduct.customOptions.service.changeFee!=null&&<label className="pos-service-change-count">Cambios adicionales de logo · ${Number(selectedCartProduct.customOptions.service.changeFee).toFixed(2)} c/u<input type="number" min="0" max="100" step="1" value={logoChangeCount} onChange={(event)=>setLogoChangeCount(event.target.value)}/><small>Se añade una línea de venta por cada cambio indicado.</small></label>}
             {cartMode==='area'&&selectedCartProduct&&<POSMeasurementControls widthValue={cartWidthCm} heightValue={cartHeightCm} quantityValue={cartQuantity} widthCm={cartWidthNumber} heightCm={cartHeightNumber} quantity={cartQuantityNumber} onWidthChange={setCartWidthCm} onHeightChange={setCartHeightCm} onQuantityChange={setCartQuantity}/>}
@@ -2212,7 +2343,7 @@ export function PosPage() {
             </button>
           </div>
           {form.quoteId
-            ? <POSApprovedQuoteSummary lines={currentQuoteLines} quoteCode={quotePreview?.quote_code || 'Pedido aprobado'} total={activeTotal} emptyDescription={form.description}/>
+            ? <POSApprovedQuoteSummary lines={currentQuoteLines} quoteCode={quotePreview?.quote_code || 'Pedido aprobado'} total={activeTotal} emptyDescription={form.description} variantLinks={catalogLinks} branchId={selectedBranchId} inventory={data.inventory} onVariantChange={(lineKey,variantId)=>setSelectedQuoteVariants((current)=>({...current,[lineKey]:variantId}))}/>
             : <section className="pos-cart" aria-label="Carrito de venta">
                 <div className="pos-cart-heading">
                   <div>
@@ -2228,18 +2359,26 @@ export function PosPage() {
                 {cart.length===0?<p className="pos-cart-empty">Agrega productos del catálogo (clic en “+ Agregar” o configura sus medidas) o registra un concepto libre con precio acordado.</p>:<div className="pos-cart-lines">{cart.map((line)=>{
                   const routeCode=productionByLine[line.key]?.workflow_code||(line.productId?recommendedWorkflowByProduct[line.productId]||productWorkflowRoutes[line.productId]:undefined);
                   const routeName=routeCode?workflowTemplates.find((t)=>t.code===routeCode)?.name||routeCode:undefined;
-                  return <POSCartLineEditor
-                    key={line.key}
-                    line={line}
-                    product={data.catalog.find((product)=>product.id===line.productId)}
-                    inventoryStatus={cartInventoryStatus(line)}
-                    inventoryTone={cartInventoryTone(line)}
-                    workflowLabel={routeName}
-                    finishingPrices={data.calculatorSettings||{}}
-                    onDuplicate={()=>duplicateCartLine(line)}
-                    onRemove={()=>{setCart(current=>current.filter(item=>item.key!==line.key));setMaterialRequestsByLine(current=>{const next={...current};delete next[line.key];return next;});}}
-                    onSave={(nextLine)=>setCart(current=>current.map(item=>item.key===line.key?nextLine:item))}
-                  />;
+                  const lineVariantLinks=catalogLinks.filter((link)=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.productId);
+                  return <div key={line.key} style={{minWidth:0,maxWidth:'100%'}}>
+                    <POSCartLineEditor
+                      line={line}
+                      product={data.catalog.find((product)=>product.id===line.productId)}
+                      inventoryStatus={cartInventoryStatus(line)}
+                      inventoryTone={cartInventoryTone(line)}
+                      workflowLabel={routeName}
+                      finishingPrices={data.calculatorSettings||{}}
+                      onDuplicate={()=>duplicateCartLine(line)}
+                      onRemove={()=>{setCart(current=>current.filter(item=>item.key!==line.key));setMaterialRequestsByLine(current=>{const next={...current};delete next[line.key];return next;});}}
+                      onSave={(nextLine)=>setCart(current=>current.map(item=>item.key===line.key?{...nextLine,inventoryVariantId:line.inventoryVariantId}:item))}
+                    />
+                    {lineVariantLinks.length>1&&<label className="pos-inventory-variant-select" style={{display:'grid',gap:'.35rem',minWidth:0,maxWidth:'100%'}}>Variante de inventario
+                      <select style={{width:'100%',minWidth:0,maxWidth:'100%'}} value={lineVariantLinks.some((link)=>link.inventory_variant_id===line.inventoryVariantId)?line.inventoryVariantId:''} onChange={(event)=>setCart(current=>current.map(item=>item.key===line.key?{...item,inventoryVariantId:event.target.value}:item))}>
+                        <option value="">Selecciona talla, color o variante</option>
+                        {lineVariantLinks.map((link)=>{const option=getPOSLinkedVariantLabel(link,data.inventory);return <option key={link.inventory_variant_id} value={link.inventory_variant_id}>{option.optionLabel}</option>;})}
+                      </select>
+                    </label>}
+                  </div>;
                 })}</div>}
               </section>}
           {!form.quoteId&&cart.length>0&&<section className="pos-discount-editor" aria-labelledby="pos-discount-title"><div className="pos-discount-heading"><div><span className="eyebrow">AJUSTE COMERCIAL</span><h3 id="pos-discount-title">Descuento de la venta</h3></div><div className="pos-discount-heading-actions"><strong>{manualDiscountPercent}%</strong><button className="pos-discount-visibility-toggle" type="button" aria-expanded={discountControlsVisible} aria-controls="pos-discount-controls" aria-label={`${discountControlsVisible?'Ocultar':'Mostrar'} controles de descuento`} onClick={()=>setDiscountControlsVisible(visible=>!visible)}>{discountControlsVisible?'Ocultar':'Mostrar'}<ChevronDown size={13} aria-hidden="true"/></button></div></div><div id="pos-discount-controls" className="pos-discount-controls" hidden={!discountControlsVisible}><div className="pos-discount-slider-row"><label htmlFor="pos-discount-percent">Porcentaje de descuento <span>Hasta 40%</span></label><input id="pos-discount-percent" type="range" min="0" max="40" step="1" value={manualDiscountPercent} onChange={(event)=>setDiscountPercent(event.target.value)} aria-describedby="pos-discount-hint"/><div className="pos-discount-milestones">{[0,5,10,15,20,40].map((value)=><button key={value} type="button" className={manualDiscountPercent===value?'is-active':''} onClick={()=>setDiscountPercent(String(value))}>{value}%</button>)}</div></div>{manualDiscountAmount>0&&<label className="pos-discount-reason" htmlFor="pos-discount-reason">Motivo del descuento <span>Obligatorio · {discountReason.trim().length}/300</span><input id="pos-discount-reason" type="text" maxLength={300} value={discountReason} onChange={(event)=>setDiscountReason(event.target.value)} aria-invalid={!discountReasonValid} placeholder="Ej.: cliente frecuente, volumen acordado"/></label>}<p id="pos-discount-hint" className="pos-discount-hint">El descuento se registra en la venta y requiere un motivo. Las cotizaciones aprobadas conservan su desglose.</p></div></section>}

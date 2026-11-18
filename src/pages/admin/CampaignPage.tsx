@@ -14,12 +14,20 @@ import { SelectDropdown } from '../../components/ui/SelectDropdown';
 import { useConfirm } from '../../components/ui/OperationalKit';
 import { EmptyState, StageBadge } from '../../components/feedback';
 import { supabase } from '../../lib/supabaseClient';
-import { MarketingCalendar, MarketingReadinessIndicators } from './marketing/MarketingCalendar';
+import {
+  getChannelBadge,
+  getFormatBadge,
+  getPlatformClassName,
+  MarketingCalendar,
+  MarketingReadinessIndicators,
+  renderDeliverableDots,
+} from './marketing/MarketingCalendar';
 import { MarketingPostArtwork, type MarketingArtworkAsset } from './marketing/MarketingPostArtwork';
 import { MarketingAssetIntake } from './marketing/MarketingAssetIntake';
 import { MarketingAssetPreview } from './marketing/MarketingAssetPreview';
 import './marketing/campaign-post-cards.css';
 import './marketing/marketing-insights.css';
+import './marketing/marketing-table.css';
 import './marketing/marketing-interface-polish.css';
 import { DEFAULT_MARKETING_TAGS, PublicationEditorSections, type PublicationDraft, type PublicationEditorTab } from './marketing/PublicationEditorSections';
 import { getMarketingCalendarColor, getMarketingTags, MARKETING_COLORS } from './marketing/marketingColors';
@@ -809,15 +817,55 @@ export function CampaignPage({ area = 'admin', initialSection }: { area?: 'admin
             : filteredPosts.length === 0 ? <EmptyState icon={Search} title="No encontramos coincidencias" text="Prueba con otro título, canal, responsable o estado." action={<button className="button button-outline" onClick={() => { setQuery(''); setStatusFilter('Todos los estados'); }}>Limpiar búsqueda</button>}/>
               : <div className={`vc-content-post-grid ${activeSection === 'overview' ? 'is-overview' : ''}`}>
                 <div className="vc-content-post-list">
-                  {postView === 'table' ? <div className="vc-marketing-post-table-wrap"><table className="vc-marketing-post-table"><thead><tr><th><input type="checkbox" aria-label="Seleccionar todas las publicaciones visibles" checked={filteredPosts.length>0&&filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/></th><th>Publicación</th><th>Fecha y canal</th><th>Etapa</th><th>Tags</th><th>Acciones</th></tr></thead><tbody>{filteredPosts.map((post)=> <tr key={post.id}><td><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></td><td><button type="button" className="vc-marketing-table-title" onClick={()=>{ void openPost(post); }}>{post.title||'Sin título'}</button><small>{post.content_line||'Tema pendiente'}</small><MarketingReadinessIndicators post={post} onChange={(field, checked) => void changePostReadiness(post, field, checked)} disabled={!canEdit||saving}/></td><td>{post.scheduled_date?formatDate(post.scheduled_date):'Fecha pendiente'}<small>{post.platform||'Canal pendiente'}{post.scheduled_time?` · ${post.scheduled_time}`:''}</small></td><td><StageBadge stage={post.status||'Por iniciar'}/></td><td><div className="vc-marketing-table-tags">{getMarketingTags(post.tags).map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div></td><td><ContextMenu label={`Acciones para ${post.title}`} actions={postActions(post)}><span className="vc-marketing-menu-anchor" aria-hidden="true"/></ContextMenu></td></tr>)}</tbody></table></div> : <AnimatedList stagger={0} className="vc-marketing-card-grid" itemClassName="vc-content-post-entry">{filteredPosts.map((post) => {
+                  {postView === 'table' ? <div className="vc-marketing-post-table-wrap"><table className="vc-marketing-post-table"><thead><tr><th><input type="checkbox" aria-label="Seleccionar todas las publicaciones visibles" checked={filteredPosts.length>0&&filteredPosts.every((post)=>selectedPostIds.has(post.id))} onChange={selectVisiblePosts}/></th><th>Publicación</th><th>Fecha y canal</th><th>Etapa</th><th>Tags</th><th>Acciones</th></tr></thead><tbody>{filteredPosts.map((post)=> {
+                    const channelInfo = getChannelBadge(post.platform);
+                    const formatInfo = getFormatBadge(post.format, post.platform);
+                    const FormatIcon = formatInfo.icon;
+                    return <tr key={post.id}>
+                      <td><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></td>
+                      <td>
+                        <div className="vc-marketing-table-post-cell">
+                          <MarketingPostArtwork organizationId={organizationId || ''} post={post} asset={artworkByPost.get(post.id)} canEdit={canEdit} variant="compact" onSaved={() => void refresh()}/>
+                          <div className="vc-marketing-table-post-copy">
+                            <button type="button" className="vc-marketing-table-title" onClick={()=>{ void openPost(post); }}>{post.title||'Sin título'}</button>
+                            <small>{post.content_line||'Tema pendiente'}</small>
+                            <MarketingReadinessIndicators post={post} onChange={(field, checked) => void changePostReadiness(post, field, checked)} disabled={!canEdit||saving}/>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="vc-table-date-channel-cell">
+                          <span>{post.scheduled_date?formatDate(post.scheduled_date):'Fecha pendiente'}</span>
+                          <div className="vc-table-channel-wrap">
+                            <span className={`vc-cal-channel-badge ${channelInfo.className}`} title={channelInfo.name}>{channelInfo.code}</span>
+                            <span className={`vc-cal-format-chip ${formatInfo.className}`} title={`Formato: ${post.format || formatInfo.label}`}><FormatIcon size={10}/><span>{formatInfo.label}</span></span>
+                            <small>{post.platform||'Canal pendiente'}{post.scheduled_time?` · ${post.scheduled_time}`:''}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="vc-table-stage-cell">
+                          <StageBadge stage={post.status||'Por iniciar'}/>
+                          {renderDeliverableDots(post)}
+                        </div>
+                      </td>
+                      <td><div className="vc-marketing-table-tags">{getMarketingTags(post.tags).map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div></td>
+                      <td><ContextMenu label={`Acciones para ${post.title}`} actions={postActions(post)}><span className="vc-marketing-menu-anchor" aria-hidden="true"/></ContextMenu></td>
+                    </tr>;
+                  })}</tbody></table></div> : <AnimatedList stagger={0} className="vc-marketing-card-grid" itemClassName="vc-content-post-entry">{filteredPosts.map((post) => {
                   const linked = data.postAssets.filter((link) => link.post_id === post.id).length;
-                  const platformClass = String(post.platform || 'general').toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
+                  const platformClass = getPlatformClassName(post.platform);
+                  const channelInfo = getChannelBadge(post.platform);
+                  const formatInfo = getFormatBadge(post.format, post.platform);
+                  const FormatIcon = formatInfo.icon;
                   return <ContextMenu key={post.id} className="vc-marketing-post-context" label={`Acciones para ${post.title}`} actions={postActions(post)}><article className={`vc-content-post is-artwork-card${canEdit||canDelete?' has-selection':''} is-platform-${platformClass}`}>
-                    <header className="vc-marketing-post-card-top">{(canEdit||canDelete)&&<label className="vc-marketing-select-post"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></label>}<div className="vc-content-date" style={getMarketingCalendarColor(post.calendar_color, post.tags)?{borderColor:getMarketingCalendarColor(post.calendar_color, post.tags),color:getMarketingCalendarColor(post.calendar_color, post.tags)}:undefined}><strong>{post.scheduled_date ? post.scheduled_date.slice(8,10) : '—'}</strong><span>{post.scheduled_date ? new Intl.DateTimeFormat('es-EC',{month:'short'}).format(new Date(`${post.scheduled_date.slice(0,10)}T12:00:00`)) : 'PEND.'}</span></div><div className="vc-content-post-end"><span className={`vc-marketing-channel-pill is-${platformClass}`}>{post.platform || 'Canal'} · {post.format || 'Post'}</span><StageBadge stage={post.status || 'Por iniciar'}/><span className={`vc-content-dot is-${statusTone(post.status)}`}/></div></header>
+                    <header className="vc-marketing-post-card-top">{(canEdit||canDelete)&&<label className="vc-marketing-select-post"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={()=>togglePost(post.id)}/></label>}<div className="vc-content-date" style={getMarketingCalendarColor(post.calendar_color, post.tags)?{borderColor:getMarketingCalendarColor(post.calendar_color, post.tags),color:getMarketingCalendarColor(post.calendar_color, post.tags)}:undefined}><strong>{post.scheduled_date ? post.scheduled_date.slice(8,10) : '—'}</strong><span>{post.scheduled_date ? new Intl.DateTimeFormat('es-EC',{month:'short'}).format(new Date(`${post.scheduled_date.slice(0,10)}T12:00:00`)) : 'PEND.'}</span></div><div className="vc-content-post-end"><span className={`vc-marketing-channel-pill is-${platformClass}`}><span className={`vc-cal-channel-badge ${channelInfo.className}`}>{channelInfo.code}</span><FormatIcon size={11} aria-hidden="true"/><span>{post.platform || 'Canal'} · {post.format || 'Post'}</span></span><StageBadge stage={post.status || 'Por iniciar'}/><span className={`vc-content-dot is-${statusTone(post.status)}`}/></div></header>
                     <MarketingPostArtwork organizationId={organizationId || ''} post={post} asset={artworkByPost.get(post.id)} canEdit={canEdit} variant="overview" onSaved={() => void refresh()}/>
                     <button className="vc-content-post-main" type="button" onClick={() => { void openPost(post); }}><span className="vc-content-post-eyebrow">{post.content_line || post.platform || 'Contenido'} <i>·</i> {post.format || 'Formato pendiente'}</span><strong>{post.title || 'Sin título'}</strong><span className="vc-content-post-caption">{post.caption || post.next_action || 'Copy y siguiente paso por completar.'}</span><span className="vc-content-post-meta"><span><Megaphone size={13}/>{post.platform || 'Canal pendiente'}{post.scheduled_time ? ` · ${post.scheduled_time}` : ''}</span><span><Images size={13}/>{linked} piezas</span></span></button>
-                    <WorkDetails post={post} today={today} reviews={data.reviews} materials={materialsFor(post)} canEdit={canEdit} compact onOpen={() => { void openPost(post); }} onReview={()=>setReviewPost(post)} onReschedule={()=>reschedulePost(post)}/>
-                    <MarketingReadinessIndicators post={post} onChange={(field, checked) => void changePostReadiness(post, field, checked)} disabled={!canEdit||saving}/>
+                    <div className="vc-marketing-card-ops-strip">
+                      <WorkDetails post={post} today={today} reviews={data.reviews} materials={materialsFor(post)} canEdit={canEdit} compact onOpen={() => { void openPost(post); }} onReview={()=>setReviewPost(post)} onReschedule={()=>reschedulePost(post)}/>
+                      <MarketingReadinessIndicators post={post} onChange={(field, checked) => void changePostReadiness(post, field, checked)} disabled={!canEdit||saving}/>
+                    </div>
                     {getMarketingTags(post.tags).length>0&&<div className="vc-marketing-post-tags">{getMarketingTags(post.tags).map((tag:string,index:number)=><span key={tag} style={{'--tag-color':MARKETING_COLORS[index%MARKETING_COLORS.length]} as React.CSSProperties}>{tag}</span>)}</div>}
                   </article></ContextMenu>;
                 })}</AnimatedList>}

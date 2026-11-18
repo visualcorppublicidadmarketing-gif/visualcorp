@@ -31,6 +31,7 @@ import { ChatterDrawer360 } from '../../components/ui/ChatterDrawer360';
 import { ExecutiveQuotePdfModal, type QuoteData } from '../../components/ExecutiveQuotePdfModal';
 import { PaymentReceiptModal, type PaymentReceiptRecord } from '../../components/PaymentReceiptModal';
 import { calculateTieredPrice, getNextVolumeTierRecommendation } from '../../lib/volumePricing';
+import { classifyCatalogInventoryProduct } from '../../lib/inventoryProductMetadata.mjs';
 import { CommercialFinishingControls } from '../../components/CommercialFinishingControls';
 import { calculateCommercialFinishing, emptyCommercialFinishing, sanitizeCommercialFinishing } from '../../lib/commercialFinishing';
 import './operations-quote.css';
@@ -366,17 +367,38 @@ export function OperationsQuotePage() {
       const tone = components.some((row) => row.tone === 'danger') ? 'danger' as const : components.some((row) => row.tone === 'warning') ? 'warning' as const : 'available' as const;
       return { tone, label: components.map((row) => row.label).join(' · ') };
     }
+    const catalogProduct = data.catalog.find((product: any) => product.id === productId);
+    if (classifyCatalogInventoryProduct(catalogProduct) === 'service') {
+      return { tone: 'neutral' as const, label: 'Servicio o producto bajo pedido · stock directo no aplica' };
+    }
     const links = catalogLinks.filter((link) => link.active && link.catalog_product_id === productId && (!branchId || link.branch_id === branchId));
     if (!links.length) return { tone: 'neutral' as const, label: `Sin vínculo de stock en ${branchName}` };
-    const primary = links[0];
-    const stock = (data.inventory || []).find((row: any) => row.variantId === primary.inventory_variant_id && (!branchId || row.branchId === branchId) && !row.archived);
-    if (!stock || stock.sourceStatus) return { tone: 'warning' as const, label: `Conteo físico pendiente en ${branchName}` };
-    const available = Number(stock.availableQuantity ?? (Number(stock.quantity || 0) - Number(stock.reservedQuantity || 0)));
-    const unit = stock.unit || 'und';
-    if (available <= 0) return { tone: 'danger' as const, label: `Agotado en ${branchName} (0 ${unit})` };
-    if (Number(stock.minimum || 0) > 0 && available <= Number(stock.minimum)) {
-      return { tone: 'warning' as const, label: `Stock bajo en ${branchName}: ${available} ${unit}` };
+    const linkedStocks = links.map((link) => {
+      const stock = (data.inventory || []).find((row: any) => row.variantId === link.inventory_variant_id && (!branchId || row.branchId === branchId) && row.location === (link.location_code || 'MAIN') && !row.archived);
+      if (!stock || stock.sourceStatus) return { link, stock, available: null as number | null };
+      return { link, stock, available: Number(stock.availableQuantity ?? (Number(stock.quantity || 0) - Number(stock.reservedQuantity || 0))) };
+    });
+    const pending = linkedStocks.filter((entry) => entry.available === null);
+    const unit = linkedStocks.find((entry) => entry.stock?.unit)?.stock?.unit || 'und';
+    const confirmedAvailable = linkedStocks.reduce((sum, entry) => sum + (entry.available ?? 0), 0);
+    const lowVariant = linkedStocks.some((entry) => entry.available !== null && Number(entry.stock?.minimum || 0) > 0 && entry.available <= Number(entry.stock.minimum));
+    const exhaustedVariant = linkedStocks.some((entry) => entry.available === 0);
+    if (pending.length) {
+      const counted = linkedStocks.length - pending.length;
+      return {
+        tone: 'warning' as const,
+        label: `${counted ? `${confirmedAvailable} ${unit} confirmadas` : 'Conteo físico pendiente'} · ${pending.length} de ${links.length} variantes sin contar en ${branchName}`,
+      };
     }
+    if (links.length > 1) {
+      const label = `Total por ${links.length} variantes: ${confirmedAvailable} ${unit} en ${branchName}`;
+      if (confirmedAvailable <= 0) return { tone: 'danger' as const, label: `Agotado en todas las variantes en ${branchName} (0 ${unit})` };
+      return { tone: lowVariant || exhaustedVariant ? 'warning' as const : 'available' as const, label };
+    }
+    const single = linkedStocks[0];
+    const available = single?.available ?? 0;
+    if (available <= 0) return { tone: 'danger' as const, label: `Agotado en ${branchName} (0 ${unit})` };
+    if (lowVariant) return { tone: 'warning' as const, label: `Stock bajo en ${branchName}: ${available} ${unit}` };
     return { tone: 'available' as const, label: `Disponible en ${branchName}: ${available} ${unit}` };
   };
 

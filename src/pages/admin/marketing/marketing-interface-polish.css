@@ -27,11 +27,11 @@
 .vc-marketing-calendar-controls .ok-date { font-size: 11px; }
 .vc-marketing-calendar-controls .ok-date input { min-height: 40px; font-size: 12px; }
 
-.vc-marketing-kanban-filters { gap: 8px 12px; padding: 8px 12px; background: #faf8fc; }
-.vc-marketing-kanban-result-count { color: #5b4b69; font-size: 11.5px; }
-.vc-marketing-filter-clear { min-height: 36px; padding: 0 11px; border: 1px solid #d8c6e4; border-radius: 9px; background: #fff; color: #673884; font: inherit; font-size: 11.5px; font-weight: 750; cursor: pointer; white-space: nowrap; transition: all .14s ease; }
-.vc-marketing-filter-clear:hover, .vc-marketing-filter-clear:focus-visible { border-color: #9e6bc0; background: #f7effc; }
-.vc-marketing-empty-lanes-toggle { display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: 7px !important; min-height: 36px !important; padding: 0 10px !important; border: 1px solid #e2daea !important; border-radius: 9px !important; background: #fff !important; color: #4a3f54 !important; font-size: 11.5px !important; font-weight: 700 !important; white-space: nowrap; cursor: pointer; }
+.vc-marketing-kanban-filters { gap: 8px 12px; padding: 8px 12px; }
+.vc-marketing-kanban-result-count { color: var(--mk-glass-ink, #5b4b69); font-size: 11.5px; }
+.vc-marketing-filter-clear { min-height: 36px; padding: 0 11px; border: 1px solid var(--mk-glass-border, #d8c6e4); border-radius: 9px; background: var(--mk-glass-pill, #fff); color: var(--mk-glass-ink, #673884); font: inherit; font-size: 11.5px; font-weight: 750; cursor: pointer; white-space: nowrap; transition: all .14s ease; }
+.vc-marketing-filter-clear:hover, .vc-marketing-filter-clear:focus-visible { border-color: var(--mk-glass-border-hover, #9e6bc0); background: var(--mk-glass-surface, #f7effc); }
+.vc-marketing-empty-lanes-toggle { display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: 7px !important; min-height: 36px !important; padding: 0 10px !important; border: 1px solid var(--mk-glass-border, #e2daea) !important; border-radius: 9px !important; background: var(--mk-glass-pill, #fff) !important; color: var(--mk-glass-ink, #4a3f54) !important; font-size: 11.5px !important; font-weight: 700 !important; white-space: nowrap; cursor: pointer; }
 .vc-marketing-empty-lanes-toggle input { width: 15px !important; height: 15px !important; margin: 0 !important; accent-color: var(--marketing-purple); }
 
 .vc-marketing-calendar.is-month .vc-marketing-calendar-grid {
@@ -52,7 +52,7 @@
 }
 
 .vc-marketing-calendar.is-week .vc-marketing-calendar-grid:focus-visible { outline: 3px solid #8954a6; outline-offset: 3px; }
-.vc-marketing-calendar.is-week .vc-marketing-calendar-weekday { min-height: 44px; padding: 11px 12px; background: #faf7fc; color: #51475a; font-size: 12px; }
+.vc-marketing-calendar.is-week .vc-marketing-calendar-weekday { min-height: 44px; padding: 11px 12px; background: var(--mk-glass-header-sticky, #faf7fc); color: var(--mk-glass-muted, #51475a); font-size: 12px; }
 .vc-marketing-calendar.is-week .vc-marketing-calendar-day { min-height: 360px; padding: 11px; scroll-snap-align: start; }
 .vc-marketing-calendar.is-week .vc-marketing-calendar-day-head { min-height: 34px; padding-bottom: 8px; font-size: 14px; }
 .vc-marketing-calendar.is-week .vc-marketing-calendar-day-head>button { width: 32px; height: 32px; }
@@ -118,14 +118,14 @@
 .vc-marketing-calendar .vc-marketing-week-card.tone-cancelled { border-left-color: #af5d57; }
 .vc-marketing-calendar .vc-marketing-week-card.tone-working { border-left-color: #8257a2; }
 .vc-marketing-calendar .vc-marketing-week-card.tone-approved { border-left-color: #5784b5; }
-.vc-marketing-calendar .vc-marketing-calendar-event.tone-active { border-left-color: #806293; background: #f6f2f8; }
-.vc-marketing-calendar .vc-marketing-calendar-event.tone-working { border-left-color: #8257a2; background: #f4eff9; }
-.vc-marketing-calendar .vc-marketing-calendar-event.tone-review { border-left-color: #b38a32; background: #fff9e9; }
-.vc-marketing-calendar .vc-marketing-calendar-event.tone-approved { border-left-color: #5784b5; background: #f1f7fd; }
-.vc-marketing-calendar .vc-marketing-calendar-event.tone-published { border-left-color: #3d9b73; background: #edf8f2; }
-.vc-marketing-calendar .vc-marketing-calendar-event.tone-completed { border-left-color: #737c88; background: #f3f4f6; }
-.vc-marketing-calendar .vc-marketing-calendar-event.tone-blocked,
-.vc-marketing-calendar .vc-marketing-calendar-event.tone-cancelled { border-left-color: #af5d57; background: #fff3f1; }
+.vc-marketing-calendar .vc-marketing-calendar-event:not(.is-compact-pill):not(.is-detailed-card).tone-active { border-left-color: #806293; background: #f6f2f8; }
+.vc-marketing-calendar .vc-marketing-calendar-event:not(.is-compact-pill):not(.is-detailed-card).tone-working { border-left-color: #8257a2; background: #f4eff9; }
+.vc-marketing-calendar .vc-marketing-calendar-event:not(.is-compact-pill):not(.is-detailed-card).tone-review { border-left-color: #b38a32; background: #fff9e9; }
+.vc-marketing-calendar .vc-marketing-calendar-event:not(.is-compact-pill):not(.is-detailed-card).tone-approved { border-left-color: #5784b5; background: #f1f7fd; }
+.vc-marketing-calendar .vc-marketing-calendar-event:not(.is-compact-pill):not(.is-detailed-card).tone-published { border-left-color: #3d9b73; background: #edf8f2; }
+.vc-marketing-calendar .vc-marketing-calendar-event:not(.is-compact-pill):not(.is-detailed-card).tone-completed { border-left-color: #737c88; background: #f3f4f6; }
+.vc-marketing-calendar .vc-marketing-calendar-event:not(.is-compact-pill):not(.is-detailed-card).tone-blocked,
+.vc-marketing-calendar .vc-marketing-calendar-event:not(.is-compact-pill):not(.is-detailed-card).tone-cancelled { border-left-color: #af5d57; background: #fff3f1; }
 .vc-marketing-calendar-foot i.tone-active { background: #806293; }
 .vc-marketing-calendar-foot i.tone-working { background: #8257a2; }
 .vc-marketing-calendar-foot i.tone-review { background: #b38a32; }
@@ -137,7 +137,7 @@
 
 .vc-marketing-calendar.is-kanban .vc-marketing-kanban-board { grid-auto-columns: minmax(290px, 330px); padding-bottom: 15px; scrollbar-width: auto; scroll-snap-type: x proximity; }
 .vc-marketing-calendar.is-kanban .vc-marketing-kanban-column { scroll-snap-align: start; }
-.vc-marketing-calendar.is-kanban .vc-marketing-kanban-column-head { position: sticky; top: 0; z-index: 1; background: #f9f8fa; }
+.vc-marketing-calendar.is-kanban .vc-marketing-kanban-column-head { position: sticky; top: 0; z-index: 2; background: var(--mk-glass-header-sticky, #f9f8fa); backdrop-filter: var(--mk-glass-pill-blur, blur(12px)); -webkit-backdrop-filter: var(--mk-glass-pill-blur, blur(12px)); }
 .vc-marketing-calendar.is-kanban .vc-marketing-kanban-card-title b { font-size: 15px; }
 .vc-marketing-calendar.is-kanban .vc-marketing-kanban-card-topic,
 .vc-marketing-calendar.is-kanban .vc-marketing-kanban-card-meta { color: #5f5764; font-size: 12px; }
@@ -156,7 +156,7 @@
 .vc-marketing-calendar.is-table .vc-marketing-table-publication-main>button small { color: #655d6a; font-size: 11px; }
 .vc-marketing-calendar.is-table .vc-marketing-table-publication { min-width: 300px; }
 .vc-marketing-calendar.is-table .vc-marketing-table-artwork { width: 68px; height: 52px; }
-.vc-marketing-calendar.is-table .vc-marketing-table tbody tr:focus-within { background: #faf6fc; outline: 2px solid #8851a2; outline-offset: -2px; }
+.vc-marketing-calendar.is-table .vc-marketing-table tbody tr:focus-within { background: color-mix(in srgb, var(--mk-glass-pill, #faf6fc) 90%, rgb(165 16 145 / 8%)); outline: 2px solid #8851a2; outline-offset: -2px; }
 .vc-marketing-calendar.is-table .vc-marketing-table .vc-marketing-week-card-status { font-size: 10px; }
 
 .vc-publication-editor-header { display: flex!important; align-items: flex-start!important; justify-content: space-between!important; gap: 16px!important; }
@@ -233,7 +233,7 @@
 .vc-marketing-readiness-item.is-ready>svg{color:#2f9364}
 .vc-marketing-readiness-item b{font-size:8px;font-weight:750}
 .vc-marketing-readiness-indicators.is-compact{gap:3px}
-.vc-marketing-readiness-indicators.is-compact .vc-marketing-readiness-item{gap:2px;padding:2px 4px;border-radius:6px;background:#ffffffd9;font-size:8px}
+.vc-marketing-readiness-indicators.is-compact .vc-marketing-readiness-item{gap:2px;padding:2px 4px;border-color:var(--mk-glass-border,#e8e3eb);border-radius:6px;background:var(--mk-glass-pill,#ffffffd9);color:var(--mk-glass-ink,#5b4d66);font-size:8px}
 .vc-marketing-readiness-indicators.is-compact .vc-marketing-readiness-item span,.vc-marketing-readiness-indicators.is-compact .vc-marketing-readiness-item b{display:none}
 .vc-marketing-calendar.is-week .vc-marketing-readiness-item,.vc-marketing-calendar.is-kanban .vc-marketing-readiness-item{font-size:10px}
 .vc-marketing-calendar .vc-marketing-calendar-event>.vc-marketing-event-label{display:block;min-width:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
@@ -283,53 +283,34 @@
 }
 .vc-marketing-calendar.is-month .vc-marketing-calendar-events{gap:5px;overflow:hidden}
 .vc-marketing-calendar.is-month .vc-marketing-event-row{position:relative;display:block}
-.vc-marketing-calendar.is-month .vc-marketing-event-select{position:absolute;top:5px;right:5px;z-index:4;width:15px;height:15px;margin:0;opacity:0}
-.vc-marketing-calendar.is-month .vc-marketing-event-row:hover .vc-marketing-event-select,
-.vc-marketing-calendar.is-month .vc-marketing-event-select:focus-visible,
-.vc-marketing-calendar.is-month .vc-marketing-event-select:checked{opacity:1}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card{display:grid;align-content:start;gap:5px;min-height:0;overflow:hidden;padding:6px 7px;border:1px solid color-mix(in srgb,var(--event-color,#8660ad) 20%,#e9e3ed);border-left:3px solid var(--event-color,#8660ad);border-radius:9px;background:linear-gradient(145deg,var(--event-tint,#f8f3fb),#fff 90%);color:#453c4b}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-top{display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:center;gap:4px;width:100%;min-width:0}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-top{grid-template-columns:minmax(0,1fr) auto 24px auto}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-post-drag-handle{grid-column:3;grid-row:1;justify-self:center}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-cal-channel-badge,
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-cal-format-badge{max-width:28px;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-pill-indicator{display:none}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-top time{justify-self:end;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-event-label{grid-column:1/-1;display:-webkit-box;width:100%;min-width:0;max-height:2.65em;overflow:hidden;padding:0;border:0;background:transparent;color:#332b38;font-size:10px;font-weight:780;line-height:1.32;text-align:left;text-overflow:ellipsis;white-space:normal;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-foot{display:flex;align-items:center;gap:4px;min-width:0}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-foot .vc-marketing-event-status{max-width:100%;padding:2px 5px;border-radius:999px;background:#ffffffb8;font-size:8px;line-height:1.2}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-cal-pipeline-dots,
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-readiness-indicators{display:none!important}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-icons{margin-left:auto}
+.vc-marketing-calendar.is-month .vc-marketing-event-row:not(.is-compact-row) .vc-marketing-event-select{position:absolute;top:5px;right:5px;z-index:4;width:15px;height:15px;margin:0;opacity:0}
+.vc-marketing-calendar.is-month .vc-marketing-event-row:not(.is-compact-row):hover .vc-marketing-event-select,
+.vc-marketing-calendar.is-month .vc-marketing-event-row:not(.is-compact-row) .vc-marketing-event-select:focus-visible,
+.vc-marketing-calendar.is-month .vc-marketing-event-row:not(.is-compact-row) .vc-marketing-event-select:checked{opacity:1}
 .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-task{max-width:100%;overflow:hidden;padding:6px 7px;border-radius:9px}
 .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-task .vc-marketing-event-label{max-width:100%;overflow-wrap:anywhere}
-.vc-marketing-calendar.is-month .vc-marketing-calendar-more{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-color:#d9cce2;background:#faf7fc;color:#704787}
-.work-app.theme-dark .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card{border-color:color-mix(in srgb,var(--event-color,#a77ac1) 42%,#353047);border-left-color:var(--event-color,#a77ac1);background:linear-gradient(145deg,#211d2d,#191a25 92%);color:#ded9e7}
-.work-app.theme-dark .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-event-label{color:#f1edf6}
-.work-app.theme-dark .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-compact-foot .vc-marketing-event-status{background:#2a2635;color:#e5d9ee}
-.work-app.theme-dark .vc-marketing-calendar.is-month .vc-marketing-calendar-more{border-color:#494054;background:#211d2b;color:#d3b6e4}
+.vc-marketing-calendar.is-month .vc-marketing-calendar-more{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-color:var(--mk-glass-border,#d9cce2);background:var(--mk-glass-pill,#faf7fc);color:#704787}
+.work-app.theme-dark .vc-marketing-calendar.is-month .vc-marketing-calendar-more{border-color:var(--mk-glass-border,#494054);background:var(--mk-glass-pill,#211d2b);color:#d3b6e4}
 @media(max-width:760px){
   .vc-marketing-calendar.is-month .vc-marketing-event-select{opacity:1}
-  .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card{padding:5px}
 }
 @media(prefers-reduced-motion:reduce){
   .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card,.vc-marketing-post-drag-handle{transition:none}
 }
 
-.vc-marketing-post-drag-handle{display:grid;flex:0 0 27px;width:27px;height:27px;min-width:24px;min-height:24px;place-items:center;padding:0;border:1px solid #e3d5eb;border-radius:7px;background:#fff;color:#805098;cursor:grab;touch-action:none;transition:background .14s,border-color .14s,color .14s,box-shadow .14s}
+.vc-marketing-post-drag-handle{display:grid;flex:0 0 27px;width:27px;height:27px;min-width:24px;min-height:24px;place-items:center;padding:0;border:1px solid var(--mk-glass-border,#e3d5eb);border-radius:7px;background:var(--mk-glass-surface,#fff);color:#805098;cursor:grab;touch-action:none;transition:background .14s,border-color .14s,color .14s,box-shadow .14s,opacity .14s}
 .vc-marketing-post-drag-handle:hover,.vc-marketing-post-drag-handle:focus-visible{border-color:#b991cc;background:#f7f0fa;color:#633a7a;box-shadow:0 0 0 2px #9560ad20;outline:2px solid transparent;outline-offset:2px}
 .vc-marketing-post-drag-handle:active{cursor:grabbing;background:#efe3f5}
-.vc-marketing-post-drag-handle-compact{width:24px;height:24px;flex-basis:24px}
+.vc-marketing-post-drag-handle-compact{width:22px;height:22px;min-width:22px;min-height:22px;flex-basis:22px}
 .vc-marketing-calendar-day.is-drop-target{outline:2px solid #9347ba!important;outline-offset:-3px;background:#f6ebfb!important;box-shadow:inset 0 0 0 2px #fff}
-.vc-marketing-calendar-drag-status{max-width:100%;margin:0 0 8px;padding:7px 10px;border:1px solid #dfd0e9;border-radius:9px;background:#faf6fc;color:#65447a;font-size:10px;font-weight:650;line-height:1.4;overflow-wrap:anywhere}
+.vc-marketing-calendar-drag-status{max-width:100%;margin:0 0 8px;padding:7px 10px;border:1px solid var(--mk-glass-border,#dfd0e9);border-radius:9px;background:var(--mk-glass-pill,#faf6fc);color:#65447a;font-size:10px;font-weight:650;line-height:1.4;overflow-wrap:anywhere}
 .vc-marketing-calendar-drag-status.is-active{border-color:#bd9acb;background:#f4eafa}
-.work-app.theme-dark .vc-marketing-post-drag-handle{border-color:#484052;background:#211d2b;color:#d3b6e4}
+.work-app.theme-dark .vc-marketing-post-drag-handle{border-color:var(--mk-glass-border,#484052);background:var(--mk-glass-surface,#211d2b);color:#d3b6e4}
 .work-app.theme-dark .vc-marketing-post-drag-handle:hover,.work-app.theme-dark .vc-marketing-post-drag-handle:focus-visible{border-color:#8764a0;background:#2b2333;color:#f0dafa}
 .work-app.theme-dark .vc-marketing-calendar-day.is-drop-target{outline-color:#c392dd!important;background:#32233e!important;box-shadow:inset 0 0 0 2px #17151f}
-.work-app.theme-dark .vc-marketing-calendar-drag-status{border-color:#494054;background:#211d2b;color:#d3b6e4}
+.work-app.theme-dark .vc-marketing-calendar-drag-status{border-color:var(--mk-glass-border,#494054);background:var(--mk-glass-pill,#211d2b);color:#d3b6e4}
 @media(max-width:760px){
-  .vc-marketing-calendar.is-month .vc-marketing-post-drag-handle-compact{width:24px;height:24px;flex-basis:24px}
-  .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill .vc-marketing-compact-top{flex-wrap:wrap}
+  .vc-marketing-calendar.is-month .vc-marketing-post-drag-handle-compact{width:22px;height:22px;flex-basis:22px}
 }
 @media(prefers-reduced-motion:reduce){
   .vc-marketing-post-drag-handle{transition:none}
@@ -462,19 +443,11 @@
   border-color: #8a4caf;
 }
 
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-side-panel {
-  border-color: #2b2f42;
-  background: linear-gradient(160deg, #161822, #12141d);
-  color: var(--vc-ink, #f1f2f6);
-}
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-side-heading .eyebrow {
   color: #c79af0;
 }
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-side-heading h3 {
   color: #f5f3fa;
-}
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-next-list button {
-  border-bottom-color: #26293a;
 }
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-next-list button:hover b {
   color: #deb0f4;
@@ -491,11 +464,6 @@
 }
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-text-link {
   color: #cf9df2;
-}
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-side-callout {
-  border-color: #362e49;
-  background: #1d192b;
-  color: #d8c2ee;
 }
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-content-side-callout p {
   color: #b7bcd0;
