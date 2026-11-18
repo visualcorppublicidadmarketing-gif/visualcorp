@@ -40,15 +40,15 @@
   height: 75%;
   border-radius: 50%;
   background: radial-gradient(
-    ellipse 70% 60% at 50% 50%,
-    rgba(229, 0, 126, 0.42) 0%,
-    rgba(138, 69, 210, 0.32) 42%,
+    ellipse 72% 62% at 50% 50%,
+    rgba(229, 0, 126, 0.56) 0%,
+    rgba(138, 69, 210, 0.44) 42%,
     rgba(22, 17, 38, 0) 78%
   );
   filter: blur(90px);
   -webkit-filter: blur(90px);
   transform: translateZ(0);
-  opacity: 0.9;
+  opacity: 0.98;
 }
 
 /* Layer 2 - Mid Layer: blur(35px) cian/rosa #009ee2 / #f076bc */
@@ -59,35 +59,35 @@
   height: 48%;
   border-radius: 50%;
   background: radial-gradient(
-    ellipse 65% 45% at 50% 50%,
-    rgba(0, 158, 226, 0.55) 0%,
-    rgba(240, 118, 188, 0.45) 48%,
+    ellipse 66% 46% at 50% 50%,
+    rgba(0, 158, 226, 0.70) 0%,
+    rgba(240, 118, 188, 0.56) 48%,
     transparent 80%
   );
-  filter: blur(35px);
-  -webkit-filter: blur(35px);
+  filter: blur(34px);
+  -webkit-filter: blur(34px);
   transform: translateZ(0);
-  opacity: 0.85;
+  opacity: 0.94;
 }
 
-/* Layer 3 - Core Layer: blur(22px) luminous white / specular streak */
+/* Layer 3 - Core Layer: blur(20px) luminous white / specular streak */
 .horizon-wave-core {
   position: absolute;
-  width: 70%;
-  max-width: 920px;
-  height: 22%;
+  width: 72%;
+  max-width: 940px;
+  height: 24%;
   border-radius: 9999px;
   background: radial-gradient(
-    ellipse 60% 30% at 50% 50%,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(84, 202, 255, 0.75) 30%,
-    rgba(229, 0, 126, 0.45) 60%,
+    ellipse 62% 32% at 50% 50%,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(84, 202, 255, 0.90) 28%,
+    rgba(229, 0, 126, 0.58) 60%,
     transparent 85%
   );
-  filter: blur(22px);
-  -webkit-filter: blur(22px);
+  filter: blur(20px);
+  -webkit-filter: blur(20px);
   transform: translateZ(0);
-  opacity: 0.95;
+  opacity: 1;
 }
 
 /* Hourglass contour streak (reloj de arena filament) */
@@ -95,21 +95,27 @@
   position: absolute;
   inset-inline: 0;
   top: 50%;
-  height: 2px;
+  height: 2.5px;
   transform: translateY(-50%);
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(138, 69, 210, 0.3) 15%,
-    rgba(0, 158, 226, 0.85) 40%,
+    rgba(138, 69, 210, 0.35) 15%,
+    rgba(0, 158, 226, 0.95) 40%,
     #ffffff 50%,
-    rgba(229, 0, 126, 0.85) 60%,
-    rgba(138, 69, 210, 0.3) 85%,
+    rgba(229, 0, 126, 0.95) 60%,
+    rgba(138, 69, 210, 0.35) 85%,
     transparent 100%
   );
   box-shadow:
-    0 0 16px rgba(0, 158, 226, 0.8),
-    0 0 32px rgba(229, 0, 126, 0.6);
+    0 0 18px rgba(0, 158, 226, 0.92),
+    0 0 36px rgba(229, 0, 126, 0.72);
+}
+
+/* Ambient glow enhancement for Horizon Light Wave behind Hero content */
+.home-hero-ambient-wave,
+.home-stage-horizon {
+  filter: drop-shadow(0 0 32px rgba(229, 0, 126, 0.22));
 }
 
 /* Light mode adaptation */
@@ -173,12 +179,12 @@ html[data-public-theme="light"] .horizon-wave-core,
   bottom: 0;
   left: 5%;
   right: 5%;
-  height: 52%;
+  height: 54%;
   clip-path: polygon(16% 0%, 84% 0%, 100% 100%, 0% 100%);
   background: linear-gradient(
     180deg,
-    rgba(0, 158, 226, 0.16) 0%,
-    rgba(229, 0, 126, 0.12) 45%,
+    rgba(0, 158, 226, 0.32) 0%,
+    rgba(229, 0, 126, 0.24) 45%,
     rgba(14, 17, 28, 0) 100%
   );
   transform: translateZ(0);
@@ -189,8 +195,8 @@ html[data-public-theme="light"] .portal-stage-floor-reflection,
 :root[data-vc-theme="light"] .portal-stage-floor-reflection {
   background: linear-gradient(
     180deg,
-    rgba(0, 158, 226, 0.10) 0%,
-    rgba(229, 0, 126, 0.08) 45%,
+    rgba(0, 158, 226, 0.12) 0%,
+    rgba(229, 0, 126, 0.10) 45%,
     transparent 100%
   );
 }
@@ -208,21 +214,21 @@ html[data-public-theme="light"] .portal-stage-floor-reflection,
 }
 
 .portal-grid-line {
-  stroke: rgba(84, 202, 255, 0.35);
+  stroke: rgba(84, 202, 255, 0.52);
   vector-effect: non-scaling-stroke;
 }
 
 .portal-grid-cross {
-  stroke: rgba(240, 118, 188, 0.28);
+  stroke: rgba(240, 118, 188, 0.42);
   vector-effect: non-scaling-stroke;
 }
 
 html[data-public-theme="light"] .portal-grid-line {
-  stroke: rgba(0, 158, 226, 0.25);
+  stroke: rgba(0, 158, 226, 0.30);
 }
 
 html[data-public-theme="light"] .portal-grid-cross {
-  stroke: rgba(134, 54, 130, 0.22);
+  stroke: rgba(134, 54, 130, 0.26);
 }
 
 /* Vertical light columns with additive blend mode (plus-lighter / screen) */
@@ -242,29 +248,29 @@ html[data-public-theme="light"] .portal-grid-cross {
   }
 }
 
-/* Staggered blur light columns: 15px, 56px, 120px */
+/* Staggered blur light columns: 14px, 50px, 110px */
 .portal-column-15 {
   position: absolute;
   bottom: 12%;
-  width: 4px;
-  height: 82%;
+  width: 5px;
+  height: 84%;
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.9) 30%,
-    rgba(84, 202, 255, 0.8) 75%,
+    rgba(255, 255, 255, 0.98) 28%,
+    rgba(84, 202, 255, 0.88) 75%,
     transparent 100%
   );
-  filter: blur(15px);
-  -webkit-filter: blur(15px);
+  filter: blur(14px);
+  -webkit-filter: blur(14px);
   transform: translateZ(0);
 }
 
 .portal-column-15.col-center {
   left: 50%;
   transform: translateX(-50%);
-  width: 6px;
-  height: 90%;
+  width: 8px;
+  height: 92%;
 }
 
 .portal-column-15.col-left {
@@ -278,24 +284,24 @@ html[data-public-theme="light"] .portal-grid-cross {
 .portal-column-56 {
   position: absolute;
   bottom: 8%;
-  width: 70px;
-  height: 86%;
+  width: 76px;
+  height: 88%;
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(0, 158, 226, 0.45) 25%,
-    rgba(229, 0, 126, 0.5) 65%,
+    rgba(0, 158, 226, 0.58) 22%,
+    rgba(229, 0, 126, 0.62) 65%,
     transparent 100%
   );
-  filter: blur(56px);
-  -webkit-filter: blur(56px);
+  filter: blur(50px);
+  -webkit-filter: blur(50px);
   transform: translateZ(0);
 }
 
 .portal-column-56.col-center {
   left: 50%;
   transform: translateX(-50%);
-  width: 110px;
+  width: 120px;
 }
 
 .portal-column-56.col-left {
@@ -311,16 +317,16 @@ html[data-public-theme="light"] .portal-grid-cross {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: min(540px, 80%);
+  width: min(560px, 80%);
   height: 100%;
   background: radial-gradient(
-    ellipse 55% 70% at 50% 60%,
-    rgba(229, 0, 126, 0.38) 0%,
-    rgba(0, 158, 226, 0.28) 45%,
+    ellipse 58% 72% at 50% 60%,
+    rgba(229, 0, 126, 0.48) 0%,
+    rgba(0, 158, 226, 0.36) 45%,
     transparent 75%
   );
-  filter: blur(120px);
-  -webkit-filter: blur(120px);
+  filter: blur(110px);
+  -webkit-filter: blur(110px);
   transform: translateZ(0);
 }
 
@@ -328,7 +334,7 @@ html[data-public-theme="light"] .portal-grid-cross {
 html[data-public-theme="light"] .portal-stage-columns,
 :root[data-vc-theme="light"] .portal-stage-columns {
   mix-blend-mode: normal;
-  opacity: 0.58;
+  opacity: 0.62;
 }
 
 /* --------------------------------------------------------------------------

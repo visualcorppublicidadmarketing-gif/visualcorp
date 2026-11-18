@@ -4,11 +4,22 @@
   max-width: 100%;
   min-width: 0;
   gap: clamp(8px, 1.6vw, 24px);
-  border-color: var(--glass-border, rgba(231, 235, 255, .16));
-  background: var(--glass-bg-strong, linear-gradient(110deg, rgba(16, 19, 32, .94), rgba(11, 14, 26, .84)));
-  box-shadow: var(--glass-shadow, 0 16px 52px rgba(0, 0, 0, .38)), inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, .07));
-  backdrop-filter: var(--glass-blur, blur(22px) saturate(1.25));
-  -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(1.25));
+  border: 1px solid var(--glass-border, rgba(235, 238, 255, 0.18));
+  background: var(--glass-bg-strong, linear-gradient(110deg, rgba(16, 19, 32, 0.92), rgba(11, 14, 26, 0.86)));
+  box-shadow:
+    var(--glass-shadow, 0 18px 52px rgba(0, 0, 0, 0.42)),
+    0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, 0.18));
+  backdrop-filter: var(--glass-blur, blur(24px) saturate(1.45));
+  -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.45));
+}
+
+html[data-public-theme="light"] .public-site .site-header-inner {
+  border-color: rgba(134, 54, 130, 0.18);
+  background: var(--glass-bg-strong, rgba(255, 255, 255, 0.92));
+  box-shadow: 0 14px 40px rgba(48, 29, 59, 0.08), inset 0 1px 0 #ffffff;
+  backdrop-filter: var(--glass-blur, blur(20px) saturate(1.2));
+  -webkit-backdrop-filter: var(--glass-blur, blur(20px) saturate(1.2));
 }
 
 .public-site .site-header-inner::before {
@@ -19,7 +30,7 @@
   height: 2px;
   border-radius: 99px;
   content: "";
-  background: linear-gradient(90deg, var(--site-cyan), var(--site-accent), var(--site-yellow));
+  background: linear-gradient(90deg, var(--site-cyan, #009ee2), var(--site-accent, #e5007e), var(--site-yellow, #ffec00));
 }
 
 .public-site .site-nav {

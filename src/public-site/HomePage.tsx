@@ -538,9 +538,10 @@ export function PublicHomePage() {
   return (
     <div className="vc-home">
       <section className="home-hero" aria-labelledby="home-title">
+        <HorizonLightWave className="home-hero-ambient-wave" />
         <div className="home-hero-inner">
           <div className="home-hero-copy">
-            <div className="home-hero-kicker home-kicker">
+            <div className="home-hero-kicker home-kicker vc-glass-clear">
               <span className="home-status-dot" aria-hidden="true" />
               <AnimatedShinyText shimmerWidth={140}>{data.settings.heroEyebrow}</AnimatedShinyText>
             </div>

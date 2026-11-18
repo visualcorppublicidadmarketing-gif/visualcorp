@@ -1,42 +1,409 @@
-.vc-context-anchor{position:relative;min-width:0}
-.vc-context-trigger{position:absolute;z-index:3;top:5px;right:5px;display:grid;width:28px;height:28px;place-items:center;border:1px solid #e8e3ec;border-radius:8px;background:#fff;color:#625b69;opacity:0;cursor:pointer;transition:opacity .14s,background .14s,border-color .14s}
-.vc-context-anchor:hover>.vc-context-trigger,.vc-context-trigger:focus-visible,.vc-context-trigger[aria-expanded=true]{opacity:1}
-.vc-context-trigger:hover{background:#f7f3fa;border-color:#d8c9e0}
-.vc-context-menu{position:fixed;z-index:10000;display:grid;width:max-content;min-width:min(214px,calc(100vw - 16px));max-width:min(290px,calc(100vw - 16px));max-height:min(460px,calc(100dvh - 16px));overflow-x:hidden;overflow-y:auto;padding:5px;border:1px solid #e8e4eb;border-radius:12px;background:#fff;color:#393340;box-shadow:0 16px 48px #21132b2b;overscroll-behavior:contain;scrollbar-gutter:stable;touch-action:pan-y;-webkit-overflow-scrolling:touch;animation:vc-context-enter .13s ease-out both}
-.vc-context-menu button,.vc-context-submenu-trigger{position:relative;display:flex;width:100%;min-height:36px;align-items:center;gap:9px;padding:7px 9px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left;font:inherit;font-size:12px;cursor:pointer}
-.vc-context-menu button:hover,.vc-context-menu button:focus-visible,.vc-context-submenu-trigger:hover,.vc-context-submenu-trigger:focus-visible{background:#f7f3f9;outline:0}
-.vc-context-menu button:focus-visible,.vc-context-submenu-trigger:focus-visible{box-shadow:inset 0 0 0 2px #9a62b4}
-.vc-context-action-icon{display:grid;flex:none;min-width:15px;place-items:center;color:#7d588f}
-.vc-context-action-label{flex:1;min-width:0}
-.vc-context-menu button.is-destructive,.vc-context-menu button.is-destructive .vc-context-action-icon{color:#c3313b}
-.vc-context-menu button.is-destructive:hover,.vc-context-menu button.is-destructive:focus-visible{background:#fff0f0}
-.vc-context-menu button:disabled,.vc-context-submenu-trigger:disabled{opacity:.45;cursor:not-allowed}
-.vc-context-menu kbd{margin-left:auto;color:#8a8490;font:inherit;font-size:9px}
-.vc-context-separator{height:1px;margin:4px 5px;background:#eeeaf1}
-.vc-context-group-label{overflow:hidden;padding:7px 9px 4px;color:#88818e;font-size:9px;font-weight:800;letter-spacing:.08em;text-overflow:ellipsis;text-transform:uppercase;white-space:nowrap}
-.vc-context-check{display:grid;width:14px;height:14px;flex:none;place-items:center;border:1px solid #bbb2c2;border-radius:4px;color:#754894;font-size:11px;font-weight:800}
-.vc-context-menu [role=menuitemradio] .vc-context-check{border-radius:50%}
-.vc-context-menu [role=menuitemradio][aria-checked=true] .vc-context-check{border:4px solid #754894}
-.vc-context-menu [role=menuitemcheckbox][aria-checked=true] .vc-context-check{border-color:#754894;background:#f4eefa}
-.vc-context-submenu-trigger>svg:last-child{flex:none;margin-left:auto;color:#8a8490;transition:transform .14s}
-.vc-context-submenu-trigger[aria-expanded=true]>svg:last-child{transform:rotate(90deg)}
-.vc-context-submenu-panel{position:fixed;z-index:10001;min-width:min(210px,calc(100vw - 16px));max-width:min(275px,calc(100vw - 16px));max-height:min(360px,calc(100dvh - 16px));border-radius:10px;box-shadow:0 12px 35px #21132b30}
-.vc-context-submenu-panel[data-side=left]{transform-origin:right top}
-.vc-context-submenu-panel[data-side=right]{transform-origin:left top}
-.vc-context-menu.vc-context-public-site{border-color:#ffffff22;background:#15121c;color:#f7f4fa;box-shadow:0 18px 55px #07050bb8,0 0 0 1px #d827a018;backdrop-filter:blur(16px)}
-.vc-context-menu.vc-context-public-site button,.vc-context-menu.vc-context-public-site .vc-context-submenu-trigger{color:#f1edf5}
-.vc-context-menu.vc-context-public-site button:hover,.vc-context-menu.vc-context-public-site button:focus-visible,.vc-context-menu.vc-context-public-site .vc-context-submenu-trigger:hover,.vc-context-menu.vc-context-public-site .vc-context-submenu-trigger:focus-visible{background:#ffffff0e}
-.vc-context-menu.vc-context-public-site .vc-context-action-icon{color:#ee83d0}
-.vc-context-menu.vc-context-public-site .vc-context-group-label{color:#b8afc2}
-.vc-context-menu.vc-context-public-site .vc-context-separator{background:#ffffff20}
-.vc-context-menu.vc-context-public-site.vc-context-submenu-panel{border-color:#ffffff22;background:#15121c;color:#f7f4fa;box-shadow:0 18px 55px #07050bb8;backdrop-filter:blur(16px)}
-.vc-context-menu.vc-marketing-context-menu{border-color:#e5d9ed;box-shadow:0 18px 52px #30213f36,0 0 0 3px #8b52a50d}
-.vc-context-menu.vc-marketing-context-menu .vc-context-group-label{color:#805294}
-.vc-context-menu.vc-marketing-context-menu .vc-context-action-icon{color:#8654a0}
-.vc-context-menu.vc-marketing-context-menu button:hover,.vc-context-menu.vc-marketing-context-menu button:focus-visible,.vc-context-menu.vc-marketing-context-menu .vc-context-submenu-trigger:hover,.vc-context-menu.vc-marketing-context-menu .vc-context-submenu-trigger:focus-visible{background:#f5eff8}
-.vc-context-menu.vc-marketing-context-menu.vc-context-submenu-panel{border-color:#e5d9ed}
-.vc-public-context-status{position:fixed;z-index:10001;right:18px;bottom:18px;padding:0;border-radius:9px;background:#17131d;color:#fff;font-size:12px;pointer-events:none}
-.vc-public-context-status:not(:empty){padding:10px 14px;border:1px solid #ffffff24;box-shadow:0 12px 35px #0005}
-@keyframes vc-context-enter{from{opacity:0;transform:translateY(3px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
-@media(max-width:700px){.vc-context-trigger{opacity:1}.vc-context-menu{min-width:min(200px,calc(100vw - 16px))}}
-@media(prefers-reduced-motion:reduce){.vc-context-menu{animation:none}.vc-context-trigger,.vc-context-submenu-trigger>svg:last-child{transition:none}}
+.vc-context-anchor {
+  position: relative;
+  min-width: 0;
+}
+
+.vc-context-trigger {
+  position: absolute;
+  z-index: 3;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #e8e3ec;
+  border-radius: 8px;
+  background: #fff;
+  color: #625b69;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity .14s, background .14s, border-color .14s;
+}
+
+.vc-context-anchor:hover > .vc-context-trigger,
+.vc-context-trigger:focus-visible,
+.vc-context-trigger[aria-expanded="true"] {
+  opacity: 1;
+}
+
+.vc-context-trigger:hover {
+  background: #f7f3fa;
+  border-color: #d8c9e0;
+}
+
+.vc-context-menu {
+  position: fixed;
+  z-index: 10000;
+  display: grid;
+  width: max-content;
+  min-width: min(214px, calc(100vw - 16px));
+  max-width: min(290px, calc(100vw - 16px));
+  max-height: min(680px, calc(100dvh - 24px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--glass-border, #e8e4eb);
+  border-radius: 12px;
+  background: var(--glass-bg-strong, rgba(255, 255, 255, 0.94));
+  color: var(--glass-ink, #393340);
+  box-shadow: var(--glass-shadow, 0 16px 48px rgba(33, 19, 43, 0.17)), inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, 0.8));
+  backdrop-filter: blur(var(--glass-blur, 20px)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(140%);
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(90, 80, 110, 0.25) transparent;
+  animation: vc-context-enter .13s ease-out both;
+}
+
+/* Discrete scrollbar styling for context menus */
+.vc-context-menu::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.vc-context-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.vc-context-menu::-webkit-scrollbar-thumb {
+  background: rgba(90, 80, 110, 0.25);
+  border-radius: 99px;
+}
+
+.vc-context-menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(90, 80, 110, 0.4);
+}
+
+.vc-context-menu button,
+.vc-context-submenu-trigger {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 36px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+
+.vc-context-menu button:hover,
+.vc-context-menu button:focus-visible,
+.vc-context-submenu-trigger:hover,
+.vc-context-submenu-trigger:focus-visible {
+  background: #f7f3f9;
+  outline: 0;
+}
+
+.vc-context-menu button:focus-visible,
+.vc-context-submenu-trigger:focus-visible {
+  box-shadow: inset 0 0 0 2px #9a62b4;
+}
+
+.vc-context-action-icon {
+  display: grid;
+  flex: none;
+  min-width: 15px;
+  place-items: center;
+  color: #7d588f;
+}
+
+.vc-context-action-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.vc-context-menu button.is-destructive,
+.vc-context-menu button.is-destructive .vc-context-action-icon {
+  color: #c3313b;
+}
+
+.vc-context-menu button.is-destructive:hover,
+.vc-context-menu button.is-destructive:focus-visible {
+  background: #fff0f0;
+}
+
+.vc-context-menu button:disabled,
+.vc-context-submenu-trigger:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.vc-context-menu kbd {
+  margin-left: auto;
+  color: #8a8490;
+  font: inherit;
+  font-size: 9px;
+}
+
+.vc-context-separator {
+  height: 1px;
+  margin: 4px 5px;
+  background: #eeeaf1;
+}
+
+.vc-context-group-label {
+  overflow: hidden;
+  padding: 7px 9px 4px;
+  color: #88818e;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.vc-context-check {
+  display: grid;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  place-items: center;
+  border: 1px solid #bbb2c2;
+  border-radius: 4px;
+  color: #754894;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.vc-context-menu [role="menuitemradio"] .vc-context-check {
+  border-radius: 50%;
+}
+
+.vc-context-menu [role="menuitemradio"][aria-checked="true"] .vc-context-check {
+  border: 4px solid #754894;
+}
+
+.vc-context-menu [role="menuitemcheckbox"][aria-checked="true"] .vc-context-check {
+  border-color: #754894;
+  background: #f4eefa;
+}
+
+.vc-context-submenu-trigger > svg:last-child {
+  flex: none;
+  margin-left: auto;
+  color: #8a8490;
+  transition: transform .14s;
+}
+
+.vc-context-submenu-trigger[aria-expanded="true"] > svg:last-child {
+  transform: rotate(90deg);
+}
+
+.vc-context-submenu-panel {
+  position: fixed;
+  z-index: 10001;
+  min-width: min(210px, calc(100vw - 16px));
+  max-width: min(275px, calc(100vw - 16px));
+  max-height: min(560px, calc(100dvh - 24px));
+  border-radius: 12px;
+  box-shadow: 0 16px 42px rgba(33, 19, 43, 0.22);
+}
+
+.vc-context-submenu-panel[data-side="left"] {
+  transform-origin: right top;
+}
+
+.vc-context-submenu-panel[data-side="right"] {
+  transform-origin: left top;
+}
+
+/* ==========================================================================
+   Public Site Frosted Glass Theme
+   ========================================================================== */
+.vc-context-menu.vc-context-public-site,
+.vc-context-menu.vc-context-public-site.vc-context-submenu-panel {
+  border: 1px solid rgba(235, 238, 255, 0.18);
+  background: linear-gradient(155deg, rgba(24, 21, 38, 0.82), rgba(13, 14, 24, 0.88));
+  color: #f7f4fa;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(28px) saturate(165%);
+  -webkit-backdrop-filter: blur(28px) saturate(165%);
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.vc-context-menu.vc-context-public-site::-webkit-scrollbar-thumb,
+.vc-context-menu.vc-context-public-site.vc-context-submenu-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.vc-context-menu.vc-context-public-site::-webkit-scrollbar-thumb:hover,
+.vc-context-menu.vc-context-public-site.vc-context-submenu-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.vc-context-menu.vc-context-public-site button,
+.vc-context-menu.vc-context-public-site .vc-context-submenu-trigger {
+  color: #f1edf5;
+}
+
+.vc-context-menu.vc-context-public-site button:hover,
+.vc-context-menu.vc-context-public-site button:focus-visible,
+.vc-context-menu.vc-context-public-site .vc-context-submenu-trigger:hover,
+.vc-context-menu.vc-context-public-site .vc-context-submenu-trigger:focus-visible {
+  background: linear-gradient(90deg, rgba(229, 0, 126, 0.18), rgba(0, 158, 226, 0.08));
+  color: #ffffff;
+  outline: 0;
+}
+
+.vc-context-menu.vc-context-public-site button:focus-visible,
+.vc-context-menu.vc-context-public-site .vc-context-submenu-trigger:focus-visible {
+  box-shadow: inset 0 0 0 1.5px rgba(229, 0, 126, 0.55);
+}
+
+.vc-context-menu.vc-context-public-site .vc-context-action-icon {
+  color: #ee83d0;
+}
+
+.vc-context-menu.vc-context-public-site .vc-context-group-label {
+  color: #b8afc2;
+}
+
+.vc-context-menu.vc-context-public-site .vc-context-separator {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Marketing Context Menu Theme */
+.vc-context-menu.vc-marketing-context-menu,
+.vc-context-menu.vc-marketing-context-menu.vc-context-submenu-panel {
+  border-color: var(--glass-border, #e5d9ed);
+  background: var(--glass-bg-strong, rgba(255, 255, 255, 0.94));
+  box-shadow: var(--glass-shadow, 0 18px 52px rgba(48, 33, 63, 0.21)), 0 0 0 3px rgba(139, 82, 165, 0.05);
+  backdrop-filter: blur(var(--glass-blur, 18px)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 18px)) saturate(140%);
+}
+
+.vc-context-menu.vc-marketing-context-menu .vc-context-group-label {
+  color: #805294;
+}
+
+.vc-context-menu.vc-marketing-context-menu .vc-context-action-icon {
+  color: #8654a0;
+}
+
+.vc-context-menu.vc-marketing-context-menu button:hover,
+.vc-context-menu.vc-marketing-context-menu button:focus-visible,
+.vc-context-menu.vc-marketing-context-menu .vc-context-submenu-trigger:hover,
+.vc-context-menu.vc-marketing-context-menu .vc-context-submenu-trigger:focus-visible {
+  background: linear-gradient(90deg, rgba(229, 0, 126, 0.08), rgba(138, 69, 210, 0.06));
+}
+
+/* Light / Dark Mode Adaptations for Internal Workspace Context Menu */
+:root[data-vc-theme="dark"] .vc-context-menu,
+body[data-vc-theme="dark"] .vc-context-menu {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+:root[data-vc-theme="dark"] .vc-context-menu::-webkit-scrollbar-thumb,
+body[data-vc-theme="dark"] .vc-context-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+:root[data-vc-theme="dark"] .vc-context-menu button:hover,
+:root[data-vc-theme="dark"] .vc-context-menu button:focus-visible,
+:root[data-vc-theme="dark"] .vc-context-menu .vc-context-submenu-trigger:hover,
+:root[data-vc-theme="dark"] .vc-context-menu .vc-context-submenu-trigger:focus-visible,
+body[data-vc-theme="dark"] .vc-context-menu button:hover,
+body[data-vc-theme="dark"] .vc-context-menu button:focus-visible,
+body[data-vc-theme="dark"] .vc-context-menu .vc-context-submenu-trigger:hover,
+body[data-vc-theme="dark"] .vc-context-menu .vc-context-submenu-trigger:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-vc-theme="dark"] .vc-context-menu .vc-context-separator,
+body[data-vc-theme="dark"] .vc-context-menu .vc-context-separator {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-vc-theme="dark"] .vc-context-menu .vc-context-group-label,
+body[data-vc-theme="dark"] .vc-context-menu .vc-context-group-label {
+  color: #9f97aa;
+}
+
+.vc-public-context-status {
+  position: fixed;
+  z-index: 10001;
+  right: 18px;
+  bottom: 18px;
+  padding: 0;
+  border-radius: 9px;
+  background: #17131d;
+  color: #fff;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.vc-public-context-status:not(:empty) {
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes vc-context-enter {
+  from {
+    opacity: 0;
+    transform: translateY(3px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 700px) {
+  .vc-context-trigger {
+    opacity: 1;
+  }
+  .vc-context-menu {
+    min-width: min(200px, calc(100vw - 16px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-context-menu {
+    animation: none;
+  }
+  .vc-context-trigger,
+  .vc-context-submenu-trigger > svg:last-child {
+    transition: none;
+  }
+}
+
+@supports not (backdrop-filter: blur(10px)) {
+  .vc-context-menu {
+    background: #ffffff;
+  }
+  .vc-context-menu.vc-context-public-site,
+  .vc-context-menu.vc-context-public-site.vc-context-submenu-panel {
+    background: #15121c;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .vc-context-menu,
+  .vc-context-menu.vc-context-public-site,
+  .vc-context-menu.vc-context-public-site.vc-context-submenu-panel,
+  .vc-context-menu.vc-marketing-context-menu {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .vc-context-menu {
+    background: #ffffff !important;
+  }
+  .vc-context-menu.vc-context-public-site,
+  .vc-context-menu.vc-context-public-site.vc-context-submenu-panel {
+    background: #121019 !important;
+    border-color: #4c465a !important;
+  }
+}
