@@ -302,6 +302,17 @@
   background-color: var(--vc-input-bg, var(--vc-surface, #fff));
 }
 
+/* Keep the unprefixed declaration available in Chromium and other modern engines. */
+@supports (backdrop-filter: blur(1px)) {
+  .work-app .sidebar {
+    backdrop-filter: blur(var(--admin-glass-blur)) saturate(132%);
+  }
+
+  .work-app .topbar {
+    backdrop-filter: blur(var(--admin-glass-blur)) saturate(134%);
+  }
+}
+
 .work-app .unified-dashboard {
   --dashboard-accent: var(--admin-glass-accent-strong);
   --dashboard-accent-strong: var(--admin-glass-accent);

@@ -12,6 +12,7 @@ import { LeadsTable } from './CRMPage';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import { Skeleton } from '../../components/ui/Skeleton';
+import { UiLiquidGlassAccent } from '../../components/ui/DesignSystemPrimitives';
 import './unified-home.css';
 
 const metricCards = [
@@ -378,6 +379,7 @@ export function UnifiedHome() {
   return <AppFrame area="operations">
     <div className="unified-dashboard">
       <header className="unified-dashboard-hero">
+        <UiLiquidGlassAccent />
         <div className="unified-dashboard-hero-copy">
           <div className="unified-dashboard-eyebrow"><span className="unified-dashboard-mark"><ClipboardCheck size={17} aria-hidden="true"/></span><span>INICIO PERSONALIZADO</span></div>
           <h1>Hola, {greetingName}<span className="unified-greeting-dot">.</span></h1>

@@ -914,6 +914,13 @@
   }
 }
 
+@media (prefers-reduced-transparency: reduce) {
+  .pos-mobile-summary-backdrop {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pos-workspace-shell,
   .pos-workspace-shell * {
