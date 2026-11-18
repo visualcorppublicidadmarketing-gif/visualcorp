@@ -588,20 +588,21 @@
 
 /* A single, low-contrast brand wash keeps the greeting as the dashboard focus. */
 .work-app .unified-dashboard-hero {
-  border-color: var(--admin-glass-border, var(--vc-glass-border));
-  background-color: color-mix(in srgb, var(--vc-surface, #fff) 76%, transparent);
+  border-color: color-mix(in srgb, var(--admin-glass-border, var(--vc-glass-border)) 82%, var(--admin-glass-accent-strong, #a51091));
+  background-color: color-mix(in srgb, var(--vc-surface, #fff) 72%, transparent);
   background-image:
-    radial-gradient(ellipse at 92% 0%, rgb(165 16 145 / 11%), transparent 30rem),
+    radial-gradient(ellipse at 86% 0%, color-mix(in srgb, var(--vc-brand-magenta, #a51091) 17%, transparent), transparent 30rem),
+    radial-gradient(ellipse at 8% 112%, color-mix(in srgb, var(--vc-brand-blue, #069cdb) 13%, transparent), transparent 26rem),
     linear-gradient(
       118deg,
-      color-mix(in srgb, var(--vc-surface, #fff) 88%, transparent) 8%,
-      color-mix(in srgb, var(--vc-brand-blue, #069cdb) 5%, color-mix(in srgb, var(--vc-surface, #fff) 84%, transparent)) 43%,
-      color-mix(in srgb, var(--vc-brand, #a51091) 8%, color-mix(in srgb, var(--vc-surface, #fff) 80%, transparent)) 78%,
-      color-mix(in srgb, #ff8a26 6%, color-mix(in srgb, var(--vc-surface, #fff) 78%, transparent)) 100%
+      color-mix(in srgb, var(--vc-surface, #fff) 87%, transparent) 8%,
+      color-mix(in srgb, var(--vc-brand-blue, #069cdb) 6%, color-mix(in srgb, var(--vc-surface, #fff) 80%, transparent)) 43%,
+      color-mix(in srgb, var(--vc-brand, #a51091) 9%, color-mix(in srgb, var(--vc-surface, #fff) 74%, transparent)) 78%,
+      color-mix(in srgb, #f59d49 6%, color-mix(in srgb, var(--vc-surface, #fff) 72%, transparent)) 100%
     );
-  box-shadow: var(--admin-glass-shadow);
-  backdrop-filter: blur(20px) saturate(138%);
-  -webkit-backdrop-filter: blur(20px) saturate(138%);
+  box-shadow: 0 24px 60px rgb(42 24 58 / 11%), inset 0 1px 0 var(--admin-glass-surface-highlight, rgb(255 255 255 / 72%));
+  backdrop-filter: blur(22px) saturate(132%);
+  -webkit-backdrop-filter: blur(22px) saturate(132%);
 }
 
 .work-app .unified-dashboard-hero::before,
@@ -636,16 +637,27 @@
 }
 
 .work-app.theme-dark .unified-dashboard-hero {
-  background-color: color-mix(in srgb, var(--vc-surface, #171a25) 82%, transparent);
+  border-color: color-mix(in srgb, var(--vc-glass-border, rgb(255 255 255 / 12%)) 80%, var(--vc-brand, #d093f0));
+  background-color: color-mix(in srgb, var(--vc-surface, #171a25) 74%, transparent);
   background-image:
-    radial-gradient(ellipse at 92% 0%, rgb(208 147 240 / 14%), transparent 30rem),
+    radial-gradient(ellipse at 86% 0%, color-mix(in srgb, var(--vc-brand, #d093f0) 21%, transparent), transparent 30rem),
+    radial-gradient(ellipse at 8% 112%, color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 16%, transparent), transparent 26rem),
+    radial-gradient(ellipse at 100% 100%, rgb(245 157 73 / 7%), transparent 25rem),
     linear-gradient(
       118deg,
       color-mix(in srgb, var(--vc-surface, #171a25) 86%, transparent) 8%,
-      color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 7%, color-mix(in srgb, var(--vc-surface, #171a25) 82%, transparent)) 43%,
-      color-mix(in srgb, var(--vc-brand, #d093f0) 10%, color-mix(in srgb, var(--vc-surface, #171a25) 78%, transparent)) 78%,
-      color-mix(in srgb, #ff9c43 7%, color-mix(in srgb, var(--vc-surface, #171a25) 76%, transparent)) 100%
+      color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 8%, color-mix(in srgb, var(--vc-surface, #171a25) 80%, transparent)) 43%,
+      color-mix(in srgb, var(--vc-brand, #d093f0) 12%, color-mix(in srgb, var(--vc-surface, #171a25) 76%, transparent)) 78%,
+      color-mix(in srgb, #f59d49 8%, color-mix(in srgb, var(--vc-surface, #171a25) 74%, transparent)) 100%
     );
+  box-shadow: 0 26px 64px rgb(0 0 0 / 30%), inset 0 1px 0 var(--admin-glass-surface-highlight, rgb(255 255 255 / 7%));
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .work-app .unified-dashboard-hero,
+  .work-app.theme-dark .unified-dashboard-hero {
+    backdrop-filter: blur(22px) saturate(132%);
+  }
 }
 
 .work-app.theme-dark .unified-clock-card,
@@ -721,6 +733,17 @@
   .work-app.theme-dark .unified-clock-card,
   .work-app.theme-dark .unified-weather-card {
     background: var(--vc-surface-raised, #1e2230);
+  }
+
+  @supports (backdrop-filter: blur(1px)) {
+    .work-app .unified-dashboard-hero,
+    .work-app.theme-dark .unified-dashboard-hero,
+    .work-app .unified-clock-card,
+    .work-app.theme-dark .unified-clock-card,
+    .work-app .unified-weather-card,
+    .work-app.theme-dark .unified-weather-card {
+      backdrop-filter: none;
+    }
   }
 
   .work-app .unified-dashboard-badges > span {
