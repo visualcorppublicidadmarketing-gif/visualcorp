@@ -999,6 +999,19 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .work-app .sidebar,
+  .work-app .main-shell,
+  .work-app .sidebar *,
+  .work-app .sidebar *::before,
+  .work-app .sidebar *::after,
+  .work-app .sidebar-tooltip {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+
 
 /* Refuerzo de visibilidad y contraste para etiquetas de flyout popover */
 .sidebar-nav-item.is-flyout-item,

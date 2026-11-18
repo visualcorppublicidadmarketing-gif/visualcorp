@@ -1,0 +1,53 @@
+/* Utility-only Tailwind entry for public UI components; deliberately omits preflight. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "@heroui/styles/components/card.css" layer(components);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@source "../components";
+@source ".";
+
+@theme inline {
+  --color-background: var(--vc-ui-background);
+  --color-foreground: var(--vc-ui-foreground);
+  --color-card: var(--vc-ui-card);
+  --color-card-foreground: var(--vc-ui-card-foreground);
+  --color-border: var(--vc-ui-border);
+  --color-input: var(--vc-ui-border);
+  --color-ring: var(--vc-ui-ring);
+  --color-surface: var(--vc-ui-card);
+  --color-surface-foreground: var(--vc-ui-card-foreground);
+  --color-surface-secondary: var(--vc-ui-surface-secondary);
+  --color-surface-tertiary: var(--vc-ui-surface-tertiary);
+  --color-muted: var(--vc-ui-muted);
+  --radius-3xl: var(--vc-ui-radius-3xl);
+  --shadow-surface: var(--vc-ui-shadow);
+}
+
+.public-site {
+  --vc-ui-background: #090b13;
+  --vc-ui-foreground: #f3f4fb;
+  --vc-ui-card: rgba(20, 23, 37, .72);
+  --vc-ui-card-foreground: #f3f4fb;
+  --vc-ui-surface-secondary: rgba(20, 23, 37, .76);
+  --vc-ui-surface-tertiary: rgba(28, 31, 48, .82);
+  --vc-ui-muted: #b4b1bf;
+  --vc-ui-radius-3xl: 24px;
+  --vc-ui-shadow: 0 18px 48px rgba(0, 0, 0, .18);
+  --vc-ui-border: rgba(231, 235, 255, .16);
+  --vc-ui-ring: #e5007e;
+}
+
+html[data-public-theme="light"] .public-site {
+  --vc-ui-background: #faf8fc;
+  --vc-ui-foreground: #211b2a;
+  --vc-ui-card: rgba(255, 255, 255, .86);
+  --vc-ui-card-foreground: #211b2a;
+  --vc-ui-surface-secondary: #fff;
+  --vc-ui-surface-tertiary: #f6f0f8;
+  --vc-ui-muted: #656170;
+  --vc-ui-radius-3xl: 24px;
+  --vc-ui-shadow: 0 12px 32px rgba(48, 29, 59, .08);
+  --vc-ui-border: #e7e1eb;
+  --vc-ui-ring: #a51c82;
+}

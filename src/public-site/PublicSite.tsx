@@ -6,6 +6,7 @@ import { useWorkspace } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
 import { Avatar, getGoogleAvatarUrl } from '../components/ui/Avatar';
+import { Card as ShadcnCard } from '../components/ui/card';
 import { getGoogleMapsEmbedUrl, getGoogleMapsOpenUrl, isGoogleMapsUrl } from '../lib/maps';
 import { multiProductQuoteService, publicAddress, publicServiceFamilies, serviceDeliverableTags, serviceDetailContent, serviceProjectPrompts, type PublicServiceId } from './content.ts';
 import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategoryStrips, ServiceVisualShowcase, StrategicBenefitsGrid } from './SolutionsComponents';
@@ -14,7 +15,7 @@ import { AboutHero, ContactHero, ProcessHero } from './CompanyHeroes';
 import { companyProcessSteps } from './company-hero-content';
 import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
 import { STOREFRONT_SKU_PARAM } from './storefrontCatalog';
-import { AnimatedList, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight, PulsingBeacon, AnimatedShinyText } from '../components/ui/MagicComponents';
+import { AnimatedList, BorderBeam, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight, PulsingBeacon, AnimatedShinyText } from '../components/ui/MagicComponents';
 import { FloatInput, FloatTextarea, FeedbackAlert } from '../components/ui/FormControls';
 import { SelectDropdown } from '../components/ui/SelectDropdown';
 import { AnimatedThemeToggler } from '../components/ui/AnimatedThemeToggler';
@@ -31,6 +32,8 @@ import './public-theme.css';
 import './service-detail.css';
 import './mobile-bottom-navigation.css';
 import './navigation-refinement.css';
+import './ui-libraries.css';
+import './glass-refresh.css';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 const familyInfo = (id) => publicServiceFamilies.find((family) => family.id === id);
@@ -267,7 +270,10 @@ export function PublicSiteLayout() {
     document.documentElement.dataset.publicTheme = nextTheme;
   };
   useEffect(() => { document.documentElement.dataset.publicTheme = theme; }, [theme]);
-  return <div className="public-site"><ScrollProgress/><PublicSiteContextMenu/><SiteHeader theme={theme} onThemeChange={changeTheme}/><main className="site-main"><motion.div key={location.pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.28 }}><Outlet/></motion.div></main><SiteFooter theme={theme}/></div>;
+  useEffect(() => {
+    if (!location.hash) window.scrollTo(0, 0);
+  }, [location.pathname]);
+  return <div className="public-site"><a className="site-skip-link" href="#main-content">Saltar al contenido principal</a><ScrollProgress/><PublicSiteContextMenu/><SiteHeader theme={theme} onThemeChange={changeTheme}/><main id="main-content" className="site-main" tabIndex={-1}><motion.div key={location.pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.28 }}><Outlet/></motion.div></main><SiteFooter theme={theme}/></div>;
 }
 
 function Eyebrow({ children, light = false }) { return <span className={`site-eyebrow${light ? ' light' : ''}`}><i/>{children}</span>; }
@@ -280,7 +286,8 @@ function ServiceCard({ service, index = 0 }) {
   const info = familyInfo(service.id);
   const Icon = serviceIcons[service.id] || Sparkles;
   const examples = serviceDeliverableTags[service.id as PublicServiceId] || [];
-  return <Link className="site-service-card vc-magic-card" to={`/servicios/${service.id}`} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
+  return <Link className="site-service-card-link" to={`/servicios/${service.id}`}>
+    <ShadcnCard className="site-service-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
     <SpotlightLayer/>
     <div className="site-service-card-topline"><span className="site-service-index">{info?.mark || String(index + 1).padStart(2, '0')}</span><span className="site-service-icon"><Icon size={20} aria-hidden="true"/></span></div>
     <div className="site-service-card-3d-wrap"><Title3D serviceId={service.id as PublicServiceId} variant="badge" maxWidth={180} showAura={false} interactive={false} /></div>
@@ -288,6 +295,7 @@ function ServiceCard({ service, index = 0 }) {
     <p>{service.description}</p>
     {examples.length > 0 && <><span className="site-service-tags-label">Ejemplos de piezas</span><ul className="site-service-tags" aria-label={`Ejemplos de piezas para ${service.name}`}>{examples.map((tag) => <li key={tag}>{tag}</li>)}</ul></>}
     <span className="site-card-link">Explorar servicio <ArrowUpRight size={15}/></span>
+    </ShadcnCard>
   </Link>;
 }
 
@@ -483,7 +491,14 @@ export function ServicesIndexPage() {
     <div className="site-services-index-heading"><div><Eyebrow>FAMILIAS DE TRABAJO</Eyebrow><h2 id="site-services-index-title">Compara las familias.</h2></div><p>Revisa ejemplos de piezas y entra a la ficha que mejor se relaciona con tu idea.</p></div>
     <AnimatedList className="site-services-grid" stagger={0.075}>{services.map((service, index) => <ServiceCard key={service.id} service={service} index={index}/>)}</AnimatedList>
     <p className="site-service-note">Cada solicitud se revisa según su alcance. Materiales, disponibilidad, valores y tiempos se confirman para cada proyecto.</p>
-    <div className="site-services-next-step"><div><Eyebrow>EL SIGUIENTE PASO</Eyebrow><p>Comparte los detalles de tu proyecto para iniciar la solicitud.</p></div><Link className="site-primary-button" to="/cotizador">Cuéntanos tu proyecto <ArrowUpRight size={16} aria-hidden="true"/></Link></div>
+    <div className="site-services-next-step heroui-services-card card card--tertiary" data-slot="card">
+      <div className="card__header" data-slot="card-header">
+        <h3 className="card__title" data-slot="card-title">EL SIGUIENTE PASO</h3>
+        <p className="card__description" data-slot="card-description">Comparte los detalles de tu proyecto para iniciar la solicitud.</p>
+      </div>
+      <div className="card__footer" data-slot="card-footer"><Link className="site-primary-button" to="/cotizador">Cuéntanos tu proyecto <ArrowUpRight size={16} aria-hidden="true"/></Link></div>
+      <BorderBeam label="Luz de borde para el siguiente paso" size={72} duration={8} colorFrom="#009ee2" colorTo="#e5007e" className="services-next-step-beam" />
+    </div>
   </section><EnvironmentBrandingMatrix/><StrategicBenefitsGrid/><PanoramicCategoryStrips/><Callout data={data}/></>;
 }
 

@@ -89,7 +89,7 @@ function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; 
     <motion.div
       className={className}
       initial={reduceMotion ? false : { opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.12 }}
       transition={{ duration: reduceMotion ? 0 : 0.65, delay: reduceMotion ? 0 : delay, ease: [0.22, 1, 0.36, 1] }}
     >
@@ -459,6 +459,7 @@ export function PublicHomePage() {
                 Explorar servicios <ArrowDown size={18} />
               </a>
             </div>
+            <VisualitoStage />
             <div className="home-goal-strip" role="group" aria-label="Accesos rápidos según tu objetivo">
               <div className="home-goal-strip-heading">
                 <span className="home-goal-strip-label">
@@ -501,7 +502,6 @@ export function PublicHomePage() {
               </span>
             </div>
           </div>
-          <VisualitoStage />
         </div>
         <div className="home-hero-footer">
           <span>
@@ -571,7 +571,6 @@ export function PublicHomePage() {
                     onPointerLeave={clearSpotlight}
                   >
                     <SpotlightLayer />
-                    {isFeatured && <BorderBeam />}
                     <div className="home-service-top">
                       <span className="home-service-number">{String(index + 1).padStart(2, '0')}</span>
                       <span className="home-service-arrow" aria-hidden="true">

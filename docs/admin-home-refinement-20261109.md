@@ -12,3 +12,13 @@ Se reutilizan la navegación, los permisos, React Router y los iconos existentes
 Verificación local con Playwright en un fixture aislado: filtros, acentos, teclado, estados vacíos, persistencia y aislamiento por cuenta; tema claro/oscuro y anchos 320, 390, 600, 768, 950, 1280, 1366 y 1920 px. TypeScript y diff check pasan. Una compilación Vite previa a los ajustes finales terminó; los dos intentos finales no completaron por falta de memoria nativa durante la transformación. El fixture no sustituye una verificación con la sesión real del panel.
 
 Este cambio no altera datos persistidos ni requiere migración. Los favoritos quedan locales al navegador.
+
+## Refinamiento Glass para el espacio autenticado · 2026-11-18
+
+Se extendió el lenguaje de vidrio a la navegación, al fondo del espacio de trabajo y a las superficies compartidas de paneles y tarjetas. La portada administrativa conserva una sola jerarquía principal; los brillos y degradados quedan estáticos y tenues. Los controles y las celdas de tablas mantienen fondos sólidos para proteger la lectura. Los temas claro y oscuro usan los tokens `--vc-*` existentes, con alternativas sólidas para transparencia reducida y sin transiciones para movimiento reducido.
+
+El alcance de código se limita a `src/app/admin-glass-theme.css`, `src/app/sidebar.css` y `src/pages/admin/unified-home.css`. No cambian rutas, permisos, formularios, datos, interacciones del inicio ni dependencias. Se corrigió además el desplazamiento del bloque de hora y clima en la cabecera móvil.
+
+La revisión del panel protegido usó un fixture visual con sus estilos y clases en 32 combinaciones: 320, 390, 600, 768, 950, 1280, 1366 y 1920 px, con los temas claro/oscuro y el sidebar expandido/compacto. No hubo scroll horizontal; el contexto queda dentro de la cabecera móvil y el foco de teclado se ve. Movimiento reducido elimina las transiciones y transparencia reducida deja superficies sólidas. La ruta local `/panel` redirigió al acceso porque no había sesión autenticada disponible, por lo que el fixture no sustituye una revisión con sesión real. `npm run build` terminó correctamente; Vite conserva su aviso general de algunos chunks mayores de 500 kB.
+
+Magic UI y HeroUI se consultaron por MCP. El MCP de shadcn respondió, pero no tenía registros configurados; se comprobó su documentación oficial como alternativa. No se eligió ni instaló un componente externo: bastaban los componentes y tokens del proyecto.

@@ -518,15 +518,21 @@
 
 @media (max-width: 760px) {
   .unified-dashboard-hero { align-items: flex-start; }
-  .unified-dashboard-hero-side { width: 100%; flex-basis: 100%; }
+  .unified-dashboard-hero-side {
+    align-self: stretch;
+    flex: 0 1 auto;
+    min-width: 0;
+    width: 100%;
+  }
   .unified-dashboard-hero-side .unified-dashboard-hero-actions { align-items: flex-start; }
 }
 
 @media (max-width: 430px) {
-  .unified-dashboard-context { gap: 8px; }
+  .unified-dashboard-context { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .unified-clock-card,
   .unified-weather-card { min-height: 112px; padding: 13px; }
   .unified-clock-card > strong { font-size: clamp(22px, 6vw, 27px); }
+  .unified-context-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
 /* Keep the context cards legible over the light hero as well as the dark one. */
@@ -579,4 +585,190 @@
 
 .work-app.theme-dark .unified-clock-card::after,
 .work-app.theme-dark .unified-weather-card::after { border-color: rgb(255 255 255 / 10%); }
+
+/* A single, low-contrast brand wash keeps the greeting as the dashboard focus. */
+.work-app .unified-dashboard-hero {
+  border-color: var(--admin-glass-border, var(--vc-glass-border));
+  background-color: color-mix(in srgb, var(--vc-surface, #fff) 76%, transparent);
+  background-image:
+    radial-gradient(ellipse at 92% 0%, rgb(165 16 145 / 11%), transparent 30rem),
+    linear-gradient(
+      118deg,
+      color-mix(in srgb, var(--vc-surface, #fff) 88%, transparent) 8%,
+      color-mix(in srgb, var(--vc-brand-blue, #069cdb) 5%, color-mix(in srgb, var(--vc-surface, #fff) 84%, transparent)) 43%,
+      color-mix(in srgb, var(--vc-brand, #a51091) 8%, color-mix(in srgb, var(--vc-surface, #fff) 80%, transparent)) 78%,
+      color-mix(in srgb, #ff8a26 6%, color-mix(in srgb, var(--vc-surface, #fff) 78%, transparent)) 100%
+    );
+  box-shadow: var(--admin-glass-shadow);
+  backdrop-filter: blur(20px) saturate(138%);
+  -webkit-backdrop-filter: blur(20px) saturate(138%);
+}
+
+.work-app .unified-dashboard-hero::before,
+.work-app .unified-dashboard-hero::after {
+  display: none;
+}
+
+.work-app .unified-clock-card,
+.work-app .unified-weather-card {
+  border-color: var(--admin-glass-border, var(--vc-glass-border));
+  background: var(--vc-surface, #fff);
+  background: color-mix(in srgb, var(--vc-surface, #fff) 90%, transparent);
+  color: var(--vc-ink, #191522);
+  box-shadow: var(--vc-elevation-1, 0 2px 8px rgb(34 23 47 / 5%));
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+}
+
+.work-app .unified-context-label,
+.work-app .unified-clock-card > small,
+.work-app .unified-weather-card > small {
+  color: var(--vc-muted, #5e566b);
+}
+
+.work-app .unified-weather-card > svg {
+  color: var(--vc-state-warning, #9a5608);
+}
+
+.work-app .unified-clock-card::after,
+.work-app .unified-weather-card::after {
+  opacity: .14;
+}
+
+.work-app.theme-dark .unified-dashboard-hero {
+  background-color: color-mix(in srgb, var(--vc-surface, #171a25) 82%, transparent);
+  background-image:
+    radial-gradient(ellipse at 92% 0%, rgb(208 147 240 / 14%), transparent 30rem),
+    linear-gradient(
+      118deg,
+      color-mix(in srgb, var(--vc-surface, #171a25) 86%, transparent) 8%,
+      color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 7%, color-mix(in srgb, var(--vc-surface, #171a25) 82%, transparent)) 43%,
+      color-mix(in srgb, var(--vc-brand, #d093f0) 10%, color-mix(in srgb, var(--vc-surface, #171a25) 78%, transparent)) 78%,
+      color-mix(in srgb, #ff9c43 7%, color-mix(in srgb, var(--vc-surface, #171a25) 76%, transparent)) 100%
+    );
+}
+
+.work-app.theme-dark .unified-clock-card,
+.work-app.theme-dark .unified-weather-card {
+  border-color: var(--vc-glass-border, rgb(255 255 255 / 12%));
+  background: var(--vc-surface-raised, #1e2230);
+  background: color-mix(in srgb, var(--vc-surface-raised, #1e2230) 88%, transparent);
+  color: var(--vc-ink, #f1f3f8);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+}
+
+.work-app.theme-dark .unified-context-label,
+.work-app.theme-dark .unified-clock-card > small,
+.work-app.theme-dark .unified-weather-card > small {
+  color: var(--vc-muted, #b2b8c8);
+}
+
+.work-app.theme-dark .unified-weather-card > svg {
+  color: var(--vc-state-warning, #ffc66d);
+}
+
+.work-app .unified-dashboard :is(
+  .unified-dashboard-action,
+  .unified-refresh,
+  .unified-metric-link,
+  .unified-priority-item,
+  .operation-card,
+  .unified-recent-panel a
+):focus-visible {
+  outline: 3px solid var(--admin-glass-focus, var(--vc-focus, #a51091));
+  outline-offset: 3px;
+}
+
+.work-app .unified-dashboard-badges > span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 380px) {
+  .work-app .unified-dashboard-context {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .work-app .unified-dashboard-hero {
+    background-color: var(--vc-surface, #fff);
+    background-image: linear-gradient(
+      118deg,
+      var(--vc-surface, #fff),
+      color-mix(in srgb, var(--vc-brand, #a51091) 7%, var(--vc-surface, #fff))
+    );
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .work-app .unified-clock-card,
+  .work-app .unified-weather-card {
+    background: var(--vc-surface, #fff);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .work-app.theme-dark .unified-dashboard-hero {
+    background-color: var(--vc-surface, #171a25);
+    background-image: linear-gradient(
+      118deg,
+      var(--vc-surface, #171a25),
+      color-mix(in srgb, var(--vc-brand, #d093f0) 9%, var(--vc-surface, #171a25))
+    );
+  }
+
+  .work-app.theme-dark .unified-clock-card,
+  .work-app.theme-dark .unified-weather-card {
+    background: var(--vc-surface-raised, #1e2230);
+  }
+
+  .work-app .unified-dashboard-badges > span {
+    border-color: var(--vc-line, #e5e0ea);
+    background: var(--vc-surface, #fff);
+    color: var(--vc-ink, #191522);
+  }
+
+  .work-app.theme-dark .unified-dashboard-badges > span {
+    border-color: var(--vc-line, #303447);
+    background: var(--vc-surface-raised, #1e2230);
+    color: var(--vc-ink, #f1f3f8);
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .work-app .unified-dashboard-hero {
+    background-color: var(--vc-surface, #fff);
+  }
+
+  .work-app .unified-clock-card,
+  .work-app .unified-weather-card {
+    background: var(--vc-surface, #fff);
+  }
+
+  .work-app.theme-dark .unified-dashboard-hero {
+    background-color: var(--vc-surface, #171a25);
+  }
+
+  .work-app.theme-dark .unified-clock-card,
+  .work-app.theme-dark .unified-weather-card {
+    background: var(--vc-surface-raised, #1e2230);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .work-app .unified-dashboard :is(
+    .unified-dashboard-action,
+    .unified-dashboard-action:hover,
+    .unified-refresh,
+    .unified-metric-link,
+    .unified-priority-item,
+    .operation-card,
+    .operation-card:hover,
+    .unified-recent-panel a
+  ) {
+    transition: none;
+    transform: none;
+  }
+}
 

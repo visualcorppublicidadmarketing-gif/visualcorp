@@ -17,6 +17,11 @@ function githubPagesFallback() {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), githubPagesFallback()],
+  resolve: {
+    alias: {
+      '@': path.resolve(process.cwd(), 'src'),
+    },
+  },
   build: {
     rolldownOptions: {
       output: {
