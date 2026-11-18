@@ -85,105 +85,537 @@
 .vc-marketing-day-agenda>button{justify-self:start}
 @media(max-width:600px){.vc-marketing-calendar-task-list{padding:10px}.vc-marketing-calendar-task-list>header>.button{min-height:38px}.vc-marketing-calendar-event.is-task{min-height:42px}}
 
+.vc-marketing-calendar{grid-template-columns:minmax(0,1fr);box-sizing:border-box;min-width:0;max-width:100%}
+.vc-marketing-calendar-head,.vc-marketing-calendar-head>div{min-width:0;max-width:100%}
 .vc-marketing-calendar.is-month .vc-marketing-calendar-day{user-select:none}
 .vc-marketing-calendar.is-month .vc-marketing-calendar-day.is-selected-range{position:relative;z-index:1;outline:2px solid #8a4caf;outline-offset:-3px;background:#f4eafa;box-shadow:inset 0 0 0 1px #fff}
-.vc-marketing-selection-hint{margin:0 0 8px;color:#766b7d;font-size:11px}
-.vc-marketing-time-scroll{max-height:min(72vh,900px);overflow:auto;border:1px solid #e5dfea;border-radius:13px;background:#fff;overscroll-behavior:contain;scrollbar-width:thin}
+.vc-marketing-time-grid{box-sizing:border-box;width:100%;min-width:0;max-width:100%;overflow:hidden}
+.vc-marketing-time-toolbar-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-bottom:10px;min-width:0;max-width:100%}
+.vc-marketing-selection-hint{margin:0;color:var(--mk-glass-muted,#766b7d);font-size:11px;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.vc-marketing-time-scroll{box-sizing:border-box;min-width:0;max-width:100%;max-height:min(72vh,900px);overflow:auto;border:1px solid var(--mk-glass-border,#e5dfea);border-radius:16px;background:var(--mk-glass-column,rgb(250 247 254 / 62%));box-shadow:var(--mk-glass-shadow,0 12px 32px rgb(43 24 66 / 8%));overscroll-behavior:contain;scrollbar-width:thin}
 .vc-marketing-time-head,.vc-marketing-all-day-row,.vc-marketing-time-body{display:grid;grid-template-columns:56px repeat(var(--vc-grid-day-count, 7),minmax(0,1fr));min-width:0;width:100%}
 .vc-marketing-time-grid.is-day .vc-marketing-time-head,.vc-marketing-time-grid.is-day .vc-marketing-all-day-row,.vc-marketing-time-grid.is-day .vc-marketing-time-body{grid-template-columns:64px minmax(320px,1fr);min-width:100%}
-.vc-marketing-time-head{position:sticky;top:0;z-index:5;border-bottom:1px solid #e7e1ec;background:#fcfbfd}
-.vc-marketing-time-gutter{position:sticky;left:0;z-index:4;display:flex;align-items:center;justify-content:center;padding:5px 3px;border-right:1px solid #e9e4ed;background:#faf8fc;color:#736a78;font-size:9px;font-weight:750;text-align:center}
+.vc-marketing-time-head{position:sticky;top:0;z-index:5;border-bottom:1px solid var(--mk-glass-line,#e7e1ec);background:var(--mk-glass-header-sticky,rgb(252 250 255 / 86%));backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%)}
+.vc-marketing-time-gutter{position:sticky;left:0;z-index:4;display:flex;align-items:center;justify-content:center;padding:5px 3px;border-right:1px solid var(--mk-glass-line,#e9e4ed);background:var(--mk-glass-header-sticky,rgb(250 248 252 / 86%));color:var(--mk-glass-muted,#736a78);font-size:9px;font-weight:750;text-align:center}
 .vc-marketing-time-head>.vc-marketing-time-gutter{z-index:6;min-height:43px}
-.vc-marketing-time-day-heading{display:flex;min-width:0;min-height:43px;align-items:center;justify-content:space-between;gap:7px;padding:7px 9px;border-right:1px solid #e9e4ed;color:#433a49;font-size:11px;text-transform:capitalize}
-.vc-marketing-time-day-heading span{color:#837a88;font-size:9px;font-weight:600}
-.vc-marketing-time-day-heading.is-today{background:#f4ebf8;color:#704089}
-.vc-marketing-all-day-row{position:sticky;top:43px;z-index:4;border-bottom:1px solid #e9e4ed;background:#fff}
+.vc-marketing-time-day-heading{display:flex;min-width:0;min-height:43px;align-items:center;justify-content:space-between;gap:7px;padding:7px 9px;border-right:1px solid var(--mk-glass-line,#e9e4ed);color:var(--mk-glass-ink,#433a49);font-size:11px;text-transform:capitalize}
+.vc-marketing-time-day-heading span{color:var(--mk-glass-muted,#837a88);font-size:9px;font-weight:600}
+.vc-marketing-time-day-heading.is-today{background:rgb(165 16 145 / 10%);color:#704089}
+.vc-marketing-all-day-row{position:static;border-bottom:1px solid var(--mk-glass-line,#e9e4ed);background:var(--mk-glass-header-sticky,rgb(255 255 255 / 84%))}
 .vc-marketing-all-day-row>.vc-marketing-time-gutter{z-index:5;min-height:42px}
-.vc-marketing-all-day-cell{display:grid;align-content:start;gap:4px;min-width:0;min-height:42px;padding:4px;border-right:1px solid #eeeaf1}
-.vc-marketing-all-day-create{justify-self:start;padding:2px 5px;border:1px dashed #d6c8df;border-radius:5px;background:#fff;color:#76528b;font-size:8px;cursor:pointer}
+.vc-marketing-all-day-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border:1px solid var(--mk-glass-border,#dfd5e7);border-radius:999px;background:var(--mk-glass-pill,rgb(255 255 255 / 72%));color:var(--mk-glass-ink,#5b4372);font-size:9px;font-weight:800;line-height:1}
+.vc-marketing-all-day-cell{display:grid;align-content:start;gap:4px;min-width:0;min-height:42px;padding:4px;border-right:1px solid var(--mk-glass-line,#eeeaf1)}
+.vc-marketing-all-day-create{justify-self:start;padding:2px 6px;border:1px dashed var(--mk-glass-border,#d6c8df);border-radius:6px;background:var(--mk-glass-pill,#fff);color:#76528b;font-size:8px;font-weight:700;cursor:pointer}
 .vc-marketing-all-day-create:hover{border-color:#8a4caf;background:#f8f1fb}
-.vc-marketing-all-day-empty{align-self:center;color:#c0bac3;font-size:10px;text-align:center}
+.vc-marketing-all-day-empty{align-self:center;color:var(--mk-glass-muted,#c0bac3);font-size:10px;text-align:center}
 .vc-marketing-time-body{--calendar-slots:24;position:relative;align-items:stretch}
 .vc-marketing-time-labels,.vc-marketing-time-day-column{display:grid;grid-template-rows:repeat(var(--calendar-slots),42px);min-width:0}
-.vc-marketing-time-labels{grid-column:1;grid-row:1;z-index:2;align-content:stretch}
-.vc-marketing-time-labels span{position:relative;display:flex;align-items:flex-start;justify-content:center;padding-top:2px;border-bottom:1px solid #eeeaf1;background:#faf8fc;color:#aaa2ae;font-size:8px;line-height:1}
-.vc-marketing-time-labels span.is-hour{color:#70677a;font-weight:750}
-.vc-marketing-time-day-column{position:relative;grid-row:1;grid-template-columns:minmax(0,1fr);border-right:1px solid #e9e4ed;background:repeating-linear-gradient(to bottom,#fff 0,#fff 41px,#eeeaf1 41px,#eeeaf1 42px)}
-.vc-marketing-time-day-column.is-today{background-color:#fffdfd}
+.vc-marketing-time-labels{grid-column:1;grid-row:1;z-index:2;align-items:stretch;justify-items:stretch;align-content:stretch;padding:0}
+.vc-marketing-time-labels span{position:relative;display:flex;align-items:flex-start;justify-content:center;padding-top:2px;border-bottom:1px solid var(--mk-glass-line,#eeeaf1);background:var(--mk-glass-header-sticky,rgb(250 248 252 / 84%));color:var(--mk-glass-muted,#aaa2ae);font-size:8px;line-height:1}
+.vc-marketing-time-labels span.is-hour{color:var(--mk-glass-ink,#5a5166);font-weight:750}
+.vc-marketing-time-day-column{position:relative;grid-row:1;grid-template-columns:minmax(0,1fr);border-right:1px solid var(--mk-glass-line,#e9e4ed);background:repeating-linear-gradient(to bottom,rgb(255 255 255 / 34%) 0,rgb(255 255 255 / 34%) 41px,var(--mk-glass-line,rgb(112 85 142 / 11%)) 41px,var(--mk-glass-line,rgb(112 85 142 / 11%)) 42px)}
+.vc-marketing-time-day-column.is-today{background-color:rgb(165 16 145 / 4%)}
 .vc-marketing-time-slot-layer{grid-column:1;grid-row:1/-1;z-index:0;display:grid;grid-template-rows:repeat(var(--calendar-slots),minmax(20px,1fr))}
-.vc-marketing-time-slot{width:100%;min-width:0;min-height:0;padding:0;border:0;border-bottom:1px solid #eeeaf1;background:transparent;cursor:crosshair;touch-action:none;user-select:none}
-.vc-marketing-time-slot.is-hour{border-top:1px solid #ddd5e3}
-.vc-marketing-time-slot:hover{background:#faf5fc}
+.vc-marketing-time-slot{width:100%;min-width:0;min-height:0;padding:0;border:0;border-bottom:1px solid var(--mk-glass-line,rgb(112 85 142 / 9%));background:transparent;cursor:crosshair;touch-action:none;user-select:none}
+.vc-marketing-time-slot.is-hour{border-top:1px solid var(--mk-glass-border,rgb(112 85 142 / 16%))}
+.vc-marketing-time-slot:hover{background:rgb(165 16 145 / 6%)}
 .vc-marketing-time-slot:focus-visible{position:relative;z-index:3;outline:2px solid #8a4caf;outline-offset:-2px}
-.vc-marketing-time-selection{grid-column:1;z-index:1;align-self:stretch;border:1px solid #8a4caf;border-radius:5px;background:#8a4caf30;pointer-events:none}
+.vc-marketing-time-selection{grid-column:1;z-index:1;align-self:stretch;border:1px solid #8a4caf;border-radius:6px;background:#8a4caf30;pointer-events:none}
 .vc-marketing-time-event-context{display:contents}
-.vc-marketing-time-event{box-sizing:border-box;grid-column:1;position:relative;z-index:2;display:grid;align-content:start;justify-items:start;gap:2px;min-width:0;min-height:22px;overflow:hidden;margin:1px 3px;padding:4px 5px;border:1px solid #d9c5e3;border-left:3px solid #80529b;border-radius:6px;background:#f6effa;color:#44354c;text-align:left;cursor:pointer}
-.vc-marketing-time-event time{color:#714587;font-size:8px;font-weight:800;line-height:1.1}
-.vc-marketing-time-event b{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;font-size:9px;line-height:1.2}
-.vc-marketing-time-event>span{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;color:#776c7d;font-size:8px;line-height:1.2}
-.vc-marketing-time-event.tone-review{border-left-color:#bd9638;background:#fff8e9}
-.vc-marketing-time-event.tone-working{border-left-color:#6d82bc;background:#eff2fc}
-.vc-marketing-time-event.tone-completed{border-left-color:#4e9875;background:#eef8f1}
-.vc-marketing-time-event.tone-blocked,.vc-marketing-time-event.is-overdue{border-color:#e4c2b9;border-left-color:#bc5d44;background:#fff2ed}
-.vc-marketing-time-event.is-all-day{min-height:30px;margin:0;padding:4px 6px}
-.vc-marketing-time-event.is-all-day b{font-size:9px}
+.vc-marketing-time-event{box-sizing:border-box;grid-column:1;position:relative;z-index:2;display:grid;align-content:start;justify-items:stretch;gap:4px;min-width:0;max-width:100%;min-height:24px;overflow:hidden;margin:1px 3px;padding:6px 8px;border:1px solid var(--mk-glass-border,#d9c5e3);border-left:3.5px solid var(--event-color,#80529b);border-radius:10px;background:radial-gradient(ellipse at 95% 0%,var(--mk-channel-glow,transparent),transparent 55%),var(--mk-glass-surface,rgb(255 255 255 / 74%));box-shadow:var(--mk-glass-shadow,0 8px 20px rgb(43 24 66 / 8%));backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);color:var(--mk-glass-ink,#44354c);text-align:left;cursor:pointer;transition:transform 150ms ease,border-color 150ms ease,box-shadow 150ms ease}
+.vc-marketing-time-event:hover{border-color:var(--mk-glass-border-hover);box-shadow:var(--mk-glass-shadow-hover)}
+.vc-marketing-time-event time{color:#714587;font-size:8.5px;font-weight:800;line-height:1.1}
+.vc-marketing-time-event b{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;color:var(--mk-glass-ink,#30263b);font-size:10.5px;line-height:1.25}
+.vc-marketing-time-event>span{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;color:var(--mk-glass-muted,#776c7d);font-size:8.5px;line-height:1.25}
+.vc-marketing-time-event.tone-review{border-left-color:#c69a37;background:radial-gradient(ellipse at 95% 0%,var(--mk-channel-glow,transparent),transparent 55%),radial-gradient(ellipse at 0% 0%,rgb(245 158 11 / 12%),transparent 55%),var(--mk-glass-surface,rgb(255 255 255 / 76%))}
+.vc-marketing-time-event.tone-working{border-left-color:#7c52b8;background:radial-gradient(ellipse at 95% 0%,var(--mk-channel-glow,transparent),transparent 55%),radial-gradient(ellipse at 0% 0%,rgb(139 92 246 / 12%),transparent 55%),var(--mk-glass-surface,rgb(255 255 255 / 76%))}
+.vc-marketing-time-event.tone-approved{border-left-color:#3b82f6;background:radial-gradient(ellipse at 95% 0%,var(--mk-channel-glow,transparent),transparent 55%),radial-gradient(ellipse at 0% 0%,rgb(59 130 246 / 12%),transparent 55%),var(--mk-glass-surface,rgb(255 255 255 / 76%))}
+.vc-marketing-time-event.tone-published{border-left-color:#10b981;background:radial-gradient(ellipse at 95% 0%,var(--mk-channel-glow,transparent),transparent 55%),radial-gradient(ellipse at 0% 0%,rgb(16 185 129 / 12%),transparent 55%),var(--mk-glass-surface,rgb(255 255 255 / 76%))}
+.vc-marketing-time-event.tone-completed{border-left-color:#4e9875;background:radial-gradient(ellipse at 95% 0%,var(--mk-channel-glow,transparent),transparent 55%),radial-gradient(ellipse at 0% 0%,rgb(20 184 166 / 10%),transparent 55%),var(--mk-glass-surface,rgb(255 255 255 / 76%))}
+.vc-marketing-time-event.tone-blocked,.vc-marketing-time-event.is-overdue{border-color:rgb(225 29 72 / 30%);border-left-color:#d9483b;background:radial-gradient(ellipse at 95% 0%,var(--mk-channel-glow,transparent),transparent 55%),radial-gradient(ellipse at 0% 0%,rgb(225 29 72 / 11%),transparent 55%),var(--mk-glass-surface,rgb(255 255 255 / 76%))}
+.vc-marketing-time-event.is-all-day{min-height:30px;margin:0;padding:5px 7px}
+.vc-marketing-time-event.is-all-day b{font-size:10px}
 .vc-marketing-time-event:focus-visible{outline:2px solid #8a4caf;outline-offset:1px}
-.vc-marketing-time-day-column.has-selection{background-color:#fcf8fe}
+.vc-marketing-time-day-column.has-selection{background-color:rgb(168 85 247 / 6%)}
+
+/* Week entry layout inside time grid */
+.vc-marketing-time-event.is-week-entry{padding:5px 7px;gap:4px}
+.vc-time-event-head{display:flex;align-items:center;justify-content:space-between;gap:5px;width:100%;min-width:0}
+.vc-time-event-head>div,.vc-time-event-head>span{display:inline-flex;align-items:center;gap:3px;min-width:0}
+.vc-time-event-body{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:6px;width:100%;min-width:0}
+.vc-time-event-text{display:grid;gap:2px;min-width:0}
+.vc-time-event-text b{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;color:var(--mk-glass-ink,#2b2236);font-size:10.5px;font-weight:760;line-height:1.25}
+.vc-time-event-text span{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:1;line-clamp:1;color:var(--mk-glass-muted,#6f667a);font-size:8.5px;line-height:1.25}
+.vc-time-event-thumb{width:28px;height:28px;flex-shrink:0;overflow:hidden;border:1px solid var(--mk-glass-border);border-radius:6px;background:var(--mk-glass-pill);object-fit:cover}
+.vc-time-event-thumb>img{display:block;width:100%;height:100%;object-fit:cover}
+.vc-time-event-foot{display:flex;align-items:center;justify-content:space-between;gap:4px;width:100%;min-width:0}
+
+/* Day entry horizontal 3-zone glass layout */
+.vc-marketing-time-event.is-day-entry{padding:6px 10px}
+.vc-time-event-day-layout{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;min-width:0;box-sizing:border-box}
+.vc-time-day-media{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.vc-time-day-media time{padding:3px 7px;border:1px solid var(--mk-glass-border);border-radius:7px;background:var(--mk-glass-pill);color:var(--mk-glass-ink,#5b3a77);font-size:10.5px;font-weight:800;white-space:nowrap}
+.vc-time-day-media .vc-marketing-post-artwork.is-compact{width:46px;height:46px;min-width:46px;min-height:46px;border:1px solid var(--mk-glass-border);border-radius:9px;background:var(--mk-glass-pill);overflow:hidden}
+.vc-time-day-format-icon{display:grid;width:46px;height:46px;flex-shrink:0;place-items:center;border:1px dashed var(--mk-glass-border);border-radius:9px;background:var(--mk-glass-pill);color:var(--mk-glass-muted)}
+.vc-time-day-info{display:grid;gap:3px;min-width:0}
+.vc-time-day-badges{display:flex;flex-wrap:wrap;align-items:center;gap:5px;min-width:0}
+.vc-time-day-info b{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;color:var(--mk-glass-ink,#241d2e);font-size:13px;font-weight:780;line-height:1.3;overflow-wrap:anywhere}
+.vc-time-day-summary{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;color:var(--mk-glass-muted,#665d73);font-size:11px;line-height:1.4}
+.vc-time-day-owner{color:var(--mk-glass-muted,#756b82);font-size:10px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vc-time-day-controls{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:0}
+.vc-marketing-quick-time-btn{padding:3px 8px;border:1px solid var(--mk-glass-border);border-radius:7px;background:var(--mk-glass-pill);color:var(--mk-glass-ink,#5d3a77);font:inherit;font-size:9.5px;font-weight:750;cursor:pointer;backdrop-filter:var(--mk-glass-pill-blur);-webkit-backdrop-filter:var(--mk-glass-pill-blur);transition:background 140ms ease,border-color 140ms ease,color 140ms ease}
+.vc-marketing-quick-time-btn:hover,.vc-marketing-quick-time-btn:focus-visible{border-color:#9347ba;background:#874da5;color:#fff}
+
 @media(max-width:760px){.vc-marketing-time-head,.vc-marketing-all-day-row,.vc-marketing-time-body{grid-template-columns:54px repeat(7,minmax(148px,1fr))}.vc-marketing-time-grid.is-day .vc-marketing-time-head,.vc-marketing-time-grid.is-day .vc-marketing-all-day-row,.vc-marketing-time-grid.is-day .vc-marketing-time-body{grid-template-columns:54px minmax(290px,1fr)}.vc-marketing-time-labels,.vc-marketing-time-day-column{grid-template-rows:repeat(var(--calendar-slots),38px)}.vc-marketing-time-scroll{max-height:72vh}}
-@media(prefers-reduced-motion:reduce){.vc-marketing-time-scroll{scroll-behavior:auto}}
+@media(max-width:700px){.vc-time-event-day-layout{grid-template-columns:minmax(0,1fr);gap:8px}.vc-time-day-controls{align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){.vc-marketing-time-scroll{scroll-behavior:auto}.vc-marketing-time-event,.vc-marketing-quick-time-btn{transition:none}}
 .vc-marketing-time-now-line{position:absolute;left:0;right:0;z-index:5;height:2px;background:#e11d48;box-shadow:0 0 6px rgba(225,29,72,.45);pointer-events:none}
 .vc-marketing-time-now-badge{position:absolute;top:-8px;left:-2px;display:inline-flex;align-items:center;padding:1px 4px;border-radius:4px;background:#e11d48;color:#fff;font-size:7px;font-weight:800;letter-spacing:.02em}
-.vc-marketing-drop-cue{display:flex;align-items:center;gap:6px;padding:6px 10px;margin-bottom:8px;border:1px dashed #9347ba;border-radius:8px;background:#f5eafb;color:#6b2890;font-size:11px;font-weight:600}
-.vc-marketing-all-day-cell.is-drop-target{background:#faf2fd!important;outline:2px dashed #9347ba!important;outline-offset:-2px}
-.vc-marketing-time-slot.is-drop-target{background:#f3e4fc!important;outline:2px dashed #9347ba!important;outline-offset:-2px}
-.vc-marketing-time-range-toggle{display:inline-flex;align-items:center;padding:2px;border-radius:7px;background:#f3edf7;gap:2px}
-.vc-marketing-time-range-toggle button{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:0;border-radius:5px;background:transparent;color:#685b72;font-size:9px;font-weight:700;cursor:pointer}
-.vc-marketing-time-range-toggle button.active{background:#fff;color:#723b91;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-.vc-marketing-day-quick-times{display:flex;flex-wrap:wrap;align-items:center;gap:3px;margin-top:4px;padding-top:3px;border-top:1px dashed #e7dfec}
-.vc-marketing-quick-time-chip{padding:1px 5px;border:1px solid #d8cadf;border-radius:4px;background:#fff;color:#6a4c7c;font-size:7.5px;font-weight:700;cursor:pointer;transition:all .12s ease}
+.vc-marketing-drop-cue{display:flex;align-items:center;gap:6px;padding:6px 10px;margin-bottom:8px;border:1px dashed #9347ba;border-radius:8px;background:var(--mk-glass-pill,#f5eafb);color:#6b2890;font-size:11px;font-weight:600}
+.vc-marketing-all-day-cell.is-drop-target{background:rgb(168 85 247 / 12%)!important;outline:2px dashed #9347ba!important;outline-offset:-2px}
+.vc-marketing-time-slot.is-drop-target{background:rgb(168 85 247 / 14%)!important;outline:2px dashed #9347ba!important;outline-offset:-2px}
+.vc-marketing-time-range-toggle{display:inline-flex;align-items:center;padding:2px;border:1px solid var(--mk-glass-border,#e4d8ec);border-radius:8px;background:var(--mk-glass-pill,#f3edf7);gap:2px}
+.vc-marketing-time-range-toggle button{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:0;border-radius:6px;background:transparent;color:var(--mk-glass-muted,#685b72);font-size:9px;font-weight:700;cursor:pointer}
+.vc-marketing-time-range-toggle button.active,.vc-marketing-time-range-toggle button.is-active{background:var(--mk-glass-surface,#fff);color:#723b91;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.vc-marketing-day-quick-times{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:4px;padding-top:4px;border-top:1px dashed var(--mk-glass-line,#e7dfec)}
+.vc-marketing-quick-time-chip{padding:2px 6px;border:1px solid var(--mk-glass-border,#d8cadf);border-radius:6px;background:var(--mk-glass-pill,#fff);color:var(--mk-glass-ink,#6a4c7c);font-size:8px;font-weight:700;cursor:pointer;transition:all .12s ease}
 .vc-marketing-quick-time-chip:hover{background:#874da5;color:#fff;border-color:#874da5}
-.vc-marketing-density-toggle{display:inline-flex;align-items:center;padding:2px;margin:0 4px;border-radius:8px;background:#f2eaf7;gap:2px}
-.vc-marketing-density-toggle button{padding:3px 9px;border:0;border-radius:6px;background:transparent;color:#6b5c75;font-size:9.5px;font-weight:700;cursor:pointer;transition:all .12s ease}
-.vc-marketing-density-toggle button.active{background:#fff;color:#723b91;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-.vc-marketing-focus-btn{color:#6b5c75}
+.vc-marketing-density-toggle{display:inline-flex;align-items:center;padding:2px;margin:0 4px;border:1px solid var(--mk-glass-border,#e4d8ec);border-radius:9px;background:var(--mk-glass-pill,#f2eaf7);gap:2px}
+.vc-marketing-density-toggle button{padding:3px 9px;border:0;border-radius:6px;background:transparent;color:var(--mk-glass-muted,#6b5c75);font-size:9.5px;font-weight:700;cursor:pointer;transition:all .12s ease}
+.vc-marketing-density-toggle button.active{background:var(--mk-glass-surface,#fff);color:#723b91;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.vc-marketing-focus-btn{color:var(--mk-glass-muted,#6b5c75)}
 .vc-marketing-focus-btn.active{border-color:#763b96;background:#763b96;color:#fff}
-.vc-marketing-calendar.is-focus-mode{position:fixed;inset:12px;z-index:1000;overflow-y:auto;padding:20px;border-radius:16px;background:#fff;box-shadow:0 12px 48px rgba(0,0,0,.22)}
+.vc-marketing-calendar.is-focus-mode{position:fixed;inset:12px;z-index:1000;overflow-y:auto;padding:20px;border-radius:18px;background:var(--mk-glass-surface,#fff);box-shadow:0 16px 52px rgba(0,0,0,.28)}
+/* =========================================================================
+   Month View: Executive Compact Pill vs. 3-Level Editorial Detailed Card
+   ========================================================================= */
+
 .vc-marketing-event-row.is-compact-row,
 .vc-marketing-event-row.is-selectable.is-compact-row {
   position: relative;
   display: block;
   grid-template-columns: minmax(0, 1fr);
   min-width: 0;
-  margin-bottom: 2px;
-}
-
-.vc-marketing-event-row.is-compact-row > .vc-marketing-event-select {
-  position: absolute;
-  top: 4px;
-  right: 22px;
-  z-index: 4;
-  margin: 0;
+  max-width: 100%;
+  margin-bottom: 3px;
 }
 
 .vc-marketing-task-event-row.is-compact-row {
   display: block;
   grid-template-columns: minmax(0, 1fr);
   min-width: 0;
-  margin-bottom: 2px;
+  max-width: 100%;
+  margin-bottom: 3px;
 }
 
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill,
+/* Compact Mode Pill (1 single row, glass pill) */
+.work-app .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill,
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 29px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 3px 6px;
+  overflow: hidden;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 16%));
+  border-left: 3px solid var(--event-color, #8660ad);
+  border-radius: 8px;
+  background:
+    radial-gradient(ellipse at 92% 50%, var(--mk-channel-glow, transparent), transparent 56%),
+    var(--mk-glass-pill, rgb(255 255 255 / 66%));
+  box-shadow: var(--mk-glass-highlight, inset 0 1px 0 rgb(255 255 255 / 80%));
+  color: var(--mk-glass-ink, #2a2235);
+  backdrop-filter: var(--mk-glass-pill-blur, blur(12px) saturate(140%));
+  -webkit-backdrop-filter: var(--mk-glass-pill-blur, blur(12px) saturate(140%));
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.work-app .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill:hover {
+  border-color: var(--mk-glass-border-hover);
+  box-shadow: var(--mk-glass-shadow);
+}
+
+.vc-cal-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.vc-cal-compact-row .vc-marketing-pill-indicator,
+.vc-cal-compact-row .vc-cal-format-badge {
+  display: none;
+}
+
+.vc-cal-compact-row time {
+  flex-shrink: 0;
+  padding: 0 3px;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 14%));
+  border-radius: 4px;
+  background: var(--mk-glass-surface, rgb(255 255 255 / 72%));
+  color: var(--mk-glass-ink, #4f356a);
+  font-size: 7.5px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.vc-cal-compact-row .vc-marketing-event-label {
+  display: block;
+  flex: 1 1 36px;
+  min-width: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mk-glass-ink, #2b2236);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 720;
+  line-height: 1.25;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.vc-cal-compact-progress {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 16px;
+  padding: 1px 4px;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 16%));
+  border-radius: 999px;
+  background: var(--mk-glass-surface, rgb(255 255 255 / 74%));
+  color: var(--mk-glass-muted, #5c5268);
+  font-size: 7.5px;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.vc-cal-compact-progress.is-active {
+  border-color: rgb(128 98 147 / 28%);
+  background: rgb(128 98 147 / 12%);
+  color: #5b3f70;
+}
+.vc-cal-compact-progress.is-working {
+  border-color: rgb(147 51 234 / 30%);
+  background: rgb(147 51 234 / 12%);
+  color: #6b21a8;
+}
+.vc-cal-compact-progress.is-review {
+  border-color: rgb(245 158 11 / 34%);
+  background: rgb(245 158 11 / 14%);
+  color: #92400e;
+}
+.vc-cal-compact-progress.is-approved {
+  border-color: rgb(59 130 246 / 32%);
+  background: rgb(59 130 246 / 13%);
+  color: #1d4ed8;
+}
+.vc-cal-compact-progress.is-published {
+  border-color: rgb(16 185 129 / 34%);
+  background: rgb(16 185 129 / 14%);
+  color: #065f46;
+}
+.vc-cal-compact-progress.is-completed {
+  border-color: rgb(20 184 166 / 32%);
+  background: rgb(20 184 166 / 12%);
+  color: #0f766e;
+}
+.vc-cal-compact-progress.is-blocked {
+  border-color: rgb(239 68 68 / 34%);
+  background: rgb(239 68 68 / 13%);
+  color: #b91c1c;
+}
+.vc-cal-compact-progress.is-cancelled {
+  border-color: rgb(156 163 175 / 34%);
+  background: rgb(156 163 175 / 14%);
+  color: #4b5563;
+}
+
+/* Floating Quick-Action Micro-Overlay in Compact Row */
+.work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row > .vc-marketing-event-select,
+.work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row .vc-marketing-post-drag-handle.vc-marketing-post-drag-handle-compact {
+  position: absolute;
+  top: 50%;
+  z-index: 6;
+  margin: 0;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row .vc-marketing-post-drag-handle.vc-marketing-post-drag-handle-compact {
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 22%));
+  border-radius: 6px;
+  background: var(--mk-glass-header-sticky, rgb(252 250 255 / 90%));
+  box-shadow: var(--mk-glass-shadow);
+  backdrop-filter: var(--mk-glass-pill-blur, blur(12px));
+  -webkit-backdrop-filter: var(--mk-glass-pill-blur, blur(12px));
+}
+
+.work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row > .vc-marketing-event-select {
+  right: 29px;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 3px var(--mk-glass-header-sticky, rgb(255 255 255 / 88%));
+}
+
+.work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row:hover > .vc-marketing-event-select,
+.work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row:focus-within > .vc-marketing-event-select,
+.work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row > .vc-marketing-event-select:checked,
+.work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row:hover .vc-marketing-post-drag-handle.vc-marketing-post-drag-handle-compact,
+.work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row:focus-within .vc-marketing-post-drag-handle.vc-marketing-post-drag-handle-compact,
+.work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row:has(.vc-marketing-event-select:checked) .vc-marketing-post-drag-handle.vc-marketing-post-drag-handle-compact {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (hover: none), (max-width: 760px) {
+  .work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row > .vc-marketing-event-select,
+  .work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row .vc-marketing-post-drag-handle.vc-marketing-post-drag-handle-compact {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .work-app .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row .vc-cal-compact-row {
+    padding-right: 48px;
+  }
+}
+
+/* Detailed Mode Card (3-Level Editorial Glass Card) */
+.work-app .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card,
 .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 3px;
+  align-content: start;
+  gap: 6px;
   min-height: 0;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
-  padding: 5px 7px;
-  border-radius: 7px;
+  padding: 7px 8px;
+  overflow: hidden;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 16%));
+  border-left: 3px solid var(--event-color, #8660ad);
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at 95% 0%, var(--mk-channel-glow, transparent), transparent 54%),
+    var(--mk-glass-surface, rgb(255 255 255 / 76%));
+  box-shadow: var(--mk-glass-shadow, 0 10px 26px rgb(43 24 66 / 8%));
+  color: var(--mk-glass-ink, #2a2235);
+  backdrop-filter: var(--mk-glass-blur, blur(18px) saturate(145%));
+  -webkit-backdrop-filter: var(--mk-glass-blur, blur(18px) saturate(145%));
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
 
+.work-app .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card:hover {
+  border-color: var(--mk-glass-border-hover);
+  box-shadow: var(--mk-glass-shadow-hover);
+}
+
+/* Level 1: Header */
+.vc-cal-detailed-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+  padding-right: 18px;
+  box-sizing: border-box;
+}
+
+.vc-cal-format-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 15%));
+  border-radius: 5px;
+  background: var(--mk-glass-pill, rgb(255 255 255 / 66%));
+  color: var(--mk-glass-muted, #5c5368);
+  font-size: 8px;
+  font-weight: 750;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.vc-cal-detailed-head time {
+  flex-shrink: 0;
+  padding: 1px 5px;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 14%));
+  border-radius: 5px;
+  background: var(--mk-glass-pill, rgb(255 255 255 / 68%));
+  color: var(--mk-glass-ink, #53366e);
+  font-size: 8.5px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.vc-cal-stage-pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 1px 6px;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 16%));
+  border-radius: 999px;
+  background: var(--mk-glass-pill, rgb(255 255 255 / 70%));
+  color: var(--mk-glass-ink, #4f3d60);
+  font-size: 8px;
+  font-weight: 780;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vc-cal-stage-pill.tone-review { border-color: rgb(245 158 11 / 34%); background: rgb(245 158 11 / 14%); color: #92400e; }
+.vc-cal-stage-pill.tone-working { border-color: rgb(147 51 234 / 30%); background: rgb(147 51 234 / 12%); color: #6b21a8; }
+.vc-cal-stage-pill.tone-approved { border-color: rgb(59 130 246 / 32%); background: rgb(59 130 246 / 13%); color: #1d4ed8; }
+.vc-cal-stage-pill.tone-published { border-color: rgb(16 185 129 / 34%); background: rgb(16 185 129 / 14%); color: #065f46; }
+.vc-cal-stage-pill.tone-completed { border-color: rgb(20 184 166 / 32%); background: rgb(20 184 166 / 12%); color: #0f766e; }
+.vc-cal-stage-pill.tone-blocked,
+.vc-cal-stage-pill.tone-cancelled { border-color: rgb(239 68 68 / 34%); background: rgb(239 68 68 / 13%); color: #b91c1c; }
+
+.vc-cal-detailed-head .vc-marketing-post-drag-handle-compact {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Level 2: Media + Copy */
+.vc-cal-detailed-body {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 7px;
+  align-items: start;
+  min-width: 0;
+  width: 100%;
+}
+
+.vc-cal-detailed-body .vc-marketing-post-artwork.is-month {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 18%));
+  border-radius: 7px;
+  background: var(--mk-glass-pill, rgb(255 255 255 / 66%));
+  box-shadow: var(--mk-glass-highlight);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.vc-cal-detailed-body .vc-marketing-post-artwork.is-month > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vc-cal-detailed-art-placeholder {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  box-sizing: border-box;
+  border: 1px dashed var(--mk-glass-border, rgb(112 85 142 / 26%));
+  border-radius: 7px;
+  background: var(--mk-glass-pill, rgb(255 255 255 / 54%));
+  color: var(--mk-glass-muted, #8a7f95);
+}
+
+.vc-cal-detailed-art-placeholder.has-local {
+  border-style: solid;
+  border-color: rgb(147 51 234 / 36%);
+  background: rgb(147 51 234 / 11%);
+  color: #7e22ce;
+}
+
+.vc-cal-detailed-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vc-cal-detailed-copy .vc-marketing-event-label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mk-glass-ink, #2a2235);
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 760;
+  line-height: 1.28;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.vc-cal-detailed-subline {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--mk-glass-muted, #6f667a);
+  font-size: 9px;
+  line-height: 1.25;
+}
+
+/* Level 3: Footer (Pipeline dots + Readiness + optional badge) */
+.vc-cal-detailed-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  min-width: 0;
+  width: 100%;
+  padding-top: 4px;
+  border-top: 1px solid var(--mk-glass-line, rgb(112 85 142 / 12%));
+}
+
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-cal-pipeline-dots {
+  display: inline-flex;
+}
+
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-marketing-readiness-indicators.is-compact {
+  display: inline-flex;
+  width: auto;
+  flex-wrap: nowrap;
+  gap: 3px;
+}
+
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card .vc-cal-detailed-foot .ok-badge {
+  display: inline-flex;
+  max-width: 100%;
+}
+
+/* Legacy compact-top/foot support for non-upgraded subviews */
 .vc-marketing-compact-top {
   display: flex;
   align-items: flex-start;
@@ -204,8 +636,8 @@
   flex-shrink: 0;
   padding: 1px 4px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.78);
-  color: #5b3b75;
+  background: var(--mk-glass-pill, rgba(255, 255, 255, 0.78));
+  color: var(--mk-glass-ink, #5b3b75);
   font-size: 8.5px !important;
   font-weight: 800;
   line-height: 1.2;
@@ -217,7 +649,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: #322a38;
+  color: var(--mk-glass-ink, #322a38);
   font: inherit;
   font-size: 10.5px;
   font-weight: 750;
@@ -233,11 +665,6 @@
   white-space: normal;
   overflow-wrap: break-word;
   word-break: normal;
-}
-
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill .vc-marketing-compact-top .vc-marketing-event-label {
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
 }
 
 .vc-marketing-compact-foot {
@@ -303,8 +730,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 5px;
-  min-height: 26px;
-  padding: 4px 7px;
+  min-height: 29px;
+  padding: 3px 7px;
 }
 
 .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-task.is-compact-pill .vc-marketing-event-label {
@@ -477,18 +904,61 @@
 }
 
 /* =========================================================================
-   Marketing Calendar - Dark Mode Themes
+   Marketing Calendar - Glass Shell (Light & Dark Mode)
    ========================================================================= */
+.work-app .vc-marketing-calendar {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 15%));
+  border-radius: 20px;
+  background: var(--mk-glass-surface, rgb(255 255 255 / 74%));
+  box-shadow: var(--mk-glass-shadow, 0 14px 34px rgb(43 24 66 / 8%));
+  color: var(--mk-glass-ink, #261f30);
+  backdrop-filter: var(--mk-glass-blur, blur(18px) saturate(145%));
+  -webkit-backdrop-filter: var(--mk-glass-blur, blur(18px) saturate(145%));
+}
+
+.work-app .vc-marketing-calendar .vc-marketing-calendar-grid {
+  border-color: var(--mk-glass-border, rgb(112 85 142 / 15%));
+  background: var(--mk-glass-column, rgb(250 247 254 / 45%));
+}
+
+.work-app .vc-marketing-calendar .vc-marketing-calendar-weekday {
+  border-color: var(--mk-glass-line, rgb(112 85 142 / 13%));
+  background: var(--mk-glass-header-sticky, rgb(252 250 255 / 86%));
+  color: var(--mk-glass-muted, #6f667a);
+}
+
+.work-app .vc-marketing-calendar .vc-marketing-calendar-day {
+  border-color: var(--mk-glass-line, rgb(112 85 142 / 12%));
+  background: rgb(255 255 255 / 44%);
+}
+
+.work-app .vc-marketing-calendar .vc-marketing-calendar-day.is-outside {
+  background: rgb(245 242 250 / 28%);
+}
+
+.work-app .vc-marketing-calendar .vc-marketing-calendar-day.is-today {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(165 16 145 / 11%), transparent 64%),
+    rgb(255 255 255 / 62%);
+}
+
 :root[data-theme='dark'] .vc-marketing-calendar,
 .work-app.theme-dark .vc-marketing-calendar,
 .work-app[data-theme='dark'] .vc-marketing-calendar,
 [data-theme='dark'] .vc-marketing-calendar {
   --cal-bg: #14161f;
-  --cal-border: #262939;
-  --cal-surface: #1a1c28;
-  --cal-surface-hover: #222535;
+  --cal-border: rgb(232 218 250 / 13%);
+  --cal-surface: rgb(24 27 40 / 74%);
+  --cal-surface-hover: rgb(35 39 58 / 82%);
   --cal-text: #f0f1f5;
-  --cal-muted: #9ba0b4;
+  --cal-muted: #a6acc2;
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-surface);
+  box-shadow: var(--mk-glass-shadow);
+  color: var(--mk-glass-ink);
 }
 
 :root[data-theme='dark'] .vc-marketing-calendar .vc-marketing-calendar-head h2,
@@ -498,144 +968,335 @@
 
 :root[data-theme='dark'] .vc-marketing-calendar .vc-marketing-calendar-head p,
 .work-app.theme-dark .vc-marketing-calendar .vc-marketing-calendar-head p {
-  color: #9ba0b4;
+  color: #a6acc2;
 }
 
 :root[data-theme='dark'] .vc-marketing-time-scroll,
 .work-app.theme-dark .vc-marketing-time-scroll {
-  background: #14161f;
-  border-color: #262939;
+  background: var(--mk-glass-column, rgb(19 21 32 / 64%));
+  border-color: var(--mk-glass-border, rgb(232 218 250 / 13%));
 }
 
 :root[data-theme='dark'] .vc-marketing-time-head,
 .work-app.theme-dark .vc-marketing-time-head {
-  background: #1a1c28;
-  border-color: #262939;
+  background: var(--mk-glass-header-sticky, rgb(22 24 36 / 88%));
+  border-color: var(--mk-glass-line, rgb(220 206 244 / 13%));
 }
 
 :root[data-theme='dark'] .vc-marketing-time-gutter,
 .work-app.theme-dark .vc-marketing-time-gutter {
-  background: #161822;
-  border-color: #262939;
-  color: #9ba0b4;
+  background: var(--mk-glass-header-sticky, rgb(22 24 36 / 88%));
+  border-color: var(--mk-glass-line, rgb(220 206 244 / 13%));
+  color: var(--mk-glass-muted, #9ba0b4);
 }
 
 :root[data-theme='dark'] .vc-marketing-time-day-heading,
 .work-app.theme-dark .vc-marketing-time-day-heading {
-  border-color: #262939;
+  border-color: var(--mk-glass-line);
   color: #e5e7eb;
 }
 
 :root[data-theme='dark'] .vc-marketing-time-day-heading.is-today,
 .work-app.theme-dark .vc-marketing-time-day-heading.is-today {
-  background: #251c33;
-  color: #d8b4fe;
+  background: rgb(192 132 252 / 14%);
+  color: #e9d5ff;
 }
 
 :root[data-theme='dark'] .vc-marketing-all-day-row,
 .work-app.theme-dark .vc-marketing-all-day-row {
-  background: #181a25;
-  border-color: #262939;
+  background: var(--mk-glass-header-sticky, rgb(22 24 36 / 86%));
+  border-color: var(--mk-glass-line);
 }
 
 :root[data-theme='dark'] .vc-marketing-all-day-cell,
 .work-app.theme-dark .vc-marketing-all-day-cell {
-  border-color: #262939;
+  border-color: var(--mk-glass-line);
+}
+
+:root[data-theme='dark'] .vc-marketing-all-day-count,
+.work-app.theme-dark .vc-marketing-all-day-count {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-pill);
+  color: #e9d5ff;
 }
 
 :root[data-theme='dark'] .vc-marketing-all-day-toggle,
 .work-app.theme-dark .vc-marketing-all-day-toggle {
-  background: #222534;
-  border-color: #35384c;
+  background: var(--mk-glass-pill);
+  border-color: var(--mk-glass-border);
   color: #c4b5fd;
 }
 
 :root[data-theme='dark'] .vc-marketing-all-day-more-pill,
 .work-app.theme-dark .vc-marketing-all-day-more-pill {
-  background: #242234;
-  border-color: #3f3956;
+  background: var(--mk-glass-pill);
+  border-color: var(--mk-glass-border);
   color: #d8b4fe;
 }
 
 :root[data-theme='dark'] .vc-marketing-all-day-create,
 .work-app.theme-dark .vc-marketing-all-day-create {
-  background: #1f212f;
-  border-color: #373b52;
+  background: var(--mk-glass-pill);
+  border-color: var(--mk-glass-border);
+  color: #e2d4f4;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-labels span,
+.work-app.theme-dark .vc-marketing-time-labels span {
+  border-bottom-color: var(--mk-glass-line);
+  background: var(--mk-glass-header-sticky);
+  color: var(--mk-glass-muted);
+}
+
+:root[data-theme='dark'] .vc-marketing-time-labels span.is-hour,
+.work-app.theme-dark .vc-marketing-time-labels span.is-hour {
+  color: var(--mk-glass-ink);
 }
 
 :root[data-theme='dark'] .vc-marketing-time-day-column,
 .work-app.theme-dark .vc-marketing-time-day-column {
-  border-color: #262939;
-  background: repeating-linear-gradient(to bottom, #14161f 0, #14161f 41px, #1c1f2d 41px, #1c1f2d 42px);
+  border-color: var(--mk-glass-line);
+  background: repeating-linear-gradient(to bottom, rgb(18 20 31 / 46%) 0, rgb(18 20 31 / 46%) 41px, var(--mk-glass-line, rgb(220 206 244 / 9%)) 41px, var(--mk-glass-line, rgb(220 206 244 / 9%)) 42px);
+}
+
+:root[data-theme='dark'] .vc-marketing-time-day-column.is-today,
+.work-app.theme-dark .vc-marketing-time-day-column.is-today {
+  background-color: rgb(168 85 247 / 6%);
 }
 
 :root[data-theme='dark'] .vc-marketing-time-slot,
 .work-app.theme-dark .vc-marketing-time-slot {
-  border-bottom-color: #1e2130;
+  border-bottom-color: rgb(220 206 244 / 7%);
 }
 
 :root[data-theme='dark'] .vc-marketing-time-slot.is-hour,
 .work-app.theme-dark .vc-marketing-time-slot.is-hour {
-  border-top-color: #282c40;
+  border-top-color: rgb(220 206 244 / 13%);
 }
 
 :root[data-theme='dark'] .vc-marketing-time-slot:hover,
 .work-app.theme-dark .vc-marketing-time-slot:hover {
-  background: #231f33;
+  background: rgb(192 132 252 / 10%);
 }
 
 :root[data-theme='dark'] .vc-marketing-time-event,
 .work-app.theme-dark .vc-marketing-time-event {
-  background: #221f2d;
-  border-color: #3b334a;
+  background:
+    radial-gradient(ellipse at 95% 0%, var(--mk-channel-glow, transparent), transparent 56%),
+    var(--mk-glass-surface, rgb(24 27 40 / 78%));
+  border-color: var(--mk-glass-border, rgb(232 218 250 / 15%));
+  border-left-color: var(--event-color, #a855f7);
+  color: var(--mk-glass-ink, #f3f4f8);
+  box-shadow: var(--mk-glass-shadow);
+}
+
+:root[data-theme='dark'] .vc-marketing-time-event.tone-review,
+.work-app.theme-dark .vc-marketing-time-event.tone-review {
+  border-left-color: #f59e0b;
+  background:
+    radial-gradient(ellipse at 95% 0%, var(--mk-channel-glow, transparent), transparent 56%),
+    radial-gradient(ellipse at 0% 0%, rgb(245 158 11 / 15%), transparent 56%),
+    var(--mk-glass-surface);
+}
+
+:root[data-theme='dark'] .vc-marketing-time-event.tone-working,
+.work-app.theme-dark .vc-marketing-time-event.tone-working {
   border-left-color: #a855f7;
-  color: #f3f4f8;
+  background:
+    radial-gradient(ellipse at 95% 0%, var(--mk-channel-glow, transparent), transparent 56%),
+    radial-gradient(ellipse at 0% 0%, rgb(168 85 247 / 16%), transparent 56%),
+    var(--mk-glass-surface);
+}
+
+:root[data-theme='dark'] .vc-marketing-time-event.tone-approved,
+.work-app.theme-dark .vc-marketing-time-event.tone-approved {
+  border-left-color: #60a5fa;
+  background:
+    radial-gradient(ellipse at 95% 0%, var(--mk-channel-glow, transparent), transparent 56%),
+    radial-gradient(ellipse at 0% 0%, rgb(59 130 246 / 16%), transparent 56%),
+    var(--mk-glass-surface);
+}
+
+:root[data-theme='dark'] .vc-marketing-time-event.tone-published,
+.work-app.theme-dark .vc-marketing-time-event.tone-published {
+  border-left-color: #34d399;
+  background:
+    radial-gradient(ellipse at 95% 0%, var(--mk-channel-glow, transparent), transparent 56%),
+    radial-gradient(ellipse at 0% 0%, rgb(16 185 129 / 16%), transparent 56%),
+    var(--mk-glass-surface);
+}
+
+:root[data-theme='dark'] .vc-marketing-time-event.tone-completed,
+.work-app.theme-dark .vc-marketing-time-event.tone-completed {
+  border-left-color: #2dd4bf;
+  background:
+    radial-gradient(ellipse at 95% 0%, var(--mk-channel-glow, transparent), transparent 56%),
+    radial-gradient(ellipse at 0% 0%, rgb(20 184 166 / 14%), transparent 56%),
+    var(--mk-glass-surface);
+}
+
+:root[data-theme='dark'] .vc-marketing-time-event.tone-blocked,
+:root[data-theme='dark'] .vc-marketing-time-event.is-overdue,
+.work-app.theme-dark .vc-marketing-time-event.tone-blocked,
+.work-app.theme-dark .vc-marketing-time-event.is-overdue {
+  border-color: rgb(244 63 94 / 35%);
+  border-left-color: #fb7185;
+  background:
+    radial-gradient(ellipse at 95% 0%, var(--mk-channel-glow, transparent), transparent 56%),
+    radial-gradient(ellipse at 0% 0%, rgb(244 63 94 / 16%), transparent 56%),
+    var(--mk-glass-surface);
 }
 
 :root[data-theme='dark'] .vc-marketing-time-event b,
-.work-app.theme-dark .vc-marketing-time-event b {
+.work-app.theme-dark .vc-marketing-time-event b,
+:root[data-theme='dark'] .vc-time-day-info b,
+.work-app.theme-dark .vc-time-day-info b {
   color: #ffffff;
 }
 
-:root[data-theme='dark'] .vc-marketing-time-event>span,
-.work-app.theme-dark .vc-marketing-time-event>span {
-  color: #b5adc0;
+:root[data-theme='dark'] .vc-marketing-time-event > span,
+.work-app.theme-dark .vc-marketing-time-event > span,
+:root[data-theme='dark'] .vc-time-day-summary,
+.work-app.theme-dark .vc-time-day-summary,
+:root[data-theme='dark'] .vc-time-day-owner,
+.work-app.theme-dark .vc-time-day-owner {
+  color: var(--mk-glass-muted, #b5adc0);
 }
 
 :root[data-theme='dark'] .vc-marketing-time-event time,
-.work-app.theme-dark .vc-marketing-time-event time {
-  color: #c084fc;
+.work-app.theme-dark .vc-marketing-time-event time,
+:root[data-theme='dark'] .vc-time-day-media time,
+.work-app.theme-dark .vc-time-day-media time {
+  color: #d8b4fe;
+}
+
+:root[data-theme='dark'] .vc-marketing-quick-time-btn,
+.work-app.theme-dark .vc-marketing-quick-time-btn,
+:root[data-theme='dark'] .vc-marketing-quick-time-chip,
+.work-app.theme-dark .vc-marketing-quick-time-chip {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-pill);
+  color: #e9d5ff;
+}
+
+:root[data-theme='dark'] .vc-marketing-time-range-toggle,
+.work-app.theme-dark .vc-marketing-time-range-toggle,
+:root[data-theme='dark'] .vc-marketing-density-toggle,
+.work-app.theme-dark .vc-marketing-density-toggle {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-pill);
+}
+
+:root[data-theme='dark'] .vc-marketing-time-range-toggle button.active,
+:root[data-theme='dark'] .vc-marketing-time-range-toggle button.is-active,
+.work-app.theme-dark .vc-marketing-time-range-toggle button.active,
+.work-app.theme-dark .vc-marketing-time-range-toggle button.is-active,
+:root[data-theme='dark'] .vc-marketing-density-toggle button.active,
+.work-app.theme-dark .vc-marketing-density-toggle button.active {
+  background: var(--mk-glass-surface);
+  color: #f3e8ff;
 }
 
 :root[data-theme='dark'] .vc-marketing-calendar-grid,
 .work-app.theme-dark .vc-marketing-calendar-grid {
-  border-color: #262939;
-  background: #14161f;
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-column);
 }
 
 :root[data-theme='dark'] .vc-marketing-calendar-weekday,
 .work-app.theme-dark .vc-marketing-calendar-weekday {
-  background: #1a1c28;
-  border-color: #262939;
-  color: #9ba0b4;
+  background: var(--mk-glass-header-sticky);
+  border-color: var(--mk-glass-line);
+  color: var(--mk-glass-muted);
 }
 
 :root[data-theme='dark'] .vc-marketing-calendar-day,
 .work-app.theme-dark .vc-marketing-calendar-day {
-  background: #151722;
-  border-color: #262939;
+  background: rgb(20 22 34 / 48%);
+  border-color: var(--mk-glass-line);
   color: #e2e4ec;
 }
 
 :root[data-theme='dark'] .vc-marketing-calendar-day.is-outside,
 .work-app.theme-dark .vc-marketing-calendar-day.is-outside {
-  background: #101118;
-  color: #5d6175;
+  background: rgb(14 16 24 / 42%);
+  color: #6b7188;
 }
 
 :root[data-theme='dark'] .vc-marketing-calendar-day.is-today,
 .work-app.theme-dark .vc-marketing-calendar-day.is-today {
-  background: #201a2d;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(196 86 220 / 17%), transparent 64%),
+    rgb(29 24 44 / 62%);
+}
+
+/* Dark Mode Month Compact Pills & Detailed Glass Cards (overrides admin-dark-refinements.css) */
+.work-app.theme-dark .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill,
+:root[data-theme='dark'] .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill {
+  border-color: var(--mk-glass-border);
+  border-left-color: var(--event-color, #a855f7);
+  background:
+    radial-gradient(ellipse at 92% 50%, var(--mk-channel-glow, transparent), transparent 56%),
+    var(--mk-glass-pill);
+  box-shadow: var(--mk-glass-highlight);
+  color: var(--mk-glass-ink);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card,
+:root[data-theme='dark'] .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-detailed-card {
+  border-color: var(--mk-glass-border);
+  border-left-color: var(--event-color, #a855f7);
+  background:
+    radial-gradient(ellipse at 95% 0%, var(--mk-channel-glow, transparent), transparent 54%),
+    var(--mk-glass-surface);
+  box-shadow: var(--mk-glass-shadow);
+  color: var(--mk-glass-ink);
+}
+
+.work-app.theme-dark .vc-cal-compact-progress,
+:root[data-theme='dark'] .vc-cal-compact-progress {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-surface);
+  color: var(--mk-glass-muted);
+}
+
+.work-app.theme-dark .vc-cal-compact-progress.is-active,
+:root[data-theme='dark'] .vc-cal-compact-progress.is-active { border-color: rgb(192 132 252 / 28%); background: rgb(168 85 247 / 16%); color: #e9d5ff; }
+.work-app.theme-dark .vc-cal-compact-progress.is-working,
+:root[data-theme='dark'] .vc-cal-compact-progress.is-working { border-color: rgb(192 132 252 / 34%); background: rgb(147 51 234 / 22%); color: #f3e8ff; }
+.work-app.theme-dark .vc-cal-compact-progress.is-review,
+:root[data-theme='dark'] .vc-cal-compact-progress.is-review { border-color: rgb(251 191 36 / 34%); background: rgb(245 158 11 / 18%); color: #fde68a; }
+.work-app.theme-dark .vc-cal-compact-progress.is-approved,
+:root[data-theme='dark'] .vc-cal-compact-progress.is-approved { border-color: rgb(96 165 250 / 34%); background: rgb(59 130 246 / 18%); color: #bfdbfe; }
+.work-app.theme-dark .vc-cal-compact-progress.is-published,
+:root[data-theme='dark'] .vc-cal-compact-progress.is-published { border-color: rgb(52 211 153 / 34%); background: rgb(16 185 129 / 18%); color: #a7f3d0; }
+.work-app.theme-dark .vc-cal-compact-progress.is-completed,
+:root[data-theme='dark'] .vc-cal-compact-progress.is-completed { border-color: rgb(45 212 191 / 34%); background: rgb(20 184 166 / 18%); color: #99f6e4; }
+.work-app.theme-dark .vc-cal-compact-progress.is-blocked,
+:root[data-theme='dark'] .vc-cal-compact-progress.is-blocked { border-color: rgb(251 113 133 / 36%); background: rgb(225 29 72 / 20%); color: #fecdd3; }
+.work-app.theme-dark .vc-cal-compact-progress.is-cancelled,
+:root[data-theme='dark'] .vc-cal-compact-progress.is-cancelled { border-color: rgb(156 163 175 / 30%); background: rgb(107 114 128 / 18%); color: #d1d5db; }
+
+.work-app.theme-dark .vc-cal-stage-pill.tone-review,
+:root[data-theme='dark'] .vc-cal-stage-pill.tone-review { border-color: rgb(251 191 36 / 34%); background: rgb(245 158 11 / 18%); color: #fde68a; }
+.work-app.theme-dark .vc-cal-stage-pill.tone-working,
+:root[data-theme='dark'] .vc-cal-stage-pill.tone-working { border-color: rgb(192 132 252 / 34%); background: rgb(147 51 234 / 22%); color: #f3e8ff; }
+.work-app.theme-dark .vc-cal-stage-pill.tone-approved,
+:root[data-theme='dark'] .vc-cal-stage-pill.tone-approved { border-color: rgb(96 165 250 / 34%); background: rgb(59 130 246 / 18%); color: #bfdbfe; }
+.work-app.theme-dark .vc-cal-stage-pill.tone-published,
+:root[data-theme='dark'] .vc-cal-stage-pill.tone-published { border-color: rgb(52 211 153 / 34%); background: rgb(16 185 129 / 18%); color: #a7f3d0; }
+.work-app.theme-dark .vc-cal-stage-pill.tone-completed,
+:root[data-theme='dark'] .vc-cal-stage-pill.tone-completed { border-color: rgb(45 212 191 / 34%); background: rgb(20 184 166 / 18%); color: #99f6e4; }
+.work-app.theme-dark .vc-cal-stage-pill.tone-blocked,
+.work-app.theme-dark .vc-cal-stage-pill.tone-cancelled,
+:root[data-theme='dark'] .vc-cal-stage-pill.tone-blocked,
+:root[data-theme='dark'] .vc-cal-stage-pill.tone-cancelled { border-color: rgb(251 113 133 / 36%); background: rgb(225 29 72 / 20%); color: #fecdd3; }
+
+.work-app.theme-dark .vc-cal-detailed-art-placeholder.has-local,
+:root[data-theme='dark'] .vc-cal-detailed-art-placeholder.has-local {
+  border-color: rgb(192 132 252 / 38%);
+  background: rgb(168 85 247 / 16%);
+  color: #e9d5ff;
 }
 
 :root[data-theme='dark'] .vc-marketing-slot-modal,
@@ -689,13 +1350,17 @@
   gap: 12px;
   padding: 10px 14px;
   margin-bottom: 12px;
-  border: 1px solid #e5dfea;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #fdfcfe 0%, #f7f1fb 100%);
+  border: 1px solid var(--mk-glass-border, #e5dfea);
+  border-radius: 15px;
+  background:
+    radial-gradient(ellipse at 92% 10%, rgb(165 16 145 / 8%), transparent 45%),
+    var(--mk-glass-pill, rgb(255 255 255 / 66%));
   box-sizing: border-box;
   max-width: 100%;
   min-width: 0;
-  box-shadow: 0 1px 4px rgba(40, 20, 60, 0.04);
+  box-shadow: var(--mk-glass-highlight, inset 0 1px 0 rgb(255 255 255 / 80%));
+  backdrop-filter: var(--mk-glass-pill-blur, blur(12px) saturate(140%));
+  -webkit-backdrop-filter: var(--mk-glass-pill-blur, blur(12px) saturate(140%));
 }
 
 .vc-marketing-pulse-stats {
@@ -1074,9 +1739,11 @@
 /* Dark Mode Overrides for Pulse Bar & Semiotic Indicators */
 :root[data-theme='dark'] .vc-marketing-calendar-pulse,
 .work-app.theme-dark .vc-marketing-calendar-pulse {
-  background: linear-gradient(135deg, #181926 0%, #151622 100%);
-  border-color: #2a2c3d;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  background:
+    radial-gradient(ellipse at 92% 10%, rgb(196 86 220 / 13%), transparent 48%),
+    var(--mk-glass-pill, rgb(31 34 50 / 68%));
+  border-color: var(--mk-glass-border, rgb(232 218 250 / 13%));
+  box-shadow: var(--mk-glass-highlight);
 }
 
 :root[data-theme='dark'] .vc-pulse-val-row strong,
@@ -1145,8 +1812,8 @@
 
 :root[data-theme='dark'] .vc-channel-chip,
 .work-app.theme-dark .vc-channel-chip {
-  background: #1c1e2b;
-  border-color: #2c2f42;
+  background: var(--mk-glass-pill, rgb(31 34 50 / 72%));
+  border-color: var(--mk-glass-border, rgb(232 218 250 / 15%));
   color: #d1d5db;
 }
 
@@ -1251,7 +1918,7 @@
 }
 
 /* The monthly overview uses a static, non-interactive signed-URL thumbnail. */
-.vc-marketing-calendar.is-month .vc-marketing-calendar-event.has-month-artwork {
+.vc-marketing-calendar.is-month .vc-marketing-calendar-event.has-month-artwork:not(.is-detailed-card):not(.is-compact-pill) {
   grid-template-columns: 32px minmax(0, 1fr);
   column-gap: 6px;
   row-gap: 3px;
@@ -1302,12 +1969,12 @@
 }
 
 @media (max-width: 760px) {
-  .vc-marketing-calendar.is-month .vc-marketing-calendar-event.has-month-artwork {
+  .vc-marketing-calendar.is-month .vc-marketing-calendar-event.has-month-artwork:not(.is-detailed-card):not(.is-compact-pill) {
     grid-template-columns: 23px minmax(0, 1fr);
     column-gap: 4px;
   }
 
-  .vc-marketing-calendar.is-month .has-month-artwork > .vc-marketing-post-artwork.is-month {
+  .vc-marketing-calendar.is-month .has-month-artwork:not(.is-detailed-card):not(.is-compact-pill) > .vc-marketing-post-artwork.is-month {
     width: 23px;
     min-height: 22px;
   }

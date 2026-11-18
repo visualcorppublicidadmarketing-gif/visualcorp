@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react';
+import { motion, useInView, useReducedMotion } from 'motion/react';
 import {
   ArrowDown,
   ArrowRight,
@@ -22,7 +22,9 @@ import {
   Store,
 } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
+import { Card } from '../components/ui/card';
 import {
+  AnimatedShinyText,
   BorderBeam,
   DotPattern,
   SpotlightLayer,
@@ -30,6 +32,12 @@ import {
   updateSpotlight,
 } from '../components/ui/MagicComponents';
 import { Dialog, DialogCallout } from '../components/ui/DialogSystem';
+import {
+  HorizonLightWave,
+  PortalLightStage,
+  PlanetaryHorizonArc,
+  SculptedWaveDivider,
+} from '../components/ui/GlassWaveEffects';
 import {
   creativePillars,
   projectOrientatorGoals,
@@ -51,6 +59,24 @@ const serviceIcons: Record<string, typeof Printer> = {
   textil: Shirt,
   corte: Scissors,
   eventos: ScanLine,
+};
+
+const orbitalServices: Array<{ id: PublicServiceId; name: string }> = [
+  { id: 'impresion', name: 'Impresión' },
+  { id: 'corte', name: 'Corte Láser' },
+  { id: 'rotulos', name: 'Rótulos' },
+  { id: 'gran-formato', name: 'Gran Formato' },
+  { id: 'textil', name: 'Textil' },
+  { id: 'eventos', name: 'Eventos' },
+];
+
+const serviceToPillarIndex: Record<string, number> = {
+  impresion: 0,
+  corte: 0,
+  rotulos: 1,
+  'gran-formato': 1,
+  eventos: 2,
+  textil: 2,
 };
 
 const pillarIcons = {
@@ -98,83 +124,49 @@ function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; 
   );
 }
 
-function VisualitoStage() {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const reduceMotion = useReducedMotion();
-  const pointerX = useMotionValue(0);
-  const pointerY = useMotionValue(0);
-  const smoothPointerX = useSpring(pointerX, { damping: 24, stiffness: 150, mass: 0.8 });
-  const smoothPointerY = useSpring(pointerY, { damping: 24, stiffness: 150, mass: 0.8 });
-  const { scrollYProgress } = useScroll({
-    target: stageRef,
-    offset: ['start end', 'end start'],
-  });
-  const sceneY = useTransform(scrollYProgress, [0, 1], [18, -14]);
-  const wordY = useTransform(scrollYProgress, [0, 1], [26, -22]);
-  const ringY = useTransform(scrollYProgress, [0, 1], [-12, 14]);
-  const visualitoY = useTransform(scrollYProgress, [0, 1], [12, -20]);
-  const rotateX = useTransform(smoothPointerY, [-0.5, 0.5], [4.5, -4.5]);
-  const rotateY = useTransform(smoothPointerX, [-0.5, 0.5], [-6, 6]);
-  const lightX = useTransform(smoothPointerX, [-0.5, 0.5], [-110, 110]);
-  const lightY = useTransform(smoothPointerY, [-0.5, 0.5], [-82, 82]);
-
-  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== 'mouse' || reduceMotion) return;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    if (!bounds.width || !bounds.height) return;
-    pointerX.set(((event.clientX - bounds.left) / bounds.width - 0.5) * 2);
-    pointerY.set(((event.clientY - bounds.top) / bounds.height - 0.5) * 2);
-  };
-
-  const handlePointerLeave = () => {
-    pointerX.set(0);
-    pointerY.set(0);
-  };
-
+function VisualitoStage({ onOpenOrientator }: { onOpenOrientator?: () => void }) {
   return (
-    <div
-      ref={stageRef}
-      className="home-stage"
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
-    >
+    <div className="home-stage">
+      <BorderBeam size={220} duration={9} borderWidth={1.25} />
       <DotPattern width={26} height={26} className="home-stage-dots" />
       <div className="home-stage-glow" aria-hidden="true" />
-      <motion.div
-        className="home-stage-scene"
-        style={{
-          y: reduceMotion ? 0 : sceneY,
-          rotateX: reduceMotion ? 0 : rotateX,
-          rotateY: reduceMotion ? 0 : rotateY,
-          transformPerspective: 1100,
-        }}
+      <PortalLightStage className="home-stage-portal" />
+      <HorizonLightWave className="home-stage-horizon" />
+
+      {/* Satélite 1: Estudio + Taller (Payrot sculpted frosted satellite) */}
+      <div className="home-stage-satellite home-satellite-studio vc-glass-frosted" aria-hidden="true">
+        <span className="home-satellite-kicker">
+          <Sparkles size={11} aria-hidden="true" /> ESTUDIO + TALLER
+        </span>
+        <strong>Diseño y producción propia en Milagro</strong>
+      </div>
+
+      {/* Satélite 2: 6 líneas conectadas (Payrot sculpted clear satellite, clickeable) */}
+      <button
+        type="button"
+        className="home-stage-satellite home-satellite-lines vc-glass-clear"
+        onClick={onOpenOrientator}
+        aria-label="6 líneas conectadas: Asesoría, diseño, impresión y montaje. Haz clic para orientar tu proyecto"
       >
-        <motion.div
-          className="home-stage-ring"
-          style={{ y: reduceMotion ? 0 : ringY, rotate: -18, z: -50 }}
-          aria-hidden="true"
-        />
-        <motion.span
-          className="home-stage-word"
-          style={{ y: reduceMotion ? 0 : wordY, z: -36 }}
-          aria-hidden="true"
-        >
+        <span className="home-satellite-kicker">
+          6 LÍNEAS CONECTADAS <ArrowUpRight size={12} aria-hidden="true" />
+        </span>
+        <strong>Asesoría, diseño, impresión y montaje</strong>
+      </button>
+
+      <div className="home-stage-scene">
+        <div className="home-stage-ring" aria-hidden="true" />
+        <span className="home-stage-word" aria-hidden="true">
           CREA.
-        </motion.span>
-        <motion.div
-          className="home-stage-pointer-glow"
-          style={{ x: reduceMotion ? 0 : lightX, y: reduceMotion ? 0 : lightY, z: -10 }}
-          aria-hidden="true"
-        />
+        </span>
         <div className="home-stage-floor" aria-hidden="true" />
-        <motion.img
+        <img
           className="home-visualito"
           src="/public-site/visualito-hero.webp"
           alt="Visualito, la mascota de Visual Corp"
           width={720}
           height={1080}
           fetchPriority="high"
-          style={{ y: reduceMotion ? 0 : visualitoY, z: 44 }}
         />
         <span className="home-stage-label">
           <span className="home-color-dots" aria-hidden="true">
@@ -184,7 +176,20 @@ function VisualitoStage() {
           </span>
           DISEÑO · PUBLICIDAD · PRODUCCIÓN
         </span>
-      </motion.div>
+      </div>
+
+      {/* Cápsula de cristal interactiva al pie del portal (Reflect AI style) */}
+      <button
+        type="button"
+        className="home-stage-portal-capsule vc-glass-clear"
+        onClick={onOpenOrientator}
+        aria-label="¿Qué necesita tu marca hoy? · Haz clic para orientar tu proyecto"
+      >
+        <Sparkles size={14} className="home-portal-capsule-icon" aria-hidden="true" />
+        <span>¿Qué necesita tu marca hoy? · Haz clic para orientar tu proyecto</span>
+        <ArrowRight size={14} aria-hidden="true" />
+      </button>
+
       <div className="home-stage-caption">
         <span>VISUALITO / ESTUDIO CREATIVO & TALLER</span>
         <span>
@@ -259,6 +264,40 @@ function CreativeStudioSection({
         </div>
       </Reveal>
 
+      {/* Abanico Orbital de Especialidades (WebAngles orbital arc) */}
+      <div className="home-orbital-fan" role="region" aria-label="Abanico orbital de especialidades">
+        <div className="home-orbital-fan-track" aria-hidden="true">
+          <div className="home-orbital-fan-arc" />
+        </div>
+        <div className="home-orbital-fan-items" role="tablist" aria-label="Especialidades por pilar">
+          {orbitalServices.map((orbital) => {
+            const pillarIdx = serviceToPillarIndex[orbital.id] ?? 0;
+            const isSelected = activeIndex === pillarIdx;
+            const Icon = serviceIcons[orbital.id] || Sparkles;
+            return (
+              <button
+                key={orbital.id}
+                type="button"
+                className={`home-orbital-node vc-glass-clear${isSelected ? ' is-active' : ''}`}
+                onClick={() => {
+                  setActiveIndex(pillarIdx);
+                  pillarTabRefs.current[pillarIdx]?.focus();
+                }}
+                aria-label={`${orbital.name} · Ver pilar ${creativePillars[pillarIdx]?.badge || ''}`}
+              >
+                <span className="home-orbital-node-icon" aria-hidden="true">
+                  <Icon size={16} />
+                </span>
+                <span>{orbital.name}</span>
+                <span className="home-orbital-node-badge">
+                  {creativePillars[pillarIdx]?.mark || '01'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="home-pillars-layout">
         <div className="home-pillars-tabs" role="tablist" aria-orientation="vertical" aria-label="Pilares de trabajo de Visual Corp">
           {creativePillars.map((pillar, index) => {
@@ -277,7 +316,7 @@ function CreativeStudioSection({
                   pillarTabRefs.current[index] = element;
                 }}
                 onKeyDown={(event) => handlePillarKeyDown(event, index)}
-                className={`home-pillar-tab${isSelected ? ' is-active' : ''}`}
+                className={`home-pillar-tab vc-glass-frosted${isSelected ? ' is-active' : ''}`}
                 onClick={() => setActiveIndex(index)}
               >
                 <span className="home-pillar-tab-mark">{pillar.mark}</span>
@@ -294,8 +333,8 @@ function CreativeStudioSection({
           })}
         </div>
 
-        <div
-          className="home-pillar-showcase vc-magic-card"
+        <Card
+          className="home-pillar-showcase home-glass-card vc-magic-card vc-glass-blur"
           role="tabpanel"
           id={`home-pillar-panel-${activePillar.id}`}
           aria-labelledby={`home-pillar-tab-${activePillar.id}`}
@@ -304,7 +343,6 @@ function CreativeStudioSection({
           onPointerLeave={clearSpotlight}
         >
           <SpotlightLayer />
-          <BorderBeam />
           <motion.div
             key={activePillar.id}
             className="home-pillar-showcase-inner"
@@ -346,7 +384,7 @@ function CreativeStudioSection({
             )}
 
             <div className="home-pillar-actions">
-              <Link className="home-button home-button-primary vc-shimmer-button" to={quoteHref}>
+              <Link className="home-button home-button-primary" to={quoteHref}>
                 {activePillar.ctaLabel} <ArrowUpRight size={17} />
               </Link>
               <Link className="home-button home-button-secondary" to={`/servicios/${activePillar.recommendedServiceId}`}>
@@ -354,7 +392,7 @@ function CreativeStudioSection({
               </Link>
             </div>
           </motion.div>
-        </div>
+        </Card>
       </div>
     </section>
   );
@@ -402,7 +440,7 @@ function ProcessSection({ onOpenOrientator }: { onOpenOrientator: () => void }) 
             </button>
           </div>
         </div>
-        <div className="home-process-panel" id="home-process-detail" aria-live="polite" aria-atomic="true">
+        <Card className="home-process-panel home-glass-card vc-glass-blur" id="home-process-detail" aria-live="polite" aria-atomic="true">
           <motion.div
             key={active}
             initial={reduceMotion ? false : { opacity: 0, y: 12 }}
@@ -425,7 +463,7 @@ function ProcessSection({ onOpenOrientator }: { onOpenOrientator: () => void }) 
               <span>Atención directa en {publicAddress}</span>
             </div>
           </motion.div>
-        </div>
+        </Card>
       </div>
     </section>
   );
@@ -500,11 +538,12 @@ export function PublicHomePage() {
   return (
     <div className="vc-home">
       <section className="home-hero" aria-labelledby="home-title">
+        <HorizonLightWave className="home-hero-ambient-wave" />
         <div className="home-hero-inner">
           <div className="home-hero-copy">
-            <div className="home-hero-kicker home-kicker">
+            <div className="home-hero-kicker home-kicker vc-glass-clear">
               <span className="home-status-dot" aria-hidden="true" />
-              {data.settings.heroEyebrow}
+              <AnimatedShinyText shimmerWidth={140}>{data.settings.heroEyebrow}</AnimatedShinyText>
             </div>
             <h1 id="home-title">
               {words.join(' ')} <span>{lastWord}</span>
@@ -518,7 +557,7 @@ export function PublicHomePage() {
                 Explorar servicios <ArrowDown size={18} />
               </a>
             </div>
-            <VisualitoStage />
+            <VisualitoStage onOpenOrientator={() => setOrientatorOpen(true)} />
             <div className="home-goal-strip" role="group" aria-label="Accesos rápidos según tu objetivo">
               <div className="home-goal-strip-heading">
                 <span className="home-goal-strip-label">
@@ -590,6 +629,9 @@ export function PublicHomePage() {
         </div>
       )}
 
+      {/* Divisor de onda esculpido (getwaves.io style): Hero -> Light/Services */}
+      <SculptedWaveDivider variant="hero-to-light" />
+
       <section className="home-services home-section" id="servicios" aria-labelledby="home-services-title">
         <Reveal className="home-section-heading">
           <div>
@@ -622,10 +664,10 @@ export function PublicHomePage() {
             const tags = serviceDeliverableTags[service.id as PublicServiceId] || [];
             return (
               <Reveal key={service.id} className={isFeatured ? 'home-service-featured' : ''} delay={(index % 3) * 0.06}>
-                <div className="home-service-card-wrap">
+                <Card className="home-service-card-wrap home-glass-card vc-glass-frosted">
                   <Link
                     to={`/servicios/${encodeURIComponent(service.id)}`}
-                    className={`home-service home-service-${service.id} vc-magic-card`}
+                    className={`home-service home-service-${service.id} vc-magic-card vc-glass-frosted`}
                     onPointerMove={updateSpotlight}
                     onPointerLeave={clearSpotlight}
                   >
@@ -665,7 +707,7 @@ export function PublicHomePage() {
                     <Eye size={14} aria-hidden="true" />
                     <span>Vista rápida</span>
                   </button>
-                </div>
+                </Card>
               </Reveal>
             );
           })}
@@ -691,6 +733,9 @@ export function PublicHomePage() {
           </div>
         </div>
       </section>
+
+      {/* Divisor de onda esculpido (getwaves.io style): Services -> Dark Creative Studio */}
+      <SculptedWaveDivider variant="light-to-dark" />
 
       <CreativeStudioSection services={services} onOpenOrientator={openOrientatorForService} />
 
@@ -740,6 +785,18 @@ export function PublicHomePage() {
       </div>
 
       <section className="home-contact home-section" aria-labelledby="home-contact-title">
+        {/* Arco planetario luminoso de horizonte atmosférico (WebAngles style) */}
+        <PlanetaryHorizonArc className="home-contact-arc" />
+
+        {/* Divisor con muesca esculpida central y medallón de marca (Payrot style) */}
+        <div className="home-contact-notch-wrap">
+          <SculptedWaveDivider variant="notch-portal">
+            <div className="home-contact-notch-emblem" aria-hidden="true">
+              <Sparkles size={22} />
+            </div>
+          </SculptedWaveDivider>
+        </div>
+
         <Reveal>
           <span className="home-kicker">04 / HAGAMOS QUE SUCEDA</span>
           <h2 id="home-contact-title">
@@ -753,7 +810,7 @@ export function PublicHomePage() {
             Estamos en {publicAddress} para escucharte.
           </p>
           <div className="home-actions">
-            <Link className="home-button home-button-primary vc-shimmer-button" to="/cotizador">
+            <Link className="home-button home-button-primary" to="/cotizador">
               Empezar mi proyecto <ArrowUpRight size={20} />
             </Link>
             <Link className="home-button home-button-secondary" to="/contacto">

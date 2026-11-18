@@ -8,6 +8,152 @@
 
 
 /* =========================================================================
+   Overview Table Glass Surface (.vc-marketing-post-table-wrap)
+   ========================================================================= */
+
+.work-app .vc-content-workspace .vc-marketing-post-table-wrap {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 15%));
+  border-radius: 16px;
+  background: var(--mk-glass-surface, rgb(255 255 255 / 74%));
+  box-shadow: var(--mk-glass-shadow, 0 14px 34px rgb(43 24 66 / 8%));
+  backdrop-filter: var(--mk-glass-blur, blur(18px) saturate(145%));
+  -webkit-backdrop-filter: var(--mk-glass-blur, blur(18px) saturate(145%));
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-post-table-wrap,
+:root[data-theme='dark'] .vc-content-workspace .vc-marketing-post-table-wrap {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-surface);
+  box-shadow: var(--mk-glass-shadow);
+}
+
+.work-app .vc-content-workspace .vc-marketing-post-table {
+  width: 100%;
+  min-width: 780px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: transparent;
+}
+
+.work-app .vc-content-workspace .vc-marketing-post-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 12px 11px;
+  border-bottom: 1px solid var(--mk-glass-line, rgb(112 85 142 / 14%));
+  background: var(--mk-glass-header-sticky, rgb(252 250 255 / 88%));
+  color: var(--mk-glass-muted, #6f667a);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.work-app .vc-content-workspace .vc-marketing-post-table td {
+  padding: 11px;
+  border-bottom: 1px solid var(--mk-glass-line, rgb(112 85 142 / 12%));
+  color: var(--mk-glass-ink, #3c3346);
+  font-size: 12.5px;
+  line-height: 1.45;
+  vertical-align: middle;
+  transition: background-color 140ms ease;
+}
+
+.work-app .vc-content-workspace .vc-marketing-post-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.work-app .vc-content-workspace .vc-marketing-post-table tbody tr:hover td {
+  background: rgb(165 16 145 / 5%);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-post-table tbody tr:hover td,
+:root[data-theme='dark'] .vc-content-workspace .vc-marketing-post-table tbody tr:hover td {
+  background: rgb(208 147 240 / 8%);
+}
+
+.work-app .vc-content-workspace .vc-marketing-post-table td > small {
+  color: var(--mk-glass-muted, #766d80);
+  font-size: 11px;
+}
+
+.work-app .vc-content-workspace .vc-marketing-post-table .vc-marketing-table-title {
+  color: var(--mk-glass-ink, #2e2638);
+  font-size: 13px;
+  font-weight: 780;
+  line-height: 1.35;
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-post-table .vc-marketing-table-title,
+:root[data-theme='dark'] .vc-content-workspace .vc-marketing-post-table .vc-marketing-table-title {
+  color: var(--mk-glass-ink, #f2eff8);
+}
+
+.work-app .vc-content-workspace .vc-marketing-post-table .vc-marketing-table-title:hover {
+  color: #8b3dc0;
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-post-table .vc-marketing-table-title:hover,
+:root[data-theme='dark'] .vc-content-workspace .vc-marketing-post-table .vc-marketing-table-title:hover {
+  color: #e4b5ff;
+}
+
+.vc-marketing-post-table .vc-table-channel-wrap,
+.vc-marketing-post-table .vc-table-stage-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vc-marketing-post-table .vc-marketing-table-post-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.vc-marketing-post-table .vc-marketing-table-post-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.vc-marketing-post-table .vc-cal-pipeline-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.vc-marketing-card-ops-strip {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid var(--marketing-card-line, var(--mk-glass-line, rgb(77 62 97 / 14%)));
+  border-radius: 15px;
+  background: var(--marketing-card-inner, var(--mk-glass-pill, rgb(255 255 255 / 58%)));
+}
+
+.vc-marketing-card-ops-strip .mk-work-details {
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+}
+
+/* =========================================================================
    Modern Premium Marketing Cards & WorkDetails Semiotics (Light & Dark Mode)
    ========================================================================= */
 
@@ -253,6 +399,13 @@
   border-color: rgba(244, 114, 182, 0.35) !important;
   background: rgba(244, 114, 182, 0.14) !important;
   color: #f9a8d4 !important;
+}
+
+[data-theme='dark'] .vc-marketing-channel-pill.is-tiktok,
+.work-app.theme-dark .vc-marketing-channel-pill.is-tiktok {
+  border-color: rgba(34, 211, 238, 0.35) !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  color: #67e8f9 !important;
 }
 
 [data-theme='dark'] .vc-marketing-channel-pill.is-facebook,

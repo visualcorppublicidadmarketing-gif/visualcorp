@@ -36,15 +36,17 @@
 .public-site .footer-shell {
   position: relative;
   z-index: 1;
+  width: 100%;
   max-width: 1376px;
+  min-width: 0;
   padding: 0 clamp(20px, 2vw, 30px);
   overflow: hidden;
-  border-color: rgba(231, 235, 255, .13);
+  border-color: var(--glass-border, rgba(231, 235, 255, .13));
   border-radius: 24px;
-  background: linear-gradient(140deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .012) 62%, rgba(255, 255, 255, .026));
-  box-shadow: 0 28px 76px rgba(0, 0, 0, .25), inset 0 1px rgba(255, 255, 255, .055);
-  backdrop-filter: blur(20px) saturate(1.12);
-  -webkit-backdrop-filter: blur(20px) saturate(1.12);
+  background: var(--glass-bg, linear-gradient(140deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .012) 62%, rgba(255, 255, 255, .026)));
+  box-shadow: var(--glass-shadow, 0 28px 76px rgba(0, 0, 0, .25)), inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, .055));
+  backdrop-filter: var(--glass-blur, blur(20px) saturate(1.12));
+  -webkit-backdrop-filter: var(--glass-blur, blur(20px) saturate(1.12));
 }
 
 .public-site .footer-shell > :not(.site-footer-particles) {
@@ -304,4 +306,12 @@
   .public-site .site-footer::after { animation: none; }
   .public-site .footer-cta-link::before { transition: none; }
   .public-site .site-footer a { transition-duration: .01ms; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .public-site .footer-shell {
+    background: #10121c;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }

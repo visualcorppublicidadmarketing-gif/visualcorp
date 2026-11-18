@@ -1,35 +1,318 @@
-.vc-marketing-calendar.is-table{min-width:0}
-.vc-marketing-table-wrap{max-width:100%;overflow:auto;border:1px solid #e9e4ec;border-radius:12px;background:#fff;overscroll-behavior-x:contain;scrollbar-width:thin}
-.vc-marketing-table{width:100%;min-width:910px;border-collapse:separate;border-spacing:0;text-align:left}
-.vc-marketing-table th{position:sticky;top:0;z-index:1;padding:10px 9px;border-bottom:1px solid #e9e4ec;background:#faf8fc;color:#827a89;font-size:9px;font-weight:800;letter-spacing:.03em;white-space:nowrap}
-.vc-marketing-table td{padding:9px;border-bottom:1px solid #f0edf2;color:#5c5361;font-size:10px;vertical-align:middle}
-.vc-marketing-table tbody tr:last-child td{border-bottom:0}
-.vc-marketing-table tbody tr:hover{background:#fcfafe}
-.vc-marketing-table tbody tr.is-selected{background:#f7f1fa}
-.vc-marketing-table-select{width:34px;text-align:center}
-.vc-marketing-table-select input{width:14px;height:14px;margin:0;accent-color:#744792}
-.vc-marketing-table-date{min-width:100px;white-space:nowrap}
-.vc-marketing-table-date b,.vc-marketing-table-date small,.vc-marketing-table-channel b,.vc-marketing-table-channel small{display:block}
-.vc-marketing-table-date b,.vc-marketing-table-channel b{color:#4b414f;font-size:10px;font-weight:750}
-.vc-marketing-table-date small,.vc-marketing-table-channel small{margin-top:3px;color:#928a98;font-size:9px}
-.vc-marketing-table-publication{min-width:260px}
-.vc-marketing-table-publication-main{display:flex;align-items:center;gap:9px;min-width:0}
-.vc-marketing-table-artwork{width:58px;height:46px;flex:none;overflow:hidden;border-radius:7px;background:#f8f5fa}
-.vc-marketing-table-artwork .vc-marketing-post-artwork.is-compact{width:100%;height:100%;border:0;border-radius:7px}
-.vc-marketing-table-artwork .vc-marketing-post-artwork.is-compact .vc-marketing-post-artwork-browse{border-radius:7px}
-.vc-marketing-table-publication-main>button{display:grid;min-width:0;gap:4px;padding:0;border:0;background:transparent;color:#403747;text-align:left;cursor:pointer}
-.vc-marketing-table-publication-main>button:focus-visible{outline:2px solid #8750a5;outline-offset:3px;border-radius:4px}
-.vc-marketing-table-publication-main>button b{overflow:hidden;font-size:10px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
-.vc-marketing-table-publication-main>button small{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;color:#89818e;font-size:9px;line-height:1.4}
-.vc-marketing-table-channel{min-width:116px}
-.vc-marketing-table-owner{min-width:125px}
-.vc-marketing-table .vc-marketing-week-card-status{display:inline-block;max-width:none;font-size:9px}
-.vc-marketing-table-tags{min-width:100px;white-space:nowrap}
-.vc-marketing-table-tags .ok-badge{margin:2px 3px 2px 0}
-.vc-marketing-table-tags>span{color:#aaa2ad}
-.vc-marketing-table td.vc-marketing-table-actions{position:relative;width:38px;padding:0!important;text-align:center}
-.vc-marketing-table-actions>.vc-marketing-table-context{position:static;display:grid;min-height:38px;place-items:center}
-.vc-marketing-table-actions>.vc-marketing-table-context>.vc-context-trigger{position:static;width:28px;height:28px;opacity:1}
-.vc-marketing-table-empty{height:130px;text-align:center!important;color:#968d9b!important}
-@media(max-width:760px){.vc-marketing-calendar.is-table .vc-marketing-calendar-toolbar{justify-content:space-between}.vc-marketing-table{min-width:850px}}
-@media(prefers-reduced-motion:reduce){.vc-marketing-table tbody tr{scroll-behavior:auto}}
+.vc-marketing-calendar.is-table {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.work-app .vc-content-workspace .vc-marketing-table-wrap,
+.vc-marketing-table-wrap {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 15%));
+  border-radius: 16px;
+  background: var(--mk-glass-surface, rgb(255 255 255 / 74%));
+  box-shadow: var(--mk-glass-shadow, 0 14px 34px rgb(43 24 66 / 8%));
+  backdrop-filter: var(--mk-glass-blur, blur(18px) saturate(145%));
+  -webkit-backdrop-filter: var(--mk-glass-blur, blur(18px) saturate(145%));
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-table-wrap,
+:root[data-theme='dark'] .vc-content-workspace .vc-marketing-table-wrap {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-surface);
+  box-shadow: var(--mk-glass-shadow);
+}
+
+.vc-marketing-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+  background: transparent;
+}
+
+.vc-marketing-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 12px 11px;
+  border-bottom: 1px solid var(--mk-glass-line, rgb(112 85 142 / 14%));
+  background: var(--mk-glass-header-sticky, rgb(252 250 255 / 88%));
+  color: var(--mk-glass-muted, #6f667a);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.vc-marketing-table td {
+  padding: 11px;
+  border-bottom: 1px solid var(--mk-glass-line, rgb(112 85 142 / 12%));
+  color: var(--mk-glass-ink, #3c3346);
+  font-size: 12px;
+  line-height: 1.4;
+  vertical-align: middle;
+  transition: background-color 140ms ease;
+}
+
+.vc-marketing-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.vc-marketing-table tbody tr:hover td {
+  background: rgb(165 16 145 / 5%);
+}
+
+.vc-marketing-table tbody tr.is-selected td {
+  background: rgb(139 92 246 / 10%);
+}
+
+.work-app.theme-dark .vc-marketing-table tbody tr:hover td,
+:root[data-theme='dark'] .vc-marketing-table tbody tr:hover td {
+  background: rgb(208 147 240 / 8%);
+}
+
+.work-app.theme-dark .vc-marketing-table tbody tr.is-selected td,
+:root[data-theme='dark'] .vc-marketing-table tbody tr.is-selected td {
+  background: rgb(168 85 247 / 16%);
+}
+
+.vc-marketing-table-select {
+  width: 36px;
+  text-align: center;
+}
+
+.vc-marketing-table-select input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: #8b3dc0;
+}
+
+.vc-marketing-table-date {
+  min-width: 108px;
+  white-space: nowrap;
+}
+
+.vc-marketing-table-date b,
+.vc-marketing-table-date small,
+.vc-marketing-table-channel b,
+.vc-marketing-table-channel small {
+  display: block;
+}
+
+.vc-marketing-table-date b,
+.vc-marketing-table-channel b {
+  color: var(--mk-glass-ink, #32283c);
+  font-size: 12.5px;
+  font-weight: 750;
+}
+
+.vc-marketing-table-date small,
+.vc-marketing-table-channel small {
+  margin-top: 3px;
+  color: var(--mk-glass-muted, #766d80);
+  font-size: 11px;
+}
+
+.vc-marketing-table-publication {
+  min-width: 280px;
+}
+
+.vc-marketing-table-publication-main,
+.vc-marketing-table-post-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.vc-marketing-table-artwork {
+  width: 60px;
+  height: 48px;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 15%));
+  border-radius: 9px;
+  background: var(--mk-glass-pill, rgb(255 255 255 / 66%));
+}
+
+.vc-marketing-table-artwork .vc-marketing-post-artwork.is-compact {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 8px;
+}
+
+.vc-marketing-table-artwork .vc-marketing-post-artwork.is-compact .vc-marketing-post-artwork-browse {
+  border-radius: 8px;
+}
+
+.vc-marketing-table-post-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.vc-marketing-table-publication-main > button,
+.vc-marketing-table-post-copy > button {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mk-glass-ink, #2e2638);
+  text-align: left;
+  cursor: pointer;
+}
+
+.vc-marketing-table-publication-main > button:focus-visible,
+.vc-marketing-table-post-copy > button:focus-visible {
+  outline: 2px solid #8750a5;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.vc-marketing-table-publication-main > button b,
+.vc-marketing-table-post-copy > button b {
+  overflow: hidden;
+  color: var(--mk-glass-ink, #2e2638);
+  font-size: 13px;
+  font-weight: 780;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc-marketing-table-publication-main > button:hover b,
+.vc-marketing-table-post-copy > button:hover b {
+  color: #8b3dc0;
+  text-decoration: underline;
+}
+
+.work-app.theme-dark .vc-marketing-table-publication-main > button:hover b,
+.work-app.theme-dark .vc-marketing-table-post-copy > button:hover b,
+:root[data-theme='dark'] .vc-marketing-table-publication-main > button:hover b,
+:root[data-theme='dark'] .vc-marketing-table-post-copy > button:hover b {
+  color: #e4b5ff;
+}
+
+.vc-marketing-table-publication-main > button small,
+.vc-marketing-table-post-copy > button small {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  color: var(--mk-glass-muted, #766d80);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.vc-marketing-table-post-copy .vc-cal-pipeline-dots,
+.vc-marketing-table .vc-cal-pipeline-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 0;
+}
+
+.vc-marketing-table-channel {
+  min-width: 130px;
+}
+
+.vc-table-channel-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vc-table-stage-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vc-marketing-table-owner {
+  min-width: 130px;
+  color: var(--mk-glass-ink, #3c3346);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.vc-marketing-table .vc-marketing-week-card-status {
+  display: inline-flex;
+  align-items: center;
+  max-width: none;
+  font-size: 10.5px;
+}
+
+.vc-marketing-table-tags {
+  min-width: 110px;
+  white-space: nowrap;
+}
+
+.vc-marketing-table-tags .ok-badge {
+  margin: 2px 3px 2px 0;
+}
+
+.vc-marketing-table-tags > span {
+  color: var(--mk-glass-muted, #948b9c);
+}
+
+.vc-marketing-table td.vc-marketing-table-actions {
+  position: relative;
+  width: 42px;
+  padding: 0 !important;
+  text-align: center;
+}
+
+.vc-marketing-table-actions > .vc-marketing-table-context {
+  position: static;
+  display: grid;
+  min-height: 38px;
+  place-items: center;
+}
+
+.vc-marketing-table-actions > .vc-marketing-table-context > .vc-context-trigger {
+  position: static;
+  width: 28px;
+  height: 28px;
+  opacity: 1;
+}
+
+.vc-marketing-table-empty {
+  height: 130px;
+  text-align: center !important;
+  color: var(--mk-glass-muted, #847a8c) !important;
+  font-size: 12.5px !important;
+}
+
+@media (max-width: 760px) {
+  .vc-marketing-calendar.is-table .vc-marketing-calendar-toolbar {
+    justify-content: space-between;
+  }
+
+  .vc-marketing-table {
+    min-width: 860px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-marketing-table tbody tr,
+  .vc-marketing-table td {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

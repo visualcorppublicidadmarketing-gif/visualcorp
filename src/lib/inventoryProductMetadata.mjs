@@ -40,6 +40,36 @@ export const INVENTORY_BASE_UNIT_SUGGESTIONS = [
   'hoja', 'rollo', 'lámina', 'litro', 'mililitro', 'kilogramo', 'gramo',
 ];
 
+const DISCRETE_INVENTORY_UNITS = new Set([
+  'unidad', 'unidades', 'unit', 'units', 'pieza', 'piezas', 'pza', 'pzas', 'pz', 'ud', 'uds',
+  'paquete', 'paquetes', 'pack', 'packs', 'set', 'sets', 'juego', 'juegos', 'par', 'pares',
+  'docena', 'docenas', 'kit', 'kits', 'articulo', 'articulos', 'botella', 'botellas',
+  'caja', 'cajas', 'hoja', 'hojas', 'rollo', 'rollos', 'lamina', 'laminas', 'resma', 'resmas',
+]);
+
+export function inventoryUnitIsDiscrete(value) {
+  return DISCRETE_INVENTORY_UNITS.has(normalizeOptionKey(value));
+}
+
+const CATALOG_SINGLE_UNIT_UNITS = new Set([
+  'unidad', 'unidades', 'unit', 'units', 'pieza', 'piezas', 'pza', 'pzas', 'pz', 'ud', 'uds', 'item', 'items', 'articulo', 'articulos',
+]);
+
+export function inventoryUnitMatchesCatalogSalesUnit(value) {
+  return CATALOG_SINGLE_UNIT_UNITS.has(normalizeOptionKey(value));
+}
+
+export function classifyCatalogInventoryProduct(product) {
+  if (!product || typeof product !== 'object') return 'unknown';
+  const productType = normalizeOptionKey(product.productType ?? product.product_type ?? product.type);
+  const productKind = normalizeOptionKey(product.productKind ?? product.product_kind);
+  const mode = normalizeOptionKey(product.mode ?? product.calc_type);
+  if (mode === 'area' || mode === 'm2') return 'area';
+  if (productType === 'service' || productKind === 'service') return 'service';
+  if (productType === 'physical') return 'quantity';
+  return 'unknown';
+}
+
 export const INVENTORY_SPECIFICATION_SUGGESTIONS = {
   finish: ['Brillante', 'Mate', 'Satinado', 'Transparente', 'Arenado / esmerilado', 'Metalizado', 'Texturizado', 'Natural'],
   color: ['Blanco', 'Negro', 'Transparente', 'Natural', 'Dorado', 'Plateado', 'Rojo', 'Amarillo', 'Azul', 'Verde', 'Multicolor'],

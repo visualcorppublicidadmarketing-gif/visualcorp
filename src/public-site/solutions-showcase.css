@@ -130,13 +130,18 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.vc-sol-card,
+.vc-sol-matrix-card,
 .vc-sol-env-card {
   position: relative;
   display: flex;
   flex-direction: column;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--glass-border, rgba(231, 235, 255, 0.14));
+  background: var(--glass-blur-bg, linear-gradient(160deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.02)), rgba(18, 21, 34, 0.72));
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28), inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, 0.12));
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
   overflow: hidden;
   isolation: isolate;
   transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
@@ -315,8 +320,11 @@
   flex-direction: column;
   padding: 26px 24px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  border: 1px solid var(--glass-border, rgba(231, 235, 255, 0.14));
+  background: var(--glass-blur-bg, linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)), rgba(18, 21, 34, 0.68));
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24), inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, 0.1));
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
   overflow: hidden;
   isolation: isolate;
   transition: transform 0.25s ease, border-color 0.25s ease;
@@ -387,11 +395,15 @@
   gap: 44px;
 }
 
+.vc-sol-strip-card,
 .vc-sol-strip-block {
   padding: 28px;
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  border: 1px solid var(--glass-border, rgba(231, 235, 255, 0.16));
+  background: var(--glass-frosted-bg, linear-gradient(155deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)), rgba(15, 18, 30, 0.8));
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.32), inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, 0.13));
+  backdrop-filter: blur(20px) saturate(135%);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
 }
 
 .vc-sol-strip-head {
@@ -448,8 +460,11 @@
   flex: 1;
   min-width: 0;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--glass-border, rgba(231, 235, 255, 0.15));
   background: radial-gradient(circle at 50% 35%, rgba(84, 202, 255, 0.16), rgba(11, 12, 18, 0.95));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   overflow: hidden;
   cursor: pointer;
   transition: flex 0.42s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s ease, box-shadow 0.25s ease;
@@ -613,8 +628,11 @@
   display: flex;
   flex-direction: column;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--glass-border, rgba(231, 235, 255, 0.14));
+  background: var(--glass-blur-bg, linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)), rgba(18, 21, 34, 0.72));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28), inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, 0.11));
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
   overflow: hidden;
   isolation: isolate;
   transition: transform 0.26s ease, border-color 0.26s ease, box-shadow 0.26s ease;
@@ -1057,14 +1075,27 @@ html[data-public-theme='light'] .vc-sol-filter-tab.is-active {
   background: linear-gradient(135deg, rgba(229, 0, 126, 0.15), rgba(84, 202, 255, 0.18));
 }
 
+html[data-public-theme='light'] .vc-sol-card,
+html[data-public-theme='light'] .vc-sol-matrix-card,
 html[data-public-theme='light'] .vc-sol-env-card,
 html[data-public-theme='light'] .vc-sol-benefit-card,
-html[data-public-theme='light'] .vc-sol-strip-block,
 html[data-public-theme='light'] .vc-sol-piece-card {
-  border-color: rgba(36, 32, 45, 0.12);
-  background: #ffffff;
+  border-color: rgba(61, 42, 74, 0.14);
+  background: rgba(255, 255, 255, 0.9);
   color: #221e2b;
-  box-shadow: 0 12px 32px rgba(34, 24, 46, 0.06);
+  box-shadow: 0 14px 34px rgba(48, 29, 59, 0.07), inset 0 1px 0 #ffffff;
+  backdrop-filter: blur(16px) saturate(115%);
+  -webkit-backdrop-filter: blur(16px) saturate(115%);
+}
+
+html[data-public-theme='light'] .vc-sol-strip-card,
+html[data-public-theme='light'] .vc-sol-strip-block {
+  border-color: rgba(61, 42, 74, 0.15);
+  background: rgba(255, 255, 255, 0.92);
+  color: #221e2b;
+  box-shadow: 0 18px 44px rgba(48, 29, 59, 0.08), inset 0 1px 0 #ffffff;
+  backdrop-filter: blur(20px) saturate(120%);
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
 }
 
 html[data-public-theme='light'] .vc-sol-env-media,
@@ -1230,4 +1261,49 @@ html[data-public-theme='light'] .portfolio-practical-link:focus-visible { outlin
 @media (prefers-reduced-motion: reduce) {
   .portfolio-practical-card,.portfolio-practical-link svg { transition: none; }
   .portfolio-practical-card:hover { transform: none; }
+}
+
+/* Fallbacks for backdrop-filter and reduced transparency / contrast */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .vc-sol-card,
+  .vc-sol-matrix-card,
+  .vc-sol-env-card,
+  .vc-sol-benefit-card,
+  .vc-sol-strip-card,
+  .vc-sol-strip-block,
+  .vc-sol-slice,
+  .vc-sol-piece-card,
+  .vc-sol-env-badge,
+  .vc-sol-piece-env {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #141724 !important;
+  }
+  html[data-public-theme='light'] :is(.vc-sol-card, .vc-sol-matrix-card, .vc-sol-env-card, .vc-sol-benefit-card, .vc-sol-strip-card, .vc-sol-strip-block, .vc-sol-piece-card) {
+    background: #ffffff !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .vc-sol-card,
+  .vc-sol-matrix-card,
+  .vc-sol-env-card,
+  .vc-sol-benefit-card,
+  .vc-sol-strip-card,
+  .vc-sol-strip-block,
+  .vc-sol-slice,
+  .vc-sol-piece-card,
+  .vc-sol-env-badge,
+  .vc-sol-piece-env {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #111422 !important;
+    border-color: #8b93ad !important;
+    box-shadow: none !important;
+  }
+  html[data-public-theme='light'] :is(.vc-sol-card, .vc-sol-matrix-card, .vc-sol-env-card, .vc-sol-benefit-card, .vc-sol-strip-card, .vc-sol-strip-block, .vc-sol-piece-card) {
+    background: #ffffff !important;
+    border-color: #6f5570 !important;
+    box-shadow: none !important;
+  }
 }

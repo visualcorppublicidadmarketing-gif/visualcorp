@@ -1,51 +1,699 @@
-.vc-marketing-calendar.is-kanban{min-width:0}
-.vc-marketing-calendar.is-kanban .vc-marketing-calendar-view button{display:inline-flex;align-items:center;gap:5px}
-.vc-marketing-kanban-filters{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;padding:8px 12px;border:1px solid #ece6f1;border-radius:12px;background:#faf8fc}
-.vc-marketing-filters-group{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
-.vc-marketing-filters-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto}
-.vc-marketing-kanban-result-count{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:#f1ebf6;color:#5e4c6b;font-size:11px;font-weight:700;white-space:nowrap}
-.vc-marketing-kanban-rule{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid #d8eadf;border-radius:11px;background:linear-gradient(100deg,#f2faf5,#fff);color:#54715e}
-.vc-marketing-kanban-rule>span{display:grid;width:23px;height:23px;flex:none;place-items:center;border-radius:7px;background:#e2f2e8;color:#3d8558}
-.vc-marketing-kanban-rule>div{display:grid;gap:3px;min-width:0}
-.vc-marketing-kanban-rule b{font-size:12px;color:#3e674c}
-.vc-marketing-kanban-rule small{font-size:11px;line-height:1.5;color:#718878}
-.vc-marketing-kanban-board{display:grid;grid-auto-columns:minmax(305px,1fr);grid-auto-flow:column;gap:14px;overflow-x:auto;align-items:start;padding:2px 2px 12px;overscroll-behavior-x:contain;scrollbar-width:thin}
-.vc-marketing-kanban-column{display:grid;min-width:0;min-height:350px;align-content:start;gap:12px;padding:12px;border:1px solid #ebe6ee;border-radius:14px;background:#f9f8fa;transition:border-color .14s,background .14s,box-shadow .14s}
-.vc-marketing-kanban-column.can-drop{border-color:#c8a8d8;background:#f5eef9;box-shadow:inset 0 0 0 1px #d9c4e3}
-.vc-marketing-kanban-column-head{display:grid;gap:5px;padding:2px 2px 10px;border-bottom:1px solid #e9e4ec}
-.vc-marketing-kanban-column-head>div{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.vc-marketing-kanban-column-head b{color:#443b49;font-size:13px}
-.vc-marketing-kanban-column-head>div>span{display:grid;min-width:26px;height:26px;place-items:center;border-radius:8px;background:#eee8f2;color:#6d527d;font-size:11px;font-weight:800}
-.vc-marketing-kanban-column-head small{color:#928897;font-size:10px}
-.vc-marketing-kanban-cards{display:grid;align-content:start;gap:12px;min-height:190px}
-.vc-marketing-kanban-empty{display:grid;min-height:110px;place-items:center;padding:12px;border:1px dashed #e0d9e4;border-radius:10px;color:#a098a5;font-size:10px;text-align:center}
-.vc-marketing-kanban-card-context{position:relative;display:block;min-width:0}
-.vc-marketing-kanban-card{position:relative;display:grid;min-width:0;gap:10px;padding:12px;border:1px solid color-mix(in srgb,var(--event-color,#8660ad) 24%,#fff);border-top:4px solid var(--event-color,#8660ad);border-radius:12px;background:linear-gradient(150deg,var(--event-tint,#f8f4fb),#fff 65%);color:#4a4050;box-shadow:0 2px 8px #29203308;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
-.vc-marketing-kanban-card:hover{transform:translateY(-1px);box-shadow:0 6px 15px #29203312}
-.vc-marketing-kanban-card.tone-review{border-top-color:#c69a37;background:linear-gradient(150deg,var(--event-tint,#fff8e9),#fff 66%)}
-.vc-marketing-kanban-card.tone-published{border-top-color:#3d9b73;background:linear-gradient(150deg,var(--event-tint,#edf8f2),#fff 66%)}
-.vc-marketing-kanban-card.tone-blocked{border-top-color:#d07965;background:linear-gradient(150deg,var(--event-tint,#fff1ee),#fff 66%)}
-.vc-marketing-kanban-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#786d80;font-size:10px;font-weight:750}
-.vc-marketing-kanban-card-top input{width:16px;height:16px;margin:0;accent-color:#744792}
-.vc-marketing-kanban-card-title{display:flex;align-items:flex-start;gap:4px;padding:0;border:0;background:transparent;color:#312b36;text-align:left;cursor:pointer}
-.vc-marketing-kanban-card-title svg{flex:none;margin-top:2px;color:#9b8ba4;cursor:grab}
-.vc-marketing-kanban-card-title b{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;font-size:14px;line-height:1.4}
-.vc-marketing-kanban-card-title:focus-visible{outline:2px solid #8750a5;outline-offset:3px;border-radius:4px}
-.vc-marketing-kanban-card-topic{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;color:#716977;font-size:11px;line-height:1.5}
-.vc-marketing-kanban-card .vc-marketing-post-artwork.is-week{min-height:170px;aspect-ratio:16/9}
-.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban.has-image{min-height:150px;aspect-ratio:16/9;border-radius:9px;overflow:hidden}
-.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image){min-height:38px;height:38px;aspect-ratio:auto;padding:4px 8px;display:flex;align-items:center;justify-content:space-between;border:1px dashed #d9cedf;border-radius:8px;background:#fcf9fd}
-.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image):hover{border-color:#8e52ad;background:#f9f2fc}
-.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-empty{display:flex;flex-direction:row;align-items:center;gap:6px;min-height:0;padding:0}
-.vc-marketing-kanban-empty-cue{font-size:10px;font-weight:650;color:#786485}
+.vc-marketing-calendar.is-kanban {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vc-marketing-calendar.is-kanban .vc-marketing-calendar-view button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vc-marketing-kanban-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 15%));
+  border-radius: 14px;
+  background: var(--mk-glass-pill, rgb(255 255 255 / 66%));
+  box-shadow: var(--mk-glass-highlight, inset 0 1px 0 rgb(255 255 255 / 80%));
+  backdrop-filter: var(--mk-glass-pill-blur, blur(12px) saturate(140%));
+  -webkit-backdrop-filter: var(--mk-glass-pill-blur, blur(12px) saturate(140%));
+}
+
+.vc-marketing-filters-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vc-marketing-filters-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.vc-marketing-kanban-result-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 15%));
+  border-radius: 999px;
+  background: var(--mk-glass-surface, rgb(255 255 255 / 72%));
+  color: var(--mk-glass-ink, #4f3f5c);
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.vc-marketing-kanban-rule {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgb(54 163 114 / 26%);
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgb(54 163 114 / 12%), transparent 45%),
+    var(--mk-glass-surface, rgb(255 255 255 / 74%));
+  color: var(--mk-glass-ink, #3e5b48);
+  box-shadow: var(--mk-glass-highlight, inset 0 1px 0 rgb(255 255 255 / 75%));
+  backdrop-filter: var(--mk-glass-pill-blur, blur(12px) saturate(140%));
+  -webkit-backdrop-filter: var(--mk-glass-pill-blur, blur(12px) saturate(140%));
+}
+
+.vc-marketing-kanban-rule > span {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  place-items: center;
+  border-radius: 8px;
+  background: rgb(54 163 114 / 16%);
+  color: #2f7d53;
+}
+
+.vc-marketing-kanban-rule > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.vc-marketing-kanban-rule b {
+  font-size: 12px;
+  color: #2d5d40;
+}
+
+.vc-marketing-kanban-rule small {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--mk-glass-muted, #5c7565);
+}
+
+.vc-marketing-kanban-board {
+  display: grid;
+  grid-auto-columns: minmax(305px, 1fr);
+  grid-auto-flow: column;
+  gap: 14px;
+  overflow-x: auto;
+  align-items: start;
+  padding: 3px 3px 14px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.vc-marketing-kanban-column {
+  --lane-color: #8b5cf6;
+  display: grid;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 350px;
+  align-content: start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 15%));
+  border-radius: 18px;
+  background: var(--mk-glass-column, rgb(250 247 254 / 62%));
+  box-shadow: var(--mk-glass-shadow, 0 12px 32px rgb(43 24 66 / 8%));
+  backdrop-filter: var(--mk-glass-blur, blur(18px) saturate(145%));
+  -webkit-backdrop-filter: var(--mk-glass-blur, blur(18px) saturate(145%));
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.vc-marketing-kanban-column.lane-planned { --lane-color: #8b7ba0; }
+.vc-marketing-kanban-column.lane-planning { --lane-color: #9333ea; }
+.vc-marketing-kanban-column.lane-design { --lane-color: #a855f7; }
+.vc-marketing-kanban-column.lane-production { --lane-color: #ec4899; }
+.vc-marketing-kanban-column.lane-review { --lane-color: #f59e0b; }
+.vc-marketing-kanban-column.lane-approved { --lane-color: #06b6d4; }
+.vc-marketing-kanban-column.lane-scheduled { --lane-color: #3b82f6; }
+.vc-marketing-kanban-column.lane-blocked { --lane-color: #ef4444; }
+.vc-marketing-kanban-column.lane-published { --lane-color: #10b981; }
+.vc-marketing-kanban-column.lane-completed { --lane-color: #14b8a6; }
+.vc-marketing-kanban-column.lane-cancelled { --lane-color: #9ca3af; }
+
+.vc-marketing-kanban-column.can-drop {
+  border-color: var(--mk-glass-border-hover, rgb(156 54 172 / 38%));
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(168 85 247 / 12%), transparent 60%),
+    var(--mk-glass-column, rgb(245 238 249 / 76%));
+  box-shadow: inset 0 0 0 1px var(--mk-glass-border-hover, #d9c4e3), var(--mk-glass-shadow);
+}
+
+.vc-marketing-kanban-column-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  gap: 7px;
+  margin: -4px -4px 0;
+  padding: 8px 8px 10px;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 12%));
+  border-radius: 13px;
+  background: var(--mk-glass-header-sticky, rgb(252 250 255 / 86%));
+  box-shadow: var(--mk-glass-highlight, inset 0 1px 0 rgb(255 255 255 / 80%));
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+.vc-marketing-kanban-column-head > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vc-kanban-head-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vc-kanban-lane-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--lane-color, #8b5cf6);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lane-color, #8b5cf6) 22%, transparent);
+}
+
+.vc-marketing-kanban-column-head b {
+  color: var(--mk-glass-ink, #32283c);
+  font-size: 13px;
+  font-weight: 780;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc-kanban-count-pill,
+.vc-marketing-kanban-column-head > div > span:not(.vc-kanban-lane-dot) {
+  display: inline-grid;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 7px;
+  place-items: center;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 16%));
+  border-radius: 999px;
+  background: var(--mk-glass-pill, rgb(255 255 255 / 70%));
+  color: var(--mk-glass-ink, #5b4372);
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.vc-marketing-kanban-column-head small {
+  color: var(--mk-glass-muted, #7f7489);
+  font-size: 10px;
+}
+
+.vc-kanban-lane-meter {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--mk-glass-line, rgb(112 85 142 / 14%));
+}
+
+.vc-kanban-lane-meter > i,
+.vc-kanban-lane-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8b5cf6 0%, #d946ef 55%, #06b6d4 100%);
+  transition: width 220ms ease;
+}
+
+.vc-marketing-kanban-cards {
+  display: grid;
+  align-content: start;
+  gap: 11px;
+  min-height: 190px;
+  min-width: 0;
+}
+
+.vc-marketing-kanban-empty {
+  display: grid;
+  min-height: 110px;
+  place-items: center;
+  padding: 12px;
+  border: 1px dashed var(--mk-glass-border, rgb(112 85 142 / 22%));
+  border-radius: 12px;
+  background: var(--mk-glass-pill, rgb(255 255 255 / 42%));
+  color: var(--mk-glass-muted, #8e8497);
+  font-size: 10.5px;
+  text-align: center;
+}
+
+.vc-marketing-kanban-card-context {
+  position: relative;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vc-marketing-kanban-card {
+  position: relative;
+  display: grid;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 16%));
+  border-top: 3.5px solid var(--event-color, #8660ad);
+  border-radius: 15px;
+  background:
+    radial-gradient(ellipse at 94% 4%, var(--mk-channel-glow, transparent), transparent 54%),
+    linear-gradient(150deg, var(--event-tint, rgb(168 85 247 / 7%)), transparent 58%),
+    var(--mk-glass-surface, rgb(255 255 255 / 76%));
+  color: var(--mk-glass-ink, #382e42);
+  box-shadow: var(--mk-glass-shadow, 0 8px 24px rgb(43 24 66 / 8%));
+  backdrop-filter: var(--mk-glass-blur, blur(16px) saturate(140%));
+  -webkit-backdrop-filter: var(--mk-glass-blur, blur(16px) saturate(140%));
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.vc-marketing-kanban-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--mk-glass-border-hover, rgb(156 54 172 / 34%));
+  box-shadow: var(--mk-glass-shadow-hover, 0 14px 32px rgb(43 24 66 / 14%));
+}
+
+.vc-marketing-kanban-card.tone-review {
+  border-top-color: #d69e2e;
+  background:
+    radial-gradient(ellipse at 94% 4%, var(--mk-channel-glow, transparent), transparent 54%),
+    radial-gradient(ellipse at 8% 0%, rgb(245 158 11 / 10%), transparent 50%),
+    var(--mk-glass-surface, rgb(255 255 255 / 76%));
+}
+
+.vc-marketing-kanban-card.tone-published {
+  border-top-color: #10b981;
+  background:
+    radial-gradient(ellipse at 94% 4%, var(--mk-channel-glow, transparent), transparent 54%),
+    radial-gradient(ellipse at 8% 0%, rgb(16 185 129 / 10%), transparent 50%),
+    var(--mk-glass-surface, rgb(255 255 255 / 76%));
+}
+
+.vc-marketing-kanban-card.tone-blocked,
+.vc-marketing-kanban-card.tone-cancelled {
+  border-top-color: #e11d48;
+  background:
+    radial-gradient(ellipse at 94% 4%, var(--mk-channel-glow, transparent), transparent 54%),
+    radial-gradient(ellipse at 8% 0%, rgb(225 29 72 / 9%), transparent 50%),
+    var(--mk-glass-surface, rgb(255 255 255 / 76%));
+}
+
+.vc-marketing-kanban-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  color: var(--mk-glass-muted, #6f6478);
+  font-size: 10.5px;
+  font-weight: 750;
+}
+
+.vc-kanban-top-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.vc-marketing-kanban-card-top input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #8b3dc0;
+  flex-shrink: 0;
+}
+
+.vc-marketing-kanban-card-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mk-glass-ink, #292232);
+  text-align: left;
+  cursor: pointer;
+}
+
+.vc-marketing-kanban-card-title svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--mk-glass-muted, #9b8ba4);
+  cursor: grab;
+}
+
+.vc-marketing-kanban-card-title b {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  font-size: 14px;
+  font-weight: 760;
+  line-height: 1.4;
+}
+
+.vc-marketing-kanban-card-title:focus-visible {
+  outline: 2px solid #8750a5;
+  outline-offset: 3px;
+  border-radius: 5px;
+}
+
+.vc-marketing-kanban-card-topic {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  color: var(--mk-glass-muted, #696071);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-week {
+  min-height: 170px;
+  aspect-ratio: 16 / 9;
+}
+
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban.has-image {
+  min-height: 150px;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--mk-glass-border, rgb(112 85 142 / 16%));
+}
+
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) {
+  min-height: 38px;
+  height: 38px;
+  aspect-ratio: auto;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px dashed var(--mk-glass-border, rgb(135 90 164 / 28%));
+  border-radius: 9px;
+  background: var(--mk-glass-pill, rgb(255 255 255 / 55%));
+}
+
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image):hover {
+  border-color: var(--mk-glass-border-hover, #8e52ad);
+  background: var(--mk-glass-surface, rgb(255 255 255 / 80%));
+}
+
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-empty {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  min-height: 0;
+  padding: 0;
+}
+
+.vc-marketing-kanban-empty-cue {
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--mk-glass-muted, #786485);
+}
+
 .vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-paste,
-.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-browse{position:static;height:26px;padding:2px 8px;font-size:9.5px;border-radius:6px;opacity:1}
-.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-paste kbd{display:none}
-.vc-marketing-kanban-card-meta{display:grid;gap:6px;color:#706779;font-size:10px}
-.vc-marketing-kanban-card-meta>span{display:flex;align-items:center;gap:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.vc-marketing-kanban-card-meta svg{flex:none;color:#937aa1}
-.vc-marketing-kanban-card-foot{display:flex;min-width:0;align-items:center;justify-content:space-between;gap:6px}
-.vc-marketing-kanban-card-foot>div{display:flex;gap:3px;min-width:0;overflow:hidden}
-@media(max-width:760px){.vc-marketing-kanban-filters{align-items:stretch}.vc-marketing-kanban-filters label{flex:1 1 220px}.vc-marketing-kanban-filters select{flex:1;min-width:0;max-width:none}.vc-marketing-kanban-result-count{flex-basis:100%;margin-left:0}.vc-marketing-kanban-board{grid-auto-columns:minmax(290px,78vw)}}
-@media(max-width:520px){.vc-marketing-kanban-rule{padding:10px}.vc-marketing-kanban-board{grid-auto-columns:minmax(280px,88vw)}.vc-marketing-kanban-column{min-height:300px}.vc-marketing-kanban-card .vc-marketing-post-artwork.is-week{min-height:155px}}
-@media(prefers-reduced-motion:reduce){.vc-marketing-kanban-card,.vc-marketing-kanban-column{transition:none}.vc-marketing-kanban-card:hover{transform:none}}
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-browse {
+  position: static;
+  height: 26px;
+  padding: 2px 8px;
+  font-size: 9.5px;
+  border-radius: 7px;
+  border-color: var(--mk-glass-border, rgb(112 85 142 / 20%));
+  background: var(--mk-glass-surface, rgb(255 255 255 / 80%));
+  opacity: 1;
+}
+
+.vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-paste kbd {
+  display: none;
+}
+
+.vc-marketing-kanban-card-prod {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--mk-glass-line, rgb(112 85 142 / 14%));
+  border-radius: 10px;
+  background: var(--mk-glass-pill, rgb(255 255 255 / 54%));
+}
+
+.vc-marketing-kanban-card-meta {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--mk-glass-muted, #696071);
+  font-size: 11px;
+}
+
+.vc-marketing-kanban-card-meta > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc-marketing-kanban-card-meta svg {
+  flex: none;
+  color: #937aa1;
+}
+
+.vc-marketing-kanban-card-foot {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.vc-marketing-kanban-card-foot > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* =========================================================================
+   Kanban Dark Mode (theme-dark & data-theme='dark')
+   ========================================================================= */
+.work-app.theme-dark .vc-marketing-kanban-filters,
+:root[data-theme='dark'] .vc-marketing-kanban-filters {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-pill);
+}
+
+.work-app.theme-dark .vc-marketing-kanban-result-count,
+:root[data-theme='dark'] .vc-marketing-kanban-result-count {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-surface);
+  color: var(--mk-glass-ink);
+}
+
+.work-app.theme-dark .vc-marketing-filter-clear,
+:root[data-theme='dark'] .vc-marketing-filter-clear,
+.work-app.theme-dark .vc-marketing-empty-lanes-toggle,
+:root[data-theme='dark'] .vc-marketing-empty-lanes-toggle {
+  border-color: var(--mk-glass-border) !important;
+  background: var(--mk-glass-pill) !important;
+  color: var(--mk-glass-ink) !important;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-rule,
+:root[data-theme='dark'] .vc-marketing-kanban-rule {
+  border-color: rgb(52 211 153 / 24%);
+  background:
+    radial-gradient(ellipse at 0% 0%, rgb(16 185 129 / 14%), transparent 48%),
+    var(--mk-glass-surface);
+  color: var(--mk-glass-ink);
+}
+
+.work-app.theme-dark .vc-marketing-kanban-rule > span,
+:root[data-theme='dark'] .vc-marketing-kanban-rule > span {
+  background: rgb(16 185 129 / 18%);
+  color: #6ee7b7;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-rule b,
+:root[data-theme='dark'] .vc-marketing-kanban-rule b {
+  color: #a7f3d0;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-column,
+:root[data-theme='dark'] .vc-marketing-kanban-column {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-column);
+  box-shadow: var(--mk-glass-shadow);
+}
+
+.work-app.theme-dark .vc-marketing-kanban-column.can-drop,
+:root[data-theme='dark'] .vc-marketing-kanban-column.can-drop {
+  border-color: var(--mk-glass-border-hover);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(192 132 252 / 14%), transparent 60%),
+    var(--mk-glass-column);
+}
+
+.work-app.theme-dark .vc-marketing-kanban-column-head,
+:root[data-theme='dark'] .vc-marketing-kanban-column-head {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-header-sticky);
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card,
+:root[data-theme='dark'] .vc-marketing-kanban-card {
+  border-color: var(--mk-glass-border);
+  background:
+    radial-gradient(ellipse at 94% 4%, var(--mk-channel-glow, transparent), transparent 56%),
+    linear-gradient(150deg, rgb(168 85 247 / 10%), transparent 56%),
+    var(--mk-glass-surface);
+  color: var(--mk-glass-ink);
+  box-shadow: var(--mk-glass-shadow);
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card.tone-review,
+:root[data-theme='dark'] .vc-marketing-kanban-card.tone-review {
+  background:
+    radial-gradient(ellipse at 94% 4%, var(--mk-channel-glow, transparent), transparent 56%),
+    radial-gradient(ellipse at 8% 0%, rgb(251 191 36 / 12%), transparent 52%),
+    var(--mk-glass-surface);
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card.tone-published,
+:root[data-theme='dark'] .vc-marketing-kanban-card.tone-published {
+  background:
+    radial-gradient(ellipse at 94% 4%, var(--mk-channel-glow, transparent), transparent 56%),
+    radial-gradient(ellipse at 8% 0%, rgb(52 211 153 / 12%), transparent 52%),
+    var(--mk-glass-surface);
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card.tone-blocked,
+.work-app.theme-dark .vc-marketing-kanban-card.tone-cancelled,
+:root[data-theme='dark'] .vc-marketing-kanban-card.tone-blocked,
+:root[data-theme='dark'] .vc-marketing-kanban-card.tone-cancelled {
+  background:
+    radial-gradient(ellipse at 94% 4%, var(--mk-channel-glow, transparent), transparent 56%),
+    radial-gradient(ellipse at 8% 0%, rgb(244 63 94 / 12%), transparent 52%),
+    var(--mk-glass-surface);
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image),
+:root[data-theme='dark'] .vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-pill);
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-paste,
+.work-app.theme-dark .vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-browse,
+:root[data-theme='dark'] .vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-paste,
+:root[data-theme='dark'] .vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-post-artwork-browse {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-surface);
+  color: var(--mk-glass-ink);
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card-meta svg,
+:root[data-theme='dark'] .vc-marketing-kanban-card-meta svg {
+  color: #c49df0;
+}
+
+@media (max-width: 760px) {
+  .vc-marketing-kanban-filters {
+    align-items: stretch;
+  }
+
+  .vc-marketing-kanban-filters label {
+    flex: 1 1 220px;
+  }
+
+  .vc-marketing-kanban-filters select {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .vc-marketing-kanban-result-count {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  .vc-marketing-kanban-board {
+    grid-auto-columns: minmax(290px, 78vw);
+  }
+}
+
+@media (max-width: 520px) {
+  .vc-marketing-kanban-rule {
+    padding: 10px;
+  }
+
+  .vc-marketing-kanban-board {
+    grid-auto-columns: minmax(280px, 88vw);
+  }
+
+  .vc-marketing-kanban-column {
+    min-height: 300px;
+  }
+
+  .vc-marketing-kanban-card .vc-marketing-post-artwork.is-week {
+    min-height: 155px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-marketing-kanban-card,
+  .vc-marketing-kanban-column,
+  .vc-kanban-lane-meter > i,
+  .vc-kanban-lane-meter > span {
+    transition: none;
+  }
+
+  .vc-marketing-kanban-card:hover {
+    transform: none;
+  }
+}

@@ -1,0 +1,397 @@
+/* Shared glassmorphism token layer across Visual Corp Suite (admin, POS, and public site). */
+:root,
+:root[data-vc-theme="light"],
+body[data-vc-theme="light"],
+.work-app {
+  --glass-bg: var(--vc-glass-surface, rgb(255 255 255 / 74%));
+  --glass-bg-strong: rgb(255 255 255 / 90%);
+  --glass-border: var(--vc-glass-border, rgb(111 105 143 / 18%));
+  --glass-blur: var(--vc-glass-blur, 16px);
+  --glass-shadow: var(
+    --vc-glass-shadow,
+    0 18px 48px rgb(42 24 58 / 9%),
+    inset 0 1px 0 rgb(255 255 255 / 76%)
+  );
+  --glass-highlight: rgb(255 255 255 / 76%);
+  --glass-ink: var(--vc-ink, #191522);
+  --glass-muted: var(--vc-muted, #5e566b);
+
+  /* 3 Physical Glass Tiers - Work app light */
+  --glass-frosted-bg: rgba(255, 255, 255, 0.74);
+  --glass-frosted-border: rgba(111, 105, 143, 0.20);
+  --glass-frosted-border-top: rgba(255, 255, 255, 0.88);
+  --glass-frosted-shadow: 0 16px 42px rgba(42, 24, 58, 0.08), 0 2px 6px rgba(42, 24, 58, 0.04), inset 0 1px 0 var(--glass-frosted-border-top);
+
+  --glass-clear-bg: rgba(255, 255, 255, 0.52);
+  --glass-clear-border: rgba(111, 105, 143, 0.18);
+  --glass-clear-shadow: 0 10px 28px rgba(42, 24, 58, 0.06), inset 0 1.5px 0 rgba(255, 255, 255, 0.85), inset 0 -1px 0 rgba(134, 54, 130, 0.14);
+
+  --glass-blur-bg: rgba(255, 255, 255, 0.88);
+  --glass-blur-border: rgba(111, 105, 143, 0.16);
+  --glass-blur-shadow: 0 22px 52px rgba(42, 24, 58, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+:root[data-vc-theme="dark"],
+body[data-vc-theme="dark"],
+.work-app.theme-dark,
+.work-app[data-theme="dark"],
+.vc-dialog.theme-dark {
+  --glass-bg: var(--vc-glass-surface, rgb(23 26 37 / 78%));
+  --glass-bg-strong: rgb(23 26 37 / 92%);
+  --glass-border: var(--vc-glass-border, rgb(255 255 255 / 14%));
+  --glass-blur: var(--vc-glass-blur, 16px);
+  --glass-shadow: var(
+    --vc-glass-shadow,
+    0 20px 58px rgb(0 0 0 / 32%),
+    inset 0 1px 0 rgb(255 255 255 / 8%)
+  );
+  --glass-highlight: rgb(255 255 255 / 8%);
+  --glass-ink: var(--vc-ink, #f1f3f8);
+  --glass-muted: var(--vc-muted, #b2b8c8);
+
+  /* 3 Physical Glass Tiers - Work app dark */
+  --glass-frosted-bg: rgba(23, 26, 37, 0.78);
+  --glass-frosted-border: rgba(255, 255, 255, 0.15);
+  --glass-frosted-border-top: rgba(255, 255, 255, 0.28);
+  --glass-frosted-shadow: 0 20px 52px rgba(0, 0, 0, 0.36), 0 2px 8px rgba(0, 0, 0, 0.20), inset 0 1px 0 var(--glass-frosted-border-top);
+
+  --glass-clear-bg: rgba(23, 26, 37, 0.48);
+  --glass-clear-border: rgba(255, 255, 255, 0.18);
+  --glass-clear-shadow: 0 14px 34px rgba(0, 0, 0, 0.28), inset 0 1.5px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(84, 202, 255, 0.20);
+
+  --glass-blur-bg: rgba(23, 26, 37, 0.88);
+  --glass-blur-border: rgba(255, 255, 255, 0.12);
+  --glass-blur-shadow: 0 24px 60px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+.public-site {
+  --glass-bg: rgba(20, 23, 37, 0.62);
+  --glass-bg-strong: rgba(12, 15, 27, 0.84);
+  --glass-border: rgba(231, 235, 255, 0.14);
+  --glass-blur: 18px;
+  --glass-shadow: 0 18px 48px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.06);
+  --glass-highlight: rgba(255, 255, 255, 0.06);
+  --glass-ink: #f4f5fb;
+  --glass-muted: #a2a6b6;
+
+  /* 3 Physical Glass Tiers - Public site dark */
+  --glass-frosted-bg: rgba(18, 22, 38, 0.68);
+  --glass-frosted-border: rgba(231, 235, 255, 0.16);
+  --glass-frosted-border-top: rgba(255, 255, 255, 0.28);
+  --glass-frosted-shadow: 0 22px 58px rgba(0, 0, 0, 0.42), 0 2px 10px rgba(0, 0, 0, 0.22), inset 0 1px 0 var(--glass-frosted-border-top);
+
+  --glass-clear-bg: rgba(25, 30, 52, 0.40);
+  --glass-clear-border: rgba(255, 255, 255, 0.22);
+  --glass-clear-shadow: 0 16px 36px rgba(0, 0, 0, 0.32), inset 0 1.5px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(84, 202, 255, 0.20);
+
+  --glass-blur-bg: rgba(15, 18, 32, 0.84);
+  --glass-blur-border: rgba(231, 235, 255, 0.12);
+  --glass-blur-shadow: 0 26px 64px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+html[data-public-theme="light"] .public-site {
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --glass-bg-strong: rgba(255, 255, 255, 0.94);
+  --glass-border: rgba(134, 54, 130, 0.19);
+  --glass-blur: 18px;
+  --glass-shadow: 0 15px 38px rgba(48, 29, 59, 0.09), inset 0 1px #ffffff;
+  --glass-highlight: rgba(255, 255, 255, 0.92);
+  --glass-ink: #211b2a;
+  --glass-muted: #5a5165;
+
+  /* 3 Physical Glass Tiers - Public site light */
+  --glass-frosted-bg: rgba(255, 255, 255, 0.82);
+  --glass-frosted-border: rgba(134, 54, 130, 0.20);
+  --glass-frosted-border-top: rgba(134, 54, 130, 0.22);
+  --glass-frosted-shadow: 0 18px 46px rgba(48, 29, 59, 0.10), 0 2px 8px rgba(48, 29, 59, 0.05), inset 0 1px 0 var(--glass-frosted-border-top);
+
+  --glass-clear-bg: rgba(255, 255, 255, 0.62);
+  --glass-clear-border: rgba(134, 54, 130, 0.20);
+  --glass-clear-shadow: 0 12px 30px rgba(48, 29, 59, 0.08), inset 0 1.5px 0 rgba(255, 255, 255, 0.90), inset 0 -1px 0 rgba(134, 54, 130, 0.15);
+
+  --glass-blur-bg: rgba(255, 255, 255, 0.92);
+  --glass-blur-border: rgba(134, 54, 130, 0.16);
+  --glass-blur-shadow: 0 22px 52px rgba(48, 29, 59, 0.10), inset 0 1px 0 #ffffff;
+}
+
+.vc-glass-surface {
+  box-sizing: border-box;
+  max-width: 100%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--glass-ink);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.12);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.12);
+}
+
+.vc-glass-toaster {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+/* ==========================================================================
+   3 Physical Glass Materials / Levels
+   ========================================================================== */
+
+/* 1. Frosted Glass (Vidrio esmerilado con textura óptica y borde especular superior) */
+.vc-glass-frosted {
+  position: relative;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  background: var(--glass-frosted-bg);
+  border: 1px solid var(--glass-frosted-border);
+  color: var(--glass-ink);
+  box-shadow: var(--glass-frosted-shadow);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+}
+
+.vc-glass-frosted::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(130% 90% at 50% 0%, rgba(255, 255, 255, 0.14) 0%, transparent 65%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+  opacity: 0.82;
+}
+
+html[data-public-theme="light"] .vc-glass-frosted::before,
+:root[data-vc-theme="light"] .vc-glass-frosted::before,
+body[data-vc-theme="light"] .vc-glass-frosted::before {
+  background:
+    radial-gradient(130% 90% at 50% 0%, rgba(255, 255, 255, 0.45) 0%, transparent 65%),
+    linear-gradient(180deg, rgba(134, 54, 130, 0.04) 0%, transparent 100%);
+  opacity: 0.65;
+}
+
+/* 2. Clear Glass (Vidrio cristalino tipo iOS con alta transparencia y doble borde interno refractario) */
+.vc-glass-clear {
+  position: relative;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  background: var(--glass-clear-bg);
+  border: 1px solid var(--glass-clear-border);
+  color: var(--glass-ink);
+  box-shadow: var(--glass-clear-shadow);
+  backdrop-filter: blur(12px) saturate(190%) contrast(104%);
+  -webkit-backdrop-filter: blur(12px) saturate(190%) contrast(104%);
+}
+
+/* 3. Blur Glass (Difusión suave cálida/mate de máxima legibilidad AA para paneles, lectura y drawers) */
+.vc-glass-blur {
+  position: relative;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  background: var(--glass-blur-bg);
+  border: 1px solid var(--glass-blur-border);
+  color: var(--glass-ink);
+  box-shadow: var(--glass-blur-shadow);
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+}
+
+/* Fallback when backdrop-filter is unsupported. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  :root[data-vc-theme="light"],
+  body[data-vc-theme="light"],
+  .work-app {
+    --glass-bg: #ffffff;
+    --glass-bg-strong: #ffffff;
+    --glass-border: #d5cedf;
+    --glass-blur: 0px;
+    --glass-highlight: #ffffff;
+
+    --glass-frosted-bg: #ffffff;
+    --glass-frosted-border: #d5cedf;
+    --glass-clear-bg: #ffffff;
+    --glass-clear-border: #d5cedf;
+    --glass-blur-bg: #ffffff;
+    --glass-blur-border: #d5cedf;
+  }
+
+  :root[data-vc-theme="dark"],
+  body[data-vc-theme="dark"],
+  .work-app.theme-dark,
+  .work-app[data-theme="dark"],
+  .vc-dialog.theme-dark {
+    --glass-bg: #171a25;
+    --glass-bg-strong: #1e2230;
+    --glass-border: #3a4056;
+    --glass-blur: 0px;
+    --glass-highlight: rgb(255 255 255 / 4%);
+
+    --glass-frosted-bg: #171a25;
+    --glass-frosted-border: #3a4056;
+    --glass-clear-bg: #1e2230;
+    --glass-clear-border: #3a4056;
+    --glass-blur-bg: #151823;
+    --glass-blur-border: #3a4056;
+  }
+
+  .public-site {
+    --glass-bg: #141725;
+    --glass-bg-strong: #0c0f1b;
+    --glass-border: #2e334a;
+    --glass-blur: 0px;
+    --glass-highlight: rgba(255, 255, 255, 0.03);
+
+    --glass-frosted-bg: #141725;
+    --glass-frosted-border: #2e334a;
+    --glass-clear-bg: #1b1f33;
+    --glass-clear-border: #2e334a;
+    --glass-blur-bg: #101321;
+    --glass-blur-border: #2e334a;
+  }
+
+  html[data-public-theme="light"] .public-site {
+    --glass-bg: #ffffff;
+    --glass-bg-strong: #ffffff;
+    --glass-border: #d5c7da;
+    --glass-blur: 0px;
+    --glass-highlight: #ffffff;
+
+    --glass-frosted-bg: #ffffff;
+    --glass-frosted-border: #d5c7da;
+    --glass-clear-bg: #ffffff;
+    --glass-clear-border: #d5c7da;
+    --glass-blur-bg: #ffffff;
+    --glass-blur-border: #d5c7da;
+  }
+
+  .vc-glass-surface,
+  .vc-glass-toaster [data-sonner-toast],
+  .vc-glass-frosted,
+  .vc-glass-clear,
+  .vc-glass-blur {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .vc-glass-frosted::before {
+    display: none !important;
+  }
+}
+
+/* Reduced transparency & high contrast: opaque AA surfaces (>= 4.5:1 text, >= 3:1 borders). */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root,
+  :root[data-vc-theme="light"],
+  body[data-vc-theme="light"],
+  .work-app {
+    --glass-bg: #ffffff;
+    --glass-bg-strong: #ffffff;
+    --glass-border: #6f6580;
+    --glass-blur: 0px;
+    --glass-highlight: #ffffff;
+    --glass-ink: #120e1a;
+    --glass-muted: #433c4f;
+
+    --glass-frosted-bg: #ffffff;
+    --glass-frosted-border: #6f6580;
+    --glass-frosted-border-top: #6f6580;
+    --glass-clear-bg: #ffffff;
+    --glass-clear-border: #6f6580;
+    --glass-blur-bg: #ffffff;
+    --glass-blur-border: #6f6580;
+  }
+
+  :root[data-vc-theme="dark"],
+  body[data-vc-theme="dark"],
+  .work-app.theme-dark,
+  .work-app[data-theme="dark"],
+  .vc-dialog.theme-dark {
+    --glass-bg: #12151f;
+    --glass-bg-strong: #0b0d14;
+    --glass-border: #8b93ad;
+    --glass-blur: 0px;
+    --glass-highlight: #1c2030;
+    --glass-ink: #ffffff;
+    --glass-muted: #d4d8e6;
+
+    --glass-frosted-bg: #12151f;
+    --glass-frosted-border: #8b93ad;
+    --glass-frosted-border-top: #8b93ad;
+    --glass-clear-bg: #161926;
+    --glass-clear-border: #8b93ad;
+    --glass-blur-bg: #0e111a;
+    --glass-blur-border: #8b93ad;
+  }
+
+  .public-site {
+    --glass-bg: #111422;
+    --glass-bg-strong: #090b14;
+    --glass-border: #8b93ad;
+    --glass-blur: 0px;
+    --glass-highlight: #181c2e;
+    --glass-ink: #ffffff;
+    --glass-muted: #d4d8e6;
+
+    --glass-frosted-bg: #111422;
+    --glass-frosted-border: #8b93ad;
+    --glass-frosted-border-top: #8b93ad;
+    --glass-clear-bg: #171b2e;
+    --glass-clear-border: #8b93ad;
+    --glass-blur-bg: #0d0f1c;
+    --glass-blur-border: #8b93ad;
+  }
+
+  html[data-public-theme="light"] .public-site {
+    --glass-bg: #ffffff;
+    --glass-bg-strong: #ffffff;
+    --glass-border: #6f5570;
+    --glass-blur: 0px;
+    --glass-highlight: #ffffff;
+    --glass-ink: #17121e;
+    --glass-muted: #463c52;
+
+    --glass-frosted-bg: #ffffff;
+    --glass-frosted-border: #6f5570;
+    --glass-frosted-border-top: #6f5570;
+    --glass-clear-bg: #ffffff;
+    --glass-clear-border: #6f5570;
+    --glass-blur-bg: #ffffff;
+    --glass-blur-border: #6f5570;
+  }
+
+  .vc-glass-surface,
+  .vc-glass-toaster [data-sonner-toast],
+  .public-site .site-header-inner,
+  .public-site .site-service-card,
+  .public-site .showcase-card,
+  .public-site .site-not-found,
+  .vc-glass-frosted,
+  .vc-glass-clear,
+  .vc-glass-blur {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .vc-glass-frosted::before {
+    display: none !important;
+  }
+}
+
+/* Reduced motion: disable transitions and animations on glass utility helpers. */
+@media (prefers-reduced-motion: reduce) {
+  .vc-glass-surface,
+  .vc-glass-surface::before,
+  .vc-glass-surface::after,
+  .vc-glass-toaster,
+  .vc-glass-toaster *,
+  .vc-glass-frosted,
+  .vc-glass-frosted::before,
+  .vc-glass-frosted::after,
+  .vc-glass-clear,
+  .vc-glass-blur {
+    transition: none !important;
+    animation: none !important;
+  }
+}

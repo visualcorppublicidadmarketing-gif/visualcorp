@@ -67,3 +67,67 @@
 @media(prefers-reduced-motion:reduce){
   .pc-filter-row button{transition:none}
 }
+
+/* Restrained glassmorphism & accessibility fallbacks */
+.pc-search,
+.pc-area-filter select {
+  background: var(--vc-input-bg, var(--vc-surface, #fff));
+  color: var(--vc-ink, #252531);
+  border-color: var(--vc-line, #e6e3e9);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .pc-summary > div,
+  .pc-order,
+  .pc-filter-row button:not(.is-active) {
+    background: var(--glass-bg, var(--vc-glass-surface, color-mix(in srgb, var(--vc-surface, #fff) 86%, transparent)));
+    border-color: var(--glass-border, var(--vc-line, #e6e3e9));
+    backdrop-filter: blur(10px) saturate(125%);
+    -webkit-backdrop-filter: blur(10px) saturate(125%);
+  }
+
+  .pc-order {
+    box-shadow: var(--glass-shadow, 0 8px 24px rgb(37 27 44 / 7%));
+  }
+
+  [data-theme="dark"] .pc-summary > div,
+  [data-theme="dark"] .pc-order,
+  [data-theme="dark"] .pc-filter-row button:not(.is-active),
+  .work-app.theme-dark .pc-summary > div,
+  .work-app.theme-dark .pc-order,
+  .work-app.theme-dark .pc-filter-row button:not(.is-active) {
+    background: var(--glass-bg, var(--vc-glass-surface, rgb(23 26 37 / 86%)));
+    border-color: var(--glass-border, var(--vc-line, #303447));
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .pc-summary > div,
+  .pc-order,
+  .pc-filter-row button:not(.is-active) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--vc-surface, #fff);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .pc-summary > div,
+  .pc-order,
+  .pc-filter-row button:not(.is-active) {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--vc-surface, #fff) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .pc-summary > div,
+  .pc-order,
+  .pc-filter-row button {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--vc-surface, #fff) !important;
+    border-color: currentColor !important;
+  }
+}

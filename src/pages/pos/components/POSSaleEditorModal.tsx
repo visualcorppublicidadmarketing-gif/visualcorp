@@ -38,6 +38,7 @@ interface EditableLine {
   id?: string;
   catalog_product_id?: string | null;
   variant_id?: string | null;
+  quantityMode?: 'quantity' | 'area';
   sku?: string;
   description: string;
   quantity: number | string;
@@ -168,12 +169,26 @@ export function POSSaleEditorModal({
           .order('id', { ascending: true });
 
         if (linesErr) throw linesErr;
+        const catalogProductIds = [...new Set((saleLines || []).map((line: any) => line.catalog_product_id).filter((id: unknown): id is string => typeof id === 'string' && Boolean(id)))];
+        const quantityModeByProduct = new Map<string, 'quantity' | 'area'>();
+        if (catalogProductIds.length) {
+          const { data: products, error: productsError } = await supabase
+            .from('public_quote_catalog_products')
+            .select('id, type, calc_type')
+            .in('id', catalogProductIds);
+          if (productsError) throw productsError;
+          for (const product of products || []) {
+            if (product.calc_type === 'm2') quantityModeByProduct.set(product.id, 'area');
+            else if (product.type === 'physical') quantityModeByProduct.set(product.id, 'quantity');
+          }
+        }
         if (active) {
           setLines(
             (saleLines || []).map((l: any) => ({
               id: l.id,
               catalog_product_id: l.catalog_product_id || null,
               variant_id: l.variant_id || null,
+              quantityMode: quantityModeByProduct.get(l.catalog_product_id) ?? undefined,
               sku: l.sku_snapshot || '',
               description: l.description_snapshot || '',
               quantity: l.quantity,
@@ -342,6 +357,10 @@ export function POSSaleEditorModal({
       }
       if (!Number.isFinite(Number(l.quantity)) || Number(l.quantity) <= 0) {
         setError(`El artículo #${i + 1} tiene una cantidad inválida.`);
+        return;
+      }
+      if (l.quantityMode === 'quantity' && !Number.isSafeInteger(Number(l.quantity))) {
+        setError(`El artículo #${i + 1} se vende por unidades y requiere una cantidad entera.`);
         return;
       }
       if (!Number.isFinite(Number(l.unit_price)) || Number(l.unit_price) < 0) {
@@ -578,7 +597,8 @@ export function POSSaleEditorModal({
                           <input
                             type="number"
                             min="0.001"
-                            step="any"
+                            inputMode={line.quantityMode === 'quantity' ? 'numeric' : 'decimal'}
+                            step={line.quantityMode === 'quantity' ? '1' : 'any'}
                             required
                             value={line.quantity}
                             onChange={(e) => updateLine(idx, 'quantity', e.target.value)}

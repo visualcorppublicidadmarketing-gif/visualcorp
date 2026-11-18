@@ -1,154 +1,252 @@
 /* Shared glass surfaces for the authenticated Visual Corp workspaces. */
 .work-app {
   --admin-glass-nav-fallback: var(--vc-surface, #fff);
-  --admin-glass-nav: color-mix(in srgb, var(--vc-surface, #fff), transparent 22%);
-  --admin-glass-card: var(--vc-surface, #fff);
-  --admin-glass-panel: var(--vc-surface, #fff);
-  --admin-glass-border: var(--vc-glass-border, rgb(255 255 255 / 82%));
+  --admin-glass-nav: var(--glass-bg-strong, color-mix(in srgb, var(--vc-surface, #fff), transparent 22%));
+  --admin-glass-card: var(--glass-bg, var(--vc-glass-surface, var(--vc-surface, #fff)));
+  --admin-glass-panel: var(--glass-bg-strong, var(--vc-surface, #fff));
+  --admin-glass-border: var(--glass-border, var(--vc-glass-border, rgb(255 255 255 / 82%)));
   --admin-glass-line: var(--vc-line, rgb(77 62 97 / 14%));
-  --admin-glass-shadow: var(--vc-glass-shadow, 0 18px 48px rgb(42 24 58 / 9%), inset 0 1px 0 rgb(255 255 255 / 76%));
+  --admin-glass-shadow: var(--glass-shadow, var(--vc-glass-shadow, 0 18px 48px rgb(42 24 58 / 9%), inset 0 1px 0 rgb(255 255 255 / 76%)));
   --admin-glass-ink: var(--vc-ink, #292533);
   --admin-glass-muted: var(--vc-muted, #5d5969);
   --admin-glass-accent: var(--vc-brand-strong, #7e1977);
   --admin-glass-accent-strong: var(--vc-brand, #a51091);
   --admin-glass-focus: var(--vc-focus, #a51091);
   --admin-glass-tint: var(--vc-brand-soft, #f3eaf9);
-  --admin-glass-surface-shadow: 0 8px 26px rgb(42 24 58 / 7%), inset 0 1px 0 rgb(255 255 255 / 72%);
-  --admin-glass-surface-highlight: rgb(255 255 255 / 72%);
-  --admin-glass-nav-edge: rgb(255 255 255 / 68%);
+  --admin-glass-surface-highlight: var(--glass-highlight, rgb(255 255 255 / 72%));
+  --admin-glass-surface-shadow: 0 8px 26px rgb(42 24 58 / 7%), inset 0 1px 0 var(--admin-glass-surface-highlight);
   --admin-hero-ink: var(--vc-ink, #292533);
   --admin-hero-muted: var(--vc-muted, #514c5d);
   --admin-hero-action-bg: var(--vc-brand, #a51091);
   --admin-hero-action-ink: #fff;
-  --admin-glass-blur: 18px;
+  --admin-glass-blur: var(--glass-blur, var(--vc-glass-blur, 16px));
+
+  /* 3 Physical Materials for Admin / Operations (Light Mode) */
+  --admin-frosted-bg: color-mix(in srgb, var(--vc-surface, #fff) 84%, transparent);
+  --admin-frosted-blur: blur(20px) saturate(155%);
+  --admin-frosted-border: color-mix(in srgb, var(--vc-brand, #a51091) 14%, var(--admin-glass-line));
+  --admin-frosted-shadow: 0 16px 44px rgb(42 24 58 / 8%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+
+  --admin-clear-bg: color-mix(in srgb, var(--vc-surface, #fff) 70%, transparent);
+  --admin-clear-blur: blur(12px) saturate(135%);
+  --admin-clear-border: color-mix(in srgb, var(--vc-brand, #a51091) 18%, var(--admin-glass-line));
+  --admin-clear-shadow: 0 6px 18px rgb(42 24 58 / 5%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+
+  --admin-blur-bg: color-mix(in srgb, var(--vc-surface, #fff) 88%, transparent);
+  --admin-blur-blur: blur(14px) saturate(125%);
+  --admin-blur-border: var(--admin-glass-line);
+  --admin-blur-shadow: 0 8px 26px rgb(42 24 58 / 6%), inset 0 1px 0 var(--admin-glass-surface-highlight);
 }
 
 .work-app.theme-dark {
   --admin-glass-nav-fallback: var(--vc-surface-soft, #10111a);
-  --admin-glass-nav: color-mix(in srgb, var(--vc-surface-soft, #10111a), transparent 16%);
-  --admin-glass-card: var(--vc-surface, #171a25);
-  --admin-glass-panel: var(--vc-surface, #171a25);
-  --admin-glass-border: var(--vc-glass-border, rgb(255 255 255 / 12%));
+  --admin-glass-nav: var(--glass-bg-strong, color-mix(in srgb, var(--vc-surface-soft, #10111a), transparent 16%));
+  --admin-glass-card: var(--glass-bg, var(--vc-glass-surface, var(--vc-surface, #171a25)));
+  --admin-glass-panel: var(--glass-bg-strong, var(--vc-surface, #171a25));
+  --admin-glass-border: var(--glass-border, var(--vc-glass-border, rgb(255 255 255 / 12%)));
   --admin-glass-line: var(--vc-line, rgb(217 204 235 / 15%));
-  --admin-glass-shadow: var(--vc-glass-shadow, 0 20px 58px rgb(0 0 0 / 30%), inset 0 1px 0 rgb(255 255 255 / 7%));
+  --admin-glass-shadow: var(--glass-shadow, var(--vc-glass-shadow, 0 20px 58px rgb(0 0 0 / 30%), inset 0 1px 0 rgb(255 255 255 / 7%)));
   --admin-glass-ink: var(--vc-ink, #f2eff8);
   --admin-glass-muted: var(--vc-muted, #b9b4c8);
   --admin-glass-accent: var(--vc-brand-strong, #e3bcff);
   --admin-glass-accent-strong: var(--vc-brand, #d093f0);
   --admin-glass-focus: var(--vc-focus, #d093f0);
   --admin-glass-tint: var(--vc-brand-soft, #30223d);
-  --admin-glass-surface-shadow: 0 10px 30px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 7%);
-  --admin-glass-surface-highlight: rgb(255 255 255 / 7%);
-  --admin-glass-nav-edge: rgb(255 255 255 / 8%);
+  --admin-glass-surface-highlight: var(--glass-highlight, rgb(255 255 255 / 7%));
+  --admin-glass-surface-shadow: 0 10px 30px rgb(0 0 0 / 22%), inset 0 1px 0 var(--admin-glass-surface-highlight);
   --admin-hero-ink: var(--vc-ink, #f5f1fa);
   --admin-hero-muted: var(--vc-muted, #d0c9db);
   --admin-hero-action-bg: var(--vc-brand, #d093f0);
   --admin-hero-action-ink: #211329;
+
+  /* 3 Physical Materials for Admin / Operations (Dark Mode) */
+  --admin-frosted-bg: color-mix(in srgb, var(--vc-surface-soft, #10111a) 86%, transparent);
+  --admin-frosted-blur: blur(20px) saturate(155%);
+  --admin-frosted-border: color-mix(in srgb, var(--vc-brand, #d093f0) 20%, var(--admin-glass-line));
+  --admin-frosted-shadow: 0 18px 48px rgb(0 0 0 / 28%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+
+  --admin-clear-bg: color-mix(in srgb, var(--vc-surface-raised, #1e2230) 72%, transparent);
+  --admin-clear-blur: blur(12px) saturate(135%);
+  --admin-clear-border: color-mix(in srgb, var(--vc-brand, #d093f0) 24%, var(--admin-glass-line));
+  --admin-clear-shadow: 0 8px 22px rgb(0 0 0 / 20%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+
+  --admin-blur-bg: color-mix(in srgb, var(--vc-surface, #171a25) 90%, transparent);
+  --admin-blur-blur: blur(14px) saturate(125%);
+  --admin-blur-border: var(--admin-glass-line);
+  --admin-blur-shadow: 0 10px 30px rgb(0 0 0 / 22%), inset 0 1px 0 var(--admin-glass-surface-highlight);
 }
 
 .work-app .sidebar {
   border-right: 1px solid var(--admin-glass-line) !important;
   background: var(--admin-glass-nav-fallback) !important;
-  box-shadow: 10px 0 38px rgb(36 25 50 / 5%), inset -1px 0 0 var(--admin-glass-nav-edge);
-  backdrop-filter: blur(var(--admin-glass-blur)) saturate(132%);
-  -webkit-backdrop-filter: blur(var(--admin-glass-blur)) saturate(132%);
+  box-shadow: 10px 0 38px rgb(36 25 50 / 5%), inset -1px 0 0 var(--admin-glass-surface-highlight);
+  backdrop-filter: blur(20px) saturate(155%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(155%) !important;
 }
 
 .work-app .topbar {
   border-bottom: 1px solid var(--admin-glass-line) !important;
   background: var(--admin-glass-nav-fallback) !important;
-  box-shadow: 0 10px 28px rgb(36 25 50 / 5%), inset 0 -1px 0 var(--admin-glass-nav-edge);
-  backdrop-filter: blur(var(--admin-glass-blur)) saturate(134%);
-  -webkit-backdrop-filter: blur(var(--admin-glass-blur)) saturate(134%);
+  box-shadow: 0 10px 28px rgb(36 25 50 / 5%), inset 0 -1px 0 var(--admin-glass-surface-highlight);
+  backdrop-filter: blur(20px) saturate(155%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(155%) !important;
 }
 
 /* A quiet, static brand wash sits behind the authenticated workspace. */
 .work-app .main-shell {
   background-color: var(--vc-canvas, #f7f6fa);
   background-image:
-    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--vc-brand-magenta, #a51091) 9%, transparent), transparent 35rem),
-    radial-gradient(ellipse at 0% 28%, color-mix(in srgb, var(--vc-brand-blue, #069cdb) 7%, transparent), transparent 31rem),
-    radial-gradient(ellipse at 92% 100%, rgb(245 157 73 / 5%), transparent 32rem);
+    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--vc-brand-magenta, #a51091) 7%, transparent), transparent 35rem),
+    radial-gradient(ellipse at 0% 28%, color-mix(in srgb, var(--vc-brand-blue, #069cdb) 6%, transparent), transparent 31rem),
+    radial-gradient(ellipse at 92% 100%, rgb(245 157 73 / 4%), transparent 32rem);
 }
 
 .work-app.theme-dark .main-shell {
   background-color: var(--vc-canvas, #0d0e15);
   background-image:
-    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--vc-brand, #d093f0) 13%, transparent), transparent 35rem),
-    radial-gradient(ellipse at 0% 28%, color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 10%, transparent), transparent 31rem),
-    radial-gradient(ellipse at 92% 100%, rgb(245 157 73 / 6%), transparent 32rem);
+    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--vc-brand, #d093f0) 11%, transparent), transparent 35rem),
+    radial-gradient(ellipse at 0% 28%, color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 9%, transparent), transparent 31rem),
+    radial-gradient(ellipse at 92% 100%, rgb(245 157 73 / 5%), transparent 32rem);
 }
 
-/* Shared work surfaces become subtly translucent; controls and table cells stay solid. */
-.work-app .main-content .panel {
-  border-color: var(--admin-glass-line);
-  background-color: var(--admin-glass-panel);
-  box-shadow: var(--admin-glass-surface-shadow);
+/* Shared work surfaces: Blur physical diffusion with 1px border and internal specular highlight */
+.work-app .main-content .panel,
+.work-app .unified-priority-panel {
+  border: 1px solid var(--admin-blur-border);
+  background-color: var(--admin-blur-bg);
+  box-shadow: var(--admin-blur-shadow);
+  backdrop-filter: var(--admin-blur-blur);
+  -webkit-backdrop-filter: var(--admin-blur-blur);
 }
 
 .work-app .main-content :is(.stat-card, .operation-card) {
-  border-color: var(--admin-glass-line);
-  background-color: var(--admin-glass-card);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  border: 1px solid var(--admin-blur-border);
+  background-color: var(--admin-blur-bg);
+  box-shadow: var(--admin-blur-shadow);
+  backdrop-filter: var(--admin-blur-blur);
+  -webkit-backdrop-filter: var(--admin-blur-blur);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
 .work-app .main-content :is(.stat-card, .operation-card):hover {
   transform: none;
-  border-color: color-mix(in srgb, var(--admin-glass-accent-strong) 30%, var(--admin-glass-line));
-  box-shadow: 0 10px 26px rgb(42 24 58 / 9%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  border-color: color-mix(in srgb, var(--admin-glass-accent-strong) 36%, var(--admin-glass-line));
+  box-shadow: 0 12px 30px rgb(42 24 58 / 10%), inset 0 1px 0 var(--admin-glass-surface-highlight);
 }
 
-.work-app.theme-dark .main-content .panel {
-  background-color: var(--admin-glass-panel) !important;
+.work-app.theme-dark .main-content .panel,
+.work-app.theme-dark .unified-priority-panel {
+  background-color: var(--admin-blur-bg) !important;
+  box-shadow: var(--admin-blur-shadow);
 }
 
 .work-app.theme-dark .main-content :is(.stat-card, .operation-card) {
-  background-color: var(--admin-glass-card) !important;
+  background-color: var(--admin-blur-bg) !important;
+  box-shadow: var(--admin-blur-shadow);
 }
 
 .work-app.theme-dark .main-content :is(.stat-card, .operation-card):hover {
-  box-shadow: 0 12px 32px rgb(0 0 0 / 28%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  border-color: color-mix(in srgb, var(--admin-glass-accent-strong) 42%, var(--admin-glass-line));
+  box-shadow: 0 14px 36px rgb(0 0 0 / 32%), inset 0 1px 0 var(--admin-glass-surface-highlight);
 }
 
-.work-app.theme-dark .sidebar,
-.work-app.theme-dark .topbar {
-  box-shadow: 12px 0 42px rgb(0 0 0 / 18%), inset -1px 0 0 var(--admin-glass-nav-edge);
+.work-app.theme-dark .sidebar {
+  box-shadow: 12px 0 42px rgb(0 0 0 / 22%), inset -1px 0 0 var(--admin-glass-surface-highlight);
 }
 
 .work-app.theme-dark .topbar {
-  box-shadow: 0 12px 32px rgb(0 0 0 / 24%), inset 0 -1px 0 var(--admin-glass-nav-edge);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 26%), inset 0 -1px 0 var(--admin-glass-surface-highlight);
 }
 
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .work-app {
-    --admin-glass-card: rgb(255 255 255 / 84%);
-    --admin-glass-panel: rgb(255 255 255 / 93%);
+    --admin-glass-card: var(--admin-blur-bg);
+    --admin-glass-panel: var(--admin-blur-bg);
   }
 
   .work-app.theme-dark {
-    --admin-glass-card: rgb(23 26 37 / 88%);
-    --admin-glass-panel: rgb(23 26 37 / 95%);
+    --admin-glass-card: var(--admin-blur-bg);
+    --admin-glass-panel: var(--admin-blur-bg);
   }
 
   .work-app .main-content :is(.stat-card, .operation-card) {
-    backdrop-filter: blur(10px) saturate(125%);
-    -webkit-backdrop-filter: blur(10px) saturate(125%);
+    backdrop-filter: var(--admin-blur-blur);
+    -webkit-backdrop-filter: var(--admin-blur-blur);
   }
 
-  .work-app .main-content .panel {
-    backdrop-filter: blur(10px) saturate(118%);
-    -webkit-backdrop-filter: blur(10px) saturate(118%);
+  .work-app .main-content .panel,
+  .work-app .unified-priority-panel {
+    backdrop-filter: var(--admin-blur-blur);
+    -webkit-backdrop-filter: var(--admin-blur-blur);
   }
 
   .work-app .sidebar,
   .work-app .topbar {
-    background: var(--admin-glass-nav) !important;
+    background: var(--admin-frosted-bg) !important;
+    backdrop-filter: var(--admin-frosted-blur) !important;
+    -webkit-backdrop-filter: var(--admin-frosted-blur) !important;
   }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .work-app .sidebar,
+  .work-app .topbar,
+  .work-app .unified-dashboard-hero,
+  .work-app .unified-overview .stat-card,
+  .work-app .unified-dashboard .unified-priority-panel,
+  .work-app .workspace-launcher {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--admin-glass-nav-fallback) !important;
+  }
+
+  .work-app .main-content :is(.panel, .stat-card, .operation-card) {
+    background-color: var(--vc-surface, #fff) !important;
+  }
+
+  .work-app.theme-dark .main-content :is(.panel, .stat-card, .operation-card) {
+    background-color: var(--vc-surface, #171a25) !important;
+  }
+}
+
+/* Operational readability: dense tables and form controls stay opaque without row blur. */
+.work-app .main-content :is(.table-wrap, table, thead, tbody, tr, th, td, input, select, textarea) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.work-app .main-content .table-wrap {
+  background-color: var(--vc-surface, #fff);
+}
+
+.work-app .main-content :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  background-color: var(--vc-input-bg, var(--vc-surface, #fff));
 }
 
 .work-app .unified-dashboard {
   --dashboard-accent: var(--admin-glass-accent-strong);
   --dashboard-accent-strong: var(--admin-glass-accent);
+}
+
+.work-app .unified-dashboard-hero {
+  border: 1px solid var(--admin-frosted-border);
+  background:
+    radial-gradient(ellipse at 92% 5%, rgb(165 16 145 / 15%), transparent 28rem),
+    radial-gradient(ellipse at 78% 115%, rgb(6 156 219 / 11%), transparent 24rem),
+    var(--admin-frosted-bg);
+  box-shadow: var(--admin-frosted-shadow);
+  color: var(--admin-hero-ink);
+  backdrop-filter: var(--admin-frosted-blur);
+  -webkit-backdrop-filter: var(--admin-frosted-blur);
+}
+
+.work-app.theme-dark .unified-dashboard-hero {
+  border-color: var(--admin-frosted-border);
+  background:
+    radial-gradient(ellipse at 90% 6%, rgb(208 147 240 / 17%), transparent 28rem),
+    radial-gradient(ellipse at 78% 115%, rgb(98 200 240 / 12%), transparent 24rem),
+    var(--admin-frosted-bg);
+  box-shadow: var(--admin-frosted-shadow);
 }
 
 .work-app .unified-dashboard-hero h1,
@@ -320,6 +418,20 @@
   padding-bottom: 58px;
 }
 
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .work-app .unified-dashboard-hero {
+    background-color: var(--admin-frosted-bg);
+    backdrop-filter: var(--admin-frosted-blur);
+    -webkit-backdrop-filter: var(--admin-frosted-blur);
+  }
+
+  .work-app.theme-dark .unified-dashboard-hero {
+    background-color: var(--admin-frosted-bg);
+    backdrop-filter: var(--admin-frosted-blur);
+    -webkit-backdrop-filter: var(--admin-frosted-blur);
+  }
+}
+
 @media (prefers-reduced-transparency: reduce) {
   .work-app {
     --admin-glass-card: #fff;
@@ -370,19 +482,38 @@
   .work-app .topbar {
     background: var(--admin-glass-nav-fallback) !important;
   }
+}
 
-  @supports (backdrop-filter: blur(1px)) {
-    .work-app .sidebar,
-    .work-app .topbar,
-    .work-app .main-content :is(.panel, .stat-card, .operation-card),
-    .work-app .unified-dashboard-hero,
-    .work-app .unified-overview .stat-card,
-    .work-app .unified-dashboard .unified-priority-panel,
-    .work-app .workspace-launcher,
-    .work-app .unified-clock-card,
-    .work-app .unified-weather-card {
-      backdrop-filter: none;
-    }
+@media (prefers-contrast: more) {
+  .work-app {
+    --admin-glass-card: var(--vc-surface, #fff);
+    --admin-glass-panel: var(--vc-surface, #fff);
+    --admin-glass-line: color-mix(in srgb, var(--vc-ink, #191522) 38%, transparent);
+    --admin-glass-border: color-mix(in srgb, var(--vc-ink, #191522) 45%, transparent);
+  }
+
+  .work-app.theme-dark {
+    --admin-glass-card: var(--vc-surface, #171a25);
+    --admin-glass-panel: var(--vc-surface, #171a25);
+    --admin-glass-line: color-mix(in srgb, var(--vc-ink, #f1f3f8) 42%, transparent);
+    --admin-glass-border: color-mix(in srgb, var(--vc-ink, #f1f3f8) 48%, transparent);
+  }
+
+  .work-app .sidebar,
+  .work-app .topbar,
+  .work-app .main-content :is(.panel, .stat-card, .operation-card),
+  .work-app .unified-dashboard-hero {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--vc-surface, #fff) !important;
+    border-color: var(--admin-glass-line) !important;
+  }
+
+  .work-app.theme-dark .sidebar,
+  .work-app.theme-dark .topbar,
+  .work-app.theme-dark .main-content :is(.panel, .stat-card, .operation-card),
+  .work-app.theme-dark .unified-dashboard-hero {
+    background: var(--vc-surface, #171a25) !important;
   }
 }
 
