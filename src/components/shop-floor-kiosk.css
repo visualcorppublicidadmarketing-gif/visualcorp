@@ -1710,3 +1710,76 @@ body.theme-dark {
     border: 1px solid #000;
   }
 }
+
+/* ==========================================================================
+   Restrained Glassmorphism & Accessibility Fallbacks (Kiosk)
+   ========================================================================== */
+.sf-search-input {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .sf-header,
+  .sf-machines-bar,
+  .sf-metric-card,
+  .sf-station-tab:not(.active),
+  .sf-card:not(.running):not(.paused),
+  .sf-empty-state {
+    background-color: var(--glass-bg, color-mix(in srgb, var(--sf-card-bg) 86%, transparent));
+    border-color: var(--glass-border, var(--sf-card-border));
+    backdrop-filter: blur(10px) saturate(125%);
+    -webkit-backdrop-filter: blur(10px) saturate(125%);
+  }
+
+  .sf-toast {
+    background-color: color-mix(in srgb, var(--sf-text-main) 92%, transparent);
+    backdrop-filter: blur(12px) saturate(130%);
+    -webkit-backdrop-filter: blur(12px) saturate(130%);
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .sf-header,
+  .sf-machines-bar,
+  .sf-metric-card,
+  .sf-station-tab:not(.active),
+  .sf-card:not(.running):not(.paused),
+  .sf-empty-state,
+  .sf-toast {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .sf-header,
+  .sf-machines-bar,
+  .sf-metric-card,
+  .sf-station-tab:not(.active),
+  .sf-card:not(.running):not(.paused),
+  .sf-empty-state,
+  .sf-toast {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--sf-card-bg) !important;
+  }
+
+  .sf-toast {
+    background-color: var(--sf-text-main) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .sf-header,
+  .sf-machines-bar,
+  .sf-metric-card,
+  .sf-station-tab,
+  .sf-card,
+  .sf-empty-state {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--sf-card-bg) !important;
+    border-color: var(--sf-text-main) !important;
+  }
+}

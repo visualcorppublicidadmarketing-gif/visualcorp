@@ -1,10 +1,14 @@
 /* Navegacion publica v06: contraste, jerarquia y estados consistentes. */
 .public-site .site-header-inner {
   width: min(100%, 1376px);
+  max-width: 100%;
+  min-width: 0;
   gap: clamp(8px, 1.6vw, 24px);
-  border-color: rgba(231, 235, 255, .16);
-  background: linear-gradient(110deg, rgba(16, 19, 32, .94), rgba(11, 14, 26, .84));
-  box-shadow: 0 16px 52px rgba(0, 0, 0, .38), inset 0 1px rgba(255, 255, 255, .07);
+  border-color: var(--glass-border, rgba(231, 235, 255, .16));
+  background: var(--glass-bg-strong, linear-gradient(110deg, rgba(16, 19, 32, .94), rgba(11, 14, 26, .84)));
+  box-shadow: var(--glass-shadow, 0 16px 52px rgba(0, 0, 0, .38)), inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, .07));
+  backdrop-filter: var(--glass-blur, blur(22px) saturate(1.25));
+  -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(1.25));
 }
 
 .public-site .site-header-inner::before {
@@ -135,13 +139,16 @@ html[data-public-theme="light"] .public-site .site-header .site-admin-access:hov
 
 .public-site .site-mega-panel {
   top: calc(100% + 11px);
+  max-width: 100%;
   max-height: min(610px, calc(100dvh - 112px));
-  border-color: rgba(226, 231, 250, .16);
+  border-color: var(--glass-border, rgba(226, 231, 250, .16));
   border-radius: 22px;
   background:
     radial-gradient(ellipse at 82% 0, rgba(33, 39, 70, .55), transparent 45%),
-    linear-gradient(125deg, rgba(18, 21, 35, .985), rgba(10, 13, 24, .98));
-  box-shadow: 0 32px 90px rgba(0, 0, 0, .58), 0 0 0 1px rgba(255, 255, 255, .025), inset 0 1px rgba(255, 255, 255, .08);
+    var(--glass-bg-strong, linear-gradient(125deg, rgba(18, 21, 35, .985), rgba(10, 13, 24, .98)));
+  box-shadow: var(--glass-shadow, 0 32px 90px rgba(0, 0, 0, .58)), 0 0 0 1px rgba(255, 255, 255, .025), inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, .08));
+  backdrop-filter: var(--glass-blur, blur(24px) saturate(1.2));
+  -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.2));
   scrollbar-color: rgba(255, 255, 255, .22) transparent;
 }
 
@@ -408,4 +415,14 @@ html[data-public-theme="light"] .public-site .site-header .site-admin-access:hov
 @media (prefers-reduced-motion: reduce) {
   .public-site .site-explore-links > a,
   .public-site .site-explore-links > a > svg:last-child { transition: none; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .public-site .site-header-inner,
+  .public-site .site-mega-panel,
+  .public-site .site-mobile-panel,
+  .public-site .site-header .site-admin-access {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }

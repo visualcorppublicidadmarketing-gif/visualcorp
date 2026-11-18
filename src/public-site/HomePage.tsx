@@ -22,7 +22,9 @@ import {
   Store,
 } from 'lucide-react';
 import { useWorkspace } from '../app/workspace';
+import { Card } from '../components/ui/card';
 import {
+  AnimatedShinyText,
   BorderBeam,
   DotPattern,
   SpotlightLayer,
@@ -101,6 +103,7 @@ function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; 
 function VisualitoStage() {
   return (
     <div className="home-stage">
+      <BorderBeam size={220} duration={9} borderWidth={1.25} />
       <DotPattern width={26} height={26} className="home-stage-dots" />
       <div className="home-stage-glow" aria-hidden="true" />
       <div className="home-stage-scene">
@@ -235,8 +238,8 @@ function CreativeStudioSection({
           })}
         </div>
 
-        <div
-          className="home-pillar-showcase vc-magic-card"
+        <Card
+          className="home-pillar-showcase home-glass-card vc-magic-card"
           role="tabpanel"
           id={`home-pillar-panel-${activePillar.id}`}
           aria-labelledby={`home-pillar-tab-${activePillar.id}`}
@@ -245,7 +248,6 @@ function CreativeStudioSection({
           onPointerLeave={clearSpotlight}
         >
           <SpotlightLayer />
-          <BorderBeam />
           <motion.div
             key={activePillar.id}
             className="home-pillar-showcase-inner"
@@ -287,7 +289,7 @@ function CreativeStudioSection({
             )}
 
             <div className="home-pillar-actions">
-              <Link className="home-button home-button-primary vc-shimmer-button" to={quoteHref}>
+              <Link className="home-button home-button-primary" to={quoteHref}>
                 {activePillar.ctaLabel} <ArrowUpRight size={17} />
               </Link>
               <Link className="home-button home-button-secondary" to={`/servicios/${activePillar.recommendedServiceId}`}>
@@ -295,7 +297,7 @@ function CreativeStudioSection({
               </Link>
             </div>
           </motion.div>
-        </div>
+        </Card>
       </div>
     </section>
   );
@@ -343,7 +345,7 @@ function ProcessSection({ onOpenOrientator }: { onOpenOrientator: () => void }) 
             </button>
           </div>
         </div>
-        <div className="home-process-panel" id="home-process-detail" aria-live="polite" aria-atomic="true">
+        <Card className="home-process-panel home-glass-card" id="home-process-detail" aria-live="polite" aria-atomic="true">
           <motion.div
             key={active}
             initial={reduceMotion ? false : { opacity: 0, y: 12 }}
@@ -366,7 +368,7 @@ function ProcessSection({ onOpenOrientator }: { onOpenOrientator: () => void }) 
               <span>Atención directa en {publicAddress}</span>
             </div>
           </motion.div>
-        </div>
+        </Card>
       </div>
     </section>
   );
@@ -445,7 +447,7 @@ export function PublicHomePage() {
           <div className="home-hero-copy">
             <div className="home-hero-kicker home-kicker">
               <span className="home-status-dot" aria-hidden="true" />
-              {data.settings.heroEyebrow}
+              <AnimatedShinyText shimmerWidth={140}>{data.settings.heroEyebrow}</AnimatedShinyText>
             </div>
             <h1 id="home-title">
               {words.join(' ')} <span>{lastWord}</span>
@@ -563,7 +565,7 @@ export function PublicHomePage() {
             const tags = serviceDeliverableTags[service.id as PublicServiceId] || [];
             return (
               <Reveal key={service.id} className={isFeatured ? 'home-service-featured' : ''} delay={(index % 3) * 0.06}>
-                <div className="home-service-card-wrap">
+                <Card className="home-service-card-wrap home-glass-card">
                   <Link
                     to={`/servicios/${encodeURIComponent(service.id)}`}
                     className={`home-service home-service-${service.id} vc-magic-card`}
@@ -606,7 +608,7 @@ export function PublicHomePage() {
                     <Eye size={14} aria-hidden="true" />
                     <span>Vista rápida</span>
                   </button>
-                </div>
+                </Card>
               </Reveal>
             );
           })}
@@ -694,7 +696,7 @@ export function PublicHomePage() {
             Estamos en {publicAddress} para escucharte.
           </p>
           <div className="home-actions">
-            <Link className="home-button home-button-primary vc-shimmer-button" to="/cotizador">
+            <Link className="home-button home-button-primary" to="/cotizador">
               Empezar mi proyecto <ArrowUpRight size={20} />
             </Link>
             <Link className="home-button home-button-secondary" to="/contacto">

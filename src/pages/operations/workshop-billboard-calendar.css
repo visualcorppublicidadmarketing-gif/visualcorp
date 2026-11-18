@@ -564,3 +564,85 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Restrained glassmorphism & accessibility fallbacks */
+.ws-search-field,
+.ws-area-filter {
+  background: var(--vc-input-bg, var(--vc-surface, #fff));
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ws-scope-note,
+  .ws-stats article,
+  .ws-toolbar,
+  .ws-map-header-bar,
+  .ws-unmapped,
+  .ws-undated {
+    background: var(--glass-bg, var(--vc-glass-surface, rgb(255 255 255 / 86%)));
+    border-color: var(--glass-border, var(--vc-line, #e5e0ea));
+    backdrop-filter: blur(10px) saturate(125%);
+    -webkit-backdrop-filter: blur(10px) saturate(125%);
+  }
+
+  .work-app.theme-dark .ws-scope-note,
+  .work-app.theme-dark .ws-stats article,
+  .work-app.theme-dark .ws-toolbar,
+  .work-app.theme-dark .ws-map-header-bar,
+  .work-app.theme-dark .ws-unmapped,
+  .work-app.theme-dark .ws-undated,
+  [data-theme="dark"] .ws-scope-note,
+  [data-theme="dark"] .ws-stats article,
+  [data-theme="dark"] .ws-toolbar,
+  [data-theme="dark"] .ws-map-header-bar,
+  [data-theme="dark"] .ws-unmapped,
+  [data-theme="dark"] .ws-undated {
+    background: var(--glass-bg, var(--vc-glass-surface, rgb(23 26 37 / 86%)));
+    border-color: var(--glass-border, var(--vc-line, #303447));
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ws-scope-note,
+  .ws-stats article,
+  .ws-toolbar,
+  .ws-map-header-bar,
+  .ws-unmapped,
+  .ws-undated {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--vc-surface, #fff);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ws-scope-note,
+  .ws-stats article,
+  .ws-toolbar,
+  .ws-map-header-bar,
+  .ws-unmapped,
+  .ws-undated {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--vc-surface, #fff) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .ws-scope-note,
+  .ws-stats article,
+  .ws-toolbar,
+  .ws-map-header-bar,
+  .ws-unmapped,
+  .ws-undated {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--vc-surface, #fff) !important;
+    border-color: currentColor !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .ws-stats {
+    grid-template-columns: 1fr;
+  }
+}

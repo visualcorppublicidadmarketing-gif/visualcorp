@@ -123,7 +123,10 @@ html:has(.public-site):not([data-public-theme='light']) .vc-dialog,
   --vc-tone-accent: var(--vc-dlg-brand);
   --vc-tone-soft: var(--vc-dlg-brand-soft);
   position: relative;
+  box-sizing: border-box;
   width: min(100%, 36rem);
+  max-width: 100%;
+  min-width: 0;
   max-height: min(90dvh, 54rem);
   display: flex;
   flex-direction: column;
@@ -1171,5 +1174,103 @@ html:has(.public-site):not([data-public-theme='light']) .vc-app-toast-icon {
 @media (max-width: 600px) {
   .quote-request-system-dialog .quote-request-fields {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Glassmorphism surfaces & accessibility fallbacks for Dialogs & Toasts */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .vc-dialog,
+  .ok-dialog {
+    background: var(--glass-bg-strong, color-mix(in srgb, var(--vc-dlg-bg) 90%, transparent));
+    border-color: var(--glass-border, var(--vc-dlg-border));
+    backdrop-filter: blur(var(--glass-blur, 18px)) saturate(135%);
+    -webkit-backdrop-filter: blur(var(--glass-blur, 18px)) saturate(135%);
+  }
+
+  .vc-dialog-header,
+  .ok-dialog > header {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--vc-dlg-surface) 78%, transparent) 0%, transparent 100%);
+  }
+
+  .vc-dialog-footer,
+  .ok-dialog > footer {
+    background: color-mix(in srgb, var(--vc-dlg-surface) 80%, transparent);
+  }
+
+  .vc-app-toast {
+    background: var(--glass-bg-strong, color-mix(in srgb, var(--vc-toast-bg) 90%, transparent));
+    backdrop-filter: blur(14px) saturate(135%);
+    -webkit-backdrop-filter: blur(14px) saturate(135%);
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .vc-dialog-overlay.backdrop-blur,
+  .ok-overlay,
+  .vc-dialog-overlay.backdrop-dim,
+  .vc-dialog,
+  .ok-dialog,
+  .vc-app-toast,
+  .vc-dialog-media-badge {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .vc-dialog,
+  .ok-dialog {
+    background: var(--vc-dlg-bg);
+  }
+
+  .vc-app-toast {
+    background: var(--vc-toast-bg);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .vc-dialog-overlay.backdrop-blur,
+  .ok-overlay,
+  .vc-dialog-overlay.backdrop-dim,
+  .vc-dialog,
+  .ok-dialog,
+  .vc-app-toast,
+  .vc-dialog-media-badge {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .vc-dialog,
+  .ok-dialog {
+    background: var(--vc-dlg-bg) !important;
+  }
+
+  .vc-dialog-header,
+  .ok-dialog > header {
+    background: var(--vc-dlg-surface) !important;
+  }
+
+  .vc-dialog-footer,
+  .ok-dialog > footer {
+    background: var(--vc-dlg-surface) !important;
+  }
+
+  .vc-app-toast {
+    background: var(--vc-toast-bg) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .vc-dialog,
+  .ok-dialog,
+  .vc-app-toast {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--vc-dlg-bg) !important;
+    border-color: var(--vc-dlg-text) !important;
+  }
+
+  .vc-dialog-field input,
+  .vc-dialog-field textarea,
+  .vc-dialog-field select {
+    border-color: var(--vc-dlg-text);
   }
 }

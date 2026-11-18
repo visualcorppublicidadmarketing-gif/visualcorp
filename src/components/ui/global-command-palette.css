@@ -905,3 +905,107 @@
     font-size: 10px;
   }
 }
+
+/* Glassmorphism & Accessibility Fallbacks for Command Palette */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .vc-palette-dialog {
+    background: var(--glass-bg-strong, var(--vc-cmd-bg));
+    border-color: var(--glass-border, var(--vc-cmd-border));
+    box-shadow: var(--glass-shadow, var(--vc-cmd-shadow));
+    backdrop-filter: blur(var(--glass-blur, 20px)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(140%);
+  }
+
+  .vc-palette-header {
+    background: color-mix(in srgb, var(--vc-cmd-header-bg) 78%, transparent);
+  }
+
+  .vc-palette-tabs-bar {
+    background: color-mix(in srgb, var(--vc-cmd-bg) 70%, transparent);
+  }
+
+  .vc-palette-footer {
+    background: color-mix(in srgb, var(--vc-cmd-footer-bg) 82%, transparent);
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .vc-palette-overlay,
+  .vc-palette-dialog {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .vc-palette-dialog {
+    background: var(--vc-surface, #ffffff);
+  }
+
+  [data-theme='dark'] .vc-palette-dialog,
+  .theme-dark .vc-palette-dialog,
+  .vc-palette-overlay.theme-dark .vc-palette-dialog {
+    background: var(--vc-surface, #121420);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .vc-palette-overlay,
+  .vc-palette-dialog {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .vc-palette-dialog {
+    background: var(--vc-surface, #ffffff) !important;
+  }
+
+  [data-theme='dark'] .vc-palette-dialog,
+  .theme-dark .vc-palette-dialog,
+  .vc-palette-overlay.theme-dark .vc-palette-dialog {
+    background: var(--vc-surface, #121420) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .vc-palette-overlay,
+  .vc-palette-dialog {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .vc-palette-dialog {
+    background: var(--vc-surface, #ffffff) !important;
+    border-color: var(--vc-cmd-text-ink) !important;
+  }
+
+  [data-theme='dark'] .vc-palette-dialog,
+  .theme-dark .vc-palette-dialog,
+  .vc-palette-overlay.theme-dark .vc-palette-dialog {
+    background: var(--vc-surface, #121420) !important;
+  }
+
+  .vc-palette-item.active {
+    outline: 2px solid var(--vc-cmd-accent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-palette-overlay,
+  .vc-palette-dialog,
+  .vc-palette-toast,
+  .vc-palette-item-enter,
+  .vc-palette-trigger,
+  .vc-palette-item,
+  .vc-palette-item-icon,
+  .vc-palette-action-btn,
+  .vc-palette-tab {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .vc-palette-trigger:hover,
+  .vc-palette-item:hover .vc-palette-item-icon,
+  .vc-palette-item.active .vc-palette-item-icon,
+  .vc-palette-action-btn:hover {
+    transform: none !important;
+  }
+}

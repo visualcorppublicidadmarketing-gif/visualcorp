@@ -312,3 +312,70 @@
     transition: none;
   }
 }
+
+/* Glassmorphism, Dark Mode & Accessibility Fallbacks */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .pjd-nav-bar,
+  .pjd-hero,
+  .pjd-facts div,
+  .pjd-stage-item:not(.is-selected) {
+    background: var(--glass-bg, var(--vc-glass-surface, rgb(255 255 255 / 84%)));
+    border-color: var(--glass-border, var(--vc-line, #e6dfe9));
+    backdrop-filter: blur(10px) saturate(125%);
+    -webkit-backdrop-filter: blur(10px) saturate(125%);
+  }
+
+  [data-theme="dark"] .pjd-nav-bar,
+  [data-theme="dark"] .pjd-hero,
+  [data-theme="dark"] .pjd-facts div,
+  [data-theme="dark"] .pjd-stage-item:not(.is-selected),
+  .work-app.theme-dark .pjd-nav-bar,
+  .work-app.theme-dark .pjd-hero,
+  .work-app.theme-dark .pjd-facts div,
+  .work-app.theme-dark .pjd-stage-item:not(.is-selected) {
+    background: var(--glass-bg, var(--vc-glass-surface, rgb(23 26 37 / 86%)));
+    border-color: var(--glass-border, var(--vc-line, #303447));
+    color: var(--vc-ink, #f1f3f8);
+  }
+}
+
+[data-theme="dark"] .pjd-stage-item.is-selected,
+.work-app.theme-dark .pjd-stage-item.is-selected {
+  background: color-mix(in srgb, var(--vc-brand, #d093f0) 14%, var(--vc-surface, #171a25));
+  border-color: var(--vc-brand, #d093f0);
+  box-shadow: 0 0 0 1px var(--vc-brand, #d093f0);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .pjd-nav-bar,
+  .pjd-hero,
+  .pjd-facts div,
+  .pjd-stage-item:not(.is-selected) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--vc-surface, #fff);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .pjd-nav-bar,
+  .pjd-hero,
+  .pjd-facts div,
+  .pjd-stage-item:not(.is-selected) {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--vc-surface, #fff) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .pjd-nav-bar,
+  .pjd-hero,
+  .pjd-facts div,
+  .pjd-stage-item {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--vc-surface, #fff) !important;
+    border-color: currentColor !important;
+  }
+}

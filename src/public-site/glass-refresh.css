@@ -1,5 +1,49 @@
 /* Brand glass: color stays at the edges so content keeps a calm reading surface. */
+:root,
 .public-site {
+  --glass-bg: rgba(18, 21, 34, 0.72);
+  --glass-bg-strong: rgba(14, 17, 29, 0.9);
+  --glass-border: rgba(231, 235, 255, 0.16);
+  --glass-blur: blur(18px) saturate(1.22);
+  --glass-shadow: 0 20px 52px rgba(0, 0, 0, 0.34);
+  --glass-highlight: rgba(255, 255, 255, 0.12);
+}
+
+html[data-public-theme="light"],
+html[data-public-theme="light"] .public-site {
+  --glass-bg: rgba(255, 255, 255, 0.84);
+  --glass-bg-strong: rgba(255, 255, 255, 0.94);
+  --glass-border: rgba(61, 42, 74, 0.15);
+  --glass-blur: blur(18px) saturate(1.15);
+  --glass-shadow: 0 16px 42px rgba(36, 22, 52, 0.09);
+  --glass-highlight: rgba(255, 255, 255, 0.94);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  .public-site {
+    --glass-bg: #141622;
+    --glass-bg-strong: #11131d;
+    --glass-blur: none;
+  }
+
+  html[data-public-theme="light"],
+  html[data-public-theme="light"] .public-site {
+    --glass-bg: #ffffff;
+    --glass-bg-strong: #ffffff;
+    --glass-blur: none;
+  }
+}
+
+.public-site,
+.public-site *,
+.public-site *::before,
+.public-site *::after {
+  box-sizing: border-box;
+}
+
+.public-site {
+  max-width: 100%;
   background-color: var(--site-bg, #080a12);
   background-image:
     radial-gradient(ellipse 46rem 34rem at 4% 13%, rgba(0, 158, 226, .12), transparent 72%),

@@ -48,3 +48,103 @@
 .pj-sync-banner,.pj-stale-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border:1px solid #eadbb8;border-radius:10px;background:#fffbef;color:#805810;font-size:12px;font-weight:600;min-width:0;max-width:100%;box-sizing:border-box;flex-wrap:wrap}
 .pj-sync-banner svg,.pj-stale-banner svg{flex:none}
 [data-theme="dark"] .production-jobs .pj-sync-banner,[data-theme="dark"] .production-jobs .pj-stale-banner{border-color:#6d552d;background:#302919;color:#f1d28e}
+
+/* Restrained glassmorphism & accessibility fallbacks for Production Jobs */
+.production-jobs .pj-search input,
+.production-jobs .pj-actions input,
+.production-jobs .pj-actions select,
+.production-jobs .pj-actions textarea,
+.production-jobs .pj-artwork-form input,
+.production-jobs .pj-artwork-form textarea,
+.production-jobs .pj-fulfillment input,
+.production-jobs .pj-fulfillment textarea,
+.production-jobs .pj-rework select,
+.production-jobs .pj-lot-config input,
+.production-jobs .pj-lot-actions input,
+.production-jobs .pj-lot-note textarea {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: var(--vc-input-bg, var(--vc-surface, #fff));
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .production-jobs .pj-area-nav a:not([aria-current="page"]),
+  .production-jobs .pj-filter,
+  .production-jobs .pj-card:not(.is-overdue),
+  .production-jobs .pj-detail-hero,
+  .production-jobs .pj-coordination,
+  .production-jobs .pj-artwork,
+  .production-jobs .pj-handoff,
+  .production-jobs .pj-lots,
+  .production-jobs .pj-fulfillment {
+    background-color: var(--glass-bg, var(--vc-glass-surface, rgb(255 255 255 / 86%)));
+    border-color: var(--glass-border, var(--vc-line, #e7e3ea));
+    backdrop-filter: blur(10px) saturate(125%);
+    -webkit-backdrop-filter: blur(10px) saturate(125%);
+  }
+
+  [data-theme="dark"] .production-jobs .pj-area-nav a:not([aria-current="page"]),
+  [data-theme="dark"] .production-jobs .pj-filter,
+  [data-theme="dark"] .production-jobs .pj-card:not(.is-overdue),
+  [data-theme="dark"] .production-jobs .pj-detail-hero,
+  [data-theme="dark"] .production-jobs .pj-coordination,
+  [data-theme="dark"] .production-jobs .pj-artwork,
+  [data-theme="dark"] .production-jobs .pj-handoff,
+  [data-theme="dark"] .production-jobs .pj-lots,
+  [data-theme="dark"] .production-jobs .pj-fulfillment,
+  .work-app.theme-dark .production-jobs .pj-area-nav a:not([aria-current="page"]),
+  .work-app.theme-dark .production-jobs .pj-filter,
+  .work-app.theme-dark .production-jobs .pj-card:not(.is-overdue) {
+    background-color: var(--glass-bg, var(--vc-glass-surface, rgb(23 26 37 / 86%)));
+    border-color: var(--glass-border, var(--vc-line, #303447));
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .production-jobs .pj-area-nav a:not([aria-current="page"]),
+  .production-jobs .pj-filter,
+  .production-jobs .pj-card:not(.is-overdue),
+  .production-jobs .pj-detail-hero,
+  .production-jobs .pj-coordination,
+  .production-jobs .pj-artwork,
+  .production-jobs .pj-handoff,
+  .production-jobs .pj-lots,
+  .production-jobs .pj-fulfillment {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: var(--vc-surface, #fff);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .production-jobs .pj-area-nav a,
+  .production-jobs .pj-filter,
+  .production-jobs .pj-card,
+  .production-jobs .pj-detail-hero,
+  .production-jobs .pj-coordination,
+  .production-jobs .pj-artwork,
+  .production-jobs .pj-handoff,
+  .production-jobs .pj-lots,
+  .production-jobs .pj-fulfillment {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--vc-surface, #fff) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .production-jobs .pj-area-nav a,
+  .production-jobs .pj-filter,
+  .production-jobs .pj-card,
+  .production-jobs .pj-detail-hero,
+  .production-jobs .pj-coordination,
+  .production-jobs .pj-artwork,
+  .production-jobs .pj-handoff,
+  .production-jobs .pj-lots,
+  .production-jobs .pj-fulfillment {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--vc-surface, #fff) !important;
+    border-color: currentColor !important;
+  }
+}
