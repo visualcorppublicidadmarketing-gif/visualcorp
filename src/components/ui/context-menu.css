@@ -23,13 +23,18 @@
 .vc-context-submenu-panel{position:fixed;z-index:10001;min-width:min(210px,calc(100vw - 16px));max-width:min(275px,calc(100vw - 16px));max-height:min(360px,calc(100dvh - 16px));border-radius:10px;box-shadow:0 12px 35px #21132b30}
 .vc-context-submenu-panel[data-side=left]{transform-origin:right top}
 .vc-context-submenu-panel[data-side=right]{transform-origin:left top}
-.vc-context-menu.vc-context-public-site{border-color:#ffffff22;background:#15121c;color:#f7f4fa;box-shadow:0 18px 55px #07050bb8,0 0 0 1px #d827a018;backdrop-filter:blur(16px)}
+.vc-context-menu.vc-context-public-site{border-color:#ffffff2b;background:#17131f;color:#f7f4fa;box-shadow:0 22px 62px #05040bb8,0 0 0 1px #d827a022,inset 0 1px 0 #ffffff1a;scrollbar-color:#ffffff50 transparent;scrollbar-width:thin}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.vc-context-menu.vc-context-public-site{border-color:#ffffff38;background:radial-gradient(115% 62% at 0% 0%,#e5007e24,transparent 60%),radial-gradient(80% 55% at 100% 100%,#54caff15,transparent 62%),linear-gradient(145deg,#241f32dc 0%,#11101cc9 100%);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%)}}
+.vc-context-menu.vc-context-public-site::-webkit-scrollbar{width:8px}
+.vc-context-menu.vc-context-public-site::-webkit-scrollbar-track{background:transparent}
+.vc-context-menu.vc-context-public-site::-webkit-scrollbar-thumb{border:2px solid transparent;border-radius:999px;background:#ffffff55;background-clip:padding-box}
 .vc-context-menu.vc-context-public-site button,.vc-context-menu.vc-context-public-site .vc-context-submenu-trigger{color:#f1edf5}
-.vc-context-menu.vc-context-public-site button:hover,.vc-context-menu.vc-context-public-site button:focus-visible,.vc-context-menu.vc-context-public-site .vc-context-submenu-trigger:hover,.vc-context-menu.vc-context-public-site .vc-context-submenu-trigger:focus-visible{background:#ffffff0e}
-.vc-context-menu.vc-context-public-site .vc-context-action-icon{color:#ee83d0}
-.vc-context-menu.vc-context-public-site .vc-context-group-label{color:#b8afc2}
+.vc-context-menu.vc-context-public-site button:hover,.vc-context-menu.vc-context-public-site .vc-context-submenu-trigger:hover{background:linear-gradient(100deg,#e5007e21,#54caff12)}
+.vc-context-menu.vc-context-public-site button:focus-visible,.vc-context-menu.vc-context-public-site .vc-context-submenu-trigger:focus-visible{background:linear-gradient(100deg,#e5007e28,#54caff18);box-shadow:inset 0 0 0 1px #ffffff45,0 0 0 1px #e5007e}
+.vc-context-menu.vc-context-public-site .vc-context-action-icon{color:#f08ad0;filter:drop-shadow(0 0 7px #e5007e42)}
+.vc-context-menu.vc-context-public-site .vc-context-group-label{color:#d2c6dc}
 .vc-context-menu.vc-context-public-site .vc-context-separator{background:#ffffff20}
-.vc-context-menu.vc-context-public-site.vc-context-submenu-panel{border-color:#ffffff22;background:#15121c;color:#f7f4fa;box-shadow:0 18px 55px #07050bb8;backdrop-filter:blur(16px)}
+.vc-context-menu.vc-context-public-site.vc-context-submenu-panel{box-shadow:0 18px 48px #05040bb8,0 0 0 1px #d827a018,inset 0 1px 0 #ffffff18}
 .vc-context-menu.vc-marketing-context-menu{border-color:#e5d9ed;box-shadow:0 18px 52px #30213f36,0 0 0 3px #8b52a50d}
 .vc-context-menu.vc-marketing-context-menu .vc-context-group-label{color:#805294}
 .vc-context-menu.vc-marketing-context-menu .vc-context-action-icon{color:#8654a0}
@@ -39,4 +44,5 @@
 .vc-public-context-status:not(:empty){padding:10px 14px;border:1px solid #ffffff24;box-shadow:0 12px 35px #0005}
 @keyframes vc-context-enter{from{opacity:0;transform:translateY(3px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:700px){.vc-context-trigger{opacity:1}.vc-context-menu{min-width:min(200px,calc(100vw - 16px))}}
+@media(prefers-reduced-transparency:reduce){.vc-context-menu.vc-context-public-site{border-color:#ffffff32;background:#17131ff5;backdrop-filter:none;-webkit-backdrop-filter:none}}
 @media(prefers-reduced-motion:reduce){.vc-context-menu{animation:none}.vc-context-trigger,.vc-context-submenu-trigger>svg:last-child{transition:none}}
