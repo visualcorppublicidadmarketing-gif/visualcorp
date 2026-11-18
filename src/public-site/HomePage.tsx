@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useInView, useReducedMotion } from 'motion/react';
+import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react';
 import {
   ArrowDown,
   ArrowRight,
@@ -99,23 +99,82 @@ function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; 
 }
 
 function VisualitoStage() {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+  const pointerX = useMotionValue(0);
+  const pointerY = useMotionValue(0);
+  const smoothPointerX = useSpring(pointerX, { damping: 24, stiffness: 150, mass: 0.8 });
+  const smoothPointerY = useSpring(pointerY, { damping: 24, stiffness: 150, mass: 0.8 });
+  const { scrollYProgress } = useScroll({
+    target: stageRef,
+    offset: ['start end', 'end start'],
+  });
+  const sceneY = useTransform(scrollYProgress, [0, 1], [18, -14]);
+  const wordY = useTransform(scrollYProgress, [0, 1], [26, -22]);
+  const ringY = useTransform(scrollYProgress, [0, 1], [-12, 14]);
+  const visualitoY = useTransform(scrollYProgress, [0, 1], [12, -20]);
+  const rotateX = useTransform(smoothPointerY, [-0.5, 0.5], [4.5, -4.5]);
+  const rotateY = useTransform(smoothPointerX, [-0.5, 0.5], [-6, 6]);
+  const lightX = useTransform(smoothPointerX, [-0.5, 0.5], [-110, 110]);
+  const lightY = useTransform(smoothPointerY, [-0.5, 0.5], [-82, 82]);
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'mouse' || reduceMotion) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    pointerX.set(((event.clientX - bounds.left) / bounds.width - 0.5) * 2);
+    pointerY.set(((event.clientY - bounds.top) / bounds.height - 0.5) * 2);
+  };
+
+  const handlePointerLeave = () => {
+    pointerX.set(0);
+    pointerY.set(0);
+  };
+
   return (
-    <div className="home-stage">
+    <div
+      ref={stageRef}
+      className="home-stage"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+    >
       <DotPattern width={26} height={26} className="home-stage-dots" />
       <div className="home-stage-glow" aria-hidden="true" />
-      <div className="home-stage-scene">
-        <div className="home-stage-ring" aria-hidden="true" />
-        <span className="home-stage-word" aria-hidden="true">
+      <motion.div
+        className="home-stage-scene"
+        style={{
+          y: reduceMotion ? 0 : sceneY,
+          rotateX: reduceMotion ? 0 : rotateX,
+          rotateY: reduceMotion ? 0 : rotateY,
+          transformPerspective: 1100,
+        }}
+      >
+        <motion.div
+          className="home-stage-ring"
+          style={{ y: reduceMotion ? 0 : ringY, rotate: -18, z: -50 }}
+          aria-hidden="true"
+        />
+        <motion.span
+          className="home-stage-word"
+          style={{ y: reduceMotion ? 0 : wordY, z: -36 }}
+          aria-hidden="true"
+        >
           CREA.
-        </span>
+        </motion.span>
+        <motion.div
+          className="home-stage-pointer-glow"
+          style={{ x: reduceMotion ? 0 : lightX, y: reduceMotion ? 0 : lightY, z: -10 }}
+          aria-hidden="true"
+        />
         <div className="home-stage-floor" aria-hidden="true" />
-        <img
+        <motion.img
           className="home-visualito"
           src="/public-site/visualito-hero.webp"
           alt="Visualito, la mascota de Visual Corp"
           width={720}
           height={1080}
           fetchPriority="high"
+          style={{ y: reduceMotion ? 0 : visualitoY, z: 44 }}
         />
         <span className="home-stage-label">
           <span className="home-color-dots" aria-hidden="true">
@@ -125,7 +184,7 @@ function VisualitoStage() {
           </span>
           DISEÑO · PUBLICIDAD · PRODUCCIÓN
         </span>
-      </div>
+      </motion.div>
       <div className="home-stage-caption">
         <span>VISUALITO / ESTUDIO CREATIVO & TALLER</span>
         <span>
