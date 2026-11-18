@@ -29,8 +29,8 @@
     0 18px 42px rgb(47 29 66 / 9%),
     inset 0 1px 0 rgb(255 255 255 / 82%);
   color: var(--marketing-card-ink);
-  backdrop-filter: blur(18px) saturate(142%);
-  -webkit-backdrop-filter: blur(18px) saturate(142%);
+  backdrop-filter: blur(14px) saturate(128%);
+  -webkit-backdrop-filter: blur(14px) saturate(128%);
   transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
@@ -48,7 +48,7 @@
 }
 
 .work-app .vc-marketing-post-context .vc-content-post.is-artwork-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--admin-glass-accent-strong, #a51091) 38%, var(--marketing-card-line));
   box-shadow:
     0 24px 54px rgb(47 29 66 / 13%),
@@ -673,6 +673,15 @@
 
   .work-app.theme-dark .vc-marketing-post-context .vc-content-post.is-artwork-card {
     background: #171a25;
+  }
+
+  @supports (backdrop-filter: blur(1px)) {
+    .work-app .vc-marketing-post-context .vc-content-post.is-artwork-card,
+    .work-app .vc-marketing-post-artwork.is-overview .vc-marketing-post-artwork-paste,
+    .work-app .vc-marketing-post-artwork.is-overview .vc-marketing-post-artwork-browse,
+    .work-app .vc-marketing-post-context > .vc-context-trigger {
+      backdrop-filter: none;
+    }
   }
 }
 

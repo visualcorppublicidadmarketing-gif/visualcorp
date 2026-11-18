@@ -15,11 +15,12 @@
   --admin-glass-tint: var(--vc-brand-soft, #f3eaf9);
   --admin-glass-surface-shadow: 0 8px 26px rgb(42 24 58 / 7%), inset 0 1px 0 rgb(255 255 255 / 72%);
   --admin-glass-surface-highlight: rgb(255 255 255 / 72%);
+  --admin-glass-nav-edge: rgb(255 255 255 / 68%);
   --admin-hero-ink: var(--vc-ink, #292533);
   --admin-hero-muted: var(--vc-muted, #514c5d);
   --admin-hero-action-bg: var(--vc-brand, #a51091);
   --admin-hero-action-ink: #fff;
-  --admin-glass-blur: 16px;
+  --admin-glass-blur: 18px;
 }
 
 .work-app.theme-dark {
@@ -38,6 +39,7 @@
   --admin-glass-tint: var(--vc-brand-soft, #30223d);
   --admin-glass-surface-shadow: 0 10px 30px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 7%);
   --admin-glass-surface-highlight: rgb(255 255 255 / 7%);
+  --admin-glass-nav-edge: rgb(255 255 255 / 8%);
   --admin-hero-ink: var(--vc-ink, #f5f1fa);
   --admin-hero-muted: var(--vc-muted, #d0c9db);
   --admin-hero-action-bg: var(--vc-brand, #d093f0);
@@ -47,34 +49,34 @@
 .work-app .sidebar {
   border-right: 1px solid var(--admin-glass-line) !important;
   background: var(--admin-glass-nav-fallback) !important;
-  box-shadow: 10px 0 38px rgb(36 25 50 / 5%);
-  backdrop-filter: blur(var(--admin-glass-blur)) saturate(145%);
-  -webkit-backdrop-filter: blur(var(--admin-glass-blur)) saturate(145%);
+  box-shadow: 10px 0 38px rgb(36 25 50 / 5%), inset -1px 0 0 var(--admin-glass-nav-edge);
+  backdrop-filter: blur(var(--admin-glass-blur)) saturate(132%);
+  -webkit-backdrop-filter: blur(var(--admin-glass-blur)) saturate(132%);
 }
 
 .work-app .topbar {
   border-bottom: 1px solid var(--admin-glass-line) !important;
   background: var(--admin-glass-nav-fallback) !important;
-  box-shadow: 0 10px 28px rgb(36 25 50 / 5%);
-  backdrop-filter: blur(var(--admin-glass-blur)) saturate(150%);
-  -webkit-backdrop-filter: blur(var(--admin-glass-blur)) saturate(150%);
+  box-shadow: 0 10px 28px rgb(36 25 50 / 5%), inset 0 -1px 0 var(--admin-glass-nav-edge);
+  backdrop-filter: blur(var(--admin-glass-blur)) saturate(134%);
+  -webkit-backdrop-filter: blur(var(--admin-glass-blur)) saturate(134%);
 }
 
 /* A quiet, static brand wash sits behind the authenticated workspace. */
 .work-app .main-shell {
   background-color: var(--vc-canvas, #f7f6fa);
   background-image:
-    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--vc-brand-magenta, #a51091) 7%, transparent), transparent 35rem),
-    radial-gradient(ellipse at 0% 28%, color-mix(in srgb, var(--vc-brand-blue, #069cdb) 6%, transparent), transparent 31rem),
-    radial-gradient(ellipse at 92% 100%, rgb(245 157 73 / 4%), transparent 32rem);
+    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--vc-brand-magenta, #a51091) 9%, transparent), transparent 35rem),
+    radial-gradient(ellipse at 0% 28%, color-mix(in srgb, var(--vc-brand-blue, #069cdb) 7%, transparent), transparent 31rem),
+    radial-gradient(ellipse at 92% 100%, rgb(245 157 73 / 5%), transparent 32rem);
 }
 
 .work-app.theme-dark .main-shell {
   background-color: var(--vc-canvas, #0d0e15);
   background-image:
-    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--vc-brand, #d093f0) 11%, transparent), transparent 35rem),
-    radial-gradient(ellipse at 0% 28%, color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 9%, transparent), transparent 31rem),
-    radial-gradient(ellipse at 92% 100%, rgb(245 157 73 / 5%), transparent 32rem);
+    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--vc-brand, #d093f0) 13%, transparent), transparent 35rem),
+    radial-gradient(ellipse at 0% 28%, color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 10%, transparent), transparent 31rem),
+    radial-gradient(ellipse at 92% 100%, rgb(245 157 73 / 6%), transparent 32rem);
 }
 
 /* Shared work surfaces become subtly translucent; controls and table cells stay solid. */
@@ -110,11 +112,11 @@
 
 .work-app.theme-dark .sidebar,
 .work-app.theme-dark .topbar {
-  box-shadow: 12px 0 42px rgb(0 0 0 / 18%);
+  box-shadow: 12px 0 42px rgb(0 0 0 / 18%), inset -1px 0 0 var(--admin-glass-nav-edge);
 }
 
 .work-app.theme-dark .topbar {
-  box-shadow: 0 12px 32px rgb(0 0 0 / 24%);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 24%), inset 0 -1px 0 var(--admin-glass-nav-edge);
 }
 
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -147,26 +149,6 @@
 .work-app .unified-dashboard {
   --dashboard-accent: var(--admin-glass-accent-strong);
   --dashboard-accent-strong: var(--admin-glass-accent);
-}
-
-.work-app .unified-dashboard-hero {
-  border-color: var(--admin-glass-border);
-  background:
-    radial-gradient(ellipse at 92% 5%, rgb(165 16 145 / 16%), transparent 27rem),
-    radial-gradient(ellipse at 75% 112%, rgb(20 142 208 / 12%), transparent 24rem),
-    linear-gradient(122deg, rgb(255 255 255 / 88%), rgb(255 255 255 / 64%));
-  box-shadow: var(--admin-glass-shadow);
-  color: var(--admin-hero-ink);
-  backdrop-filter: blur(20px) saturate(145%);
-  -webkit-backdrop-filter: blur(20px) saturate(145%);
-}
-
-.work-app.theme-dark .unified-dashboard-hero {
-  border-color: rgb(226 199 244 / 17%);
-  background:
-    radial-gradient(ellipse at 88% 7%, rgb(165 16 145 / 24%), transparent 27rem),
-    radial-gradient(ellipse at 74% 118%, rgb(20 142 208 / 15%), transparent 24rem),
-    linear-gradient(122deg, rgb(30 26 42 / 90%), rgb(19 23 36 / 78%));
 }
 
 .work-app .unified-dashboard-hero h1,
@@ -338,16 +320,6 @@
   padding-bottom: 58px;
 }
 
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .work-app .unified-dashboard-hero {
-    background-color: rgb(255 255 255 / 48%);
-  }
-
-  .work-app.theme-dark .unified-dashboard-hero {
-    background-color: rgb(18 19 31 / 60%);
-  }
-}
-
 @media (prefers-reduced-transparency: reduce) {
   .work-app {
     --admin-glass-card: #fff;
@@ -397,6 +369,20 @@
   .work-app .sidebar,
   .work-app .topbar {
     background: var(--admin-glass-nav-fallback) !important;
+  }
+
+  @supports (backdrop-filter: blur(1px)) {
+    .work-app .sidebar,
+    .work-app .topbar,
+    .work-app .main-content :is(.panel, .stat-card, .operation-card),
+    .work-app .unified-dashboard-hero,
+    .work-app .unified-overview .stat-card,
+    .work-app .unified-dashboard .unified-priority-panel,
+    .work-app .workspace-launcher,
+    .work-app .unified-clock-card,
+    .work-app .unified-weather-card {
+      backdrop-filter: none;
+    }
   }
 }
 
