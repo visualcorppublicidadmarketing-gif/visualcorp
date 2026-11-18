@@ -85,6 +85,21 @@
 /* Sección 01: Ecosistema Creativo 360° (Diseño + Publicidad + Marketing) */
 .home-pillars{background:radial-gradient(ellipse at 18% 20%,#52164026,transparent 56%),linear-gradient(180deg,#0b0c12,#10121b);border-bottom:1px solid var(--home-line)}
 .home-pillars .home-kicker{color:#ee9ad0}
+
+/* Abanico Orbital de Especialidades (WebAngles style) */
+.home-orbital-fan{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;margin:0 auto 36px;width:100%;max-width:1100px}
+.home-orbital-fan-track{position:relative;width:100%;display:flex;align-items:center;justify-content:center;min-height:2px}
+.home-orbital-fan-arc{position:absolute;top:50%;left:4%;right:4%;height:1px;background:linear-gradient(90deg,transparent,rgba(84,202,255,.32) 20%,rgba(240,118,188,.45) 50%,rgba(84,202,255,.32) 80%,transparent);pointer-events:none}
+.home-orbital-fan-items{position:relative;z-index:2;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px 12px;max-width:100%}
+.home-orbital-node{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:7px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(20,23,37,.6);color:#ded9e7;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:transform .22s ease,border-color .22s ease,background .22s ease,box-shadow .22s ease}
+.home-orbital-node:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.38);background:rgba(255,255,255,.09);color:#ffffff}
+.home-orbital-node.is-active{border-color:#f076bc;background:linear-gradient(135deg,rgba(229,0,126,.26),rgba(84,202,255,.14));color:#ffffff;box-shadow:0 8px 24px rgba(229,0,126,.28);transform:translateY(-2px)}
+.home-orbital-node:focus-visible{outline:2px solid #f076bc;outline-offset:3px}
+.home-orbital-node-icon{display:grid;place-items:center;color:#f076bc}
+.home-orbital-node.is-active .home-orbital-node-icon{color:#54caff}
+.home-orbital-node-badge{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.1);color:#d0c8dc}
+.home-orbital-node.is-active .home-orbital-node-badge{background:rgba(229,0,126,.35);color:#fff}
+
 .home-pillars-layout{display:grid;grid-template-columns:.92fr 1.08fr;gap:28px;align-items:stretch}
 .home-pillars-tabs{display:flex;flex-direction:column;gap:12px}
 .home-pillar-tab{display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:14px;width:100%;padding:20px 22px;border-radius:16px;border:1px solid #ffffff1a;background:#ffffff05;color:var(--home-text);font-family:inherit;text-align:left;cursor:pointer;transition:border-color .25s,background .25s,transform .25s}
@@ -188,8 +203,11 @@ html[data-public-theme="dark"] .home-services{--services-art-base-from:#292432;-
 .vc-home .site-content-highlights{max-width:none;padding:90px max(24px,calc((100% - 1200px)/2));background:var(--home-bg)}
 .vc-home .site-content-highlights h2{font-size:50px}
 .vc-home .site-content-highlights .showcase-card h2{font-family:VisualCorpPublicDMSans,sans-serif;font-size:20px;line-height:1.4;text-transform:none}
-.home-contact{position:relative;isolation:isolate;text-align:center;padding-top:110px;padding-bottom:100px;overflow:hidden;background:radial-gradient(ellipse at 50% 100%,#63244b55,transparent 64%),#0b0c12}
+.home-contact{position:relative;isolation:isolate;text-align:center;padding-top:90px;padding-bottom:100px;overflow:hidden;background:radial-gradient(ellipse at 50% 100%,#63244b55,transparent 64%),#0b0c12}
 .home-contact:before{position:absolute;content:'';inset:auto 8% -220px;height:330px;z-index:-1;border:1px solid #cb759f40;border-radius:50%;box-shadow:0 0 0 38px #ffffff02,0 0 0 39px #ffffff06}
+.home-contact-arc{position:absolute;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:1600px;pointer-events:none;z-index:0}
+.home-contact-notch-emblem{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.24);background:linear-gradient(135deg,rgba(229,0,126,.22),rgba(84,202,255,.16)),rgba(20,23,37,.8);color:#f076bc;box-shadow:0 12px 28px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.3);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.home-contact-notch-wrap{position:relative;z-index:2;margin-bottom:28px}
 .home-contact .home-kicker{justify-content:center;color:#d195be}
 .public-site .vc-home .home-contact h2{margin:25px auto 23px;font-size:clamp(54px,6.2vw,90px)}
 .home-contact h2 span{color:#e8a2cc}
@@ -241,6 +259,15 @@ html[data-public-theme="light"] .public-site .vc-home .home-button-primary{backg
 html[data-public-theme="light"] .public-site .vc-home .home-button-secondary:hover{background:#34253a0a;border-color:#52395d66}
 html[data-public-theme="light"] .home-pillars{background:radial-gradient(ellipse at 18% 20%,#eccce247,transparent 56%),linear-gradient(180deg,#f5f2f8,#ece7f2)}
 html[data-public-theme="light"] .home-pillars .home-kicker{color:#8d2c6d}
+html[data-public-theme="light"] .home-orbital-fan-arc{background:linear-gradient(90deg,transparent,rgba(22,109,149,.25) 20%,rgba(162,62,131,.35) 50%,rgba(22,109,149,.25) 80%,transparent)}
+html[data-public-theme="light"] .home-orbital-node{border-color:rgba(61,42,74,.16);background:rgba(255,255,255,.82);color:#2e2638;box-shadow:0 4px 14px rgba(36,22,52,.06)}
+html[data-public-theme="light"] .home-orbital-node:hover{border-color:rgba(162,62,131,.4);background:rgba(255,255,255,.95);color:#17151c}
+html[data-public-theme="light"] .home-orbital-node.is-active{border-color:#a23e83;background:linear-gradient(135deg,#ffffff,#f7eaf3);color:#17151c;box-shadow:0 8px 20px rgba(162,62,131,.18)}
+html[data-public-theme="light"] .home-orbital-node-icon{color:#8d2c6d}
+html[data-public-theme="light"] .home-orbital-node.is-active .home-orbital-node-icon{color:#166d95}
+html[data-public-theme="light"] .home-orbital-node-badge{background:rgba(61,42,74,.08);color:#57485e}
+html[data-public-theme="light"] .home-orbital-node.is-active .home-orbital-node-badge{background:rgba(162,62,131,.16);color:#8d2c6d}
+html[data-public-theme="light"] .home-contact-notch-emblem{border-color:rgba(61,42,74,.2);background:rgba(255,255,255,.92);color:#8d2c6d;box-shadow:0 10px 24px rgba(36,22,52,.12),inset 0 1px 0 #ffffff}
 html[data-public-theme="light"] .home-pillar-tab{border-color:#35273b1f;background:#ffffffb8;color:#24202d}
 html[data-public-theme="light"] .home-pillar-tab.is-active{border-color:#a23e83;background:linear-gradient(135deg,#ffffff,#f7eaf3);box-shadow:0 14px 30px #3c223814}
 html[data-public-theme="light"] .home-pillar-tab-copy small{color:#8d2c6d}
@@ -330,6 +357,9 @@ html[data-public-theme="light"] .home-orientator-goal.is-selected{border-color:#
   .home-section-heading h2{margin-top:15px}
   .vc-home .home-section-heading p{max-width:460px;font-size:14px;line-height:1.7}
   .home-pillar-showcase{padding:24px 22px}
+  .home-orbital-fan{margin-bottom:24px}
+  .home-orbital-fan-items{gap:7px 8px}
+  .home-orbital-node{padding:6px 11px;font-size:11px;min-height:40px}
   .home-services-grid,.home-services-grid.is-bento{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
   .public-site .vc-home .home-service{padding:18px!important;min-height:350px}
   .vc-home .home-service h3{font-size:17px}
@@ -396,10 +426,12 @@ html[data-public-theme="light"] .home-orientator-goal.is-selected{border-color:#
   .vc-home .home-process-panel h3{font-size:21px}
   .home-contact .home-actions{flex-direction:column}
   .home-contact .home-button{width:100%;max-width:300px}
+  .home-orbital-node{padding:5px 8px;font-size:10px}
+  .home-orbital-node-badge{display:none}
 }
 @media(prefers-reduced-motion:reduce){
   .vc-home *,.vc-home *:before,.vc-home *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
-  .vc-home .home-service:hover,.vc-home .home-button:hover,.vc-home .home-pillar-tab:hover{transform:none!important}
+  .vc-home .home-service:hover,.vc-home .home-button:hover,.vc-home .home-pillar-tab:hover,.vc-home .home-orbital-node:hover{transform:none!important}
   .vc-home .home-button:hover svg,.vc-home .home-text-link:hover svg{transform:none!important}
 }
 
@@ -422,10 +454,10 @@ html[data-public-theme="light"] .vc-home .home-process-panel{
   color:#f6f5f8;
 }
 @media(prefers-reduced-transparency:reduce){
-  .vc-home .home-glass-card,.vc-home .home-pillar-showcase,.vc-home .home-service,.vc-home .home-process-panel{
-    backdrop-filter:none;-webkit-backdrop-filter:none;
+  .vc-home .home-glass-card,.vc-home .home-pillar-showcase,.vc-home .home-service,.vc-home .home-process-panel,.vc-home .home-orbital-node,.vc-home .home-contact-notch-emblem{
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
   }
-  .vc-home .home-pillar-showcase,.vc-home .home-process-panel{background:#141622}
+  .vc-home .home-pillar-showcase,.vc-home .home-process-panel,.vc-home .home-orbital-node{background:#141622}
   .public-site .vc-home .home-service{background:#191a24}
-  html[data-public-theme="light"] .vc-home .home-pillar-showcase,html[data-public-theme="light"] .public-site .vc-home .home-service{background:#ffffff}
+  html[data-public-theme="light"] .vc-home .home-pillar-showcase,html[data-public-theme="light"] .public-site .vc-home .home-service,html[data-public-theme="light"] .vc-home .home-orbital-node{background:#ffffff}
 }

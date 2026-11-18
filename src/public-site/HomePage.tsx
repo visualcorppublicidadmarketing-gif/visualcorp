@@ -33,6 +33,12 @@ import {
 } from '../components/ui/MagicComponents';
 import { Dialog, DialogCallout } from '../components/ui/DialogSystem';
 import {
+  HorizonLightWave,
+  PortalLightStage,
+  PlanetaryHorizonArc,
+  SculptedWaveDivider,
+} from '../components/ui/GlassWaveEffects';
+import {
   creativePillars,
   projectOrientatorGoals,
   publicAddress,
@@ -53,6 +59,24 @@ const serviceIcons: Record<string, typeof Printer> = {
   textil: Shirt,
   corte: Scissors,
   eventos: ScanLine,
+};
+
+const orbitalServices: Array<{ id: PublicServiceId; name: string }> = [
+  { id: 'impresion', name: 'Impresión' },
+  { id: 'corte', name: 'Corte Láser' },
+  { id: 'rotulos', name: 'Rótulos' },
+  { id: 'gran-formato', name: 'Gran Formato' },
+  { id: 'textil', name: 'Textil' },
+  { id: 'eventos', name: 'Eventos' },
+];
+
+const serviceToPillarIndex: Record<string, number> = {
+  impresion: 0,
+  corte: 0,
+  rotulos: 1,
+  'gran-formato': 1,
+  eventos: 2,
+  textil: 2,
 };
 
 const pillarIcons = {
@@ -100,12 +124,36 @@ function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; 
   );
 }
 
-function VisualitoStage() {
+function VisualitoStage({ onOpenOrientator }: { onOpenOrientator?: () => void }) {
   return (
     <div className="home-stage">
       <BorderBeam size={220} duration={9} borderWidth={1.25} />
       <DotPattern width={26} height={26} className="home-stage-dots" />
       <div className="home-stage-glow" aria-hidden="true" />
+      <PortalLightStage className="home-stage-portal" />
+      <HorizonLightWave className="home-stage-horizon" />
+
+      {/* Satélite 1: Estudio + Taller (Payrot sculpted frosted satellite) */}
+      <div className="home-stage-satellite home-satellite-studio vc-glass-frosted" aria-hidden="true">
+        <span className="home-satellite-kicker">
+          <Sparkles size={11} aria-hidden="true" /> ESTUDIO + TALLER
+        </span>
+        <strong>Diseño y producción propia en Milagro</strong>
+      </div>
+
+      {/* Satélite 2: 6 líneas conectadas (Payrot sculpted clear satellite, clickeable) */}
+      <button
+        type="button"
+        className="home-stage-satellite home-satellite-lines vc-glass-clear"
+        onClick={onOpenOrientator}
+        aria-label="6 líneas conectadas: Asesoría, diseño, impresión y montaje. Haz clic para orientar tu proyecto"
+      >
+        <span className="home-satellite-kicker">
+          6 LÍNEAS CONECTADAS <ArrowUpRight size={12} aria-hidden="true" />
+        </span>
+        <strong>Asesoría, diseño, impresión y montaje</strong>
+      </button>
+
       <div className="home-stage-scene">
         <div className="home-stage-ring" aria-hidden="true" />
         <span className="home-stage-word" aria-hidden="true">
@@ -129,6 +177,19 @@ function VisualitoStage() {
           DISEÑO · PUBLICIDAD · PRODUCCIÓN
         </span>
       </div>
+
+      {/* Cápsula de cristal interactiva al pie del portal (Reflect AI style) */}
+      <button
+        type="button"
+        className="home-stage-portal-capsule vc-glass-clear"
+        onClick={onOpenOrientator}
+        aria-label="¿Qué necesita tu marca hoy? · Haz clic para orientar tu proyecto"
+      >
+        <Sparkles size={14} className="home-portal-capsule-icon" aria-hidden="true" />
+        <span>¿Qué necesita tu marca hoy? · Haz clic para orientar tu proyecto</span>
+        <ArrowRight size={14} aria-hidden="true" />
+      </button>
+
       <div className="home-stage-caption">
         <span>VISUALITO / ESTUDIO CREATIVO & TALLER</span>
         <span>
@@ -203,6 +264,40 @@ function CreativeStudioSection({
         </div>
       </Reveal>
 
+      {/* Abanico Orbital de Especialidades (WebAngles orbital arc) */}
+      <div className="home-orbital-fan" role="region" aria-label="Abanico orbital de especialidades">
+        <div className="home-orbital-fan-track" aria-hidden="true">
+          <div className="home-orbital-fan-arc" />
+        </div>
+        <div className="home-orbital-fan-items" role="tablist" aria-label="Especialidades por pilar">
+          {orbitalServices.map((orbital) => {
+            const pillarIdx = serviceToPillarIndex[orbital.id] ?? 0;
+            const isSelected = activeIndex === pillarIdx;
+            const Icon = serviceIcons[orbital.id] || Sparkles;
+            return (
+              <button
+                key={orbital.id}
+                type="button"
+                className={`home-orbital-node vc-glass-clear${isSelected ? ' is-active' : ''}`}
+                onClick={() => {
+                  setActiveIndex(pillarIdx);
+                  pillarTabRefs.current[pillarIdx]?.focus();
+                }}
+                aria-label={`${orbital.name} · Ver pilar ${creativePillars[pillarIdx]?.badge || ''}`}
+              >
+                <span className="home-orbital-node-icon" aria-hidden="true">
+                  <Icon size={16} />
+                </span>
+                <span>{orbital.name}</span>
+                <span className="home-orbital-node-badge">
+                  {creativePillars[pillarIdx]?.mark || '01'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="home-pillars-layout">
         <div className="home-pillars-tabs" role="tablist" aria-orientation="vertical" aria-label="Pilares de trabajo de Visual Corp">
           {creativePillars.map((pillar, index) => {
@@ -221,7 +316,7 @@ function CreativeStudioSection({
                   pillarTabRefs.current[index] = element;
                 }}
                 onKeyDown={(event) => handlePillarKeyDown(event, index)}
-                className={`home-pillar-tab${isSelected ? ' is-active' : ''}`}
+                className={`home-pillar-tab vc-glass-frosted${isSelected ? ' is-active' : ''}`}
                 onClick={() => setActiveIndex(index)}
               >
                 <span className="home-pillar-tab-mark">{pillar.mark}</span>
@@ -239,7 +334,7 @@ function CreativeStudioSection({
         </div>
 
         <Card
-          className="home-pillar-showcase home-glass-card vc-magic-card"
+          className="home-pillar-showcase home-glass-card vc-magic-card vc-glass-blur"
           role="tabpanel"
           id={`home-pillar-panel-${activePillar.id}`}
           aria-labelledby={`home-pillar-tab-${activePillar.id}`}
@@ -345,7 +440,7 @@ function ProcessSection({ onOpenOrientator }: { onOpenOrientator: () => void }) 
             </button>
           </div>
         </div>
-        <Card className="home-process-panel home-glass-card" id="home-process-detail" aria-live="polite" aria-atomic="true">
+        <Card className="home-process-panel home-glass-card vc-glass-blur" id="home-process-detail" aria-live="polite" aria-atomic="true">
           <motion.div
             key={active}
             initial={reduceMotion ? false : { opacity: 0, y: 12 }}
@@ -461,7 +556,7 @@ export function PublicHomePage() {
                 Explorar servicios <ArrowDown size={18} />
               </a>
             </div>
-            <VisualitoStage />
+            <VisualitoStage onOpenOrientator={() => setOrientatorOpen(true)} />
             <div className="home-goal-strip" role="group" aria-label="Accesos rápidos según tu objetivo">
               <div className="home-goal-strip-heading">
                 <span className="home-goal-strip-label">
@@ -533,6 +628,9 @@ export function PublicHomePage() {
         </div>
       )}
 
+      {/* Divisor de onda esculpido (getwaves.io style): Hero -> Light/Services */}
+      <SculptedWaveDivider variant="hero-to-light" />
+
       <section className="home-services home-section" id="servicios" aria-labelledby="home-services-title">
         <Reveal className="home-section-heading">
           <div>
@@ -565,10 +663,10 @@ export function PublicHomePage() {
             const tags = serviceDeliverableTags[service.id as PublicServiceId] || [];
             return (
               <Reveal key={service.id} className={isFeatured ? 'home-service-featured' : ''} delay={(index % 3) * 0.06}>
-                <Card className="home-service-card-wrap home-glass-card">
+                <Card className="home-service-card-wrap home-glass-card vc-glass-frosted">
                   <Link
                     to={`/servicios/${encodeURIComponent(service.id)}`}
-                    className={`home-service home-service-${service.id} vc-magic-card`}
+                    className={`home-service home-service-${service.id} vc-magic-card vc-glass-frosted`}
                     onPointerMove={updateSpotlight}
                     onPointerLeave={clearSpotlight}
                   >
@@ -635,6 +733,9 @@ export function PublicHomePage() {
         </div>
       </section>
 
+      {/* Divisor de onda esculpido (getwaves.io style): Services -> Dark Creative Studio */}
+      <SculptedWaveDivider variant="light-to-dark" />
+
       <CreativeStudioSection services={services} onOpenOrientator={openOrientatorForService} />
 
       <EnvironmentBrandingMatrix compact />
@@ -683,6 +784,18 @@ export function PublicHomePage() {
       </div>
 
       <section className="home-contact home-section" aria-labelledby="home-contact-title">
+        {/* Arco planetario luminoso de horizonte atmosférico (WebAngles style) */}
+        <PlanetaryHorizonArc className="home-contact-arc" />
+
+        {/* Divisor con muesca esculpida central y medallón de marca (Payrot style) */}
+        <div className="home-contact-notch-wrap">
+          <SculptedWaveDivider variant="notch-portal">
+            <div className="home-contact-notch-emblem" aria-hidden="true">
+              <Sparkles size={22} />
+            </div>
+          </SculptedWaveDivider>
+        </div>
+
         <Reveal>
           <span className="home-kicker">04 / HAGAMOS QUE SUCEDA</span>
           <h2 id="home-contact-title">

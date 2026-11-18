@@ -588,10 +588,11 @@
 
 /* A single, low-contrast brand wash keeps the greeting as the dashboard focus. */
 .work-app .unified-dashboard-hero {
-  border-color: var(--admin-glass-border, var(--vc-glass-border));
-  background-color: color-mix(in srgb, var(--vc-surface, #fff) 76%, transparent);
+  position: relative;
+  border: 1px solid var(--admin-frosted-border, var(--admin-glass-border, var(--vc-glass-border)));
+  background-color: color-mix(in srgb, var(--vc-surface, #fff) 82%, transparent);
   background-image:
-    radial-gradient(ellipse at 92% 0%, rgb(165 16 145 / 11%), transparent 30rem),
+    radial-gradient(ellipse at 92% 0%, rgb(165 16 145 / 14%), transparent 30rem),
     linear-gradient(
       118deg,
       color-mix(in srgb, var(--vc-surface, #fff) 88%, transparent) 8%,
@@ -599,25 +600,50 @@
       color-mix(in srgb, var(--vc-brand, #a51091) 8%, color-mix(in srgb, var(--vc-surface, #fff) 80%, transparent)) 78%,
       color-mix(in srgb, #ff8a26 6%, color-mix(in srgb, var(--vc-surface, #fff) 78%, transparent)) 100%
     );
-  box-shadow: var(--admin-glass-shadow);
-  backdrop-filter: blur(20px) saturate(138%);
-  -webkit-backdrop-filter: blur(20px) saturate(138%);
+  box-shadow: var(--admin-glass-shadow, 0 16px 42px rgb(30 24 40 / 8%)), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  backdrop-filter: blur(20px) saturate(155%);
+  -webkit-backdrop-filter: blur(20px) saturate(155%);
 }
 
-.work-app .unified-dashboard-hero::before,
+/* Subtle, controlled corner horizon arc in Visual Corp operational colors */
+.work-app .unified-dashboard-hero::before {
+  position: absolute;
+  z-index: 0;
+  top: -95px;
+  right: -45px;
+  width: 320px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 65% 35%,
+    rgb(165 16 145 / 16%),
+    rgb(6 156 219 / 9%) 48%,
+    transparent 75%
+  );
+  box-shadow: 0 0 54px rgb(165 16 145 / 10%);
+  pointer-events: none;
+  content: "";
+}
+
 .work-app .unified-dashboard-hero::after {
   display: none;
 }
 
+.work-app .unified-dashboard-hero-copy,
+.work-app .unified-dashboard-hero-side {
+  position: relative;
+  z-index: 1;
+}
+
+/* Clear material for clock and weather cards */
 .work-app .unified-clock-card,
 .work-app .unified-weather-card {
-  border-color: var(--admin-glass-border, var(--vc-glass-border));
-  background: var(--vc-surface, #fff);
-  background: color-mix(in srgb, var(--vc-surface, #fff) 90%, transparent);
+  border: 1px solid var(--admin-clear-border, var(--admin-glass-border, var(--vc-glass-border)));
+  background: var(--admin-clear-bg, color-mix(in srgb, var(--vc-surface, #fff) 86%, transparent));
   color: var(--vc-ink, #191522);
-  box-shadow: var(--vc-elevation-1, 0 2px 8px rgb(34 23 47 / 5%));
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  box-shadow: 0 6px 20px rgb(34 23 47 / 5%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
 }
 
 .work-app .unified-context-label,
@@ -636,25 +662,36 @@
 }
 
 .work-app.theme-dark .unified-dashboard-hero {
-  background-color: color-mix(in srgb, var(--vc-surface, #171a25) 82%, transparent);
+  border-color: var(--admin-frosted-border, rgb(226 199 244 / 17%));
+  background-color: color-mix(in srgb, var(--vc-surface, #171a25) 86%, transparent);
   background-image:
-    radial-gradient(ellipse at 92% 0%, rgb(208 147 240 / 14%), transparent 30rem),
+    radial-gradient(ellipse at 92% 0%, rgb(208 147 240 / 16%), transparent 30rem),
     linear-gradient(
       118deg,
-      color-mix(in srgb, var(--vc-surface, #171a25) 86%, transparent) 8%,
-      color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 7%, color-mix(in srgb, var(--vc-surface, #171a25) 82%, transparent)) 43%,
-      color-mix(in srgb, var(--vc-brand, #d093f0) 10%, color-mix(in srgb, var(--vc-surface, #171a25) 78%, transparent)) 78%,
-      color-mix(in srgb, #ff9c43 7%, color-mix(in srgb, var(--vc-surface, #171a25) 76%, transparent)) 100%
+      color-mix(in srgb, var(--vc-surface, #171a25) 88%, transparent) 8%,
+      color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 7%, color-mix(in srgb, var(--vc-surface, #171a25) 84%, transparent)) 43%,
+      color-mix(in srgb, var(--vc-brand, #d093f0) 10%, color-mix(in srgb, var(--vc-surface, #171a25) 80%, transparent)) 78%,
+      color-mix(in srgb, #ff9c43 7%, color-mix(in srgb, var(--vc-surface, #171a25) 78%, transparent)) 100%
     );
+  box-shadow: var(--admin-glass-shadow), inset 0 1px 0 var(--admin-glass-surface-highlight);
+}
+
+.work-app.theme-dark .unified-dashboard-hero::before {
+  background: radial-gradient(
+    ellipse at 65% 35%,
+    rgb(208 147 240 / 18%),
+    rgb(98 200 240 / 12%) 48%,
+    transparent 75%
+  );
+  box-shadow: 0 0 60px rgb(208 147 240 / 12%);
 }
 
 .work-app.theme-dark .unified-clock-card,
 .work-app.theme-dark .unified-weather-card {
-  border-color: var(--vc-glass-border, rgb(255 255 255 / 12%));
-  background: var(--vc-surface-raised, #1e2230);
-  background: color-mix(in srgb, var(--vc-surface-raised, #1e2230) 88%, transparent);
+  border-color: var(--admin-clear-border, rgb(255 255 255 / 14%));
+  background: var(--admin-clear-bg, color-mix(in srgb, var(--vc-surface-raised, #1e2230) 80%, transparent));
   color: var(--vc-ink, #f1f3f8);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+  box-shadow: inset 0 1px 0 var(--admin-glass-surface-highlight);
 }
 
 .work-app.theme-dark .unified-context-label,
@@ -665,6 +702,72 @@
 
 .work-app.theme-dark .unified-weather-card > svg {
   color: var(--vc-state-warning, #ffc66d);
+}
+
+/* Clear finish for quick dashboard action and badges */
+.work-app .unified-dashboard-action {
+  border: 1px solid var(--admin-clear-border, rgb(255 255 255 / 70%));
+  background: var(--admin-hero-action-bg, #a51091);
+  color: var(--admin-hero-action-ink, #fff);
+  box-shadow: 0 8px 22px rgb(126 25 119 / 18%), inset 0 1px 0 rgb(255 255 255 / 40%);
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+}
+
+.work-app .unified-dashboard-badges > span {
+  border: 1px solid var(--admin-clear-border, rgb(165 16 145 / 16%));
+  background: var(--admin-clear-bg, color-mix(in srgb, var(--vc-surface, #fff) 72%, transparent));
+  color: var(--admin-glass-ink, #292533);
+  box-shadow: 0 4px 14px rgb(42 24 58 / 5%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  backdrop-filter: blur(12px) saturate(135%);
+  -webkit-backdrop-filter: blur(12px) saturate(135%);
+}
+
+.work-app.theme-dark .unified-dashboard-badges > span {
+  border-color: var(--admin-clear-border, rgb(255 255 255 / 16%));
+  background: var(--admin-clear-bg, color-mix(in srgb, var(--vc-surface-raised, #1e2230) 74%, transparent));
+  color: var(--admin-glass-ink, #f2eff8);
+  box-shadow: inset 0 1px 0 var(--admin-glass-surface-highlight);
+}
+
+/* Blur finish for panels and overview cards */
+.work-app .unified-dashboard .panel,
+.work-app .unified-dashboard .unified-metric-link > .stat-card,
+.work-app .unified-dashboard .operation-card,
+.work-app .unified-dashboard .unified-priority-panel {
+  border: 1px solid var(--admin-blur-border, var(--admin-glass-line));
+  background-color: var(--admin-blur-bg, color-mix(in srgb, var(--surface, #fff) 88%, transparent));
+  box-shadow: 0 8px 26px rgb(34 30 48 / 6%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  backdrop-filter: blur(14px) saturate(125%);
+  -webkit-backdrop-filter: blur(14px) saturate(125%);
+}
+
+.work-app.theme-dark .unified-dashboard .panel,
+.work-app.theme-dark .unified-dashboard .unified-metric-link > .stat-card,
+.work-app.theme-dark .unified-dashboard .operation-card,
+.work-app.theme-dark .unified-dashboard .unified-priority-panel {
+  background-color: var(--admin-blur-bg, color-mix(in srgb, var(--vc-surface, #171a25) 90%, transparent));
+  box-shadow: 0 10px 30px rgb(0 0 0 / 22%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+}
+
+.work-app .unified-dashboard .unified-metric-link:hover > .stat-card,
+.work-app .unified-dashboard .operation-card:hover {
+  border-color: color-mix(in srgb, var(--dashboard-accent) 36%, var(--admin-glass-line));
+  box-shadow: 0 12px 30px rgb(34 30 48 / 10%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+}
+
+/* Sacred operational rule: tables and inputs stay completely opaque without backdrop blur */
+.work-app .unified-dashboard :is(.table-wrap, table, thead, tbody, tr, th, td, input, select, textarea) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.work-app .unified-dashboard .table-wrap {
+  background-color: var(--surface, #fff) !important;
+}
+
+.work-app.theme-dark .unified-dashboard .table-wrap {
+  background-color: var(--vc-surface, #171a25) !important;
 }
 
 .work-app .unified-dashboard :is(

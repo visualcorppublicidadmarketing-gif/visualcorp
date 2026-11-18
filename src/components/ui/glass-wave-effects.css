@@ -1,0 +1,609 @@
+/* ==========================================================================
+   Glass Wave & Atmospheric Lighting Effects
+   Visual Corp Suite — Physics-based optical lighting and sculpted wave dividers
+   Inspired by WebAngles, Payrot, getwaves.io, and iOS specular glass
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Horizon Light Wave (Hourglass / Concentric Light Beams)
+   -------------------------------------------------------------------------- */
+.vc-horizon-light-wave {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: clamp(140px, 18vw, 240px);
+  margin-inline: auto;
+}
+
+.horizon-wave-inner {
+  position: relative;
+  width: 100%;
+  max-width: 1440px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Layer 1 - Outer Layer: blur(90px) magenta/violet #e5007e / #8a45d2 */
+.horizon-wave-outer {
+  position: absolute;
+  width: 120%;
+  max-width: 1600px;
+  height: 75%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 50%,
+    rgba(229, 0, 126, 0.42) 0%,
+    rgba(138, 69, 210, 0.32) 42%,
+    rgba(22, 17, 38, 0) 78%
+  );
+  filter: blur(90px);
+  -webkit-filter: blur(90px);
+  transform: translateZ(0);
+  opacity: 0.9;
+}
+
+/* Layer 2 - Mid Layer: blur(35px) cian/rosa #009ee2 / #f076bc */
+.horizon-wave-mid {
+  position: absolute;
+  width: 90%;
+  max-width: 1200px;
+  height: 48%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 65% 45% at 50% 50%,
+    rgba(0, 158, 226, 0.55) 0%,
+    rgba(240, 118, 188, 0.45) 48%,
+    transparent 80%
+  );
+  filter: blur(35px);
+  -webkit-filter: blur(35px);
+  transform: translateZ(0);
+  opacity: 0.85;
+}
+
+/* Layer 3 - Core Layer: blur(22px) luminous white / specular streak */
+.horizon-wave-core {
+  position: absolute;
+  width: 70%;
+  max-width: 920px;
+  height: 22%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse 60% 30% at 50% 50%,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(84, 202, 255, 0.75) 30%,
+    rgba(229, 0, 126, 0.45) 60%,
+    transparent 85%
+  );
+  filter: blur(22px);
+  -webkit-filter: blur(22px);
+  transform: translateZ(0);
+  opacity: 0.95;
+}
+
+/* Hourglass contour streak (reloj de arena filament) */
+.horizon-wave-hourglass {
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(138, 69, 210, 0.3) 15%,
+    rgba(0, 158, 226, 0.85) 40%,
+    #ffffff 50%,
+    rgba(229, 0, 126, 0.85) 60%,
+    rgba(138, 69, 210, 0.3) 85%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 16px rgba(0, 158, 226, 0.8),
+    0 0 32px rgba(229, 0, 126, 0.6);
+}
+
+/* Light mode adaptation */
+html[data-public-theme="light"] .vc-horizon-light-wave,
+:root[data-vc-theme="light"] .vc-horizon-light-wave,
+body[data-vc-theme="light"] .vc-horizon-light-wave {
+  opacity: 0.72;
+}
+
+html[data-public-theme="light"] .horizon-wave-outer,
+:root[data-vc-theme="light"] .horizon-wave-outer {
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 50%,
+    rgba(229, 0, 126, 0.28) 0%,
+    rgba(138, 69, 210, 0.22) 42%,
+    transparent 78%
+  );
+}
+
+html[data-public-theme="light"] .horizon-wave-mid,
+:root[data-vc-theme="light"] .horizon-wave-mid {
+  background: radial-gradient(
+    ellipse 65% 45% at 50% 50%,
+    rgba(0, 158, 226, 0.35) 0%,
+    rgba(240, 118, 188, 0.32) 48%,
+    transparent 80%
+  );
+}
+
+html[data-public-theme="light"] .horizon-wave-core,
+:root[data-vc-theme="light"] .horizon-wave-core {
+  background: radial-gradient(
+    ellipse 60% 30% at 50% 50%,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(84, 202, 255, 0.6) 35%,
+    rgba(229, 0, 126, 0.35) 65%,
+    transparent 85%
+  );
+}
+
+/* --------------------------------------------------------------------------
+   2. Portal Light Stage (Perspective grid + additive vertical shafts + floor reflection)
+   -------------------------------------------------------------------------- */
+.vc-portal-light-stage {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  pointer-events: none;
+  min-height: clamp(260px, 32vw, 420px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* Floor trapezoidal reflection (reflejo trapezoidal de piso) */
+.portal-stage-floor-reflection {
+  position: absolute;
+  bottom: 0;
+  left: 5%;
+  right: 5%;
+  height: 52%;
+  clip-path: polygon(16% 0%, 84% 0%, 100% 100%, 0% 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 158, 226, 0.16) 0%,
+    rgba(229, 0, 126, 0.12) 45%,
+    rgba(14, 17, 28, 0) 100%
+  );
+  transform: translateZ(0);
+  pointer-events: none;
+}
+
+html[data-public-theme="light"] .portal-stage-floor-reflection,
+:root[data-vc-theme="light"] .portal-stage-floor-reflection {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 158, 226, 0.10) 0%,
+    rgba(229, 0, 126, 0.08) 45%,
+    transparent 100%
+  );
+}
+
+/* Lower perspective grid */
+.portal-stage-grid {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 58%;
+  display: block;
+  mask-image: radial-gradient(ellipse 65% 55% at 50% 95%, #000000 25%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 65% 55% at 50% 95%, #000000 25%, transparent 80%);
+}
+
+.portal-grid-line {
+  stroke: rgba(84, 202, 255, 0.35);
+  vector-effect: non-scaling-stroke;
+}
+
+.portal-grid-cross {
+  stroke: rgba(240, 118, 188, 0.28);
+  vector-effect: non-scaling-stroke;
+}
+
+html[data-public-theme="light"] .portal-grid-line {
+  stroke: rgba(0, 158, 226, 0.25);
+}
+
+html[data-public-theme="light"] .portal-grid-cross {
+  stroke: rgba(134, 54, 130, 0.22);
+}
+
+/* Vertical light columns with additive blend mode (plus-lighter / screen) */
+.portal-stage-columns {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  mix-blend-mode: plus-lighter;
+  pointer-events: none;
+}
+
+@supports not (mix-blend-mode: plus-lighter) {
+  .portal-stage-columns {
+    mix-blend-mode: screen;
+  }
+}
+
+/* Staggered blur light columns: 15px, 56px, 120px */
+.portal-column-15 {
+  position: absolute;
+  bottom: 12%;
+  width: 4px;
+  height: 82%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.9) 30%,
+    rgba(84, 202, 255, 0.8) 75%,
+    transparent 100%
+  );
+  filter: blur(15px);
+  -webkit-filter: blur(15px);
+  transform: translateZ(0);
+}
+
+.portal-column-15.col-center {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 90%;
+}
+
+.portal-column-15.col-left {
+  left: 32%;
+}
+
+.portal-column-15.col-right {
+  right: 32%;
+}
+
+.portal-column-56 {
+  position: absolute;
+  bottom: 8%;
+  width: 70px;
+  height: 86%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 158, 226, 0.45) 25%,
+    rgba(229, 0, 126, 0.5) 65%,
+    transparent 100%
+  );
+  filter: blur(56px);
+  -webkit-filter: blur(56px);
+  transform: translateZ(0);
+}
+
+.portal-column-56.col-center {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110px;
+}
+
+.portal-column-56.col-left {
+  left: 28%;
+}
+
+.portal-column-56.col-right {
+  right: 28%;
+}
+
+.portal-column-120 {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(540px, 80%);
+  height: 100%;
+  background: radial-gradient(
+    ellipse 55% 70% at 50% 60%,
+    rgba(229, 0, 126, 0.38) 0%,
+    rgba(0, 158, 226, 0.28) 45%,
+    transparent 75%
+  );
+  filter: blur(120px);
+  -webkit-filter: blur(120px);
+  transform: translateZ(0);
+}
+
+/* Light mode adaptation for columns */
+html[data-public-theme="light"] .portal-stage-columns,
+:root[data-vc-theme="light"] .portal-stage-columns {
+  mix-blend-mode: normal;
+  opacity: 0.58;
+}
+
+/* --------------------------------------------------------------------------
+   3. Planetary Horizon Arc (WebAngles style curved atmospheric horizon)
+   -------------------------------------------------------------------------- */
+.vc-planetary-horizon-arc {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding-bottom: 24px;
+}
+
+.planetary-arc-backdrop {
+  position: relative;
+  width: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.planetary-arc-svg {
+  width: 100%;
+  height: clamp(90px, 14vw, 170px);
+  display: block;
+}
+
+/* Atmospheric corona glow beneath and along the arc */
+.planetary-arc-atmosphere {
+  position: absolute;
+  top: 15%;
+  left: 5%;
+  right: 5%;
+  height: 110%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 65% 50% at 50% 25%,
+    rgba(0, 158, 226, 0.28) 0%,
+    rgba(229, 0, 126, 0.24) 40%,
+    transparent 75%
+  );
+  filter: blur(54px);
+  -webkit-filter: blur(54px);
+  pointer-events: none;
+}
+
+html[data-public-theme="light"] .planetary-arc-atmosphere {
+  background: radial-gradient(
+    ellipse 65% 50% at 50% 25%,
+    rgba(0, 158, 226, 0.18) 0%,
+    rgba(229, 0, 126, 0.14) 40%,
+    transparent 75%
+  );
+}
+
+/* Optional orbital children container */
+.planetary-orbit-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: clamp(16px, 3.5vw, 40px);
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   4. Sculpted Wave Dividers (Organic getwaves.io & Payrot notched portal)
+   -------------------------------------------------------------------------- */
+.vc-sculpted-wave-divider {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: visible;
+  line-height: 0;
+}
+
+.vc-sculpted-wave-divider svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Variant A: Hero to Light */
+.vc-sculpted-wave-divider.is-hero-to-light {
+  margin-top: -1px;
+}
+
+.wave-layer-ambient {
+  opacity: 0.18;
+}
+
+.wave-layer-mid {
+  opacity: 0.26;
+}
+
+.wave-layer-front {
+  opacity: 1;
+}
+
+/* Adapt destination fill using context or fallback */
+.vc-sculpted-wave-divider.is-hero-to-light .wave-fill-ambient {
+  fill: #8a45d2;
+}
+
+.vc-sculpted-wave-divider.is-hero-to-light .wave-fill-mid {
+  fill: #009ee2;
+}
+
+.vc-sculpted-wave-divider.is-hero-to-light .wave-fill-front {
+  fill: var(--services-bg, #101119);
+}
+
+html[data-public-theme="light"] .vc-sculpted-wave-divider.is-hero-to-light .wave-fill-front {
+  fill: var(--services-bg, #f6f5f7);
+}
+
+/* Variant B: Light to Dark */
+.vc-sculpted-wave-divider.is-light-to-dark {
+  margin-bottom: -1px;
+}
+
+.vc-sculpted-wave-divider.is-light-to-dark .wave-fill-ambient {
+  fill: #009ee2;
+}
+
+.vc-sculpted-wave-divider.is-light-to-dark .wave-fill-mid {
+  fill: #e5007e;
+}
+
+.vc-sculpted-wave-divider.is-light-to-dark .wave-fill-front {
+  fill: var(--home-bg, #0b0d18);
+}
+
+html[data-public-theme="light"] .vc-sculpted-wave-divider.is-light-to-dark .wave-fill-front {
+  fill: var(--home-bg, #ffffff);
+}
+
+/* Variant C: Notch Portal (Payrot style with central medallion socket) */
+.vc-sculpted-wave-divider.is-notch-portal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-block: 8px;
+}
+
+.notch-portal-bar {
+  position: relative;
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notch-portal-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(231, 235, 255, 0.15) 20%,
+    rgba(84, 202, 255, 0.4) 40%,
+    transparent 47%,
+    transparent 53%,
+    rgba(229, 0, 126, 0.4) 60%,
+    rgba(231, 235, 255, 0.15) 80%,
+    transparent 100%
+  );
+  transform: translateY(-50%);
+}
+
+html[data-public-theme="light"] .notch-portal-line {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(134, 54, 130, 0.18) 20%,
+    rgba(0, 158, 226, 0.35) 40%,
+    transparent 47%,
+    transparent 53%,
+    rgba(229, 0, 126, 0.35) 60%,
+    rgba(134, 54, 130, 0.18) 80%,
+    transparent 100%
+  );
+}
+
+.notch-portal-socket {
+  position: relative;
+  z-index: 2;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: radial-gradient(
+    circle at 50% 30%,
+    rgba(28, 33, 54, 0.92) 0%,
+    rgba(12, 15, 27, 0.96) 100%
+  );
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    0 0 18px rgba(84, 202, 255, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+html[data-public-theme="light"] .notch-portal-socket {
+  background: radial-gradient(
+    circle at 50% 30%,
+    #ffffff 0%,
+    #f3eff6 100%
+  );
+  border-color: rgba(134, 54, 130, 0.25);
+  box-shadow:
+    0 8px 22px rgba(48, 29, 59, 0.12),
+    0 0 14px rgba(229, 0, 126, 0.18),
+    inset 0 1px 0 #ffffff;
+}
+
+.notch-medallion-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility & Reduced Preferences
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .vc-horizon-light-wave,
+  .vc-horizon-light-wave *,
+  .vc-portal-light-stage,
+  .vc-portal-light-stage *,
+  .vc-planetary-horizon-arc,
+  .vc-planetary-horizon-arc *,
+  .vc-sculpted-wave-divider,
+  .vc-sculpted-wave-divider * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .horizon-wave-outer,
+  .horizon-wave-mid,
+  .horizon-wave-core,
+  .portal-stage-columns,
+  .planetary-arc-atmosphere {
+    filter: none !important;
+    -webkit-filter: none !important;
+    opacity: 0.25 !important;
+  }
+
+  .portal-stage-floor-reflection {
+    display: none !important;
+  }
+
+  .notch-portal-socket {
+    background: #0b0d14 !important;
+    border-color: #8b93ad !important;
+    box-shadow: none !important;
+  }
+
+  html[data-public-theme="light"] .notch-portal-socket {
+    background: #ffffff !important;
+    border-color: #6f5570 !important;
+  }
+}

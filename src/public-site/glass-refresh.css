@@ -1,4 +1,4 @@
-/* Brand glass: color stays at the edges so content keeps a calm reading surface. */
+/* Brand glass: 3 physical materials (Frosted, Clear, Blur) with color staying at the edges so content keeps a calm reading surface. */
 :root,
 .public-site {
   --glass-bg: rgba(18, 21, 34, 0.72);
@@ -7,6 +7,28 @@
   --glass-blur: blur(18px) saturate(1.22);
   --glass-shadow: 0 20px 52px rgba(0, 0, 0, 0.34);
   --glass-highlight: rgba(255, 255, 255, 0.12);
+
+  /* 3 Physical Glass Materials: Dark Mode (Default) */
+  /* 1. Frosted: High diffusion, silky specular rim, balanced opacity for structural panels */
+  --glass-frosted-bg: rgba(15, 18, 30, 0.82);
+  --glass-frosted-border: rgba(231, 235, 255, 0.18);
+  --glass-frosted-blur: blur(22px) saturate(145%);
+  --glass-frosted-shadow: 0 20px 52px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --glass-frosted-highlight: rgba(255, 255, 255, 0.14);
+
+  /* 2. Clear: High transmission, lightweight tint, crisp specular rim for pills and controls */
+  --glass-clear-bg: rgba(255, 255, 255, 0.05);
+  --glass-clear-border: rgba(231, 235, 255, 0.22);
+  --glass-clear-blur: blur(12px) saturate(130%);
+  --glass-clear-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --glass-clear-highlight: rgba(255, 255, 255, 0.22);
+
+  /* 3. Blur: Soft ambient diffusion for reading cards and responsive grids */
+  --glass-blur-bg: linear-gradient(150deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.02)), rgba(18, 21, 34, 0.7);
+  --glass-blur-border: rgba(231, 235, 255, 0.14);
+  --glass-blur-filter: blur(16px) saturate(120%);
+  --glass-blur-shadow: 0 18px 46px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --glass-blur-highlight: rgba(255, 255, 255, 0.09);
 }
 
 html[data-public-theme="light"],
@@ -17,6 +39,25 @@ html[data-public-theme="light"] .public-site {
   --glass-blur: blur(18px) saturate(1.15);
   --glass-shadow: 0 16px 42px rgba(36, 22, 52, 0.09);
   --glass-highlight: rgba(255, 255, 255, 0.94);
+
+  /* 3 Physical Glass Materials: Light Mode */
+  --glass-frosted-bg: rgba(255, 255, 255, 0.88);
+  --glass-frosted-border: rgba(134, 54, 130, 0.18);
+  --glass-frosted-blur: blur(20px) saturate(125%);
+  --glass-frosted-shadow: 0 16px 40px rgba(48, 29, 59, 0.08), inset 0 1px 0 #ffffff;
+  --glass-frosted-highlight: #ffffff;
+
+  --glass-clear-bg: rgba(255, 255, 255, 0.62);
+  --glass-clear-border: rgba(134, 54, 130, 0.16);
+  --glass-clear-blur: blur(10px) saturate(115%);
+  --glass-clear-shadow: 0 8px 22px rgba(48, 29, 59, 0.05), inset 0 1px 0 #ffffff;
+  --glass-clear-highlight: #ffffff;
+
+  --glass-blur-bg: linear-gradient(150deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.84));
+  --glass-blur-border: rgba(61, 42, 74, 0.13);
+  --glass-blur-filter: blur(16px) saturate(112%);
+  --glass-blur-shadow: 0 14px 34px rgba(36, 22, 52, 0.07), inset 0 1px 0 #ffffff;
+  --glass-blur-highlight: #ffffff;
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -201,6 +242,129 @@ html[data-public-theme="light"] .public-site .heroui-services-card .card__descri
   }
 }
 
+/* ==========================================================================
+   Physical Glass Materials (Frosted, Clear, Blur) Utility Classes
+   ========================================================================== */
+.public-site .vc-glass-frosted {
+  box-sizing: border-box;
+  max-width: 100%;
+  border: 1px solid var(--glass-frosted-border);
+  background: var(--glass-frosted-bg);
+  box-shadow: var(--glass-frosted-shadow);
+  backdrop-filter: var(--glass-frosted-blur);
+  -webkit-backdrop-filter: var(--glass-frosted-blur);
+}
+
+.public-site .vc-glass-clear {
+  box-sizing: border-box;
+  max-width: 100%;
+  border: 1px solid var(--glass-clear-border);
+  background: var(--glass-clear-bg);
+  box-shadow: var(--glass-clear-shadow);
+  backdrop-filter: var(--glass-clear-blur);
+  -webkit-backdrop-filter: var(--glass-clear-blur);
+}
+
+.public-site .vc-glass-blur {
+  box-sizing: border-box;
+  max-width: 100%;
+  border: 1px solid var(--glass-blur-border);
+  background: var(--glass-blur-bg);
+  box-shadow: var(--glass-blur-shadow);
+  backdrop-filter: var(--glass-blur-filter);
+  -webkit-backdrop-filter: var(--glass-blur-filter);
+}
+
+/* ==========================================================================
+   Floating Site Header Inner: Layered Clear / Frosted Glass with Double Specular Rim
+   ========================================================================== */
+.public-site .site-header-inner {
+  position: relative;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid var(--glass-clear-border, rgba(231, 235, 255, 0.18));
+  background: var(--glass-frosted-bg, rgba(14, 17, 29, 0.8));
+  box-shadow:
+    0 16px 44px rgba(0, 0, 0, 0.32),
+    0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 var(--glass-clear-highlight, rgba(255, 255, 255, 0.16));
+  backdrop-filter: blur(24px) saturate(155%);
+  -webkit-backdrop-filter: blur(24px) saturate(155%);
+  transition: border-color 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.public-site .site-header-inner::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 55%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+html[data-public-theme="light"] .public-site .site-header-inner {
+  border-color: rgba(134, 54, 130, 0.2);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    0 14px 38px rgba(48, 29, 59, 0.08),
+    0 1px 0 rgba(134, 54, 130, 0.07),
+    inset 0 1px 0 #ffffff;
+  backdrop-filter: blur(22px) saturate(125%);
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
+}
+
+html[data-public-theme="light"] .public-site .site-header-inner::after {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent 60%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+/* Fallback when backdrop-filter is unsupported */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .public-site .site-header-inner,
+  .public-site .vc-glass-frosted,
+  .public-site .vc-glass-clear,
+  .public-site .vc-glass-blur,
+  .public-site .heroui-services-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #111422;
+  }
+
+  html[data-public-theme="light"] .public-site .site-header-inner,
+  html[data-public-theme="light"] .public-site .vc-glass-frosted,
+  html[data-public-theme="light"] .public-site .vc-glass-clear,
+  html[data-public-theme="light"] .public-site .vc-glass-blur,
+  html[data-public-theme="light"] .public-site .heroui-services-card {
+    background: #ffffff;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .public-site .site-header-inner,
+  .public-site .vc-glass-frosted,
+  .public-site .vc-glass-clear,
+  .public-site .vc-glass-blur,
+  .public-site .heroui-services-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #111422 !important;
+    border-color: #8b93ad !important;
+    box-shadow: none !important;
+  }
+
+  html[data-public-theme="light"] .public-site .site-header-inner,
+  html[data-public-theme="light"] .public-site .vc-glass-frosted,
+  html[data-public-theme="light"] .public-site .vc-glass-clear,
+  html[data-public-theme="light"] .public-site .vc-glass-blur,
+  html[data-public-theme="light"] .public-site .heroui-services-card {
+    background: #ffffff !important;
+    border-color: #6f5570 !important;
+    box-shadow: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .public-site .vc-scroll-progress {
     display: none !important;
@@ -212,5 +376,9 @@ html[data-public-theme="light"] .public-site .heroui-services-card .card__descri
 
   .public-site .heroui-services-card .vc-border-beam::before {
     animation: none !important;
+  }
+
+  .public-site .site-header-inner {
+    transition: none !important;
   }
 }
