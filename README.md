@@ -200,6 +200,15 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - En Supabase no hay vínculos de catálogo activos todavía. La taza blanca tiene una auditoría de conteo de 72 unidades del 16 de noviembre; sigue pendiente confirmar su equivalencia con el SKU comercial. La camiseta no tiene sucursal ni saldo y requiere confirmar su talla/color. Las migraciones `20261118191907_enforce_integer_physical_catalog_sales.sql`, `20261118191916_pos_inventory_variants.sql` y `20261118193302_catalog_physical_integer_stock_guard.sql` ya están aplicadas; no se editaron saldos y la interfaz no se publicó.
 - La versión 3 de la hoja `outputs/01a1ef5a-6a47-7c03-97a3-2403d8c01743/CONTEO_FISICO_CATALOGO_POS_2026-11-18_v03.xlsx` incluye los 29 SKU físicos, 13 prioritarios y 1.740 filas para capturar variantes. Deja los conteos vacíos y bloquea sumar una cantidad total junto al desglose por opciones.
 - `calc_type=scale` representa precio/cotización por cantidad; los físicos `scale` pueden contarse como unidades. El editor POS aplica enteros a físicos por unidad y conserva fracciones para servicios y áreas. `npm run build:checked` pasa.
+- **Actualización:** 18 de noviembre de 2026. Iteración visual de la portada pública, integrada mediante el PR [#318](https://github.com/visualcorppublicidadmarketing-gif/visualcorp/pull/318).
+- **Resultado buscado:** presentar una experiencia más inmersiva con profundidad ligada al scroll y una respuesta sutil al puntero, manteniendo la identidad y los datos confirmados.
+- **Versión de trabajo:** `codex/home-interactive-premium-20261118`; `src/public-site/HomePage.tsx` y `src/public-site/home-page.css`.
+- **Decisiones aplicadas:** reutilizar Motion, la ilustración existente de Visualito y la paleta/tipografía actual. Se añadió parallax por capas, tilt con spring, halo para mouse y un rótulo glass; se limita el movimiento con `prefers-reduced-motion`.
+- **Investigación:** [dirección, fuentes y decisiones](docs/HOME_INTERACTIVE_PREMIUM_2026-11-18.md).
+- **Verificación:** `npm run typecheck`, `npm run build`, `git diff --check` y el workflow `Production build` pasan. Se revisó el hero localmente con scroll y puntero, y en anchos de laptop y móvil sin desbordamiento horizontal visible; Vercel Preview responde HTTP 200.
+- **Estado:** integrado a `main` en `253293ac39b1fe70434f80034013a70afd010ab3`; Vercel Production quedó `Ready` y responde HTTP 200 en [visualcorp-suite.vercel.app](https://visualcorp-suite.vercel.app/). Sin dependencias nuevas ni cambios de datos.
+- **Siguiente acción:** valorar si se extiende este lenguaje visual a las demás páginas públicas.
+
 - **Actualización:** 16 de noviembre de 2026. Mejora local del catálogo de operaciones y del POS.
 - **Resultado buscado:** gestionar artículos y servicios configurables en una sola fuente de catálogo, con escritura reservada a propietarios y administradores; seleccionar paquetes de servicios en el POS.
 - **Versión de trabajo:** cambios en `src/pages/admin/CatalogPage.tsx`, `src/pages/admin/StandardCustomProducts.tsx`, `src/pages/admin/ServiceCatalog.tsx`, `src/pages/pos/CheckoutWorkspace.tsx` y `src/app/workspace.tsx`.
@@ -208,3 +217,4 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - **Pendientes:** revisión del alcance contractual, entregables y tiempos con administración; definir tarifas/paquetes de publicidad digital. La migración aún no está aplicada a Supabase y estos cambios no se han publicado.
 - **Revisión y aprobación:** typecheck y build local pasan; no se realizó una venta ni se comprobó con una sesión autenticada. Sin aprobación de publicación en esta solicitud.
 - **Siguiente acción:** aplicar la migración de forma controlada y publicar cuando se solicite.
+
