@@ -419,6 +419,11 @@ html[data-public-theme="light"] .vc-home .home-hero-proof span{
     font-size:7.5px;
   }
 }
+@media(max-width:640px){
+  .vc-home .home-stage-label{
+    display:none;
+  }
+}
 @media(max-width:520px){
   .vc-home .home-stage-satellite.home-satellite-studio{
     top:12px;
