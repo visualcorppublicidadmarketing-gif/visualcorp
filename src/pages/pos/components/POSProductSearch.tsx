@@ -18,7 +18,7 @@ export function POSProductSearch<T extends POSSearchProduct>({
   products, query, onQueryChange, onChoose, onEnter, selectedId, disabled, family, onFamilyChange, families,
   codesByProduct, stockByProduct, stockMetaByProduct = {}, renderImage, favoriteIds = new Set<string>(), onToggleFavorite, onQuickAdd,
   emptyStateTitle, emptyStateDescription, emptyStateAction, resultNoun = 'producto', showInventoryFilters = true,
-  inputRef,
+  inputRef, contextKey,
 }: {
   products: T[]; query: string; onQueryChange: (value: string) => void; onChoose: (product: T) => void;
   onEnter: (query: string, highlighted?: T) => void; selectedId: string; disabled: boolean;
@@ -30,6 +30,7 @@ export function POSProductSearch<T extends POSSearchProduct>({
   onQuickAdd?: (product: T) => void;
   emptyStateTitle?: string; emptyStateDescription?: string; emptyStateAction?: React.ReactNode;
   resultNoun?: string; showInventoryFilters?: boolean;
+  contextKey: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
 }) {
   const listId = useId();
@@ -38,6 +39,10 @@ export function POSProductSearch<T extends POSSearchProduct>({
   const [activeIndex, setActiveIndex] = useState(-1);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [stockFilter, setStockFilter] = useState<'all' | 'available' | 'linked'>('all');
+  const [filterContextKey, setFilterContextKey] = useState(contextKey);
+  const filtersMatchContext = filterContextKey === contextKey;
+  const effectiveFavoritesOnly = filtersMatchContext && favoritesOnly;
+  const effectiveStockFilter = filtersMatchContext ? stockFilter : 'all';
 
   const stockCounts = useMemo(() => {
     let available = 0;
@@ -53,18 +58,24 @@ export function POSProductSearch<T extends POSSearchProduct>({
   const filtered = useMemo(() => rankPOSProducts(
     products.filter((product) => {
       if (family !== 'Todas' && product.family !== family) return false;
-      if (favoritesOnly && !favoriteIds.has(product.id)) return false;
-      if (showInventoryFilters && stockFilter === 'available' && stockMetaByProduct[product.id]?.tone !== 'available') return false;
-      if (showInventoryFilters && stockFilter === 'linked' && !stockMetaByProduct[product.id]?.linked) return false;
+      if (effectiveFavoritesOnly && !favoriteIds.has(product.id)) return false;
+      if (showInventoryFilters && effectiveStockFilter === 'available' && stockMetaByProduct[product.id]?.tone !== 'available') return false;
+      if (showInventoryFilters && effectiveStockFilter === 'linked' && !stockMetaByProduct[product.id]?.linked) return false;
       return true;
     }),
     query,
     codesByProduct,
   ).sort((a, b) => query.trim() ? 0 : Number(favoriteIds.has(b.id)) - Number(favoriteIds.has(a.id)) || a.name.localeCompare(b.name, 'es')),
-  [products, family, query, codesByProduct, favoritesOnly, favoriteIds, stockFilter, stockMetaByProduct, showInventoryFilters]);
+  [products, family, query, codesByProduct, effectiveFavoritesOnly, favoriteIds, effectiveStockFilter, stockMetaByProduct, showInventoryFilters]);
 
   const visible = filtered.slice(0, 24);
-  useEffect(() => setActiveIndex(-1), [query, family, stockFilter, favoritesOnly]);
+  useEffect(() => {
+    setFilterContextKey(contextKey);
+    setFavoritesOnly(false);
+    setStockFilter('all');
+    setActiveIndex(-1);
+  }, [contextKey]);
+  useEffect(() => setActiveIndex(-1), [query, family, effectiveStockFilter, effectiveFavoritesOnly]);
   useEffect(() => {
     if (activeIndex >= 0) document.getElementById(`${listId}-option-${activeIndex}`)?.scrollIntoView({ block: 'nearest' });
   }, [activeIndex, listId]);
@@ -102,17 +113,17 @@ export function POSProductSearch<T extends POSSearchProduct>({
     </div>
 
     <div className="pos-filter-pills-row" role="group" aria-label={showInventoryFilters ? 'Filtros rápidos de catálogo e inventario' : 'Filtros rápidos de catálogo'}>
-      {onToggleFavorite && <button type="button" className={`pos-favorites-filter${favoritesOnly ? ' active' : ''}`} aria-pressed={favoritesOnly} onClick={() => { setFavoritesOnly((value) => !value); setActiveIndex(-1); }}>
+      {onToggleFavorite && <button type="button" className={`pos-favorites-filter${effectiveFavoritesOnly ? ' active' : ''}`} aria-pressed={effectiveFavoritesOnly} onClick={() => { setFilterContextKey(contextKey); setFavoritesOnly(!effectiveFavoritesOnly); setActiveIndex(-1); }}>
         <Star size={13} aria-hidden="true"/> Mis productos estrella <span>{favoriteIds.size}</span>
       </button>}
       {showInventoryFilters&&<>
-      <button type="button" className={`pos-stock-filter-pill${stockFilter === 'all' ? ' active' : ''}`} aria-pressed={stockFilter === 'all'} onClick={() => setStockFilter('all')}>
+      <button type="button" className={`pos-stock-filter-pill${effectiveStockFilter === 'all' ? ' active' : ''}`} aria-pressed={effectiveStockFilter === 'all'} onClick={() => { setFilterContextKey(contextKey); setStockFilter('all'); }}>
         <Boxes size={12} aria-hidden="true"/> Todos <span>{products.length}</span>
       </button>
-      <button type="button" className={`pos-stock-filter-pill is-available${stockFilter === 'available' ? ' active' : ''}`} aria-pressed={stockFilter === 'available'} onClick={() => setStockFilter((curr) => curr === 'available' ? 'all' : 'available')}>
+      <button type="button" className={`pos-stock-filter-pill is-available${effectiveStockFilter === 'available' ? ' active' : ''}`} aria-pressed={effectiveStockFilter === 'available'} onClick={() => { setFilterContextKey(contextKey); setStockFilter(effectiveStockFilter === 'available' ? 'all' : 'available'); }}>
         <CheckCircle2 size={12} aria-hidden="true"/> En stock <span>{stockCounts.available}</span>
       </button>
-      <button type="button" className={`pos-stock-filter-pill is-linked${stockFilter === 'linked' ? ' active' : ''}`} aria-pressed={stockFilter === 'linked'} onClick={() => setStockFilter((curr) => curr === 'linked' ? 'all' : 'linked')}>
+      <button type="button" className={`pos-stock-filter-pill is-linked${effectiveStockFilter === 'linked' ? ' active' : ''}`} aria-pressed={effectiveStockFilter === 'linked'} onClick={() => { setFilterContextKey(contextKey); setStockFilter(effectiveStockFilter === 'linked' ? 'all' : 'linked'); }}>
         <Link2 size={12} aria-hidden="true"/> Con vínculo <span>{stockCounts.linked}</span>
       </button>
       </>}
@@ -128,7 +139,7 @@ export function POSProductSearch<T extends POSSearchProduct>({
     <small className="pos-scan-hint">Escribe para filtrar. Usa ↑ ↓ y Enter para elegir; el lector de SKU también funciona con Enter.</small>
     <div className="pos-catalog-count" aria-live="polite">
       <span>{filtered.length} {resultNoun}{filtered.length === 1 ? '' : 's'} encontrados{filtered.length > 24 ? ' · mostrando los primeros 24' : ''}</span>
-      {(family !== 'Todas' || favoritesOnly || stockFilter !== 'all' || query.trim()) && <button type="button" className="pos-reset-filters-btn" onClick={() => { onFamilyChange('Todas'); setFavoritesOnly(false); setStockFilter('all'); onQueryChange(''); }}>Restablecer filtros</button>}
+      {(family !== 'Todas' || effectiveFavoritesOnly || effectiveStockFilter !== 'all' || query.trim()) && <button type="button" className="pos-reset-filters-btn" onClick={() => { onFamilyChange('Todas'); setFilterContextKey(contextKey); setFavoritesOnly(false); setStockFilter('all'); onQueryChange(''); }}>Restablecer filtros</button>}
     </div>
 
     {visible.length > 0 ? <div id={`${listId}-results`} className="pos-product-grid" role="listbox" aria-label="Productos encontrados">
