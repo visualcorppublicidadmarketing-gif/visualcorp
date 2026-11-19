@@ -4,6 +4,7 @@ import { syncManualAccessCookie } from './manualAccessCookie';
 
 type AccessProfile = { key: string; name: string; role: string };
 type PermissionMap = Record<string, Record<string, boolean>>;
+type AccessRequestStatus = 'idle' | 'recorded' | 'dismissed' | 'unavailable' | 'error';
 const AuthContext = createContext<any>(null);
 
 export function AuthProvider({ children }) {
@@ -15,9 +16,11 @@ export function AuthProvider({ children }) {
   const [workAccessOpen, setWorkAccessOpen] = useState(true);
   const [loading, setLoading] = useState(Boolean(supabase));
   const [accessError, setAccessError] = useState('');
+  const [accessRequestStatus, setAccessRequestStatus] = useState<AccessRequestStatus>('idle');
   const sessionRef = useRef<any>(null);
   const accessRequestRef = useRef(0);
   const lastInvitationClaimAtRef = useRef(0);
+  const recordedAccessRequestRef = useRef(false);
 
   const refreshAccess = useCallback(async (currentSession?: any) => {
     if (!supabase) { setLoading(false); return; }
@@ -30,6 +33,11 @@ export function AuthProvider({ children }) {
       && previous?.access_token === nextSession?.access_token
       ? previous
       : nextSession);
+
+    if (userChanged) {
+      recordedAccessRequestRef.current = false;
+      setAccessRequestStatus('idle');
+    }
 
     if (!nextSession?.user) {
       syncManualAccessCookie(null, []);
@@ -63,6 +71,27 @@ export function AuthProvider({ children }) {
         syncManualAccessCookie(null, []);
         setProfiles([]); setRoles([]); setPermissions({}); setOrganizationId(access.organization_id || null); setAccessError('');
         return;
+      }
+      if (assigned.length) {
+        recordedAccessRequestRef.current = false;
+        setAccessRequestStatus('idle');
+      } else if (!recordedAccessRequestRef.current) {
+        const metadata = nextSession.user.app_metadata;
+        const usesGoogle = metadata?.provider === 'google' || metadata?.providers?.includes('google');
+        if (usesGoogle) {
+          let status: AccessRequestStatus = 'error';
+          try {
+            const { data: request, error: requestError } = await supabase.rpc('record_my_access_request');
+            if (!requestError && request?.status === 'recorded') status = 'recorded';
+            if (!requestError && request?.status === 'dismissed') status = 'dismissed';
+            if (!requestError && request?.status === 'already_has_access') status = 'unavailable';
+          } catch { /* Keep the access check usable if recording fails. */ }
+          if (requestId !== accessRequestRef.current) return;
+          recordedAccessRequestRef.current = status === 'recorded';
+          setAccessRequestStatus(status);
+        } else {
+          setAccessRequestStatus('unavailable');
+        }
       }
       syncManualAccessCookie(nextSession, nextRoles);
       const nextPermissions = access.permissions || {};
@@ -116,7 +145,7 @@ export function AuthProvider({ children }) {
   }, [refreshAccess]);
 
   const value = useMemo(() => ({
-    session, user: session?.user || null, roles, profiles, permissions, organizationId, loading, accessError, workAccessOpen, refreshAccess,
+    session, user: session?.user || null, roles, profiles, permissions, organizationId, loading, accessError, accessRequestStatus, workAccessOpen, refreshAccess,
     hasPermission: (module: string, action: string) => roles.includes('owner') || permissions?.[module]?.[action] === true || (action === 'view' && permissions?.[module]?.edit === true),
     sendSignInLink: async (email: string) => {
       if (!supabase) throw new Error('La conexión con Supabase todavía no está configurada.');
@@ -129,7 +158,7 @@ export function AuthProvider({ children }) {
       if (error) throw error;
     },
     signOut: async () => { if (supabase) await supabase.auth.signOut(); },
-  }), [session, roles, profiles, permissions, organizationId, loading, accessError, workAccessOpen, refreshAccess]);
+  }), [session, roles, profiles, permissions, organizationId, loading, accessError, accessRequestStatus, workAccessOpen, refreshAccess]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

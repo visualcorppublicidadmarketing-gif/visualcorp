@@ -95,13 +95,33 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
     : navigationItem
     ? canViewNavigationItem(navigationItem, auth.hasPermission)
     : auth.hasPermission(requiredModule, 'view');
-  if (!canAccessPage) return <main className="access-screen"><section className="access-card">
-    <img src={wordmark} alt="Visual Corp" />
-    <span className="site-eyebrow"><i /> PERMISOS</span>
-    <h1>Tu perfil no tiene acceso a este panel.</h1>
-    <p>El acceso al panel se configura por módulos y acciones. Solicita al propietario que revise tu perfil si necesitas esta sección.</p>
-    <button className="site-primary-button" onClick={auth.signOut}>Cerrar sesión <LogOut size={16} /></button>
-  </section></main>;
+  if (!canAccessPage) {
+    const hasNoProfiles = !(auth.profiles || []).length;
+    const userEmail = auth.user?.email;
+    const requestStatus = auth.accessRequestStatus;
+    const requestSent = requestStatus === 'recorded';
+    if (hasNoProfiles) return <main className="access-screen"><section className="access-card">
+      <img src={wordmark} alt="Visual Corp" />
+      <span className="site-eyebrow"><i /> ACCESO INTERNO</span>
+      <h1>Tu cuenta aún no tiene acceso.</h1>
+      {userEmail && <p style={{ overflowWrap: 'anywhere' }}>Ingresaste con <strong>{userEmail}</strong>.</p>}
+      <p role="status">
+        {requestSent && 'Tu solicitud quedó registrada. Cuando un administrador la apruebe, puedes pulsar «Comprobar de nuevo» para entrar.'}
+        {requestStatus === 'error' && 'No pudimos registrar tu solicitud. Pulsa «Comprobar de nuevo» para reintentar.'}
+        {requestStatus === 'dismissed' && 'Tu solicitud fue descartada. Contacta a un administrador si todavía necesitas acceso.'}
+        {!requestSent && requestStatus !== 'error' && requestStatus !== 'dismissed' && 'Pide a un administrador que revise el acceso de tu cuenta.'}
+      </p>
+      <button className="site-primary-button" type="button" onClick={() => void auth.refreshAccess()}>Comprobar de nuevo</button>
+      <button className="site-secondary-button" type="button" onClick={() => void auth.signOut()}>Cerrar sesión <LogOut size={16} /></button>
+    </section></main>;
+    return <main className="access-screen"><section className="access-card">
+      <img src={wordmark} alt="Visual Corp" />
+      <span className="site-eyebrow"><i /> PERMISOS</span>
+      <h1>Tu perfil no tiene acceso a este panel.</h1>
+      <p>El acceso al panel se configura por módulos y acciones. Solicita al propietario que revise tu perfil si necesitas esta sección.</p>
+      <button className="site-primary-button" onClick={auth.signOut}>Cerrar sesión <LogOut size={16} /></button>
+    </section></main>;
+  }
 
   return children;
 }
