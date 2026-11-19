@@ -57,6 +57,8 @@ La captura del POS mostraba 29 productos por cantidad, cero por m² y 219 servic
 
 En la interfaz publicada se seleccionó `Lona Campaña brillante 9oz (tejido 300x500)`: el POS mostró ancho y alto en centímetros, piezas, área calculada y tarifa por m². El cotizador interno ya mostraba correctamente esos campos al seleccionar una lona; no requirió cambios.
 
+Para evitar que el conteo `m² (0)` de Productos y artículos oculte las lonas clasificadas como servicios, pulsar ese filtro cambia a Servicios cuando allí están las opciones por área. En el selector del cotizador se añadieron filtros `Todo`, `Por unidad` y `Por medidas m²`; el buscador también encuentra `m²`, medidas, área y unidades aunque esos términos no estén en el nombre del producto.
+
 ### Saldos iniciales intencionales
 
 El usuario autorizó asignar 5 solo a los productos físicos del catálogo POS y crear/vincular una variante general cuando faltara. Se crearon 29 fichas con variante `General`, unidad `unidad`, sucursal Visual Corp y ubicación `MAIN`; cada una tiene saldo 5, para un total inicial intencional de 145 unidades. La auditoría de cada variante tiene `source_status='opening_balance_intentional'` y la nota `Saldo inicial intencional de 5 por instrucción del usuario; no representa conteo físico.` No se registró `physical_count_confirmed_at` ni `physical_count_confirmed_by`.

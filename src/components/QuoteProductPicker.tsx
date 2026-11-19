@@ -23,7 +23,9 @@ type Props = {
   onToggleFavorite?: (productId: string) => void;
 };
 
-const normalize = (value: unknown) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').trim();
+type CalculationFilter = 'all' | 'unit' | 'area';
+
+const normalize = (value: unknown) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/²|\^2/g, '2').toLocaleLowerCase('es').trim();
 const EMPTY_FAVORITES = new Set<string>();
 
 export function QuoteProductPicker({ products, selected, onSelect, idPrefix, favoriteIds = EMPTY_FAVORITES, onToggleFavorite }: Props) {
@@ -35,7 +37,10 @@ export function QuoteProductPicker({ products, selected, onSelect, idPrefix, fav
   const [activeIndex, setActiveIndex] = useState(-1);
   const [showAll, setShowAll] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [calculationFilter, setCalculationFilter] = useState<CalculationFilter>('all');
   const inputRef = useRef<HTMLInputElement>(null);
+  const areaCount = useMemo(() => products.filter((product) => product.mode === 'area').length, [products]);
+  const unitCount = products.length - areaCount;
   const families = useMemo(() => {
     const counts = new Map<string, number>();
     products.forEach((product) => counts.set(product.family || 'General', (counts.get(product.family || 'General') || 0) + 1));
@@ -45,19 +50,21 @@ export function QuoteProductPicker({ products, selected, onSelect, idPrefix, fav
     const normalizedQuery = normalize(query);
     const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
     return products.map((product, originalIndex) => {
-      const searchable = normalize(`${product.name} ${product.family} ${product.description || ''} ${product.id}`);
+      const modeTerms = product.mode === 'area' ? 'por area por medidas m2 metros cuadrados superficie' : `por unidad cantidad ${product.unit || ''}`;
+      const searchable = normalize(`${product.name} ${product.family} ${product.description || ''} ${product.id} ${product.mode || ''} ${product.unit || ''} ${modeTerms}`);
       const words = tokens.map((token) => ({
         token,
         rank: normalize(product.name) === token ? 0 : normalize(product.name).startsWith(token) ? 1 : normalize(product.family).startsWith(token) ? 2 : searchable.includes(token) ? 3 : 99,
       }));
       const matches = tokens.length === 0 || words.every((word) => word.rank < 99);
+      const matchesCalculation = calculationFilter === 'all' || (calculationFilter === 'area' ? product.mode === 'area' : product.mode !== 'area');
       const familyMatches = !family || (product.family || 'General') === family;
       const favoriteMatches = !favoritesOnly || favoriteIds.has(product.id);
-      return { product, originalIndex, matches: matches && familyMatches && favoriteMatches, favoriteRank: favoriteIds.has(product.id) ? 0 : 1, rank: words.reduce((sum, word) => sum + word.rank, 0) };
+      return { product, originalIndex, matches: matches && matchesCalculation && familyMatches && favoriteMatches, favoriteRank: favoriteIds.has(product.id) ? 0 : 1, rank: words.reduce((sum, word) => sum + word.rank, 0) };
     }).filter((entry) => entry.matches)
       .sort((a, b) => (tokens.length ? a.rank - b.rank : a.favoriteRank - b.favoriteRank) || a.originalIndex - b.originalIndex)
       .map((entry) => entry.product);
-  }, [products, query, family, favoritesOnly, favoriteIds]);
+  }, [products, query, family, favoritesOnly, favoriteIds, calculationFilter]);
   const visible = results.slice(0, showAll ? results.length : 8);
   const activeProductId = visible[activeIndex]?.id;
 
@@ -109,6 +116,21 @@ export function QuoteProductPicker({ products, selected, onSelect, idPrefix, fav
       <small className="quote-product-hint">Busca por nombre, familia o descripción. No necesitas escribir el nombre completo.</small>
       {open && <div className="quote-product-results">
         <div className="quote-product-results-top"><span>{results.length} {results.length === 1 ? 'resultado' : 'resultados'}</span><span>{products.length} productos en catálogo</span></div>
+        <div className="quote-mode-filters" role="group" aria-label="Filtrar productos por forma de cálculo">
+          {([
+            ['all', `Todo (${products.length})`],
+            ['unit', `Por unidad (${unitCount})`],
+            ['area', `Por medidas m² (${areaCount})`],
+          ] as const).map(([filter, label]) => <button
+            key={filter}
+            type="button"
+            className={calculationFilter === filter ? 'active' : ''}
+            aria-pressed={calculationFilter === filter}
+            disabled={filter === 'area' && areaCount === 0}
+            onPointerDown={(event) => event.preventDefault()}
+            onClick={() => { setCalculationFilter(filter); setActiveIndex(-1); setShowAll(false); }}
+          >{label}</button>)}
+        </div>
         <div className="quote-family-filters" aria-label="Filtrar por familia">
           {onToggleFavorite && <button type="button" className={favoritesOnly ? 'active' : ''} aria-pressed={favoritesOnly} onPointerDown={(event) => event.preventDefault()} onClick={() => { setFavoritesOnly((value) => !value); setActiveIndex(-1); }}><Star size={12} aria-hidden="true"/> Mis favoritos <small>{favoriteIds.size}</small></button>}
           <button type="button" className={!family ? 'active' : ''} onPointerDown={(event) => event.preventDefault()} onClick={() => { setFamily(''); setActiveIndex(-1); }}>Todas</button>
