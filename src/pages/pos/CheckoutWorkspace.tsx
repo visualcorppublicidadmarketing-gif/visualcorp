@@ -2237,14 +2237,14 @@ export function PosPage() {
               stockByProduct={stockByProduct}
               stockMetaByProduct={stockMetaByProduct}
               renderImage={(product)=><POSProductVisual src={product.image} className="pos-product-image"/>}
-              favoriteIds={catalogKind==='product'?favoriteIds:new Set<string>()} onToggleFavorite={catalogKind==='product'?toggleFavorite:undefined}
+              favoriteIds={favoriteIds} onToggleFavorite={toggleFavorite}
               onQuickAdd={catalogKind==='product'&&cartMode==='quantity'?quickAddProductToCart:undefined}
               emptyStateTitle={catalogKind==='service'?'Aún no hay servicios disponibles para vender':'No hay artículos en esta modalidad'}
               emptyStateDescription={catalogKind==='service'?'Publica un servicio con al menos un paquete y una tarifa confirmada para habilitarlo aquí.':'Pide a administración que complete el catálogo.'}
               emptyStateAction={catalogKind==='service'&&canManageCatalog?<Link className="button button-outline pos-service-catalog-link" to="/operaciones/servicios">Administrar catálogo de servicios <ArrowUpRight size={14}/></Link>:undefined}
               resultNoun={catalogKind==='service'?'servicio':'producto'} showInventoryFilters={catalogKind==='product'}
             />
-            {favoriteStorageStatus==='local'&&<small className="pos-favorite-storage-note">Las estrellas se guardan en este navegador hasta conectar el almacenamiento del equipo.</small>}
+            {favoriteStorageStatus==='local'&&<small className="pos-favorite-storage-note">No se pudieron sincronizar con tu cuenta; tus favoritos siguen guardados en este navegador.</small>}
             </>}
             {cartEntryType==='custom-quantity'&&<div className="pos-custom-quantity-box">
               <label>Concepto o producto personalizado<input value={cartItemName} onChange={(event)=>setCartItemName(event.target.value)} placeholder="Ej.: instalación, diseño especial, servicio…" maxLength={160}/></label>
