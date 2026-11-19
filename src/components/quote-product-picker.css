@@ -9,6 +9,10 @@
 .quote-product-results{position:absolute;z-index:30;top:calc(100% + 7px);right:0;left:0;overflow:hidden;border:1px solid #e6e3eb;border-radius:12px;background:#fff;box-shadow:0 16px 38px #21182c20}
 .quote-product-results-top{display:flex;justify-content:space-between;gap:8px;padding:10px 12px 7px;color:#6c6d77;font-size:9px}
 .quote-product-results-top span:first-child{color:#30313b;font-weight:750}
+.quote-mode-filters{display:flex;flex-wrap:wrap;gap:6px;padding:2px 10px 8px}
+.quote-mode-filters>button{display:flex;align-items:center;justify-content:center;min-height:28px;padding:0 9px;border:1px solid #e8e6ed;border-radius:99px;background:#fff;color:#646570;font-size:9px;white-space:nowrap;cursor:pointer}
+.quote-mode-filters>button.active{border-color:#ead9ee;background:#f8f0fa;color:#8b197d;font-weight:750}
+.quote-mode-filters>button:disabled{opacity:.45;cursor:not-allowed}
 .quote-family-filters{display:flex;gap:6px;overflow-x:auto;padding:2px 10px 9px;scrollbar-width:thin}
 .quote-family-filters>button,.quote-more-families summary{display:flex;align-items:center;gap:5px;flex:none;min-height:26px;padding:0 9px;border:1px solid #e8e6ed;border-radius:99px;background:#fff;color:#646570;font-size:9px;white-space:nowrap;cursor:pointer}
 .quote-family-filters>button.active,.quote-more-families button.active{border-color:#ead9ee;background:#f8f0fa;color:#8b197d;font-weight:750}
