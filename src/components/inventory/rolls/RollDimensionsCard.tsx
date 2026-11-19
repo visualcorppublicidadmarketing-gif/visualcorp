@@ -1,5 +1,8 @@
 import React from 'react';
 import { AlertTriangle, Boxes, Check, Ruler, Scissors, Sparkles } from 'lucide-react';
+import { computeRollMetrics } from '../../../lib/inventoryRollHelpers.mjs';
+import { RollLiveMetric } from './RollLiveMetric';
+import { RollSpoolPreview } from './RollSpoolPreview';
 import type { RollCondition } from './types';
 
 export type RollDimensionsCardProps = {
@@ -11,6 +14,8 @@ export type RollDimensionsCardProps = {
   onConditionChange: (condition: RollCondition) => void;
   remainingMeters: string;
   onRemainingMetersChange: (meters: string) => void;
+  materialName?: string;
+  materialFamily?: string;
   stepNumber?: number;
   disabled?: boolean;
 };
@@ -27,12 +32,20 @@ export const RollDimensionsCard: React.FC<RollDimensionsCardProps> = ({
   onConditionChange,
   remainingMeters,
   onRemainingMetersChange,
+  materialName = 'Nueva bobina a recibir',
+  materialFamily = '',
   stepNumber = 3,
   disabled = false,
 }) => {
   const nominalNum = Number(nominalLength) || 0;
-  const remainingNum = Number(remainingMeters) || 0;
-  const percent = nominalNum > 0 ? Math.min(100, Math.max(0, (remainingNum / nominalNum) * 100)) : 100;
+  const remainingNum = condition === 'full' ? (nominalNum || Number(remainingMeters) || 0) : (Number(remainingMeters) || 0);
+  const widthNum = Number(width) || 0;
+  const metrics = computeRollMetrics({
+    remaining_m: remainingNum,
+    standard_length_m: nominalNum > 0 ? nominalNum : null,
+    nominal_width_cm: widthNum > 0 ? widthNum : null,
+  });
+  const percent = metrics.percent ?? 100;
   const isOverflow = nominalNum > 0 && remainingNum > nominalNum;
 
   const handleSelectCondition = (nextCondition: RollCondition) => {
@@ -266,6 +279,43 @@ export const RollDimensionsCard: React.FC<RollDimensionsCardProps> = ({
               )}
             </div>
           )}
+        </div>
+
+        {/* Vista previa física en vivo de la bobina antes de guardar */}
+        <div className="roll-reception__live-preview" aria-label="Previsualización en vivo de la bobina a ingresar">
+          <RollSpoolPreview
+            materialName={materialName}
+            materialFamily={materialFamily}
+            remainingM={metrics.remainingM}
+            standardLengthM={metrics.nominalM}
+            percent={metrics.percent}
+            widthCm={metrics.widthCm}
+            size="reception"
+            showWidthBar
+          />
+          <div className="roll-reception__live-preview-stats">
+            <span className="roll-reception__live-preview-eyebrow">Vista previa de bobina</span>
+            <div className="roll-reception__live-preview-figures">
+              <div className="roll-reception__live-stat">
+                <small>Metros</small>
+                <strong>
+                  <RollLiveMetric value={metrics.remainingM} decimals={2} suffix=" m" />
+                </strong>
+              </div>
+              <div className="roll-reception__live-stat">
+                <small>Llenado</small>
+                <strong>
+                  <RollLiveMetric value={metrics.percent} decimals={1} suffix="%" />
+                </strong>
+              </div>
+              <div className="roll-reception__live-stat">
+                <small>Área útil</small>
+                <strong>
+                  <RollLiveMetric value={metrics.areaM2} decimals={2} suffix=" m²" />
+                </strong>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

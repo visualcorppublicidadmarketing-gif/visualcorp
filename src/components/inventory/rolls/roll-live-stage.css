@@ -1,0 +1,1523 @@
+/* ==========================================================================
+   VISUAL CORP SUITE — LIVE ROLL SPOOL PREVIEW, SPLIT STAGE & INSPECTOR
+   Zero overflow, full light/dark calibration, WCAG 2.2 AA & reduced motion
+   ========================================================================== */
+
+.roll-live-metric {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   1. Parametric Spool Visual (RollSpoolPreview)
+   -------------------------------------------------------------------------- */
+.roll-spool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.roll-spool__dial {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.7), rgba(226, 232, 240, 0.35));
+  border: 1px solid var(--spool-ring, rgba(111, 105, 143, 0.24));
+  box-shadow: 0 8px 20px var(--spool-glow, rgba(0, 0, 0, 0.08));
+}
+
+.roll-spool--featured .roll-spool__dial {
+  width: 92px;
+  height: 92px;
+}
+
+.roll-spool--reception .roll-spool__dial {
+  width: 84px;
+  height: 84px;
+}
+
+.roll-spool__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.roll-spool__footprint {
+  fill: none;
+  stroke: rgba(100, 116, 139, 0.26);
+  stroke-width: 1;
+  stroke-dasharray: 2.5 2.5;
+}
+
+.roll-spool__material-fill {
+  transition: r 220ms ease;
+}
+
+.roll-spool__bore {
+  fill: var(--vc-surface, #ffffff);
+  stroke: rgba(100, 72, 42, 0.45);
+  stroke-width: 1;
+}
+
+.roll-spool__notch {
+  stroke: rgba(78, 52, 27, 0.55);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.roll-spool__hub {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.roll-spool.is-spinning .roll-spool__hub {
+  animation: roll-spool-rotate 9s linear infinite;
+}
+
+@keyframes roll-spool-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.roll-spool__family-pill {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: var(--spool-family-accent, #14786e);
+  color: #ffffff;
+  font-size: 8.5px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+}
+
+.roll-spool__width-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  min-width: 72px;
+  max-width: 100px;
+}
+
+.roll-spool__width-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.18);
+  overflow: hidden;
+}
+
+.roll-spool__width-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--spool-family-accent, #14786e), #069cdb);
+}
+
+.roll-spool__width-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--vc-muted, #5e566b);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   2. Split Stage Layout (Zero Overflow across 360 / 768 / 950 / 1440px)
+   -------------------------------------------------------------------------- */
+.roll-book__family-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+.roll-book__family-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 31px;
+  padding: 0 10px;
+  border: 1px solid var(--vc-line, #dce4e2);
+  border-radius: 999px;
+  background: var(--vc-surface, #ffffff);
+  color: var(--vc-muted, #5e566b);
+  font-size: 11px;
+  font-weight: 700;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+}
+
+.roll-book__family-filters button.is-active {
+  border-color: var(--vc-brand, #a51091);
+  background: var(--vc-brand-soft, #f5eefa);
+  color: var(--vc-brand-strong, #7e1977);
+}
+
+.roll-book__stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.roll-book__stage.has-inspector {
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 390px);
+}
+
+.roll-book__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 14px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.roll-book__stage.has-inspector .roll-book__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 1439px) {
+  .roll-book__stage.has-inspector {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+  }
+}
+
+@media (max-width: 1220px) {
+  .roll-book__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .roll-book__stage.has-inspector .roll-book__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1149px) {
+  .roll-book__stage.has-inspector {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .roll-book__stage.has-inspector .roll-book__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .roll-book__grid,
+  .roll-book__stage.has-inspector .roll-book__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. Unified Live Roll Card
+   -------------------------------------------------------------------------- */
+.roll-book__header-panel {
+  padding: 16px 18px;
+  border-radius: 16px;
+  margin-bottom: 18px;
+}
+
+.roll-book__metrics article.vc-glass-blur {
+  background: var(--glass-blur-bg);
+  border-color: var(--glass-blur-border);
+  box-shadow: var(--glass-blur-shadow);
+}
+
+.roll-book__card,
+.roll-book__card.vc-glass-blur,
+.work-app.theme-dark .roll-book__card.vc-glass-blur,
+[data-theme='dark'] .work-app .roll-book__card.vc-glass-blur,
+.work-app[data-theme='dark'] .roll-book__card.vc-glass-blur {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 15px;
+  border-radius: 15px;
+  background: var(--glass-blur-bg);
+  border: 1px solid var(--glass-blur-border);
+  box-shadow: var(--glass-blur-shadow);
+  overflow: hidden;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.roll-book__card.is-machine {
+  border-top: 3px solid #14786e;
+  padding-top: 13px;
+}
+
+.roll-book__card.is-low:not(.is-inspected) {
+  border-color: rgba(217, 119, 6, 0.45);
+}
+
+.roll-book__card.is-critical:not(.is-inspected) {
+  border-color: rgba(220, 38, 38, 0.5);
+}
+
+.roll-book__card.is-exhausted:not(.is-inspected) {
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+.roll-book__card.is-inspected {
+  border-color: var(--vc-brand, #a51091) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--vc-brand, #a51091) 24%, transparent), var(--glass-blur-shadow);
+}
+
+.roll-book__card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.roll-book__location-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
+  flex: none;
+}
+
+.roll-book__location.machine .roll-book__location-pulse {
+  animation: roll-live-beacon 2s ease-out infinite;
+}
+
+@keyframes roll-live-beacon {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.roll-book__status-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.roll-book__status.is-tier-healthy {
+  background: #dcfce7;
+  color: #14532d;
+}
+.roll-book__status.is-tier-medium {
+  background: #e0f2fe;
+  color: #075985;
+}
+.roll-book__status.is-tier-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+.roll-book__status.is-tier-critical,
+.roll-book__status.is-tier-exhausted {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.roll-book__unlinked-badge {
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px dashed rgba(148, 163, 184, 0.55);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-book__card-title-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.roll-book__card-title-row h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+}
+
+.roll-book__variant {
+  margin: 0 !important;
+  font-size: 11.5px;
+  color: var(--vc-muted, #5e566b);
+}
+
+/* Visual Hero inside Card */
+.roll-book__visual-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--vc-line, #dce4e2) 72%, transparent);
+  background: color-mix(in srgb, var(--vc-surface-soft, #fcfbfe) 86%, transparent);
+}
+
+.roll-book__visual-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.roll-book__primary-readout {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.roll-book__pct-hero {
+  font-size: 27px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--vc-ink, #191522);
+}
+
+.roll-book__meters-hero {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--vc-brand-strong, #0d5f57);
+}
+
+.roll-book__sub-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 11px;
+  color: var(--vc-muted, #5e566b);
+  font-variant-numeric: tabular-nums;
+}
+
+.roll-book__confidence-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.roll-book__confirm-inline-btn {
+  padding: 2px 8px;
+  border: 1px solid #d97706;
+  border-radius: 6px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.roll-book__confirm-inline-btn:hover:not(:disabled) {
+  background: #fef3c7;
+}
+
+/* Visible Spec & Backup Strip */
+.roll-book__spec-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.roll-book__spec-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--vc-line, #dce4e2) 82%, transparent);
+  background: color-mix(in srgb, var(--vc-surface, #ffffff) 74%, transparent);
+  font-size: 10.5px;
+  font-weight: 650;
+  color: var(--vc-ink, #191522);
+}
+
+.roll-book__backup-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.roll-book__backup-banner.has-stock {
+  background: rgba(20, 120, 110, 0.09);
+  color: #0d5f57;
+}
+
+.roll-book__backup-banner.no-stock {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-book__backup-banner.no-stock.is-urgent {
+  background: rgba(220, 38, 38, 0.11);
+  color: #b91c1c;
+}
+
+/* 1-Touch Calibration Controls on Card */
+.roll-book__quick-calibrate {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--vc-line, #dce4e2) 78%, transparent);
+  background: color-mix(in srgb, var(--vc-surface-soft, #fcfbfe) 75%, transparent);
+}
+
+.roll-book__quick-calibrate-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 750;
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-book__quick-pct-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.roll-book__quick-pct-row button,
+.roll-book__quick-meter-row button {
+  min-height: 32px;
+  padding: 0 4px;
+  border: 1px solid var(--vc-line, #dce4e2);
+  border-radius: 7px;
+  background: var(--vc-surface, #ffffff);
+  color: var(--vc-ink, #191522);
+  font-size: 10.5px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.roll-book__quick-pct-row button:hover:not(:disabled),
+.roll-book__quick-meter-row button:hover:not(:disabled) {
+  border-color: #14786e;
+  color: #0d5f57;
+}
+
+.roll-book__quick-pct-row button.is-selected {
+  border-color: #14786e;
+  background: #14786e;
+  color: #ffffff;
+}
+
+.roll-book__quick-meter-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.roll-book__card-slider {
+  width: 100%;
+  accent-color: #14786e;
+  cursor: pointer;
+}
+
+.roll-book__card-actions-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: auto;
+}
+
+.roll-book__inspect-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1 1 160px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--vc-line, #dce4e2);
+  border-radius: 9px;
+  background: var(--vc-surface, #ffffff);
+  color: var(--vc-ink, #191522);
+  font-size: 11.5px;
+  font-weight: 750;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.roll-book__inspect-btn:hover {
+  border-color: var(--vc-brand, #a51091);
+  background: var(--vc-brand-soft, #f5eefa);
+}
+
+.roll-book__inspect-btn.is-active {
+  border-color: var(--vc-brand, #a51091);
+  background: var(--vc-brand, #a51091);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   4. Inspector Panel (Desktop Sticky, Tablet Sheet, Mobile Vaul Drawer)
+   -------------------------------------------------------------------------- */
+.roll-inspector--desktop {
+  position: sticky;
+  top: 14px;
+  max-height: calc(100dvh - 28px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.roll-inspector__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--vc-line, #e5e0ea);
+}
+
+.roll-inspector__head-title {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.roll-inspector__eyebrow {
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vc-brand, #a51091);
+}
+
+.roll-inspector__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  color: var(--vc-ink, #191522);
+}
+
+.roll-inspector__subtitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-inspector__close-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border: 1px solid var(--vc-line, #e5e0ea);
+  border-radius: 9px;
+  background: var(--vc-surface, #ffffff);
+  color: var(--vc-ink, #191522);
+  cursor: pointer;
+}
+
+.roll-inspector__scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 16px 18px;
+}
+
+.roll-inspector__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.roll-inspector__hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--vc-line, #e5e0ea);
+  background: var(--vc-surface-soft, #fcfbfe);
+}
+
+.roll-inspector__hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.roll-inspector__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.roll-inspector__unlinked-pill {
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px dashed var(--vc-line, #cbd5e1);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-inspector__hero-numbers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.roll-inspector__stat-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--vc-line, #e5e0ea);
+  background: var(--vc-surface, #ffffff);
+  min-width: 0;
+}
+
+.roll-inspector__stat-box small {
+  font-size: 9.5px;
+  font-weight: 650;
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-inspector__stat-box strong {
+  font-size: 12.5px;
+  font-weight: 850;
+  color: var(--vc-ink, #191522);
+  font-variant-numeric: tabular-nums;
+}
+
+.roll-inspector__tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.roll-inspector .ok-tabs > div[role='tablist'] {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.roll-inspector__pane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.roll-inspector__spec-card,
+.roll-inspector__block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 11px;
+  border: 1px solid var(--vc-line, #e5e0ea);
+  background: var(--vc-surface, #ffffff);
+  min-width: 0;
+}
+
+.roll-inspector__spec-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.roll-inspector__spec-grid small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-inspector__spec-grid b {
+  font-size: 12px;
+  color: var(--vc-ink, #191522);
+  overflow-wrap: anywhere;
+}
+
+.roll-inspector__spec-hint,
+.roll-inspector__hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-inspector__block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.roll-inspector__block-head b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--vc-ink, #191522);
+}
+
+.roll-inspector__block-head small {
+  font-size: 10.5px;
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-inspector__form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.roll-inspector__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.roll-inspector__field--full {
+  grid-column: 1 / -1;
+}
+
+.roll-inspector__field span,
+.roll-inspector__field label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--vc-ink, #191522);
+}
+
+.roll-inspector__field input,
+.roll-inspector__field select,
+.roll-inspector__field textarea {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid var(--vc-line, #dcd6e3);
+  border-radius: 8px;
+  background: var(--vc-surface, #ffffff);
+  color: var(--vc-ink, #191522);
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.roll-inspector__field textarea {
+  min-height: 62px;
+  resize: vertical;
+}
+
+.roll-inspector__inline-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.roll-inspector__inline-group input {
+  flex: 1;
+  min-width: 0;
+}
+
+.roll-inspector__icon-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 38px;
+  flex: none;
+  border: 1px solid var(--vc-line, #dcd6e3);
+  border-radius: 8px;
+  background: var(--vc-surface-soft, #f8fafc);
+  color: var(--vc-ink, #191522);
+  cursor: pointer;
+}
+
+.roll-inspector__unit-badge {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 38px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: var(--vc-surface-soft, #f1f5f9);
+  font-size: 12px;
+  font-weight: 750;
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-inspector__preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.roll-inspector__preset-row button {
+  padding: 3px 8px;
+  border: 1px solid var(--vc-line, #dcd6e3);
+  border-radius: 6px;
+  background: var(--vc-surface-soft, #f8fafc);
+  color: var(--vc-ink, #191522);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.roll-inspector__preset-row button.is-active {
+  border-color: #14786e;
+  background: #14786e;
+  color: #ffffff;
+}
+
+.roll-inspector__field-error {
+  font-size: 10.5px;
+  color: var(--vc-state-danger, #bd4052);
+}
+
+.roll-inspector__machine-assign {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.roll-inspector__action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.roll-inspector__btn-primary,
+.roll-inspector__btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.roll-inspector__btn-primary {
+  border: 0;
+  background: #14786e;
+  color: #ffffff;
+}
+
+.roll-inspector__btn-primary:hover:not(:disabled) {
+  background: #0d5f57;
+}
+
+.roll-inspector__btn-outline {
+  border: 1px solid var(--vc-line, #dcd6e3);
+  background: var(--vc-surface, #ffffff);
+  color: var(--vc-ink, #191522);
+}
+
+.roll-inspector__btn-full {
+  width: 100%;
+}
+
+.roll-inspector__text-btn {
+  border: 0;
+  background: transparent;
+  color: var(--vc-brand, #a51091);
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.roll-inspector__backup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roll-inspector__backup-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: var(--vc-surface-soft, #f8fafc);
+  font-size: 11.5px;
+}
+
+.roll-inspector__backup-list li > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.roll-inspector__backup-list li small {
+  font-size: 10px;
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-inspector__backup-list li > span {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.roll-inspector__empty-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--vc-muted, #5e566b);
+}
+
+/* Calibration Switch & Controls */
+.roll-inspector__mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.roll-inspector__mode-switch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--vc-line, #dcd6e3);
+  border-radius: 9px;
+  background: var(--vc-surface, #ffffff);
+  color: var(--vc-muted, #5e566b);
+  font-size: 11.5px;
+  font-weight: 750;
+}
+
+.roll-inspector__mode-switch button.is-active {
+  border-color: #14786e;
+  background: #e6f6f2;
+  color: #0d5f57;
+}
+
+.roll-inspector__delta-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--vc-line, #e5e0ea);
+  background: var(--vc-surface-soft, #f8fafc);
+}
+
+.roll-inspector__delta-box small {
+  font-size: 10px;
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-inspector__delta-box strong {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.roll-inspector__delta-box strong.is-negative {
+  color: var(--vc-state-danger, #bd4052);
+}
+
+.roll-inspector__delta-box strong.is-positive {
+  color: var(--vc-state-success, #16805d);
+}
+
+.roll-inspector__quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.roll-inspector__quick-grid button {
+  min-height: 38px;
+  border: 1px solid var(--vc-line, #dcd6e3);
+  border-radius: 8px;
+  background: var(--vc-surface-soft, #f8fafc);
+  color: var(--vc-ink, #191522);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.roll-inspector__quick-grid button.is-selected {
+  border-color: #14786e;
+  background: #14786e;
+  color: #ffffff;
+}
+
+.roll-inspector__slider-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.roll-inspector__slider-wrap > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.roll-inspector__slider-wrap input {
+  width: 100%;
+  accent-color: #14786e;
+}
+
+/* Swap compare */
+.roll-inspector__swap-compare {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.roll-inspector__swap-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--vc-line, #e5e0ea);
+  background: var(--vc-surface-soft, #f8fafc);
+  min-width: 0;
+}
+
+.roll-inspector__swap-card.is-incoming {
+  border-color: rgba(20, 120, 110, 0.45);
+  background: rgba(20, 120, 110, 0.08);
+}
+
+.roll-inspector__swap-card small {
+  font-size: 9.5px;
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-inspector__swap-card b {
+  font-size: 11.5px;
+  overflow-wrap: anywhere;
+}
+
+.roll-inspector__swap-card span {
+  font-size: 11px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.roll-inspector__swap-arrow {
+  color: var(--vc-muted, #5e566b);
+}
+
+.roll-inspector__history-list {
+  max-height: 300px;
+  padding: 0 4px !important;
+}
+
+/* Mobile Vaul Drawer */
+.roll-inspector-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1220;
+  background: rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.roll-inspector-drawer {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1221;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 22px 22px 0 0;
+  border-bottom: 0;
+  outline: none;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.roll-inspector-drawer__handle-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 2px;
+}
+
+.roll-inspector-drawer__handle {
+  width: 44px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.55);
+}
+
+.roll-inspector-drawer__scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 14px 20px;
+}
+
+@media (max-width: 540px) {
+  .roll-inspector__form-grid,
+  .roll-inspector__spec-grid,
+  .roll-inspector__swap-compare {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .roll-inspector__swap-arrow {
+    justify-self: center;
+    transform: rotate(90deg);
+  }
+  .roll-inspector__hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .roll-inspector__hero-copy {
+    width: 100%;
+  }
+  .roll-book__quick-pct-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .roll-book__quick-pct-row button,
+  .roll-book__quick-meter-row button {
+    min-height: 40px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. Dark Theme Calibration (Card, Stage, Inspector & Portaled Vaul Drawer)
+   -------------------------------------------------------------------------- */
+.roll-inspector-drawer.theme-dark {
+  --glass-blur-bg: rgba(23, 26, 37, 0.94);
+  --glass-blur-border: rgba(255, 255, 255, 0.14);
+  --glass-ink: #f1f3f8;
+  --vc-surface: #171a25;
+  --vc-surface-soft: #12151e;
+  --vc-ink: #f1f3f8;
+  --vc-muted: #b2b8c8;
+  --vc-line: #303447;
+  --vc-brand: #d093f0;
+  background: rgba(23, 26, 37, 0.94);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f1f3f8;
+}
+
+.work-app.theme-dark .roll-spool__dial,
+[data-theme='dark'] .roll-spool__dial,
+.theme-dark .roll-spool__dial {
+  background: radial-gradient(circle at 50% 42%, rgba(30, 34, 48, 0.92), rgba(15, 18, 28, 0.72));
+}
+
+.work-app.theme-dark .roll-spool__bore,
+[data-theme='dark'] .roll-spool__bore,
+.theme-dark .roll-spool__bore {
+  fill: #171a25;
+}
+
+.work-app.theme-dark .roll-book__family-filters button,
+[data-theme='dark'] .roll-book__family-filters button {
+  background: #1a2029;
+  border-color: #303846;
+  color: #cbd5e1;
+}
+
+.work-app.theme-dark .roll-book__family-filters button.is-active,
+[data-theme='dark'] .roll-book__family-filters button.is-active {
+  background: #30223d;
+  border-color: #d093f0;
+  color: #f3e8ff;
+}
+
+.work-app.theme-dark .roll-book__visual-hero,
+.work-app.theme-dark .roll-book__quick-calibrate,
+[data-theme='dark'] .roll-book__visual-hero,
+[data-theme='dark'] .roll-book__quick-calibrate {
+  background: rgba(15, 19, 28, 0.68);
+  border-color: #2f3846;
+}
+
+.work-app.theme-dark .roll-book__pct-hero,
+[data-theme='dark'] .roll-book__pct-hero {
+  color: #f8fafc;
+}
+
+.work-app.theme-dark .roll-book__meters-hero,
+[data-theme='dark'] .roll-book__meters-hero {
+  color: #5eead4;
+}
+
+.work-app.theme-dark .roll-book__spec-chip,
+.work-app.theme-dark .roll-book__quick-pct-row button,
+.work-app.theme-dark .roll-book__quick-meter-row button,
+.work-app.theme-dark .roll-book__inspect-btn,
+[data-theme='dark'] .roll-book__spec-chip,
+[data-theme='dark'] .roll-book__quick-pct-row button,
+[data-theme='dark'] .roll-book__quick-meter-row button,
+[data-theme='dark'] .roll-book__inspect-btn {
+  background: #1d2330;
+  border-color: #323c4c;
+  color: #e2e8f0;
+}
+
+.work-app.theme-dark .roll-book__quick-pct-row button.is-selected,
+[data-theme='dark'] .roll-book__quick-pct-row button.is-selected {
+  background: #14786e;
+  border-color: #2dd4bf;
+  color: #ffffff;
+}
+
+.work-app.theme-dark .roll-book__inspect-btn.is-active,
+[data-theme='dark'] .roll-book__inspect-btn.is-active {
+  background: #78408e;
+  border-color: #d093f0;
+  color: #ffffff;
+}
+
+.work-app.theme-dark .roll-book__backup-banner.has-stock {
+  background: rgba(20, 120, 110, 0.22);
+  color: #7ee8d4;
+}
+
+.work-app.theme-dark .roll-book__backup-banner.no-stock.is-urgent {
+  background: rgba(220, 38, 38, 0.2);
+  color: #fca5a5;
+}
+
+.work-app.theme-dark .roll-book__confirm-inline-btn {
+  background: #382c15;
+  border-color: #92671d;
+  color: #fde68a;
+}
+
+.work-app.theme-dark .roll-book__status.is-tier-healthy {
+  background: #163327;
+  color: #86efac;
+}
+.work-app.theme-dark .roll-book__status.is-tier-medium {
+  background: #173044;
+  color: #7dd3fc;
+}
+.work-app.theme-dark .roll-book__status.is-tier-warning {
+  background: #3c2e16;
+  color: #fcd34d;
+}
+.work-app.theme-dark .roll-book__status.is-tier-critical,
+.work-app.theme-dark .roll-book__status.is-tier-exhausted {
+  background: #3e1d23;
+  color: #fca5a5;
+}
+
+.work-app.theme-dark .roll-inspector__hero,
+.work-app.theme-dark .roll-inspector__spec-card,
+.work-app.theme-dark .roll-inspector__block,
+.work-app.theme-dark .roll-inspector__stat-box,
+.work-app.theme-dark .roll-inspector__delta-box,
+.work-app.theme-dark .roll-inspector__backup-list li,
+.work-app.theme-dark .roll-inspector__swap-card,
+.roll-inspector-drawer.theme-dark .roll-inspector__hero,
+.roll-inspector-drawer.theme-dark .roll-inspector__spec-card,
+.roll-inspector-drawer.theme-dark .roll-inspector__block,
+.roll-inspector-drawer.theme-dark .roll-inspector__stat-box,
+.roll-inspector-drawer.theme-dark .roll-inspector__delta-box,
+.roll-inspector-drawer.theme-dark .roll-inspector__backup-list li,
+.roll-inspector-drawer.theme-dark .roll-inspector__swap-card,
+.vc-dialog.theme-dark .roll-inspector__hero,
+.vc-dialog.theme-dark .roll-inspector__spec-card,
+.vc-dialog.theme-dark .roll-inspector__block,
+.vc-dialog.theme-dark .roll-inspector__stat-box,
+.vc-dialog.theme-dark .roll-inspector__delta-box,
+.vc-dialog.theme-dark .roll-inspector__backup-list li,
+.vc-dialog.theme-dark .roll-inspector__swap-card {
+  background: #171b26;
+  border-color: #2f3749;
+  color: #f1f5f9;
+}
+
+.work-app.theme-dark .roll-inspector__title,
+.work-app.theme-dark .roll-inspector__stat-box strong,
+.work-app.theme-dark .roll-inspector__spec-grid b,
+.work-app.theme-dark .roll-inspector__block-head b,
+.work-app.theme-dark .roll-inspector__field span,
+.work-app.theme-dark .roll-inspector__field label,
+.roll-inspector-drawer.theme-dark .roll-inspector__title,
+.roll-inspector-drawer.theme-dark .roll-inspector__stat-box strong,
+.roll-inspector-drawer.theme-dark .roll-inspector__spec-grid b,
+.roll-inspector-drawer.theme-dark .roll-inspector__block-head b,
+.roll-inspector-drawer.theme-dark .roll-inspector__field span,
+.roll-inspector-drawer.theme-dark .roll-inspector__field label,
+.vc-dialog.theme-dark .roll-inspector__title,
+.vc-dialog.theme-dark .roll-inspector__stat-box strong,
+.vc-dialog.theme-dark .roll-inspector__spec-grid b,
+.vc-dialog.theme-dark .roll-inspector__block-head b,
+.vc-dialog.theme-dark .roll-inspector__field span,
+.vc-dialog.theme-dark .roll-inspector__field label {
+  color: #f1f5f9;
+}
+
+.work-app.theme-dark .roll-inspector__subtitle,
+.work-app.theme-dark .roll-inspector__spec-grid small,
+.work-app.theme-dark .roll-inspector__spec-hint,
+.work-app.theme-dark .roll-inspector__hint,
+.work-app.theme-dark .roll-inspector__block-head small,
+.work-app.theme-dark .roll-inspector__stat-box small,
+.work-app.theme-dark .roll-inspector__delta-box small,
+.roll-inspector-drawer.theme-dark .roll-inspector__subtitle,
+.roll-inspector-drawer.theme-dark .roll-inspector__spec-grid small,
+.roll-inspector-drawer.theme-dark .roll-inspector__spec-hint,
+.roll-inspector-drawer.theme-dark .roll-inspector__hint,
+.roll-inspector-drawer.theme-dark .roll-inspector__block-head small,
+.roll-inspector-drawer.theme-dark .roll-inspector__stat-box small,
+.roll-inspector-drawer.theme-dark .roll-inspector__delta-box small,
+.vc-dialog.theme-dark .roll-inspector__subtitle,
+.vc-dialog.theme-dark .roll-inspector__spec-grid small,
+.vc-dialog.theme-dark .roll-inspector__spec-hint,
+.vc-dialog.theme-dark .roll-inspector__hint,
+.vc-dialog.theme-dark .roll-inspector__block-head small,
+.vc-dialog.theme-dark .roll-inspector__stat-box small,
+.vc-dialog.theme-dark .roll-inspector__delta-box small {
+  color: #a9b4c7;
+}
+
+.work-app.theme-dark .roll-inspector__field input,
+.work-app.theme-dark .roll-inspector__field select,
+.work-app.theme-dark .roll-inspector__field textarea,
+.work-app.theme-dark .roll-inspector__close-btn,
+.work-app.theme-dark .roll-inspector__icon-btn,
+.work-app.theme-dark .roll-inspector__btn-outline,
+.work-app.theme-dark .roll-inspector__mode-switch button,
+.work-app.theme-dark .roll-inspector__quick-grid button,
+.work-app.theme-dark .roll-inspector__preset-row button,
+.roll-inspector-drawer.theme-dark .roll-inspector__field input,
+.roll-inspector-drawer.theme-dark .roll-inspector__field select,
+.roll-inspector-drawer.theme-dark .roll-inspector__field textarea,
+.roll-inspector-drawer.theme-dark .roll-inspector__close-btn,
+.roll-inspector-drawer.theme-dark .roll-inspector__icon-btn,
+.roll-inspector-drawer.theme-dark .roll-inspector__btn-outline,
+.roll-inspector-drawer.theme-dark .roll-inspector__mode-switch button,
+.roll-inspector-drawer.theme-dark .roll-inspector__quick-grid button,
+.roll-inspector-drawer.theme-dark .roll-inspector__preset-row button,
+.vc-dialog.theme-dark .roll-inspector__field input,
+.vc-dialog.theme-dark .roll-inspector__field select,
+.vc-dialog.theme-dark .roll-inspector__field textarea,
+.vc-dialog.theme-dark .roll-inspector__close-btn,
+.vc-dialog.theme-dark .roll-inspector__icon-btn,
+.vc-dialog.theme-dark .roll-inspector__btn-outline,
+.vc-dialog.theme-dark .roll-inspector__mode-switch button,
+.vc-dialog.theme-dark .roll-inspector__quick-grid button,
+.vc-dialog.theme-dark .roll-inspector__preset-row button {
+  background: #121620;
+  border-color: #323b4d;
+  color: #f1f5f9;
+}
+
+.work-app.theme-dark .roll-inspector__mode-switch button.is-active,
+.roll-inspector-drawer.theme-dark .roll-inspector__mode-switch button.is-active,
+.vc-dialog.theme-dark .roll-inspector__mode-switch button.is-active {
+  background: #163631;
+  border-color: #2dd4bf;
+  color: #8ceee0;
+}
+
+.work-app.theme-dark .roll-inspector .ok-tabs [role='tab'],
+.roll-inspector-drawer.theme-dark .roll-inspector .ok-tabs [role='tab'],
+.vc-dialog.theme-dark .roll-inspector .ok-tabs [role='tab'] {
+  color: #a9b4c7;
+}
+
+.work-app.theme-dark .roll-inspector .ok-tabs [role='tab'][aria-selected='true'],
+.roll-inspector-drawer.theme-dark .roll-inspector .ok-tabs [role='tab'][aria-selected='true'],
+.vc-dialog.theme-dark .roll-inspector .ok-tabs [role='tab'][aria-selected='true'] {
+  border-color: #d093f0;
+  color: #f8fafc;
+}
+
+.work-app.theme-dark .roll-inspector .ok-tabs > div[role='tablist'],
+.roll-inspector-drawer.theme-dark .roll-inspector .ok-tabs > div[role='tablist'],
+.vc-dialog.theme-dark .roll-inspector .ok-tabs > div[role='tablist'] {
+  border-bottom-color: #2f3749;
+}
+
+/* Reduced motion & high contrast safeguards */
+@media (prefers-reduced-motion: reduce) {
+  .roll-spool.is-spinning .roll-spool__hub,
+  .roll-book__location.machine .roll-book__location-pulse {
+    animation: none !important;
+  }
+  .roll-spool__material-fill,
+  .roll-book__card,
+  .roll-book__inspect-btn,
+  .roll-book__quick-pct-row button,
+  .roll-book__quick-meter-row button {
+    transition: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .roll-book__card,
+  .roll-inspector--desktop,
+  .roll-inspector-drawer {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
