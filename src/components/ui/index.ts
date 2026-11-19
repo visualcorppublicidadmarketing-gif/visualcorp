@@ -9,4 +9,5 @@ export * from './Avatar';
 export * from './AnimatedThemeToggler';
 export * from './ThemeSwitcher';
 export * from './DesignSystemPrimitives';
+export * from './GlassPanel';
 export * from './motion-presets';

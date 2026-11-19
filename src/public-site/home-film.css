@@ -1,0 +1,1211 @@
+/* ============================================================================
+   Visual Corp — Full-Bleed Dual-Format Cinematic Hero (10K Website Standard)
+   True Optical Glassmorphism Title Cards (Desktop, Tablet & Mobile)
+   ============================================================================ */
+
+/* Float the public glass navbar transparently over the full-screen home video */
+.public-site:has(.vc-home) .site-header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 50;
+  margin-bottom: 0;
+}
+
+/* ---------- Track & Sticky Full-Viewport Stage ---------- */
+.home-film {
+  --film-ink: #faf8fc;
+  --film-muted: #d8d4e4;
+  --film-cyan: #38d6ff;
+  --film-magenta: #ff5cb0;
+  --film-gold: #ffd06b;
+  --film-gradient: linear-gradient(95deg, #4fd4ff 0%, #c88eff 34%, #ff5cb0 66%, #ffd06b 100%);
+  --film-header-safe: 96px;
+  --film-bottom-safe: 32px;
+  --film-side-pad: clamp(20px, 4.8vw, 76px);
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  background: #04050a;
+  color: var(--film-ink);
+  isolation: isolate;
+}
+
+.home-film.is-cinematic {
+  height: 440svh;
+  height: 440dvh;
+}
+
+.home-film.is-static {
+  height: auto;
+}
+
+.home-film-stage {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  height: 100svh;
+  height: 100dvh;
+  min-height: 540px;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  padding-top: var(--film-header-safe);
+  padding-bottom: var(--film-bottom-safe);
+  background: #04050a;
+  isolation: isolate;
+}
+
+.home-film.is-cinematic .home-film-stage {
+  position: sticky;
+  top: 0;
+}
+
+/* ---------- Full-Bleed Edge-to-Edge Video Layer ---------- */
+.home-film-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #04050a;
+}
+
+.home-film-poster,
+.home-film-video {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 52%;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* On vertical phones, lift Visualito slightly so the bottom glass card sits cleanly below his torso */
+.home-film[data-format="portrait"] .home-film-poster,
+.home-film[data-format="portrait"] .home-film-video {
+  object-position: 50% 34%;
+}
+
+/* On wider portrait screens (e.g. 506x724, 768x1024 iPad), anchor upper-center so Visualito's crest
+   and the closing Visual Corp logo remain 100% clear above the bottom glass card */
+@media (min-aspect-ratio: 62/100) and (max-aspect-ratio: 9/10) {
+  .home-film[data-format="portrait"] .home-film-poster,
+  .home-film[data-format="portrait"] .home-film-video {
+    object-position: 50% 16%;
+  }
+}
+
+.home-film-video {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.home-film-video.is-ready {
+  opacity: 1;
+}
+
+/* ---------- Lightened Studio Scrims (lets video colors refract through glass cards!) ---------- */
+.home-film-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(4, 5, 10, 0.46) 0%,
+    rgba(4, 5, 10, 0.12) 18%,
+    rgba(4, 5, 10, 0) 40%,
+    rgba(4, 5, 10, 0) 74%,
+    rgba(4, 5, 10, 0.28) 90%,
+    rgba(4, 5, 10, 0.56) 100%
+  );
+  transition: opacity 0.45s ease;
+}
+
+/* Soft opening halo behind centered hero headline in Act 0 only */
+.home-film-scrim::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: radial-gradient(
+    ellipse 66% 52% at 50% 34%,
+    rgba(4, 5, 10, 0.58) 0%,
+    rgba(4, 5, 10, 0.2) 55%,
+    rgba(4, 5, 10, 0) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.home-film[data-scene="0"] .home-film-scrim::before {
+  opacity: 1;
+}
+
+/* Subtle cinema grain */
+.home-film-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: url('/public-site/home-film/grano.png') repeat;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+}
+
+/* ---------- Kinetic Typography Overlay Layer ---------- */
+.home-film-overlay {
+  position: relative;
+  z-index: 4;
+  width: min(100%, 1480px);
+  min-width: 0;
+  height: 100%;
+  margin-inline: auto;
+  padding-inline: var(--film-side-pad);
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  pointer-events: none;
+}
+
+.home-film-scene {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  /* Combined fine-pointer depth + subtle scroll-coupled parallax */
+  transform: translate3d(
+    calc(var(--film-px, 0) * -6px),
+    calc(var(--film-py, 0) * -4px + (var(--scene-local, 0.5) - 0.5) * -14px),
+    0
+  );
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* --- Act 0: Opening Monumental Hero --- */
+.home-film-scene-opening {
+  align-items: center;
+  text-align: center;
+  align-self: start;
+  padding-top: clamp(24px, 7svh, 92px);
+  max-width: min(100%, 980px);
+}
+
+.home-film-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  padding: 7px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(8, 10, 20, 0.42);
+  color: #efeaf6;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+@supports ((backdrop-filter: blur(16px)) or (-webkit-backdrop-filter: blur(16px))) {
+  .home-film-pill {
+    background: rgba(10, 12, 24, 0.32);
+    backdrop-filter: blur(18px) saturate(1.45);
+    -webkit-backdrop-filter: blur(18px) saturate(1.45);
+  }
+}
+
+.home-film-pill-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: #38d6ff;
+  box-shadow: 0 0 10px #38d6ff, 0 0 18px rgba(56, 214, 255, 0.65);
+  animation: film-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes film-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.28); opacity: 0.72; }
+}
+
+.public-site .vc-home .home-film .home-film-headline {
+  margin: clamp(16px, 2.8svh, 28px) 0 clamp(12px, 2svh, 20px);
+  color: var(--film-ink);
+  font-family: var(--home-display);
+  font-size: clamp(50px, 7.8vw, 128px);
+  font-weight: 400;
+  line-height: 0.89;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  text-shadow: 0 14px 44px rgba(0, 0, 0, 0.58);
+  perspective: 700px;
+}
+
+.home-film-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+}
+
+.home-film-line-inner {
+  display: inline-block;
+  transform-origin: center bottom;
+}
+
+.home-film-aurora {
+  font-style: normal;
+  color: #f6a7da;
+}
+
+@supports (background-clip: text) {
+  .home-film-aurora {
+    background: linear-gradient(
+      100deg,
+      #59d7ff 0%,
+      #d19bff 28%,
+      #ff5cb0 56%,
+      #ffd270 82%,
+      #59d7ff 100%
+    );
+    background-size: 220% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: film-aurora 7.5s linear infinite;
+  }
+}
+
+@keyframes film-aurora {
+  0% { background-position: 0% center; }
+  100% { background-position: 220% center; }
+}
+
+.vc-home .home-film-lead {
+  max-width: 48ch;
+  color: var(--film-muted);
+  font-size: clamp(0.95rem, 1.35vw, 1.18rem);
+  line-height: 1.58;
+  text-wrap: pretty;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.72);
+}
+
+/* --- Actions --- */
+.home-film-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 14px;
+  margin-top: clamp(20px, 3svh, 30px);
+}
+
+.vc-home .home-film .home-film-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  max-width: 100%;
+  padding: 11px 22px;
+  border-radius: 999px;
+  font-size: 0.87rem;
+  font-weight: 760;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
+}
+
+.vc-home .home-film .home-film-btn svg {
+  flex: none;
+  transition: transform 0.24s ease;
+}
+
+.vc-home .home-film .home-film-btn-primary {
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: #faf8fc;
+  color: #110e18;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.38);
+}
+
+.vc-home .home-film .home-film-btn-primary:hover {
+  transform: translateY(-2px);
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(229, 0, 126, 0.3);
+}
+
+.vc-home .home-film .home-film-btn-primary:hover svg {
+  transform: translate(2px, -2px);
+}
+
+.vc-home .home-film .home-film-btn-glass {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(10, 12, 24, 0.42);
+  color: #faf8fc;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+@supports ((backdrop-filter: blur(18px)) or (-webkit-backdrop-filter: blur(18px))) {
+  .vc-home .home-film .home-film-btn-glass {
+    background: rgba(12, 15, 28, 0.32);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  }
+}
+
+.vc-home .home-film .home-film-btn-glass:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 130, 203, 0.34);
+  background: rgba(22, 18, 38, 0.46);
+}
+
+.vc-home .home-film .home-film-btn-glass:hover svg {
+  transform: translateY(2px);
+}
+
+/* Scroll Cue */
+.home-film-scroll-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: clamp(22px, 4svh, 46px);
+  color: rgba(235, 230, 245, 0.82);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+}
+
+.home-film-scroll-mouse {
+  position: relative;
+  display: block;
+  width: 18px;
+  height: 28px;
+  border: 1.5px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+}
+
+.home-film-scroll-mouse > span {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 3px;
+  height: 6px;
+  margin-left: -1.5px;
+  border-radius: 999px;
+  background: #ffffff;
+  animation: film-scroll-wheel 1.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes film-scroll-wheel {
+  0% { transform: translateY(0); opacity: 0.95; }
+  75% { transform: translateY(10px); opacity: 0.15; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+
+/* ============================================================================
+   TRUE OPTICAL GLASSMORPHISM TITLE CARDS (Desktop, Tablet & Mobile)
+   Inspired by the reference card: high transmission (0.22-0.34 alpha), deep
+   blur(26px) saturate(170%) so background waves refract through the crystal,
+   ambient cyan/violet internal glow, and ultra-subtle border with ZERO white rim.
+   ============================================================================ */
+.home-film-scene-beat {
+  max-width: min(38vw, 465px);
+  align-self: end;
+  margin-bottom: clamp(12px, 3.2svh, 42px);
+}
+
+.home-film-scene-left {
+  justify-self: start;
+}
+
+.home-film-scene-right {
+  justify-self: end;
+}
+
+.home-film-beat-card,
+.home-film .home-film-beat-card.vc-glass-surface {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  width: 100%;
+  min-width: 0;
+  padding: clamp(20px, 2.2vw, 28px) clamp(22px, 2.5vw, 32px);
+  border: 1px solid rgba(185, 210, 255, 0.08);
+  border-radius: 24px;
+  background:
+    radial-gradient(120% 100% at 10% 105%, rgba(0, 180, 245, 0.10) 0%, transparent 56%),
+    radial-gradient(110% 95% at 94% -5%, rgba(180, 85, 255, 0.09) 0%, transparent 54%),
+    linear-gradient(
+      145deg,
+      rgba(12, 15, 28, 0.30) 0%,
+      rgba(7, 9, 19, 0.18) 54%,
+      rgba(6, 8, 17, 0.28) 100%
+    );
+  box-shadow:
+    0 20px 52px rgba(0, 0, 0, 0.36),
+    0 4px 14px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(56, 214, 255, 0.05);
+}
+
+@supports ((backdrop-filter: blur(22px)) or (-webkit-backdrop-filter: blur(22px))) {
+  .home-film-beat-card,
+  .home-film .home-film-beat-card.vc-glass-surface {
+    background:
+      radial-gradient(120% 100% at 10% 105%, rgba(0, 180, 245, 0.10) 0%, transparent 56%),
+      radial-gradient(110% 95% at 94% -5%, rgba(180, 85, 255, 0.09) 0%, transparent 54%),
+      linear-gradient(
+        145deg,
+        rgba(12, 15, 28, 0.22) 0%,
+        rgba(7, 9, 19, 0.13) 54%,
+        rgba(6, 8, 17, 0.20) 100%
+      );
+    backdrop-filter: blur(24px) saturate(145%) brightness(0.9);
+    -webkit-backdrop-filter: blur(24px) saturate(145%) brightness(0.9);
+  }
+}
+
+html[data-public-theme="light"] .home-film .home-film-beat-card.vc-glass-surface {
+  border-color: rgba(185, 210, 255, 0.08);
+  background:
+    radial-gradient(120% 100% at 10% 105%, rgba(0, 180, 245, 0.10) 0%, transparent 56%),
+    radial-gradient(110% 95% at 94% -5%, rgba(180, 85, 255, 0.09) 0%, transparent 54%),
+    linear-gradient(
+      145deg,
+      rgba(12, 15, 28, 0.22) 0%,
+      rgba(7, 9, 19, 0.13) 54%,
+      rgba(6, 8, 17, 0.20) 100%
+    );
+  color: #f8f6fc;
+  box-shadow:
+    0 20px 52px rgba(0, 0, 0, 0.36),
+    0 4px 14px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(56, 214, 255, 0.05);
+  backdrop-filter: blur(24px) saturate(145%) brightness(0.9);
+  -webkit-backdrop-filter: blur(24px) saturate(145%) brightness(0.9);
+}
+
+/* Soft refractive sheen sweep when each glass card enters */
+.home-film-card-sheen {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+  background: linear-gradient(
+    112deg,
+    transparent 24%,
+    rgba(255, 255, 255, 0.08) 48%,
+    rgba(56, 214, 255, 0.03) 56%,
+    transparent 72%
+  );
+  transform: translateX(-125%);
+  animation: film-glass-sheen 1.2s 0.12s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes film-glass-sheen {
+  0% { transform: translateX(-125%); opacity: 0.9; }
+  100% { transform: translateX(130%); opacity: 0; }
+}
+
+.home-film-scene-left .home-film-beat-card,
+.home-film-scene-right .home-film-beat-card {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.home-film-beat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
+.home-film-beat-step {
+  display: inline-block;
+  color: rgba(215, 212, 232, 0.56);
+  font-size: 0.66rem;
+  font-weight: 760;
+  letter-spacing: 0.14em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Inner capsule badge like the reference: recessed translucent pill with glowing cyan dot */
+.home-film-beat-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 999px;
+  background: rgba(5, 7, 15, 0.38);
+  color: #ece9f6;
+  font-size: 0.66rem;
+  font-weight: 760;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.home-film-beat-tag svg {
+  color: #38d6ff;
+  filter: drop-shadow(0 0 6px rgba(56, 214, 255, 0.6));
+}
+
+/* Animated chromatic accent hairline */
+.home-film-beat-bar {
+  display: block;
+  width: 48px;
+  height: 2.5px;
+  border-radius: 999px;
+  background: var(--film-gradient);
+  transform-origin: left center;
+}
+
+.home-film-beat-title {
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--home-display);
+  font-size: clamp(36px, 4.1vw, 64px);
+  font-weight: 400;
+  line-height: 0.93;
+  letter-spacing: -0.008em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  text-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  perspective: 600px;
+}
+
+.home-film-beat-copy {
+  max-width: 36ch;
+  color: rgba(235, 232, 246, 0.88);
+  font-size: clamp(0.88rem, 1.02vw, 0.98rem);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+/* --- Act 3: Closing Brand Finale (lower third, no background card box, keeping video's Visual Corp logo 100% clear) --- */
+.home-film-scene-finale {
+  align-self: end;
+  align-items: center;
+  text-align: center;
+  max-width: min(100%, 720px);
+  margin-bottom: clamp(8px, 2.2svh, 26px);
+}
+
+.home-film-finale-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.home-film-finale-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 999px;
+  background: rgba(5, 7, 15, 0.36);
+  color: #ece9f6;
+  font-size: 0.65rem;
+  font-weight: 760;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.home-film-finale-kicker svg {
+  color: #38d6ff;
+}
+
+.home-film-finale-title {
+  margin: 4px 0 0;
+  color: #ffffff;
+  font-family: var(--home-display);
+  font-size: clamp(34px, 4.2vw, 62px);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  text-shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
+}
+
+.home-film-scene-finale .home-film-actions {
+  margin-top: clamp(10px, 1.6svh, 16px);
+}
+
+/* ---------- Zero-Footprint Edge Progress Hairline ---------- */
+.home-film-edge-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 6;
+  height: 2.5px;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.home-film-edge-progress > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(var(--film-progress, 0));
+  transform-origin: left center;
+  background: var(--film-gradient);
+}
+
+.home-film :focus-visible {
+  outline: 2px solid #ffc2ed;
+  outline-offset: 3px;
+}
+
+/* Reduced-motion / static desktop fallback: wrap opening in a lower-left glass card so Visualito stays clear */
+.home-film.is-static[data-format="landscape"] .home-film-scrim::before {
+  opacity: 0;
+}
+
+.home-film.is-static[data-format="landscape"] .home-film-scene-opening {
+  justify-self: start;
+  align-self: end;
+  align-items: flex-start;
+  text-align: left;
+  padding: 24px 28px;
+  margin-bottom: 18px;
+  max-width: min(39vw, 480px);
+  border: 1px solid rgba(185, 210, 255, 0.085);
+  border-radius: 24px;
+  background:
+    radial-gradient(120% 100% at 12% 105%, rgba(0, 180, 245, 0.11) 0%, transparent 58%),
+    linear-gradient(145deg, rgba(18, 22, 38, 0.34) 0%, rgba(8, 11, 22, 0.24) 100%);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.44), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(26px) saturate(172%);
+  -webkit-backdrop-filter: blur(26px) saturate(172%);
+}
+
+.home-film.is-static[data-format="landscape"] .home-film-headline {
+  font-size: clamp(42px, 4.6vw, 74px);
+  margin-block: 14px 10px;
+}
+
+.home-film.is-static[data-format="landscape"] .home-film-actions {
+  justify-content: flex-start;
+  margin-top: 18px;
+}
+
+/* ============================================================================
+   PORTRAIT / MOBILE CHOREOGRAPHY (9:16 Full-Screen Vertical Video)
+   ============================================================================ */
+.home-film[data-format="portrait"].is-cinematic {
+  height: 390svh;
+  height: 390dvh;
+}
+
+.home-film[data-format="portrait"] {
+  --film-header-safe: 76px;
+  --film-side-pad: clamp(14px, 4.4vw, 28px);
+}
+
+.home-film[data-format="portrait"] .home-film-scene {
+  transform: translate3d(0, calc((var(--scene-local, 0.5) - 0.5) * -5px), 0);
+}
+
+.home-film[data-format="portrait"] .home-film-scene-opening {
+  padding-top: clamp(14px, 4svh, 48px);
+  max-width: min(100%, 520px);
+}
+
+.home-film[data-format="portrait"] .home-film-headline {
+  font-size: clamp(42px, 11vw, 76px);
+  line-height: 0.9;
+  margin-block: 12px 10px;
+}
+
+.home-film[data-format="portrait"] .home-film-lead {
+  max-width: 34ch;
+  font-size: clamp(0.88rem, 3.6vw, 1rem);
+  line-height: 1.48;
+}
+
+.home-film[data-format="portrait"] .home-film-actions {
+  margin-top: 16px;
+  gap: 8px 10px;
+}
+
+.home-film[data-format="portrait"] .home-film-scroll-cue {
+  margin-top: 22px;
+}
+
+/* --- Bottom Optical Glassmorphism Card for Portrait Acts 1, 2 & 3 --- */
+.home-film[data-format="portrait"] .home-film-scene-beat,
+.home-film[data-format="portrait"] .home-film-scene-finale {
+  align-self: end;
+  justify-self: center;
+  width: 100%;
+  max-width: min(100%, 468px);
+  margin-bottom: 0;
+  padding-bottom: 4px;
+}
+
+.home-film[data-format="portrait"] .home-film-beat-card,
+.home-film[data-format="portrait"] .home-film-beat-card.vc-glass-surface {
+  padding: 16px 18px 17px;
+  border-radius: 22px;
+  gap: 8px;
+}
+
+.home-film[data-format="portrait"] .home-film-finale-card {
+  padding: 0 4px 4px;
+  gap: 6px;
+}
+
+.home-film[data-format="portrait"] .home-film-beat-tag {
+  padding: 4px 11px;
+  font-size: 0.61rem;
+  letter-spacing: 0.13em;
+}
+
+.home-film[data-format="portrait"] .home-film-beat-bar {
+  width: 42px;
+  height: 2px;
+}
+
+.home-film[data-format="portrait"] .home-film-beat-title {
+  font-size: clamp(28px, 7.6vw, 40px);
+  line-height: 0.96;
+}
+
+.home-film[data-format="portrait"] .home-film-beat-title .home-film-line {
+  display: inline;
+  padding-bottom: 0;
+}
+
+.home-film[data-format="portrait"] .home-film-beat-title .home-film-line + .home-film-line::before {
+  content: " ";
+}
+
+.home-film[data-format="portrait"] .home-film-beat-copy {
+  max-width: 44ch;
+  font-size: clamp(0.8rem, 3.1vw, 0.9rem);
+  line-height: 1.44;
+}
+
+.home-film[data-format="portrait"] .home-film-finale-kicker {
+  font-size: 0.6rem;
+  letter-spacing: 0.13em;
+}
+
+.home-film[data-format="portrait"] .home-film-finale-title {
+  margin-top: 2px;
+  font-size: clamp(27px, 7.2vw, 38px);
+  line-height: 0.97;
+}
+
+.home-film[data-format="portrait"] .home-film-scene-finale .home-film-actions {
+  margin-top: 10px;
+  gap: 8px;
+}
+
+/* Reduced-motion / static portrait fallback: anchor opening hero in a bottom glass card too */
+.home-film.is-static[data-format="portrait"] .home-film-scrim::before {
+  opacity: 0;
+}
+
+.home-film.is-static[data-format="portrait"] .home-film-scene-opening {
+  align-self: end;
+  padding: 16px 18px 17px;
+  border: 1px solid rgba(185, 210, 255, 0.085);
+  border-radius: 22px;
+  background:
+    radial-gradient(120% 100% at 12% 105%, rgba(0, 180, 245, 0.11) 0%, transparent 58%),
+    linear-gradient(145deg, rgba(18, 22, 38, 0.36) 0%, rgba(8, 11, 22, 0.28) 100%);
+  box-shadow: 0 24px 54px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(26px) saturate(172%);
+  -webkit-backdrop-filter: blur(26px) saturate(172%);
+  max-width: min(100%, 468px);
+}
+
+.home-film.is-static[data-format="portrait"] .home-film-headline {
+  font-size: clamp(32px, 8.6vw, 48px);
+  margin-block: 10px 8px;
+}
+
+/* Clear the floating MobileBottomNavigation dock on <= 1100px viewports */
+@media (max-width: 1100px) {
+  .home-film {
+    --film-bottom-safe: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .home-film-edge-progress {
+    display: none;
+  }
+}
+
+/* Short laptops (1280x720, 1366x768) keep every opening line balanced inside 100svh */
+@media (max-height: 780px) and (min-width: 821px) {
+  .home-film {
+    --film-header-safe: 86px;
+    --film-bottom-safe: 22px;
+  }
+
+  .home-film-scene-opening {
+    padding-top: clamp(14px, 4svh, 44px);
+  }
+
+  .public-site .vc-home .home-film .home-film-headline {
+    font-size: clamp(48px, 6.6vw, 98px);
+    margin-block: 14px 12px;
+  }
+
+  .home-film-actions {
+    margin-top: 18px;
+  }
+
+  .home-film-scroll-cue {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .vc-home .home-film .home-film-btn {
+    min-height: 44px;
+    padding: 9px 16px;
+    font-size: 0.8rem;
+  }
+
+  .home-film-pill {
+    padding: 6px 12px;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+  }
+}
+
+/* Ultra-compact screens (e.g. 320x568 iPhone SE) */
+@media (max-height: 670px) {
+  .home-film[data-format="portrait"] {
+    --film-header-safe: 70px;
+    --film-bottom-safe: calc(82px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .home-film[data-format="portrait"] .home-film-scene-opening {
+    padding-top: 6px;
+  }
+
+  .home-film[data-format="portrait"] .home-film-headline {
+    font-size: clamp(36px, 10.5vw, 48px);
+    margin-block: 8px 6px;
+  }
+
+  .home-film[data-format="portrait"] .home-film-lead {
+    font-size: 0.8rem;
+    line-height: 1.38;
+  }
+
+  .home-film[data-format="portrait"] .home-film-actions {
+    margin-top: 10px;
+    gap: 6px 8px;
+  }
+
+  .home-film[data-format="portrait"] .home-film-scroll-cue {
+    margin-top: 12px;
+  }
+
+  .home-film[data-format="portrait"] .home-film-beat-card,
+  .home-film[data-format="portrait"] .home-film-beat-card.vc-glass-surface {
+    padding: 13px 15px 14px;
+    border-radius: 18px;
+  }
+}
+
+@media (max-width: 360px) {
+  .home-film[data-format="portrait"] .home-film-headline {
+    font-size: 38px;
+  }
+
+  .vc-home .home-film .home-film-btn {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    gap: 6px;
+  }
+}
+
+/* ============================================================================
+   SECTION RIGHT BELOW THE FILM: "¿Qué quieres crear?" (Seamless obsidian handoff)
+   ============================================================================ */
+.home-project-entry {
+  --project-glass: #141726;
+  position: relative;
+  isolation: isolate;
+  padding: clamp(48px, 6.5vw, 88px) clamp(20px, 5vw, 85px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--home-line);
+  background:
+    radial-gradient(ellipse 65% 80% at 50% 0%, rgba(229, 0, 126, 0.12), transparent 62%),
+    radial-gradient(ellipse at 64% 100%, rgba(101, 65, 137, 0.28), transparent 70%),
+    linear-gradient(180deg, #04050a 0%, var(--home-bg) 28%);
+}
+
+html[data-public-theme="light"] .home-project-entry {
+  --project-glass: #f4eef8;
+  border-top-color: rgba(53, 39, 59, 0.09);
+  background:
+    radial-gradient(ellipse 65% 80% at 15% 10%, rgba(0, 158, 226, 0.08), transparent 60%),
+    radial-gradient(ellipse 60% 75% at 88% 95%, rgba(229, 0, 126, 0.09), transparent 62%),
+    linear-gradient(180deg, #f3f0f8 0%, #faf8fd 100%);
+}
+
+.home-project-entry-inner {
+  width: min(100%, 1310px);
+  margin-inline: auto;
+}
+
+.home-project-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px 25px;
+  margin-bottom: 24px;
+}
+
+.public-site .vc-home .home-project-entry h2 {
+  color: var(--home-text);
+  font-size: clamp(38px, 4.4vw, 68px);
+  overflow-wrap: anywhere;
+}
+
+.vc-home .home-project-heading p {
+  margin-top: 6px;
+  max-width: 53ch;
+  color: var(--home-muted);
+  font-size: 0.96rem;
+  line-height: 1.55;
+}
+
+.public-site .vc-home .home-project-heading button {
+  color: var(--home-text);
+}
+
+.home-project-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.home-project-card {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-width: 0;
+  width: 100%;
+  min-height: 142px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  align-items: center;
+  gap: 12px 9px;
+  padding: 20px 22px;
+  border: 1px solid rgba(185, 210, 255, 0.08);
+  border-radius: 18px;
+  background: var(--project-glass);
+  color: var(--home-text);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+.home-project-card.vc-glass-surface {
+  padding: 20px 22px;
+}
+
+@supports ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  html:not([data-public-theme="light"]) .home-project-card {
+    background:
+      radial-gradient(110% 100% at 10% 105%, rgba(0, 180, 245, 0.08), transparent 58%),
+      linear-gradient(145deg, rgba(18, 22, 38, 0.36) 0%, rgba(10, 12, 22, 0.24) 100%);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+  }
+}
+
+.home-project-card::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: url('/public-site/home-film/grano.png') repeat;
+  opacity: 0.18;
+  pointer-events: none;
+  content: "";
+}
+
+/* Light mode adaptation for ¿Qué quieres crear? */
+html[data-public-theme="light"] .home-project-card::before {
+  display: none;
+}
+
+html[data-public-theme="light"] .home-project-card,
+html[data-public-theme="light"] .home-project-card.vc-glass-surface {
+  padding: 20px 22px;
+  border-color: rgba(126, 62, 138, 0.13);
+  background:
+    radial-gradient(115% 105% at 10% 105%, rgba(0, 158, 226, 0.07) 0%, transparent 58%),
+    radial-gradient(110% 100% at 92% 0%, rgba(229, 0, 126, 0.07) 0%, transparent 56%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.86) 0%, rgba(250, 246, 253, 0.72) 100%);
+  color: #1c1628;
+  box-shadow:
+    0 16px 38px rgba(42, 24, 62, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(24px) saturate(155%);
+  -webkit-backdrop-filter: blur(24px) saturate(155%);
+}
+
+html[data-public-theme="light"] .home-project-card > svg:first-of-type {
+  color: #9e1e72;
+}
+
+html[data-public-theme="light"] .home-project-card > svg:nth-of-type(2) {
+  color: #786b8a;
+}
+
+html[data-public-theme="light"] .home-project-card strong {
+  color: #1c1628;
+}
+
+html[data-public-theme="light"] .home-project-card small {
+  color: #595167;
+}
+
+html[data-public-theme="light"] .home-project-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(213, 21, 138, 0.32);
+  box-shadow:
+    0 22px 50px rgba(42, 24, 62, 0.12),
+    0 0 24px rgba(229, 0, 126, 0.08),
+    inset 0 1px 0 #ffffff;
+}
+
+.home-project-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(228, 124, 192, 0.36);
+  box-shadow: 0 22px 52px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+
+.home-project-card > svg:nth-of-type(2) {
+  color: var(--home-muted);
+}
+
+.home-project-card strong,
+.home-project-card small {
+  grid-column: 1 / -1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.home-project-card strong {
+  font-size: 0.95rem;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.home-project-card small {
+  margin-top: -5px;
+  color: var(--home-muted);
+  font-size: 0.78rem;
+  line-height: 1.42;
+}
+
+.vc-home #servicios {
+  scroll-margin-top: 90px;
+}
+
+@media (max-width: 1260px) {
+  .home-project-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .home-project-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-project-card {
+    min-height: 0;
+  }
+}
+
+/* ---------- Accessibility: Reduced Motion & Reduced Transparency ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .home-film-pill-dot,
+  .home-film-aurora,
+  .home-film-scroll-mouse > span,
+  .home-film-card-sheen {
+    animation: none;
+  }
+
+  .home-film-card-sheen {
+    display: none;
+  }
+
+  .home-film-scene {
+    transform: none;
+    transition: none;
+  }
+
+  .vc-home .home-film .home-film-btn,
+  .home-project-card {
+    transition: none;
+  }
+
+  .vc-home .home-film .home-film-btn:hover,
+  .home-project-card:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .home-film-pill,
+  .vc-home .home-film .home-film-btn-glass,
+  .home-film-beat-tag,
+  .home-film-beat-card,
+  .home-film-finale-card,
+  .home-film.is-static .home-film-scene-opening,
+  .home-project-card {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(13, 15, 25, 0.96);
+  }
+}

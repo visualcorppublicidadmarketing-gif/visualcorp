@@ -1,8 +1,7 @@
-import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState, lazy, Suspense, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, useInView, useReducedMotion } from 'motion/react';
 import {
-  ArrowDown,
   ArrowRight,
   ArrowUpRight,
   Check,
@@ -17,6 +16,7 @@ import {
   Printer,
   ScanLine,
   Scissors,
+  Send,
   Shirt,
   Sparkles,
   Store,
@@ -24,17 +24,18 @@ import {
 import { useWorkspace } from '../app/workspace';
 import { Card } from '../components/ui/card';
 import {
-  AnimatedShinyText,
-  BorderBeam,
-  DotPattern,
   SpotlightLayer,
   clearSpotlight,
   updateSpotlight,
 } from '../components/ui/MagicComponents';
+import {
+  GlassButton,
+  GlassCard,
+  GlassFormField,
+  GlassPill,
+} from '../components/ui/GlassPanel';
 import { Dialog, DialogCallout } from '../components/ui/DialogSystem';
 import {
-  HorizonLightWave,
-  PortalLightStage,
   PlanetaryHorizonArc,
   SculptedWaveDivider,
 } from '../components/ui/GlassWaveEffects';
@@ -48,6 +49,7 @@ import {
   type PublicServiceId,
 } from './content';
 import './home-page.css';
+import { HomeFilm } from './HomeFilm';
 import { EnvironmentBrandingMatrix, PanoramicCategoryStrips } from './SolutionsComponents';
 
 const Highlights = lazy(() => import('./ShowcasePages').then((module) => ({ default: module.HomeContentHighlights })));
@@ -121,82 +123,6 @@ function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; 
     >
       {children}
     </motion.div>
-  );
-}
-
-function VisualitoStage({ onOpenOrientator }: { onOpenOrientator?: () => void }) {
-  return (
-    <div className="home-stage">
-      <BorderBeam size={220} duration={9} borderWidth={1.25} />
-      <DotPattern width={26} height={26} className="home-stage-dots" />
-      <div className="home-stage-glow" aria-hidden="true" />
-      <PortalLightStage className="home-stage-portal" />
-      <HorizonLightWave className="home-stage-horizon" />
-
-      {/* Satélite 1: Estudio + Taller (Payrot sculpted frosted satellite) */}
-      <div className="home-stage-satellite home-satellite-studio vc-glass-frosted" aria-hidden="true">
-        <span className="home-satellite-kicker">
-          <Sparkles size={11} aria-hidden="true" /> ESTUDIO + TALLER
-        </span>
-        <strong>Diseño y producción propia en Milagro</strong>
-      </div>
-
-      {/* Satélite 2: 6 líneas conectadas (Payrot sculpted clear satellite, clickeable) */}
-      <button
-        type="button"
-        className="home-stage-satellite home-satellite-lines vc-glass-clear"
-        onClick={onOpenOrientator}
-        aria-label="6 líneas conectadas: Asesoría, diseño, impresión y montaje. Haz clic para orientar tu proyecto"
-      >
-        <span className="home-satellite-kicker">
-          6 LÍNEAS CONECTADAS <ArrowUpRight size={12} aria-hidden="true" />
-        </span>
-        <strong>Asesoría, diseño, impresión y montaje</strong>
-      </button>
-
-      <div className="home-stage-scene">
-        <div className="home-stage-ring" aria-hidden="true" />
-        <span className="home-stage-word" aria-hidden="true">
-          CREA.
-        </span>
-        <div className="home-stage-floor" aria-hidden="true" />
-        <img
-          className="home-visualito"
-          src="/public-site/visualito-hero.webp"
-          alt="Visualito, la mascota de Visual Corp"
-          width={720}
-          height={1080}
-          fetchPriority="high"
-        />
-        <span className="home-stage-label">
-          <span className="home-color-dots" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
-          DISEÑO · PUBLICIDAD · PRODUCCIÓN
-        </span>
-      </div>
-
-      {/* Cápsula de cristal interactiva al pie del portal (Reflect AI style) */}
-      <button
-        type="button"
-        className="home-stage-portal-capsule vc-glass-clear"
-        onClick={onOpenOrientator}
-        aria-label="¿Qué necesita tu marca hoy? · Haz clic para orientar tu proyecto"
-      >
-        <Sparkles size={14} className="home-portal-capsule-icon" aria-hidden="true" />
-        <span>¿Qué necesita tu marca hoy? · Haz clic para orientar tu proyecto</span>
-        <ArrowRight size={14} aria-hidden="true" />
-      </button>
-
-      <div className="home-stage-caption">
-        <span>VISUALITO / ESTUDIO CREATIVO & TALLER</span>
-        <span>
-          MILAGRO, ECUADOR <ArrowUpRight size={13} />
-        </span>
-      </div>
-    </div>
   );
 }
 
@@ -471,17 +397,27 @@ function ProcessSection({ onOpenOrientator }: { onOpenOrientator: () => void }) 
 
 export function PublicHomePage() {
   const { data } = useWorkspace();
+  const navigate = useNavigate();
   const services = data.services.filter((service: { enabled: boolean }) => service.enabled);
   const contentRef = useRef<HTMLDivElement>(null);
   const showContent = useInView(contentRef, { once: true, margin: '300px' });
-  const title = String(data.settings.heroTitle || 'Hacemos visible lo que imaginas.').trim();
-  const words = title.split(/\s+/);
-  const lastWord = words.pop();
 
   const [orientatorOpen, setOrientatorOpen] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string>(projectOrientatorGoals[0].id);
   const goalRadioRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [previewServiceId, setPreviewServiceId] = useState<PublicServiceId | null>(null);
+  const [quickIdea, setQuickIdea] = useState('');
+  const [quickService, setQuickService] = useState<string>('');
+
+  const handleQuickLaunchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    if (quickService) params.set('servicio', quickService);
+    const trimmed = quickIdea.trim();
+    if (trimmed) params.set('producto', trimmed);
+    const query = params.toString();
+    navigate(query ? `/cotizador?${query}` : '/cotizador');
+  };
 
   useEffect(() => {
     document.title = 'Inicio · Visual Corp';
@@ -537,102 +473,56 @@ export function PublicHomePage() {
 
   return (
     <div className="vc-home">
-      <section className="home-hero" aria-labelledby="home-title">
-        <HorizonLightWave className="home-hero-ambient-wave" />
-        <div className="home-hero-inner">
-          <div className="home-hero-copy">
-            <div className="home-hero-kicker home-kicker vc-glass-clear">
-              <span className="home-status-dot" aria-hidden="true" />
-              <AnimatedShinyText shimmerWidth={140}>{data.settings.heroEyebrow}</AnimatedShinyText>
-            </div>
-            <h1 id="home-title">
-              {words.join(' ')} <span>{lastWord}</span>
-            </h1>
-            <p className="home-hero-description">{data.settings.heroText}</p>
-            <div className="home-actions">
-              <Link className="home-button home-button-primary" to="/cotizador">
-                Solicitar cotización <ArrowUpRight size={19} />
-              </Link>
-              <a className="home-button home-button-secondary" href="#servicios">
-                Explorar servicios <ArrowDown size={18} />
-              </a>
-            </div>
-            <VisualitoStage onOpenOrientator={() => setOrientatorOpen(true)} />
-            <div className="home-goal-strip" role="group" aria-label="Accesos rápidos según tu objetivo">
-              <div className="home-goal-strip-heading">
-                <span className="home-goal-strip-label">
-                  <Sparkles size={13} aria-hidden="true" /> ¿Qué necesita tu marca hoy?
-                </span>
-                <button
-                  type="button"
-                  className="home-hero-orientator"
-                  onClick={() => setOrientatorOpen(true)}
-                >
-                  <Compass size={15} aria-hidden="true" /> Orientar mi proyecto
-                </button>
+      <HomeFilm
+        eyebrow={data.settings.heroEyebrow?.trim() || 'Agencia de publicidad y marketing'}
+        title={data.settings.heroTitle?.trim() || 'Hacemos visible lo que imaginas.'}
+        description={data.settings.heroText?.trim() || 'Diseño, producción y marketing para marcas que quieren ocupar su espacio.'}
+      />
+
+      <section className="home-project-entry" aria-labelledby="home-project-title">
+        <div className="home-project-entry-inner">
+          <Reveal>
+            <div className="home-project-heading">
+              <div>
+                <h2 id="home-project-title">¿Qué quieres crear?</h2>
+                <p>Elige qué necesita tu marca y descubre qué preparar para cotizar.</p>
               </div>
-              <div className="home-goal-chips">
-                {projectOrientatorGoals.slice(0, 4).map((goal) => (
-                  <button
+              <button type="button" className="home-text-link home-text-button" onClick={() => setOrientatorOpen(true)}>
+                Abrir el orientador <Compass size={17} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="home-project-grid">
+              {projectOrientatorGoals.slice(0, 4).map((goal) => {
+                const Icon = serviceIcons[goal.serviceId];
+                return (
+                  <GlassCard
+                    as="button"
                     key={goal.id}
                     type="button"
-                    className="home-goal-chip"
+                    variant="card"
+                    radius="md"
+                    padding="md"
+                    glow="brand"
+                    interactive
+                    spotlight
+                    className="home-project-card"
                     onClick={() => openOrientatorForGoal(goal.id)}
                   >
-                    {goal.label}
-                    <ArrowUpRight size={13} aria-hidden="true" />
-                  </button>
-                ))}
-              </div>
+                    <Icon size={22} strokeWidth={1.7} aria-hidden="true" />
+                    <ArrowUpRight size={17} aria-hidden="true" />
+                    <strong>{goal.label}</strong>
+                    <small>{goal.subtitle}</small>
+                  </GlassCard>
+                );
+              })}
             </div>
-            <div className="home-hero-proof">
-              <span>
-                <Check size={15} />
-                Atención directa en Milagro
-              </span>
-              <span>
-                <Check size={15} />
-                Diseño y coordinación según proyecto
-              </span>
-              <span>
-                <Check size={15} />
-                Cotización guiada por proyecto
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="home-hero-footer">
-          <span>
-            <MapPin size={14} /> MILAGRO, ECUADOR · {publicAddress.toUpperCase()}
-          </span>
-          <a href="#servicios">
-            UNA IDEA. MUCHAS POSIBILIDADES. <ArrowDown size={15} />
-          </a>
-          <span className="home-footer-index" aria-hidden="true">
-            01 — 04
-          </span>
+          </Reveal>
         </div>
       </section>
 
-      {services.length > 0 && (
-        <div className="home-service-families">
-          <ul aria-label="Familias de trabajo disponibles">
-            {[
-              ...services.map((service: { name: string }) => service.name),
-              'Diseño gráfico comercial',
-              'Identidad para negocios',
-              'Montaje o instalación según el alcance del proyecto',
-            ].map((family, index) => (
-              <li key={`${index}-${family}`}>{family}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Divisor de onda esculpido (getwaves.io style): Hero -> Light/Services */}
       <SculptedWaveDivider variant="hero-to-light" />
 
-      <section className="home-services home-section" id="servicios" aria-labelledby="home-services-title">
+      <section className="home-services home-section" id="servicios" aria-labelledby="home-services-title" tabIndex={-1}>
         <Reveal className="home-section-heading">
           <div>
             <span className="home-kicker">01 / LO QUE PODEMOS CREAR</span>
@@ -797,27 +687,148 @@ export function PublicHomePage() {
           </SculptedWaveDivider>
         </div>
 
-        <Reveal>
-          <span className="home-kicker">04 / HAGAMOS QUE SUCEDA</span>
-          <h2 id="home-contact-title">
-            Lo próximo que se vea
-            <br />
-            puede ser <span>tu marca.</span>
-          </h2>
-          <p>
-            Una idea, una pregunta o un proyecto por empezar.
-            <br />
-            Estamos en {publicAddress} para escucharte.
-          </p>
-          <div className="home-actions">
-            <Link className="home-button home-button-primary" to="/cotizador">
-              Empezar mi proyecto <ArrowUpRight size={20} />
-            </Link>
-            <Link className="home-button home-button-secondary" to="/contacto">
-              Hablar con el equipo <MessageCircle size={18} />
-            </Link>
-          </div>
-          <span className="home-contact-signature">VISUAL CORP · CREATIVIDAD QUE TOMA FORMA · MILAGRO, ECUADOR</span>
+        <Reveal className="home-contact-stage">
+          <GlassCard
+            variant="card"
+            radius="xl"
+            padding="xl"
+            glow="brand"
+            sheen
+            spotlight
+            className="home-contact-portal"
+          >
+            <div className="home-contact-head">
+              <GlassPill dot dotColor="cyan">
+                04 · HAGAMOS QUE SUCEDA
+              </GlassPill>
+
+              <h2 id="home-contact-title">
+                Lo próximo que se vea
+                <br />
+                puede ser <span className="home-contact-aurora">tu marca.</span>
+              </h2>
+
+              <p className="home-contact-lead">
+                Una idea, una pregunta o un proyecto por empezar.
+                <br />
+                Estamos en <strong>{publicAddress}</strong> para escucharte.
+              </p>
+
+              <div className="home-contact-actions">
+                <GlassButton tone="primary" size="lg" to="/cotizador">
+                  <span>Empezar mi proyecto</span>
+                  <ArrowUpRight size={19} aria-hidden="true" />
+                </GlassButton>
+                <GlassButton tone="glass" size="lg" to="/contacto">
+                  <span>Hablar con el equipo</span>
+                  <MessageCircle size={18} aria-hidden="true" />
+                </GlassButton>
+                <GlassButton tone="glass" size="lg" onClick={() => setOrientatorOpen(true)}>
+                  <span>Orientar mi idea</span>
+                  <Compass size={18} aria-hidden="true" />
+                </GlassButton>
+              </div>
+            </div>
+
+            <div className="home-contact-bento">
+              <GlassCard
+                as="form"
+                variant="veil"
+                radius="lg"
+                padding="md"
+                glow="cyan"
+                className="home-contact-quickform"
+                onSubmit={handleQuickLaunchSubmit}
+              >
+                <div className="home-contact-quickform-top">
+                  <GlassPill icon={<Sparkles size={12} />}>
+                    INICIO RÁPIDO DE PROYECTO
+                  </GlassPill>
+                  <span className="home-contact-quickform-tag">Paso 01 / Brief</span>
+                </div>
+
+                <div className="home-contact-chip-row" role="group" aria-label="Especialidad sugerida">
+                  {services.slice(0, 6).map((svc: { id: string; name: string }) => {
+                    const isSelected = quickService === svc.name;
+                    return (
+                      <GlassButton
+                        key={svc.id}
+                        type="button"
+                        tone={isSelected ? 'accent' : 'glass'}
+                        size="sm"
+                        aria-pressed={isSelected}
+                        onClick={() => setQuickService((prev) => (prev === svc.name ? '' : svc.name))}
+                      >
+                        {svc.name}
+                      </GlassButton>
+                    );
+                  })}
+                </div>
+
+                <div className="home-contact-form-row">
+                  <GlassFormField
+                    label="¿Qué tienes en mente crear o cotizar?"
+                    placeholder="Ej. Rótulo luminoso para fachada, 200 tarjetas o camisetas para mi equipo..."
+                    value={quickIdea}
+                    onChange={(event) => setQuickIdea(event.target.value)}
+                    icon={<Lightbulb size={16} />}
+                  />
+                  <GlassButton type="submit" tone="accent" size="md" className="home-contact-submit">
+                    <span>Continuar al cotizador</span>
+                    <Send size={15} aria-hidden="true" />
+                  </GlassButton>
+                </div>
+              </GlassCard>
+
+              <div className="home-contact-cards">
+                <GlassCard
+                  as={Link}
+                  to="/contacto#contacto-ubicacion"
+                  variant="veil"
+                  radius="lg"
+                  padding="md"
+                  glow="magenta"
+                  interactive
+                  className="home-contact-mini-card"
+                >
+                  <span className="home-contact-mini-icon">
+                    <MapPin size={19} aria-hidden="true" />
+                  </span>
+                  <div className="home-contact-mini-copy">
+                    <small>ESTUDIO & ATENCIÓN DIRECTA</small>
+                    <strong>{publicAddress}</strong>
+                    <span>Ver mapa e indicaciones en Milagro</span>
+                  </div>
+                  <ArrowUpRight size={18} className="home-contact-mini-arrow" aria-hidden="true" />
+                </GlassCard>
+
+                <GlassCard
+                  as={Link}
+                  to="/como-trabajamos"
+                  variant="veil"
+                  radius="lg"
+                  padding="md"
+                  glow="cyan"
+                  interactive
+                  className="home-contact-mini-card"
+                >
+                  <span className="home-contact-mini-icon is-cyan">
+                    <Layers size={19} aria-hidden="true" />
+                  </span>
+                  <div className="home-contact-mini-copy">
+                    <small>DISEÑO, IMPRESIÓN Y MONTAJE</small>
+                    <strong>Un solo equipo de principio a fin</strong>
+                    <span>Revisa cómo coordinamos tu proyecto</span>
+                  </div>
+                  <ArrowUpRight size={18} className="home-contact-mini-arrow" aria-hidden="true" />
+                </GlassCard>
+              </div>
+            </div>
+
+            <span className="home-contact-signature">
+              VISUAL CORP · CREATIVIDAD QUE TOMA FORMA · MILAGRO, ECUADOR
+            </span>
+          </GlassCard>
         </Reveal>
       </section>
 

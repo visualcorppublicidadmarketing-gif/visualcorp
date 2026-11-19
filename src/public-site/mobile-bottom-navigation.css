@@ -357,7 +357,7 @@
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
+@media (forced-colors: active) {
   @media (max-width: 1100px) {
     .public-site .mobile-bottom-navigation {
       background: #121420;
@@ -386,20 +386,25 @@
 
 /* Light mode */
 html[data-public-theme="light"] .public-site .mobile-bottom-navigation {
-  border-color: var(--glass-border, rgba(61, 42, 74, 0.16));
-  background: var(--glass-bg-strong, rgba(255, 255, 255, 0.92));
+  border-color: rgba(134, 54, 130, 0.12);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.90), rgba(250, 246, 254, 0.84));
   color: #42394b;
-  box-shadow:
-    var(--glass-shadow, 0 12px 38px rgba(34, 22, 49, 0.14)),
-    inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, 0.92));
+  box-shadow: 0 14px 36px rgba(34, 22, 49, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(26px) saturate(170%);
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
 }
 
 html[data-public-theme="light"] .public-site .mobile-bottom-item {
   color: #554c61;
 }
 
+html[data-public-theme="light"] .public-site .mobile-bottom-item:hover {
+  color: #241e2c;
+  background: rgba(255, 255, 255, 0.6);
+}
+
 html[data-public-theme="light"] .public-site .mobile-bottom-item.is-active {
-  background: #f6e7f4;
+  background: rgba(229, 0, 126, 0.12);
   color: #8a146e;
 }
 
@@ -407,21 +412,51 @@ html[data-public-theme="light"] .public-site .mobile-bottom-item.is-active svg {
   color: #a61480;
 }
 
+html[data-public-theme="light"] .public-site .mobile-bottom-item.mobile-bottom-quote {
+  color: #ffffff;
+  background: linear-gradient(125deg, #df007d, #9634c4);
+  box-shadow: 0 5px 15px rgba(206, 0, 128, 0.28);
+}
+
+html[data-public-theme="light"] .public-site .mobile-bottom-item.mobile-bottom-quote svg {
+  color: #ffffff;
+}
+
+html[data-public-theme="light"] .public-site .mobile-bottom-item.mobile-bottom-quote:hover,
+html[data-public-theme="light"] .public-site .mobile-bottom-item.mobile-bottom-quote:active,
+html[data-public-theme="light"] .public-site .mobile-bottom-item.mobile-bottom-quote.is-active {
+  color: #ffffff;
+  background: linear-gradient(125deg, #e5007e, #a83ac8);
+  box-shadow: 0 7px 18px rgba(206, 0, 128, 0.35);
+}
+
+html[data-public-theme="light"] .public-site .mobile-bottom-item.mobile-bottom-quote:hover svg,
+html[data-public-theme="light"] .public-site .mobile-bottom-item.mobile-bottom-quote:active svg,
+html[data-public-theme="light"] .public-site .mobile-bottom-item.mobile-bottom-quote.is-active svg {
+  color: #ffffff;
+}
+
+html[data-public-theme="light"] .public-site .mobile-bottom-item.mobile-bottom-quote:focus-visible {
+  color: #ffffff;
+  outline: 3px solid #f076bc;
+  outline-offset: 2px;
+}
+
 html[data-public-theme="light"] .mobile-bottom-drawer-overlay {
   background: rgba(24, 17, 32, 0.42);
 }
 
 html[data-public-theme="light"] .mobile-bottom-drawer {
-  border-color: var(--glass-border, rgba(61, 42, 74, 0.16));
-  background: var(--glass-bg-strong, rgba(255, 255, 255, 0.94));
+  border-color: rgba(134, 54, 130, 0.12);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(250, 246, 254, 0.88));
   color: #241e2c;
-  box-shadow:
-    var(--glass-shadow, 0 -16px 50px rgba(27, 17, 39, 0.18)),
-    inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, 0.95));
+  box-shadow: 0 -16px 50px rgba(27, 17, 39, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(26px) saturate(170%);
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
 }
 
 html[data-public-theme="light"] .mobile-bottom-drawer-handle {
-  background: rgba(52, 38, 66, 0.24);
+  background: rgba(52, 38, 66, 0.22);
 }
 
 html[data-public-theme="light"] .mobile-bottom-sheet-heading > div > span {
@@ -438,8 +473,8 @@ html[data-public-theme="light"] .mobile-bottom-sheet-description {
 
 html[data-public-theme="light"] .mobile-bottom-sheet-close,
 html[data-public-theme="light"] .mobile-bottom-sheet-link {
-  border-color: rgba(61, 42, 74, 0.15);
-  background: rgba(255, 255, 255, 0.86);
+  border-color: rgba(134, 54, 130, 0.12);
+  background: rgba(255, 255, 255, 0.88);
   color: #2e2838;
 }
 

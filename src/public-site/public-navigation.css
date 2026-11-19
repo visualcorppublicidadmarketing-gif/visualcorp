@@ -428,7 +428,7 @@ html[data-public-theme="light"] .public-site .site-header .site-admin-access:hov
   .public-site .site-explore-links > a > svg:last-child { transition: none; }
 }
 
-@media (prefers-reduced-transparency: reduce) {
+@media (forced-colors: active) {
   .public-site .site-header-inner,
   .public-site .site-mega-panel,
   .public-site .site-mobile-panel,

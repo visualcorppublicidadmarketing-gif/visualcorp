@@ -89,7 +89,12 @@ function SiteTitle({ children }) {
 
 function BrandLink({ onClick = undefined, footer = false, theme = 'dark' }) {
   const isHome = useLocation().pathname === '/';
-  return <Link className={`site-brand${footer ? ' site-brand-footer' : ''}${isHome ? ' home-brand' : ''}`} to="/" onClick={onClick} aria-label="Visual Corp, inicio"><img src={footer || theme === 'light' ? wordmark : isHome ? '/brand/visualcorp-wordmark-white-original.png' : '/brand/visualcorp-wordmark-dark.png'} alt="Visual Corp — Agencia Creativa" /></Link>;
+  const logoSrc = theme === 'light'
+    ? wordmark
+    : (isHome || footer)
+      ? '/brand/visualcorp-wordmark-white-original.png'
+      : '/brand/visualcorp-wordmark-dark.png';
+  return <Link className={`site-brand${footer ? ' site-brand-footer' : ''}${isHome ? ' home-brand' : ''}`} to="/" onClick={onClick} aria-label="Visual Corp, inicio"><img src={logoSrc} alt="Visual Corp — Agencia Creativa" /></Link>;
 }
 
 function SiteHeader({ theme, onThemeChange }) {
@@ -222,7 +227,7 @@ function SiteFooter({ theme }: { theme: 'light' | 'dark' }) {
       </div>
       <div className="site-footer-main">
         <div className="footer-brand-column">
-          <BrandLink footer/>
+          <BrandLink footer theme={theme} />
           <p>Ideas, producción y comunicación para que tu marca ocupe su espacio.</p>
           <span className="footer-location"><Globe2 size={15} aria-hidden="true"/>{data.settings.location}</span>
         </div>
