@@ -211,7 +211,7 @@ const getPOSLinkedVariantLabel = (link: any, inventory: any[]) => {
   const hiddenAttributes = new Set(['source_status','source_status_origin','stock_count_required','physical_count_confirmed_at','physical_count_confirmed_by','initial_branch_id','condition_status']);
   const internalAttributePattern = /(^|_)(source|status|count|cost|price|supplier|branch|organization|user|created|updated|location|stock|reservation|reserved|email|phone)(_|$)/i;
   const detail = Object.entries(attributes)
-    .filter(([key, value]) => !hiddenAttributes.has(key) && !internalAttributePattern.test(key) && ['string','number','boolean'].includes(typeof value) && value !== null && value !== undefined && String(value).trim())
+    .filter(([key, value]) => !hiddenAttributes.has(key) && !key.toLocaleLowerCase('es').startsWith('opening_balance_') && !internalAttributePattern.test(key) && ['string','number','boolean'].includes(typeof value) && value !== null && value !== undefined && String(value).trim())
     .slice(0, 5)
     .map(([key, value]) => `${key.replace(/_/g, ' ')} ${String(value)}`)
     .join(' · ');
@@ -222,7 +222,9 @@ const getPOSLinkedVariantLabel = (link: any, inventory: any[]) => {
   const available = stock && !stock.sourceStatus
     ? Number(stock.availableQuantity ?? (Number(stock.quantity || 0) - Number(stock.reservedQuantity || 0)))
     : null;
-  const availability = available === null ? 'conteo pendiente' : `${available} ${stock.unit || 'unidad(es)'}`;
+  const availability = stock?.openingBalanceIntentional
+    ? `saldo provisional ${Number(stock.quantity || 0)} ${stock.unit || 'unidad(es)'} · conteo pendiente`
+    : available === null ? 'conteo pendiente' : `${available} ${stock.unit || 'unidad(es)'}`;
   return { stock, label, sku, availability, optionLabel: `${label}${sku ? ` · ${sku}` : ''} · ${availability}` };
 };
 
@@ -1561,6 +1563,9 @@ export function PosPage() {
     setCartVariantId(links.length===1?links[0].inventory_variant_id:'');setCartMode(product.mode==='area'?'area':'quantity');setCartFamily(product.family||'Todas');setCartProductId(product.id);setCartItemName('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartPriceTier('pvp');setCartOptionChoice('');setCartFinishing({...emptyCommercialFinishing});setCartSearch('');
     requestAnimationFrame(()=>document.getElementById(product.mode==='area'?'pos-cart-width':'pos-cart-quantity')?.focus());
   };
+  const changeCatalogContext=(nextKind:'product'|'service',nextMode:'quantity'|'area')=>{
+    setCatalogKind(nextKind);setCartMode(nextMode);setCartProductId('');setCartVariantId('');setCartFamily('Todas');setCartSearch('');setCartPriceTier('pvp');setCartOptionChoice('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});
+  };
   const handleCartScan=(query:string,highlightedProduct?:any)=>{
     const scannedCode=query.trim().toLocaleUpperCase('es');
     if(!scannedCode)return;
@@ -2213,16 +2218,17 @@ export function PosPage() {
             {cartEntryType!=='catalog'&&<p className="pos-entry-kind-note">Concepto manual · no descuenta inventario · precio confirmado por el asesor.</p>}
             {cartEntryType==='catalog'&&<>
             <div className="pos-mode-switch" role="group" aria-label="Tipo de catálogo">
-              <button type="button" className={catalogKind==='product'?'active':''} aria-pressed={catalogKind==='product'} onClick={()=>{setCatalogKind('product');setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');setCartOptionChoice('');}}>Productos y artículos</button>
-              <button type="button" className={catalogKind==='service'?'active':''} aria-pressed={catalogKind==='service'} onClick={()=>{setCatalogKind('service');setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');setCartOptionChoice('');}}>Servicios ({data.catalog.filter(isPOSServiceProduct).length})</button>
+              <button type="button" className={catalogKind==='product'?'active':''} aria-pressed={catalogKind==='product'} onClick={()=>changeCatalogContext('product','quantity')}>Productos y artículos</button>
+              <button type="button" className={catalogKind==='service'?'active':''} aria-pressed={catalogKind==='service'} onClick={()=>changeCatalogContext('service','quantity')}>Servicios ({data.catalog.filter(isPOSServiceProduct).length})</button>
             </div>
             <div className="pos-mode-switch" role="group" aria-label={`Forma de calcular ${catalogKind==='service'?'el servicio':'el producto'}`}>
-              <button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>{setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por cantidad ({catalogModeCounts.quantity})</button>
-              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>{if(catalogModeCounts.area===0&&otherKindAreaCount>0)setCatalogKind(catalogKind==='product'?'service':'product');setCartMode('area');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por medidas m² ({catalogModeCounts.area})</button>
+              <button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>changeCatalogContext(catalogKind,'quantity')}>Por cantidad ({catalogModeCounts.quantity})</button>
+              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>changeCatalogContext(catalogModeCounts.area===0&&otherKindAreaCount>0?(catalogKind==='product'?'service':'product'):catalogKind,'area')}>Por medidas m² ({catalogModeCounts.area})</button>
               {catalogKind==='service'&&<span className="pos-entry-kind-note">Los servicios no descuentan existencias por unidad. Las medidas m² calculan la tarifa por superficie.</span>}
               {catalogKind==='product'&&catalogModeCounts.area===0&&otherKindAreaCount>0&&<span className="pos-entry-kind-note">Las {otherKindAreaCount} referencias por m² están en Servicios. Pulsa el filtro para verlas.</span>}
             </div>
             <POSProductSearch
+              contextKey={`${catalogKind}:${cartMode}`}
               inputRef={productSearchInputRef}
               products={modeCatalog} query={cartSearch} onQueryChange={setCartSearch}
               onChoose={chooseCartProduct} onEnter={handleCartScan} selectedId={cartProductId}

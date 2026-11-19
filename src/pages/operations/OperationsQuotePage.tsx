@@ -77,6 +77,73 @@ const tierAliases: Record<string, string> = { pvp: 'normal', instalacion: 'insta
 const reverseTierAliases: Record<string, string> = { normal: 'pvp', installation: 'instalacion', corporate: 'corporativo', pvp: 'pvp', instalacion: 'instalacion', corporativo: 'corporativo' };
 const roundMoney = (value: number) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
+const normalizeQuoteMode = (value: unknown) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/²|\^2/g, '2')
+  .trim()
+  .toLocaleLowerCase('es');
+
+const isCatalogService = (product: any) => product?.productKind === 'service'
+  || normalizeQuoteMode(product?.productType) === 'service';
+
+const isAdditionalChangeOption = (option: any) => normalizeQuoteMode(option?.label) === 'cambio adicional';
+
+const servicePackageOptions = (product: any) => {
+  const options = Array.isArray(product?.optionPrices) ? product.optionPrices : [];
+  return isCatalogService(product) ? options.filter((option: any) => !isAdditionalChangeOption(option)) : options;
+};
+
+const requiresServicePackage = (product: any) => isCatalogService(product)
+  && servicePackageOptions(product).length > 0;
+
+const hasValidServicePackage = (product: any, selectedOption: string) => !requiresServicePackage(product)
+  || servicePackageOptions(product).some((option: any) => option.label === selectedOption);
+
+function requestItemDimensionCm(item: any, dimension: 'width' | 'height') {
+  const centimeterValue = item?.[`${dimension}Cm`] ?? item?.[`${dimension}_cm`];
+  if (centimeterValue !== null && centimeterValue !== undefined && String(centimeterValue).trim() !== '') {
+    return String(centimeterValue);
+  }
+  const rawValue = item?.[dimension];
+  const numericValue = Number(rawValue);
+  const measurementUnit = normalizeQuoteMode(item?.measurementUnit ?? item?.measurement_unit ?? item?.dimensionUnit);
+  const centimeters = ['m', 'meter', 'meters', 'metro', 'metros'].includes(measurementUnit)
+    ? numericValue * 100
+    : numericValue;
+  return rawValue === null || rawValue === undefined || String(rawValue).trim() === ''
+    ? '100'
+    : String(centimeters);
+}
+
+function requestItemUsesArea(item: any) {
+  const declaredMode = [
+    item?.calculationMode,
+    item?.calculation_mode,
+    item?.pricingMode,
+    item?.pricing_mode,
+    item?.calcType,
+    item?.calc_type,
+    item?.mode,
+  ].map(normalizeQuoteMode).find(Boolean) || '';
+  const declaredUnit = normalizeQuoteMode(item?.unit);
+  const areaModes = new Set(['area', 'm2', 'sqm', 'square meter', 'square meters', 'metro cuadrado', 'metros cuadrados', 'medidas']);
+  const unitModes = new Set(['unit', 'units', 'quantity', 'count', 'unidad', 'unidades', 'pieza', 'piezas', 'pza', 'pzas']);
+  const areaUnits = new Set(['m2', 'sqm', 'square meter', 'square meters', 'metro cuadrado', 'metros cuadrados']);
+  const discreteUnits = new Set(['unit', 'units', 'quantity', 'count', 'unidad', 'unidades', 'pieza', 'piezas', 'pza', 'pzas']);
+
+  if (areaModes.has(declaredMode) || areaUnits.has(declaredUnit)) return true;
+  if (unitModes.has(declaredMode) || discreteUnits.has(declaredUnit)) return false;
+
+  const rawWidth = item?.widthCm ?? item?.width_cm ?? item?.width;
+  const rawHeight = item?.heightCm ?? item?.height_cm ?? item?.height;
+  const width = Number(rawWidth);
+  const height = Number(rawHeight);
+  return rawWidth !== null && rawWidth !== undefined && String(rawWidth).trim() !== ''
+    && rawHeight !== null && rawHeight !== undefined && String(rawHeight).trim() !== ''
+    && Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0;
+}
+
 const COMMON_SIZE_PRESETS = [
   { width: 100, height: 100, title: 'Cuadrado', label: '1 × 1 m' },
   { width: 200, height: 100, title: 'Banner', label: '2 × 1 m' },
@@ -212,10 +279,10 @@ export function OperationsQuotePage() {
               (item.productName && p.name?.toLowerCase().trim() === item.productName?.toLowerCase().trim())
             );
             const isCustom = !matchedProduct;
-            const widthCm = String(item.width || item.widthCm || 100);
-            const heightCm = String(item.height || item.heightCm || 100);
+            const customMode: 'quantity' | 'area' = requestItemUsesArea(item) ? 'area' : 'quantity';
+            const widthCm = requestItemDimensionCm(item, 'width');
+            const heightCm = requestItemDimensionCm(item, 'height');
             const qty = String(item.quantity || item.piece_quantity || 1);
-            const customMode: 'quantity' | 'area' = item.calculationMode === 'area' || (Number(widthCm) > 0 && Number(heightCm) > 0) ? 'area' : 'quantity';
 
             return {
               id: newLineId(),
@@ -555,6 +622,16 @@ export function OperationsQuotePage() {
   const finishingPrices = data.calculatorSettings || {};
   const configuredLines = useMemo(() => lines.map((line) => {
     const product = data.catalog.find((item: any) => item.id === line.productId);
+    const isServiceProduct = isCatalogService(product);
+    const availableServicePackages = servicePackageOptions(product);
+    const requiresPackage = requiresServicePackage(product);
+    const pricingOption = isServiceProduct && !availableServicePackages.some((option: any) => option.label === line.option)
+      ? ''
+      : line.option;
+    const selectedServicePackage = isServiceProduct
+      ? availableServicePackages.find((option: any) => option.label === pricingOption)
+      : undefined;
+    const validServicePackage = hasValidServicePackage(product, pricingOption);
     const isAreaMode = line.custom ? line.customMode === 'area' : product?.mode === 'area';
     const width = Number(line.widthCm);
     const height = Number(line.heightCm);
@@ -575,8 +652,12 @@ export function OperationsQuotePage() {
           ? Number.isFinite(customPrice) && customPrice > 0 && hasValidQuantity && hasValidSize && basis > 0
             ? roundMoney(customPrice * basis)
             : null
-          : product && hasValidSize && hasValidQuantity
-            ? calculateQuotePrice(product, tier.id, basis, line.option)
+          : product && hasValidSize && hasValidQuantity && validServicePackage
+            ? selectedServicePackage
+              ? Number.isFinite(Number(selectedServicePackage.price)) && Number(selectedServicePackage.price) > 0 && basis > 0
+                ? roundMoney(Number(selectedServicePackage.price) * basis)
+                : null
+              : calculateQuotePrice(product, tier.id, basis, pricingOption)
             : null,
       ]),
     );
@@ -587,6 +668,9 @@ export function OperationsQuotePage() {
     const unit = line.custom
       ? (isAreaMode ? 'm²' : line.customUnit || 'unidad')
       : isAreaMode ? 'm²' : product?.unit || 'unidad';
+    const hasAdditionalChangeOption = isServiceProduct
+      && Array.isArray(product?.optionPrices)
+      && product.optionPrices.some((option: any) => isAdditionalChangeOption(option));
     const selectedSubtotal = totals[priceTier];
     const unitPrice = selectedSubtotal !== null && basis > 0 ? roundMoney(selectedSubtotal / basis) : null;
     const baseUnitPrice = baseTotals[priceTier] !== null && basis > 0 ? roundMoney(Number(baseTotals[priceTier]) / basis) : null;
@@ -595,6 +679,12 @@ export function OperationsQuotePage() {
     return {
       ...line,
       product,
+      option: pricingOption,
+      isServiceProduct,
+      servicePackageOptions: availableServicePackages,
+      requiresServicePackage: requiresPackage,
+      hasValidServicePackage: validServicePackage,
+      hasAdditionalChangeOption,
       isAreaMode,
       width,
       height,
@@ -618,7 +708,7 @@ export function OperationsQuotePage() {
   }), [lines, data.catalog, data.calculatorSettings, priceTier, catalogLinks, materialRecipes, selectedBranch.id, data.inventory, productWorkflowRoutes, familyWorkflowRoutes, productWorkflowRecommendations, workflowTemplates]);
 
   const rawTierTotals = useMemo(() => Object.fromEntries(quoteTiers.map((tier) => {
-    const complete = configuredLines.length > 0 && configuredLines.every((line) => (line.custom ? line.title : line.product) && line.hasValidSize && line.hasValidQuantity && line.totals[tier.id] !== null);
+    const complete = configuredLines.length > 0 && configuredLines.every((line) => (line.custom ? line.title : line.product) && line.hasValidSize && line.hasValidQuantity && line.hasValidServicePackage && line.totals[tier.id] !== null);
     return [tier.id, complete ? roundMoney(configuredLines.reduce((sum, line) => sum + (line.totals[tier.id] || 0), 0)) : null];
   })), [configuredLines]);
 
@@ -638,7 +728,7 @@ export function OperationsQuotePage() {
   })), [rawTierTotals, discountRate, taxRate, extraCost]);
 
   const tierTotals = useMemo(() => Object.fromEntries(quoteTiers.map((tier) => [tier.id, tierFinancials[tier.id]?.total ?? null])), [tierFinancials]);
-  const allItemsSelected = configuredLines.every((line) => (line.custom ? line.title : line.product) && line.hasValidSize && line.hasValidQuantity && (!line.custom || Number(line.customUnitPrice) > 0) && line.finishing.valid);
+  const allItemsSelected = configuredLines.every((line) => (line.custom ? line.title : line.product) && line.hasValidSize && line.hasValidQuantity && (!line.custom || Number(line.customUnitPrice) > 0) && line.hasValidServicePackage && line.finishing.valid);
   const pricesConfirmed = configuredLines.every((line) => line.custom || line.product?.confirmed || line.product?.published === true);
   const selectedTotal = tierTotals[priceTier];
   const selectedFinancials = tierFinancials[priceTier];
@@ -719,7 +809,7 @@ export function OperationsQuotePage() {
           rate: line.basis > 0 ? Number(baseTotal || 0) / line.basis : null,
           rateUnit: line.unit,
           option: line.option,
-          optionAmount: Math.max(0, Number(baseTotal || 0) - Number(catalogBaseTotal || 0)),
+          optionAmount: line.isServiceProduct ? undefined : Math.max(0, Number(baseTotal || 0) - Number(catalogBaseTotal || 0)),
           description: [line.additionalDescription, ...line.finishing.summary].filter(Boolean).join(' · '),
           lineTotal: line.totals[priceTier],
         };
@@ -1260,7 +1350,7 @@ export function OperationsQuotePage() {
                     idPrefix={`operations-quote-product-${line.id}`}
                     products={data.catalog}
                     selected={line.product}
-                    onSelect={(product) => updateLine(line.id, { productId: product?.id || '', option: '', finishing: { ...emptyCommercialFinishing } })}
+                    onSelect={(product) => updateLine(line.id, { productId: product?.id || '', option: '', concept: '', finishing: { ...emptyCommercialFinishing } })}
                     favoriteIds={favoriteIds}
                     onToggleFavorite={toggleFavorite}
                   />
@@ -1441,18 +1531,27 @@ export function OperationsQuotePage() {
                   </label>
                 )}
 
-                {!line.custom && line.product?.optionPrices?.length > 0 && (
+                {!line.custom && (line.requiresServicePackage || (!line.isServiceProduct && line.product?.optionPrices?.length > 0)) && (
                   <label className="operations-quote-option">
-                    Material / acabado del catálogo
+                    {line.isServiceProduct ? 'Paquete de servicio' : 'Material / acabado del catálogo'}
                     <select value={line.option} onChange={(event) => updateLine(line.id, { option: event.target.value })}>
-                      <option value="">Usar tarifa base del producto</option>
-                      {line.product.optionPrices.map((option: any, optionIndex: number) => (
+                      <option value="">{line.isServiceProduct ? 'Selecciona un paquete' : 'Usar tarifa base del producto'}</option>
+                      {line.servicePackageOptions.map((option: any, optionIndex: number) => (
                         <option key={`${option.label}-${optionIndex}`} value={option.label}>
-                          {option.label} · {formatMoney(option.price)}
+                          {option.label} · {formatMoney(option.price)}{line.isServiceProduct ? ' / unidad' : ''}
                         </option>
                       ))}
                     </select>
                   </label>
+                )}
+                {!line.custom && line.requiresServicePackage && !line.hasValidServicePackage && (
+                  <small className="muted" role="alert">Elige un paquete de servicio válido para completar esta línea.</small>
+                )}
+                {!line.custom && line.requiresServicePackage && line.hasValidServicePackage && (
+                  <small className="muted">El paquete usa su tarifa publicada por unidad en Normal, Instalación y Corporativo; el catálogo no define precios distintos por tarifa para cada paquete.</small>
+                )}
+                {!line.custom && line.isServiceProduct && line.hasAdditionalChangeOption && (
+                  <small className="muted">“Cambio adicional” no es un paquete y no se incluye en esta línea. El cotizador no permite indicar aquí su cantidad.</small>
                 )}
 
                 {(line.custom || line.product) && (
