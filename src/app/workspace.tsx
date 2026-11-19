@@ -281,6 +281,10 @@ export function WorkspaceProvider({ children }) {
       for (const { stock, branch } of inventoryRows) {
         const location = stock?.location_code || item.custom_fields?.default_location_code || 'MAIN';
         const metrics = branch ? metricsByKey.get(`${variant.id}|${branch.id}|${location}`) : null;
+        const variantAttributes = variant.attributes || {};
+        const variantSourceStatus = String(variantAttributes.source_status || '');
+        const openingBalanceIntentional = variantAttributes.opening_balance_intentional === true || variantSourceStatus === 'opening_balance_intentional';
+        const countStillRequired = variantSourceStatus !== 'count_confirmed' && (variantAttributes.stock_count_required === true || variantSourceStatus === 'count_pending');
         const productImagePaths = Array.isArray(item.custom_fields?.product_image_paths) ? item.custom_fields.product_image_paths.filter((value: unknown): value is string => typeof value === 'string' && Boolean(value.trim())) : [];
         const productImages = productImagePaths.map((path: string, index: number) => {
           const storagePath = inventoryReferenceStoragePath(path);
@@ -296,7 +300,7 @@ export function WorkspaceProvider({ children }) {
           reservedPercent: metrics?.reserved_percent == null ? null : Number(metrics.reserved_percent), lastRestockAt: metrics?.last_restock_at || null,
           lifetimeConsumed: metrics ? Number(metrics.lifetime_consumed) : null, consumedLast30Days: metrics ? Number(metrics.consumed_last_30_days) : null,
           movementCount: metrics ? Number(metrics.movement_count) : 0, lastMovementAt: metrics?.last_movement_at || null,
-          minimum: Number(item.minimum_quantity || 0), minimumConfigured: item.minimum_quantity_configured == null ? Number(item.minimum_quantity || 0) > 0 : Boolean(item.minimum_quantity_configured), unitCost: costByVariant.has(variant.id) ? Number(costByVariant.get(variant.id).unit_cost) : null, supplierName: costByVariant.get(variant.id)?.supplier_name || '', openingBalanceIntentional: variant.attributes?.opening_balance_intentional === true || variant.attributes?.source_status === 'opening_balance_intentional', sourceStatus: variant.attributes?.opening_balance_intentional === true || variant.attributes?.source_status === 'opening_balance_intentional' ? 'Saldo inicial intencional · pendiente de conteo físico' : stock ? '' : 'Sin conteo físico', archived: !item.active || !variant.active,
+          minimum: Number(item.minimum_quantity || 0), minimumConfigured: item.minimum_quantity_configured == null ? Number(item.minimum_quantity || 0) > 0 : Boolean(item.minimum_quantity_configured), unitCost: costByVariant.has(variant.id) ? Number(costByVariant.get(variant.id).unit_cost) : null, supplierName: costByVariant.get(variant.id)?.supplier_name || '', openingBalanceIntentional, sourceStatus: openingBalanceIntentional ? 'Saldo inicial intencional · pendiente de conteo físico' : countStillRequired ? 'Conteo físico pendiente' : stock ? '' : 'Sin conteo físico', archived: !item.active || !variant.active,
           createdAt: item.created_at, updatedAt: stock?.updated_at || item.updated_at,
         });
       }

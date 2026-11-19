@@ -39,7 +39,7 @@ const blankItem = { name:'', category:'', itemType:'', tags:'', referenceImageUr
 const inventoryReferenceOptions = inventoryReferenceLibrary.products.flatMap((product) => product.images.map((image) => ({ path: image.path, label: `${product.name} · ${image.label}` })));
 const uid = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const summarizeInventoryVariantAttributes=(attributes:any={})=>{
-  const ignored=new Set(['initial_branch_id','source_status','source_status_origin','stock_count_required','condition_status','physical_count_confirmed_at','physical_count_confirmed_by']);
+  const ignored=new Set(['initial_branch_id','source_status','source_status_origin','stock_count_required','condition_status','physical_count_confirmed_at','physical_count_confirmed_by','inventory_create_attempt_token']);
   return Object.entries(attributes&&typeof attributes==='object'&&!Array.isArray(attributes)?attributes:{}).filter(([key,value])=>!ignored.has(key)&&!key.toLocaleLowerCase('es').startsWith('opening_balance_')&&value!==null&&value!==undefined&&value!=='').map(([key,value])=>`${key}: ${typeof value==='object'?JSON.stringify(value):String(value)}`).join(' · ');
 };
 const withoutOpeningBalanceMarkers=(attributes:any={})=>Object.fromEntries(Object.entries(attributes&&typeof attributes==='object'&&!Array.isArray(attributes)?attributes:{}).filter(([key])=>!key.toLocaleLowerCase('es').startsWith('opening_balance_')));
@@ -146,7 +146,7 @@ export function InventoryWorkspace() {
   const [variantRepairDraft,setVariantRepairDraft]=useState({label:'',sku:'',branchId:''});
   const [variantRepairBusy,setVariantRepairBusy]=useState(false);
   const [term,setTerm]=useState(''); const [area,setArea]=useState('Todas'); const [branch,setBranch]=useState('Todas'); const [category,setCategory]=useState('Todas');
-  const [showForm,setShowForm]=useState(false); const [savingItem,setSavingItem]=useState(false); const savingItemLock=useRef(false); const [metadataSaveBusy,setMetadataSaveBusy]=useState(false); const metadataSaveLock=useRef(false); const [movement,setMovement]=useState(null); const [transferBusy,setTransferBusy]=useState(false); const movementSaveLock=useRef(false); const [reservationBusy,setReservationBusy]=useState(false); const reservationSaveLock=useRef(false); const [costBusy,setCostBusy]=useState(false); const costSaveLock=useRef(false); const sectionNavRef=useRef<HTMLDivElement>(null); const [navScrollState,setNavScrollState]=useState({canLeft:false,canRight:false}); const [draft,setDraft]=useState(blankItem); const [newProductImages,setNewProductImages]=useState<InventoryGalleryImage[]>([]); const [costEdit,setCostEdit]=useState(null); const [countSession,setCountSession]=useState(null); const [countBusy,setCountBusy]=useState(false); const [countMovementContext,setCountMovementContext]=useState({status:'idle',openedAt:'',total:0,events:[],error:''}); const [countMovementRefresh,setCountMovementRefresh]=useState(0); const [movementPageBusy,setMovementPageBusy]=useState(false); const [movementHistoryExhausted,setMovementHistoryExhausted]=useState(false); const [movementVisibleCount,setMovementVisibleCount]=useState(30);
+  const [showForm,setShowForm]=useState(false); const [savingItem,setSavingItem]=useState(false); const savingItemLock=useRef(false); const pendingItemCreation=useRef<{identity:string;token:string}|null>(null); const [metadataSaveBusy,setMetadataSaveBusy]=useState(false); const metadataSaveLock=useRef(false); const [movement,setMovement]=useState(null); const [transferBusy,setTransferBusy]=useState(false); const movementSaveLock=useRef(false); const [reservationBusy,setReservationBusy]=useState(false); const reservationSaveLock=useRef(false); const [costBusy,setCostBusy]=useState(false); const costSaveLock=useRef(false); const sectionNavRef=useRef<HTMLDivElement>(null); const [navScrollState,setNavScrollState]=useState({canLeft:false,canRight:false}); const [draft,setDraft]=useState(blankItem); const [newProductImages,setNewProductImages]=useState<InventoryGalleryImage[]>([]); const [costEdit,setCostEdit]=useState(null); const [countSession,setCountSession]=useState(null); const [countBusy,setCountBusy]=useState(false); const [countMovementContext,setCountMovementContext]=useState({status:'idle',openedAt:'',total:0,events:[],error:''}); const [countMovementRefresh,setCountMovementRefresh]=useState(0); const [movementPageBusy,setMovementPageBusy]=useState(false); const [movementHistoryExhausted,setMovementHistoryExhausted]=useState(false); const [movementVisibleCount,setMovementVisibleCount]=useState(30);
   const [movementSearch,setMovementSearch]=useState(''); const [movementTypeFilter,setMovementTypeFilter]=useState('Todos'); const [movementBranchFilter,setMovementBranchFilter]=useState('Todas'); const [movementLocationFilter,setMovementLocationFilter]=useState('Todas');
   const [specificationDraft,setSpecificationDraft]=useState<InventorySpecificationDraft>({});
   const [typeFilter,setTypeFilter]=useState('Todos'); const [statusFilter,setStatusFilter]=useState('Todos'); const [tagFilter,setTagFilter]=useState('Todos'); const [viewMode,setViewMode]=useState('table'); const [metadataEdit,setMetadataEdit]=useState<any>(null); const [reservationEdit,setReservationEdit]=useState<any>(null);
@@ -825,9 +825,14 @@ export function InventoryWorkspace() {
     if(draft.referenceImageUrl&&!isValidInventoryReference(draft.referenceImageUrl)){flash('La imagen debe ser una URL pública o una ruta válida de la biblioteca.');return;}
     const prefix=`VC-INV-${areaCodes[draft.area]||'GEN'}-`;
     const requestedSku=draft.sku.trim();
+    const creationIdentity=JSON.stringify([draft.name.trim(),requestedSku,draft.area,draft.branch,draft.location.trim(),draft.unit.trim(),draft.variant.trim(),inventoryBrandScope,catalogStockCreateProduct?.id||'']);
+    const currentAttempt=pendingItemCreation.current;
+    const itemCreationAttempt=currentAttempt?.identity===creationIdentity?currentAttempt:{identity:creationIdentity,token:uid()};
+    pendingItemCreation.current=itemCreationAttempt;
+    const creationAttemptToken=itemCreationAttempt.token;
     const specificationEntries=Object.entries(specificationDraft).map(([key,value])=>[key,typeof value==='string'?value.trim():value]).filter(([,value])=>value!==''&&value!==undefined);
-    const technicalSpecs={...Object.fromEntries(specificationEntries),brand_scope:inventoryBrandScope==='giga'?'giga':'visual',condition_status:draft.condition||'Sin revisar'};
-    const variantAttributes={...Object.fromEntries(specificationEntries),condition_status:draft.condition||'Sin revisar',source_status:'count_pending',stock_count_required:true};
+    const technicalSpecs={...Object.fromEntries(specificationEntries),brand_scope:inventoryBrandScope==='giga'?'giga':'visual',condition_status:draft.condition||'Sin revisar',inventory_create_attempt_token:creationAttemptToken};
+    const variantAttributes={...Object.fromEntries(specificationEntries),condition_status:draft.condition||'Sin revisar',source_status:'count_pending',stock_count_required:true,inventory_create_attempt_token:creationAttemptToken};
     const intentionalCatalogOpeningBalance=Boolean(catalogStockCreateProduct&&draft.quantity!=='');
     let catalogLinkFailure='';
     let catalogCountMetadataWarning='';
@@ -872,28 +877,61 @@ export function InventoryWorkspace() {
           if((page||[]).length<500)return rows;
         }
       };
+      const catalogSetupMetadata=catalogStockCreateProduct?{catalog_stock_setup:{product_id:catalogStockCreateProduct.id,product_sku:String(catalogStockCreateProduct.sku||catalogStockCreateProduct.id),branch_id:branch.id,variant_label:draft.variant.trim()}}:{};
+      const persistedTechnicalSpecs={...technicalSpecs,...catalogSetupMetadata};
       const recoverIncompleteItem=async()=>{
-        const query=supabase.from('inventory_items').select('id,sku,area_id,custom_fields,created_by,created_at').eq('organization_id',organizationId).eq('name',draft.name.trim()).like('sku',`${prefix}%`);
+        const query=supabase.from('inventory_items').select('id,sku,area_id,custom_fields,description,created_by,created_at').eq('organization_id',organizationId).eq('name',draft.name.trim()).like('sku',`${prefix}%`);
         const {data:matches,error}=targetAreaId?await query.eq('area_id',targetAreaId):await query.is('area_id',null);
         if(error)throw error;
-        const sameScope=(matches||[]).filter((row:any)=>isRecoverableInventoryItem(row,{userId:user.id,areaId:targetAreaId,brandScope:inventoryBrandScope==='giga'?'giga':'visual',requestedSku}));
+        const brandScope=inventoryBrandScope==='giga'?'giga':'visual';
+        const identityScope=(matches||[]).filter((row:any)=>row.created_by===user.id&&row.area_id===targetAreaId&&row.custom_fields?.brand_scope===brandScope&&(!requestedSku||row.sku===requestedSku));
+        const exactAttemptRows=identityScope.filter((row:any)=>row.custom_fields?.inventory_create_attempt_token===creationAttemptToken);
+        const sameScope=exactAttemptRows.length?exactAttemptRows:identityScope.filter((row:any)=>isRecoverableInventoryItem(row,{userId:user.id,areaId:targetAreaId,brandScope,requestedSku}));
         if(!sameScope.length)return null;
         const ids=sameScope.map((row:any)=>row.id);
-        const {data:existingVariants,error:variantsError}=await supabase.from('inventory_variants').select('item_id').eq('organization_id',organizationId).in('item_id',ids);
+        const {data:existingVariants,error:variantsError}=await supabase.from('inventory_variants').select('id,item_id,sku,label,attributes,active').eq('organization_id',organizationId).in('item_id',ids);
         if(variantsError)throw variantsError;
-        const variantOwners=new Set((existingVariants||[]).map((row:any)=>row.item_id));
-        const recoverable=sameScope.filter((row:any)=>!variantOwners.has(row.id));
+        const variantsByItem=new Map<string,any[]>();
+        for(const variant of existingVariants||[]){variantsByItem.set(variant.item_id,[...(variantsByItem.get(variant.item_id)||[]),variant]);}
+        const matchesCatalogOrigin=(row:any)=>{
+          if(!catalogStockCreateProduct)return row.custom_fields?.inventory_create_attempt_token===creationAttemptToken;
+          const rowToken=row.custom_fields?.inventory_create_attempt_token;
+          if(rowToken&&rowToken!==creationAttemptToken)return false;
+          const stored=row.custom_fields?.catalog_stock_setup;
+          if(stored&&typeof stored==='object'&&!Array.isArray(stored))return stored.product_id===catalogStockCreateProduct.id&&stored.product_sku===String(catalogStockCreateProduct.sku||catalogStockCreateProduct.id)&&stored.branch_id===branch.id&&stored.variant_label===draft.variant.trim();
+          // Recover only pre-marker saves whose original catalog note still identifies this exact product.
+          return !rowToken&&String(row.description||'').startsWith(`Catálogo ${String(catalogStockCreateProduct.sku||catalogStockCreateProduct.id)}. `);
+        };
+        const canRecoverLegacyEmptyItem=(row:any)=>!catalogStockCreateProduct&&!row.custom_fields?.inventory_create_attempt_token&&(variantsByItem.get(row.id)||[]).length===0;
+        if(sameScope.length>1)throw new Error('Hay varias fichas recientes con el mismo nombre, área y alcance. No se reutilizó ninguna; revisa el catálogo antes de continuar.');
+        const originCandidates=sameScope.filter((row:any)=>matchesCatalogOrigin(row)||canRecoverLegacyEmptyItem(row));
+        if(sameScope.length&&!originCandidates.length)throw new Error(catalogStockCreateProduct?'Hay una ficha reciente con ese nombre, pero no se pudo comprobar que provenga de este producto del catálogo y este intento. Revísala y vincúlala desde Integraciones para evitar duplicados.':'Hay una ficha reciente con ese nombre, pero no se pudo comprobar que pertenezca a este intento de guardado. Revísala antes de crear otra.');
+        if(originCandidates.length>1)throw new Error('Hay más de una ficha incompleta reciente con ese origen. Revisa los registros antes de volver a crearla.');
+        const recoverable=sameScope.filter((row:any)=>{
+          if(!matchesCatalogOrigin(row)&&!canRecoverLegacyEmptyItem(row))return false;
+          const variants=variantsByItem.get(row.id)||[];
+          if(!variants.length)return true;
+          if(variants.length!==1)return false;
+          const variant=variants[0],attrs=variant.attributes&&typeof variant.attributes==='object'&&!Array.isArray(variant.attributes)?variant.attributes:{};
+          const legacyCatalogVariant=!attrs.inventory_create_attempt_token&&Boolean(catalogStockCreateProduct)&&!row.custom_fields?.inventory_create_attempt_token;
+          return variant.active===true&&variant.sku===`${row.sku}-01`&&variant.label===draft.variant.trim()&&attrs.initial_branch_id===branch.id&&['count_pending','count_confirmed','opening_balance_intentional'].includes(attrs.source_status)&&(attrs.inventory_create_attempt_token===creationAttemptToken||legacyCatalogVariant);
+        });
+        if(originCandidates.length===1&&!recoverable.includes(originCandidates[0]))throw new Error('La ficha de origen existe, pero sus variantes no coinciden de forma segura con este intento (token, SKU, etiqueta o sucursal). Revisa la ficha antes de continuar.');
         if(recoverable.length>1)throw new Error('Hay más de una ficha incompleta reciente con ese nombre. Abre el catálogo para revisar los registros antes de volver a crearla.');
-        return recoverable[0]||null;
+        const row=recoverable[0];
+        return row?{item:row,variant:(variantsByItem.get(row.id)||[])[0]||null}:null;
       };
       let sku=requestedSku;
       let item:any=null;
       let recoveredItem:any=null;
+      let recoveredVariant:any=null;
       for(let attempt=0;attempt<5&&!item;attempt++){
-        recoveredItem=await recoverIncompleteItem();
+        const recovery=await recoverIncompleteItem();
+        recoveredItem=recovery?.item||null;
+        recoveredVariant=recovery?.variant||null;
         if(recoveredItem){
           sku=recoveredItem.sku;
-          const {data:updated,error:updateError}=await supabase.from('inventory_items').update({area_id:targetAreaId,category_id:categoryId,inventory_group_id:draft.inventoryGroupId||null,description:draft.notes.trim(),item_type:draft.itemType.trim(),tags:[...new Set(draft.tags.split(',').map(tag=>tag.trim().slice(0,48)).filter(Boolean))].slice(0,40),custom_fields:{...(recoveredItem.custom_fields||{}),...technicalSpecs},base_unit:draft.unit.trim()||'unidad',minimum_quantity:draft.minimumConfigured?Number(draft.minimum)||0:0,minimum_quantity_configured:Boolean(draft.minimumConfigured),updated_at:new Date().toISOString()}).eq('id',recoveredItem.id).eq('organization_id',organizationId).select('id').single();
+          const {data:updated,error:updateError}=await supabase.from('inventory_items').update({area_id:targetAreaId,category_id:categoryId,inventory_group_id:draft.inventoryGroupId||null,description:draft.notes.trim(),item_type:draft.itemType.trim(),tags:[...new Set(draft.tags.split(',').map(tag=>tag.trim().slice(0,48)).filter(Boolean))].slice(0,40),custom_fields:{...(recoveredItem.custom_fields||{}),...persistedTechnicalSpecs},base_unit:draft.unit.trim()||'unidad',minimum_quantity:draft.minimumConfigured?Number(draft.minimum)||0:0,minimum_quantity_configured:Boolean(draft.minimumConfigured),updated_at:new Date().toISOString()}).eq('id',recoveredItem.id).eq('organization_id',organizationId).select('id').single();
           if(updateError)throw updateError;
           item=updated;
           break;
@@ -910,7 +948,7 @@ export function InventoryWorkspace() {
           if(variantCheckError)throw variantCheckError;
           if(existingItem||existingVariant)throw new Error(`El código “${sku}” o su variante “${sku}-01” ya está en uso. Cambia el código o déjalo vacío para asignar uno disponible automáticamente.`);
         }
-        const {data:created,error:createError}=await supabase.from('inventory_items').insert({organization_id:organizationId,area_id:targetAreaId,category_id:categoryId,inventory_group_id:draft.inventoryGroupId||null,sku,name:draft.name.trim(),description:draft.notes.trim(),item_type:draft.itemType.trim(),tags:[...new Set(draft.tags.split(',').map(tag=>tag.trim().slice(0,48)).filter(Boolean))].slice(0,40),reference_image_url:null,custom_fields:technicalSpecs,base_unit:draft.unit.trim()||'unidad',minimum_quantity:draft.minimumConfigured?Number(draft.minimum)||0:0,minimum_quantity_configured:Boolean(draft.minimumConfigured),created_by:user.id}).select('id').single();
+        const {data:created,error:createError}=await supabase.from('inventory_items').insert({organization_id:organizationId,area_id:targetAreaId,category_id:categoryId,inventory_group_id:draft.inventoryGroupId||null,sku,name:draft.name.trim(),description:draft.notes.trim(),item_type:draft.itemType.trim(),tags:[...new Set(draft.tags.split(',').map(tag=>tag.trim().slice(0,48)).filter(Boolean))].slice(0,40),reference_image_url:null,custom_fields:persistedTechnicalSpecs,base_unit:draft.unit.trim()||'unidad',minimum_quantity:draft.minimumConfigured?Number(draft.minimum)||0:0,minimum_quantity_configured:Boolean(draft.minimumConfigured),created_by:user.id}).select('id').single();
         if(!createError){item=created;break;}
         if(requestedSku||!isInventoryItemSkuConflict(createError))throw createError;
         sku='';
@@ -931,17 +969,39 @@ export function InventoryWorkspace() {
       const coverPath=productImagePaths[0]||draft.referenceImageUrl.trim()||recoveredItem?.reference_image_url||previousImagePaths[0]||'';
       const finalImagePaths=productImagePaths.length?productImagePaths:draft.referenceImageUrl.trim()?[draft.referenceImageUrl.trim()]:previousImagePaths;
       if(finalImagePaths.length||coverPath){
-        const {error:imageSaveError}=await supabase.from('inventory_items').update({reference_image_url:coverPath||null,custom_fields:{...(recoveredItem?.custom_fields||{}),...technicalSpecs,product_image_paths:finalImagePaths.length?finalImagePaths:[coverPath]}}).eq('id',item.id).eq('organization_id',organizationId);
+        const {error:imageSaveError}=await supabase.from('inventory_items').update({reference_image_url:coverPath||null,custom_fields:{...(recoveredItem?.custom_fields||{}),...persistedTechnicalSpecs,product_image_paths:finalImagePaths.length?finalImagePaths:[coverPath]}}).eq('id',item.id).eq('organization_id',organizationId);
         if(imageSaveError)throw imageSaveError;
       }
-      const {data:variant,error:variantError}=await supabase.from('inventory_variants').insert({organization_id:organizationId,item_id:item.id,sku:`${sku}-01`,label:draft.variant.trim(),attributes:variantAttributes}).select('id').single();
-      if(variantError)throw variantError;
+      let variant=recoveredVariant;
+      if(!variant){
+        const {data:createdVariant,error:variantError}=await supabase.from('inventory_variants').insert({organization_id:organizationId,item_id:item.id,sku:`${sku}-01`,label:draft.variant.trim(),attributes:variantAttributes}).select('id').single();
+        if(variantError)throw variantError;
+        variant=createdVariant;
+      }
+      if(!variant)throw new Error('No se confirmó la creación o recuperación de la variante.');
+      if(recoveredVariant&&recoveredVariant.attributes?.inventory_create_attempt_token!==creationAttemptToken){
+        const recoveredAttributes={...(recoveredVariant.attributes&&typeof recoveredVariant.attributes==='object'?recoveredVariant.attributes:{}),inventory_create_attempt_token:creationAttemptToken};
+        const {error:attemptTokenError}=await supabase.from('inventory_variants').update({attributes:recoveredAttributes}).eq('id',variant.id).eq('organization_id',organizationId);
+        if(attemptTokenError)throw attemptTokenError;
+        recoveredVariant={...recoveredVariant,attributes:recoveredAttributes};
+      }
       if(draft.quantity!==''){
         const countNote=intentionalCatalogOpeningBalance
           ?`Saldo inicial intencional de ${Number(draft.quantity)} por instrucción del usuario; no representa conteo físico.`
           :'Alta de artículo; conteo físico confirmado por el usuario';
-        const {error:countError}=await supabase.rpc('set_inventory_count',{p_variant_id:variant.id,p_branch_id:branch.id,p_counted_quantity:Number(draft.quantity),p_location_code:draft.location.trim()||'MAIN',p_note:countNote});
-        if(countError)throw countError;
+        let priorCountApplied=false;
+        if(recoveredVariant&&recoveredItem?.created_at){
+          const [{data:stockRow,error:stockReadError},{data:auditRows,error:auditReadError}]=await Promise.all([
+            supabase.from('inventory_stock').select('quantity').eq('organization_id',organizationId).eq('variant_id',variant.id).eq('branch_id',branch.id).eq('location_code',draft.location.trim()||'MAIN').maybeSingle(),
+            supabase.from('inventory_count_audits').select('counted_quantity,note,created_at,responsible_user_id').eq('organization_id',organizationId).eq('variant_id',variant.id).eq('branch_id',branch.id).eq('location_code',draft.location.trim()||'MAIN').gte('created_at',recoveredItem.created_at).order('created_at',{ascending:false}).limit(1),
+          ]);
+          const lastAudit=(auditRows||[])[0];
+          priorCountApplied=!stockReadError&&!auditReadError&&Number(stockRow?.quantity)===Number(draft.quantity)&&Number(lastAudit?.counted_quantity)===Number(draft.quantity)&&lastAudit?.note===countNote&&lastAudit?.responsible_user_id===user.id;
+        }
+        if(!priorCountApplied){
+          const {error:countError}=await supabase.rpc('set_inventory_count',{p_variant_id:variant.id,p_branch_id:branch.id,p_counted_quantity:Number(draft.quantity),p_location_code:draft.location.trim()||'MAIN',p_note:countNote});
+          if(countError)throw countError;
+        }
         const confirmedAt=new Date().toISOString();
         const confirmedAttributes=intentionalCatalogOpeningBalance
           ?{...variantAttributes,source_status:'opening_balance_intentional',source_status_origin:variantAttributes.source_status,stock_count_required:false,opening_balance_intentional:true,opening_balance_recorded_at:confirmedAt,opening_balance_recorded_by:user.id}
@@ -976,6 +1036,7 @@ export function InventoryWorkspace() {
         setActiveSection('integrations');
       }
       setCatalogStockCreateProduct(null);
+      pendingItemCreation.current=null;
       const catalogLinkMessage=catalogStockCreateProduct?(catalogLinkFailure?` La ficha quedó creada, pero no se pudo confirmar el vínculo: ${catalogLinkFailure}`:` Producto vinculado al catálogo en ${draft.branch} · ${draft.location||'MAIN'}.${draft.quantity===''?' El stock queda pendiente hasta completar un conteo físico.':''}`):'';
       const savedQuantityMessage=draft.quantity===''?'Artículo guardado sin saldo físico confirmado.':intentionalCatalogOpeningBalance?'Artículo guardado con saldo inicial intencional; no representa conteo físico.':'Artículo guardado con conteo físico auditado.';
       flash(`${recoveredItem?'Se recuperó la ficha incompleta. ':''}${savedQuantityMessage}${catalogLinkMessage}${catalogCountMetadataWarning?` El saldo sí se guardó, pero no se actualizaron sus metadatos: ${catalogCountMetadataWarning}`:''}${imageFailures.length?` Algunas imágenes no se guardaron; abre la ficha para reintentarlo: ${imageFailures.join(' · ')}`:''}`);
@@ -990,7 +1051,7 @@ export function InventoryWorkspace() {
   const closeNewItemForm=()=>{
     if(savingItem)return;
     newProductImages.forEach((image)=>{if(image.file)URL.revokeObjectURL(image.src);});
-    const defaultBranch = getDefaultBranchName(inventoryBrandScope, branch, branches); setNewProductImages([]);setDraft({ ...blankItem, branch: defaultBranch });setSpecificationDraft({});setCatalogStockCreateProduct(null);setShowForm(false);
+    const defaultBranch = getDefaultBranchName(inventoryBrandScope, branch, branches); setNewProductImages([]);setDraft({ ...blankItem, branch: defaultBranch });setSpecificationDraft({});setCatalogStockCreateProduct(null);pendingItemCreation.current=null;setShowForm(false);
   };
   const openImportReview=(row:any)=>{const candidate=row.candidate||{};const raw=row.raw_row||{};setReviewVariantSearch('');setReviewEditor({id:row.id,batchId:row.batch_id,sourceSheet:row.source_sheet,sourceRow:row.source_row,sourceReference:row.source_reference,sourceFile:importBatches[row.batch_id]?.source_file||'Inventario importado',candidate,raw,decision:'mapped',variantId:'',note:row.review_note||''});};
   const reviewImportRow=async(event)=>{event.preventDefault();if(!reviewEditor||!supabase||!canReviewImports)return;const continueAfterSave=event.nativeEvent?.submitter?.value==='save-next';const currentIndex=importRows.findIndex(row=>row.id===reviewEditor.id);const targetIndex=Math.max(0,currentIndex);const mapped=reviewEditor.decision==='mapped';if(mapped&&!reviewEditor.variantId){flash('Selecciona la variante correcta antes de vincular.');return;}if(!mapped&&!reviewEditor.note.trim()){flash('Indica por qué se excluye esta fila.');return;}setReviewBusy(true);try{const {error}=await supabase.rpc('review_inventory_import_row',{p_row_id:reviewEditor.id,p_decision:reviewEditor.decision,p_variant_id:mapped?reviewEditor.variantId:null,p_note:reviewEditor.note.trim()});if(error)throw error;const nextMatchCount=Math.max(0,Number(matchingImportCount||0)-1);const nextPage=Math.min(importPage,Math.max(0,Math.ceil(nextMatchCount/50)-1));const nextReloadKey=importReloadKey+1;setImportRows(rows=>rows.filter(row=>row.id!==reviewEditor.id));setPendingImportCount(count=>Math.max(0,Number(count||0)-1));setMatchingImportCount(nextMatchCount);setImportPage(nextPage);setReviewEditor(null);setReviewContinuation(continueAfterSave?{reloadKey:nextReloadKey,targetIndex}:null);setImportReloadKey(nextReloadKey);flash(continueAfterSave?'Revisión guardada. Abriendo la siguiente fila pendiente…':mapped?'Fila vinculada al artículo. El inventario sigue pendiente de conteo físico.':'Fila excluida con motivo e historial auditado.');}catch(error){flash(`No se pudo guardar la revisión: ${error.message}`);}finally{setReviewBusy(false);}};
@@ -1308,6 +1369,7 @@ export function InventoryWorkspace() {
     if(classifyCatalogInventoryProduct(product)!=='quantity'){flash('Solo productos clasificados como físicos por unidad se crean desde este conteo. Revisa servicios y productos por m² en sus flujos separados.');return;}
     const targetBranch=branches.includes(catalogLinkBranch)?catalogLinkBranch:branches[0]||blankItem.branch;
     const location='MAIN';
+    pendingItemCreation.current=null;
     setCatalogStockCreateProduct(product);
     setActiveSection('catalog');
     setDraft({...blankItem,name:product.name,variant:'General',category:product.family&&product.family!=='General'?product.family:'',branch:targetBranch,location,unit:'unidad',notes:`Catálogo ${product.sku||product.id}. Saldo inicial intencional autorizado; no equivale a un conteo físico.`});
@@ -1405,6 +1467,7 @@ export function InventoryWorkspace() {
           type="button"
           className="button button-dark"
           onClick={() => {
+            pendingItemCreation.current=null;
             setCatalogStockCreateProduct(null);
             setActiveSection('catalog');
             const defaultBranch = getDefaultBranchName(inventoryBrandScope, branch, branches);
