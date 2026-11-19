@@ -1382,3 +1382,102 @@
     transition: none;
   }
 }
+
+/* Live spool preview inside RollDimensionsCard */
+.roll-reception__live-preview {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-sm);
+  background: var(--rr-surface-sub);
+}
+
+.roll-reception__live-preview-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.roll-reception__live-preview-eyebrow {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rr-brand-dark);
+}
+
+.roll-reception__live-preview-figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.roll-reception__live-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 9px;
+  border: 1px solid var(--rr-border);
+  border-radius: 8px;
+  background: var(--rr-surface);
+  min-width: 0;
+}
+
+.roll-reception__live-stat small {
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--rr-ink-muted);
+}
+
+.roll-reception__live-stat strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--rr-ink-main);
+  font-variant-numeric: tabular-nums;
+}
+
+.work-app.theme-dark .roll-reception__live-preview,
+[data-theme='dark'] .roll-reception__live-preview {
+  background: #131820;
+  border-color: #2c3643;
+}
+
+.work-app.theme-dark .roll-reception__live-preview-eyebrow,
+[data-theme='dark'] .roll-reception__live-preview-eyebrow {
+  color: #5eead4;
+}
+
+.work-app.theme-dark .roll-reception__live-stat,
+[data-theme='dark'] .roll-reception__live-stat {
+  background: #1a212b;
+  border-color: #2f3b49;
+}
+
+.work-app.theme-dark .roll-reception__live-stat small,
+[data-theme='dark'] .roll-reception__live-stat small {
+  color: #94a3b8;
+}
+
+.work-app.theme-dark .roll-reception__live-stat strong,
+[data-theme='dark'] .roll-reception__live-stat strong {
+  color: #f8fafc;
+}
+
+@media (max-width: 600px) {
+  .roll-reception__live-preview {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+
+  .roll-reception__live-preview-stats {
+    width: 100%;
+  }
+
+  .roll-reception__live-preview-figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

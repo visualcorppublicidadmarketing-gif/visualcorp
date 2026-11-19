@@ -4,4 +4,8 @@ export * from './RollMaterialSelectorCard';
 export * from './RollDimensionsCard';
 export * from './RollTraceabilityCard';
 export * from './RollReceptionFooter';
+export * from './RollLiveMetric';
+export * from './RollSpoolPreview';
+export * from './RollInspectorPanel';
 import './roll-reception.css';
+import './roll-live-stage.css';
