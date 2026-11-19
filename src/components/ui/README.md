@@ -18,7 +18,7 @@ La fuente de tema es `ThemeProvider` (`src/app/ThemeProvider.tsx`). Dentro de la
 ## Componentes nuevos
 
 ```tsx
-import { AuroraField, UiBadge, UiButton, UiSurface, UiTextField } from '../../components/ui';
+import { AuroraField, GlassButton, GlassCard, GlassFormField, GlassPill, UiBadge, UiButton, UiSurface, UiTextField } from '../../components/ui';
 
 <UiSurface variant="raised">
   <UiBadge tone="success">Listo</UiBadge>
@@ -26,7 +26,11 @@ import { AuroraField, UiBadge, UiButton, UiSurface, UiTextField } from '../../co
   <UiButton variant="primary">Guardar</UiButton>
 </UiSurface>
 
-<AuroraField>Contenido</AuroraField>
+<GlassCard as="form" variant="card" radius="xl" glow="brand" sheen spotlight>
+  <GlassPill dot dotColor="cyan">Visual Corp</GlassPill>
+  <GlassFormField label="Proyecto" placeholder="Ej. Rótulo luminoso" />
+  <GlassButton tone="glass" type="submit">Continuar</GlassButton>
+</GlassCard>
 ```
 
 `UiButton` expone variantes `primary`, `secondary`, `outline`, `ghost` y `danger`; tamaños `sm`, `md` y `lg`; y estado `loading`. `UiSurface` admite `plain`, `raised`, `subtle` y `glass`. `UiTextField` enlaza label, ayuda y error con el campo. `UiNotice` usa un estado accesible y nunca depende solo del color.

@@ -587,7 +587,7 @@ html[data-public-theme="light"] .notch-portal-socket {
   }
 }
 
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+@media (forced-colors: active) {
   .horizon-wave-outer,
   .horizon-wave-mid,
   .horizon-wave-core,

@@ -1,34 +1,34 @@
 /* Brand glass: 3 physical materials (Frosted, Clear, Blur) with color staying at the edges so content keeps a calm reading surface. */
 :root,
 .public-site {
-  --glass-bg: rgba(18, 21, 34, 0.72);
-  --glass-bg-strong: rgba(14, 17, 29, 0.9);
-  --glass-border: rgba(231, 235, 255, 0.16);
-  --glass-blur: blur(18px) saturate(1.22);
-  --glass-shadow: 0 20px 52px rgba(0, 0, 0, 0.34);
-  --glass-highlight: rgba(255, 255, 255, 0.12);
+  --glass-bg: rgba(14, 18, 32, 0.42);
+  --glass-bg-strong: rgba(12, 15, 28, 0.52);
+  --glass-border: rgba(185, 210, 255, 0.08);
+  --glass-blur: blur(24px) saturate(1.65);
+  --glass-shadow: 0 22px 54px rgba(0, 0, 0, 0.38);
+  --glass-highlight: rgba(255, 255, 255, 0.06);
 
   /* 3 Physical Glass Materials: Dark Mode (Default) */
-  /* 1. Frosted: High diffusion, silky specular rim, balanced opacity for structural panels */
-  --glass-frosted-bg: rgba(15, 18, 30, 0.82);
-  --glass-frosted-border: rgba(231, 235, 255, 0.18);
-  --glass-frosted-blur: blur(22px) saturate(145%);
-  --glass-frosted-shadow: 0 20px 52px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  --glass-frosted-highlight: rgba(255, 255, 255, 0.14);
+  /* 1. Frosted: High diffusion, subtle refractive edge without chalky white rim */
+  --glass-frosted-bg: rgba(14, 18, 32, 0.44);
+  --glass-frosted-border: rgba(185, 210, 255, 0.085);
+  --glass-frosted-blur: blur(26px) saturate(168%);
+  --glass-frosted-shadow: 0 22px 54px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-frosted-highlight: rgba(255, 255, 255, 0.06);
 
-  /* 2. Clear: High transmission, lightweight tint, crisp specular rim for pills and controls */
-  --glass-clear-bg: rgba(255, 255, 255, 0.05);
-  --glass-clear-border: rgba(231, 235, 255, 0.22);
-  --glass-clear-blur: blur(12px) saturate(130%);
-  --glass-clear-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  --glass-clear-highlight: rgba(255, 255, 255, 0.22);
+  /* 2. Clear: High transmission, lightweight tint, delicate rim for pills and controls */
+  --glass-clear-bg: rgba(255, 255, 255, 0.04);
+  --glass-clear-border: rgba(185, 210, 255, 0.08);
+  --glass-clear-blur: blur(16px) saturate(150%);
+  --glass-clear-shadow: 0 10px 26px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-clear-highlight: rgba(255, 255, 255, 0.07);
 
   /* 3. Blur: Soft ambient diffusion for reading cards and responsive grids */
-  --glass-blur-bg: linear-gradient(150deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.02)), rgba(18, 21, 34, 0.7);
-  --glass-blur-border: rgba(231, 235, 255, 0.14);
-  --glass-blur-filter: blur(16px) saturate(120%);
-  --glass-blur-shadow: 0 18px 46px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.09);
-  --glass-blur-highlight: rgba(255, 255, 255, 0.09);
+  --glass-blur-bg: linear-gradient(150deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)), rgba(14, 18, 32, 0.42);
+  --glass-blur-border: rgba(185, 210, 255, 0.08);
+  --glass-blur-filter: blur(22px) saturate(155%);
+  --glass-blur-shadow: 0 18px 46px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  --glass-blur-highlight: rgba(255, 255, 255, 0.055);
 }
 
 html[data-public-theme="light"],
@@ -60,7 +60,7 @@ html[data-public-theme="light"] .public-site {
   --glass-blur-highlight: #ffffff;
 }
 
-@media (prefers-reduced-transparency: reduce) {
+@media (forced-colors: active) {
   :root,
   .public-site {
     --glass-bg: #141622;
@@ -276,22 +276,34 @@ html[data-public-theme="light"] .public-site .heroui-services-card .card__descri
 }
 
 /* ==========================================================================
-   Floating Site Header Inner: Layered Clear / Frosted Glass with Double Specular Rim
+   Floating Site Header Inner & Navigation: True Optical Glass without White Rim
    ========================================================================== */
 .public-site .site-header-inner {
   position: relative;
   box-sizing: border-box;
   max-width: 100%;
   min-width: 0;
-  border: 1px solid var(--glass-clear-border, rgba(231, 235, 255, 0.18));
-  background: var(--glass-frosted-bg, rgba(14, 17, 29, 0.8));
+  border: 1px solid rgba(185, 210, 255, 0.065);
+  background:
+    radial-gradient(90% 140% at 14% 115%, rgba(0, 175, 240, 0.085) 0%, transparent 56%),
+    radial-gradient(85% 130% at 86% -20%, rgba(220, 60, 180, 0.08) 0%, transparent 56%),
+    linear-gradient(
+      135deg,
+      rgba(12, 15, 28, 0.34) 0%,
+      rgba(7, 9, 18, 0.22) 52%,
+      rgba(10, 13, 24, 0.32) 100%
+    );
   box-shadow:
-    0 16px 44px rgba(0, 0, 0, 0.32),
-    0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 1px 0 var(--glass-clear-highlight, rgba(255, 255, 255, 0.16));
-  backdrop-filter: blur(24px) saturate(155%);
-  -webkit-backdrop-filter: blur(24px) saturate(155%);
+    0 20px 50px rgba(0, 0, 0, 0.42),
+    0 4px 14px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(26px) saturate(172%);
+  -webkit-backdrop-filter: blur(26px) saturate(172%);
   transition: border-color 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.public-site .site-header-inner::before {
+  display: none;
 }
 
 .public-site .site-header-inner::after {
@@ -300,24 +312,148 @@ html[data-public-theme="light"] .public-site .heroui-services-card .card__descri
   border-radius: inherit;
   content: "";
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 55%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  background: radial-gradient(80% 100% at 50% 0%, rgba(255, 255, 255, 0.03), transparent 70%);
+  box-shadow: none;
+}
+
+.public-site .site-header .site-admin-access,
+.public-site .site-header .animated-theme-toggler,
+.public-site .site-header .site-menu-toggle {
+  border-color: rgba(185, 210, 255, 0.075);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.public-site .site-header .site-admin-access:hover,
+.public-site .site-header .animated-theme-toggler:hover,
+.public-site .site-header .site-menu-toggle:hover {
+  border-color: rgba(255, 130, 203, 0.28);
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.public-site .site-header .site-quote-button {
+  border-color: rgba(255, 140, 215, 0.16);
+  background: linear-gradient(118deg, rgba(223, 0, 125, 0.86), rgba(142, 56, 204, 0.82));
+  box-shadow: 0 10px 26px rgba(229, 0, 126, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.public-site .site-header .site-mega-panel {
+  border-color: rgba(185, 210, 255, 0.075);
+  background:
+    radial-gradient(90% 80% at 85% 0%, rgba(0, 168, 232, 0.11), transparent 56%),
+    radial-gradient(80% 80% at 10% 100%, rgba(229, 0, 126, 0.10), transparent 56%),
+    linear-gradient(145deg, rgba(14, 17, 30, 0.56), rgba(8, 10, 20, 0.46));
+  box-shadow:
+    0 32px 84px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(28px) saturate(172%);
+  -webkit-backdrop-filter: blur(28px) saturate(172%);
+}
+
+.public-site .site-header .site-panel-toolbar {
+  background: rgba(10, 13, 24, 0.36);
+  border-bottom-color: rgba(185, 210, 255, 0.07);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.public-site .site-header .site-explore-links > a,
+.public-site .site-header .site-mega-services > a,
+.public-site .site-header .site-company-links > a {
+  border-color: rgba(185, 210, 255, 0.07);
+  background: rgba(16, 20, 35, 0.38);
+}
+
+.public-site .mobile-bottom-navigation {
+  border-color: rgba(185, 210, 255, 0.07);
+  background:
+    radial-gradient(90% 130% at 15% 100%, rgba(0, 175, 240, 0.09), transparent 58%),
+    radial-gradient(85% 130% at 85% 0%, rgba(229, 0, 126, 0.09), transparent 58%),
+    linear-gradient(135deg, rgba(12, 15, 28, 0.38) 0%, rgba(7, 9, 18, 0.28) 100%);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(26px) saturate(172%);
+  -webkit-backdrop-filter: blur(26px) saturate(172%);
 }
 
 html[data-public-theme="light"] .public-site .site-header-inner {
-  border-color: rgba(134, 54, 130, 0.2);
-  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(134, 54, 130, 0.11);
+  background:
+    radial-gradient(85% 140% at 12% 115%, rgba(0, 175, 240, 0.09) 0%, transparent 56%),
+    radial-gradient(85% 140% at 88% -20%, rgba(229, 0, 126, 0.09) 0%, transparent 56%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.90) 0%, rgba(252, 249, 255, 0.84) 55%, rgba(247, 251, 255, 0.88) 100%);
   box-shadow:
-    0 14px 38px rgba(48, 29, 59, 0.08),
-    0 1px 0 rgba(134, 54, 130, 0.07),
-    inset 0 1px 0 #ffffff;
-  backdrop-filter: blur(22px) saturate(125%);
-  -webkit-backdrop-filter: blur(22px) saturate(125%);
+    0 16px 40px rgba(32, 18, 52, 0.13),
+    0 2px 8px rgba(32, 18, 52, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(28px) saturate(175%);
+  -webkit-backdrop-filter: blur(28px) saturate(175%);
 }
 
 html[data-public-theme="light"] .public-site .site-header-inner::after {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent 60%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 60%);
+  box-shadow: none;
+}
+
+html[data-public-theme="light"] .public-site .site-nav-link.is-active,
+html[data-public-theme="light"] .public-site .site-nav-link:hover,
+html[data-public-theme="light"] .site-nav-link.is-active,
+html[data-public-theme="light"] .site-nav-link:hover {
+  background: rgba(138, 42, 126, 0.085);
+  color: #1c1528;
+}
+
+html[data-public-theme="light"] .public-site .site-header .site-admin-access,
+html[data-public-theme="light"] .public-site .site-header .animated-theme-toggler,
+html[data-public-theme="light"] .public-site .site-header .site-menu-toggle {
+  border-color: rgba(116, 62, 132, 0.14);
+  background: rgba(255, 255, 255, 0.72);
+  color: #8c226d;
+  box-shadow: 0 2px 8px rgba(42, 24, 62, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+html[data-public-theme="light"] .public-site .site-header .site-admin-access:hover,
+html[data-public-theme="light"] .public-site .site-header .animated-theme-toggler:hover,
+html[data-public-theme="light"] .public-site .site-header .site-menu-toggle:hover {
+  border-color: rgba(213, 21, 138, 0.28);
+  background: rgba(255, 255, 255, 0.92);
+  color: #6c1854;
+}
+
+html[data-public-theme="light"] .public-site .mobile-bottom-navigation,
+html[data-public-theme="light"] .mobile-bottom-navigation {
+  border-color: rgba(134, 54, 130, 0.12);
+  background:
+    radial-gradient(90% 130% at 15% 100%, rgba(0, 175, 240, 0.08), transparent 58%),
+    radial-gradient(85% 130% at 85% 0%, rgba(229, 0, 126, 0.08), transparent 58%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(250, 246, 254, 0.84) 100%);
+  background-color: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    0 18px 46px rgba(42, 24, 62, 0.12),
+    0 2px 8px rgba(42, 24, 62, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(26px) saturate(170%);
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
+  color: #1c1628;
+}
+
+html[data-public-theme="light"] .public-site .site-header .site-mega-panel {
+  border-color: rgba(134, 54, 130, 0.14);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 28px 70px rgba(41, 26, 56, 0.18);
+}
+
+html[data-public-theme="light"] .public-site .site-header .site-panel-toolbar {
+  background: rgba(250, 248, 253, 0.82);
+  border-bottom-color: rgba(134, 54, 130, 0.12);
+}
+
+html[data-public-theme="light"] .public-site .site-header .site-explore-links > a,
+html[data-public-theme="light"] .public-site .site-header .site-mega-services > a,
+html[data-public-theme="light"] .public-site .site-header .site-company-links > a {
+  border-color: rgba(134, 54, 130, 0.12);
+  background: rgba(255, 255, 255, 0.82);
 }
 
 /* Fallback when backdrop-filter is unsupported */
@@ -341,7 +477,7 @@ html[data-public-theme="light"] .public-site .site-header-inner::after {
   }
 }
 
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+@media (forced-colors: active) {
   .public-site .site-header-inner,
   .public-site .vc-glass-frosted,
   .public-site .vc-glass-clear,
@@ -350,8 +486,6 @@ html[data-public-theme="light"] .public-site .site-header-inner::after {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background: #111422 !important;
-    border-color: #8b93ad !important;
-    box-shadow: none !important;
   }
 
   html[data-public-theme="light"] .public-site .site-header-inner,
@@ -360,8 +494,6 @@ html[data-public-theme="light"] .public-site .site-header-inner::after {
   html[data-public-theme="light"] .public-site .vc-glass-blur,
   html[data-public-theme="light"] .public-site .heroui-services-card {
     background: #ffffff !important;
-    border-color: #6f5570 !important;
-    box-shadow: none !important;
   }
 }
 

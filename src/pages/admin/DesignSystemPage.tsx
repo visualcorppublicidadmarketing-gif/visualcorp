@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { PageHeading } from '../../app/layout';
 import { useTheme } from '../../app/ThemeProvider';
 import { AuroraField, UiBadge, UiButton, UiNotice, UiSurface, UiTextField } from '../../components/ui/DesignSystemPrimitives';
+import { GlassButton, GlassCard, GlassFormField, GlassPill } from '../../components/ui/GlassPanel';
 import { ThemeSwitcher } from '../../components/ui/ThemeSwitcher';
 import { vcMotionPresets, vcMotionTransition } from '../../components/ui/motion-presets';
 import './design-system-page.css';
@@ -82,7 +83,19 @@ export function DesignSystemPage() {
         <div className="vc-ds-surface-grid">
           <UiSurface variant="plain" className="vc-ds-surface-card"><span className="vc-ds-surface-icon"><Layers3 size={16} /></span><h3>Base</h3><p>Para contenido agrupado sin sombra marcada.</p><code>variant="plain"</code></UiSurface>
           <UiSurface variant="raised" className="vc-ds-surface-card"><span className="vc-ds-surface-icon"><ArrowUpRight size={16} /></span><h3>Elevada</h3><p>Para módulos que necesitan separarse del lienzo.</p><code>variant="raised"</code></UiSurface>
-          <AuroraField className="vc-ds-surface-card vc-ds-glass-card"><span className="vc-ds-surface-icon"><Sparkles size={16} /></span><h3>Aurora glass</h3><p>Desenfoque translúcido con halo magenta y azul adaptable al tema.</p><code>variant="glass" + AuroraField</code></AuroraField>
+          <GlassCard variant="card" radius="lg" padding="md" glow="brand" sheen spotlight className="vc-ds-surface-card">
+            <GlassPill dot dotColor="cyan">GlassCard</GlassPill>
+            <h3>Cristal óptico</h3>
+            <p>Polimórfico para tarjetas, botones, enlaces y formularios con refracción sin borde blanco.</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+              <GlassButton tone="glass" size="sm">Botón Glass</GlassButton>
+              <GlassButton tone="accent" size="sm">Acento</GlassButton>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <GlassFormField label="Campo Glass" placeholder="Escribe aquí..." />
+            </div>
+            <code>{'<GlassCard /> · <GlassButton /> · <GlassFormField />'}</code>
+          </GlassCard>
         </div>
         <div className="vc-ds-notice-grid">
           <UiNotice tone="info" icon={<CircleHelp size={16} />} title="Información">Mantén el mensaje breve y añade una acción solo cuando haga falta.</UiNotice>

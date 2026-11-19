@@ -1061,6 +1061,43 @@
 /* ==========================================================================
    Modo Claro (html[data-public-theme="light"])
    ========================================================================== */
+html[data-public-theme='light'] .vc-sol-section-header h2 span {
+  background: linear-gradient(105deg, #0077b6 8%, #c91178 56%, #d97706 96%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html[data-public-theme='light'] .vc-sol-toggle-btn {
+  border-color: rgba(168, 34, 120, 0.28);
+  background: linear-gradient(135deg, rgba(229, 0, 126, 0.10), rgba(0, 158, 226, 0.08)), rgba(255, 255, 255, 0.88);
+  color: #7e175c;
+  box-shadow: 0 6px 18px rgba(42, 24, 62, 0.06), inset 0 1px 0 #ffffff;
+}
+
+html[data-public-theme='light'] .vc-sol-toggle-btn:hover {
+  border-color: #c91178;
+  background: linear-gradient(135deg, rgba(229, 0, 126, 0.16), rgba(0, 158, 226, 0.12)), #ffffff;
+  color: #5b0d43;
+}
+
+html[data-public-theme='light'] .vc-sol-strip-eyebrow {
+  color: #9e1d70;
+}
+
+html[data-public-theme='light'] .vc-sol-strip-head .site-secondary-button {
+  border-color: rgba(116, 62, 132, 0.20);
+  background: rgba(255, 255, 255, 0.86);
+  color: #241b31;
+  box-shadow: 0 6px 18px rgba(42, 24, 62, 0.06), inset 0 1px 0 #ffffff;
+}
+
+html[data-public-theme='light'] .vc-sol-strip-head .site-secondary-button:hover {
+  border-color: rgba(213, 21, 138, 0.42);
+  background: #ffffff;
+  color: #7e175c;
+}
+
 html[data-public-theme='light'] .vc-sol-series-switch,
 html[data-public-theme='light'] .vc-sol-search,
 html[data-public-theme='light'] .vc-sol-filter-tab {
@@ -1090,12 +1127,77 @@ html[data-public-theme='light'] .vc-sol-piece-card {
 
 html[data-public-theme='light'] .vc-sol-strip-card,
 html[data-public-theme='light'] .vc-sol-strip-block {
-  border-color: rgba(61, 42, 74, 0.15);
-  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(120, 62, 136, 0.12);
+  background: radial-gradient(110% 90% at 8% 100%, rgba(0, 158, 226, 0.06), transparent 55%), radial-gradient(110% 90% at 92% 0%, rgba(229, 0, 126, 0.06), transparent 55%), rgba(255, 255, 255, 0.84);
   color: #221e2b;
-  box-shadow: 0 18px 44px rgba(48, 29, 59, 0.08), inset 0 1px 0 #ffffff;
-  backdrop-filter: blur(20px) saturate(120%);
-  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  box-shadow: 0 20px 50px rgba(42, 24, 62, 0.07), inset 0 1px 0 #ffffff;
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
+}
+
+html[data-public-theme='light'] .vc-sol-slice {
+  border-color: rgba(116, 62, 132, 0.14);
+  background: radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.96) 0%, rgba(242, 237, 250, 0.94) 72%, rgba(235, 242, 252, 0.96) 100%);
+  box-shadow: 0 8px 22px rgba(42, 24, 62, 0.06), inset 0 1px 0 #ffffff;
+}
+
+html[data-public-theme='light'] .vc-sol-slice.is-expanded {
+  border-color: rgba(213, 21, 138, 0.48);
+  box-shadow: 0 18px 40px rgba(56, 26, 76, 0.13);
+}
+
+html[data-public-theme='light'] .vc-sol-slice-overlay {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, transparent 44%, rgba(248, 244, 253, 0.90) 80%, rgba(255, 255, 255, 0.98) 100%);
+}
+
+html[data-public-theme='light'] .vc-sol-slice-tag {
+  border-color: rgba(120, 62, 136, 0.16);
+  background: rgba(255, 255, 255, 0.88);
+  color: #6c1e66;
+}
+
+html[data-public-theme='light'] .vc-sol-slice-content h4 {
+  color: #1c1628;
+}
+
+html[data-public-theme='light'] .public-site .vc-sol-slice-cta {
+  background: #1d1629;
+  color: #ffffff;
+}
+
+html[data-public-theme='light'] .public-site .vc-sol-slice-cta:hover {
+  background: linear-gradient(120deg, #dc007a, #8d37c7);
+}
+
+html[data-public-theme='light'] .vc-sol-env-badge {
+  border-color: rgba(120, 62, 136, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+  color: #6c1e66;
+}
+
+html[data-public-theme='light'] .vc-sol-env-media-floating {
+  border-color: rgba(120, 62, 136, 0.16);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 20px rgba(42, 24, 62, 0.12);
+}
+
+html[data-public-theme='light'] .vc-sol-env-checklist li svg {
+  color: #0377ae;
+}
+
+html[data-public-theme='light'] .vc-sol-env-footer {
+  border-top-color: rgba(56, 36, 74, 0.1);
+}
+
+html[data-public-theme='light'] .vc-sol-env-cta {
+  border-color: rgba(168, 34, 120, 0.25);
+  background: rgba(229, 0, 126, 0.07);
+  color: #7a175a;
+}
+
+html[data-public-theme='light'] .vc-sol-env-cta:hover {
+  background: rgba(229, 0, 126, 0.14);
+  border-color: #c91178;
 }
 
 html[data-public-theme='light'] .vc-sol-env-media,
@@ -1284,7 +1386,7 @@ html[data-public-theme='light'] .portfolio-practical-link:focus-visible { outlin
   }
 }
 
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+@media (forced-colors: active) {
   .vc-sol-card,
   .vc-sol-matrix-card,
   .vc-sol-env-card,
