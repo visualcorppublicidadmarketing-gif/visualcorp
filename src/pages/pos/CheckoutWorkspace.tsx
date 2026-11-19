@@ -208,7 +208,7 @@ const getPOSLinkedVariantStock = (link: any, inventory: any[]) => inventory.find
 const getPOSLinkedVariantLabel = (link: any, inventory: any[]) => {
   const stock = getPOSLinkedVariantStock(link, inventory);
   const attributes = stock?.variantAttributes && typeof stock.variantAttributes === 'object' ? stock.variantAttributes : {};
-  const hiddenAttributes = new Set(['source_status','source_status_origin','stock_count_required','physical_count_confirmed_at','physical_count_confirmed_by','initial_branch_id','condition_status']);
+  const hiddenAttributes = new Set(['source_status','source_status_origin','stock_count_required','physical_count_confirmed_at','physical_count_confirmed_by','initial_branch_id','condition_status','inventory_create_attempt_token']);
   const internalAttributePattern = /(^|_)(source|status|count|cost|price|supplier|branch|organization|user|created|updated|location|stock|reservation|reserved|email|phone)(_|$)/i;
   const detail = Object.entries(attributes)
     .filter(([key, value]) => !hiddenAttributes.has(key) && !key.toLocaleLowerCase('es').startsWith('opening_balance_') && !internalAttributePattern.test(key) && ['string','number','boolean'].includes(typeof value) && value !== null && value !== undefined && String(value).trim())
