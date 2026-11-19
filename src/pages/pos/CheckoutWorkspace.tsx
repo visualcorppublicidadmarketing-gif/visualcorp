@@ -1286,7 +1286,9 @@ export function PosPage() {
   const paymentBreakdown=calculatePOSPaymentBreakdown(activeTotal,payments);
   const paymentPreview=paymentBreakdown.applied;
   const selectedCartProduct=data.catalog.find((product)=>product.id===cartProductId);
-  const modeCatalog=useMemo(()=>data.catalog.filter(product=>(product.mode==='area'?'area':'quantity')===cartMode&&(catalogKind==='service'?isPOSServiceProduct(product):!isPOSServiceProduct(product))),[data.catalog,cartMode,catalogKind]);
+  const catalogKindProducts=useMemo(()=>data.catalog.filter(product=>catalogKind==='service'?isPOSServiceProduct(product):!isPOSServiceProduct(product)),[data.catalog,catalogKind]);
+  const catalogModeCounts=useMemo(()=>({quantity:catalogKindProducts.filter(product=>product.mode!=='area').length,area:catalogKindProducts.filter(product=>product.mode==='area').length}),[catalogKindProducts]);
+  const modeCatalog=useMemo(()=>catalogKindProducts.filter(product=>(product.mode==='area'?'area':'quantity')===cartMode),[catalogKindProducts,cartMode]);
   const cartFamilies=useMemo(()=>[...new Set<string>(modeCatalog.map(product=>String(product.family||'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[modeCatalog]);
   const canViewPOSSales=hasPermission('sales','view');
   const canManageBackorders=hasPermission('purchases','edit');
@@ -2213,10 +2215,10 @@ export function PosPage() {
               <button type="button" className={catalogKind==='product'?'active':''} aria-pressed={catalogKind==='product'} onClick={()=>{setCatalogKind('product');setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');setCartOptionChoice('');}}>Productos y artículos</button>
               <button type="button" className={catalogKind==='service'?'active':''} aria-pressed={catalogKind==='service'} onClick={()=>{setCatalogKind('service');setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');setCartOptionChoice('');}}>Servicios ({data.catalog.filter(isPOSServiceProduct).length})</button>
             </div>
-            <div className="pos-mode-switch" role="group" aria-label="Forma de calcular el producto">
-              {catalogKind==='product'&&<><button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>{setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por cantidad ({data.catalog.filter(p=>!isPOSServiceProduct(p)&&p.mode!=='area').length})</button>
-              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>{setCartMode('area');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por medidas m² ({data.catalog.filter(p=>!isPOSServiceProduct(p)&&p.mode==='area').length})</button></>}
-              {catalogKind==='service'&&<span className="pos-entry-kind-note">Servicios por unidad o paquete · no descuentan inventario</span>}
+            <div className="pos-mode-switch" role="group" aria-label={`Forma de calcular ${catalogKind==='service'?'el servicio':'el producto'}`}>
+              <button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>{setCartMode('quantity');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por cantidad ({catalogModeCounts.quantity})</button>
+              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>{setCartMode('area');setCartProductId('');setCartFamily('Todas');setCartPriceTier('pvp');}}>Por medidas m² ({catalogModeCounts.area})</button>
+              {catalogKind==='service'&&<span className="pos-entry-kind-note">Los servicios no descuentan existencias por unidad. Las medidas m² calculan la tarifa por superficie.</span>}
             </div>
             <POSProductSearch
               inputRef={productSearchInputRef}
