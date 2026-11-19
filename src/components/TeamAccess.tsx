@@ -6,6 +6,7 @@ import {
   Briefcase,
   Check,
   Clock,
+  Copy,
   Filter,
   IdCard,
   KeyRound,
@@ -208,6 +209,13 @@ export function TeamAccess() {
   const [personnelRecords, setPersonnelRecords] = useState<any[]>([]);
   const [invitations, setInvitations] = useState<any[]>([]);
   const [invitationLoadError, setInvitationLoadError] = useState(false);
+  const [accessRequests, setAccessRequests] = useState<any[]>([]);
+  const [requestProfilesById, setRequestProfilesById] = useState<Record<string, string>>({});
+  const [requestLoadingId, setRequestLoadingId] = useState<string | null>(null);
+  const [requestsRefreshing, setRequestsRefreshing] = useState(false);
+  const [lastInvitationEmail, setLastInvitationEmail] = useState('');
+  const [copiedInvitationEmail, setCopiedInvitationEmail] = useState('');
+  const requestsPanelRef = useRef<HTMLElement | null>(null);
   const [selectedId, setSelectedId] = useState(() => new URLSearchParams(search).get('perfil') || '');
   const selectedIdRef = useRef('');
   selectedIdRef.current = selectedId;
@@ -238,13 +246,14 @@ export function TeamAccess() {
     setLoading(true);
     setLoadFailed(false);
     setError('');
-    const [profileResult, permissionResult, memberResult, googleResult, invitationResult, personnelResult] = await Promise.all([
+    const [profileResult, permissionResult, memberResult, googleResult, invitationResult, personnelResult, requestsResult] = await Promise.all([
       supabase.from('access_profiles').select('id,profile_key,name,description,base_role,is_system,active').eq('organization_id', organizationId).order('name'),
       supabase.from('access_profile_permissions').select('profile_id,module_key,action_key,enabled'),
       supabase.rpc('list_visualcorp_team_members'),
       supabase.rpc('list_visualcorp_team_accounts_with_avatars'),
       supabase.rpc('list_organization_access_invitations', { p_organization_id: organizationId }),
       supabase.from('personnel_records').select('id,full_name,email,department,job_title,status').eq('organization_id', organizationId),
+      Promise.resolve(supabase.rpc('list_organization_access_requests', { p_organization_id: organizationId })).catch(() => ({ data: [], error: true })),
     ]);
     const profileRows = profileResult.data || [];
     const membershipRows = memberResult.data || [];
@@ -268,6 +277,11 @@ export function TeamAccess() {
     setPersonnelRecords(personnelResult.data || []);
     setInvitations(invitationResult.data || []);
     setInvitationLoadError(Boolean(invitationResult.error));
+    if (!requestsResult.error && Array.isArray(requestsResult.data)) {
+      setAccessRequests(requestsResult.data);
+    } else {
+      setAccessRequests([]);
+    }
     const loadedPermRows = permissionResult.data || [];
     const chosen = preferredId || selectedIdRef.current || profileResult.data?.find((profile: any) => profile.profile_key !== 'owner')?.id || '';
     setSelectedId(chosen);
@@ -285,9 +299,39 @@ export function TeamAccess() {
     setLoading(false);
   }, [organizationId]);
 
+  const reloadAccessRequests = useCallback(async (showSpinner = false) => {
+    if (!organizationId || !supabase) return;
+    if (showSpinner) setRequestsRefreshing(true);
+    try {
+      const { data, error: reqError } = await supabase.rpc('list_organization_access_requests', { p_organization_id: organizationId });
+      if (!reqError && Array.isArray(data)) {
+        setAccessRequests(data);
+      }
+    } catch {
+      /* RPC may not be deployed yet; degrade silently. */
+    } finally {
+      if (showSpinner) setRequestsRefreshing(false);
+    }
+  }, [organizationId]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void reloadAccessRequests(false);
+      }
+    };
+    const onFocus = () => void reloadAccessRequests(false);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [reloadAccessRequests]);
 
   const selectedProfile = profiles.find((profile) => profile.id === selectedId);
   const lastPathPart = pathname.split('/').filter(Boolean).at(-1) || '';
@@ -601,15 +645,20 @@ export function TeamAccess() {
         p_profile_id: assignProfileId,
       });
       if (assignError) throw assignError;
+      const invitedTargetEmail = data?.email || email.trim();
       setEmail('');
       await load();
-      setMessage(
-        data?.status === 'assigned'
-          ? `Acceso asignado a ${data.email}. Los permisos se actualizarán en su sesión.`
-          : `Invitación creada para ${data?.email || email.trim()}. Vence el ${
-              data?.expires_at ? new Date(data.expires_at).toLocaleDateString('es-EC') : 'en 7 días'
-            }. Comunica el acceso por un canal verificado; la aplicación no envía correos.`,
-      );
+      if (data?.status === 'assigned') {
+        setLastInvitationEmail('');
+        setMessage(`Acceso asignado a ${data.email}. Los permisos se actualizarán en su sesión.`);
+      } else {
+        setLastInvitationEmail(invitedTargetEmail);
+        setMessage(
+          `Invitación creada para ${invitedTargetEmail}. Vence el ${
+            data?.expires_at ? new Date(data.expires_at).toLocaleDateString('es-EC') : 'en 7 días'
+          }. Comunica el acceso por un canal verificado; la aplicación no envía correos.`,
+        );
+      }
     } catch (assignError: any) {
       setError(assignError.message || 'No se pudo asignar el perfil.');
     } finally {
@@ -659,6 +708,60 @@ export function TeamAccess() {
       setError(revokeError.message || 'No se pudo cancelar la invitación.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const approveAccessRequest = async (req: any) => {
+    const profileId = requestProfilesById[req.id] || assignableProfiles[0]?.id || '';
+    if (!canManageMembers || requestLoadingId || !profileId) return;
+    setRequestLoadingId(req.id);
+    setMessage('');
+    setError('');
+    try {
+      const { data, error: approveError } = await supabase.rpc('approve_organization_access_request', {
+        p_request_id: req.id,
+        p_profile_id: profileId,
+      });
+      if (approveError) throw approveError;
+      await load();
+      const profName = data?.profile_name || profiles.find((p) => p.id === profileId)?.name || 'perfil asignado';
+      setMessage(`Acceso aprobado para ${data?.email || req.email} con el perfil "${profName}".`);
+    } catch (approveError: any) {
+      setError(approveError.message || 'No se pudo aprobar la solicitud de acceso.');
+    } finally {
+      setRequestLoadingId(null);
+    }
+  };
+
+  const dismissAccessRequest = async (req: any) => {
+    if (!canManageMembers || requestLoadingId) return;
+    setRequestLoadingId(req.id);
+    setMessage('');
+    setError('');
+    try {
+      const { error: dismissError } = await supabase.rpc('dismiss_organization_access_request', {
+        p_request_id: req.id,
+      });
+      if (dismissError) throw dismissError;
+      await load();
+      setMessage(`Solicitud descartada para ${req.email || req.full_name || 'la cuenta'}.`);
+    } catch (dismissError: any) {
+      setError(dismissError.message || 'No se pudo descartar la solicitud de acceso.');
+    } finally {
+      setRequestLoadingId(null);
+    }
+  };
+
+  const copyInvitationMessage = async (targetEmail: string) => {
+    const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://visualcorp-suite.vercel.app';
+    const text = `Ingresa a ${origin} con Google usando ${targetEmail}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedInvitationEmail(targetEmail);
+      setMessage(`Mensaje de invitación copiado para ${targetEmail}.`);
+      window.setTimeout(() => setCopiedInvitationEmail((prev) => (prev === targetEmail ? '' : prev)), 3000);
+    } catch {
+      setMessage(text);
     }
   };
 
@@ -926,7 +1029,7 @@ export function TeamAccess() {
         <>
           {section === 'usuarios' && (
             <>
-              <div className="team-metrics team-metrics-5" aria-label="Resumen ejecutivo de usuarios y gobernanza">
+              <div className="team-metrics team-metrics-6" aria-label="Resumen ejecutivo de usuarios y gobernanza">
                 <div>
                   <span className="team-metric-icon">
                     <Users size={17} />
@@ -963,6 +1066,20 @@ export function TeamAccess() {
                     <small>{invitationLoadError ? 'Invitaciones no disponibles' : 'Invitaciones pendientes'}</small>
                   </span>
                 </div>
+                <button
+                  type="button"
+                  className={`team-metric-button ${accessRequests.length > 0 ? 'has-requests' : ''}`}
+                  aria-label={`Solicitudes pendientes: ${accessRequests.length}. Ir al panel de solicitudes`}
+                  onClick={() => requestsPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                >
+                  <span className="team-metric-icon is-requests">
+                    <UserCheck size={17} />
+                  </span>
+                  <span>
+                    <b>{accessRequests.length}</b>
+                    <small>Solicitudes pendientes</small>
+                  </span>
+                </button>
                 <div>
                   <span className="team-metric-icon is-discount">
                     <Percent size={17} />
@@ -991,18 +1108,19 @@ export function TeamAccess() {
 
                   <div className="team-account-filters team-account-filters-extended">
                     <label className="team-account-search">
-                      <Search size={16} />
-                      <span className="sr-only">Buscar usuarios por nombre, correo, cargo o perfil</span>
+                      <Search size={16} aria-hidden="true" />
+                      <span className="sr-only">Buscar por nombre o correo</span>
                       <input
                         type="search"
+                        aria-label="Buscar por nombre o correo"
                         value={accountQuery}
                         onChange={(event) => setAccountQuery(event.target.value)}
-                        placeholder="Buscar por nombre, correo, cargo o perfil…"
+                        placeholder="Buscar por nombre o correo"
                       />
                     </label>
                     <label className="team-account-state">
                       <span className="sr-only">Filtrar por perfil</span>
-                      <select value={profileFilterId} onChange={(event) => setProfileFilterId(event.target.value)}>
+                      <select aria-label="Filtrar por perfil" value={profileFilterId} onChange={(event) => setProfileFilterId(event.target.value)}>
                         <option value="all">Todos los perfiles</option>
                         {profiles.map((p) => (
                           <option key={p.id} value={p.id}>
@@ -1013,7 +1131,7 @@ export function TeamAccess() {
                     </label>
                     <label className="team-account-state">
                       <span className="sr-only">Filtrar usuarios por estado</span>
-                      <select value={accountState} onChange={(event) => setAccountState(event.target.value as typeof accountState)}>
+                      <select aria-label="Filtrar usuarios por estado" value={accountState} onChange={(event) => setAccountState(event.target.value as typeof accountState)}>
                         <option value="all">Todos los estados</option>
                         <option value="active">Con acceso activo</option>
                         <option value="blocked">Acceso pausado</option>
@@ -1267,6 +1385,136 @@ export function TeamAccess() {
                 </section>
 
                 <aside className="team-access-side">
+                  <section
+                    ref={requestsPanelRef}
+                    className={`panel team-requests-panel ${accessRequests.length > 0 ? 'has-requests' : ''}`}
+                    aria-labelledby="team-requests-title"
+                  >
+                    <header className="team-panel-heading">
+                      <div>
+                        <span className="eyebrow">COLA DE INGRESO</span>
+                        <h2 id="team-requests-title">Solicitudes de acceso</h2>
+                        <p>Cuentas que iniciaron sesión sin invitación y esperan que un administrador les asigne perfil.</p>
+                      </div>
+                      <div className="team-requests-head-actions">
+                        <span
+                          className={`team-requests-badge ${accessRequests.length > 0 ? 'has-items' : ''}`}
+                          aria-label={`${accessRequests.length} solicitudes pendientes`}
+                        >
+                          {accessRequests.length}
+                        </span>
+                        <button
+                          type="button"
+                          className="button button-outline team-requests-refresh"
+                          disabled={requestsRefreshing}
+                          onClick={() => void reloadAccessRequests(true)}
+                          aria-label="Actualizar solicitudes de acceso"
+                          title="Actualizar solicitudes de acceso"
+                        >
+                          <RotateCcw size={13} className={requestsRefreshing ? 'is-spinning' : ''} />
+                          <span>{requestsRefreshing ? 'Actualizando…' : 'Actualizar'}</span>
+                        </button>
+                      </div>
+                    </header>
+
+                    {accessRequests.length === 0 ? (
+                      <div className="team-requests-empty" role="status">
+                        <span className="team-empty-mark">
+                          <UserCheck size={18} />
+                        </span>
+                        <div>
+                          <b>Nadie está esperando acceso</b>
+                          <p>Cuando un compañero inicie sesión con Google sin invitación, aparecerá aquí para aprobarlo en un clic.</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <ul className="team-request-list">
+                        {accessRequests.map((req) => {
+                          const reqSelectedProfile = requestProfilesById[req.id] ?? (assignableProfiles[0]?.id || '');
+                          const isRowLoading = requestLoadingId === req.id;
+                          const seenAt = req.last_seen_at || req.requested_at;
+                          const attempts = Number(req.request_count) || 1;
+                          return (
+                            <li className="team-request-card" key={req.id}>
+                              <div className="team-request-person">
+                                <Avatar
+                                  name={req.full_name || req.email || 'Solicitante'}
+                                  src={req.avatar_url}
+                                  size="sm"
+                                  className="activity-avatar"
+                                  badge={req.avatar_url ? <span className="vc-google-avatar-mark">G</span> : undefined}
+                                />
+                                <div className="team-request-copy">
+                                  <b>{req.full_name || req.email || 'Cuenta Google'}</b>
+                                  <small>{req.email}</small>
+                                  <div className="team-request-meta">
+                                    <span className="team-meta-chip">
+                                      <Clock size={11} />
+                                      {formatRelativeAccess(seenAt)}
+                                    </span>
+                                    <span className="team-meta-chip is-attempts">
+                                      {attempts} {attempts === 1 ? 'intento' : 'intentos'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {canManageMembers ? (
+                                <div className="team-request-controls">
+                                  <label className="team-request-select-wrap">
+                                    <span className="sr-only">Perfil para {req.full_name || req.email}</span>
+                                    <select
+                                      aria-label={`Perfil para ${req.full_name || req.email}`}
+                                      value={reqSelectedProfile}
+                                      disabled={isRowLoading || assignableProfiles.length === 0}
+                                      onChange={(event) =>
+                                        setRequestProfilesById((prev) => ({
+                                          ...prev,
+                                          [req.id]: event.target.value,
+                                        }))
+                                      }
+                                    >
+                                      {assignableProfiles.length === 0 ? (
+                                        <option value="">Sin perfiles asignables</option>
+                                      ) : (
+                                        assignableProfiles.map((profile) => (
+                                          <option key={profile.id} value={profile.id}>
+                                            {profile.name}
+                                          </option>
+                                        ))
+                                      )}
+                                    </select>
+                                  </label>
+                                  <div className="team-request-buttons">
+                                    <button
+                                      type="button"
+                                      className="button button-dark team-request-approve"
+                                      disabled={isRowLoading || !reqSelectedProfile}
+                                      onClick={() => void approveAccessRequest(req)}
+                                    >
+                                      <Check size={14} />
+                                      {isRowLoading ? 'Procesando…' : 'Aprobar'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="button button-outline team-request-dismiss"
+                                      disabled={isRowLoading}
+                                      onClick={() => void dismissAccessRequest(req)}
+                                    >
+                                      Descartar
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="team-access-help">Solo un administrador puede aprobar o descartar esta solicitud.</p>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </section>
+
                   <section className="panel team-invite-panel" aria-labelledby="team-invite-title">
                     <header className="team-panel-heading">
                       <div>
@@ -1279,37 +1527,56 @@ export function TeamAccess() {
                       </span>
                     </header>
                     {canManageMembers ? (
-                      <form onSubmit={assign} className="team-access-form">
-                        <label>
-                          Correo de la cuenta
-                          <input
-                            required
-                            type="email"
-                            autoComplete="email"
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
-                            placeholder="persona@visualcorp.com"
-                          />
-                        </label>
-                        <label>
-                          Perfil de acceso
-                          <select required value={assignProfileId} onChange={(event) => setAssignProfileId(event.target.value)}>
-                            <option value="">Selecciona un perfil</option>
-                            {assignableProfiles.map((profile) => (
-                              <option key={profile.id} value={profile.id}>
-                                {profile.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <p className="team-access-help">
-                          Si la cuenta todavía no existe o no está verificada, se creará una invitación por 7 días. La aplicación no envía el correo: comunica el acceso por un canal seguro.
-                        </p>
-                        <button className="button button-dark team-invite-submit" type="submit" disabled={saving || !assignProfileId}>
-                          <UserPlus size={15} />
-                          {saving ? 'Guardando…' : 'Asignar o invitar'}
-                        </button>
-                      </form>
+                      <>
+                        <form onSubmit={assign} className="team-access-form">
+                          <label>
+                            Correo de la cuenta
+                            <input
+                              required
+                              type="email"
+                              autoComplete="email"
+                              value={email}
+                              onChange={(event) => setEmail(event.target.value)}
+                              placeholder="persona@visualcorp.com"
+                            />
+                          </label>
+                          <label>
+                            Perfil de acceso
+                            <select required value={assignProfileId} onChange={(event) => setAssignProfileId(event.target.value)}>
+                              <option value="">Selecciona un perfil</option>
+                              {assignableProfiles.map((profile) => (
+                                <option key={profile.id} value={profile.id}>
+                                  {profile.name}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <p className="team-access-help">
+                            Si la cuenta todavía no existe o no está verificada, se creará una invitación por 7 días. La aplicación no envía el correo: comunica el acceso por un canal seguro.
+                          </p>
+                          <button className="button button-dark team-invite-submit" type="submit" disabled={saving || !assignProfileId}>
+                            <UserPlus size={15} />
+                            {saving ? 'Guardando…' : 'Asignar o invitar'}
+                          </button>
+                        </form>
+                        {lastInvitationEmail && (
+                          <div className="team-invite-share-box" role="region" aria-label="Mensaje de invitación listo para copiar">
+                            <p className="team-invite-share-copy">
+                              <code>
+                                Ingresa a {typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://visualcorp-suite.vercel.app'} con Google usando {lastInvitationEmail}
+                              </code>
+                            </p>
+                            <button
+                              type="button"
+                              className="button button-outline team-invite-copy-btn"
+                              onClick={() => void copyInvitationMessage(lastInvitationEmail)}
+                            >
+                              {copiedInvitationEmail === lastInvitationEmail ? <Check size={14} /> : <Copy size={14} />}
+                              {copiedInvitationEmail === lastInvitationEmail ? 'Mensaje copiado' : 'Copiar mensaje de invitación'}
+                            </button>
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <p className="team-access-help">
                         Tu perfil permite consultar usuarios. Para asignar accesos, solicita el permiso a una persona administradora.
@@ -1331,7 +1598,12 @@ export function TeamAccess() {
                           No se pudo consultar el estado de las invitaciones. Vuelve a intentarlo más tarde.
                         </p>
                       ) : invitations.length === 0 ? (
-                        <p className="team-access-help team-empty-invitations">No hay invitaciones pendientes.</p>
+                        <div className="team-empty-invitations-box">
+                          <b>No hay invitaciones pendientes</b>
+                          <p>
+                            Si invitas un correo que aún no ha iniciado sesión, quedará reservado aquí durante 7 días y podrás copiar el enlace para enviárselo por WhatsApp o correo.
+                          </p>
+                        </div>
                       ) : (
                         <ul className="team-invitation-list">
                           {invitations.map((invitation) => (
@@ -1342,14 +1614,26 @@ export function TeamAccess() {
                                   {invitation.profile_name} · vence {new Date(invitation.expires_at).toLocaleDateString('es-EC')}
                                 </small>
                               </span>
-                              <button
-                                className="team-invitation-revoke"
-                                type="button"
-                                disabled={saving}
-                                onClick={() => void revokeInvitation(invitation)}
-                              >
-                                Cancelar
-                              </button>
+                              <div className="team-invitation-actions">
+                                <button
+                                  className="button button-outline team-invitation-copy"
+                                  type="button"
+                                  onClick={() => void copyInvitationMessage(invitation.invited_email)}
+                                  aria-label={`Copiar mensaje de invitación para ${invitation.invited_email}`}
+                                  title="Copiar mensaje de invitación"
+                                >
+                                  {copiedInvitationEmail === invitation.invited_email ? <Check size={12} /> : <Copy size={12} />}
+                                  <span>{copiedInvitationEmail === invitation.invited_email ? 'Copiado' : 'Copiar mensaje'}</span>
+                                </button>
+                                <button
+                                  className="team-invitation-revoke"
+                                  type="button"
+                                  disabled={saving}
+                                  onClick={() => void revokeInvitation(invitation)}
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
                             </li>
                           ))}
                         </ul>
@@ -1768,7 +2052,7 @@ export function TeamAccess() {
                     Activa solo lo que este perfil necesita. Permitir editar habilita también la consulta de ese módulo. El perfil Propietario está protegido.
                   </p>
 
-                  <div className="team-matrix-wrap">
+                  <div className="table-wrap team-matrix-wrap">
                     <table className="team-permission-matrix">
                       <caption className="sr-only">Permisos de consulta, edición y eliminación por módulo</caption>
                       <thead>
