@@ -54,6 +54,7 @@ export function POSProductSearch<T extends POSSearchProduct>({
     }
     return { available, linked };
   }, [products, stockMetaByProduct]);
+  const favoriteCount = useMemo(() => products.reduce((count, product) => count + Number(favoriteIds.has(product.id)), 0), [products, favoriteIds]);
 
   const filtered = useMemo(() => rankPOSProducts(
     products.filter((product) => {
@@ -65,7 +66,10 @@ export function POSProductSearch<T extends POSSearchProduct>({
     }),
     query,
     codesByProduct,
-  ).sort((a, b) => query.trim() ? 0 : Number(favoriteIds.has(b.id)) - Number(favoriteIds.has(a.id)) || a.name.localeCompare(b.name, 'es')),
+  ).sort((a, b) => {
+    const favoriteRank = Number(favoriteIds.has(b.id)) - Number(favoriteIds.has(a.id));
+    return favoriteRank || (query.trim() ? 0 : a.name.localeCompare(b.name, 'es'));
+  }),
   [products, family, query, codesByProduct, effectiveFavoritesOnly, favoriteIds, effectiveStockFilter, stockMetaByProduct, showInventoryFilters]);
 
   const visible = filtered.slice(0, 24);
@@ -114,7 +118,7 @@ export function POSProductSearch<T extends POSSearchProduct>({
 
     <div className="pos-filter-pills-row" role="group" aria-label={showInventoryFilters ? 'Filtros rápidos de catálogo e inventario' : 'Filtros rápidos de catálogo'}>
       {onToggleFavorite && <button type="button" className={`pos-favorites-filter${effectiveFavoritesOnly ? ' active' : ''}`} aria-pressed={effectiveFavoritesOnly} onClick={() => { setFilterContextKey(contextKey); setFavoritesOnly(!effectiveFavoritesOnly); setActiveIndex(-1); }}>
-        <Star size={13} aria-hidden="true"/> Mis productos estrella <span>{favoriteIds.size}</span>
+        <Star size={13} aria-hidden="true"/> Mis favoritos <span>{favoriteCount}</span>
       </button>}
       {showInventoryFilters&&<>
       <button type="button" className={`pos-stock-filter-pill${effectiveStockFilter === 'all' ? ' active' : ''}`} aria-pressed={effectiveStockFilter === 'all'} onClick={() => { setFilterContextKey(contextKey); setStockFilter('all'); }}>
@@ -142,7 +146,7 @@ export function POSProductSearch<T extends POSSearchProduct>({
       {(family !== 'Todas' || effectiveFavoritesOnly || effectiveStockFilter !== 'all' || query.trim()) && <button type="button" className="pos-reset-filters-btn" onClick={() => { onFamilyChange('Todas'); setFilterContextKey(contextKey); setFavoritesOnly(false); setStockFilter('all'); onQueryChange(''); }}>Restablecer filtros</button>}
     </div>
 
-    {visible.length > 0 ? <div id={`${listId}-results`} className="pos-product-grid" role="listbox" aria-label="Productos encontrados">
+    {visible.length > 0 ? <div id={`${listId}-results`} className="pos-product-grid" role="listbox" aria-label={resultNoun === 'servicio' ? 'Servicios encontrados' : 'Productos encontrados'}>
       {visible.map((product, index) => {
         const meta = stockMetaByProduct[product.id];
         const tone = meta?.tone || 'unlinked';
@@ -157,8 +161,9 @@ export function POSProductSearch<T extends POSSearchProduct>({
             {onToggleFavorite && <button
               type="button"
               className={`pos-tile-star-btn${isStarred ? ' is-starred' : ''}`}
-              aria-label={isStarred ? `Quitar ${product.name} de productos estrella` : `Marcar ${product.name} como producto estrella`}
-              title={isStarred ? 'Producto estrella' : 'Guardar en favoritos'}
+              aria-label={isStarred ? `Quitar ${product.name} de mis favoritos` : `Marcar ${product.name} como favorito`}
+              aria-pressed={isStarred}
+              title={isStarred ? 'Quitar de favoritos' : 'Guardar en favoritos'}
               onClick={(event) => { event.stopPropagation(); onToggleFavorite(product.id); }}
             >
               <Star size={12} fill={isStarred ? 'currentColor' : 'none'}/>
@@ -190,6 +195,6 @@ export function POSProductSearch<T extends POSSearchProduct>({
           </span>
         </div>;
       })}
-    </div> : <div id={`${listId}-results`} className="pos-catalog-empty" role="status"><Search size={19}/><b>{favoritesOnly && favoriteIds.size === 0 ? 'Aún no tienes estrellas' : products.length ? `No encontramos ${resultNoun}${resultNoun.endsWith('s') ? '' : 's'}` : emptyStateTitle || 'No hay artículos en esta modalidad'}</b><span>{favoritesOnly && favoriteIds.size === 0 ? 'Selecciona un producto y márcalo con la estrella.' : products.length ? `Prueba otras palabras o limpia la búsqueda de ${resultNoun}${resultNoun.endsWith('s') ? '' : 's'}.` : emptyStateDescription || 'Pide a administración que complete el catálogo.'}</span>{!products.length&&emptyStateAction}</div>}
+    </div> : <div id={`${listId}-results`} className="pos-catalog-empty" role="status"><Search size={19}/><b>{favoritesOnly && products.length > 0 && favoriteCount === 0 ? 'Aún no tienes favoritos en esta modalidad' : products.length ? `No encontramos ${resultNoun}${resultNoun.endsWith('s') ? '' : 's'}` : emptyStateTitle || 'No hay artículos en esta modalidad'}</b><span>{favoritesOnly && products.length > 0 && favoriteCount === 0 ? 'Marca con la estrella los productos o servicios que usas con frecuencia.' : products.length ? `Prueba otras palabras o limpia la búsqueda de ${resultNoun}${resultNoun.endsWith('s') ? '' : 's'}.` : emptyStateDescription || 'Pide a administración que complete el catálogo.'}</span>{!products.length&&emptyStateAction}</div>}
   </div>;
 }
