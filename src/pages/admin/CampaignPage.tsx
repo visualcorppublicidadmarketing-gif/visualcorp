@@ -42,6 +42,7 @@ import {
 } from './marketing/MarketingPlanning';
 import './marketing/marketing-card-glass.css';
 import './marketing/marketing-responsive.css';
+import './marketing/marketing-editor-dark-mode.css';
 
 type Post = Record<string, any> & { id: string; title: string; status: string; scheduled_date: string; platform: string };
 type Asset = Record<string, any> & { id: string; filename: string; rel_path: string; section: string; is_available: boolean; storage_status?: string; retention_enabled?: boolean; retention_months?: number };
