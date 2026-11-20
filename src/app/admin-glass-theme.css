@@ -76,8 +76,8 @@
   --admin-blur-shadow: 0 10px 30px rgb(0 0 0 / 22%), inset 0 1px 0 var(--admin-glass-surface-highlight);
 }
 
-/* Admin-only glass polish keeps the shared Operations and POS surfaces unchanged. */
-.work-app.area-admin {
+/* Scope the admin-home polish to its real dashboard, not the shared POS shell. */
+.work-app:has(.unified-dashboard) {
   --admin-glass-nav: color-mix(in srgb, var(--vc-surface, #fff) 72%, transparent);
   --admin-glass-panel: var(--admin-blur-bg, var(--vc-surface, #fff));
   --admin-glass-specular: linear-gradient(135deg, rgb(255 255 255 / 58%) 0%, rgb(255 255 255 / 12%) 30%, transparent 64%);
@@ -90,7 +90,7 @@
   --admin-blur-shadow: 0 12px 32px rgb(42 24 58 / 8%), inset 0 1px 0 rgb(255 255 255 / 82%), inset 0 -1px 0 rgb(126 25 119 / 4%);
 }
 
-.work-app.area-admin.theme-dark {
+.work-app.theme-dark:has(.unified-dashboard) {
   --admin-glass-nav: color-mix(in srgb, var(--vc-surface-soft, #10111a) 76%, transparent);
   --admin-glass-panel: var(--admin-blur-bg, var(--vc-surface, #171a25));
   --admin-glass-specular: linear-gradient(135deg, rgb(255 255 255 / 14%) 0%, rgb(255 255 255 / 3%) 32%, transparent 66%);
@@ -101,6 +101,26 @@
   --admin-blur-blur: blur(16px) saturate(138%);
   --admin-blur-border: color-mix(in srgb, var(--vc-brand, #d093f0) 12%, var(--admin-glass-line));
   --admin-blur-shadow: 0 14px 36px rgb(0 0 0 / 27%), inset 0 1px 0 rgb(255 255 255 / 9%), inset 0 -1px 0 rgb(208 147 240 / 5%);
+}
+
+@supports not (color: color-mix(in srgb, #fff, #000)) {
+  .work-app:has(.unified-dashboard) {
+    --admin-glass-nav: var(--admin-glass-nav-fallback);
+    --admin-glass-panel: var(--vc-surface, #fff);
+    --admin-frosted-bg: var(--vc-surface, #fff);
+    --admin-blur-bg: var(--vc-surface, #fff);
+    --admin-frosted-border: var(--admin-glass-line);
+    --admin-blur-border: var(--admin-glass-line);
+  }
+
+  .work-app.theme-dark:has(.unified-dashboard) {
+    --admin-glass-nav: var(--admin-glass-nav-fallback);
+    --admin-glass-panel: var(--vc-surface, #171a25);
+    --admin-frosted-bg: var(--vc-surface, #171a25);
+    --admin-blur-bg: var(--vc-surface, #171a25);
+    --admin-frosted-border: var(--admin-glass-line);
+    --admin-blur-border: var(--admin-glass-line);
+  }
 }
 
 .work-app .sidebar {
@@ -214,8 +234,8 @@
     -webkit-backdrop-filter: var(--admin-frosted-blur) !important;
   }
 
-  .work-app.area-admin .sidebar,
-  .work-app.area-admin .topbar {
+  .work-app:has(.unified-dashboard) .sidebar,
+  .work-app:has(.unified-dashboard) .topbar {
     background: var(--admin-glass-specular), var(--admin-glass-nav) !important;
   }
 }
@@ -514,6 +534,28 @@
   .work-app .topbar {
     background: var(--admin-glass-nav-fallback) !important;
   }
+
+  .work-app:has(.unified-dashboard) {
+    --admin-glass-nav: var(--admin-glass-nav-fallback);
+    --admin-glass-panel: var(--vc-surface, #fff);
+    --admin-frosted-bg: var(--vc-surface, #fff);
+    --admin-blur-bg: var(--vc-surface, #fff);
+    --admin-glass-specular: none;
+  }
+
+  .work-app.theme-dark:has(.unified-dashboard) {
+    --admin-glass-nav: var(--admin-glass-nav-fallback);
+    --admin-glass-panel: var(--vc-surface, #171a25);
+    --admin-frosted-bg: var(--vc-surface, #171a25);
+    --admin-blur-bg: var(--vc-surface, #171a25);
+    --admin-glass-specular: none;
+  }
+
+  .work-app:has(.unified-dashboard) :is(.sidebar, .topbar, .main-content .panel, .main-content .stat-card, .main-content .operation-card, .unified-dashboard-hero, .unified-overview .stat-card, .unified-priority-panel, .workspace-launcher) {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--admin-glass-panel) !important;
+  }
 }
 
 @media (prefers-contrast: more) {
@@ -546,6 +588,71 @@
   .work-app.theme-dark .main-content :is(.panel, .stat-card, .operation-card),
   .work-app.theme-dark .unified-dashboard-hero {
     background: var(--vc-surface, #171a25) !important;
+  }
+
+  .work-app:has(.unified-dashboard) {
+    --admin-glass-card: var(--vc-surface, #fff);
+    --admin-glass-panel: var(--vc-surface, #fff);
+    --admin-glass-specular: none;
+    --admin-frosted-bg: var(--vc-surface, #fff);
+    --admin-blur-bg: var(--vc-surface, #fff);
+    --admin-frosted-border: var(--admin-glass-line);
+    --admin-blur-border: var(--admin-glass-line);
+  }
+
+  .work-app.theme-dark:has(.unified-dashboard) {
+    --admin-glass-card: var(--vc-surface, #171a25);
+    --admin-glass-panel: var(--vc-surface, #171a25);
+    --admin-glass-specular: none;
+    --admin-frosted-bg: var(--vc-surface, #171a25);
+    --admin-blur-bg: var(--vc-surface, #171a25);
+    --admin-frosted-border: var(--admin-glass-line);
+    --admin-blur-border: var(--admin-glass-line);
+  }
+
+  .work-app:has(.unified-dashboard) :is(.sidebar, .topbar, .main-content .panel, .main-content .stat-card, .main-content .operation-card, .unified-dashboard-hero, .unified-overview .stat-card, .unified-priority-panel, .workspace-launcher) {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--admin-glass-panel) !important;
+    border-color: var(--admin-glass-line) !important;
+  }
+}
+
+@supports not (color: color-mix(in srgb, #fff, #000)) {
+  @media (prefers-contrast: more) {
+    .work-app:has(.unified-dashboard) {
+      --admin-glass-line: rgb(41 37 51 / 58%);
+    }
+
+    .work-app.theme-dark:has(.unified-dashboard) {
+      --admin-glass-line: rgb(245 241 250 / 66%);
+    }
+  }
+}
+
+@media (forced-colors: active) {
+  .work-app:has(.unified-dashboard) {
+    --admin-glass-nav: Canvas;
+    --admin-glass-panel: Canvas;
+    --admin-glass-line: CanvasText;
+    --admin-frosted-bg: Canvas;
+    --admin-frosted-border: CanvasText;
+    --admin-blur-bg: Canvas;
+    --admin-blur-border: CanvasText;
+    --admin-glass-specular: none;
+  }
+
+  .work-app:has(.unified-dashboard) :is(.sidebar, .topbar, .main-content .panel, .main-content .stat-card, .main-content .operation-card, .unified-dashboard-hero, .unified-overview .stat-card, .unified-priority-panel, .workspace-launcher) {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: Canvas !important;
+    border-color: CanvasText !important;
+    box-shadow: none !important;
+  }
+
+  .work-app:has(.unified-dashboard) :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
   }
 }
 
