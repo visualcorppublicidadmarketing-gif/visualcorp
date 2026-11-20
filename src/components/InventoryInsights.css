@@ -93,7 +93,6 @@
 @media(max-width:540px){.inventory-product-card{grid-template-columns:64px minmax(0,1fr);grid-template-rows:auto minmax(44px,auto) 32px auto auto;padding:12px;}.inventory-product-image{width:64px;height:64px;}.inventory-product-main{flex-direction:row;padding-right:28px;}.inventory-product-main b{font-size:12px;}.inventory-product-tags{grid-column:2;flex-wrap:wrap;max-height:44px;overflow:hidden;}.inventory-product-state{grid-column:2;}.inventory-product-facts{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(48px,auto);}.inventory-product-actions{grid-template-columns:repeat(2,minmax(0,1fr));}.inventory-product-actions button{min-height:42px;padding-inline:8px;font-size:10px;}}
 @media(prefers-reduced-motion:reduce){.inventory-product-image img{transition:none}.inventory-product-image:not(:disabled):hover img{transform:none}}
 
-
 /* =========================================================================
    Inventory Insights Dark & Light Mode Theme Harmony
    ========================================================================= */
@@ -1757,4 +1756,96 @@
 .work-app.theme-dark .inventory-filter-chip.is-reset:hover {
   border-color: #f43f5e;
   background: #3f1d28;
+}
+
+/* Card refinement: visible gallery, selected state, and corrected image sizing. */
+.inventory-product-card {
+  grid-template-columns: 104px minmax(0, 1fr);
+  grid-template-areas:
+    "image main"
+    "image tags"
+    "image state"
+    "meter meter"
+    "facts facts"
+    "actions actions";
+  grid-template-rows: auto minmax(20px, auto) 32px auto 1fr auto;
+  column-gap: 12px;
+}
+
+.inventory-product-image {
+  position: relative;
+  width: 104px;
+  height: 104px;
+}
+
+.inventory-product-image:focus-visible {
+  outline: 3px solid #873bd0a8;
+  outline-offset: 3px;
+}
+
+.inventory-image-count {
+  position: absolute;
+  z-index: 2;
+  top: 5px;
+  right: 5px;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 6px;
+  border: 1px solid #ffffff80;
+  border-radius: 999px;
+  background: #292633dc;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 750;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.inventory-product-card.is-selected,
+.inventory-product-card.is-selected:hover {
+  border-color: #8740bd;
+  box-shadow: 0 0 0 2px #8740bd2e, 0 7px 22px #3f185b16;
+}
+
+.inventory-product-card.is-selected .inventory-card-select {
+  border-color: #8740bd;
+  background: #f4eafa;
+}
+
+.inventory-card-health-meter {
+  height: 6px;
+}
+
+@media (max-width: 900px) {
+  .inventory-product-card { grid-template-columns: 96px minmax(0, 1fr); }
+  .inventory-product-image { width: 96px; height: 96px; }
+}
+
+@media (max-width: 760px) {
+  .inventory-product-card { grid-template-columns: 88px minmax(0, 1fr); }
+  .inventory-product-image { width: 88px; height: 88px; }
+}
+
+@media (max-width: 540px) {
+  .inventory-product-card { grid-template-columns: 76px minmax(0, 1fr); }
+  .inventory-product-image { width: 76px; height: 76px; }
+}
+
+[data-theme='dark'] .inventory-product-card.is-selected,
+.work-app.theme-dark .inventory-product-card.is-selected,
+[data-theme='dark'] .inventory-product-card.is-selected:hover,
+.work-app.theme-dark .inventory-product-card.is-selected:hover {
+  border-color: #c084fc !important;
+  box-shadow: 0 0 0 2px #c084fc45, 0 8px 26px #0005 !important;
+}
+
+[data-theme='dark'] .inventory-product-card.is-selected .inventory-card-select,
+.work-app.theme-dark .inventory-product-card.is-selected .inventory-card-select {
+  border-color: #c084fc !important;
+  background: #30233d !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-product-image img { transition: none; }
+  .inventory-product-image:not(:disabled):hover img { transform: none; }
 }
