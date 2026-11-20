@@ -624,7 +624,9 @@
 }
 .dashboard-shortcut-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  max-width: 1260px;
+  margin-inline: auto;
   gap: 12px;
   min-width: 0;
 }
@@ -842,17 +844,24 @@
   }
 }
 @container (max-width: 600px) {
-  .unified-dashboard .dashboard-shortcut-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .unified-dashboard .dashboard-shortcut-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .unified-dashboard .unified-stat-grid { grid-template-columns: minmax(0, 1fr); }
   .unified-dashboard .dashboard-shortcut { min-height: 0; padding: 12px; }
   .unified-dashboard .dashboard-shortcut.is-featured { min-height: 0; padding: 13px; }
-  .unified-dashboard .dashboard-shortcut.is-featured > strong { max-width: 62%; margin-top: 15px; font-size: 15px; }
+  .unified-dashboard .dashboard-shortcut > small { display: none; }
+  .unified-dashboard .dashboard-shortcut-cta { padding-top: 8px; font-size: 9px; }
+  .unified-dashboard .dashboard-shortcut.is-featured > strong { max-width: 58%; margin-top: 15px; font-size: 15px; }
   .unified-dashboard .dashboard-shortcut.is-featured > small { max-width: 60%; font-size: 10px; }
-  .unified-dashboard .dashboard-shortcut-art { right: 2px; transform: translateY(-38%) scale(.62); transform-origin: center right; }
+  .unified-dashboard .dashboard-shortcut-art { right: 2px; transform: translateY(-38%) scale(.43); transform-origin: center right; }
+  .dashboard-section-heading { align-items: flex-start; }
+}
+@container (max-width: 479px) {
+  .unified-dashboard .dashboard-shortcut-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dashboard-section-heading { align-items: flex-start; }
 }
 @container (max-width: 380px) {
   .unified-dashboard .dashboard-shortcut > small { display: none; }
+  .unified-dashboard .dashboard-shortcut-cta { display: none; }
   .unified-dashboard .dashboard-shortcut.is-featured > strong { max-width: 100%; }
   .unified-dashboard .dashboard-shortcut.is-featured .dashboard-shortcut-art { display: none; }
 }

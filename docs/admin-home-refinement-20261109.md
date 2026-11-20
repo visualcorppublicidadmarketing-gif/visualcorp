@@ -29,20 +29,19 @@ La portada destaca hasta cuatro accesos a partir del orden de módulos y rutas c
 
 Los indicadores conservan las métricas que ya devuelve `get_visualcorp_operations_summary()`: ventas confirmadas de hoy con su número de operaciones, solicitudes abiertas, cotizaciones del mes y artículos activos con alerta de nivel mínimo. Se aclaran periodos y alcance. Durante una actualización se mantienen cifras previas; si falla, cada tarjeta las marca como dato anterior. La primera versión no incorporó una gráfica: el resumen solo entregaba totales actuales. Esta actualización agrega minigráficas reales de 14 días para ventas confirmadas y cotizaciones, comparando los últimos siete días con los siete anteriores. Las consultas filtran por organización, respetan permisos/RLS, usan fechas de Guayaquil y ocultan la tendencia si el límite impide recuperar todos los registros.
 
-La presentación se adapta al ancho útil real: los accesos usan una cuadrícula de tarjetas cuadradas compactas, hasta cinco columnas con ancho suficiente y dos columnas en móvil, sin una tarjeta que se extienda por toda la fila. Se conserva un detalle gráfico en el atajo principal; en espacios muy estrechos se priorizan icono y nombre para evitar desbordes. Las interacciones respetan movimiento reducido y las superficies se vuelven sólidas con transparencia reducida. No cambian rutas, permisos ni esquema/datos persistidos, y no se añade una dependencia o migración.
+La presentación se adapta al ancho útil real: los accesos usan una cuadrícula de tarjetas cuadradas compactas, tres columnas desde 480 px, dos en contenedores más estrechos y más columnas cuando el espacio lo permite. Se conserva un detalle gráfico en el atajo principal; en espacios muy estrechos se priorizan icono y nombre para evitar desbordes. Las interacciones respetan movimiento reducido y las superficies se vuelven sólidas con transparencia reducida. No cambian rutas, permisos ni esquema/datos persistidos, y no se añade una dependencia o migración.
 
 ### Catálogos y decisión
 
 - **Magic UI MCP:** se abrieron `Bento Grid`, `Glare Hover` y `Magic Card`, con ejemplos y fuente. El bento oficial usa una cuadrícula rígida de tres columnas y dependencias ajenas al proyecto; se adaptó el motivo a los breakpoints reales. El brillo se implementó en CSS y se reutilizan `SpotlightLayer` y `updateSpotlight` propios, sin agregar paquetes. Magic UI y Motion usan licencia MIT; Motion ya está instalado.
 - **HeroUI MCP:** se revisaron Card y Surface v3. La aplicación tiene `@heroui/styles` 3.2.7 (Apache-2.0), pero incorporar `@heroui/react` para una tarjeta genérica no aportaba más que los componentes locales.
-- **HeroUI MCP:** además de Card y Surface v3, se revisó el patrón Card; no aportaba una interacción necesaria y `@heroui/react` no forma parte de la aplicación.
 - **shadcn MCP:** respondió que no hay registros configurados. Se consultó su documentación oficial; la composición local no requiere instalar Card o Chart. No se envió código del proyecto a generadores externos.
 - **Obsidian:** no hubo un conector operativo en esta sesión.
 
 ### Verificación y límites
 
-`npm run typecheck` y `git diff --check` pasan para esta actualización. No se ejecutó una compilación completa en esta revisión.
+`npm run build:checked` y `git diff --check` pasan para esta actualización.
 
-La revisión autenticada actual confirmó que los accesos cuadrados mantienen contraste y lectura en los temas claro y oscuro; en el ancho móvil de 539 px se muestran dos columnas, sin desbordamiento horizontal visible. El CSS conserva la alternativa sólida para transparencia reducida, el movimiento reducido y colores de sistema para alto contraste. No se verificaron manualmente aquí otros anchos, preferencias de movimiento/transparencia ni una compilación completa.
+La revisión autenticada confirma que la cuadrícula mantiene contraste y lectura en temas claro y oscuro; a 539 px presenta tres columnas, y en contenedores por debajo de 480 px baja a dos. El CSS conserva la alternativa sólida para transparencia reducida, el movimiento reducido y colores de sistema para alto contraste. Otros anchos y preferencias de movimiento/transparencia no se revisaron manualmente en esta iteración.
 
-El cambio queda local y requiere cero migraciones. No se publicó.
+El ajuste no requiere migración ni dependencia adicional.
