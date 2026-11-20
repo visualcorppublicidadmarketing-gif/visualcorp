@@ -715,7 +715,13 @@ export function InventoryLiveRollMonitor({
 
       {/* Modal de Reemplazo de Rollo */}
       {replaceTarget && (
-        <div className="vc-live-modal-backdrop" role="presentation">
+        <div
+          className="vc-live-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (!updatingId && event.target === event.currentTarget) setReplaceTarget(null);
+          }}
+        >
           <div className="vc-live-modal">
             <header>
               <Zap size={22} className="vc-modal-icon-zap" />
@@ -783,7 +789,13 @@ export function InventoryLiveRollMonitor({
 
       {/* Modal para Añadir Nuevo Rollo a Máquina */}
       {showAddModal && (
-        <div className="vc-live-modal-backdrop" role="presentation">
+        <div
+          className="vc-live-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowAddModal(false);
+          }}
+        >
           <form className="vc-live-modal" onSubmit={handleCreateRoll}>
             <header>
               <Plus size={22} />
