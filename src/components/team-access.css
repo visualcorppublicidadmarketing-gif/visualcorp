@@ -1186,3 +1186,13 @@
     flex-wrap: wrap;
   }
 }
+
+@media (max-width: 680px) {
+  .team-account-header .team-access-role {
+    width: max-content;
+    max-width: 100%;
+    min-width: 0;
+    margin-left: 0;
+    white-space: normal;
+  }
+}
