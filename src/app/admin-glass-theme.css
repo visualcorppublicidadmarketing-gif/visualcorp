@@ -668,3 +668,10 @@
     transform: none !important;
   }
 }
+
+@media (max-width: 430px) {
+  .work-app .topbar-right {
+    min-width: 0;
+    gap: 6px;
+  }
+}
