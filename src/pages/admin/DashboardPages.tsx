@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, BriefcaseBusiness, Boxes, CheckCircle2, ClipboardCheck, Cloud, CloudDrizzle, CloudLightning, CloudRain, CloudSun, FileText, MapPin, RefreshCw, Snowflake, Sun, Users, Wallet } from 'lucide-react';
+import { ArrowUpRight, BriefcaseBusiness, Boxes, CheckCircle2, ClipboardCheck, Cloud, CloudDrizzle, CloudLightning, CloudRain, CloudSun, FileText, LayoutGrid, MapPin, RefreshCw, Snowflake, Sun, TrendingDown, TrendingUp, Users, Wallet } from 'lucide-react';
 import { formatMoney, useWorkspace } from '../../app/workspace';
 import { AppFrame } from '../../app/layout';
 import { workspaceNavigation, workspaceNavGroups, canViewNavigationItem } from '../../app/navigation';
@@ -125,18 +125,80 @@ const descriptions: Record<string, string> = {
   '/admin/respaldo': 'Consulta respaldos y procedencia de datos.',
 };
 
+type TrendPoint = { key: string; shortLabel: string; fullLabel: string; value: number };
+type MetricTrend = { points: TrendPoint[]; currentWeek: number; previousWeek: number; changePercent: number | null };
+
+const guayaquilDateFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit',
+});
+const trendShortDateFormatter = new Intl.DateTimeFormat('es-EC', { timeZone: 'UTC', weekday: 'short' });
+const trendFullDateFormatter = new Intl.DateTimeFormat('es-EC', {
+  timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long',
+});
+
+function guayaquilDateKey(date: Date) {
+  const parts = Object.fromEntries(guayaquilDateFormatter.formatToParts(date).map(({ type, value }) => [type, value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function shiftDateKey(key: string, amount: number) {
+  const [year, month, day] = key.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + amount));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+}
+
+function dailyMetricTrend(rows: Array<{ created_at: string; total?: number | string }>, kind: 'sales' | 'quotes', todayKey = guayaquilDateKey(new Date())): MetricTrend {
+  const keys = Array.from({ length: 14 }, (_, index) => shiftDateKey(todayKey, index - 13));
+  const totals = new Map(keys.map((key) => [key, 0]));
+
+  for (const row of rows) {
+    const createdAt = Date.parse(row.created_at);
+    if (!Number.isFinite(createdAt)) continue;
+    const key = guayaquilDateKey(new Date(createdAt));
+    if (!totals.has(key)) continue;
+    const value = kind === 'sales' ? Number(row.total) : 1;
+    if (Number.isFinite(value)) totals.set(key, (totals.get(key) || 0) + value);
+  }
+
+  const points = keys.map((key) => {
+    const atNoonUtc = new Date(`${key}T12:00:00Z`);
+    return {
+      key,
+      shortLabel: trendShortDateFormatter.format(atNoonUtc).replace(/\.$/, ''),
+      fullLabel: trendFullDateFormatter.format(atNoonUtc),
+      value: totals.get(key) || 0,
+    };
+  });
+  const previousWeek = points.slice(0, 7).reduce((sum, point) => sum + point.value, 0);
+  const currentWeek = points.slice(7).reduce((sum, point) => sum + point.value, 0);
+  const changePercent = previousWeek > 0 ? Math.round(((currentWeek - previousWeek) / previousWeek) * 100) : null;
+  return { points, currentWeek, previousWeek, changePercent };
+}
+
+function metricTrendLabel(trend: MetricTrend) {
+  if (trend.changePercent === null) return trend.currentWeek > 0 ? 'Actividad reciente' : 'Sin movimientos';
+  return `${trend.changePercent > 0 ? '+' : ''}${trend.changePercent}% vs. semana previa`;
+}
+
+function metricTrendAccessibleLabel(trend: MetricTrend, isMoney: boolean) {
+  const current = isMoney ? formatMoney(trend.currentWeek) : String(trend.currentWeek);
+  const previous = isMoney ? formatMoney(trend.previousWeek) : String(trend.previousWeek);
+  return `Últimos siete días: ${current}; siete días anteriores: ${previous}. ${metricTrendLabel(trend)}.`;
+}
+
 function metricValue(summary: any, key: string) {
   return summary?.[key] ?? '—';
 }
 
 export function UnifiedHome() {
-  const { user, roles, profiles, hasPermission } = useAuth();
+  const { user, roles, profiles, organizationId, hasPermission } = useAuth();
   const { data } = useWorkspace();
   const [now, setNow] = useState(() => new Date());
   const [weather, setWeather] = useState<{ temperature: number; code: number } | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
   const canViewSummary = hasPermission('dashboard', 'view');
   const [summary, setSummary] = useState<any>(null);
+  const [metricTrends, setMetricTrends] = useState<Partial<Record<'sales_today_total' | 'quotes_this_month', MetricTrend>>>({});
   const [loading, setLoading] = useState(Boolean(supabase) && canViewSummary);
   const [error, setError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -169,6 +231,8 @@ export function UnifiedHome() {
       return (ai < 0 ? Number.MAX_SAFE_INTEGER : ai) - (bi < 0 ? Number.MAX_SAFE_INTEGER : bi);
     })
     : [];
+  const canViewSalesTrend = visibleMetrics.some(({ key }) => key === 'sales_today_total');
+  const canViewQuotesTrend = visibleMetrics.some(({ key }) => key === 'quotes_this_month');
   const quickLinks = visibleGroups.flatMap((group) => group.items.map((item) => ({ ...item, groupLabel: group.label }))).slice(0, 4);
   const priorityDataComplete = (!hasPermission('crm', 'view') || typeof summary?.open_leads === 'number')
     && (!hasPermission('inventory', 'view') || typeof summary?.inventory_low_stock === 'number');
@@ -255,6 +319,54 @@ export function UnifiedHome() {
     return () => { active = false; };
   }, [canViewSummary, refreshKey]);
 
+  useEffect(() => {
+    if (!supabase || !organizationId || (!canViewSalesTrend && !canViewQuotesTrend)) {
+      setMetricTrends({});
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    let active = true;
+    setMetricTrends({});
+    const todayKey = guayaquilDateKey(new Date());
+    const from = `${shiftDateKey(todayKey, -13)}T00:00:00-05:00`;
+    const to = `${shiftDateKey(todayKey, 1)}T00:00:00-05:00`;
+
+    void (async () => {
+      const salesQuery = canViewSalesTrend
+        ? supabase.from('sales').select('created_at,total', { count: 'exact' })
+          .eq('organization_id', organizationId).eq('status', 'confirmed')
+          .gte('created_at', from).lt('created_at', to).order('created_at', { ascending: true })
+          .limit(1000).abortSignal(controller.signal)
+        : Promise.resolve(null);
+      const quotesQuery = canViewQuotesTrend
+        ? supabase.from('central_quotes').select('created_at', { count: 'exact' })
+          .eq('organization_id', organizationId).gte('created_at', from).lt('created_at', to)
+          .order('created_at', { ascending: true }).limit(1000).abortSignal(controller.signal)
+        : Promise.resolve(null);
+
+      const [salesResult, quotesResult] = await Promise.all([salesQuery, quotesQuery]);
+      if (!active) return;
+
+      const nextTrends: Partial<Record<'sales_today_total' | 'quotes_this_month', MetricTrend>> = {};
+      if (salesResult && !salesResult.error && salesResult.data
+        && (salesResult.count === null || salesResult.count <= salesResult.data.length)
+        && (salesResult.count !== null || salesResult.data.length < 1000)) {
+        nextTrends.sales_today_total = dailyMetricTrend(salesResult.data, 'sales', todayKey);
+      }
+      if (quotesResult && !quotesResult.error && quotesResult.data
+        && (quotesResult.count === null || quotesResult.count <= quotesResult.data.length)
+        && (quotesResult.count !== null || quotesResult.data.length < 1000)) {
+        nextTrends.quotes_this_month = dailyMetricTrend(quotesResult.data, 'quotes', todayKey);
+      }
+      setMetricTrends(nextTrends);
+    })().catch(() => {
+      if (active) setMetricTrends({});
+    });
+
+    return () => { active = false; controller.abort(); };
+  }, [canViewSalesTrend, canViewQuotesTrend, organizationId, refreshKey]);
+
   const updatedAt = summary?.as_of && Number.isFinite(Date.parse(summary.as_of))
     ? new Intl.DateTimeFormat('es-EC', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Guayaquil' }).format(new Date(summary.as_of))
     : '';
@@ -290,18 +402,26 @@ export function UnifiedHome() {
       </header>
     {quickLinks.length > 0 && <section className="dashboard-shortcuts" aria-labelledby="dashboard-shortcuts-heading" id="dashboard-shortcuts">
       <div className="dashboard-section-heading"><div><span className="eyebrow">ACCESOS CLAVE · {primaryRole}</span><h2 id="dashboard-shortcuts-heading">Tus herramientas para empezar</h2><p>Atajos según tu perfil y permisos; las demás herramientas siguen disponibles más abajo.</p></div><span className="dashboard-shortcut-count">{quickLinks.length} de {workspaceToolCount} herramientas</span></div>
-      <AnimatedList className="dashboard-shortcut-grid" itemClassName="dashboard-shortcut-item" stagger={0.055}>
-        {quickLinks.map(({ to, label, icon: Icon, groupLabel }) => <Link key={to} className="dashboard-shortcut vc-magic-card" to={to} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
+      <AnimatedList className={`dashboard-shortcut-grid${quickLinks.length === 4 ? ' has-four-shortcuts' : ''}`} itemClassName="dashboard-shortcut-item" stagger={0.055}>
+        {quickLinks.map(({ to, label, icon: Icon, groupLabel }, index) => <Link key={to} className={`dashboard-shortcut vc-magic-card${index === 0 ? ' is-featured' : ''}`} to={to} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
           <SpotlightLayer/>
-          <span className="dashboard-shortcut-top"><span className="dashboard-shortcut-icon"><Icon size={19} aria-hidden="true"/></span><span className="dashboard-shortcut-area">{groupLabel}</span><ArrowUpRight className="dashboard-shortcut-open" size={17} aria-hidden="true"/></span>
+          {index === 0 && <span className="dashboard-shortcut-art" aria-hidden="true"><span className="dashboard-shortcut-art-back"/><span className="dashboard-shortcut-art-orbit"/><span className="dashboard-shortcut-art-front"><Icon size={46}/></span></span>}
+          <span className="dashboard-shortcut-top">{index !== 0 && <span className="dashboard-shortcut-icon"><Icon size={19} aria-hidden="true"/></span>}<span className="dashboard-shortcut-area">{groupLabel}</span><ArrowUpRight className="dashboard-shortcut-open" size={17} aria-hidden="true"/></span>
           <strong>{label}</strong><small>{descriptions[to] || 'Consulta y gestiona los registros de este módulo.'}</small>
           <span className="dashboard-shortcut-cta">Abrir herramienta <ArrowUpRight size={14} aria-hidden="true"/></span>
         </Link>)}
+        <a className="dashboard-shortcut dashboard-shortcut-explore vc-magic-card" href="#dashboard-all-tools" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
+          <SpotlightLayer/>
+          <span className="dashboard-shortcut-top"><span className="dashboard-shortcut-icon"><LayoutGrid size={19} aria-hidden="true"/></span><span className="dashboard-shortcut-area">TU ESPACIO</span><ArrowUpRight className="dashboard-shortcut-open" size={17} aria-hidden="true"/></span>
+          <strong>Explora tus herramientas</strong><small>Busca por área, filtra opciones y guarda tus favoritas.</small>
+          <span className="dashboard-shortcut-cta">Ver todas las áreas <ArrowUpRight size={14} aria-hidden="true"/></span>
+        </a>
       </AnimatedList>
     </section>}
     {error && <div className="unified-summary-error" role="alert"><span>{error}</span><button type="button" className="button button-outline" onClick={() => setRefreshKey((value) => value + 1)} disabled={loading}><RefreshCw size={14}/> {loading ? 'Actualizando…' : 'Reintentar'}</button></div>}
     {visibleMetrics.length > 0 && <section className="unified-overview" aria-label={`Indicadores disponibles para ${primaryRole}`}><div className="unified-overview-heading"><div><span className="eyebrow">INDICADORES DISPONIBLES</span><p>Datos reales, organizados por periodo y permisos de tu perfil.</p></div><button type="button" className="unified-refresh" onClick={() => setRefreshKey(value => value + 1)} disabled={loading}><RefreshCw size={14} aria-hidden="true"/>{loading ? 'Actualizando…' : 'Actualizar resumen'}</button></div><div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, to, key, label, scope, note, noteKey, icon: Icon, tone, money }) => {
       const value = metricValue(summary, key);
+      const trend = key === 'sales_today_total' || key === 'quotes_this_month' ? metricTrends[key] : undefined;
       const initialLoading = loading && !summary;
       const displayValue = initialLoading
         ? <Skeleton className="dashboard-metric-skeleton"/>
@@ -316,17 +436,28 @@ export function UnifiedHome() {
           : typeof noteValue === 'number' && noteKey === 'inventory_low_stock'
             ? `${noteValue} ${noteValue === 1 ? 'artículo en' : 'artículos en'} nivel mínimo`
             : note;
-      return <Link key={module} className={`unified-metric-link vc-magic-card metric-${tone}`} to={to} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight} aria-label={`${label}: ${typeof value === 'number' ? value : value}. ${detail}. Abrir módulo`}>
+      const trendMax = trend ? Math.max(0, ...trend.points.map((point) => point.value)) : 0;
+      const trendAccessibleLabel = trend ? metricTrendAccessibleLabel(trend, Boolean(money)) : '';
+      return <Link key={module} className={`unified-metric-link vc-magic-card metric-${tone}`} to={to} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight} aria-label={`${label}: ${typeof value === 'number' ? value : value}. ${detail}. ${trendAccessibleLabel} Abrir módulo`}>
         <SpotlightLayer/>
         <span className={`dashboard-metric-icon tone-${tone}`}><Icon size={19} aria-hidden="true"/></span><span className="dashboard-metric-scope">{error ? 'SIN ACTUALIZAR' : scope}</span><span className="unified-metric-open" aria-hidden="true"><ArrowUpRight size={16}/></span>
         <strong className="dashboard-metric-value">{displayValue}</strong><span className="dashboard-metric-label">{label}</span><small className="dashboard-metric-note">{detail}</small>
+        {trend && <span className="dashboard-metric-trend">
+          <span className="dashboard-metric-trend-heading"><span>{money ? 'VENTAS' : 'COTIZACIONES'} · 14 DÍAS</span><strong>{trend.changePercent !== null && trend.changePercent !== 0 && (trend.changePercent > 0 ? <TrendingUp size={12} aria-hidden="true"/> : <TrendingDown size={12} aria-hidden="true"/>)}{metricTrendLabel(trend)}</strong></span>
+          <span className="dashboard-metric-trend-bars" aria-hidden="true">{trend.points.map((point, index) => {
+            const height = trendMax > 0 ? Math.max(8, Math.round((point.value / trendMax) * 100)) : 5;
+            const valueLabel = money ? formatMoney(point.value) : `${point.value} ${point.value === 1 ? 'cotización' : 'cotizaciones'}`;
+            return <span key={point.key} className={index === trend.points.length - 1 ? 'is-today' : ''} style={{ height: `${height}%` }} title={`${point.fullLabel}: ${valueLabel}`}/>;
+          })}</span>
+          <span className="dashboard-metric-trend-axis" aria-hidden="true"><span>Hace 13 días</span><span>Hoy</span></span>
+        </span>}
       </Link>;
     })}</div></section>}
     {canViewSummary && (hasPermission('crm', 'view') || hasPermission('inventory', 'view')) ? <section className="panel unified-priority-panel" aria-labelledby="unified-priority-heading">
       <div className="panel-heading"><div><span className="eyebrow">SIGUIENTE PASO</span><h2 id="unified-priority-heading">Pendientes que puedes atender</h2></div>{loading ? <span className="unified-priority-state">Actualizando</span> : error ? <span className="unified-priority-state">Sin actualizar</span> : priorities.length ? <span className="unified-priority-state has-items">{priorities.length} {priorities.length === 1 ? 'pendiente' : 'pendientes'}</span> : priorityDataComplete ? <span className="unified-priority-state is-clear"><CheckCircle2 size={15}/> Sin alertas</span> : <span className="unified-priority-state">Sin datos</span>}</div>
       {error ? <p className="unified-priority-empty">No se muestran pendientes hasta confirmar que la información está actualizada.</p> : loading ? <div className="unified-priority-loading" role="status"><span className="sr-only">Consultando los registros autorizados para tu perfil</span><Skeleton className="dashboard-priority-skeleton"/><Skeleton className="dashboard-priority-skeleton is-short"/></div> : priorities.length ? <div className="unified-priority-list">{priorities.map(({ key, to, icon: Icon, title, detail, count }) => <Link className="unified-priority-item" to={to} key={key}><span className={`unified-priority-icon ${key}`}><Icon size={18}/></span><span className="unified-priority-copy"><b>{title}</b><small>{detail}</small></span><span className="unified-priority-count">{count}</span><ArrowUpRight size={16} aria-hidden="true"/></Link>)}</div> : priorityDataComplete ? <p className="unified-priority-empty">No se detectan pendientes en los módulos visibles para tu perfil.</p> : <p className="unified-priority-empty">No se recibieron datos suficientes para confirmar si hay pendientes.</p>}
     </section> : null}
-    <WorkspaceLauncher key={user?.id || 'anonymous'} userId={user?.id || 'anonymous'} groups={visibleGroups} descriptions={descriptions} heading={`Herramientas para ${primaryRole}`}/>
+    <div id="dashboard-all-tools" className="dashboard-all-tools"><WorkspaceLauncher key={user?.id || 'anonymous'} userId={user?.id || 'anonymous'} groups={visibleGroups} descriptions={descriptions} heading={`Herramientas para ${primaryRole}`}/></div>
     {hasPermission('crm', 'view') && <section className="panel unified-recent-panel"><div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO COMERCIAL</span><h2>Solicitudes recientes</h2></div><Link className="text-link" to="/operaciones/crm">Abrir CRM <ArrowUpRight size={14}/></Link></div><LeadsTable/></section>}
     {hasPermission('team', 'view') && <ChangeLogPanel area="operations" compact/>}
     </div>
