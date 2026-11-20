@@ -320,6 +320,15 @@ html[data-public-theme="light"] .public-site .site-header .site-admin-access:hov
 
 @keyframes site-nav-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
 
+@media (max-width: 1280px) and (min-width: 1101px) {
+  .public-site .site-header-inner { gap: 11px; padding-inline: 18px; }
+  .public-site .site-nav-link,
+  .public-site .site-nav-trigger { padding-inline: 6px; font-size: 11px; }
+  .public-site .site-header .site-brand { width: 132px; }
+  .public-site .site-header .site-admin-access { gap: 6px; padding-inline: 9px; font-size: 10px; }
+  .public-site .site-header .site-quote-button { padding-inline: 11px; }
+}
+
 @media (max-width: 1120px) {
   .public-site .site-mobile-panel { top: 88px; }
 }
