@@ -151,6 +151,10 @@ export function MarketingTimeGrid({
   onCreateRangeRef.current = onCreateRange;
   const timelineRef = useRef<HTMLDivElement>(null);
   const dayFormat = useMemo(() => new Intl.DateTimeFormat('es-EC', { weekday: 'short', day: 'numeric', month: 'short' }), []);
+  const [mobileSelectedDate, setMobileSelectedDate] = useState(firstDate);
+  const mobileAgendaDateKey = dates.some((date) => dateKey(date) === mobileSelectedDate)
+    ? mobileSelectedDate
+    : dates.some((date) => dateKey(date) === today) ? today : firstDate;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -372,6 +376,39 @@ export function MarketingTimeGrid({
     if (entry.kind === 'task' && entry.task) onTaskSelect(entry.task);
   };
 
+  const renderMobileAgendaEntry = (entry: TimedEntry | AllDayEntry, date: string, isAllDay: boolean) => {
+    const platformModifier = entry.kind === 'post' && entry.post
+      ? ` is-platform-${getPlatformClassName(entry.post.platform)}`
+      : '';
+
+    return (
+      <ContextMenu
+        key={entry.key}
+        displayContents
+        trigger={false}
+        className="vc-marketing-time-event-context"
+        label={`Acciones para ${entry.title}`}
+        actions={entry.kind === 'post' && entry.post ? postActions(entry.post) : entry.task ? taskActions(entry.task) : []}
+      >
+        <div
+          role="button"
+          tabIndex={0}
+          className={`vc-marketing-time-event vc-marketing-mobile-agenda-event is-${view}-entry tone-${entry.tone}${entry.overdue ? ' is-overdue' : ''}${entry.kind === 'task' ? ' is-task' : ' is-post'}${platformModifier}`}
+          onClick={() => createPostOrTask(entry)}
+          onKeyDown={(event) => {
+            if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+              event.preventDefault();
+              createPostOrTask(entry);
+            }
+          }}
+          aria-label={`${entry.timeLabel || (isAllDay ? 'Todo el día' : '')} · ${entry.title} · ${entry.subline}`}
+        >
+          {renderTimeEventContent(entry, isAllDay, date)}
+        </div>
+      </ContextMenu>
+    );
+  };
+
   const handleDragStart = (e: React.DragEvent, kind: 'post' | 'task', id: string, title: string) => {
     if (!canEdit) return;
     e.stopPropagation();
@@ -581,7 +618,7 @@ export function MarketingTimeGrid({
       <div className="vc-marketing-time-toolbar-strip">
         <p className="vc-marketing-selection-hint">
           {canEdit
-            ? '💡 Arrastra cualquier tarjeta a la hora o día deseado. También puedes arrastrar sobre horas vacías para crear una nueva actividad.'
+            ? <><span className="vc-marketing-hint-desktop">💡 Arrastra cualquier tarjeta a la hora o día deseado. También puedes arrastrar sobre horas vacías para crear una nueva actividad.</span><span className="vc-marketing-hint-mobile">Toca una tarjeta para abrirla. Usa los botones de cada día para crear publicaciones o actividades.</span></>
             : 'Las actividades y publicaciones se organizan según sus horarios y fechas.'}
         </p>
         <div className="vc-marketing-time-range-toggle">
@@ -604,6 +641,48 @@ export function MarketingTimeGrid({
             <span>24 Horas</span>
           </button>
         </div>
+      </div>
+
+      <div className="vc-marketing-mobile-agenda" role="region" aria-label={view === 'day' ? 'Agenda del día' : 'Agenda semanal'}>
+        {view === 'week' && <nav className="vc-marketing-mobile-date-picker" aria-label="Elegir día de la semana">
+          {dates.map((date) => {
+            const key = dateKey(date);
+            const entries = entriesByDate.get(key) || { allDay: [], timed: [] };
+            const count = entries.allDay.length + entries.timed.length;
+            return <button type="button" key={key} aria-label={`${new Intl.DateTimeFormat('es-EC', { dateStyle: 'full' }).format(date)} · ${count} ${count === 1 ? 'elemento' : 'elementos'}`} aria-pressed={mobileAgendaDateKey === key} onClick={() => setMobileSelectedDate(key)}><span>{new Intl.DateTimeFormat('es-EC', { weekday: 'short' }).format(date).replace('.', '')}</span><b>{date.getDate()}</b><small>{count}</small></button>;
+          })}
+        </nav>}
+        {(view === 'day' ? dates : dates.filter((date) => dateKey(date) === mobileAgendaDateKey)).map((date) => {
+          const key = dateKey(date);
+          const entries = entriesByDate.get(key) || { allDay: [], timed: [] };
+          const orderedEntries = [
+            ...entries.allDay.map((entry) => ({ entry, allDay: true })),
+            ...entries.timed.map((entry) => ({ entry, allDay: false })),
+          ];
+          const heading = new Intl.DateTimeFormat('es-EC', { weekday: 'long', day: 'numeric', month: 'long' }).format(date);
+
+          return (
+            <section className={`vc-marketing-mobile-agenda-day${key === today ? ' is-today' : ''}`} key={key} aria-label={heading}>
+              <header className="vc-marketing-mobile-agenda-day-head">
+                <div>
+                  <h3>{heading}</h3>
+                  <span>{orderedEntries.length} {orderedEntries.length === 1 ? 'elemento' : 'elementos'}{key === today ? ' · Hoy' : ''}</span>
+                </div>
+                {canEdit && <div className="vc-marketing-mobile-agenda-day-actions">
+                  <button type="button" className="is-post" onClick={() => onCreatePost?.(key)}>+ Publicación</button>
+                  <button type="button" className="is-task" onClick={() => onCreateRange({ startDate: key, endDate: key })}>+ Actividad</button>
+                </div>}
+              </header>
+              {orderedEntries.length ? (
+                <div className="vc-marketing-mobile-agenda-entries">
+                  {orderedEntries.map(({ entry, allDay }) => renderMobileAgendaEntry(entry, key, allDay))}
+                </div>
+              ) : (
+                <p className="vc-marketing-mobile-agenda-empty">Sin publicaciones ni actividades programadas.</p>
+              )}
+            </section>
+          );
+        })}
       </div>
 
       <div ref={timelineRef} className="vc-marketing-time-scroll" role="grid" aria-label={view === 'day' ? `Día ${firstDate}; intervalos de 30 minutos` : `Semana ${firstDate} al ${lastDate}; 7 días completos`}>
