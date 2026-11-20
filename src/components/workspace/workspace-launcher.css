@@ -79,3 +79,44 @@
   .workspace-tool-card > a { min-height: 112px; }
 }
 @media (prefers-reduced-motion: reduce) { .workspace-tool-card { transition: none; } }
+
+.work-app .workspace-launcher .workspace-tool-card {
+  border-color: var(--admin-frosted-border, var(--wl-border));
+  background:
+    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--admin-glass-accent-strong, #a51091) 8%, transparent), transparent 58%),
+    var(--admin-frosted-bg, var(--wl-card));
+  box-shadow: var(--admin-frosted-shadow, 0 8px 22px rgb(34 30 48 / 5%));
+  backdrop-filter: var(--admin-frosted-blur, blur(12px) saturate(130%));
+  -webkit-backdrop-filter: var(--admin-frosted-blur, blur(12px) saturate(130%));
+  transition: transform .24s ease, border-color .24s ease, box-shadow .24s ease, background-color .24s ease;
+}
+.work-app .workspace-launcher .workspace-tool-card > a { position: relative; z-index: 1; min-height: 136px; padding-top: 17px; }
+.work-app .workspace-launcher .workspace-tool-card > a > svg:last-child { transition: transform .24s ease, color .24s ease; }
+.work-app .workspace-launcher .workspace-tool-icon {
+  border-color: color-mix(in srgb, var(--admin-glass-accent-strong, #a51091) 20%, var(--admin-glass-line, var(--wl-border)));
+  background: color-mix(in srgb, var(--admin-glass-accent-strong, #a51091) 9%, var(--admin-glass-card, #fff));
+  color: var(--admin-glass-accent-strong, var(--wl-accent));
+  transition: transform .24s ease, background-color .24s ease;
+}
+.work-app .workspace-launcher .workspace-tool-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--admin-glass-accent-strong, #a51091) 38%, var(--admin-glass-line, var(--wl-border)));
+  background:
+    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--admin-glass-accent-strong, #a51091) 12%, transparent), transparent 58%),
+    var(--admin-frosted-bg, var(--wl-card));
+  box-shadow: 0 18px 36px rgb(42 24 58 / 11%), inset 0 1px 0 var(--admin-glass-surface-highlight, rgb(255 255 255 / 70%));
+}
+.work-app .workspace-launcher .workspace-tool-card:hover .workspace-tool-icon { transform: translateY(-2px) rotate(-3deg); }
+.work-app .workspace-launcher .workspace-tool-card:hover > a > svg:last-child { transform: translate(2px, -2px); color: var(--admin-glass-accent-strong, var(--wl-accent)); }
+.work-app .workspace-launcher .workspace-pin { z-index: 2; background: color-mix(in srgb, var(--admin-glass-card, #fff) 82%, transparent); }
+.work-app .workspace-launcher .workspace-pin:hover { border-color: var(--admin-glass-line, var(--wl-border)); background: var(--admin-glass-tint, var(--wl-tint)); color: var(--admin-glass-accent-strong, var(--wl-accent)); }
+@media (prefers-reduced-transparency: reduce) {
+  .work-app .workspace-launcher .workspace-tool-card { border-color: var(--vc-line, var(--wl-border)); background: var(--vc-surface, var(--wl-bg)); box-shadow: var(--admin-glass-surface-shadow, 0 4px 18px rgb(34 30 48 / 6%)); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .work-app.theme-dark .workspace-launcher .workspace-tool-card { background: var(--vc-surface, var(--wl-bg)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .work-app .workspace-launcher .workspace-tool-card,
+  .work-app .workspace-launcher .workspace-tool-card:hover,
+  .work-app .workspace-launcher .workspace-tool-icon,
+  .work-app .workspace-launcher .workspace-tool-card > a > svg:last-child { transform: none !important; transition: none !important; }
+}

@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, BriefcaseBusiness, Boxes, CheckCircle2, ClipboardCheck, Cloud, CloudDrizzle, CloudLightning, CloudRain, CloudSun, FileText, MapPin, RefreshCw, Snowflake, Sun, Users, Wallet } from 'lucide-react';
 import { formatMoney, useWorkspace } from '../../app/workspace';
-import { AppFrame, StatCard } from '../../app/layout';
+import { AppFrame } from '../../app/layout';
 import { workspaceNavigation, workspaceNavGroups, canViewNavigationItem } from '../../app/navigation';
 import { legacyRoleNames } from '../../auth/accessCatalog';
 import { ChangeLogPanel } from '../../components/ChangeLog';
 import { WorkspaceLauncher } from '../../components/workspace';
+import { AnimatedList, clearSpotlight, NumberTicker, SpotlightLayer, updateSpotlight } from '../../components/ui/MagicComponents';
 import { LeadsTable } from './CRMPage';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
@@ -14,10 +15,10 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import './unified-home.css';
 
 const metricCards = [
-  { module: 'sales', to: '/operaciones/pos', key: 'sales_today_total', label: 'Ventas de hoy', note: 'Total confirmado hoy', icon: Wallet, tone: 'blue', money: true },
-  { module: 'crm', to: '/operaciones/crm', key: 'open_leads', label: 'Solicitudes abiertas', note: 'Seguimiento comercial', icon: Users, tone: 'violet' },
-  { module: 'quotes', to: '/operaciones/cotizador', key: 'quotes_this_month', label: 'Cotizaciones del mes', note: 'Propuestas compartidas', icon: FileText, tone: 'amber' },
-  { module: 'inventory', to: '/operaciones/inventario', key: 'inventory_items', label: 'Artículos inventariados', noteKey: 'inventory_low_stock', icon: Boxes, tone: 'rose' },
+  { module: 'sales', to: '/operaciones/pos', key: 'sales_today_total', label: 'Ventas de hoy', scope: 'HOY', noteKey: 'sales_today_count', note: 'ventas confirmadas', icon: Wallet, tone: 'blue', money: true },
+  { module: 'crm', to: '/operaciones/crm', key: 'open_leads', label: 'Solicitudes abiertas', scope: 'SEGUIMIENTO', note: 'Pendientes de atención comercial', icon: Users, tone: 'violet' },
+  { module: 'quotes', to: '/operaciones/cotizador', key: 'quotes_this_month', label: 'Cotizaciones del mes', scope: 'MES ACTUAL', note: 'Propuestas creadas este mes', icon: FileText, tone: 'amber' },
+  { module: 'inventory', to: '/operaciones/inventario', key: 'inventory_items', label: 'Artículos activos', scope: 'INVENTARIO', noteKey: 'inventory_low_stock', note: 'en nivel mínimo', icon: Boxes, tone: 'rose' },
 ];
 
 const roleCardPriority: Record<string, string[]> = {
@@ -124,9 +125,7 @@ const descriptions: Record<string, string> = {
   '/admin/respaldo': 'Consulta respaldos y procedencia de datos.',
 };
 
-function metricValue(summary: any, key: string, loading: boolean, error: string) {
-  if (loading) return '…';
-  if (error) return '—';
+function metricValue(summary: any, key: string) {
   return summary?.[key] ?? '—';
 }
 
@@ -163,16 +162,14 @@ export function UnifiedHome() {
     const ai = groupOrder.indexOf(a.id); const bi = groupOrder.indexOf(b.id);
     return (ai < 0 ? Number.MAX_SAFE_INTEGER : ai) - (bi < 0 ? Number.MAX_SAFE_INTEGER : bi);
   }), [availableLinks, groupOrder, routeOrder]);
+  const workspaceToolCount = visibleGroups.reduce((count, group) => count + group.items.length, 0);
   const visibleMetrics = canViewSummary
     ? metricCards.filter(({ module, to }) => hasPermission(module, 'view') && availableLinks.some((item) => item.to === to)).sort((a, b) => {
       const ai = roleOrder.indexOf(a.module); const bi = roleOrder.indexOf(b.module);
       return (ai < 0 ? Number.MAX_SAFE_INTEGER : ai) - (bi < 0 ? Number.MAX_SAFE_INTEGER : bi);
     })
     : [];
-  const primaryPath = routeOrder.find((path) => availableLinks.some((link) => link.to === path));
-  const primaryAction = availableLinks.find((item) => item.to === primaryPath)
-    || availableLinks.find((item) => item.to === '/operaciones/pos')
-    || availableLinks[0];
+  const quickLinks = visibleGroups.flatMap((group) => group.items.map((item) => ({ ...item, groupLabel: group.label }))).slice(0, 4);
   const priorityDataComplete = (!hasPermission('crm', 'view') || typeof summary?.open_leads === 'number')
     && (!hasPermission('inventory', 'view') || typeof summary?.inventory_low_stock === 'number');
   const priorities = useMemo(() => {
@@ -287,18 +284,43 @@ export function UnifiedHome() {
           </div>
           <div className="unified-dashboard-hero-actions">
           {(loading || updatedAt) && <div className="unified-summary-meta" role="status" aria-live="polite"><span className={`status-dot${error ? ' is-warning' : ''}`}/>{loading ? 'Actualizando información…' : error ? `Última consulta: ${updatedAt} · sin actualizar` : `Información actualizada a las ${updatedAt}`}</div>}
-          {primaryAction && <Link className="unified-dashboard-action" to={primaryAction.to}>Abrir {primaryAction.label} <ArrowUpRight size={17} aria-hidden="true"/></Link>}
+          <a className="unified-dashboard-action" href="#dashboard-shortcuts">Ver accesos directos <ArrowUpRight size={17} aria-hidden="true"/></a>
           </div>
         </div>
       </header>
+    {quickLinks.length > 0 && <section className="dashboard-shortcuts" aria-labelledby="dashboard-shortcuts-heading" id="dashboard-shortcuts">
+      <div className="dashboard-section-heading"><div><span className="eyebrow">ACCESOS CLAVE · {primaryRole}</span><h2 id="dashboard-shortcuts-heading">Tus herramientas para empezar</h2><p>Atajos según tu perfil y permisos; las demás herramientas siguen disponibles más abajo.</p></div><span className="dashboard-shortcut-count">{quickLinks.length} de {workspaceToolCount} herramientas</span></div>
+      <AnimatedList className="dashboard-shortcut-grid" itemClassName="dashboard-shortcut-item" stagger={0.055}>
+        {quickLinks.map(({ to, label, icon: Icon, groupLabel }) => <Link key={to} className="dashboard-shortcut vc-magic-card" to={to} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
+          <SpotlightLayer/>
+          <span className="dashboard-shortcut-top"><span className="dashboard-shortcut-icon"><Icon size={19} aria-hidden="true"/></span><span className="dashboard-shortcut-area">{groupLabel}</span><ArrowUpRight className="dashboard-shortcut-open" size={17} aria-hidden="true"/></span>
+          <strong>{label}</strong><small>{descriptions[to] || 'Consulta y gestiona los registros de este módulo.'}</small>
+          <span className="dashboard-shortcut-cta">Abrir herramienta <ArrowUpRight size={14} aria-hidden="true"/></span>
+        </Link>)}
+      </AnimatedList>
+    </section>}
     {error && <div className="unified-summary-error" role="alert"><span>{error}</span><button type="button" className="button button-outline" onClick={() => setRefreshKey((value) => value + 1)} disabled={loading}><RefreshCw size={14}/> {loading ? 'Actualizando…' : 'Reintentar'}</button></div>}
-    {visibleMetrics.length > 0 && <section className="unified-overview" aria-label="Resumen operativo"><div className="unified-overview-heading"><span className="eyebrow">RESUMEN OPERATIVO</span><button type="button" className="unified-refresh" onClick={() => setRefreshKey(value => value + 1)} disabled={loading}><RefreshCw size={14} aria-hidden="true"/>{loading ? 'Actualizando…' : 'Actualizar resumen'}</button></div><div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, to, key, label, note, noteKey, icon, tone, money }) => {
-      const value = metricValue(summary, key, loading, error);
-      const displayValue = loading ? <Skeleton className="dashboard-metric-skeleton"/> : money && typeof value === 'number' ? formatMoney(value) : value;
-      const detail = noteKey && !loading && !error && summary?.[noteKey] != null
-        ? `${summary[noteKey]} en nivel mínimo`
-        : note;
-      return <Link key={module} className="unified-metric-link" to={to}><StatCard label={label} value={displayValue} icon={icon} note={detail} tone={tone}/><span className="unified-metric-open" aria-hidden="true"><ArrowUpRight size={16}/></span><span className="sr-only">Abrir módulo: {label}</span></Link>;
+    {visibleMetrics.length > 0 && <section className="unified-overview" aria-label={`Indicadores disponibles para ${primaryRole}`}><div className="unified-overview-heading"><div><span className="eyebrow">INDICADORES DISPONIBLES</span><p>Datos reales, organizados por periodo y permisos de tu perfil.</p></div><button type="button" className="unified-refresh" onClick={() => setRefreshKey(value => value + 1)} disabled={loading}><RefreshCw size={14} aria-hidden="true"/>{loading ? 'Actualizando…' : 'Actualizar resumen'}</button></div><div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, to, key, label, scope, note, noteKey, icon: Icon, tone, money }) => {
+      const value = metricValue(summary, key);
+      const initialLoading = loading && !summary;
+      const displayValue = initialLoading
+        ? <Skeleton className="dashboard-metric-skeleton"/>
+        : money && typeof value === 'number'
+          ? formatMoney(value)
+          : typeof value === 'number' ? <NumberTicker value={value}/> : value;
+      const noteValue = noteKey ? summary?.[noteKey] : null;
+      const detail = error
+        ? 'Dato anterior · sin actualizar'
+        : typeof noteValue === 'number' && noteKey === 'sales_today_count'
+          ? `${noteValue} ${noteValue === 1 ? 'venta confirmada' : 'ventas confirmadas'} hoy`
+          : typeof noteValue === 'number' && noteKey === 'inventory_low_stock'
+            ? `${noteValue} ${noteValue === 1 ? 'artículo en' : 'artículos en'} nivel mínimo`
+            : note;
+      return <Link key={module} className={`unified-metric-link vc-magic-card metric-${tone}`} to={to} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight} aria-label={`${label}: ${typeof value === 'number' ? value : value}. ${detail}. Abrir módulo`}>
+        <SpotlightLayer/>
+        <span className={`dashboard-metric-icon tone-${tone}`}><Icon size={19} aria-hidden="true"/></span><span className="dashboard-metric-scope">{error ? 'SIN ACTUALIZAR' : scope}</span><span className="unified-metric-open" aria-hidden="true"><ArrowUpRight size={16}/></span>
+        <strong className="dashboard-metric-value">{displayValue}</strong><span className="dashboard-metric-label">{label}</span><small className="dashboard-metric-note">{detail}</small>
+      </Link>;
     })}</div></section>}
     {canViewSummary && (hasPermission('crm', 'view') || hasPermission('inventory', 'view')) ? <section className="panel unified-priority-panel" aria-labelledby="unified-priority-heading">
       <div className="panel-heading"><div><span className="eyebrow">SIGUIENTE PASO</span><h2 id="unified-priority-heading">Pendientes que puedes atender</h2></div>{loading ? <span className="unified-priority-state">Actualizando</span> : error ? <span className="unified-priority-state">Sin actualizar</span> : priorities.length ? <span className="unified-priority-state has-items">{priorities.length} {priorities.length === 1 ? 'pendiente' : 'pendientes'}</span> : priorityDataComplete ? <span className="unified-priority-state is-clear"><CheckCircle2 size={15}/> Sin alertas</span> : <span className="unified-priority-state">Sin datos</span>}</div>

@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Search, Star, X } from 'lucide-react';
 import type { AppNavGroup, AppNavLink } from '../../app/navigation';
+import { clearSpotlight, SpotlightLayer, updateSpotlight } from '../ui/MagicComponents';
 import './workspace-launcher.css';
 
 export type WorkspaceLauncherProps = {
@@ -54,7 +55,14 @@ export function WorkspaceLauncher({ userId, groups, descriptions, heading }: Wor
     <div className="workspace-area-filters" role="group" aria-label="Filtrar herramientas por área"><button type="button" aria-pressed={area === 'all'} onClick={() => setArea('all')}>Todas las áreas</button>{groups.map(({id,label,icon:Icon}) => <button key={id} type="button" aria-pressed={area === id} onClick={() => setArea(id)}><Icon size={15} aria-hidden="true"/>{label}</button>)}</div>
     <p className="workspace-tool-count" role="status" aria-live="polite">{count} {count === 1 ? 'herramienta disponible' : 'herramientas disponibles'}{query && ` para “${query}”`}</p>
     {storageWarning && <p className="workspace-storage-warning" role="status">Tus favoritos funcionan durante esta sesión, pero el navegador no permitió guardarlos.</p>}
-    {filteredGroups.map(({id,label,icon:GroupIcon,items}) => <section key={id} className="workspace-tool-group" aria-labelledby={`${searchId}-${id}`}><h3 id={`${searchId}-${id}`}><GroupIcon size={17} aria-hidden="true"/>{label}<span>{items.length}</span></h3><div className="workspace-tool-grid">{items.map(({to,label: name,icon:Icon}) => <article className="workspace-tool-card" key={to}><Link to={to}><span className="workspace-tool-icon"><Icon size={21} aria-hidden="true"/></span><span><strong>{name}</strong><small>{descriptions[to] || 'Consulta y gestiona los registros de este módulo.'}</small></span><ArrowUpRight size={17} aria-hidden="true"/></Link><button className="workspace-pin" type="button" aria-pressed={favorites.includes(to)} aria-label={`${favorites.includes(to) ? 'Quitar' : 'Añadir'} ${name} ${favorites.includes(to) ? 'de' : 'a'} favoritos`} onClick={() => toggleFavorite(to)}><Star size={17} fill={favorites.includes(to) ? 'currentColor' : 'none'} aria-hidden="true"/></button></article>)}</div></section>)}
+    {filteredGroups.map(({ id, label, icon: GroupIcon, items }) => <section key={id} className="workspace-tool-group" aria-labelledby={`${searchId}-${id}`}>
+      <h3 id={`${searchId}-${id}`}><GroupIcon size={17} aria-hidden="true"/>{label}<span>{items.length}</span></h3>
+      <div className="workspace-tool-grid">{items.map(({ to, label: name, icon: Icon }) => <article className="workspace-tool-card vc-magic-card" key={to} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
+        <SpotlightLayer/>
+        <Link to={to}><span className="workspace-tool-icon"><Icon size={21} aria-hidden="true"/></span><span><strong>{name}</strong><small>{descriptions[to] || 'Consulta y gestiona los registros de este módulo.'}</small></span><ArrowUpRight size={17} aria-hidden="true"/></Link>
+        <button className="workspace-pin" type="button" aria-pressed={favorites.includes(to)} aria-label={`${favorites.includes(to) ? 'Quitar' : 'Añadir'} ${name} ${favorites.includes(to) ? 'de' : 'a'} favoritos`} onClick={() => toggleFavorite(to)}><Star size={17} fill={favorites.includes(to) ? 'currentColor' : 'none'} aria-hidden="true"/></button>
+      </article>)}</div>
+    </section>)}
     {!count && <div className="workspace-tools-empty"><Search size={26} aria-hidden="true"/><h3>{!groups.length ? 'Sin herramientas asignadas' : onlyFavorites && !allowedFavorites.length ? 'Tus favoritos empiezan aquí' : 'No encontramos herramientas'}</h3><p>{!groups.length ? 'Solicita al responsable revisar los permisos de tu perfil.' : onlyFavorites && !allowedFavorites.length ? 'Vuelve a todas las herramientas y marca las que utilizas a diario.' : 'Prueba con otra palabra o cambia los filtros.'}</p>{groups.length > 0 && <button type="button" onClick={reset}>Ver todas las herramientas</button>}</div>}
   </section>;
 }
