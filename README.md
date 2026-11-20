@@ -171,7 +171,7 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ### Inicio de Admin: accesos por perfil y métricas — 2026-11-20
 
-- Se destacan cuatro herramientas según el orden y los permisos del perfil, en tarjetas cuadradas compactas de tres columnas desde 480 px, dos en contenedores estrechos y más cuando hay espacio; la búsqueda y los favoritos conservan el catálogo completo. Las métricas incluyen tendencias reales de 14 días para ventas confirmadas y cotizaciones, agrupadas en fechas de Guayaquil y limitadas por organización, permisos y RLS.
+- Se destacan cuatro herramientas según el orden y los permisos del perfil, en tarjetas cuadradas compactas de tres columnas en anchos habituales, dos en contenedores por debajo de 480 px y más columnas solo en escritorio amplio; la búsqueda y los favoritos conservan el catálogo completo. Las métricas incluyen tendencias reales de 14 días para ventas confirmadas y cotizaciones, agrupadas en fechas de Guayaquil y limitadas por organización, permisos y RLS.
 - Tarjetas glass con brillo, animación sutil y diseño adaptable; se mantiene el tratamiento para temas claro/oscuro, movimiento y transparencia reducidos. No cambian rutas ni permisos, no se agregan dependencias o migraciones y no se altera información persistida.
 - `npm run build:checked` y `git diff --check` pasan. La revisión visual autenticada confirmó ambos temas, tres columnas en 539 px y dos en espacios estrechos, sin desbordamiento visible. Investigación, decisiones y límites: [ficha del inicio](docs/admin-home-refinement-20261109.md).
 
