@@ -1196,3 +1196,10 @@
     white-space: normal;
   }
 }
+
+@media (max-width: 430px) {
+  .work-app:has(.team-access) .topbar-right {
+    min-width: 0;
+    gap: 6px;
+  }
+}
