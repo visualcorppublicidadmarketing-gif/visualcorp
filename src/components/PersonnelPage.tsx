@@ -93,6 +93,7 @@ export function PersonnelPage() {
 
   const [personnel, setPersonnel] = useState<PersonnelRecord[]>([]);
   const [googleAccounts, setGoogleAccounts] = useState<GoogleAccount[]>([]);
+  const [googleAccountsLoaded, setGoogleAccountsLoaded] = useState(false);
   const [accessProfiles, setAccessProfiles] = useState<AccessProfile[]>([]);
   const [workHours, setWorkHours] = useState<TeamWorkHour[]>([]);
   const [workExceptions, setWorkExceptions] = useState<TeamWorkException[]>([]);
@@ -111,6 +112,7 @@ export function PersonnelPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [quickFilter, setQuickFilter] = useState<DirectoryQuickFilter>('active');
   const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [googleLinkFilter, setGoogleLinkFilter] = useState<'all' | 'linked' | 'unlinked'>('all');
 
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -195,11 +197,15 @@ export function PersonnelPage() {
 
   const loadWorkspace = useCallback(async () => {
     if (!supabase || !organizationId) {
+      setGoogleAccountsLoaded(false);
+      setGoogleLinkFilter('all');
       setLoading(false);
       return;
     }
     setLoading(true);
     setErrorMessage('');
+    setGoogleAccountsLoaded(false);
+    if (!canManageTeam || !canEdit) setGoogleLinkFilter('all');
 
     const personnelPromise = supabase
       .from('personnel_records')
@@ -330,6 +336,8 @@ export function PersonnelPage() {
     setEmploymentPeriods((employmentPeriodsRes.data || []) as PersonnelEmploymentPeriod[]);
     setEmploymentCompensation((employmentCompensationRes.data || []) as PersonnelEmploymentCompensation[]);
     setGoogleAccounts((googleRes.data || []) as GoogleAccount[]);
+    setGoogleAccountsLoaded(Boolean(canManageTeam && canEdit && !googleRes.error));
+    if (googleRes.error || !canManageTeam || !canEdit) setGoogleLinkFilter('all');
     setAccessProfiles((profilesRes.data || []) as AccessProfile[]);
     setAllCompensation((compRes.data || []) as CompensationEntry[]);
     setAllDeductions((dedRes.data || []) as PayrollDeduction[]);
@@ -661,6 +669,8 @@ export function PersonnelPage() {
 
   const filteredPersonnel = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
+    const canFilterGoogleAccounts = canManageTeam && canEdit && googleAccountsLoaded;
+    const effectiveGoogleLinkFilter = canFilterGoogleAccounts ? googleLinkFilter : 'all';
     return personnel.filter((person) => {
       if (quickFilter === 'active' && person.status !== 'active') return false;
       if (quickFilter === 'inactive' && person.status !== 'inactive') return false;
@@ -670,6 +680,9 @@ export function PersonnelPage() {
       if (quickFilter === 'incomplete' && (person.status !== 'active' || readinessByPersonnel.get(person.id)?.tier !== 'incomplete')) {
         return false;
       }
+      const hasGoogleLink = googleAccountByPersonnelId.has(person.id);
+      if (effectiveGoogleLinkFilter === 'linked' && !hasGoogleLink) return false;
+      if (effectiveGoogleLinkFilter === 'unlinked' && hasGoogleLink) return false;
       if (departmentFilter !== 'all' && person.department !== departmentFilter) return false;
       if (!term) return true;
       return [
@@ -685,7 +698,14 @@ export function PersonnelPage() {
         val.toLowerCase().includes(term),
       );
     });
-  }, [personnel, quickFilter, departmentFilter, searchTerm, googleAccountByPersonnelId, readinessByPersonnel]);
+  }, [personnel, quickFilter, departmentFilter, searchTerm, googleAccountByPersonnelId, readinessByPersonnel, canManageTeam, canEdit, googleAccountsLoaded, googleLinkFilter]);
+
+  useEffect(() => {
+    if (!(canManageTeam && canEdit && googleAccountsLoaded)) return;
+    if (filteredPersonnel.some((person) => person.id === selectedId)) return;
+    if (googleLinkFilter === 'all' && selectedId) return;
+    setSelectedId(filteredPersonnel[0]?.id || '');
+  }, [canManageTeam, canEdit, googleAccountsLoaded, googleLinkFilter, filteredPersonnel, selectedId]);
 
   const selected = useMemo(
     () => personnel.find((item) => item.id === selectedId) || null,
@@ -1261,7 +1281,7 @@ export function PersonnelPage() {
                 />
               </label>
 
-              <div className="personnel-filter-row">
+              <div className={`personnel-filter-row${canManageTeam && canEdit && googleAccountsLoaded ? ' has-google-link-filter' : ''}`}>
                 <select
                   aria-label="Filtrar por estado de ficha"
                   value={quickFilter}
@@ -1286,6 +1306,17 @@ export function PersonnelPage() {
                     </option>
                   ))}
                 </select>
+                {canManageTeam && canEdit && googleAccountsLoaded && (
+                  <select
+                    aria-label="Filtrar por cuenta Google vinculada"
+                    value={googleLinkFilter}
+                    onChange={(event) => setGoogleLinkFilter(event.target.value as typeof googleLinkFilter)}
+                  >
+                    <option value="all">Todas las cuentas Google</option>
+                    <option value="linked">Con Google vinculado</option>
+                    <option value="unlinked">Sin Google vinculado</option>
+                  </select>
+                )}
               </div>
             </div>
 

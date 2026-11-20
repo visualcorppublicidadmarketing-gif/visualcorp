@@ -607,6 +607,14 @@
   gap: 8px;
 }
 
+.personnel-filter-row.has-google-link-filter {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.personnel-filter-row.has-google-link-filter > select:last-child {
+  grid-column: 1 / -1;
+}
+
 .personnel-page select,
 .personnel-page input:not([type='checkbox']):not([type='radio']):not([type='search']),
 .personnel-page textarea,
@@ -1676,6 +1684,10 @@
   .personnel-filter-row,
   .personnel-date-pair {
     grid-template-columns: 1fr;
+  }
+
+  .personnel-filter-row.has-google-link-filter > select:last-child {
+    grid-column: auto;
   }
 
   .personnel-chip-btn,
