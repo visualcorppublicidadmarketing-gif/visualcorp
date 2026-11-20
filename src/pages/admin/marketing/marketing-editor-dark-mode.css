@@ -1,0 +1,217 @@
+/* Keep the publication editor's surfaces and foregrounds paired in dark mode. */
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor {
+  color-scheme: dark;
+  --vc-editor-surface: #202131;
+  --vc-editor-surface-raised: #27283a;
+  --vc-editor-surface-hover: #303149;
+  --vc-editor-border: #414258;
+  --vc-editor-ink: #f3eff9;
+  --vc-editor-muted: #c3bdcf;
+  --vc-editor-subtle: #aaa4b8;
+  --vc-editor-accent: #d2a7f0;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor :is(
+  .vc-marketing-tags-editor,
+  .vc-marketing-canvas-size,
+  .vc-marketing-readiness,
+  .vc-publication-artwork-section,
+  .vc-publication-copy-preview,
+  .vc-publication-editor-artwork
+) {
+  border-color: var(--vc-editor-border);
+  background: var(--vc-editor-surface);
+  color: var(--vc-editor-ink);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-publication-steps button {
+  border-color: var(--vc-editor-border);
+  background: var(--vc-editor-surface);
+  color: var(--vc-editor-ink);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-publication-steps button:hover {
+  border-color: #8963a8;
+  background: var(--vc-editor-surface-hover);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-publication-steps button.is-active {
+  border-color: #a876ca;
+  background: #31253e;
+  color: #fbf7ff;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-publication-step-number {
+  background: #35354b;
+  color: #e2dcec;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-publication-steps button.is-active .vc-publication-step-number {
+  background: #70438d;
+  color: #fff;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor :is(
+  .vc-publication-field,
+  .vc-publication-field > span,
+  .vc-publication-section-heading b,
+  .vc-marketing-tags-editor > div:first-child b,
+  .vc-marketing-color-picker > b,
+  .vc-publication-copy-preview h3,
+  .vc-publication-copy-preview li p,
+  .vc-publication-editor-artwork-copy .eyebrow,
+  .vc-publication-editor-artwork-copy > b
+) {
+  color: var(--vc-editor-ink);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor :is(
+  .vc-publication-steps small,
+  .vc-publication-field > small,
+  .vc-publication-section-heading small,
+  .vc-marketing-tags-editor small,
+  .vc-marketing-color-picker > span,
+  .vc-publication-copy-preview li small,
+  .vc-publication-preview-note,
+  .vc-publication-production-note p,
+  .vc-publication-editor-artwork-copy > small,
+  .vc-content-modal-actions > span
+) {
+  color: var(--vc-editor-muted);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor :is(
+  .vc-publication-field input:not([type='checkbox']):not([type='radio']),
+  .vc-publication-field select,
+  .vc-publication-field textarea,
+  .vc-marketing-tag-add input
+) {
+  border-color: #4b4a62;
+  background: #191b2b;
+  color: var(--vc-editor-ink);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor :is(
+  .vc-publication-field input,
+  .vc-publication-field textarea,
+  .vc-marketing-tag-add input
+)::placeholder {
+  color: var(--vc-editor-subtle);
+  opacity: 1;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor select option {
+  background: #202131;
+  color: var(--vc-editor-ink);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor :is(
+  .vc-publication-field input,
+  .vc-publication-field select,
+  .vc-publication-field textarea,
+  .vc-marketing-tag-add input
+):focus-visible {
+  border-color: #c08be2;
+  box-shadow: 0 0 0 3px rgb(192 139 226 / 24%);
+  outline: 0;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor :is(
+  .vc-marketing-tag-add button,
+  .vc-marketing-tag-suggestions button
+) {
+  border-color: var(--vc-editor-border);
+  background: var(--vc-editor-surface-raised);
+  color: var(--vc-editor-muted);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor :is(
+  .vc-marketing-tag-add button:not(:disabled),
+  .vc-marketing-tag-suggestions button:not(:disabled)
+):hover {
+  border-color: #8963a8;
+  background: var(--vc-editor-surface-hover);
+  color: var(--vc-editor-ink);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-marketing-tag-chips button {
+  border-color: color-mix(in srgb, var(--tag-color) 55%, var(--vc-editor-border));
+  background: color-mix(in srgb, var(--tag-color) 18%, var(--vc-editor-surface));
+  color: color-mix(in srgb, var(--tag-color) 60%, white);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-marketing-canvas-ratio {
+  border-color: var(--vc-editor-border);
+  background: var(--vc-editor-surface-raised);
+  color: var(--vc-editor-muted);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-marketing-canvas-ratio.is-valid {
+  border-color: #8c65aa;
+  background: #30243c;
+  color: #ead8f8;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-marketing-readiness-options > label {
+  border-color: var(--vc-editor-border);
+  background: var(--vc-editor-surface-raised);
+  color: var(--vc-editor-ink);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-publication-heading-icon {
+  background: #342a42;
+  color: #d7b2f0;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-publication-heading-icon.is-cta {
+  background: #1d3a33;
+  color: #9de2c2;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-publication-copy-preview li > i {
+  background: #353149;
+  color: #e1c7f5;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-publication-copy-preview li:nth-child(3) > i {
+  background: #1d3a33;
+  color: #9de2c2;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-publication-cta-block {
+  border-color: #315145;
+  background: #1b2a28;
+  color: var(--vc-editor-ink);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-publication-production-note {
+  border-color: var(--vc-editor-border);
+  background: var(--vc-editor-surface-raised);
+  color: #dfc9ee;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor :is(
+  .vc-publication-editor-missing,
+  .vc-publication-completeness
+) {
+  border-color: #775b37;
+  background: #302819;
+  color: #f1d69e;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-marketing-color-picker > div button {
+  border-color: var(--vc-editor-surface);
+  box-shadow: 0 0 0 1px #77768c;
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-marketing-color-picker > div button[aria-pressed='true'] {
+  box-shadow: 0 0 0 2px var(--tag-color), 0 0 0 4px var(--vc-editor-surface);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-publication-preview-note {
+  border-color: var(--vc-editor-border);
+}
+
+:is(:root[data-theme='dark'], .work-app.theme-dark) .vc-content-modal-editor .vc-content-modal-actions > span {
+  color: var(--vc-editor-muted);
+}
