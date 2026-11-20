@@ -1,9 +1,9 @@
 /* Shared glass surfaces for the authenticated Visual Corp workspaces. */
 .work-app {
   --admin-glass-nav-fallback: var(--vc-surface, #fff);
-  --admin-glass-nav: var(--glass-bg-strong, color-mix(in srgb, var(--vc-surface, #fff), transparent 22%));
+  --admin-glass-nav: color-mix(in srgb, var(--vc-surface, #fff) 72%, transparent);
   --admin-glass-card: var(--glass-bg, var(--vc-glass-surface, var(--vc-surface, #fff)));
-  --admin-glass-panel: var(--glass-bg-strong, var(--vc-surface, #fff));
+  --admin-glass-panel: var(--admin-blur-bg, var(--vc-surface, #fff));
   --admin-glass-border: var(--glass-border, var(--vc-glass-border, rgb(255 255 255 / 82%)));
   --admin-glass-line: var(--vc-line, rgb(77 62 97 / 14%));
   --admin-glass-shadow: var(--glass-shadow, var(--vc-glass-shadow, 0 18px 48px rgb(42 24 58 / 9%), inset 0 1px 0 rgb(255 255 255 / 76%)));
@@ -15,6 +15,7 @@
   --admin-glass-tint: var(--vc-brand-soft, #f3eaf9);
   --admin-glass-surface-highlight: var(--glass-highlight, rgb(255 255 255 / 72%));
   --admin-glass-surface-shadow: 0 8px 26px rgb(42 24 58 / 7%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  --admin-glass-specular: linear-gradient(135deg, rgb(255 255 255 / 58%) 0%, rgb(255 255 255 / 12%) 30%, transparent 64%);
   --admin-hero-ink: var(--vc-ink, #292533);
   --admin-hero-muted: var(--vc-muted, #514c5d);
   --admin-hero-action-bg: var(--vc-brand, #a51091);
@@ -22,27 +23,27 @@
   --admin-glass-blur: var(--glass-blur, var(--vc-glass-blur, 16px));
 
   /* 3 Physical Materials for Admin / Operations (Light Mode) */
-  --admin-frosted-bg: color-mix(in srgb, var(--vc-surface, #fff) 84%, transparent);
+  --admin-frosted-bg: color-mix(in srgb, var(--vc-surface, #fff) 76%, transparent);
   --admin-frosted-blur: blur(20px) saturate(155%);
-  --admin-frosted-border: color-mix(in srgb, var(--vc-brand, #a51091) 14%, var(--admin-glass-line));
-  --admin-frosted-shadow: 0 16px 44px rgb(42 24 58 / 8%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  --admin-frosted-border: color-mix(in srgb, var(--vc-brand, #a51091) 18%, var(--admin-glass-line));
+  --admin-frosted-shadow: 0 18px 46px rgb(42 24 58 / 9%), inset 0 1px 0 var(--admin-glass-surface-highlight), inset 0 -1px 0 rgb(126 25 119 / 5%);
 
   --admin-clear-bg: color-mix(in srgb, var(--vc-surface, #fff) 70%, transparent);
   --admin-clear-blur: blur(12px) saturate(135%);
   --admin-clear-border: color-mix(in srgb, var(--vc-brand, #a51091) 18%, var(--admin-glass-line));
   --admin-clear-shadow: 0 6px 18px rgb(42 24 58 / 5%), inset 0 1px 0 var(--admin-glass-surface-highlight);
 
-  --admin-blur-bg: color-mix(in srgb, var(--vc-surface, #fff) 88%, transparent);
-  --admin-blur-blur: blur(14px) saturate(125%);
-  --admin-blur-border: var(--admin-glass-line);
-  --admin-blur-shadow: 0 8px 26px rgb(42 24 58 / 6%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  --admin-blur-bg: color-mix(in srgb, var(--vc-surface, #fff) 80%, transparent);
+  --admin-blur-blur: blur(16px) saturate(138%);
+  --admin-blur-border: color-mix(in srgb, var(--vc-brand, #a51091) 10%, var(--admin-glass-line));
+  --admin-blur-shadow: 0 12px 32px rgb(42 24 58 / 8%), inset 0 1px 0 rgb(255 255 255 / 82%), inset 0 -1px 0 rgb(126 25 119 / 4%);
 }
 
 .work-app.theme-dark {
   --admin-glass-nav-fallback: var(--vc-surface-soft, #10111a);
-  --admin-glass-nav: var(--glass-bg-strong, color-mix(in srgb, var(--vc-surface-soft, #10111a), transparent 16%));
+  --admin-glass-nav: color-mix(in srgb, var(--vc-surface-soft, #10111a) 76%, transparent);
   --admin-glass-card: var(--glass-bg, var(--vc-glass-surface, var(--vc-surface, #171a25)));
-  --admin-glass-panel: var(--glass-bg-strong, var(--vc-surface, #171a25));
+  --admin-glass-panel: var(--admin-blur-bg, var(--vc-surface, #171a25));
   --admin-glass-border: var(--glass-border, var(--vc-glass-border, rgb(255 255 255 / 12%)));
   --admin-glass-line: var(--vc-line, rgb(217 204 235 / 15%));
   --admin-glass-shadow: var(--glass-shadow, var(--vc-glass-shadow, 0 20px 58px rgb(0 0 0 / 30%), inset 0 1px 0 rgb(255 255 255 / 7%)));
@@ -54,26 +55,27 @@
   --admin-glass-tint: var(--vc-brand-soft, #30223d);
   --admin-glass-surface-highlight: var(--glass-highlight, rgb(255 255 255 / 7%));
   --admin-glass-surface-shadow: 0 10px 30px rgb(0 0 0 / 22%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  --admin-glass-specular: linear-gradient(135deg, rgb(255 255 255 / 14%) 0%, rgb(255 255 255 / 3%) 32%, transparent 66%);
   --admin-hero-ink: var(--vc-ink, #f5f1fa);
   --admin-hero-muted: var(--vc-muted, #d0c9db);
   --admin-hero-action-bg: var(--vc-brand, #d093f0);
   --admin-hero-action-ink: #211329;
 
   /* 3 Physical Materials for Admin / Operations (Dark Mode) */
-  --admin-frosted-bg: color-mix(in srgb, var(--vc-surface-soft, #10111a) 86%, transparent);
+  --admin-frosted-bg: color-mix(in srgb, var(--vc-surface-soft, #10111a) 80%, transparent);
   --admin-frosted-blur: blur(20px) saturate(155%);
-  --admin-frosted-border: color-mix(in srgb, var(--vc-brand, #d093f0) 20%, var(--admin-glass-line));
-  --admin-frosted-shadow: 0 18px 48px rgb(0 0 0 / 28%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  --admin-frosted-border: color-mix(in srgb, var(--vc-brand, #d093f0) 24%, var(--admin-glass-line));
+  --admin-frosted-shadow: 0 20px 50px rgb(0 0 0 / 30%), inset 0 1px 0 var(--admin-glass-surface-highlight), inset 0 -1px 0 rgb(208 147 240 / 6%);
 
   --admin-clear-bg: color-mix(in srgb, var(--vc-surface-raised, #1e2230) 72%, transparent);
   --admin-clear-blur: blur(12px) saturate(135%);
   --admin-clear-border: color-mix(in srgb, var(--vc-brand, #d093f0) 24%, var(--admin-glass-line));
   --admin-clear-shadow: 0 8px 22px rgb(0 0 0 / 20%), inset 0 1px 0 var(--admin-glass-surface-highlight);
 
-  --admin-blur-bg: color-mix(in srgb, var(--vc-surface, #171a25) 90%, transparent);
-  --admin-blur-blur: blur(14px) saturate(125%);
-  --admin-blur-border: var(--admin-glass-line);
-  --admin-blur-shadow: 0 10px 30px rgb(0 0 0 / 22%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  --admin-blur-bg: color-mix(in srgb, var(--vc-surface, #171a25) 83%, transparent);
+  --admin-blur-blur: blur(16px) saturate(138%);
+  --admin-blur-border: color-mix(in srgb, var(--vc-brand, #d093f0) 12%, var(--admin-glass-line));
+  --admin-blur-shadow: 0 14px 36px rgb(0 0 0 / 27%), inset 0 1px 0 rgb(255 255 255 / 9%), inset 0 -1px 0 rgb(208 147 240 / 5%);
 }
 
 /* Scope the admin-home polish to its real dashboard, not the shared POS shell. */
@@ -229,7 +231,7 @@
 
   .work-app .sidebar,
   .work-app .topbar {
-    background: var(--admin-frosted-bg) !important;
+    background: var(--admin-glass-specular), var(--admin-glass-nav) !important;
     backdrop-filter: var(--admin-frosted-blur) !important;
     -webkit-backdrop-filter: var(--admin-frosted-blur) !important;
   }
