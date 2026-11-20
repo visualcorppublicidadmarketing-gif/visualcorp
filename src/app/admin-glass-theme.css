@@ -675,3 +675,9 @@
     gap: 6px;
   }
 }
+
+@media (max-width: 320px) {
+  body:has(.work-app) {
+    min-width: 0;
+  }
+}
