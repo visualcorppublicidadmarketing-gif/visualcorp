@@ -171,10 +171,9 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ### Inicio de Admin: accesos por perfil y métricas — 2026-11-20
 
-- Se destacan cuatro herramientas según el orden de trabajo y los permisos del perfil; la búsqueda y los favoritos conservan el catálogo completo.
-- Métricas con periodos claros y cifras secundarias de ventas confirmadas y alertas de existencias. Al fallar la actualización, los últimos valores quedan visibles como datos anteriores.
-- Tarjetas glass con brillo al puntero, animación sutil y adaptación por ancho útil, tema y movimiento reducido. Sin cambios de permisos, datos, rutas, dependencias ni migraciones.
-- `npm run build:checked` y `git diff --check` pasan. La revisión visual autenticada confirmó los dos temas, las superficies glass y el ajuste en 390, 663 y 1366 px sin desbordamiento. El navegador usa transparencia reducida, por lo que presenta la alternativa sólida accesible; el vidrio se confirmó con la preferencia normal. Contexto y decisión de componentes: [ficha del inicio](docs/admin-home-refinement-20261109.md).
+- Se destacan cuatro herramientas según el orden y los permisos del perfil, en tarjetas cuadradas compactas de dos columnas en móvil y hasta cinco con más espacio; la búsqueda y los favoritos conservan el catálogo completo. Las métricas incluyen tendencias reales de 14 días para ventas confirmadas y cotizaciones, agrupadas en fechas de Guayaquil y limitadas por organización, permisos y RLS.
+- Tarjetas glass con brillo, animación sutil y diseño adaptable; se mantiene el tratamiento para temas claro/oscuro, movimiento y transparencia reducidos. No cambian rutas ni permisos, no se agregan dependencias o migraciones y no se altera información persistida.
+- `npm run typecheck` y `git diff --check` pasan. La revisión visual autenticada mostró legibles ambos temas y sin desbordamiento visible en 539 px; esta iteración no incluye compilación completa ni verificación manual de otros anchos. Investigación, decisiones y límites: [ficha del inicio](docs/admin-home-refinement-20261109.md).
 
 ### Tarjetas de publicaciones y Calendario de Marketing — 2026-11-09
 
