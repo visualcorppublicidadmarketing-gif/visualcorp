@@ -61,6 +61,7 @@ type Props = {
 
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const monthLabel = new Intl.DateTimeFormat('es-EC', { month: 'long', year: 'numeric' });
+const weekdayLabel = new Intl.DateTimeFormat('es-EC', { weekday: 'long' });
 const weekdays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const publicationStatuses = ['Por iniciar', 'Planificada', 'En diseño', 'En producción', 'En revisión', 'Aprobada', 'Programada', 'Publicada', 'Completada', 'Terminada', 'Bloqueada', 'Cancelada'];
 const statusClass = (post: MarketingCalendarPost) => {
@@ -576,6 +577,15 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
     }).sort((a, b) => String(a.due_date || '').localeCompare(String(b.due_date || '')) || a.title.localeCompare(b.title, 'es')) : [];
   }, [campaignFilter, cells, recordTypeFilter, tasks, view, weekEndKey, weekStartKey]);
   const campaignNames = useMemo(() => new Map(campaigns.map((campaign) => [campaign.id, campaign.title])), [campaigns]);
+  const expandedAgendaPosts = expandedDate ? byDate.get(expandedDate) || [] : [];
+  const expandedAgendaTasks = useMemo(() => {
+    if (!expandedDate) return [];
+    return calendarTasks.filter((task) => {
+      const start = String(task.start_date || task.due_date || '').slice(0, 10);
+      const end = String(task.due_date || task.start_date || '').slice(0, 10);
+      return Boolean(start && end && start <= expandedDate && end >= expandedDate);
+    });
+  }, [calendarTasks, expandedDate]);
 
 
   const weekPosts = posts.filter((post) => {
@@ -928,6 +938,14 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
     {(view === 'month' || view === 'week' || view === 'day') && filteredPeriodPosts.length === 0 && calendarTasks.length === 0 && <div className="vc-marketing-calendar-empty" role="status">No hay publicaciones ni actividades para este periodo con los filtros actuales.</div>}
     {view === 'week' || view === 'day' ? <MarketingTimeGrid view={view} dates={cells} today={today} posts={filteredPeriodPosts} tasks={calendarTasks} campaignNames={campaignNames} canEdit={canEdit} artworkByPost={artworkByPost} organizationId={organizationId} onArtworkSaved={onArtworkSaved} onReadinessChange={onReadinessChange} onPostSelect={onSelect} onTaskSelect={onTaskSelect} postActions={contextualActions} taskActions={taskActions} onCreatePost={onCreate} onCreateRange={onTaskCreateRange} onPostSchedule={onQuickReschedule || onReschedule} onTaskSchedule={onTaskQuickSchedule}/> : view === 'kanban' ? <>
       <div className="vc-marketing-kanban-rule" role="note"><span><Check size={15}/></span><div><b>Regla de continuidad activa</b><small>Las fichas vencidas sin publicar pasan automáticamente al siguiente día hábil. Si el vencimiento cae sábado o domingo, pasan al lunes. Publicadas, terminadas y canceladas se respetan.{canEdit ? ' También se revisan al abrir el Kanban mientras el proceso diario completa el traslado en segundo plano.' : ' Tu perfil puede consultar la regla; los cambios requieren permiso de edición.'}</small></div></div>
+      <nav className="vc-marketing-kanban-quick-nav" aria-label="Acceso rápido a etapas">
+        {kanbanColumns.map((lane) => {
+          const laneCount = kanbanPosts.filter((post) => laneForStatus(String(post.status || 'Por iniciar')) === lane.key).length;
+          if (!showEmptyKanbanLanes && laneCount === 0) return null;
+          const anchor = `vc-marketing-lane-${lane.key.replace(/[^a-z0-9-]/gi, '-').toLowerCase()}`;
+          return <button key={lane.key} type="button" onClick={() => document.getElementById(anchor)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })}>{lane.label}<span>{laneCount}</span></button>;
+        })}
+      </nav>
       <div className="vc-marketing-kanban-board" role="list" aria-label={`Kanban semanal · ${weekRange}`}>
         {kanbanPosts.length === 0 && <div className="vc-marketing-calendar-empty" role="status">No hay publicaciones para esta semana con los filtros actuales. Prueba otros filtros o límpialos.</div>}
         {kanbanColumns.map((lane) => {
@@ -939,7 +957,8 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
             return applicableCount > 0 && readyCount === applicableCount;
           }).length;
           const pct = lanePosts.length > 0 ? Math.round((readyInLane / lanePosts.length) * 100) : 0;
-          return <section key={lane.key} className={`vc-marketing-kanban-column lane-${lane.key.replace(/[^a-z0-9-]/gi, '-').toLowerCase()}${draggingKanban ? ' can-drop' : ''}`} role="listitem" aria-label={`${lane.label}: ${lanePosts.length} publicaciones`}
+          const anchor = `vc-marketing-lane-${lane.key.replace(/[^a-z0-9-]/gi, '-').toLowerCase()}`;
+          return <section id={anchor} key={lane.key} className={`vc-marketing-kanban-column lane-${lane.key.replace(/[^a-z0-9-]/gi, '-').toLowerCase()}${draggingKanban ? ' can-drop' : ''}`} role="listitem" aria-label={`${lane.label}: ${lanePosts.length} publicaciones`}
             onDragOver={(event) => { if (canEdit && draggingKanban) event.preventDefault(); }}
             onDrop={(event) => { event.preventDefault(); const post = weekPosts.find((item) => item.id === (event.dataTransfer.getData('text/plain') || draggingKanban)); if (post && laneForStatus(String(post.status || 'Por iniciar')) !== lane.key) onStatusChange(post, lane.status); setDraggingKanban(null); }}>
             <header className="vc-marketing-kanban-column-head">
@@ -1002,10 +1021,10 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
           const formatInfo = getFormatBadge(post.format, post.platform);
           const FormatIcon = formatInfo.icon;
           return <tr key={post.id} className={selectedIds.has(post.id) ? 'is-selected' : ''}>
-            {(canEdit || canDelete) && <td className="vc-marketing-table-select"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={() => onToggle(post.id)}/></td>}
-            <td className="vc-marketing-table-date"><b>{formattedDate}</b><small>{post.scheduled_time || 'Hora pendiente'}</small></td>
-            <td className="vc-marketing-table-publication"><div className="vc-marketing-table-publication-main"><div className="vc-marketing-table-artwork"><MarketingPostArtwork {...artworkProps} variant="compact"/></div><div className="vc-marketing-table-publication-copy"><button type="button" onClick={() => onSelect(post)}><b>{post.title || 'Sin título'}</b><small>{post.content_line || post.next_action || 'Tema y siguiente paso por completar.'}</small></button><MarketingReadinessIndicators post={post} onChange={(field, checked) => onReadinessChange(post, field, checked)} disabled={!canEdit}/></div></div></td>
-            <td className="vc-marketing-table-channel">
+            {(canEdit || canDelete) && <td className="vc-marketing-table-select" data-label="Seleccionar"><input type="checkbox" aria-label={`Seleccionar ${post.title}`} checked={selectedIds.has(post.id)} onChange={() => onToggle(post.id)}/></td>}
+            <td className="vc-marketing-table-date" data-label="Fecha"><b>{formattedDate}</b><small>{post.scheduled_time || 'Hora pendiente'}</small></td>
+            <td className="vc-marketing-table-publication" data-label="Publicación"><div className="vc-marketing-table-publication-main"><div className="vc-marketing-table-artwork"><MarketingPostArtwork {...artworkProps} variant="compact"/></div><div className="vc-marketing-table-publication-copy"><button type="button" onClick={() => onSelect(post)}><b>{post.title || 'Sin título'}</b><small>{post.content_line || post.next_action || 'Tema y siguiente paso por completar.'}</small></button><MarketingReadinessIndicators post={post} onChange={(field, checked) => onReadinessChange(post, field, checked)} disabled={!canEdit}/></div></div></td>
+            <td className="vc-marketing-table-channel" data-label="Canal y formato">
               <div className="vc-table-channel-wrap">
                 <span className={`vc-cal-channel-badge ${channelInfo.className}`} title={channelInfo.name}>{channelInfo.code}</span>
                 <span className={`vc-cal-format-badge ${formatInfo.className}`} title={formatInfo.label}><FormatIcon size={10} /></span>
@@ -1015,15 +1034,15 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
                 </div>
               </div>
             </td>
-            <td className="vc-marketing-table-owner">{post.owner || 'Responsable pendiente'}</td>
-            <td>
+            <td className="vc-marketing-table-owner" data-label="Responsable">{post.owner || 'Responsable pendiente'}</td>
+            <td data-label="Etapa">
               <div className="vc-table-stage-cell">
                 <span className={`vc-marketing-week-card-status tone-${statusClass(post)}`}>{post.status || 'Por iniciar'}</span>
                 {renderDeliverableDots(post)}
               </div>
             </td>
-            <td className="vc-marketing-table-tags">{tags.length ? tags.slice(0, 3).map((tag) => <Badge key={tag} color={color || undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>) : <span>—</span>}</td>
-            <td className="vc-marketing-table-actions"><ContextMenu className="vc-marketing-table-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><span aria-hidden="true"/></ContextMenu></td>
+            <td className="vc-marketing-table-tags" data-label="Etiquetas">{tags.length ? tags.slice(0, 3).map((tag) => <Badge key={tag} color={color || undefined} title={`Etiqueta: ${tag}`}>{tag}</Badge>) : <span>—</span>}</td>
+            <td className="vc-marketing-table-actions" data-label="Acciones"><ContextMenu className="vc-marketing-table-context vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><span aria-hidden="true"/></ContextMenu></td>
           </tr>;
         })}</tbody>
       </table>
@@ -1045,13 +1064,13 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
         const visibleTasks=dayTasks.slice(0,Math.max(0,maxVisible-visible.length));
         const remaining=items.length+dayTasks.length-visible.length-visibleTasks.length;
         const isSelectedRange=Boolean(monthSelection && key>=monthSelectionStart && key<=monthSelectionEnd);
-        return <React.Fragment key={key}>{cellIndex % rowSize === 0 && <div className="vc-marketing-calendar-week-number" role="rowheader" aria-label={`Semana ${weekLabel}`}>{weekLabel}</div>}<ContextMenu displayContents trigger={false} className="vc-calendar-day-scope vc-marketing-context-menu" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" data-calendar-date={key} aria-label={`${key}, ${items.length} publicaciones y ${dayTasks.length} actividades${dropTargetDate === key ? ', destino de reprogramación' : ''}`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${nonprodDay?' is-nonproduction':''}${dragging?' can-drop':''}${dropTargetDate===key?' is-drop-target':''}${expandedDate===key?' is-expanded':''}${isSelectedRange?' is-selected-range':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
+        return <React.Fragment key={key}>{cellIndex % rowSize === 0 && <div className="vc-marketing-calendar-week-number" role="rowheader" aria-label={`Semana ${weekLabel}`}>{weekLabel}</div>}<ContextMenu displayContents trigger={false} className="vc-calendar-day-scope vc-marketing-context-menu" label={`Acciones del ${key}`} actions={dayActions(key)}><div role="gridcell" data-calendar-date={key} aria-current={key===today?'date':undefined} aria-label={`${key}, ${items.length} publicaciones y ${dayTasks.length} actividades${dropTargetDate === key ? ', destino de reprogramación' : ''}`} className={`vc-marketing-calendar-day${inMonth?'':' is-outside'}${key===today?' is-today':''}${nonprodDay?' is-nonproduction':''}${dragging?' can-drop':''}${dropTargetDate===key?' is-drop-target':''}${expandedDate===key?' is-expanded':''}${isSelectedRange?' is-selected-range':''}`} style={{'--calendar-day-index':cellIndex} as React.CSSProperties}
           onPointerDown={(event)=>startMonthSelection(event,key)}
           onDragOver={(event)=>{if(canEdit&&(draggingPostRef.current||dragging)){event.preventDefault();setDropTargetDate((current)=>current===key?current:key);}}}
           onDrop={(event)=>{event.preventDefault();const rawId=event.dataTransfer.getData('application/x-visualcorp-marketing-post')||event.dataTransfer.getData('text/plain')||draggingPostRef.current||dragging;if(!rawId){finishCalendarPostDrag();return;}const post=posts.find((item)=>item.id===rawId);if(post){moveCalendarPostToDate(post,key);finishCalendarPostDrag();return;}const task=calendarTasks.find((item)=>item.id===rawId);if(task){const taskDate=String(task.start_date||task.due_date||'').slice(0,10);if(taskDate!==key){if(onTaskQuickSchedule){onTaskQuickSchedule(task,key,task.start_time||undefined,task.end_time||undefined);}else{onTaskReschedule(task,key);}}finishCalendarPostDrag();return;}finishCalendarPostDrag();}}
           onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node)&&dropTargetDate===key)setDropTargetDate(null);}}
           onDragEnter={()=>{if(draggingPostRef.current||dragging)setDropTargetDate(key);}}>
-          <div className="vc-marketing-calendar-day-head"><span>{date.getDate()}</span>{items.length>0&&<button type="button" className="vc-marketing-calendar-day-agenda-toggle" aria-label={`Abrir agenda del ${key}`} onClick={()=>setExpandedDate(expandedDate===key?null:key)}>{items.length}</button>}{canEdit&&<button type="button" aria-label={`Crear publicación el ${key}`} onClick={()=>onCreate(key)}><Plus size={13}/></button>}</div>
+          <div className="vc-marketing-calendar-day-head"><span className="vc-marketing-calendar-day-number">{date.getDate()}</span><span className="vc-marketing-calendar-day-weekday">{weekdayLabel.format(date)}</span>{items.length+dayTasks.length>0&&<button type="button" className="vc-marketing-calendar-day-agenda-toggle" aria-label={`Abrir agenda del ${key}`} onClick={()=>setExpandedDate(expandedDate===key?null:key)}>{items.length+dayTasks.length}</button>}{canEdit&&<button type="button" aria-label={`Crear publicación el ${key}`} onClick={()=>onCreate(key)}><Plus size={13}/></button>}</div>
           {nonprodDay && <div className="vc-cal-nonprod-strip" title={`Día sin producción: ${nonprodDay.reason || 'Sin producción'}`}><span className="vc-cal-nonprod-badge">🏖️ {nonprodDay.reason || 'Sin producción'}</span></div>}
           <div className="vc-marketing-calendar-events">{visible.map((post)=>{
             const color=getMarketingCalendarColor(post.calendar_color,post.tags);
@@ -1198,7 +1217,7 @@ export function MarketingCalendar({ posts, days = [], tasks, campaigns, organiza
       const isOverdue=Boolean(task.due_date&&task.due_date.slice(0,10)<today&&!/listo|cancelad/i.test(task.status||''));
       return <article className="vc-marketing-task-event-row" key={`period-task:${task.id}`}><ContextMenu className="vc-marketing-event-context vc-marketing-context-menu" label={`Acciones para ${task.title}`} actions={taskActions(task)}><button type="button" className={`vc-marketing-calendar-event is-task${isOverdue?' is-overdue':''}`} onClick={()=>onTaskSelect(task)}><span className="vc-marketing-event-type">{typeName}</span><b className="vc-marketing-event-label">{task.title}</b><span className="vc-marketing-event-campaign">{campaignName||'Sin campaña'} · {task.due_date?`Límite ${task.due_date.slice(0,10)}`:'Plazo pendiente'}{task.owner?` · ${task.owner}`:''}</span><span className="vc-marketing-event-status">{task.status}{isOverdue?' · Atrasada':''}</span></button></ContextMenu></article>;
     })}</div></section>}
-    {expandedDate&&<section className="vc-marketing-day-agenda" aria-label={`Agenda del ${expandedDate}`}><header><div><span className="eyebrow">AGENDA DEL DÍA</span><b>{new Intl.DateTimeFormat('es-EC',{dateStyle:'full'}).format(new Date(`${expandedDate}T12:00:00`))} · {(byDate.get(expandedDate)||[]).length} publicaciones</b></div><button type="button" className="icon-button" aria-label="Cerrar agenda" onClick={()=>setExpandedDate(null)}><X size={15}/></button></header>{(byDate.get(expandedDate)||[]).map((post)=><article key={post.id}><span className="vc-marketing-agenda-time">{post.scheduled_time||'Sin hora'}</span><button type="button" className="vc-marketing-agenda-title" onClick={()=>onSelect(post)}><b>{post.title}</b><small>{post.platform||'Canal pendiente'} · {post.status}{getMarketingTags(post.tags).length?` · ${getMarketingTags(post.tags).join(', ')}`:''}</small></button><ContextMenu className="vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><span/></ContextMenu></article>)}{canEdit&&<div style={{ display: 'flex', gap: 8, marginTop: 8 }}><button type="button" className="button button-outline" onClick={()=>onCreate(expandedDate)}><Plus size={14}/>Crear publicación</button><button type="button" className="button button-outline" onClick={()=>onTaskCreate(expandedDate)}><CheckCircle2 size={14}/>Crear actividad</button></div>}</section>}
+    {expandedDate&&<section className="vc-marketing-day-agenda" aria-label={`Agenda del ${expandedDate}`}><header><div><span className="eyebrow">AGENDA DEL DÍA</span><b>{new Intl.DateTimeFormat('es-EC',{dateStyle:'full'}).format(new Date(`${expandedDate}T12:00:00`))} · {expandedAgendaPosts.length} publicaciones · {expandedAgendaTasks.length} actividades</b></div><button type="button" className="icon-button" aria-label="Cerrar agenda" onClick={()=>setExpandedDate(null)}><X size={15}/></button></header>{expandedAgendaPosts.map((post)=><article key={post.id}><span className="vc-marketing-agenda-time">{post.scheduled_time||'Sin hora'}</span><button type="button" className="vc-marketing-agenda-title" onClick={()=>onSelect(post)}><b>{post.title}</b><small>{post.platform||'Canal pendiente'} · {post.status}{getMarketingTags(post.tags).length?` · ${getMarketingTags(post.tags).join(', ')}`:''}</small></button><ContextMenu className="vc-marketing-context-menu" label={`Acciones para ${post.title}`} actions={contextualActions(post)}><span/></ContextMenu></article>)}{expandedAgendaTasks.map((task)=>{const typeName=task.activity_type==='Otro'?task.custom_activity_type||'Otro':task.activity_type;const campaignName=task.campaign_id?campaignNames.get(task.campaign_id):'';return <article key={`task:${task.id}`}><span className="vc-marketing-agenda-time">{task.start_time||'Sin hora'}</span><button type="button" className="vc-marketing-agenda-title" onClick={()=>onTaskSelect(task)}><b>{task.title}</b><small>{typeName} · {task.status}{campaignName?` · ${campaignName}`:''}</small></button><ContextMenu className="vc-marketing-context-menu" label={`Acciones para ${task.title}`} actions={taskActions(task)}><span/></ContextMenu></article>})}{canEdit&&<div className="vc-marketing-agenda-actions"><button type="button" className="button button-outline" onClick={()=>onCreate(expandedDate)}><Plus size={14}/>Crear publicación</button><button type="button" className="button button-outline" onClick={()=>onTaskCreate(expandedDate)}><CheckCircle2 size={14}/>Crear actividad</button></div>}</section>}
     <footer className="vc-marketing-calendar-foot" aria-label="Leyenda de etapas"><span><i className="tone-active"/>Pendiente o planificada</span><span><i className="tone-working"/>En trabajo</span><span><i className="tone-review"/>En revisión</span><span><i className="tone-approved"/>Aprobada o programada</span><span><i className="tone-published"/>Publicada</span><span><i className="tone-completed"/>Terminada</span><span><i className="tone-blocked"/>Bloqueada</span><span><i className="tone-cancelled"/>Cancelada</span>{undated.length>0&&<span className="vc-marketing-undated">{undated.length} sin fecha asignada</span>}</footer>
   </section>;
 }
