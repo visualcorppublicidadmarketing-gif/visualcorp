@@ -1291,6 +1291,8 @@ export function PosPage() {
   const catalogKindProducts=useMemo(()=>data.catalog.filter(product=>catalogKind==='service'?isPOSServiceProduct(product):!isPOSServiceProduct(product)),[data.catalog,catalogKind]);
   const catalogModeCounts=useMemo(()=>({quantity:catalogKindProducts.filter(product=>product.mode!=='area').length,area:catalogKindProducts.filter(product=>product.mode==='area').length}),[catalogKindProducts]);
   const otherKindAreaCount=useMemo(()=>data.catalog.filter(product=>product.mode==='area'&&(catalogKind==='product'?isPOSServiceProduct(product):!isPOSServiceProduct(product))).length,[data.catalog,catalogKind]);
+  const measurementTargetKind=catalogModeCounts.area===0&&otherKindAreaCount>0?(catalogKind==='product'?'service':'product'):catalogKind;
+  const measurementTargetCount=measurementTargetKind===catalogKind?catalogModeCounts.area:otherKindAreaCount;
   const modeCatalog=useMemo(()=>catalogKindProducts.filter(product=>(product.mode==='area'?'area':'quantity')===cartMode),[catalogKindProducts,cartMode]);
   const cartFamilies=useMemo(()=>[...new Set<string>(modeCatalog.map(product=>String(product.family||'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[modeCatalog]);
   const canViewPOSSales=hasPermission('sales','view');
@@ -2223,7 +2225,7 @@ export function PosPage() {
             </div>
             <div className="pos-mode-switch" role="group" aria-label={`Forma de calcular ${catalogKind==='service'?'el servicio':'el producto'}`}>
               <button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>changeCatalogContext(catalogKind,'quantity')}>Por cantidad ({catalogModeCounts.quantity})</button>
-              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>changeCatalogContext(catalogModeCounts.area===0&&otherKindAreaCount>0?(catalogKind==='product'?'service':'product'):catalogKind,'area')}>Por medidas m² ({catalogModeCounts.area})</button>
+              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>changeCatalogContext(measurementTargetKind,'area')}>Por medidas m² ({measurementTargetCount})</button>
               {catalogKind==='service'&&<span className="pos-entry-kind-note">Los servicios no descuentan existencias por unidad. Las medidas m² calculan la tarifa por superficie.</span>}
               {catalogKind==='product'&&catalogModeCounts.area===0&&otherKindAreaCount>0&&<span className="pos-entry-kind-note">Las {otherKindAreaCount} referencias por m² están en Servicios. Pulsa el filtro para verlas.</span>}
             </div>
