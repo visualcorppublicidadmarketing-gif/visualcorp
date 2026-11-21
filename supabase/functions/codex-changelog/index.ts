@@ -1,13 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const organizationSlug = "visual-corp";
 const maximumBodyBytes = 24 * 1024;
 const maximumClockSkewSeconds = 300;
 const validCategories = new Set(["general", "website", "sales", "inventory", "operations", "security"]);
 const validAudiences = new Set(["both", "admin", "operations"]);
 const encoder = new TextEncoder();
-
-type ExistingEntry = { id: string; status: string; published_at: string | null };
 
 function jsonResponse(body: unknown, status = 200) {
   return Response.json(body, {
@@ -95,33 +92,6 @@ function textField(value: unknown, minimum: number, maximum: number, optional = 
   return text;
 }
 
-async function findEntry(
-  supabaseUrl: string,
-  serviceRoleKey: string,
-  organizationId: string,
-  entryId: string,
-): Promise<ExistingEntry | null | "error"> {
-  const url = new URL(`${supabaseUrl}/rest/v1/internal_change_log`);
-  url.searchParams.set("select", "id,status,published_at");
-  url.searchParams.set("id", `eq.${entryId}`);
-  url.searchParams.set("organization_id", `eq.${organizationId}`);
-
-  try {
-    const response = await fetch(url, {
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        Accept: "application/json",
-      },
-    });
-    if (!response.ok) return "error";
-    const rows = await response.json() as ExistingEntry[];
-    return rows[0] ?? null;
-  } catch {
-    return "error";
-  }
-}
-
 async function handleRequest(request: Request) {
   if (request.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);
@@ -200,67 +170,61 @@ async function handleRequest(request: Request) {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) return jsonResponse({ error: "Publisher is not configured" }, 503);
 
-  const organizationUrl = new URL(`${supabaseUrl}/rest/v1/organizations`);
-  organizationUrl.searchParams.set("select", "id");
-  organizationUrl.searchParams.set("slug", `eq.${organizationSlug}`);
-  organizationUrl.searchParams.set("limit", "1");
-
   try {
-    const organizationResponse = await fetch(organizationUrl, {
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        Accept: "application/json",
-      },
-    });
-    if (!organizationResponse.ok) return jsonResponse({ error: "Publisher could not resolve its organization" }, 503);
-    const organizations = await organizationResponse.json() as Array<{ id: string }>;
-    const organizationId = organizations[0]?.id;
-    if (!organizationId) return jsonResponse({ error: "Publisher organization is unavailable" }, 503);
-
-    const existing = await findEntry(supabaseUrl, serviceRoleKey, organizationId, id);
-    if (existing === "error") return jsonResponse({ error: "Publisher could not check the request ID" }, 503);
-    if (existing) {
-      if (existing.status !== "published") return jsonResponse({ error: "Request ID is already in use" }, 409);
-      return jsonResponse({ ok: true, id, status: "published", published_at: existing.published_at, duplicate: true });
-    }
-
-    const publishedAt = new Date().toISOString();
-    const payload = {
-      id,
-      organization_id: organizationId,
-      title,
-      summary,
-      details,
-      category,
-      audience,
-      version_tag: versionTag,
-      tags,
-      status: "published",
-      published_at: publishedAt,
-      created_by: null,
-      updated_by: null,
-    };
-    const insertResponse = await fetch(`${supabaseUrl}/rest/v1/internal_change_log`, {
+    const publishResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/codex_publish_internal_change_log`, {
       method: "POST",
       headers: {
         apikey: serviceRoleKey,
         Authorization: `Bearer ${serviceRoleKey}`,
         "Content-Type": "application/json",
-        Prefer: "return=minimal",
+        Accept: "application/json",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        p_entry_id: id,
+        p_title: title,
+        p_summary: summary,
+        p_details: details,
+        p_category: category,
+        p_audience: audience,
+        p_version_tag: versionTag,
+        p_tags: tags.filter((tag) => tag.toLocaleLowerCase("es") !== "codex"),
+      }),
     });
-
-    if (!insertResponse.ok) {
-      const racedEntry = await findEntry(supabaseUrl, serviceRoleKey, organizationId, id);
-      if (racedEntry && racedEntry !== "error" && racedEntry.status === "published") {
-        return jsonResponse({ ok: true, id, status: "published", published_at: racedEntry.published_at, duplicate: true });
+    if (!publishResponse.ok) {
+      let databaseErrorCode: string | undefined;
+      try {
+        const databaseError = await publishResponse.json() as { code?: unknown };
+        if (typeof databaseError.code === "string" && /^[A-Z0-9]{5}$/.test(databaseError.code)) {
+          databaseErrorCode = databaseError.code;
+        }
+      } catch {
+        // Keep the public response generic; only log the non-sensitive SQLSTATE.
       }
+      console.error("Codex changelog RPC rejected publication", {
+        status: publishResponse.status,
+        code: databaseErrorCode ?? "unknown",
+      });
       return jsonResponse({ error: "Publisher could not create the entry" }, 503);
     }
 
-    return jsonResponse({ ok: true, id, status: "published", published_at: publishedAt, duplicate: false }, 201);
+    const result = await publishResponse.json() as {
+      ok?: boolean;
+      id?: string;
+      status?: string;
+      published_at?: string;
+      duplicate?: boolean;
+    };
+    if (result.ok !== true || result.id !== id || result.status !== "published" || !result.published_at) {
+      return jsonResponse({ error: "Publisher returned an invalid publication result" }, 503);
+    }
+
+    return jsonResponse({
+      ok: true,
+      id,
+      status: "published",
+      published_at: result.published_at,
+      duplicate: result.duplicate === true,
+    }, result.duplicate ? 200 : 201);
   } catch {
     return jsonResponse({ error: "Publisher could not complete the request" }, 503);
   }
