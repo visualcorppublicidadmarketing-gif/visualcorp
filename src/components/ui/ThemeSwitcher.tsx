@@ -51,12 +51,8 @@ export function ThemeSwitcher({
 
   if (variant === 'row') {
     return (
-      <div className={`vc-theme-row-container ${className}`}>
-        <div className="vc-theme-row-label">
-          <span className="vc-theme-row-title">Tema visual</span>
-          <span className="vc-theme-row-shortcut">Ctrl+Shift+L</span>
-        </div>
-        <div className="vc-theme-row-segmented" role="radiogroup" aria-label="Seleccionar tema visual">
+      <div className={`vc-theme-row-container vc-theme-row-unlabeled ${className}`}>
+        <div className="vc-theme-row-segmented" role="radiogroup" aria-label="Seleccionar modo de color">
           <button
             type="button"
             className={`vc-theme-seg-btn ${!isDark ? 'is-active' : ''}`}
