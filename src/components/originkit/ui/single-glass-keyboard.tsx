@@ -136,6 +136,8 @@ export interface BerylCapProps {
     /** Drift, light sweep and press tempo. Motion is a hand-rolled loop, so there is no Transition row. */
     speed?: number
     advanced?: Partial<Advanced>
+    /** Let a desktop mouse steer the key while it is anywhere in the browser page. */
+    followPointerOutside?: boolean
     style?: CSSProperties
 }
 
@@ -796,6 +798,7 @@ function __OriginkitBase_BerylCap(props: BerylCapProps) {
     placement,
     speed = 50,
     advanced,
+    followPointerOutside = false,
     style,
 } = props
     const rootRef = useRef<HTMLDivElement>(null)
@@ -1019,9 +1022,20 @@ function __OriginkitBase_BerylCap(props: BerylCapProps) {
         const onScroll = () => {
             if (ptr.over) ptr.moved = true
         }
-        root.addEventListener("pointerenter", onMove)
-        root.addEventListener("pointermove", onMove)
-        root.addEventListener("pointerleave", onLeave)
+        const onWindowPointerMove = (e: PointerEvent) => {
+            if (e.pointerType === "mouse") onMove(e)
+        }
+        const onWindowPointerOut = (e: PointerEvent) => {
+            if (e.pointerType === "mouse" && !e.relatedTarget) onLeave()
+        }
+        if (followPointerOutside) {
+            window.addEventListener("pointermove", onWindowPointerMove, { passive: true })
+            window.addEventListener("pointerout", onWindowPointerOut)
+        } else {
+            root.addEventListener("pointerenter", onMove)
+            root.addEventListener("pointermove", onMove)
+            root.addEventListener("pointerleave", onLeave)
+        }
         root.addEventListener("pointerdown", onDown)
         window.addEventListener("pointerup", onUp)
         window.addEventListener("pointercancel", onLeave)
@@ -1371,9 +1385,14 @@ function __OriginkitBase_BerylCap(props: BerylCapProps) {
             cancelAnimationFrame(raf)
             ro.disconnect()
             io.disconnect()
-            root.removeEventListener("pointerenter", onMove)
-            root.removeEventListener("pointermove", onMove)
-            root.removeEventListener("pointerleave", onLeave)
+            if (followPointerOutside) {
+                window.removeEventListener("pointermove", onWindowPointerMove)
+                window.removeEventListener("pointerout", onWindowPointerOut)
+            } else {
+                root.removeEventListener("pointerenter", onMove)
+                root.removeEventListener("pointermove", onMove)
+                root.removeEventListener("pointerleave", onLeave)
+            }
             root.removeEventListener("pointerdown", onDown)
             window.removeEventListener("pointerup", onUp)
             window.removeEventListener("pointercancel", onLeave)
@@ -1388,7 +1407,7 @@ function __OriginkitBase_BerylCap(props: BerylCapProps) {
             if (vao) gl.deleteVertexArray(vao)
             if (program) gl.deleteProgram(program)
         }
-    }, [generation])
+    }, [followPointerOutside, generation])
 
     return (
         <div
