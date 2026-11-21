@@ -304,10 +304,12 @@ export function GlobalCommandPalette({
     }
   }, [isControlled, externalOnClose]);
 
-  // Manejo de atajo global Ctrl+K / Cmd+K
+  // The route palette owns Ctrl+K inside the Suite; this data palette uses Ctrl+Shift+K there.
   useEffect(() => {
     const onGlobalKeyDown = (event: globalThis.KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      if ((event.metaKey || event.ctrlKey)
+        && event.key.toLowerCase() === 'k'
+        && (isSuiteRoute ? event.shiftKey : !event.shiftKey)) {
         event.preventDefault();
         if (isControlled) {
           if (open) {
@@ -321,10 +323,18 @@ export function GlobalCommandPalette({
         }
       }
     };
+    const openFromContextMenu = () => {
+      if (isControlled) externalOnClose?.();
+      else setInternalOpen(true);
+    };
 
     window.addEventListener('keydown', onGlobalKeyDown);
-    return () => window.removeEventListener('keydown', onGlobalKeyDown);
-  }, [isControlled, open, externalOnClose]);
+    window.addEventListener('vc-open-global-command-palette', openFromContextMenu);
+    return () => {
+      window.removeEventListener('keydown', onGlobalKeyDown);
+      window.removeEventListener('vc-open-global-command-palette', openFromContextMenu);
+    };
+  }, [isControlled, open, externalOnClose, isSuiteRoute]);
 
   // Al abrir la paleta: resetear query, índice y dar autofocus
   useEffect(() => {
@@ -988,11 +998,11 @@ export function GlobalCommandPalette({
           className={`vc-palette-trigger ${triggerClassName}`}
           onClick={() => (isControlled ? externalOnClose?.() : setInternalOpen(true))}
           aria-label="Buscar en Visual Corp Suite"
-          aria-keyshortcuts="Control+K Meta+K"
+          aria-keyshortcuts={isSuiteRoute ? 'Control+Shift+K Meta+Shift+K' : 'Control+K Meta+K'}
         >
           <Search size={15} className="vc-palette-trigger-search-icon" />
           <span className="vc-palette-trigger-text">Buscar comandos, clientes o stock…</span>
-          <kbd className="vc-palette-trigger-kbd">⌘K / Ctrl+K</kbd>
+          <kbd className="vc-palette-trigger-kbd">{isSuiteRoute ? '⌘⇧K / Ctrl+Shift+K' : '⌘K / Ctrl+K'}</kbd>
         </button>
       )}
 

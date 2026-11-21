@@ -1,31 +1,16 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  ArrowUpRight,
-  BookOpen,
-  BriefcaseBusiness,
-  Globe2,
-  Image,
-  Mail,
-  Newspaper,
-  ShoppingBag,
-} from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
+import { workspaceNavigation, workspaceNavGroups } from '../../app/navigation';
 import './site-admin.css';
 
-const tabs = [
-  { to: '/admin/sitio', label: 'Inicio', icon: Globe2 },
-  { to: '/admin/servicios', label: 'Servicios', icon: BriefcaseBusiness },
-  { to: '/admin/tienda', label: 'Tienda', icon: ShoppingBag },
-  { to: '/admin/blog', label: 'Blog', icon: BookOpen },
-  { to: '/admin/publicaciones', label: 'Publicaciones', icon: Newspaper },
-  { to: '/admin/portafolio', label: 'Portafolio', icon: Image },
-  { to: '/admin/contacto', label: 'Contacto', icon: Mail },
-];
+const siteNavigationPaths = new Set(workspaceNavGroups.find((group) => group.id === 'website')?.paths || []);
+const tabs = workspaceNavigation.filter((link) => siteNavigationPaths.has(link.to));
 
 const publicLinks: Record<string, { to: string; label: string; badge: string }> = {
   '/admin/sitio': { to: '/', label: 'Ver inicio público', badge: 'Portada' },
   '/admin/servicios': { to: '/#servicios', label: 'Ver servicios públicos', badge: 'Servicios' },
   '/admin/tienda': { to: '/tienda', label: 'Ver tienda pública', badge: 'Catálogo' },
+  '/admin/contenido': { to: '/', label: 'Ver sitio público', badge: 'En vivo' },
   '/admin/blog': { to: '/blog', label: 'Ver blog público', badge: 'Artículos' },
   '/admin/publicaciones': { to: '/publicaciones', label: 'Ver publicaciones', badge: 'Editorial' },
   '/admin/portafolio': { to: '/portafolio', label: 'Ver portafolio', badge: 'Galería' },

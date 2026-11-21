@@ -714,6 +714,22 @@
   }
 }
 
+@media (max-width: 360px) {
+  .work-app .topbar {
+    gap: 4px;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .work-app .topbar-right {
+    gap: 4px;
+  }
+
+  .work-app .topbar-right .connection-indicator {
+    display: none;
+  }
+}
+
 @media (max-width: 320px) {
   body:has(.work-app) {
     min-width: 0;

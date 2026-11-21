@@ -11,6 +11,8 @@ export type AppNavLink = {
   module: string;
   end?: boolean;
   anyOf?: string[];
+  /** Legacy or equivalent entry paths that share the same protected page. */
+  aliases?: string[];
 };
 
 export type AppNavGroup = { id: string; label: string; icon: LucideIcon; paths: string[] };
@@ -146,7 +148,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/rutas-productos', label: 'Rutas por producto', icon: Workflow, module: 'workshop', anyOf: ['sales', 'workshop'] },
   { to: '/operaciones/automatizaciones', label: 'Automatizaciones', icon: Sparkles, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
   { to: '/operaciones/flujos', label: 'Flujos y producción', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
-  { to: '/operaciones/coordinacion-trabajos', label: 'Coordinación de trabajos', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'workshop'] },
+  { to: '/operaciones/coordinacion-trabajos', aliases: ['/operaciones/trabajos'], label: 'Coordinación de trabajos', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'workshop'] },
   { to: '/operaciones/cartelera-taller', label: 'Cartelera y Mapa de Taller', icon: MapPin, module: 'workshop', anyOf: ['sales', 'workshop'] },
   { to: '/operaciones/kiosk', label: 'Terminal de taller (Kiosk)', icon: Radio, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop'] },
   { to: '/operaciones/archivos', label: 'Archivos y artes (Vault)', icon: FolderOpen, module: 'workshop', anyOf: ['sales', 'workshop', 'quotes', 'crm'] },
@@ -166,6 +168,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/admin/sitio', label: 'Inicio del sitio', icon: Globe2, module: 'website' },
   { to: '/admin/servicios', label: 'Servicios', icon: BriefcaseBusiness, module: 'website' },
   { to: '/admin/tienda', label: 'Tienda web', icon: ShoppingBag, module: 'website' },
+  { to: '/admin/contenido', label: 'Contenido del sitio', icon: FileText, module: 'website' },
   { to: '/admin/blog', label: 'Blog', icon: BookOpen, module: 'website' },
   { to: '/admin/publicaciones', label: 'Publicaciones', icon: Newspaper, module: 'website' },
   { to: '/admin/portafolio', label: 'Portafolio', icon: Image, module: 'website' },
@@ -173,6 +176,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/personal', label: 'Personal', icon: Users, module: 'personnel' },
   { to: '/operaciones/equipo/horarios', label: 'Horarios y turnos', icon: CalendarClock, module: 'team_schedule' },
   { to: '/operaciones/manual-aprendizaje', label: 'Aprendizaje', icon: BookOpen, module: 'dashboard' },
+  { to: '/admin/manual-aprendizaje', label: 'Manual de administración web', icon: BookOpen, module: 'website' },
   { to: '/operaciones/equipo', label: 'Usuarios, perfiles y permisos', icon: ShieldCheck, module: 'team' },
   { to: '/operaciones/cambios', label: 'Novedades', icon: History, module: 'team' },
   { to: '/admin/respaldo', label: 'Respaldo y migración', icon: Database, module: 'backup' },
@@ -185,9 +189,9 @@ export const workspaceNavGroups: AppNavGroup[] = [
   { id: 'workshop-areas', label: 'Taller y áreas de trabajo', icon: ClipboardList, paths: ['/operaciones/kiosk', '/operaciones/archivos', '/operaciones/trabajos/diseno', '/operaciones/trabajos/impresion', '/operaciones/trabajos/sublimacion', '/operaciones/trabajos/laser', '/operaciones/trabajos/taller'] },
   { id: 'inventory-purchasing', label: 'Inventario y compras', icon: Boxes, paths: ['/operaciones/inventario', '/operaciones/solicitudes-compras', '/operaciones/compras', '/operaciones/equipos'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing', '/operaciones/marketing/calendario', '/operaciones/marketing/campanas'] },
-  { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
+  { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/contenido', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
   { id: 'people', label: 'Personas', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo/horarios', '/operaciones/manual-aprendizaje'] },
-  { id: 'administration', label: 'Administración', icon: ShieldCheck, paths: ['/operaciones/equipo', '/operaciones/equipo/biblioteca-ui', '/operaciones/cambios', '/admin/respaldo'] },
+  { id: 'administration', label: 'Administración', icon: ShieldCheck, paths: ['/admin/manual-aprendizaje', '/operaciones/equipo', '/operaciones/equipo/biblioteca-ui', '/operaciones/cambios', '/admin/respaldo'] },
 ];
 
 /**
@@ -196,9 +200,12 @@ export const workspaceNavGroups: AppNavGroup[] = [
  */
 export const permissionByPath: Record<string, string> = Object.fromEntries(
   [
-    ...workspaceNavigation.map(({ to, module }) => [to, module]),
+    ...workspaceNavigation.flatMap(({ to, aliases, module }) => [
+      [to, module],
+      ...(aliases || []).map((alias) => [alias, module]),
+    ]),
     ['/admin/solicitudes', 'crm'], ['/admin/marketing', 'marketing'],
-    ['/admin/cambios', 'team'], ['/admin/contenido', 'website'], ['/admin/catalogo', 'catalog_admin'],
+    ['/admin/cambios', 'team'], ['/admin/catalogo', 'catalog_admin'],
     ['/admin', 'dashboard'], ['/operaciones', 'dashboard'],
   ],
 );
