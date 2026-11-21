@@ -128,36 +128,37 @@ export function saveNavigationPreferences(userId: string | null | undefined, pre
   }
 }
 
-/** One user-facing navigation index for both former panels. */
+/** One user-facing navigation index for every navigation style. */
 export const workspaceNavigation: AppNavLink[] = [
   { to: '/panel', label: 'Inicio', icon: LayoutDashboard, module: 'dashboard', end: true },
-  { to: '/operaciones/pos', label: 'Punto de venta', icon: ShoppingCart, module: 'sales' },
+  // A personal overview is a frequent shortcut, not a sales category.
   { to: '/operaciones/mi-semana', label: 'Mi semana', icon: ChartNoAxesCombined, module: 'sales' },
-  { to: '/operaciones/rutas-productos', label: 'Rutas por producto', icon: Workflow, module: 'workshop', anyOf: ['sales', 'workshop'] },
-  { to: '/operaciones/trabajos/asesoria', label: 'Trabajos de asesoría', icon: ClipboardList, module: 'sales', anyOf: ['sales', 'workshop'] },
-  { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'finance' },
-  { to: '/operaciones/cajas-abiertas', label: 'Cajas abiertas', icon: Radio, module: 'sales', anyOf: ['sales', 'cash'] },
+  { to: '/operaciones/pos', label: 'Punto de venta', icon: ShoppingCart, module: 'sales' },
   { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText, module: 'quotes' },
   { to: '/operaciones/crm', label: 'Solicitudes', icon: Inbox, module: 'crm' },
   { to: '/operaciones/clientes', label: 'Directorio de clientes', icon: Users, module: 'crm' },
-  { to: '/operaciones/automatizaciones', label: 'Automatizaciones', icon: Sparkles, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
-  { to: '/operaciones/archivos', label: 'Archivos y artes (Vault)', icon: FolderOpen, module: 'workshop', anyOf: ['sales', 'workshop', 'quotes', 'crm'] },
+  { to: '/operaciones/trabajos/asesoria', label: 'Trabajos de asesoría', icon: ClipboardList, module: 'sales', anyOf: ['sales', 'workshop'] },
   { to: '/seguimiento', label: 'Portal de aprobación', icon: ShieldCheck, module: 'workshop', anyOf: ['sales', 'workshop', 'quotes', 'crm'] },
+  { to: '/operaciones/catalogo', label: 'Catálogo y tarifas', icon: ShoppingBag, module: 'catalog_admin' },
+  { to: '/operaciones/servicios', label: 'Catálogo de servicios', icon: BriefcaseBusiness, module: 'catalog_admin' },
+  { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'finance' },
+  { to: '/operaciones/cajas-abiertas', label: 'Cajas abiertas', icon: Radio, module: 'sales', anyOf: ['sales', 'cash'] },
+  { to: '/operaciones/rutas-productos', label: 'Rutas por producto', icon: Workflow, module: 'workshop', anyOf: ['sales', 'workshop'] },
+  { to: '/operaciones/automatizaciones', label: 'Automatizaciones', icon: Sparkles, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
   { to: '/operaciones/flujos', label: 'Flujos y producción', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
-  { to: '/operaciones/kiosk', label: 'Terminal de taller (Kiosk)', icon: Radio, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop'] },
   { to: '/operaciones/coordinacion-trabajos', label: 'Coordinación de trabajos', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'workshop'] },
   { to: '/operaciones/cartelera-taller', label: 'Cartelera y Mapa de Taller', icon: MapPin, module: 'workshop', anyOf: ['sales', 'workshop'] },
+  { to: '/operaciones/kiosk', label: 'Terminal de taller (Kiosk)', icon: Radio, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop'] },
+  { to: '/operaciones/archivos', label: 'Archivos y artes (Vault)', icon: FolderOpen, module: 'workshop', anyOf: ['sales', 'workshop', 'quotes', 'crm'] },
   { to: '/operaciones/trabajos/diseno', label: 'Diseño', icon: ClipboardList, module: 'workshop' },
   { to: '/operaciones/trabajos/impresion', label: 'Impresión', icon: ClipboardList, module: 'workshop' },
   { to: '/operaciones/trabajos/sublimacion', label: 'Sublimación', icon: ClipboardList, module: 'workshop' },
   { to: '/operaciones/trabajos/laser', label: 'Corte láser', icon: ClipboardList, module: 'workshop' },
   { to: '/operaciones/trabajos/taller', label: 'Taller', icon: ClipboardList, module: 'workshop' },
   { to: '/operaciones/inventario', label: 'Inventario', icon: Boxes, module: 'inventory' },
-  { to: '/operaciones/compras', label: 'Compras', icon: Truck, module: 'purchases' },
   { to: '/operaciones/solicitudes-compras', label: 'Solicitudes de materiales', icon: ClipboardList, module: 'purchases', anyOf: ['purchases', 'workshop', 'sales'] },
+  { to: '/operaciones/compras', label: 'Compras', icon: Truck, module: 'purchases' },
   { to: '/operaciones/equipos', label: 'Equipos', icon: BriefcaseBusiness, module: 'inventory' },
-  { to: '/operaciones/catalogo', label: 'Catálogo y tarifas', icon: ShoppingBag, module: 'catalog_admin' },
-  { to: '/operaciones/servicios', label: 'Catálogo de servicios', icon: BriefcaseBusiness, module: 'catalog_admin' },
   { to: '/operaciones/equipo/biblioteca-ui', label: 'Biblioteca de interfaz', icon: Palette, module: 'team' },
   { to: '/operaciones/marketing', label: 'Bandeja y flujo', icon: Megaphone, module: 'marketing' },
   { to: '/operaciones/marketing/calendario', label: 'Calendario editorial', icon: CalendarDays, module: 'marketing' },
@@ -170,19 +171,23 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/admin/portafolio', label: 'Portafolio', icon: Image, module: 'website' },
   { to: '/admin/contacto', label: 'Contacto web', icon: Users, module: 'website' },
   { to: '/operaciones/personal', label: 'Personal', icon: Users, module: 'personnel' },
-  { to: '/operaciones/equipo', label: 'Usuarios, perfiles y permisos', icon: ShieldCheck, module: 'team' },
   { to: '/operaciones/equipo/horarios', label: 'Horarios y turnos', icon: CalendarClock, module: 'team_schedule' },
   { to: '/operaciones/manual-aprendizaje', label: 'Aprendizaje', icon: BookOpen, module: 'dashboard' },
+  { to: '/operaciones/equipo', label: 'Usuarios, perfiles y permisos', icon: ShieldCheck, module: 'team' },
   { to: '/operaciones/cambios', label: 'Novedades', icon: History, module: 'team' },
   { to: '/admin/respaldo', label: 'Respaldo y migración', icon: Database, module: 'backup' },
 ];
 
 export const workspaceNavGroups: AppNavGroup[] = [
-  { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/mi-semana', '/operaciones/rutas-productos', '/operaciones/trabajos/asesoria', '/operaciones/finanzas', '/operaciones/cajas-abiertas', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes', '/operaciones/catalogo', '/operaciones/servicios', '/seguimiento'] },
-  { id: 'production', label: 'Producción y abastecimiento', icon: Boxes, paths: ['/operaciones/automatizaciones', '/operaciones/archivos', '/operaciones/flujos', '/operaciones/kiosk', '/operaciones/coordinacion-trabajos', '/operaciones/cartelera-taller', '/operaciones/trabajos/diseno', '/operaciones/trabajos/impresion', '/operaciones/trabajos/sublimacion', '/operaciones/trabajos/laser', '/operaciones/trabajos/taller', '/operaciones/inventario', '/operaciones/compras', '/operaciones/solicitudes-compras', '/operaciones/equipos'] },
+  { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes', '/operaciones/trabajos/asesoria', '/seguimiento', '/operaciones/catalogo', '/operaciones/servicios'] },
+  { id: 'finance', label: 'Finanzas', icon: Wallet, paths: ['/operaciones/finanzas', '/operaciones/cajas-abiertas'] },
+  { id: 'production-planning', label: 'Planificación y coordinación', icon: Workflow, paths: ['/operaciones/rutas-productos', '/operaciones/automatizaciones', '/operaciones/flujos', '/operaciones/coordinacion-trabajos', '/operaciones/cartelera-taller'] },
+  { id: 'workshop-areas', label: 'Taller y áreas de trabajo', icon: ClipboardList, paths: ['/operaciones/kiosk', '/operaciones/archivos', '/operaciones/trabajos/diseno', '/operaciones/trabajos/impresion', '/operaciones/trabajos/sublimacion', '/operaciones/trabajos/laser', '/operaciones/trabajos/taller'] },
+  { id: 'inventory-purchasing', label: 'Inventario y compras', icon: Boxes, paths: ['/operaciones/inventario', '/operaciones/solicitudes-compras', '/operaciones/compras', '/operaciones/equipos'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing', '/operaciones/marketing/calendario', '/operaciones/marketing/campanas'] },
   { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
-  { id: 'team', label: 'Equipo y sistema', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo', '/operaciones/equipo/horarios', '/operaciones/equipo/biblioteca-ui', '/operaciones/manual-aprendizaje', '/operaciones/cambios', '/admin/respaldo'] },
+  { id: 'people', label: 'Personas', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo/horarios', '/operaciones/manual-aprendizaje'] },
+  { id: 'administration', label: 'Administración', icon: ShieldCheck, paths: ['/operaciones/equipo', '/operaciones/equipo/biblioteca-ui', '/operaciones/cambios', '/admin/respaldo'] },
 ];
 
 /**
