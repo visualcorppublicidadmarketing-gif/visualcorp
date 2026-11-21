@@ -96,7 +96,11 @@ export function AppFrame({ area, children }: AppFrameProps) {
   const nav = workspaceNavigation.filter((link) => canViewNavigationItem(link, hasPermission));
   const navGroupDefinitions = workspaceNavGroups;
   const navGroups = navGroupDefinitions.map((group) => ({ ...group, items: nav.filter((link) => group.paths.includes(link.to)) })).filter((group) => group.items.length > 0);
-  const activeNavGroup = navGroups.find((group) => group.items.some((link) => link.end ? pathname === link.to : pathname === link.to || pathname.startsWith(`${link.to}/`)));
+  const activeNavGroup = navGroups
+    .flatMap((group) => group.items
+      .filter((link) => link.end ? pathname === link.to : pathname === link.to || pathname.startsWith(`${link.to}/`))
+      .map((link) => ({ group, pathLength: link.to.length })))
+    .sort((left, right) => right.pathLength - left.pathLength)[0]?.group;
   const [expandedNavGroups, setExpandedNavGroups] = useState<Record<string, boolean>>(() => activeNavGroup ? { [activeNavGroup.id]: true } : {});
   useEffect(() => {
     if (activeNavGroup) setExpandedNavGroups((current) => ({ ...current, [activeNavGroup.id]: true }));
