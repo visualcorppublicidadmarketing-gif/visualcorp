@@ -15,6 +15,63 @@ export type AppNavLink = {
 
 export type AppNavGroup = { id: string; label: string; icon: LucideIcon; paths: string[] };
 
+export const navigationStyleOptions = [
+  {
+    id: 'categories',
+    label: 'Por categorías',
+    description: 'Secciones agrupadas en una barra lateral desplegable.',
+  },
+  {
+    id: 'rail',
+    label: 'Rail compacto',
+    description: 'Acceso con iconos y paneles emergentes por categoría.',
+  },
+  {
+    id: 'grid',
+    label: 'Cuadrícula',
+    description: 'Accesos en tarjetas para recorrer varias secciones.',
+  },
+  {
+    id: 'dropdown',
+    label: 'Lista desplegable',
+    description: 'Busca y abre una sección desde una lista compacta.',
+  },
+  {
+    id: 'adaptive',
+    label: 'Adaptable',
+    description: 'Barra lateral, rail en tableta y cajón en móvil.',
+  },
+] as const;
+
+export type NavigationStyle = (typeof navigationStyleOptions)[number]['id'];
+
+export const DEFAULT_NAVIGATION_STYLE: NavigationStyle = 'categories';
+const NAVIGATION_STYLE_STORAGE_PREFIX = 'vc-suite-navigation-style:';
+
+export function isNavigationStyle(value: unknown): value is NavigationStyle {
+  return typeof value === 'string'
+    && navigationStyleOptions.some((option) => option.id === value);
+}
+
+export function readNavigationStylePreference(userId?: string | null): NavigationStyle {
+  if (!userId || typeof window === 'undefined') return DEFAULT_NAVIGATION_STYLE;
+  try {
+    const stored = window.localStorage.getItem(NAVIGATION_STYLE_STORAGE_PREFIX + userId);
+    return isNavigationStyle(stored) ? stored : DEFAULT_NAVIGATION_STYLE;
+  } catch {
+    return DEFAULT_NAVIGATION_STYLE;
+  }
+}
+
+export function saveNavigationStylePreference(userId: string | null | undefined, style: NavigationStyle) {
+  if (!userId || typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(NAVIGATION_STYLE_STORAGE_PREFIX + userId, style);
+  } catch {
+    // Keep the preference for this session if browser storage is unavailable.
+  }
+}
+
 /** One user-facing navigation index for both former panels. */
 export const workspaceNavigation: AppNavLink[] = [
   { to: '/panel', label: 'Inicio', icon: LayoutDashboard, module: 'dashboard', end: true },

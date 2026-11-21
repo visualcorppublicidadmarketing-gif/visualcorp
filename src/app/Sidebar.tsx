@@ -5,14 +5,16 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Search,
   Moon,
   Sun,
   type LucideIcon,
 } from 'lucide-react';
 import { Avatar } from '../components/ui/Avatar';
 import { PulsingBeacon } from '../components/ui/MagicComponents';
-import type { AppNavLink, AppNavGroup } from './navigation';
+import type { AppNavLink, AppNavGroup, NavigationStyle } from './navigation';
 import { ThemeSwitcher } from '../components/ui/ThemeSwitcher';
+import { NavigationStylePicker } from './NavigationStylePicker';
 import './sidebar.css';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
@@ -27,6 +29,8 @@ export type SidebarProps = {
   mobileOpen: boolean;
   onCloseMobile: () => void;
   navGroups: SidebarGroupWithItems[];
+  navigationStyle: NavigationStyle;
+  onNavigationStyleChange: (style: NavigationStyle) => void;
   activeNavGroup?: SidebarGroupWithItems;
   directNavLinks: AppNavLink[];
   userDisplayName: string;
@@ -46,6 +50,8 @@ export function Sidebar({
   mobileOpen,
   onCloseMobile,
   navGroups,
+  navigationStyle,
+  onNavigationStyleChange,
   activeNavGroup,
   directNavLinks,
   userDisplayName,
@@ -85,10 +91,14 @@ export function Sidebar({
 
   // Popover de perfil de usuario en modo compactado
   const [profileFlyout, setProfileFlyout] = useState<{ top: number } | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const sidebarRef = useRef<HTMLElement>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
   const profileTriggerRef = useRef<HTMLButtonElement>(null);
+  const searchTriggerRef = useRef<HTMLButtonElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const suppressFocusOpenRef = useRef(false);
 
   const focusClosedTrigger = (trigger: HTMLElement | null) => {
@@ -102,12 +112,21 @@ export function Sidebar({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        const openDialog = document.querySelector('dialog[open]');
+        if (openDialog) return;
         if (profileFlyout) {
           setProfileFlyout(null);
           focusClosedTrigger(profileTriggerRef.current);
+        } else if (searchOpen) {
+          setSearchOpen(false);
+          setSearchQuery('');
+          focusClosedTrigger(searchTriggerRef.current);
         } else if (activeFlyout) {
           setActiveFlyout(null);
           focusClosedTrigger(document.getElementById(`nav-group-trigger-${area}-${activeFlyout.groupId}`));
+        } else if (mobileOpen) {
+          onCloseMobile();
+          document.querySelector<HTMLButtonElement>('.mobile-menu-button')?.focus();
         }
         setProfileFlyout(null);
         setTooltip(null);
@@ -122,6 +141,8 @@ export function Sidebar({
         setActiveFlyout(null);
         setProfileFlyout(null);
         setTooltip(null);
+        setSearchOpen(false);
+        setSearchQuery('');
       }
     };
     const handleViewportChange = () => {
@@ -140,13 +161,15 @@ export function Sidebar({
       window.removeEventListener('scroll', handleViewportChange);
       document.removeEventListener('pointerdown', handlePointerDown);
     };
-  }, [activeFlyout, area, profileFlyout]);
+  }, [activeFlyout, area, mobileOpen, onCloseMobile, profileFlyout, searchOpen]);
 
   // Al navegar, cerrar drawers y flyouts
   useEffect(() => {
     setActiveFlyout(null);
     setProfileFlyout(null);
     setTooltip(null);
+    setSearchOpen(false);
+    setSearchQuery('');
     onCloseMobile();
   }, [pathname]);
 
@@ -154,7 +177,7 @@ export function Sidebar({
     setExpandedGroups((curr) => ({ ...curr, [groupId]: !curr[groupId] }));
   };
 
-  const showTooltip = (text: string, e: React.MouseEvent<HTMLElement>) => {
+  const showTooltip = (text: string, e: React.MouseEvent<HTMLElement> | React.FocusEvent<HTMLElement>) => {
     if (!isCollapsed) return;
     const rect = e.currentTarget.getBoundingClientRect();
     setTooltip({ text, top: rect.top + rect.height / 2 - 12 });
@@ -210,13 +233,20 @@ export function Sidebar({
           if (!inFlyout) showTooltip(link.label, e);
         }}
         onMouseLeave={hideTooltip}
+        onFocus={(e) => {
+          if (!inFlyout) showTooltip(link.label, e);
+        }}
         onBlur={(e) => {
           if (inFlyout && !e.currentTarget.parentElement?.contains(e.relatedTarget as Node | null)) {
             setActiveFlyout(null);
+          } else if (!inFlyout) {
+            hideTooltip();
           }
         }}
         onClick={() => {
           setActiveFlyout(null);
+          setSearchOpen(false);
+          setSearchQuery('');
           onCloseMobile();
         }}
         className={({ isActive }) =>
@@ -236,6 +266,110 @@ export function Sidebar({
     );
   };
 
+  const renderGridNavigation = () => (
+    <>
+      <div className="sidebar-grid-direct-links">
+        {directNavLinks.map((link) => renderNavLinkItem(link, false))}
+      </div>
+      {navGroups.map((group) => {
+        const GroupIcon = group.icon;
+        const isExpanded = Boolean(expandedGroups[group.id]);
+        const containsCurrentPage = group.id === activeNavGroup?.id;
+        const groupControlId = 'nav-grid-group-' + area + '-' + group.id;
+        return (
+          <section key={group.id} className={'sidebar-grid-group' + (containsCurrentPage ? ' has-active-child' : '')}>
+            <button
+              type="button"
+              className="sidebar-grid-group-trigger"
+              aria-expanded={isExpanded}
+              aria-controls={groupControlId}
+              onClick={() => toggleGroup(group.id)}
+            >
+              <span className="sidebar-nav-icon" aria-hidden="true"><GroupIcon size={17} /></span>
+              <span>{group.label}</span>
+              <span className="sidebar-group-badge">{group.items.length}</span>
+              <ChevronDown size={14} className="sidebar-group-chevron" aria-hidden="true" />
+            </button>
+            {isExpanded && (
+              <div id={groupControlId} className="sidebar-grid-links">
+                {group.items.map((link) => renderNavLinkItem(link, true))}
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </>
+  );
+
+  const renderDropdownNavigation = () => {
+    const query = searchQuery.trim().toLocaleLowerCase();
+    const matches = (label: string, groupLabel = '') => !query || label.toLocaleLowerCase().includes(query) || groupLabel.toLocaleLowerCase().includes(query);
+    const matchingDirectLinks = directNavLinks.filter((link) => matches(link.label));
+    const matchingGroups = navGroups
+      .map((group) => ({ ...group, items: group.items.filter((link) => matches(link.label, group.label)) }))
+      .filter((group) => group.items.length > 0);
+    const hasResults = matchingDirectLinks.length > 0 || matchingGroups.length > 0;
+    const resultsId = 'sidebar-navigation-results-' + area;
+
+    return (
+      <div className="sidebar-navigation-dropdown">
+        <button
+          ref={searchTriggerRef}
+          type="button"
+          className="sidebar-navigation-dropdown-trigger"
+          aria-expanded={searchOpen}
+          aria-controls={searchOpen ? resultsId : undefined}
+          onClick={() => {
+            const nextOpen = !searchOpen;
+            setSearchOpen(nextOpen);
+            if (nextOpen) window.requestAnimationFrame(() => searchInputRef.current?.focus());
+            else setSearchQuery('');
+          }}
+        >
+          <Search size={16} aria-hidden="true" />
+          <span>Explorar secciones</span>
+          <ChevronDown size={14} className="sidebar-group-chevron" aria-hidden="true" />
+        </button>
+        {searchOpen && (
+          <div id={resultsId} className="sidebar-navigation-dropdown-panel">
+            <label className="sidebar-navigation-search">
+              <Search size={15} aria-hidden="true" />
+              <span className="sr-only">Buscar una sección</span>
+              <input
+                ref={searchInputRef}
+                type="search"
+                value={searchQuery}
+                autoComplete="off"
+                placeholder="Buscar una sección…"
+                onChange={(event) => setSearchQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') {
+                    event.stopPropagation();
+                    setSearchOpen(false);
+                    setSearchQuery('');
+                    focusClosedTrigger(searchTriggerRef.current);
+                  }
+                }}
+              />
+            </label>
+            <div className="sidebar-navigation-dropdown-results" role="group" aria-label="Secciones disponibles">
+              {matchingDirectLinks.map((link) => renderNavLinkItem(link))}
+              {matchingGroups.map((group) => (
+                <section key={group.id} className="sidebar-navigation-search-group" aria-label={group.label}>
+                  <span className="sidebar-navigation-search-group-title">
+                    {group.label}
+                    <span className="sidebar-group-badge" aria-label={`${group.items.length} secciones`}>{group.items.length}</span>
+                  </span>
+                  {group.items.map((link) => renderNavLinkItem(link, true))}
+                </section>
+              ))}
+              {!hasResults && <p className="sidebar-navigation-search-empty" role="status">No hay secciones que coincidan.</p>}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
   return (
     <>
       <aside
@@ -293,6 +427,10 @@ export function Sidebar({
         <nav className="sidebar-nav-container" aria-label="Navegación de módulos">
           <span className="sidebar-section-kicker">Espacio de trabajo</span>
 
+          {navigationStyle === 'grid' && renderGridNavigation()}
+          {navigationStyle === 'dropdown' && renderDropdownNavigation()}
+          {navigationStyle !== 'grid' && navigationStyle !== 'dropdown' && (
+            <>
           {/* Enlaces directos (ej. Inicio) */}
           {directNavLinks.map((link) => renderNavLinkItem(link, false))}
 
@@ -313,7 +451,7 @@ export function Sidebar({
                     className={`sidebar-collapsed-trigger-btn${
                       containsCurrentPage ? ' has-active-child' : ''
                     }${activeFlyout?.groupId === group.id ? ' is-flyout-open' : ''}`}
-                    aria-label={group.label}
+                    aria-label={`${group.label}, ${group.items.length} secciones${containsCurrentPage ? ', contiene la sección actual' : ''}`}
                     title={group.label}
                     aria-expanded={activeFlyout?.groupId === group.id}
                     aria-controls={activeFlyout?.groupId === group.id ? groupControlId : undefined}
@@ -328,6 +466,7 @@ export function Sidebar({
                   >
                     <GroupIcon size={18} />
                     <span className="sidebar-collapsed-label">{group.label}</span>
+                    <span className="sidebar-group-badge" aria-hidden="true">{group.items.length}</span>
                     {containsCurrentPage && <span className="sidebar-collapsed-active-dot" />}
                   </button>
                   {activeFlyout?.groupId === group.id && (
@@ -382,9 +521,12 @@ export function Sidebar({
               </section>
             );
           })}
+            </>
+          )}
         </nav>
 
         <div className="sidebar-footer-dock">
+          <NavigationStylePicker value={navigationStyle} isCollapsed={isCollapsed} onSave={onNavigationStyleChange} />
           {/* Selector de tema visual (Claro / Oscuro) */}
           {toggleTheme && (
             isCollapsed ? (
