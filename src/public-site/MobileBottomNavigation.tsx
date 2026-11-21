@@ -97,110 +97,112 @@ export function MobileBottomNavigation({ services }: { services: ServiceLink[] }
               }
             }}
           >
-            <div className="mobile-bottom-drawer-handle-wrap">
-              <Drawer.Handle className="mobile-bottom-drawer-handle" />
-            </div>
-
-            <div className="mobile-bottom-sheet-heading">
-              <div>
-                <span>EXPLORA VISUAL CORP</span>
-                <Drawer.Title className="mobile-bottom-sheet-title">{meta.title}</Drawer.Title>
-                <Drawer.Description className="mobile-bottom-sheet-description">
-                  {meta.description}
-                </Drawer.Description>
+            <div className="mobile-bottom-drawer-scroll">
+              <div className="mobile-bottom-drawer-handle-wrap">
+                <Drawer.Handle className="mobile-bottom-drawer-handle" />
               </div>
-              <button
-                type="button"
-                className="mobile-bottom-sheet-close"
-                onClick={close}
-                aria-label="Cerrar menú"
-              >
-                <X size={19} aria-hidden="true" />
-              </button>
+
+              <div className="mobile-bottom-sheet-heading">
+                <div>
+                  <span>EXPLORA VISUAL CORP</span>
+                  <Drawer.Title className="mobile-bottom-sheet-title">{meta.title}</Drawer.Title>
+                  <Drawer.Description className="mobile-bottom-sheet-description">
+                    {meta.description}
+                  </Drawer.Description>
+                </div>
+                <button
+                  type="button"
+                  className="mobile-bottom-sheet-close"
+                  onClick={close}
+                  aria-label="Cerrar menú"
+                >
+                  <X size={19} aria-hidden="true" />
+                </button>
+              </div>
+
+              {openGroup === 'services' && (
+                <nav className="mobile-bottom-sheet-grid" aria-label="Servicios">
+                  <NavLink
+                    className={({ isActive }) =>
+                      `mobile-bottom-sheet-link mobile-bottom-sheet-feature${isActive ? ' is-active' : ''}`
+                    }
+                    to="/servicios"
+                    end
+                    onClick={close}
+                  >
+                    <Layers3 size={18} aria-hidden="true" />
+                    <span>Todos los servicios</span>
+                    <ArrowUpRight size={15} aria-hidden="true" />
+                  </NavLink>
+                  {services.map((service) => (
+                    <NavLink
+                      className={({ isActive }) =>
+                        `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`
+                      }
+                      key={service.id}
+                      to={`/servicios/${service.id}`}
+                      onClick={close}
+                    >
+                      <span>{service.name}</span>
+                      <ArrowUpRight size={15} aria-hidden="true" />
+                    </NavLink>
+                  ))}
+                </nav>
+              )}
+
+              {openGroup === 'company' && (
+                <nav className="mobile-bottom-sheet-grid" aria-label="La empresa">
+                  <NavLink
+                    className={({ isActive }) =>
+                      `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`
+                    }
+                    to="/nosotros"
+                    onClick={close}
+                  >
+                    <span>Quiénes somos</span>
+                    <ArrowUpRight size={15} aria-hidden="true" />
+                  </NavLink>
+                  <NavLink
+                    className={({ isActive }) =>
+                      `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`
+                    }
+                    to="/como-trabajamos"
+                    onClick={close}
+                  >
+                    <span>Cómo trabajamos</span>
+                    <ArrowUpRight size={15} aria-hidden="true" />
+                  </NavLink>
+                  <NavLink
+                    className={({ isActive }) =>
+                      `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`
+                    }
+                    to="/contacto"
+                    onClick={close}
+                  >
+                    <span>Contacto</span>
+                    <ArrowUpRight size={15} aria-hidden="true" />
+                  </NavLink>
+                </nav>
+              )}
+
+              {openGroup === 'explore' && (
+                <nav className="mobile-bottom-sheet-grid" aria-label="Otras secciones">
+                  {exploreLinks.map(({ to, label }) => (
+                    <NavLink
+                      className={({ isActive }) =>
+                        `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`
+                      }
+                      key={to}
+                      to={to}
+                      onClick={close}
+                    >
+                      <span>{label}</span>
+                      <ArrowUpRight size={15} aria-hidden="true" />
+                    </NavLink>
+                  ))}
+                </nav>
+              )}
             </div>
-
-            {openGroup === 'services' && (
-              <nav className="mobile-bottom-sheet-grid" aria-label="Servicios">
-                <NavLink
-                  className={({ isActive }) =>
-                    `mobile-bottom-sheet-link mobile-bottom-sheet-feature${isActive ? ' is-active' : ''}`
-                  }
-                  to="/servicios"
-                  end
-                  onClick={close}
-                >
-                  <Layers3 size={18} aria-hidden="true" />
-                  <span>Todos los servicios</span>
-                  <ArrowUpRight size={15} aria-hidden="true" />
-                </NavLink>
-                {services.map((service) => (
-                  <NavLink
-                    className={({ isActive }) =>
-                      `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`
-                    }
-                    key={service.id}
-                    to={`/servicios/${service.id}`}
-                    onClick={close}
-                  >
-                    <span>{service.name}</span>
-                    <ArrowUpRight size={15} aria-hidden="true" />
-                  </NavLink>
-                ))}
-              </nav>
-            )}
-
-            {openGroup === 'company' && (
-              <nav className="mobile-bottom-sheet-grid" aria-label="La empresa">
-                <NavLink
-                  className={({ isActive }) =>
-                    `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`
-                  }
-                  to="/nosotros"
-                  onClick={close}
-                >
-                  <span>Quiénes somos</span>
-                  <ArrowUpRight size={15} aria-hidden="true" />
-                </NavLink>
-                <NavLink
-                  className={({ isActive }) =>
-                    `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`
-                  }
-                  to="/como-trabajamos"
-                  onClick={close}
-                >
-                  <span>Cómo trabajamos</span>
-                  <ArrowUpRight size={15} aria-hidden="true" />
-                </NavLink>
-                <NavLink
-                  className={({ isActive }) =>
-                    `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`
-                  }
-                  to="/contacto"
-                  onClick={close}
-                >
-                  <span>Contacto</span>
-                  <ArrowUpRight size={15} aria-hidden="true" />
-                </NavLink>
-              </nav>
-            )}
-
-            {openGroup === 'explore' && (
-              <nav className="mobile-bottom-sheet-grid" aria-label="Otras secciones">
-                {exploreLinks.map(({ to, label }) => (
-                  <NavLink
-                    className={({ isActive }) =>
-                      `mobile-bottom-sheet-link${isActive ? ' is-active' : ''}`
-                    }
-                    key={to}
-                    to={to}
-                    onClick={close}
-                  >
-                    <span>{label}</span>
-                    <ArrowUpRight size={15} aria-hidden="true" />
-                  </NavLink>
-                ))}
-              </nav>
-            )}
           </Drawer.Content>
         </Drawer.Portal>
       </Drawer.Root>

@@ -111,3 +111,9 @@ Las publicaciones las redacta el equipo desde el panel o Codex con la credencial
 - Se reforzó el efecto de vidrio de la navegación superior e inferior con desenfoque de fondo en temas claro y oscuro.
 - En modo claro, ambas barras usan fondos algo translúcidos y un desenfoque gaussiano suave para mantener visible el contenido detrás sin perder legibilidad.
 - En modo oscuro, se redujo la opacidad de los fondos superior e inferior para que la transparencia y el desenfoque se perciban con claridad, manteniendo el contraste de las etiquetas.
+
+## 2026-11-21 — Legibilidad del menú inferior móvil
+
+- Los paneles de Servicios, Empresa y Explorar ahora usan fondos más opacos y desenfoque visible en los temas claro y oscuro.
+- El scroll queda en el contenido del menú: las secciones cortas ya no muestran una barra innecesaria y la lista larga conserva scroll táctil con un tirador fino.
+- No requiere cambios de base de datos.
