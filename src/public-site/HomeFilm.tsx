@@ -365,6 +365,51 @@ export function HomeFilm({
         <div className="home-film-scrim" aria-hidden="true" />
         <div className="home-film-grain" aria-hidden="true" />
 
+        {/* Chromatic print-light orbit: a restrained animated frame for Visualito */}
+        <div className="home-film-spectrum" aria-hidden="true">
+          <svg viewBox="0 0 1000 640" preserveAspectRatio="none" focusable="false">
+            <defs>
+              <linearGradient id="home-film-spectrum-gradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#38d6ff" stopOpacity="0" />
+                <stop offset="23%" stopColor="#38d6ff" stopOpacity="0.78" />
+                <stop offset="55%" stopColor="#c88eff" stopOpacity="0.7" />
+                <stop offset="79%" stopColor="#ff5cb0" stopOpacity="0.86" />
+                <stop offset="100%" stopColor="#ffd06b" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <g className="home-film-spectrum-orbit">
+              <ellipse
+                cx="500"
+                cy="336"
+                rx="438"
+                ry="204"
+                transform="rotate(-13 500 336)"
+                fill="none"
+                stroke="url(#home-film-spectrum-gradient)"
+                strokeWidth="1.5"
+                strokeDasharray="188 22 52 34 246 20 104 38"
+              />
+              <circle cx="909" cy="229" r="4.2" fill="#f8f2ff" />
+              <circle cx="909" cy="229" r="9" fill="none" stroke="#ff5cb0" strokeOpacity="0.58" strokeWidth="1" />
+            </g>
+            <g className="home-film-spectrum-orbit home-film-spectrum-orbit-secondary">
+              <ellipse
+                cx="500"
+                cy="336"
+                rx="461"
+                ry="178"
+                transform="rotate(17 500 336)"
+                fill="none"
+                stroke="url(#home-film-spectrum-gradient)"
+                strokeWidth="1"
+                strokeDasharray="5 19 136 25 3 46 82 28"
+                opacity="0.58"
+              />
+              <circle cx="104" cy="356" r="2.7" fill="#55dfff" />
+            </g>
+          </svg>
+        </div>
+
         {/* Choreographed kinetic typography layer synced to the video */}
         <div className="home-film-overlay">
           <AnimatePresence mode="wait">

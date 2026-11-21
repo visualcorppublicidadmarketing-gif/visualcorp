@@ -7,6 +7,7 @@
     "skipLibCheck": true,
     "moduleResolution": "Bundler",
     "paths": {
+      "@/components/originkit/ui/single-glass-keyboard": ["./src/components/originkit/ui/single-glass-keyboard.d.ts"],
       "@/*": ["./src/*"]
     },
     "allowImportingTsExtensions": true,
@@ -20,5 +21,6 @@
     "noImplicitAny": false,
     "types": ["vite/client"]
   },
-  "include": ["src", "api", "server"]
+  "include": ["src", "api", "server"],
+  "exclude": ["src/components/originkit/ui/single-glass-keyboard.tsx"]
 }

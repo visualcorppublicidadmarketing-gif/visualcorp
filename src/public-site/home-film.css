@@ -158,6 +158,48 @@
   mix-blend-mode: overlay;
 }
 
+/* Slow, chromatic print-light orbit frames the mascot without competing with the copy. */
+.home-film-spectrum {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  transform: translate3d(calc(var(--film-px, 0) * 8px), calc(var(--film-py, 0) * 6px), 0);
+  transition: opacity 0.7s ease;
+}
+
+.home-film[data-scene="0"] .home-film-spectrum {
+  opacity: 0.68;
+}
+
+.home-film-spectrum svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.home-film-spectrum-orbit {
+  transform-box: view-box;
+  transform-origin: 500px 336px;
+  animation: home-film-spectrum-turn 54s linear infinite;
+}
+
+.home-film-spectrum-orbit > circle {
+  filter: drop-shadow(0 0 7px currentColor);
+}
+
+.home-film-spectrum-orbit-secondary {
+  animation-duration: 72s;
+  animation-direction: reverse;
+}
+
+@keyframes home-film-spectrum-turn {
+  to { transform: rotate(360deg); }
+}
+
 /* ---------- Kinetic Typography Overlay Layer ---------- */
 .home-film-overlay {
   position: relative;
@@ -1158,6 +1200,14 @@ html[data-public-theme="light"] .home-project-card:hover {
 }
 
 @media (max-width: 600px) {
+  .home-film[data-scene="0"] .home-film-spectrum {
+    opacity: 0.5;
+  }
+
+  .home-film-spectrum-orbit-secondary {
+    opacity: 0.42;
+  }
+
   .home-project-grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1171,9 +1221,15 @@ html[data-public-theme="light"] .home-project-card:hover {
 @media (prefers-reduced-motion: reduce) {
   .home-film-pill-dot,
   .home-film-aurora,
+  .home-film-spectrum-orbit,
   .home-film-scroll-mouse > span,
   .home-film-card-sheen {
     animation: none;
+  }
+
+  .home-film-spectrum {
+    transform: none;
+    transition: none;
   }
 
   .home-film-card-sheen {
