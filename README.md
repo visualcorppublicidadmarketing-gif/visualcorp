@@ -39,6 +39,8 @@ Las migraciones versionadas están en `supabase/migrations/`. Revisa el estado l
 - Administración: `/admin`, `/admin/sitio`, `/admin/contenido` y `/admin/solicitudes`.
 - Operaciones: /operaciones, /operaciones/pos, /operaciones/cotizador, /operaciones/inventario, /operaciones/compras, /operaciones/clientes y /operaciones/marketing.
 
+La tienda incluye una colección visual de ejemplos en `/tienda?coleccion=souvenirs`. Revisa [docs/GALERIA_SOUVENIRS_TIENDA.md](docs/GALERIA_SOUVENIRS_TIENDA.md) para el flujo y el cuidado de sus imágenes.
+
 Los perfiles configurables y la matriz de permisos ya están aplicados en Supabase con validación de servidor y RLS. Consulta [docs/MODELO_USUARIOS_ROLES_Y_PERMISOS_VISUAL_CORP.md](docs/MODELO_USUARIOS_ROLES_Y_PERMISOS_VISUAL_CORP.md) para el flujo de asignación, los límites de cuentas y el estado de verificación. Una cuenta nueva debe iniciar sesión una vez antes de que se le pueda asignar un perfil.
 
 Las páginas privadas requieren una sesión válida y el rol correspondiente cuando Supabase está configurado.
