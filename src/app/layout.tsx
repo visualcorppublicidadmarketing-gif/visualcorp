@@ -7,7 +7,7 @@ import { AdminCommandPalette } from '../components/AdminCommandPalette';
 import { NumberTicker, PulsingBeacon, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
 import { ContextMenu, type ContextMenuAction } from '../components/ui/ContextMenu';
 import { motion, useReducedMotion } from 'motion/react';
-import { canViewNavigationItem, workspaceNavigation, workspaceNavGroups, type AppNavLink } from './navigation';
+import { canViewNavigationItem, workspaceNavigation, workspaceNavGroups, DEFAULT_NAVIGATION_PREFERENCES, readNavigationPreferences, saveNavigationPreferences, type AppNavLink, type NavigationPreferences } from './navigation';
 import { Avatar, getGoogleAvatarUrl } from '../components/ui/Avatar';
 import { ProductionAttention } from '../pages/operations/ProductionAttention';
 import { Sidebar } from './Sidebar';
@@ -39,6 +39,38 @@ export function AppFrame({ area, children }: AppFrameProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return window.localStorage.getItem('vc-suite-sidebar-collapsed') === 'true'; } catch { return false; }
   });
+  const [navigationPreference, setNavigationPreference] = useState<NavigationPreferences & { userId: string | null }>({
+    userId: null,
+    ...DEFAULT_NAVIGATION_PREFERENCES,
+  });
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
+  const savedNavigationPreferences = navigationPreference.userId === (user?.id || null)
+    ? navigationPreference
+    : { ...DEFAULT_NAVIGATION_PREFERENCES, userId: user?.id || null };
+  const { style: navigationStyle, density: navigationDensity, width: navigationWidth } = savedNavigationPreferences;
+  const isAdaptiveTablet = navigationStyle === 'adaptive' && viewportWidth >= 768 && viewportWidth <= 1100;
+  const isCompactSidebar = navigationStyle === 'rail'
+    || isAdaptiveTablet
+    || ((navigationStyle === 'categories' || navigationStyle === 'adaptive') && sidebarCollapsed);
+
+  useEffect(() => {
+    const userId = user?.id || null;
+    setNavigationPreference({ userId, ...readNavigationPreferences(userId) });
+  }, [user?.id]);
+
+  useEffect(() => {
+    const updateViewportWidth = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', updateViewportWidth);
+    return () => window.removeEventListener('resize', updateViewportWidth);
+  }, []);
+
+  const saveNavigationSettings = (preferences: NavigationPreferences) => {
+    const userId = user?.id || null;
+    setNavigationPreference({ userId, ...preferences });
+    saveNavigationPreferences(userId, preferences);
+    setSidebarCollapsed(false);
+    try { window.localStorage.setItem('vc-suite-sidebar-collapsed', 'false'); } catch { /* Storage can be unavailable in private browsing. */ }
+  };
   const toggleSidebar = () => setSidebarCollapsed((collapsed) => {
     const next = !collapsed;
     try { window.localStorage.setItem('vc-suite-sidebar-collapsed', String(next)); } catch { /* Storage can be unavailable in private browsing. */ }
@@ -53,19 +85,14 @@ export function AppFrame({ area, children }: AppFrameProps) {
         if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
           return;
         }
+        if (navigationStyle !== 'categories' && navigationStyle !== 'adaptive') return;
         e.preventDefault();
         toggleSidebar();
       }
     };
     window.addEventListener('keydown', handleShortcut);
     return () => window.removeEventListener('keydown', handleShortcut);
-  }, []);
-  useEffect(() => {
-    if (!mobileNavOpen) return undefined;
-    const closeOnEscape = (event) => { if (event.key === 'Escape') setMobileNavOpen(false); };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [mobileNavOpen]);
+  }, [navigationStyle]);
   const nav = workspaceNavigation.filter((link) => canViewNavigationItem(link, hasPermission));
   const navGroupDefinitions = workspaceNavGroups;
   const navGroups = navGroupDefinitions.map((group) => ({ ...group, items: nav.filter((link) => group.paths.includes(link.to)) })).filter((group) => group.items.length > 0);
@@ -100,15 +127,18 @@ export function AppFrame({ area, children }: AppFrameProps) {
     { kind: 'separator', label: '', onSelect: () => {} },
     { label: 'Volver arriba', icon: <ArrowUpRight size={14}/>, shortcut: '↑', onSelect: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
   ];
-  return <div className={`work-app area-${area}${sidebarCollapsed ? ' sidebar-collapsed' : ''}${theme === 'dark' ? ' theme-dark' : ' theme-light'}`} data-theme={theme}>
+  return <div className={`work-app area-${area}${isCompactSidebar ? ' sidebar-collapsed' : ''}${theme === 'dark' ? ' theme-dark' : ' theme-light'}`} data-theme={theme} data-navigation-style={navigationStyle} data-navigation-density={navigationDensity} data-navigation-width={navigationWidth} data-adaptive-compact={isAdaptiveTablet ? 'true' : undefined}>
     <ContextMenu scope="document" trigger={false} label="Acciones de navegación" actions={contextActions}/>
     <Sidebar
       area={area}
-      isCollapsed={sidebarCollapsed}
+      isCollapsed={isCompactSidebar}
       onToggleCollapse={toggleSidebar}
       mobileOpen={mobileNavOpen}
       onCloseMobile={() => setMobileNavOpen(false)}
       navGroups={navGroups}
+      navigationStyle={navigationStyle}
+      navigationPreferences={savedNavigationPreferences}
+      onNavigationPreferencesChange={saveNavigationSettings}
       activeNavGroup={activeNavGroup}
       directNavLinks={directNavLinks}
       userDisplayName={userDisplayName}
@@ -121,7 +151,7 @@ export function AppFrame({ area, children }: AppFrameProps) {
       toggleTheme={toggleTheme}
     />
     {mobileNavOpen && <button className="mobile-nav-backdrop" aria-label="Cerrar menú" onClick={() => setMobileNavOpen(false)}/>}
-    <div className="main-shell"><header className="topbar"><button className="desktop-sidebar-toggle" type="button" aria-label={sidebarCollapsed ? 'Expandir barra lateral (Ctrl+B)' : 'Contraer barra lateral (Ctrl+B)'} aria-pressed={sidebarCollapsed} title={sidebarCollapsed ? 'Expandir barra lateral (Ctrl+B)' : 'Contraer barra lateral (Ctrl+B)'} onClick={toggleSidebar}>{sidebarCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}</button><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'} aria-expanded={mobileNavOpen} aria-controls="sidebar-workspace" onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}</button><div className="breadcrumbs"><span>{areaTitle}</span><ChevronRight size={14}/><b>{data.settings.name}</b></div><div className="topbar-right"><ThemeSwitcher theme={theme} onToggle={toggleTheme} variant="capsule" /><AdminCommandPalette items={nav}/><ProductionAttention/><span className="local-badge connection-indicator" title={connectionLabel}><PulsingBeacon size={8} color={connectionColor} label={connectionLabel}/></span><button className="top-avatar" aria-label={`Cerrar sesión de ${userDisplayName}`} title={userDisplayName} onClick={signOut}><Avatar name={userDisplayName} src={googleAvatarUrl} size="sm" badge={googleAvatarUrl ? <span className="vc-google-avatar-mark">G</span> : undefined}/></button></div></header><main className="main-content"><motion.div key={pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.24 }}>{children}</motion.div><footer className="local-footer">Acceso autenticado y permisos comprobados en Supabase.</footer></main></div>
+    <div className="main-shell"><header className="topbar"><button className="desktop-sidebar-toggle" type="button" aria-label={isCompactSidebar ? 'Expandir barra lateral (Ctrl+B)' : 'Contraer barra lateral (Ctrl+B)'} aria-pressed={isCompactSidebar} title={isCompactSidebar ? 'Expandir barra lateral (Ctrl+B)' : 'Contraer barra lateral (Ctrl+B)'} onClick={toggleSidebar}>{isCompactSidebar ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}</button><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'} aria-expanded={mobileNavOpen} aria-controls="sidebar-workspace" onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}</button><div className="breadcrumbs"><span>{areaTitle}</span><ChevronRight size={14}/><b>{data.settings.name}</b></div><div className="topbar-right"><ThemeSwitcher theme={theme} onToggle={toggleTheme} variant="capsule" /><AdminCommandPalette items={nav}/><ProductionAttention/><span className="local-badge connection-indicator" title={connectionLabel}><PulsingBeacon size={8} color={connectionColor} label={connectionLabel}/></span><button className="top-avatar" aria-label={`Cerrar sesión de ${userDisplayName}`} title={userDisplayName} onClick={signOut}><Avatar name={userDisplayName} src={googleAvatarUrl} size="sm" badge={googleAvatarUrl ? <span className="vc-google-avatar-mark">G</span> : undefined}/></button></div></header><main className="main-content"><motion.div key={pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.24 }}>{children}</motion.div><footer className="local-footer">Acceso autenticado y permisos comprobados en Supabase.</footer></main></div>
   </div>;
 }
 

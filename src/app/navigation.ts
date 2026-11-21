@@ -15,6 +15,119 @@ export type AppNavLink = {
 
 export type AppNavGroup = { id: string; label: string; icon: LucideIcon; paths: string[] };
 
+export const navigationStyleOptions = [
+  {
+    id: 'categories',
+    label: 'Por categorías',
+    description: 'Secciones agrupadas en una barra lateral desplegable.',
+  },
+  {
+    id: 'rail',
+    label: 'Rail compacto',
+    description: 'Acceso con iconos y paneles emergentes por categoría.',
+  },
+  {
+    id: 'grid',
+    label: 'Cuadrícula',
+    description: 'Accesos en tarjetas para recorrer varias secciones.',
+  },
+  {
+    id: 'dropdown',
+    label: 'Lista desplegable',
+    description: 'Busca y abre una sección desde una lista compacta.',
+  },
+  {
+    id: 'adaptive',
+    label: 'Adaptable',
+    description: 'Barra lateral, rail en tableta y cajón en móvil.',
+  },
+] as const;
+
+export type NavigationStyle = (typeof navigationStyleOptions)[number]['id'];
+
+export const DEFAULT_NAVIGATION_STYLE: NavigationStyle = 'categories';
+export type NavigationDensity = 'comfortable' | 'compact';
+export type NavigationWidth = 'narrow' | 'standard' | 'wide';
+export type NavigationPreferences = {
+  style: NavigationStyle;
+  density: NavigationDensity;
+  width: NavigationWidth;
+};
+
+export const DEFAULT_NAVIGATION_PREFERENCES: NavigationPreferences = {
+  style: 'categories',
+  density: 'comfortable',
+  width: 'standard',
+};
+
+const NAVIGATION_STYLE_STORAGE_PREFIX = 'vc-suite-navigation-style:';
+const NAVIGATION_DENSITY_STORAGE_PREFIX = 'vc-suite-navigation-density:';
+const NAVIGATION_WIDTH_STORAGE_PREFIX = 'vc-suite-navigation-width:';
+
+export function isNavigationStyle(value: unknown): value is NavigationStyle {
+  return typeof value === 'string'
+    && navigationStyleOptions.some((option) => option.id === value);
+}
+
+export function readNavigationStylePreference(userId?: string | null): NavigationStyle {
+  if (!userId || typeof window === 'undefined') return DEFAULT_NAVIGATION_STYLE;
+  try {
+    const stored = window.localStorage.getItem(NAVIGATION_STYLE_STORAGE_PREFIX + userId);
+    return isNavigationStyle(stored) ? stored : DEFAULT_NAVIGATION_STYLE;
+  } catch {
+    return DEFAULT_NAVIGATION_STYLE;
+  }
+}
+
+export function saveNavigationStylePreference(userId: string | null | undefined, style: NavigationStyle) {
+  if (!userId || typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(NAVIGATION_STYLE_STORAGE_PREFIX + userId, style);
+  } catch {
+    // Keep the preference for this session if browser storage is unavailable.
+  }
+}
+
+export function readNavigationDensityPreference(userId?: string | null): NavigationDensity {
+  if (!userId || typeof window === 'undefined') return DEFAULT_NAVIGATION_PREFERENCES.density;
+  try {
+    return window.localStorage.getItem(NAVIGATION_DENSITY_STORAGE_PREFIX + userId) === 'compact'
+      ? 'compact'
+      : DEFAULT_NAVIGATION_PREFERENCES.density;
+  } catch {
+    return DEFAULT_NAVIGATION_PREFERENCES.density;
+  }
+}
+
+export function readNavigationWidthPreference(userId?: string | null): NavigationWidth {
+  if (!userId || typeof window === 'undefined') return DEFAULT_NAVIGATION_PREFERENCES.width;
+  try {
+    const stored = window.localStorage.getItem(NAVIGATION_WIDTH_STORAGE_PREFIX + userId);
+    return stored === 'narrow' || stored === 'wide' ? stored : DEFAULT_NAVIGATION_PREFERENCES.width;
+  } catch {
+    return DEFAULT_NAVIGATION_PREFERENCES.width;
+  }
+}
+
+export function readNavigationPreferences(userId?: string | null): NavigationPreferences {
+  return {
+    style: readNavigationStylePreference(userId),
+    density: readNavigationDensityPreference(userId),
+    width: readNavigationWidthPreference(userId),
+  };
+}
+
+export function saveNavigationPreferences(userId: string | null | undefined, preferences: NavigationPreferences) {
+  if (!userId || typeof window === 'undefined') return;
+  saveNavigationStylePreference(userId, preferences.style);
+  try {
+    window.localStorage.setItem(NAVIGATION_DENSITY_STORAGE_PREFIX + userId, preferences.density);
+    window.localStorage.setItem(NAVIGATION_WIDTH_STORAGE_PREFIX + userId, preferences.width);
+  } catch {
+    // Keep the preferences in memory if browser storage is unavailable.
+  }
+}
+
 /** One user-facing navigation index for both former panels. */
 export const workspaceNavigation: AppNavLink[] = [
   { to: '/panel', label: 'Inicio', icon: LayoutDashboard, module: 'dashboard', end: true },

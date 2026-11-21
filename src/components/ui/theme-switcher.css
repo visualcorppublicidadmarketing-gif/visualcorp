@@ -110,29 +110,8 @@
   border-color: #272a3e;
 }
 
-.vc-theme-row-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.vc-theme-row-title {
-  font-size: 10px;
-  font-weight: 750;
-  color: #554d63;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-[data-theme='dark'] .vc-theme-row-title,
-.theme-dark .vc-theme-row-title {
-  color: #9ba2bc;
-}
-
-.vc-theme-row-shortcut {
-  display: none;
+.vc-theme-row-unlabeled {
+  justify-content: center;
 }
 
 .vc-theme-row-segmented {
