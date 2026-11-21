@@ -1,38 +1,144 @@
+/* A restrained Visual Corp spectrum for desktop vertical scrollbars.
+   Keep the browser's native scrolling, dimensions and drag behavior. */
 @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
   @media not (forced-colors: active) {
     :root,
-    :where(.work-app.theme-light, .vc-dialog-overlay.theme-light, .vc-dialog.theme-light) {
-      --vc-scrollbar-track: #f2edf5;
-      --vc-scrollbar-thumb: #906e91;
-      --vc-scrollbar-start: #816990;
-      --vc-scrollbar-end: #a17194;
-      --vc-scrollbar-hover-start: #775f87;
-      --vc-scrollbar-hover-end: #9a5b82;
-      --vc-scrollbar-active: #694f76;
-      --vc-scrollbar-highlight: rgb(255 255 255 / 34%);
+    :where(
+      .work-app.theme-light,
+      .work-app[data-theme="light"],
+      .vc-dialog-overlay.theme-light,
+      .vc-dialog.theme-light
+    ) {
+      --vc-scrollbar-track: #eee9f3;
+      --vc-scrollbar-track-line: rgb(92 61 112 / 22%);
+      --vc-scrollbar-thumb: #7e1977;
+      --vc-scrollbar-start: #0875a7;
+      --vc-scrollbar-mid: #81377f;
+      --vc-scrollbar-end: #a51091;
+      --vc-scrollbar-hover-start: #086f9f;
+      --vc-scrollbar-hover-mid: #7e1977;
+      --vc-scrollbar-hover-end: #b31b8d;
+      --vc-scrollbar-active: #64105f;
+      --vc-scrollbar-highlight: rgb(255 255 255 / 74%);
+      --vc-scrollbar-outline: rgb(74 39 91 / 34%);
+      --vc-scrollbar-glow: rgb(126 25 119 / 18%);
+      --vc-scrollbar-hover-glow: rgb(6 117 167 / 34%);
     }
 
     :root[data-vc-theme="dark"],
     :root:has(.public-site):not([data-public-theme="light"], [data-vc-theme]),
-    :where(.work-app.theme-dark, .vc-dialog-overlay.theme-dark, .vc-dialog.theme-dark) {
-      --vc-scrollbar-track: #1e2230;
-      --vc-scrollbar-thumb: #9980a0;
-      --vc-scrollbar-start: #8b78a4;
-      --vc-scrollbar-end: #a67997;
-      --vc-scrollbar-hover-start: #a084b4;
-      --vc-scrollbar-hover-end: #bd769a;
-      --vc-scrollbar-active: #d0a0ba;
-      --vc-scrollbar-highlight: rgb(255 255 255 / 30%);
+    :where(
+      .work-app.theme-dark,
+      .work-app[data-theme="dark"],
+      .vc-dialog-overlay.theme-dark,
+      .vc-dialog.theme-dark
+    ) {
+      --vc-scrollbar-track: #171923;
+      --vc-scrollbar-track-line: rgb(208 147 240 / 28%);
+      --vc-scrollbar-thumb: #d093f0;
+      --vc-scrollbar-start: #62c8f0;
+      --vc-scrollbar-mid: #d093f0;
+      --vc-scrollbar-end: #f27fbd;
+      --vc-scrollbar-hover-start: #8de4ff;
+      --vc-scrollbar-hover-mid: #e3bcff;
+      --vc-scrollbar-hover-end: #ff9ed3;
+      --vc-scrollbar-active: #f5d9ff;
+      --vc-scrollbar-highlight: rgb(255 255 255 / 78%);
+      --vc-scrollbar-outline: rgb(7 10 18 / 76%);
+      --vc-scrollbar-glow: rgb(208 147 240 / 22%);
+      --vc-scrollbar-hover-glow: rgb(98 200 240 / 42%);
     }
 
-    /* The standard color property paints both axes, so keep tables and rails out of this group. */
+    /* Theme every vertical rail in Chromium/WebKit; direction selectors leave
+       horizontal carousels and table rails alone. */
+    @supports selector(::-webkit-scrollbar-thumb:vertical) {
+      :where(*)::-webkit-scrollbar-track:vertical {
+        margin-block: 4px;
+        border-radius: 999px;
+        background: linear-gradient(
+          90deg,
+          transparent 0 33%,
+          var(--vc-scrollbar-track-line) 33% 67%,
+          transparent 67%
+        );
+      }
+
+      :where(*)::-webkit-scrollbar-thumb:vertical {
+        min-height: 44px;
+        border: 3px solid transparent;
+        border-radius: 999px;
+        background: linear-gradient(
+          180deg,
+          var(--vc-scrollbar-start) 0%,
+          var(--vc-scrollbar-mid) 52%,
+          var(--vc-scrollbar-end) 100%
+        ) var(--vc-scrollbar-thumb);
+        background-clip: padding-box;
+        box-shadow:
+          inset 0 1px 0 var(--vc-scrollbar-highlight),
+          0 0 0 1px var(--vc-scrollbar-outline),
+          0 1px 9px var(--vc-scrollbar-glow);
+      }
+
+      :where(*)::-webkit-scrollbar-thumb:vertical:hover {
+        background: linear-gradient(
+          180deg,
+          var(--vc-scrollbar-hover-start) 0%,
+          var(--vc-scrollbar-hover-mid) 52%,
+          var(--vc-scrollbar-hover-end) 100%
+        );
+        background-clip: padding-box;
+        box-shadow:
+          inset 0 1px 0 var(--vc-scrollbar-highlight),
+          0 0 0 1px var(--vc-scrollbar-outline),
+          0 0 13px var(--vc-scrollbar-hover-glow);
+      }
+
+      :where(*)::-webkit-scrollbar-thumb:vertical:active {
+        background: var(--vc-scrollbar-active);
+        background-clip: padding-box;
+        box-shadow:
+          inset 0 1px 0 var(--vc-scrollbar-highlight),
+          0 0 0 1px var(--vc-scrollbar-outline);
+      }
+
+      :where(*)::-webkit-scrollbar-corner {
+        background: transparent;
+      }
+
+      @media (prefers-reduced-transparency: reduce) {
+        :where(*)::-webkit-scrollbar-track:vertical {
+          background: var(--vc-scrollbar-track);
+        }
+
+        :where(*)::-webkit-scrollbar-thumb:vertical,
+        :where(*)::-webkit-scrollbar-thumb:vertical:hover,
+        :where(*)::-webkit-scrollbar-thumb:vertical:active {
+          border-color: var(--vc-scrollbar-track);
+          background: var(--vc-scrollbar-thumb);
+          box-shadow: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        :where(*)::-webkit-scrollbar-thumb:vertical {
+          transition: box-shadow 160ms ease-out;
+        }
+      }
+    }
+
+    /* The standards-based fallback colors both axes, so only opt in known
+       vertical scrollers and let every nested control keep its own setting. */
     :is(
       html,
       .sidebar-nav-container,
       .sidebar-flyout-popover,
+      .vc-dialog,
       .vc-dialog-overlay,
       .vc-dialog-body,
       .ok-dialog-content,
+      .admin-command-results,
+      .admin-modal,
       .pos-product-grid,
       .pos-order-summary,
       .pos-customer-suggestions,
@@ -44,48 +150,16 @@
       .personnel-list,
       .quote-customer-results,
       .quote-product-options,
-      .store-selection-items
+      .quote-more-families,
+      .store-selection-items,
+      .op-flow-list,
+      .op-overview-list,
+      .equipment-modal
     ) {
-      @supports selector(::-webkit-scrollbar-thumb:vertical) {
-        &::-webkit-scrollbar {
-          width: auto;
-        }
-
-        &::-webkit-scrollbar-track:vertical {
-          background-color: var(--vc-scrollbar-track);
-          border-radius: 999px;
-        }
-
-        &::-webkit-scrollbar-thumb:vertical {
-          background: linear-gradient(135deg, var(--vc-scrollbar-start), var(--vc-scrollbar-end)) var(--vc-scrollbar-thumb);
-          background-clip: padding-box;
-          border: 2px solid transparent;
-          border-radius: 999px;
-          box-shadow: inset 0 1px 1px var(--vc-scrollbar-highlight);
-        }
-
-        &::-webkit-scrollbar-thumb:vertical:hover {
-          background-color: var(--vc-scrollbar-hover-start);
-          background-image: linear-gradient(135deg, var(--vc-scrollbar-hover-start), var(--vc-scrollbar-hover-end));
-        }
-
-        &::-webkit-scrollbar-thumb:vertical:active {
-          background-color: var(--vc-scrollbar-active);
-          background-image: none;
-        }
-
-        @media (prefers-reduced-transparency: reduce) {
-          &::-webkit-scrollbar-thumb:vertical {
-            background-image: none;
-            box-shadow: none;
-          }
-        }
-      }
-
       @supports (scrollbar-color: red blue) and (not selector(::-webkit-scrollbar-thumb:vertical)) {
         scrollbar-color: var(--vc-scrollbar-thumb) var(--vc-scrollbar-track);
 
-        /* Stop inherited colors at the scroller so nested horizontal rails retain their own styling. */
+        /* Prevent inherited colors from changing nested horizontal scrollers. */
         :where(&) > * {
           scrollbar-color: auto;
         }

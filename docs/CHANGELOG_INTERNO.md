@@ -139,3 +139,13 @@ Las publicaciones las redacta el equipo desde el panel o Codex con la credencial
 - Las 29 categorías publicadas revisadas se asignan a las siete familias existentes; el catálogo y las reglas de publicación no cambian.
 - **Verificación:** 6 pruebas específicas, verificación de tipos y compilación de producción correctas. Recorrido visual y funcional en 320, 375, 768, 1024 y 1440 px, zoom al 200 %, recarga e historial atrás/adelante; la página no presenta desbordamiento horizontal y el cotizador recibió el producto y su SKU. No se modificó la base de datos ni se publicó a producción.
 - No se incorporó el efecto WebGL de Originkit: en este entorno no se encontró código accesible del componente; el hero conserva la imagen estática actual.
+
+## 2026-11-21 — Barra vertical con acabado Visual Corp
+
+**Etiquetas:** `interfaz`, `navegación`, `escritorio`, `accesibilidad`
+
+- La barra vertical del sitio y los paneles desplazables ahora usa un carril fino y un tirador degradado de azul Visual Corp a violeta y magenta, con reflejo satinado y brillo discreto.
+- El hover y el arrastre elevan el contraste y la luz del tirador; el estado de reposo se integra con el fondo en los temas claro y oscuro.
+- Se mantiene el scroll nativo y su tamaño. El estilo se limita a escritorio con puntero preciso; las barras horizontales y la experiencia táctil conservan su presentación.
+- Alto contraste conserva el estilo del sistema. El modo de transparencia reducida usa colores sólidos y el movimiento reducido desactiva las transiciones.
+- **Verificación:** `npm run build:checked` completó TypeScript y producción. La inspección visual de navegador local no estuvo disponible en esta sesión.

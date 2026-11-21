@@ -71,12 +71,13 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ### Barra vertical global: refinamiento visual · 21 de noviembre de 2026
 
-- **Estado:** vista previa local en la rama `codex/scrollbar-glass-refine-20261121`; sin publicación.
-- **Corrección recibida:** en la captura de la vista previa el magenta saturado del tirador destacaba demasiado y se veía poco integrado.
-- **Decisión:** reposo en malva/violeta apagado con reflejo satinado; mayor acento solo al pasar el cursor o arrastrar. Se mantienen el tamaño nativo, el alcance de escritorio desde 1024 px, la barra nativa, los colores por tema y el estilo actual en pantallas táctiles y barras horizontales.
-- **Fuentes revisadas:** documentación de [CSS Scrollbars en MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Scrollbars_styling), [`scrollbar-color`](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/scrollbar-color) y [CSS Scrollbars Module del W3C](https://www.w3.org/TR/css-scrollbars-1/). Se conserva el CSS compartido; no se añadió biblioteca.
-- **Verificación:** `npm run build:checked` pasó. Edge confirmó la paleta en ambos temas, el umbral 1023/1024 px y el retorno al estilo del sistema en alto contraste. Los colores sólidos del tirador mantienen contraste superior a 3:1 con el carril.
-- **Pendiente:** valoración en navegador de escritorio con la barra visible y decisión de publicación.
+- **Dirección visual:** tirador vertical degradado azul, violeta y magenta, con reflejo satinado y brillo moderado. El reposo se integra con los fondos claros y oscuros; hover y arrastre hacen el acento más visible.
+- **Alcance:** todas las barras verticales nativas en escritorio con puntero preciso, desde 1024 px. No cambia el tamaño ni el gesto nativo; las barras horizontales y la presentación táctil quedan intactas.
+- **Accesibilidad:** alto contraste conserva el estilo del sistema; transparencia reducida usa colores sólidos; la transición solo existe si el usuario no reduce el movimiento.
+- **Selección:** Originkit no ofreció una pieza específica para el control nativo; sus resultados de scroll son efectos animados. Magic UI y HeroUI ScrollShadow tampoco sustituyen ese control; shadcn no tiene registros configurados aquí. Se eligió CSS nativo sin dependencias nuevas.
+- **Fuentes:** [CSS Scrollbars en MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Scrollbars_styling), [`scrollbar-color`](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/scrollbar-color), [CSS Scrollbars Module del W3C](https://www.w3.org/TR/css-scrollbars-1/) y [catálogo Originkit](https://www.originkit.dev/category/background-animation).
+- **Verificación:** `npm run build:checked` pasó (TypeScript y Vite). La inspección visual del navegador no estuvo disponible en esta sesión por la configuración de Work.
+- **Fuentes locales:** `src/styles/desktop-scrollbars.css`, importado desde `src/main.tsx`; registro en `docs/CHANGELOG_INTERNO.md`.
 
 - **Usuarios y Accesos (19 de noviembre de 2026):** el panel incorpora solicitudes de usuarios de Google sin perfil, aprobación con perfil, descarte e invitaciones con mensaje copiable. La confirmación de registro se muestra después de recibir la respuesta de Supabase. El archivo `20261119184952_organization_access_requests.sql` coincide con la migración registrada en producción. La compilación y las pruebas locales de solicitudes y acceso manual pasaron.
 
