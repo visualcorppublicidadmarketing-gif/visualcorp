@@ -16,6 +16,90 @@ export const publicServiceFamilies: PublicServiceFamily[] = [
   { id: 'eventos', name: 'Exhibición y eventos', description: 'Material visual para presentar ideas y proyectos.', mark: '06' },
 ];
 
+export type ServiceShowcase = {
+  badge: string;
+  title: string;
+  summary: string;
+  capabilities: [string, string, string];
+  imageAlt: string;
+  conceptBrand: string;
+};
+
+export const serviceShowcaseContent: Record<PublicServiceId, ServiceShowcase> = {
+  impresion: {
+    badge: 'IMPRESIÓN · PAPELERÍA · PIEZAS GRÁFICAS',
+    title: 'Ideas que toman forma en papel.',
+    summary: 'Piezas impresas para presentar tu marca, comunicar una campaña o acompañar la experiencia en tu punto de atención.',
+    capabilities: [
+      'Papelería comercial, tarjetas, carpetas y material informativo.',
+      'Stickers, etiquetas, folletos y catálogos según la necesidad.',
+      'Revisamos formato, cantidades, acabados y arte antes de cotizar.',
+    ],
+    imageAlt: 'Maqueta conceptual de papelería impresa con identidad visual de Apple; ejemplo no oficial.',
+    conceptBrand: 'Apple',
+  },
+  corte: {
+    badge: 'CORTE LÁSER · PIEZAS A MEDIDA',
+    title: 'Un diseño que encuentra su forma.',
+    summary: 'Partimos de tu dibujo, sus dimensiones y el uso previsto para orientar piezas personalizadas con formas definidas.',
+    capabilities: [
+      'Piezas con siluetas especiales, identificadores y señalética personalizada.',
+      'Placas y elementos visuales pensados para integrarse a un espacio.',
+      'Material, espesor, acabado y factibilidad se revisan para cada proyecto.',
+    ],
+    imageAlt: 'Maqueta conceptual de rótulo en acrílico cortado y ensamblado con identidad LEGO; ejemplo no oficial.',
+    conceptBrand: 'LEGO',
+  },
+  rotulos: {
+    badge: 'RÓTULOS · FACHADAS · IDENTIDAD ESPACIAL',
+    title: 'Tu marca, visible desde el primer vistazo.',
+    summary: 'Diseñamos la presencia visual de un local o espacio a partir de su fachada, el punto de vista y la identidad que quieres comunicar.',
+    capabilities: [
+      'Rótulos, letras con volumen e identificación para espacios comerciales.',
+      'Propuestas visuales para fachadas, vitrinas y puntos de atención.',
+      'Medidas, materiales, iluminación e instalación se confirman al revisar el lugar.',
+    ],
+    imageAlt: 'Maqueta conceptual de fachada con rótulo dimensional e identidad Starbucks; ejemplo no oficial.',
+    conceptBrand: 'Starbucks',
+  },
+  'gran-formato': {
+    badge: 'GRAN FORMATO · GRÁFICA PARA ESPACIOS',
+    title: 'Haz que tu mensaje ocupe su espacio.',
+    summary: 'Gráfica de mayor escala para comunicar a distancia o dar continuidad visual a una superficie, vitrina o ambiente.',
+    capabilities: [
+      'Lonas, banners y piezas gráficas para espacios interiores o exteriores.',
+      'Gráfica para vitrinas, superficies y presentaciones visuales.',
+      'El lugar, la medida, la distancia de lectura y el uso orientan cada propuesta.',
+    ],
+    imageAlt: 'Maqueta conceptual de banner impreso de gran formato con identidad Coca-Cola; ejemplo no oficial.',
+    conceptBrand: 'Coca-Cola',
+  },
+  textil: {
+    badge: 'TEXTIL · PRENDAS · ARTÍCULOS PROMOCIONALES',
+    title: 'Una identidad que acompaña a tu equipo.',
+    summary: 'Prendas y artículos personalizados para equipos, actividades, campañas o detalles de marca.',
+    capabilities: [
+      'Prendas para equipos y piezas textiles con identidad visual.',
+      'Artículos promocionales para entregar, presentar o acompañar una actividad.',
+      'Definimos contigo pieza, cantidades, tallas, colores y ubicación del diseño.',
+    ],
+    imageAlt: 'Maqueta conceptual de sudadera y gorra textiles con identidad Nike; ejemplo no oficial.',
+    conceptBrand: 'Nike',
+  },
+  eventos: {
+    badge: 'EVENTOS · FERIAS · EXHIBICIÓN',
+    title: 'Una experiencia, muchas piezas en sintonía.',
+    summary: 'Apoyos visuales para presentar una marca, ordenar un espacio y dar unidad a ferias, lanzamientos o activaciones.',
+    capabilities: [
+      'Fondos, displays y piezas para exhibición o presentaciones.',
+      'Elementos visuales que ayudan a organizar un stand o punto de encuentro.',
+      'El tipo de evento, el espacio, las medidas y la fecha definen el alcance.',
+    ],
+    imageAlt: 'Maqueta conceptual de montaje para evento con identidad Netflix; ejemplo no oficial.',
+    conceptBrand: 'Netflix',
+  },
+};
+
 export const serviceDeliverableTags: Record<PublicServiceId, [string, string, string, string]> = {
   impresion: ['Papelería comercial', 'Tarjetas y carpetas', 'Stickers y etiquetas', 'Folletería y catálogos'],
   'gran-formato': ['Lonas y piezas de gran formato', 'Gráfica para superficies', 'Banners y estructuras visuales', 'Gráfica para vitrinas'],
