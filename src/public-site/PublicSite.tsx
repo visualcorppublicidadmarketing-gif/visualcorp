@@ -11,6 +11,7 @@ import { getGoogleMapsEmbedUrl, getGoogleMapsOpenUrl, isGoogleMapsUrl } from '..
 import { multiProductQuoteService, publicAddress, publicServiceFamilies, serviceDeliverableTags, serviceDetailContent, serviceProjectPrompts, type PublicServiceId } from './content.ts';
 import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategoryStrips, ServiceVisualShowcase, StrategicBenefitsGrid } from './SolutionsComponents';
 import { Title3D } from './Title3D';
+import { ServiceKeycap, getServiceKeycapColor } from './ServiceKeycap';
 import { AboutHero, ContactHero, ProcessHero } from './CompanyHeroes';
 import { companyProcessSteps } from './company-hero-content';
 import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
@@ -517,8 +518,9 @@ export function ServiceDetailPage() {
   const service = data.services.find((item) => item.id === slug);
   const details = familyInfo(slug);
   if (!service?.enabled) return <PageNotFound title="Este servicio no está disponible"/>;
-  const Icon = serviceIcons[service.id] || Sparkles;
   const page = details ? serviceDetailContent[details.id] : undefined;
+  const serviceId = service.id as PublicServiceId;
+  const keycapColor = getServiceKeycapColor(serviceId);
   const quoteUrl = `/cotizador?servicio=${encodeURIComponent(service.name)}`;
   const relatedIds: string[] = page?.relatedServices || [];
   const relatedServices = data.services.filter((item) => item.enabled && relatedIds.includes(item.id)).sort((a, b) => relatedIds.indexOf(a.id) - relatedIds.indexOf(b.id));
@@ -527,7 +529,7 @@ export function ServiceDetailPage() {
       <header className="service-detail-hero">
         <nav className="service-detail-breadcrumbs" aria-label="Ruta de navegación"><Link to="/">Inicio</Link><ChevronRight size={14} aria-hidden="true"/><Link to="/servicios">Servicios</Link><ChevronRight size={14} aria-hidden="true"/><span aria-current="page">{service.name}</span></nav>
         <div className="service-detail-hero-grid"><div className="service-detail-hero-copy"><Eyebrow light>{`SERVICIOS · ${details?.mark || ''}`}</Eyebrow><div className="service-detail-title-3d-wrapper"><Title3D serviceId={service.id as PublicServiceId} variant="hero" priority /><h1 className="sr-only">{service.name}</h1></div><p className="service-detail-hero-description">{page?.headline || service.description}</p><p className="service-detail-hero-intro">{page?.introduction || serviceProjectPrompts[service.id] || 'Cuéntanos qué necesitas y revisaremos contigo los detalles del proyecto.'}</p><div className="service-detail-actions"><Link className="site-primary-button" to={quoteUrl}>Preparar mi cotización <ArrowUpRight size={16}/></Link><a className="site-secondary-button" href="#orientar-proyecto">¿Qué información compartir? <ArrowDownRight size={16}/></a></div><span className="service-detail-hero-footnote"><Check size={14}/> Revisaremos contigo los detalles antes de confirmar tu solicitud.</span></div>
-          <div className="service-detail-visual" aria-hidden="true"><div className="service-detail-visual-orbit"/><span className="service-detail-visual-number">{details?.mark || 'VC'}</span><div className="service-detail-visual-icon"><Icon size={76} strokeWidth={1.2}/></div><span className="service-detail-visual-label"><i/> IDEAS QUE TOMAN FORMA</span></div>
+          <div className="service-detail-visual" style={{ '--detail-accent': keycapColor } as React.CSSProperties} aria-hidden="true"><div className="service-detail-visual-orbit"/><span className="service-detail-visual-number">{details?.mark || 'VC'}</span><ServiceKeycap serviceId={serviceId} className="service-detail-keycap-stage"/><span className="service-detail-visual-label"><i/> IDEAS QUE TOMAN FORMA</span></div>
         </div>
       </header>
       <section className="service-detail-brief service-detail-section" id="orientar-proyecto" tabIndex={-1} aria-labelledby="service-detail-brief-title"><div className="service-detail-brief-heading"><Eyebrow>PARA EMPEZAR</Eyebrow><h2 id="service-detail-brief-title">Cuéntanos un poco<br/>sobre tu idea.</h2><p>{serviceProjectPrompts[service.id] || 'Comparte el objetivo, el espacio o la necesidad que quieres resolver.'}</p><span>{page?.preparation}</span></div><div className="service-detail-checklist">{(page?.checklist || ['El objetivo que quieres conseguir', 'Las medidas o cantidad aproximadas, si las conoces', 'Una foto, diseño o referencia, si la tienes']).map((item, index) => <div key={item}><span>{String(index + 1).padStart(2, '0')}</span><p>{item}</p><Check size={17} aria-hidden="true"/></div>)}<Link className="site-primary-button" to={quoteUrl}>Continuar al cotizador <ArrowUpRight size={16} aria-hidden="true"/></Link></div></section>

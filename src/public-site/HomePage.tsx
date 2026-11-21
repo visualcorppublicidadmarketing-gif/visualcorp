@@ -48,12 +48,12 @@ import {
   serviceProjectPrompts,
   type PublicServiceId,
 } from './content';
+import { ServiceKeycap, getServiceKeycapColor } from './ServiceKeycap';
 import './home-page.css';
 import { HomeFilm } from './HomeFilm';
 import { EnvironmentBrandingMatrix, PanoramicCategoryStrips } from './SolutionsComponents';
 
 const Highlights = lazy(() => import('./ShowcasePages').then((module) => ({ default: module.HomeContentHighlights })));
-const OriginkitSingleGlassKeyboard = lazy(() => import('@/components/originkit/ui/single-glass-keyboard'));
 
 const serviceIcons: Record<string, typeof Printer> = {
   impresion: Printer,
@@ -62,15 +62,6 @@ const serviceIcons: Record<string, typeof Printer> = {
   textil: Shirt,
   corte: Scissors,
   eventos: ScanLine,
-};
-
-const serviceKeycaps: Record<string, { mark: string; color: string }> = {
-  impresion: { mark: '/public-site/originkit/printer-mark.svg', color: '#FFFFFF' },
-  'gran-formato': { mark: '/public-site/originkit/billboard-mark.svg', color: '#82DDF3' },
-  rotulos: { mark: '/public-site/originkit/storefront-mark.svg', color: '#F2A5D1' },
-  textil: { mark: '/public-site/originkit/shirt-mark.svg', color: '#F2A5D1' },
-  corte: { mark: '/public-site/originkit/scissors-mark.svg', color: '#D1A4F0' },
-  eventos: { mark: '/public-site/originkit/events-mark.svg', color: '#82DDF3' },
 };
 
 const serviceCardDescriptions: Record<string, string> = {
@@ -142,50 +133,6 @@ function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; 
     >
       {children}
     </motion.div>
-  );
-}
-
-function HomeServiceKeycap({ Icon, mark, color }: { Icon: typeof Printer; mark: string; color: string }) {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const nearViewport = useInView(stageRef, { margin: '100px' });
-  const [stageBounds, setStageBounds] = useState({ width: 0, height: 0 });
-
-  useEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
-
-    const observer = new ResizeObserver(([entry]) => {
-      const width = Math.round(entry.contentRect.width);
-      const height = Math.round(entry.contentRect.height);
-      setStageBounds((current) => (
-        current.width === width && current.height === height ? current : { width, height }
-      ));
-    });
-    observer.observe(stage);
-    return () => observer.disconnect();
-  }, []);
-
-  const keySize = stageBounds.width && stageBounds.height
-    ? Math.min(260, Math.max(145, Math.round(Math.min(stageBounds.width * 0.68, stageBounds.height * 0.68))))
-    : 180;
-
-  return (
-    <div ref={stageRef} className="home-service-keycap-stage">
-      {nearViewport ? (
-        <Suspense fallback={<Icon className="home-service-keycap-fallback" size={keySize} strokeWidth={1.1} aria-hidden="true" style={{ width: keySize, height: keySize }} />}>
-          <OriginkitSingleGlassKeyboard
-            background="transparent"
-            legend=""
-            mark={mark}
-            legendColor={color}
-            size={keySize}
-            advanced={{ grain: 0, vignette: 0 }}
-          />
-        </Suspense>
-      ) : (
-        <Icon className="home-service-keycap-fallback" size={keySize} strokeWidth={1.1} style={{ color, width: keySize, height: keySize }} aria-hidden="true" />
-      )}
-    </div>
   );
 }
 
@@ -612,8 +559,8 @@ export function PublicHomePage() {
 
         <div className="home-services-grid">
           {services.map((service: { id: string; name: string; description: string }, index: number) => {
-            const Icon = serviceIcons[service.id] || Sparkles;
-            const keycap = serviceKeycaps[service.id] || serviceKeycaps.impresion;
+            const serviceId = service.id as PublicServiceId;
+            const keycapColor = getServiceKeycapColor(serviceId);
             return (
               <Reveal key={service.id} delay={(index % 3) * 0.06}>
                 <Card className="home-service-card-wrap home-glass-card vc-glass-frosted">
@@ -630,8 +577,8 @@ export function PublicHomePage() {
                         <ArrowUpRight size={21} />
                       </span>
                     </div>
-                    <div className="home-service-art is-originkit-keyboard" style={{ color: keycap.color }} aria-hidden="true">
-                      <HomeServiceKeycap Icon={Icon} mark={keycap.mark} color={keycap.color} />
+                    <div className="home-service-art is-originkit-keyboard" style={{ color: keycapColor }} aria-hidden="true">
+                      <ServiceKeycap serviceId={serviceId} className="home-service-keycap-stage" />
                     </div>
                     <div className="home-service-copy">
                       <h3>{service.name}</h3>
