@@ -13,6 +13,13 @@ La aplicación mantiene un registro de cambios del equipo en Supabase (`public.i
 
 La tabla tiene políticas RLS por organización, audiencia y rol. Usuarios internos autorizados leen solo publicaciones vigentes para su espacio. `owner`, `admin`, `manager` y `website_admin` pueden gestionar el registro. Los cambios se transmiten con Supabase Realtime. La migración base es `20261022184130_internal_change_log`; el registro inicial de la función y las mejoras recientes se carga con `20261022184223_publish_changelog_feature`.
 
+### Publicación segura desde Codex
+
+- La Edge Function `codex-changelog` acepta únicamente solicitudes `POST` con una firma HMAC-SHA256 válida y una marca de tiempo de hasta cinco minutos. Publica solo en la organización `visual-corp`, crea entradas nuevas y añade la etiqueta `Codex`; no usa el correo del usuario para autenticar ni permite editar o archivar entradas.
+- `verify_jwt = false` es intencional porque la función verifica su propia firma antes de acceder a Supabase. Sin `CODEX_CHANGELOG_HMAC_SECRET`, el endpoint falla de forma cerrada.
+- Para la primera configuración, ejecutar `pwsh -File tools/Publish-CodexChange.ps1 -Initialize -Confirm:$false`. El script guarda el secreto aleatorio en Windows Credential Manager y lo copia al portapapeles sin mostrarlo; pegarlo directamente en Supabase **Project Settings → Edge Functions → Secrets** como `CODEX_CHANGELOG_HMAC_SECRET` y luego limpiar el portapapeles. No copiarlo al chat ni al repositorio.
+- Codex publica con `pwsh -File tools/Publish-CodexChange.ps1 -Publish` y los campos de la entrada. La clave de servicio de Supabase permanece solo en Edge Functions; el secreto HMAC local autoriza únicamente esta ruta. El UUID de cada entrada permite que una repetición de la misma solicitud sea idempotente.
+
 ## Entradas iniciales
 
 - Inventario avanzado y trazable (`483136c`).
@@ -22,7 +29,7 @@ La tabla tiene políticas RLS por organización, audiencia y rol. Usuarios inter
 - POS: carrito de varios artículos con búsqueda y filtros, imágenes de catálogo, total en vivo, selección de cliente y cotización aprobada; publicación en Supabase pendiente de acceso autenticado (`Fase 3 parcial`, 2026-10-22).
 - POS: cobro dividido entre efectivo, transferencia, tarjeta u otro; saldo pendiente visible y posibilidad explícita de dejar la orden a crédito. Cobros en efectivo requieren turno de caja abierto (`Fase 3 parcial`, 2026-10-23).
 
-Las futuras publicaciones las redacta el equipo desde el panel; la lista no se rellena automáticamente a partir de commits para evitar publicar cambios sin revisar su alcance o impacto.
+Las publicaciones las redacta el equipo desde el panel o Codex con la credencial de propósito limitado; la lista no se rellena automáticamente a partir de commits para evitar publicar cambios sin revisar su alcance o impacto.
 
 ## 2026-11-08 — Pulso de avance y medición por campaña
 
