@@ -95,12 +95,12 @@ html[data-public-theme="dark"] .home-services{--services-art-base-from:#292432;-
 .home-service-arrow{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--services-arrow-border);border-radius:50%;transition:background .3s,color .3s,transform .3s}
 .home-service-quickview{position:absolute;top:22px;right:68px;z-index:5;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 12px;border-radius:999px;border:1px solid var(--services-quickview-border);background:var(--services-quickview-bg);color:var(--services-quickview-text);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);transition:background .2s,border-color .2s,color .2s,transform .2s}
 .home-service-quickview:hover{background:var(--services-hover);border-color:var(--services-hover);color:var(--services-hover-foreground);transform:translateY(-1px)}
-.vc-home .home-service .home-service-art.is-originkit-keyboard{position:absolute;inset:40px 0 66px;z-index:1;display:grid;place-items:center;width:auto;height:auto;margin:0;overflow:visible;border:0;border-radius:0;background:transparent;box-shadow:none;mix-blend-mode:screen;pointer-events:auto}
-.home-service-keycap-stage{position:relative;display:grid;place-items:center;width:100%;height:100%;overflow:visible}
-.home-service-keycap-stage>div{width:100%;height:100%;background:transparent!important;mix-blend-mode:normal!important}
-.home-service-keycap-stage canvas{mix-blend-mode:normal}
+.vc-home .home-service .home-service-art.is-originkit-keyboard{position:absolute;inset:40px 0 66px;z-index:1;display:grid;place-items:center;width:auto;height:auto;margin:0;overflow:visible;border:0;border-radius:0;background:transparent;box-shadow:none;pointer-events:auto}
+.home-service-keycap-stage{position:relative;display:grid;place-items:center;width:100%;height:100%;overflow:visible;pointer-events:auto}
+.home-service-keycap-stage>div{width:100%;height:100%;background:transparent!important;mix-blend-mode:screen!important;pointer-events:auto!important}
+.home-service-keycap-stage canvas{mix-blend-mode:normal;pointer-events:none}
 .home-service-keycap-stage>.home-service-keycap-fallback{width:clamp(100px,14vw,180px);height:auto;color:inherit;filter:drop-shadow(0 0 18px #e5007e55)}
-.home-service-copy{position:relative;z-index:4;display:flex;flex:1;flex-direction:column;justify-content:flex-end;min-width:0;padding-top:150px;text-shadow:0 2px 2px rgba(8,7,16,.3),0 6px 14px rgba(8,7,16,.2)}
+.home-service-copy{position:relative;z-index:4;display:flex;flex:1;flex-direction:column;justify-content:flex-end;min-width:0;padding-top:150px;text-shadow:0 2px 2px rgba(8,7,16,.3),0 6px 14px rgba(8,7,16,.2);pointer-events:none}
 .vc-home .home-service .home-service-copy h3{max-width:14ch;font-size:clamp(28px,2.4vw,36px);font-weight:750;line-height:.98;letter-spacing:-.035em;text-shadow:0 2px 2px rgba(8,7,16,.34),0 6px 14px rgba(8,7,16,.28),0 12px 24px rgba(8,7,16,.18)}
 .vc-home .home-service .home-service-copy p{max-width:32ch;margin-top:10px;color:var(--services-card-muted);font-size:13.5px;line-height:1.5;text-shadow:0 1px 5px rgba(8,7,16,.24),0 0 16px rgba(8,7,16,.14)}
 .home-service-link{position:relative;z-index:4;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;padding-top:14px;border-top:1px solid var(--services-divider);font-size:11px;font-weight:700}
