@@ -1,0 +1,95 @@
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  @media not (forced-colors: active) {
+    :root,
+    :where(.work-app.theme-light, .vc-dialog-overlay.theme-light, .vc-dialog.theme-light) {
+      --vc-scrollbar-track: #f2edf5;
+      --vc-scrollbar-thumb: #906e91;
+      --vc-scrollbar-start: #816990;
+      --vc-scrollbar-end: #a17194;
+      --vc-scrollbar-hover-start: #775f87;
+      --vc-scrollbar-hover-end: #9a5b82;
+      --vc-scrollbar-active: #694f76;
+      --vc-scrollbar-highlight: rgb(255 255 255 / 34%);
+    }
+
+    :root[data-vc-theme="dark"],
+    :root:has(.public-site):not([data-public-theme="light"], [data-vc-theme]),
+    :where(.work-app.theme-dark, .vc-dialog-overlay.theme-dark, .vc-dialog.theme-dark) {
+      --vc-scrollbar-track: #1e2230;
+      --vc-scrollbar-thumb: #9980a0;
+      --vc-scrollbar-start: #8b78a4;
+      --vc-scrollbar-end: #a67997;
+      --vc-scrollbar-hover-start: #a084b4;
+      --vc-scrollbar-hover-end: #bd769a;
+      --vc-scrollbar-active: #d0a0ba;
+      --vc-scrollbar-highlight: rgb(255 255 255 / 30%);
+    }
+
+    /* The standard color property paints both axes, so keep tables and rails out of this group. */
+    :is(
+      html,
+      .sidebar-nav-container,
+      .sidebar-flyout-popover,
+      .vc-dialog-overlay,
+      .vc-dialog-body,
+      .ok-dialog-content,
+      .pos-product-grid,
+      .pos-order-summary,
+      .pos-customer-suggestions,
+      .guided-count-movement-list,
+      .roll-book__material-candidates-list,
+      .roll-book__history-list,
+      .vc-fleet-modal-body,
+      .vc-live-modal-body,
+      .personnel-list,
+      .quote-customer-results,
+      .quote-product-options,
+      .store-selection-items
+    ) {
+      @supports selector(::-webkit-scrollbar-thumb:vertical) {
+        &::-webkit-scrollbar {
+          width: auto;
+        }
+
+        &::-webkit-scrollbar-track:vertical {
+          background-color: var(--vc-scrollbar-track);
+          border-radius: 999px;
+        }
+
+        &::-webkit-scrollbar-thumb:vertical {
+          background: linear-gradient(135deg, var(--vc-scrollbar-start), var(--vc-scrollbar-end)) var(--vc-scrollbar-thumb);
+          background-clip: padding-box;
+          border: 2px solid transparent;
+          border-radius: 999px;
+          box-shadow: inset 0 1px 1px var(--vc-scrollbar-highlight);
+        }
+
+        &::-webkit-scrollbar-thumb:vertical:hover {
+          background-color: var(--vc-scrollbar-hover-start);
+          background-image: linear-gradient(135deg, var(--vc-scrollbar-hover-start), var(--vc-scrollbar-hover-end));
+        }
+
+        &::-webkit-scrollbar-thumb:vertical:active {
+          background-color: var(--vc-scrollbar-active);
+          background-image: none;
+        }
+
+        @media (prefers-reduced-transparency: reduce) {
+          &::-webkit-scrollbar-thumb:vertical {
+            background-image: none;
+            box-shadow: none;
+          }
+        }
+      }
+
+      @supports (scrollbar-color: red blue) and (not selector(::-webkit-scrollbar-thumb:vertical)) {
+        scrollbar-color: var(--vc-scrollbar-thumb) var(--vc-scrollbar-track);
+
+        /* Stop inherited colors at the scroller so nested horizontal rails retain their own styling. */
+        :where(&) > * {
+          scrollbar-color: auto;
+        }
+      }
+    }
+  }
+}

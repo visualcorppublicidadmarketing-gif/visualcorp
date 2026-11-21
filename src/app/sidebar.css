@@ -251,17 +251,24 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(121, 63, 160, 0.2) transparent;
 }
 
-.sidebar-nav-container::-webkit-scrollbar {
-  width: 4px;
-}
+@media (width < 1024px), (hover: none), (pointer: coarse), (pointer: none) {
+  @media not (forced-colors: active) {
+    .sidebar-nav-container {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(121, 63, 160, 0.2) transparent;
+    }
 
-.sidebar-nav-container::-webkit-scrollbar-thumb {
-  background: rgba(121, 63, 160, 0.22);
-  border-radius: 4px;
+    .sidebar-nav-container::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .sidebar-nav-container::-webkit-scrollbar-thumb {
+      background: rgba(121, 63, 160, 0.22);
+      border-radius: 4px;
+    }
+  }
 }
 
 .work-app.sidebar-collapsed .sidebar-nav-container {
