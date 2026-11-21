@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Check, LayoutGrid, List, Monitor, PanelLeft, Search, SlidersHorizontal, X, type LucideIcon } from 'lucide-react';
-import { navigationStyleOptions, type NavigationStyle } from './navigation';
+import { DEFAULT_NAVIGATION_PREFERENCES, navigationStyleOptions, type NavigationDensity, type NavigationPreferences, type NavigationWidth } from './navigation';
 import './navigation-style-picker.css';
 
 type NavigationStylePickerProps = {
-  value: NavigationStyle;
+  value: NavigationPreferences;
   isCollapsed: boolean;
-  onSave: (style: NavigationStyle) => void;
+  onSave: (preferences: NavigationPreferences) => void;
 };
 
-const styleIcons: Record<NavigationStyle, LucideIcon> = {
+const styleIcons: Record<NavigationPreferences['style'], LucideIcon> = {
   categories: List,
   rail: PanelLeft,
   grid: LayoutGrid,
@@ -20,9 +20,9 @@ const styleIcons: Record<NavigationStyle, LucideIcon> = {
 export function NavigationStylePicker({ value, isCollapsed, onSave }: NavigationStylePickerProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [draftStyle, setDraftStyle] = useState<NavigationStyle>(value);
+  const [draftPreferences, setDraftPreferences] = useState<NavigationPreferences>(value);
 
-  useEffect(() => setDraftStyle(value), [value]);
+  useEffect(() => setDraftPreferences(value), [value]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -38,13 +38,13 @@ export function NavigationStylePicker({ value, isCollapsed, onSave }: Navigation
       <button
         type="button"
         className={'nav-style-picker-trigger' + (isCollapsed ? ' is-compact' : '')}
-        aria-label="Elegir estilo de navegación"
+        aria-label="Configurar el panel"
         aria-haspopup="dialog"
         onClick={() => setIsOpen(true)}
-        title="Estilo de navegación"
+        title="Configuración del panel"
       >
         <SlidersHorizontal size={16} aria-hidden="true" />
-        <span>Estilo de navegación</span>
+        <span>Configuración</span>
       </button>
 
       <dialog
@@ -64,25 +64,32 @@ export function NavigationStylePicker({ value, isCollapsed, onSave }: Navigation
         <header className="nav-style-dialog-header">
           <div>
             <span className="nav-style-dialog-eyebrow">PERSONALIZA EL PANEL</span>
-            <h2 id="nav-style-dialog-title">Estilo de navegación</h2>
-            <p id="nav-style-dialog-description">Compara las opciones y elige cómo recorrer las secciones.</p>
+            <h2 id="nav-style-dialog-title">Configuración del panel</h2>
+            <p id="nav-style-dialog-description">Personaliza la navegación y el espacio de trabajo.</p>
           </div>
           <button type="button" className="nav-style-dialog-close" aria-label="Cerrar" onClick={closeDialog}>
             <X size={18} aria-hidden="true" />
           </button>
         </header>
 
-        <div className="nav-style-options" role="group" aria-label="Estilos de navegación">
+        <section className="nav-settings-section" aria-labelledby="nav-style-section-title">
+          <div className="nav-settings-heading">
+            <div>
+              <h3 id="nav-style-section-title">Estilo de navegación</h3>
+              <p>Compara las opciones y elige cómo recorrer las secciones.</p>
+            </div>
+          </div>
+          <div className="nav-style-options" role="group" aria-label="Estilos de navegación">
           {navigationStyleOptions.map((option) => {
             const Icon = styleIcons[option.id];
-            const selected = draftStyle === option.id;
+            const selected = draftPreferences.style === option.id;
             return (
               <button
                 type="button"
                 key={option.id}
                 className={'nav-style-option' + (selected ? ' is-selected' : '')}
                 aria-pressed={selected}
-                onClick={() => setDraftStyle(option.id)}
+                onClick={() => setDraftPreferences((current) => ({ ...current, style: option.id }))}
               >
                 <span className="nav-style-option-heading">
                   <span className="nav-style-option-icon"><Icon size={16} aria-hidden="true" /></span>
@@ -105,21 +112,85 @@ export function NavigationStylePicker({ value, isCollapsed, onSave }: Navigation
               </button>
             );
           })}
-        </div>
+          </div>
+        </section>
+
+        <section className="nav-settings-section nav-display-settings" aria-labelledby="nav-display-section-title">
+          <div className="nav-settings-heading">
+            <div>
+              <h3 id="nav-display-section-title">Visualización</h3>
+              <p>Ajusta el espacio de la barra para mostrar más o menos secciones.</p>
+            </div>
+            <button
+              type="button"
+              className="nav-settings-reset"
+              onClick={() => setDraftPreferences(DEFAULT_NAVIGATION_PREFERENCES)}
+            >
+              Restaurar recomendados
+            </button>
+          </div>
+
+          <div className="nav-settings-grid">
+            <fieldset className="nav-settings-control">
+              <legend>Densidad</legend>
+              <p>Elige cuánto espacio dejar entre las opciones.</p>
+              <div className="nav-settings-choices" role="group" aria-label="Densidad de navegación">
+                {([
+                  ['comfortable', 'Cómoda', 'Más espacio'],
+                  ['compact', 'Compacta', 'Más opciones a la vista'],
+                ] as [NavigationDensity, string, string][]).map(([density, label, description]) => (
+                  <button
+                    type="button"
+                    key={density}
+                    className={'nav-settings-choice' + (draftPreferences.density === density ? ' is-selected' : '')}
+                    aria-pressed={draftPreferences.density === density}
+                    onClick={() => setDraftPreferences((current) => ({ ...current, density }))}
+                  >
+                    <span>{label}</span>
+                    <small>{description}</small>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="nav-settings-control">
+              <legend>Ancho de la barra</legend>
+              <p>Se aplica a las vistas con barra expandida en escritorio.</p>
+              <div className="nav-settings-choices nav-settings-width-choices" role="group" aria-label="Ancho de la barra lateral">
+                {([
+                  ['narrow', 'Estrecha'],
+                  ['standard', 'Estándar'],
+                  ['wide', 'Amplia'],
+                ] as [NavigationWidth, string][]).map(([width, label]) => (
+                  <button
+                    type="button"
+                    key={width}
+                    className={'nav-settings-choice nav-settings-width-choice' + (draftPreferences.width === width ? ' is-selected' : '')}
+                    aria-pressed={draftPreferences.width === width}
+                    onClick={() => setDraftPreferences((current) => ({ ...current, width }))}
+                  >
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+              <small className="nav-settings-note">El rail compacto conserva su ancho para mantener los iconos accesibles.</small>
+            </fieldset>
+          </div>
+        </section>
 
         <footer className="nav-style-dialog-footer">
-          <span>La elección se guarda para tu cuenta en este navegador.</span>
+          <span>Los ajustes se guardan para tu cuenta en este navegador.</span>
           <div>
             <button type="button" className="nav-style-cancel" onClick={closeDialog}>Cancelar</button>
             <button
               type="button"
               className="nav-style-save"
               onClick={() => {
-                onSave(draftStyle);
+                onSave(draftPreferences);
                 closeDialog();
               }}
             >
-              Guardar preferencia
+              Guardar cambios
             </button>
           </div>
         </footer>

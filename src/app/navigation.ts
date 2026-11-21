@@ -46,7 +46,23 @@ export const navigationStyleOptions = [
 export type NavigationStyle = (typeof navigationStyleOptions)[number]['id'];
 
 export const DEFAULT_NAVIGATION_STYLE: NavigationStyle = 'categories';
+export type NavigationDensity = 'comfortable' | 'compact';
+export type NavigationWidth = 'narrow' | 'standard' | 'wide';
+export type NavigationPreferences = {
+  style: NavigationStyle;
+  density: NavigationDensity;
+  width: NavigationWidth;
+};
+
+export const DEFAULT_NAVIGATION_PREFERENCES: NavigationPreferences = {
+  style: 'categories',
+  density: 'comfortable',
+  width: 'standard',
+};
+
 const NAVIGATION_STYLE_STORAGE_PREFIX = 'vc-suite-navigation-style:';
+const NAVIGATION_DENSITY_STORAGE_PREFIX = 'vc-suite-navigation-density:';
+const NAVIGATION_WIDTH_STORAGE_PREFIX = 'vc-suite-navigation-width:';
 
 export function isNavigationStyle(value: unknown): value is NavigationStyle {
   return typeof value === 'string'
@@ -69,6 +85,46 @@ export function saveNavigationStylePreference(userId: string | null | undefined,
     window.localStorage.setItem(NAVIGATION_STYLE_STORAGE_PREFIX + userId, style);
   } catch {
     // Keep the preference for this session if browser storage is unavailable.
+  }
+}
+
+export function readNavigationDensityPreference(userId?: string | null): NavigationDensity {
+  if (!userId || typeof window === 'undefined') return DEFAULT_NAVIGATION_PREFERENCES.density;
+  try {
+    return window.localStorage.getItem(NAVIGATION_DENSITY_STORAGE_PREFIX + userId) === 'compact'
+      ? 'compact'
+      : DEFAULT_NAVIGATION_PREFERENCES.density;
+  } catch {
+    return DEFAULT_NAVIGATION_PREFERENCES.density;
+  }
+}
+
+export function readNavigationWidthPreference(userId?: string | null): NavigationWidth {
+  if (!userId || typeof window === 'undefined') return DEFAULT_NAVIGATION_PREFERENCES.width;
+  try {
+    const stored = window.localStorage.getItem(NAVIGATION_WIDTH_STORAGE_PREFIX + userId);
+    return stored === 'narrow' || stored === 'wide' ? stored : DEFAULT_NAVIGATION_PREFERENCES.width;
+  } catch {
+    return DEFAULT_NAVIGATION_PREFERENCES.width;
+  }
+}
+
+export function readNavigationPreferences(userId?: string | null): NavigationPreferences {
+  return {
+    style: readNavigationStylePreference(userId),
+    density: readNavigationDensityPreference(userId),
+    width: readNavigationWidthPreference(userId),
+  };
+}
+
+export function saveNavigationPreferences(userId: string | null | undefined, preferences: NavigationPreferences) {
+  if (!userId || typeof window === 'undefined') return;
+  saveNavigationStylePreference(userId, preferences.style);
+  try {
+    window.localStorage.setItem(NAVIGATION_DENSITY_STORAGE_PREFIX + userId, preferences.density);
+    window.localStorage.setItem(NAVIGATION_WIDTH_STORAGE_PREFIX + userId, preferences.width);
+  } catch {
+    // Keep the preferences in memory if browser storage is unavailable.
   }
 }
 

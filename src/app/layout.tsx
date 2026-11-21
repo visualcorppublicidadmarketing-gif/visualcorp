@@ -7,7 +7,7 @@ import { AdminCommandPalette } from '../components/AdminCommandPalette';
 import { NumberTicker, PulsingBeacon, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
 import { ContextMenu, type ContextMenuAction } from '../components/ui/ContextMenu';
 import { motion, useReducedMotion } from 'motion/react';
-import { canViewNavigationItem, workspaceNavigation, workspaceNavGroups, DEFAULT_NAVIGATION_STYLE, readNavigationStylePreference, saveNavigationStylePreference, type AppNavLink, type NavigationStyle } from './navigation';
+import { canViewNavigationItem, workspaceNavigation, workspaceNavGroups, DEFAULT_NAVIGATION_PREFERENCES, readNavigationPreferences, saveNavigationPreferences, type AppNavLink, type NavigationPreferences } from './navigation';
 import { Avatar, getGoogleAvatarUrl } from '../components/ui/Avatar';
 import { ProductionAttention } from '../pages/operations/ProductionAttention';
 import { Sidebar } from './Sidebar';
@@ -39,14 +39,15 @@ export function AppFrame({ area, children }: AppFrameProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return window.localStorage.getItem('vc-suite-sidebar-collapsed') === 'true'; } catch { return false; }
   });
-  const [navigationPreference, setNavigationPreference] = useState<{ userId: string | null; style: NavigationStyle }>({
+  const [navigationPreference, setNavigationPreference] = useState<NavigationPreferences & { userId: string | null }>({
     userId: null,
-    style: DEFAULT_NAVIGATION_STYLE,
+    ...DEFAULT_NAVIGATION_PREFERENCES,
   });
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
-  const navigationStyle = navigationPreference.userId === (user?.id || null)
-    ? navigationPreference.style
-    : DEFAULT_NAVIGATION_STYLE;
+  const savedNavigationPreferences = navigationPreference.userId === (user?.id || null)
+    ? navigationPreference
+    : { ...DEFAULT_NAVIGATION_PREFERENCES, userId: user?.id || null };
+  const { style: navigationStyle, density: navigationDensity, width: navigationWidth } = savedNavigationPreferences;
   const isAdaptiveTablet = navigationStyle === 'adaptive' && viewportWidth >= 768 && viewportWidth <= 1100;
   const isCompactSidebar = navigationStyle === 'rail'
     || isAdaptiveTablet
@@ -54,7 +55,7 @@ export function AppFrame({ area, children }: AppFrameProps) {
 
   useEffect(() => {
     const userId = user?.id || null;
-    setNavigationPreference({ userId, style: readNavigationStylePreference(userId) });
+    setNavigationPreference({ userId, ...readNavigationPreferences(userId) });
   }, [user?.id]);
 
   useEffect(() => {
@@ -63,10 +64,10 @@ export function AppFrame({ area, children }: AppFrameProps) {
     return () => window.removeEventListener('resize', updateViewportWidth);
   }, []);
 
-  const saveNavigationStyle = (style: NavigationStyle) => {
+  const saveNavigationSettings = (preferences: NavigationPreferences) => {
     const userId = user?.id || null;
-    setNavigationPreference({ userId, style });
-    saveNavigationStylePreference(userId, style);
+    setNavigationPreference({ userId, ...preferences });
+    saveNavigationPreferences(userId, preferences);
     setSidebarCollapsed(false);
     try { window.localStorage.setItem('vc-suite-sidebar-collapsed', 'false'); } catch { /* Storage can be unavailable in private browsing. */ }
   };
@@ -126,7 +127,7 @@ export function AppFrame({ area, children }: AppFrameProps) {
     { kind: 'separator', label: '', onSelect: () => {} },
     { label: 'Volver arriba', icon: <ArrowUpRight size={14}/>, shortcut: '↑', onSelect: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
   ];
-  return <div className={`work-app area-${area}${isCompactSidebar ? ' sidebar-collapsed' : ''}${theme === 'dark' ? ' theme-dark' : ' theme-light'}`} data-theme={theme} data-navigation-style={navigationStyle} data-adaptive-compact={isAdaptiveTablet ? 'true' : undefined}>
+  return <div className={`work-app area-${area}${isCompactSidebar ? ' sidebar-collapsed' : ''}${theme === 'dark' ? ' theme-dark' : ' theme-light'}`} data-theme={theme} data-navigation-style={navigationStyle} data-navigation-density={navigationDensity} data-navigation-width={navigationWidth} data-adaptive-compact={isAdaptiveTablet ? 'true' : undefined}>
     <ContextMenu scope="document" trigger={false} label="Acciones de navegación" actions={contextActions}/>
     <Sidebar
       area={area}
@@ -136,7 +137,8 @@ export function AppFrame({ area, children }: AppFrameProps) {
       onCloseMobile={() => setMobileNavOpen(false)}
       navGroups={navGroups}
       navigationStyle={navigationStyle}
-      onNavigationStyleChange={saveNavigationStyle}
+      navigationPreferences={savedNavigationPreferences}
+      onNavigationPreferencesChange={saveNavigationSettings}
       activeNavGroup={activeNavGroup}
       directNavLinks={directNavLinks}
       userDisplayName={userDisplayName}

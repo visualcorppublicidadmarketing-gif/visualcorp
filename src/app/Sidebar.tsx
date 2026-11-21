@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Avatar } from '../components/ui/Avatar';
 import { PulsingBeacon } from '../components/ui/MagicComponents';
-import type { AppNavLink, AppNavGroup, NavigationStyle } from './navigation';
+import type { AppNavLink, AppNavGroup, NavigationPreferences, NavigationStyle } from './navigation';
 import { ThemeSwitcher } from '../components/ui/ThemeSwitcher';
 import { NavigationStylePicker } from './NavigationStylePicker';
 import './sidebar.css';
@@ -30,7 +30,8 @@ export type SidebarProps = {
   onCloseMobile: () => void;
   navGroups: SidebarGroupWithItems[];
   navigationStyle: NavigationStyle;
-  onNavigationStyleChange: (style: NavigationStyle) => void;
+  navigationPreferences: NavigationPreferences;
+  onNavigationPreferencesChange: (preferences: NavigationPreferences) => void;
   activeNavGroup?: SidebarGroupWithItems;
   directNavLinks: AppNavLink[];
   userDisplayName: string;
@@ -51,7 +52,8 @@ export function Sidebar({
   onCloseMobile,
   navGroups,
   navigationStyle,
-  onNavigationStyleChange,
+  navigationPreferences,
+  onNavigationPreferencesChange,
   activeNavGroup,
   directNavLinks,
   userDisplayName,
@@ -526,7 +528,7 @@ export function Sidebar({
         </nav>
 
         <div className="sidebar-footer-dock">
-          <NavigationStylePicker value={navigationStyle} isCollapsed={isCollapsed} onSave={onNavigationStyleChange} />
+          <NavigationStylePicker value={navigationPreferences} isCollapsed={isCollapsed} onSave={onNavigationPreferencesChange} />
           {/* Selector de tema visual (Claro / Oscuro) */}
           {toggleTheme && (
             isCollapsed ? (

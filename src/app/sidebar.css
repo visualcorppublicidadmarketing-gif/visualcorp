@@ -4,7 +4,10 @@
    ========================================================================= */
 
 :root {
-  --vc-sidebar-width: 264px;
+  --vc-sidebar-open-width: 264px;
+  --vc-sidebar-grid-width: 400px;
+  --vc-sidebar-dropdown-width: 320px;
+  --vc-sidebar-width: var(--vc-sidebar-open-width);
   --vc-sidebar-collapsed-width: 68px;
   --vc-sidebar-bg: #ffffff;
   --vc-sidebar-border: #e8e6ed;
@@ -1118,11 +1121,67 @@
 
 /* Presentaciones configurables del menú del espacio de trabajo */
 .work-app[data-navigation-style='grid'] {
-  --vc-sidebar-width: 400px;
+  --vc-sidebar-width: var(--vc-sidebar-grid-width);
 }
 
 .work-app[data-navigation-style='dropdown'] {
-  --vc-sidebar-width: 320px;
+  --vc-sidebar-width: var(--vc-sidebar-dropdown-width);
+}
+
+.work-app[data-navigation-width='narrow'] {
+  --vc-sidebar-open-width: 236px;
+  --vc-sidebar-grid-width: 360px;
+  --vc-sidebar-dropdown-width: 280px;
+}
+
+.work-app[data-navigation-width='wide'] {
+  --vc-sidebar-open-width: 304px;
+  --vc-sidebar-grid-width: 440px;
+  --vc-sidebar-dropdown-width: 360px;
+}
+
+.work-app {
+  --vc-sidebar-width: var(--vc-sidebar-open-width);
+}
+
+.work-app[data-navigation-density='compact'] .sidebar-nav-container {
+  gap: 1px;
+}
+
+.work-app[data-navigation-density='compact'] .sidebar-nav-item {
+  min-height: 34px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  gap: 9px;
+}
+
+.work-app[data-navigation-density='compact'] .sidebar-group-header-btn {
+  min-height: 34px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.work-app[data-navigation-density='compact'] .sidebar-group-subitems {
+  gap: 1px;
+}
+
+.work-app[data-navigation-density='compact'] .sidebar-grid-group {
+  margin-top: 4px;
+}
+
+.work-app[data-navigation-density='compact'] .sidebar-grid-group-trigger {
+  min-height: 36px;
+}
+
+.work-app[data-navigation-density='compact'] .sidebar-grid-direct-links .sidebar-nav-item,
+.work-app[data-navigation-density='compact'] .sidebar-grid-links .sidebar-nav-item {
+  min-height: 54px;
+  padding: 7px;
+  gap: 5px;
+}
+
+.work-app[data-navigation-density='compact'] .sidebar-navigation-search-group .sidebar-nav-item {
+  min-height: 34px;
 }
 
 .work-app[data-navigation-style='rail'] .desktop-sidebar-toggle,
@@ -1423,7 +1482,7 @@
 
 @media (max-width: 600px) {
   .work-app[data-navigation-style='grid'] .sidebar {
-    width: min(400px, 96vw) !important;
+    width: min(var(--vc-sidebar-width), 96vw) !important;
   }
 
   .sidebar-grid-direct-links,
