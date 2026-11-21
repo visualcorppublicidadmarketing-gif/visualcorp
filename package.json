@@ -18,6 +18,7 @@
     "test:personnel": "node --test scripts/test-personnel.mjs",
     "test:personnel:browser": "node scripts/test-personnel-browser.mjs",
     "test:geospatial": "node --experimental-strip-types scripts/test-geospatial-proximity.mjs",
+    "test:storefront": "node --experimental-strip-types --test scripts/test-storefront-catalog.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

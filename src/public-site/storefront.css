@@ -363,6 +363,60 @@
   .store-category-card:hover,.store-product-card:hover,.store-product-add:hover{transform:none}
 }
 
+/* Resumen recuperable cuando la selección guardada contiene productos retirados. */
+.store-selection-recovery{display:grid;grid-template-columns:34px minmax(0,1fr) 40px;align-items:center;gap:10px;margin:0 0 18px;padding:10px;border:1px solid #e5bd6840;border-radius:12px;background:linear-gradient(120deg,#292218,#191720);color:#f1dcaa}
+.store-selection-recovery>span{display:grid;width:34px;height:34px;place-items:center;border-radius:9px;background:#e6b94c18;color:#f0ce7c}
+.store-selection-recovery p{min-width:0;margin:0;color:#e9dfc7;font-size:11px;line-height:1.55;overflow-wrap:anywhere}
+.store-selection-recovery>button{display:grid;width:40px;height:40px;place-items:center;border:1px solid #ffffff24;border-radius:9px;background:#ffffff08;color:#eee4d1;cursor:pointer}
+.store-selection-recovery>button:focus-visible{outline:3px solid #f1cf80;outline-offset:2px}
+.store-mobile-filter-toggle,.store-mobile-filter-panel,.store-mobile-active-filters{display:none}
+
+@media(max-width:760px){
+  .store-catalog-controls .store-results-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 0}
+  .store-catalog-controls .store-results-copy{grid-column:1;grid-row:1;min-width:0}
+  .store-catalog-controls .store-desktop-filter-controls{display:none!important}
+  .store-catalog-controls .store-mobile-filter-toggle{display:flex;grid-column:2;grid-row:1;align-items:center;justify-content:center;gap:7px;min-width:44px;min-height:44px;padding:0 11px;border:1px solid #ffffff26;border-radius:10px;background:#ffffff09;color:#f0eaf3;font:inherit;font-size:10px;font-weight:750;cursor:pointer}
+  .store-mobile-filter-toggle small{padding:3px 6px;border-radius:99px;background:#e547ae20;color:#f4afd8;font-size:8px;white-space:nowrap}
+  .store-mobile-filter-toggle[aria-expanded=true]{border-color:#e547ae80;background:#e547ae17}
+  .store-mobile-filter-toggle:focus-visible,.store-active-filter-chip:focus-visible,.store-active-filter-clear:focus-visible{outline:3px solid #f184cb;outline-offset:2px}
+  .store-mobile-filter-panel:not([hidden]){display:grid;grid-column:1/-1;grid-row:2;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:9px;padding:9px;border:1px solid #ffffff1b;border-radius:11px;background:#17151eee}
+  .store-mobile-filter-panel .store-inline-search{grid-column:1/-1;width:100%;min-height:44px}
+  .store-mobile-filter-panel .store-results-sort{grid-column:1/-1;justify-content:space-between;gap:9px;min-height:44px;font-size:10px}
+  .store-mobile-filter-panel .store-results-sort select{flex:1;width:auto;max-width:none;min-height:44px;font-size:11px}
+  .store-mobile-filter-panel .store-clear-filters{grid-column:1/-1;justify-self:stretch;min-height:44px;font-size:10px}
+  .store-mobile-active-filters{display:flex;grid-column:1/-1;flex-wrap:wrap;align-items:center;gap:7px;padding:1px 0 8px}
+  .store-mobile-filter-panel .store-clear-filters{display:none!important}
+  .store-active-filter-chip{display:inline-flex;align-items:center;gap:7px;min-width:0;max-width:100%;min-height:40px;padding:0 10px;border:1px solid #e547ae4a;border-radius:999px;background:#e547ae13;color:#f5d9eb;font:inherit;font-size:9px;cursor:pointer}
+  .store-active-filter-chip span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .store-active-filter-chip svg{flex:none}
+  .store-active-filter-clear{min-height:40px;padding:0 10px;border:1px solid #ffffff27;border-radius:999px;background:#ffffff08;color:#eee7f0;font:inherit;font-size:9px;font-weight:750;cursor:pointer}
+  .store-catalog-controls .store-category-rail button{min-height:44px}
+}
+
+@media(max-width:430px){
+  .store-catalog-controls .store-results-toolbar{gap:7px}
+  .store-catalog-controls .store-mobile-filter-toggle{gap:5px;padding:0 8px;font-size:9px}
+  .store-mobile-filter-toggle>svg:last-child{width:13px}
+  .store-mobile-filter-panel:not([hidden]){grid-template-columns:minmax(0,1fr)}
+  .store-mobile-filter-panel .store-inline-search,.store-mobile-filter-panel .store-results-sort,.store-mobile-filter-panel .store-clear-filters{grid-column:1}
+  .store-selection-recovery{grid-template-columns:30px minmax(0,1fr) 40px;gap:8px;padding:9px}
+  .store-selection-recovery>span{width:30px;height:30px}
+  .store-selection-recovery p{font-size:10px}
+}
+
+html[data-public-theme="light"] .store-catalog-controls .store-mobile-filter-toggle{border-color:rgba(82,54,96,.2);background:rgba(105,57,125,.055);color:#3b3046}
+html[data-public-theme="light"] .store-mobile-filter-toggle small{background:#f1e5f4;color:#672f70}
+html[data-public-theme="light"] .store-catalog-controls .store-mobile-filter-toggle[aria-expanded="true"]{border-color:#a4569d;background:#f7eaf6;color:#442b4d}
+html[data-public-theme="light"] .store-mobile-filter-panel:not([hidden]){border-color:#dfd5e5;background:rgba(255,255,255,.98);box-shadow:0 12px 28px rgba(52,34,66,.1);color:#453a4d}
+html[data-public-theme="light"] .store-mobile-filter-panel .store-results-sort{color:#51465b}
+html[data-public-theme="light"] .store-mobile-filter-panel .store-inline-search{border-color:#d9cfe1;background:#fff;color:#44384d}
+html[data-public-theme="light"] .store-mobile-filter-panel .store-inline-search input{background:#fff;color:#352b3d}
+html[data-public-theme="light"] .store-mobile-filter-panel .store-inline-search input::placeholder{color:#776d7f}
+html[data-public-theme="light"] .store-mobile-filter-panel .store-results-sort select{border-color:#d9cfe1;background:#fff;color:#352b3d}
+html[data-public-theme="light"] .store-mobile-filter-panel .store-clear-filters{border-color:#ddd2e2;background:#fff;color:#493c50}
+html[data-public-theme="light"] .store-active-filter-chip{border-color:#dfbfd7;background:#fff5fb;color:#5b2853}
+html[data-public-theme="light"] .store-active-filter-clear{border-color:#ddd2e2;background:#fff;color:#493c50}
+
 /* Evita que la pista de desplazamiento invada los datos del hero en tablet. */
 @media (min-width:761px) and (max-width:1050px){.store-hero-scroll{display:none}}
 

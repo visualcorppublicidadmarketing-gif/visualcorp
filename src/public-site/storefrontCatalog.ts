@@ -46,6 +46,24 @@ export type ConsolidatedStorefrontCatalogItem = StorefrontCatalogItem & {
 export const STOREFRONT_SEARCH_PARAM = 'buscar';
 export const STOREFRONT_FAMILY_PARAM = 'familia';
 export const STOREFRONT_SKU_PARAM = 'sku';
+export const STOREFRONT_SORT_PARAM = 'orden';
+
+export type StorefrontSortOrder = 'relevance' | 'az' | 'za';
+
+const storefrontSortOrders = new Set<StorefrontSortOrder>(['relevance', 'az', 'za']);
+
+export function getStorefrontSortOrder(searchParams: URLSearchParams): StorefrontSortOrder {
+  const value = searchParams.get(STOREFRONT_SORT_PARAM);
+  return value && storefrontSortOrders.has(value as StorefrontSortOrder)
+    ? value as StorefrontSortOrder
+    : 'relevance';
+}
+
+export function withStorefrontSortOrder(searchParams: URLSearchParams, value: StorefrontSortOrder) {
+  const next = new URLSearchParams(searchParams);
+  next.set(STOREFRONT_SORT_PARAM, value);
+  return next;
+}
 
 export function getStorefrontSearchQuery(searchParams: URLSearchParams) {
   return searchParams.get(STOREFRONT_SEARCH_PARAM) || '';
@@ -63,6 +81,72 @@ export function clearStorefrontSearchAndFamily(searchParams: URLSearchParams) {
   next.delete(STOREFRONT_SEARCH_PARAM);
   next.delete(STOREFRONT_FAMILY_PARAM);
   return next;
+}
+
+export function clearStorefrontCatalogState(searchParams: URLSearchParams) {
+  const next = clearStorefrontSearchAndFamily(searchParams);
+  next.delete(STOREFRONT_SORT_PARAM);
+  return next;
+}
+
+export function reconcileStorefrontSelection(
+  products: readonly StorefrontCatalogItem[],
+  selectedIds: readonly string[],
+  selectedTiers: Readonly<Record<string, string>>,
+) {
+  const uniqueSelectedIds = [...new Set(selectedIds)];
+  const productByAnyId = new Map<string, StorefrontCatalogItem>();
+  products.forEach((product) => {
+    productByAnyId.set(product.id, product);
+    product.sourceIds?.forEach((sourceId) => productByAnyId.set(sourceId, product));
+  });
+
+  const ids = [...new Set(uniqueSelectedIds.flatMap((id) => {
+    const product = productByAnyId.get(id);
+    return product ? [product.id] : [];
+  }))];
+  const quantityTiers: Record<string, string> = {};
+  Object.entries(selectedTiers).forEach(([id, tier]) => {
+    const product = productByAnyId.get(id);
+    if (product?.quantityTiers?.includes(tier)) quantityTiers[product.id] = tier;
+  });
+
+  return {
+    ids,
+    quantityTiers,
+    removedCount: uniqueSelectedIds.filter((id) => !productByAnyId.has(id)).length,
+  };
+}
+
+export function buildStorefrontQuoteUrl(
+  items: readonly StorefrontCatalogItem[],
+  selectedTiers: Readonly<Record<string, string>>,
+  labelsById: Readonly<Record<string, string>>,
+  multiProductServiceLabel: string,
+  quantityTier = '',
+) {
+  const params = new URLSearchParams();
+  const itemServiceIds = items.map((product) => getStorefrontServiceId(getStorefrontProductGroup(product)));
+  const serviceIds = [...new Set(itemServiceIds.filter(Boolean))];
+  if (items.length === 1 && itemServiceIds[0]) params.set('servicio', itemServiceIds[0]);
+  else if (items.length > 1) {
+    const oneSharedService = itemServiceIds.every(Boolean) && serviceIds.length === 1;
+    params.set('servicio', oneSharedService ? serviceIds[0] : multiProductServiceLabel);
+  }
+
+  items.forEach((product, index) => {
+    params.append('producto', labelsById[product.id] || product.name);
+    params.append(STOREFRONT_SKU_PARAM, product.sku || '');
+    params.append('familia', itemServiceIds[index]);
+  });
+  if (items.length === 1) {
+    const tier = quantityTier || selectedTiers[items[0].id] || '';
+    if (tier) params.set('cantidad', tier);
+  } else if (items.length > 1) {
+    items.forEach((product) => params.append('cantidad', selectedTiers[product.id] || ''));
+  }
+
+  return `/cotizador?${params.toString()}`;
 }
 
 export function normalizeStorefrontSearch(value: string) {
