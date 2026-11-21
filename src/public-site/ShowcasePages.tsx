@@ -25,7 +25,7 @@ import {
   withStorefrontSearchQuery,
 } from './storefrontCatalog';
 import { ArticleMarkdown } from './ArticleMarkdown';
-import { SouvenirCollectionPage } from './SouvenirCollectionPage';
+import { SouvenirCollectionPage, SOUVENIR_EXAMPLE_COUNT } from './SouvenirCollectionPage';
 import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategoryStrips } from './SolutionsComponents';
 import { PortfolioPracticalExamples } from './PortfolioPracticalExamples';
 import './storefront.css';
@@ -202,9 +202,9 @@ function StoreCategoryDiscovery({
     <div className="store-category-carousel">
       <button className="store-category-scroll" type="button" aria-label="Desplazar categorías a la izquierda" onClick={() => onScroll(-1)}><ChevronLeft size={18}/></button>
       <div className="store-category-grid" ref={railRef} role="group" aria-label="Categorías de la tienda">
-        <button type="button" className="store-category-tile store-category-tile-souvenirs" onClick={onOpenSouvenirs} aria-label="Abrir Souvenirs personalizados, 15 ejemplos">
-          <img src="/images/store/souvenirs/01_taza_tia-card.webp" alt="" loading="lazy"/>
-          <span className="store-category-tile-copy"><small><Sparkles size={12}/> COLECCIÓN · 15 IDEAS</small><b>Souvenirs<br/>personalizados</b><span>Ver colección <ArrowUpRight size={14}/></span></span>
+        <button type="button" className="store-category-tile store-category-tile-souvenirs" onClick={onOpenSouvenirs} aria-label={`Abrir Souvenirs personalizados, ${SOUVENIR_EXAMPLE_COUNT} ejemplos`}>
+          <img src="/images/store/souvenirs/12_taza_cafe_sol-card.webp" alt="" loading="lazy"/>
+          <span className="store-category-tile-copy"><small><Sparkles size={12}/> COLECCIÓN · {SOUVENIR_EXAMPLE_COUNT} IDEAS</small><b>Souvenirs<br/>personalizados</b><span>Ver colección <ArrowUpRight size={14}/></span></span>
         </button>
         {modules.map(({ name, count, product }, index) => <button type="button" className={`store-category-tile store-category-tile-${index + 1}${activeCategory === name ? ' is-active' : ''}`} key={name} aria-pressed={activeCategory === name} onClick={() => onSelectCategory(name)}>
           {product?.image ? <img src={product.image} alt="" loading="lazy"/> : <span className="store-category-tile-placeholder"><ShoppingBag size={28}/></span>}
