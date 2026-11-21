@@ -181,7 +181,7 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
   // The lifecycle page combines several independently permissioned flows.
   // Let users enter when they can see at least one flow; the page then filters
   // its tabs and data by each flow's own permission.
-  const navigationItem = workspaceNavigation.find((item) => item.to === location.pathname);
+  const navigationItem = workspaceNavigation.find((item) => item.to === location.pathname || item.aliases?.includes(location.pathname));
   const canAccessPage = legacyPanelPaths.has(location.pathname)
     ? auth.hasPermission('dashboard', 'view')
     : navigationItem

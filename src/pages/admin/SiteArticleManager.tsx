@@ -527,7 +527,7 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
   };
 
   const title = initialKind === 'portafolio' ? 'Portafolio' : initialKind === 'publicaciones' ? 'Publicaciones' : initialKind === 'blog' ? 'Blog' : 'Contenido del sitio';
-  const activeTab = initialKind === 'portafolio' ? '/admin/portafolio' : initialKind === 'publicaciones' ? '/admin/publicaciones' : '/admin/blog';
+  const activeTab = initialKind === 'portafolio' ? '/admin/portafolio' : initialKind === 'publicaciones' ? '/admin/publicaciones' : initialKind === 'blog' ? '/admin/blog' : '/admin/contenido';
 
   return (
     <AppFrame area="admin">
