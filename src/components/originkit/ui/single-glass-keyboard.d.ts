@@ -5,6 +5,7 @@ type OriginkitSingleGlassKeyboardProps = {
   legend?: string;
   mark?: string;
   legendColor?: string;
+  size?: number;
   advanced?: { grain?: number; vignette?: number };
   style?: CSSProperties;
 };

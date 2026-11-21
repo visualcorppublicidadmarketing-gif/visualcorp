@@ -185,7 +185,6 @@ uniform vec3 uLegendCol;
 uniform float uLegendSize;
 uniform float uLegLod;
 uniform float uTint;
-uniform vec3 uBg;
 uniform float uGrain;
 uniform float uSeed;
 uniform float uVig;
@@ -378,8 +377,9 @@ uint hashU(uvec3 v) {
 
 // One eye ray through canvas point frag, shaded and composited on the stage.
 // sig tells main which light path it took, so main can spot edges.
-vec3 sampleAt(vec2 frag, out float sig) {
+vec3 sampleAt(vec2 frag, out float sig, out float alpha) {
     sig = 0.0;
+    alpha = 0.0;
     vec2 uv = (frag - uCentre) / uPx;
     uv = mat2(uRoll.x, uRoll.y, -uRoll.y, uRoll.x) * uv;
     float se = sin(uElev);
@@ -397,6 +397,7 @@ vec3 sampleAt(vec2 frag, out float sig) {
     float pxW = 1.0 / uPx;
     vec3 col = vec3(0.0);
     float glass = 0.0;
+    bool halo = false;
     float legA = 0.0;
     vec3 legC = vec3(0.0);
 
@@ -588,6 +589,7 @@ vec3 sampleAt(vec2 frag, out float sig) {
             // shows the march's steps; the silhouette itself is smoothed in main.
             col = vec3(0.85, 0.85, 0.95) * uGlow * exp(-max(minD, 0.0) / (0.035 + pxW));
             glass = 1.0;
+            halo = true;
         }
     }
 
@@ -595,7 +597,12 @@ vec3 sampleAt(vec2 frag, out float sig) {
     col = 1.0 - exp(-col * 1.35);
     // The print sits on the surface, so it is laid on after the roll-off and stays pure.
     col = mix(col, legC, legA);
-    return uBg + col * glass * (1.0 - uBg);
+    if (halo) {
+        alpha = clamp(max(col.r, max(col.g, col.b)), 0.0, 1.0);
+        return col;
+    }
+    alpha = glass;
+    return col * glass;
 }
 
 // Rotated-grid offsets for the edge resample; the first is the pixel centre.
@@ -608,20 +615,24 @@ void main() {
     // rotated grid average the pixel. Flat glass and the stage pay for one.
     // One call site, so the big body is compiled once.
     vec3 outC = vec3(0.0);
+    float outA = 0.0;
     float n = 0.0;
     bool edge = false;
     for (int i = 0; i < 5; i++) {
         float sg;
-        vec3 c = sampleAt(frag + RG[i], sg);
+        float sa;
+        vec3 c = sampleAt(frag + RG[i], sg, sa);
         if (i == 0) {
             vec3 fc = fwidth(c);
             edge = fwidth(sg) > 0.5 || max(fc.r, max(fc.g, fc.b)) > 0.12;
         }
         outC += c;
+        outA += sa;
         n += 1.0;
         if (!edge) break;
     }
     outC /= n;
+    outA /= n;
 
     vec2 nd = (frag - 0.5 * uRes) / (0.5 * uRes);
     outC *= 1.0 - uVig * smoothstep(0.2, 1.4, length(nd));
@@ -630,8 +641,10 @@ void main() {
     uvec2 cell = uvec2(frag);
     float r = float(hashU(uvec3(cell, uint(uSeed))) >> 8) / 16777216.0;
     float lum = dot(outC, vec3(0.299, 0.587, 0.114));
-    outC += (r - 0.5) * uGrain * (0.25 + 0.75 * smoothstep(0.0, 0.35, lum) * (1.0 - 0.6 * lum));
-    outColor = vec4(clamp(outC, 0.0, 1.0), 1.0);
+    outC += (r - 0.5) * uGrain * (0.25 + 0.75 * smoothstep(0.0, 0.35, lum) * (1.0 - 0.6 * lum)) * outA;
+    float finalAlpha = clamp(outA, 0.0, 1.0);
+    vec3 finalColor = finalAlpha > 0.0001 ? outC / finalAlpha : vec3(0.0);
+    outColor = vec4(clamp(finalColor, 0.0, 1.0), finalAlpha);
 }`
 
 const D2R = Math.PI / 180
@@ -758,7 +771,7 @@ function drawPrint(
 const NAMES = [
     "uCentre", "uPx", "uRoll", "uInv", "uOff", "uTarget", "uElev", "uShape", "uDish", "uIor",
     "uWall", "uEnvRot", "uC0", "uC1", "uC2", "uC3", "uAz", "uKeyCol", "uKeyDir", "uPtr", "uPtrGain", "uPL",
-    "uLight", "uRim", "uRimPow", "uGlow", "uLegend", "uLegendCol", "uLegendSize", "uLegLod", "uTint", "uBg", "uGrain",
+    "uLight", "uRim", "uRimPow", "uGlow", "uLegend", "uLegendCol", "uLegendSize", "uLegLod", "uTint", "uGrain",
     "uSeed", "uVig", "uRes",
 ] as const
 type UName = (typeof NAMES)[number]
@@ -853,7 +866,7 @@ function __OriginkitBase_BerylCap(props: BerylCapProps) {
         if (!rootEl || !canvasEl) return
         const ctx = canvasEl.getContext("webgl2", {
             antialias: false,
-            alpha: false,
+            alpha: true,
             premultipliedAlpha: false,
             powerPreference: "low-power",
             preserveDrawingBuffer: false,
@@ -1341,7 +1354,6 @@ function __OriginkitBase_BerylCap(props: BerylCapProps) {
             // obliquely, and a level picked for its short axis greys thin strokes.
             f1("uLegLod", Math.max(0, Math.log2(((PRINT_TEX / face) * 0.75) / Math.max(1e-3, pxU))))
             f1("uTint", printImg && !L.pr.tint ? 0 : 1)
-            c3("uBg", L.background, [0, 0, 0])
             f1("uGrain", (clampN(num(A.grain, 35), 0, 100) / 100) * 0.25)
             // Grain only crawls while something moves; a settled frame keeps its grain.
             if (!settled) frameNo = (frameNo + 1) % 4096
