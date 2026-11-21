@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeftRight, ArrowRight, ArrowUpRight, BookOpen, BriefcaseBusiness, Check, ChevronLeft, ChevronRight, ClipboardList, Gift, Newspaper, Search, ShoppingBag, Sparkles, X } from 'lucide-react';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
@@ -21,6 +21,7 @@ import {
   withStorefrontSearchQuery,
 } from './storefrontCatalog';
 import { ArticleMarkdown } from './ArticleMarkdown';
+import { SouvenirCollectionPage } from './SouvenirCollectionPage';
 import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategoryStrips } from './SolutionsComponents';
 import { PortfolioPracticalExamples } from './PortfolioPracticalExamples';
 import './storefront.css';
@@ -170,6 +171,47 @@ function DocumentTitle({ title }: { title: string }) {
   return null;
 }
 
+type StoreCategoryModule = { name: string; count: number; product?: CatalogProduct };
+
+function StoreCategoryDiscovery({
+  categoriesCount,
+  modules,
+  activeCategory,
+  railRef,
+  onOpenSouvenirs,
+  onSelectCategory,
+  onScroll,
+}: {
+  categoriesCount: number;
+  modules: StoreCategoryModule[];
+  activeCategory: string;
+  railRef: RefObject<HTMLDivElement | null>;
+  onOpenSouvenirs: () => void;
+  onSelectCategory: (name: string) => void;
+  onScroll: (direction: -1 | 1) => void;
+}) {
+  return <section className="store-category-discovery" aria-labelledby="store-category-title">
+    <div className="store-module-heading">
+      <div><span className="site-eyebrow"><i/>ENCUENTRA TU CATEGORÍA</span><h3 id="store-category-title">¿Qué tienes en mente?</h3></div>
+      <span>{categoriesCount} familias · 1 colección</span>
+    </div>
+    <div className="store-category-carousel">
+      <button className="store-category-scroll" type="button" aria-label="Desplazar categorías a la izquierda" onClick={() => onScroll(-1)}><ChevronLeft size={18}/></button>
+      <div className="store-category-grid" ref={railRef} role="group" aria-label="Categorías de la tienda">
+        <button type="button" className="store-category-tile store-category-tile-souvenirs" onClick={onOpenSouvenirs} aria-label="Abrir Souvenirs personalizados, 15 ejemplos">
+          <img src="/images/store/souvenirs/01_taza_tia-card.webp" alt="" loading="lazy"/>
+          <span className="store-category-tile-copy"><small><Sparkles size={12}/> COLECCIÓN · 15 IDEAS</small><b>Souvenirs<br/>personalizados</b><span>Ver colección <ArrowUpRight size={14}/></span></span>
+        </button>
+        {modules.map(({ name, count, product }, index) => <button type="button" className={`store-category-tile store-category-tile-${index + 1}${activeCategory === name ? ' is-active' : ''}`} key={name} aria-pressed={activeCategory === name} onClick={() => onSelectCategory(name)}>
+          {product?.image ? <img src={product.image} alt="" loading="lazy"/> : <span className="store-category-tile-placeholder"><ShoppingBag size={28}/></span>}
+          <span className="store-category-tile-copy"><small>CATÁLOGO · {count} {count === 1 ? 'PRODUCTO' : 'PRODUCTOS'}</small><b>{name}</b><span>Ver categoría <ArrowUpRight size={14}/></span></span>
+        </button>)}
+      </div>
+      <button className="store-category-scroll" type="button" aria-label="Desplazar categorías a la derecha" onClick={() => onScroll(1)}><ChevronRight size={18}/></button>
+    </div>
+  </section>;
+}
+
 export function HomeContentHighlights() {
   const { articles } = usePublishedArticles();
   const portfolioPicks = articles.filter((article) => articleMatches(article, 'portafolio') && Boolean(article.cover_image?.trim())).slice(0, 3);
@@ -197,6 +239,7 @@ export function StorefrontPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const searchInput = useRef<HTMLInputElement>(null);
+  const categoryRail = useRef<HTMLDivElement>(null);
   const [category, setCategory] = useState('Todos');
   const [sort, setSort] = useState('relevance');
   const [visibleLimit, setVisibleLimit] = useState(24);
@@ -217,6 +260,7 @@ export function StorefrontPage() {
   const comparisonDialog = useRef<HTMLDialogElement>(null);
   const [selectedQuantityTier, setSelectedQuantityTier] = useState('');
   const queryProduct = searchParams.get('producto');
+  const showSouvenirs = searchParams.get('coleccion') === 'souvenirs';
   const requestedFamily = searchParams.get(STOREFRONT_FAMILY_PARAM);
   useEffect(() => {
     const focusSearch = (event: KeyboardEvent) => {
@@ -291,6 +335,7 @@ export function StorefrontPage() {
   const selectCategory = (nextCategory: string) => {
     setCategory(nextCategory);
     const next = new URLSearchParams(searchParams);
+    next.delete('coleccion');
     if (nextCategory === 'Todos') next.delete(STOREFRONT_FAMILY_PARAM);
     else next.set(STOREFRONT_FAMILY_PARAM, nextCategory);
     setSearchParams(next);
@@ -427,6 +472,19 @@ export function StorefrontPage() {
   const scrollToCatalog = () => document.getElementById('catalogo-productos')?.scrollIntoView({
     behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
   });
+  const openSouvenirs = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete(STOREFRONT_FAMILY_PARAM);
+    next.delete('producto');
+    next.set('coleccion', 'souvenirs');
+    setSearchParams(next);
+  };
+  const scrollCategories = (direction: -1 | 1) => {
+    categoryRail.current?.scrollBy({
+      left: direction * 320,
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+    });
+  };
   const renderProductCard = (product: CatalogProduct, index: number) => {
     const productGroup=groupFor(product); const isDuplicateName=duplicateProductNameKeys.has(getStorefrontProductNameKey(product.name)); const identity=productLabel(product); const isSelected=selection.includes(product.id); const isCompared=comparedIds.includes(product.id); const productImage=product.image;
     return <article className="store-product-card vc-magic-card" key={product.id} style={{'--store-card-index':Math.min(index%12,11)} as CSSProperties} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}><SpotlightLayer/>
@@ -434,6 +492,7 @@ export function StorefrontPage() {
       <div className="store-product-copy"><div className="store-product-card-meta"><span className="store-product-category">{productGroup}</span>{isDuplicateName&&product.sku&&!product.quantityTiers?.length&&<span className="store-product-sku-tag">Código · {product.sku}</span>}</div><h3><button type="button" aria-label={`Ver detalles de ${productLabel(product)}`} onClick={()=>openProduct(product)}>{product.name}</button></h3><p>{product.description || 'Cuéntanos qué tienes en mente y revisamos los detalles contigo.'}</p>{product.quantityTiers?.length ? <span className="store-product-tier-hint">{product.quantityTiers.length} opciones de cantidad</span> : null}<div className="store-product-card-bottom"><button type="button" className={`store-product-add${isSelected?' is-selected':''}`} aria-label={isSelected?`Quitar ${identity} de tu lista para cotizar`:`Añadir ${identity} a tu lista para cotizar`} aria-pressed={isSelected} onClick={()=>toggleSelection(product.id)}>{isSelected?<><Check size={15}/>En tu lista</>:<>+ Añadir a mi lista</>}</button><span>{product.quantityTiers?.length ? 'Opciones por cantidad' : 'Precio según proyecto'}</span></div><button type="button" className={`store-product-compare${isCompared?' is-selected':''}`} aria-label={isCompared?`Quitar ${identity} de la comparación`:`Comparar ${identity}`} aria-pressed={isCompared} onClick={()=>toggleComparison(product.id)}><ArrowLeftRight size={14}/>{isCompared?'En comparación':'Comparar'}</button></div>
     </article>;
   };
+  if (showSouvenirs) return <><DocumentTitle title="Souvenirs personalizados"/><SouvenirCollectionPage/></>;
   return <><DocumentTitle title="Tienda"/><div className="storefront-page">
     <section className="store-hero store-hero-commerce" aria-labelledby="store-title">
       <div className="store-hero-orbit store-hero-orbit-one"/><div className="store-hero-orbit store-hero-orbit-two"/>
@@ -455,7 +514,7 @@ export function StorefrontPage() {
     </section>
     <section className="storefront-catalog" id="catalogo" aria-labelledby="store-catalog-title">
       <div className="storefront-heading"><div><span className="site-eyebrow"><i/>DESCUBRE LO QUE PODEMOS CREAR</span><h2 id="store-catalog-title">Explora por<br/><em>lo que necesitas.</em></h2><p>Encuentra opciones, añade las que te interesan y define cantidades, materiales y acabados al cotizar.</p></div><div className="storefront-promise"><span><Check size={15}/></span><div><b>Una lista. Una solicitud.</b><small>Tu selección se conserva en este dispositivo.</small></div></div></div>
-      {!loading&&!error&&categoryModules.length>0&&<section className="store-category-discovery" aria-labelledby="store-category-title"><div className="store-module-heading"><div><span className="site-eyebrow"><i/>ENCUENTRA TU CATEGORÍA</span><h3 id="store-category-title">¿Qué tienes en mente?</h3></div><span>{categories.length} familias</span></div><div className="store-category-grid">{categoryModules.map(({name,count,product},index)=><button type="button" className={`store-category-card store-category-card-${index+1}${category===name?' is-active':''}`} key={name} aria-pressed={category===name} onClick={()=>{selectCategory(name);scrollToCatalog();}}><span className="store-category-photo">{product?.image?<img src={product.image} alt="" loading="lazy"/>:<ShoppingBag size={25}/>}</span><span className="store-category-label"><b>{name}</b><small>{count} {count===1?'producto':'productos'}</small></span>{category===name?<Check size={17}/>:<ArrowUpRight size={16}/>}</button>)}</div></section>}
+      {!loading&&<StoreCategoryDiscovery categoriesCount={categories.length} modules={categoryModules} activeCategory={category} railRef={categoryRail} onOpenSouvenirs={openSouvenirs} onSelectCategory={(name)=>{selectCategory(name);scrollToCatalog();}} onScroll={scrollCategories}/>}
       {!loading&&!error&&featuredProducts.length>0&&<section className="store-featured-module" aria-labelledby="store-featured-title"><div className="store-module-heading"><div><span className="site-eyebrow"><i/>SELECCIÓN VISUAL CORP</span><h3 id="store-featured-title">Productos destacados</h3></div><button type="button" onClick={()=>{selectCategory('Todos');scrollToCatalog();}}>Ver catálogo completo <ArrowRight size={15}/></button></div><div className="store-featured-grid">{featuredProducts.map(renderProductCard)}</div></section>}
       <div id="catalogo-productos" className="store-product-browser-heading"><div><span className="site-eyebrow"><i/>CATÁLOGO COMPLETO</span><h3>Encuentra tu producto</h3><p>Filtra por familia o busca por nombre, material y uso.</p></div></div>
       <div className="store-catalog-controls" role="region" aria-label="Búsqueda y filtros del catálogo">
