@@ -11,7 +11,6 @@ import {
   Lightbulb,
   MapPin,
   MessageCircle,
-  Palette,
   PanelsTopLeft,
   Printer,
   ScanLine,
@@ -40,12 +39,12 @@ import {
   SculptedWaveDivider,
 } from '../components/ui/GlassWaveEffects';
 import {
-  creativePillars,
   projectOrientatorGoals,
   publicAddress,
   serviceDeliverableTags,
   serviceDetailContent,
   serviceProjectPrompts,
+  serviceShowcaseContent,
   type PublicServiceId,
 } from './content';
 import { ServiceKeycap, getServiceKeycapColor } from './ServiceKeycap';
@@ -82,19 +81,13 @@ const orbitalServices: Array<{ id: PublicServiceId; name: string }> = [
   { id: 'eventos', name: 'Eventos' },
 ];
 
-const serviceToPillarIndex: Record<string, number> = {
-  impresion: 0,
-  corte: 0,
-  rotulos: 1,
-  'gran-formato': 1,
-  eventos: 2,
-  textil: 2,
-};
-
-const pillarIcons = {
-  'diseno-marca': Palette,
-  'publicidad-espacios': Store,
-  'marketing-activaciones': Layers,
+const conceptVisualByService: Record<PublicServiceId, string> = {
+  impresion: 'apple-print',
+  corte: 'lego-laser',
+  rotulos: 'starbucks-signage',
+  'gran-formato': 'coca-cola-wide-format',
+  textil: 'nike-textile',
+  eventos: 'netflix-events',
 };
 
 const process = [
@@ -144,25 +137,68 @@ function CreativeStudioSection({
   onOpenOrientator: (serviceId?: PublicServiceId) => void;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const pillarTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const serviceTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const backgroundVideoRef = useRef<HTMLVideoElement>(null);
   const reduceMotion = useReducedMotion();
-  const activePillar = creativePillars[activeIndex] || creativePillars[0];
-  const PillarIcon = pillarIcons[activePillar.id] || Palette;
-  const matchedService = services.find((item) => item.id === activePillar.recommendedServiceId);
+  const activeService = orbitalServices[activeIndex] || orbitalServices[0];
+  const showcase = serviceShowcaseContent[activeService.id];
+  const ServiceIcon = serviceIcons[activeService.id] || Sparkles;
+  const matchedService = services.find((item) => item.id === activeService.id);
   const quoteHref = matchedService
     ? `/cotizador?servicio=${encodeURIComponent(matchedService.name)}`
     : '/cotizador';
-  const tags = serviceDeliverableTags[activePillar.recommendedServiceId] || [];
-  const handlePillarKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const lastIndex = creativePillars.length - 1;
+  const tags = serviceDeliverableTags[activeService.id] || [];
+
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    if (connection?.saveData) return;
+
+    const video = backgroundVideoRef.current;
+    if (!video) return;
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let isVisible = false;
+
+    const syncPlayback = () => {
+      if (isVisible && !motionPreference.matches) void video.play().catch(() => undefined);
+      else video.pause();
+    };
+
+    if (typeof IntersectionObserver === 'undefined') {
+      isVisible = true;
+      syncPlayback();
+      motionPreference.addEventListener('change', syncPlayback);
+      return () => {
+        motionPreference.removeEventListener('change', syncPlayback);
+        video.pause();
+      };
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      isVisible = entries.some((entry) => entry.isIntersecting);
+      syncPlayback();
+    }, { threshold: 0.01 });
+
+    observer.observe(video);
+    motionPreference.addEventListener('change', syncPlayback);
+    return () => {
+      observer.disconnect();
+      motionPreference.removeEventListener('change', syncPlayback);
+      video.pause();
+    };
+  }, [reduceMotion]);
+
+  const handleServiceKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const lastIndex = orbitalServices.length - 1;
     let nextIndex: number;
 
     switch (event.key) {
+      case 'ArrowRight':
       case 'ArrowDown':
-        nextIndex = (index + 1) % creativePillars.length;
+        nextIndex = (index + 1) % orbitalServices.length;
         break;
+      case 'ArrowLeft':
       case 'ArrowUp':
-        nextIndex = (index - 1 + creativePillars.length) % creativePillars.length;
+        nextIndex = (index - 1 + orbitalServices.length) % orbitalServices.length;
         break;
       case 'Home':
         nextIndex = 0;
@@ -176,11 +212,27 @@ function CreativeStudioSection({
 
     event.preventDefault();
     setActiveIndex(nextIndex);
-    pillarTabRefs.current[nextIndex]?.focus();
+    serviceTabRefs.current[nextIndex]?.focus();
   };
 
   return (
     <section className="home-pillars home-section" aria-labelledby="home-pillars-title">
+      <div className="home-pillars-video-layer" aria-hidden="true">
+        <video
+          ref={backgroundVideoRef}
+          className="home-pillars-video"
+          muted
+          playsInline
+          loop
+          preload="none"
+          poster="/public-site/home-film/apertura.webp"
+          tabIndex={-1}
+        >
+          <source src="/public-site/home-film/visualcorp-432p.mp4" type="video/mp4" />
+        </video>
+        <span className="home-pillars-video-scrim" />
+      </div>
+
       <Reveal className="home-section-heading">
         <div>
           <span className="home-kicker">02 / DISEÑO GRÁFICO, PUBLICIDAD Y MARKETING</span>
@@ -194,39 +246,42 @@ function CreativeStudioSection({
           <p>
             Coordinamos dirección gráfica, comunicación comercial y producción según el alcance de cada proyecto.
           </p>
-          <button type="button" className="home-text-link home-text-button" onClick={() => onOpenOrientator(activePillar.recommendedServiceId)}>
+          <button type="button" className="home-text-link home-text-button" onClick={() => onOpenOrientator(activeService.id)}>
             Orientar mi proyecto paso a paso <Compass size={17} />
           </button>
         </div>
       </Reveal>
 
-      {/* Abanico Orbital de Especialidades (WebAngles orbital arc) */}
-      <div className="home-orbital-fan" role="region" aria-label="Abanico orbital de especialidades">
+      <div className="home-orbital-fan">
         <div className="home-orbital-fan-track" aria-hidden="true">
           <div className="home-orbital-fan-arc" />
         </div>
-        <div className="home-orbital-fan-items" role="tablist" aria-label="Especialidades por pilar">
-          {orbitalServices.map((orbital) => {
-            const pillarIdx = serviceToPillarIndex[orbital.id] ?? 0;
-            const isSelected = activeIndex === pillarIdx;
-            const Icon = serviceIcons[orbital.id] || Sparkles;
+        <div className="home-orbital-fan-items" role="tablist" aria-label="Especialidades de producción">
+          {orbitalServices.map((service, index) => {
+            const isSelected = activeIndex === index;
+            const Icon = serviceIcons[service.id] || Sparkles;
             return (
               <button
-                key={orbital.id}
+                key={service.id}
                 type="button"
-                className={`home-orbital-node vc-glass-clear${isSelected ? ' is-active' : ''}`}
-                onClick={() => {
-                  setActiveIndex(pillarIdx);
-                  pillarTabRefs.current[pillarIdx]?.focus();
+                role="tab"
+                id={`home-service-tab-${service.id}`}
+                aria-selected={isSelected}
+                aria-controls="home-service-panel"
+                tabIndex={isSelected ? 0 : -1}
+                ref={(element) => {
+                  serviceTabRefs.current[index] = element;
                 }}
-                aria-label={`${orbital.name} · Ver pilar ${creativePillars[pillarIdx]?.badge || ''}`}
+                onKeyDown={(event) => handleServiceKeyDown(event, index)}
+                className={`home-orbital-node vc-glass-clear${isSelected ? ' is-active' : ''}`}
+                onClick={() => setActiveIndex(index)}
               >
                 <span className="home-orbital-node-icon" aria-hidden="true">
                   <Icon size={16} />
                 </span>
-                <span>{orbital.name}</span>
+                <span>{service.name}</span>
                 <span className="home-orbital-node-badge">
-                  {creativePillars[pillarIdx]?.mark || '01'}
+                  {String(index + 1).padStart(2, '0')}
                 </span>
               </button>
             );
@@ -234,53 +289,70 @@ function CreativeStudioSection({
         </div>
       </div>
 
+      <p className="home-pillars-brand-disclaimer">
+        Las marcas y logotipos son referencias visuales conceptuales; no representan clientes, proyectos realizados ni colaboraciones de Visual Corp.
+      </p>
+
       <div className="home-pillars-layout">
-        <div className="home-pillars-tabs" role="tablist" aria-orientation="vertical" aria-label="Pilares de trabajo de Visual Corp">
-          {creativePillars.map((pillar, index) => {
-            const Icon = pillarIcons[pillar.id] || Sparkles;
-            const isSelected = index === activeIndex;
-            return (
-              <button
-                key={pillar.id}
-                type="button"
-                role="tab"
-                id={`home-pillar-tab-${pillar.id}`}
-                aria-selected={isSelected}
-                aria-controls={`home-pillar-panel-${pillar.id}`}
-                tabIndex={isSelected ? 0 : -1}
-                ref={(element) => {
-                  pillarTabRefs.current[index] = element;
-                }}
-                onKeyDown={(event) => handlePillarKeyDown(event, index)}
-                className={`home-pillar-tab vc-glass-frosted${isSelected ? ' is-active' : ''}`}
-                onClick={() => setActiveIndex(index)}
-              >
-                <span className="home-pillar-tab-mark">{pillar.mark}</span>
-                <span className="home-pillar-tab-icon">
-                  <Icon size={20} aria-hidden="true" />
-                </span>
-                <span className="home-pillar-tab-copy">
-                  <small>{pillar.badge}</small>
-                  <strong>{pillar.title}</strong>
-                </span>
-                <ArrowUpRight className="home-pillar-tab-arrow" size={18} aria-hidden="true" />
-              </button>
-            );
-          })}
-        </div>
+        <Card
+          className="home-pillar-visual home-glass-card vc-magic-card vc-glass-blur"
+          aria-label={`Maqueta visual conceptual para ${activeService.name}`}
+          onPointerMove={updateSpotlight}
+          onPointerLeave={clearSpotlight}
+        >
+          <SpotlightLayer />
+          <motion.div
+            key={`visual-${activeService.id}`}
+            className="home-pillar-visual-inner"
+            initial={reduceMotion ? false : { opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: reduceMotion ? 0 : 0.42 }}
+          >
+            <span className="home-pillar-concept-label">Maqueta conceptual · {showcase.conceptBrand}</span>
+            <picture>
+              <source
+                srcSet={`/public-site/service-visuals/concept-brands/${conceptVisualByService[activeService.id]}.webp`}
+                type="image/webp"
+              />
+              <img
+                src={`/public-site/service-visuals/concept-brands/${conceptVisualByService[activeService.id]}.png`}
+                alt={showcase.imageAlt}
+                width="1254"
+                height="1254"
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
+            {!reduceMotion && (
+              <div className="home-pillar-pixel-reveal" aria-hidden="true">
+                {Array.from({ length: 24 }, (_, index) => (
+                  <span key={index} style={{ animationDelay: `${((index * 7) % 24) * 18}ms` }} />
+                ))}
+              </div>
+            )}
+            <div className="home-pillar-visual-footer">
+              <span className="home-pillar-visual-icon"><ServiceIcon size={19} aria-hidden="true" /></span>
+              <span>
+                <small>REFERENCIA DE {activeService.name.toLocaleUpperCase('es-EC')}</small>
+                <strong>Una aplicación visual para imaginar el resultado.</strong>
+              </span>
+              <ArrowUpRight size={18} aria-hidden="true" />
+            </div>
+          </motion.div>
+        </Card>
 
         <Card
           className="home-pillar-showcase home-glass-card vc-magic-card vc-glass-blur"
           role="tabpanel"
-          id={`home-pillar-panel-${activePillar.id}`}
-          aria-labelledby={`home-pillar-tab-${activePillar.id}`}
+          id="home-service-panel"
+          aria-labelledby={`home-service-tab-${activeService.id}`}
           tabIndex={0}
           onPointerMove={updateSpotlight}
           onPointerLeave={clearSpotlight}
         >
           <SpotlightLayer />
           <motion.div
-            key={activePillar.id}
+            key={activeService.id}
             className="home-pillar-showcase-inner"
             initial={reduceMotion ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -288,19 +360,19 @@ function CreativeStudioSection({
           >
             <div className="home-pillar-showcase-top">
               <span className="home-pillar-badge">
-                <PillarIcon size={16} aria-hidden="true" />
-                {activePillar.badge}
+                <ServiceIcon size={16} aria-hidden="true" />
+                {showcase.badge}
               </span>
               <span className="home-pillar-index" aria-hidden="true">
-                {activePillar.mark}
+                {String(activeIndex + 1).padStart(2, '0')}
               </span>
             </div>
 
-            <h3>{activePillar.title}</h3>
-            <p className="home-pillar-summary">{activePillar.summary}</p>
+            <h3>{showcase.title}</h3>
+            <p className="home-pillar-summary">{showcase.summary}</p>
 
-            <div className="home-pillar-capabilities" aria-label="Alcance de este pilar">
-              {activePillar.capabilities.map((item) => (
+            <div className="home-pillar-capabilities" aria-label={`Alcance de ${activeService.name}`}>
+              {showcase.capabilities.map((item) => (
                 <div key={item} className="home-pillar-capability">
                   <Check size={16} aria-hidden="true" />
                   <span>{item}</span>
@@ -310,7 +382,7 @@ function CreativeStudioSection({
 
             {tags.length > 0 && (
               <div className="home-pillar-tags-block">
-                <small>SOLUCIONES FRECUENTES EN ESTA LÍNEA</small>
+                <small>PIEZAS QUE PODEMOS CONVERSAR</small>
                 <div className="home-pillar-tags">
                   {tags.map((tag) => (
                     <span key={tag}>{tag}</span>
@@ -321,9 +393,9 @@ function CreativeStudioSection({
 
             <div className="home-pillar-actions">
               <Link className="home-button home-button-primary" to={quoteHref}>
-                {activePillar.ctaLabel} <ArrowUpRight size={17} />
+                Cotizar {activeService.name} <ArrowUpRight size={17} />
               </Link>
-              <Link className="home-button home-button-secondary" to={`/servicios/${activePillar.recommendedServiceId}`}>
+              <Link className="home-button home-button-secondary" to={`/servicios/${activeService.id}`}>
                 Ver especialidad <ArrowRight size={16} />
               </Link>
             </div>
