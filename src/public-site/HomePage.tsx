@@ -148,21 +148,42 @@ function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; 
 function HomeServiceKeycap({ Icon, mark, color }: { Icon: typeof Printer; mark: string; color: string }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const nearViewport = useInView(stageRef, { margin: '100px' });
+  const [stageBounds, setStageBounds] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.round(entry.contentRect.width);
+      const height = Math.round(entry.contentRect.height);
+      setStageBounds((current) => (
+        current.width === width && current.height === height ? current : { width, height }
+      ));
+    });
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, []);
+
+  const keySize = stageBounds.width && stageBounds.height
+    ? Math.min(260, Math.max(145, Math.round(Math.min(stageBounds.width * 0.68, stageBounds.height * 0.68))))
+    : 180;
 
   return (
     <div ref={stageRef} className="home-service-keycap-stage">
       {nearViewport ? (
-        <Suspense fallback={<Icon className="home-service-keycap-fallback" size={56} strokeWidth={1.1} aria-hidden="true" />}>
+        <Suspense fallback={<Icon className="home-service-keycap-fallback" size={keySize} strokeWidth={1.1} aria-hidden="true" style={{ width: keySize, height: keySize }} />}>
           <OriginkitSingleGlassKeyboard
-            background="#000000"
+            background="transparent"
             legend=""
             mark={mark}
             legendColor={color}
+            size={keySize}
             advanced={{ grain: 0, vignette: 0 }}
           />
         </Suspense>
       ) : (
-        <Icon className="home-service-keycap-fallback" size={56} strokeWidth={1.1} style={{ color }} aria-hidden="true" />
+        <Icon className="home-service-keycap-fallback" size={keySize} strokeWidth={1.1} style={{ color, width: keySize, height: keySize }} aria-hidden="true" />
       )}
     </div>
   );
