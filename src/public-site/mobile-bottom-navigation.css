@@ -45,8 +45,8 @@
     box-shadow:
       var(--glass-shadow, 0 18px 46px rgba(0, 0, 0, 0.42)),
       inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, 0.14));
-    backdrop-filter: var(--glass-blur, blur(20px) saturate(1.25));
-    -webkit-backdrop-filter: var(--glass-blur, blur(20px) saturate(1.25));
+    backdrop-filter: blur(34px) saturate(1.35);
+    -webkit-backdrop-filter: blur(34px) saturate(1.35);
   }
 
   .public-site .mobile-bottom-item {

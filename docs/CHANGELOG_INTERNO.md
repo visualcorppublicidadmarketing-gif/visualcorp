@@ -96,3 +96,10 @@ Las futuras publicaciones las redacta el equipo desde el panel; la lista no se r
   - `/portafolio` (`ShowcasePage`): integra la galería interactiva filtrable (`InteractiveCatalogGallery`), las tiras panorámicas y la matriz de espacios junto a las publicaciones del estudio.
   - `/nosotros` (`AboutPage`), `/como-trabajamos` (`ProcessPage`) e Inicio (`/`): conectan los beneficios estratégicos, la matriz de branding por espacios y las tiras panorámicas interactivas.
 
+
+## 2026-11-21 — Desenfoque y transparencia en la navegación pública
+
+**Etiquetas:** `sitio público`, `navegación`, `móvil`, `modo claro`, `interfaz`
+
+- Se reforzó el efecto de vidrio de la navegación superior e inferior con desenfoque de fondo en temas claro y oscuro.
+- En modo claro, ambas barras usan fondos algo translúcidos y un desenfoque gaussiano suave para mantener visible el contenido detrás sin perder legibilidad.
