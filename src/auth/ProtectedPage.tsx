@@ -1,8 +1,10 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ArrowUpRight, LogOut } from 'lucide-react';
+import { ArrowUpRight, Gauge, Layers3, LogIn, LogOut, Moon, ShieldCheck, Sparkles, Sun, UsersRound } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
 import { useAuth } from './AuthProvider';
 import { canViewNavigationItem, legacyPanelPaths, permissionByPath, workspaceNavigation } from '../app/navigation';
+import { useTheme } from '../app/ThemeProvider';
 
 type AccessArea = 'website' | 'catalog' | 'team' | 'operations';
 
@@ -24,6 +26,9 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [oauthLoading, setOauthLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const reduceMotion = useReducedMotion();
 
   if (auth.loading) return <main className="access-screen"><p>Verificando acceso seguro…</p></main>;
 
@@ -32,11 +37,14 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
       event.preventDefault();
       setError('');
       setMessage('');
+      setEmailLoading(true);
       try {
         await auth.sendSignInLink(email.trim());
         setMessage('Te enviamos un enlace de acceso al correo. Ábrelo en este mismo navegador para continuar.');
       } catch (err) {
         setError(errorMessage(err));
+      } finally {
+        setEmailLoading(false);
       }
     };
 
@@ -52,20 +60,104 @@ export function ProtectedPage({ area, children }: ProtectedPageProps) {
       }
     };
 
-    return <main className="access-screen"><form className="access-card" onSubmit={sendLink}>
-      <img src={wordmark} alt="Visual Corp" />
-      <span className="site-eyebrow"><i /> ACCESO INTERNO</span>
-      <h1>Visual Corp Suite</h1>
-      <p>Inicia sesión para abrir el panel y acceder a los módulos habilitados para tu perfil.</p>
-      <button className="site-primary-button" type="button" disabled={oauthLoading} onClick={signInWithGoogle}>
-        {oauthLoading ? 'Conectando con Google…' : 'Continuar con Google'} <ArrowUpRight size={16} />
+    return <motion.main
+      className="access-screen access-screen--login"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: reduceMotion ? 0 : 0.35, ease: 'easeOut' }}
+    >
+      <button
+        className="access-theme-toggle"
+        type="button"
+        onClick={toggleTheme}
+        aria-label={theme === 'dark' ? 'Cambiar al modo claro' : 'Cambiar al modo oscuro'}
+        title={theme === 'dark' ? 'Cambiar al modo claro' : 'Cambiar al modo oscuro'}
+      >
+        {theme === 'dark' ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
+        <span>{theme === 'dark' ? 'Claro' : 'Oscuro'}</span>
       </button>
-      <div className="divider-label">O USA UN ENLACE POR CORREO</div>
-      <label>Correo de Visual Corp<input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-      <button className="site-primary-button" type="submit">Enviar enlace de acceso <ArrowUpRight size={16} /></button>
-      {message && <small role="status">{message}</small>}
-      {error && <small className="access-error" role="alert">{error}</small>}
-    </form></main>;
+
+      <div className="access-layout">
+        <motion.section
+          className="access-story"
+          aria-labelledby="access-story-title"
+          initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.5, delay: reduceMotion ? 0 : 0.04, ease: 'easeOut' }}
+        >
+          <div className="access-brand-lockup">
+            <img src="/brand/visualcorp-symbol.png" alt="" aria-hidden="true" />
+            <span><strong>VISUAL CORP</strong><small>CREATIVE WORKSPACE</small></span>
+          </div>
+          <span className="access-kicker"><i /> TU ESPACIO DE TRABAJO</span>
+          <h1 id="access-story-title">Un solo espacio.<br /><em>Todo tu equipo.</em></h1>
+          <p className="access-story-copy">Entra a las herramientas, proyectos y tareas de Visual Corp desde un espacio creado para trabajar en equipo.</p>
+
+          <div className="access-visual" aria-hidden="true">
+            <span className="access-visual-orbit access-visual-orbit--outer" />
+            <span className="access-visual-orbit access-visual-orbit--inner" />
+            <span className="access-visual-glow" />
+            <span className="access-visual-mark"><img src="/brand/visualcorp-symbol.png" alt="" /></span>
+            <span className="access-visual-note"><Sparkles size={15} /> Ideas en movimiento</span>
+          </div>
+
+          <ul className="access-capabilities" aria-label="Áreas de trabajo">
+            <li><Layers3 size={15} aria-hidden="true" /> Herramientas</li>
+            <li><UsersRound size={15} aria-hidden="true" /> Equipo</li>
+            <li><Gauge size={15} aria-hidden="true" /> Operaciones</li>
+          </ul>
+          <div className="access-story-footer"><ShieldCheck size={16} aria-hidden="true" /><span>Acceso privado para el equipo Visual Corp</span></div>
+        </motion.section>
+
+        <motion.section
+          className="access-panel"
+          aria-labelledby="access-login-title"
+          initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: reduceMotion ? 0 : 0.48, delay: reduceMotion ? 0 : 0.1, ease: 'easeOut' }}
+        >
+          <form className="access-card access-card--login" onSubmit={sendLink}>
+            <span className="access-card-eyebrow"><i /> ACCESO INTERNO</span>
+            <div className="access-card-heading">
+              <h2 id="access-login-title">Te damos la bienvenida</h2>
+              <p>Inicia sesión para abrir tu espacio de trabajo y ver los módulos habilitados para tu perfil.</p>
+            </div>
+
+            <button className="access-oauth-button" type="button" disabled={oauthLoading || emailLoading} onClick={signInWithGoogle}>
+              <span className="access-oauth-icon" aria-hidden="true"><LogIn size={17} /></span>
+              <span>{oauthLoading ? 'Conectando con Google…' : 'Continuar con Google'}</span>
+              <ArrowUpRight size={17} aria-hidden="true" />
+            </button>
+
+            <div className="access-divider"><span>o continúa con tu correo</span></div>
+
+            <label className="access-field" htmlFor="access-email">
+              <span>Correo de Visual Corp</span>
+              <input
+                id="access-email"
+                type="email"
+                required
+                autoComplete="email"
+                aria-describedby="access-email-help"
+                placeholder="Escribe tu correo de trabajo"
+                value={email}
+                disabled={oauthLoading || emailLoading}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </label>
+            <small className="access-helper" id="access-email-help">Te enviaremos un enlace seguro para continuar en este navegador.</small>
+
+            <button className="access-submit-button" type="submit" disabled={emailLoading || oauthLoading}>
+              <span>{emailLoading ? 'Enviando enlace…' : 'Enviar enlace de acceso'}</span>
+              <ArrowUpRight size={17} aria-hidden="true" />
+            </button>
+            {message && <small className="access-feedback access-feedback--success" role="status"><ShieldCheck size={16} aria-hidden="true" />{message}</small>}
+            {error && <small className="access-feedback access-feedback--error" role="alert">{error}</small>}
+            <div className="access-card-footer"><ShieldCheck size={14} aria-hidden="true" /><span>Tu acceso se verifica de forma segura</span></div>
+          </form>
+        </motion.section>
+      </div>
+    </motion.main>;
   }
 
   if (auth.accessError && !auth.roles.length) return <main className="access-screen"><section className="access-card" role="alert">
