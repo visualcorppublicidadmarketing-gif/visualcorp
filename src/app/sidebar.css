@@ -99,7 +99,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  height: 62px;
+  height: 72px;
   padding: 0 14px;
   border-bottom: 1px solid var(--vc-sidebar-border);
   flex-shrink: 0;
@@ -122,11 +122,11 @@
 
 .sidebar-brand-wordmark {
   display: block;
-  height: 28px;
-  width: auto;
-  max-width: 164px;
-  object-fit: contain;
-  object-position: left center;
+  width: 184px;
+  height: 46px;
+  max-width: 184px;
+  object-fit: cover;
+  object-position: center 50%;
   transition: opacity 0.18s ease;
 }
 
