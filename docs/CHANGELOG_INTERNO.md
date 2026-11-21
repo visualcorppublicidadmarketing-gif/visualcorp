@@ -103,3 +103,4 @@ Las futuras publicaciones las redacta el equipo desde el panel; la lista no se r
 
 - Se reforzó el efecto de vidrio de la navegación superior e inferior con desenfoque de fondo en temas claro y oscuro.
 - En modo claro, ambas barras usan fondos algo translúcidos y un desenfoque gaussiano suave para mantener visible el contenido detrás sin perder legibilidad.
+- En modo oscuro, se redujo la opacidad de los fondos superior e inferior para que la transparencia y el desenfoque se perciban con claridad, manteniendo el contraste de las etiquetas.

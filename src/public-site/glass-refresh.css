@@ -285,13 +285,13 @@ html[data-public-theme="light"] .public-site .heroui-services-card .card__descri
   min-width: 0;
   border: 1px solid rgba(185, 210, 255, 0.065);
   background:
-    radial-gradient(90% 140% at 14% 115%, rgba(0, 175, 240, 0.085) 0%, transparent 56%),
-    radial-gradient(85% 130% at 86% -20%, rgba(220, 60, 180, 0.08) 0%, transparent 56%),
+    radial-gradient(90% 140% at 14% 115%, rgba(0, 175, 240, 0.055) 0%, transparent 56%),
+    radial-gradient(85% 130% at 86% -20%, rgba(220, 60, 180, 0.05) 0%, transparent 56%),
     linear-gradient(
       135deg,
-      rgba(12, 15, 28, 0.34) 0%,
-      rgba(7, 9, 18, 0.22) 52%,
-      rgba(10, 13, 24, 0.32) 100%
+      rgba(12, 15, 28, 0.26) 0%,
+      rgba(7, 9, 18, 0.18) 52%,
+      rgba(10, 13, 24, 0.23) 100%
     );
   box-shadow:
     0 20px 50px rgba(0, 0, 0, 0.42),
@@ -367,9 +367,9 @@ html[data-public-theme="light"] .public-site .heroui-services-card .card__descri
 .public-site .mobile-bottom-navigation {
   border-color: rgba(185, 210, 255, 0.07);
   background:
-    radial-gradient(90% 130% at 15% 100%, rgba(0, 175, 240, 0.09), transparent 58%),
-    radial-gradient(85% 130% at 85% 0%, rgba(229, 0, 126, 0.09), transparent 58%),
-    linear-gradient(135deg, rgba(12, 15, 28, 0.38) 0%, rgba(7, 9, 18, 0.28) 100%);
+    radial-gradient(90% 130% at 15% 100%, rgba(0, 175, 240, 0.05), transparent 58%),
+    radial-gradient(85% 130% at 85% 0%, rgba(229, 0, 126, 0.05), transparent 58%),
+    linear-gradient(135deg, rgba(12, 15, 28, 0.28) 0%, rgba(7, 9, 18, 0.20) 100%);
   box-shadow:
     0 20px 50px rgba(0, 0, 0, 0.48),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
