@@ -127,3 +127,15 @@ Las publicaciones las redacta el equipo desde el panel o Codex con la credencial
 - La función Edge mantiene su verificación HMAC, ventana temporal y validación del contenido antes de invocar el RPC.
 - **Migración:** supabase/migrations/20261121150000_codex_changelog_publish_rpc.sql.
 - **Verificación:** dos entradas nuevas publicadas y verificadas en public.internal_change_log; service_role puede ejecutar el RPC, anon y authenticated no.
+
+## 2026-11-21 — Catálogo de tienda y acceso al cotizador
+
+**Etiquetas:** `tienda`, `catálogo`, `búsqueda`, `cotizador`, `móvil`
+
+- El orden del catálogo (`Más relevantes`, `Nombre: A a Z`, `Nombre: Z a A`) ahora se comparte y restaura desde `orden` en la URL, junto a la búsqueda y la familia seleccionada.
+- En móvil, la búsqueda y el orden se agrupan en un panel compacto; se mantienen visibles los filtros activos y la acción para limpiarlos. Las familias conservan el desplazamiento táctil sin provocar desbordamiento horizontal de la página.
+- La lista local se normaliza al cargar el catálogo: elimina duplicados, conserva los productos vigentes y avisa cuando alguna selección ya no está publicada. El enlace al cotizador mantiene productos, SKU, familias y cantidades seleccionadas.
+- Los controles compactos conservan el contraste en tema claro y oscuro. Las actualizaciones rápidas de búsqueda, orden y familia parten de la URL vigente para no borrar entre sí los filtros.
+- Las 29 categorías publicadas revisadas se asignan a las siete familias existentes; el catálogo y las reglas de publicación no cambian.
+- **Verificación:** 6 pruebas específicas, verificación de tipos y compilación de producción correctas. Recorrido visual y funcional en 320, 375, 768, 1024 y 1440 px, zoom al 200 %, recarga e historial atrás/adelante; la página no presenta desbordamiento horizontal y el cotizador recibió el producto y su SKU. No se modificó la base de datos ni se publicó a producción.
+- No se incorporó el efecto WebGL de Originkit: en este entorno no se encontró código accesible del componente; el hero conserva la imagen estática actual.

@@ -1,23 +1,27 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeftRight, ArrowRight, ArrowUpRight, BookOpen, BriefcaseBusiness, Check, ChevronLeft, ChevronRight, ClipboardList, Gift, Newspaper, Search, ShoppingBag, Sparkles, X } from 'lucide-react';
+import { ArrowLeftRight, ArrowRight, ArrowUpRight, BookOpen, BriefcaseBusiness, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Gift, Newspaper, Search, ShoppingBag, SlidersHorizontal, Sparkles, X } from 'lucide-react';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
 import { catalogImagesForProduct } from '../data/catalogProductImages';
 import { AnimatedList, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
 import { multiProductQuoteService } from './content';
 import { MAX_QUOTE_ITEMS } from './quote/quoteConstants';
 import {
-  clearStorefrontSearchAndFamily,
+  buildStorefrontQuoteUrl,
+  clearStorefrontCatalogState,
   consolidateStorefrontQuantityTiers,
   getStorefrontProductNameKey,
   getStorefrontProductGroup,
   getStorefrontProductSearchText,
-  getStorefrontServiceId,
   getStorefrontSearchQuery,
+  getStorefrontSortOrder,
   normalizeStorefrontSearch,
+  reconcileStorefrontSelection,
   type StorefrontCatalogItem,
   STOREFRONT_FAMILY_PARAM,
-  STOREFRONT_SKU_PARAM,
+  STOREFRONT_SORT_PARAM,
+  type StorefrontSortOrder,
+  withStorefrontSortOrder,
   withStorefrontSearchQuery,
 } from './storefrontCatalog';
 import { ArticleMarkdown } from './ArticleMarkdown';
@@ -241,8 +245,9 @@ export function StorefrontPage() {
   const searchInput = useRef<HTMLInputElement>(null);
   const categoryRail = useRef<HTMLDivElement>(null);
   const [category, setCategory] = useState('Todos');
-  const [sort, setSort] = useState('relevance');
+  const sort = getStorefrontSortOrder(searchParams);
   const [visibleLimit, setVisibleLimit] = useState(24);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [comparedIds, setComparedIds] = useState<string[]>([]);
   const [comparisonNotice, setComparisonNotice] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
@@ -251,10 +256,13 @@ export function StorefrontPage() {
     catch { return []; }
   });
   const [selectionNotice, setSelectionNotice] = useState('');
+  const [selectionRecoveryCount, setSelectionRecoveryCount] = useState(0);
   const [selectionTiers, setSelectionTiers] = useState<Record<string,string>>(() => {
     try { const saved = JSON.parse(localStorage.getItem('visualcorp-store-quantity-tiers-v1') || '{}'); return saved && typeof saved === 'object' && !Array.isArray(saved) ? Object.fromEntries(Object.entries(saved).filter((entry): entry is [string,string] => typeof entry[1] === 'string')) : {}; }
     catch { return {}; }
   });
+  const selectionRef = useRef(selection);
+  const selectionTiersRef = useRef(selectionTiers);
   const productDialog = useRef<HTMLDialogElement>(null);
   const selectionDialog = useRef<HTMLDialogElement>(null);
   const comparisonDialog = useRef<HTMLDialogElement>(null);
@@ -262,6 +270,8 @@ export function StorefrontPage() {
   const queryProduct = searchParams.get('producto');
   const showSouvenirs = searchParams.get('coleccion') === 'souvenirs';
   const requestedFamily = searchParams.get(STOREFRONT_FAMILY_PARAM);
+  useEffect(() => { selectionRef.current = selection; }, [selection]);
+  useEffect(() => { selectionTiersRef.current = selectionTiers; }, [selectionTiers]);
   useEffect(() => {
     const focusSearch = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); searchInput.current?.focus(); }
@@ -281,10 +291,15 @@ export function StorefrontPage() {
           .eq('is_published', true).order('sort_order', { ascending: true });
         if (!current) return;
         if (productError) { setError('No pudimos cargar el catálogo. Comprueba tu conexión e inténtalo de nuevo.'); return; }
-        setProducts(consolidateStorefrontQuantityTiers((rows || []) as CatalogProduct[]).map((product) => {
+        const nextProducts = consolidateStorefrontQuantityTiers((rows || []) as CatalogProduct[]).map((product) => {
           const images = catalogImagesForProduct({ id: product.id, name: product.name, family: product.category || '', image: product.image, images: product.images || [] });
           return { ...product, sku: product.sku?.trim() || undefined, images: images.length ? images : product.images || [], image: images[0] || product.image };
-        }));
+        });
+        const reconciledSelection = reconcileStorefrontSelection(nextProducts, selectionRef.current, selectionTiersRef.current);
+        if (reconciledSelection.removedCount > 0) setSelectionRecoveryCount(reconciledSelection.removedCount);
+        setSelection(reconciledSelection.ids);
+        setSelectionTiers(reconciledSelection.quantityTiers);
+        setProducts(nextProducts);
       } catch {
         if (current) setError('No pudimos conectar con el catálogo. Comprueba tu conexión e inténtalo de nuevo.');
       } finally {
@@ -296,16 +311,9 @@ export function StorefrontPage() {
   }, [reloadKey]);
   useEffect(() => { try { localStorage.setItem('visualcorp-store-selection-v1', JSON.stringify(selection)); } catch { /* La lista sigue funcionando durante esta visita. */ } }, [selection]);
   useEffect(() => { try { localStorage.setItem('visualcorp-store-quantity-tiers-v1', JSON.stringify(selectionTiers)); } catch { /* La lista sigue funcionando durante esta visita. */ } }, [selectionTiers]);
-  useEffect(() => {
-    if (!products.length) return;
-    setSelection((current) => [...new Set(products.filter((product) => current.includes(product.id) || product.sourceIds?.some((id) => current.includes(id))).map((product) => product.id))]);
-    setSelectionTiers((current) => Object.fromEntries(Object.entries(current).flatMap(([id,tier]) => {
-      const product = products.find((item) => item.id === id || item.sourceIds?.includes(id));
-      return product?.quantityTiers?.includes(tier) ? [[product.id,tier]] : [];
-    })));
-  }, [products]);
   const normalized = normalizeSearch;
   const groupFor = getStorefrontProductGroup;
+  const currentCatalogParams = () => new URLSearchParams(window.location.search);
   const categories = useMemo(() => {
     const counts = new Map<string, number>();
     products.forEach((product) => { const group = groupFor(product); counts.set(group, (counts.get(group) || 0) + 1); });
@@ -323,18 +331,25 @@ export function StorefrontPage() {
     }
   }, [categories, loading, requestedFamily, searchParams, setSearchParams]);
   const updateSearch = (value: string) => {
-    const next = withStorefrontSearchQuery(searchParams, value);
-    if (next.toString() === searchParams.toString()) return;
-    const replaceCurrentEntry = Boolean(search.trim() && value.trim());
+    const current = currentCatalogParams();
+    const next = withStorefrontSearchQuery(current, value);
+    if (next.toString() === current.toString()) return;
+    const replaceCurrentEntry = Boolean(getStorefrontSearchQuery(current).trim() && value.trim());
     setSearchParams(next, { replace: replaceCurrentEntry });
   };
   const clearStorefrontFilters = () => {
     setCategory('Todos');
-    setSearchParams(clearStorefrontSearchAndFamily(searchParams));
+    setMobileFiltersOpen(false);
+    setSearchParams(clearStorefrontCatalogState(currentCatalogParams()));
+  };
+  const updateSort = (value: StorefrontSortOrder) => {
+    const current = currentCatalogParams();
+    const next = withStorefrontSortOrder(current, value);
+    if (next.toString() !== current.toString()) setSearchParams(next);
   };
   const selectCategory = (nextCategory: string) => {
     setCategory(nextCategory);
-    const next = new URLSearchParams(searchParams);
+    const next = currentCatalogParams();
     next.delete('coleccion');
     if (nextCategory === 'Todos') next.delete(STOREFRONT_FAMILY_PARAM);
     else next.set(STOREFRONT_FAMILY_PARAM, nextCategory);
@@ -441,31 +456,24 @@ export function StorefrontPage() {
     setSelectionNotice('');
     setSelection((current) => current.includes(id) ? current : [...current, id]);
   };
-  const quoteUrl = (items: CatalogProduct[], quantityTier = '') => {
-    const params = new URLSearchParams();
-    const itemServiceIds = items.map((product) => getStorefrontServiceId(groupFor(product)));
-    const serviceIds = [...new Set(itemServiceIds.filter(Boolean))];
-    if (items.length === 1 && itemServiceIds[0]) params.set('servicio', itemServiceIds[0]);
-    else if (items.length > 1) {
-      const oneSharedService = itemServiceIds.every(Boolean) && serviceIds.length === 1;
-      params.set('servicio', oneSharedService ? serviceIds[0] : multiProductQuoteService);
-    }
-    items.forEach((product) => {
-      params.append('producto', productLabel(product));
-      params.append(STOREFRONT_SKU_PARAM, product.sku || '');
-      params.append('familia', getStorefrontServiceId(groupFor(product)));
-    });
-    if (items.length === 1) {
-      const tier = quantityTier || selectionTiers[items[0].id] || '';
-      if (tier) params.set('cantidad', tier);
-    } else if (items.length > 1) items.forEach((product) => params.append('cantidad', selectionTiers[product.id] || ''));
-    return `/cotizador?${params.toString()}`;
-  };
+  const quoteUrl = (items: CatalogProduct[], quantityTier = '') => buildStorefrontQuoteUrl(
+    items,
+    selectionTiers,
+    Object.fromEntries(items.map((product) => [product.id, productLabel(product)])),
+    multiProductQuoteService,
+    quantityTier,
+  );
   const selectedProducts = products.filter((product) => selection.includes(product.id));
   const selectionStatus = selectionNotice || (selectedProducts.length > MAX_QUOTE_ITEMS
     ? `El cotizador admite hasta ${MAX_QUOTE_ITEMS} artículos. Quita ${selectedProducts.length - MAX_QUOTE_ITEMS} ${selectedProducts.length - MAX_QUOTE_ITEMS === 1 ? 'artículo' : 'artículos'} para continuar.`
     : '');
   const comparedProducts = comparedIds.flatMap((id) => { const product = products.find((item) => item.id === id); return product ? [product] : []; });
+  const activeFilterCount = Number(category !== 'Todos') + Number(Boolean(search.trim()));
+  const hasActiveCatalogState = activeFilterCount > 0 || sort !== 'relevance';
+  const sortLabel = sort === 'az' ? 'Nombre: A a Z' : sort === 'za' ? 'Nombre: Z a A' : 'Más relevantes';
+  const selectionRecoveryMessage = selectionRecoveryCount === 1
+    ? '1 producto de tu lista ya no está publicado. Lo retiramos para que no llegue al cotizador; puedes buscar otra opción por nombre o familia.'
+    : `${selectionRecoveryCount} productos de tu lista ya no están publicados. Los retiramos para que no lleguen al cotizador; busca otras opciones por nombre o familia.`;
   const featuredProducts = products.filter((product) => product.featured).slice(0, 4);
   const featuredPreview = [...products].sort((a,b) => Number(b.featured)-Number(a.featured) || a.sort_order-b.sort_order).slice(0, 3);
   const categoryModules = categories.slice(0, 6).map(([name,count]) => ({name,count,product:products.find((product)=>groupFor(product)===name)}));
@@ -514,12 +522,19 @@ export function StorefrontPage() {
     </section>
     <section className="storefront-catalog" id="catalogo" aria-labelledby="store-catalog-title">
       <div className="storefront-heading"><div><span className="site-eyebrow"><i/>DESCUBRE LO QUE PODEMOS CREAR</span><h2 id="store-catalog-title">Explora por<br/><em>lo que necesitas.</em></h2><p>Encuentra opciones, añade las que te interesan y define cantidades, materiales y acabados al cotizar.</p></div><div className="storefront-promise"><span><Check size={15}/></span><div><b>Una lista. Una solicitud.</b><small>Tu selección se conserva en este dispositivo.</small></div></div></div>
+      {selectionRecoveryCount > 0 && <aside className="store-selection-recovery" role="status" aria-live="polite"><span aria-hidden="true"><ShoppingBag size={17}/></span><p>{selectionRecoveryMessage}</p><button type="button" onClick={() => setSelectionRecoveryCount(0)} aria-label="Cerrar aviso de productos retirados"><X size={17}/></button></aside>}
       {!loading&&<StoreCategoryDiscovery categoriesCount={categories.length} modules={categoryModules} activeCategory={category} railRef={categoryRail} onOpenSouvenirs={openSouvenirs} onSelectCategory={(name)=>{selectCategory(name);scrollToCatalog();}} onScroll={scrollCategories}/>}
       {!loading&&!error&&featuredProducts.length>0&&<section className="store-featured-module" aria-labelledby="store-featured-title"><div className="store-module-heading"><div><span className="site-eyebrow"><i/>SELECCIÓN VISUAL CORP</span><h3 id="store-featured-title">Productos destacados</h3></div><button type="button" onClick={()=>{selectCategory('Todos');scrollToCatalog();}}>Ver catálogo completo <ArrowRight size={15}/></button></div><div className="store-featured-grid">{featuredProducts.map(renderProductCard)}</div></section>}
       <div id="catalogo-productos" className="store-product-browser-heading"><div><span className="site-eyebrow"><i/>CATÁLOGO COMPLETO</span><h3>Encuentra tu producto</h3><p>Filtra por familia o busca por nombre, material y uso.</p></div></div>
       <div className="store-catalog-controls" role="region" aria-label="Búsqueda y filtros del catálogo">
         <div className="store-category-rail" role="group" aria-label="Filtrar por familia"><button className={category==='Todos'?'active':''} type="button" aria-pressed={category==='Todos'} onClick={()=>selectCategory('Todos')}>Todo el catálogo <span>{products.length}</span></button>{categories.map(([name,count])=><button key={name} className={category===name?'active':''} type="button" aria-pressed={category===name} onClick={()=>selectCategory(name)}>{name}<span>{count}</span></button>)}</div>
-        <div className="store-results-toolbar"><div className="store-results-copy" aria-live="polite" aria-atomic="true"><b>{loading ? 'Cargando productos…' : `${matches.length} ${matches.length===1?'producto':'productos'}`}</b><span>{category==='Todos'?'en el catálogo':`en ${category}`}{search.trim()?` para “${search.trim()}”`:''}</span></div><div className="store-results-controls"><label className="store-inline-search"><Search size={15}/><input type="search" aria-label="Buscar en el catálogo" value={search} onChange={(event)=>updateSearch(event.target.value)} placeholder="Buscar productos" autoComplete="off"/>{search&&<button type="button" aria-label="Borrar búsqueda" onClick={()=>updateSearch('')}><X size={14}/></button>}</label><label className="store-results-sort">Ordenar por<select value={sort} onChange={(event)=>setSort(event.target.value)}><option value="relevance">Más relevantes</option><option value="az">Nombre: A a Z</option><option value="za">Nombre: Z a A</option></select></label>{(category!=='Todos'||search.trim())&&<button type="button" className="store-clear-filters" onClick={clearStorefrontFilters}>Limpiar filtros <X size={13}/></button>}</div></div>
+        <div className="store-results-toolbar">
+          <div className="store-results-copy" aria-live="polite" aria-atomic="true"><b>{loading ? 'Cargando productos…' : `${matches.length} ${matches.length===1?'producto':'productos'}`}</b><span>{category==='Todos'?'en el catálogo':`en ${category}`}{search.trim()?` para “${search.trim()}”`:''}</span></div>
+          <button type="button" className="store-mobile-filter-toggle" aria-expanded={mobileFiltersOpen} aria-controls="store-mobile-filter-panel" onClick={() => setMobileFiltersOpen((open) => !open)}><SlidersHorizontal size={16} aria-hidden="true"/><span>Buscar y ordenar</span>{activeFilterCount > 0 && <small>{activeFilterCount} {activeFilterCount===1?'filtro':'filtros'}</small>}<ChevronDown size={15} aria-hidden="true"/></button>
+          <div className="store-results-controls store-desktop-filter-controls"><label className="store-inline-search"><Search size={15}/><input type="search" aria-label="Buscar en el catálogo" value={search} onChange={(event)=>updateSearch(event.target.value)} placeholder="Buscar productos" autoComplete="off"/>{search&&<button type="button" aria-label="Borrar búsqueda" onClick={()=>updateSearch('')}><X size={14}/></button>}</label><label className="store-results-sort">Ordenar por<select value={sort} onChange={(event)=>updateSort(event.target.value as StorefrontSortOrder)}><option value="relevance">Más relevantes</option><option value="az">Nombre: A a Z</option><option value="za">Nombre: Z a A</option></select></label>{hasActiveCatalogState&&<button type="button" className="store-clear-filters" onClick={clearStorefrontFilters}>Limpiar filtros <X size={13}/></button>}</div>
+          <div id="store-mobile-filter-panel" className="store-mobile-filter-panel" hidden={!mobileFiltersOpen} aria-label="Buscar y ordenar el catálogo"><label className="store-inline-search"><Search size={15}/><input type="search" aria-label="Buscar en el catálogo" value={search} onChange={(event)=>updateSearch(event.target.value)} placeholder="Buscar productos" autoComplete="off"/>{search&&<button type="button" aria-label="Borrar búsqueda" onClick={()=>updateSearch('')}><X size={14}/></button>}</label><label className="store-results-sort">Ordenar por<select value={sort} onChange={(event)=>updateSort(event.target.value as StorefrontSortOrder)}><option value="relevance">Más relevantes</option><option value="az">Nombre: A a Z</option><option value="za">Nombre: Z a A</option></select></label>{hasActiveCatalogState&&<button type="button" className="store-clear-filters" onClick={clearStorefrontFilters}>Limpiar filtros y orden <X size={14}/></button>}</div>
+          {hasActiveCatalogState&&<div className="store-mobile-active-filters" aria-label="Filtros y orden activos">{category!=='Todos'&&<button type="button" className="store-active-filter-chip" aria-label={`Quitar filtro de familia ${category}`} onClick={()=>selectCategory('Todos')}><span>Familia: {category}</span><X size={13} aria-hidden="true"/></button>}{search.trim()&&<button type="button" className="store-active-filter-chip" title={`Búsqueda: ${search.trim()}`} aria-label={`Quitar búsqueda ${search.trim()}`} onClick={()=>updateSearch('')}><span>Búsqueda: {search.trim()}</span><X size={13} aria-hidden="true"/></button>}{sort!=='relevance'&&<button type="button" className="store-active-filter-chip" aria-label={`Restablecer orden: ${sortLabel}`} onClick={()=>updateSort('relevance')}><span>Orden: {sortLabel}</span><X size={13} aria-hidden="true"/></button>}<button type="button" className="store-active-filter-clear" onClick={clearStorefrontFilters}>Limpiar todo</button></div>}
+        </div>
       </div>
       {loading ? <div className="store-product-grid" role="status" aria-label="Cargando catálogo">{Array.from({length:8},(_,index)=><div className="store-product-skeleton" key={index}><i/><span/><b/></div>)}</div>
         : error ? <div className="store-state-card" role="alert"><span><ShoppingBag size={22}/></span><h3>No pudimos mostrar la tienda</h3><p>{error}</p><button type="button" className="site-primary-button" onClick={()=>{setLoading(true);setReloadKey((key)=>key+1);}}>Intentar de nuevo <ArrowRight size={16}/></button></div>
