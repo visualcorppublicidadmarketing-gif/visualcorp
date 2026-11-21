@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { CalendarDays, ChevronLeft, RotateCcw, RefreshCw, Wallet } from 'lucide-react';
+import NumberFlow from '@number-flow/react';
+import { motion, useReducedMotion } from 'motion/react';
+import { CalendarDays, ChevronLeft, CircleDollarSign, CreditCard, ReceiptText, RotateCcw, RefreshCw, Wallet } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import {
@@ -25,6 +27,18 @@ const money = (value: number) => new Intl.NumberFormat('es-EC', {
   style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
 }).format(value || 0);
 const fromCents = (value: number) => money(value / 100);
+
+function AnimatedCurrency({ value, reduceMotion }: { value: number; reduceMotion: boolean }) {
+  const label = fromCents(value);
+  if (reduceMotion) return <span>{label}</span>;
+  return <NumberFlow value={value / 100} locales="es-EC" format={{ style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }} aria-label={label} aria-live="off" />;
+}
+
+function AnimatedCount({ value, reduceMotion }: { value: number; reduceMotion: boolean }) {
+  const label = new Intl.NumberFormat('es-EC', { maximumFractionDigits: 0 }).format(value);
+  if (reduceMotion) return <span>{label}</span>;
+  return <NumberFlow value={value} locales="es-EC" format={{ maximumFractionDigits: 0 }} aria-label={label} aria-live="off" />;
+}
 
 async function readAllRows(createQuery: () => any) {
   const rows: any[] = [];
@@ -83,6 +97,7 @@ function advisorFallback(id: string) {
 
 export function FinanceWeeklySummary() {
   const { organizationId, hasPermission } = useAuth();
+  const reduceMotion = useReducedMotion() ?? false;
   const canSeeRefunds = hasPermission('sales', 'view');
   const canSeeTeam = hasPermission('team', 'view');
   const [today, setToday] = useState(() => businessDate());
@@ -316,15 +331,17 @@ export function FinanceWeeklySummary() {
   const sales = useMemo(() => snapshot.sales.filter((sale) => (
     advisorFilter === 'all' || (sale.advisor_id || 'unassigned') === advisorFilter
   )), [snapshot.sales, advisorFilter]);
-  const payments = useMemo(() => snapshot.payments.flatMap((payment) => {
+  const allPayments = useMemo(() => snapshot.payments.flatMap((payment) => {
     const sale = saleContextById.get(payment.sale_id);
     if (!sale || (branchFilter !== 'all' && sale.branch_id !== branchFilter)) return [];
     const advisorId = sale.advisor_id || 'unassigned';
     if (advisorFilter !== 'all' && advisorFilter !== advisorId) return [];
     const method = normalizePaymentMethod(payment.method);
-    if (selectedMethod !== 'all' && selectedMethod !== method) return [];
     return [{ ...payment, sale, advisorId, method, amountCents: cents(payment.amount), date: businessDate(payment.created_at) }];
-  }), [snapshot.payments, saleContextById, branchFilter, advisorFilter, selectedMethod]);
+  }), [snapshot.payments, saleContextById, branchFilter, advisorFilter]);
+  const payments = useMemo(() => selectedMethod === 'all'
+    ? allPayments
+    : allPayments.filter((payment) => payment.method === selectedMethod), [allPayments, selectedMethod]);
   const refunds = useMemo(() => snapshot.refunds.flatMap((refund) => {
     const sale = saleContextById.get(refund.sale_id);
     if (!sale || (branchFilter !== 'all' && refund.branch_id !== branchFilter)) return [];
@@ -370,15 +387,26 @@ export function FinanceWeeklySummary() {
   }, [directory, advisorFilter, sales, payments, returnsBySale, advisorNames, sortBy]);
 
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)), [weekStart]);
-  const chartRows = useMemo(() => advisorRows.map((row) => ({
-    advisorId: row.id,
-    advisorName: row.name,
-    cash: row.methods.cash / 100,
-    transfer: row.methods.transfer / 100,
-    card: row.methods.card / 100,
-    cheque: row.methods.cheque / 100,
-    other: row.methods.other / 100,
-  })), [advisorRows]);
+  const chartRows = useMemo(() => {
+    const methodsByAdvisor = new Map<string, Record<PaymentMethodId, number>>();
+    allPayments.forEach((payment) => {
+      const methods = methodsByAdvisor.get(payment.advisorId) || { cash: 0, transfer: 0, card: 0, cheque: 0, other: 0 };
+      methods[payment.method] += payment.amountCents;
+      methodsByAdvisor.set(payment.advisorId, methods);
+    });
+    return advisorRows.map((row) => {
+      const methods = methodsByAdvisor.get(row.id) || { cash: 0, transfer: 0, card: 0, cheque: 0, other: 0 };
+      return {
+        advisorId: row.id,
+        advisorName: row.name,
+        cash: methods.cash / 100,
+        transfer: methods.transfer / 100,
+        card: methods.card / 100,
+        cheque: methods.cheque / 100,
+        other: methods.other / 100,
+      };
+    });
+  }, [advisorRows, allPayments]);
   const collectedCents = payments.reduce((sum, payment) => sum + payment.amountCents, 0);
   const salesCents = advisorRows.reduce((sum, row) => sum + row.salesCents, 0);
   const saleCount = advisorRows.reduce((sum, row) => sum + row.salesCount, 0);
@@ -443,24 +471,33 @@ export function FinanceWeeklySummary() {
       {!canSeeTeam && !error && <p className="weekly-finance-note">Tu perfil no muestra asesoras sin movimientos; el resumen incluye a quienes registraron ventas o cobros esta semana.</p>}
       {!canSeeRefunds && !error && <p className="weekly-finance-note">El total de reembolsos requiere el permiso de consulta de ventas; los demás bloques siguen disponibles.</p>}
 
-      <div className="weekly-finance-metrics">
+      <motion.div
+        className="weekly-finance-metrics"
+        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.26, ease: 'easeOut' }}
+      >
         <article className="weekly-finance-metric weekly-finance-metric--sales">
-          <span>Ventas confirmadas</span><b>{loading ? '—' : fromCents(salesCents)}</b>
+          <div className="weekly-finance-metric-label"><span>Ventas confirmadas</span><CircleDollarSign size={17} aria-hidden="true" /></div>
+          <b>{loading ? '—' : <AnimatedCurrency value={salesCents} reduceMotion={reduceMotion} />}</b>
           <small>{loading ? 'Cargando…' : 'Importe neto de artículos devueltos'}</small>
         </article>
-        <article className="weekly-finance-metric">
-          <span>Total cobrado{selectedMethod !== 'all' ? ` · ${PAYMENT_LABELS[selectedMethod]}` : ''}</span><b>{loading ? '—' : fromCents(collectedCents)}</b>
+        <article className="weekly-finance-metric weekly-finance-metric--collections">
+          <div className="weekly-finance-metric-label"><span>Total cobrado{selectedMethod !== 'all' ? ` · ${PAYMENT_LABELS[selectedMethod]}` : ''}</span><Wallet size={17} aria-hidden="true" /></div>
+          <b>{loading ? '—' : <AnimatedCurrency value={collectedCents} reduceMotion={reduceMotion} />}</b>
           <small>{loading ? 'Cargando…' : `${payments.length} ${payments.length === 1 ? 'movimiento' : 'movimientos'} · fecha del pago`}</small>
         </article>
-        <article className="weekly-finance-metric">
-          <span>Reembolsos realizados</span><b>{loading || !canSeeRefunds ? '—' : fromCents(refundsCents)}</b>
+        <article className="weekly-finance-metric weekly-finance-metric--refunds">
+          <div className="weekly-finance-metric-label"><span>Reembolsos realizados</span><ReceiptText size={17} aria-hidden="true" /></div>
+          <b>{loading || !canSeeRefunds ? '—' : <AnimatedCurrency value={refundsCents} reduceMotion={reduceMotion} />}</b>
           <small>{loading ? 'Cargando…' : canSeeRefunds ? `${refunds.length} ${refunds.length === 1 ? 'liquidación' : 'liquidaciones'} · fecha de liquidación` : 'No disponible con este perfil'}</small>
         </article>
         <article className="weekly-finance-metric weekly-finance-metric--count">
-          <span>Número de ventas</span><b>{loading ? '—' : String(saleCount)}</b>
+          <div className="weekly-finance-metric-label"><span>Número de ventas</span><CreditCard size={17} aria-hidden="true" /></div>
+          <b>{loading ? '—' : <AnimatedCount value={saleCount} reduceMotion={reduceMotion} />}</b>
           <small>Semana de la venta · asesoría responsable</small>
         </article>
-      </div>
+      </motion.div>
 
       <div className="weekly-finance-panels">
         <section className="panel weekly-finance-panel" aria-labelledby="weekly-finance-advisors-title">
@@ -470,7 +507,7 @@ export function FinanceWeeklySummary() {
             <button type="button" aria-pressed={sortBy === 'sales'} onClick={() => setSortBy('sales')}>Ventas</button>
             <button type="button" aria-pressed={sortBy === 'collections'} onClick={() => setSortBy('collections')}>Cobros</button>
           </div>
-          <div className="weekly-finance-table-wrap">
+          <div className="weekly-finance-table-wrap weekly-finance-advisor-table-wrap">
             <table className="weekly-finance-table">
               <thead><tr><th>Asesora</th><th>Ventas</th><th>N.º</th><th>Cobrado{selectedMethod !== 'all' ? ` · ${PAYMENT_LABELS[selectedMethod]}` : ''}</th></tr></thead>
               <tbody>
@@ -481,6 +518,13 @@ export function FinanceWeeklySummary() {
                 {!loading && !advisorRows.length && <tr><td colSpan={4} className="weekly-finance-empty">No hay asesoras o movimientos para estos filtros.</td></tr>}
               </tbody>
             </table>
+          </div>
+          <div className="weekly-finance-advisor-cards">
+            {advisorRows.map((row) => <article key={row.id} className="weekly-finance-advisor-card">
+              <div className="weekly-finance-advisor-card-heading"><b>{row.name}</b><small>{row.salesCount} {row.salesCount === 1 ? 'venta' : 'ventas'}</small></div>
+              <div className="weekly-finance-advisor-card-values"><span>Vendido <b>{fromCents(row.salesCents)}</b></span><span>Cobrado <button type="button" className="weekly-finance-amount-link" onClick={() => openDetails({ advisorId: row.id })} disabled={!row.collectionsCents}>{fromCents(row.collectionsCents)}</button></span></div>
+            </article>)}
+            {!loading && !advisorRows.length && <p className="weekly-finance-empty">No hay asesoras o movimientos para estos filtros.</p>}
           </div>
           <p className="weekly-finance-footnote">Las ventas se atribuyen a la semana de registro. Los cobros aparecen según la fecha en que se registró cada pago, incluso si pertenecen a una venta anterior.</p>
         </section>
@@ -495,17 +539,30 @@ export function FinanceWeeklySummary() {
               </button>;
             })}
           </div>
-          {chartRows.length ? <div className="weekly-finance-chart" aria-label="Barras apiladas con cobros por asesora y medio de pago">
+          {chartRows.length ? <>
+            <div className="weekly-finance-chart-mobile" aria-label="Comparación de cobros por asesora y medio de pago">
+              {chartRows.map((row) => {
+                const total = PAYMENT_METHODS.reduce((sum, method) => sum + row[method.id], 0);
+                return <div className="weekly-finance-chart-mobile-row" key={row.advisorId}>
+                  <div className="weekly-finance-chart-mobile-heading"><span>{row.advisorName}</span><b>{money(total)}</b></div>
+                  <div className="weekly-finance-chart-mobile-track" role="img" aria-label={`${row.advisorName}: ${PAYMENT_METHODS.map((method) => `${method.label} ${money(row[method.id])}`).join(', ')}`}>
+                    {total > 0 ? PAYMENT_METHODS.map((method) => row[method.id] > 0 && <i key={method.id} title={`${method.label}: ${money(row[method.id])}`} style={{ width: `${(row[method.id] / total) * 100}%`, backgroundColor: method.color }} />) : <i className="is-empty" />}
+                  </div>
+                </div>;
+              })}
+            </div>
+            <div className="weekly-finance-chart" aria-label="Barras apiladas con cobros por asesora y medio de pago">
             <ResponsiveContainer width="100%" height={Math.max(180, chartRows.length * 38 + 48)}>
               <BarChart data={chartRows} layout="vertical" accessibilityLayer margin={{ top: 8, right: 14, bottom: 0, left: 0 }} barCategoryGap={10}>
                 <CartesianGrid horizontal={false} stroke="var(--line)" />
                 <XAxis type="number" tickFormatter={(value) => money(Number(value))} tick={{ fontSize: 10, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="advisorName" width={108} tick={{ fontSize: 10, fill: 'var(--ink)' }} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(value: any, name: any) => [money(Number(value)), PAYMENT_LABELS[name as PaymentMethodId] || 'Otros']} />
-                {PAYMENT_METHODS.map((method) => <Bar key={method.id} dataKey={method.id} name={method.label} stackId="payments" fill={method.color} maxBarSize={24} isAnimationActive={false} onClick={() => selectMethod(method.id)} cursor="pointer" />)}
+                <Tooltip formatter={(value: any, name: any) => [money(Number(value)), PAYMENT_LABELS[name as PaymentMethodId] || 'Otros']} contentStyle={{ background: 'var(--paper)', borderColor: 'var(--line)', borderRadius: 10, color: 'var(--ink)', boxShadow: '0 12px 32px rgb(0 0 0 / .14)' }} labelStyle={{ color: 'var(--ink)', fontWeight: 750 }} itemStyle={{ color: 'var(--ink)' }} />
+                {PAYMENT_METHODS.map((method) => <Bar key={method.id} dataKey={method.id} name={method.label} stackId="payments" fill={method.color} maxBarSize={24} isAnimationActive={!reduceMotion} onClick={() => selectMethod(method.id)} cursor="pointer" />)}
               </BarChart>
             </ResponsiveContainer>
-          </div> : <p className="weekly-finance-empty">No hay asesoras registradas para graficar.</p>}
+            </div>
+          </> : <p className="weekly-finance-empty">No hay asesoras registradas para graficar.</p>}
           <p className="weekly-finance-footnote">Selecciona un medio para filtrar los importes cobrados y su detalle. El gráfico conserva la comparación completa.</p>
         </section>
       </div>
