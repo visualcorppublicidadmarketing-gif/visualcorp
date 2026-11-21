@@ -8,5 +8,6 @@ import './components/ui/magic-components.css';
 import './app/design-tokens.css';
 import './components/ui/design-system-primitives.css';
 import './auth/auth-access.css';
+import './styles/desktop-scrollbars.css';
 
 createRoot(document.getElementById('root')).render(<React.StrictMode><MotionConfig reducedMotion="user"><App /></MotionConfig></React.StrictMode>);
