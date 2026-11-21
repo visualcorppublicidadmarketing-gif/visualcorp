@@ -19,7 +19,17 @@ export function getServiceKeycapColor(serviceId: PublicServiceId) {
   return serviceKeycapVisuals[serviceId].color;
 }
 
-export function ServiceKeycap({ serviceId, className = '' }: { serviceId: PublicServiceId; className?: string }) {
+export function ServiceKeycap({
+  serviceId,
+  className = '',
+  interactive = false,
+  followPointerOutside = false,
+}: {
+  serviceId: PublicServiceId;
+  className?: string;
+  interactive?: boolean;
+  followPointerOutside?: boolean;
+}) {
   const { Icon, mark, color } = serviceKeycapVisuals[serviceId];
   const stageRef = useRef<HTMLDivElement>(null);
   const nearViewport = useInView(stageRef, { margin: '100px' });
@@ -54,7 +64,8 @@ export function ServiceKeycap({ serviceId, className = '' }: { serviceId: Public
             mark={mark}
             legendColor={color}
             size={keySize}
-            advanced={{ grain: 0, vignette: 0 }}
+            advanced={{ grain: 0, vignette: 0, hover: interactive ? 70 : 0 }}
+            followPointerOutside={interactive && followPointerOutside}
           />
         </Suspense>
       ) : (

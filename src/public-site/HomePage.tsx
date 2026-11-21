@@ -578,7 +578,7 @@ export function PublicHomePage() {
                       </span>
                     </div>
                     <div className="home-service-art is-originkit-keyboard" style={{ color: keycapColor }} aria-hidden="true">
-                      <ServiceKeycap serviceId={serviceId} className="home-service-keycap-stage" />
+                      <ServiceKeycap serviceId={serviceId} className="home-service-keycap-stage" interactive />
                     </div>
                     <div className="home-service-copy">
                       <h3>{service.name}</h3>
