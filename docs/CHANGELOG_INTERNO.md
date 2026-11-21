@@ -117,3 +117,13 @@ Las publicaciones las redacta el equipo desde el panel o Codex con la credencial
 - Los paneles de Servicios, Empresa y Explorar ahora usan fondos más opacos y desenfoque visible en los temas claro y oscuro.
 - El scroll queda en el contenido del menú: las secciones cortas ya no muestran una barra innecesaria y la lista larga conserva scroll táctil con un tirador fino.
 - No requiere cambios de base de datos.
+
+## 2026-11-21 — Publicación segura de novedades desde Codex
+
+**Etiquetas:** seguridad, changelog, automatización, administración
+
+- El publicador firmado por HMAC ahora crea novedades mediante el RPC codex_publish_internal_change_log, que limita la escritura a entradas nuevas de la organización Visual Corp.
+- La función SQL valida campos y etiquetas, fija el estado como publicado, conserva idempotencia por UUID y limita EXECUTE a service_role; la omisión de la protección de escritura se aplica solo dentro de la transacción del RPC.
+- La función Edge mantiene su verificación HMAC, ventana temporal y validación del contenido antes de invocar el RPC.
+- **Migración:** supabase/migrations/20261121150000_codex_changelog_publish_rpc.sql.
+- **Verificación:** dos entradas nuevas publicadas y verificadas en public.internal_change_log; service_role puede ejecutar el RPC, anon y authenticated no.
