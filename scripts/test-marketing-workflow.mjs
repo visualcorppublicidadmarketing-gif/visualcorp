@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { readFileSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { resolve } from "node:path";
-import ts from "typescript";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import {
   createMarketingDatabase,
   asUser,
@@ -13,27 +13,19 @@ import {
   USERS,
 } from "./lib/marketing-test-database.mjs";
 
-// Compile the actual pure UI rules into an ignored cache; no duplicated implementation.
-const cache = resolve("node_modules/.cache/marketing-tests");
-mkdirSync(cache, { recursive: true });
+// Copy the actual pure UI rules into an ignored cache. Node strips their types at runtime.
+const cache = mkdtempSync(join(tmpdir(), "visualcorp-marketing-tests-"));
 for (const file of ["marketingScheduleRules", "marketingWorkflow"]) {
   const source = readFileSync(
     `src/pages/admin/marketing/${file}.ts`,
     "utf8",
-  ).replaceAll("./marketingScheduleRules", "./marketingScheduleRules.mjs");
-  writeFileSync(
-    `${cache}/${file}.mjs`,
-    ts.transpileModule(source, {
-      compilerOptions: {
-        target: ts.ScriptTarget.ES2022,
-        module: ts.ModuleKind.ESNext,
-      },
-    }).outputText,
-  );
+  ).replaceAll("./marketingScheduleRules", "./marketingScheduleRules.ts");
+  writeFileSync(join(cache, `${file}.ts`), source);
 }
 const rules = await import(
-  pathToFileURL(`${cache}/marketingWorkflow.mjs`).href
+  pathToFileURL(join(cache, "marketingWorkflow.ts")).href
 );
+rmSync(cache, { recursive: true, force: true });
 test("Queues separate plans, untitled ideas, overdue production and missing publication confirmation", () => {
   const p = {
     id: "1",

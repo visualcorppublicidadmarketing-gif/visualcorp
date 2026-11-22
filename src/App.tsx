@@ -8,7 +8,6 @@ import { supabase } from './lib/supabaseClient';
 import { AppFrame, Brand, PageHeading, StatCard } from './app/layout';
 import { ThemeProvider } from './app/ThemeProvider';
 import { EmptyState, StageBadge } from './components/feedback';
-import { OperationsQuotePage as QuotePage } from './pages/operations/OperationsQuotePage';
 import { DialogProvider } from './components/ui/OperationalKit';
 import GlobalCommandPalette from './components/ui/GlobalCommandPalette';
 import './app.css';
@@ -33,6 +32,7 @@ const CatalogPage = lazy(() => import('./pages/admin/CatalogPage').then((module)
 const ServiceCatalogPage = lazy(() => import('./pages/admin/ServiceCatalogPage').then((module) => ({ default: module.ServiceCatalogPage })));
 const PosPage = lazy(() => import('./pages/pos/CheckoutWorkspace').then((module) => ({ default: module.PosPage })));
 const AdvisorFinance = lazy(() => import('./pages/operations/AdvisorFinance').then((module) => ({ default: module.AdvisorFinance })));
+const QuotePage = lazy(() => import('./pages/operations/OperationsQuotePage').then((module) => ({ default: module.OperationsQuotePage })));
 const ProductWorkflowRoutesPage = lazy(() => import('./pages/operations/ProductWorkflowRoutesPage').then((module) => ({ default: module.ProductWorkflowRoutesPage })));
 const ProductionJobsPage = lazy(() => import('./pages/operations/ProductionJobsPage').then((module) => ({ default: module.ProductionJobsPage })));
 const ProductionCoordinationPage = lazy(() => import('./pages/operations/ProductionCoordinationPage').then((module) => ({ default: module.ProductionCoordinationPage })));
@@ -93,6 +93,26 @@ function AutomationPage() { return <AppFrame area="operations"><AutomationCenter
 function VaultPage() { return <AppFrame area="operations"><VisualCorpVault/></AppFrame>; }
 function KioskPage() { return <AppFrame area="operations"><ShopFloorKiosk/></AppFrame>; }
 
+function RouteNotFound() {
+  const { pathname } = useLocation();
+  const isWorkspaceRoute = ['/panel', '/admin', '/operaciones'].some((basePath) =>
+    pathname === basePath || pathname.startsWith(`${basePath}/`));
+  const homePath = isWorkspaceRoute ? '/panel' : '/';
+
+  return <main className="access-screen">
+    <section className="access-card" aria-labelledby="route-not-found-title">
+      <span className="site-eyebrow"><i/> {isWorkspaceRoute ? 'ESPACIO DE TRABAJO' : 'VISUAL CORP'}</span>
+      <h1 id="route-not-found-title">No encontramos esta página.</h1>
+      <p>La dirección puede haber cambiado o no estar disponible. Regresa al inicio para continuar.</p>
+      <Link className="site-primary-button" to={homePath}>
+        {isWorkspaceRoute ? 'Volver al panel' : 'Ir al inicio'}
+        <ArrowUpRight size={17} aria-hidden="true"/>
+      </Link>
+      {isWorkspaceRoute && <Link className="button button-outline" to="/">Ir al sitio público</Link>}
+    </section>
+  </main>;
+}
+
 function AppRouter() {
   const location=useLocation();
   if(location.pathname==='/publico') return <Navigate to="/" replace/>;
@@ -124,7 +144,7 @@ function AppRouter() {
     <Route path="/operaciones/equipo/horarios" element={<ProtectedPage area="team"><AppFrame area="operations"><TeamSchedulePage/></AppFrame></ProtectedPage>}/>
     <Route path="/operaciones/equipo/biblioteca-ui" element={<ProtectedPage area="team"><AppFrame area="operations"><DesignSystemPage/></AppFrame></ProtectedPage>}/>
     <Route path="/operaciones/cambios" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="EQUIPO" title="Novedades" description="Consulta los cambios compartidos por todo el equipo."/><ChangeLogPanel area="operations"/></AppFrame></ProtectedPage>}/> <Route path="/operaciones/pos" element={<ProtectedPage area="operations"><PosPage/></ProtectedPage>}/><Route path="/operaciones/mi-semana" element={<ProtectedPage area="operations"><AdvisorFinance/></ProtectedPage>}/><Route path="/operaciones/rutas-productos" element={<ProtectedPage area="operations"><ProductWorkflowRoutesPage/></ProtectedPage>}/><Route path="/operaciones/automatizaciones" element={<ProtectedPage area="operations"><AutomationPage/></ProtectedPage>}/><Route path="/operaciones/archivos" element={<ProtectedPage area="operations"><VaultPage/></ProtectedPage>}/><Route path="/operaciones/vault" element={<Navigate to="/operaciones/archivos" replace/>}/><Route path="/operaciones/kiosk" element={<ProtectedPage area="operations"><KioskPage/></ProtectedPage>}/><Route path="/operaciones/taller-kiosk" element={<Navigate to="/operaciones/kiosk" replace/>}/><Route path="/operaciones/coordinacion-trabajos" element={<ProtectedPage area="operations"><ProductionCoordinationPage/></ProtectedPage>}/><Route path="/operaciones/cartelera-taller" element={<ProtectedPage area="operations"><WorkshopBillboardCalendarPage/></ProtectedPage>}/><Route path="/operaciones/cartelera" element={<Navigate to="/operaciones/cartelera-taller" replace/>}/><Route path="/operaciones/calendario-taller" element={<Navigate to="/operaciones/cartelera-taller?tab=calendar" replace/>}/><Route path="/operaciones/trabajos" element={<ProtectedPage area="operations"><ProductionCoordinationPage/></ProtectedPage>}/><Route path="/operaciones/trabajos/:area" element={<ProtectedPage area="operations"><ProductionJobsPage/></ProtectedPage>}/><Route path="/operaciones/finanzas" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="OPERACIONES · VENTAS" title="Finanzas" description="Consulta ventas confirmadas, pagos registrados y saldos por fecha, sucursal y asesora responsable."/><OperationsFinance/></AppFrame></ProtectedPage>}/><Route path="/operaciones/finanzas/resumen-semanal" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="OPERACIONES · VENTAS" title="Resumen semanal" description="Revisa ventas y cobros por asesora, medio de pago y día."/><FinanceWeeklySummary/></AppFrame></ProtectedPage>}/><Route path="/operaciones/cajas-abiertas" element={<ProtectedPage area="operations"><OpenCashMonitor/></ProtectedPage>}/><Route path="/operaciones/flujos" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="OPERACIONES" title="Flujos conectados" description="Revisa caja, devoluciones, compras, traslados, producción y cotizaciones desde sus registros compartidos."/><OperationsLifecycle/></AppFrame></ProtectedPage>}/><Route path="/operaciones/cotizador" element={<ProtectedPage area="operations"><QuotePage/></ProtectedPage>}/><Route path="/operaciones/inventario" element={<ProtectedPage area="operations"><InventoryPage/></ProtectedPage>}/><Route path="/operaciones/equipos" element={<ProtectedPage area="operations"><EquipmentPage/></ProtectedPage>}/><Route path="/operaciones/compras" element={<ProtectedPage area="operations"><PurchasingPage/></ProtectedPage>}/><Route path="/operaciones/solicitudes-compras" element={<ProtectedPage area="operations"><PurchaseRequestsPage/></ProtectedPage>}/><Route path="/operaciones/clientes" element={<ProtectedPage area="operations"><AppFrame area="operations"><CustomerBook/></AppFrame></ProtectedPage>}/><Route path="/operaciones/crm" element={<ProtectedPage area="operations"><LeadsPage area="operations"/></ProtectedPage>}/><Route path="/operaciones/marketing" element={<ProtectedPage area="operations"><CampaignPage area="operations" initialSection="overview"/></ProtectedPage>}/><Route path="/operaciones/marketing/calendario" element={<ProtectedPage area="operations"><CampaignPage area="operations" initialSection="calendar"/></ProtectedPage>}/><Route path="/operaciones/marketing/campanas" element={<ProtectedPage area="operations"><CampaignPage area="operations" initialSection="campaigns"/></ProtectedPage>}/><Route path="/operaciones/personal" element={<ProtectedPage area="operations"><AppFrame area="operations"><PersonnelPage/></AppFrame></ProtectedPage>}/><Route path="/operaciones/equipo" element={<Navigate to="/operaciones/equipo/usuarios" replace/>}/><Route path="/operaciones/equipo/:section" element={<ProtectedPage area="team"><AppFrame area="operations"><TeamAccess/></AppFrame></ProtectedPage>}/><Route path="/operaciones/equipo/*" element={<ProtectedPage area="team"><AppFrame area="operations"><TeamAccess/></AppFrame></ProtectedPage>}/>
-    <Route path="*" element={<Navigate to="/" replace/>}/>
+    <Route path="*" element={<RouteNotFound/>}/>
   </Routes></Suspense>;
 }
 

@@ -200,6 +200,7 @@ export function UnifiedHome() {
   const canViewSummary = hasPermission('dashboard', 'view');
   const [summary, setSummary] = useState<any>(null);
   const [metricTrends, setMetricTrends] = useState<Partial<Record<'sales_today_total' | 'quotes_this_month', MetricTrend>>>({});
+  const [trendLimitReached, setTrendLimitReached] = useState<string[]>([]);
   const [loading, setLoading] = useState(Boolean(supabase) && canViewSummary);
   const [error, setError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -321,6 +322,7 @@ export function UnifiedHome() {
   }, [canViewSummary, refreshKey]);
 
   useEffect(() => {
+    setTrendLimitReached([]);
     if (!supabase || !organizationId || (!canViewSalesTrend && !canViewQuotesTrend)) {
       setMetricTrends({});
       return undefined;
@@ -349,6 +351,17 @@ export function UnifiedHome() {
       const [salesResult, quotesResult] = await Promise.all([salesQuery, quotesQuery]);
       if (!active) return;
 
+      const limitReached: string[] = [];
+      if (salesResult && !salesResult.error && salesResult.data?.length === 1000
+        && (salesResult.count === null || salesResult.count > salesResult.data.length)) {
+        limitReached.push('ventas');
+      }
+      if (quotesResult && !quotesResult.error && quotesResult.data?.length === 1000
+        && (quotesResult.count === null || quotesResult.count > quotesResult.data.length)) {
+        limitReached.push('cotizaciones');
+      }
+      setTrendLimitReached(limitReached);
+
       const nextTrends: Partial<Record<'sales_today_total' | 'quotes_this_month', MetricTrend>> = {};
       if (salesResult && !salesResult.error && salesResult.data
         && (salesResult.count === null || salesResult.count <= salesResult.data.length)
@@ -362,7 +375,10 @@ export function UnifiedHome() {
       }
       setMetricTrends(nextTrends);
     })().catch(() => {
-      if (active) setMetricTrends({});
+      if (active) {
+        setMetricTrends({});
+        setTrendLimitReached([]);
+      }
     });
 
     return () => { active = false; controller.abort(); };
@@ -421,6 +437,7 @@ export function UnifiedHome() {
       </AnimatedList>
     </section>}
     {error && <div className="unified-summary-error" role="alert"><span>{error}</span><button type="button" className="button button-outline" onClick={() => setRefreshKey((value) => value + 1)} disabled={loading}><RefreshCw size={14}/> {loading ? 'Actualizando…' : 'Reintentar'}</button></div>}
+    {trendLimitReached.length > 0 && <p className="unified-trend-limit" role="status">No se muestra la tendencia de {trendLimitReached.join(' y ')} porque la consulta alcanzó el límite de 1.000 registros. El resumen principal sigue disponible.</p>}
     {visibleMetrics.length > 0 && <section className="unified-overview" aria-label={`Indicadores disponibles para ${primaryRole}`}><div className="unified-overview-heading"><div><span className="eyebrow">INDICADORES DISPONIBLES</span><p>Datos reales, organizados por periodo y permisos de tu perfil.</p></div><button type="button" className="unified-refresh" onClick={() => setRefreshKey(value => value + 1)} disabled={loading}><RefreshCw size={14} aria-hidden="true"/>{loading ? 'Actualizando…' : 'Actualizar resumen'}</button></div><div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, to, key, label, scope, note, noteKey, icon: Icon, tone, money }) => {
       const value = metricValue(summary, key);
       const trend = key === 'sales_today_total' || key === 'quotes_this_month' ? metricTrends[key] : undefined;

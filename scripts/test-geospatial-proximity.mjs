@@ -1,17 +1,39 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { tmpdir } from 'node:os';
+
+const suiteRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const cache = mkdtempSync(join(tmpdir(), 'visualcorp-geospatial-tests-'));
+writeFileSync(
+  join(cache, 'geospatialProximity.ts'),
+  readFileSync(resolve(suiteRoot, 'src/lib/geospatialProximity.ts'), 'utf8'),
+);
+writeFileSync(
+  join(cache, 'maplibreGeospatial.ts'),
+  readFileSync(resolve(suiteRoot, 'src/lib/maplibreGeospatial.ts'), 'utf8').replace(
+    "from './geospatialProximity'",
+    "from './geospatialProximity.ts'",
+  ),
+);
+
+const proximity = await import(pathToFileURL(join(cache, 'geospatialProximity.ts')).href);
+const maplibre = await import(pathToFileURL(join(cache, 'maplibreGeospatial.ts')).href);
+rmSync(cache, { recursive: true, force: true });
+const {
   calculateHaversineDistance,
   detectProximityPairs,
   clusterJobsByProximity,
   parseCoordinatesInput,
   formatDistance,
-} from '../src/lib/geospatialProximity.ts';
-import {
+} = proximity;
+const {
   createGeoJsonCircle,
   buildHalosFeatureCollection,
   buildConnectionLinesFeatureCollection,
-} from '../src/lib/maplibreGeospatial.ts';
+} = maplibre;
 
 test('calculateHaversineDistance computes accurate distance between Milagro landmarks', () => {
   // Parque Central (-2.1343, -79.5938) y Av. 17 de Septiembre y Colón (-2.1328, -79.5912)

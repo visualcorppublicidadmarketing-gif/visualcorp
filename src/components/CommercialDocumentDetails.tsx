@@ -171,6 +171,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
     amount: number;
     reference: string;
     note?: string;
+    cash_session_id?: string | null;
   }>>([]);
   const [amendmentReason, setAmendmentReason] = useState<string>('Ajuste comercial confirmado');
 
@@ -194,7 +195,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
     try {
       const result = isQuote
         ? await supabase.from('central_quotes').select('*').eq('organization_id', organizationId).eq('id', documentId).maybeSingle()
-        : await supabase.from('sales').select('*,branches(name),customers(full_name,phone),sale_lines(id,sku_snapshot,description_snapshot,quantity,fulfilled_quantity,backordered_quantity,returned_quantity,unit_price,line_total,catalog_product_id,variant_id,finishing_options,material_requests),sale_payments(id,method,amount,reference,note,created_at),sale_fulfillment_details(installation_required,installation_address,installation_maps_url,installation_latitude,installation_longitude,installation_estimated_at,delivery_due_at)').eq('organization_id', organizationId).eq('id', documentId).maybeSingle();
+        : await supabase.from('sales').select('*,branches(name),customers(full_name,phone),sale_lines(id,sku_snapshot,description_snapshot,quantity,fulfilled_quantity,backordered_quantity,returned_quantity,unit_price,line_total,catalog_product_id,variant_id,finishing_options,material_requests),sale_payments(id,method,amount,reference,note,cash_session_id,created_at),sale_fulfillment_details(installation_required,installation_address,installation_maps_url,installation_latitude,installation_longitude,installation_estimated_at,delivery_due_at)').eq('organization_id', organizationId).eq('id', documentId).maybeSingle();
       if (result.error) throw result.error;
       if (result.data) {
         setDocument(result.data);
@@ -223,7 +224,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
       try {
         const result = isQuote
           ? await supabase.from('central_quotes').select('*').eq('organization_id', organizationId).eq('id', documentId).maybeSingle()
-          : await supabase.from('sales').select('*,branches(name),customers(full_name,phone),sale_lines(id,sku_snapshot,description_snapshot,quantity,fulfilled_quantity,backordered_quantity,returned_quantity,unit_price,line_total,catalog_product_id,variant_id,finishing_options,material_requests),sale_payments(id,method,amount,reference,note,created_at),sale_fulfillment_details(installation_required,installation_address,installation_maps_url,installation_latitude,installation_longitude,installation_estimated_at,delivery_due_at)').eq('organization_id', organizationId).eq('id', documentId).maybeSingle();
+          : await supabase.from('sales').select('*,branches(name),customers(full_name,phone),sale_lines(id,sku_snapshot,description_snapshot,quantity,fulfilled_quantity,backordered_quantity,returned_quantity,unit_price,line_total,catalog_product_id,variant_id,finishing_options,material_requests),sale_payments(id,method,amount,reference,note,cash_session_id,created_at),sale_fulfillment_details(installation_required,installation_address,installation_maps_url,installation_latitude,installation_longitude,installation_estimated_at,delivery_due_at)').eq('organization_id', organizationId).eq('id', documentId).maybeSingle();
         if (result.error) throw result.error;
         if (!result.data) throw new Error('No se encontró la ficha o tu perfil no tiene acceso a ella.');
         if (active) setDocument(result.data);
@@ -283,6 +284,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
         amount: Number(p.amount) || 0,
         reference: p.reference || '',
         note: p.note || '',
+        cash_session_id: p.cash_session_id || null,
       })));
       setAmendmentReason('Ajuste comercial en ficha');
     }
@@ -351,6 +353,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
         amount: Number(p.amount) || 0,
         reference: p.reference?.trim() || '',
         note: p.note?.trim() || '',
+        cash_session_id: p.cash_session_id || null,
       }));
 
       const { error: rpcError } = await supabase.rpc('amend_confirmed_pos_sale', {

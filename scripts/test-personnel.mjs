@@ -1,31 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
-import ts from 'typescript';
+import { dirname, join, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 
 const suiteRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const cache = resolve(suiteRoot, 'node_modules/.cache/personnel-tests');
-mkdirSync(cache, { recursive: true });
+const cache = mkdtempSync(join(tmpdir(), 'visualcorp-personnel-tests-'));
 
 for (const file of ['personnelTypes', 'personnelDomain']) {
   const source = readFileSync(resolve(suiteRoot, `src/components/personnel/${file}.ts`), 'utf8').replaceAll(
     './personnelTypes',
-    './personnelTypes.mjs',
+    './personnelTypes.ts',
   );
-  writeFileSync(
-    `${cache}/${file}.mjs`,
-    ts.transpileModule(source, {
-      compilerOptions: {
-        target: ts.ScriptTarget.ES2022,
-        module: ts.ModuleKind.ESNext,
-      },
-    }).outputText,
-  );
+  writeFileSync(join(cache, `${file}.ts`), source);
 }
 
-const domain = await import(pathToFileURL(`${cache}/personnelDomain.mjs`).href);
+const domain = await import(pathToFileURL(join(cache, 'personnelDomain.ts')).href);
+rmSync(cache, { recursive: true, force: true });
 
 test('America/Guayaquil date helpers never shift forward after 19:00 local time (00:00 UTC next day)', () => {
   // 2026-11-12T02:30:00Z is 2026-11-11 21:30 in Ecuador (UTC-5)
@@ -164,6 +156,8 @@ test('Role-fair family detection, profile readiness and CSV injection defense be
       full_name: 'Ana Pérez',
       email: '',
       phone: '',
+      document_reference: '',
+      home_address: '',
       department: 'Diseño Gráfico',
       job_title: 'Diseñadora',
       status: 'active',

@@ -178,7 +178,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/equipo/horarios', label: 'Horarios y turnos', icon: CalendarClock, module: 'team_schedule' },
   { to: '/operaciones/manual-aprendizaje', label: 'Aprendizaje', icon: BookOpen, module: 'dashboard' },
   { to: '/admin/manual-aprendizaje', label: 'Manual de administración web', icon: BookOpen, module: 'website' },
-  { to: '/operaciones/equipo', label: 'Usuarios, perfiles y permisos', icon: ShieldCheck, module: 'team' },
+  { to: '/operaciones/equipo', aliases: ['/operaciones/equipo/usuarios'], label: 'Usuarios, perfiles y permisos', icon: ShieldCheck, module: 'team' },
   { to: '/operaciones/cambios', label: 'Novedades', icon: History, module: 'team' },
   { to: '/admin/respaldo', label: 'Respaldo y migración', icon: Database, module: 'backup' },
 ];
