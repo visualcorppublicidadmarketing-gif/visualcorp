@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ArrowUpRight, BadgePercent, Gift, Sparkles } from 'lucide-react';
+import { AmbientVideoLayer } from './AmbientVideoLayer';
 import './store-promotions.css';
 
 const sections = [
@@ -30,7 +31,8 @@ export function StorePromotionsPage() {
   }, []);
 
   return <div className="store-promo-page">
-    <header className="store-promo-hero">
+    <header className="store-promo-hero has-ambient-video">
+      <AmbientVideoLayer clip="silk" variant="promo-hero" parallax playbackRate={0.78} />
       <div className="store-promo-hero-copy">
         <Link className="store-promo-back" to="/tienda"><ArrowLeft size={15}/> Volver a la tienda</Link>
         <span className="site-eyebrow light"><i/><Sparkles size={14}/> NOVEDADES VISUAL CORP</span>

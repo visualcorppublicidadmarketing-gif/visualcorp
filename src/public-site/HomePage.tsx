@@ -50,6 +50,7 @@ import {
 import { ServiceKeycap, getServiceKeycapColor } from './ServiceKeycap';
 import './home-page.css';
 import { HomeFilm } from './HomeFilm';
+import { AmbientVideoLayer } from './AmbientVideoLayer';
 import { EnvironmentBrandingMatrix, PanoramicCategoryStrips } from './SolutionsComponents';
 
 const Highlights = lazy(() => import('./ShowcasePages').then((module) => ({ default: module.HomeContentHighlights })));
@@ -767,8 +768,9 @@ export function PublicHomePage() {
             glow="brand"
             sheen
             spotlight
-            className="home-contact-portal"
+            className="home-contact-portal has-ambient-video"
           >
+            <AmbientVideoLayer clip="silk" variant="home-portal" playbackRate={0.7} />
             <div className="home-contact-head">
               <GlassPill dot dotColor="cyan">
                 04 · HAGAMOS QUE SUCEDA
