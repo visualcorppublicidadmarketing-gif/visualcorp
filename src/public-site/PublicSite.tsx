@@ -23,6 +23,7 @@ import { AnimatedThemeToggler } from '../components/ui/AnimatedThemeToggler';
 import { PublicSiteContextMenu } from './PublicSiteContextMenu';
 import { FooterParticles } from './FooterParticles';
 import { MobileBottomNavigation } from './MobileBottomNavigation';
+import { AmbientVideoLayer, type AmbientVideoClip } from './AmbientVideoLayer';
 import './public-site-v2.css';
 import './glass-system.css';
 import './public-navigation.css';
@@ -493,7 +494,7 @@ export { PublicHomePage } from './HomePage';
 export function ServicesIndexPage() {
   const { data } = useWorkspace();
   const services = data.services.filter((service) => service.enabled);
-  return <><SiteTitle>Servicios</SiteTitle><PageHero eyebrow="LO QUE HACEMOS" title={<>Ideas que encuentran<br/>su forma.</>} description="Explora las familias de trabajo de Visual Corp. Cada proyecto empieza con una conversación sobre lo que necesitas." primary={{ label: 'Cuéntanos tu proyecto', to: '/cotizador' }} secondary={{ label: 'Ver soluciones por espacio', to: '/soluciones' }}/><section className="site-page-section site-services-index" aria-labelledby="site-services-index-title">
+  return <><SiteTitle>Servicios</SiteTitle><PageHero ambientVideo="aurora" eyebrow="LO QUE HACEMOS" title={<>Ideas que encuentran<br/>su forma.</>} description="Explora las familias de trabajo de Visual Corp. Cada proyecto empieza con una conversación sobre lo que necesitas." primary={{ label: 'Cuéntanos tu proyecto', to: '/cotizador' }} secondary={{ label: 'Ver soluciones por espacio', to: '/soluciones' }}/><section className="site-page-section site-services-index" aria-labelledby="site-services-index-title">
     <div className="site-services-index-heading"><div><Eyebrow>FAMILIAS DE TRABAJO</Eyebrow><h2 id="site-services-index-title">Compara las familias.</h2></div><p>Revisa ejemplos de piezas y entra a la ficha que mejor se relaciona con tu idea.</p></div>
     <AnimatedList className="site-services-grid" stagger={0.075}>{services.map((service, index) => <ServiceCard key={service.id} service={service} index={index}/>)}</AnimatedList>
     <p className="site-service-note">Cada solicitud se revisa según su alcance. Materiales, disponibilidad, valores y tiempos se confirman para cada proyecto.</p>
@@ -509,7 +510,7 @@ export function ServicesIndexPage() {
 }
 
 export function SolutionsIndexPage() {
-  return <><SiteTitle>Soluciones por espacio</SiteTitle><PageHero eyebrow="SOLUCIONES POR ESPACIO" title={<>Ideas de marca<br/>para cada espacio.</>} description="Explora referencias de piezas gráficas y señalización que podrías consultar según el espacio donde interactúas con tus clientes." primary={{ label: 'Ver servicios', to: '/servicios' }} secondary={{ label: 'Preparar mi cotización', to: '/cotizador' }}/><EnvironmentBrandingMatrix/><PanoramicCategoryStrips/></>;
+  return <><SiteTitle>Soluciones por espacio</SiteTitle><PageHero ambientVideo="aurora" eyebrow="SOLUCIONES POR ESPACIO" title={<>Ideas de marca<br/>para cada espacio.</>} description="Explora referencias de piezas gráficas y señalización que podrías consultar según el espacio donde interactúas con tus clientes." primary={{ label: 'Ver servicios', to: '/servicios' }} secondary={{ label: 'Preparar mi cotización', to: '/cotizador' }}/><EnvironmentBrandingMatrix/><PanoramicCategoryStrips/></>;
 }
 
 export function ServiceDetailPage() {
@@ -672,13 +673,21 @@ export function PublicQuotePage() {
   const service = serviceName(requestedService);
   const itemServices = requestedFamilies.length ? requestedLines.map((line) => serviceName(line.family)) : [];
   const requestKey = `${searchParams.toString()}|${service}|${itemServices.join('|')}`;
-  return <><SiteTitle>Solicitar cotización</SiteTitle><PageHero eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp" tabIndex={-1}><nav className="site-quote-flow" aria-label="Etapas de la solicitud"><a href="#quote-items-title"><span className="site-quote-flow-index" aria-hidden="true">01</span><span><strong>Detalla tu proyecto</strong><small>Artículos y, si aplica, instalación.</small></span></a><a href="#formulario-cotizacion"><span className="site-quote-flow-index" aria-hidden="true">02</span><span><strong>Comparte tus datos</strong><small>Para que el equipo responda tu solicitud.</small></span></a></nav><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} validationMessage={quoteValidationError} onChange={handleQuoteChange}/><div className="site-quote-request" id="formulario-cotizacion" tabIndex={-1}><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData} onQuoteValidationError={setQuoteValidationError}/></div></section></>;
+  return <><SiteTitle>Solicitar cotización</SiteTitle><PageHero ambientVideo="aurora" eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp" tabIndex={-1}><nav className="site-quote-flow" aria-label="Etapas de la solicitud"><a href="#quote-items-title"><span className="site-quote-flow-index" aria-hidden="true">01</span><span><strong>Detalla tu proyecto</strong><small>Artículos y, si aplica, instalación.</small></span></a><a href="#formulario-cotizacion"><span className="site-quote-flow-index" aria-hidden="true">02</span><span><strong>Comparte tus datos</strong><small>Para que el equipo responda tu solicitud.</small></span></a></nav><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} validationMessage={quoteValidationError} onChange={handleQuoteChange}/><div className="site-quote-request" id="formulario-cotizacion" tabIndex={-1}><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData} onQuoteValidationError={setQuoteValidationError}/></div></section></>;
 }
-function PageHero({ eyebrow, title, description, compact = false, primary, secondary }) {
+function PageHero({ eyebrow, title, description, compact = false, primary, secondary, ambientVideo }: {
+  eyebrow: string;
+  title: React.ReactNode;
+  description: string;
+  compact?: boolean;
+  primary?: { label: string; to: string };
+  secondary?: { label: string; to: string };
+  ambientVideo?: AmbientVideoClip;
+}) {
   const action = (item, className, Icon) => item.to.startsWith('#')
     ? <a className={className} href={item.to}>{item.label} <Icon size={16}/></a>
     : <Link className={className} to={item.to}>{item.label} <Icon size={16}/></Link>;
-  return <section className={`site-page-hero${compact ? ' compact' : ''}`}><div className="site-hero-glow glow-pink"/><div className="site-page-hero-inner"><Eyebrow light>{eyebrow}</Eyebrow><h1>{title}</h1><p>{description}</p><div className="site-page-hero-actions">{primary && action(primary, 'site-primary-button', ArrowUpRight)}{secondary && action(secondary, 'site-secondary-button', ArrowRight)}</div></div></section>;
+  return <section className={`site-page-hero${compact ? ' compact' : ''}${ambientVideo ? ' has-ambient-video' : ''}`}>{ambientVideo ? <AmbientVideoLayer clip={ambientVideo} variant="page-hero" parallax playbackRate={0.78}/> : <div className="site-hero-glow glow-pink"/>}<div className="site-page-hero-inner"><Eyebrow light>{eyebrow}</Eyebrow><h1>{title}</h1><p>{description}</p><div className="site-page-hero-actions">{primary && action(primary, 'site-primary-button', ArrowUpRight)}{secondary && action(secondary, 'site-secondary-button', ArrowRight)}</div></div></section>;
 }
 
 function Callout({ data, title = '¿Tienes una idea en mente?' }) {

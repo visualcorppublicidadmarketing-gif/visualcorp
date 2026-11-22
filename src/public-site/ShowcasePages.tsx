@@ -28,6 +28,8 @@ import { ArticleMarkdown } from './ArticleMarkdown';
 import { SouvenirCollectionPage, SOUVENIR_EXAMPLE_COUNT } from './SouvenirCollectionPage';
 import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategoryStrips } from './SolutionsComponents';
 import { PortfolioPracticalExamples } from './PortfolioPracticalExamples';
+import { StoreCinemaHero } from './StoreCinemaHero';
+import { AmbientVideoLayer } from './AmbientVideoLayer';
 import './storefront.css';
 import './store-promo-teaser.css';
 import './store-product-sku.css';
@@ -502,20 +504,26 @@ export function StorefrontPage() {
   };
   if (showSouvenirs) return <><DocumentTitle title="Souvenirs personalizados"/><SouvenirCollectionPage/></>;
   return <><DocumentTitle title="Tienda"/><div className="storefront-page">
-    <section className="store-hero store-hero-commerce" aria-labelledby="store-title">
-      <div className="store-hero-orbit store-hero-orbit-one"/><div className="store-hero-orbit store-hero-orbit-two"/>
-      <div className="store-hero-inner"><div className="store-hero-copy"><span className="site-eyebrow light"><i/><ShoppingBag size={15}/>TIENDA VISUAL CORP</span>
-        <h1 id="store-title">Tu próxima idea<br/><em>empieza aquí.</em></h1>
-        <p>Encuentra productos para tu marca, evento o negocio. Reúne tus opciones y solicita una cotización con los detalles de tu proyecto.</p>
-        <label className="storefront-search store-hero-search"><Search size={19}/><input ref={searchInput} aria-label="Buscar productos en la tienda" type="search" value={search} onChange={(event)=>updateSearch(event.target.value)} placeholder="¿Qué estás buscando?" autoComplete="off"/><kbd>Ctrl K</kbd>{search&&<button type="button" aria-label="Borrar búsqueda" onClick={()=>updateSearch('')}><X size={16}/></button>}</label>
-        <div className="store-hero-actions"><a className="site-primary-button" href="#catalogo-productos">Explorar productos <ArrowRight size={17}/></a><Link className="store-hero-secondary" to="/contacto">Quiero orientación <ArrowUpRight size={15}/></Link></div>
-        <div className="store-hero-stats"><span><b>{loading ? '…' : products.length}</b><small>productos publicados</small></span><i/><span><b>A tu medida</b><small>cantidades al cotizar</small></span><i/><span><b>Milagro</b><small>atención directa</small></span></div>
-      </div><div className="store-hero-showcase" aria-label="Una muestra del catálogo">{featuredPreview.length ? featuredPreview.map((product,index)=><button type="button" className={`store-hero-product store-hero-product-${index+1}`} key={product.id} onClick={()=>openProduct(product)} aria-label={`Ver ${product.name}`}>
-        <span className="store-hero-product-image">{product.image ? <img src={product.image} alt=""/> : <ShoppingBag size={24}/>}</span><span className="store-hero-product-name">{product.name}</span><span className="store-hero-product-mark">0{index+1}</span>
-      </button>) : <div className="store-hero-art-placeholder"><Sparkles size={30}/><span>Ideas en movimiento</span></div>}<span className="store-hero-art-label">CATÁLOGO · {loading ? 'VISUAL CORP' : `${products.length} IDEAS`}</span></div></div>
-      <a className="store-hero-scroll" href="#catalogo">Desliza para explorar <span>↓</span></a>
-    </section>
-    <section className="store-promo-teaser" aria-labelledby="store-promo-teaser-title">
+    <StoreCinemaHero
+      productsCount={products.length}
+      categories={categories}
+      featuredPreview={featuredPreview}
+      loading={loading}
+      search={search}
+      searchInputRef={searchInput}
+      onSearchChange={updateSearch}
+      onOpenProduct={(item) => {
+        const match = products.find((product) => product.id === item.id);
+        if (match) openProduct(match);
+      }}
+      onSelectCategory={(name) => {
+        selectCategory(name);
+      }}
+      onOpenSouvenirs={openSouvenirs}
+      onScrollToCatalog={scrollToCatalog}
+    />
+    <section className="store-promo-teaser has-ambient-video" aria-labelledby="store-promo-teaser-title">
+      <AmbientVideoLayer clip="silk" variant="promo-teaser" playbackRate={0.72} />
       <span className="store-promo-teaser-icon" aria-hidden="true"><Gift size={22}/></span>
       <div className="store-promo-teaser-copy"><span className="site-eyebrow"><i/>NOVEDADES DE LA TIENDA</span><h2 id="store-promo-teaser-title">Promociones y sorteos</h2><p>Consulta las campañas que Visual Corp publique oficialmente, con sus fechas y condiciones.</p></div>
       <Link className="store-promo-teaser-link" to="/tienda/promociones">Ver novedades <ArrowUpRight size={16}/></Link>
@@ -541,7 +549,7 @@ export function StorefrontPage() {
         : matches.length ? <><div className="store-product-grid">{matches.slice(0,visibleLimit).map(renderProductCard)}</div>{visibleLimit<matches.length&&<div className="store-load-more"><span>Viendo {Math.min(visibleLimit,matches.length)} de {matches.length}</span><button className="site-secondary-button" type="button" onClick={()=>setVisibleLimit((limit)=>Math.min(limit+24,matches.length))}>Cargar más productos <ArrowRight size={16}/></button></div>}</>
         : <div className="store-state-card"><span><Search size={22}/></span><h3>{search||category!=='Todos'?'No encontramos coincidencias':'El catálogo se está preparando'}</h3><p>{search||category!=='Todos'?'Cambia la búsqueda o prueba otra familia para encontrar productos.':'Cuando haya productos publicados, aparecerán aquí.'}</p>{(search||category!=='Todos')&&<button type="button" className="store-reset-button" onClick={clearStorefrontFilters}>Limpiar búsqueda y filtros <X size={15}/></button>}</div>}
     </section>
-    <section className="store-help-band"><div><span className="site-eyebrow light"><i/>¿NO SABES POR DÓNDE EMPEZAR?</span><h2>Tu idea no tiene que<br/>llegar resuelta.</h2><p>Comparte el objetivo y te ayudamos a decidir qué pieza, medidas y acabados revisar.</p></div><Link className="site-primary-button" to="/contacto">Conversemos sobre tu idea <ArrowUpRight size={16}/></Link></section>
+    <section className="store-help-band has-ambient-video"><AmbientVideoLayer clip="silk" variant="store-cta" parallax playbackRate={0.74}/><div><span className="site-eyebrow light"><i/>¿NO SABES POR DÓNDE EMPEZAR?</span><h2>Tu idea no tiene que<br/>llegar resuelta.</h2><p>Comparte el objetivo y te ayudamos a decidir qué pieza, medidas y acabados revisar.</p></div><Link className="site-primary-button" to="/contacto">Conversemos sobre tu idea <ArrowUpRight size={16}/></Link></section>
      {selectedProducts.length>0&&<aside className="store-selection-bar" aria-label="Resumen de tu lista para cotizar"><span className="store-selection-icon" aria-hidden="true"><ClipboardList size={18}/></span><span className="store-selection-count">{selectedProducts.length}</span><button type="button" className="store-selection-copy" aria-haspopup="dialog" onClick={()=>selectionDialog.current?.showModal()}><b>Tu lista para cotizar</b><small className={selectionNotice?'is-limit-notice':''}>{selectionNotice||`${selectedProducts.slice(0,2).map((item)=>`${item.name}${selectionTiers[item.id]?` · ${selectionTiers[item.id]} uds.`:''}`).join(' · ')}${selectedProducts.length>2?` · +${selectedProducts.length-2}`:''} · Revisar lista`}</small></button>{selectedProducts.length>MAX_QUOTE_ITEMS?<button type="button" className="site-primary-button" onClick={()=>selectionDialog.current?.showModal()}>Ajustar lista <ArrowRight size={16}/></button>:<Link className="site-primary-button" to={quoteUrl(selectedProducts)}>Solicitar cotización <ArrowRight size={16}/></Link>}<button type="button" className="store-selection-clear" onClick={()=>{setSelection([]);setSelectionTiers({});setSelectionNotice('');}} aria-label="Vaciar lista">Vaciar</button></aside>}
      <p className="storefront-live-status" role="status" aria-live="polite">{selectionStatus}</p>
     {comparedProducts.length>0&&<aside className={`store-compare-bar${selectedProducts.length?' has-quote-selection':''}`} aria-label="Productos seleccionados para comparar"><span className="store-compare-icon" aria-hidden="true"><ArrowLeftRight size={17}/></span><span className="store-compare-copy"><b>{comparedProducts.length} de 3 para comparar</b><small role="status" aria-live="polite">{comparisonNotice||comparedProducts.map((product)=>product.name).join(' · ')}</small></span>{comparedProducts.length>=2?<button type="button" className="store-compare-open" aria-haspopup="dialog" onClick={()=>comparisonDialog.current?.showModal()}>Comparar productos <ArrowRight size={15}/></button>:<span className="store-compare-hint">Añade 1 más</span>}<button type="button" className="store-compare-clear" onClick={()=>{setComparedIds([]);setComparisonNotice('');}} aria-label="Vaciar comparación">Vaciar</button></aside>}
