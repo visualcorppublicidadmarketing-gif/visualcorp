@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const migrationPath = path.join(__dirname, '../supabase/migrations/20261122032817_prevent_reopening_cash_amount_mutation.sql');
-const amendmentMigrationPath = path.join(__dirname, '../supabase/migrations/20261122033201_validate_cash_session_on_sale_amendment.sql');
+const migrationPath = path.join(__dirname, '../supabase/migrations/20261122050814_prevent_reopening_cash_amount_mutation.sql');
+const amendmentMigrationPath = path.join(__dirname, '../supabase/migrations/20261122050818_validate_cash_session_on_sale_amendment.sql');
 const openMigration = fs.readFileSync(migrationPath, 'utf8');
 const amendmentMigration = fs.readFileSync(amendmentMigrationPath, 'utf8');
 const posSaleEditor = fs.readFileSync(path.join(__dirname, '../src/pages/pos/components/POSSaleEditorModal.tsx'), 'utf8');

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const migrationPath = path.join(__dirname, '../supabase/migrations/20261122040155_restrict_commercial_data_read_permissions.sql');
+const migrationPath = path.join(__dirname, '../supabase/migrations/20261122050821_restrict_commercial_data_read_permissions.sql');
 const migration = fs.readFileSync(migrationPath, 'utf8');
 
 const org = '10000000-0000-0000-0000-000000000001';

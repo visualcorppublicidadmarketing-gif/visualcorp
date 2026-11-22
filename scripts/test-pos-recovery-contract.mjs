@@ -4,7 +4,7 @@ import test from 'node:test';
 import { PGlite } from '@electric-sql/pglite';
 import { createPOSSaleAssetRecoveryStore } from '../src/lib/posSaleAssetRecovery.ts';
 
-const migration = await readFile(new URL('../supabase/migrations/20261121180000_pos_durable_checkout_recovery.sql', import.meta.url), 'utf8');
+const migration = await readFile(new URL('../supabase/migrations/20261122050812_pos_durable_checkout_recovery.sql', import.meta.url), 'utf8');
 const checkout = await readFile(new URL('../src/pages/pos/CheckoutWorkspace.tsx', import.meta.url), 'utf8');
 const database = new PGlite();
 

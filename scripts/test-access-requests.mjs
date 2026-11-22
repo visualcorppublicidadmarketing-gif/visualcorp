@@ -8,7 +8,7 @@ import { PGlite } from '@electric-sql/pglite';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MIG_INV = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261027131235_organization_access_invitations.sql'), 'utf8');
 const MIG_REQ = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261119184952_organization_access_requests.sql'), 'utf8');
-const MIG_HARDEN = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261121170000_harden_access_profile_delegation.sql'), 'utf8');
+const MIG_HARDEN = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261122050754_harden_access_profile_delegation.sql'), 'utf8');
 
 const orgId = '00000000-0000-0000-0000-000000000001';
 const otherOrgId = '00000000-0000-0000-0000-000000000002';
