@@ -42,6 +42,42 @@ export function cents(value: number | string | null | undefined) {
   return Math.round(Number(value || 0) * 100);
 }
 
+type WeeklySaleAttribution = {
+  status: string;
+  total: number | string;
+  created_at: string;
+};
+
+type WeeklyRefundSettlementAttribution = {
+  amount: number | string;
+  settled_at: string;
+};
+
+function isInBusinessWeek(value: string, weekStart: string) {
+  const date = businessDate(value);
+  return date >= weekStart && date < addDays(weekStart, 7);
+}
+
+export function summarizeWeeklyAttribution(
+  sales: WeeklySaleAttribution[],
+  refundSettlements: WeeklyRefundSettlementAttribution[],
+  weekStart: string,
+) {
+  const weeklySales = sales.filter((sale) => (
+    sale.status === 'confirmed' && isInBusinessWeek(sale.created_at, weekStart)
+  ));
+  const weeklyRefunds = refundSettlements.filter((refund) => (
+    isInBusinessWeek(refund.settled_at, weekStart)
+  ));
+
+  return {
+    salesCents: weeklySales.reduce((sum, sale) => sum + cents(sale.total), 0),
+    saleCount: weeklySales.length,
+    refundsCents: weeklyRefunds.reduce((sum, refund) => sum + cents(refund.amount), 0),
+    refundCount: weeklyRefunds.length,
+  };
+}
+
 export function normalizePaymentMethod(value: string | null | undefined): PaymentMethodId {
   const method = String(value || '').trim().toLowerCase();
   if (method === 'cash' || method === 'transfer' || method === 'card' || method === 'cheque') return method;
@@ -57,20 +93,4 @@ export function weekdayLabel(date: string, options: Intl.DateTimeFormatOptions =
 export function dateLabel(date: string, options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }) {
   return new Intl.DateTimeFormat('es-EC', { ...options, timeZone: FINANCE_TIME_ZONE })
     .format(new Date(`${date}T12:00:00Z`));
-}
-
-export function saleReturnedCents(sale: any, saleReturns: any[]) {
-  const subtotal = Number(sale?.subtotal || 0);
-  const discountRate = subtotal > 0
-    ? Math.min(1, Math.max(0, Number(sale?.discount_total || 0) / subtotal))
-    : 0;
-  const returnedValue = saleReturns.reduce((sum, saleReturn) => {
-    if (saleReturn.kind === 'cancellation') return sum;
-    const lines = Array.isArray(saleReturn.sale_return_lines) ? saleReturn.sale_return_lines : [];
-    return sum + lines.reduce((lineSum: number, line: any) => {
-      const saleLine = Array.isArray(line.sale_lines) ? line.sale_lines[0] : line.sale_lines;
-      return lineSum + Number(line.quantity || 0) * Number(saleLine?.unit_price || 0) * (1 - discountRate);
-    }, 0);
-  }, 0);
-  return cents(returnedValue);
 }

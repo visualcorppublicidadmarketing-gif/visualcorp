@@ -22,6 +22,7 @@ import { CommercialAssetsGallery } from '../../components/commercial/CommercialA
 import { GoogleMapsPreview } from '../../components/commercial/GoogleMapsPreview';
 import { RichTextEditor } from '../../components/studio/RichTextEditor';
 import { persistCommercialAssets, type CommercialAssetDraft } from '../../lib/commercialAssets';
+import { posSaleAssetRecovery } from '../../lib/posSaleAssetRecovery';
 import { normalizeGoogleMapsUrl } from '../../lib/maps';
 import { POSCustomerPicker } from './components/POSCustomerPicker';
 import { POSCheckoutSteps, type POSCheckoutStep } from './components/POSCheckoutSteps';
@@ -719,6 +720,9 @@ export function PosPage() {
   const [mapLink,setMapLink]=useState('');
   const [clientBriefHtml,setClientBriefHtml]=useState('<p></p>');
   const [saleAssets,setSaleAssets]=useState<CommercialAssetDraft[]>([]);
+  const [saleAssetsRecoveryStatus,setSaleAssetsRecoveryStatus]=useState<'loading'|'saving'|'ready'|'error'>('loading');
+  const [saleAssetsRecoveryNotice,setSaleAssetsRecoveryNotice]=useState('');
+  const [saleAssetsRecoveryMustResolve,setSaleAssetsRecoveryMustResolve]=useState(false);
   const [customerQuery,setCustomerQuery]=useState('');
   const [customerSearch,setCustomerSearch]=useState({loading:false,results:null,error:'',hasMore:false});
   const [customerSearchLimit,setCustomerSearchLimit]=useState(8);
@@ -778,6 +782,9 @@ export function PosPage() {
   const [posSalesStatus,setPosSalesStatus]=useState<'loading'|'ready'|'error'|'restricted'>('loading');
   const [pendingSaleRecoveryError,setPendingSaleRecoveryError]=useState('');
   const [pendingSaleRecoveryMode,setPendingSaleRecoveryMode]=useState(false);
+  const [idbRecoveredPendingSaleKey,setIdbRecoveredPendingSaleKey]=useState('');
+  const [pendingSaleSnapshotMissing,setPendingSaleSnapshotMissing]=useState(false);
+  const [pendingSaleSnapshotReviewed,setPendingSaleSnapshotReviewed]=useState(false);
   const [mobileSummaryOpen,setMobileSummaryOpen]=useState(false);
   const [checkoutStep,setCheckoutStep]=useState<POSCheckoutStep>('order');
   const [showQuickCashOpen,setShowQuickCashOpen]=useState(false);
@@ -805,19 +812,109 @@ export function PosPage() {
   const posDraftStorageKey=`visualcorp-pos-cart-draft-v1:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
   const pendingSaleStorageKey=`visualcorp-pos-pending-sale-key:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
   const pendingSaleSnapshotStorageKey=`${pendingSaleStorageKey}:snapshot`;
+  const posSaleAssetScopeKey=`${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
+  const clearPendingSaleStorage=()=>{try{localStorage.removeItem(pendingSaleStorageKey);}catch{}try{sessionStorage.removeItem(pendingSaleStorageKey);sessionStorage.removeItem(pendingSaleSnapshotStorageKey);}catch{}setIdbRecoveredPendingSaleKey('');setPendingSaleSnapshotMissing(false);setPendingSaleSnapshotReviewed(false);};
   const [draftLoadedKey,setDraftLoadedKey]=useState('');
   const pendingSaleKey=useRef('');
   const pendingSaleSnapshotRef=useRef<any>(null);
+  const saleAssetDraftWriteRef=useRef<Promise<void>>(Promise.resolve());
+  const saleAssetPreviewRef=useRef(saleAssets);
+  useEffect(()=>{saleAssetPreviewRef.current=saleAssets;},[saleAssets]);
+  useEffect(()=>()=>saleAssetPreviewRef.current.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl)),[]);
   const pendingSaleSnapshot={form,cart,discountPercent,discountReason,materialRequestsByLine,fulfillment,mapLink,payments,chargeNow,activeParkedOrderId,allowBackorder:pendingSaleSnapshotRef.current?.allowBackorder,saleLines:pendingSaleSnapshotRef.current?.saleLines,saleNote:pendingSaleSnapshotRef.current?.saleNote,productionByLine,clientBriefHtml};
   const pendingSaleChanged=Boolean(pendingSaleRecoveryMode&&pendingSaleSnapshotRef.current&&pendingSaleSignature(pendingSaleSnapshot)!==pendingSaleSignature(pendingSaleSnapshotRef.current));
+  const saleAssetRecoveryPromiseRef=useRef<Promise<{idempotencyKey:string|null;error:unknown|null;hasRecord:boolean;checkedSale?:{id:string;sale_code:string|null}|null}>>(
+    Promise.resolve({idempotencyKey:null,error:null,hasRecord:false,checkedSale:undefined}),
+  );
+  useEffect(()=>{
+    setSaleAssets(current=>{current.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl));return[];});setSaleAssetsRecoveryNotice('');setSaleAssetsRecoveryMustResolve(false);
+    if(!organizationId||!user?.id){setSaleAssetsRecoveryStatus('ready');saleAssetRecoveryPromiseRef.current=Promise.resolve({idempotencyKey:null,error:null,hasRecord:false,checkedSale:undefined});return;}
+    let active=true;
+    let previewsAdopted=false;
+    let loadedAssets:CommercialAssetDraft[]=[];
+    setSaleAssetsRecoveryStatus('loading');
+    const recover=async()=>{
+      let loadedKey:string|null=null;
+      let hasRecord=false;
+      try{
+        const stored=await posSaleAssetRecovery.load(posSaleAssetScopeKey);
+        if(!stored){if(active){setSaleAssetsRecoveryMustResolve(false);setSaleAssetsRecoveryStatus('ready');}return{idempotencyKey:null,error:null,hasRecord:false,checkedSale:undefined};}
+        hasRecord=true;loadedKey=stored.idempotencyKey;loadedAssets=stored.assets.map(asset=>asset.kind==='image'&&asset.file?{...asset,previewUrl:URL.createObjectURL(asset.file)}:asset);
+        if(loadedKey){
+          let pendingKey='';
+          try{pendingKey=localStorage.getItem(pendingSaleStorageKey)||sessionStorage.getItem(pendingSaleStorageKey)||'';}catch{}
+          if(pendingKey&&pendingKey!==loadedKey)throw new Error('La clave de recuperación de los adjuntos no coincide con la operación pendiente. Conservé ambos datos para evitar vincular archivos a otra venta.');
+          if(!pendingKey){pendingSaleKey.current=loadedKey;try{localStorage.setItem(pendingSaleStorageKey,loadedKey);sessionStorage.setItem(pendingSaleStorageKey,loadedKey);}catch{}if(active){setIdbRecoveredPendingSaleKey(loadedKey);setPendingSaleRecoveryMode(true);setPendingSaleSnapshotMissing(true);setPendingSaleSnapshotReviewed(false);}}
+          if(!supabase)throw new Error('No hay una conexión para comprobar si la venta con adjuntos se registró.');
+          const {data:existingSale,error:saleError}=await supabase.from('sales').select('id,sale_code').eq('organization_id',organizationId).eq('idempotency_key',loadedKey).maybeSingle();
+          if(saleError)throw saleError;
+          if(existingSale){
+            const {count,error:assetsReadError}=await supabase.from('commercial_document_assets').select('id',{count:'exact',head:true}).eq('document_kind','sale').eq('document_id',existingSale.id);
+            if(assetsReadError)throw assetsReadError;
+            if(count===null)throw new Error('No pude comprobar si los adjuntos ya estaban vinculados a la venta.');
+            if(count===0&&loadedAssets.length)await persistCommercialAssets({organizationId,documentId:existingSale.id,kind:'sale',assets:loadedAssets});
+            await posSaleAssetRecovery.clear(posSaleAssetScopeKey);
+            if(active){loadedAssets.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl));setSaleAssets([]);previewsAdopted=true;setSaleAssetsRecoveryMustResolve(false);setSaleAssetsRecoveryNotice(loadedAssets.length?`Recuperé y vinculé los adjuntos de la venta ${existingSale.sale_code||existingSale.id}.`:'');setSaleAssetsRecoveryStatus('ready');}
+            return{idempotencyKey:loadedKey,error:null,hasRecord:true,checkedSale:existingSale};
+          }
+        }
+        if(active){setSaleAssets(loadedAssets);previewsAdopted=true;setSaleAssetsRecoveryMustResolve(false);setSaleAssetsRecoveryNotice(loadedAssets.length?'Recuperé adjuntos de una sesión anterior. Revisa que correspondan a esta orden antes de confirmar.':'');setSaleAssetsRecoveryStatus('ready');}
+        return{idempotencyKey:loadedKey,error:null,hasRecord,checkedSale:loadedKey?null:undefined};
+      }catch(error){
+        if(active){setSaleAssets(loadedAssets);previewsAdopted=true;setSaleAssetsRecoveryMustResolve(hasRecord);setSaleAssetsRecoveryStatus('error');setSaleAssetsRecoveryNotice('No pude comprobar o guardar el borrador de adjuntos. Conservé la copia local; no la vincularé automáticamente a otra venta.');}
+        return{idempotencyKey:loadedKey,error,hasRecord,checkedSale:undefined};
+      }
+    };
+    saleAssetRecoveryPromiseRef.current=recover();
+    return()=>{active=false;if(!previewsAdopted)loadedAssets.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl));};
+  },[organizationId,user?.id,posSaleAssetScopeKey,pendingSaleStorageKey]);
+  const handleSaleAssetsChange=(assets:CommercialAssetDraft[])=>{
+    if(saleAssetsRecoveryStatus==='loading'||(saleAssetsRecoveryStatus==='error'&&assets.length>=saleAssets.length)){
+      assets.filter(asset=>asset.previewUrl&&!saleAssets.some(current=>current.id===asset.id)).forEach(asset=>URL.revokeObjectURL(asset.previewUrl!));
+      flash('Espera a que termine la recuperación de adjuntos antes de modificarlos.');
+      return;
+    }
+    setSaleAssets(assets);setSaleAssetsRecoveryNotice('');setSaleAssetsRecoveryStatus('saving');
+    const write=saleAssetDraftWriteRef.current.catch(()=>{}).then(()=>posSaleAssetRecovery.save(posSaleAssetScopeKey,assets,pendingSaleKey.current||null));
+    saleAssetDraftWriteRef.current=write;
+    void write.then(()=>{if(saleAssetDraftWriteRef.current===write){setSaleAssetsRecoveryMustResolve(false);setSaleAssetsRecoveryStatus('ready');}}).catch(error=>{if(saleAssetDraftWriteRef.current===write){setSaleAssetsRecoveryMustResolve(assets.length>0);setSaleAssetsRecoveryStatus('error');setSaleAssetsRecoveryNotice(`No se pudo guardar la recuperación local de los adjuntos: ${error.message||'revisa el espacio disponible del navegador'}.`);flash('No se pudo guardar la copia recuperable de los adjuntos; no confirmaré una venta con esos archivos hasta resolverlo.');}});
+  };
   useEffect(()=>{
     if(!supabase||!organizationId||!user)return;
-    const stored=sessionStorage.getItem(pendingSaleStorageKey)||'';
+    let active=true;
+    let stored='';
+    try{stored=localStorage.getItem(pendingSaleStorageKey)||'';}catch{}
+    if(!stored){try{stored=sessionStorage.getItem(pendingSaleStorageKey)||'';}catch{}}
     pendingSaleKey.current=stored;
-    if(!stored){pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('');return;}
+    if(!stored){pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('');setPendingSaleSnapshotMissing(false);setPendingSaleSnapshotReviewed(false);return ()=>{active=false;};}
+    try{localStorage.setItem(pendingSaleStorageKey,stored);}catch{}
+    let snapshotRaw='';
+    try{snapshotRaw=sessionStorage.getItem(pendingSaleSnapshotStorageKey)||'';}catch{}
+    const verifyKeyWithoutSnapshot=async()=>{
+      const assetRecovery=await saleAssetRecoveryPromiseRef.current;
+      if(!active)return;
+      if(assetRecovery.error){setPendingSaleRecoveryError('No pude verificar que los adjuntos correspondan a esta venta. La clave quedó protegida; recarga cuando vuelva la conexión para reintentar.');return;}
+      if(assetRecovery.hasRecord&&assetRecovery.idempotencyKey&&assetRecovery.idempotencyKey!==stored){setPendingSaleRecoveryError('La clave de la operación y la de sus adjuntos no coinciden. Conservé ambas para evitar duplicar o asignar archivos a otra venta.');return;}
+      let existingSale=assetRecovery.hasRecord&&assetRecovery.idempotencyKey===stored?assetRecovery.checkedSale:undefined;
+      if(existingSale===undefined){const {data:queriedSale,error}=await supabase.from('sales').select('id,sale_code').eq('organization_id',organizationId).eq('idempotency_key',stored).maybeSingle();if(!active)return;if(error){setPendingSaleRecoveryError('No se pudo comprobar si la venta pendiente quedó registrada. Revisa las ventas antes de continuar.');flash(`No pude verificar la operación protegida: ${error.message}. No vuelvas a cobrarla hasta revisar las ventas.`);return;}existingSale=queriedSale;}
+      if(existingSale&&assetRecovery.hasRecord&&assetRecovery.idempotencyKey!==stored){setPendingSaleRecoveryError('Encontré una venta pendiente, pero sus adjuntos tienen otra clave. Conservé ambos datos para evitar asignar archivos a otra venta.');return;}
+      if(existingSale){clearPendingSaleStorage();pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('');setPendingSaleSnapshotMissing(false);setPendingSaleSnapshotReviewed(false);flash(`La venta ${existingSale.sale_code||existingSale.id} ya quedó registrada. No la repetí; revisa sus archivos adjuntos.`);void refreshPOSDaySales();}
+      else{
+        // A negative lookup is only a point-in-time observation. Keep the key and its
+        // IndexedDB attachment association so a later retry serializes on that key.
+        pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(true);setPendingSaleRecoveryError('');setPendingSaleSnapshotMissing(true);setPendingSaleSnapshotReviewed(false);
+        flash('No encontré la venta todavía. Conservé la clave y sus adjuntos: reconstruye y revisa el pedido original antes de reintentar con esa misma clave.');
+      }
+    };
+    if(!snapshotRaw){
+      setPendingSaleSnapshotMissing(true);setPendingSaleSnapshotReviewed(false);
+      void verifyKeyWithoutSnapshot();
+      return ()=>{active=false;};
+    }
     try{
-      const snapshot=JSON.parse(sessionStorage.getItem(pendingSaleSnapshotStorageKey)||'null');
-      if(!snapshot||!snapshot.form){pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('Existe una venta pendiente de revisar antes de registrar otra.');flash('Hay una operación pendiente sin datos suficientes para recuperarla. Revisa las ventas de hoy antes de volver a cobrar.');return;}
+      const snapshot=JSON.parse(snapshotRaw);
+      if(!snapshot||!snapshot.form){setPendingSaleSnapshotMissing(true);setPendingSaleSnapshotReviewed(false);void verifyKeyWithoutSnapshot();return ()=>{active=false;};}
+      setPendingSaleSnapshotMissing(false);setPendingSaleSnapshotReviewed(false);
       const restoredForm={...snapshot.form,branchCode:String(snapshot.form.branchCode||form.branchCode)};
       const restoredCart=sanitizePOSCart(snapshot.cart);
       const restoredPayments=sanitizePOSPayments(snapshot.payments);
@@ -833,8 +930,9 @@ export function PosPage() {
       setChargeNow(snapshot.chargeNow!==false);setActiveParkedOrderId(String(snapshot.activeParkedOrderId||''));setCustomerQuery(String(restoredForm.customer||''));setSelectedCustomerSnapshot(restoredForm.customerId?{id:String(restoredForm.customerId),name:String(restoredForm.customer||''),phone:String(restoredForm.customerPhone||''),email:String(restoredForm.customerEmail||''),documentReference:String(restoredForm.customerDocumentReference||'')}:null);setDraftLoadedKey(posDraftStorageKey);
       setPendingSaleRecoveryError('');
       flash('Recuperé una operación pendiente. Confirma de nuevo para completar sus vínculos sin duplicar la venta.');
-   }catch{pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('No se pudo recuperar una venta pendiente. Revisa las ventas antes de volver a cobrar.');flash('Hay una operación pendiente que no se pudo restaurar. No vuelvas a cobrarla hasta revisar las ventas de hoy.');}
-  },[organizationId,user?.id,pendingSaleStorageKey,pendingSaleSnapshotStorageKey,posDraftStorageKey]);
+    }catch{setPendingSaleSnapshotMissing(true);setPendingSaleSnapshotReviewed(false);void verifyKeyWithoutSnapshot();}
+   return ()=>{active=false;};
+  },[organizationId,user?.id,pendingSaleStorageKey,pendingSaleSnapshotStorageKey,posDraftStorageKey,idbRecoveredPendingSaleKey]);
   useEffect(()=>{
     if(!supabase||!organizationId){setProductWorkflowRoutes({});setFamilyWorkflowRoutes([]);setWorkflowTemplates([]);setWorkflowRouteStatus('unavailable');return;}
     let active=true;
@@ -1462,11 +1560,12 @@ export function PosPage() {
     });
   },[salesToday,recentSalesQuery,recentSalesFilter]);
   const needsCashShift=chargeNow&&payments.some(payment=>payment.method==='Efectivo');
-  const cashShiftPending=needsCashShift&&!pendingSaleRecoveryMode&&cashierSession.loading;
-  const cashShiftUnavailable=needsCashShift&&!pendingSaleRecoveryMode&&!cashierSession.loading&&!cashierSession.session;
+  const cashShiftPending=needsCashShift&&(!pendingSaleRecoveryMode||pendingSaleSnapshotMissing)&&cashierSession.loading;
+  const cashShiftUnavailable=needsCashShift&&(!pendingSaleRecoveryMode||pendingSaleSnapshotMissing)&&!cashierSession.loading&&!cashierSession.session;
   const missingCartAccessoryLink=cart.some(line=>trackedAccessoryProductIds.has(line.productId)&&!catalogLinks.some(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.productId));
-  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&catalogLinkStatus==='ready'&&workflowRouteStatus==='ready'&&(form.quoteId||taxConfigurationStatus==='ready')&&(!saleMaterialLines.some((line)=>line.catalog_product_id)||materialRecipesStatus==='ready')&&!previewConfigurationIssues.length&&!missingCartAccessoryLink&&!backorderPermissionMissing&&!pendingSaleRecoveryError&&!pendingOperationChanged&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&discountReasonValid&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
-  const submitBlockReason=pendingSaleRecoveryError||(pendingOperationChanged?'Los datos de la operación o de la cotización cambiaron mientras la venta estaba pendiente. Recarga para restaurar la versión original antes de reintentar.':savingSale?'Guardando la venta…':!discountReasonValid?'Escribe el motivo del descuento (mínimo 3 y máximo 300 caracteres).':!form.quoteId&&taxConfigurationStatus==='loading'?'Consultando la tasa de IVA de la organización…':!form.quoteId&&taxConfigurationStatus==='error'?'No se pudo verificar la tasa de IVA. Recarga antes de confirmar la venta.':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando los vínculos de inventario…':catalogLinkStatus==='error'?'No se pudieron consultar los vínculos de inventario. Recarga antes de confirmar.':saleMaterialLines.some((line)=>line.catalog_product_id)&&materialRecipesStatus!=='ready'?(materialRecipesStatus==='checking'?'Comprobando las recetas de materiales de esta sucursal…':'No se pudieron verificar las recetas. Vuelve a Detalles del trabajo y reintenta la consulta.'):previewConfigurationIssues.length?'Corrige los vínculos y datos de inventario indicados antes de cobrar.':missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':backorderPermissionMissing?'Hay artículos sin conteo o materiales con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.':duplicateCustomer?`Ya existe ${duplicateCustomer.name} con ese teléfono, correo o identificación. Selecciónalo para evitar crear un duplicado.`:customerLookupFailed?'No se pudo verificar si el cliente ya existe. Reintenta la búsqueda antes de confirmar.':customerLookupPending?'Buscando coincidencias del cliente…':customerNameMissing?'Completa el nombre del cliente o limpia la búsqueda si será una venta de mostrador.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'');
+  const saleAssetsNotDurable=saleAssets.length>0&&saleAssetsRecoveryStatus!=='ready';
+  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&saleAssetsRecoveryStatus!=='loading'&&saleAssetsRecoveryStatus!=='saving'&&!saleAssetsRecoveryMustResolve&&!saleAssetsNotDurable&&catalogLinkStatus==='ready'&&workflowRouteStatus==='ready'&&(form.quoteId||taxConfigurationStatus==='ready')&&(!saleMaterialLines.some((line)=>line.catalog_product_id)||materialRecipesStatus==='ready')&&!previewConfigurationIssues.length&&!missingCartAccessoryLink&&!backorderPermissionMissing&&!pendingSaleRecoveryError&&(!pendingSaleSnapshotMissing||pendingSaleSnapshotReviewed)&&!pendingOperationChanged&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&discountReasonValid&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
+  const submitBlockReason=pendingSaleRecoveryError||(pendingSaleSnapshotMissing&&!pendingSaleSnapshotReviewed?'Se perdió el snapshot. Reconstruye y coteja el pedido original; confirma la revisión para reintentar con la misma clave protegida.':saleAssetsRecoveryStatus==='loading'?'Recuperando los adjuntos guardados…':saleAssetsRecoveryStatus==='saving'?'Guardando copia recuperable de los adjuntos…':saleAssetsRecoveryMustResolve?'No continuaré con esta venta hasta comprobar o recuperar los adjuntos pendientes. Recarga para volver a intentarlo.':saleAssetsNotDurable?'No confirmaré con adjuntos hasta guardar su copia recuperable en este navegador.':pendingOperationChanged?'Los datos de la operación o de la cotización cambiaron mientras la venta estaba pendiente. Recarga para restaurar la versión original antes de reintentar.':savingSale?'Guardando la venta…':!discountReasonValid?'Escribe el motivo del descuento (mínimo 3 y máximo 300 caracteres).':!form.quoteId&&taxConfigurationStatus==='loading'?'Consultando la tasa de IVA de la organización…':!form.quoteId&&taxConfigurationStatus==='error'?'No se pudo verificar la tasa de IVA. Recarga antes de confirmar la venta.':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando los vínculos de inventario…':catalogLinkStatus==='error'?'No se pudieron consultar los vínculos de inventario. Recarga antes de confirmar.':saleMaterialLines.some((line)=>line.catalog_product_id)&&materialRecipesStatus!=='ready'?(materialRecipesStatus==='checking'?'Comprobando las recetas de materiales de esta sucursal…':'No se pudieron verificar las recetas. Vuelve a Detalles del trabajo y reintenta la consulta.'):previewConfigurationIssues.length?'Corrige los vínculos y datos de inventario indicados antes de cobrar.':missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':backorderPermissionMissing?'Hay artículos sin conteo o materiales con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.':duplicateCustomer?`Ya existe ${duplicateCustomer.name} con ese teléfono, correo o identificación. Selecciónalo para evitar crear un duplicado.`:customerLookupFailed?'No se pudo verificar si el cliente ya existe. Reintenta la búsqueda antes de confirmar.':customerLookupPending?'Buscando coincidencias del cliente…':customerNameMissing?'Completa el nombre del cliente o limpia la búsqueda si será una venta de mostrador.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'');
   const cartQuantityNumber=Number(cartQuantity);
   const cartWidthNumber=Number(cartWidthCm);
   const cartHeightNumber=Number(cartHeightCm);
@@ -1695,6 +1794,7 @@ export function PosPage() {
   const choosePOSCustomer=(customer)=>{setSelectedCustomerSnapshot(customer||null);setForm((current)=>({...current,customerId:customer?.id||'',customer:customer?.name||'',customerPhone:customer?.phone||'',customerEmail:customer?.email||'',customerDocumentReference:customer?.documentReference||''}));setCustomerQuery(customer?.name||'');};
   const parkCurrentOrder=async()=>{
     if(!user||!organizationId||parking)return;
+    if(saleAssets.length){flash('Esta orden tiene adjuntos guardados solo en este navegador. Las órdenes en espera no sincronizan esos archivos; quítalos antes de aparcar o confirma la venta para vincularlos.');return;}
     if(!form.quoteId&&taxConfigurationStatus!=='ready'){flash(taxConfigurationStatus==='loading'?'Espera a que se confirme la tasa de IVA antes de guardar el total.':'No se pudo verificar la tasa de IVA. Recarga antes de guardar la orden.');return;}
     if(activeParkedOrderId){flash('Esta orden ya está en espera; confírmala para cerrarla desde esta pantalla.');return;}
     if(!form.quoteId&&!cart.length){flash('Agrega artículos o elige una cotización antes de guardar en espera.');return;}
@@ -1758,8 +1858,8 @@ export function PosPage() {
     const restoredDiscountPercent=String(Math.min(40,Math.max(0,Math.round(Number(payload.discountPercent)||0))));
     const restoredDiscountReason=String(payload.discountReason||'').slice(0,300);
     const recoveredSnapshot={form:savedForm,cart:restoredCart,discountPercent:restoredDiscountPercent,discountReason:restoredDiscountReason,materialRequestsByLine:restoredMaterialRequests,productionByLine:restoredProductionByLine,fulfillment:restoredFulfillment,mapLink:restoredMapLink,payments:restoredPayments,chargeNow:restoredChargeNow,activeParkedOrderId:order.id};
-    try{sessionStorage.setItem(pendingSaleStorageKey,order.idempotency_key);sessionStorage.setItem(pendingSaleSnapshotStorageKey,JSON.stringify({version:1,savedAt:Date.now(),...recoveredSnapshot}));}
-    catch{if(!pendingSaleKey.current){sessionStorage.removeItem(pendingSaleStorageKey);sessionStorage.removeItem(pendingSaleSnapshotStorageKey);}flash('No se pudo guardar la recuperación de esta orden en esta sesión. No se envió la venta.');return;}
+    try{localStorage.setItem(pendingSaleStorageKey,order.idempotency_key);sessionStorage.setItem(pendingSaleStorageKey,order.idempotency_key);sessionStorage.setItem(pendingSaleSnapshotStorageKey,JSON.stringify({version:1,savedAt:Date.now(),...recoveredSnapshot}));}
+    catch{if(!pendingSaleKey.current)clearPendingSaleStorage();flash('No se pudo guardar la recuperación de esta orden. No se envió la venta.');return;}
     setFulfillment(restoredFulfillment);setMapLink(restoredMapLink);setPayments(restoredPayments);setChargeNow(restoredChargeNow);setCustomerQuery(String(savedForm.customer||''));setSelectedCustomerSnapshot(savedForm.customerId?{id:String(savedForm.customerId),name:String(savedForm.customer||''),phone:String(savedForm.customerPhone||''),email:String(savedForm.customerEmail||''),documentReference:String(savedForm.customerDocumentReference||'')}:null);
     setForm(savedForm);setCart(restoredCart);setDiscountPercent(restoredDiscountPercent);setDiscountReason(restoredDiscountReason);setMaterialRequestsByLine(restoredMaterialRequests);setProductionByLine(restoredProductionByLine);
     setCartProductId('');setCartItemName('');setCartUnitPrice('');setCartQuantity('1');setActiveParkedOrderId(order.id);
@@ -1934,9 +2034,12 @@ export function PosPage() {
     try{
       if(form.quoteId&&quote?.status==='converted'&&pendingSaleRecoveryMode&&pendingSaleKey.current){const {data:existingSale,error:existingSaleError}=await supabase.from('sales').select('id,central_quote_id').eq('organization_id',organizationId).eq('idempotency_key',pendingSaleKey.current).maybeSingle();if(existingSaleError){flash(`No pude comprobar si la cotización ya quedó vinculada: ${existingSaleError.message}. La operación permanece protegida.`);return;}quoteAlreadyLinked=Boolean(existingSale?.central_quote_id===form.quoteId);}
       if(form.quoteId&&(!quote||(!quoteAlreadyLinked&&quote.status!=='accepted')||!quote.price_confirmed||Math.round(Number(quote.selected_total)*100)!==Math.round(total*100))){flash('La cotización debe seguir aceptada y el total debe coincidir exactamente antes de confirmar.');return;}
-      let quoteLinkError='';
-      if(salePayments.some(payment=>payment.method==='cash')&&!(pendingSaleRecoveryMode&&pendingSaleKey.current)){const {data:branch}=await supabase.from('branches').select('id').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();const {data:shift,error:shiftError}=await supabase.from('cash_sessions').select('id').eq('organization_id',organizationId).eq('branch_id',branch?.id||'').eq('opened_by',user.id).eq('status','open').maybeSingle();if(shiftError)throw shiftError;if(!shift){flash('Abre primero tu turno de caja en Caja y producción para registrar cualquier parte en efectivo.');return;}}
-      if(!pendingSaleKey.current){pendingSaleKey.current=globalThis.crypto?.randomUUID?.()||`sale-${Date.now()}-${Math.random().toString(36).slice(2)}`;sessionStorage.setItem(pendingSaleStorageKey,pendingSaleKey.current);}
+      if(salePayments.some(payment=>payment.method==='cash')&&!(pendingSaleRecoveryMode&&pendingSaleKey.current&&!pendingSaleSnapshotMissing)){const {data:branch}=await supabase.from('branches').select('id').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();const {data:shift,error:shiftError}=await supabase.from('cash_sessions').select('id').eq('organization_id',organizationId).eq('branch_id',branch?.id||'').eq('opened_by',user.id).eq('status','open').maybeSingle();if(shiftError)throw shiftError;if(!shift){flash('Abre primero tu turno de caja en Caja y producción para registrar cualquier parte en efectivo.');return;}}
+      await saleAssetDraftWriteRef.current;
+      if(!pendingSaleKey.current)pendingSaleKey.current=globalThis.crypto?.randomUUID?.()||`sale-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      if(saleAssets.length)await posSaleAssetRecovery.save(posSaleAssetScopeKey,saleAssets,pendingSaleKey.current);
+      else if(saleAssetsRecoveryStatus==='ready')await posSaleAssetRecovery.clear(posSaleAssetScopeKey);
+      localStorage.setItem(pendingSaleStorageKey,pendingSaleKey.current);sessionStorage.setItem(pendingSaleStorageKey,pendingSaleKey.current);
       const productionJobs=Array.isArray(pendingSaleSnapshotRef.current?.productionJobs)?pendingSaleSnapshotRef.current.productionJobs:lines.map((line,index)=>{
         const displayLine=productionLines[index]||{line_key:line.line_key,name:line.description,productId:line.catalog_product_id};
         const defaultRoute=line.catalog_product_id?recommendedWorkflowByProduct[line.catalog_product_id]||'review':'review';
@@ -1960,25 +2063,23 @@ export function PosPage() {
         p_payments:salePayments,
         p_fulfillment:fulfillmentPayload,
         p_production_jobs:productionJobs,
+        p_client_brief_html:clientBriefHtml,
+        p_parked_order:activeParkedOrderId||null,
       });
       if(error)throw error;
-      const {error:briefError}=await supabase.rpc('save_pos_sale_client_brief',{p_sale:sale.sale_id,p_brief_html:clientBriefHtml});
-      if(briefError)throw briefError;
-      if(saleAssets.length){const {count:existingAssets,error:assetsReadError}=await supabase.from('commercial_document_assets').select('id',{count:'exact',head:true}).eq('document_kind','sale').eq('document_id',sale.sale_id);if(assetsReadError)throw assetsReadError;if(!existingAssets)await persistCommercialAssets({organizationId,documentId:sale.sale_id,kind:'sale',assets:saleAssets});}
+      if(saleAssets.length){const {count:existingAssets,error:assetsReadError}=await supabase.from('commercial_document_assets').select('id',{count:'exact',head:true}).eq('document_kind','sale').eq('document_id',sale.sale_id);if(assetsReadError)throw assetsReadError;if(existingAssets===null)throw new Error('No pude comprobar si los adjuntos ya se guardaron. Conservé la clave de recuperación.');if(existingAssets===0)await persistCommercialAssets({organizationId,documentId:sale.sale_id,kind:'sale',assets:saleAssets});await posSaleAssetRecovery.clear(posSaleAssetScopeKey);}
       window.dispatchEvent(new Event('visualcorp:production-changed'));
       let materialBackorder=false;
       try{const {data:materialRows}=await supabase.from('sale_material_consumptions').select('backordered_quantity').eq('sale_id',sale.sale_id).gt('backordered_quantity',0);materialBackorder=Boolean(materialRows?.length);}catch{}
       const completingParkedOrder=activeParkedOrderId;
-      let parkedCompletionError='';
-      if(completingParkedOrder){const {error:parkedError}=await supabase.rpc('complete_parked_pos_order',{p_parked_order:completingParkedOrder,p_sale:sale.sale_id});if(parkedError)parkedCompletionError=parkedError.message;}
-      if(form.quoteId&&!quoteAlreadyLinked){const {error:quoteError}=await supabase.rpc('link_pos_sale_to_central_quote',{p_sale:sale.sale_id,p_quote:form.quoteId});if(quoteError){const {data:linkedSale,error:linkCheckError}=await supabase.from('sales').select('central_quote_id').eq('organization_id',organizationId).eq('id',sale.sale_id).maybeSingle();if(!linkCheckError&&linkedSale?.central_quote_id===form.quoteId)quoteAlreadyLinked=true;else quoteLinkError=linkCheckError?`${quoteError.message} · No se pudo verificar el vínculo: ${linkCheckError.message}`:quoteError.message;}if(quoteAlreadyLinked||!quoteError)setCentralQuotes(rows=>rows.map(q=>q.id===form.quoteId?{...q,status:'converted'}:q));}
+      if(form.quoteId)setCentralQuotes(rows=>rows.map(q=>q.id===form.quoteId?{...q,status:'converted'}:q));
       await refreshRemote();
       await refreshPOSDaySales();
       if(completingParkedOrder)await refreshParkedOrders().catch(()=>{});
       setLastSaleConfirmation({code:sale.sale_code||sale.sale_id,total:Number(sale.total??total),paid:Number(sale.paid??paymentState.applied),balance:Number(sale.balance??Math.max(0,total-paymentState.applied)),branch:branchName,change:paymentState.change,deliveryAt:fulfillment.deliveryAt||''});
-      if(!parkedCompletionError&&!quoteLinkError){resetCheckout();sessionStorage.removeItem(pendingSaleStorageKey);sessionStorage.removeItem(pendingSaleSnapshotStorageKey);pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);}
-      flash(parkedCompletionError?`Venta ${sale.sale_code||''} registrada. La orden sigue en espera por un problema de sincronización; al recuperarla, la clave evita duplicar la venta.`:quoteLinkError?`Venta ${sale.sale_code||''} registrada, pero la cotización no quedó vinculada: ${quoteLinkError}`:shortages.length||sale.backordered_quantity||materialBackorder?'Orden confirmada; el faltante de producto o material quedó como compra urgente.':`Venta ${sale.sale_code||''} confirmada con sus datos de entrega e instalación.`);
-    }catch(error){if(!saleRequestStarted&&!hadPendingSaleKey){pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);sessionStorage.removeItem(pendingSaleStorageKey);sessionStorage.removeItem(pendingSaleSnapshotStorageKey);}flash(saleRequestStarted?`La orden puede haberse registrado antes de la falla. Se conserva la clave segura y los datos del formulario para reintentar sin duplicarla: ${error.message}`:`No se envió la venta porque no se pudo preparar la recuperación de la sesión: ${error.message}`);}
+      resetCheckout();clearPendingSaleStorage();pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);
+      flash(shortages.length||sale.backordered_quantity||materialBackorder?'Orden confirmada; el faltante de producto o material quedó como compra urgente.':`Venta ${sale.sale_code||''} confirmada con sus datos de entrega e instalación.`);
+    }catch(error){if(!saleRequestStarted&&!hadPendingSaleKey){pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);clearPendingSaleStorage();}flash(saleRequestStarted?`La orden puede haberse registrado antes de la falla. Se conserva la clave de recuperación y los datos locales de esta sesión para reintentar sin duplicarla: ${error.message}`:`No se envió la venta porque no se pudo preparar la recuperación de la sesión: ${error.message}`);}
     finally{setSavingSale(false);}
   };
   const registerBalancePayment=async(event,sale)=>{
@@ -1991,12 +2092,13 @@ export function PosPage() {
     const change=paymentForm.method==='Efectivo'?Math.max(0,received-amount):0;
     setSavingBalancePayment(sale.id);
     try{
-      const keyName=`visualcorp-pos-payment-${sale.id}`;let key=sessionStorage.getItem(keyName);
-      if(!key){key=globalThis.crypto?.randomUUID?.()||`payment-${Date.now()}-${Math.random().toString(36).slice(2)}`;sessionStorage.setItem(keyName,key);}
+      const keyName=`visualcorp-pos-payment-v1:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}:${sale.id}`;const legacyKeyName=`visualcorp-pos-payment-${sale.id}`;let key=localStorage.getItem(keyName)||sessionStorage.getItem(keyName)||sessionStorage.getItem(legacyKeyName)||'';
+      if(!key)key=globalThis.crypto?.randomUUID?.()||`payment-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(keyName,key);sessionStorage.setItem(keyName,key);
       const methodMap={Efectivo:'cash',Transferencia:'transfer',Tarjeta:'card',Otro:'other'};
       const {error}=await supabase.rpc('record_sale_payment',{p_idempotency_key:key,p_sale_id:sale.id,p_method:methodMap[paymentForm.method]||'other',p_amount:amount,p_reference:paymentForm.reference.trim(),p_note:paymentForm.note.trim()});
       if(error)throw error;
-      sessionStorage.removeItem(keyName);await refreshRemote();await refreshPOSDaySales();setPaymentTarget(null);setPaymentForm({amount:'',method:'Efectivo',reference:'',note:''});
+      localStorage.removeItem(keyName);sessionStorage.removeItem(keyName);sessionStorage.removeItem(legacyKeyName);await refreshRemote();await refreshPOSDaySales();setPaymentTarget(null);setPaymentForm({amount:'',method:'Efectivo',reference:'',note:''});
       flash(change>0?`Abono aplicado. Vuelto: ${formatMoney(change)}.`:'Abono guardado y saldo actualizado.');
     }catch(error){flash(`No se guardó el abono; puedes reintentar sin duplicarlo: ${error.message}`);}
     finally{setSavingBalancePayment('');}
@@ -2172,8 +2274,10 @@ export function PosPage() {
       <form className="panel form-panel pos-checkout-form" onSubmit={save}>
         <div className="panel-heading"><div><span className="eyebrow">NUEVA ORDEN</span><h2>{checkoutStep==='order'?'Agrega los productos':checkoutStep==='details'?'Prepara el trabajo':'Revisa y cobra'}</h2><p className="pos-step-caption">Elige del catálogo o carga una cotización aprobada. Revisa el total y el cobro antes de confirmar.</p></div><ShoppingCart size={19}/></div>
         <POSCheckoutSteps active={checkoutStep} onChange={chooseCheckoutStep} itemCount={form.quoteId?currentQuoteLines.length:cart.length} requiresDetails={requiresWorkDetails}/>
-        {pendingSaleRecoveryMode&&<UiNotice tone={pendingOperationChanged?'warning':'info'} title="Operación protegida" className={`pos-pending-sale-notice${pendingOperationChanged?' is-changed':''}`}>
-          <p>{pendingOperationChanged?'Detecté cambios en los datos guardados o en los conceptos de la cotización. No enviaré una venta con la misma clave y contenido distinto. Recarga para recuperar la versión original.':'Si la respuesta anterior se interrumpió, puedes reintentar con esta misma clave y estos datos para evitar una venta duplicada.'}</p>
+        {pendingSaleRecoveryMode&&<UiNotice tone={pendingOperationChanged||pendingSaleSnapshotMissing?'warning':'info'} title={pendingSaleSnapshotMissing?'Pedido pendiente sin snapshot':'Operación protegida'} className={`pos-pending-sale-notice${pendingOperationChanged||pendingSaleSnapshotMissing?' is-changed':''}`}>
+          <p>{pendingSaleSnapshotMissing?'No se recuperó el pedido de esta sesión. Conservé la clave de idempotencia y la asociación de adjuntos. Reconstruye y coteja cliente, artículos, cantidades, descuentos, pagos y datos del trabajo con la orden original. Reintentar debe usar esa misma clave; si no puedes verificar el pedido, no lo reenvíes.':'Si la respuesta anterior se interrumpió, puedes reintentar con esta misma clave y estos datos para evitar una venta duplicada.'}</p>
+          {pendingSaleSnapshotMissing&&!pendingSaleSnapshotReviewed&&<button className="button button-outline" type="button" onClick={()=>setPendingSaleSnapshotReviewed(true)}>Reconstruí y revisé el pedido original</button>}
+          {pendingSaleSnapshotMissing&&pendingSaleSnapshotReviewed&&<p role="status">Revisión marcada. El reintento conservará la clave original; el servidor rechazará si detecta que los datos financieros ya confirmados difieren.</p>}
           {pendingOperationChanged&&<button className="button button-outline" type="button" onClick={()=>window.location.reload()}>Restaurar datos originales</button>}
         </UiNotice>}
         <div className="pos-checkout-main" hidden={checkoutStep!=='order'}>
@@ -2317,7 +2421,7 @@ export function PosPage() {
           <POSMaterialUsage lines={saleMaterialLines} recipes={materialRecipes} inventory={data.inventory} branchId={selectedBranchId} values={materialRequestsByLine} status={materialRecipesStatus} onChange={updateMaterialRequest} onRetry={()=>setMaterialRecipesReload((value)=>value+1)}/>
         <POSProductionDetails lines={productionLines} values={productionByLine} routeByProduct={recommendedWorkflowByProduct} routeSourceByProduct={workflowSourceByProduct} templates={workflowTemplates} routeStatus={workflowRouteStatus} onChange={(lineKey,value)=>setProductionByLine((current)=>({...current,[lineKey]:value}))}/>
         <section className="pos-fulfillment-fields" aria-labelledby="pos-fulfillment-title"><div><span className="eyebrow">ENTREGA Y PRODUCCIÓN</span><h3 id="pos-fulfillment-title">Fechas y ubicación del pedido</h3><p>Se guardan con la venta para que Finanzas y Producción consulten la misma información.</p></div><label className="pos-install-toggle"><input type="checkbox" checked={fulfillment.installationRequired} onChange={(event)=>setFulfillment({...fulfillment,installationRequired:event.target.checked})}/> Requiere instalación</label>{fulfillment.installationRequired&&<><label>Ubicación de instalación<input value={fulfillment.installationAddress} onChange={(event)=>setFulfillment({...fulfillment,installationAddress:event.target.value})} placeholder="Dirección o referencia"/></label><div className="pos-location-tools"><button type="button" className="button button-outline" onClick={()=>setShowLocationPicker(true)}>Ubicar en Google Maps</button>{fulfillment.latitude&&fulfillment.longitude&&<span>Pin guardado · {fulfillment.latitude}, {fulfillment.longitude}</span>}</div><GoogleMapsPreview url={mapLink} address={fulfillment.installationAddress} coordinates={fulfillment.latitude&&fulfillment.longitude?`${fulfillment.latitude},${fulfillment.longitude}`:""}/><div className="pos-cart-inputs"><label>Latitud (opcional)<input inputMode="decimal" value={fulfillment.latitude} onChange={(event)=>setFulfillment({...fulfillment,latitude:event.target.value})} placeholder="-2.1234567"/></label><label>Longitud (opcional)<input inputMode="decimal" value={fulfillment.longitude} onChange={(event)=>setFulfillment({...fulfillment,longitude:event.target.value})} placeholder="-79.1234567"/></label></div><label>Instalación estimada<input type="datetime-local" value={fulfillment.installationAt} onChange={(event)=>setFulfillment({...fulfillment,installationAt:event.target.value})}/></label></>}<label>Fecha de entrega<input type="datetime-local" value={fulfillment.deliveryAt} onChange={(event)=>setFulfillment({...fulfillment,deliveryAt:event.target.value})}/></label></section>{showLocationPicker&&<div className="pos-map-backdrop" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setShowLocationPicker(false);}}><section className="pos-map-dialog" role="dialog" aria-modal="true" aria-labelledby="pos-map-title"><div className="panel-heading"><div><span className="eyebrow">UBICACIÓN DEL PEDIDO</span><h2 id="pos-map-title">Selecciona el lugar</h2></div><button className="icon-button" type="button" aria-label="Cerrar mapa" onClick={()=>setShowLocationPicker(false)}><X size={17}/></button></div><p>Abre Google Maps para buscar el sitio o colocar un pin. Puedes pegar el enlace compartido tal como lo copiaste, sin escribir https://.</p><label>Dirección o referencia<input value={fulfillment.installationAddress} onChange={(event)=>setFulfillment({...fulfillment,installationAddress:event.target.value})} placeholder="Busca la dirección o el sitio"/></label><label>Enlace compartido de Google Maps<input type="text" inputMode="url" autoCapitalize="off" autoCorrect="off" value={mapLink} onChange={(event)=>{setMapLink(event.target.value);const point=coordinatesFromMapLink(event.target.value);if(point)setFulfillment(current=>({...current,...point}));}} placeholder="maps.app.goo.gl/… o google.com/maps/…"/></label><GoogleMapsPreview url={mapLink} address={fulfillment.installationAddress} coordinates={fulfillment.latitude&&fulfillment.longitude?`${fulfillment.latitude},${fulfillment.longitude}`:""}/><div className="pos-map-coordinates"><label>Latitud<input inputMode="decimal" value={fulfillment.latitude} onChange={(event)=>setFulfillment({...fulfillment,latitude:event.target.value})}/></label><label>Longitud<input inputMode="decimal" value={fulfillment.longitude} onChange={(event)=>setFulfillment({...fulfillment,longitude:event.target.value})}/></label></div><div className="pos-submit-actions"><a className="button button-outline" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fulfillment.latitude&&fulfillment.longitude?`${fulfillment.latitude},${fulfillment.longitude}`:fulfillment.installationAddress||'Milagro, Ecuador')}`} target="_blank" rel="noreferrer">Abrir Google Maps</a><button className="button button-dark" type="button" onClick={()=>setShowLocationPicker(false)}>Guardar ubicación</button></div></section></div>}
-        <label>Notas internas<textarea rows={2} value={form.description} onChange={(event)=>setForm({...form,description:event.target.value})} placeholder="Detalles acordados para esta orden"/></label><section className="panel"><div className="panel-heading"><div><span className="eyebrow">BRIEF DEL TRABAJO</span><h3>Descripción e indicaciones</h3></div></div><RichTextEditor label="Descripción enriquecida" value={clientBriefHtml} onChange={setClientBriefHtml} minHeight={150} placeholder="Describe el diseño, materiales, ubicación, acabados o solicitudes del cliente…"/></section>{form.quoteId&&<CommercialAssetsGallery kind="quote" documentId={form.quoteId}/>}<CommercialAssetsEditor value={saleAssets} onChange={setSaleAssets} label="Fotos del sitio, referencias y diseños"/>
+        <label>Notas internas<textarea rows={2} value={form.description} onChange={(event)=>setForm({...form,description:event.target.value})} placeholder="Detalles acordados para esta orden"/></label><section className="panel"><div className="panel-heading"><div><span className="eyebrow">BRIEF DEL TRABAJO</span><h3>Descripción e indicaciones</h3></div></div><RichTextEditor label="Descripción enriquecida" value={clientBriefHtml} onChange={setClientBriefHtml} minHeight={150} placeholder="Describe el diseño, materiales, ubicación, acabados o solicitudes del cliente…"/></section>{form.quoteId&&<CommercialAssetsGallery kind="quote" documentId={form.quoteId}/>}{saleAssetsRecoveryNotice&&<UiNotice tone={saleAssetsRecoveryStatus==='error'?'warning':'info'} title={saleAssetsRecoveryStatus==='error'?'Adjuntos conservados localmente':'Adjuntos recuperados'}><p>{saleAssetsRecoveryNotice}</p></UiNotice>}{saleAssetsRecoveryStatus==='loading'?<UiNotice tone="info" title="Recuperando adjuntos"><p>Estoy comprobando los archivos guardados antes de habilitar otra venta.</p></UiNotice>:<CommercialAssetsEditor value={saleAssets} onChange={handleSaleAssetsChange} label="Fotos del sitio, referencias y diseños"/>}
           <div className="pos-step-actions"><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('order')}>Volver al pedido</button><button className="button button-dark" type="button" onClick={continueToPayment}>Revisar y cobrar <ChevronRight size={15}/></button></div>
         </section>}
         {checkoutStep==='payment'&&<section className="pos-checkout-review" aria-label="Revisión antes de confirmar">

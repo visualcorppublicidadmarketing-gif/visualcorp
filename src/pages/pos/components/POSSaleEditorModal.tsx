@@ -49,6 +49,7 @@ interface EditableLine {
 
 interface EditablePayment {
   id?: string;
+  cash_session_id?: string | null;
   method: 'cash' | 'transfer' | 'card' | 'other';
   amount: number | string;
   reference?: string;
@@ -202,7 +203,7 @@ export function POSSaleEditorModal({
         // Payments
         const { data: salePayments, error: payErr } = await supabase
           .from('sale_payments')
-          .select('id, method, amount, reference, note')
+          .select('id, method, amount, reference, note, cash_session_id')
           .eq('sale_id', saleId)
           .order('id', { ascending: true });
 
@@ -212,6 +213,7 @@ export function POSSaleEditorModal({
             (salePayments && salePayments.length > 0)
               ? salePayments.map((p: any) => ({
                   id: p.id,
+                  cash_session_id: typeof p.cash_session_id === 'string' ? p.cash_session_id : null,
                   method: (p.method as any) || 'cash',
                   amount: p.amount,
                   reference: p.reference || '',
@@ -396,6 +398,7 @@ export function POSSaleEditorModal({
 
       const sanitizedPayments = payments.map((p) => ({
         id: p.id || null,
+        cash_session_id: typeof p.cash_session_id === 'string' ? p.cash_session_id : null,
         method: p.method,
         amount: roundMoney(Number(p.amount)),
         reference: (p.reference || '').trim(),
