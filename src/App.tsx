@@ -55,6 +55,7 @@ const PortfolioDetailPage = lazy(() => import('./public-site/ShowcasePages').the
 const StorefrontPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.StorefrontPage })));
 const StorePromotionsPage = lazy(() => import('./public-site/StorePromotionsPage').then((module) => ({ default: module.StorePromotionsPage })));
 const CreativeToolsPage = lazy(() => import('./public-site/tools/CreativeToolsPage').then((module) => ({ default: module.CreativeToolsPage })));
+const LogoMockupStudio = lazy(() => import('./public-site/tools/LogoMockupStudio').then((module) => ({ default: module.LogoMockupStudio })));
 const PaymentsPage = lazy(() => import('./public-site/PaymentsPage').then((module) => ({ default: module.PaymentsPage })));
 const InventoryWorkspace = lazy(() => import('./components/InventoryWorkspace').then((module) => ({ default: module.InventoryWorkspace })));
 const EquipmentInventory = lazy(() => import('./pages/operations/EquipmentInventory').then((module) => ({ default: module.EquipmentInventory })));
@@ -141,6 +142,21 @@ function AppRouter() {
       <Route path="/seguimiento/:code" element={<ClientOrderPortalPage/>}/>
     </Route>
     <Route path="/panel" element={<ProtectedPage area="operations"><UnifiedHome/></ProtectedPage>}/><Route path="/admin" element={<Navigate to="/panel" replace/>}/><Route path="/operaciones" element={<Navigate to="/panel" replace/>}/><Route path="/admin/sitio" element={<ProtectedPage area="website"><WebsiteAdmin/></ProtectedPage>}/><Route path="/admin/servicios" element={<ProtectedPage area="website"><ServicesAdmin/></ProtectedPage>}/><Route path="/admin/tienda" element={<ProtectedPage area="website"><StorefrontAdmin/></ProtectedPage>}/><Route path="/admin/contacto" element={<ProtectedPage area="website"><ContactAdmin/></ProtectedPage>}/><Route path="/admin/contenido" element={<ProtectedPage area="website"><SiteArticleManager/></ProtectedPage>}/><Route path="/admin/blog" element={<ProtectedPage area="website"><BlogAdmin/></ProtectedPage>}/><Route path="/admin/publicaciones" element={<ProtectedPage area="website"><PublicationsAdmin/></ProtectedPage>}/><Route path="/admin/portafolio" element={<ProtectedPage area="website"><PortfolioAdmin/></ProtectedPage>}/><Route path="/admin/cambios" element={<Navigate to="/operaciones/cambios" replace/>}/><Route path="/admin/solicitudes" element={<Navigate to="/operaciones/crm" replace/>}/><Route path="/operaciones/catalogo" element={<ProtectedPage area="catalog"><CatalogPage/></ProtectedPage>}/><Route path="/operaciones/servicios" element={<ProtectedPage area="catalog"><ServiceCatalogPage/></ProtectedPage>}/><Route path="/admin/catalogo" element={<Navigate to="/operaciones/catalogo" replace/>}/><Route path="/admin/marketing" element={<Navigate to="/operaciones/marketing" replace/>}/><Route path="/admin/marketing/calendario" element={<Navigate to="/operaciones/marketing/calendario" replace/>}/><Route path="/admin/marketing/campanas" element={<Navigate to="/operaciones/marketing/campanas" replace/>}/><Route path="/admin/respaldo" element={<ProtectedPage area="website"><AppFrame area="admin"><PageHeading eyebrow="DATOS" title="Respaldo y migración" description="Consulta el respaldo y la procedencia de datos."/><BackupWorkspace/></AppFrame></ProtectedPage>}/>
+    <Route
+      path="/operaciones/marketing/editor"
+      element={
+        <ProtectedPage area="operations">
+          <AppFrame area="operations">
+            <PageHeading eyebrow="MARKETING · DISEÑO" title="Editor de diseño" description="Prepara composiciones para productos y piezas visuales con el editor creativo compartido." />
+            <div className="vc-tools-workspace vc-admin-creative-workspace">
+              <LogoMockupStudio quotePath="/operaciones/cotizador" />
+            </div>
+          </AppFrame>
+        </ProtectedPage>
+      }
+    />
+    <Route path="/admin/editor" element={<Navigate to="/operaciones/marketing/editor" replace/>}/>
+    <Route path="/admin/marketing/editor" element={<Navigate to="/operaciones/marketing/editor" replace/>}/>
     <Route path="/admin/manual-aprendizaje/*" element={<ProtectedPage area="website"><ManualLearningPage area="admin"/></ProtectedPage>}/>
     <Route path="/operaciones/manual-aprendizaje/*" element={<ProtectedPage area="operations"><ManualLearningPage area="operations"/></ProtectedPage>}/>
     <Route path="/operaciones/equipo/horarios" element={<ProtectedPage area="team"><AppFrame area="operations"><TeamSchedulePage/></AppFrame></ProtectedPage>}/>

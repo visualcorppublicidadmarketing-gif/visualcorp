@@ -721,8 +721,14 @@ html[data-public-theme="light"] .public-site .vc-tool-ghost-btn {
 
 .vc-layout-editor-grid { grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr); }
 .vc-layout-editor-controls { gap: 14px; }
+.vc-layout-editor-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; min-height: 40px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.2); border-radius: 9px; background: rgba(255,255,255,.06); color: #f5f2f9; font: inherit; font-size: 11px; font-weight: 750; line-height: 1.3; text-align: center; text-decoration: none; cursor: pointer; transition: border-color .18s ease, background .18s ease, color .18s ease; }
+.vc-layout-editor-button:hover:not(:disabled) { border-color: rgba(240,118,188,.8); background: rgba(229,0,126,.16); }
+.vc-layout-editor-button.is-primary { border-color: transparent; background: #f7f7fa; color: #181a20; }
+.vc-layout-editor-button.is-primary:hover { background: #fff; }
+.vc-layout-editor-button:disabled { opacity: .6; cursor: wait; }
+.vc-layout-editor-button:focus-visible { outline: 3px solid #f476c8; outline-offset: 2px; }
 .vc-layout-editor-add-actions { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
-.vc-layout-editor-add-actions .site-secondary-button { min-height: 38px; padding: 8px 11px; font-size: 11px; }
+.vc-layout-editor-add-actions .vc-layout-editor-button { min-height: 38px; padding: 8px 11px; font-size: 11px; }
 .vc-layout-layer-list { display: grid; gap: 6px; max-height: 190px; overflow-y: auto; min-width: 0; }
 .vc-layout-layer-row { display: flex; min-width: 0; gap: 5px; }
 .vc-layout-layer-select { overflow-wrap: anywhere; }
@@ -747,11 +753,14 @@ html[data-public-theme="light"] .public-site .vc-tool-ghost-btn {
 .vc-design-layer-rectangle { height: auto; aspect-ratio: 2 / 1; }
 .vc-design-layer-circle { aspect-ratio: 1; border-radius: 50%; }
 .vc-layout-layer-row button:focus-visible,.vc-layout-editor-add-actions button:focus-visible,.vc-layout-text-field input:focus-visible,.vc-layout-color-field input:focus-visible { outline: 3px solid #f476c8; outline-offset: 2px; }
+.vc-admin-creative-workspace { padding-top: 0; padding-bottom: 32px; }
 
 html[data-public-theme="light"] .public-site .vc-layout-layer-row>button:first-child { border-color: #ddd2e6; background: #fff; color: #342b40; }
 html[data-public-theme="light"] .public-site .vc-layout-layer-row.is-active>button:first-child { border-color: #b81d80; background: #faecf6; }
 html[data-public-theme="light"] .public-site .vc-layout-layer-delete { border-color: #ddd2e6; background: #fff; color: #342b40; }
 html[data-public-theme="light"] .public-site .vc-layout-layer-order { border-color: #ddd2e6; background: #fff; color: #342b40; }
+html[data-public-theme="light"] .public-site .vc-layout-editor-button:not(.is-primary) { border-color: #ddd2e6; background: #fff; color: #342b40; }
+html[data-public-theme="light"] .public-site .vc-layout-editor-button:not(.is-primary):hover { border-color: #b81d80; background: #faecf6; }
 html[data-public-theme="light"] .public-site .vc-layout-layer-properties { border-color: #e4daec; background: #faf8fc; }
 html[data-public-theme="light"] .public-site .vc-layout-text-field,
 html[data-public-theme="light"] .public-site .vc-layout-color-field { color: #3a3047; }

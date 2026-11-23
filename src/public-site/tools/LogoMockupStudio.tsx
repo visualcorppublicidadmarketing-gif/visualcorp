@@ -16,6 +16,7 @@ import {
   Trash2,
   Type,
 } from 'lucide-react';
+import './creative-tools.css';
 
 type MockupBase = {
   id: string;
@@ -74,7 +75,7 @@ function initialLogoLayer(base: MockupBase): DesignLayer {
   };
 }
 
-export function LogoMockupStudio({ initialBaseId }: { initialBaseId?: string }) {
+export function LogoMockupStudio({ initialBaseId, quotePath = '/cotizador' }: { initialBaseId?: string; quotePath?: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const objectUrlsRef = useRef<string[]>([]);
@@ -380,11 +381,11 @@ export function LogoMockupStudio({ initialBaseId }: { initialBaseId?: string }) 
           <div className="vc-tool-section">
             <span className="vc-tool-label">Añadir al diseño</span>
             <div className="vc-layout-editor-add-actions">
-              <button type="button" className="site-secondary-button" onClick={addText}><Type size={15} aria-hidden="true" /> Texto</button>
-              <button type="button" className="site-secondary-button" onClick={() => addShape('rectangle')}><RectangleHorizontal size={15} aria-hidden="true" /> Franja</button>
-              <button type="button" className="site-secondary-button" onClick={() => addShape('circle')}><Circle size={15} aria-hidden="true" /> Círculo</button>
+              <button type="button" className="vc-layout-editor-button" onClick={addText}><Type size={15} aria-hidden="true" /> Texto</button>
+              <button type="button" className="vc-layout-editor-button" onClick={() => addShape('rectangle')}><RectangleHorizontal size={15} aria-hidden="true" /> Franja</button>
+              <button type="button" className="vc-layout-editor-button" onClick={() => addShape('circle')}><Circle size={15} aria-hidden="true" /> Círculo</button>
               <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="sr-only" onChange={handleUpload} />
-              <button type="button" className="site-secondary-button" onClick={() => fileInputRef.current?.click()}><ImagePlus size={15} aria-hidden="true" /> Imagen</button>
+              <button type="button" className="vc-layout-editor-button" onClick={() => fileInputRef.current?.click()}><ImagePlus size={15} aria-hidden="true" /> Imagen</button>
             </div>
           </div>
 
@@ -428,8 +429,8 @@ export function LogoMockupStudio({ initialBaseId }: { initialBaseId?: string }) 
 
           <div className="vc-tool-downloads">
             <button type="button" className="vc-tool-outline-btn" onClick={resetDesign}><RotateCcw size={14} aria-hidden="true" /> Reiniciar diseño</button>
-            <button type="button" className="site-secondary-button" onClick={exportDesign} disabled={exporting}><Download size={16} aria-hidden="true" /> {exporting ? 'Generando PNG…' : 'Descargar diseño PNG'}</button>
-            <Link className="site-primary-button" to={`/cotizador?servicio=${encodeURIComponent(activeBase.family)}&producto=${encodeURIComponent(activeBase.quoteProduct)}`}>Cotizar {activeBase.name.toLowerCase()} <ArrowUpRight size={16} aria-hidden="true" /></Link>
+            <button type="button" className="vc-layout-editor-button" onClick={exportDesign} disabled={exporting}><Download size={16} aria-hidden="true" /> {exporting ? 'Generando PNG…' : 'Descargar diseño PNG'}</button>
+            <Link className="vc-layout-editor-button is-primary" to={`${quotePath}?servicio=${encodeURIComponent(activeBase.family)}&producto=${encodeURIComponent(activeBase.quoteProduct)}`}>Cotizar {activeBase.name.toLowerCase()} <ArrowUpRight size={16} aria-hidden="true" /></Link>
           </div>
           {message && <p className="vc-layout-editor-status" role="status" aria-live="polite">{message}</p>}
         </div>
