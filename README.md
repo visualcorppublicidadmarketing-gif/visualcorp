@@ -74,7 +74,7 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - **Causa:** los SKU físicos PF003 y PF007 están publicados en el mismo catálogo que lee el POS y el cotizador. Se llaman «Jarro» y describen el producto como taza; la búsqueda del POS no consultaba la descripción, mientras el cotizador sí.
 - **Corrección local:** el buscador del POS incluye ahora la descripción y reconoce consultas en singular/plural. La ayuda del campo indica que también busca por descripción. No cambian el catálogo, inventario, precios ni migraciones.
 - **Verificación:** lectura de catálogo en Supabase confirmó PF003/PF007; una búsqueda funcional de «tazas» devolvió ambos SKU; `npm run build:checked` y `git diff --check` pasaron.
-- **Estado:** preparado en `codex/pos-taza-search-20261123`, basada en `main` `57c3c22`; todavía no publicado.
+- **Estado:** publicado mediante el PR [#377](https://github.com/visualcorppublicidadmarketing-gif/visualcorp/pull/377), integrado en `main` en `c9e3dabc39cae20a63d9e8acd4af24820a4c09ec`; Vercel Production `READY` y `/operaciones/pos` responde HTTP 200.
 
 ### Barra vertical global: refinamiento visual · 21 de noviembre de 2026
 
