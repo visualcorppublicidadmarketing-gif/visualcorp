@@ -69,6 +69,13 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ## Continuidad del trabajo
 
+### Búsqueda de tazas en el POS · 23 de noviembre de 2026
+
+- **Causa:** los SKU físicos PF003 y PF007 están publicados en el mismo catálogo que lee el POS y el cotizador. Se llaman «Jarro» y describen el producto como taza; la búsqueda del POS no consultaba la descripción, mientras el cotizador sí.
+- **Corrección local:** el buscador del POS incluye ahora la descripción y reconoce consultas en singular/plural. La ayuda del campo indica que también busca por descripción. No cambian el catálogo, inventario, precios ni migraciones.
+- **Verificación:** lectura de catálogo en Supabase confirmó PF003/PF007; una búsqueda funcional de «tazas» devolvió ambos SKU; `npm run build:checked` y `git diff --check` pasaron.
+- **Estado:** preparado en `codex/pos-taza-search-20261123`, basada en `main` `57c3c22`; todavía no publicado.
+
 ### Barra vertical global: refinamiento visual · 21 de noviembre de 2026
 
 - **Dirección visual:** tirador vertical degradado azul, violeta y magenta, con reflejo satinado y brillo moderado. El reposo se integra con los fondos claros y oscuros; hover y arrastre hacen el acento más visible.

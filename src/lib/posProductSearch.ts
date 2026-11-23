@@ -3,6 +3,7 @@ export type POSSearchProduct = {
   name: string;
   sku?: string;
   family?: string;
+  description?: string;
   unit?: string;
   image?: string;
   price?: number;
@@ -11,6 +12,8 @@ export type POSSearchProduct = {
 };
 
 const normalize = (value: unknown) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').trim();
+const matchesToken = (text: string, token: string) => text.includes(token)
+  || (token.length > 3 && token.endsWith('s') && text.includes(token.slice(0, -1)));
 
 export function rankPOSProducts<T extends POSSearchProduct>(products: T[], query: string, codesByProduct: Record<string, string[]>): T[] {
   const normalized = normalize(query);
@@ -20,11 +23,12 @@ export function rankPOSProducts<T extends POSSearchProduct>(products: T[], query
     const sku = normalize(product.sku || product.id);
     const stockCodes = (codesByProduct[product.id] || []).map(normalize);
     const name = normalize(product.name);
-    const combined = `${name} ${sku} ${normalize(product.family)} ${stockCodes.join(' ')}`;
-    if (!tokens.every((token) => combined.includes(token))) return null;
+    const combined = `${name} ${sku} ${normalize(product.family)} ${normalize(product.description)} ${stockCodes.join(' ')}`;
+    if (!tokens.every((token) => matchesToken(combined, token))) return null;
     const exactCode = sku === normalized || stockCodes.includes(normalized);
     const codeStarts = sku.startsWith(normalized) || stockCodes.some((code) => code.startsWith(normalized));
-    const score = exactCode ? 0 : codeStarts ? 1 : name === normalized ? 2 : name.startsWith(normalized) ? 3 : tokens.every((token) => name.includes(token)) ? 4 : 5;
+    const nameMatches = tokens.every((token) => matchesToken(name, token));
+    const score = exactCode ? 0 : codeStarts ? 1 : name === normalized ? 2 : name.startsWith(normalized) ? 3 : nameMatches ? 4 : 5;
     return { product, score };
   }).filter((entry): entry is { product: T; score: number } => entry !== null)
     .sort((a, b) => a.score - b.score || a.product.name.localeCompare(b.product.name, 'es'))
