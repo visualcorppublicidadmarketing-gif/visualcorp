@@ -40,11 +40,11 @@ export function CreativeToolsPage() {
             </Link>
           )}
           <p>
-            Prueba tu logo sobre productos, crea un QR vectorial listo para imprenta y comprueba la resolución de tu diseño antes de cotizar. Todo funciona gratis y en tu navegador.
+              Compón una propuesta con imágenes, textos y formas sobre productos, crea un QR vectorial y comprueba la resolución de tu archivo antes de cotizar. Todo funciona gratis y en tu navegador.
           </p>
           <nav className="vc-tools-jump-nav" aria-label="Saltar a una herramienta">
             <a href="#probador-logo">
-              <Sparkles size={15} aria-hidden="true" /> Probador de logo
+              <Sparkles size={15} aria-hidden="true" /> Editor de diseño
             </a>
             <a href="#generador-qr">
               <QrCode size={15} aria-hidden="true" /> Generador QR
