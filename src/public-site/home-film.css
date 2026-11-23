@@ -774,6 +774,13 @@ html[data-public-theme="light"] .home-film .home-film-beat-card.vc-glass-surface
   height: 390dvh;
 }
 
+@media (max-width: 600px) {
+  .vc-home .home-film[data-format="portrait"].is-cinematic {
+    height: 280svh;
+    height: 280dvh;
+  }
+}
+
 .home-film[data-format="portrait"] {
   --film-header-safe: 76px;
   --film-side-pad: clamp(14px, 4.4vw, 28px);
