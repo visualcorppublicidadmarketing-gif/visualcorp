@@ -94,16 +94,17 @@ const MOCKUP_BASES: MockupBase[] = [
 
 const DEMO_LOGO = '/brand/visualcorp-symbol.png';
 
-export function LogoMockupStudio() {
+export function LogoMockupStudio({ initialBaseId }: { initialBaseId?: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
-  const [baseId, setBaseId] = useState(MOCKUP_BASES[0].id);
+  const initialBase = MOCKUP_BASES.find((base) => base.id === initialBaseId) || MOCKUP_BASES[0];
+  const [baseId, setBaseId] = useState(initialBase.id);
   const [logoSrc, setLogoSrc] = useState(DEMO_LOGO);
   const [isCustomLogo, setIsCustomLogo] = useState(false);
-  const [posX, setPosX] = useState(MOCKUP_BASES[0].defaultX);
-  const [posY, setPosY] = useState(MOCKUP_BASES[0].defaultY);
-  const [scalePct, setScalePct] = useState(MOCKUP_BASES[0].defaultScale);
+  const [posX, setPosX] = useState(initialBase.defaultX);
+  const [posY, setPosY] = useState(initialBase.defaultY);
+  const [scalePct, setScalePct] = useState(initialBase.defaultScale);
   const [rotation, setRotation] = useState(0);
   const [opacity, setOpacity] = useState(96);
   const [captionText, setCaptionText] = useState('');
