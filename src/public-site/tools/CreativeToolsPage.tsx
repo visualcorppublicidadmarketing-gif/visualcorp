@@ -5,7 +5,6 @@ import { AmbientVideoLayer } from '../AmbientVideoLayer';
 import { LogoMockupStudio } from './LogoMockupStudio';
 import { QrPrintStudio } from './QrPrintStudio';
 import { ArtworkPreflightDropzone } from '../quote/ArtworkPreflightDropzone';
-import './creative-tools.css';
 
 export function CreativeToolsPage() {
   const [searchParams] = useSearchParams();
