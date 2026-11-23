@@ -111,7 +111,7 @@ export function POSProductSearch<T extends POSSearchProduct>({
         aria-expanded={visible.length > 0} aria-controls={`${listId}-results`}
         aria-activedescendant={activeIndex >= 0 && visible[activeIndex] ? `${listId}-option-${activeIndex}` : undefined}
         value={query} onChange={(event) => onQueryChange(event.target.value)} onFocus={(event) => event.currentTarget.select()}
-        onKeyDown={handleKeyDown} disabled={disabled} placeholder={disabled ? 'Cargando sucursal…' : 'Nombre, código PI001 o SKU de inventario · Enter'}
+        onKeyDown={handleKeyDown} disabled={disabled} placeholder={disabled ? 'Cargando sucursal…' : 'Nombre, descripción, código PI001 o SKU de inventario · Enter'}
       />
       {query && <button type="button" className="pos-search-clear-btn" aria-label="Limpiar búsqueda de producto" onClick={() => { onQueryChange(''); resolvedInputRef.current?.focus(); }}><X size={14}/></button>}
     </div>
