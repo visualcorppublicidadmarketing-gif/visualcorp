@@ -9,12 +9,14 @@ import {
   Download,
   Eye,
   EyeOff,
+  FolderOpen,
   ImagePlus,
   Lock,
   Plus,
   RectangleHorizontal,
   Redo2,
   RotateCcw,
+  Save,
   ShieldCheck,
   Sparkles,
   Trash2,
@@ -25,6 +27,7 @@ import {
 } from 'lucide-react';
 import { createArtworkCanvas, createMockupCanvas, downloadCanvas } from './product-design/canvas-utils';
 import { DEFAULT_PRODUCT_ID, getDefaultLogoLayer, PRODUCT_BASES } from './product-design/products';
+import { DESIGN_FONT_OPTIONS, designProjectFilename, MAX_PROJECT_FILE_BYTES, restoreDesignProject, serializeDesignProject } from './product-design/project-file';
 import type { DesignLayer, PrintArea, ProductBase } from './product-design/types';
 import './creative-tools.css';
 import './product-design/product-design.css';
@@ -32,7 +35,6 @@ import './product-design/product-design.css';
 const ProductDesignCanvas = lazy(() => import('./product-design/ProductDesignCanvas').then((module) => ({ default: module.ProductDesignCanvas })));
 const ThreeDProductPreview = lazy(() => import('./product-design/ThreeDProductPreview').then((module) => ({ default: module.ThreeDProductPreview })));
 const MAX_UPLOAD_BYTES = 12 * 1024 * 1024;
-const FONT_OPTIONS = ['DM Sans', 'Arial', 'Georgia', 'Impact'];
 
 type StudioHistory = { past: DesignLayer[][]; future: DesignLayer[][]; lastKey: string; lastAt: number };
 
@@ -74,6 +76,7 @@ function fileTypeIsSupported(file: File) {
 export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }: { initialBaseId?: string; quotePath?: string }) {
   const layerInputRef = useRef<HTMLInputElement>(null);
   const productInputRef = useRef<HTMLInputElement>(null);
+  const projectInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef<string[]>([]);
   const layersRef = useRef<DesignLayer[]>([]);
   const historyRef = useRef<StudioHistory>({ past: [], future: [], lastKey: '', lastAt: 0 });
@@ -88,6 +91,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [artworkUrl, setArtworkUrl] = useState('');
   const [exporting, setExporting] = useState<'mockup' | 'art' | ''>('');
+  const [projectAction, setProjectAction] = useState<'save' | 'open' | ''>('');
   const [message, setMessage] = useState('');
   const activeBase = useMemo(() => products.find((product) => product.id === baseId) || products[0], [products, baseId]);
   const selectedLayer = layers.find((layer) => layer.id === selectedLayerId) || null;
@@ -259,6 +263,65 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     }
   };
 
+  const handleSaveProject = async () => {
+    if (projectAction || exporting) return;
+    setProjectAction('save');
+    setMessage('Preparando el archivo de proyecto…');
+    try {
+      const contents = await serializeDesignProject(activeBase, layersRef.current);
+      const blob = new Blob([contents], { type: 'application/json;charset=utf-8' });
+      if (blob.size > MAX_PROJECT_FILE_BYTES) throw new Error('El archivo de proyecto supera el límite de 32 MB.');
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = designProjectFilename(activeBase.name);
+      anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      setMessage('Proyecto guardado en un archivo local. Puedes abrirlo después desde este editor.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'No se pudo guardar el proyecto.');
+    } finally {
+      setProjectAction('');
+    }
+  };
+
+  const handleOpenProject = async (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    if (file.size > MAX_PROJECT_FILE_BYTES) {
+      setMessage('El archivo de proyecto supera el límite de 32 MB.');
+      return;
+    }
+    if (projectAction || exporting) return;
+
+    setProjectAction('open');
+    setMessage('Abriendo el proyecto…');
+    try {
+      const restored = await restoreDesignProject(await file.text());
+      if (!window.confirm(`Abrir “${restored.product.name}” reemplazará la composición actual. ¿Quieres continuar?`)) {
+        setMessage('Se conservó el diseño actual.');
+        return;
+      }
+      const product = restored.product.isCustom ? { ...restored.product, id: createId('custom') } : restored.product;
+      setProducts((current) => product.isCustom
+        ? [...current, product]
+        : current.map((existing) => existing.id === product.id ? product : existing));
+      setBaseId(product.id);
+      layersRef.current = restored.layers;
+      setLayers(restored.layers);
+      historyRef.current = { past: [], future: [], lastKey: '', lastAt: 0 };
+      setSelectedLayerId(restored.layers.at(-1)?.id || '');
+      setViewMode('2d');
+      setMessage(`Proyecto abierto: ${product.name}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'No se pudo abrir el proyecto.');
+    } finally {
+      setProjectAction('');
+    }
+  };
+
   const updatePrintArea = (field: keyof PrintArea, value: number) => {
     setProducts((current) => current.map((product) => {
       if (product.id !== activeBase.id) return product;
@@ -375,6 +438,11 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
           <input ref={layerInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={handleImageUpload} />
           <button type="button" className="vc-product-action" onClick={() => layerInputRef.current?.click()}><ImagePlus size={15} aria-hidden="true" /> Imagen</button>
         </div>
+        <div className="vc-product-tool-group" role="group" aria-label="Archivo de proyecto">
+          <input ref={projectInputRef} type="file" accept=".vcdesign.json,.json,application/json" className="sr-only" onChange={handleOpenProject} />
+          <button type="button" className="vc-product-action" onClick={handleSaveProject} disabled={Boolean(projectAction || exporting)}><Save size={15} aria-hidden="true" /> {projectAction === 'save' ? 'Guardando…' : 'Guardar proyecto'}</button>
+          <button type="button" className="vc-product-action" onClick={() => projectInputRef.current?.click()} disabled={Boolean(projectAction || exporting)}><FolderOpen size={15} aria-hidden="true" /> {projectAction === 'open' ? 'Abriendo…' : 'Abrir proyecto'}</button>
+        </div>
         <div className="vc-product-tool-group" role="group" aria-label="Historial">
           <button type="button" className="vc-product-icon-button" aria-label="Deshacer" title="Deshacer · Ctrl/Cmd+Z" disabled={!canUndo} onClick={undo}><Undo2 size={16} aria-hidden="true" /></button>
           <button type="button" className="vc-product-icon-button" aria-label="Rehacer" title="Rehacer · Ctrl/Cmd+Shift+Z" disabled={!canRedo} onClick={redo}><Redo2 size={16} aria-hidden="true" /></button>
@@ -453,7 +521,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
                 </label>
                 <label className="vc-product-field">Tipografía
                   <select value={selectedLayer.fontFamily} onChange={(event) => updateLayer(selectedLayer.id, { fontFamily: event.target.value })}>
-                    {FONT_OPTIONS.map((font) => <option value={font} key={font}>{font}</option>)}
+                    {DESIGN_FONT_OPTIONS.map((font) => <option value={font} key={font}>{font}</option>)}
                   </select>
                 </label>
               </>}
