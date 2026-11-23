@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, FileCheck2, QrCode, Sparkles } from 'lucide-react';
 import { AmbientVideoLayer } from '../AmbientVideoLayer';
 import { LogoMockupStudio } from './LogoMockupStudio';
@@ -8,6 +8,9 @@ import { ArtworkPreflightDropzone } from '../quote/ArtworkPreflightDropzone';
 import './creative-tools.css';
 
 export function CreativeToolsPage() {
+  const [searchParams] = useSearchParams();
+  const initialBaseId = searchParams.get('base') || undefined;
+  const returnTo = searchParams.get('returnTo');
   useEffect(() => {
     const prev = document.title;
     document.title = 'Herramientas creativas gratis · Visual Corp';
@@ -31,6 +34,11 @@ export function CreativeToolsPage() {
             <br />
             preparar tu marca.
           </h1>
+          {returnTo?.startsWith('/') && !returnTo.startsWith('//') && (
+            <Link className="site-secondary-button vc-tools-return" to={returnTo}>
+              {returnTo === '/tienda' ? 'Volver a la tienda' : 'Volver al servicio'}
+            </Link>
+          )}
           <p>
             Prueba tu logo sobre productos, crea un QR vectorial listo para imprenta y comprueba la resolución de tu diseño antes de cotizar. Todo funciona gratis y en tu navegador.
           </p>
@@ -49,7 +57,7 @@ export function CreativeToolsPage() {
       </header>
 
       <div className="vc-tools-workspace">
-        <LogoMockupStudio />
+        <LogoMockupStudio initialBaseId={initialBaseId} />
         <QrPrintStudio />
 
         <section id="verificador-arte" className="vc-tool-preflight-wrap" aria-label="Verificador de archivos para imprenta">

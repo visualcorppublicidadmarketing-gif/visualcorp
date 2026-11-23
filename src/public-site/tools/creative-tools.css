@@ -716,6 +716,8 @@ html[data-public-theme="light"] .public-site .vc-tool-ghost-btn {
 }
 
 /* Responsive Breakpoints (Zero Overflow) */
+.vc-tools-return { display: inline-flex; width: fit-content; margin: 0 0 16px; }
+
 @media (max-width: 1120px) {
   .vc-mockup-bases {
     grid-template-columns: repeat(3, minmax(0, 1fr));
