@@ -1,0 +1,370 @@
+/* ============================================================================
+   Visual Corp — Interactive Before/After Slider + Store Product Image Zoom
+   ============================================================================ */
+
+/* ---------- Before / After Branding Comparison Showcase ---------- */
+.vc-compare-section {
+  display: grid;
+  gap: 20px;
+}
+
+.vc-compare-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.vc-compare-header h2 {
+  margin: 10px 0 8px;
+  font-family: VisualCorpDisplay, BebasKai, VisualCorpPublicDMSans, sans-serif;
+  font-size: clamp(36px, 4.6vw, 58px);
+  font-weight: 400;
+  line-height: 0.96;
+  color: var(--site-ink, #f8f7fa);
+}
+
+.vc-compare-header h2 span {
+  color: transparent;
+  background: linear-gradient(95deg, #4fd4ff, #e94ab0 58%, #ffd06b);
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.vc-compare-header p {
+  margin: 0;
+  max-width: 58ch;
+  color: var(--site-muted, #b4b0c4);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.vc-compare-disclaimer {
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #b8b4c6;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.vc-compare-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.vc-compare-tab {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e0ef;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.vc-compare-tab span {
+  font-size: 12.5px;
+  font-weight: 750;
+}
+
+.vc-compare-tab small {
+  color: #a6a1b8;
+  font-size: 10px;
+}
+
+.vc-compare-tab:hover {
+  border-color: rgba(240, 118, 188, 0.6);
+  transform: translateY(-1px);
+}
+
+.vc-compare-tab.is-active {
+  border-color: #e5007e;
+  background: linear-gradient(125deg, rgba(229, 0, 126, 0.24), rgba(56, 214, 255, 0.14));
+  color: #ffffff;
+}
+
+.vc-compare-tab.is-active small {
+  color: #f6c4e5;
+}
+
+.vc-compare-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+  gap: 22px;
+  align-items: stretch;
+}
+
+.vc-compare-stage {
+  position: relative;
+  min-height: 410px;
+  max-height: 520px;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 22px;
+  background: radial-gradient(ellipse at 50% 42%, #242138, #11121c 74%);
+  box-shadow: 0 26px 68px rgba(0, 0, 0, 0.36);
+  cursor: ew-resize;
+  user-select: none;
+  touch-action: none;
+}
+
+.vc-compare-stage:focus-visible,
+.vc-compare-tab:focus-visible {
+  outline: 3px solid #f476c8;
+  outline-offset: 3px;
+}
+
+.vc-compare-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 20px;
+  pointer-events: none;
+}
+
+.vc-compare-pill {
+  position: absolute;
+  top: 14px;
+  z-index: 3;
+  padding: 6px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(11, 12, 22, 0.74);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+.vc-compare-pill.is-left {
+  left: 14px;
+  border-color: rgba(244, 118, 200, 0.55);
+}
+
+.vc-compare-pill.is-right {
+  right: 14px;
+}
+
+.vc-compare-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 4;
+  width: 2px;
+  background: linear-gradient(180deg, #38d6ff, #e5007e, #ffd06b);
+  box-shadow: 0 0 18px rgba(229, 0, 126, 0.55);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.vc-compare-knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e5007e, #8d2ad4);
+  color: #ffffff;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.52);
+  transform: translate(-50%, -50%);
+}
+
+.vc-compare-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  padding: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(22, 23, 36, 0.9), rgba(13, 14, 24, 0.94));
+  color: #f6f4fb;
+}
+
+.vc-compare-family-badge {
+  width: max-content;
+  max-width: 100%;
+  padding: 5px 10px;
+  border: 1px solid rgba(244, 155, 215, 0.35);
+  border-radius: 999px;
+  background: rgba(229, 0, 126, 0.15);
+  color: #f6b2e0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vc-compare-info h3 {
+  margin: 0;
+  font-family: VisualCorpDisplay, BebasKai, VisualCorpPublicDMSans, sans-serif;
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 0.98;
+  color: #ffffff;
+}
+
+.vc-compare-info p {
+  margin: 0;
+  color: #c2bed2;
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.vc-compare-info-links {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* Light theme for Before / After showcase */
+html[data-public-theme="light"] .public-site .vc-compare-disclaimer {
+  border-color: #e2d8ea;
+  background: #f7f3fa;
+  color: #5b5266;
+}
+
+html[data-public-theme="light"] .public-site .vc-compare-tab {
+  border-color: #ded4e6;
+  background: #ffffff;
+  color: #292033;
+}
+
+html[data-public-theme="light"] .public-site .vc-compare-tab small {
+  color: #6b6276;
+}
+
+html[data-public-theme="light"] .public-site .vc-compare-tab.is-active {
+  border-color: #b81d80;
+  background: #faecf6;
+  color: #6e1550;
+}
+
+html[data-public-theme="light"] .public-site .vc-compare-tab.is-active small {
+  color: #8f2d6d;
+}
+
+html[data-public-theme="light"] .public-site .vc-compare-stage {
+  border-color: #dfd4e7;
+  background: radial-gradient(ellipse at 50% 42%, #ffffff, #f2edf7 80%);
+  box-shadow: 0 20px 52px rgba(42, 22, 62, 0.12);
+}
+
+html[data-public-theme="light"] .public-site .vc-compare-info {
+  border-color: #e4daec;
+  background: linear-gradient(145deg, #ffffff, #f8f4fc);
+  color: #211b2a;
+}
+
+html[data-public-theme="light"] .public-site .vc-compare-info h3 {
+  color: #211b2a;
+}
+
+html[data-public-theme="light"] .public-site .vc-compare-info p {
+  color: #5d5568;
+}
+
+html[data-public-theme="light"] .public-site .vc-compare-family-badge {
+  border-color: #e4bfd9;
+  background: #faecf6;
+  color: #881c6b;
+}
+
+/* ---------- Store Product Gallery Optical Zoom ---------- */
+.store-detail-image.is-zoomable {
+  cursor: zoom-in;
+}
+
+.store-detail-image.is-zoomed {
+  cursor: zoom-out;
+}
+
+.store-detail-image.is-zoomed img {
+  transform: scale(2.15);
+  transition: transform 0.18s ease-out;
+}
+
+.store-gallery-zoom-btn {
+  position: absolute;
+  left: 14px;
+  bottom: 13px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(16, 15, 24, 0.78);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 750;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.store-gallery-zoom-btn:hover {
+  border-color: #f076bc;
+  background: rgba(229, 0, 126, 0.36);
+}
+
+.store-gallery-zoom-btn:focus-visible {
+  outline: 3px solid #f476c8;
+  outline-offset: 2px;
+}
+
+@media (max-width: 960px) {
+  .vc-compare-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vc-compare-stage {
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 520px) {
+  .vc-compare-stage {
+    min-height: 270px;
+  }
+
+  .vc-compare-img {
+    padding: 12px;
+  }
+
+  .vc-compare-info {
+    padding: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .store-detail-image.is-zoomed img,
+  .vc-compare-tab {
+    transition: none !important;
+  }
+}

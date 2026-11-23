@@ -1,0 +1,745 @@
+/* ============================================================================
+   Visual Corp — Free Creative Tools Studio (/herramientas)
+   Logo Mockup Tester · Vector Print QR Studio · Print Preflight Checker
+   ============================================================================ */
+
+.vc-tools-page {
+  background: #0b0c12;
+  color: #f8f7fa;
+  overflow: clip;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vc-tools-jump-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.vc-tools-jump-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(16, 17, 28, 0.58);
+  color: #faf8fc;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.vc-tools-jump-nav a:hover {
+  transform: translateY(-2px);
+  border-color: #f076bc;
+  background: rgba(229, 0, 126, 0.26);
+}
+
+.vc-tools-workspace {
+  display: grid;
+  gap: 44px;
+  width: min(1240px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 58px 0 92px;
+  min-width: 0;
+}
+
+.vc-tool-card,
+.vc-tool-preflight-wrap {
+  scroll-margin-top: 102px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vc-tool-card {
+  display: grid;
+  gap: 24px;
+  padding: clamp(22px, 3.4vw, 38px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 26px;
+  background: linear-gradient(145deg, rgba(22, 22, 34, 0.92), rgba(13, 14, 22, 0.96));
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.34);
+}
+
+.vc-tool-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.vc-tool-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #f49bd7;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.vc-tool-card-head h2 {
+  margin: 8px 0 6px;
+  font-family: VisualCorpDisplay, BebasKai, VisualCorpPublicDMSans, sans-serif;
+  font-size: clamp(32px, 4vw, 50px);
+  font-weight: 400;
+  line-height: 0.98;
+  color: #ffffff;
+}
+
+.vc-tool-card-head p {
+  margin: 0;
+  max-width: 60ch;
+  color: #b8b4c8;
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.vc-tool-privacy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid rgba(67, 199, 154, 0.35);
+  border-radius: 999px;
+  background: rgba(67, 199, 154, 0.1);
+  color: #8ee8c7;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.vc-tool-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(20px, 3vw, 34px);
+  align-items: start;
+}
+
+.vc-tool-controls,
+.vc-tool-preview-col {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.vc-tool-segment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vc-tool-segment button,
+.vc-tool-pills button,
+.vc-tool-preview-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #dcd8ea;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.vc-tool-segment button.is-active,
+.vc-tool-pills button.is-active,
+.vc-tool-preview-toggle button.is-active {
+  border-color: #e5007e;
+  background: linear-gradient(120deg, rgba(229, 0, 126, 0.28), rgba(56, 214, 255, 0.16));
+  color: #ffffff;
+}
+
+.vc-tool-fields,
+.vc-tool-section,
+.vc-tool-sliders {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.vc-tool-fields label,
+.vc-tool-color-pickers label {
+  display: grid;
+  gap: 6px;
+  color: #d6d2e4;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.vc-tool-fields input,
+.vc-tool-caption-row input[type="text"],
+.vc-qr-plaque-caption-input input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.vc-tool-fields input:focus-visible,
+.vc-tool-caption-row input:focus-visible,
+.vc-tool-segment button:focus-visible,
+.vc-tool-pills button:focus-visible,
+.vc-mockup-base-btn:focus-visible {
+  outline: 3px solid #f476c8;
+  outline-offset: 2px;
+}
+
+.vc-tool-row-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.vc-tool-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #d6d2e4;
+  font-size: 11.5px;
+  font-weight: 750;
+}
+
+.vc-tool-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.vc-color-swatch {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  display: inline-block;
+}
+
+.vc-tool-color-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.vc-tool-color-pickers input[type="color"],
+.vc-tool-caption-row input[type="color"] {
+  width: 46px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 9px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.vc-tool-logo-row,
+.vc-tool-downloads,
+.vc-tool-cta-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.vc-tool-outline-btn,
+.vc-tool-ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vc-tool-outline-btn {
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f6f4fb;
+}
+
+.vc-tool-ghost-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #c5c0d6;
+}
+
+.vc-tool-outline-btn:hover {
+  border-color: #f076bc;
+  background: rgba(229, 0, 126, 0.16);
+}
+
+/* QR Preview Stages */
+.vc-tool-preview-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vc-qr-stage {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 28px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 25%, rgba(229, 0, 126, 0.12), transparent 62%), #11121c;
+}
+
+.vc-qr-image {
+  width: min(280px, 100%);
+  height: auto;
+  border-radius: 18px;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.48);
+}
+
+.vc-qr-meta {
+  color: #b4b0c5;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.vc-qr-plaque-stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 42%, #ffffff, #ece6f4 80%);
+}
+
+.vc-qr-plaque-frame {
+  position: relative;
+  width: min(360px, 100%);
+}
+
+.vc-qr-plaque-base {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+}
+
+.vc-qr-plaque-overlay {
+  position: absolute;
+  top: 41%;
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 38%;
+  transform: translate(-52%, -50%) perspective(520px) rotateY(-12deg) skewY(2deg);
+  pointer-events: none;
+}
+
+.vc-qr-plaque-overlay img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34);
+}
+
+.vc-qr-plaque-overlay span {
+  color: #ffffff;
+  font-family: VisualCorpDisplay, BebasKai, sans-serif;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+}
+
+.vc-qr-plaque-caption-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  color: #362c44;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.vc-qr-plaque-caption-input input {
+  background: #ffffff;
+  border-color: #d6cbe2;
+  color: #211b2a;
+  min-height: 36px;
+}
+
+.vc-tool-quote-cta {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid rgba(244, 155, 215, 0.24);
+  border-radius: 14px;
+  background: rgba(229, 0, 126, 0.08);
+}
+
+.vc-tool-quote-cta p {
+  margin: 0;
+  color: #e6e0f0;
+  font-size: 12px;
+}
+
+.vc-tool-cta-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #f6b2e0;
+  font-size: 12px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.vc-tool-cta-links a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+/* Logo Mockup Tester */
+.vc-mockup-bases {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.vc-mockup-base-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #f2eef8;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.vc-mockup-base-btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(240, 118, 188, 0.55);
+}
+
+.vc-mockup-base-btn.is-active {
+  border-color: #e5007e;
+  background: linear-gradient(130deg, rgba(229, 0, 126, 0.24), rgba(56, 214, 255, 0.14));
+}
+
+.vc-mockup-base-btn img {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 9px;
+  object-fit: contain;
+  background: #f3eff8;
+  padding: 3px;
+}
+
+.vc-mockup-base-btn span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vc-mockup-base-btn b {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc-mockup-base-btn small {
+  color: #aaa5bc;
+  font-size: 9.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc-mockup-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 490px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 22px;
+  background: radial-gradient(ellipse at 50% 42%, #ffffff, #e9e3f2 82%);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.vc-mockup-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.vc-mockup-product-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 24px;
+  pointer-events: none;
+}
+
+.vc-mockup-logo-overlay {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.24));
+}
+
+.vc-mockup-logo-overlay img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.vc-mockup-caption {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+
+.vc-mockup-drag-hint {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(15, 16, 28, 0.78);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.vc-mockup-disclaimer {
+  margin: 0;
+  color: #a8a3b8;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.vc-tool-sliders label {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 10px;
+  color: #d6d2e4;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.vc-tool-sliders input[type="range"] {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: #e5007e;
+  cursor: pointer;
+}
+
+.vc-tool-caption-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Closing Band */
+.vc-tools-footer-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: clamp(28px, 4vw, 48px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 24px;
+  background: radial-gradient(ellipse at 90% 10%, rgba(229, 0, 126, 0.2), transparent 52%), linear-gradient(125deg, #171624, #0f101a);
+}
+
+.vc-tools-footer-band h2 {
+  margin: 10px 0 8px;
+  font-family: VisualCorpDisplay, BebasKai, VisualCorpPublicDMSans, sans-serif;
+  font-size: clamp(34px, 4.4vw, 54px);
+  font-weight: 400;
+  line-height: 0.96;
+  color: #ffffff;
+}
+
+.vc-tools-footer-band h2 em {
+  font-style: normal;
+  color: transparent;
+  background: linear-gradient(95deg, #4fd4ff, #ff5cb0, #ffd06b);
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.vc-tools-footer-band p {
+  margin: 0;
+  max-width: 56ch;
+  color: #c2bed2;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.vc-tools-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Light Theme Parity */
+html[data-public-theme="light"] .public-site .vc-tools-page {
+  background: #faf8fc;
+  color: #211b2a;
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-card {
+  border-color: #e4daec;
+  background: linear-gradient(145deg, #ffffff, #f8f5fc);
+  box-shadow: 0 18px 48px rgba(42, 22, 62, 0.08);
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-kicker {
+  color: #8f1d70;
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-card-head h2,
+html[data-public-theme="light"] .public-site .vc-mockup-base-btn b {
+  color: #211b2a;
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-card-head p,
+html[data-public-theme="light"] .public-site .vc-mockup-disclaimer,
+html[data-public-theme="light"] .public-site .vc-qr-meta,
+html[data-public-theme="light"] .public-site .vc-mockup-base-btn small {
+  color: #5b5266;
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-privacy {
+  border-color: #a6d9c5;
+  background: #eaf8f2;
+  color: #0e6f4f;
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-segment button,
+html[data-public-theme="light"] .public-site .vc-tool-pills button,
+html[data-public-theme="light"] .public-site .vc-tool-preview-toggle button,
+html[data-public-theme="light"] .public-site .vc-tool-outline-btn,
+html[data-public-theme="light"] .public-site .vc-mockup-base-btn {
+  border-color: #ddd2e6;
+  background: #ffffff;
+  color: #342b40;
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-segment button.is-active,
+html[data-public-theme="light"] .public-site .vc-tool-pills button.is-active,
+html[data-public-theme="light"] .public-site .vc-tool-preview-toggle button.is-active,
+html[data-public-theme="light"] .public-site .vc-mockup-base-btn.is-active {
+  border-color: #b81d80;
+  background: #faecf6;
+  color: #701453;
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-fields label,
+html[data-public-theme="light"] .public-site .vc-tool-label,
+html[data-public-theme="light"] .public-site .vc-tool-sliders label,
+html[data-public-theme="light"] .public-site .vc-tool-color-pickers label {
+  color: #3a3047;
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-fields input,
+html[data-public-theme="light"] .public-site .vc-tool-caption-row input[type="text"] {
+  border-color: #d8cce3;
+  background: #ffffff;
+  color: #211b2a;
+}
+
+html[data-public-theme="light"] .public-site .vc-qr-stage {
+  border-color: #e4daec;
+  background: radial-gradient(ellipse at 50% 25%, rgba(229, 0, 126, 0.08), transparent 62%), #f4eff9;
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-quote-cta {
+  border-color: #e5c2dc;
+  background: #fdf4fa;
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-quote-cta p {
+  color: #463a52;
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-cta-links a {
+  color: #8c1a6b;
+}
+
+html[data-public-theme="light"] .public-site .vc-tool-ghost-btn {
+  color: #5b5266;
+}
+
+/* Responsive Breakpoints (Zero Overflow) */
+@media (max-width: 1120px) {
+  .vc-mockup-bases {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .vc-tool-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .vc-tools-workspace {
+    width: calc(100% - 28px);
+    padding: 36px 0 64px;
+    gap: 28px;
+  }
+
+  .vc-mockup-bases {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vc-tool-row-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

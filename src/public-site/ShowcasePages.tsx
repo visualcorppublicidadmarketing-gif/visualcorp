@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { startTransition, useEffect, useMemo, useRef, useState, ViewTransition, type CSSProperties, type PointerEvent, type RefObject } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeftRight, ArrowRight, ArrowUpRight, BookOpen, BriefcaseBusiness, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Gift, Newspaper, Search, ShoppingBag, SlidersHorizontal, Sparkles, X } from 'lucide-react';
+import { ArrowLeftRight, ArrowRight, ArrowUpRight, BookOpen, BriefcaseBusiness, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Gift, Newspaper, Search, ShoppingBag, SlidersHorizontal, Sparkles, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
 import { catalogImagesForProduct } from '../data/catalogProductImages';
 import { AnimatedList, SpotlightLayer, clearSpotlight, updateSpotlight } from '../components/ui/MagicComponents';
@@ -30,6 +30,7 @@ import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategory
 import { PortfolioPracticalExamples } from './PortfolioPracticalExamples';
 import { StoreCinemaHero } from './StoreCinemaHero';
 import { AmbientVideoLayer } from './AmbientVideoLayer';
+import { BrandBeforeAfterShowcase } from './BrandBeforeAfterShowcase';
 import './storefront.css';
 import './store-promo-teaser.css';
 import './store-product-sku.css';
@@ -62,9 +63,56 @@ type CatalogProduct = StorefrontCatalogItem & {
 function StoreProductGallery({ product }: { product: CatalogProduct }) {
   const images = (product.images || []).filter(Boolean);
   const [active, setActive] = useState(0);
-  useEffect(() => setActive(0), [product.id]);
+  const [zoomed, setZoomed] = useState(false);
+  const [origin, setOrigin] = useState({ x: 50, y: 50 });
+  useEffect(() => {
+    setActive(0);
+    setZoomed(false);
+  }, [product.id]);
+  useEffect(() => {
+    setZoomed(false);
+  }, [active]);
   const image = images[active] || product.image;
-  return <div className="store-detail-gallery"><div className="store-detail-image">{image ? <img src={image} alt={`${product.name}${images.length > 1 ? ` · imagen ${active + 1} de ${images.length}` : ''}`}/> : <span className="store-product-placeholder"><ShoppingBag size={36}/></span>}{images.length > 1 && <><button className="store-gallery-arrow previous" type="button" onClick={() => setActive((active - 1 + images.length) % images.length)} aria-label="Imagen anterior"><ChevronLeft size={19}/></button><button className="store-gallery-arrow next" type="button" onClick={() => setActive((active + 1) % images.length)} aria-label="Imagen siguiente"><ChevronRight size={19}/></button><span className="store-gallery-count">{active + 1} / {images.length}</span></>}</div>{images.length > 1 && <div className="store-gallery-thumbnails" role="group" aria-label="Imágenes del producto">{images.map((src, index) => <button key={`${src}-${index}`} type="button" aria-label={`Ver imagen ${index + 1}`} aria-pressed={active === index} onClick={() => setActive(index)}><img src={src} alt=""/></button>)}</div>}</div>;
+  const handleZoomMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!zoomed) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = Math.min(100, Math.max(0, ((event.clientX - rect.left) / Math.max(1, rect.width)) * 100));
+    const y = Math.min(100, Math.max(0, ((event.clientY - rect.top) / Math.max(1, rect.height)) * 100));
+    setOrigin({ x, y });
+  };
+  return <div className="store-detail-gallery">
+    <div
+      className={`store-detail-image${image ? ' is-zoomable' : ''}${zoomed ? ' is-zoomed' : ''}`}
+      onPointerMove={handleZoomMove}
+      onPointerLeave={() => setOrigin({ x: 50, y: 50 })}
+      onClick={(event) => {
+        if (!image || (event.target as HTMLElement).closest('button')) return;
+        setZoomed((current) => !current);
+      }}
+    >
+      {image ? (
+        <img
+          src={image}
+          alt={`${product.name}${images.length > 1 ? ` · imagen ${active + 1} de ${images.length}` : ''}`}
+          style={zoomed ? { transformOrigin: `${origin.x.toFixed(1)}% ${origin.y.toFixed(1)}%` } : undefined}
+        />
+      ) : (
+        <span className="store-product-placeholder"><ShoppingBag size={36}/></span>
+      )}
+      {image && (
+        <button
+          type="button"
+          className="store-gallery-zoom-btn"
+          aria-pressed={zoomed}
+          onClick={() => setZoomed((current) => !current)}
+        >
+          {zoomed ? <><ZoomOut size={14} aria-hidden="true"/> Alejar</> : <><ZoomIn size={14} aria-hidden="true"/> Acercar detalle</>}
+        </button>
+      )}
+      {images.length > 1 && <><button className="store-gallery-arrow previous" type="button" onClick={() => setActive((active - 1 + images.length) % images.length)} aria-label="Imagen anterior"><ChevronLeft size={19}/></button><button className="store-gallery-arrow next" type="button" onClick={() => setActive((active + 1) % images.length)} aria-label="Imagen siguiente"><ChevronRight size={19}/></button><span className="store-gallery-count">{active + 1} / {images.length}</span></>}
+    </div>
+    {images.length > 1 && <div className="store-gallery-thumbnails" role="group" aria-label="Imágenes del producto">{images.map((src, index) => <button key={`${src}-${index}`} type="button" aria-label={`Ver imagen ${index + 1}`} aria-pressed={active === index} onClick={() => setActive(index)}><img src={src} alt=""/></button>)}</div>}
+  </div>;
 }
 function usePublishedArticles() {
   const [articles, setArticles] = useState<SiteArticle[]>([]);
@@ -160,7 +208,7 @@ function ArticleIndex({ kind }: { kind: ContentKind }) {
     : kind === 'publicaciones'
       ? 'Una selección de novedades y piezas compartidas por Visual Corp.'
       : 'Explora ejemplos prácticos de lo que hacemos y casos documentados cuando están disponibles.';
-  return <><ShowcaseHero kind={kind} description={description}/>{kind === 'portafolio' && <><PortfolioPracticalExamples/><InteractiveCatalogGallery eyebrow="TRABAJOS Y SOLUCIONES POR CATEGORÍA" heading="Señalética, letreros, branding, BTL, cortes láser e impresión"/><PanoramicCategoryStrips/><EnvironmentBrandingMatrix compact/></>}<section className="showcase-section">
+  return <><ShowcaseHero kind={kind} description={description}/>{kind === 'portafolio' && <><BrandBeforeAfterShowcase/><PortfolioPracticalExamples/><InteractiveCatalogGallery eyebrow="TRABAJOS Y SOLUCIONES POR CATEGORÍA" heading="Señalética, letreros, branding, BTL, cortes láser e impresión"/><PanoramicCategoryStrips/><EnvironmentBrandingMatrix compact/></>}<section className="showcase-section">
     <div className="showcase-toolbar"><div><span className="site-eyebrow"><i/>VISUAL CORP</span><h2>{kind === 'portafolio' ? 'Casos documentados' : kind === 'publicaciones' ? 'Últimas publicaciones' : 'Lecturas recientes'}</h2></div><label className="showcase-search"><Search size={16}/><span className="sr-only">Buscar contenido</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar contenido"/></label></div>
     {loading ? <div className="showcase-empty glass-card" role="status">Cargando contenido…</div> : error ? <ContentLoadError message={error} onRetry={retry}/> : matches.length ? <AnimatedList className="showcase-grid" stagger={0.045}>{matches.map((article) => <ContentCard key={article.id} article={article} kind={kind}/>)}</AnimatedList> : sectionArticles.length && search.trim() ? <div className="showcase-empty glass-card" role="status"><h2>No encontramos resultados para “{search.trim()}”.</h2><p>Prueba con otras palabras o vuelve a ver todo el contenido.</p><button type="button" className="site-secondary-button" onClick={() => setSearch('')}>Limpiar búsqueda <ArrowRight size={15}/></button></div> : <EmptyContent kind={kind}/>}
   </section></>;
@@ -347,15 +395,17 @@ export function StorefrontPage() {
   const updateSort = (value: StorefrontSortOrder) => {
     const current = currentCatalogParams();
     const next = withStorefrontSortOrder(current, value);
-    if (next.toString() !== current.toString()) setSearchParams(next);
+    if (next.toString() !== current.toString()) startTransition(() => { setSearchParams(next); });
   };
   const selectCategory = (nextCategory: string) => {
-    setCategory(nextCategory);
-    const next = currentCatalogParams();
-    next.delete('coleccion');
-    if (nextCategory === 'Todos') next.delete(STOREFRONT_FAMILY_PARAM);
-    else next.set(STOREFRONT_FAMILY_PARAM, nextCategory);
-    setSearchParams(next);
+    startTransition(() => {
+      setCategory(nextCategory);
+      const next = currentCatalogParams();
+      next.delete('coleccion');
+      if (nextCategory === 'Todos') next.delete(STOREFRONT_FAMILY_PARAM);
+      else next.set(STOREFRONT_FAMILY_PARAM, nextCategory);
+      setSearchParams(next);
+    });
   };
   const matches = useMemo(() => {
     const result = products.filter((product) => (category === 'Todos' || groupFor(product) === category)
@@ -497,10 +547,10 @@ export function StorefrontPage() {
   };
   const renderProductCard = (product: CatalogProduct, index: number) => {
     const productGroup=groupFor(product); const isDuplicateName=duplicateProductNameKeys.has(getStorefrontProductNameKey(product.name)); const identity=productLabel(product); const isSelected=selection.includes(product.id); const isCompared=comparedIds.includes(product.id); const productImage=product.image;
-    return <article className="store-product-card vc-magic-card" key={product.id} style={{'--store-card-index':Math.min(index%12,11)} as CSSProperties} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}><SpotlightLayer/>
+    return <ViewTransition key={product.id} update="vc-vt-card"><article className="store-product-card vc-magic-card" style={{'--store-card-index':Math.min(index%12,11)} as CSSProperties} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}><SpotlightLayer/>
       <button type="button" className="store-product-open" onClick={()=>openProduct(product)} aria-label={`Ver detalles de ${productLabel(product)}`}><span className="store-product-image">{productImage?<img src={productImage} alt="" loading={index<6?'eager':'lazy'}/>:<span className="store-product-placeholder"><ShoppingBag size={30}/></span>}<span className="store-product-image-label">VER DETALLES <ArrowUpRight size={13}/></span></span></button>
       <div className="store-product-copy"><div className="store-product-card-meta"><span className="store-product-category">{productGroup}</span>{isDuplicateName&&product.sku&&!product.quantityTiers?.length&&<span className="store-product-sku-tag">Código · {product.sku}</span>}</div><h3><button type="button" aria-label={`Ver detalles de ${productLabel(product)}`} onClick={()=>openProduct(product)}>{product.name}</button></h3><p>{product.description || 'Cuéntanos qué tienes en mente y revisamos los detalles contigo.'}</p>{product.quantityTiers?.length ? <span className="store-product-tier-hint">{product.quantityTiers.length} opciones de cantidad</span> : null}<div className="store-product-card-bottom"><button type="button" className={`store-product-add${isSelected?' is-selected':''}`} aria-label={isSelected?`Quitar ${identity} de tu lista para cotizar`:`Añadir ${identity} a tu lista para cotizar`} aria-pressed={isSelected} onClick={()=>toggleSelection(product.id)}>{isSelected?<><Check size={15}/>En tu lista</>:<>+ Añadir a mi lista</>}</button><span>{product.quantityTiers?.length ? 'Opciones por cantidad' : 'Precio según proyecto'}</span></div><button type="button" className={`store-product-compare${isCompared?' is-selected':''}`} aria-label={isCompared?`Quitar ${identity} de la comparación`:`Comparar ${identity}`} aria-pressed={isCompared} onClick={()=>toggleComparison(product.id)}><ArrowLeftRight size={14}/>{isCompared?'En comparación':'Comparar'}</button></div>
-    </article>;
+    </article></ViewTransition>;
   };
   if (showSouvenirs) return <><DocumentTitle title="Souvenirs personalizados"/><SouvenirCollectionPage/></>;
   return <><DocumentTitle title="Tienda"/><div className="storefront-page">

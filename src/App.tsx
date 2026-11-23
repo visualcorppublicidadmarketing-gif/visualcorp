@@ -54,6 +54,7 @@ const PublicationDetailPage = lazy(() => import('./public-site/ShowcasePages').t
 const PortfolioDetailPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.PortfolioArticleDetailPage })));
 const StorefrontPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.StorefrontPage })));
 const StorePromotionsPage = lazy(() => import('./public-site/StorePromotionsPage').then((module) => ({ default: module.StorePromotionsPage })));
+const CreativeToolsPage = lazy(() => import('./public-site/tools/CreativeToolsPage').then((module) => ({ default: module.CreativeToolsPage })));
 const PaymentsPage = lazy(() => import('./public-site/PaymentsPage').then((module) => ({ default: module.PaymentsPage })));
 const InventoryWorkspace = lazy(() => import('./components/InventoryWorkspace').then((module) => ({ default: module.InventoryWorkspace })));
 const EquipmentInventory = lazy(() => import('./pages/operations/EquipmentInventory').then((module) => ({ default: module.EquipmentInventory })));
@@ -129,6 +130,7 @@ function AppRouter() {
       <Route path="/cotizador" element={<MultiPageQuotePage/>}/>
       <Route path="/tienda" element={<StorefrontPage/>}/>
       <Route path="/tienda/promociones" element={<StorePromotionsPage/>}/>
+      <Route path="/herramientas" element={<CreativeToolsPage/>}/>
       <Route path="/portafolio" element={<PortfolioIndexPage/>}/>
       <Route path="/portafolio/:slug" element={<PortfolioDetailPage/>}/>
       <Route path="/blog" element={<BlogIndexPage/>}/>

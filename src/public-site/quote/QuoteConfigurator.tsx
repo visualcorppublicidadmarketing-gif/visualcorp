@@ -6,6 +6,8 @@ import { calculateScenario, loadQuoteProducts, type PricingMode, type QuoteProdu
 import { multiProductQuoteService } from '../content';
 import { MAX_QUOTE_ITEMS } from './quoteConstants';
 import { getStorefrontQuoteSourceKey } from './storefrontQuoteAliases';
+import { SignageScaleVisualizer } from './SignageScaleVisualizer';
+import { ArtworkPreflightDropzone } from './ArtworkPreflightDropzone';
 
 export type QuoteService = { id: string; name: string };
 export type QuoteCalculationMode = 'unknown' | 'area' | 'units';
@@ -295,6 +297,12 @@ function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate,
         <label>Alto ({item.measurementUnit})<input type="number" inputMode="decimal" min={0.01} step="any" value={item.height} onChange={(event) => update({ height: Math.max(0.01, Number(event.target.value) || 0.01) })}/></label>
       </div>
       <p className="quote-area-readout">Área referencial por pieza <b>{areaOf(item).toFixed(2)} m²</b></p>
+      <SignageScaleVisualizer
+        width={item.width}
+        height={item.height}
+        unit={item.measurementUnit}
+        label={item.project.trim() || item.productName || `Artículo ${index + 1}`}
+      />
     </div>}
 
     {item.calculationMode !== 'unknown' && <div className="quote-step-fields quote-production-fields quote-item-production">
@@ -569,6 +577,23 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
           <label className="quote-location-wide">Acceso, horario o detalle del sitio <span>(opcional)</span><input value={location.accessNotes} onChange={(event) => setLocation((current) => ({ ...current, accessNotes: event.target.value }))} placeholder="Describe cualquier condición que debamos considerar" maxLength={240}/></label>
         </div>
       </section>}
+
+      {(() => {
+        const areaItem = items.find((entry) => entry.calculationMode === 'area');
+        const initialWidthCm = areaItem
+          ? areaItem.measurementUnit === 'm' ? areaItem.width * 100 : areaItem.width
+          : 50;
+        const initialHeightCm = areaItem
+          ? areaItem.measurementUnit === 'm' ? areaItem.height * 100 : areaItem.height
+          : 50;
+        return (
+          <ArtworkPreflightDropzone
+            compact
+            initialWidthCm={initialWidthCm}
+            initialHeightCm={initialHeightCm}
+          />
+        );
+      })()}
     </div>
 
     <aside className="quote-builder-summary">

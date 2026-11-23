@@ -1,0 +1,109 @@
+/* ============================================================================
+   Visual Corp — Native React 19.3 View Transitions
+   Directional hierarchy, catalog list identity, and shared-element morphs
+   ============================================================================ */
+
+:root {
+  --vc-vt-exit: 150ms;
+  --vc-vt-enter: 220ms;
+  --vc-vt-move: 360ms;
+}
+
+@keyframes vc-vt-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes vc-vt-slide {
+  from {
+    translate: var(--vc-vt-offset, 48px);
+  }
+  to {
+    translate: 0;
+  }
+}
+
+/* Isolate the fixed glass navbar so it never flickers during route/list transitions */
+.public-site .site-header {
+  view-transition-name: vc-persistent-header;
+}
+
+::view-transition-group(vc-persistent-header) {
+  animation: none;
+  z-index: 120;
+}
+
+::view-transition-old(vc-persistent-header) {
+  display: none;
+}
+
+::view-transition-new(vc-persistent-header) {
+  animation: none;
+}
+
+/* Allow clicks/scroll through unnamed transition overlays */
+::view-transition {
+  pointer-events: none;
+}
+
+/* Directional hierarchical navigation (e.g., Servicios -> Detalle de Servicio) */
+::view-transition-old(.vc-vt-forward) {
+  --vc-vt-offset: -44px;
+  animation:
+    var(--vc-vt-exit) ease-in both vc-vt-fade reverse,
+    var(--vc-vt-move) cubic-bezier(0.22, 1, 0.36, 1) both vc-vt-slide reverse;
+}
+
+::view-transition-new(.vc-vt-forward) {
+  --vc-vt-offset: 44px;
+  animation:
+    var(--vc-vt-enter) ease-out var(--vc-vt-exit) both vc-vt-fade,
+    var(--vc-vt-move) cubic-bezier(0.22, 1, 0.36, 1) both vc-vt-slide;
+}
+
+::view-transition-old(.vc-vt-back) {
+  --vc-vt-offset: 44px;
+  animation:
+    var(--vc-vt-exit) ease-in both vc-vt-fade reverse,
+    var(--vc-vt-move) cubic-bezier(0.22, 1, 0.36, 1) both vc-vt-slide reverse;
+}
+
+::view-transition-new(.vc-vt-back) {
+  --vc-vt-offset: -44px;
+  animation:
+    var(--vc-vt-enter) ease-out var(--vc-vt-exit) both vc-vt-fade,
+    var(--vc-vt-move) cubic-bezier(0.22, 1, 0.36, 1) both vc-vt-slide;
+}
+
+/* Shared-element morph and list reorder smoothness */
+::view-transition-group(.vc-vt-morph) {
+  animation-duration: var(--vc-vt-move);
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-group(.vc-vt-card) {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(.vc-vt-fade-out) {
+  animation: var(--vc-vt-exit) ease-in vc-vt-fade reverse;
+}
+
+::view-transition-new(.vc-vt-fade-in) {
+  animation: var(--vc-vt-enter) ease-out var(--vc-vt-exit) both vc-vt-fade;
+}
+
+/* Reduced motion: disable all view transition animations immediately */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
