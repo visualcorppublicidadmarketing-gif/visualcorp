@@ -240,7 +240,7 @@ export function PanoramicCategoryStrips() {
         </div>
         <div className="vc-sol-header-controls">
           <p>
-            Pasa el cursor o selecciona cada columna vertical para expandir la pieza y preparar tu cotización directa.
+            Explora cada pieza para preparar tu cotización. En móvil, desliza horizontalmente para ver la colección completa.
           </p>
           <button
             type="button"

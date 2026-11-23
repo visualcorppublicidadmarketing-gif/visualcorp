@@ -1282,10 +1282,32 @@ html[data-public-theme='light'] .vc-sol-piece-detail-btn {
 }
 
 @media (max-width: 460px) {
-  .vc-sol-strip-accordion,
   .vc-sol-hero-collage,
   .vc-service-env-banner-images {
     grid-template-columns: 1fr;
+  }
+
+  .vc-sol-strip-accordion {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-width: 0;
+    gap: 12px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding: 0 2px 12px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .vc-sol-strip-accordion .vc-sol-slice,
+  .vc-sol-strip-accordion .vc-sol-slice.is-expanded {
+    flex: 0 0 min(82vw, 320px);
+    width: min(82vw, 320px);
+    height: 240px;
+    scroll-snap-align: start;
   }
 }
 

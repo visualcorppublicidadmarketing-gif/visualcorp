@@ -202,61 +202,32 @@ Para responder a la creciente demanda de rotulación de flotas de distribución 
   ],
   portafolio: [
     {
-      name: 'Caso de éxito (Reto · Solución · Resultado)',
-      title: 'Caso de éxito: Remodelación integral de fachada y letrero corpóreo monumental',
-      excerpt: 'Diseño, fabricación estructural y montaje en altura de letrero 3D retroiluminado para reconocida cadena comercial.',
-      body: `## El reto del cliente
+      name: 'Caso documentado (completar con datos verificados)',
+      title: '',
+      excerpt: '',
+      body: `## El reto
 
-El cliente necesitaba transformar una fachada antigua de 22 metros lineales en una arteria de alto tránsito, logrando alta visibilidad diurna y nocturna con bajo consumo energético.
+Describe la necesidad del cliente con información confirmada. Omite nombres o datos que no estén autorizados para publicación.
 
-## La solución de Visual Corp
+## Objetivo del proyecto
 
-- **Estructura base:** Bastidor autoportante de acero galvanizado con tratamiento anticorrosivo marino.
-- **Revestimiento:** Paneles de aluminio compuesto (ACM) color gris carbón satinado con fijaciones ocultas.
-- **Cuerpo tipográfico:** Letras corpóreas de 90 cm de altura en acrílico opal con laterales en aluminio lacado blanco.
-- **Sistema lumínico:** Módulos LED Samsung IP68 con encendido automático programable mediante fotocélula.
+¿Qué debía resolver el trabajo? Incluye solo el alcance acordado.
 
-## Resultado obtenido
+## La solución realizada
 
-> El resultado final logró un impacto visual inmediato, multiplicando la afluencia de clientes en las primeras semanas tras la inauguración.
+Describe las piezas, materiales y procesos que se puedan respaldar con el registro del proyecto.
 
-## Ficha técnica
+## Resultado comprobable
 
-- **Cliente:** Sector Retail / Comercial
-- **Ubicación:** Milagro, Guayas
-- **Tiempo de producción y montaje:** 12 días calendario`,
-    },
-    {
-      name: 'Instalación y rotulación en sitio',
-      title: 'Instalación en sitio: Rotulación vehicular de flota comercial pesada',
-      excerpt: 'Brandeo completo de camiones de carga con vinil reflectivo grado ingeniería y laminado de protección UV.',
-      body: `## Alcance de la rotulación
+Incluye resultados observables o medibles únicamente si están documentados. Si no hay medición, describe el entregable final sin atribuir impacto comercial.
 
-Intervención de 8 unidades de transporte pesado destinadas a logística interprovincial, combinando estética de marca con normativas de seguridad vial.
+## Ficha del proyecto
 
-## Procesos y materiales
-
-- **Material:** Vinil fundido conformable con microcanales de aire antiburbujas.
-- **Laminado:** Película transparente ultra brillante con bloqueador UV para resistir radiación y lavados a presión.
-- **Detalles de seguridad:** Franjas reflectivas perimetrales homologadas grado diamante.
-
-> Durabilidad garantizada ante condiciones climáticas severas, lluvia y barro de carretera.`,
-    },
-    {
-      name: 'Producción corporativa',
-      title: 'Producción corporativa: Señalética interior y decoración de oficinas',
-      excerpt: 'Diseño e instalación de cuadros tensados en tela backlight, señalética en acrílico cristal y vinil esmerilado arquitectónico.',
-      body: `## Ambientación corporativa moderna
-
-Desarrollo de un concepto de ambientación visual que refleja la identidad de la empresa en cada área operativa, salas de reuniones y recepción.
-
-## Componentes destacados
-
-- **Recepción:** Isologo corpóreo en acero inoxidable con retroiluminación LED cálida sobre muro decorativo.
-- **Salas de directorio:** Vinil esmerilado (frosted glass) con corte lineal para privacidad y diseño minimalista.
-- **Pasillos y áreas comunes:** Cajas de luz LED ultradelgadas con gráfica textil intercambiable por silicona perimetral.
-
-> Un entorno laboral armónico que inspira confianza a clientes y colaboradores.`,
+- **Cliente / sector:** [confirmar permiso y dato publicable]
+- **Ubicación:** [confirmar]
+- **Alcance y fechas:** [confirmar]
+- **Crédito fotográfico:** [confirmar]
+- **Permiso para publicar imágenes y marca:** [confirmar antes de publicar]`,
     },
   ],
 };
