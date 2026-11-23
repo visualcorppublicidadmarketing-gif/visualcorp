@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, FileCheck2, QrCode, Sparkles } from 'lucide-react';
 import { AmbientVideoLayer } from '../AmbientVideoLayer';
-import { LogoMockupStudio } from './LogoMockupStudio';
+import { ProductDesignStudio } from './ProductDesignStudio';
 import { QrPrintStudio } from './QrPrintStudio';
 import { ArtworkPreflightDropzone } from '../quote/ArtworkPreflightDropzone';
 
@@ -56,7 +56,7 @@ export function CreativeToolsPage() {
       </header>
 
       <div className="vc-tools-workspace">
-        <LogoMockupStudio initialBaseId={initialBaseId} />
+        <ProductDesignStudio initialBaseId={initialBaseId} />
         <QrPrintStudio />
 
         <section id="verificador-arte" className="vc-tool-preflight-wrap" aria-label="Verificador de archivos para imprenta">

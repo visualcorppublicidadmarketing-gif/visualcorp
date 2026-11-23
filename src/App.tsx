@@ -55,7 +55,7 @@ const PortfolioDetailPage = lazy(() => import('./public-site/ShowcasePages').the
 const StorefrontPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.StorefrontPage })));
 const StorePromotionsPage = lazy(() => import('./public-site/StorePromotionsPage').then((module) => ({ default: module.StorePromotionsPage })));
 const CreativeToolsPage = lazy(() => import('./public-site/tools/CreativeToolsPage').then((module) => ({ default: module.CreativeToolsPage })));
-const LogoMockupStudio = lazy(() => import('./public-site/tools/LogoMockupStudio').then((module) => ({ default: module.LogoMockupStudio })));
+const ProductDesignStudio = lazy(() => import('./public-site/tools/ProductDesignStudio').then((module) => ({ default: module.ProductDesignStudio })));
 const PaymentsPage = lazy(() => import('./public-site/PaymentsPage').then((module) => ({ default: module.PaymentsPage })));
 const InventoryWorkspace = lazy(() => import('./components/InventoryWorkspace').then((module) => ({ default: module.InventoryWorkspace })));
 const EquipmentInventory = lazy(() => import('./pages/operations/EquipmentInventory').then((module) => ({ default: module.EquipmentInventory })));
@@ -147,9 +147,9 @@ function AppRouter() {
       element={
         <ProtectedPage area="operations">
           <AppFrame area="operations">
-            <PageHeading eyebrow="MARKETING · DISEÑO" title="Editor de diseño" description="Prepara composiciones para productos y piezas visuales con el editor creativo compartido." />
+            <PageHeading eyebrow="MARKETING · DISEÑO" title="Estudio de diseño de productos" description="Crea composiciones para prendas, promocionales y exhibidores en el editor compartido." />
             <div className="vc-tools-workspace vc-admin-creative-workspace">
-              <LogoMockupStudio quotePath="/operaciones/cotizador" />
+              <ProductDesignStudio quotePath="/operaciones/cotizador" />
             </div>
           </AppFrame>
         </ProtectedPage>
