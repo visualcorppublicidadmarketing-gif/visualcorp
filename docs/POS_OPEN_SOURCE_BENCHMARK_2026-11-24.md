@@ -33,7 +33,9 @@ Decisión: conservar React y CSS actuales, sin dependencias nuevas. Es el camino
 
 La revisión local encontró que el POS generaba una clave idempotente nueva al enviar cada entrada/retiro manual. Si el servidor guardaba el movimiento pero se perdía la respuesta, el segundo intento podía crear otra fila. El cliente ahora persiste antes del RPC el turno, sentido, monto en centavos, motivo y clave. Si falta confirmación, restaura el mismo formulario y reenvía exactamente esa operación. La nueva migración `20261124164053_pos_durable_cash_movement_recovery.sql` compara el contenido existente para esa clave, devuelve la fila original en caso de coincidencia y rechaza datos distintos; permite también confirmar un intento que sí se guardó aunque el turno ya se haya cerrado.
 
-La migración es un artefacto local pendiente de publicar. No se aplicó a una base de datos. Hasta desplegarla, un intento pendiente cuyo turno ya cerró debe conservarse y revisarse; el cliente no lo reemplaza por una operación nueva.
+**Estado de publicación (2026-11-24):** la migración `20261124164053_pos_durable_cash_movement_recovery.sql` se aplicó al proyecto Supabase Visual Corp y quedó registrada remotamente como versión `20261124164616`. El [PR #382](https://github.com/visualcorppublicidadmarketing-gif/visualcorp/pull/382) se fusionó en el commit `59e403d5e68eaffec4228374cfb598268b9f9195`; Vercel marcó producción como `READY` y `/operaciones/pos` respondió HTTP 200. CI #820 pasó los checks específicos del POS, TypeScript y build.
+
+No se registraron movimientos financieros de prueba en producción. Para un intento sin confirmación, el cliente conserva el payload y reintenta con la misma clave; la RPC devuelve el movimiento original únicamente si coincide el turno, sentido, monto, motivo y usuario.
 
 ## Límites de la investigación
 
