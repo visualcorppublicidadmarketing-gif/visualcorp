@@ -43,6 +43,11 @@ import './pos-material-usage.css';
 
 const trackedAccessoryProductIds = new Set(['prod-extras-ojal-peque-o-c-u','prod-extras-ojales-grande-c-u']);
 const roundMoney = (value:number) => Math.round((value + Number.EPSILON) * 100) / 100;
+const stablePOSJson = (value: unknown): string => {
+  if (Array.isArray(value)) return `[${value.map(stablePOSJson).join(',')}]`;
+  if (value && typeof value === 'object') return `{${Object.entries(value as Record<string, unknown>).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>`${JSON.stringify(key)}:${stablePOSJson(item)}`).join(',')}}`;
+  return JSON.stringify(value) ?? 'null';
+};
 const pluralizePOSUnit = (unit:string) => /^(?:m|mm|cm|km|m2|m²|cm2|cm²|m3|m³|cm3|cm³|kg|g|mg|l|lt|ml|hz)$/i.test(unit.trim())||/s$/i.test(unit)||/[^\p{L}]$/u.test(unit) ? unit : /[aeiouáéó]$/i.test(unit) ? `${unit}s` : `${unit}es`;
 const isPOSServiceProduct = (product:any) => product?.productKind==='service'||String(product?.productType||'').trim().toLocaleLowerCase('es')==='service';
 const normalizeCustomerPhone = (value) => { const digits=String(value||'').replace(/\D/g,'');return digits.startsWith('593')&&digits.length===12?`0${digits.slice(3)}`:digits; };
@@ -414,6 +419,7 @@ function POSCartLineEditor({
     widthCm: String(line.widthCm || ''),
     heightCm: String(line.heightCm || ''),
     unitPrice: String(line.baseUnitPrice ?? line.unitPrice),
+    priceMode: (line.customUnitPriceApplied || !line.productId ? 'agreed' : 'catalog') as 'agreed' | 'catalog',
     pricingTier: (line.pricingTier || 'pvp') as 'pvp' | 'instalacion' | 'corporativo',
     lineDiscountPercent: String(line.lineDiscountPercent || '0'),
     finishing: sanitizeCommercialFinishing(line.finishing),
@@ -427,6 +433,7 @@ function POSCartLineEditor({
       widthCm: String(line.widthCm || ''),
       heightCm: String(line.heightCm || ''),
       unitPrice: String(line.baseUnitPrice ?? line.unitPrice),
+      priceMode: (line.customUnitPriceApplied || !line.productId ? 'agreed' : 'catalog') as 'agreed' | 'catalog',
       pricingTier: (line.pricingTier || 'pvp') as 'pvp' | 'instalacion' | 'corporativo',
       lineDiscountPercent: String(line.lineDiscountPercent || '0'),
       finishing: sanitizeCommercialFinishing(line.finishing),
@@ -447,6 +454,7 @@ function POSCartLineEditor({
     nextHeightCm: number,
     nextTier: 'pvp' | 'instalacion' | 'corporativo',
     nextUnitPrice: number,
+    nextPriceMode: 'agreed' | 'catalog',
     nextLineDiscount: number,
     nextFinishing: CommercialFinishingValue,
   ) => {
@@ -458,7 +466,7 @@ function POSCartLineEditor({
 
     if (line.productId && product) {
       if (line.mode === 'area' && (!Number.isFinite(nextWidthCm) || !Number.isFinite(nextHeightCm) || nextWidthCm <= 0 || nextHeightCm <= 0)) return false;
-      const customPriceArg = Number.isFinite(nextUnitPrice) && nextUnitPrice > 0 ? nextUnitPrice : undefined;
+      const customPriceArg = nextPriceMode === 'agreed' && Number.isFinite(nextUnitPrice) && nextUnitPrice > 0 ? nextUnitPrice : undefined;
       const calculation = calculatePOSLine({
         product,
         mode: line.mode,
@@ -559,6 +567,7 @@ function POSCartLineEditor({
       Number(line.heightCm || 0),
       line.pricingTier || 'pvp',
       Number((line.baseUnitPrice ?? line.unitPrice) || 0),
+      line.customUnitPriceApplied ? 'agreed' : 'catalog',
       Number(line.lineDiscountPercent || 0),
       sanitizeCommercialFinishing(line.finishing),
     );
@@ -573,6 +582,7 @@ function POSCartLineEditor({
       Number(draft.heightCm),
       draft.pricingTier,
       Number(draft.unitPrice),
+      draft.priceMode,
       Number(draft.lineDiscountPercent),
       draft.finishing,
     );
@@ -635,7 +645,7 @@ function POSCartLineEditor({
       <label className="pos-line-editor-span-2">Nombre / Concepto<input type="text" value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}/></label>
       <label className="pos-line-editor-span-2">Descripción visible<input type="text" value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}/></label>
       <label>Cantidad<input type="number" min="0.001" step="any" value={draft.quantity} onChange={(event) => setDraft((current) => ({ ...current, quantity: event.target.value }))}/></label>
-      <label>Precio unit. / m² ($)<div className="money-input"><span>$</span><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(event) => setDraft((current) => ({ ...current, unitPrice: event.target.value }))}/></div></label>
+      <label>Precio unit. / m² ($)<div className="money-input"><span>$</span><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(event) => setDraft((current) => ({ ...current, unitPrice: event.target.value, priceMode: 'agreed' }))}/></div><small>{draft.priceMode==='catalog'?'Se recalcula según la tarifa y la cantidad.':'Se conserva como precio acordado.'}</small></label>
       {line.productId && <label>Tarifa<select value={draft.pricingTier} onChange={(event) => setDraft((current) => ({ ...current, pricingTier: event.target.value as 'pvp' | 'instalacion' | 'corporativo' }))}><option value="pvp">Normal (PVP)</option><option value="instalacion">Con instalación</option><option value="corporativo">Corporativo</option></select></label>}
       <label>Desc. línea (%)<input type="number" min="0" max="100" step="1" value={draft.lineDiscountPercent} onChange={(event) => setDraft((current) => ({ ...current, lineDiscountPercent: event.target.value }))}/></label>
       {line.mode === 'area' && <><label>Ancho (cm)<input type="number" min="0.01" step="0.01" value={draft.widthCm} onChange={(event) => setDraft((current) => ({ ...current, widthCm: event.target.value }))}/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" value={draft.heightCm} onChange={(event) => setDraft((current) => ({ ...current, heightCm: event.target.value }))}/></label></>}
@@ -713,6 +723,8 @@ export function PosPage() {
   const productSearchInputRef = useRef<HTMLInputElement>(null);
   const [form,setForm]=useState({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
   const [quoteSearchQuery, setQuoteSearchQuery] = useState('');
+  const [quoteSearchLoading,setQuoteSearchLoading]=useState(false);
+  const [quoteSearchError,setQuoteSearchError]=useState('');
   const [catalogKind,setCatalogKind]=useState<'product'|'service'>('product');
   const [logoChangeCount,setLogoChangeCount]=useState('0');
   const [isExecutivePreviewOpen,setIsExecutivePreviewOpen]=useState(false);
@@ -773,6 +785,9 @@ export function PosPage() {
   const balancePaymentRecoveryReady=balancePaymentRecoveryMatches&&balancePaymentRecovery.status==='ready';
   const pendingBalancePaymentBySale=balancePaymentRecoveryReady?balancePaymentRecovery.pending:{};
   const [parkedOrders,setParkedOrders]=useState([]);
+  const [parkedOrdersHasMore,setParkedOrdersHasMore]=useState(false);
+  const [parkedOrdersOffset,setParkedOrdersOffset]=useState(0);
+  const [parkedSearchQuery,setParkedSearchQuery]=useState('');
   const [branchNames,setBranchNames]=useState({});
   const [parkedManagerAccess,setParkedManagerAccess]=useState({all:false,branchIds:[] as string[]});
   const [activeParkedOrderId,setActiveParkedOrderId]=useState('');
@@ -785,6 +800,10 @@ export function PosPage() {
   const [savingBalancePayment,setSavingBalancePayment]=useState('');
   const [lastSaleConfirmation,setLastSaleConfirmation]=useState(null);
   const [posDaySales,setPosDaySales]=useState([]);
+  const [posSalesSummary,setPosSalesSummary]=useState({totalCount:0,totalAmount:0,totalBalance:0,commonMethod:'—'});
+  const [posSalesHasMore,setPosSalesHasMore]=useState(false);
+  const [posSalesPage,setPosSalesPage]=useState(0);
+  const [recentSalesPeriod,setRecentSalesPeriod]=useState<'today'|'7'|'30'|'90'|'all'>('today');
   const [posSalesStatus,setPosSalesStatus]=useState<'loading'|'ready'|'error'|'restricted'>('loading');
   const [pendingSaleRecoveryError,setPendingSaleRecoveryError]=useState('');
   const [pendingSaleRecoveryMode,setPendingSaleRecoveryMode]=useState(false);
@@ -798,7 +817,12 @@ export function PosPage() {
   const [openingQuickCash,setOpeningQuickCash]=useState(false);
   const [cashReloadTick,setCashReloadTick]=useState(0);
   const [recentSalesQuery,setRecentSalesQuery]=useState('');
+  const [debouncedRecentSalesQuery,setDebouncedRecentSalesQuery]=useState('');
   const [recentSalesFilter,setRecentSalesFilter]=useState<'all'|'balance'|'paid'>('all');
+  useEffect(()=>{
+    const timer=window.setTimeout(()=>{setDebouncedRecentSalesQuery(recentSalesQuery.trim());setPosSalesPage(0);},250);
+    return()=>window.clearTimeout(timer);
+  },[recentSalesQuery]);
   const [cartCustomUnitPrice,setCartCustomUnitPrice]=useState('');
   useEffect(()=>{
     if(!organizationId||!user?.id){setBalancePaymentRecovery({scope:'',status:'ready',pending:{},error:''});return;}
@@ -828,6 +852,8 @@ export function PosPage() {
   const [adminDeleteTarget,setAdminDeleteTarget]=useState<AdminDeleteTarget|null>(null);
   const canDeleteSales = canAdminDeleteSales(roles, hasPermission);
   const posDraftStorageKey=`visualcorp-pos-cart-draft-v1:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
+  const parkedOrderRetryStorageKey=`visualcorp-pos-park-retry-v1:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
+  const parkedOrderRetryRef=useRef<any>(null);
   const pendingSaleStorageKey=`visualcorp-pos-pending-sale-key:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
   const pendingSaleSnapshotStorageKey=`${pendingSaleStorageKey}:snapshot`;
   const posSaleAssetScopeKey=`${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
@@ -976,6 +1002,25 @@ export function PosPage() {
     setDraftLoadedKey('');
     setCart([]);setDiscountPercent('0');setDiscountReason('');setMaterialRequestsByLine({});setProductionByLine({});
     try{
+      const parkedRetryRaw=sessionStorage.getItem(parkedOrderRetryStorageKey);
+      if(parkedRetryRaw){
+        const attempt=JSON.parse(parkedRetryRaw);
+        const age=Date.now()-Number(attempt.savedAt||0);
+        if(attempt.version===1&&typeof attempt.key==='string'&&attempt.key.length>=12&&age>=0&&age<24*60*60*1000&&attempt.payload?.form&&Array.isArray(attempt.payload.cart)&&Number.isSafeInteger(attempt.totalCents)&&attempt.totalCents>0){
+          parkedOrderRetryRef.current=attempt;
+          const restoredForm={...attempt.payload.form,branchCode:String(attempt.payload.form.branchCode||data.branches?.[0]?.code||'')};
+          const restoredCart=sanitizePOSCart(attempt.payload.cart);
+          setForm((current)=>({...current,...restoredForm}));setCart(restoredCart);
+          setDiscountPercent(String(attempt.payload.discountPercent??'0'));setDiscountReason(String(attempt.payload.discountReason||''));
+          setMaterialRequestsByLine(sanitizePOSMaterialRequestMap(attempt.payload.materialRequestsByLine));
+          setProductionByLine(sanitizeProductionDetails(attempt.payload.productionByLine));setFulfillment(attempt.payload.fulfillment||{installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});
+          setMapLink(String(attempt.payload.mapLink||''));setPayments(sanitizePOSPayments(attempt.payload.payments));setChargeNow(attempt.payload.chargeNow!==false);
+          setClientBriefHtml(String(attempt.payload.clientBriefHtml||'<p></p>'));setCustomerQuery(String(restoredForm.customer||''));
+          setSelectedCustomerSnapshot(restoredForm.customerId?{id:String(restoredForm.customerId),name:String(restoredForm.customer||''),phone:String(restoredForm.customerPhone||''),email:String(restoredForm.customerEmail||''),documentReference:String(restoredForm.customerDocumentReference||'')}:null);
+          setDraftLoadedKey(posDraftStorageKey);flash('Recuperé una orden que pudo guardarse en espera. Reintenta sin modificar sus datos para evitar duplicarla.');return;
+        }
+        sessionStorage.removeItem(parkedOrderRetryStorageKey);
+      }
       const raw=sessionStorage.getItem(posDraftStorageKey);
       if(raw){
         const saved=JSON.parse(raw);
@@ -986,9 +1031,9 @@ export function PosPage() {
           if(typeof saved.branchCode==='string'&&saved.branchCode)setForm((current)=>({...current,branchCode:saved.branchCode}));
         }else sessionStorage.removeItem(posDraftStorageKey);
       }
-    }catch{sessionStorage.removeItem(posDraftStorageKey);}
+    }catch{sessionStorage.removeItem(posDraftStorageKey);sessionStorage.removeItem(parkedOrderRetryStorageKey);parkedOrderRetryRef.current=null;}
     setDraftLoadedKey(posDraftStorageKey);
-  },[organizationId,user?.id,posDraftStorageKey,pendingSaleSnapshotStorageKey]);
+  },[organizationId,user?.id,posDraftStorageKey,pendingSaleSnapshotStorageKey,parkedOrderRetryStorageKey]);
   useEffect(()=>{
     if(!organizationId||!user||draftLoadedKey!==posDraftStorageKey)return;
     if(cart.length)sessionStorage.setItem(posDraftStorageKey,JSON.stringify({version:1,savedAt:Date.now(),branchCode:form.branchCode,cart,discountPercent,discountReason,materialRequestsByLine,productionByLine}));
@@ -1064,6 +1109,29 @@ export function PosPage() {
     return()=>{active=false;};
   },[organizationId,form.quoteId,centralQuotes]);
   useEffect(()=>{
+    const raw=quoteSearchQuery.trim();
+    if(!supabase||!organizationId||raw.length<2){setQuoteSearchLoading(false);setQuoteSearchError('');return;}
+    let active=true;
+    setQuoteSearchLoading(true);setQuoteSearchError('');
+    const timer=window.setTimeout(()=>{
+      const query=raw.replace(/[^\p{L}\p{N}\s._@/-]/gu,' ').replace(/\s+/g,' ').trim().slice(0,100);
+      if(query.length<2){setQuoteSearchLoading(false);return;}
+      void (async()=>{
+        try{
+          const {data:found,error}=await supabase.from('central_quotes').select('*').eq('organization_id',organizationId).eq('status','accepted')
+            .eq('price_confirmed',true).not('selected_total','is',null)
+            .or(`quote_code.ilike.%${query}%,customer_name.ilike.%${query}%,notes.ilike.%${query}%`)
+            .order('updated_at',{ascending:false}).limit(100);
+          if(!active)return;
+          if(error){setQuoteSearchError('No se pudieron buscar más cotizaciones aprobadas.');return;}
+          setCentralQuotes((current)=>[...(found||[]),...current.filter((quote:any)=>!(found||[]).some((row:any)=>row.id===quote.id))]);
+        }catch{if(active)setQuoteSearchError('No se pudieron buscar más cotizaciones aprobadas.');}
+        finally{if(active)setQuoteSearchLoading(false);}
+      })();
+    },250);
+    return()=>{active=false;window.clearTimeout(timer);};
+  },[organizationId,quoteSearchQuery]);
+  useEffect(()=>{
     if(!supabase||!organizationId){setTaxConfigurationStatus('error');return;}
     let active=true;setTaxConfigurationStatus('loading');
     void (async()=>{
@@ -1117,53 +1185,19 @@ export function PosPage() {
       if (branchError) throw branchError;
       if (!branch?.id) throw new Error('No encontramos la sucursal seleccionada.');
 
-      let rpcSucceeded = false;
-      try {
-        const { error: rpcError } = await supabase.rpc('open_pos_cash_session', {
-          p_branch_id: branch.id,
-          p_opening_cash: openingAmount,
-        });
-        if (!rpcError) {
-          rpcSucceeded = true;
-        }
-      } catch {
-        rpcSucceeded = false;
-      }
-
-      if (!rpcSucceeded) {
-        let registerId: string | null = null;
-        const { data: registers, error: regError } = await supabase
-          .from('cash_registers')
-          .select('id,name,active,assigned_advisor_id')
-          .eq('organization_id', organizationId)
-          .eq('branch_id', branch.id);
-        if (!regError && Array.isArray(registers) && registers.length > 0) {
-          const activeRegs = registers.filter((r: any) => r.active);
-          const myReg = activeRegs.find((r: any) => r.assigned_advisor_id === user.id);
-          if (myReg) {
-            registerId = myReg.id;
-          } else if (hasPermission('cash', 'edit') && activeRegs[0]) {
-            registerId = activeRegs[0].id;
-          }
-        }
-        const { error: insertError } = await supabase
-          .from('cash_sessions')
-          .insert({
-            organization_id: organizationId,
-            branch_id: branch.id,
-            cash_register_id: registerId,
-            opening_cash: openingAmount,
-            opened_by: user.id,
-            status: 'open',
-          })
-          .select('id')
-          .single();
-        if (insertError) throw insertError;
-      }
+      const { data: openedSession, error: openError } = await supabase.rpc('open_pos_cash_session', {
+        p_branch_id: branch.id,
+        p_opening_cash: openingAmount,
+      });
+      if (openError) throw openError;
 
       setShowQuickCashOpen(false);
       setCashReloadTick((tick) => tick + 1);
-      flash(`Turno de caja abierto en ${branch.name || branch.code} con fondo inicial de ${formatMoney(openingAmount)}.`);
+      if (openedSession?.already_open) {
+        flash(`Ya había un turno abierto en ${branch.name || branch.code} con fondo de ${formatMoney(Number(openedSession.opening_cash) || 0)}. No se modificó.`);
+      } else {
+        flash(`Turno de caja abierto en ${branch.name || branch.code} con fondo inicial de ${formatMoney(Number(openedSession?.opening_cash ?? openingAmount))}.`);
+      }
     } catch (error: any) {
       flash(`No se pudo abrir la caja desde el POS: ${error?.message || 'Error desconocido'}`);
     } finally {
@@ -1308,21 +1342,26 @@ export function PosPage() {
     setMobileSummaryOpen(true);
     flash('Cobro exprés en efectivo seleccionado con monto exacto.');
   };
-  const refreshParkedOrders=async()=>{
+  const refreshParkedOrders=async(append=false)=>{
     if(!supabase||!organizationId)return;
+    const start=append?parkedOrdersOffset:0;
     const [{data:orders,error:ordersError},{data:branches,error:branchesError},{data:memberships,error:membershipsError}]=await Promise.all([
-      supabase.from('parked_pos_orders').select('id,branch_id,created_by,payload,total,idempotency_key,created_at').eq('organization_id',organizationId).eq('status','parked').order('created_at',{ascending:false}).limit(50),
+      supabase.from('parked_pos_orders').select('id,branch_id,created_by,payload,total,idempotency_key,created_at,updated_at').eq('organization_id',organizationId).eq('status','parked').order('updated_at',{ascending:false}).range(start,start+49),
       supabase.from('branches').select('id,code,name').eq('organization_id',organizationId),
       user?.id?supabase.from('organization_memberships').select('branch_id,role').eq('organization_id',organizationId).eq('user_id',user.id).eq('active',true):Promise.resolve({data:[],error:null}),
     ]);
     if(ordersError)throw ordersError;
     if(branchesError)throw branchesError;
-    setParkedOrders(orders||[]);
     setBranchNames(Object.fromEntries((branches||[]).map(branch=>[branch.id,branch.name||branch.code])));
+    const activeMemberships=membershipsError?[]:(memberships||[]);
+    const memberBranchIds=activeMemberships.map(membership=>membership.branch_id).filter(Boolean);
     const managerMemberships=membershipsError?[]:(memberships||[]).filter(membership=>['owner','admin','manager'].includes(membership.role));
     setParkedManagerAccess({all:managerMemberships.some(membership=>!membership.branch_id),branchIds:managerMemberships.map(membership=>membership.branch_id).filter(Boolean)});
+    const visible=(orders||[]).filter(order=>order.created_by===user?.id||order.branch_id===selectedBranchId||memberBranchIds.includes(order.branch_id)||managerMemberships.some(membership=>!membership.branch_id));
+    setParkedOrders(current=>append?[...current,...visible.filter(order=>!current.some(existing=>existing.id===order.id))]:visible);
+    setParkedOrdersOffset(start+(orders||[]).length);setParkedOrdersHasMore((orders||[]).length===50);
   };
-  useEffect(()=>{let active=true;if(!supabase||!organizationId)return undefined;refreshParkedOrders().catch(error=>{if(active)flash(`No se pudieron cargar las órdenes en espera: ${error.message}`);});return()=>{active=false;};},[organizationId]);
+  useEffect(()=>{let active=true;if(!supabase||!organizationId)return undefined;refreshParkedOrders().catch(error=>{if(active)flash(`No se pudieron cargar las órdenes en espera: ${error.message}`);});return()=>{active=false;};},[organizationId,form.branchCode]);
   const canSearchCustomers=hasPermission('crm','view');
   useEffect(()=>{
     let active=true;
@@ -1541,33 +1580,32 @@ export function PosPage() {
   const allPreviewShortages=[...previewShortages.filter((issue)=>issue.kind!=='configuration'),...previewRecipeShortages.filter((issue)=>issue.kind!=='configuration')];
   const backorderPermissionMissing=Boolean(allPreviewShortages.length&&!canManageBackorders&&!hasPendingBackorderAuthorization);
   const refreshPOSDaySales=useCallback(async()=>{
-    if(!supabase||!organizationId||!selectedBranchId){setPosDaySales([]);setPosSalesStatus('loading');return;}
-    if(!canViewPOSSales){setPosDaySales([]);setPosSalesStatus('restricted');return;}
+    if(!supabase||!organizationId||!selectedBranchId){setPosDaySales([]);setPosSalesSummary({totalCount:0,totalAmount:0,totalBalance:0,commonMethod:'—'});setPosSalesStatus('loading');return;}
+    if(!canViewPOSSales){setPosDaySales([]);setPosSalesSummary({totalCount:0,totalAmount:0,totalBalance:0,commonMethod:'—'});setPosSalesStatus('restricted');return;}
     setPosSalesStatus('loading');
     try{
-      const start=new Date();start.setHours(0,0,0,0);
-      const end=new Date(start);end.setDate(end.getDate()+1);
-      const pageSize=500;const rows=[];
-      for(let offset=0;;offset+=pageSize){
-        const {data:page,error}=await supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity),sale_payments(method,amount)').eq('organization_id',organizationId).eq('branch_id',selectedBranchId).eq('status','confirmed').gte('created_at',start.toISOString()).lt('created_at',end.toISOString()).order('created_at',{ascending:false}).order('id',{ascending:false}).range(offset,offset+pageSize-1);
-        if(error)throw error;
-        rows.push(...(page||[]));
-        if((page||[]).length<pageSize)break;
+      const now=new Date();
+      let from:string|null=null;
+      let to:string|null=null;
+      if(recentSalesPeriod!=='all'){
+        const days=recentSalesPeriod==='today'?1:Number(recentSalesPeriod);
+        const start=new Date(now);start.setHours(0,0,0,0);start.setDate(start.getDate()-days+1);
+        const end=new Date(now);end.setHours(0,0,0,0);end.setDate(end.getDate()+1);
+        from=start.toISOString();to=end.toISOString();
       }
-      const loadedSaleIds=new Set(rows.map((row:any)=>row.id));
-      const pendingSaleIds=balancePaymentRecoveryMatches?Object.keys(balancePaymentRecovery.pending).filter(id=>!loadedSaleIds.has(id)):[];
-      for(let offset=0;offset<pendingSaleIds.length;offset+=100){
-        const {data:pendingRows,error:pendingError}=await supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity),sale_payments(method,amount)').eq('organization_id',organizationId).eq('branch_id',selectedBranchId).eq('status','confirmed').in('id',pendingSaleIds.slice(offset,offset+100));
-        if(pendingError)throw pendingError;
-        rows.push(...(pendingRows||[]));
-      }
-      rows.sort((a:any,b:any)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime());
-      const customerById=new Map<string,any>((data.customers||[]).map((customer:any)=>[customer.id,customer]));
-      const paymentLabels={cash:'Efectivo',transfer:'Transferencia',card:'Tarjeta',other:'Otro'};
-      const mapped=rows.map((row)=>{const paid=(row.sale_payments||[]).reduce((sum,payment)=>sum+Number(payment.amount||0),0);const methods=[...new Set((row.sale_payments||[]).map((payment)=>payment.method))];return{id:row.id,code:row.sale_code||row.id.slice(0,8),total:Number(row.total),paid,balance:Math.max(0,Number(row.total)-paid),date:row.created_at,method:methods.length>1?'Pago dividido':paymentLabels[methods[0]||row.payment_method]||'Otro',customer:customerById.get(row.customer_id)?.name||'',description:(row.sale_lines||[]).map((line)=>line.description_snapshot).join(', '),quantity:(row.sale_lines||[]).reduce((sum,line)=>sum+Number(line.quantity||0),0),urgent:row.urgent_backorder,status:row.status,note:row.note,pendingBalancePayment:Boolean(balancePaymentRecovery.pending[row.id])};});
-      setPosDaySales(mapped);setPosSalesStatus('ready');
-    }catch{setPosDaySales([]);setPosSalesStatus('error');}
-  },[organizationId,selectedBranchId,canViewPOSSales,data.customers,balancePaymentRecoveryMatches,balancePaymentRecovery.pending]);
+      const pendingIds=balancePaymentRecoveryMatches?Object.keys(balancePaymentRecovery.pending):[];
+      const {data,error}=await supabase.rpc('search_visualcorp_pos_sales',{
+        p_organization_id:organizationId,p_branch_id:selectedBranchId,p_query:debouncedRecentSalesQuery,
+        p_balance_filter:recentSalesFilter,p_from:from,p_to:to,p_limit:40,p_offset:posSalesPage*40,p_include_sale_ids:pendingIds,
+      });
+      if(error)throw error;
+      const rows=Array.isArray(data?.items)?data.items:[];
+      const mapped=rows.map((row:any)=>({...row,total:Number(row.total)||0,adjustedTotal:Number(row.adjusted_total)||0,returnedValue:Number(row.returned_value)||0,paid:Number(row.paid)||0,settledRefund:Number(row.settled_refund)||0,balance:Number(row.balance)||0,customerCredit:Number(row.customer_credit)||0,quantity:Number(row.quantity)||0,pendingBalancePayment:Boolean(balancePaymentRecovery.pending[row.id])}));
+      setPosDaySales(mapped);setPosSalesHasMore(Boolean(data?.has_more));
+      setPosSalesSummary({totalCount:Number(data?.total_count)||0,totalAmount:Number(data?.total_amount)||0,totalBalance:Number(data?.total_balance)||0,commonMethod:String(data?.common_method||'—')});
+      setPosSalesStatus('ready');
+    }catch{setPosDaySales([]);setPosSalesHasMore(false);setPosSalesSummary({totalCount:0,totalAmount:0,totalBalance:0,commonMethod:'—'});setPosSalesStatus('error');}
+  },[organizationId,selectedBranchId,canViewPOSSales,balancePaymentRecoveryMatches,balancePaymentRecovery.pending,recentSalesPeriod,recentSalesFilter,debouncedRecentSalesQuery,posSalesPage]);
   useEffect(()=>{void refreshPOSDaySales();},[refreshPOSDaySales]);
   const salesToday=posDaySales;
   const inventoryByVariant=useMemo(()=>{
@@ -1626,16 +1664,17 @@ export function PosPage() {
       String(quote.title||'').toLocaleLowerCase('es').includes(q)
     );
   },[acceptedQuotes,quoteSearchQuery]);
-  const filteredRecentSales=useMemo(()=>{
-    const q=recentSalesQuery.trim().toLocaleLowerCase('es');
-    return salesToday.filter((sale:any)=>{
-      const hasPendingPayment=Boolean(pendingBalancePaymentBySale[sale.id]);
-      if(recentSalesFilter==='balance'&&!(Number(sale.balance)>0)&&!hasPendingPayment)return false;
-      if(recentSalesFilter==='paid'&&(Number(sale.balance)>0||hasPendingPayment))return false;
-      if(!q)return true;
-      return `${sale.customer||''} ${sale.description||''} ${sale.code||''} ${sale.method||''}`.toLocaleLowerCase('es').includes(q);
+  const filteredParkedOrders=useMemo(()=>{
+    const query=parkedSearchQuery.trim().toLocaleLowerCase('es');
+    if(!query)return parkedOrders;
+    return parkedOrders.filter((order:any)=>{
+      const payload=order.payload||{};
+      const quote=centralQuotes.find((candidate:any)=>candidate.id===payload.form?.quoteId);
+      const haystack=[payload.form?.customer,payload.form?.description,quote?.quote_code,quote?.customer_name,branchNames[order.branch_id],order.id].join(' ').toLocaleLowerCase('es');
+      return haystack.includes(query);
     });
-  },[salesToday,recentSalesQuery,recentSalesFilter,pendingBalancePaymentBySale]);
+  },[parkedOrders,parkedSearchQuery,centralQuotes,branchNames]);
+  const filteredRecentSales=salesToday;
   const needsCashShift=chargeNow&&payments.some(payment=>payment.method==='Efectivo');
   const cashShiftPending=needsCashShift&&(!pendingSaleRecoveryMode||pendingSaleSnapshotMissing)&&cashierSession.loading;
   const cashShiftUnavailable=needsCashShift&&(!pendingSaleRecoveryMode||pendingSaleSnapshotMissing)&&!cashierSession.loading&&!cashierSession.session;
@@ -1699,7 +1738,7 @@ export function PosPage() {
     const inventoryVariantId=variantLinks.length===1?variantLinks[0].inventory_variant_id:'';
     const calc=calculatePOSLine({product,mode:'quantity',quantity:1,tier:'pvp',optionChoice:''});
     if(!calc||!(product.confirmed||product.published)){chooseCartProduct(product);return;}
-    const existing=cart.find((item:any)=>item.productId===product.id&&item.inventoryVariantId===inventoryVariantId&&item.mode==='quantity'&&(item.pricingTier||'pvp')==='pvp'&&!item.optionChoice&&sanitizeCommercialFinishing(item.finishing).eyeletType==='none'&&sanitizeCommercialFinishing(item.finishing).designService==='ready');
+    const existing=cart.find((item:any)=>item.productId===product.id&&item.inventoryVariantId===inventoryVariantId&&item.mode==='quantity'&&(item.pricingTier||'pvp')==='pvp'&&!item.optionChoice&&!item.customUnitPriceApplied&&Number(item.lineDiscountPercent||0)===0&&sanitizeCommercialFinishing(item.finishing).eyeletType==='none'&&sanitizeCommercialFinishing(item.finishing).designService==='ready');
     if(existing){
       const nextQty=Number(existing.quantity||1)+1;
       const nextCalc=calculatePOSLine({product,mode:'quantity',quantity:nextQty,tier:'pvp',optionChoice:''});
@@ -1708,9 +1747,13 @@ export function PosPage() {
           ...item,
           quantity:nextQty,
           billingQuantity:nextCalc.billedQuantity,
+          baseUnitPrice:nextCalc.baseUnitPrice,
           unitPrice:nextCalc.unitPrice,
           total:nextCalc.total,
-          description:formatPOSLineDescription({name:item.name,mode:'quantity',quantity:nextQty,unit:nextCalc.unit,unitPrice:nextCalc.unitPrice,pricingTierLabel:item.pricingTierLabel||'Normal'}),
+          customUnitPriceApplied:false,
+          lineDiscountPercent:0,
+          pricingTierLabel:'Normal',
+          description:formatPOSLineDescription({name:item.name,mode:'quantity',quantity:nextQty,unit:nextCalc.unit,unitPrice:nextCalc.unitPrice,pricingTierLabel:'Normal',customUnitPriceApplied:false,lineDiscountPercent:0}),
         }:item));
         flash(`${product.name} actualizado a ${nextQty} ${nextCalc.unit} en el carrito.`);
         return;
@@ -1873,22 +1916,44 @@ export function PosPage() {
     if(!user||!organizationId||parking)return;
     if(saleAssets.length){flash('Esta orden tiene adjuntos guardados solo en este navegador. Las órdenes en espera no sincronizan esos archivos; quítalos antes de aparcar o confirma la venta para vincularlos.');return;}
     if(!form.quoteId&&taxConfigurationStatus!=='ready'){flash(taxConfigurationStatus==='loading'?'Espera a que se confirme la tasa de IVA antes de guardar el total.':'No se pudo verificar la tasa de IVA. Recarga antes de guardar la orden.');return;}
-    if(activeParkedOrderId){flash('Esta orden ya está en espera; confírmala para cerrarla desde esta pantalla.');return;}
     if(!form.quoteId&&!cart.length){flash('Agrega artículos o elige una cotización antes de guardar en espera.');return;}
     if(!activeTotal||activeTotal<=0){flash('La orden necesita un total mayor que cero para guardarse en espera.');return;}
     setParking(true);
     try{
-      const key=globalThis.crypto?.randomUUID?.()||`park-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const payload={form:{...form},cart,discountPercent:manualDiscountPercent,discountReason,materialRequestsByLine,productionByLine,fulfillment,mapLink,payments,chargeNow,clientBriefHtml};
+      if(activeParkedOrderId){
+        const {error}=await supabase.rpc('update_parked_pos_order',{p_parked_order:activeParkedOrderId,p_payload:payload,p_total:activeTotal});
+        if(error)throw error;
+        clearPendingSaleStorage();pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);
+        await refreshParkedOrders();resetCheckout();
+        flash('Se actualizaron los datos de la orden en espera. No se reservaron existencias.');return;
+      }
+      const totalCents=Math.round(activeTotal*100);
+      let attempt=parkedOrderRetryRef.current;
+      if(attempt&&(stablePOSJson(attempt.payload)!==stablePOSJson(payload)||Number(attempt.totalCents)!==totalCents)){
+        throw new Error('Hay un intento de guardado que pudo completarse. No cambies el pedido; recarga para recuperar exactamente los datos guardados o verifica si ya aparece en Órdenes en espera.');
+      }
+      if(!attempt){
+        attempt={version:1,savedAt:Date.now(),key:globalThis.crypto?.randomUUID?.()||`park-${Date.now()}-${Math.random().toString(36).slice(2)}`,payload,totalCents};
+        sessionStorage.setItem(parkedOrderRetryStorageKey,JSON.stringify(attempt));
+        const verified=JSON.parse(sessionStorage.getItem(parkedOrderRetryStorageKey)||'null');
+        if(stablePOSJson(verified)!==stablePOSJson(attempt))throw new Error('No se pudo guardar la protección de reintento en esta pestaña; la orden no se envió.');
+        parkedOrderRetryRef.current=attempt;
+      }
       const {data:branch,error:branchError}=await supabase.from('branches').select('id').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();
       if(branchError)throw branchError;
       if(!branch?.id)throw new Error('No encontramos la sucursal seleccionada.');
-      const {data:parkedId,error}=await supabase.rpc('park_pos_order',{p_organization_id:organizationId,p_branch_code:form.branchCode,p_idempotency_key:key,p_payload:payload,p_total:activeTotal});
+      const {data:parkedId,error}=await supabase.rpc('park_pos_order',{p_organization_id:organizationId,p_branch_code:form.branchCode,p_idempotency_key:attempt.key,p_payload:attempt.payload,p_total:attempt.totalCents/100});
       if(error)throw error;
+      sessionStorage.removeItem(parkedOrderRetryStorageKey);parkedOrderRetryRef.current=null;
       await refreshParkedOrders();
       resetCheckout();
       flash(`Orden guardada en espera · ${String(parkedId).slice(0,8).toUpperCase()}. No se reservó ni descontó inventario.`);
-    }catch(error){flash(`No se pudo guardar la orden en espera: ${error.message}`);}
+    }catch(error){
+      const code=String(error?.code||'');
+      if(/^[0-9A-Z]{5}$/.test(code)&&code!=='00000'){sessionStorage.removeItem(parkedOrderRetryStorageKey);parkedOrderRetryRef.current=null;}
+      flash(`No se pudo guardar la orden en espera: ${error.message}`);
+    }
     finally{setParking(false);}
   };
   const deleteParkedOrder=async(order)=>{
@@ -2253,6 +2318,7 @@ export function PosPage() {
               type="button"
               className={`pos-branch-pill${form.branchCode===branch.code?' is-active':''}`}
               aria-pressed={form.branchCode===branch.code}
+              disabled={Boolean(activeParkedOrderId)&&form.branchCode!==branch.code}
               onClick={()=>setForm((current)=>({...current,branchCode:branch.code}))}
             >{branch.name||branch.code}</button>)}
           </div>
@@ -2262,21 +2328,21 @@ export function PosPage() {
         </div>
 
         <div className="pos-counter-block pos-counter-metrics">
-          <span className="pos-counter-block-label"><ChartNoAxesCombined size={13} aria-hidden="true"/> VENTAS DE HOY</span>
+          <span className="pos-counter-block-label"><ChartNoAxesCombined size={13} aria-hidden="true"/> VENTAS DEL PERIODO</span>
           <div className="pos-counter-metric-group">
             <div className="pos-counter-metric-item">
-              <small>Total confirmado</small>
-              <strong className="tabular-num">{posSalesStatus==='ready'?formatMoney(salesToday.reduce((sum,sale)=>sum+sale.total,0)):'—'}</strong>
+              <small>Total neto tras devoluciones</small>
+              <strong className="tabular-num">{posSalesStatus==='ready'?formatMoney(posSalesSummary.totalAmount):'—'}</strong>
             </div>
             <div className="pos-counter-metric-separator" aria-hidden="true"/>
             <div className="pos-counter-metric-item">
               <small>Transacciones</small>
-              <strong className="tabular-num">{posSalesStatus==='ready'?salesToday.length:'—'}</strong>
+              <strong className="tabular-num">{posSalesStatus==='ready'?posSalesSummary.totalCount:'—'}</strong>
             </div>
             <div className="pos-counter-metric-separator" aria-hidden="true"/>
             <div className="pos-counter-metric-item">
               <small>Método común</small>
-              <strong>{posSalesStatus==='ready'&&salesToday.length?mostFrequent(salesToday.map((sale)=>sale.method)):'—'}</strong>
+              <strong>{posSalesStatus==='ready'?posSalesSummary.commonMethod:'—'}</strong>
             </div>
           </div>
         </div>
@@ -2403,7 +2469,7 @@ export function PosPage() {
         <div className="pos-origin-branch-row">
           <label>
             <span>Origen de la venta</span>
-            {acceptedQuotes.length > 6 && (
+            {(acceptedQuotes.length > 6 || quoteSearchQuery.trim().length > 0) && (
               <div className="pos-quote-search-inline">
                 <Search size={13} aria-hidden="true"/>
                 <input
@@ -2420,6 +2486,8 @@ export function PosPage() {
                 )}
               </div>
             )}
+            {quoteSearchLoading&&<small className="pos-field-help" role="status">Buscando cotizaciones aprobadas…</small>}
+            {quoteSearchError&&<small className="pos-field-help" role="alert">{quoteSearchError} Revisa que la búsqueda del servidor esté disponible.</small>}
             <select value={form.quoteId} onChange={(event)=>void handleQuoteSelection(event.target.value,event.currentTarget)}>
               <option value="">Venta manual: catálogo y carrito</option>
               {filteredAcceptedQuotes.map((quote)=><option key={quote.id} value={quote.id}>{quote.quote_code} · {quote.customer_name||'Cliente'} · {formatMoney(quote.selected_total)}</option>)}
@@ -2429,7 +2497,7 @@ export function PosPage() {
             </select>
             <small className="pos-field-help">Puedes armar una venta nueva o cargar una cotización aprobada con su precio confirmado.</small>
           </label>
-          <label className="pos-payment-fields pos-branch-selector"><span>Sucursal</span><select value={form.branchCode} disabled={!data.branches.length} onChange={(event)=>setForm((current)=>({...current,branchCode:event.target.value}))}>{data.branches.length?data.branches.map((branch)=><option key={branch.id} value={branch.code}>{branch.name||branch.code}</option>):<option value={form.branchCode}>{branchName}</option>}</select><small className="pos-field-help">Define de qué inventario se descuenta y en qué caja ingresa.</small></label>
+          <label className="pos-payment-fields pos-branch-selector"><span>Sucursal</span><select value={form.branchCode} disabled={!data.branches.length||Boolean(activeParkedOrderId)} onChange={(event)=>setForm((current)=>({...current,branchCode:event.target.value}))}>{data.branches.length?data.branches.map((branch)=><option key={branch.id} value={branch.code}>{branch.name||branch.code}</option>):<option value={form.branchCode}>{branchName}</option>}</select><small className="pos-field-help">{activeParkedOrderId?'La sucursal queda fija mientras editas una orden recuperada.':'Define de qué inventario se descuenta y en qué caja ingresa.'}</small></label>
         </div>
         <POSCustomerPicker customers={data.customers||[]} remoteMatches={customerLookupActive&&canSearchCustomers&&!form.customerId&&customerSearch.results!==null&&!customerSearch.error?customerSearch.results:null} searchingCustomers={customerSearch.loading} searchError={customerSearch.error} onRetrySearch={()=>setCustomerSearchRequest((request)=>request+1)} canShowMore={Boolean(customerSearch.hasMore&&customerSearchLimit<20)} onShowMore={()=>setCustomerSearchLimit(20)} selectedCustomer={selectedCustomer} duplicateCustomer={duplicateCustomer} customerName={form.customer} onNewNameChange={(value)=>setForm((current)=>({...current,customer:value}))} query={customerQuery} onQueryChange={updateCustomerQuery} onSelect={choosePOSCustomer} phone={form.customerPhone} email={form.customerEmail} documentReference={form.customerDocumentReference} onContactChange={(field,value)=>setForm((current)=>({...current,[field==='phone'?'customerPhone':field==='email'?'customerEmail':'customerDocumentReference']:value}))} canViewSales={canViewCustomerHistory} historyLoading={customerHistory.loading} historyCount={customerHistory.count} historySummary={customerHistory.summary} recentPurchases={customerHistory.rows} onOpenPurchase={(purchase)=>setDetailTarget({kind:'sale',id:purchase.id,code:purchase.code})}/>
         {form.quoteId?<div className="pos-quote-total"><span>Total aprobado en cotización</span><strong>{formatMoney(form.total)}</strong><small>El total se conserva igual al aprobado.</small></div>:<>
@@ -2656,30 +2724,37 @@ export function PosPage() {
         </section>
         {activeParkedOrderId&&<div className="pos-parked-active"><span>ORDEN RECUPERADA</span><b>Se conserva en espera hasta confirmar la venta.</b></div>}
         <div className="pos-submit-actions">
-          <button className="button button-outline" type="button" disabled={parking||pendingSaleRecoveryMode||Boolean(activeParkedOrderId)||(!form.quoteId&&!cart.length)||(!form.quoteId&&taxConfigurationStatus!=='ready')} onClick={parkCurrentOrder}>{activeParkedOrderId?'Ya está en espera':parking?'Guardando…':'Guardar en espera'} <ClipboardList size={15}/></button>
+          <button className="button button-outline" type="button" disabled={parking||(pendingSaleRecoveryMode&&!activeParkedOrderId)||(!form.quoteId&&!cart.length)||(!form.quoteId&&taxConfigurationStatus!=='ready')} onClick={parkCurrentOrder}>{parking?'Guardando…':activeParkedOrderId?'Actualizar orden en espera':'Guardar en espera'} <ClipboardList size={15}/></button>
           {checkoutStep==='order'?<button className="button button-dark" type="button" onClick={advanceFromOrder}>{requiresWorkDetails?'Ir a detalles':'Revisar y cobrar'} <ChevronRight size={15}/></button>:checkoutStep==='details'?<button className="button button-dark" type="button" onClick={continueToPayment}>Revisar y cobrar <ChevronRight size={15}/></button>:<button className="button button-dark form-submit" type="submit" disabled={!canSubmitSale}>{savingSale?'Guardando venta…':'Confirmar orden'} <Check size={16}/></button>}
         </div>
         {submitBlockReason&&<p className="pos-submit-guidance" role="status">{submitBlockReason}</p>}
         </aside>
       </form>
-      <section className="panel pos-parked-panel"><div className="panel-heading"><div><span className="eyebrow">ÓRDENES RECUPERABLES</span><h2>En espera</h2></div><span className="muted-count">{parkedOrders.length} órdenes</span></div>{parkedOrders.length===0?<EmptyState icon={ClipboardList} title="No hay órdenes en espera" text="Guarda aquí un carrito o cotización para continuarla desde esta sucursal. No reserva stock."/>:<div className="activity-list">{parkedOrders.map(order=>{const payload=order.payload||{};const customerName=payload.form?.customer||payload.form?.quoteId&&centralQuotes.find(quote=>quote.id===payload.form.quoteId)?.customer_name||'Sin cliente';const orderIsOpen=activeParkedOrderId===order.id;const canManageOrderBranch=parkedManagerAccess.all||parkedManagerAccess.branchIds.includes(order.branch_id);const canDeleteOrder=order.created_by===user?.id||canManageOrderBranch;return <article className="sale-activity pos-parked-card" key={order.id}><div className="sale-row"><span className="sale-icon"><ClipboardList size={17}/></span><span><b>{customerName}</b><small>{branchNames[order.branch_id]||'Sucursal'} · {new Date(order.created_at).toLocaleString('es-EC',{dateStyle:'short',timeStyle:'short'})}</small></span><strong>{formatMoney(order.total)}</strong></div><div className="sale-payment-summary"><span>{payload.cart?.length|| (payload.form?.quoteId?'Cotización aprobada':'')} artículo(s)</span><span>Guardada por <b>{order.created_by===user?.id?'ti':'el equipo'}</b></span></div><div className="pos-parked-actions"><button className="button button-outline" type="button" disabled={Boolean(deletingParkedOrderId)} onClick={()=>resumeParkedOrder(order)}>Recuperar orden</button>{canDeleteOrder&&(orderIsOpen?<span className="pos-parked-open-badge" title="Confirma la venta o descarta esta orden abierta antes de eliminarla">Abierta en el POS</span>:<button className="button button-outline pos-parked-delete" type="button" disabled={Boolean(deletingParkedOrderId)} aria-label={`Eliminar orden de ${customerName}`} onClick={()=>deleteParkedOrder(order)}><Trash2 size={14} aria-hidden="true"/>{deletingParkedOrderId===order.id?'Eliminando…':'Eliminar orden'}</button>)}</div></article>;})}</div>}</section>
-      <section className="panel pos-recent-panel"><div className="panel-heading"><div><span className="eyebrow">CAJA DEL DÍA · {branchName}</span><h2>Ventas confirmadas</h2></div><span className="muted-count">{posSalesStatus==='ready'?`${salesToday.length} registros`:posSalesStatus==='loading'?'Consultando…':posSalesStatus==='restricted'?'Acceso limitado':'Error de consulta'}</span></div>
-        {posSalesStatus==='ready'&&salesToday.length>0&&<div className="pos-recent-toolbar">
-          <div className="search-input pos-recent-search"><Search size={14}/><input type="search" value={recentSalesQuery} onChange={(e)=>setRecentSalesQuery(e.target.value)} placeholder="Buscar cliente, código VEN o producto…" aria-label="Buscar en ventas de hoy"/></div>
-          <div className="pos-recent-filter-pills" role="group" aria-label="Filtrar ventas de hoy">
-            <button type="button" className={recentSalesFilter==='all'?'is-active':''} onClick={()=>setRecentSalesFilter('all')}>Todas ({salesToday.length})</button>
-            <button type="button" className={recentSalesFilter==='balance'?'is-active':''} onClick={()=>setRecentSalesFilter('balance')}>Con saldo ({salesToday.filter((s:any)=>Number(s.balance)>0||pendingBalancePaymentBySale[s.id]).length})</button>
-            <button type="button" className={recentSalesFilter==='paid'?'is-active':''} onClick={()=>setRecentSalesFilter('paid')}>Pagadas ({salesToday.filter((s:any)=>!(Number(s.balance)>0)&&!pendingBalancePaymentBySale[s.id]).length})</button>
+      <section className="panel pos-parked-panel">
+        <div className="panel-heading"><div><span className="eyebrow">ÓRDENES RECUPERABLES</span><h2>En espera</h2></div><span className="muted-count">{filteredParkedOrders.length} visibles</span></div>
+        <div className="pos-parked-toolbar"><div className="search-input"><Search size={14}/><input type="search" value={parkedSearchQuery} onChange={(event)=>setParkedSearchQuery(event.target.value)} placeholder="Buscar cliente, cotización o sucursal…" aria-label="Buscar órdenes en espera"/></div></div>
+        {parkedOrders.length===0?<EmptyState icon={ClipboardList} title="No hay órdenes en espera" text="Guarda aquí un carrito o cotización para continuarla desde una sucursal. No reserva existencias."/>:filteredParkedOrders.length===0?<div className="pos-sales-state">No hay órdenes que coincidan con la búsqueda.</div>:<div className="activity-list">{filteredParkedOrders.map(order=>{const payload=order.payload||{};const quote=centralQuotes.find((candidate:any)=>candidate.id===payload.form?.quoteId);const customerName=payload.form?.customer||quote?.customer_name||'Sin cliente';const orderIsOpen=activeParkedOrderId===order.id;const canManageOrderBranch=parkedManagerAccess.all||parkedManagerAccess.branchIds.includes(order.branch_id);const canDeleteOrder=order.created_by===user?.id||canManageOrderBranch;return <article className="sale-activity pos-parked-card" key={order.id}><div className="sale-row"><span className="sale-icon"><ClipboardList size={17}/></span><span><b>{customerName}</b><small>{branchNames[order.branch_id]||'Sucursal'} · Actualizada {new Date(order.updated_at||order.created_at).toLocaleString('es-EC',{dateStyle:'short',timeStyle:'short'})}</small></span><strong>{formatMoney(order.total)}</strong></div><div className="sale-payment-summary"><span>{payload.cart?.length|| (payload.form?.quoteId?'Cotización aprobada':'')} artículo(s)</span><span>Guardada por <b>{order.created_by===user?.id?'ti':'el equipo'}</b></span></div><div className="pos-parked-actions">{orderIsOpen?<span className="pos-parked-open-badge">Abierta en el POS · guarda cambios desde el formulario</span>:<button className="button button-outline" type="button" disabled={Boolean(deletingParkedOrderId)} onClick={()=>resumeParkedOrder(order)}>Recuperar orden</button>}{canDeleteOrder&&!orderIsOpen&&<button className="button button-outline pos-parked-delete" type="button" disabled={Boolean(deletingParkedOrderId)} aria-label={`Eliminar orden de ${customerName}`} onClick={()=>deleteParkedOrder(order)}><Trash2 size={14} aria-hidden="true"/>{deletingParkedOrderId===order.id?'Eliminando…':'Eliminar orden'}</button>}</div></article>;})}</div>}
+        {parkedOrdersHasMore&&<div className="pos-recent-pagination"><span>Se cargaron {parkedOrders.length} órdenes accesibles</span><button type="button" className="button button-outline" onClick={()=>void refreshParkedOrders(true)}>Cargar más órdenes</button></div>}
+      </section>
+      <section className="panel pos-recent-panel"><div className="panel-heading"><div><span className="eyebrow">HISTORIAL Y SALDOS · {branchName}</span><h2>Ventas confirmadas</h2></div><span className="muted-count">{posSalesStatus==='ready'?`${posSalesSummary.totalCount} registros`:posSalesStatus==='loading'?'Consultando…':posSalesStatus==='restricted'?'Acceso limitado':'Error de consulta'}</span></div>
+        <div className="pos-recent-toolbar">
+          <div className="search-input pos-recent-search"><Search size={14}/><input type="search" value={recentSalesQuery} onChange={(e)=>{setRecentSalesQuery(e.target.value);setPosSalesPage(0);}} placeholder="Buscar cliente, código VEN, nota o producto…" aria-label="Buscar ventas de la sucursal"/></div>
+          <label className="pos-recent-period"><span>Periodo</span><select value={recentSalesPeriod} onChange={(event)=>{setRecentSalesPeriod(event.target.value as typeof recentSalesPeriod);setPosSalesPage(0);}}><option value="today">Hoy</option><option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option><option value="all">Todo el historial</option></select></label>
+          <div className="pos-recent-filter-pills" role="group" aria-label="Filtrar ventas por saldo">
+            <button type="button" className={recentSalesFilter==='all'?'is-active':''} aria-pressed={recentSalesFilter==='all'} onClick={()=>{setRecentSalesFilter('all');setPosSalesPage(0);}}>Todas</button>
+            <button type="button" className={recentSalesFilter==='balance'?'is-active':''} aria-pressed={recentSalesFilter==='balance'} onClick={()=>{setRecentSalesFilter('balance');setPosSalesPage(0);}}>Con saldo</button>
+            <button type="button" className={recentSalesFilter==='paid'?'is-active':''} aria-pressed={recentSalesFilter==='paid'} onClick={()=>{setRecentSalesFilter('paid');setPosSalesPage(0);}}>Pagadas</button>
           </div>
-        </div>}
-        {balancePaymentRecoveryMatches&&balancePaymentRecovery.status==='error'&&<div className="pos-sales-state" role="alert">No se puede registrar otro abono hasta resolver la recuperación guardada: {balancePaymentRecovery.error}</div>}{posSalesStatus==='loading'?<div className="pos-sales-state" role="status">Consultando las ventas de hoy para {branchName}…</div>:posSalesStatus==='restricted'?<div className="pos-sales-state">Tu perfil no tiene permiso para consultar ventas.</div>:posSalesStatus==='error'?<div className="pos-sales-state" role="alert"><span>No se pudieron cargar las ventas de esta sucursal.</span><button className="button button-outline" type="button" onClick={()=>void refreshPOSDaySales()}>Reintentar</button></div>:salesToday.length===0?<EmptyState icon={Wallet} title="Todavía no hay ventas" text={`Las ventas confirmadas de hoy en ${branchName} aparecerán aquí.`}/>:filteredRecentSales.length===0?<div className="pos-sales-state"><span>No hay ventas que coincidan con el filtro actual.</span><button className="button button-outline" type="button" onClick={()=>{setRecentSalesQuery('');setRecentSalesFilter('all');}}>Ver todas</button></div>:<div className="activity-list">{filteredRecentSales.map((sale)=><article className="sale-activity" key={sale.id}><div className="sale-row"><span className="sale-icon"><ShoppingCart size={17}/></span><span><b>{sale.customer||sale.description||'Venta'}</b><small>{pendingBalancePaymentBySale[sale.id]?<>Abono pendiente · {sale.code} · {new Date(sale.date).toLocaleDateString('es-EC')}</>:<>{sale.method} · {new Date(sale.date).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})} · {sale.code}</>}</small></span><strong>{formatMoney(sale.total)}</strong></div><div className="sale-payment-summary"><span>Abonado: <b>{formatMoney(sale.paid||0)}</b></span><span className={pendingBalancePaymentBySale[sale.id]?'pos-sale-balance-tag is-due':Number(sale.balance)>0?'pos-sale-balance-tag is-due':'pos-sale-balance-tag is-paid'}>Saldo{pendingBalancePaymentBySale[sale.id]?' consultado':''}: <b>{formatMoney(sale.balance||0)}</b></span>{pendingBalancePaymentBySale[sale.id]&&<span className="inventory-status pending">Abono por confirmar</span>}{sale.urgent&&<span className="inventory-status pending">Compra urgente pendiente</span>}</div><div className="pos-sale-card-actions"><button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>setDetailTarget({kind:'sale',id:sale.id,code:sale.code})}>Ver ficha completa</button><button className="button button-outline pos-sale-detail-trigger pos-sale-edit-btn" type="button" onClick={()=>setEditingSaleId(sale.id)}><Pencil size={13}/> Editar venta</button>{(Number(sale.balance)>0||pendingBalancePaymentBySale[sale.id])&&<button className="button button-outline pos-sale-detail-trigger" type="button" disabled={!balancePaymentRecoveryReady} onClick={()=>toggleBalancePayment(sale)}>{pendingBalancePaymentBySale[sale.id]?'Reintentar abono pendiente':'Registrar abono'}</button>}{canDeleteSales&&<button className="button button-outline pos-sale-detail-trigger" style={{color:'#dc2626',borderColor:'rgba(239,68,68,0.45)'}} type="button" onClick={()=>setAdminDeleteTarget({kind:'sale',saleId:sale.id,saleCode:sale.code,customerName:sale.customer,total:sale.total,status:sale.status,paymentMethod:sale.method,createdAt:sale.date})}><Trash2 size={13}/> Eliminar</button>}</div>{(Number(sale.balance)>0||pendingBalancePaymentBySale[sale.id])&&paymentTarget===sale.id&&<form className="payment-form" onSubmit={(event)=>registerBalancePayment(event,sale)}>{pendingBalancePaymentBySale[sale.id]&&<p className="pos-calculation-warning" role="status">Este abono conserva el intento original para evitar duplicarlo. Reinténtalo con los mismos datos; no edites el monto, método, referencia ni nota.</p>}
+        </div>
+        {balancePaymentRecoveryMatches&&balancePaymentRecovery.status==='error'&&<div className="pos-sales-state" role="alert">No se puede registrar otro abono hasta resolver la recuperación guardada: {balancePaymentRecovery.error}</div>}{posSalesStatus==='loading'?<div className="pos-sales-state" role="status">Consultando ventas para {branchName}…</div>:posSalesStatus==='restricted'?<div className="pos-sales-state">Tu perfil no tiene permiso para consultar ventas.</div>:posSalesStatus==='error'?<div className="pos-sales-state" role="alert"><span>No se pudieron cargar las ventas de esta sucursal.</span><button className="button button-outline" type="button" onClick={()=>void refreshPOSDaySales()}>Reintentar</button></div>:salesToday.length===0?<EmptyState icon={Wallet} title="Todavía no hay ventas" text={`Las ventas confirmadas del periodo seleccionado en ${branchName} aparecerán aquí.`}/>:filteredRecentSales.length===0?<div className="pos-sales-state"><span>No hay ventas que coincidan con el filtro actual.</span><button className="button button-outline" type="button" onClick={()=>{setRecentSalesQuery('');setRecentSalesFilter('all');setPosSalesPage(0);}}>Ver todas</button></div>:<div className="activity-list">{filteredRecentSales.map((sale)=><article className="sale-activity" key={sale.id}><div className="sale-row"><span className="sale-icon"><ShoppingCart size={17}/></span><span><b>{sale.customer||sale.description||'Venta'}</b><small>{pendingBalancePaymentBySale[sale.id]?<>Abono pendiente · {sale.code} · {new Date(sale.date).toLocaleDateString('es-EC')}</>:<>{sale.method} · {new Date(sale.date).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})} · {sale.code}</>}</small></span><strong>{formatMoney(sale.adjustedTotal)}</strong></div>{(Number(sale.returnedValue)>0||Number(sale.settledRefund)>0)&&<div className="sale-payment-summary pos-sale-return-summary"><span>Venta original: <b>{formatMoney(sale.total)}</b></span>{Number(sale.returnedValue)>0&&<span>Devoluciones: <b>−{formatMoney(sale.returnedValue)}</b></span>}{Number(sale.settledRefund)>0&&<span>Reembolsado: <b>−{formatMoney(sale.settledRefund)}</b></span>}</div>}<div className="sale-payment-summary"><span>Pagado neto: <b>{formatMoney(sale.paid||0)}</b></span><span className={pendingBalancePaymentBySale[sale.id]?'pos-sale-balance-tag is-due':Number(sale.balance)>0?'pos-sale-balance-tag is-due':'pos-sale-balance-tag is-paid'}>Saldo{pendingBalancePaymentBySale[sale.id]?' consultado':''}: <b>{formatMoney(sale.balance||0)}</b></span>{Number(sale.customerCredit)>0&&<span className="pos-sale-balance-tag is-paid">Saldo a favor: <b>{formatMoney(sale.customerCredit)}</b></span>}{pendingBalancePaymentBySale[sale.id]&&<span className="inventory-status pending">Abono por confirmar</span>}{sale.urgent&&<span className="inventory-status pending">Compra urgente pendiente</span>}</div><div className="pos-sale-card-actions"><button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>setDetailTarget({kind:'sale',id:sale.id,code:sale.code})}>Ver ficha completa</button><button className="button button-outline pos-sale-detail-trigger pos-sale-edit-btn" type="button" onClick={()=>setEditingSaleId(sale.id)}><Pencil size={13}/> Editar venta</button>{(Number(sale.balance)>0||pendingBalancePaymentBySale[sale.id])&&<button className="button button-outline pos-sale-detail-trigger" type="button" disabled={!balancePaymentRecoveryReady} onClick={()=>toggleBalancePayment(sale)}>{pendingBalancePaymentBySale[sale.id]?'Reintentar abono pendiente':'Registrar abono'}</button>}{canDeleteSales&&<button className="button button-outline pos-sale-detail-trigger" style={{color:'#dc2626',borderColor:'rgba(239,68,68,0.45)'}} type="button" onClick={()=>setAdminDeleteTarget({kind:'sale',saleId:sale.id,saleCode:sale.code,customerName:sale.customer,total:sale.total,status:sale.status,paymentMethod:sale.method,createdAt:sale.date})}><Trash2 size={13}/> Eliminar</button>}</div>{(Number(sale.balance)>0||pendingBalancePaymentBySale[sale.id])&&paymentTarget===sale.id&&<form className="payment-form" onSubmit={(event)=>registerBalancePayment(event,sale)}>{pendingBalancePaymentBySale[sale.id]&&<p className="pos-calculation-warning" role="status">Este abono conserva el intento original para evitar duplicarlo. Reinténtalo con los mismos datos; no edites el monto, método, referencia ni nota.</p>}
           <label>{paymentForm.method==='Efectivo'?'Monto recibido':'Monto aplicado'}<input type="number" min={0.01} max={pendingBalancePaymentBySale[sale.id]?undefined:(paymentForm.method==='Efectivo'?undefined:sale.balance)} step={0.01} required disabled={Boolean(pendingBalancePaymentBySale[sale.id])} value={paymentForm.amount} onChange={(event)=>setPaymentForm({...paymentForm,amount:event.target.value})}/></label>
           {paymentForm.method==='Efectivo'&&<small className="pos-balance-change-preview">{pendingBalancePaymentBySale[sale.id]?<>Se aplicará {formatMoney(pendingBalancePaymentBySale[sale.id].appliedCents/100)} · Vuelto {formatMoney(Math.max(0,pendingBalancePaymentBySale[sale.id].receivedCents-pendingBalancePaymentBySale[sale.id].appliedCents)/100)}</>:<>Se aplicará {formatMoney(Math.min(Number(paymentForm.amount)||0,Number(sale.balance)))} · Vuelto {formatMoney(Math.max(0,(Number(paymentForm.amount)||0)-Number(sale.balance)))}</>}</small>}
           <label>Forma de pago<select disabled={Boolean(pendingBalancePaymentBySale[sale.id])} value={paymentForm.method} onChange={(event)=>setPaymentForm({...paymentForm,method:event.target.value as PendingPOSBalancePayment['method']})}><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></label>
           {(paymentForm.method==='Transferencia'||paymentForm.method==='Tarjeta')&&<label>Referencia (opcional)<input disabled={Boolean(pendingBalancePaymentBySale[sale.id])} value={paymentForm.reference} onChange={(event)=>setPaymentForm({...paymentForm,reference:event.target.value})} placeholder="Código o últimos dígitos"/></label>}
           <label>Nota (opcional)<input disabled={Boolean(pendingBalancePaymentBySale[sale.id])} value={paymentForm.note} onChange={(event)=>setPaymentForm({...paymentForm,note:event.target.value})} placeholder="Detalle del abono"/></label>
           <button className="button button-dark" type="submit" disabled={savingBalancePayment===sale.id||!balancePaymentRecoveryReady}>{savingBalancePayment===sale.id?'Guardando…':pendingBalancePaymentBySale[sale.id]?'Reintentar abono pendiente':'Guardar abono'}</button>
-        </form>}</article>)}</div>}
+         </form>}</article>)}</div>}
+        {posSalesStatus==='ready'&&posSalesHasMore&&<div className="pos-recent-pagination"><span>Mostrando {posSalesPage*40+salesToday.length} de {posSalesSummary.totalCount}</span><button type="button" className="button button-outline" onClick={()=>setPosSalesPage((page)=>page+1)}>Cargar más ventas</button></div>}
       </section>
     </div><div className="notice-box"><span><CircleHelp size={17}/></span><div><b>Antes de confirmar</b><p>Los vínculos conectan productos con variantes de inventario; la disponibilidad depende de un conteo físico registrado por sucursal. Si falta el conteo o la existencia no alcanza, el POS lo muestra como pendiente y permite marcar la compra urgente al confirmar. Las órdenes en espera no reservan existencias y esta pantalla no emite comprobantes tributarios.</p></div></div>
      {isExecutivePreviewOpen && <ExecutiveQuotePdfModal

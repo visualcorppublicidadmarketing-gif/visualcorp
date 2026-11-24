@@ -1443,6 +1443,25 @@
 .pos-recent-search {
   min-height: 36px;
 }
+.pos-recent-period {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+.pos-recent-period select {
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
 .pos-recent-filter-pills {
   display: flex;
   flex-wrap: wrap;
@@ -1465,6 +1484,28 @@
   background: color-mix(in srgb, var(--pos-accent) 14%, var(--pos-surface));
   color: var(--pos-ink);
   font-weight: 800;
+}
+.pos-recent-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.pos-parked-toolbar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin-bottom: 10px; }
+.pos-parked-toolbar .search-input { min-height: 36px; min-width: 0; }
+.pos-recent-toolbar > *, .pos-recent-period > * { min-width: 0; }
+@media (min-width: 720px) {
+  .pos-recent-toolbar { grid-template-columns: minmax(220px, 1fr) auto auto; align-items: center; }
+}
+@media (max-width: 520px) {
+  .pos-recent-period { justify-content: space-between; }
+  .pos-recent-period select { flex: 1; }
+  .pos-recent-pagination { align-items: stretch; }
+  .pos-recent-pagination .button { width: 100%; }
 }
 .pos-sale-card-actions {
   display: flex;
