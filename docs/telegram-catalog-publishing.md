@@ -29,7 +29,11 @@ Si no aparece el canal privado, confirma que el bot ya sea administrador y vuelv
 
 ## Costos y límites
 
-La integración usa el proyecto Supabase Free existente y la Bot API normal de Telegram. No crea otro proyecto, hosting, servicio de imágenes ni suscripción. Los archivos privados y llamadas quedan sujetos a los límites incluidos en los planes actuales; conviene no cargar masters que no se necesiten. La publicación depende de que el sitio y Supabase sigan operativos.
+La integración usa el proyecto Supabase Free existente y la Bot API normal de Telegram. No activa publicaciones pagadas con Telegram Stars ni crea otro proyecto, hosting, servicio de imágenes o suscripción.
+
+Todos los mensajes de foto y documento pasan por una cola compartida y persistente en Supabase. La cola reserva turnos de forma atómica entre ambos canales, deja al menos **3,1 segundos** entre inicios de mensajes y convierte las fotos, QR, barras y editables en mensajes individuales en lugar de enviarlos como álbum. Ese ritmo conservador también queda por debajo del límite de 20 mensajes por minuto que Telegram fija para grupos. Si Telegram responde `429`, el bot guarda `retry_after` y pausa los siguientes envíos hasta que termine la espera. Si el turno calculado supera 60 segundos, la función se detiene antes de enviar y pide volver a intentar; no envía en ráfaga para vaciar la cola.
+
+El limitador controla los mensajes enviados por esta integración. Para mantener esa protección, no se debe usar el mismo token desde otros scripts o herramientas; tráfico externo con el mismo bot también consume la cuota de Telegram y no puede coordinarse con esta cola. La publicación depende de que el sitio y Supabase sigan operativos.
 
 ## Secretos configurables
 
@@ -47,3 +51,4 @@ La función utiliza además `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `SUPABASE_SERV
 - El acceso a masters requiere `catalog_admin.edit`. Publicar al público requiere que el producto esté publicado y el usuario tenga `website.publish_content`. Publicar internamente requiere permisos de catálogo para editar y modificar precios.
 - La Edge Function verifica el JWT, vuelve a comprobar el permiso del usuario en Postgres y solo luego usa las credenciales de servicio para leer el producto o los archivos.
 - El historial almacena destino, estado, enlaces de mensajes y progreso; no copia ni expone precios en los registros públicos.
+
