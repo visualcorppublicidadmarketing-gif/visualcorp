@@ -6,6 +6,7 @@ import { createPOSSaleAssetRecoveryStore } from '../src/lib/posSaleAssetRecovery
 
 const migration = await readFile(new URL('../supabase/migrations/20261122050812_pos_durable_checkout_recovery.sql', import.meta.url), 'utf8');
 const checkout = await readFile(new URL('../src/pages/pos/CheckoutWorkspace.tsx', import.meta.url), 'utf8');
+const paymentRecovery = await readFile(new URL('../src/lib/posPayments.ts', import.meta.url), 'utf8');
 const database = new PGlite();
 
 await database.exec(`
@@ -75,12 +76,14 @@ test('rechaza un brief sobredimensionado antes de confirmar la venta', async () 
   assert.equal(result.rows[0].count, 3);
 });
 
-test('el POS conserva la clave sin guardar el snapshot con datos del cliente en localStorage', () => {
+test('el POS conserva la clave y protege el payload exacto del abono', () => {
   assert.match(checkout, /localStorage\.setItem\(pendingSaleStorageKey,pendingSaleKey\.current\)/);
   assert.match(checkout, /sessionStorage\.setItem\(pendingSaleSnapshotStorageKey/);
   assert.match(checkout, /p_client_brief_html:clientBriefHtml/);
   assert.match(checkout, /p_parked_order:activeParkedOrderId\|\|null/);
-  assert.match(checkout, /localStorage\.setItem\(keyName,key\)/);
+  assert.match(checkout, /savePendingPOSBalancePayment\(organizationId,user\.id,intent\)/);
+  assert.match(checkout, /p_idempotency_key:intent\.idempotencyKey/);
+  assert.match(paymentRecovery, /window\.localStorage\.setItem\(storageKey,JSON\.stringify\(payment\)\)/);
   assert.doesNotMatch(checkout, /rpc\('save_pos_sale_client_brief'/);
   assert.doesNotMatch(checkout, /rpc\('complete_parked_pos_order'/);
 });
