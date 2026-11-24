@@ -23,6 +23,7 @@ import { GoogleMapsPreview } from '../../components/commercial/GoogleMapsPreview
 import { RichTextEditor } from '../../components/studio/RichTextEditor';
 import { persistCommercialAssets, type CommercialAssetDraft } from '../../lib/commercialAssets';
 import { posSaleAssetRecovery } from '../../lib/posSaleAssetRecovery';
+import { clearPendingPOSCashMovement, createPOSCashMovementKey, loadPendingPOSCashMovement, savePendingPOSCashMovement, type PendingPOSCashMovement } from '../../lib/posCashMovementRecovery';
 import { normalizeGoogleMapsUrl } from '../../lib/maps';
 import { POSCustomerPicker } from './components/POSCustomerPicker';
 import { POSCheckoutSteps, type POSCheckoutStep } from './components/POSCheckoutSteps';
@@ -806,6 +807,11 @@ export function PosPage() {
   const [cashMovementAmount,setCashMovementAmount]=useState('');
   const [cashMovementReason,setCashMovementReason]=useState('');
   const [savingCashMovement,setSavingCashMovement]=useState(false);
+  const cashMovementRecoveryStorageKey=organizationId&&user?.id?`visualcorp-pos-pending-cash-movement-v1:${organizationId}:${user.id}`:'';
+  const [cashMovementRecovery,setCashMovementRecovery]=useState<{storageKey:string;status:'loading'|'ready'|'error';pending:PendingPOSCashMovement|null;error:string}>({storageKey:'',status:'loading',pending:null,error:''});
+  const cashMovementRecoveryMatches=Boolean(cashMovementRecoveryStorageKey)&&cashMovementRecovery.storageKey===cashMovementRecoveryStorageKey;
+  const cashMovementRecoveryReady=cashMovementRecoveryMatches&&cashMovementRecovery.status==='ready';
+  const pendingCashMovement=cashMovementRecoveryMatches?cashMovementRecovery.pending:null;
   const [editingSaleId,setEditingSaleId]=useState<string|null>(null);
   const [adminDeleteTarget,setAdminDeleteTarget]=useState<AdminDeleteTarget|null>(null);
   const canDeleteSales = canAdminDeleteSales(roles, hasPermission);
@@ -1062,6 +1068,25 @@ export function PosPage() {
     return()=>{active=false;};
   },[organizationId]);
   useEffect(()=>{let active=true;const load=async()=>{if(!supabase||!organizationId||!user){setCashierSession({loading:false,session:null,branch:null,error:''});return;}setCashierSession(current=>({...current,loading:true,error:''}));try{const {data:branch,error:branchError}=await supabase.from('branches').select('id,code,name').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();if(branchError)throw branchError;if(!branch?.id){if(active)setCashierSession({loading:false,session:null,branch:null,error:''});return;}const {data:session,error:sessionError}=await supabase.from('cash_sessions').select('id,opened_at,opening_cash,status').eq('organization_id',organizationId).eq('branch_id',branch.id).eq('opened_by',user.id).eq('status','open').maybeSingle();if(sessionError)throw sessionError;if(active)setCashierSession({loading:false,session,branch,error:''});}catch(error){if(active)setCashierSession({loading:false,session:null,branch:null,error:error.message||'Error desconocido'});}};load();return()=>{active=false;};},[organizationId,user?.id,form.branchCode,cashReloadTick]);
+  useEffect(()=>{
+    let active=true;
+    if(!cashMovementRecoveryStorageKey){setCashMovementRecovery({storageKey:'',status:'ready',pending:null,error:''});return()=>{active=false;};}
+    setCashMovementRecovery({storageKey:cashMovementRecoveryStorageKey,status:'loading',pending:null,error:''});
+    try{
+      const pending=loadPendingPOSCashMovement(cashMovementRecoveryStorageKey);
+      if(active)setCashMovementRecovery({storageKey:cashMovementRecoveryStorageKey,status:'ready',pending,error:''});
+    }catch(error:any){
+      if(active)setCashMovementRecovery({storageKey:cashMovementRecoveryStorageKey,status:'error',pending:null,error:error?.message||'No se pudo recuperar el movimiento pendiente.'});
+    }
+    return()=>{active=false;};
+  },[cashMovementRecoveryStorageKey]);
+  useEffect(()=>{
+    if(!pendingCashMovement)return;
+    setCashMovementDirection(pendingCashMovement.direction);
+    setCashMovementAmount((pendingCashMovement.amountCents/100).toFixed(2));
+    setCashMovementReason(pendingCashMovement.reason);
+    setShowCashMovementModal(true);
+  },[pendingCashMovement?.idempotencyKey]);
   const openCashSessionFromPOS = async (overrideAmount?: number) => {
     if (!supabase || !organizationId || !user || openingQuickCash) return;
     const openingAmount = overrideAmount !== undefined ? overrideAmount : Number(quickCashAmount);
@@ -1168,9 +1193,11 @@ export function PosPage() {
 
   const handleRecordCashMovement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cashierSession.session?.id || savingCashMovement) return;
-    const amount = Number(cashMovementAmount);
-    const reason = cashMovementReason.trim();
+    if (savingCashMovement || !cashMovementRecoveryReady || !cashMovementRecoveryStorageKey) return;
+    if (!pendingCashMovement && !cashierSession.session?.id) return;
+    const amount = pendingCashMovement ? pendingCashMovement.amountCents/100 : Number(cashMovementAmount);
+    const reason = (pendingCashMovement?.reason || cashMovementReason.trim()).slice(0,500);
+    const direction = pendingCashMovement?.direction || cashMovementDirection;
     if (!Number.isFinite(amount) || amount <= 0) {
       flash('Ingresa un monto mayor a cero.');
       return;
@@ -1180,23 +1207,52 @@ export function PosPage() {
       return;
     }
     setSavingCashMovement(true);
+    let requestSent=false;
     try {
-      const key = globalThis.crypto?.randomUUID?.() || `mov-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const intent = pendingCashMovement || {
+        version:1 as const,
+        idempotencyKey:createPOSCashMovementKey(),
+        sessionId:cashierSession.session.id,
+        direction,
+        amountCents:Math.round(amount*100),
+        reason,
+        createdAt:new Date().toISOString(),
+      };
+      if(!pendingCashMovement){
+        savePendingPOSCashMovement(cashMovementRecoveryStorageKey,intent);
+        setCashMovementRecovery({storageKey:cashMovementRecoveryStorageKey,status:'ready',pending:intent,error:''});
+      }
+      requestSent=true;
       const { error } = await supabase.rpc('record_cash_session_movement', {
-        p_session: cashierSession.session.id,
-        p_direction: cashMovementDirection,
-        p_amount: amount,
-        p_reason: reason,
-        p_key: key,
+        p_session: intent.sessionId,
+        p_direction: intent.direction,
+        p_amount: intent.amountCents/100,
+        p_reason: intent.reason,
+        p_key: intent.idempotencyKey,
       });
+      if (error?.code === '55000') {
+        clearPendingPOSCashMovement(cashMovementRecoveryStorageKey);
+        setCashMovementRecovery({storageKey:cashMovementRecoveryStorageKey,status:'ready',pending:null,error:''});
+        setCashMovementAmount('');
+        setCashMovementReason('');
+        setShowCashMovementModal(false);
+        setCashReloadTick((tick) => tick + 1);
+        flash('La caja ya se cerró y no se encontró un movimiento registrado con esta clave. No se agregó ningún movimiento; puedes iniciar otro turno.');
+        return;
+      }
       if (error) throw error;
+      clearPendingPOSCashMovement(cashMovementRecoveryStorageKey);
+      setCashMovementRecovery({storageKey:cashMovementRecoveryStorageKey,status:'ready',pending:null,error:''});
       setShowCashMovementModal(false);
       setCashMovementAmount('');
       setCashMovementReason('');
       setCashReloadTick((tick) => tick + 1);
-      flash(`Movimiento de ${cashMovementDirection === 'in' ? 'ingreso' : 'retiro'} (${formatMoney(amount)}) registrado.`);
+      flash(`Movimiento de ${intent.direction === 'in' ? 'ingreso' : 'retiro'} (${formatMoney(amount)}) registrado.`);
     } catch (err: any) {
-      flash(`No se pudo registrar el movimiento: ${err.message}`);
+      const detail=err?.message||'No se pudo confirmar la respuesta del servidor.';
+      flash(!requestSent
+        ? `No se envió el movimiento: no se pudo guardar su recuperación segura (${detail}). Revisa el navegador e inténtalo de nuevo.`
+        : `No se confirmó el resultado (${detail}). El movimiento quedó guardado para reintentar con la misma clave y evitar duplicarlo.`);
     } finally {
       setSavingCashMovement(false);
     }
@@ -1204,7 +1260,7 @@ export function PosPage() {
 
   const handleExpressCashCheckout = async () => {
     if (!form.quoteId && !cart.length) {
-      focusCheckoutField('#pos-product-search-input');
+      focusCheckoutField('[data-pos-product-search-input="true"]');
       flash('Agrega un artículo o cotización antes de cobrar.');
       return;
     }
@@ -1769,7 +1825,7 @@ export function PosPage() {
     return true;
   };
   const continueToPayment=()=>{
-    if(!form.quoteId&&!cart.length){setCheckoutStep('order');focusCheckoutField('#pos-product-search-input');flash('Agrega un artículo o carga una cotización.');return;}
+    if(!form.quoteId&&!cart.length){setCheckoutStep('order');focusCheckoutField('[data-pos-product-search-input="true"]');flash('Agrega un artículo o carga una cotización.');return;}
     if(activeTotal<=0){setCheckoutStep('order');flash('La orden necesita un total mayor que cero.');return;}
     if(!discountReasonValid){setCheckoutStep('order');focusCheckoutField('#pos-discount-reason');flash('Escribe el motivo del descuento comercial para continuar.');return;}
     if(customerNameMissing){setCheckoutStep('order');focusCheckoutField('.pos-customer-picker input[role="combobox"]');flash('Completa el nombre del cliente o limpia la búsqueda para una venta de mostrador.');return;}
@@ -1779,7 +1835,7 @@ export function PosPage() {
     setCheckoutStep('payment');setMobileSummaryOpen(true);
   };
   const advanceFromOrder=()=>{
-    if(!form.quoteId&&!cart.length){focusCheckoutField('#pos-product-search-input');flash('Agrega un artículo o carga una cotización.');return;}
+    if(!form.quoteId&&!cart.length){focusCheckoutField('[data-pos-product-search-input="true"]');flash('Agrega un artículo o carga una cotización.');return;}
     if(activeTotal<=0){flash('La orden necesita un total mayor que cero.');return;}
     if(!discountReasonValid){focusCheckoutField('#pos-discount-reason');flash('Escribe el motivo del descuento comercial para continuar.');return;}
     if(customerNameMissing){focusCheckoutField('.pos-customer-picker input[role="combobox"]');flash('Completa el nombre del cliente o limpia la búsqueda para una venta de mostrador.');return;}
@@ -1910,7 +1966,7 @@ export function PosPage() {
       const extraChangeLine=extraChangeCalculation?{key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:selectedCartProduct.id,inventoryVariantId:'',sku:selectedCartProduct.sku||selectedCartProduct.id,name:`${selectedCartProduct.name} · Cambio adicional`,family:selectedCartProduct.family||'Diseño de identidad',image:selectedCartProduct.image||'',mode:'quantity',quantity:changeCount,billingQuantity:changeCount,unit:'unidad',unitPrice:extraChangeCalculation.unitPrice,baseUnitPrice:extraChangeCalculation.unitPrice,total:extraChangeCalculation.total,finishing:{...emptyCommercialFinishing},widthCm:null,heightCm:null,areaPerPiece:null,areaTotal:null,pricingTier:'pvp',pricingTierLabel:'Precio acordado',optionChoice:changeOption.label,description:`${selectedCartProduct.name} · ${changeCount} ${changeCount===1?'cambio adicional':'cambios adicionales'} · ${formatMoney(changeOption.price)} c/u`}:null;
       setCart(current=>[...current,line,...(extraChangeLine?[extraChangeLine]:[])]);
       setCartProductId('');setCartVariantId('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});setLogoChangeCount('0');
-      requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
+      requestAnimationFrame(()=>document.querySelector<HTMLInputElement>('[data-pos-product-search-input="true"]')?.focus());
       return;
     }
     if(cartEntryType==='custom-area'){
@@ -1933,7 +1989,7 @@ export function PosPage() {
       };
       setCart(current=>[...current,line]);
       setCartItemName('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});
-      requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
+      requestAnimationFrame(()=>document.querySelector<HTMLInputElement>('[data-pos-product-search-input="true"]')?.focus());
       return;
     }
     const unitPrice=Number(cartUnitPrice);
@@ -1948,7 +2004,7 @@ export function PosPage() {
     const line={key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:'',sku:'LIBRE',name,family:'Concepto libre',image:'',mode:'quantity',quantity,billingQuantity:quantity,unit,unitPrice:effectiveUnitPrice,baseUnitPrice:unitPrice,total,finishing:snapshotCommercialFinishing(cartFinishing,quantity,data.calculatorSettings||{}),customUnitPriceApplied:true,description:`${name} · ${quantity} ${quantityLabel} · $${unitPrice.toFixed(2)} c/u`};
     setCart(current=>[...current,line]);
     setCartItemName('');setCartQuantity('1');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});
-    requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
+    requestAnimationFrame(()=>document.querySelector<HTMLInputElement>('[data-pos-product-search-input="true"]')?.focus());
   };
   const save=async(event)=>{
     event.preventDefault();
@@ -2196,11 +2252,14 @@ export function PosPage() {
         <span>{cashierSession.branch?.name||branchName} · la venta y los pagos en efectivo se registran en tu turno activo</span>
       </span>
       <div className="pos-cashier-actions">
+        {cashMovementRecoveryMatches&&cashMovementRecovery.status==='error'&&<span className="inventory-status pending" title={cashMovementRecovery.error}>Hay una recuperación de caja que requiere revisión</span>}
+        {cashMovementRecoveryMatches&&cashMovementRecovery.status==='loading'&&<span className="inventory-status pending">Revisando movimientos pendientes…</span>}
+        {pendingCashMovement&&<span className="inventory-status pending">Movimiento pendiente · reintenta antes de registrar otro</span>}
         {cashierSession.loading?<span className="inventory-status pending">Consultando turno…</span>:cashierSession.session?<>
           <span className="inventory-status available">Caja abierta · {new Date(cashierSession.session.opened_at).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})}{Number.isFinite(Number(cashierSession.session.opening_cash))?` · Base ${formatMoney(Number(cashierSession.session.opening_cash))}`:''}</span>
           <button type="button" className="button button-outline pos-cashier-ctrl-btn" onClick={()=>{setNewBaseAmount(String(cashierSession.session.opening_cash||'0'));setShowEditBaseModal(true);}}><Pencil size={12}/> Editar base</button>
-          <button type="button" className="button button-outline pos-cashier-ctrl-btn is-in" onClick={()=>{setCashMovementDirection('in');setCashMovementAmount('');setCashMovementReason('');setShowCashMovementModal(true);}}><Plus size={12}/> + Entrada</button>
-          <button type="button" className="button button-outline pos-cashier-ctrl-btn is-out" onClick={()=>{setCashMovementDirection('out');setCashMovementAmount('');setCashMovementReason('');setShowCashMovementModal(true);}}><Minus size={12}/> - Retiro</button>
+          <button type="button" className="button button-outline pos-cashier-ctrl-btn is-in" disabled={!cashMovementRecoveryReady||Boolean(pendingCashMovement)} onClick={()=>{setCashMovementDirection('in');setCashMovementAmount('');setCashMovementReason('');setShowCashMovementModal(true);}}><Plus size={12}/> + Entrada</button>
+          <button type="button" className="button button-outline pos-cashier-ctrl-btn is-out" disabled={!cashMovementRecoveryReady||Boolean(pendingCashMovement)} onClick={()=>{setCashMovementDirection('out');setCashMovementAmount('');setCashMovementReason('');setShowCashMovementModal(true);}}><Minus size={12}/> - Retiro</button>
           <Link to="/operaciones/flujos?tab=cash" className="button button-outline">Arqueo / Cerrar turno <ArrowUpRight size={14}/></Link>
           {hasPermission('cash', 'view') && <Link to="/operaciones/cajas-abiertas" className="button button-outline">Control cajas abiertas <ArrowUpRight size={14}/></Link>}
         </>:cashierSession.error?<span className="inventory-status pending" title={cashierSession.error}>No se pudo verificar el turno</span>:<>
@@ -2228,27 +2287,27 @@ export function PosPage() {
           <button type="button" className="button button-outline" onClick={()=>setShowEditBaseModal(false)}>Cancelar</button>
         </div>
       </form>}
-      {showCashMovementModal&&cashierSession.session&&<form className="pos-quick-cash-drawer is-movement" onSubmit={handleRecordCashMovement}>
+      {showCashMovementModal&&(cashierSession.session||pendingCashMovement)&&<form className="pos-quick-cash-drawer is-movement" onSubmit={handleRecordCashMovement}>
         <div>
-          <span className="eyebrow">{cashMovementDirection==='in'?'+ ENTRADA DE EFECTIVO':'− RETIRO DE EFECTIVO'}</span>
-          <b>{cashMovementDirection==='in'?'Ingreso rápido a la gaveta de caja':'Salida o retiro de efectivo'}</b>
-          <small>Registra el importe y el motivo para cuadrar en el arqueo final.</small>
+          <span className="eyebrow">{pendingCashMovement?'RESULTADO PENDIENTE · MISMA CLAVE':cashMovementDirection==='in'?'+ ENTRADA DE EFECTIVO':'− RETIRO DE EFECTIVO'}</span>
+          <b>{pendingCashMovement?'Confirma el movimiento original de caja':cashMovementDirection==='in'?'Ingreso rápido a la gaveta de caja':'Salida o retiro de efectivo'}</b>
+          <small>{pendingCashMovement?`Se reintentará en el turno original (${pendingCashMovement.sessionId.slice(0,8)}…). No cambies el importe ni el motivo.`:'Registra el importe y el motivo para cuadrar en el arqueo final.'}</small>
         </div>
         <div className="pos-quick-cash-controls">
           <div className="pos-mode-switch compact" role="group">
-            <button type="button" className={cashMovementDirection==='in'?'active':''} onClick={()=>setCashMovementDirection('in')}>+ Entrada</button>
-            <button type="button" className={cashMovementDirection==='out'?'active':''} onClick={()=>setCashMovementDirection('out')}>− Retiro</button>
+            <button type="button" className={cashMovementDirection==='in'?'active':''} disabled={Boolean(pendingCashMovement)} onClick={()=>setCashMovementDirection('in')}>+ Entrada</button>
+            <button type="button" className={cashMovementDirection==='out'?'active':''} disabled={Boolean(pendingCashMovement)} onClick={()=>setCashMovementDirection('out')}>− Retiro</button>
           </div>
           <label className="pos-quick-cash-input">
             <span>Monto ($)</span>
-            <input type="number" min="0.01" step="0.01" required placeholder="0.00" value={cashMovementAmount} onChange={(e)=>setCashMovementAmount(e.target.value)}/>
+            <input type="number" min="0.01" step="0.01" required placeholder="0.00" value={cashMovementAmount} readOnly={Boolean(pendingCashMovement)} onChange={(e)=>setCashMovementAmount(e.target.value)}/>
           </label>
           <label className="pos-quick-cash-input is-wide">
             <span>Motivo del movimiento *</span>
-            <input type="text" required placeholder="Ej.: Cambio de sencillo, pago de delivery, etc." value={cashMovementReason} onChange={(e)=>setCashMovementReason(e.target.value)}/>
+            <input type="text" required maxLength={500} placeholder="Ej.: Cambio de sencillo, pago de delivery, etc." value={cashMovementReason} readOnly={Boolean(pendingCashMovement)} onChange={(e)=>setCashMovementReason(e.target.value)}/>
           </label>
-          <button type="submit" className="button button-dark" disabled={savingCashMovement}>{savingCashMovement?'Registrando…':'Registrar movimiento'}</button>
-          <button type="button" className="button button-outline" onClick={()=>setShowCashMovementModal(false)}>Cancelar</button>
+          <button type="submit" className="button button-dark" disabled={savingCashMovement||!cashMovementRecoveryReady}>{savingCashMovement?'Confirmando…':pendingCashMovement?'Reintentar el mismo movimiento':'Registrar movimiento'}</button>
+          <button type="button" className="button button-outline" disabled={savingCashMovement||Boolean(pendingCashMovement)} onClick={()=>setShowCashMovementModal(false)}>Cancelar</button>
         </div>
       </form>}
       {showQuickCashOpen&&!cashierSession.session&&<div className="pos-quick-cash-drawer" role="region" aria-label="Apertura rápida de turno de caja">
