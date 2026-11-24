@@ -83,7 +83,7 @@ test('el POS conserva la clave y protege el payload exacto del abono', () => {
   assert.match(checkout, /p_parked_order:activeParkedOrderId\|\|null/);
   assert.match(checkout, /savePendingPOSBalancePayment\(organizationId,user\.id,intent\)/);
   assert.match(checkout, /p_idempotency_key:intent\.idempotencyKey/);
-  assert.match(paymentRecovery, /window\.localStorage\.setItem\(storageKey,JSON\.stringify\(payment\)\)/);
+  assert.match(paymentRecovery, /window\.localStorage\.setItem\(storageKey,\s*JSON\.stringify\(payment\)\)/);
   assert.doesNotMatch(checkout, /rpc\('save_pos_sale_client_brief'/);
   assert.doesNotMatch(checkout, /rpc\('complete_parked_pos_order'/);
 });
