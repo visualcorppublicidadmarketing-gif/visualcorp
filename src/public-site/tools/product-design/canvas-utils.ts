@@ -752,6 +752,46 @@ export async function createArtworkCanvas(product: ProductBase, layers: DesignLa
   return canvas;
 }
 
+export async function createFrontalMockupCanvas(
+  product: ProductBase,
+  layers: DesignLayer[],
+  width = 1024,
+  appearance?: ProductAppearance,
+) {
+  const height = Math.max(1, Math.round(width / product.ratio));
+  const { canvas, context } = createCanvas(width, height);
+  const baseImage = await loadCanvasImage(product.image);
+  const activeAppearance: ProductAppearance = appearance || {
+    mode: 'original',
+    color: product.defaultColor,
+    accentColor: product.defaultAccentColor,
+    finish: product.defaultFinish,
+    warpMode: product.defaultWarp,
+    warpStrength: product.defaultWarpStrength,
+  };
+  const processedProduct = buildProcessedProductCanvas(
+    baseImage,
+    product.image,
+    activeAppearance,
+    false,
+    Math.min(width, 1600),
+  );
+  context.drawImage(processedProduct, 0, 0, width, height);
+
+  const artCanvas = await createArtworkCanvas(product, layers, Math.min(width, 1600));
+  drawWarpedArtworkCanvas(
+    context,
+    artCanvas,
+    (product.printArea.x / 100) * width,
+    (product.printArea.y / 100) * height,
+    (product.printArea.width / 100) * width,
+    (product.printArea.height / 100) * height,
+    activeAppearance.warpMode,
+    activeAppearance.warpStrength,
+  );
+  return canvas;
+}
+
 export async function createMockupCanvas(
   product: ProductBase,
   layers: DesignLayer[],

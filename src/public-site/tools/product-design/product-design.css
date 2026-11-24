@@ -1145,6 +1145,47 @@ html[data-vc-theme="light"] .vc-product-studio .vc-product-inspector-footer {
   }
 }
 
+.vc-product-local-draft {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--vc-line, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  color: var(--vc-muted, #aeb4c4);
+  font-size: 12px;
+}
+
+.vc-product-local-draft span {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.vc-product-local-draft button {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--vc-line, rgba(255, 255, 255, 0.16));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.vc-product-local-draft button:hover:not(:disabled) {
+  border-color: var(--vc-accent, #ec1688);
+  color: var(--vc-text, #fff);
+}
+
+.vc-product-local-draft button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 @media (max-width: 380px) {
   .vc-product-template-grid {
     grid-template-columns: minmax(0, 1fr);

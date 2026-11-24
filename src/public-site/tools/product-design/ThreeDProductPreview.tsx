@@ -25,6 +25,7 @@ export type ThreeDPreviewHandle = {
 type ThreeDProductPreviewProps = {
   product: ProductBase;
   artworkUrl: string;
+  frontalMockupUrl: string;
   appearance: ProductAppearance;
   background: SceneBackground;
   customModel: Custom3DModelState | null;
@@ -96,6 +97,21 @@ function createCurvedPatchGeometry(width: number, height: number, bendX: number,
   pos.needsUpdate = true;
   geo.computeVertexNormals();
   return geo;
+}
+
+function getFrontalMockupFrame(product: ProductBase): { width: number; height: number; z: number } {
+  switch (product.model) {
+    case 'apparel': return { width: 2.34, height: 2.06, z: 0.19 };
+    case 'mug': return { width: 1.75, height: 1.24, z: 0.49 };
+    case 'bottle': return { width: 2.18, height: 1.86, z: 0.38 };
+    case 'cap': return { width: 1.58, height: 1.04, z: 0.86 };
+    case 'tote': return { width: 1.72, height: 2.12, z: 0.14 };
+    case 'rollup': return { width: 1.97, height: 1.83, z: 0.045 };
+    case 'banner-x': return { width: 1.93, height: 1.62, z: 0.05 };
+    case 'banner-a': return { width: 1.42, height: 1.51, z: 0.34 };
+    case 'sign': return { width: 2.58, height: 1.87, z: 0.1 };
+    default: return { width: 1.8, height: 1.8, z: 0.16 };
+  }
 }
 
 function createGarmentShape(productId: string) {
@@ -475,19 +491,24 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
 }
 
 function disposeObject3D(root: THREE.Object3D) {
+  const geometries = new Set<THREE.BufferGeometry>();
+  const materials = new Set<THREE.Material>();
+  const textures = new Set<THREE.Texture>();
   root.traverse((obj) => {
     if (obj instanceof THREE.Mesh) {
-      obj.geometry.dispose();
+      geometries.add(obj.geometry);
       const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
       mats.forEach((mat) => {
-        if (mat instanceof THREE.MeshStandardMaterial) {
-          mat.dispose();
-        } else {
-          mat.dispose();
-        }
+        materials.add(mat);
+        Object.values(mat).forEach((value) => {
+          if (value instanceof THREE.Texture) textures.add(value);
+        });
       });
     }
   });
+  geometries.forEach((geometry) => geometry.dispose());
+  materials.forEach((material) => material.dispose());
+  textures.forEach((texture) => texture.dispose());
 }
 
 async function loadCustom3DObject(url: string, format: Custom3DModelState['format']): Promise<THREE.Group> {
@@ -612,6 +633,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
   {
     product,
     artworkUrl,
+    frontalMockupUrl,
     appearance,
     background,
     customModel,
@@ -634,6 +656,8 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
   const decalMeshRef = useRef<THREE.Mesh | null>(null);
   const bgTextureRef = useRef<THREE.Texture | null>(null);
   const artTextureRef = useRef<THREE.Texture | null>(null);
+  const frontalTextureRef = useRef<THREE.Texture | null>(null);
+  const frontalMockupMeshRef = useRef<THREE.Mesh | null>(null);
   const floorRef = useRef<THREE.Mesh | null>(null);
   const targetCameraPosRef = useRef<THREE.Vector3 | null>(null);
   const baseDistanceRef = useRef(4.1);
@@ -869,6 +893,9 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
       bgTextureRef.current = null;
       artTextureRef.current?.dispose();
       artTextureRef.current = null;
+      frontalTextureRef.current?.dispose();
+      frontalTextureRef.current = null;
+      frontalMockupMeshRef.current = null;
       if (decalMeshRef.current) {
         decalMeshRef.current.geometry.dispose();
         (decalMeshRef.current.material as THREE.Material).dispose();
@@ -941,7 +968,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
     return () => { cancelled = true; };
   }, [background]);
 
-  // 3. Build Built-In Product Model OR Load Custom 3D Model (.glb / .gltf / .obj / .stl)
+  // 3. Build Built-In Product Model OR Load Custom 3D Model (.glb / .obj / .stl)
   useEffect(() => {
     const modelRoot = modelRootRef.current;
     const camera = cameraRef.current;
@@ -987,7 +1014,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
         .catch(() => {
           if (!cancelled) {
             setLoadingCustom(false);
-            setError('No se pudo cargar este archivo 3D. Verifica que sea un GLB, GLTF, OBJ o STL válido.');
+            setError('No se pudo cargar este archivo 3D. Verifica que sea un GLB, OBJ o STL válido.');
           }
         });
       return () => { cancelled = true; };
@@ -1005,7 +1032,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
         : Math.max(1.85, Math.min(2.6, 1.55 / Math.max(0.55, product.ratio)));
     const dist = Math.max(3.4, worldHeight * 1.95);
     baseDistanceRef.current = dist;
-    camera.position.set(-dist * 0.22, dist * 0.08, dist * 0.96);
+    camera.position.set(0, dist * 0.025, dist);
     controls.target.set(0, 0, 0);
     controls.update();
 
@@ -1023,6 +1050,56 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
     customModel?.url,
     customModel?.format,
   ]);
+
+  // A photorealistic frontal render sits over the matching 3D form for the straight-on studio view.
+  useEffect(() => {
+    const modelRoot = modelRootRef.current;
+    if (!modelRoot || product.isCustom3D || !frontalMockupUrl) return undefined;
+
+    let active = true;
+    let mockupMesh: THREE.Mesh | null = null;
+    let mockupTexture: THREE.Texture | null = null;
+    const loader = new THREE.TextureLoader();
+    const texture = loader.load(frontalMockupUrl, (loadedTexture) => {
+      if (!active) {
+        loadedTexture.dispose();
+        return;
+      }
+
+      loadedTexture.colorSpace = THREE.SRGBColorSpace;
+      loadedTexture.anisotropy = rendererRef.current?.capabilities.getMaxAnisotropy() ?? 4;
+      loadedTexture.needsUpdate = true;
+      const frame = getFrontalMockupFrame(product);
+      const material = new THREE.MeshBasicMaterial({
+        map: loadedTexture,
+        transparent: true,
+        alphaTest: 0.015,
+        depthWrite: false,
+        side: THREE.FrontSide,
+        toneMapped: false,
+      });
+      mockupMesh = new THREE.Mesh(new THREE.PlaneGeometry(frame.width, frame.height), material);
+      mockupMesh.position.set(0, 0, frame.z);
+      mockupMesh.renderOrder = 4;
+      modelRoot.add(mockupMesh);
+      mockupTexture = loadedTexture;
+      frontalTextureRef.current = loadedTexture;
+      frontalMockupMeshRef.current = mockupMesh;
+    });
+
+    return () => {
+      active = false;
+      if (mockupMesh) {
+        modelRoot.remove(mockupMesh);
+        mockupMesh.geometry.dispose();
+        (mockupMesh.material as THREE.Material).dispose();
+        mockupMesh = null;
+      }
+      mockupTexture?.dispose();
+      if (frontalTextureRef.current === texture) frontalTextureRef.current = null;
+      frontalMockupMeshRef.current = null;
+    };
+  }, [frontalMockupUrl, product.id, product.model, product.isCustom3D]);
 
   // 4. Live-update Product Color & Material Finish without rebuilding the geometry
   useEffect(() => {

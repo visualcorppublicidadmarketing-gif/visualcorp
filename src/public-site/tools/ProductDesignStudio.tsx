@@ -54,7 +54,7 @@ import {
   Upload,
   Wand2,
 } from 'lucide-react';
-import { createArtworkCanvas, createMockupCanvas, downloadCanvas } from './product-design/canvas-utils';
+import { createArtworkCanvas, createFrontalMockupCanvas, createMockupCanvas, downloadCanvas } from './product-design/canvas-utils';
 import {
   createStarterPresetLayers,
   DEFAULT_PRODUCT_ID,
@@ -99,6 +99,8 @@ const ThreeDProductPreview = lazy(() =>
 
 const MAX_UPLOAD_BYTES = 12 * 1024 * 1024;
 const MAX_3D_UPLOAD_BYTES = 25 * 1024 * 1024;
+const MAX_UPLOAD_IMAGE_PIXELS = 24_000_000;
+const MAX_DESIGN_LAYERS = 80;
 
 type StudioHistory = { past: DesignLayer[][]; future: DesignLayer[][]; lastKey: string; lastAt: number };
 type InspectorTab = 'layers' | 'product' | 'background' | 'export';
@@ -114,6 +116,41 @@ function loadImageDimensions(src: string) {
     image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
     image.onerror = () => reject(new Error('No se pudo leer esta imagen.'));
     image.src = src;
+  });
+}
+
+function readLocalDesignDraft(key: string) {
+  return new Promise<string | null>((resolve, reject) => {
+    if (!('indexedDB' in window)) return reject(new Error('IndexedDB no está disponible en este navegador.'));
+    const request = window.indexedDB.open('visualcorp-product-design', 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('drafts');
+    request.onerror = () => reject(request.error || new Error('No se pudo abrir el borrador local.'));
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction('drafts', 'readonly');
+      const read = transaction.objectStore('drafts').get(key);
+      read.onsuccess = () => resolve(typeof read.result === 'string' ? read.result : null);
+      read.onerror = () => reject(read.error || new Error('No se pudo leer el borrador local.'));
+      transaction.oncomplete = () => db.close();
+      transaction.onerror = () => db.close();
+    };
+  });
+}
+
+function writeLocalDesignDraft(key: string, contents: string) {
+  return new Promise<void>((resolve, reject) => {
+    if (!('indexedDB' in window)) return reject(new Error('IndexedDB no está disponible en este navegador.'));
+    const request = window.indexedDB.open('visualcorp-product-design', 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('drafts');
+    request.onerror = () => reject(request.error || new Error('No se pudo abrir el borrador local.'));
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction('drafts', 'readwrite');
+      transaction.objectStore('drafts').put(contents, key);
+      transaction.oncomplete = () => { db.close(); resolve(); };
+      transaction.onerror = () => { db.close(); reject(transaction.error || new Error('No se pudo guardar el borrador local.')); };
+      transaction.onabort = () => { db.close(); reject(transaction.error || new Error('No se pudo guardar el borrador local.')); };
+    };
   });
 }
 
@@ -165,7 +202,6 @@ function fileTypeIsSupported(file: File) {
 function detect3DFormat(fileName: string): Custom3DModelFormat | null {
   const lower = fileName.toLowerCase();
   if (lower.endsWith('.glb')) return 'glb';
-  if (lower.endsWith('.gltf')) return 'gltf';
   if (lower.endsWith('.obj')) return 'obj';
   if (lower.endsWith('.stl')) return 'stl';
   return null;
@@ -231,10 +267,16 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
   const [previewWarped2D, setPreviewWarped2D] = useState(false);
   const [warpedPreviewUrl, setWarpedPreviewUrl] = useState('');
   const [canvasWidth, setCanvasWidth] = useState(0);
-  const [artworkUrl, setArtworkUrl] = useState('');
+  const [artworkTexture, setArtworkTexture] = useState<{ productId: string; url: string }>({ productId: '', url: '' });
+  const [frontalMockup, setFrontalMockup] = useState<{ productId: string; url: string }>({ productId: '', url: '' });
   const [exporting, setExporting] = useState<'mockup' | 'mockup-3d' | 'mockup-3d-alpha' | 'art' | ''>('');
   const [projectAction, setProjectAction] = useState<'save' | 'open' | ''>('');
   const [message, setMessage] = useState('');
+  const [localDraftContents, setLocalDraftContents] = useState('');
+  const [localDraftLoaded, setLocalDraftLoaded] = useState(false);
+  const [localDraftStatus, setLocalDraftStatus] = useState<'loading' | 'ready' | 'saving' | 'saved' | 'unavailable'>('loading');
+  const draftsRef = useRef<Record<string, { layers: DesignLayer[]; appearance: ProductAppearance }>>({});
+  const localDraftSequenceRef = useRef(0);
 
   const activeBase = useMemo(() => products.find((product) => product.id === baseId) || products[0], [products, baseId]);
   const activeCustomModel = activeBase.isCustom3D ? customModelsByBaseId[activeBase.id] || null : null;
@@ -256,6 +298,49 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
   useEffect(() => {
     layersRef.current = layers;
   }, [layers]);
+
+  useEffect(() => {
+    draftsRef.current[baseId] = { layers, appearance };
+  }, [baseId, layers, appearance]);
+
+  const localDraftKey = `${window.location.pathname}:studio:${initialBase.id}`;
+  useEffect(() => {
+    let cancelled = false;
+    readLocalDesignDraft(localDraftKey)
+      .then((contents) => {
+        if (cancelled) return;
+        setLocalDraftContents(contents || '');
+        setLocalDraftLoaded(true);
+        setLocalDraftStatus('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setLocalDraftStatus('unavailable');
+      });
+    return () => { cancelled = true; };
+  }, [localDraftKey]);
+
+  useEffect(() => {
+    if (!localDraftLoaded || localDraftContents) return undefined;
+    const sequence = ++localDraftSequenceRef.current;
+    const snapshotBase = activeBase;
+    const snapshotLayers = layers;
+    const snapshotAppearance = appearance;
+    const snapshotBackground = background;
+    const timer = window.setTimeout(() => {
+      setLocalDraftStatus('saving');
+      serializeDesignProject(snapshotBase, snapshotLayers, snapshotAppearance, snapshotBackground)
+        .then((contents) => {
+          if (localDraftSequenceRef.current !== sequence) return;
+          return writeLocalDesignDraft(localDraftKey, contents).then(() => {
+            if (localDraftSequenceRef.current === sequence) setLocalDraftStatus('saved');
+          });
+        })
+        .catch(() => {
+          if (localDraftSequenceRef.current === sequence) setLocalDraftStatus('unavailable');
+        });
+    }, 1400);
+    return () => window.clearTimeout(timer);
+  }, [localDraftLoaded, localDraftContents, localDraftKey, activeBase, layers, appearance, background]);
 
   useEffect(() => () => objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
@@ -281,7 +366,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
       createArtworkCanvas(activeBase, layers, 1024)
         .then((canvas) => canvas.toDataURL('image/png'))
         .then((url) => {
-          if (!cancelled) setArtworkUrl(url);
+          if (!cancelled) setArtworkTexture({ productId: activeBase.id, url });
         })
         .catch(() => {
           if (!cancelled) setMessage('No se pudo actualizar la textura 3D. El diseño sigue disponible en 2D.');
@@ -292,6 +377,29 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
       window.clearTimeout(timer);
     };
   }, [activeBase, layers, viewMode]);
+
+  // Full front render for the built-in 3D stage; custom 3D files keep UV/decal projection.
+  useEffect(() => {
+    if (viewMode === '2d' || activeBase.isCustom3D) {
+      setFrontalMockup({ productId: activeBase.id, url: '' });
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      createFrontalMockupCanvas(activeBase, layers, 1024, appearance)
+        .then((canvas) => canvas.toDataURL('image/png'))
+        .then((url) => {
+          if (!cancelled) setFrontalMockup({ productId: activeBase.id, url });
+        })
+        .catch(() => {
+          if (!cancelled) setMessage('No se pudo actualizar el render frontal. El diseño sigue disponible en 2D.');
+        });
+    }, 180);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [activeBase, layers, appearance, viewMode]);
 
   // Live warped 2D preview when user toggles "Previa curva 2D"
   useEffect(() => {
@@ -371,6 +479,10 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
   };
 
   const addLayer = (layer: DesignLayer) => {
+    if (layersRef.current.length >= MAX_DESIGN_LAYERS) {
+      setMessage(`Este diseño ya tiene el máximo de ${MAX_DESIGN_LAYERS} capas.`);
+      return;
+    }
     commitLayers([...layersRef.current, layer], `add:${layer.id}`);
     setSelectedLayerId(layer.id);
     setInspectorTab('layers');
@@ -379,16 +491,16 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
   };
 
   const selectProduct = (product: ProductBase) => {
+    if (exporting || projectAction) return;
+    draftsRef.current[baseId] = { layers: layersRef.current, appearance };
     setBaseId(product.id);
-    setAppearance(getDefaultAppearance(product));
+    const savedDraft = draftsRef.current[product.id];
+    const nextAppearance = savedDraft?.appearance || getDefaultAppearance(product);
+    setAppearance(nextAppearance);
     setPreviewWarped2D(false);
-    const nextLayers = layersRef.current.map((layer) =>
-      layer.id === 'brand-logo'
-        ? { ...layer, x: product.defaultX, y: product.defaultY, size: product.defaultSize, rotation: 0 }
-        : layer,
-    );
+    const nextLayers = savedDraft?.layers || [getDefaultLogoLayer(product)];
     commitLayers(nextLayers, `product:${product.id}`);
-    setSelectedLayerId(nextLayers.some((l) => l.id === selectedLayerId) ? selectedLayerId : nextLayers.at(-1)?.id || '');
+    setSelectedLayerId(nextLayers.at(-1)?.id || '');
     if (product.isCustom3D && viewMode === '2d') {
       setViewMode(window.innerWidth >= 1120 ? 'split' : '3d');
     }
@@ -454,7 +566,14 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     }
   };
 
-  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const validateImagePixels = async (src: string) => {
+    const { width, height } = await loadImageDimensions(src);
+    if (!width || !height || width * height > MAX_UPLOAD_IMAGE_PIXELS) {
+      throw new Error('La imagen supera el límite de 24 megapíxeles. Redúcela y vuelve a cargarla.');
+    }
+  };
+
+  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
@@ -468,6 +587,14 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     }
     const src = URL.createObjectURL(file);
     objectUrlsRef.current.push(src);
+    try {
+      await validateImagePixels(src);
+    } catch (error) {
+      URL.revokeObjectURL(src);
+      objectUrlsRef.current = objectUrlsRef.current.filter((url) => url !== src);
+      setMessage(error instanceof Error ? error.message : 'No se pudo validar la imagen.');
+      return;
+    }
     addLayer({
       id: createId('layer'),
       kind: 'image',
@@ -497,7 +624,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     });
   };
 
-  const handleReplaceLayerImage = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleReplaceLayerImage = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file || !selectedLayer || selectedLayer.kind !== 'image') return;
@@ -511,6 +638,14 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     }
     const src = URL.createObjectURL(file);
     objectUrlsRef.current.push(src);
+    try {
+      await validateImagePixels(src);
+    } catch (error) {
+      URL.revokeObjectURL(src);
+      objectUrlsRef.current = objectUrlsRef.current.filter((url) => url !== src);
+      setMessage(error instanceof Error ? error.message : 'No se pudo validar la imagen.');
+      return;
+    }
     updateLayer(selectedLayer.id, { src, name: file.name.slice(0, 70) }, `replace-img:${selectedLayer.id}`);
     setMessage('Logo / diseño reemplazado conservando posición y escala.');
   };
@@ -531,6 +666,9 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     objectUrlsRef.current.push(src);
     try {
       const dimensions = await loadImageDimensions(src);
+      if (dimensions.width * dimensions.height > MAX_UPLOAD_IMAGE_PIXELS) {
+        throw new Error('La imagen supera el límite de 24 megapíxeles. Redúcela y vuelve a cargarla.');
+      }
       const product: ProductBase = {
         id: createId('custom'),
         name: file.name.replace(/\.[^.]+$/, '').slice(0, 34) || 'Producto propio',
@@ -554,13 +692,18 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
       setProducts((current) => [...current, product]);
       setFamilyFilter('Todos');
       setBaseId(product.id);
+      const nextLayers = [getDefaultLogoLayer(product)];
+      layersRef.current = nextLayers;
+      setLayers(nextLayers);
+      setSelectedLayerId(nextLayers[0].id);
       setAppearance(getDefaultAppearance(product));
+      historyRef.current = { past: [], future: [], lastKey: '', lastAt: 0 };
       setInspectorTab('product');
       setMessage('Foto de producto propia cargada. Puedes ajustar color, fondo y zona imprimible.');
-    } catch {
+    } catch (error) {
       URL.revokeObjectURL(src);
       objectUrlsRef.current = objectUrlsRef.current.filter((url) => url !== src);
-      setMessage('No se pudo cargar la foto. Prueba con otra imagen.');
+      setMessage(error instanceof Error ? error.message : 'No se pudo cargar la foto. Prueba con otra imagen.');
     }
   };
 
@@ -570,7 +713,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     if (!file) return;
     const format = detect3DFormat(file.name);
     if (!format) {
-      setMessage('Formato 3D no compatible. Usa archivos .glb, .gltf, .obj o .stl.');
+      setMessage('Formato 3D no compatible. Usa archivos .glb, .obj o .stl.');
       return;
     }
     if (file.size > MAX_3D_UPLOAD_BYTES) {
@@ -639,7 +782,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     setMessage(`Objeto 3D “${cleanName}” cargado localmente. El diseño 2D se proyecta sobre la forma.`);
   };
 
-  const handleBackgroundImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleBackgroundImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
@@ -653,26 +796,38 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     }
     const src = URL.createObjectURL(file);
     objectUrlsRef.current.push(src);
+    try {
+      await validateImagePixels(src);
+    } catch (error) {
+      URL.revokeObjectURL(src);
+      objectUrlsRef.current = objectUrlsRef.current.filter((url) => url !== src);
+      setMessage(error instanceof Error ? error.message : 'No se pudo validar la imagen.');
+      return;
+    }
     setBackground((prev) => ({ ...prev, kind: 'image', imageSrc: src, imageName: file.name.slice(0, 60) }));
     setMessage('Fondo fotográfico aplicado a la escena 2D y 3D.');
   };
 
   const handleSaveProject = async () => {
     if (projectAction || exporting) return;
+    const projectProduct = activeBase;
+    const projectLayers = layersRef.current;
+    const projectAppearance = appearance;
+    const projectBackground = background;
     setProjectAction('save');
     setMessage('Preparando el archivo de proyecto…');
     try {
-      const contents = await serializeDesignProject(activeBase, layersRef.current, appearance, background);
+      const contents = await serializeDesignProject(projectProduct, projectLayers, projectAppearance, projectBackground);
       const blob = new Blob([contents], { type: 'application/json;charset=utf-8' });
       if (blob.size > MAX_PROJECT_FILE_BYTES) throw new Error('El archivo de proyecto supera el límite de 32 MB.');
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = designProjectFilename(activeBase.name);
+      anchor.download = designProjectFilename(projectProduct.name);
       anchor.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 0);
       setMessage(
-        activeBase.isCustom3D
+        projectProduct.isCustom3D
           ? 'Proyecto guardado (capas, color y fondo). Al reabrirlo, vuelve a seleccionar tu archivo 3D local si deseas proyectarlo.'
           : 'Proyecto guardado en un archivo local .vcdesign.json.',
       );
@@ -713,6 +868,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
       setBackground(restored.background);
       layersRef.current = restored.layers;
       setLayers(restored.layers);
+      draftsRef.current[product.id] = { layers: restored.layers, appearance: restored.appearance };
       historyRef.current = { past: [], future: [], lastKey: '', lastAt: 0 };
       setSelectedLayerId(restored.layers.at(-1)?.id || '');
       setPreviewWarped2D(false);
@@ -721,6 +877,58 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
       setMessage(error instanceof Error ? error.message : 'No se pudo abrir el proyecto.');
     } finally {
       setProjectAction('');
+    }
+  };
+
+  const recoverLocalDraft = async () => {
+    if (!localDraftContents || projectAction || exporting) return;
+    setProjectAction('open');
+    try {
+      const restored = await restoreDesignProject(localDraftContents);
+      if (!window.confirm(`Recuperar “${restored.product.name}” reemplazará la composición actual. ¿Quieres continuar?`)) {
+        setMessage('Se conservó el diseño actual.');
+        return;
+      }
+      const product = restored.product.isCustom ? { ...restored.product, id: createId('custom') } : restored.product;
+      setProducts((current) => product.isCustom ? [...current, product] : current.map((item) => item.id === product.id ? product : item));
+      setBaseId(product.id);
+      setAppearance(restored.appearance);
+      setBackground(restored.background);
+      layersRef.current = restored.layers;
+      setLayers(restored.layers);
+      draftsRef.current[product.id] = { layers: restored.layers, appearance: restored.appearance };
+      historyRef.current = { past: [], future: [], lastKey: '', lastAt: 0 };
+      setSelectedLayerId(restored.layers.at(-1)?.id || '');
+      setLocalDraftContents('');
+      setLocalDraftStatus('ready');
+      setMessage(`Borrador local recuperado: ${product.name}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'No se pudo recuperar el borrador local.');
+    } finally {
+      setProjectAction('');
+    }
+  };
+
+  const dismissLocalDraft = async () => {
+    if (!localDraftContents) return;
+    try {
+      const request = window.indexedDB.open('visualcorp-product-design', 1);
+      await new Promise<void>((resolve, reject) => {
+        request.onupgradeneeded = () => request.result.createObjectStore('drafts');
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction('drafts', 'readwrite');
+          transaction.objectStore('drafts').delete(localDraftKey);
+          transaction.oncomplete = () => { db.close(); resolve(); };
+          transaction.onerror = () => { db.close(); reject(transaction.error); };
+        };
+      });
+      setLocalDraftContents('');
+      setLocalDraftStatus('ready');
+      setMessage('Borrador local descartado de este navegador.');
+    } catch {
+      setMessage('No se pudo descartar el borrador local.');
     }
   };
 
@@ -749,6 +957,10 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
 
   const exportDesign = async (kind: 'mockup' | 'mockup-3d' | 'mockup-3d-alpha' | 'art') => {
     if (exporting) return;
+    const exportBase = activeBase;
+    const exportLayers = layers;
+    const exportAppearance = appearance;
+    const exportBackground = background;
     setExporting(kind);
     setMessage('');
     try {
@@ -762,7 +974,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
         if (!snap) throw new Error('Vista 3D no lista.');
         await downloadCanvas(
           snap,
-          `visualcorp-mockup-3d-${activeBase.id}${kind === 'mockup-3d-alpha' ? '-transparente' : ''}.png`,
+          `visualcorp-mockup-3d-${exportBase.id}${kind === 'mockup-3d-alpha' ? '-transparente' : ''}.png`,
         );
         setMessage(
           kind === 'mockup-3d-alpha'
@@ -774,9 +986,9 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
 
       const canvas =
         kind === 'mockup'
-          ? await createMockupCanvas(activeBase, layers, 2400, appearance, background)
-          : await createArtworkCanvas(activeBase, layers, 4000);
-      await downloadCanvas(canvas, `visualcorp-${kind === 'mockup' ? 'mockup-2d' : 'arte-impresion'}-${activeBase.id}.png`);
+          ? await createMockupCanvas(exportBase, exportLayers, 2400, exportAppearance, exportBackground)
+          : await createArtworkCanvas(exportBase, exportLayers, 4000);
+      await downloadCanvas(canvas, `visualcorp-${kind === 'mockup' ? 'mockup-2d' : 'arte-impresion'}-${exportBase.id}.png`);
       setMessage(
         kind === 'mockup'
           ? 'Mockup 2D PNG descargado con color, fondo y adaptación de forma.'
@@ -896,15 +1108,15 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
           </div>
 
           <div className="vc-product-upload-pair">
-            <button type="button" className="vc-product-add-own" onClick={() => productInputRef.current?.click()}>
+            <button type="button" className="vc-product-add-own" disabled={Boolean(exporting || projectAction)} onClick={() => productInputRef.current?.click()}>
               <ImagePlus size={14} aria-hidden="true" /> Foto 2D propia
             </button>
             <input ref={productInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={handleProductUpload} />
 
-            <button type="button" className="vc-product-add-own is-3d" onClick={() => model3DInputRef.current?.click()}>
+            <button type="button" className="vc-product-add-own is-3d" disabled={Boolean(exporting || projectAction)} onClick={() => model3DInputRef.current?.click()}>
               <Box size={14} aria-hidden="true" /> Subir objeto 3D
             </button>
-            <input ref={model3DInputRef} type="file" accept=".glb,.gltf,.obj,.stl" className="sr-only" onChange={handle3DModelUpload} />
+            <input ref={model3DInputRef} type="file" accept=".glb,.obj,.stl" className="sr-only" onChange={handle3DModelUpload} />
           </div>
         </div>
 
@@ -915,6 +1127,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
               type="button"
               className={`vc-product-template${product.id === activeBase.id ? ' is-active' : ''}`}
               aria-pressed={product.id === activeBase.id}
+              disabled={Boolean(exporting || projectAction)}
               onClick={() => selectProduct(product)}
             >
               {product.isCustom3D ? (
@@ -932,6 +1145,24 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
           ))}
         </div>
       </div>
+
+      {(localDraftContents || ['saving', 'saved', 'unavailable'].includes(localDraftStatus)) && (
+        <div className="vc-product-local-draft" role="status" aria-live="polite">
+          {localDraftContents ? (
+          <>
+            <span>Hay un borrador local anterior para este estudio.</span>
+            <button type="button" onClick={recoverLocalDraft} disabled={Boolean(projectAction || exporting)}>Recuperar borrador</button>
+            <button type="button" onClick={dismissLocalDraft} disabled={Boolean(projectAction || exporting)}>Descartar borrador</button>
+          </>
+          ) : localDraftStatus === 'saving' ? (
+            <span>Guardando borrador local…</span>
+          ) : localDraftStatus === 'saved' ? (
+            <span>Borrador guardado en este navegador.</span>
+          ) : (
+            <span>El guardado automático local no está disponible; usa Guardar proyecto para conservar un archivo.</span>
+          )}
+        </div>
+      )}
 
       {/* Main Studio Action Toolbar */}
       <div className="vc-product-editor-toolbar">
@@ -1054,6 +1285,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
                   ) : (
                     <Suspense fallback={<div className="vc-product-canvas-loading" role="status">Cargando el lienzo 2D…</div>}>
                       <ProductDesignCanvas
+                        key={`${activeBase.id}:${activeBase.image}`}
                         product={activeBase}
                         layers={layers}
                         selectedLayerId={selectedLayerId}
@@ -1077,9 +1309,11 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
               <div className="vc-product-3d-viewer-shell">
                 <Suspense fallback={<div className="vc-product-canvas-loading" role="status">Iniciando motor 3D…</div>}>
                   <ThreeDProductPreview
+                    key={`${activeBase.id}:${activeBase.image}`}
                     ref={threeDPreviewRef}
                     product={activeBase}
-                    artworkUrl={artworkUrl}
+                    artworkUrl={artworkTexture.productId === activeBase.id ? artworkTexture.url : ''}
+                    frontalMockupUrl={frontalMockup.productId === activeBase.id ? frontalMockup.url : ''}
                     appearance={appearance}
                     background={background}
                     customModel={activeCustomModel}
@@ -1101,7 +1335,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
               {activeBase.isCustom3D
                 ? 'Edita tus capas en 2D y proyecta en vivo sobre tu modelo 3D (Decal curvo o UV directo).'
                 : viewMode === '3d'
-                  ? 'Estudio 3D interactivo con iluminación PBR y envoltura adaptada a la geometría.'
+                  ? 'Render frontal fotorrealista integrado al modelo 3D; usa los controles para revisar otros ángulos.'
                   : `${activeBase.hint} · arrastra, redimensiona o activa 2D + 3D para ver cambios en vivo.`}
             </span>
             <span>Composición referencial; medidas, materiales y técnicas se confirman al cotizar.</span>
@@ -1110,11 +1344,29 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
 
         {/* 4-Tab Professional Inspector */}
         <aside className="vc-product-inspector" aria-label="Inspector profesional de diseño">
-          <div className="vc-product-inspector-tabs" role="tablist" aria-label="Secciones del inspector">
+          <div
+            className="vc-product-inspector-tabs"
+            role="tablist"
+            aria-label="Secciones del inspector"
+            onKeyDown={(event) => {
+              const tabs: InspectorTab[] = ['layers', 'product', 'background', 'export'];
+              const current = tabs.indexOf(inspectorTab);
+              const next = event.key === 'ArrowRight' ? (current + 1) % tabs.length
+                : event.key === 'ArrowLeft' ? (current + tabs.length - 1) % tabs.length
+                  : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
+              if (next < 0) return;
+              event.preventDefault();
+              setInspectorTab(tabs[next]);
+              requestAnimationFrame(() => document.getElementById(`vc-product-tab-${tabs[next]}`)?.focus());
+            }}
+          >
             <button
               type="button"
               role="tab"
+              id="vc-product-tab-layers"
+              aria-controls="vc-product-panel-layers"
               aria-selected={inspectorTab === 'layers'}
+              tabIndex={inspectorTab === 'layers' ? 0 : -1}
               className={inspectorTab === 'layers' ? 'is-active' : ''}
               onClick={() => setInspectorTab('layers')}
             >
@@ -1123,7 +1375,10 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
             <button
               type="button"
               role="tab"
+              id="vc-product-tab-product"
+              aria-controls="vc-product-panel-product"
               aria-selected={inspectorTab === 'product'}
+              tabIndex={inspectorTab === 'product' ? 0 : -1}
               className={inspectorTab === 'product' ? 'is-active' : ''}
               onClick={() => setInspectorTab('product')}
             >
@@ -1132,7 +1387,10 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
             <button
               type="button"
               role="tab"
+              id="vc-product-tab-background"
+              aria-controls="vc-product-panel-background"
               aria-selected={inspectorTab === 'background'}
+              tabIndex={inspectorTab === 'background' ? 0 : -1}
               className={inspectorTab === 'background' ? 'is-active' : ''}
               onClick={() => setInspectorTab('background')}
             >
@@ -1141,7 +1399,10 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
             <button
               type="button"
               role="tab"
+              id="vc-product-tab-export"
+              aria-controls="vc-product-panel-export"
               aria-selected={inspectorTab === 'export'}
+              tabIndex={inspectorTab === 'export' ? 0 : -1}
               className={inspectorTab === 'export' ? 'is-active' : ''}
               onClick={() => setInspectorTab('export')}
             >
@@ -1151,7 +1412,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
 
           {/* TAB 1: CAPAS & PROPIEDADES DEL ELEMENTO */}
           {inspectorTab === 'layers' && (
-            <div className="vc-product-tab-panel" role="tabpanel">
+            <div className="vc-product-tab-panel" id="vc-product-panel-layers" role="tabpanel" aria-labelledby="vc-product-tab-layers" tabIndex={0}>
               <div className="vc-product-inspector-section">
                 <div className="vc-product-section-heading">
                   <span className="vc-tool-label">Capas del diseño</span>
@@ -1514,7 +1775,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
 
           {/* TAB 2: PRODUCTO, COLOR, ADAPTACIÓN DE FORMA Y OBJETOS 3D */}
           {inspectorTab === 'product' && (
-            <div className="vc-product-tab-panel" role="tabpanel">
+            <div className="vc-product-tab-panel" id="vc-product-panel-product" role="tabpanel" aria-labelledby="vc-product-tab-product" tabIndex={0}>
               <div className="vc-product-inspector-section">
                 <div className="vc-product-section-heading">
                   <span className="vc-tool-label">Color del producto</span>
@@ -1798,7 +2059,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
 
           {/* TAB 3: FONDO DE ESCENA */}
           {inspectorTab === 'background' && (
-            <div className="vc-product-tab-panel" role="tabpanel">
+            <div className="vc-product-tab-panel" id="vc-product-panel-background" role="tabpanel" aria-labelledby="vc-product-tab-background" tabIndex={0}>
               <div className="vc-product-inspector-section">
                 <div className="vc-product-section-heading">
                   <span className="vc-tool-label">Fondos de estudio</span>
@@ -1902,7 +2163,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
 
           {/* TAB 4: EXPORTAR & PROYECTO */}
           {inspectorTab === 'export' && (
-            <div className="vc-product-tab-panel" role="tabpanel">
+            <div className="vc-product-tab-panel" id="vc-product-panel-export" role="tabpanel" aria-labelledby="vc-product-tab-export" tabIndex={0}>
               <div className="vc-product-export-actions">
                 <span className="vc-tool-label">Descargar entregables</span>
 
