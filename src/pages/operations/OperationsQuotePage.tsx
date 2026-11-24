@@ -172,6 +172,71 @@ function mapsUrl(address: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
+type QuoteAssetSaveRecovery = { version: 1; fingerprint: string; id: string; quote_code: string };
+
+const quoteAssetRecoveryStorageKey = (organizationId: string, userId: string, fingerprint: string) =>
+  `visualcorp-quote-assets-recovery-v1:${organizationId}:${userId}:${fingerprint}`;
+
+async function fingerprintQuoteAssetSave(payload: unknown, assets: CommercialAssetDraft[]) {
+  const assetIdentity = [];
+  for (const asset of assets) {
+    let fileIdentity: { name: string; size: number; type: string; digest: string } | undefined;
+    if (asset.kind === 'image' && asset.file) {
+      if (!globalThis.crypto?.subtle) throw new Error('El navegador no permite verificar la recuperación segura de adjuntos. Usa una sesión actualizada o guarda la cotización sin adjuntos.');
+      const fileDigest = await globalThis.crypto.subtle.digest('SHA-256', await asset.file.arrayBuffer());
+      fileIdentity = {
+        name: asset.file.name,
+        size: asset.file.size,
+        type: asset.file.type,
+        digest: Array.from(new Uint8Array(fileDigest), (value) => value.toString(16).padStart(2, '0')).join(''),
+      };
+    }
+    assetIdentity.push({
+      kind: asset.kind,
+      title: asset.title,
+      description: asset.description,
+      url: asset.kind === 'link' ? asset.url || '' : undefined,
+      file: fileIdentity,
+    });
+  }
+  const serialized = JSON.stringify({ payload, assets: assetIdentity });
+  if (!globalThis.crypto?.subtle) throw new Error('El navegador no permite verificar la recuperación segura de adjuntos. Usa una sesión actualizada o guarda la cotización sin adjuntos.');
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(serialized));
+  return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('');
+}
+
+function readQuoteAssetRecovery(storageKey: string): QuoteAssetSaveRecovery | null {
+  try {
+    const value = sessionStorage.getItem(storageKey);
+    if (!value) return null;
+    const parsed = JSON.parse(value);
+    return parsed?.version === 1 && typeof parsed.fingerprint === 'string'
+      && typeof parsed.id === 'string' && typeof parsed.quote_code === 'string'
+      ? parsed as QuoteAssetSaveRecovery
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function canPersistQuoteAssetRecovery(storageKey: string) {
+  try {
+    const probeKey = `${storageKey}:probe`;
+    sessionStorage.setItem(probeKey, '1');
+    sessionStorage.removeItem(probeKey);
+    return true;
+  } catch { return false; }
+}
+
+function writeQuoteAssetRecovery(storageKey: string, recovery: QuoteAssetSaveRecovery) {
+  try { sessionStorage.setItem(storageKey, JSON.stringify(recovery)); return true; }
+  catch { return false; }
+}
+
+function clearQuoteAssetRecovery(storageKey: string) {
+  try { sessionStorage.removeItem(storageKey); } catch { /* Storage may be disabled. */ }
+}
+
 export function OperationsQuotePage() {
   const { data, flash } = useWorkspace();
   const navigate = useNavigate();
@@ -237,6 +302,7 @@ export function OperationsQuotePage() {
   const [updatingStatusId, setUpdatingStatusId] = useState('');
   const [saving, setSaving] = useState(false);
   const [quoteError, setQuoteError] = useState('');
+  const quoteAssetRecoveryRef = useRef(new Map<string, QuoteAssetSaveRecovery>());
   const [historyQuery, setHistoryQuery] = useState('');
   const [historyFilter, setHistoryFilter] = useState<'all' | 'quotes' | 'accepted' | 'sales'>('all');
   const [selectedQuoteForPdf, setSelectedQuoteForPdf] = useState<QuoteData | null>(null);
@@ -994,7 +1060,7 @@ export function OperationsQuotePage() {
       const payloadBytes = new TextEncoder().encode(JSON.stringify(itemsWithDocumentDetails)).length;
       if (payloadBytes > 45000) throw new Error('La propuesta supera el tamaño permitido. Reduce la cantidad de artículos o acorta sus conceptos.');
       if (notes.length > 1200 || new TextEncoder().encode(JSON.stringify(documentDetails)).length > 16000) throw new Error('Los detalles de la propuesta superan el tamaño permitido. Acorta las notas o descripciones.');
-      const { data: result, error } = await supabase.rpc('create_central_quote', {
+      const quotePayload = {
         p_customer_id: customerId || null,
         p_customer_name: customer.trim(),
         p_customer_phone: phone.trim(),
@@ -1007,12 +1073,52 @@ export function OperationsQuotePage() {
         p_confirmed: pricesConfirmed,
         p_notes: notes,
         p_client_brief_html: clientBriefHtml,
-      });
-      if (error) throw error;
-      if (documentAssets.length) await persistCommercialAssets({ organizationId, documentId: result.id, kind: 'quote', assets: documentAssets });
-      await loadHistory();
+      };
+      const recoveryFingerprint = documentAssets.length
+        ? await fingerprintQuoteAssetSave(quotePayload, documentAssets)
+        : '';
+      const recoveryStorageKey = recoveryFingerprint
+        ? quoteAssetRecoveryStorageKey(organizationId, user?.id || 'sin-usuario', recoveryFingerprint)
+        : '';
+      let result: { id: string; quote_code: string } | null = null;
+      if (recoveryFingerprint && recoveryStorageKey) {
+        const cachedRecovery = quoteAssetRecoveryRef.current.get(recoveryStorageKey)
+          || readQuoteAssetRecovery(recoveryStorageKey);
+        if (cachedRecovery && cachedRecovery.fingerprint === recoveryFingerprint) result = cachedRecovery;
+      }
+      if (!result) {
+        if (recoveryStorageKey && !canPersistQuoteAssetRecovery(recoveryStorageKey)) {
+          throw new Error('Este navegador no permite conservar la recuperación de adjuntos. Habilita el almacenamiento de sesión o guarda la cotización sin adjuntos para evitar duplicarla si se pierde la respuesta.');
+        }
+        const { data: createdQuote, error } = await supabase.rpc('create_central_quote', quotePayload);
+        if (error) throw error;
+        if (!createdQuote?.id || !createdQuote?.quote_code) throw new Error('La respuesta del servidor no incluyó el identificador de la cotización. Revisa el historial antes de volver a guardar.');
+        result = createdQuote;
+        if (recoveryFingerprint && recoveryStorageKey) {
+          const recovery = { version: 1 as const, fingerprint: recoveryFingerprint, id: result.id, quote_code: result.quote_code };
+          quoteAssetRecoveryRef.current.set(recoveryStorageKey, recovery);
+          if (!writeQuoteAssetRecovery(recoveryStorageKey, recovery)) {
+            throw new Error(`La cotización ${result.quote_code} ya se creó, pero no se pudo guardar su recuperación en el navegador. Mantén esta pestaña abierta y reintenta para no duplicarla.`);
+          }
+        }
+      }
+      if (documentAssets.length) {
+        try {
+          await persistCommercialAssets({ organizationId, documentId: result.id, kind: 'quote', assets: documentAssets });
+        } catch (error: any) {
+          throw new Error(`La cotización ${result.quote_code} ya se creó, pero sus adjuntos no se guardaron. Vuelve a guardar esta misma propuesta para reintentar los adjuntos sin crear otra cotización. ${error.message || ''}`.trim());
+        }
+        if (recoveryStorageKey) {
+          quoteAssetRecoveryRef.current.delete(recoveryStorageKey);
+          clearQuoteAssetRecovery(recoveryStorageKey);
+        }
+      }
+      let historyRefreshed = true;
+      try { await loadHistory(); } catch { historyRefreshed = false; }
       resetForm();
-      flash(`Cotización ${result.quote_code} guardada con ${itemPayload.length} ${itemPayload.length === 1 ? 'artículo' : 'artículos'}.`);
+      flash(historyRefreshed
+        ? `Cotización ${result.quote_code} guardada con ${itemPayload.length} ${itemPayload.length === 1 ? 'artículo' : 'artículos'}.`
+        : `Cotización ${result.quote_code} guardada. El historial no se pudo actualizar; vuelve a cargar la página para verla.`);
     } catch (error: any) {
       setQuoteError(error.message || 'No se pudo sincronizar la cotización.');
     } finally { setSaving(false); }

@@ -12,7 +12,7 @@ import { calculateQuotePrice, getQuoteBasis } from '../../lib/quotePricing';
 import { calculatePOSLine, formatPOSLineDescription } from '../../lib/posPricing';
 import { CommercialFinishingControls } from '../../components/CommercialFinishingControls';
 import { calculateCommercialFinishing, emptyCommercialFinishing, sanitizeCommercialFinishing, snapshotCommercialFinishing, type CommercialFinishingValue } from '../../lib/commercialFinishing';
-import { calculatePOSPaymentBreakdown } from '../../lib/posPayments';
+import { calculatePOSPaymentBreakdown, clearPendingPOSBalancePayment, createPOSBalancePaymentKey, isDefinitivePOSBalancePaymentError, loadPendingPOSBalancePayments, savePendingPOSBalancePayment, type PendingPOSBalancePayment } from '../../lib/posPayments';
 import { CommercialDocumentDetails, type CommercialDocumentKind } from '../../components/CommercialDocumentDetails';
 import { Kbd, Sheet, useConfirm } from '../../components/ui/OperationalKit';
 import { UiBadge, UiNotice } from '../../components/ui/DesignSystemPrimitives';
@@ -766,7 +766,12 @@ export function PosPage() {
   const [configuredTaxRate,setConfiguredTaxRate]=useState(15);
   const [taxConfigurationStatus,setTaxConfigurationStatus]=useState<'loading'|'ready'|'error'>('loading');
   const [paymentTarget,setPaymentTarget]=useState(null);
-  const [paymentForm,setPaymentForm]=useState({amount:'',method:'Efectivo',reference:'',note:''});
+  const [paymentForm,setPaymentForm]=useState<{amount:string;method:PendingPOSBalancePayment['method'];reference:string;note:string}>({amount:'',method:'Efectivo',reference:'',note:''});
+  const paymentRecoveryScopeKey=organizationId&&user?.id?`${organizationId}:${user.id}`:'';
+  const [balancePaymentRecovery,setBalancePaymentRecovery]=useState<{scope:string;status:'loading'|'ready'|'error';pending:Record<string,PendingPOSBalancePayment>;error:string}>({scope:'',status:'loading',pending:{},error:''});
+  const balancePaymentRecoveryMatches=Boolean(paymentRecoveryScopeKey)&&balancePaymentRecovery.scope===paymentRecoveryScopeKey;
+  const balancePaymentRecoveryReady=balancePaymentRecoveryMatches&&balancePaymentRecovery.status==='ready';
+  const pendingBalancePaymentBySale=balancePaymentRecoveryReady?balancePaymentRecovery.pending:{};
   const [parkedOrders,setParkedOrders]=useState([]);
   const [branchNames,setBranchNames]=useState({});
   const [parkedManagerAccess,setParkedManagerAccess]=useState({all:false,branchIds:[] as string[]});
@@ -795,6 +800,13 @@ export function PosPage() {
   const [recentSalesQuery,setRecentSalesQuery]=useState('');
   const [recentSalesFilter,setRecentSalesFilter]=useState<'all'|'balance'|'paid'>('all');
   const [cartCustomUnitPrice,setCartCustomUnitPrice]=useState('');
+  useEffect(()=>{
+    if(!organizationId||!user?.id){setBalancePaymentRecovery({scope:'',status:'ready',pending:{},error:''});return;}
+    const scope=`${organizationId}:${user.id}`;
+    setBalancePaymentRecovery({scope,status:'loading',pending:{},error:''});
+    try{setBalancePaymentRecovery({scope,status:'ready',pending:loadPendingPOSBalancePayments(organizationId,user.id),error:''});}
+    catch(error:any){setBalancePaymentRecovery({scope,status:'error',pending:{},error:error.message||'No se pudo recuperar el intento de abono pendiente.'});}
+  },[organizationId,user?.id]);
   const explicitWorkflowRouteRows=useMemo(()=>Object.entries(productWorkflowRoutes).map(([catalog_product_id,workflow_code])=>({catalog_product_id,workflow_code,active:true})),[productWorkflowRoutes]);
   const productWorkflowRecommendations=useMemo(()=>buildProductWorkflowRecommendations(data.catalog||[],explicitWorkflowRouteRows,{activeWorkflowCodes:new Set(workflowTemplates.map((template)=>template.code)),familyRules:familyWorkflowRoutes}),[data.catalog,explicitWorkflowRouteRows,workflowTemplates,familyWorkflowRoutes]);
   const recommendedWorkflowByProduct=useMemo(()=>Object.fromEntries([...productWorkflowRecommendations].map(([id,recommendation])=>[id,recommendation.workflow_code])) as Record<string,ProductionWorkflowCode>,[productWorkflowRecommendations]);
@@ -1542,12 +1554,20 @@ export function PosPage() {
         rows.push(...(page||[]));
         if((page||[]).length<pageSize)break;
       }
+      const loadedSaleIds=new Set(rows.map((row:any)=>row.id));
+      const pendingSaleIds=balancePaymentRecoveryMatches?Object.keys(balancePaymentRecovery.pending).filter(id=>!loadedSaleIds.has(id)):[];
+      for(let offset=0;offset<pendingSaleIds.length;offset+=100){
+        const {data:pendingRows,error:pendingError}=await supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity),sale_payments(method,amount)').eq('organization_id',organizationId).eq('branch_id',selectedBranchId).eq('status','confirmed').in('id',pendingSaleIds.slice(offset,offset+100));
+        if(pendingError)throw pendingError;
+        rows.push(...(pendingRows||[]));
+      }
+      rows.sort((a:any,b:any)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime());
       const customerById=new Map<string,any>((data.customers||[]).map((customer:any)=>[customer.id,customer]));
       const paymentLabels={cash:'Efectivo',transfer:'Transferencia',card:'Tarjeta',other:'Otro'};
-      const mapped=rows.map((row)=>{const paid=(row.sale_payments||[]).reduce((sum,payment)=>sum+Number(payment.amount||0),0);const methods=[...new Set((row.sale_payments||[]).map((payment)=>payment.method))];return{id:row.id,code:row.sale_code||row.id.slice(0,8),total:Number(row.total),paid,balance:Math.max(0,Number(row.total)-paid),date:row.created_at,method:methods.length>1?'Pago dividido':paymentLabels[methods[0]||row.payment_method]||'Otro',customer:customerById.get(row.customer_id)?.name||'',description:(row.sale_lines||[]).map((line)=>line.description_snapshot).join(', '),quantity:(row.sale_lines||[]).reduce((sum,line)=>sum+Number(line.quantity||0),0),urgent:row.urgent_backorder,status:row.status,note:row.note};});
+      const mapped=rows.map((row)=>{const paid=(row.sale_payments||[]).reduce((sum,payment)=>sum+Number(payment.amount||0),0);const methods=[...new Set((row.sale_payments||[]).map((payment)=>payment.method))];return{id:row.id,code:row.sale_code||row.id.slice(0,8),total:Number(row.total),paid,balance:Math.max(0,Number(row.total)-paid),date:row.created_at,method:methods.length>1?'Pago dividido':paymentLabels[methods[0]||row.payment_method]||'Otro',customer:customerById.get(row.customer_id)?.name||'',description:(row.sale_lines||[]).map((line)=>line.description_snapshot).join(', '),quantity:(row.sale_lines||[]).reduce((sum,line)=>sum+Number(line.quantity||0),0),urgent:row.urgent_backorder,status:row.status,note:row.note,pendingBalancePayment:Boolean(balancePaymentRecovery.pending[row.id])};});
       setPosDaySales(mapped);setPosSalesStatus('ready');
     }catch{setPosDaySales([]);setPosSalesStatus('error');}
-  },[organizationId,selectedBranchId,canViewPOSSales,data.customers]);
+  },[organizationId,selectedBranchId,canViewPOSSales,data.customers,balancePaymentRecoveryMatches,balancePaymentRecovery.pending]);
   useEffect(()=>{void refreshPOSDaySales();},[refreshPOSDaySales]);
   const salesToday=posDaySales;
   const inventoryByVariant=useMemo(()=>{
@@ -1609,12 +1629,13 @@ export function PosPage() {
   const filteredRecentSales=useMemo(()=>{
     const q=recentSalesQuery.trim().toLocaleLowerCase('es');
     return salesToday.filter((sale:any)=>{
-      if(recentSalesFilter==='balance'&&!(Number(sale.balance)>0))return false;
-      if(recentSalesFilter==='paid'&&Number(sale.balance)>0)return false;
+      const hasPendingPayment=Boolean(pendingBalancePaymentBySale[sale.id]);
+      if(recentSalesFilter==='balance'&&!(Number(sale.balance)>0)&&!hasPendingPayment)return false;
+      if(recentSalesFilter==='paid'&&(Number(sale.balance)>0||hasPendingPayment))return false;
       if(!q)return true;
       return `${sale.customer||''} ${sale.description||''} ${sale.code||''} ${sale.method||''}`.toLocaleLowerCase('es').includes(q);
     });
-  },[salesToday,recentSalesQuery,recentSalesFilter]);
+  },[salesToday,recentSalesQuery,recentSalesFilter,pendingBalancePaymentBySale]);
   const needsCashShift=chargeNow&&payments.some(payment=>payment.method==='Efectivo');
   const cashShiftPending=needsCashShift&&(!pendingSaleRecoveryMode||pendingSaleSnapshotMissing)&&cashierSession.loading;
   const cashShiftUnavailable=needsCashShift&&(!pendingSaleRecoveryMode||pendingSaleSnapshotMissing)&&!cashierSession.loading&&!cashierSession.session;
@@ -2138,26 +2159,65 @@ export function PosPage() {
     }catch(error){if(!saleRequestStarted&&!hadPendingSaleKey){pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);clearPendingSaleStorage();}flash(saleRequestStarted?`La orden puede haberse registrado antes de la falla. Se conserva la clave de recuperación y los datos locales de esta sesión para reintentar sin duplicarla: ${error.message}`:`No se envió la venta porque no se pudo preparar la recuperación de la sesión: ${error.message}`);}
     finally{setSavingSale(false);}
   };
+  const toggleBalancePayment=(sale)=>{
+    if(!balancePaymentRecoveryReady){flash(balancePaymentRecovery.error||'Estoy comprobando los intentos de abono guardados. Espera un momento antes de registrar otro.');return;}
+    const pending=pendingBalancePaymentBySale[sale.id];
+    if(paymentTarget===sale.id){setPaymentTarget(null);return;}
+    setPaymentTarget(sale.id);
+    setPaymentForm(pending
+      ? {amount:(pending.receivedCents/100).toFixed(2),method:pending.method,reference:pending.reference,note:pending.note}
+      : {amount:String(sale.balance),method:'Efectivo',reference:'',note:''});
+  };
   const registerBalancePayment=async(event,sale)=>{
     event.preventDefault();
     if(savingBalancePayment===sale.id)return;
-    const received=Number(paymentForm.amount);
-    if(!Number.isFinite(received)||received<=0)return;
-    if(paymentForm.method!=='Efectivo'&&received>Number(sale.balance)){flash('El abono no puede superar el saldo pendiente.');return;}
-    const amount=paymentForm.method==='Efectivo'?Math.min(received,Number(sale.balance)):received;
-    const change=paymentForm.method==='Efectivo'?Math.max(0,received-amount):0;
+    if(!balancePaymentRecoveryReady){flash(balancePaymentRecovery.error||'No se puede registrar el abono hasta comprobar el almacenamiento de recuperación.');return;}
     setSavingBalancePayment(sale.id);
+    let requestStarted=false;
+    let paymentAccepted=false;
+    let intent=pendingBalancePaymentBySale[sale.id]||null;
     try{
-      const keyName=`visualcorp-pos-payment-v1:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}:${sale.id}`;const legacyKeyName=`visualcorp-pos-payment-${sale.id}`;let key=localStorage.getItem(keyName)||sessionStorage.getItem(keyName)||sessionStorage.getItem(legacyKeyName)||'';
-      if(!key)key=globalThis.crypto?.randomUUID?.()||`payment-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      localStorage.setItem(keyName,key);sessionStorage.setItem(keyName,key);
-      const methodMap={Efectivo:'cash',Transferencia:'transfer',Tarjeta:'card',Otro:'other'};
-      const {error}=await supabase.rpc('record_sale_payment',{p_idempotency_key:key,p_sale_id:sale.id,p_method:methodMap[paymentForm.method]||'other',p_amount:amount,p_reference:paymentForm.reference.trim(),p_note:paymentForm.note.trim()});
-      if(error)throw error;
-      localStorage.removeItem(keyName);sessionStorage.removeItem(keyName);sessionStorage.removeItem(legacyKeyName);await refreshRemote();await refreshPOSDaySales();setPaymentTarget(null);setPaymentForm({amount:'',method:'Efectivo',reference:'',note:''});
-      flash(change>0?`Abono aplicado. Vuelto: ${formatMoney(change)}.`:'Abono guardado y saldo actualizado.');
-    }catch(error){flash(`No se guardó el abono; puedes reintentar sin duplicarlo: ${error.message}`);}
-    finally{setSavingBalancePayment('');}
+      if(!supabase||!organizationId||!user?.id)throw new Error('No se validó la sesión para registrar el abono.');
+      if(intent&&intent.saleId!==sale.id)throw new Error('El intento guardado no coincide con esta venta.');
+      if(!intent){
+        const receivedCents=Math.round(Number(paymentForm.amount)*100);
+        const balanceCents=Math.max(0,Math.round(Number(sale.balance)*100));
+        if(!Number.isSafeInteger(receivedCents)||receivedCents<=0){flash('Ingresa un monto mayor a cero.');return;}
+        if(paymentForm.method!=='Efectivo'&&receivedCents>balanceCents){flash('El abono no puede superar el saldo pendiente.');return;}
+        const appliedCents=paymentForm.method==='Efectivo'?Math.min(receivedCents,balanceCents):receivedCents;
+        if(appliedCents<=0){flash('La venta ya no tiene saldo pendiente para aplicar un abono nuevo.');return;}
+        intent={version:2,idempotencyKey:createPOSBalancePaymentKey(),saleId:sale.id,method:paymentForm.method,receivedCents,appliedCents,reference:paymentForm.reference.trim(),note:paymentForm.note.trim(),createdAt:new Date().toISOString()};
+        savePendingPOSBalancePayment(organizationId,user.id,intent);
+        setBalancePaymentRecovery(current=>({...current,pending:{...current.pending,[sale.id]:intent}}));
+      }
+      const methodMap:Record<PendingPOSBalancePayment['method'],'cash'|'transfer'|'card'|'other'>={Efectivo:'cash',Transferencia:'transfer',Tarjeta:'card',Otro:'other'};
+      requestStarted=true;
+      const {error}=await supabase.rpc('record_sale_payment',{p_idempotency_key:intent.idempotencyKey,p_sale_id:intent.saleId,p_method:methodMap[intent.method],p_amount:intent.appliedCents/100,p_reference:intent.reference,p_note:intent.note});
+      if(error){
+        if(isDefinitivePOSBalancePaymentError(error)){
+          clearPendingPOSBalancePayment(organizationId,user.id,sale.id);
+          setBalancePaymentRecovery(current=>{const pending={...current.pending};delete pending[sale.id];return{...current,pending};});
+        }
+        throw error;
+      }
+      paymentAccepted=true;
+      let recoveryCleared=true;
+      try{clearPendingPOSBalancePayment(organizationId,user.id,sale.id);}
+      catch{recoveryCleared=false;}
+      if(recoveryCleared)setBalancePaymentRecovery(current=>{const pending={...current.pending};delete pending[sale.id];return{...current,pending};});
+      setPaymentTarget(null);
+      setPaymentForm({amount:'',method:'Efectivo',reference:'',note:''});
+      try{await refreshRemote();await refreshPOSDaySales();}
+      catch{flash('El abono sí quedó guardado. No se pudo actualizar la vista; consulta de nuevo las ventas antes de registrar otro.');return;}
+      const changeCents=Math.max(0,intent.receivedCents-intent.appliedCents);
+      if(!recoveryCleared)flash('El abono quedó guardado. No pude limpiar el respaldo local; usa “Reintentar abono pendiente” para confirmar y limpiar la misma clave.');
+      else flash(changeCents>0?`Abono aplicado. Vuelto: ${formatMoney(changeCents/100)}.`:'Abono guardado y saldo actualizado.');
+    }catch(error:any){
+      if(paymentAccepted){flash(`El abono sí quedó guardado; no se registrará otra vez. Actualiza las ventas: ${error.message||'falló la actualización local'}`);}
+      else if(isDefinitivePOSBalancePaymentError(error)){flash(`El servidor rechazó el abono y no lo aplicó. Puedes corregir los datos e intentarlo de nuevo: ${error.message||'solicitud inválida'}`);}
+      else if(requestStarted){flash('No llegó la confirmación del abono. Conservé el método, monto, referencia y nota originales. Reintenta el abono pendiente sin cambiar sus datos.');}
+      else{flash(`No se envió el abono porque no se pudo guardar su recuperación segura: ${error.message||'revisa el almacenamiento del navegador'}`);}
+    }finally{setSavingBalancePayment('');}
   };
   const connectedStockCount=useMemo(()=>Object.values(stockMetaByProduct).filter((meta)=>meta.tone==='available').length,[stockMetaByProduct]);
   const quickCashDenominations=useMemo(()=>{
@@ -2608,17 +2668,17 @@ export function PosPage() {
           <div className="search-input pos-recent-search"><Search size={14}/><input type="search" value={recentSalesQuery} onChange={(e)=>setRecentSalesQuery(e.target.value)} placeholder="Buscar cliente, código VEN o producto…" aria-label="Buscar en ventas de hoy"/></div>
           <div className="pos-recent-filter-pills" role="group" aria-label="Filtrar ventas de hoy">
             <button type="button" className={recentSalesFilter==='all'?'is-active':''} onClick={()=>setRecentSalesFilter('all')}>Todas ({salesToday.length})</button>
-            <button type="button" className={recentSalesFilter==='balance'?'is-active':''} onClick={()=>setRecentSalesFilter('balance')}>Con saldo ({salesToday.filter((s:any)=>Number(s.balance)>0).length})</button>
-            <button type="button" className={recentSalesFilter==='paid'?'is-active':''} onClick={()=>setRecentSalesFilter('paid')}>Pagadas ({salesToday.filter((s:any)=>!(Number(s.balance)>0)).length})</button>
+            <button type="button" className={recentSalesFilter==='balance'?'is-active':''} onClick={()=>setRecentSalesFilter('balance')}>Con saldo ({salesToday.filter((s:any)=>Number(s.balance)>0||pendingBalancePaymentBySale[s.id]).length})</button>
+            <button type="button" className={recentSalesFilter==='paid'?'is-active':''} onClick={()=>setRecentSalesFilter('paid')}>Pagadas ({salesToday.filter((s:any)=>!(Number(s.balance)>0)&&!pendingBalancePaymentBySale[s.id]).length})</button>
           </div>
         </div>}
-        {posSalesStatus==='loading'?<div className="pos-sales-state" role="status">Consultando las ventas de hoy para {branchName}…</div>:posSalesStatus==='restricted'?<div className="pos-sales-state">Tu perfil no tiene permiso para consultar ventas.</div>:posSalesStatus==='error'?<div className="pos-sales-state" role="alert"><span>No se pudieron cargar las ventas de esta sucursal.</span><button className="button button-outline" type="button" onClick={()=>void refreshPOSDaySales()}>Reintentar</button></div>:salesToday.length===0?<EmptyState icon={Wallet} title="Todavía no hay ventas" text={`Las ventas confirmadas de hoy en ${branchName} aparecerán aquí.`}/>:filteredRecentSales.length===0?<div className="pos-sales-state"><span>No hay ventas que coincidan con el filtro actual.</span><button className="button button-outline" type="button" onClick={()=>{setRecentSalesQuery('');setRecentSalesFilter('all');}}>Ver todas</button></div>:<div className="activity-list">{filteredRecentSales.map((sale)=><article className="sale-activity" key={sale.id}><div className="sale-row"><span className="sale-icon"><ShoppingCart size={17}/></span><span><b>{sale.customer||sale.description||'Venta'}</b><small>{sale.method} · {new Date(sale.date).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})} · {sale.code}</small></span><strong>{formatMoney(sale.total)}</strong></div><div className="sale-payment-summary"><span>Abonado: <b>{formatMoney(sale.paid||0)}</b></span><span className={Number(sale.balance)>0?'pos-sale-balance-tag is-due':'pos-sale-balance-tag is-paid'}>Saldo: <b>{formatMoney(sale.balance||0)}</b></span>{sale.urgent&&<span className="inventory-status pending">Compra urgente pendiente</span>}</div><div className="pos-sale-card-actions"><button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>setDetailTarget({kind:'sale',id:sale.id,code:sale.code})}>Ver ficha completa</button><button className="button button-outline pos-sale-detail-trigger pos-sale-edit-btn" type="button" onClick={()=>setEditingSaleId(sale.id)}><Pencil size={13}/> Editar venta</button>{Number(sale.balance)>0&&<button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>{setPaymentTarget(paymentTarget===sale.id?null:sale.id);setPaymentForm({amount:String(sale.balance),method:'Efectivo',reference:'',note:''});}}>Registrar abono</button>}{canDeleteSales&&<button className="button button-outline pos-sale-detail-trigger" style={{color:'#dc2626',borderColor:'rgba(239,68,68,0.45)'}} type="button" onClick={()=>setAdminDeleteTarget({kind:'sale',saleId:sale.id,saleCode:sale.code,customerName:sale.customer,total:sale.total,status:sale.status,paymentMethod:sale.method,createdAt:sale.date})}><Trash2 size={13}/> Eliminar</button>}</div>{Number(sale.balance)>0&&paymentTarget===sale.id&&<form className="payment-form" onSubmit={(event)=>registerBalancePayment(event,sale)}>
-          <label>{paymentForm.method==='Efectivo'?'Monto recibido':'Monto aplicado'}<input type="number" min={0.01} max={paymentForm.method==='Efectivo'?undefined:sale.balance} step={0.01} required value={paymentForm.amount} onChange={(event)=>setPaymentForm({...paymentForm,amount:event.target.value})}/></label>
-          {paymentForm.method==='Efectivo'&&<small className="pos-balance-change-preview">Se aplicará {formatMoney(Math.min(Number(paymentForm.amount)||0,Number(sale.balance)))} · Vuelto {formatMoney(Math.max(0,(Number(paymentForm.amount)||0)-Number(sale.balance)))}</small>}
-          <label>Forma de pago<select value={paymentForm.method} onChange={(event)=>setPaymentForm({...paymentForm,method:event.target.value})}><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></label>
-          {(paymentForm.method==='Transferencia'||paymentForm.method==='Tarjeta')&&<label>Referencia (opcional)<input value={paymentForm.reference} onChange={(event)=>setPaymentForm({...paymentForm,reference:event.target.value})} placeholder="Código o últimos dígitos"/></label>}
-          <label>Nota (opcional)<input value={paymentForm.note} onChange={(event)=>setPaymentForm({...paymentForm,note:event.target.value})} placeholder="Detalle del abono"/></label>
-          <button className="button button-dark" type="submit" disabled={savingBalancePayment===sale.id}>{savingBalancePayment===sale.id?'Guardando…':'Guardar abono'}</button>
+        {balancePaymentRecoveryMatches&&balancePaymentRecovery.status==='error'&&<div className="pos-sales-state" role="alert">No se puede registrar otro abono hasta resolver la recuperación guardada: {balancePaymentRecovery.error}</div>}{posSalesStatus==='loading'?<div className="pos-sales-state" role="status">Consultando las ventas de hoy para {branchName}…</div>:posSalesStatus==='restricted'?<div className="pos-sales-state">Tu perfil no tiene permiso para consultar ventas.</div>:posSalesStatus==='error'?<div className="pos-sales-state" role="alert"><span>No se pudieron cargar las ventas de esta sucursal.</span><button className="button button-outline" type="button" onClick={()=>void refreshPOSDaySales()}>Reintentar</button></div>:salesToday.length===0?<EmptyState icon={Wallet} title="Todavía no hay ventas" text={`Las ventas confirmadas de hoy en ${branchName} aparecerán aquí.`}/>:filteredRecentSales.length===0?<div className="pos-sales-state"><span>No hay ventas que coincidan con el filtro actual.</span><button className="button button-outline" type="button" onClick={()=>{setRecentSalesQuery('');setRecentSalesFilter('all');}}>Ver todas</button></div>:<div className="activity-list">{filteredRecentSales.map((sale)=><article className="sale-activity" key={sale.id}><div className="sale-row"><span className="sale-icon"><ShoppingCart size={17}/></span><span><b>{sale.customer||sale.description||'Venta'}</b><small>{pendingBalancePaymentBySale[sale.id]?<>Abono pendiente · {sale.code} · {new Date(sale.date).toLocaleDateString('es-EC')}</>:<>{sale.method} · {new Date(sale.date).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})} · {sale.code}</>}</small></span><strong>{formatMoney(sale.total)}</strong></div><div className="sale-payment-summary"><span>Abonado: <b>{formatMoney(sale.paid||0)}</b></span><span className={pendingBalancePaymentBySale[sale.id]?'pos-sale-balance-tag is-due':Number(sale.balance)>0?'pos-sale-balance-tag is-due':'pos-sale-balance-tag is-paid'}>Saldo{pendingBalancePaymentBySale[sale.id]?' consultado':''}: <b>{formatMoney(sale.balance||0)}</b></span>{pendingBalancePaymentBySale[sale.id]&&<span className="inventory-status pending">Abono por confirmar</span>}{sale.urgent&&<span className="inventory-status pending">Compra urgente pendiente</span>}</div><div className="pos-sale-card-actions"><button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>setDetailTarget({kind:'sale',id:sale.id,code:sale.code})}>Ver ficha completa</button><button className="button button-outline pos-sale-detail-trigger pos-sale-edit-btn" type="button" onClick={()=>setEditingSaleId(sale.id)}><Pencil size={13}/> Editar venta</button>{(Number(sale.balance)>0||pendingBalancePaymentBySale[sale.id])&&<button className="button button-outline pos-sale-detail-trigger" type="button" disabled={!balancePaymentRecoveryReady} onClick={()=>toggleBalancePayment(sale)}>{pendingBalancePaymentBySale[sale.id]?'Reintentar abono pendiente':'Registrar abono'}</button>}{canDeleteSales&&<button className="button button-outline pos-sale-detail-trigger" style={{color:'#dc2626',borderColor:'rgba(239,68,68,0.45)'}} type="button" onClick={()=>setAdminDeleteTarget({kind:'sale',saleId:sale.id,saleCode:sale.code,customerName:sale.customer,total:sale.total,status:sale.status,paymentMethod:sale.method,createdAt:sale.date})}><Trash2 size={13}/> Eliminar</button>}</div>{(Number(sale.balance)>0||pendingBalancePaymentBySale[sale.id])&&paymentTarget===sale.id&&<form className="payment-form" onSubmit={(event)=>registerBalancePayment(event,sale)}>{pendingBalancePaymentBySale[sale.id]&&<p className="pos-calculation-warning" role="status">Este abono conserva el intento original para evitar duplicarlo. Reinténtalo con los mismos datos; no edites el monto, método, referencia ni nota.</p>}
+          <label>{paymentForm.method==='Efectivo'?'Monto recibido':'Monto aplicado'}<input type="number" min={0.01} max={pendingBalancePaymentBySale[sale.id]?undefined:(paymentForm.method==='Efectivo'?undefined:sale.balance)} step={0.01} required disabled={Boolean(pendingBalancePaymentBySale[sale.id])} value={paymentForm.amount} onChange={(event)=>setPaymentForm({...paymentForm,amount:event.target.value})}/></label>
+          {paymentForm.method==='Efectivo'&&<small className="pos-balance-change-preview">{pendingBalancePaymentBySale[sale.id]?<>Se aplicará {formatMoney(pendingBalancePaymentBySale[sale.id].appliedCents/100)} · Vuelto {formatMoney(Math.max(0,pendingBalancePaymentBySale[sale.id].receivedCents-pendingBalancePaymentBySale[sale.id].appliedCents)/100)}</>:<>Se aplicará {formatMoney(Math.min(Number(paymentForm.amount)||0,Number(sale.balance)))} · Vuelto {formatMoney(Math.max(0,(Number(paymentForm.amount)||0)-Number(sale.balance)))}</>}</small>}
+          <label>Forma de pago<select disabled={Boolean(pendingBalancePaymentBySale[sale.id])} value={paymentForm.method} onChange={(event)=>setPaymentForm({...paymentForm,method:event.target.value as PendingPOSBalancePayment['method']})}><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></label>
+          {(paymentForm.method==='Transferencia'||paymentForm.method==='Tarjeta')&&<label>Referencia (opcional)<input disabled={Boolean(pendingBalancePaymentBySale[sale.id])} value={paymentForm.reference} onChange={(event)=>setPaymentForm({...paymentForm,reference:event.target.value})} placeholder="Código o últimos dígitos"/></label>}
+          <label>Nota (opcional)<input disabled={Boolean(pendingBalancePaymentBySale[sale.id])} value={paymentForm.note} onChange={(event)=>setPaymentForm({...paymentForm,note:event.target.value})} placeholder="Detalle del abono"/></label>
+          <button className="button button-dark" type="submit" disabled={savingBalancePayment===sale.id||!balancePaymentRecoveryReady}>{savingBalancePayment===sale.id?'Guardando…':pendingBalancePaymentBySale[sale.id]?'Reintentar abono pendiente':'Guardar abono'}</button>
         </form>}</article>)}</div>}
       </section>
     </div><div className="notice-box"><span><CircleHelp size={17}/></span><div><b>Antes de confirmar</b><p>Los vínculos conectan productos con variantes de inventario; la disponibilidad depende de un conteo físico registrado por sucursal. Si falta el conteo o la existencia no alcanza, el POS lo muestra como pendiente y permite marcar la compra urgente al confirmar. Las órdenes en espera no reservan existencias y esta pantalla no emite comprobantes tributarios.</p></div></div>
