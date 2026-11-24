@@ -11,11 +11,33 @@ const photoLimit = 5;
 const documentLimit = 10;
 const maxPhotoBytes = 700_000;
 const maxDocumentBytes = 45 * 1024 * 1024;
+const telegramMessageIntervalMs = 3_100;
+const telegramQueueWaitLimitMs = 60_000;
 const publicSite = 'https://visualcorp-suite.vercel.app';
 
 type Target = 'public' | 'internal';
 type Json = Record<string, unknown>;
-type TelegramResponse = { ok: boolean; result?: any; description?: string; error_code?: number };
+type TelegramResponse = {
+  ok: boolean;
+  result?: any;
+  description?: string;
+  error_code?: number;
+  parameters?: { retry_after?: number };
+};
+
+class TelegramSendDeferredError extends Error {
+  constructor(readonly retryAfterMs: number) {
+    super(`La cola de Telegram está ocupada. Espera aproximadamente ${Math.max(1, Math.ceil(retryAfterMs / 1000))} s y vuelve a intentar.`);
+    this.name = 'TelegramSendDeferredError';
+  }
+}
+
+class TelegramLimiterUnavailableError extends Error {
+  constructor() {
+    super('No se pudo confirmar el turno de envío. No se envió el mensaje; vuelve a intentar.');
+    this.name = 'TelegramLimiterUnavailableError';
+  }
+}
 
 function json(data: Json, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -132,8 +154,64 @@ async function telegramCall(token: string, method: string, body: Record<string, 
     signal: AbortSignal.timeout(35_000),
   });
   const payload = await response.json().catch(() => ({})) as TelegramResponse;
-  if (!response.ok && payload.ok !== false) return { ok: false, description: 'Telegram rechazó la solicitud.' };
+  if (!response.ok && payload.ok !== false) {
+    return { ok: false, error_code: response.status, description: 'Telegram rechazó la solicitud.' };
+  }
   return payload;
+}
+
+function wait(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, milliseconds)));
+}
+
+async function sendRateLimitedMessage(
+  admin: SupabaseClient,
+  token: string,
+  method: 'sendPhoto' | 'sendDocument',
+  body: FormData,
+): Promise<TelegramResponse> {
+  const deadline = Date.now() + telegramQueueWaitLimitMs;
+  const { data: reservation, error: reserveError } = await admin.rpc('reserve_telegram_catalog_send_slot', {
+    p_max_wait_ms: telegramQueueWaitLimitMs,
+  });
+  if (reserveError || !reservation || typeof reservation !== 'object') throw new TelegramLimiterUnavailableError();
+  if (reservation.reserved !== true) {
+    throw new TelegramSendDeferredError(Number(reservation.wait_ms) || telegramQueueWaitLimitMs);
+  }
+
+  const slotAt = String(reservation.slot_at || '');
+  if (!Number.isFinite(Date.parse(slotAt))) throw new TelegramLimiterUnavailableError();
+  await wait(Number(reservation.wait_ms) || 0);
+
+  while (Date.now() <= deadline) {
+    const { data: claim, error: claimError } = await admin.rpc('claim_telegram_catalog_send_slot', {
+      p_slot_at: slotAt,
+    });
+    if (claimError || !claim || typeof claim !== 'object') throw new TelegramLimiterUnavailableError();
+    if (claim.allowed === true) break;
+    const retryAfterMs = Math.max(1, Number(claim.wait_ms) || 0);
+    if (Date.now() + retryAfterMs > deadline) throw new TelegramSendDeferredError(retryAfterMs);
+    await wait(Math.min(retryAfterMs, 5_000));
+  }
+  if (Date.now() > deadline) throw new TelegramSendDeferredError(telegramQueueWaitLimitMs);
+
+  const result = await telegramCall(token, method, body);
+  if (result.error_code === 429) {
+    const reportedRetryAfter = Number(result.parameters?.retry_after);
+    const retryAfterSeconds = Number.isFinite(reportedRetryAfter)
+      ? Math.min(604_800, Math.max(1, Math.trunc(reportedRetryAfter)))
+      : 1;
+    const { error: cooldownError } = await admin.rpc('defer_telegram_catalog_send', {
+      p_retry_after_seconds: retryAfterSeconds,
+    });
+    if (cooldownError) {
+      return {
+        ...result,
+        description: 'Telegram aplicó una pausa, pero no se pudo guardar el tiempo de espera compartido. No continúes con más mensajes hasta reintentar desde la aplicación.',
+      };
+    }
+  }
+  return result;
 }
 
 function channelUrl(channel: string, messageId: number) {
@@ -176,40 +254,18 @@ async function loadEditables(admin: SupabaseClient, organizationId: string, prod
   return files;
 }
 
-async function sendPhotoAlbum(
+async function sendProductPhoto(
+  admin: SupabaseClient,
   token: string,
   chatId: string,
-  photos: Array<{ name: string; bytes: Uint8Array }>,
+  photo: { name: string; bytes: Uint8Array },
   caption: string,
-  barcode?: Uint8Array,
-  qr?: Uint8Array,
 ) {
-  const mediaFiles: Array<{ attachName: string; name: string; bytes: Uint8Array }> = [
-    ...photos.map((photo, index) => ({ attachName: `photo${index}`, name: photo.name, bytes: photo.bytes })),
-    ...(barcode ? [{ attachName: 'barcode', name: 'codigo-barras.png', bytes: barcode }] : []),
-    ...(qr ? [{ attachName: 'qr', name: 'codigo-qr.png', bytes: qr }] : []),
-  ];
-  const media = mediaFiles.map((file, index) => ({
-    type: 'photo',
-    media: `attach://${file.attachName}`,
-    ...(index === 0 ? { caption } : {}),
-  }));
-
-  if (media.length === 1) {
-    const form = new FormData();
-    form.set('chat_id', chatId);
-    form.set('photo', new Blob([mediaFiles[0].bytes], { type: 'image/jpeg' }), mediaFiles[0].name);
-    form.set('caption', caption);
-    return telegramCall(token, 'sendPhoto', form);
-  }
-
   const form = new FormData();
   form.set('chat_id', chatId);
-  form.set('media', JSON.stringify(media));
-  for (const file of mediaFiles) {
-    form.set(file.attachName, new Blob([file.bytes], { type: file.name.endsWith('.jpg') ? 'image/jpeg' : 'image/png' }), file.name);
-  }
-  return telegramCall(token, 'sendMediaGroup', form);
+  form.set('photo', new Blob([photo.bytes], { type: photo.name.endsWith('.jpg') ? 'image/jpeg' : 'image/png' }), photo.name);
+  if (caption) form.set('caption', caption);
+  return sendRateLimitedMessage(admin, token, 'sendPhoto', form);
 }
 
 async function updatePublication(admin: SupabaseClient, id: string, values: Record<string, unknown>) {
@@ -300,7 +356,15 @@ Deno.serve(async (request: Request) => {
       for (const item of Object.values(progress.documents || {}) as Array<Record<string, unknown>>) {
         if (item.status === 'unknown') item.status = 'failed';
       }
-      const nextStatus = progress.photos === 'sent' ? 'partial' : 'failed';
+      const photoItems = Object.values(progress.photo_items || {}) as Array<Record<string, unknown>>;
+      for (const item of photoItems) {
+        if (item.status === 'unknown') item.status = 'failed';
+      }
+      const hasSentContent = progress.photos === 'sent'
+        || photoItems.some((item) => item.status === 'sent')
+        || Object.values(progress.documents || {}).some((item: any) => item?.status === 'sent');
+      if (photoItems.length) progress.photos = hasSentContent ? 'partial' : 'failed';
+      const nextStatus = hasSentContent ? 'partial' : 'failed';
       const { error: updateError } = await admin.from('catalog_product_telegram_publications')
         .update({
           status: nextStatus,
@@ -429,38 +493,86 @@ Deno.serve(async (request: Request) => {
     if (!publication) throw new Error('No se pudo iniciar la publicación.');
 
     const progress = (publication.progress || { photos: 'pending', documents: {} }) as Record<string, any>;
-    if (progress.photos !== 'sent') {
-      let photoResult: TelegramResponse;
-      try {
-        photoResult = await sendPhotoAlbum(token, chatId, photos, buildCaption(product, target), barcode, qr);
-      } catch (error) {
+    progress.documents = progress.documents || {};
+    progress.photo_items = progress.photo_items || {};
+    progress.photo_message_ids = Array.isArray(progress.photo_message_ids) ? progress.photo_message_ids : [];
+    const legacyPhotosAlreadySent = progress.photos === 'sent' && Object.keys(progress.photo_items).length === 0;
+    if (!legacyPhotosAlreadySent) {
+      const sku = String(product.sku || product.id);
+      const photoItems = [
+        ...photos.map((photo, index) => ({
+          key: `photo_${index + 1}`,
+          photo,
+          caption: index === 0 ? buildCaption(product, target) : '',
+        })),
+        ...(barcode ? [{ key: 'barcode', photo: { name: 'codigo-barras.png', bytes: barcode }, caption: `Código de barras · ${sku}` }] : []),
+        ...(qr ? [{ key: 'qr', photo: { name: 'codigo-qr.png', bytes: qr }, caption: `Código QR · ${sku}` }] : []),
+      ];
+
+      for (const item of photoItems) {
+        if (progress.photo_items[item.key]?.status === 'sent') continue;
+        progress.photo_items[item.key] = { status: 'sending' };
+        progress.photos = 'sending';
+        await updatePublication(admin, publication.id, { status: 'sending', progress, error_message: null });
+
+        let photoResult: TelegramResponse;
+        try {
+          photoResult = await sendProductPhoto(admin, token, chatId, item.photo, item.caption);
+        } catch (error) {
+          if (error instanceof TelegramSendDeferredError || error instanceof TelegramLimiterUnavailableError) {
+            progress.photo_items[item.key] = { status: 'failed' };
+            const hasSentPhoto = Object.values(progress.photo_items).some((state: any) => state?.status === 'sent');
+            progress.photos = hasSentPhoto ? 'partial' : 'failed';
+            const status = hasSentPhoto ? 'partial' : 'failed';
+            const message = sanitizeError(error.message);
+            await updatePublication(admin, publication.id, { status, progress, error_message: message });
+            return json({ status, message_link: publication.message_link || null, error: message }, 503);
+          }
+          progress.photo_items[item.key] = { status: 'unknown' };
+          await updatePublication(admin, publication.id, {
+            status: 'unknown',
+            progress,
+            error_message: 'No sabemos si Telegram recibió una de las imágenes. Comprueba el canal antes de reintentar.',
+          });
+          return json({ status: 'unknown', message_link: publication.message_link || null, error: 'No se pudo confirmar la respuesta de Telegram. Revisa el canal antes de volver a enviar.' }, 502);
+        }
+
+        if (!photoResult.ok) {
+          progress.photo_items[item.key] = { status: 'failed' };
+          const hasSentPhoto = Object.values(progress.photo_items).some((state: any) => state?.status === 'sent');
+          progress.photos = hasSentPhoto ? 'partial' : 'failed';
+          const status = hasSentPhoto ? 'partial' : 'failed';
+          const message = photoResult.error_code === 429
+            ? photoResult.description?.includes('no se pudo guardar')
+              ? sanitizeError(photoResult.description)
+              : `Telegram limitó temporalmente los envíos. La cola pausó el bot por ${Math.max(1, Number(photoResult.parameters?.retry_after) || 1)} segundos.`
+            : `Telegram rechazó ${item.photo.name}: ${sanitizeError(photoResult.description)}`;
+          await updatePublication(admin, publication.id, { status, progress, error_message: message });
+          return json({ status, message_link: publication.message_link || null, error: message }, 502);
+        }
+
+        const messageId = photoResult.result?.message_id;
+        progress.photo_items[item.key] = { status: 'sent', ...(Number.isInteger(messageId) ? { message_id: messageId } : {}) };
+        if (Number.isInteger(messageId) && !progress.photo_message_ids.includes(messageId)) progress.photo_message_ids.push(messageId);
+        const firstMessageId = progress.photo_message_ids[0];
+        publication.message_link = Number.isInteger(firstMessageId) ? channelUrl(chatId, firstMessageId) : publication.message_link || null;
         await updatePublication(admin, publication.id, {
-          status: 'unknown',
+          status: 'sending',
           progress,
-          error_message: 'No sabemos si Telegram recibió las imágenes. Comprueba el canal antes de reintentar.',
+          message_link: publication.message_link,
+          error_message: null,
         });
-        return json({ status: 'unknown', error: 'No se pudo confirmar la respuesta de Telegram. Revisa el canal antes de volver a enviar.' }, 502);
       }
-      if (!photoResult.ok) {
-        await updatePublication(admin, publication.id, { status: 'failed', progress, error_message: sanitizeError(photoResult.description) });
-        return json({ status: 'failed', error: 'Telegram rechazó las imágenes: ' + sanitizeError(photoResult.description) }, 502);
-      }
-      const messages = Array.isArray(photoResult.result) ? photoResult.result : [photoResult.result];
+
       progress.photos = 'sent';
-      progress.photo_message_ids = messages.map((message: any) => message?.message_id).filter((id: unknown) => Number.isInteger(id));
-      progress.documents = progress.documents || {};
-      const firstMessageId = progress.photo_message_ids[0];
-      const link = Number.isInteger(firstMessageId) ? channelUrl(chatId, firstMessageId) : null;
-      publication.message_link = link;
+      const link = publication.message_link || null;
       await updatePublication(admin, publication.id, {
         status: target === 'internal' && editables.length ? 'sending' : 'published',
         progress,
         message_link: link,
         error_message: null,
       });
-      if (target === 'public' || editables.length === 0) {
-        return json({ status: 'published', message_link: link });
-      }
+      if (target === 'public' || editables.length === 0) return json({ status: 'published', message_link: link });
     }
 
     if (target === 'internal') {
@@ -477,13 +589,21 @@ Deno.serve(async (request: Request) => {
           return json({ status: 'partial', message_link: publication.message_link, error: `El editable ${editable.name} supera 45 MiB.` }, 413);
         }
         let documentResult: TelegramResponse;
+        progress.documents[editable.path] = { status: 'sending' };
+        await updatePublication(admin, publication.id, { status: 'sending', progress, error_message: null });
         try {
           const form = new FormData();
           form.set('chat_id', chatId);
           form.set('document', file, editable.name.replace(/^\d+_[a-f0-9-]+_/i, ''));
           form.set('caption', `Editable de ${product.name} · ${product.sku}`);
-          documentResult = await telegramCall(token, 'sendDocument', form);
-        } catch {
+          documentResult = await sendRateLimitedMessage(admin, token, 'sendDocument', form);
+        } catch (error) {
+          if (error instanceof TelegramSendDeferredError || error instanceof TelegramLimiterUnavailableError) {
+            progress.documents[editable.path] = { status: 'failed' };
+            const message = sanitizeError(error.message);
+            await updatePublication(admin, publication.id, { status: 'partial', progress, error_message: message });
+            return json({ status: 'partial', message_link: publication.message_link, error: message }, 503);
+          }
           progress.documents[editable.path] = { status: 'unknown' };
           await updatePublication(admin, publication.id, {
             status: 'unknown',
@@ -494,12 +614,16 @@ Deno.serve(async (request: Request) => {
         }
         if (!documentResult.ok) {
           progress.documents[editable.path] = { status: 'failed' };
-          await updatePublication(admin, publication.id, { status: 'partial', progress, error_message: sanitizeError(documentResult.description) });
-          return json({ status: 'partial', message_link: publication.message_link, error: `Telegram no recibió ${editable.name}: ${sanitizeError(documentResult.description)}` }, 502);
+          const message = documentResult.error_code === 429
+            ? documentResult.description?.includes('no se pudo guardar')
+              ? sanitizeError(documentResult.description)
+              : `Telegram limitó temporalmente los envíos. La cola pausó el bot por ${Math.max(1, Number(documentResult.parameters?.retry_after) || 1)} segundos.`
+            : `Telegram no recibió ${editable.name}: ${sanitizeError(documentResult.description)}`;
+          await updatePublication(admin, publication.id, { status: 'partial', progress, error_message: message });
+          return json({ status: 'partial', message_link: publication.message_link, error: message }, 502);
         }
         progress.documents[editable.path] = { status: 'sent', message_id: documentResult.result?.message_id };
         await updatePublication(admin, publication.id, { status: 'sending', progress, error_message: null });
-        await new Promise((resolve) => setTimeout(resolve, 1100));
       }
       const link = publication.message_link || null;
       await updatePublication(admin, publication.id, { status: 'published', progress, error_message: null });
@@ -511,3 +635,4 @@ Deno.serve(async (request: Request) => {
     return json({ error: sanitizeError(error instanceof Error ? error.message : error) }, 500);
   }
 });
+
