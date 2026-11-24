@@ -30,18 +30,18 @@ import type {
 type CanvasSize = { width: number; height: number };
 
 function useImageElement(src?: string) {
-  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [loadedImage, setLoadedImage] = useState<{ src: string; image: HTMLImageElement | null } | null>(null);
 
   useEffect(() => {
     if (!src) {
-      setImage(null);
+      setLoadedImage(null);
       return undefined;
     }
 
     const nextImage = new window.Image();
     nextImage.crossOrigin = 'anonymous';
-    nextImage.onload = () => setImage(nextImage);
-    nextImage.onerror = () => setImage(null);
+    nextImage.onload = () => setLoadedImage({ src, image: nextImage });
+    nextImage.onerror = () => setLoadedImage({ src, image: null });
     nextImage.src = src;
     return () => {
       nextImage.onload = null;
@@ -49,7 +49,9 @@ function useImageElement(src?: string) {
     };
   }, [src]);
 
-  return image;
+  // A previous product image can remain in state while the next URL loads.
+  // Never let that stale image be processed or cached under the new product's key.
+  return loadedImage && loadedImage.src === src ? loadedImage.image : null;
 }
 
 function clamp(value: number, min: number, max: number) {
