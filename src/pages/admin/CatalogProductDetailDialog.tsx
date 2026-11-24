@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import JsBarcode from 'jsbarcode';
 import { Barcode, Check, ChevronLeft, ChevronRight, Copy, Download, Image as ImageIcon, PackageSearch, Pencil, Printer } from 'lucide-react';
+import { useAuth } from '../../auth/AuthProvider';
 import { formatMoney } from '../../app/workspace';
 import { Dialog } from '../../components/ui/OperationalKit';
+import CatalogProductPublishingPanel from './CatalogProductPublishingPanel';
 import './catalog-product-detail.css';
 
 type CatalogProduct = Record<string, any>;
@@ -255,6 +257,7 @@ function BarcodeLabel({ sku, productName }: { sku: string; productName: string }
 }
 
 export function CatalogProductDetailDialog({ product, onClose, onEdit, onDuplicate }: { product: CatalogProduct | null; onClose: () => void; onEdit?: () => void; onDuplicate?: () => void }) {
+  const { hasPermission } = useAuth();
   const images = useMemo(() => product ? getImages(product) : [], [product]);
   const [activeImage, setActiveImage] = useState(0);
   const selectedProduct = product?.id || product?.sku || '';
@@ -275,7 +278,7 @@ export function CatalogProductDetailDialog({ product, onClose, onEdit, onDuplica
     ['Corporativo', product.corporatePrice ?? product.price_corp],
   ].filter(([, value]) => value != null && value !== '');
 
-  return <Dialog className="catalog-product-detail-dialog" open onOpenChange={(open) => { if (!open) onClose(); }} title={product.name || 'Producto'} description={`${category} · SKU ${sku}`} footer={<div className="catalog-detail-footer-actions">{onDuplicate && <button className="button button-outline" type="button" onClick={onDuplicate}><Copy size={14}/> Duplicar</button>}{onEdit && <button className="button button-dark" type="button" onClick={onEdit}><Pencil size={14}/> Editar producto</button>}<button className="button button-outline" type="button" onClick={onClose}>Cerrar ficha</button></div>}>
+  return <Dialog className="catalog-product-detail-dialog" size="xl" open onOpenChange={(open) => { if (!open) onClose(); }} title={product.name || 'Producto'} description={`${category} · SKU ${sku}`} footer={<div className="catalog-detail-footer-actions">{onDuplicate && <button className="button button-outline" type="button" onClick={onDuplicate}><Copy size={14}/> Duplicar</button>}{onEdit && <button className="button button-dark" type="button" onClick={onEdit}><Pencil size={14}/> Editar producto</button>}<button className="button button-outline" type="button" onClick={onClose}>Cerrar ficha</button></div>}>
     <div className="catalog-detail-layout">
       <section className="catalog-detail-gallery" aria-label={`Galería de ${product.name}`}>
         {images.length ? <>
@@ -314,6 +317,12 @@ export function CatalogProductDetailDialog({ product, onClose, onEdit, onDuplica
         </section>
       </div>
     </div>
+    {customProduct && <CatalogProductPublishingPanel
+      product={product}
+      canManageEditables={hasPermission('catalog_admin', 'edit')}
+      canPublishPublic={hasPermission('website', 'publish_content')}
+      canPublishInternal={hasPermission('catalog_admin', 'edit') && hasPermission('catalog_admin', 'edit_prices')}
+    />}
   </Dialog>;
 }
 
