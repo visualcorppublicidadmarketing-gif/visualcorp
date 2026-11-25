@@ -136,12 +136,24 @@ export function MonogramGenerator() {
   const saveDisplayUnit = (unit: MonogramDisplayUnit) => {
     setProject((current) => normalizeMonogramProject({ ...current, displayUnit: unit }));
   };
-  const outlines = useMemo<MonogramOutline[]>(() => {
-    if (!font) return [];
-    return project.elements
-      .map((element) => createMonogramOutline(font, project.height, element))
-      .filter((outline): outline is MonogramOutline => outline !== null);
+  const outlineResult = useMemo(() => {
+    if (!font) return { outlines: [] as MonogramOutline[], errors: [] as string[] };
+    const outlines: MonogramOutline[] = [];
+    const errors: string[] = [];
+
+    project.elements.forEach((element) => {
+      try {
+        const outline = createMonogramOutline(font, project.height, element);
+        if (outline) outlines.push(outline);
+      } catch {
+        const text = element.text.trim();
+        errors.push(`«${text || 'Texto vacío'}»: no se pudo convertir a contornos. Revisa los caracteres de esta capa.`);
+      }
+    });
+
+    return { outlines, errors };
   }, [font, project]);
+  const { outlines, errors: outlineErrors } = outlineResult;
   const validation = useMemo(() => validateMonogramProject(project), [project]);
   const outsideWarnings = font
     ? outlines.flatMap((outline) => {
@@ -156,7 +168,8 @@ export function MonogramGenerator() {
     })
     : validation.warnings.filter((warning) => warning.code === 'outside-artboard');
   const missingCharacters = Array.from(new Set(outlines.flatMap((outline) => outline.missingCharacters)));
-  const exportReady = Boolean(font && outlines.length > 0 && missingCharacters.length === 0);
+  const usedSimpleShaping = outlines.some((outline) => outline.usedSimpleShaping);
+  const exportReady = Boolean(font && outlines.length > 0 && missingCharacters.length === 0 && outlineErrors.length === 0);
   const visibleDepth = outlines.length > 0
     ? Number(outlines.reduce((sum, outline) => sum + outline.depth, 0).toFixed(1))
     : 0;
@@ -368,6 +381,8 @@ export function MonogramGenerator() {
             </div>
             {outsideWarnings.length > 0 && <div className="monogram__validation-warning" role="status"><strong>Revisa el área de trabajo</strong>{outsideWarnings.map((warning) => <p key={`${warning.elementId}-outside`}>{warning.message}</p>)}</div>}
             {missingCharacters.length > 0 && <div className="monogram__validation-warning" role="status"><strong>Caracteres sin glifo en DM Sans</strong><p>{missingCharacters.join(' ')}. Cambia la fuente o el texto antes de exportar.</p></div>}
+            {usedSimpleShaping && <div className="monogram__validation-warning" role="status"><strong>Modo tipográfico simplificado</strong><p>La fuente contiene reglas que el conversor no admite. Se generaron contornos glifo a glifo con kerning, sin sustituciones contextuales ni ligaduras automáticas. Revisa el resultado antes de fabricar.</p></div>}
+            {outlineErrors.length > 0 && <div className="monogram__validation-error" role="alert"><strong>No se pudieron generar algunos contornos</strong>{outlineErrors.map((error) => <p key={error}>{error}</p>)}</div>}
             {validation.errors.map((error) => <p className="monogram__validation-error" key={error}>{error}</p>)}
             {fontError && <p className="monogram__validation-error" role="alert">{fontError}</p>}
             <p className="monogram__status" role="status" aria-live="polite">{status}</p>
