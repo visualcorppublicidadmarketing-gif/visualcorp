@@ -1,4 +1,4 @@
-import { ArrowUpRight, Box, Layers3, Wrench } from 'lucide-react';
+import { ArrowUpRight, Box, Layers3, Type, Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AppFrame, PageHeading } from '../../app/layout';
 import './tools-hub-page.css';
@@ -14,7 +14,7 @@ export function ToolsHubPage() {
       <section className="tools-hub" aria-label="Herramientas disponibles">
         <div className="tools-hub__intro">
           <div><span className="tools-hub__intro-icon"><Wrench size={18} aria-hidden="true" /></span><p>Las herramientas que creemos para Visual Corp aparecerán aquí.</p></div>
-          <span className="tools-hub__count">1 disponible</span>
+          <span className="tools-hub__count">2 disponibles</span>
         </div>
         <div className="tools-hub__grid">
           <Link className="tools-hub__card" to="/operaciones/herramientas/generador-cajas">
@@ -25,6 +25,17 @@ export function ToolsHubPage() {
             </div>
             <div className="tools-hub__card-content">
               <div><span className="tools-hub__status"><i /> Disponible</span><h2>Generador de cajas</h2><p>Define medidas, grosor y tipo de ensamble; revisa el modelo y descarga el plano vectorial.</p></div>
+              <span className="tools-hub__open"><span>Abrir herramienta</span><ArrowUpRight size={17} aria-hidden="true" /></span>
+            </div>
+          </Link>
+          <Link className="tools-hub__card" to="/operaciones/herramientas/monogramas">
+            <div className="tools-hub__card-art tools-hub__card-art--monogram" aria-hidden="true">
+              <div className="tools-hub__art-grid" />
+              <span className="tools-hub__monogram-glyph">A<span>María</span></span>
+              <span className="tools-hub__art-tag"><Type size={12} /> 3D + SVG + JSON</span>
+            </div>
+            <div className="tools-hub__card-content">
+              <div><span className="tools-hub__status"><i /> Disponible · V1</span><h2>Editor de monogramas</h2><p>Combina textos independientes, colócalos en el editor 2D y previsualiza la extrusión 3D.</p></div>
               <span className="tools-hub__open"><span>Abrir herramienta</span><ArrowUpRight size={17} aria-hidden="true" /></span>
             </div>
           </Link>

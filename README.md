@@ -69,6 +69,12 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ## Continuidad del trabajo
 
+### Herramientas paramétricas 2D/3D · 25 de noviembre de 2026
+
+- **Monogramas:** V1 disponible en `/operaciones/herramientas/monogramas`, con capas editables, lienzo 2D, vista de extrusión 3D y exportación SVG/JSON. La interfaz admite mm y cm; la caja admite mm, cm y pulgadas, y el ancho de impresión QR admite mm y cm. Las medidas internas y los archivos de fabricación permanecen en mm para conservar escala y compatibilidad.
+- **Precisión:** los campos físicos admiten incrementos de 0,1 mm y 0,01 cm; Caja conserva incrementos de 0,01 in. El esquema `.vcmg.json` v1 sigue almacenando medidas en mm y acepta una preferencia opcional de visualización.
+- **Límites:** el editor de monogramas aún no une capas, valida puentes/islas ni exporta STL/3MF; SVG es vectorial y requiere revisión de fabricación. La documentación e investigación están en [Monogramas](docs/reverse-engineering/Monogramas-2026-11-25/IMPLEMENTACION_V1.md), [arquitectura paramétrica](docs/reverse-engineering/BurroCreativo-2026-11-25/ANALISIS_ARQUITECTURA_GENERADORES.md) y [roadmap](docs/reverse-engineering/HERRAMIENTAS_PARAMETRICAS_ROADMAP_2026-11-25.md).
+
 ### Búsqueda de tazas en el POS · 23 de noviembre de 2026
 
 - **Causa:** los SKU físicos PF003 y PF007 están publicados en el mismo catálogo que lee el POS y el cotizador. Se llaman «Jarro» y describen el producto como taza; la búsqueda del POS no consultaba la descripción, mientras el cotizador sí.
