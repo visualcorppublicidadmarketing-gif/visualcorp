@@ -132,7 +132,7 @@ export function saveNavigationPreferences(userId: string | null | undefined, pre
 
 /** One user-facing navigation index for every navigation style. */
 export const workspaceNavigation: AppNavLink[] = [
-  { to: '/panel', label: 'Inicio', icon: LayoutDashboard, module: 'dashboard', end: true },
+  { to: '/panel', aliases: ['/admin/presentacion'], label: 'Inicio', icon: LayoutDashboard, module: 'dashboard', end: true },
   // A personal overview is a frequent shortcut, not a sales category.
   { to: '/operaciones/mi-semana', label: 'Mi semana', icon: ChartNoAxesCombined, module: 'sales' },
   { to: '/operaciones/pos', label: 'Punto de venta', icon: ShoppingCart, module: 'sales' },
