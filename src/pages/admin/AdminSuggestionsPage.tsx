@@ -74,7 +74,7 @@ function formatSuggestionDate(value: string) {
 
 export function AdminSuggestionsPage() {
   const { organizationId, hasPermission } = useAuth();
-  const canUpdateStatus = hasPermission('team', 'manage_suggestions');
+  const canUpdateStatus = hasPermission('team', 'edit');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [draft, setDraft] = useState<SuggestionDraft>(initialDraft);
   const [search, setSearch] = useState('');
@@ -275,7 +275,7 @@ export function AdminSuggestionsPage() {
             </label>
 
             <button className="suggestions-submit" type="submit" disabled={saving}>
-              {saving ? <LoaderCircle size={17} className="suggestions-spinner"/> : <Plus size={17}/>} 
+              {saving ? <LoaderCircle size={17} className="suggestions-spinner"/> : <Plus size={17}/>}
               {saving ? 'Guardando…' : 'Agregar al tablero'}
             </button>
           </form>

@@ -36,5 +36,5 @@ create policy admin_suggestions_insert
 
 create policy admin_suggestions_update
   on public.admin_suggestions for update to authenticated
-  using (app_private.has_visualcorp_access(organization_id, 'team', 'manage_suggestions'))
-  with check (app_private.has_visualcorp_access(organization_id, 'team', 'manage_suggestions'));
+  using (app_private.has_visualcorp_access(organization_id, 'team', 'edit'))
+  with check (app_private.has_visualcorp_access(organization_id, 'team', 'edit'));
