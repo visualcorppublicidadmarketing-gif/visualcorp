@@ -12,7 +12,7 @@ import { calculateQuotePrice, getQuoteBasis } from '../../lib/quotePricing';
 import { calculatePOSLine, formatPOSLineDescription } from '../../lib/posPricing';
 import { CommercialFinishingControls } from '../../components/CommercialFinishingControls';
 import { calculateCommercialFinishing, emptyCommercialFinishing, sanitizeCommercialFinishing, snapshotCommercialFinishing, type CommercialFinishingValue } from '../../lib/commercialFinishing';
-import { calculatePOSPaymentBreakdown } from '../../lib/posPayments';
+import { calculatePOSPaymentBreakdown, clearPendingPOSBalancePayment, createPOSBalancePaymentKey, isDefinitivePOSBalancePaymentError, loadPendingPOSBalancePayments, savePendingPOSBalancePayment, type PendingPOSBalancePayment } from '../../lib/posPayments';
 import { CommercialDocumentDetails, type CommercialDocumentKind } from '../../components/CommercialDocumentDetails';
 import { Kbd, Sheet, useConfirm } from '../../components/ui/OperationalKit';
 import { UiBadge, UiNotice } from '../../components/ui/DesignSystemPrimitives';
@@ -22,6 +22,8 @@ import { CommercialAssetsGallery } from '../../components/commercial/CommercialA
 import { GoogleMapsPreview } from '../../components/commercial/GoogleMapsPreview';
 import { RichTextEditor } from '../../components/studio/RichTextEditor';
 import { persistCommercialAssets, type CommercialAssetDraft } from '../../lib/commercialAssets';
+import { posSaleAssetRecovery } from '../../lib/posSaleAssetRecovery';
+import { clearPendingPOSCashMovement, createPOSCashMovementKey, loadPendingPOSCashMovement, savePendingPOSCashMovement, type PendingPOSCashMovement } from '../../lib/posCashMovementRecovery';
 import { normalizeGoogleMapsUrl } from '../../lib/maps';
 import { POSCustomerPicker } from './components/POSCustomerPicker';
 import { POSCheckoutSteps, type POSCheckoutStep } from './components/POSCheckoutSteps';
@@ -41,6 +43,11 @@ import './pos-material-usage.css';
 
 const trackedAccessoryProductIds = new Set(['prod-extras-ojal-peque-o-c-u','prod-extras-ojales-grande-c-u']);
 const roundMoney = (value:number) => Math.round((value + Number.EPSILON) * 100) / 100;
+const stablePOSJson = (value: unknown): string => {
+  if (Array.isArray(value)) return `[${value.map(stablePOSJson).join(',')}]`;
+  if (value && typeof value === 'object') return `{${Object.entries(value as Record<string, unknown>).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>`${JSON.stringify(key)}:${stablePOSJson(item)}`).join(',')}}`;
+  return JSON.stringify(value) ?? 'null';
+};
 const pluralizePOSUnit = (unit:string) => /^(?:m|mm|cm|km|m2|m²|cm2|cm²|m3|m³|cm3|cm³|kg|g|mg|l|lt|ml|hz)$/i.test(unit.trim())||/s$/i.test(unit)||/[^\p{L}]$/u.test(unit) ? unit : /[aeiouáéó]$/i.test(unit) ? `${unit}s` : `${unit}es`;
 const isPOSServiceProduct = (product:any) => product?.productKind==='service'||String(product?.productType||'').trim().toLocaleLowerCase('es')==='service';
 const normalizeCustomerPhone = (value) => { const digits=String(value||'').replace(/\D/g,'');return digits.startsWith('593')&&digits.length===12?`0${digits.slice(3)}`:digits; };
@@ -412,6 +419,7 @@ function POSCartLineEditor({
     widthCm: String(line.widthCm || ''),
     heightCm: String(line.heightCm || ''),
     unitPrice: String(line.baseUnitPrice ?? line.unitPrice),
+    priceMode: (line.customUnitPriceApplied || !line.productId ? 'agreed' : 'catalog') as 'agreed' | 'catalog',
     pricingTier: (line.pricingTier || 'pvp') as 'pvp' | 'instalacion' | 'corporativo',
     lineDiscountPercent: String(line.lineDiscountPercent || '0'),
     finishing: sanitizeCommercialFinishing(line.finishing),
@@ -425,6 +433,7 @@ function POSCartLineEditor({
       widthCm: String(line.widthCm || ''),
       heightCm: String(line.heightCm || ''),
       unitPrice: String(line.baseUnitPrice ?? line.unitPrice),
+      priceMode: (line.customUnitPriceApplied || !line.productId ? 'agreed' : 'catalog') as 'agreed' | 'catalog',
       pricingTier: (line.pricingTier || 'pvp') as 'pvp' | 'instalacion' | 'corporativo',
       lineDiscountPercent: String(line.lineDiscountPercent || '0'),
       finishing: sanitizeCommercialFinishing(line.finishing),
@@ -445,6 +454,7 @@ function POSCartLineEditor({
     nextHeightCm: number,
     nextTier: 'pvp' | 'instalacion' | 'corporativo',
     nextUnitPrice: number,
+    nextPriceMode: 'agreed' | 'catalog',
     nextLineDiscount: number,
     nextFinishing: CommercialFinishingValue,
   ) => {
@@ -456,7 +466,7 @@ function POSCartLineEditor({
 
     if (line.productId && product) {
       if (line.mode === 'area' && (!Number.isFinite(nextWidthCm) || !Number.isFinite(nextHeightCm) || nextWidthCm <= 0 || nextHeightCm <= 0)) return false;
-      const customPriceArg = Number.isFinite(nextUnitPrice) && nextUnitPrice > 0 ? nextUnitPrice : undefined;
+      const customPriceArg = nextPriceMode === 'agreed' && Number.isFinite(nextUnitPrice) && nextUnitPrice > 0 ? nextUnitPrice : undefined;
       const calculation = calculatePOSLine({
         product,
         mode: line.mode,
@@ -557,6 +567,7 @@ function POSCartLineEditor({
       Number(line.heightCm || 0),
       line.pricingTier || 'pvp',
       Number((line.baseUnitPrice ?? line.unitPrice) || 0),
+      line.customUnitPriceApplied ? 'agreed' : 'catalog',
       Number(line.lineDiscountPercent || 0),
       sanitizeCommercialFinishing(line.finishing),
     );
@@ -571,6 +582,7 @@ function POSCartLineEditor({
       Number(draft.heightCm),
       draft.pricingTier,
       Number(draft.unitPrice),
+      draft.priceMode,
       Number(draft.lineDiscountPercent),
       draft.finishing,
     );
@@ -633,7 +645,7 @@ function POSCartLineEditor({
       <label className="pos-line-editor-span-2">Nombre / Concepto<input type="text" value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}/></label>
       <label className="pos-line-editor-span-2">Descripción visible<input type="text" value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}/></label>
       <label>Cantidad<input type="number" min="0.001" step="any" value={draft.quantity} onChange={(event) => setDraft((current) => ({ ...current, quantity: event.target.value }))}/></label>
-      <label>Precio unit. / m² ($)<div className="money-input"><span>$</span><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(event) => setDraft((current) => ({ ...current, unitPrice: event.target.value }))}/></div></label>
+      <label>Precio unit. / m² ($)<div className="money-input"><span>$</span><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(event) => setDraft((current) => ({ ...current, unitPrice: event.target.value, priceMode: 'agreed' }))}/></div><small>{draft.priceMode==='catalog'?'Se recalcula según la tarifa y la cantidad.':'Se conserva como precio acordado.'}</small></label>
       {line.productId && <label>Tarifa<select value={draft.pricingTier} onChange={(event) => setDraft((current) => ({ ...current, pricingTier: event.target.value as 'pvp' | 'instalacion' | 'corporativo' }))}><option value="pvp">Normal (PVP)</option><option value="instalacion">Con instalación</option><option value="corporativo">Corporativo</option></select></label>}
       <label>Desc. línea (%)<input type="number" min="0" max="100" step="1" value={draft.lineDiscountPercent} onChange={(event) => setDraft((current) => ({ ...current, lineDiscountPercent: event.target.value }))}/></label>
       {line.mode === 'area' && <><label>Ancho (cm)<input type="number" min="0.01" step="0.01" value={draft.widthCm} onChange={(event) => setDraft((current) => ({ ...current, widthCm: event.target.value }))}/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" value={draft.heightCm} onChange={(event) => setDraft((current) => ({ ...current, heightCm: event.target.value }))}/></label></>}
@@ -711,6 +723,8 @@ export function PosPage() {
   const productSearchInputRef = useRef<HTMLInputElement>(null);
   const [form,setForm]=useState({total:'',amountPaid:'',method:'Efectivo',customer:'',customerId:'',customerPhone:'',customerEmail:'',customerDocumentReference:'',description:'',productId:'',branchCode:'VIS',quantity:'1',quoteId:''});
   const [quoteSearchQuery, setQuoteSearchQuery] = useState('');
+  const [quoteSearchLoading,setQuoteSearchLoading]=useState(false);
+  const [quoteSearchError,setQuoteSearchError]=useState('');
   const [catalogKind,setCatalogKind]=useState<'product'|'service'>('product');
   const [logoChangeCount,setLogoChangeCount]=useState('0');
   const [isExecutivePreviewOpen,setIsExecutivePreviewOpen]=useState(false);
@@ -719,6 +733,9 @@ export function PosPage() {
   const [mapLink,setMapLink]=useState('');
   const [clientBriefHtml,setClientBriefHtml]=useState('<p></p>');
   const [saleAssets,setSaleAssets]=useState<CommercialAssetDraft[]>([]);
+  const [saleAssetsRecoveryStatus,setSaleAssetsRecoveryStatus]=useState<'loading'|'saving'|'ready'|'error'>('loading');
+  const [saleAssetsRecoveryNotice,setSaleAssetsRecoveryNotice]=useState('');
+  const [saleAssetsRecoveryMustResolve,setSaleAssetsRecoveryMustResolve]=useState(false);
   const [customerQuery,setCustomerQuery]=useState('');
   const [customerSearch,setCustomerSearch]=useState({loading:false,results:null,error:'',hasMore:false});
   const [customerSearchLimit,setCustomerSearchLimit]=useState(8);
@@ -761,8 +778,16 @@ export function PosPage() {
   const [configuredTaxRate,setConfiguredTaxRate]=useState(15);
   const [taxConfigurationStatus,setTaxConfigurationStatus]=useState<'loading'|'ready'|'error'>('loading');
   const [paymentTarget,setPaymentTarget]=useState(null);
-  const [paymentForm,setPaymentForm]=useState({amount:'',method:'Efectivo',reference:'',note:''});
+  const [paymentForm,setPaymentForm]=useState<{amount:string;method:PendingPOSBalancePayment['method'];reference:string;note:string}>({amount:'',method:'Efectivo',reference:'',note:''});
+  const paymentRecoveryScopeKey=organizationId&&user?.id?`${organizationId}:${user.id}`:'';
+  const [balancePaymentRecovery,setBalancePaymentRecovery]=useState<{scope:string;status:'loading'|'ready'|'error';pending:Record<string,PendingPOSBalancePayment>;error:string}>({scope:'',status:'loading',pending:{},error:''});
+  const balancePaymentRecoveryMatches=Boolean(paymentRecoveryScopeKey)&&balancePaymentRecovery.scope===paymentRecoveryScopeKey;
+  const balancePaymentRecoveryReady=balancePaymentRecoveryMatches&&balancePaymentRecovery.status==='ready';
+  const pendingBalancePaymentBySale=balancePaymentRecoveryReady?balancePaymentRecovery.pending:{};
   const [parkedOrders,setParkedOrders]=useState([]);
+  const [parkedOrdersHasMore,setParkedOrdersHasMore]=useState(false);
+  const [parkedOrdersOffset,setParkedOrdersOffset]=useState(0);
+  const [parkedSearchQuery,setParkedSearchQuery]=useState('');
   const [branchNames,setBranchNames]=useState({});
   const [parkedManagerAccess,setParkedManagerAccess]=useState({all:false,branchIds:[] as string[]});
   const [activeParkedOrderId,setActiveParkedOrderId]=useState('');
@@ -775,9 +800,16 @@ export function PosPage() {
   const [savingBalancePayment,setSavingBalancePayment]=useState('');
   const [lastSaleConfirmation,setLastSaleConfirmation]=useState(null);
   const [posDaySales,setPosDaySales]=useState([]);
+  const [posSalesSummary,setPosSalesSummary]=useState({totalCount:0,totalAmount:0,totalBalance:0,commonMethod:'—'});
+  const [posSalesHasMore,setPosSalesHasMore]=useState(false);
+  const [posSalesPage,setPosSalesPage]=useState(0);
+  const [recentSalesPeriod,setRecentSalesPeriod]=useState<'today'|'7'|'30'|'90'|'all'>('today');
   const [posSalesStatus,setPosSalesStatus]=useState<'loading'|'ready'|'error'|'restricted'>('loading');
   const [pendingSaleRecoveryError,setPendingSaleRecoveryError]=useState('');
   const [pendingSaleRecoveryMode,setPendingSaleRecoveryMode]=useState(false);
+  const [idbRecoveredPendingSaleKey,setIdbRecoveredPendingSaleKey]=useState('');
+  const [pendingSaleSnapshotMissing,setPendingSaleSnapshotMissing]=useState(false);
+  const [pendingSaleSnapshotReviewed,setPendingSaleSnapshotReviewed]=useState(false);
   const [mobileSummaryOpen,setMobileSummaryOpen]=useState(false);
   const [checkoutStep,setCheckoutStep]=useState<POSCheckoutStep>('order');
   const [showQuickCashOpen,setShowQuickCashOpen]=useState(false);
@@ -785,8 +817,20 @@ export function PosPage() {
   const [openingQuickCash,setOpeningQuickCash]=useState(false);
   const [cashReloadTick,setCashReloadTick]=useState(0);
   const [recentSalesQuery,setRecentSalesQuery]=useState('');
+  const [debouncedRecentSalesQuery,setDebouncedRecentSalesQuery]=useState('');
   const [recentSalesFilter,setRecentSalesFilter]=useState<'all'|'balance'|'paid'>('all');
+  useEffect(()=>{
+    const timer=window.setTimeout(()=>{setDebouncedRecentSalesQuery(recentSalesQuery.trim());setPosSalesPage(0);},250);
+    return()=>window.clearTimeout(timer);
+  },[recentSalesQuery]);
   const [cartCustomUnitPrice,setCartCustomUnitPrice]=useState('');
+  useEffect(()=>{
+    if(!organizationId||!user?.id){setBalancePaymentRecovery({scope:'',status:'ready',pending:{},error:''});return;}
+    const scope=`${organizationId}:${user.id}`;
+    setBalancePaymentRecovery({scope,status:'loading',pending:{},error:''});
+    try{setBalancePaymentRecovery({scope,status:'ready',pending:loadPendingPOSBalancePayments(organizationId,user.id),error:''});}
+    catch(error:any){setBalancePaymentRecovery({scope,status:'error',pending:{},error:error.message||'No se pudo recuperar el intento de abono pendiente.'});}
+  },[organizationId,user?.id]);
   const explicitWorkflowRouteRows=useMemo(()=>Object.entries(productWorkflowRoutes).map(([catalog_product_id,workflow_code])=>({catalog_product_id,workflow_code,active:true})),[productWorkflowRoutes]);
   const productWorkflowRecommendations=useMemo(()=>buildProductWorkflowRecommendations(data.catalog||[],explicitWorkflowRouteRows,{activeWorkflowCodes:new Set(workflowTemplates.map((template)=>template.code)),familyRules:familyWorkflowRoutes}),[data.catalog,explicitWorkflowRouteRows,workflowTemplates,familyWorkflowRoutes]);
   const recommendedWorkflowByProduct=useMemo(()=>Object.fromEntries([...productWorkflowRecommendations].map(([id,recommendation])=>[id,recommendation.workflow_code])) as Record<string,ProductionWorkflowCode>,[productWorkflowRecommendations]);
@@ -799,25 +843,122 @@ export function PosPage() {
   const [cashMovementAmount,setCashMovementAmount]=useState('');
   const [cashMovementReason,setCashMovementReason]=useState('');
   const [savingCashMovement,setSavingCashMovement]=useState(false);
+  const cashMovementRecoveryStorageKey=organizationId&&user?.id?`visualcorp-pos-pending-cash-movement-v1:${organizationId}:${user.id}`:'';
+  const [cashMovementRecovery,setCashMovementRecovery]=useState<{storageKey:string;status:'loading'|'ready'|'error';pending:PendingPOSCashMovement|null;error:string}>({storageKey:'',status:'loading',pending:null,error:''});
+  const cashMovementRecoveryMatches=Boolean(cashMovementRecoveryStorageKey)&&cashMovementRecovery.storageKey===cashMovementRecoveryStorageKey;
+  const cashMovementRecoveryReady=cashMovementRecoveryMatches&&cashMovementRecovery.status==='ready';
+  const pendingCashMovement=cashMovementRecoveryMatches?cashMovementRecovery.pending:null;
   const [editingSaleId,setEditingSaleId]=useState<string|null>(null);
   const [adminDeleteTarget,setAdminDeleteTarget]=useState<AdminDeleteTarget|null>(null);
   const canDeleteSales = canAdminDeleteSales(roles, hasPermission);
   const posDraftStorageKey=`visualcorp-pos-cart-draft-v1:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
+  const parkedOrderRetryStorageKey=`visualcorp-pos-park-retry-v1:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
+  const parkedOrderRetryRef=useRef<any>(null);
   const pendingSaleStorageKey=`visualcorp-pos-pending-sale-key:${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
   const pendingSaleSnapshotStorageKey=`${pendingSaleStorageKey}:snapshot`;
+  const posSaleAssetScopeKey=`${organizationId||'sin-organizacion'}:${user?.id||'sin-usuario'}`;
+  const clearPendingSaleStorage=()=>{try{localStorage.removeItem(pendingSaleStorageKey);}catch{}try{sessionStorage.removeItem(pendingSaleStorageKey);sessionStorage.removeItem(pendingSaleSnapshotStorageKey);}catch{}setIdbRecoveredPendingSaleKey('');setPendingSaleSnapshotMissing(false);setPendingSaleSnapshotReviewed(false);};
   const [draftLoadedKey,setDraftLoadedKey]=useState('');
   const pendingSaleKey=useRef('');
   const pendingSaleSnapshotRef=useRef<any>(null);
+  const saleAssetDraftWriteRef=useRef<Promise<void>>(Promise.resolve());
+  const saleAssetPreviewRef=useRef(saleAssets);
+  useEffect(()=>{saleAssetPreviewRef.current=saleAssets;},[saleAssets]);
+  useEffect(()=>()=>saleAssetPreviewRef.current.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl)),[]);
   const pendingSaleSnapshot={form,cart,discountPercent,discountReason,materialRequestsByLine,fulfillment,mapLink,payments,chargeNow,activeParkedOrderId,allowBackorder:pendingSaleSnapshotRef.current?.allowBackorder,saleLines:pendingSaleSnapshotRef.current?.saleLines,saleNote:pendingSaleSnapshotRef.current?.saleNote,productionByLine,clientBriefHtml};
   const pendingSaleChanged=Boolean(pendingSaleRecoveryMode&&pendingSaleSnapshotRef.current&&pendingSaleSignature(pendingSaleSnapshot)!==pendingSaleSignature(pendingSaleSnapshotRef.current));
+  const saleAssetRecoveryPromiseRef=useRef<Promise<{idempotencyKey:string|null;error:unknown|null;hasRecord:boolean;checkedSale?:{id:string;sale_code:string|null}|null}>>(
+    Promise.resolve({idempotencyKey:null,error:null,hasRecord:false,checkedSale:undefined}),
+  );
+  useEffect(()=>{
+    setSaleAssets(current=>{current.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl));return[];});setSaleAssetsRecoveryNotice('');setSaleAssetsRecoveryMustResolve(false);
+    if(!organizationId||!user?.id){setSaleAssetsRecoveryStatus('ready');saleAssetRecoveryPromiseRef.current=Promise.resolve({idempotencyKey:null,error:null,hasRecord:false,checkedSale:undefined});return;}
+    let active=true;
+    let previewsAdopted=false;
+    let loadedAssets:CommercialAssetDraft[]=[];
+    setSaleAssetsRecoveryStatus('loading');
+    const recover=async()=>{
+      let loadedKey:string|null=null;
+      let hasRecord=false;
+      try{
+        const stored=await posSaleAssetRecovery.load(posSaleAssetScopeKey);
+        if(!stored){if(active){setSaleAssetsRecoveryMustResolve(false);setSaleAssetsRecoveryStatus('ready');}return{idempotencyKey:null,error:null,hasRecord:false,checkedSale:undefined};}
+        hasRecord=true;loadedKey=stored.idempotencyKey;loadedAssets=stored.assets.map(asset=>asset.kind==='image'&&asset.file?{...asset,previewUrl:URL.createObjectURL(asset.file)}:asset);
+        if(loadedKey){
+          let pendingKey='';
+          try{pendingKey=localStorage.getItem(pendingSaleStorageKey)||sessionStorage.getItem(pendingSaleStorageKey)||'';}catch{}
+          if(pendingKey&&pendingKey!==loadedKey)throw new Error('La clave de recuperación de los adjuntos no coincide con la operación pendiente. Conservé ambos datos para evitar vincular archivos a otra venta.');
+          if(!pendingKey){pendingSaleKey.current=loadedKey;try{localStorage.setItem(pendingSaleStorageKey,loadedKey);sessionStorage.setItem(pendingSaleStorageKey,loadedKey);}catch{}if(active){setIdbRecoveredPendingSaleKey(loadedKey);setPendingSaleRecoveryMode(true);setPendingSaleSnapshotMissing(true);setPendingSaleSnapshotReviewed(false);}}
+          if(!supabase)throw new Error('No hay una conexión para comprobar si la venta con adjuntos se registró.');
+          const {data:existingSale,error:saleError}=await supabase.from('sales').select('id,sale_code').eq('organization_id',organizationId).eq('idempotency_key',loadedKey).maybeSingle();
+          if(saleError)throw saleError;
+          if(existingSale){
+            const {count,error:assetsReadError}=await supabase.from('commercial_document_assets').select('id',{count:'exact',head:true}).eq('document_kind','sale').eq('document_id',existingSale.id);
+            if(assetsReadError)throw assetsReadError;
+            if(count===null)throw new Error('No pude comprobar si los adjuntos ya estaban vinculados a la venta.');
+            if(count===0&&loadedAssets.length)await persistCommercialAssets({organizationId,documentId:existingSale.id,kind:'sale',assets:loadedAssets});
+            await posSaleAssetRecovery.clear(posSaleAssetScopeKey);
+            if(active){loadedAssets.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl));setSaleAssets([]);previewsAdopted=true;setSaleAssetsRecoveryMustResolve(false);setSaleAssetsRecoveryNotice(loadedAssets.length?`Recuperé y vinculé los adjuntos de la venta ${existingSale.sale_code||existingSale.id}.`:'');setSaleAssetsRecoveryStatus('ready');}
+            return{idempotencyKey:loadedKey,error:null,hasRecord:true,checkedSale:existingSale};
+          }
+        }
+        if(active){setSaleAssets(loadedAssets);previewsAdopted=true;setSaleAssetsRecoveryMustResolve(false);setSaleAssetsRecoveryNotice(loadedAssets.length?'Recuperé adjuntos de una sesión anterior. Revisa que correspondan a esta orden antes de confirmar.':'');setSaleAssetsRecoveryStatus('ready');}
+        return{idempotencyKey:loadedKey,error:null,hasRecord,checkedSale:loadedKey?null:undefined};
+      }catch(error){
+        if(active){setSaleAssets(loadedAssets);previewsAdopted=true;setSaleAssetsRecoveryMustResolve(hasRecord);setSaleAssetsRecoveryStatus('error');setSaleAssetsRecoveryNotice('No pude comprobar o guardar el borrador de adjuntos. Conservé la copia local; no la vincularé automáticamente a otra venta.');}
+        return{idempotencyKey:loadedKey,error,hasRecord,checkedSale:undefined};
+      }
+    };
+    saleAssetRecoveryPromiseRef.current=recover();
+    return()=>{active=false;if(!previewsAdopted)loadedAssets.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl));};
+  },[organizationId,user?.id,posSaleAssetScopeKey,pendingSaleStorageKey]);
+  const handleSaleAssetsChange=(assets:CommercialAssetDraft[])=>{
+    if(saleAssetsRecoveryStatus==='loading'||(saleAssetsRecoveryStatus==='error'&&assets.length>=saleAssets.length)){
+      assets.filter(asset=>asset.previewUrl&&!saleAssets.some(current=>current.id===asset.id)).forEach(asset=>URL.revokeObjectURL(asset.previewUrl!));
+      flash('Espera a que termine la recuperación de adjuntos antes de modificarlos.');
+      return;
+    }
+    setSaleAssets(assets);setSaleAssetsRecoveryNotice('');setSaleAssetsRecoveryStatus('saving');
+    const write=saleAssetDraftWriteRef.current.catch(()=>{}).then(()=>posSaleAssetRecovery.save(posSaleAssetScopeKey,assets,pendingSaleKey.current||null));
+    saleAssetDraftWriteRef.current=write;
+    void write.then(()=>{if(saleAssetDraftWriteRef.current===write){setSaleAssetsRecoveryMustResolve(false);setSaleAssetsRecoveryStatus('ready');}}).catch(error=>{if(saleAssetDraftWriteRef.current===write){setSaleAssetsRecoveryMustResolve(assets.length>0);setSaleAssetsRecoveryStatus('error');setSaleAssetsRecoveryNotice(`No se pudo guardar la recuperación local de los adjuntos: ${error.message||'revisa el espacio disponible del navegador'}.`);flash('No se pudo guardar la copia recuperable de los adjuntos; no confirmaré una venta con esos archivos hasta resolverlo.');}});
+  };
   useEffect(()=>{
     if(!supabase||!organizationId||!user)return;
-    const stored=sessionStorage.getItem(pendingSaleStorageKey)||'';
+    let active=true;
+    let stored='';
+    try{stored=localStorage.getItem(pendingSaleStorageKey)||'';}catch{}
+    if(!stored){try{stored=sessionStorage.getItem(pendingSaleStorageKey)||'';}catch{}}
     pendingSaleKey.current=stored;
-    if(!stored){pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('');return;}
+    if(!stored){pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('');setPendingSaleSnapshotMissing(false);setPendingSaleSnapshotReviewed(false);return ()=>{active=false;};}
+    try{localStorage.setItem(pendingSaleStorageKey,stored);}catch{}
+    let snapshotRaw='';
+    try{snapshotRaw=sessionStorage.getItem(pendingSaleSnapshotStorageKey)||'';}catch{}
+    const verifyKeyWithoutSnapshot=async()=>{
+      const assetRecovery=await saleAssetRecoveryPromiseRef.current;
+      if(!active)return;
+      if(assetRecovery.error){setPendingSaleRecoveryError('No pude verificar que los adjuntos correspondan a esta venta. La clave quedó protegida; recarga cuando vuelva la conexión para reintentar.');return;}
+      if(assetRecovery.hasRecord&&assetRecovery.idempotencyKey&&assetRecovery.idempotencyKey!==stored){setPendingSaleRecoveryError('La clave de la operación y la de sus adjuntos no coinciden. Conservé ambas para evitar duplicar o asignar archivos a otra venta.');return;}
+      let existingSale=assetRecovery.hasRecord&&assetRecovery.idempotencyKey===stored?assetRecovery.checkedSale:undefined;
+      if(existingSale===undefined){const {data:queriedSale,error}=await supabase.from('sales').select('id,sale_code').eq('organization_id',organizationId).eq('idempotency_key',stored).maybeSingle();if(!active)return;if(error){setPendingSaleRecoveryError('No se pudo comprobar si la venta pendiente quedó registrada. Revisa las ventas antes de continuar.');flash(`No pude verificar la operación protegida: ${error.message}. No vuelvas a cobrarla hasta revisar las ventas.`);return;}existingSale=queriedSale;}
+      if(existingSale&&assetRecovery.hasRecord&&assetRecovery.idempotencyKey!==stored){setPendingSaleRecoveryError('Encontré una venta pendiente, pero sus adjuntos tienen otra clave. Conservé ambos datos para evitar asignar archivos a otra venta.');return;}
+      if(existingSale){clearPendingSaleStorage();pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('');setPendingSaleSnapshotMissing(false);setPendingSaleSnapshotReviewed(false);flash(`La venta ${existingSale.sale_code||existingSale.id} ya quedó registrada. No la repetí; revisa sus archivos adjuntos.`);void refreshPOSDaySales();}
+      else{
+        // A negative lookup is only a point-in-time observation. Keep the key and its
+        // IndexedDB attachment association so a later retry serializes on that key.
+        pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(true);setPendingSaleRecoveryError('');setPendingSaleSnapshotMissing(true);setPendingSaleSnapshotReviewed(false);
+        flash('No encontré la venta todavía. Conservé la clave y sus adjuntos: reconstruye y revisa el pedido original antes de reintentar con esa misma clave.');
+      }
+    };
+    if(!snapshotRaw){
+      setPendingSaleSnapshotMissing(true);setPendingSaleSnapshotReviewed(false);
+      void verifyKeyWithoutSnapshot();
+      return ()=>{active=false;};
+    }
     try{
-      const snapshot=JSON.parse(sessionStorage.getItem(pendingSaleSnapshotStorageKey)||'null');
-      if(!snapshot||!snapshot.form){pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('Existe una venta pendiente de revisar antes de registrar otra.');flash('Hay una operación pendiente sin datos suficientes para recuperarla. Revisa las ventas de hoy antes de volver a cobrar.');return;}
+      const snapshot=JSON.parse(snapshotRaw);
+      if(!snapshot||!snapshot.form){setPendingSaleSnapshotMissing(true);setPendingSaleSnapshotReviewed(false);void verifyKeyWithoutSnapshot();return ()=>{active=false;};}
+      setPendingSaleSnapshotMissing(false);setPendingSaleSnapshotReviewed(false);
       const restoredForm={...snapshot.form,branchCode:String(snapshot.form.branchCode||form.branchCode)};
       const restoredCart=sanitizePOSCart(snapshot.cart);
       const restoredPayments=sanitizePOSPayments(snapshot.payments);
@@ -833,8 +974,9 @@ export function PosPage() {
       setChargeNow(snapshot.chargeNow!==false);setActiveParkedOrderId(String(snapshot.activeParkedOrderId||''));setCustomerQuery(String(restoredForm.customer||''));setSelectedCustomerSnapshot(restoredForm.customerId?{id:String(restoredForm.customerId),name:String(restoredForm.customer||''),phone:String(restoredForm.customerPhone||''),email:String(restoredForm.customerEmail||''),documentReference:String(restoredForm.customerDocumentReference||'')}:null);setDraftLoadedKey(posDraftStorageKey);
       setPendingSaleRecoveryError('');
       flash('Recuperé una operación pendiente. Confirma de nuevo para completar sus vínculos sin duplicar la venta.');
-   }catch{pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);setPendingSaleRecoveryError('No se pudo recuperar una venta pendiente. Revisa las ventas antes de volver a cobrar.');flash('Hay una operación pendiente que no se pudo restaurar. No vuelvas a cobrarla hasta revisar las ventas de hoy.');}
-  },[organizationId,user?.id,pendingSaleStorageKey,pendingSaleSnapshotStorageKey,posDraftStorageKey]);
+    }catch{setPendingSaleSnapshotMissing(true);setPendingSaleSnapshotReviewed(false);void verifyKeyWithoutSnapshot();}
+   return ()=>{active=false;};
+  },[organizationId,user?.id,pendingSaleStorageKey,pendingSaleSnapshotStorageKey,posDraftStorageKey,idbRecoveredPendingSaleKey]);
   useEffect(()=>{
     if(!supabase||!organizationId){setProductWorkflowRoutes({});setFamilyWorkflowRoutes([]);setWorkflowTemplates([]);setWorkflowRouteStatus('unavailable');return;}
     let active=true;
@@ -860,6 +1002,25 @@ export function PosPage() {
     setDraftLoadedKey('');
     setCart([]);setDiscountPercent('0');setDiscountReason('');setMaterialRequestsByLine({});setProductionByLine({});
     try{
+      const parkedRetryRaw=sessionStorage.getItem(parkedOrderRetryStorageKey);
+      if(parkedRetryRaw){
+        const attempt=JSON.parse(parkedRetryRaw);
+        const age=Date.now()-Number(attempt.savedAt||0);
+        if(attempt.version===1&&typeof attempt.key==='string'&&attempt.key.length>=12&&age>=0&&age<24*60*60*1000&&attempt.payload?.form&&Array.isArray(attempt.payload.cart)&&Number.isSafeInteger(attempt.totalCents)&&attempt.totalCents>0){
+          parkedOrderRetryRef.current=attempt;
+          const restoredForm={...attempt.payload.form,branchCode:String(attempt.payload.form.branchCode||data.branches?.[0]?.code||'')};
+          const restoredCart=sanitizePOSCart(attempt.payload.cart);
+          setForm((current)=>({...current,...restoredForm}));setCart(restoredCart);
+          setDiscountPercent(String(attempt.payload.discountPercent??'0'));setDiscountReason(String(attempt.payload.discountReason||''));
+          setMaterialRequestsByLine(sanitizePOSMaterialRequestMap(attempt.payload.materialRequestsByLine));
+          setProductionByLine(sanitizeProductionDetails(attempt.payload.productionByLine));setFulfillment(attempt.payload.fulfillment||{installationRequired:false,installationAddress:'',latitude:'',longitude:'',installationAt:'',deliveryAt:''});
+          setMapLink(String(attempt.payload.mapLink||''));setPayments(sanitizePOSPayments(attempt.payload.payments));setChargeNow(attempt.payload.chargeNow!==false);
+          setClientBriefHtml(String(attempt.payload.clientBriefHtml||'<p></p>'));setCustomerQuery(String(restoredForm.customer||''));
+          setSelectedCustomerSnapshot(restoredForm.customerId?{id:String(restoredForm.customerId),name:String(restoredForm.customer||''),phone:String(restoredForm.customerPhone||''),email:String(restoredForm.customerEmail||''),documentReference:String(restoredForm.customerDocumentReference||'')}:null);
+          setDraftLoadedKey(posDraftStorageKey);flash('Recuperé una orden que pudo guardarse en espera. Reintenta sin modificar sus datos para evitar duplicarla.');return;
+        }
+        sessionStorage.removeItem(parkedOrderRetryStorageKey);
+      }
       const raw=sessionStorage.getItem(posDraftStorageKey);
       if(raw){
         const saved=JSON.parse(raw);
@@ -870,9 +1031,9 @@ export function PosPage() {
           if(typeof saved.branchCode==='string'&&saved.branchCode)setForm((current)=>({...current,branchCode:saved.branchCode}));
         }else sessionStorage.removeItem(posDraftStorageKey);
       }
-    }catch{sessionStorage.removeItem(posDraftStorageKey);}
+    }catch{sessionStorage.removeItem(posDraftStorageKey);sessionStorage.removeItem(parkedOrderRetryStorageKey);parkedOrderRetryRef.current=null;}
     setDraftLoadedKey(posDraftStorageKey);
-  },[organizationId,user?.id,posDraftStorageKey,pendingSaleSnapshotStorageKey]);
+  },[organizationId,user?.id,posDraftStorageKey,pendingSaleSnapshotStorageKey,parkedOrderRetryStorageKey]);
   useEffect(()=>{
     if(!organizationId||!user||draftLoadedKey!==posDraftStorageKey)return;
     if(cart.length)sessionStorage.setItem(posDraftStorageKey,JSON.stringify({version:1,savedAt:Date.now(),branchCode:form.branchCode,cart,discountPercent,discountReason,materialRequestsByLine,productionByLine}));
@@ -948,6 +1109,29 @@ export function PosPage() {
     return()=>{active=false;};
   },[organizationId,form.quoteId,centralQuotes]);
   useEffect(()=>{
+    const raw=quoteSearchQuery.trim();
+    if(!supabase||!organizationId||raw.length<2){setQuoteSearchLoading(false);setQuoteSearchError('');return;}
+    let active=true;
+    setQuoteSearchLoading(true);setQuoteSearchError('');
+    const timer=window.setTimeout(()=>{
+      const query=raw.replace(/[^\p{L}\p{N}\s._@/-]/gu,' ').replace(/\s+/g,' ').trim().slice(0,100);
+      if(query.length<2){setQuoteSearchLoading(false);return;}
+      void (async()=>{
+        try{
+          const {data:found,error}=await supabase.from('central_quotes').select('*').eq('organization_id',organizationId).eq('status','accepted')
+            .eq('price_confirmed',true).not('selected_total','is',null)
+            .or(`quote_code.ilike.%${query}%,customer_name.ilike.%${query}%,notes.ilike.%${query}%`)
+            .order('updated_at',{ascending:false}).limit(100);
+          if(!active)return;
+          if(error){setQuoteSearchError('No se pudieron buscar más cotizaciones aprobadas.');return;}
+          setCentralQuotes((current)=>[...(found||[]),...current.filter((quote:any)=>!(found||[]).some((row:any)=>row.id===quote.id))]);
+        }catch{if(active)setQuoteSearchError('No se pudieron buscar más cotizaciones aprobadas.');}
+        finally{if(active)setQuoteSearchLoading(false);}
+      })();
+    },250);
+    return()=>{active=false;window.clearTimeout(timer);};
+  },[organizationId,quoteSearchQuery]);
+  useEffect(()=>{
     if(!supabase||!organizationId){setTaxConfigurationStatus('error');return;}
     let active=true;setTaxConfigurationStatus('loading');
     void (async()=>{
@@ -964,6 +1148,25 @@ export function PosPage() {
     return()=>{active=false;};
   },[organizationId]);
   useEffect(()=>{let active=true;const load=async()=>{if(!supabase||!organizationId||!user){setCashierSession({loading:false,session:null,branch:null,error:''});return;}setCashierSession(current=>({...current,loading:true,error:''}));try{const {data:branch,error:branchError}=await supabase.from('branches').select('id,code,name').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();if(branchError)throw branchError;if(!branch?.id){if(active)setCashierSession({loading:false,session:null,branch:null,error:''});return;}const {data:session,error:sessionError}=await supabase.from('cash_sessions').select('id,opened_at,opening_cash,status').eq('organization_id',organizationId).eq('branch_id',branch.id).eq('opened_by',user.id).eq('status','open').maybeSingle();if(sessionError)throw sessionError;if(active)setCashierSession({loading:false,session,branch,error:''});}catch(error){if(active)setCashierSession({loading:false,session:null,branch:null,error:error.message||'Error desconocido'});}};load();return()=>{active=false;};},[organizationId,user?.id,form.branchCode,cashReloadTick]);
+  useEffect(()=>{
+    let active=true;
+    if(!cashMovementRecoveryStorageKey){setCashMovementRecovery({storageKey:'',status:'ready',pending:null,error:''});return()=>{active=false;};}
+    setCashMovementRecovery({storageKey:cashMovementRecoveryStorageKey,status:'loading',pending:null,error:''});
+    try{
+      const pending=loadPendingPOSCashMovement(cashMovementRecoveryStorageKey);
+      if(active)setCashMovementRecovery({storageKey:cashMovementRecoveryStorageKey,status:'ready',pending,error:''});
+    }catch(error:any){
+      if(active)setCashMovementRecovery({storageKey:cashMovementRecoveryStorageKey,status:'error',pending:null,error:error?.message||'No se pudo recuperar el movimiento pendiente.'});
+    }
+    return()=>{active=false;};
+  },[cashMovementRecoveryStorageKey]);
+  useEffect(()=>{
+    if(!pendingCashMovement)return;
+    setCashMovementDirection(pendingCashMovement.direction);
+    setCashMovementAmount((pendingCashMovement.amountCents/100).toFixed(2));
+    setCashMovementReason(pendingCashMovement.reason);
+    setShowCashMovementModal(true);
+  },[pendingCashMovement?.idempotencyKey]);
   const openCashSessionFromPOS = async (overrideAmount?: number) => {
     if (!supabase || !organizationId || !user || openingQuickCash) return;
     const openingAmount = overrideAmount !== undefined ? overrideAmount : Number(quickCashAmount);
@@ -982,53 +1185,19 @@ export function PosPage() {
       if (branchError) throw branchError;
       if (!branch?.id) throw new Error('No encontramos la sucursal seleccionada.');
 
-      let rpcSucceeded = false;
-      try {
-        const { error: rpcError } = await supabase.rpc('open_pos_cash_session', {
-          p_branch_id: branch.id,
-          p_opening_cash: openingAmount,
-        });
-        if (!rpcError) {
-          rpcSucceeded = true;
-        }
-      } catch {
-        rpcSucceeded = false;
-      }
-
-      if (!rpcSucceeded) {
-        let registerId: string | null = null;
-        const { data: registers, error: regError } = await supabase
-          .from('cash_registers')
-          .select('id,name,active,assigned_advisor_id')
-          .eq('organization_id', organizationId)
-          .eq('branch_id', branch.id);
-        if (!regError && Array.isArray(registers) && registers.length > 0) {
-          const activeRegs = registers.filter((r: any) => r.active);
-          const myReg = activeRegs.find((r: any) => r.assigned_advisor_id === user.id);
-          if (myReg) {
-            registerId = myReg.id;
-          } else if (hasPermission('cash', 'edit') && activeRegs[0]) {
-            registerId = activeRegs[0].id;
-          }
-        }
-        const { error: insertError } = await supabase
-          .from('cash_sessions')
-          .insert({
-            organization_id: organizationId,
-            branch_id: branch.id,
-            cash_register_id: registerId,
-            opening_cash: openingAmount,
-            opened_by: user.id,
-            status: 'open',
-          })
-          .select('id')
-          .single();
-        if (insertError) throw insertError;
-      }
+      const { data: openedSession, error: openError } = await supabase.rpc('open_pos_cash_session', {
+        p_branch_id: branch.id,
+        p_opening_cash: openingAmount,
+      });
+      if (openError) throw openError;
 
       setShowQuickCashOpen(false);
       setCashReloadTick((tick) => tick + 1);
-      flash(`Turno de caja abierto en ${branch.name || branch.code} con fondo inicial de ${formatMoney(openingAmount)}.`);
+      if (openedSession?.already_open) {
+        flash(`Ya había un turno abierto en ${branch.name || branch.code} con fondo de ${formatMoney(Number(openedSession.opening_cash) || 0)}. No se modificó.`);
+      } else {
+        flash(`Turno de caja abierto en ${branch.name || branch.code} con fondo inicial de ${formatMoney(Number(openedSession?.opening_cash ?? openingAmount))}.`);
+      }
     } catch (error: any) {
       flash(`No se pudo abrir la caja desde el POS: ${error?.message || 'Error desconocido'}`);
     } finally {
@@ -1070,9 +1239,11 @@ export function PosPage() {
 
   const handleRecordCashMovement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cashierSession.session?.id || savingCashMovement) return;
-    const amount = Number(cashMovementAmount);
-    const reason = cashMovementReason.trim();
+    if (savingCashMovement || !cashMovementRecoveryReady || !cashMovementRecoveryStorageKey) return;
+    if (!pendingCashMovement && !cashierSession.session?.id) return;
+    const amount = pendingCashMovement ? pendingCashMovement.amountCents/100 : Number(cashMovementAmount);
+    const reason = (pendingCashMovement?.reason || cashMovementReason.trim()).slice(0,500);
+    const direction = pendingCashMovement?.direction || cashMovementDirection;
     if (!Number.isFinite(amount) || amount <= 0) {
       flash('Ingresa un monto mayor a cero.');
       return;
@@ -1082,23 +1253,52 @@ export function PosPage() {
       return;
     }
     setSavingCashMovement(true);
+    let requestSent=false;
     try {
-      const key = globalThis.crypto?.randomUUID?.() || `mov-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const intent = pendingCashMovement || {
+        version:1 as const,
+        idempotencyKey:createPOSCashMovementKey(),
+        sessionId:cashierSession.session.id,
+        direction,
+        amountCents:Math.round(amount*100),
+        reason,
+        createdAt:new Date().toISOString(),
+      };
+      if(!pendingCashMovement){
+        savePendingPOSCashMovement(cashMovementRecoveryStorageKey,intent);
+        setCashMovementRecovery({storageKey:cashMovementRecoveryStorageKey,status:'ready',pending:intent,error:''});
+      }
+      requestSent=true;
       const { error } = await supabase.rpc('record_cash_session_movement', {
-        p_session: cashierSession.session.id,
-        p_direction: cashMovementDirection,
-        p_amount: amount,
-        p_reason: reason,
-        p_key: key,
+        p_session: intent.sessionId,
+        p_direction: intent.direction,
+        p_amount: intent.amountCents/100,
+        p_reason: intent.reason,
+        p_key: intent.idempotencyKey,
       });
+      if (error?.code === '55000') {
+        clearPendingPOSCashMovement(cashMovementRecoveryStorageKey);
+        setCashMovementRecovery({storageKey:cashMovementRecoveryStorageKey,status:'ready',pending:null,error:''});
+        setCashMovementAmount('');
+        setCashMovementReason('');
+        setShowCashMovementModal(false);
+        setCashReloadTick((tick) => tick + 1);
+        flash('La caja ya se cerró y no se encontró un movimiento registrado con esta clave. No se agregó ningún movimiento; puedes iniciar otro turno.');
+        return;
+      }
       if (error) throw error;
+      clearPendingPOSCashMovement(cashMovementRecoveryStorageKey);
+      setCashMovementRecovery({storageKey:cashMovementRecoveryStorageKey,status:'ready',pending:null,error:''});
       setShowCashMovementModal(false);
       setCashMovementAmount('');
       setCashMovementReason('');
       setCashReloadTick((tick) => tick + 1);
-      flash(`Movimiento de ${cashMovementDirection === 'in' ? 'ingreso' : 'retiro'} (${formatMoney(amount)}) registrado.`);
+      flash(`Movimiento de ${intent.direction === 'in' ? 'ingreso' : 'retiro'} (${formatMoney(amount)}) registrado.`);
     } catch (err: any) {
-      flash(`No se pudo registrar el movimiento: ${err.message}`);
+      const detail=err?.message||'No se pudo confirmar la respuesta del servidor.';
+      flash(!requestSent
+        ? `No se envió el movimiento: no se pudo guardar su recuperación segura (${detail}). Revisa el navegador e inténtalo de nuevo.`
+        : `No se confirmó el resultado (${detail}). El movimiento quedó guardado para reintentar con la misma clave y evitar duplicarlo.`);
     } finally {
       setSavingCashMovement(false);
     }
@@ -1106,7 +1306,7 @@ export function PosPage() {
 
   const handleExpressCashCheckout = async () => {
     if (!form.quoteId && !cart.length) {
-      focusCheckoutField('#pos-product-search-input');
+      focusCheckoutField('[data-pos-product-search-input="true"]');
       flash('Agrega un artículo o cotización antes de cobrar.');
       return;
     }
@@ -1142,21 +1342,26 @@ export function PosPage() {
     setMobileSummaryOpen(true);
     flash('Cobro exprés en efectivo seleccionado con monto exacto.');
   };
-  const refreshParkedOrders=async()=>{
+  const refreshParkedOrders=async(append=false)=>{
     if(!supabase||!organizationId)return;
+    const start=append?parkedOrdersOffset:0;
     const [{data:orders,error:ordersError},{data:branches,error:branchesError},{data:memberships,error:membershipsError}]=await Promise.all([
-      supabase.from('parked_pos_orders').select('id,branch_id,created_by,payload,total,idempotency_key,created_at').eq('organization_id',organizationId).eq('status','parked').order('created_at',{ascending:false}).limit(50),
+      supabase.from('parked_pos_orders').select('id,branch_id,created_by,payload,total,idempotency_key,created_at,updated_at').eq('organization_id',organizationId).eq('status','parked').order('updated_at',{ascending:false}).range(start,start+49),
       supabase.from('branches').select('id,code,name').eq('organization_id',organizationId),
       user?.id?supabase.from('organization_memberships').select('branch_id,role').eq('organization_id',organizationId).eq('user_id',user.id).eq('active',true):Promise.resolve({data:[],error:null}),
     ]);
     if(ordersError)throw ordersError;
     if(branchesError)throw branchesError;
-    setParkedOrders(orders||[]);
     setBranchNames(Object.fromEntries((branches||[]).map(branch=>[branch.id,branch.name||branch.code])));
+    const activeMemberships=membershipsError?[]:(memberships||[]);
+    const memberBranchIds=activeMemberships.map(membership=>membership.branch_id).filter(Boolean);
     const managerMemberships=membershipsError?[]:(memberships||[]).filter(membership=>['owner','admin','manager'].includes(membership.role));
     setParkedManagerAccess({all:managerMemberships.some(membership=>!membership.branch_id),branchIds:managerMemberships.map(membership=>membership.branch_id).filter(Boolean)});
+    const visible=(orders||[]).filter(order=>order.created_by===user?.id||order.branch_id===selectedBranchId||memberBranchIds.includes(order.branch_id)||managerMemberships.some(membership=>!membership.branch_id));
+    setParkedOrders(current=>append?[...current,...visible.filter(order=>!current.some(existing=>existing.id===order.id))]:visible);
+    setParkedOrdersOffset(start+(orders||[]).length);setParkedOrdersHasMore((orders||[]).length===50);
   };
-  useEffect(()=>{let active=true;if(!supabase||!organizationId)return undefined;refreshParkedOrders().catch(error=>{if(active)flash(`No se pudieron cargar las órdenes en espera: ${error.message}`);});return()=>{active=false;};},[organizationId]);
+  useEffect(()=>{let active=true;if(!supabase||!organizationId)return undefined;refreshParkedOrders().catch(error=>{if(active)flash(`No se pudieron cargar las órdenes en espera: ${error.message}`);});return()=>{active=false;};},[organizationId,form.branchCode]);
   const canSearchCustomers=hasPermission('crm','view');
   useEffect(()=>{
     let active=true;
@@ -1375,25 +1580,32 @@ export function PosPage() {
   const allPreviewShortages=[...previewShortages.filter((issue)=>issue.kind!=='configuration'),...previewRecipeShortages.filter((issue)=>issue.kind!=='configuration')];
   const backorderPermissionMissing=Boolean(allPreviewShortages.length&&!canManageBackorders&&!hasPendingBackorderAuthorization);
   const refreshPOSDaySales=useCallback(async()=>{
-    if(!supabase||!organizationId||!selectedBranchId){setPosDaySales([]);setPosSalesStatus('loading');return;}
-    if(!canViewPOSSales){setPosDaySales([]);setPosSalesStatus('restricted');return;}
+    if(!supabase||!organizationId||!selectedBranchId){setPosDaySales([]);setPosSalesSummary({totalCount:0,totalAmount:0,totalBalance:0,commonMethod:'—'});setPosSalesStatus('loading');return;}
+    if(!canViewPOSSales){setPosDaySales([]);setPosSalesSummary({totalCount:0,totalAmount:0,totalBalance:0,commonMethod:'—'});setPosSalesStatus('restricted');return;}
     setPosSalesStatus('loading');
     try{
-      const start=new Date();start.setHours(0,0,0,0);
-      const end=new Date(start);end.setDate(end.getDate()+1);
-      const pageSize=500;const rows=[];
-      for(let offset=0;;offset+=pageSize){
-        const {data:page,error}=await supabase.from('sales').select('id,sale_code,customer_id,status,urgent_backorder,total,note,payment_method,created_at,sale_lines(description_snapshot,quantity),sale_payments(method,amount)').eq('organization_id',organizationId).eq('branch_id',selectedBranchId).eq('status','confirmed').gte('created_at',start.toISOString()).lt('created_at',end.toISOString()).order('created_at',{ascending:false}).order('id',{ascending:false}).range(offset,offset+pageSize-1);
-        if(error)throw error;
-        rows.push(...(page||[]));
-        if((page||[]).length<pageSize)break;
+      const now=new Date();
+      let from:string|null=null;
+      let to:string|null=null;
+      if(recentSalesPeriod!=='all'){
+        const days=recentSalesPeriod==='today'?1:Number(recentSalesPeriod);
+        const start=new Date(now);start.setHours(0,0,0,0);start.setDate(start.getDate()-days+1);
+        const end=new Date(now);end.setHours(0,0,0,0);end.setDate(end.getDate()+1);
+        from=start.toISOString();to=end.toISOString();
       }
-      const customerById=new Map<string,any>((data.customers||[]).map((customer:any)=>[customer.id,customer]));
-      const paymentLabels={cash:'Efectivo',transfer:'Transferencia',card:'Tarjeta',other:'Otro'};
-      const mapped=rows.map((row)=>{const paid=(row.sale_payments||[]).reduce((sum,payment)=>sum+Number(payment.amount||0),0);const methods=[...new Set((row.sale_payments||[]).map((payment)=>payment.method))];return{id:row.id,code:row.sale_code||row.id.slice(0,8),total:Number(row.total),paid,balance:Math.max(0,Number(row.total)-paid),date:row.created_at,method:methods.length>1?'Pago dividido':paymentLabels[methods[0]||row.payment_method]||'Otro',customer:customerById.get(row.customer_id)?.name||'',description:(row.sale_lines||[]).map((line)=>line.description_snapshot).join(', '),quantity:(row.sale_lines||[]).reduce((sum,line)=>sum+Number(line.quantity||0),0),urgent:row.urgent_backorder,status:row.status,note:row.note};});
-      setPosDaySales(mapped);setPosSalesStatus('ready');
-    }catch{setPosDaySales([]);setPosSalesStatus('error');}
-  },[organizationId,selectedBranchId,canViewPOSSales,data.customers]);
+      const pendingIds=balancePaymentRecoveryMatches?Object.keys(balancePaymentRecovery.pending):[];
+      const {data,error}=await supabase.rpc('search_visualcorp_pos_sales',{
+        p_organization_id:organizationId,p_branch_id:selectedBranchId,p_query:debouncedRecentSalesQuery,
+        p_balance_filter:recentSalesFilter,p_from:from,p_to:to,p_limit:40,p_offset:posSalesPage*40,p_include_sale_ids:pendingIds,
+      });
+      if(error)throw error;
+      const rows=Array.isArray(data?.items)?data.items:[];
+      const mapped=rows.map((row:any)=>({...row,total:Number(row.total)||0,adjustedTotal:Number(row.adjusted_total)||0,returnedValue:Number(row.returned_value)||0,paid:Number(row.paid)||0,settledRefund:Number(row.settled_refund)||0,balance:Number(row.balance)||0,customerCredit:Number(row.customer_credit)||0,quantity:Number(row.quantity)||0,pendingBalancePayment:Boolean(balancePaymentRecovery.pending[row.id])}));
+      setPosDaySales(mapped);setPosSalesHasMore(Boolean(data?.has_more));
+      setPosSalesSummary({totalCount:Number(data?.total_count)||0,totalAmount:Number(data?.total_amount)||0,totalBalance:Number(data?.total_balance)||0,commonMethod:String(data?.common_method||'—')});
+      setPosSalesStatus('ready');
+    }catch{setPosDaySales([]);setPosSalesHasMore(false);setPosSalesSummary({totalCount:0,totalAmount:0,totalBalance:0,commonMethod:'—'});setPosSalesStatus('error');}
+  },[organizationId,selectedBranchId,canViewPOSSales,balancePaymentRecoveryMatches,balancePaymentRecovery.pending,recentSalesPeriod,recentSalesFilter,debouncedRecentSalesQuery,posSalesPage]);
   useEffect(()=>{void refreshPOSDaySales();},[refreshPOSDaySales]);
   const salesToday=posDaySales;
   const inventoryByVariant=useMemo(()=>{
@@ -1452,21 +1664,24 @@ export function PosPage() {
       String(quote.title||'').toLocaleLowerCase('es').includes(q)
     );
   },[acceptedQuotes,quoteSearchQuery]);
-  const filteredRecentSales=useMemo(()=>{
-    const q=recentSalesQuery.trim().toLocaleLowerCase('es');
-    return salesToday.filter((sale:any)=>{
-      if(recentSalesFilter==='balance'&&!(Number(sale.balance)>0))return false;
-      if(recentSalesFilter==='paid'&&Number(sale.balance)>0)return false;
-      if(!q)return true;
-      return `${sale.customer||''} ${sale.description||''} ${sale.code||''} ${sale.method||''}`.toLocaleLowerCase('es').includes(q);
+  const filteredParkedOrders=useMemo(()=>{
+    const query=parkedSearchQuery.trim().toLocaleLowerCase('es');
+    if(!query)return parkedOrders;
+    return parkedOrders.filter((order:any)=>{
+      const payload=order.payload||{};
+      const quote=centralQuotes.find((candidate:any)=>candidate.id===payload.form?.quoteId);
+      const haystack=[payload.form?.customer,payload.form?.description,quote?.quote_code,quote?.customer_name,branchNames[order.branch_id],order.id].join(' ').toLocaleLowerCase('es');
+      return haystack.includes(query);
     });
-  },[salesToday,recentSalesQuery,recentSalesFilter]);
+  },[parkedOrders,parkedSearchQuery,centralQuotes,branchNames]);
+  const filteredRecentSales=salesToday;
   const needsCashShift=chargeNow&&payments.some(payment=>payment.method==='Efectivo');
-  const cashShiftPending=needsCashShift&&!pendingSaleRecoveryMode&&cashierSession.loading;
-  const cashShiftUnavailable=needsCashShift&&!pendingSaleRecoveryMode&&!cashierSession.loading&&!cashierSession.session;
+  const cashShiftPending=needsCashShift&&(!pendingSaleRecoveryMode||pendingSaleSnapshotMissing)&&cashierSession.loading;
+  const cashShiftUnavailable=needsCashShift&&(!pendingSaleRecoveryMode||pendingSaleSnapshotMissing)&&!cashierSession.loading&&!cashierSession.session;
   const missingCartAccessoryLink=cart.some(line=>trackedAccessoryProductIds.has(line.productId)&&!catalogLinks.some(link=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===line.productId));
-  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&catalogLinkStatus==='ready'&&workflowRouteStatus==='ready'&&(form.quoteId||taxConfigurationStatus==='ready')&&(!saleMaterialLines.some((line)=>line.catalog_product_id)||materialRecipesStatus==='ready')&&!previewConfigurationIssues.length&&!missingCartAccessoryLink&&!backorderPermissionMissing&&!pendingSaleRecoveryError&&!pendingOperationChanged&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&discountReasonValid&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
-  const submitBlockReason=pendingSaleRecoveryError||(pendingOperationChanged?'Los datos de la operación o de la cotización cambiaron mientras la venta estaba pendiente. Recarga para restaurar la versión original antes de reintentar.':savingSale?'Guardando la venta…':!discountReasonValid?'Escribe el motivo del descuento (mínimo 3 y máximo 300 caracteres).':!form.quoteId&&taxConfigurationStatus==='loading'?'Consultando la tasa de IVA de la organización…':!form.quoteId&&taxConfigurationStatus==='error'?'No se pudo verificar la tasa de IVA. Recarga antes de confirmar la venta.':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando los vínculos de inventario…':catalogLinkStatus==='error'?'No se pudieron consultar los vínculos de inventario. Recarga antes de confirmar.':saleMaterialLines.some((line)=>line.catalog_product_id)&&materialRecipesStatus!=='ready'?(materialRecipesStatus==='checking'?'Comprobando las recetas de materiales de esta sucursal…':'No se pudieron verificar las recetas. Vuelve a Detalles del trabajo y reintenta la consulta.'):previewConfigurationIssues.length?'Corrige los vínculos y datos de inventario indicados antes de cobrar.':missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':backorderPermissionMissing?'Hay artículos sin conteo o materiales con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.':duplicateCustomer?`Ya existe ${duplicateCustomer.name} con ese teléfono, correo o identificación. Selecciónalo para evitar crear un duplicado.`:customerLookupFailed?'No se pudo verificar si el cliente ya existe. Reintenta la búsqueda antes de confirmar.':customerLookupPending?'Buscando coincidencias del cliente…':customerNameMissing?'Completa el nombre del cliente o limpia la búsqueda si será una venta de mostrador.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'');
+  const saleAssetsNotDurable=saleAssets.length>0&&saleAssetsRecoveryStatus!=='ready';
+  const canSubmitSale=Boolean(supabase&&user&&organizationId&&selectedBranchId&&saleAssetsRecoveryStatus!=='loading'&&saleAssetsRecoveryStatus!=='saving'&&!saleAssetsRecoveryMustResolve&&!saleAssetsNotDurable&&catalogLinkStatus==='ready'&&workflowRouteStatus==='ready'&&(form.quoteId||taxConfigurationStatus==='ready')&&(!saleMaterialLines.some((line)=>line.catalog_product_id)||materialRecipesStatus==='ready')&&!previewConfigurationIssues.length&&!missingCartAccessoryLink&&!backorderPermissionMissing&&!pendingSaleRecoveryError&&(!pendingSaleSnapshotMissing||pendingSaleSnapshotReviewed)&&!pendingOperationChanged&&!duplicateCustomer&&!customerLookupPending&&!customerLookupFailed&&!customerNameMissing&&discountReasonValid&&activeTotal>0&&(form.quoteId||cart.length>0)&&!savingSale&&!cashShiftPending&&!cashShiftUnavailable);
+  const submitBlockReason=pendingSaleRecoveryError||(pendingSaleSnapshotMissing&&!pendingSaleSnapshotReviewed?'Se perdió el snapshot. Reconstruye y coteja el pedido original; confirma la revisión para reintentar con la misma clave protegida.':saleAssetsRecoveryStatus==='loading'?'Recuperando los adjuntos guardados…':saleAssetsRecoveryStatus==='saving'?'Guardando copia recuperable de los adjuntos…':saleAssetsRecoveryMustResolve?'No continuaré con esta venta hasta comprobar o recuperar los adjuntos pendientes. Recarga para volver a intentarlo.':saleAssetsNotDurable?'No confirmaré con adjuntos hasta guardar su copia recuperable en este navegador.':pendingOperationChanged?'Los datos de la operación o de la cotización cambiaron mientras la venta estaba pendiente. Recarga para restaurar la versión original antes de reintentar.':savingSale?'Guardando la venta…':!discountReasonValid?'Escribe el motivo del descuento (mínimo 3 y máximo 300 caracteres).':!form.quoteId&&taxConfigurationStatus==='loading'?'Consultando la tasa de IVA de la organización…':!form.quoteId&&taxConfigurationStatus==='error'?'No se pudo verificar la tasa de IVA. Recarga antes de confirmar la venta.':!selectedBranchId?'Cargando la sucursal seleccionada…':catalogLinkStatus==='checking'?'Comprobando los vínculos de inventario…':catalogLinkStatus==='error'?'No se pudieron consultar los vínculos de inventario. Recarga antes de confirmar.':saleMaterialLines.some((line)=>line.catalog_product_id)&&materialRecipesStatus!=='ready'?(materialRecipesStatus==='checking'?'Comprobando las recetas de materiales de esta sucursal…':'No se pudieron verificar las recetas. Vuelve a Detalles del trabajo y reintenta la consulta.'):previewConfigurationIssues.length?'Corrige los vínculos y datos de inventario indicados antes de cobrar.':missingCartAccessoryLink?'Vincula los ojales con su variante de inventario antes de confirmar esta venta.':backorderPermissionMissing?'Hay artículos sin conteo o materiales con existencias insuficientes. Se requiere permiso de edición de compras para confirmar una compra urgente.':duplicateCustomer?`Ya existe ${duplicateCustomer.name} con ese teléfono, correo o identificación. Selecciónalo para evitar crear un duplicado.`:customerLookupFailed?'No se pudo verificar si el cliente ya existe. Reintenta la búsqueda antes de confirmar.':customerLookupPending?'Buscando coincidencias del cliente…':customerNameMissing?'Completa el nombre del cliente o limpia la búsqueda si será una venta de mostrador.':cashShiftPending?'Verificando el turno de caja…':cashShiftUnavailable?'Abre un turno de caja para registrar pagos en efectivo.':!form.quoteId&&!cart.length?'Agrega al menos un artículo al carrito para habilitar la venta.':activeTotal<=0?'La orden necesita un total mayor que cero.':!supabase||!user||!organizationId?'No se pudo validar la sesión para guardar la venta.':'');
   const cartQuantityNumber=Number(cartQuantity);
   const cartWidthNumber=Number(cartWidthCm);
   const cartHeightNumber=Number(cartHeightCm);
@@ -1523,7 +1738,7 @@ export function PosPage() {
     const inventoryVariantId=variantLinks.length===1?variantLinks[0].inventory_variant_id:'';
     const calc=calculatePOSLine({product,mode:'quantity',quantity:1,tier:'pvp',optionChoice:''});
     if(!calc||!(product.confirmed||product.published)){chooseCartProduct(product);return;}
-    const existing=cart.find((item:any)=>item.productId===product.id&&item.inventoryVariantId===inventoryVariantId&&item.mode==='quantity'&&(item.pricingTier||'pvp')==='pvp'&&!item.optionChoice&&sanitizeCommercialFinishing(item.finishing).eyeletType==='none'&&sanitizeCommercialFinishing(item.finishing).designService==='ready');
+    const existing=cart.find((item:any)=>item.productId===product.id&&item.inventoryVariantId===inventoryVariantId&&item.mode==='quantity'&&(item.pricingTier||'pvp')==='pvp'&&!item.optionChoice&&!item.customUnitPriceApplied&&Number(item.lineDiscountPercent||0)===0&&sanitizeCommercialFinishing(item.finishing).eyeletType==='none'&&sanitizeCommercialFinishing(item.finishing).designService==='ready');
     if(existing){
       const nextQty=Number(existing.quantity||1)+1;
       const nextCalc=calculatePOSLine({product,mode:'quantity',quantity:nextQty,tier:'pvp',optionChoice:''});
@@ -1532,9 +1747,13 @@ export function PosPage() {
           ...item,
           quantity:nextQty,
           billingQuantity:nextCalc.billedQuantity,
+          baseUnitPrice:nextCalc.baseUnitPrice,
           unitPrice:nextCalc.unitPrice,
           total:nextCalc.total,
-          description:formatPOSLineDescription({name:item.name,mode:'quantity',quantity:nextQty,unit:nextCalc.unit,unitPrice:nextCalc.unitPrice,pricingTierLabel:item.pricingTierLabel||'Normal'}),
+          customUnitPriceApplied:false,
+          lineDiscountPercent:0,
+          pricingTierLabel:'Normal',
+          description:formatPOSLineDescription({name:item.name,mode:'quantity',quantity:nextQty,unit:nextCalc.unit,unitPrice:nextCalc.unitPrice,pricingTierLabel:'Normal',customUnitPriceApplied:false,lineDiscountPercent:0}),
         }:item));
         flash(`${product.name} actualizado a ${nextQty} ${nextCalc.unit} en el carrito.`);
         return;
@@ -1670,7 +1889,7 @@ export function PosPage() {
     return true;
   };
   const continueToPayment=()=>{
-    if(!form.quoteId&&!cart.length){setCheckoutStep('order');focusCheckoutField('#pos-product-search-input');flash('Agrega un artículo o carga una cotización.');return;}
+    if(!form.quoteId&&!cart.length){setCheckoutStep('order');focusCheckoutField('[data-pos-product-search-input="true"]');flash('Agrega un artículo o carga una cotización.');return;}
     if(activeTotal<=0){setCheckoutStep('order');flash('La orden necesita un total mayor que cero.');return;}
     if(!discountReasonValid){setCheckoutStep('order');focusCheckoutField('#pos-discount-reason');flash('Escribe el motivo del descuento comercial para continuar.');return;}
     if(customerNameMissing){setCheckoutStep('order');focusCheckoutField('.pos-customer-picker input[role="combobox"]');flash('Completa el nombre del cliente o limpia la búsqueda para una venta de mostrador.');return;}
@@ -1680,7 +1899,7 @@ export function PosPage() {
     setCheckoutStep('payment');setMobileSummaryOpen(true);
   };
   const advanceFromOrder=()=>{
-    if(!form.quoteId&&!cart.length){focusCheckoutField('#pos-product-search-input');flash('Agrega un artículo o carga una cotización.');return;}
+    if(!form.quoteId&&!cart.length){focusCheckoutField('[data-pos-product-search-input="true"]');flash('Agrega un artículo o carga una cotización.');return;}
     if(activeTotal<=0){flash('La orden necesita un total mayor que cero.');return;}
     if(!discountReasonValid){focusCheckoutField('#pos-discount-reason');flash('Escribe el motivo del descuento comercial para continuar.');return;}
     if(customerNameMissing){focusCheckoutField('.pos-customer-picker input[role="combobox"]');flash('Completa el nombre del cliente o limpia la búsqueda para una venta de mostrador.');return;}
@@ -1695,23 +1914,46 @@ export function PosPage() {
   const choosePOSCustomer=(customer)=>{setSelectedCustomerSnapshot(customer||null);setForm((current)=>({...current,customerId:customer?.id||'',customer:customer?.name||'',customerPhone:customer?.phone||'',customerEmail:customer?.email||'',customerDocumentReference:customer?.documentReference||''}));setCustomerQuery(customer?.name||'');};
   const parkCurrentOrder=async()=>{
     if(!user||!organizationId||parking)return;
+    if(saleAssets.length){flash('Esta orden tiene adjuntos guardados solo en este navegador. Las órdenes en espera no sincronizan esos archivos; quítalos antes de aparcar o confirma la venta para vincularlos.');return;}
     if(!form.quoteId&&taxConfigurationStatus!=='ready'){flash(taxConfigurationStatus==='loading'?'Espera a que se confirme la tasa de IVA antes de guardar el total.':'No se pudo verificar la tasa de IVA. Recarga antes de guardar la orden.');return;}
-    if(activeParkedOrderId){flash('Esta orden ya está en espera; confírmala para cerrarla desde esta pantalla.');return;}
     if(!form.quoteId&&!cart.length){flash('Agrega artículos o elige una cotización antes de guardar en espera.');return;}
     if(!activeTotal||activeTotal<=0){flash('La orden necesita un total mayor que cero para guardarse en espera.');return;}
     setParking(true);
     try{
-      const key=globalThis.crypto?.randomUUID?.()||`park-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const payload={form:{...form},cart,discountPercent:manualDiscountPercent,discountReason,materialRequestsByLine,productionByLine,fulfillment,mapLink,payments,chargeNow,clientBriefHtml};
+      if(activeParkedOrderId){
+        const {error}=await supabase.rpc('update_parked_pos_order',{p_parked_order:activeParkedOrderId,p_payload:payload,p_total:activeTotal});
+        if(error)throw error;
+        clearPendingSaleStorage();pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);
+        await refreshParkedOrders();resetCheckout();
+        flash('Se actualizaron los datos de la orden en espera. No se reservaron existencias.');return;
+      }
+      const totalCents=Math.round(activeTotal*100);
+      let attempt=parkedOrderRetryRef.current;
+      if(attempt&&(stablePOSJson(attempt.payload)!==stablePOSJson(payload)||Number(attempt.totalCents)!==totalCents)){
+        throw new Error('Hay un intento de guardado que pudo completarse. No cambies el pedido; recarga para recuperar exactamente los datos guardados o verifica si ya aparece en Órdenes en espera.');
+      }
+      if(!attempt){
+        attempt={version:1,savedAt:Date.now(),key:globalThis.crypto?.randomUUID?.()||`park-${Date.now()}-${Math.random().toString(36).slice(2)}`,payload,totalCents};
+        sessionStorage.setItem(parkedOrderRetryStorageKey,JSON.stringify(attempt));
+        const verified=JSON.parse(sessionStorage.getItem(parkedOrderRetryStorageKey)||'null');
+        if(stablePOSJson(verified)!==stablePOSJson(attempt))throw new Error('No se pudo guardar la protección de reintento en esta pestaña; la orden no se envió.');
+        parkedOrderRetryRef.current=attempt;
+      }
       const {data:branch,error:branchError}=await supabase.from('branches').select('id').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();
       if(branchError)throw branchError;
       if(!branch?.id)throw new Error('No encontramos la sucursal seleccionada.');
-      const {data:parkedId,error}=await supabase.rpc('park_pos_order',{p_organization_id:organizationId,p_branch_code:form.branchCode,p_idempotency_key:key,p_payload:payload,p_total:activeTotal});
+      const {data:parkedId,error}=await supabase.rpc('park_pos_order',{p_organization_id:organizationId,p_branch_code:form.branchCode,p_idempotency_key:attempt.key,p_payload:attempt.payload,p_total:attempt.totalCents/100});
       if(error)throw error;
+      sessionStorage.removeItem(parkedOrderRetryStorageKey);parkedOrderRetryRef.current=null;
       await refreshParkedOrders();
       resetCheckout();
       flash(`Orden guardada en espera · ${String(parkedId).slice(0,8).toUpperCase()}. No se reservó ni descontó inventario.`);
-    }catch(error){flash(`No se pudo guardar la orden en espera: ${error.message}`);}
+    }catch(error){
+      const code=String(error?.code||'');
+      if(/^[0-9A-Z]{5}$/.test(code)&&code!=='00000'){sessionStorage.removeItem(parkedOrderRetryStorageKey);parkedOrderRetryRef.current=null;}
+      flash(`No se pudo guardar la orden en espera: ${error.message}`);
+    }
     finally{setParking(false);}
   };
   const deleteParkedOrder=async(order)=>{
@@ -1758,8 +2000,8 @@ export function PosPage() {
     const restoredDiscountPercent=String(Math.min(40,Math.max(0,Math.round(Number(payload.discountPercent)||0))));
     const restoredDiscountReason=String(payload.discountReason||'').slice(0,300);
     const recoveredSnapshot={form:savedForm,cart:restoredCart,discountPercent:restoredDiscountPercent,discountReason:restoredDiscountReason,materialRequestsByLine:restoredMaterialRequests,productionByLine:restoredProductionByLine,fulfillment:restoredFulfillment,mapLink:restoredMapLink,payments:restoredPayments,chargeNow:restoredChargeNow,activeParkedOrderId:order.id};
-    try{sessionStorage.setItem(pendingSaleStorageKey,order.idempotency_key);sessionStorage.setItem(pendingSaleSnapshotStorageKey,JSON.stringify({version:1,savedAt:Date.now(),...recoveredSnapshot}));}
-    catch{if(!pendingSaleKey.current){sessionStorage.removeItem(pendingSaleStorageKey);sessionStorage.removeItem(pendingSaleSnapshotStorageKey);}flash('No se pudo guardar la recuperación de esta orden en esta sesión. No se envió la venta.');return;}
+    try{localStorage.setItem(pendingSaleStorageKey,order.idempotency_key);sessionStorage.setItem(pendingSaleStorageKey,order.idempotency_key);sessionStorage.setItem(pendingSaleSnapshotStorageKey,JSON.stringify({version:1,savedAt:Date.now(),...recoveredSnapshot}));}
+    catch{if(!pendingSaleKey.current)clearPendingSaleStorage();flash('No se pudo guardar la recuperación de esta orden. No se envió la venta.');return;}
     setFulfillment(restoredFulfillment);setMapLink(restoredMapLink);setPayments(restoredPayments);setChargeNow(restoredChargeNow);setCustomerQuery(String(savedForm.customer||''));setSelectedCustomerSnapshot(savedForm.customerId?{id:String(savedForm.customerId),name:String(savedForm.customer||''),phone:String(savedForm.customerPhone||''),email:String(savedForm.customerEmail||''),documentReference:String(savedForm.customerDocumentReference||'')}:null);
     setForm(savedForm);setCart(restoredCart);setDiscountPercent(restoredDiscountPercent);setDiscountReason(restoredDiscountReason);setMaterialRequestsByLine(restoredMaterialRequests);setProductionByLine(restoredProductionByLine);
     setCartProductId('');setCartItemName('');setCartUnitPrice('');setCartQuantity('1');setActiveParkedOrderId(order.id);
@@ -1810,7 +2052,7 @@ export function PosPage() {
       const extraChangeLine=extraChangeCalculation?{key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:selectedCartProduct.id,inventoryVariantId:'',sku:selectedCartProduct.sku||selectedCartProduct.id,name:`${selectedCartProduct.name} · Cambio adicional`,family:selectedCartProduct.family||'Diseño de identidad',image:selectedCartProduct.image||'',mode:'quantity',quantity:changeCount,billingQuantity:changeCount,unit:'unidad',unitPrice:extraChangeCalculation.unitPrice,baseUnitPrice:extraChangeCalculation.unitPrice,total:extraChangeCalculation.total,finishing:{...emptyCommercialFinishing},widthCm:null,heightCm:null,areaPerPiece:null,areaTotal:null,pricingTier:'pvp',pricingTierLabel:'Precio acordado',optionChoice:changeOption.label,description:`${selectedCartProduct.name} · ${changeCount} ${changeCount===1?'cambio adicional':'cambios adicionales'} · ${formatMoney(changeOption.price)} c/u`}:null;
       setCart(current=>[...current,line,...(extraChangeLine?[extraChangeLine]:[])]);
       setCartProductId('');setCartVariantId('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartPriceTier('pvp');setCartOptionChoice('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});setLogoChangeCount('0');
-      requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
+      requestAnimationFrame(()=>document.querySelector<HTMLInputElement>('[data-pos-product-search-input="true"]')?.focus());
       return;
     }
     if(cartEntryType==='custom-area'){
@@ -1833,7 +2075,7 @@ export function PosPage() {
       };
       setCart(current=>[...current,line]);
       setCartItemName('');setCartQuantity('1');setCartWidthCm('100');setCartHeightCm('100');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});
-      requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
+      requestAnimationFrame(()=>document.querySelector<HTMLInputElement>('[data-pos-product-search-input="true"]')?.focus());
       return;
     }
     const unitPrice=Number(cartUnitPrice);
@@ -1848,7 +2090,7 @@ export function PosPage() {
     const line={key:globalThis.crypto?.randomUUID?.()||`line-${Date.now()}-${Math.random().toString(36).slice(2)}`,productId:'',sku:'LIBRE',name,family:'Concepto libre',image:'',mode:'quantity',quantity,billingQuantity:quantity,unit,unitPrice:effectiveUnitPrice,baseUnitPrice:unitPrice,total,finishing:snapshotCommercialFinishing(cartFinishing,quantity,data.calculatorSettings||{}),customUnitPriceApplied:true,description:`${name} · ${quantity} ${quantityLabel} · $${unitPrice.toFixed(2)} c/u`};
     setCart(current=>[...current,line]);
     setCartItemName('');setCartQuantity('1');setCartUnitPrice('');setCartCustomUnitPrice('');setCartFinishing({...emptyCommercialFinishing});
-    requestAnimationFrame(()=>document.getElementById('pos-product-search-input')?.focus());
+    requestAnimationFrame(()=>document.querySelector<HTMLInputElement>('[data-pos-product-search-input="true"]')?.focus());
   };
   const save=async(event)=>{
     event.preventDefault();
@@ -1934,9 +2176,12 @@ export function PosPage() {
     try{
       if(form.quoteId&&quote?.status==='converted'&&pendingSaleRecoveryMode&&pendingSaleKey.current){const {data:existingSale,error:existingSaleError}=await supabase.from('sales').select('id,central_quote_id').eq('organization_id',organizationId).eq('idempotency_key',pendingSaleKey.current).maybeSingle();if(existingSaleError){flash(`No pude comprobar si la cotización ya quedó vinculada: ${existingSaleError.message}. La operación permanece protegida.`);return;}quoteAlreadyLinked=Boolean(existingSale?.central_quote_id===form.quoteId);}
       if(form.quoteId&&(!quote||(!quoteAlreadyLinked&&quote.status!=='accepted')||!quote.price_confirmed||Math.round(Number(quote.selected_total)*100)!==Math.round(total*100))){flash('La cotización debe seguir aceptada y el total debe coincidir exactamente antes de confirmar.');return;}
-      let quoteLinkError='';
-      if(salePayments.some(payment=>payment.method==='cash')&&!(pendingSaleRecoveryMode&&pendingSaleKey.current)){const {data:branch}=await supabase.from('branches').select('id').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();const {data:shift,error:shiftError}=await supabase.from('cash_sessions').select('id').eq('organization_id',organizationId).eq('branch_id',branch?.id||'').eq('opened_by',user.id).eq('status','open').maybeSingle();if(shiftError)throw shiftError;if(!shift){flash('Abre primero tu turno de caja en Caja y producción para registrar cualquier parte en efectivo.');return;}}
-      if(!pendingSaleKey.current){pendingSaleKey.current=globalThis.crypto?.randomUUID?.()||`sale-${Date.now()}-${Math.random().toString(36).slice(2)}`;sessionStorage.setItem(pendingSaleStorageKey,pendingSaleKey.current);}
+      if(salePayments.some(payment=>payment.method==='cash')&&!(pendingSaleRecoveryMode&&pendingSaleKey.current&&!pendingSaleSnapshotMissing)){const {data:branch}=await supabase.from('branches').select('id').eq('organization_id',organizationId).eq('code',form.branchCode).maybeSingle();const {data:shift,error:shiftError}=await supabase.from('cash_sessions').select('id').eq('organization_id',organizationId).eq('branch_id',branch?.id||'').eq('opened_by',user.id).eq('status','open').maybeSingle();if(shiftError)throw shiftError;if(!shift){flash('Abre primero tu turno de caja en Caja y producción para registrar cualquier parte en efectivo.');return;}}
+      await saleAssetDraftWriteRef.current;
+      if(!pendingSaleKey.current)pendingSaleKey.current=globalThis.crypto?.randomUUID?.()||`sale-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      if(saleAssets.length)await posSaleAssetRecovery.save(posSaleAssetScopeKey,saleAssets,pendingSaleKey.current);
+      else if(saleAssetsRecoveryStatus==='ready')await posSaleAssetRecovery.clear(posSaleAssetScopeKey);
+      localStorage.setItem(pendingSaleStorageKey,pendingSaleKey.current);sessionStorage.setItem(pendingSaleStorageKey,pendingSaleKey.current);
       const productionJobs=Array.isArray(pendingSaleSnapshotRef.current?.productionJobs)?pendingSaleSnapshotRef.current.productionJobs:lines.map((line,index)=>{
         const displayLine=productionLines[index]||{line_key:line.line_key,name:line.description,productId:line.catalog_product_id};
         const defaultRoute=line.catalog_product_id?recommendedWorkflowByProduct[line.catalog_product_id]||'review':'review';
@@ -1960,46 +2205,84 @@ export function PosPage() {
         p_payments:salePayments,
         p_fulfillment:fulfillmentPayload,
         p_production_jobs:productionJobs,
+        p_client_brief_html:clientBriefHtml,
+        p_parked_order:activeParkedOrderId||null,
       });
       if(error)throw error;
-      const {error:briefError}=await supabase.rpc('save_pos_sale_client_brief',{p_sale:sale.sale_id,p_brief_html:clientBriefHtml});
-      if(briefError)throw briefError;
-      if(saleAssets.length){const {count:existingAssets,error:assetsReadError}=await supabase.from('commercial_document_assets').select('id',{count:'exact',head:true}).eq('document_kind','sale').eq('document_id',sale.sale_id);if(assetsReadError)throw assetsReadError;if(!existingAssets)await persistCommercialAssets({organizationId,documentId:sale.sale_id,kind:'sale',assets:saleAssets});}
+      if(saleAssets.length){const {count:existingAssets,error:assetsReadError}=await supabase.from('commercial_document_assets').select('id',{count:'exact',head:true}).eq('document_kind','sale').eq('document_id',sale.sale_id);if(assetsReadError)throw assetsReadError;if(existingAssets===null)throw new Error('No pude comprobar si los adjuntos ya se guardaron. Conservé la clave de recuperación.');if(existingAssets===0)await persistCommercialAssets({organizationId,documentId:sale.sale_id,kind:'sale',assets:saleAssets});await posSaleAssetRecovery.clear(posSaleAssetScopeKey);}
       window.dispatchEvent(new Event('visualcorp:production-changed'));
       let materialBackorder=false;
       try{const {data:materialRows}=await supabase.from('sale_material_consumptions').select('backordered_quantity').eq('sale_id',sale.sale_id).gt('backordered_quantity',0);materialBackorder=Boolean(materialRows?.length);}catch{}
       const completingParkedOrder=activeParkedOrderId;
-      let parkedCompletionError='';
-      if(completingParkedOrder){const {error:parkedError}=await supabase.rpc('complete_parked_pos_order',{p_parked_order:completingParkedOrder,p_sale:sale.sale_id});if(parkedError)parkedCompletionError=parkedError.message;}
-      if(form.quoteId&&!quoteAlreadyLinked){const {error:quoteError}=await supabase.rpc('link_pos_sale_to_central_quote',{p_sale:sale.sale_id,p_quote:form.quoteId});if(quoteError){const {data:linkedSale,error:linkCheckError}=await supabase.from('sales').select('central_quote_id').eq('organization_id',organizationId).eq('id',sale.sale_id).maybeSingle();if(!linkCheckError&&linkedSale?.central_quote_id===form.quoteId)quoteAlreadyLinked=true;else quoteLinkError=linkCheckError?`${quoteError.message} · No se pudo verificar el vínculo: ${linkCheckError.message}`:quoteError.message;}if(quoteAlreadyLinked||!quoteError)setCentralQuotes(rows=>rows.map(q=>q.id===form.quoteId?{...q,status:'converted'}:q));}
+      if(form.quoteId)setCentralQuotes(rows=>rows.map(q=>q.id===form.quoteId?{...q,status:'converted'}:q));
       await refreshRemote();
       await refreshPOSDaySales();
       if(completingParkedOrder)await refreshParkedOrders().catch(()=>{});
       setLastSaleConfirmation({code:sale.sale_code||sale.sale_id,total:Number(sale.total??total),paid:Number(sale.paid??paymentState.applied),balance:Number(sale.balance??Math.max(0,total-paymentState.applied)),branch:branchName,change:paymentState.change,deliveryAt:fulfillment.deliveryAt||''});
-      if(!parkedCompletionError&&!quoteLinkError){resetCheckout();sessionStorage.removeItem(pendingSaleStorageKey);sessionStorage.removeItem(pendingSaleSnapshotStorageKey);pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);}
-      flash(parkedCompletionError?`Venta ${sale.sale_code||''} registrada. La orden sigue en espera por un problema de sincronización; al recuperarla, la clave evita duplicar la venta.`:quoteLinkError?`Venta ${sale.sale_code||''} registrada, pero la cotización no quedó vinculada: ${quoteLinkError}`:shortages.length||sale.backordered_quantity||materialBackorder?'Orden confirmada; el faltante de producto o material quedó como compra urgente.':`Venta ${sale.sale_code||''} confirmada con sus datos de entrega e instalación.`);
-    }catch(error){if(!saleRequestStarted&&!hadPendingSaleKey){pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);sessionStorage.removeItem(pendingSaleStorageKey);sessionStorage.removeItem(pendingSaleSnapshotStorageKey);}flash(saleRequestStarted?`La orden puede haberse registrado antes de la falla. Se conserva la clave segura y los datos del formulario para reintentar sin duplicarla: ${error.message}`:`No se envió la venta porque no se pudo preparar la recuperación de la sesión: ${error.message}`);}
+      resetCheckout();clearPendingSaleStorage();pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);
+      flash(shortages.length||sale.backordered_quantity||materialBackorder?'Orden confirmada; el faltante de producto o material quedó como compra urgente.':`Venta ${sale.sale_code||''} confirmada con sus datos de entrega e instalación.`);
+    }catch(error){if(!saleRequestStarted&&!hadPendingSaleKey){pendingSaleKey.current='';pendingSaleSnapshotRef.current=null;setPendingSaleRecoveryMode(false);clearPendingSaleStorage();}flash(saleRequestStarted?`La orden puede haberse registrado antes de la falla. Se conserva la clave de recuperación y los datos locales de esta sesión para reintentar sin duplicarla: ${error.message}`:`No se envió la venta porque no se pudo preparar la recuperación de la sesión: ${error.message}`);}
     finally{setSavingSale(false);}
+  };
+  const toggleBalancePayment=(sale)=>{
+    if(!balancePaymentRecoveryReady){flash(balancePaymentRecovery.error||'Estoy comprobando los intentos de abono guardados. Espera un momento antes de registrar otro.');return;}
+    const pending=pendingBalancePaymentBySale[sale.id];
+    if(paymentTarget===sale.id){setPaymentTarget(null);return;}
+    setPaymentTarget(sale.id);
+    setPaymentForm(pending
+      ? {amount:(pending.receivedCents/100).toFixed(2),method:pending.method,reference:pending.reference,note:pending.note}
+      : {amount:String(sale.balance),method:'Efectivo',reference:'',note:''});
   };
   const registerBalancePayment=async(event,sale)=>{
     event.preventDefault();
     if(savingBalancePayment===sale.id)return;
-    const received=Number(paymentForm.amount);
-    if(!Number.isFinite(received)||received<=0)return;
-    if(paymentForm.method!=='Efectivo'&&received>Number(sale.balance)){flash('El abono no puede superar el saldo pendiente.');return;}
-    const amount=paymentForm.method==='Efectivo'?Math.min(received,Number(sale.balance)):received;
-    const change=paymentForm.method==='Efectivo'?Math.max(0,received-amount):0;
+    if(!balancePaymentRecoveryReady){flash(balancePaymentRecovery.error||'No se puede registrar el abono hasta comprobar el almacenamiento de recuperación.');return;}
     setSavingBalancePayment(sale.id);
+    let requestStarted=false;
+    let paymentAccepted=false;
+    let intent=pendingBalancePaymentBySale[sale.id]||null;
     try{
-      const keyName=`visualcorp-pos-payment-${sale.id}`;let key=sessionStorage.getItem(keyName);
-      if(!key){key=globalThis.crypto?.randomUUID?.()||`payment-${Date.now()}-${Math.random().toString(36).slice(2)}`;sessionStorage.setItem(keyName,key);}
-      const methodMap={Efectivo:'cash',Transferencia:'transfer',Tarjeta:'card',Otro:'other'};
-      const {error}=await supabase.rpc('record_sale_payment',{p_idempotency_key:key,p_sale_id:sale.id,p_method:methodMap[paymentForm.method]||'other',p_amount:amount,p_reference:paymentForm.reference.trim(),p_note:paymentForm.note.trim()});
-      if(error)throw error;
-      sessionStorage.removeItem(keyName);await refreshRemote();await refreshPOSDaySales();setPaymentTarget(null);setPaymentForm({amount:'',method:'Efectivo',reference:'',note:''});
-      flash(change>0?`Abono aplicado. Vuelto: ${formatMoney(change)}.`:'Abono guardado y saldo actualizado.');
-    }catch(error){flash(`No se guardó el abono; puedes reintentar sin duplicarlo: ${error.message}`);}
-    finally{setSavingBalancePayment('');}
+      if(!supabase||!organizationId||!user?.id)throw new Error('No se validó la sesión para registrar el abono.');
+      if(intent&&intent.saleId!==sale.id)throw new Error('El intento guardado no coincide con esta venta.');
+      if(!intent){
+        const receivedCents=Math.round(Number(paymentForm.amount)*100);
+        const balanceCents=Math.max(0,Math.round(Number(sale.balance)*100));
+        if(!Number.isSafeInteger(receivedCents)||receivedCents<=0){flash('Ingresa un monto mayor a cero.');return;}
+        if(paymentForm.method!=='Efectivo'&&receivedCents>balanceCents){flash('El abono no puede superar el saldo pendiente.');return;}
+        const appliedCents=paymentForm.method==='Efectivo'?Math.min(receivedCents,balanceCents):receivedCents;
+        if(appliedCents<=0){flash('La venta ya no tiene saldo pendiente para aplicar un abono nuevo.');return;}
+        intent={version:2,idempotencyKey:createPOSBalancePaymentKey(),saleId:sale.id,method:paymentForm.method,receivedCents,appliedCents,reference:paymentForm.reference.trim(),note:paymentForm.note.trim(),createdAt:new Date().toISOString()};
+        savePendingPOSBalancePayment(organizationId,user.id,intent);
+        setBalancePaymentRecovery(current=>({...current,pending:{...current.pending,[sale.id]:intent}}));
+      }
+      const methodMap:Record<PendingPOSBalancePayment['method'],'cash'|'transfer'|'card'|'other'>={Efectivo:'cash',Transferencia:'transfer',Tarjeta:'card',Otro:'other'};
+      requestStarted=true;
+      const {error}=await supabase.rpc('record_sale_payment',{p_idempotency_key:intent.idempotencyKey,p_sale_id:intent.saleId,p_method:methodMap[intent.method],p_amount:intent.appliedCents/100,p_reference:intent.reference,p_note:intent.note});
+      if(error){
+        if(isDefinitivePOSBalancePaymentError(error)){
+          clearPendingPOSBalancePayment(organizationId,user.id,sale.id);
+          setBalancePaymentRecovery(current=>{const pending={...current.pending};delete pending[sale.id];return{...current,pending};});
+        }
+        throw error;
+      }
+      paymentAccepted=true;
+      let recoveryCleared=true;
+      try{clearPendingPOSBalancePayment(organizationId,user.id,sale.id);}
+      catch{recoveryCleared=false;}
+      if(recoveryCleared)setBalancePaymentRecovery(current=>{const pending={...current.pending};delete pending[sale.id];return{...current,pending};});
+      setPaymentTarget(null);
+      setPaymentForm({amount:'',method:'Efectivo',reference:'',note:''});
+      try{await refreshRemote();await refreshPOSDaySales();}
+      catch{flash('El abono sí quedó guardado. No se pudo actualizar la vista; consulta de nuevo las ventas antes de registrar otro.');return;}
+      const changeCents=Math.max(0,intent.receivedCents-intent.appliedCents);
+      if(!recoveryCleared)flash('El abono quedó guardado. No pude limpiar el respaldo local; usa “Reintentar abono pendiente” para confirmar y limpiar la misma clave.');
+      else flash(changeCents>0?`Abono aplicado. Vuelto: ${formatMoney(changeCents/100)}.`:'Abono guardado y saldo actualizado.');
+    }catch(error:any){
+      if(paymentAccepted){flash(`El abono sí quedó guardado; no se registrará otra vez. Actualiza las ventas: ${error.message||'falló la actualización local'}`);}
+      else if(isDefinitivePOSBalancePaymentError(error)){flash(`El servidor rechazó el abono y no lo aplicó. Puedes corregir los datos e intentarlo de nuevo: ${error.message||'solicitud inválida'}`);}
+      else if(requestStarted){flash('No llegó la confirmación del abono. Conservé el método, monto, referencia y nota originales. Reintenta el abono pendiente sin cambiar sus datos.');}
+      else{flash(`No se envió el abono porque no se pudo guardar su recuperación segura: ${error.message||'revisa el almacenamiento del navegador'}`);}
+    }finally{setSavingBalancePayment('');}
   };
   const connectedStockCount=useMemo(()=>Object.values(stockMetaByProduct).filter((meta)=>meta.tone==='available').length,[stockMetaByProduct]);
   const quickCashDenominations=useMemo(()=>{
@@ -2035,6 +2318,7 @@ export function PosPage() {
               type="button"
               className={`pos-branch-pill${form.branchCode===branch.code?' is-active':''}`}
               aria-pressed={form.branchCode===branch.code}
+              disabled={Boolean(activeParkedOrderId)&&form.branchCode!==branch.code}
               onClick={()=>setForm((current)=>({...current,branchCode:branch.code}))}
             >{branch.name||branch.code}</button>)}
           </div>
@@ -2044,21 +2328,21 @@ export function PosPage() {
         </div>
 
         <div className="pos-counter-block pos-counter-metrics">
-          <span className="pos-counter-block-label"><ChartNoAxesCombined size={13} aria-hidden="true"/> VENTAS DE HOY</span>
+          <span className="pos-counter-block-label"><ChartNoAxesCombined size={13} aria-hidden="true"/> VENTAS DEL PERIODO</span>
           <div className="pos-counter-metric-group">
             <div className="pos-counter-metric-item">
-              <small>Total confirmado</small>
-              <strong className="tabular-num">{posSalesStatus==='ready'?formatMoney(salesToday.reduce((sum,sale)=>sum+sale.total,0)):'—'}</strong>
+              <small>Total neto tras devoluciones</small>
+              <strong className="tabular-num">{posSalesStatus==='ready'?formatMoney(posSalesSummary.totalAmount):'—'}</strong>
             </div>
             <div className="pos-counter-metric-separator" aria-hidden="true"/>
             <div className="pos-counter-metric-item">
               <small>Transacciones</small>
-              <strong className="tabular-num">{posSalesStatus==='ready'?salesToday.length:'—'}</strong>
+              <strong className="tabular-num">{posSalesStatus==='ready'?posSalesSummary.totalCount:'—'}</strong>
             </div>
             <div className="pos-counter-metric-separator" aria-hidden="true"/>
             <div className="pos-counter-metric-item">
               <small>Método común</small>
-              <strong>{posSalesStatus==='ready'&&salesToday.length?mostFrequent(salesToday.map((sale)=>sale.method)):'—'}</strong>
+              <strong>{posSalesStatus==='ready'?posSalesSummary.commonMethod:'—'}</strong>
             </div>
           </div>
         </div>
@@ -2094,11 +2378,14 @@ export function PosPage() {
         <span>{cashierSession.branch?.name||branchName} · la venta y los pagos en efectivo se registran en tu turno activo</span>
       </span>
       <div className="pos-cashier-actions">
+        {cashMovementRecoveryMatches&&cashMovementRecovery.status==='error'&&<span className="inventory-status pending" title={cashMovementRecovery.error}>Hay una recuperación de caja que requiere revisión</span>}
+        {cashMovementRecoveryMatches&&cashMovementRecovery.status==='loading'&&<span className="inventory-status pending">Revisando movimientos pendientes…</span>}
+        {pendingCashMovement&&<span className="inventory-status pending">Movimiento pendiente · reintenta antes de registrar otro</span>}
         {cashierSession.loading?<span className="inventory-status pending">Consultando turno…</span>:cashierSession.session?<>
           <span className="inventory-status available">Caja abierta · {new Date(cashierSession.session.opened_at).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})}{Number.isFinite(Number(cashierSession.session.opening_cash))?` · Base ${formatMoney(Number(cashierSession.session.opening_cash))}`:''}</span>
           <button type="button" className="button button-outline pos-cashier-ctrl-btn" onClick={()=>{setNewBaseAmount(String(cashierSession.session.opening_cash||'0'));setShowEditBaseModal(true);}}><Pencil size={12}/> Editar base</button>
-          <button type="button" className="button button-outline pos-cashier-ctrl-btn is-in" onClick={()=>{setCashMovementDirection('in');setCashMovementAmount('');setCashMovementReason('');setShowCashMovementModal(true);}}><Plus size={12}/> + Entrada</button>
-          <button type="button" className="button button-outline pos-cashier-ctrl-btn is-out" onClick={()=>{setCashMovementDirection('out');setCashMovementAmount('');setCashMovementReason('');setShowCashMovementModal(true);}}><Minus size={12}/> - Retiro</button>
+          <button type="button" className="button button-outline pos-cashier-ctrl-btn is-in" disabled={!cashMovementRecoveryReady||Boolean(pendingCashMovement)} onClick={()=>{setCashMovementDirection('in');setCashMovementAmount('');setCashMovementReason('');setShowCashMovementModal(true);}}><Plus size={12}/> + Entrada</button>
+          <button type="button" className="button button-outline pos-cashier-ctrl-btn is-out" disabled={!cashMovementRecoveryReady||Boolean(pendingCashMovement)} onClick={()=>{setCashMovementDirection('out');setCashMovementAmount('');setCashMovementReason('');setShowCashMovementModal(true);}}><Minus size={12}/> - Retiro</button>
           <Link to="/operaciones/flujos?tab=cash" className="button button-outline">Arqueo / Cerrar turno <ArrowUpRight size={14}/></Link>
           {hasPermission('cash', 'view') && <Link to="/operaciones/cajas-abiertas" className="button button-outline">Control cajas abiertas <ArrowUpRight size={14}/></Link>}
         </>:cashierSession.error?<span className="inventory-status pending" title={cashierSession.error}>No se pudo verificar el turno</span>:<>
@@ -2126,27 +2413,27 @@ export function PosPage() {
           <button type="button" className="button button-outline" onClick={()=>setShowEditBaseModal(false)}>Cancelar</button>
         </div>
       </form>}
-      {showCashMovementModal&&cashierSession.session&&<form className="pos-quick-cash-drawer is-movement" onSubmit={handleRecordCashMovement}>
+      {showCashMovementModal&&(cashierSession.session||pendingCashMovement)&&<form className="pos-quick-cash-drawer is-movement" onSubmit={handleRecordCashMovement}>
         <div>
-          <span className="eyebrow">{cashMovementDirection==='in'?'+ ENTRADA DE EFECTIVO':'− RETIRO DE EFECTIVO'}</span>
-          <b>{cashMovementDirection==='in'?'Ingreso rápido a la gaveta de caja':'Salida o retiro de efectivo'}</b>
-          <small>Registra el importe y el motivo para cuadrar en el arqueo final.</small>
+          <span className="eyebrow">{pendingCashMovement?'RESULTADO PENDIENTE · MISMA CLAVE':cashMovementDirection==='in'?'+ ENTRADA DE EFECTIVO':'− RETIRO DE EFECTIVO'}</span>
+          <b>{pendingCashMovement?'Confirma el movimiento original de caja':cashMovementDirection==='in'?'Ingreso rápido a la gaveta de caja':'Salida o retiro de efectivo'}</b>
+          <small>{pendingCashMovement?`Se reintentará en el turno original (${pendingCashMovement.sessionId.slice(0,8)}…). No cambies el importe ni el motivo.`:'Registra el importe y el motivo para cuadrar en el arqueo final.'}</small>
         </div>
         <div className="pos-quick-cash-controls">
           <div className="pos-mode-switch compact" role="group">
-            <button type="button" className={cashMovementDirection==='in'?'active':''} onClick={()=>setCashMovementDirection('in')}>+ Entrada</button>
-            <button type="button" className={cashMovementDirection==='out'?'active':''} onClick={()=>setCashMovementDirection('out')}>− Retiro</button>
+            <button type="button" className={cashMovementDirection==='in'?'active':''} disabled={Boolean(pendingCashMovement)} onClick={()=>setCashMovementDirection('in')}>+ Entrada</button>
+            <button type="button" className={cashMovementDirection==='out'?'active':''} disabled={Boolean(pendingCashMovement)} onClick={()=>setCashMovementDirection('out')}>− Retiro</button>
           </div>
           <label className="pos-quick-cash-input">
             <span>Monto ($)</span>
-            <input type="number" min="0.01" step="0.01" required placeholder="0.00" value={cashMovementAmount} onChange={(e)=>setCashMovementAmount(e.target.value)}/>
+            <input type="number" min="0.01" step="0.01" required placeholder="0.00" value={cashMovementAmount} readOnly={Boolean(pendingCashMovement)} onChange={(e)=>setCashMovementAmount(e.target.value)}/>
           </label>
           <label className="pos-quick-cash-input is-wide">
             <span>Motivo del movimiento *</span>
-            <input type="text" required placeholder="Ej.: Cambio de sencillo, pago de delivery, etc." value={cashMovementReason} onChange={(e)=>setCashMovementReason(e.target.value)}/>
+            <input type="text" required maxLength={500} placeholder="Ej.: Cambio de sencillo, pago de delivery, etc." value={cashMovementReason} readOnly={Boolean(pendingCashMovement)} onChange={(e)=>setCashMovementReason(e.target.value)}/>
           </label>
-          <button type="submit" className="button button-dark" disabled={savingCashMovement}>{savingCashMovement?'Registrando…':'Registrar movimiento'}</button>
-          <button type="button" className="button button-outline" onClick={()=>setShowCashMovementModal(false)}>Cancelar</button>
+          <button type="submit" className="button button-dark" disabled={savingCashMovement||!cashMovementRecoveryReady}>{savingCashMovement?'Confirmando…':pendingCashMovement?'Reintentar el mismo movimiento':'Registrar movimiento'}</button>
+          <button type="button" className="button button-outline" disabled={savingCashMovement||Boolean(pendingCashMovement)} onClick={()=>setShowCashMovementModal(false)}>Cancelar</button>
         </div>
       </form>}
       {showQuickCashOpen&&!cashierSession.session&&<div className="pos-quick-cash-drawer" role="region" aria-label="Apertura rápida de turno de caja">
@@ -2172,15 +2459,17 @@ export function PosPage() {
       <form className="panel form-panel pos-checkout-form" onSubmit={save}>
         <div className="panel-heading"><div><span className="eyebrow">NUEVA ORDEN</span><h2>{checkoutStep==='order'?'Agrega los productos':checkoutStep==='details'?'Prepara el trabajo':'Revisa y cobra'}</h2><p className="pos-step-caption">Elige del catálogo o carga una cotización aprobada. Revisa el total y el cobro antes de confirmar.</p></div><ShoppingCart size={19}/></div>
         <POSCheckoutSteps active={checkoutStep} onChange={chooseCheckoutStep} itemCount={form.quoteId?currentQuoteLines.length:cart.length} requiresDetails={requiresWorkDetails}/>
-        {pendingSaleRecoveryMode&&<UiNotice tone={pendingOperationChanged?'warning':'info'} title="Operación protegida" className={`pos-pending-sale-notice${pendingOperationChanged?' is-changed':''}`}>
-          <p>{pendingOperationChanged?'Detecté cambios en los datos guardados o en los conceptos de la cotización. No enviaré una venta con la misma clave y contenido distinto. Recarga para recuperar la versión original.':'Si la respuesta anterior se interrumpió, puedes reintentar con esta misma clave y estos datos para evitar una venta duplicada.'}</p>
+        {pendingSaleRecoveryMode&&<UiNotice tone={pendingOperationChanged||pendingSaleSnapshotMissing?'warning':'info'} title={pendingSaleSnapshotMissing?'Pedido pendiente sin snapshot':'Operación protegida'} className={`pos-pending-sale-notice${pendingOperationChanged||pendingSaleSnapshotMissing?' is-changed':''}`}>
+          <p>{pendingSaleSnapshotMissing?'No se recuperó el pedido de esta sesión. Conservé la clave de idempotencia y la asociación de adjuntos. Reconstruye y coteja cliente, artículos, cantidades, descuentos, pagos y datos del trabajo con la orden original. Reintentar debe usar esa misma clave; si no puedes verificar el pedido, no lo reenvíes.':'Si la respuesta anterior se interrumpió, puedes reintentar con esta misma clave y estos datos para evitar una venta duplicada.'}</p>
+          {pendingSaleSnapshotMissing&&!pendingSaleSnapshotReviewed&&<button className="button button-outline" type="button" onClick={()=>setPendingSaleSnapshotReviewed(true)}>Reconstruí y revisé el pedido original</button>}
+          {pendingSaleSnapshotMissing&&pendingSaleSnapshotReviewed&&<p role="status">Revisión marcada. El reintento conservará la clave original; el servidor rechazará si detecta que los datos financieros ya confirmados difieren.</p>}
           {pendingOperationChanged&&<button className="button button-outline" type="button" onClick={()=>window.location.reload()}>Restaurar datos originales</button>}
         </UiNotice>}
         <div className="pos-checkout-main" hidden={checkoutStep!=='order'}>
         <div className="pos-origin-branch-row">
           <label>
             <span>Origen de la venta</span>
-            {acceptedQuotes.length > 6 && (
+            {(acceptedQuotes.length > 6 || quoteSearchQuery.trim().length > 0) && (
               <div className="pos-quote-search-inline">
                 <Search size={13} aria-hidden="true"/>
                 <input
@@ -2197,6 +2486,8 @@ export function PosPage() {
                 )}
               </div>
             )}
+            {quoteSearchLoading&&<small className="pos-field-help" role="status">Buscando cotizaciones aprobadas…</small>}
+            {quoteSearchError&&<small className="pos-field-help" role="alert">{quoteSearchError} Revisa que la búsqueda del servidor esté disponible.</small>}
             <select value={form.quoteId} onChange={(event)=>void handleQuoteSelection(event.target.value,event.currentTarget)}>
               <option value="">Venta manual: catálogo y carrito</option>
               {filteredAcceptedQuotes.map((quote)=><option key={quote.id} value={quote.id}>{quote.quote_code} · {quote.customer_name||'Cliente'} · {formatMoney(quote.selected_total)}</option>)}
@@ -2206,7 +2497,7 @@ export function PosPage() {
             </select>
             <small className="pos-field-help">Puedes armar una venta nueva o cargar una cotización aprobada con su precio confirmado.</small>
           </label>
-          <label className="pos-payment-fields pos-branch-selector"><span>Sucursal</span><select value={form.branchCode} disabled={!data.branches.length} onChange={(event)=>setForm((current)=>({...current,branchCode:event.target.value}))}>{data.branches.length?data.branches.map((branch)=><option key={branch.id} value={branch.code}>{branch.name||branch.code}</option>):<option value={form.branchCode}>{branchName}</option>}</select><small className="pos-field-help">Define de qué inventario se descuenta y en qué caja ingresa.</small></label>
+          <label className="pos-payment-fields pos-branch-selector"><span>Sucursal</span><select value={form.branchCode} disabled={!data.branches.length||Boolean(activeParkedOrderId)} onChange={(event)=>setForm((current)=>({...current,branchCode:event.target.value}))}>{data.branches.length?data.branches.map((branch)=><option key={branch.id} value={branch.code}>{branch.name||branch.code}</option>):<option value={form.branchCode}>{branchName}</option>}</select><small className="pos-field-help">{activeParkedOrderId?'La sucursal queda fija mientras editas una orden recuperada.':'Define de qué inventario se descuenta y en qué caja ingresa.'}</small></label>
         </div>
         <POSCustomerPicker customers={data.customers||[]} remoteMatches={customerLookupActive&&canSearchCustomers&&!form.customerId&&customerSearch.results!==null&&!customerSearch.error?customerSearch.results:null} searchingCustomers={customerSearch.loading} searchError={customerSearch.error} onRetrySearch={()=>setCustomerSearchRequest((request)=>request+1)} canShowMore={Boolean(customerSearch.hasMore&&customerSearchLimit<20)} onShowMore={()=>setCustomerSearchLimit(20)} selectedCustomer={selectedCustomer} duplicateCustomer={duplicateCustomer} customerName={form.customer} onNewNameChange={(value)=>setForm((current)=>({...current,customer:value}))} query={customerQuery} onQueryChange={updateCustomerQuery} onSelect={choosePOSCustomer} phone={form.customerPhone} email={form.customerEmail} documentReference={form.customerDocumentReference} onContactChange={(field,value)=>setForm((current)=>({...current,[field==='phone'?'customerPhone':field==='email'?'customerEmail':'customerDocumentReference']:value}))} canViewSales={canViewCustomerHistory} historyLoading={customerHistory.loading} historyCount={customerHistory.count} historySummary={customerHistory.summary} recentPurchases={customerHistory.rows} onOpenPurchase={(purchase)=>setDetailTarget({kind:'sale',id:purchase.id,code:purchase.code})}/>
         {form.quoteId?<div className="pos-quote-total"><span>Total aprobado en cotización</span><strong>{formatMoney(form.total)}</strong><small>El total se conserva igual al aprobado.</small></div>:<>
@@ -2317,7 +2608,7 @@ export function PosPage() {
           <POSMaterialUsage lines={saleMaterialLines} recipes={materialRecipes} inventory={data.inventory} branchId={selectedBranchId} values={materialRequestsByLine} status={materialRecipesStatus} onChange={updateMaterialRequest} onRetry={()=>setMaterialRecipesReload((value)=>value+1)}/>
         <POSProductionDetails lines={productionLines} values={productionByLine} routeByProduct={recommendedWorkflowByProduct} routeSourceByProduct={workflowSourceByProduct} templates={workflowTemplates} routeStatus={workflowRouteStatus} onChange={(lineKey,value)=>setProductionByLine((current)=>({...current,[lineKey]:value}))}/>
         <section className="pos-fulfillment-fields" aria-labelledby="pos-fulfillment-title"><div><span className="eyebrow">ENTREGA Y PRODUCCIÓN</span><h3 id="pos-fulfillment-title">Fechas y ubicación del pedido</h3><p>Se guardan con la venta para que Finanzas y Producción consulten la misma información.</p></div><label className="pos-install-toggle"><input type="checkbox" checked={fulfillment.installationRequired} onChange={(event)=>setFulfillment({...fulfillment,installationRequired:event.target.checked})}/> Requiere instalación</label>{fulfillment.installationRequired&&<><label>Ubicación de instalación<input value={fulfillment.installationAddress} onChange={(event)=>setFulfillment({...fulfillment,installationAddress:event.target.value})} placeholder="Dirección o referencia"/></label><div className="pos-location-tools"><button type="button" className="button button-outline" onClick={()=>setShowLocationPicker(true)}>Ubicar en Google Maps</button>{fulfillment.latitude&&fulfillment.longitude&&<span>Pin guardado · {fulfillment.latitude}, {fulfillment.longitude}</span>}</div><GoogleMapsPreview url={mapLink} address={fulfillment.installationAddress} coordinates={fulfillment.latitude&&fulfillment.longitude?`${fulfillment.latitude},${fulfillment.longitude}`:""}/><div className="pos-cart-inputs"><label>Latitud (opcional)<input inputMode="decimal" value={fulfillment.latitude} onChange={(event)=>setFulfillment({...fulfillment,latitude:event.target.value})} placeholder="-2.1234567"/></label><label>Longitud (opcional)<input inputMode="decimal" value={fulfillment.longitude} onChange={(event)=>setFulfillment({...fulfillment,longitude:event.target.value})} placeholder="-79.1234567"/></label></div><label>Instalación estimada<input type="datetime-local" value={fulfillment.installationAt} onChange={(event)=>setFulfillment({...fulfillment,installationAt:event.target.value})}/></label></>}<label>Fecha de entrega<input type="datetime-local" value={fulfillment.deliveryAt} onChange={(event)=>setFulfillment({...fulfillment,deliveryAt:event.target.value})}/></label></section>{showLocationPicker&&<div className="pos-map-backdrop" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setShowLocationPicker(false);}}><section className="pos-map-dialog" role="dialog" aria-modal="true" aria-labelledby="pos-map-title"><div className="panel-heading"><div><span className="eyebrow">UBICACIÓN DEL PEDIDO</span><h2 id="pos-map-title">Selecciona el lugar</h2></div><button className="icon-button" type="button" aria-label="Cerrar mapa" onClick={()=>setShowLocationPicker(false)}><X size={17}/></button></div><p>Abre Google Maps para buscar el sitio o colocar un pin. Puedes pegar el enlace compartido tal como lo copiaste, sin escribir https://.</p><label>Dirección o referencia<input value={fulfillment.installationAddress} onChange={(event)=>setFulfillment({...fulfillment,installationAddress:event.target.value})} placeholder="Busca la dirección o el sitio"/></label><label>Enlace compartido de Google Maps<input type="text" inputMode="url" autoCapitalize="off" autoCorrect="off" value={mapLink} onChange={(event)=>{setMapLink(event.target.value);const point=coordinatesFromMapLink(event.target.value);if(point)setFulfillment(current=>({...current,...point}));}} placeholder="maps.app.goo.gl/… o google.com/maps/…"/></label><GoogleMapsPreview url={mapLink} address={fulfillment.installationAddress} coordinates={fulfillment.latitude&&fulfillment.longitude?`${fulfillment.latitude},${fulfillment.longitude}`:""}/><div className="pos-map-coordinates"><label>Latitud<input inputMode="decimal" value={fulfillment.latitude} onChange={(event)=>setFulfillment({...fulfillment,latitude:event.target.value})}/></label><label>Longitud<input inputMode="decimal" value={fulfillment.longitude} onChange={(event)=>setFulfillment({...fulfillment,longitude:event.target.value})}/></label></div><div className="pos-submit-actions"><a className="button button-outline" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fulfillment.latitude&&fulfillment.longitude?`${fulfillment.latitude},${fulfillment.longitude}`:fulfillment.installationAddress||'Milagro, Ecuador')}`} target="_blank" rel="noreferrer">Abrir Google Maps</a><button className="button button-dark" type="button" onClick={()=>setShowLocationPicker(false)}>Guardar ubicación</button></div></section></div>}
-        <label>Notas internas<textarea rows={2} value={form.description} onChange={(event)=>setForm({...form,description:event.target.value})} placeholder="Detalles acordados para esta orden"/></label><section className="panel"><div className="panel-heading"><div><span className="eyebrow">BRIEF DEL TRABAJO</span><h3>Descripción e indicaciones</h3></div></div><RichTextEditor label="Descripción enriquecida" value={clientBriefHtml} onChange={setClientBriefHtml} minHeight={150} placeholder="Describe el diseño, materiales, ubicación, acabados o solicitudes del cliente…"/></section>{form.quoteId&&<CommercialAssetsGallery kind="quote" documentId={form.quoteId}/>}<CommercialAssetsEditor value={saleAssets} onChange={setSaleAssets} label="Fotos del sitio, referencias y diseños"/>
+        <label>Notas internas<textarea rows={2} value={form.description} onChange={(event)=>setForm({...form,description:event.target.value})} placeholder="Detalles acordados para esta orden"/></label><section className="panel"><div className="panel-heading"><div><span className="eyebrow">BRIEF DEL TRABAJO</span><h3>Descripción e indicaciones</h3></div></div><RichTextEditor label="Descripción enriquecida" value={clientBriefHtml} onChange={setClientBriefHtml} minHeight={150} placeholder="Describe el diseño, materiales, ubicación, acabados o solicitudes del cliente…"/></section>{form.quoteId&&<CommercialAssetsGallery kind="quote" documentId={form.quoteId}/>}{saleAssetsRecoveryNotice&&<UiNotice tone={saleAssetsRecoveryStatus==='error'?'warning':'info'} title={saleAssetsRecoveryStatus==='error'?'Adjuntos conservados localmente':'Adjuntos recuperados'}><p>{saleAssetsRecoveryNotice}</p></UiNotice>}{saleAssetsRecoveryStatus==='loading'?<UiNotice tone="info" title="Recuperando adjuntos"><p>Estoy comprobando los archivos guardados antes de habilitar otra venta.</p></UiNotice>:<CommercialAssetsEditor value={saleAssets} onChange={handleSaleAssetsChange} label="Fotos del sitio, referencias y diseños"/>}
           <div className="pos-step-actions"><button className="button button-outline" type="button" onClick={()=>setCheckoutStep('order')}>Volver al pedido</button><button className="button button-dark" type="button" onClick={continueToPayment}>Revisar y cobrar <ChevronRight size={15}/></button></div>
         </section>}
         {checkoutStep==='payment'&&<section className="pos-checkout-review" aria-label="Revisión antes de confirmar">
@@ -2433,30 +2724,37 @@ export function PosPage() {
         </section>
         {activeParkedOrderId&&<div className="pos-parked-active"><span>ORDEN RECUPERADA</span><b>Se conserva en espera hasta confirmar la venta.</b></div>}
         <div className="pos-submit-actions">
-          <button className="button button-outline" type="button" disabled={parking||pendingSaleRecoveryMode||Boolean(activeParkedOrderId)||(!form.quoteId&&!cart.length)||(!form.quoteId&&taxConfigurationStatus!=='ready')} onClick={parkCurrentOrder}>{activeParkedOrderId?'Ya está en espera':parking?'Guardando…':'Guardar en espera'} <ClipboardList size={15}/></button>
+          <button className="button button-outline" type="button" disabled={parking||(pendingSaleRecoveryMode&&!activeParkedOrderId)||(!form.quoteId&&!cart.length)||(!form.quoteId&&taxConfigurationStatus!=='ready')} onClick={parkCurrentOrder}>{parking?'Guardando…':activeParkedOrderId?'Actualizar orden en espera':'Guardar en espera'} <ClipboardList size={15}/></button>
           {checkoutStep==='order'?<button className="button button-dark" type="button" onClick={advanceFromOrder}>{requiresWorkDetails?'Ir a detalles':'Revisar y cobrar'} <ChevronRight size={15}/></button>:checkoutStep==='details'?<button className="button button-dark" type="button" onClick={continueToPayment}>Revisar y cobrar <ChevronRight size={15}/></button>:<button className="button button-dark form-submit" type="submit" disabled={!canSubmitSale}>{savingSale?'Guardando venta…':'Confirmar orden'} <Check size={16}/></button>}
         </div>
         {submitBlockReason&&<p className="pos-submit-guidance" role="status">{submitBlockReason}</p>}
         </aside>
       </form>
-      <section className="panel pos-parked-panel"><div className="panel-heading"><div><span className="eyebrow">ÓRDENES RECUPERABLES</span><h2>En espera</h2></div><span className="muted-count">{parkedOrders.length} órdenes</span></div>{parkedOrders.length===0?<EmptyState icon={ClipboardList} title="No hay órdenes en espera" text="Guarda aquí un carrito o cotización para continuarla desde esta sucursal. No reserva stock."/>:<div className="activity-list">{parkedOrders.map(order=>{const payload=order.payload||{};const customerName=payload.form?.customer||payload.form?.quoteId&&centralQuotes.find(quote=>quote.id===payload.form.quoteId)?.customer_name||'Sin cliente';const orderIsOpen=activeParkedOrderId===order.id;const canManageOrderBranch=parkedManagerAccess.all||parkedManagerAccess.branchIds.includes(order.branch_id);const canDeleteOrder=order.created_by===user?.id||canManageOrderBranch;return <article className="sale-activity pos-parked-card" key={order.id}><div className="sale-row"><span className="sale-icon"><ClipboardList size={17}/></span><span><b>{customerName}</b><small>{branchNames[order.branch_id]||'Sucursal'} · {new Date(order.created_at).toLocaleString('es-EC',{dateStyle:'short',timeStyle:'short'})}</small></span><strong>{formatMoney(order.total)}</strong></div><div className="sale-payment-summary"><span>{payload.cart?.length|| (payload.form?.quoteId?'Cotización aprobada':'')} artículo(s)</span><span>Guardada por <b>{order.created_by===user?.id?'ti':'el equipo'}</b></span></div><div className="pos-parked-actions"><button className="button button-outline" type="button" disabled={Boolean(deletingParkedOrderId)} onClick={()=>resumeParkedOrder(order)}>Recuperar orden</button>{canDeleteOrder&&(orderIsOpen?<span className="pos-parked-open-badge" title="Confirma la venta o descarta esta orden abierta antes de eliminarla">Abierta en el POS</span>:<button className="button button-outline pos-parked-delete" type="button" disabled={Boolean(deletingParkedOrderId)} aria-label={`Eliminar orden de ${customerName}`} onClick={()=>deleteParkedOrder(order)}><Trash2 size={14} aria-hidden="true"/>{deletingParkedOrderId===order.id?'Eliminando…':'Eliminar orden'}</button>)}</div></article>;})}</div>}</section>
-      <section className="panel pos-recent-panel"><div className="panel-heading"><div><span className="eyebrow">CAJA DEL DÍA · {branchName}</span><h2>Ventas confirmadas</h2></div><span className="muted-count">{posSalesStatus==='ready'?`${salesToday.length} registros`:posSalesStatus==='loading'?'Consultando…':posSalesStatus==='restricted'?'Acceso limitado':'Error de consulta'}</span></div>
-        {posSalesStatus==='ready'&&salesToday.length>0&&<div className="pos-recent-toolbar">
-          <div className="search-input pos-recent-search"><Search size={14}/><input type="search" value={recentSalesQuery} onChange={(e)=>setRecentSalesQuery(e.target.value)} placeholder="Buscar cliente, código VEN o producto…" aria-label="Buscar en ventas de hoy"/></div>
-          <div className="pos-recent-filter-pills" role="group" aria-label="Filtrar ventas de hoy">
-            <button type="button" className={recentSalesFilter==='all'?'is-active':''} onClick={()=>setRecentSalesFilter('all')}>Todas ({salesToday.length})</button>
-            <button type="button" className={recentSalesFilter==='balance'?'is-active':''} onClick={()=>setRecentSalesFilter('balance')}>Con saldo ({salesToday.filter((s:any)=>Number(s.balance)>0).length})</button>
-            <button type="button" className={recentSalesFilter==='paid'?'is-active':''} onClick={()=>setRecentSalesFilter('paid')}>Pagadas ({salesToday.filter((s:any)=>!(Number(s.balance)>0)).length})</button>
+      <section className="panel pos-parked-panel">
+        <div className="panel-heading"><div><span className="eyebrow">ÓRDENES RECUPERABLES</span><h2>En espera</h2></div><span className="muted-count">{filteredParkedOrders.length} visibles</span></div>
+        <div className="pos-parked-toolbar"><div className="search-input"><Search size={14}/><input type="search" value={parkedSearchQuery} onChange={(event)=>setParkedSearchQuery(event.target.value)} placeholder="Buscar cliente, cotización o sucursal…" aria-label="Buscar órdenes en espera"/></div></div>
+        {parkedOrders.length===0?<EmptyState icon={ClipboardList} title="No hay órdenes en espera" text="Guarda aquí un carrito o cotización para continuarla desde una sucursal. No reserva existencias."/>:filteredParkedOrders.length===0?<div className="pos-sales-state">No hay órdenes que coincidan con la búsqueda.</div>:<div className="activity-list">{filteredParkedOrders.map(order=>{const payload=order.payload||{};const quote=centralQuotes.find((candidate:any)=>candidate.id===payload.form?.quoteId);const customerName=payload.form?.customer||quote?.customer_name||'Sin cliente';const orderIsOpen=activeParkedOrderId===order.id;const canManageOrderBranch=parkedManagerAccess.all||parkedManagerAccess.branchIds.includes(order.branch_id);const canDeleteOrder=order.created_by===user?.id||canManageOrderBranch;return <article className="sale-activity pos-parked-card" key={order.id}><div className="sale-row"><span className="sale-icon"><ClipboardList size={17}/></span><span><b>{customerName}</b><small>{branchNames[order.branch_id]||'Sucursal'} · Actualizada {new Date(order.updated_at||order.created_at).toLocaleString('es-EC',{dateStyle:'short',timeStyle:'short'})}</small></span><strong>{formatMoney(order.total)}</strong></div><div className="sale-payment-summary"><span>{payload.cart?.length|| (payload.form?.quoteId?'Cotización aprobada':'')} artículo(s)</span><span>Guardada por <b>{order.created_by===user?.id?'ti':'el equipo'}</b></span></div><div className="pos-parked-actions">{orderIsOpen?<span className="pos-parked-open-badge">Abierta en el POS · guarda cambios desde el formulario</span>:<button className="button button-outline" type="button" disabled={Boolean(deletingParkedOrderId)} onClick={()=>resumeParkedOrder(order)}>Recuperar orden</button>}{canDeleteOrder&&!orderIsOpen&&<button className="button button-outline pos-parked-delete" type="button" disabled={Boolean(deletingParkedOrderId)} aria-label={`Eliminar orden de ${customerName}`} onClick={()=>deleteParkedOrder(order)}><Trash2 size={14} aria-hidden="true"/>{deletingParkedOrderId===order.id?'Eliminando…':'Eliminar orden'}</button>}</div></article>;})}</div>}
+        {parkedOrdersHasMore&&<div className="pos-recent-pagination"><span>Se cargaron {parkedOrders.length} órdenes accesibles</span><button type="button" className="button button-outline" onClick={()=>void refreshParkedOrders(true)}>Cargar más órdenes</button></div>}
+      </section>
+      <section className="panel pos-recent-panel"><div className="panel-heading"><div><span className="eyebrow">HISTORIAL Y SALDOS · {branchName}</span><h2>Ventas confirmadas</h2></div><span className="muted-count">{posSalesStatus==='ready'?`${posSalesSummary.totalCount} registros`:posSalesStatus==='loading'?'Consultando…':posSalesStatus==='restricted'?'Acceso limitado':'Error de consulta'}</span></div>
+        <div className="pos-recent-toolbar">
+          <div className="search-input pos-recent-search"><Search size={14}/><input type="search" value={recentSalesQuery} onChange={(e)=>{setRecentSalesQuery(e.target.value);setPosSalesPage(0);}} placeholder="Buscar cliente, código VEN, nota o producto…" aria-label="Buscar ventas de la sucursal"/></div>
+          <label className="pos-recent-period"><span>Periodo</span><select value={recentSalesPeriod} onChange={(event)=>{setRecentSalesPeriod(event.target.value as typeof recentSalesPeriod);setPosSalesPage(0);}}><option value="today">Hoy</option><option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option><option value="all">Todo el historial</option></select></label>
+          <div className="pos-recent-filter-pills" role="group" aria-label="Filtrar ventas por saldo">
+            <button type="button" className={recentSalesFilter==='all'?'is-active':''} aria-pressed={recentSalesFilter==='all'} onClick={()=>{setRecentSalesFilter('all');setPosSalesPage(0);}}>Todas</button>
+            <button type="button" className={recentSalesFilter==='balance'?'is-active':''} aria-pressed={recentSalesFilter==='balance'} onClick={()=>{setRecentSalesFilter('balance');setPosSalesPage(0);}}>Con saldo</button>
+            <button type="button" className={recentSalesFilter==='paid'?'is-active':''} aria-pressed={recentSalesFilter==='paid'} onClick={()=>{setRecentSalesFilter('paid');setPosSalesPage(0);}}>Pagadas</button>
           </div>
-        </div>}
-        {posSalesStatus==='loading'?<div className="pos-sales-state" role="status">Consultando las ventas de hoy para {branchName}…</div>:posSalesStatus==='restricted'?<div className="pos-sales-state">Tu perfil no tiene permiso para consultar ventas.</div>:posSalesStatus==='error'?<div className="pos-sales-state" role="alert"><span>No se pudieron cargar las ventas de esta sucursal.</span><button className="button button-outline" type="button" onClick={()=>void refreshPOSDaySales()}>Reintentar</button></div>:salesToday.length===0?<EmptyState icon={Wallet} title="Todavía no hay ventas" text={`Las ventas confirmadas de hoy en ${branchName} aparecerán aquí.`}/>:filteredRecentSales.length===0?<div className="pos-sales-state"><span>No hay ventas que coincidan con el filtro actual.</span><button className="button button-outline" type="button" onClick={()=>{setRecentSalesQuery('');setRecentSalesFilter('all');}}>Ver todas</button></div>:<div className="activity-list">{filteredRecentSales.map((sale)=><article className="sale-activity" key={sale.id}><div className="sale-row"><span className="sale-icon"><ShoppingCart size={17}/></span><span><b>{sale.customer||sale.description||'Venta'}</b><small>{sale.method} · {new Date(sale.date).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})} · {sale.code}</small></span><strong>{formatMoney(sale.total)}</strong></div><div className="sale-payment-summary"><span>Abonado: <b>{formatMoney(sale.paid||0)}</b></span><span className={Number(sale.balance)>0?'pos-sale-balance-tag is-due':'pos-sale-balance-tag is-paid'}>Saldo: <b>{formatMoney(sale.balance||0)}</b></span>{sale.urgent&&<span className="inventory-status pending">Compra urgente pendiente</span>}</div><div className="pos-sale-card-actions"><button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>setDetailTarget({kind:'sale',id:sale.id,code:sale.code})}>Ver ficha completa</button><button className="button button-outline pos-sale-detail-trigger pos-sale-edit-btn" type="button" onClick={()=>setEditingSaleId(sale.id)}><Pencil size={13}/> Editar venta</button>{Number(sale.balance)>0&&<button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>{setPaymentTarget(paymentTarget===sale.id?null:sale.id);setPaymentForm({amount:String(sale.balance),method:'Efectivo',reference:'',note:''});}}>Registrar abono</button>}{canDeleteSales&&<button className="button button-outline pos-sale-detail-trigger" style={{color:'#dc2626',borderColor:'rgba(239,68,68,0.45)'}} type="button" onClick={()=>setAdminDeleteTarget({kind:'sale',saleId:sale.id,saleCode:sale.code,customerName:sale.customer,total:sale.total,status:sale.status,paymentMethod:sale.method,createdAt:sale.date})}><Trash2 size={13}/> Eliminar</button>}</div>{Number(sale.balance)>0&&paymentTarget===sale.id&&<form className="payment-form" onSubmit={(event)=>registerBalancePayment(event,sale)}>
-          <label>{paymentForm.method==='Efectivo'?'Monto recibido':'Monto aplicado'}<input type="number" min={0.01} max={paymentForm.method==='Efectivo'?undefined:sale.balance} step={0.01} required value={paymentForm.amount} onChange={(event)=>setPaymentForm({...paymentForm,amount:event.target.value})}/></label>
-          {paymentForm.method==='Efectivo'&&<small className="pos-balance-change-preview">Se aplicará {formatMoney(Math.min(Number(paymentForm.amount)||0,Number(sale.balance)))} · Vuelto {formatMoney(Math.max(0,(Number(paymentForm.amount)||0)-Number(sale.balance)))}</small>}
-          <label>Forma de pago<select value={paymentForm.method} onChange={(event)=>setPaymentForm({...paymentForm,method:event.target.value})}><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></label>
-          {(paymentForm.method==='Transferencia'||paymentForm.method==='Tarjeta')&&<label>Referencia (opcional)<input value={paymentForm.reference} onChange={(event)=>setPaymentForm({...paymentForm,reference:event.target.value})} placeholder="Código o últimos dígitos"/></label>}
-          <label>Nota (opcional)<input value={paymentForm.note} onChange={(event)=>setPaymentForm({...paymentForm,note:event.target.value})} placeholder="Detalle del abono"/></label>
-          <button className="button button-dark" type="submit" disabled={savingBalancePayment===sale.id}>{savingBalancePayment===sale.id?'Guardando…':'Guardar abono'}</button>
-        </form>}</article>)}</div>}
+        </div>
+        {balancePaymentRecoveryMatches&&balancePaymentRecovery.status==='error'&&<div className="pos-sales-state" role="alert">No se puede registrar otro abono hasta resolver la recuperación guardada: {balancePaymentRecovery.error}</div>}{posSalesStatus==='loading'?<div className="pos-sales-state" role="status">Consultando ventas para {branchName}…</div>:posSalesStatus==='restricted'?<div className="pos-sales-state">Tu perfil no tiene permiso para consultar ventas.</div>:posSalesStatus==='error'?<div className="pos-sales-state" role="alert"><span>No se pudieron cargar las ventas de esta sucursal.</span><button className="button button-outline" type="button" onClick={()=>void refreshPOSDaySales()}>Reintentar</button></div>:salesToday.length===0?<EmptyState icon={Wallet} title="Todavía no hay ventas" text={`Las ventas confirmadas del periodo seleccionado en ${branchName} aparecerán aquí.`}/>:filteredRecentSales.length===0?<div className="pos-sales-state"><span>No hay ventas que coincidan con el filtro actual.</span><button className="button button-outline" type="button" onClick={()=>{setRecentSalesQuery('');setRecentSalesFilter('all');setPosSalesPage(0);}}>Ver todas</button></div>:<div className="activity-list">{filteredRecentSales.map((sale)=><article className="sale-activity" key={sale.id}><div className="sale-row"><span className="sale-icon"><ShoppingCart size={17}/></span><span><b>{sale.customer||sale.description||'Venta'}</b><small>{pendingBalancePaymentBySale[sale.id]?<>Abono pendiente · {sale.code} · {new Date(sale.date).toLocaleDateString('es-EC')}</>:<>{sale.method} · {new Date(sale.date).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})} · {sale.code}</>}</small></span><strong>{formatMoney(sale.adjustedTotal)}</strong></div>{(Number(sale.returnedValue)>0||Number(sale.settledRefund)>0)&&<div className="sale-payment-summary pos-sale-return-summary"><span>Venta original: <b>{formatMoney(sale.total)}</b></span>{Number(sale.returnedValue)>0&&<span>Devoluciones: <b>−{formatMoney(sale.returnedValue)}</b></span>}{Number(sale.settledRefund)>0&&<span>Reembolsado: <b>−{formatMoney(sale.settledRefund)}</b></span>}</div>}<div className="sale-payment-summary"><span>Pagado neto: <b>{formatMoney(sale.paid||0)}</b></span><span className={pendingBalancePaymentBySale[sale.id]?'pos-sale-balance-tag is-due':Number(sale.balance)>0?'pos-sale-balance-tag is-due':'pos-sale-balance-tag is-paid'}>Saldo{pendingBalancePaymentBySale[sale.id]?' consultado':''}: <b>{formatMoney(sale.balance||0)}</b></span>{Number(sale.customerCredit)>0&&<span className="pos-sale-balance-tag is-paid">Saldo a favor: <b>{formatMoney(sale.customerCredit)}</b></span>}{pendingBalancePaymentBySale[sale.id]&&<span className="inventory-status pending">Abono por confirmar</span>}{sale.urgent&&<span className="inventory-status pending">Compra urgente pendiente</span>}</div><div className="pos-sale-card-actions"><button className="button button-outline pos-sale-detail-trigger" type="button" onClick={()=>setDetailTarget({kind:'sale',id:sale.id,code:sale.code})}>Ver ficha completa</button><button className="button button-outline pos-sale-detail-trigger pos-sale-edit-btn" type="button" onClick={()=>setEditingSaleId(sale.id)}><Pencil size={13}/> Editar venta</button>{(Number(sale.balance)>0||pendingBalancePaymentBySale[sale.id])&&<button className="button button-outline pos-sale-detail-trigger" type="button" disabled={!balancePaymentRecoveryReady} onClick={()=>toggleBalancePayment(sale)}>{pendingBalancePaymentBySale[sale.id]?'Reintentar abono pendiente':'Registrar abono'}</button>}{canDeleteSales&&<button className="button button-outline pos-sale-detail-trigger" style={{color:'#dc2626',borderColor:'rgba(239,68,68,0.45)'}} type="button" onClick={()=>setAdminDeleteTarget({kind:'sale',saleId:sale.id,saleCode:sale.code,customerName:sale.customer,total:sale.total,status:sale.status,paymentMethod:sale.method,createdAt:sale.date})}><Trash2 size={13}/> Eliminar</button>}</div>{(Number(sale.balance)>0||pendingBalancePaymentBySale[sale.id])&&paymentTarget===sale.id&&<form className="payment-form" onSubmit={(event)=>registerBalancePayment(event,sale)}>{pendingBalancePaymentBySale[sale.id]&&<p className="pos-calculation-warning" role="status">Este abono conserva el intento original para evitar duplicarlo. Reinténtalo con los mismos datos; no edites el monto, método, referencia ni nota.</p>}
+          <label>{paymentForm.method==='Efectivo'?'Monto recibido':'Monto aplicado'}<input type="number" min={0.01} max={pendingBalancePaymentBySale[sale.id]?undefined:(paymentForm.method==='Efectivo'?undefined:sale.balance)} step={0.01} required disabled={Boolean(pendingBalancePaymentBySale[sale.id])} value={paymentForm.amount} onChange={(event)=>setPaymentForm({...paymentForm,amount:event.target.value})}/></label>
+          {paymentForm.method==='Efectivo'&&<small className="pos-balance-change-preview">{pendingBalancePaymentBySale[sale.id]?<>Se aplicará {formatMoney(pendingBalancePaymentBySale[sale.id].appliedCents/100)} · Vuelto {formatMoney(Math.max(0,pendingBalancePaymentBySale[sale.id].receivedCents-pendingBalancePaymentBySale[sale.id].appliedCents)/100)}</>:<>Se aplicará {formatMoney(Math.min(Number(paymentForm.amount)||0,Number(sale.balance)))} · Vuelto {formatMoney(Math.max(0,(Number(paymentForm.amount)||0)-Number(sale.balance)))}</>}</small>}
+          <label>Forma de pago<select disabled={Boolean(pendingBalancePaymentBySale[sale.id])} value={paymentForm.method} onChange={(event)=>setPaymentForm({...paymentForm,method:event.target.value as PendingPOSBalancePayment['method']})}><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></label>
+          {(paymentForm.method==='Transferencia'||paymentForm.method==='Tarjeta')&&<label>Referencia (opcional)<input disabled={Boolean(pendingBalancePaymentBySale[sale.id])} value={paymentForm.reference} onChange={(event)=>setPaymentForm({...paymentForm,reference:event.target.value})} placeholder="Código o últimos dígitos"/></label>}
+          <label>Nota (opcional)<input disabled={Boolean(pendingBalancePaymentBySale[sale.id])} value={paymentForm.note} onChange={(event)=>setPaymentForm({...paymentForm,note:event.target.value})} placeholder="Detalle del abono"/></label>
+          <button className="button button-dark" type="submit" disabled={savingBalancePayment===sale.id||!balancePaymentRecoveryReady}>{savingBalancePayment===sale.id?'Guardando…':pendingBalancePaymentBySale[sale.id]?'Reintentar abono pendiente':'Guardar abono'}</button>
+         </form>}</article>)}</div>}
+        {posSalesStatus==='ready'&&posSalesHasMore&&<div className="pos-recent-pagination"><span>Mostrando {posSalesPage*40+salesToday.length} de {posSalesSummary.totalCount}</span><button type="button" className="button button-outline" onClick={()=>setPosSalesPage((page)=>page+1)}>Cargar más ventas</button></div>}
       </section>
     </div><div className="notice-box"><span><CircleHelp size={17}/></span><div><b>Antes de confirmar</b><p>Los vínculos conectan productos con variantes de inventario; la disponibilidad depende de un conteo físico registrado por sucursal. Si falta el conteo o la existencia no alcanza, el POS lo muestra como pendiente y permite marcar la compra urgente al confirmar. Las órdenes en espera no reservan existencias y esta pantalla no emite comprobantes tributarios.</p></div></div>
      {isExecutivePreviewOpen && <ExecutiveQuotePdfModal

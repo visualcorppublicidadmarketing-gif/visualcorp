@@ -5,12 +5,15 @@ import {
   createMonogramLayer,
   createMonogramPreset,
   DEFAULT_MONOGRAM_PROJECT,
+  formatMonogramLength,
+  millimetersToMonogramUnit,
   MONOGRAM_GEOMETRY_LIMITATION,
   MONOGRAM_LIMITS,
+  monogramUnitToMillimeters,
   normalizeMonogramProject,
   validateMonogramProject,
 } from './monogramModel';
-import type { MonogramElement, MonogramProject } from './monogramModel';
+import type { MonogramDisplayUnit, MonogramElement, MonogramProject } from './monogramModel';
 import { createMonogramOutline, createMonogramSvg, estimateOutlineBounds, loadMonogramFont } from './monogramVector';
 import type { MonogramOutline } from './monogramVector';
 import { Monogram2DStage } from './Monogram2DStage';
@@ -47,6 +50,10 @@ function layerName(element: MonogramElement, index: number) {
   return element.text.trim() || `Texto ${index + 1}`;
 }
 
+function numberInputValue(value: number) {
+  return Number(value.toFixed(3)).toString();
+}
+
 interface MonogramNumberFieldProps {
   label: string;
   value: number;
@@ -57,21 +64,25 @@ interface MonogramNumberFieldProps {
 }
 
 function MonogramNumberField({ label, value, min, max, step, onCommit }: MonogramNumberFieldProps) {
-  const [draft, setDraft] = useState(String(value));
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [draft, setDraft] = useState(numberInputValue(value));
 
-  useEffect(() => { setDraft(String(value)); }, [value]);
+  useEffect(() => {
+    if (!inputRef.current || document.activeElement !== inputRef.current) setDraft(numberInputValue(value));
+  }, [value]);
 
   const commitDraft = () => {
     const parsed = Number(draft);
     const normalized = Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : value;
     onCommit(normalized);
-    setDraft(String(normalized));
+    setDraft(numberInputValue(normalized));
   };
 
   return (
     <label className="monogram__field">
       {label}
       <input
+        ref={inputRef}
         type="number"
         min={min}
         max={max}
@@ -119,12 +130,30 @@ export function MonogramGenerator() {
   }, [project]);
 
   const selected = project.elements.find((element) => element.id === selectedId) ?? null;
-  const outlines = useMemo<MonogramOutline[]>(() => {
-    if (!font) return [];
-    return project.elements
-      .map((element) => createMonogramOutline(font, project.height, element))
-      .filter((outline): outline is MonogramOutline => outline !== null);
+  const displayUnit = project.displayUnit;
+  const displayLength = (valueMm: number) => millimetersToMonogramUnit(valueMm, displayUnit);
+  const displayStep = displayUnit === 'cm' ? 0.01 : 0.1;
+  const saveDisplayUnit = (unit: MonogramDisplayUnit) => {
+    setProject((current) => normalizeMonogramProject({ ...current, displayUnit: unit }));
+  };
+  const outlineResult = useMemo(() => {
+    if (!font) return { outlines: [] as MonogramOutline[], errors: [] as string[] };
+    const outlines: MonogramOutline[] = [];
+    const errors: string[] = [];
+
+    project.elements.forEach((element) => {
+      try {
+        const outline = createMonogramOutline(font, project.height, element);
+        if (outline) outlines.push(outline);
+      } catch {
+        const text = element.text.trim();
+        errors.push(`«${text || 'Texto vacío'}»: no se pudo convertir a contornos. Revisa los caracteres de esta capa.`);
+      }
+    });
+
+    return { outlines, errors };
   }, [font, project]);
+  const { outlines, errors: outlineErrors } = outlineResult;
   const validation = useMemo(() => validateMonogramProject(project), [project]);
   const outsideWarnings = font
     ? outlines.flatMap((outline) => {
@@ -139,7 +168,8 @@ export function MonogramGenerator() {
     })
     : validation.warnings.filter((warning) => warning.code === 'outside-artboard');
   const missingCharacters = Array.from(new Set(outlines.flatMap((outline) => outline.missingCharacters)));
-  const exportReady = Boolean(font && outlines.length > 0 && missingCharacters.length === 0);
+  const usedSimpleShaping = outlines.some((outline) => outline.usedSimpleShaping);
+  const exportReady = Boolean(font && outlines.length > 0 && missingCharacters.length === 0 && outlineErrors.length === 0);
   const visibleDepth = outlines.length > 0
     ? Number(outlines.reduce((sum, outline) => sum + outline.depth, 0).toFixed(1))
     : 0;
@@ -161,7 +191,7 @@ export function MonogramGenerator() {
   };
 
   const choosePreset = (id: 'initial' | 'name-initial') => {
-    const next = createMonogramPreset(id);
+    const next = { ...createMonogramPreset(id), displayUnit: project.displayUnit };
     setProject(next);
     setSelectedId(next.elements[0]?.id ?? null);
     setStatus(`Preajuste «${next.title}» aplicado.`);
@@ -276,7 +306,7 @@ export function MonogramGenerator() {
               {project.elements.map((element, index) => (
                 <div className={`monogram__layer-row${element.id === selectedId ? ' is-active' : ''}`} key={element.id} role="listitem">
                   <button type="button" className="monogram__layer-select" aria-pressed={element.id === selectedId} onClick={() => setSelectedId(element.id)}>
-                    <span className="monogram__layer-icon"><Type size={15} /></span><span><strong>{layerName(element, index)}</strong><small>{element.fontSize} mm · DM Sans</small></span>
+                    <span className="monogram__layer-icon"><Type size={15} /></span><span><strong>{layerName(element, index)}</strong><small>{formatMonogramLength(element.fontSize, displayUnit)} {displayUnit} · DM Sans</small></span>
                   </button>
                   <button type="button" className="monogram__icon-action" onClick={() => { setSelectedId(element.id); duplicateLayer(element); }} aria-label={`Duplicar ${layerName(element, index)}`} title="Duplicar capa"><Copy size={14} /></button>
                   <button type="button" className="monogram__icon-action is-danger" onClick={() => removeLayerById(element.id)} aria-label={`Eliminar ${layerName(element, index)}`} title="Eliminar capa"><Trash2 size={14} /></button>
@@ -293,10 +323,10 @@ export function MonogramGenerator() {
               <input type="text" maxLength={MONOGRAM_LIMITS.maxTextLength} value={selected.text} onChange={(event) => updateLayer(selected.id, { text: event.target.value })} placeholder="Escribe un nombre o inicial" />
             </label>
             <div className="monogram__field-grid">
-              <MonogramNumberField label="Tamaño de letra (mm)" min={MONOGRAM_LIMITS.minFontSize} max={MONOGRAM_LIMITS.maxFontSize} step={1} value={selected.fontSize} onCommit={(fontSize) => updateLayer(selected.id, { fontSize })} />
-              <MonogramNumberField label="Profundidad 3D (mm)" min={MONOGRAM_LIMITS.minDepth} max={MONOGRAM_LIMITS.maxDepth} step={0.1} value={selected.depth} onCommit={(depth) => updateLayer(selected.id, { depth })} />
-              <MonogramNumberField label="Posición X (mm)" min={MONOGRAM_LIMITS.minCoordinate} max={MONOGRAM_LIMITS.maxCoordinate} step={1} value={selected.x} onCommit={(x) => updateLayer(selected.id, { x })} />
-              <MonogramNumberField label="Línea base Y (mm)" min={MONOGRAM_LIMITS.minCoordinate} max={MONOGRAM_LIMITS.maxCoordinate} step={1} value={selected.y} onCommit={(y) => updateLayer(selected.id, { y })} />
+              <MonogramNumberField label={`Tamaño de letra (${displayUnit})`} min={displayLength(MONOGRAM_LIMITS.minFontSize)} max={displayLength(MONOGRAM_LIMITS.maxFontSize)} step={displayStep} value={displayLength(selected.fontSize)} onCommit={(fontSize) => updateLayer(selected.id, { fontSize: monogramUnitToMillimeters(fontSize, displayUnit) })} />
+              <MonogramNumberField label={`Profundidad 3D (${displayUnit})`} min={displayLength(MONOGRAM_LIMITS.minDepth)} max={displayLength(MONOGRAM_LIMITS.maxDepth)} step={displayStep} value={displayLength(selected.depth)} onCommit={(depth) => updateLayer(selected.id, { depth: monogramUnitToMillimeters(depth, displayUnit) })} />
+              <MonogramNumberField label={`Posición X (${displayUnit})`} min={displayLength(MONOGRAM_LIMITS.minCoordinate)} max={displayLength(MONOGRAM_LIMITS.maxCoordinate)} step={displayStep} value={displayLength(selected.x)} onCommit={(x) => updateLayer(selected.id, { x: monogramUnitToMillimeters(x, displayUnit) })} />
+              <MonogramNumberField label={`Línea base Y (${displayUnit})`} min={displayLength(MONOGRAM_LIMITS.minCoordinate)} max={displayLength(MONOGRAM_LIMITS.maxCoordinate)} step={displayStep} value={displayLength(selected.y)} onCommit={(y) => updateLayer(selected.id, { y: monogramUnitToMillimeters(y, displayUnit) })} />
             </div>
             <label className="monogram__field monogram__rotation">Rotación <span>{selected.rotation}°</span>
               <input type="range" min={MONOGRAM_LIMITS.minRotation} max={MONOGRAM_LIMITS.maxRotation} step="1" value={selected.rotation} onChange={(event) => updateLayer(selected.id, { rotation: Number(event.target.value) })} />
@@ -307,11 +337,17 @@ export function MonogramGenerator() {
           <section className="monogram__card">
             <div className="monogram__section-heading"><div><span className="monogram__eyebrow">04 · MEDIDAS DEL DISEÑO</span><h2>Área de trabajo</h2></div></div>
             <label className="monogram__field">Nombre del diseño<input type="text" maxLength={MONOGRAM_LIMITS.maxTitleLength} value={project.title} onChange={(event) => setProject((current) => normalizeMonogramProject({ ...current, title: event.target.value }))} /></label>
+            <label className="monogram__field">Unidad de visualización
+              <select value={displayUnit} onChange={(event) => saveDisplayUnit(event.target.value === 'cm' ? 'cm' : 'mm')} aria-label="Unidad de visualización de medidas">
+                <option value="mm">Milímetros (mm)</option>
+                <option value="cm">Centímetros (cm)</option>
+              </select>
+            </label>
             <div className="monogram__field-grid">
-              <MonogramNumberField label="Ancho (mm)" min={MONOGRAM_LIMITS.minArtboard} max={MONOGRAM_LIMITS.maxArtboard} step={1} value={project.width} onCommit={(width) => setProject((current) => normalizeMonogramProject({ ...current, width }))} />
-              <MonogramNumberField label="Alto (mm)" min={MONOGRAM_LIMITS.minArtboard} max={MONOGRAM_LIMITS.maxArtboard} step={1} value={project.height} onCommit={(height) => setProject((current) => normalizeMonogramProject({ ...current, height }))} />
+              <MonogramNumberField label={`Ancho (${displayUnit})`} min={displayLength(MONOGRAM_LIMITS.minArtboard)} max={displayLength(MONOGRAM_LIMITS.maxArtboard)} step={displayStep} value={displayLength(project.width)} onCommit={(width) => setProject((current) => normalizeMonogramProject({ ...current, width: monogramUnitToMillimeters(width, displayUnit) }))} />
+              <MonogramNumberField label={`Alto (${displayUnit})`} min={displayLength(MONOGRAM_LIMITS.minArtboard)} max={displayLength(MONOGRAM_LIMITS.maxArtboard)} step={displayStep} value={displayLength(project.height)} onCommit={(height) => setProject((current) => normalizeMonogramProject({ ...current, height: monogramUnitToMillimeters(height, displayUnit) }))} />
             </div>
-            <MonogramNumberField label="Profundidad predeterminada (mm)" min={MONOGRAM_LIMITS.minDepth} max={MONOGRAM_LIMITS.maxDepth} step={0.1} value={project.thickness} onCommit={(thickness) => setProject((current) => normalizeMonogramProject({ ...current, thickness }))} />
+            <MonogramNumberField label={`Profundidad predeterminada (${displayUnit})`} min={displayLength(MONOGRAM_LIMITS.minDepth)} max={displayLength(MONOGRAM_LIMITS.maxDepth)} step={displayStep} value={displayLength(project.thickness)} onCommit={(thickness) => setProject((current) => normalizeMonogramProject({ ...current, thickness: monogramUnitToMillimeters(thickness, displayUnit) }))} />
             <button type="button" className="button button-quiet monogram__reset" onClick={reset}><RotateCcw size={14} /> Reiniciar diseño</button>
           </section>
         </aside>
@@ -323,14 +359,14 @@ export function MonogramGenerator() {
                 <button type="button" aria-pressed={view === '2d'} onClick={() => setView('2d')}>2D · vector</button>
                 <button type="button" aria-pressed={view === '3d'} onClick={() => setView('3d')}>3D · extrusión</button>
               </div>
-              <span className="monogram__dimensions"><Layers3 size={14} /> {project.width} × {project.height} × {visibleDepth} mm</span>
+              <span className="monogram__dimensions"><Layers3 size={14} /> {formatMonogramLength(project.width, displayUnit)} × {formatMonogramLength(project.height, displayUnit)} × {formatMonogramLength(visibleDepth, displayUnit)} {displayUnit}</span>
             </div>
             <div className={`monogram__stage${view === '2d' ? ' is-flat' : ''}`}>
               {view === '2d'
-                ? <Monogram2DStage width={project.width} height={project.height} outlines={outlines} selectedId={selectedId} onSelect={setSelectedId} onMove={moveLayer} />
+                ? <Monogram2DStage width={project.width} height={project.height} displayUnit={displayUnit} outlines={outlines} selectedId={selectedId} onSelect={setSelectedId} onMove={moveLayer} />
                 : <Suspense fallback={<div className="monogram__viewer-loading" role="status">Preparando la vista 3D…</div>}><Monogram3DViewer width={project.width} height={project.height} outlines={outlines} /></Suspense>}
             </div>
-            <div className="monogram__preview-footer"><span>Vista vectorial local · unidades en milímetros</span><span>Flechas mueven 1 mm; Shift + flecha, 10 mm</span></div>
+            <div className="monogram__preview-footer"><span>Geometría y exportación en mm · pantalla en {displayUnit}</span><span>Flechas mueven {displayUnit === 'cm' ? '0,1 cm' : '1 mm'}; Shift + flecha, {displayUnit === 'cm' ? '1 cm' : '10 mm'}</span></div>
           </section>
 
           <section className="monogram__card monogram__export-card">
@@ -345,6 +381,8 @@ export function MonogramGenerator() {
             </div>
             {outsideWarnings.length > 0 && <div className="monogram__validation-warning" role="status"><strong>Revisa el área de trabajo</strong>{outsideWarnings.map((warning) => <p key={`${warning.elementId}-outside`}>{warning.message}</p>)}</div>}
             {missingCharacters.length > 0 && <div className="monogram__validation-warning" role="status"><strong>Caracteres sin glifo en DM Sans</strong><p>{missingCharacters.join(' ')}. Cambia la fuente o el texto antes de exportar.</p></div>}
+            {usedSimpleShaping && <div className="monogram__validation-warning" role="status"><strong>Modo tipográfico simplificado</strong><p>La fuente contiene reglas que el conversor no admite. Se generaron contornos glifo a glifo con kerning, sin sustituciones contextuales ni ligaduras automáticas. Revisa el resultado antes de fabricar.</p></div>}
+            {outlineErrors.length > 0 && <div className="monogram__validation-error" role="alert"><strong>No se pudieron generar algunos contornos</strong>{outlineErrors.map((error) => <p key={error}>{error}</p>)}</div>}
             {validation.errors.map((error) => <p className="monogram__validation-error" key={error}>{error}</p>)}
             {fontError && <p className="monogram__validation-error" role="alert">{fontError}</p>}
             <p className="monogram__status" role="status" aria-live="polite">{status}</p>

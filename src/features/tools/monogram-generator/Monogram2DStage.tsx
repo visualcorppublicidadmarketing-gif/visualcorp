@@ -1,10 +1,13 @@
 import { useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { formatMonogramLength } from './monogramModel';
+import type { MonogramDisplayUnit } from './monogramModel';
 import type { MonogramOutline } from './monogramVector';
 
 interface Monogram2DStageProps {
   width: number;
   height: number;
+  displayUnit: MonogramDisplayUnit;
   outlines: MonogramOutline[];
   selectedId: string | null;
   onSelect: (id: string) => void;
@@ -28,7 +31,7 @@ function svgPoint(event: ReactPointerEvent<SVGSVGElement>, svg: SVGSVGElement) {
   return { x: local.x, y: local.y };
 }
 
-export function Monogram2DStage({ width, height, outlines, selectedId, onSelect, onMove }: Monogram2DStageProps) {
+export function Monogram2DStage({ width, height, displayUnit, outlines, selectedId, onSelect, onMove }: Monogram2DStageProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const dragRef = useRef<DragState | null>(null);
 
@@ -75,13 +78,17 @@ export function Monogram2DStage({ width, height, outlines, selectedId, onSelect,
     onMove(id, move[0], move[1]);
   };
 
+  const unitName = displayUnit === 'cm' ? 'centímetros' : 'milímetros';
+  const normalMove = displayUnit === 'cm' ? '0,1 cm' : '1 mm';
+  const largerMove = displayUnit === 'cm' ? '1 cm' : '10 mm';
+
   return (
     <svg
       ref={svgRef}
       className="monogram__artboard"
       viewBox={`0 0 ${width} ${height}`}
       role="group"
-      aria-label={`Editor 2D de monograma, artboard de ${width} por ${height} milímetros`}
+      aria-label={`Editor 2D de monograma, área de ${formatMonogramLength(width, displayUnit)} por ${formatMonogramLength(height, displayUnit)} ${unitName}`}
       onPointerMove={moveDrag}
       onPointerUp={stopDrag}
       onPointerCancel={stopDrag}
@@ -101,7 +108,7 @@ export function Monogram2DStage({ width, height, outlines, selectedId, onSelect,
             className={`monogram__vector-layer${selected ? ' is-selected' : ''}`}
             role="button"
             tabIndex={0}
-            aria-label={`Capa de texto: ${outline.text || 'vacía'}. Usa flechas para mover; Shift más flecha mueve diez milímetros.`}
+            aria-label={`Capa de texto: ${outline.text || 'vacía'}. Usa flechas para mover ${normalMove}; Shift más flecha mueve ${largerMove}.`}
             aria-pressed={selected}
             onPointerDown={(event) => startDrag(event, outline.id)}
             onKeyDown={(event) => moveByKeyboard(event, outline.id)}

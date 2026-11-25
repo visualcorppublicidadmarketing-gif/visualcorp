@@ -13,6 +13,13 @@ La aplicación mantiene un registro de cambios del equipo en Supabase (`public.i
 
 La tabla tiene políticas RLS por organización, audiencia y rol. Usuarios internos autorizados leen solo publicaciones vigentes para su espacio. `owner`, `admin`, `manager` y `website_admin` pueden gestionar el registro. Los cambios se transmiten con Supabase Realtime. La migración base es `20261022184130_internal_change_log`; el registro inicial de la función y las mejoras recientes se carga con `20261022184223_publish_changelog_feature`.
 
+### Publicación segura desde Codex
+
+- La Edge Function `codex-changelog` acepta únicamente solicitudes `POST` con una firma HMAC-SHA256 válida y una marca de tiempo de hasta cinco minutos. Publica solo en la organización `visual-corp`, crea entradas nuevas y añade la etiqueta `Codex`; no usa el correo del usuario para autenticar ni permite editar o archivar entradas.
+- `verify_jwt = false` es intencional porque la función verifica su propia firma antes de acceder a Supabase. Sin `CODEX_CHANGELOG_HMAC_SECRET`, el endpoint falla de forma cerrada.
+- Para la primera configuración, ejecutar `pwsh -File tools/Publish-CodexChange.ps1 -Initialize -Confirm:$false`. El script guarda el secreto aleatorio en Windows Credential Manager y lo copia al portapapeles sin mostrarlo; pegarlo directamente en Supabase **Project Settings → Edge Functions → Secrets** como `CODEX_CHANGELOG_HMAC_SECRET` y luego limpiar el portapapeles. No copiarlo al chat ni al repositorio.
+- Codex publica con `pwsh -File tools/Publish-CodexChange.ps1 -Publish` y los campos de la entrada. La clave de servicio de Supabase permanece solo en Edge Functions; el secreto HMAC local autoriza únicamente esta ruta. El UUID de cada entrada permite que una repetición de la misma solicitud sea idempotente.
+
 ## Entradas iniciales
 
 - Inventario avanzado y trazable (`483136c`).
@@ -22,7 +29,7 @@ La tabla tiene políticas RLS por organización, audiencia y rol. Usuarios inter
 - POS: carrito de varios artículos con búsqueda y filtros, imágenes de catálogo, total en vivo, selección de cliente y cotización aprobada; publicación en Supabase pendiente de acceso autenticado (`Fase 3 parcial`, 2026-10-22).
 - POS: cobro dividido entre efectivo, transferencia, tarjeta u otro; saldo pendiente visible y posibilidad explícita de dejar la orden a crédito. Cobros en efectivo requieren turno de caja abierto (`Fase 3 parcial`, 2026-10-23).
 
-Las futuras publicaciones las redacta el equipo desde el panel; la lista no se rellena automáticamente a partir de commits para evitar publicar cambios sin revisar su alcance o impacto.
+Las publicaciones las redacta el equipo desde el panel o Codex con la credencial de propósito limitado; la lista no se rellena automáticamente a partir de commits para evitar publicar cambios sin revisar su alcance o impacto.
 
 ## 2026-11-08 — Pulso de avance y medición por campaña
 
@@ -96,3 +103,49 @@ Las futuras publicaciones las redacta el equipo desde el panel; la lista no se r
   - `/portafolio` (`ShowcasePage`): integra la galería interactiva filtrable (`InteractiveCatalogGallery`), las tiras panorámicas y la matriz de espacios junto a las publicaciones del estudio.
   - `/nosotros` (`AboutPage`), `/como-trabajamos` (`ProcessPage`) e Inicio (`/`): conectan los beneficios estratégicos, la matriz de branding por espacios y las tiras panorámicas interactivas.
 
+
+## 2026-11-21 — Desenfoque y transparencia en la navegación pública
+
+**Etiquetas:** `sitio público`, `navegación`, `móvil`, `modo claro`, `interfaz`
+
+- Se reforzó el efecto de vidrio de la navegación superior e inferior con desenfoque de fondo en temas claro y oscuro.
+- En modo claro, ambas barras usan fondos algo translúcidos y un desenfoque gaussiano suave para mantener visible el contenido detrás sin perder legibilidad.
+- En modo oscuro, se redujo la opacidad de los fondos superior e inferior para que la transparencia y el desenfoque se perciban con claridad, manteniendo el contraste de las etiquetas.
+
+## 2026-11-21 — Legibilidad del menú inferior móvil
+
+- Los paneles de Servicios, Empresa y Explorar ahora usan fondos más opacos y desenfoque visible en los temas claro y oscuro.
+- El scroll queda en el contenido del menú: las secciones cortas ya no muestran una barra innecesaria y la lista larga conserva scroll táctil con un tirador fino.
+- No requiere cambios de base de datos.
+
+## 2026-11-21 — Publicación segura de novedades desde Codex
+
+**Etiquetas:** seguridad, changelog, automatización, administración
+
+- El publicador firmado por HMAC ahora crea novedades mediante el RPC codex_publish_internal_change_log, que limita la escritura a entradas nuevas de la organización Visual Corp.
+- La función SQL valida campos y etiquetas, fija el estado como publicado, conserva idempotencia por UUID y limita EXECUTE a service_role; la omisión de la protección de escritura se aplica solo dentro de la transacción del RPC.
+- La función Edge mantiene su verificación HMAC, ventana temporal y validación del contenido antes de invocar el RPC.
+- **Migración:** supabase/migrations/20261121150000_codex_changelog_publish_rpc.sql.
+- **Verificación:** dos entradas nuevas publicadas y verificadas en public.internal_change_log; service_role puede ejecutar el RPC, anon y authenticated no.
+
+## 2026-11-21 — Catálogo de tienda y acceso al cotizador
+
+**Etiquetas:** `tienda`, `catálogo`, `búsqueda`, `cotizador`, `móvil`
+
+- El orden del catálogo (`Más relevantes`, `Nombre: A a Z`, `Nombre: Z a A`) ahora se comparte y restaura desde `orden` en la URL, junto a la búsqueda y la familia seleccionada.
+- En móvil, la búsqueda y el orden se agrupan en un panel compacto; se mantienen visibles los filtros activos y la acción para limpiarlos. Las familias conservan el desplazamiento táctil sin provocar desbordamiento horizontal de la página.
+- La lista local se normaliza al cargar el catálogo: elimina duplicados, conserva los productos vigentes y avisa cuando alguna selección ya no está publicada. El enlace al cotizador mantiene productos, SKU, familias y cantidades seleccionadas.
+- Los controles compactos conservan el contraste en tema claro y oscuro. Las actualizaciones rápidas de búsqueda, orden y familia parten de la URL vigente para no borrar entre sí los filtros.
+- Las 29 categorías publicadas revisadas se asignan a las siete familias existentes; el catálogo y las reglas de publicación no cambian.
+- **Verificación:** 6 pruebas específicas, verificación de tipos y compilación de producción correctas. Recorrido visual y funcional en 320, 375, 768, 1024 y 1440 px, zoom al 200 %, recarga e historial atrás/adelante; la página no presenta desbordamiento horizontal y el cotizador recibió el producto y su SKU. No se modificó la base de datos ni se publicó a producción.
+- No se incorporó el efecto WebGL de Originkit: en este entorno no se encontró código accesible del componente; el hero conserva la imagen estática actual.
+
+## 2026-11-21 — Barra vertical con acabado Visual Corp
+
+**Etiquetas:** `interfaz`, `navegación`, `escritorio`, `accesibilidad`
+
+- La barra vertical del sitio y los paneles desplazables ahora usa un carril fino y un tirador degradado de azul Visual Corp a violeta y magenta, con reflejo satinado y brillo discreto.
+- El hover y el arrastre elevan el contraste y la luz del tirador; el estado de reposo se integra con el fondo en los temas claro y oscuro.
+- Se mantiene el scroll nativo y su tamaño. El estilo se limita a escritorio con puntero preciso; las barras horizontales y la experiencia táctil conservan su presentación.
+- Alto contraste conserva el estilo del sistema. El modo de transparencia reducida usa colores sólidos y el movimiento reducido desactiva las transiciones.
+- **Verificación:** `npm run build:checked` completó TypeScript y producción. La inspección visual de navegador local no estuvo disponible en esta sesión.

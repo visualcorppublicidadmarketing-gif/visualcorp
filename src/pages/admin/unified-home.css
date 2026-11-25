@@ -1,6 +1,7 @@
 .unified-dashboard {
   --dashboard-accent: #a51091;
   --dashboard-accent-strong: #7e1977;
+  container-type: inline-size;
   display: grid;
   gap: 18px;
   min-width: 0;
@@ -188,6 +189,17 @@
   margin: 0;
 }
 
+.unified-trend-limit {
+  margin: 0;
+  padding: 11px 14px;
+  border: 1px solid color-mix(in srgb, var(--dashboard-accent) 24%, var(--line));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--dashboard-accent) 5%, var(--surface, #fff));
+  color: var(--vc-muted, var(--muted));
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .unified-dashboard .unified-metric-link {
   min-height: 100%;
   border-radius: 18px;
@@ -324,7 +336,7 @@
   margin-top: 0;
 }
 
-@media (max-width: 1260px) {
+@container (max-width: 1100px) {
   .unified-dashboard .unified-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -624,18 +636,21 @@
 }
 .dashboard-shortcut-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 1260px;
+  margin-inline: auto;
   gap: 12px;
   min-width: 0;
 }
-.dashboard-shortcut-item { display: flex; min-width: 0; }
+.dashboard-shortcut-item { display: flex; min-width: 0; max-width: 100%; }
 .dashboard-shortcut {
   display: flex;
   flex: 1;
   min-width: 0;
-  min-height: 174px;
+  min-height: 0;
+  aspect-ratio: 1;
   flex-direction: column;
-  padding: 17px 18px 15px;
+  padding: clamp(12px, 1.4vw, 17px);
   overflow: hidden;
   border: 1px solid var(--admin-frosted-border);
   border-radius: 19px;
@@ -678,6 +693,94 @@
 .dashboard-shortcut > small { margin-top: 5px; color: var(--admin-glass-muted); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
 .dashboard-shortcut-cta { display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 13px; color: var(--dashboard-accent-strong); font-size: 10px; font-weight: 750; }
 .dashboard-shortcut-cta svg { transition: transform .24s ease; }
+.dashboard-shortcut.is-featured {
+  padding: clamp(14px, 1.6vw, 19px);
+  border-color: color-mix(in srgb, var(--dashboard-accent-strong) 24%, var(--admin-glass-line));
+  background:
+    radial-gradient(ellipse at 88% 35%, color-mix(in srgb, var(--dashboard-accent) 18%, transparent), transparent 58%),
+    radial-gradient(ellipse at 8% 100%, color-mix(in srgb, var(--vc-brand-blue, #069cdb) 8%, transparent), transparent 58%),
+    var(--admin-frosted-bg);
+  box-shadow: 0 16px 36px rgb(42 24 58 / 9%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+}
+.dashboard-shortcut.is-featured::after {
+  position: absolute;
+  z-index: 0;
+  top: -24%;
+  bottom: -24%;
+  left: -38%;
+  width: 26%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--admin-glass-surface-highlight) 82%, transparent), transparent);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: rotate(19deg);
+  transition: left .68s cubic-bezier(.2,.72,.22,1), opacity .2s ease;
+}
+.dashboard-shortcut.is-featured:hover::after,
+.dashboard-shortcut.is-featured:focus-visible::after { left: 112%; opacity: .85; }
+.dashboard-shortcut.is-featured .dashboard-shortcut-top,
+.dashboard-shortcut.is-featured > strong,
+.dashboard-shortcut.is-featured > small,
+.dashboard-shortcut.is-featured .dashboard-shortcut-cta { position: relative; z-index: 1; }
+.dashboard-shortcut.is-featured .dashboard-shortcut-top { margin-bottom: 0; }
+.dashboard-shortcut.is-featured > strong {
+  max-width: 64%;
+  margin-top: 19px;
+  font-size: clamp(15px, 1.35vw, 20px);
+  letter-spacing: -.035em;
+  line-height: 1.22;
+}
+.dashboard-shortcut.is-featured > small { max-width: 62%; margin-top: 6px; font-size: 11px; }
+.dashboard-shortcut-art { position: absolute; top: 50%; right: 9px; width: 132px; height: 124px; color: var(--dashboard-accent-strong); pointer-events: none; transform: translateY(-38%) scale(.88); transform-origin: center right; }
+.dashboard-shortcut-art-back {
+  position: absolute;
+  top: 16px;
+  left: 47px;
+  width: 72px;
+  height: 72px;
+  border: 1px solid color-mix(in srgb, var(--dashboard-accent) 32%, var(--admin-glass-line));
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--dashboard-accent) 9%, var(--admin-glass-card));
+  transform: rotate(13deg);
+  transition: transform .35s ease;
+}
+.dashboard-shortcut-art-orbit {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  width: 78px;
+  height: 78px;
+  border: 1px solid color-mix(in srgb, var(--vc-brand-blue, #069cdb) 32%, transparent);
+  border-radius: 50%;
+  transform: scale(.84);
+  transition: transform .35s ease;
+}
+.dashboard-shortcut-art-front {
+  position: absolute;
+  top: 38px;
+  left: 11px;
+  display: grid;
+  width: 82px;
+  height: 82px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--dashboard-accent) 30%, var(--admin-glass-line));
+  border-radius: 25px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--admin-glass-surface-highlight) 88%, var(--admin-glass-card)), color-mix(in srgb, var(--dashboard-accent) 15%, var(--admin-glass-card)));
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--dashboard-accent) 18%, transparent), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  transform: rotate(-8deg);
+  transition: transform .35s ease, box-shadow .35s ease;
+}
+.dashboard-shortcut-art-front svg { width: 42px; height: 42px; stroke-width: 1.7; }
+.dashboard-shortcut.is-featured:hover .dashboard-shortcut-art-back { transform: translate(-2px, -2px) rotate(17deg); }
+.dashboard-shortcut.is-featured:hover .dashboard-shortcut-art-orbit { transform: scale(1) rotate(12deg); }
+.dashboard-shortcut.is-featured:hover .dashboard-shortcut-art-front { transform: translateY(-3px) rotate(-3deg); box-shadow: 0 18px 36px color-mix(in srgb, var(--dashboard-accent) 22%, transparent), inset 0 1px 0 var(--admin-glass-surface-highlight); }
+.dashboard-shortcut-explore {
+  border-color: color-mix(in srgb, var(--vc-brand-blue, #069cdb) 22%, var(--admin-glass-line));
+  background:
+    radial-gradient(ellipse at 96% 0%, color-mix(in srgb, var(--vc-brand-blue, #069cdb) 10%, transparent), transparent 56%),
+    var(--admin-frosted-bg);
+}
 .dashboard-shortcut:hover {
   transform: translateY(-4px);
   border-color: color-mix(in srgb, var(--dashboard-accent-strong) 35%, var(--admin-glass-line));
@@ -687,6 +790,7 @@
 .dashboard-shortcut:hover .dashboard-shortcut-open { transform: translate(2px, -2px); color: var(--dashboard-accent-strong); }
 .dashboard-shortcut:hover .dashboard-shortcut-cta svg { transform: translate(2px, -2px); }
 .dashboard-shortcut:focus-visible { outline: 3px solid var(--vc-focus, var(--dashboard-accent)); outline-offset: 3px; }
+.dashboard-all-tools { min-width: 0; max-width: 100%; scroll-margin-top: 24px; }
 
 .unified-dashboard .unified-overview-heading { align-items: flex-end; }
 .unified-overview-heading > div { min-width: 0; }
@@ -735,19 +839,49 @@
 .dashboard-metric-value { grid-column: 1 / -1; grid-row: 2; min-width: 0; margin-top: 14px; color: var(--admin-glass-ink); font-size: clamp(25px, 3vw, 34px); font-weight: 780; font-variant-numeric: tabular-nums; letter-spacing: -.06em; line-height: 1.08; overflow-wrap: anywhere; }
 .dashboard-metric-label { grid-column: 1 / -1; grid-row: 3; margin-top: 6px; color: var(--admin-glass-ink); font-size: 11px; font-weight: 700; line-height: 1.35; }
 .dashboard-metric-note { grid-column: 1 / -1; grid-row: 4; margin-top: 4px; color: var(--admin-glass-muted); font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
+.dashboard-metric-trend { grid-column: 1 / -1; grid-row: 5; display: grid; min-width: 0; gap: 5px; margin-top: 10px; }
+.dashboard-metric-trend-heading { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; color: var(--admin-glass-muted); font-size: 8px; font-weight: 800; letter-spacing: .065em; }
+.dashboard-metric-trend-heading > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-metric-trend-heading > strong { display: inline-flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; color: var(--metric-accent, var(--dashboard-accent)); font-size: 9px; font-weight: 750; letter-spacing: 0; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-metric-trend-bars { display: flex; align-items: end; gap: 3px; width: 100%; height: 28px; min-width: 0; padding: 1px 0; border-bottom: 1px solid color-mix(in srgb, var(--metric-accent, var(--dashboard-accent)) 16%, var(--admin-glass-line)); }
+.dashboard-metric-trend-bars > span { flex: 1 1 0; min-width: 2px; max-width: 14px; border-radius: 4px 4px 1px 1px; background: color-mix(in srgb, var(--metric-accent, var(--dashboard-accent)) 54%, var(--admin-glass-card)); opacity: .55; transition: opacity .2s ease, filter .2s ease; }
+.dashboard-metric-trend-bars > span.is-today { background: linear-gradient(180deg, color-mix(in srgb, var(--metric-accent, var(--dashboard-accent)) 92%, var(--admin-glass-surface-highlight)), var(--metric-accent, var(--dashboard-accent))); opacity: 1; }
+.dashboard-metric-trend-axis { display: flex; justify-content: space-between; color: var(--admin-glass-muted); font-size: 8px; line-height: 1.2; }
 .unified-dashboard .dashboard-metric-skeleton { width: min(112px, 44vw); height: 28px; border-radius: 7px; }
 
 @media (min-width: 1261px) {
   @container (min-width: 1100px) {
-    .unified-dashboard .dashboard-shortcut-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .unified-dashboard .dashboard-shortcut-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
     .unified-dashboard .unified-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   }
 }
 @container (max-width: 600px) {
-  .unified-dashboard .dashboard-shortcut-grid,
+  .unified-dashboard .dashboard-shortcut-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .unified-dashboard .unified-stat-grid { grid-template-columns: minmax(0, 1fr); }
-  .unified-dashboard .dashboard-shortcut { min-height: 148px; }
+  .unified-dashboard .dashboard-shortcut { min-height: 0; padding: 12px; }
+  .unified-dashboard .dashboard-shortcut.is-featured { min-height: 0; padding: 13px; }
+  .unified-dashboard .dashboard-shortcut > small { display: none; }
+  .unified-dashboard .dashboard-shortcut-cta { padding-top: 8px; font-size: 9px; }
+  .unified-dashboard .dashboard-shortcut.is-featured > strong { max-width: 58%; margin-top: 15px; font-size: 15px; }
+  .unified-dashboard .dashboard-shortcut.is-featured > small { max-width: 60%; font-size: 10px; }
+  .unified-dashboard .dashboard-shortcut-art { right: 2px; transform: translateY(-38%) scale(.43); transform-origin: center right; }
   .dashboard-section-heading { align-items: flex-start; }
+}
+@container (max-width: 479px) {
+  .unified-dashboard .dashboard-shortcut-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-section-heading { align-items: flex-start; }
+}
+@container (max-width: 380px) {
+  .unified-dashboard .dashboard-shortcut > small { display: none; }
+  .unified-dashboard .dashboard-shortcut-cta { display: none; }
+  .unified-dashboard .dashboard-shortcut.is-featured > strong { max-width: 100%; }
+  .unified-dashboard .dashboard-shortcut.is-featured .dashboard-shortcut-art { display: none; }
+}
+@media (forced-colors: active) {
+  .dashboard-shortcut.is-featured::after { display: none; }
+  .dashboard-shortcut-art-back,
+  .dashboard-shortcut-art-front { border-color: CanvasText; background: Canvas; color: CanvasText; box-shadow: none; }
+  .dashboard-shortcut-art-orbit { border-color: Highlight; }
 }
 @media (prefers-reduced-transparency: reduce) {
   .work-app .dashboard-shortcut,
@@ -760,22 +894,26 @@
   .dashboard-shortcut-icon,
   .dashboard-shortcut-open,
   .dashboard-shortcut-cta svg,
+  .dashboard-shortcut-art-back,
+  .dashboard-shortcut-art-orbit,
+  .dashboard-shortcut-art-front,
+  .dashboard-shortcut.is-featured::after,
   .unified-dashboard .unified-metric-link { transform: none !important; transition: none !important; }
+  .dashboard-shortcut.is-featured::after { display: none; }
 }
 
 /* A single, low-contrast brand wash keeps the greeting as the dashboard focus. */
 .work-app .unified-dashboard-hero {
   border-color: color-mix(in srgb, var(--admin-glass-border, var(--vc-glass-border)) 82%, var(--admin-glass-accent-strong, #a51091));
-  background-color: color-mix(in srgb, var(--vc-surface, #fff) 72%, transparent);
+  background-color: color-mix(in srgb, var(--vc-surface, #fff) 88%, transparent);
   background-image:
-    radial-gradient(ellipse at 86% 0%, color-mix(in srgb, var(--vc-brand-magenta, #a51091) 17%, transparent), transparent 30rem),
-    radial-gradient(ellipse at 8% 112%, color-mix(in srgb, var(--vc-brand-blue, #069cdb) 13%, transparent), transparent 26rem),
+    radial-gradient(ellipse at 89% 0%, color-mix(in srgb, var(--vc-brand-magenta, #a51091) 12%, transparent), transparent 30rem),
     linear-gradient(
       118deg,
-      color-mix(in srgb, var(--vc-surface, #fff) 87%, transparent) 8%,
-      color-mix(in srgb, var(--vc-brand-blue, #069cdb) 6%, color-mix(in srgb, var(--vc-surface, #fff) 80%, transparent)) 43%,
-      color-mix(in srgb, var(--vc-brand, #a51091) 9%, color-mix(in srgb, var(--vc-surface, #fff) 74%, transparent)) 78%,
-      color-mix(in srgb, #f59d49 6%, color-mix(in srgb, var(--vc-surface, #fff) 72%, transparent)) 100%
+      color-mix(in srgb, var(--vc-surface, #fff) 94%, transparent) 8%,
+      color-mix(in srgb, var(--vc-brand-blue, #069cdb) 5%, var(--vc-surface, #fff)) 48%,
+      color-mix(in srgb, var(--vc-brand, #a51091) 7%, var(--vc-surface, #fff)) 82%,
+      color-mix(in srgb, #f59d49 5%, var(--vc-surface, #fff)) 100%
     );
   box-shadow: 0 24px 60px rgb(42 24 58 / 11%), inset 0 1px 0 var(--admin-glass-surface-highlight, rgb(255 255 255 / 72%));
   backdrop-filter: blur(22px) saturate(132%);
@@ -785,6 +923,11 @@
 .work-app .unified-dashboard-hero::before,
 .work-app .unified-dashboard-hero::after {
   display: none;
+}
+
+.work-app .unified-dashboard-hero > :not(.vc-ui-liquid-glass-accent) {
+  position: relative;
+  z-index: 1;
 }
 
 .work-app .unified-clock-card,
@@ -815,17 +958,15 @@
 
 .work-app.theme-dark .unified-dashboard-hero {
   border-color: color-mix(in srgb, var(--vc-glass-border, rgb(255 255 255 / 12%)) 80%, var(--vc-brand, #d093f0));
-  background-color: color-mix(in srgb, var(--vc-surface, #171a25) 74%, transparent);
+  background-color: color-mix(in srgb, var(--vc-surface, #171a25) 90%, transparent);
   background-image:
-    radial-gradient(ellipse at 86% 0%, color-mix(in srgb, var(--vc-brand, #d093f0) 21%, transparent), transparent 30rem),
-    radial-gradient(ellipse at 8% 112%, color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 16%, transparent), transparent 26rem),
-    radial-gradient(ellipse at 100% 100%, rgb(245 157 73 / 7%), transparent 25rem),
+    radial-gradient(ellipse at 89% 0%, color-mix(in srgb, var(--vc-brand, #d093f0) 16%, transparent), transparent 30rem),
     linear-gradient(
       118deg,
-      color-mix(in srgb, var(--vc-surface, #171a25) 86%, transparent) 8%,
-      color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 8%, color-mix(in srgb, var(--vc-surface, #171a25) 80%, transparent)) 43%,
-      color-mix(in srgb, var(--vc-brand, #d093f0) 12%, color-mix(in srgb, var(--vc-surface, #171a25) 76%, transparent)) 78%,
-      color-mix(in srgb, #f59d49 8%, color-mix(in srgb, var(--vc-surface, #171a25) 74%, transparent)) 100%
+      color-mix(in srgb, var(--vc-surface, #171a25) 96%, transparent) 8%,
+      color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 6%, var(--vc-surface, #171a25)) 48%,
+      color-mix(in srgb, var(--vc-brand, #d093f0) 9%, var(--vc-surface, #171a25)) 82%,
+      color-mix(in srgb, #f59d49 6%, var(--vc-surface, #171a25)) 100%
     );
   box-shadow: 0 26px 64px rgb(0 0 0 / 30%), inset 0 1px 0 var(--admin-glass-surface-highlight, rgb(255 255 255 / 7%));
 }

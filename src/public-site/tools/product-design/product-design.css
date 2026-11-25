@@ -1,0 +1,1205 @@
+.vc-product-studio,
+.vc-product-studio * {
+  box-sizing: border-box;
+}
+
+.vc-product-studio {
+  min-width: 0;
+  max-width: 100%;
+  overflow: clip;
+}
+
+.vc-product-base-bar {
+  display: grid;
+  gap: 11px;
+  min-width: 0;
+}
+
+.vc-product-template-heading,
+.vc-product-section-heading,
+.vc-product-editor-toolbar,
+.vc-product-tool-group,
+.vc-product-view-switch,
+.vc-product-3d-meta,
+.vc-product-3d-controls,
+.vc-product-3d-toolbar,
+.vc-product-family-pills,
+.vc-product-upload-pair,
+.vc-product-presets-strip,
+.vc-product-chip-row,
+.vc-product-mini-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.vc-product-template-heading,
+.vc-product-section-heading,
+.vc-product-3d-meta,
+.vc-product-3d-toolbar {
+  justify-content: space-between;
+}
+
+.vc-product-family-pill,
+.vc-product-preset-chip,
+.vc-product-option-chip,
+.vc-product-3d-chip,
+.vc-product-mini-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  max-width: 100%;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #dcd8ea;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.vc-product-family-pill.is-active,
+.vc-product-preset-chip.is-active,
+.vc-product-option-chip.is-active,
+.vc-product-3d-chip.is-active,
+.vc-product-mini-btn.is-active,
+.vc-product-icon-button.is-active {
+  border-color: #ed3da2;
+  background: rgba(229, 0, 126, 0.22);
+  color: #ffffff;
+}
+
+.vc-product-3d-chip.is-accent {
+  border-color: rgba(77, 225, 255, 0.55);
+  background: rgba(77, 225, 255, 0.14);
+  color: #d9f8ff;
+}
+
+.vc-product-family-pill:hover,
+.vc-product-preset-chip:hover,
+.vc-product-option-chip:hover,
+.vc-product-3d-chip:hover,
+.vc-product-mini-btn:hover {
+  border-color: rgba(240, 118, 188, 0.8);
+  background: rgba(229, 0, 126, 0.16);
+}
+
+.vc-product-mini-btn {
+  min-width: 34px;
+  padding: 0 8px;
+}
+
+.vc-product-presets-strip {
+  padding: 8px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.vc-product-presets-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #c7c2d6;
+  font-size: 11px;
+  font-weight: 750;
+  margin-right: 4px;
+}
+
+.vc-product-preset-chip.is-warp-toggle {
+  margin-left: auto;
+  border-color: rgba(77, 225, 255, 0.45);
+  color: #b4f1ff;
+}
+
+.vc-product-add-own,
+.vc-product-action,
+.vc-product-icon-button,
+.vc-product-layer-icon,
+.vc-product-export-button,
+.vc-product-reset-button,
+.vc-product-quote-button,
+.vc-product-view-switch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  max-width: 100%;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #f8f7fa;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.vc-product-add-own.is-3d {
+  border-color: rgba(77, 225, 255, 0.55);
+  background: linear-gradient(125deg, rgba(0, 168, 232, 0.22), rgba(229, 0, 126, 0.18));
+  color: #ffffff;
+}
+
+.vc-product-action.is-highlight {
+  border-color: rgba(240, 118, 188, 0.65);
+  background: rgba(229, 0, 126, 0.2);
+}
+
+.vc-product-action.is-full {
+  width: 100%;
+}
+
+.vc-product-add-own,
+.vc-product-reset-button,
+.vc-product-layer-icon {
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.vc-product-add-own:hover,
+.vc-product-action:hover,
+.vc-product-icon-button:hover,
+.vc-product-layer-icon:hover,
+.vc-product-export-button:hover,
+.vc-product-reset-button:hover,
+.vc-product-quote-button:hover,
+.vc-product-view-switch button:hover {
+  border-color: rgba(240, 118, 188, 0.8);
+  background: rgba(229, 0, 126, 0.16);
+}
+
+.vc-product-studio button:focus-visible,
+.vc-product-studio a:focus-visible,
+.vc-product-canvas-viewer:focus-visible,
+.vc-product-zone-details summary:focus-visible,
+.vc-product-field input:focus-visible,
+.vc-product-field textarea:focus-visible,
+.vc-product-field select:focus-visible,
+.vc-product-range-field input:focus-visible {
+  outline: 3px solid #f476c8;
+  outline-offset: 2px;
+}
+
+.vc-product-studio button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+/* Base Product Selector Grid */
+.vc-product-template-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.vc-product-template {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  min-height: 62px;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #f6f3fb;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.vc-product-template:hover,
+.vc-product-template.is-active {
+  border-color: #ed3da2;
+  background: linear-gradient(130deg, rgba(229, 0, 126, 0.18), rgba(56, 214, 255, 0.08));
+}
+
+.vc-product-template img,
+.vc-product-template-3d-badge {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 2px;
+}
+
+.vc-product-template-3d-badge {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(77, 225, 255, 0.25), rgba(229, 0, 126, 0.28));
+  color: #ffffff;
+}
+
+.vc-product-template span,
+.vc-product-layer-name {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.vc-product-template b,
+.vc-product-template small {
+  overflow-wrap: anywhere;
+}
+
+.vc-product-template b {
+  font-size: 11.5px;
+}
+
+.vc-product-template small {
+  color: #aca8bc;
+  font-size: 9.5px;
+  line-height: 1.25;
+}
+
+/* Editor Toolbar */
+.vc-product-editor-toolbar {
+  justify-content: space-between;
+  padding: 10px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 15px;
+  background: rgba(4, 5, 11, 0.4);
+}
+
+.vc-product-tool-group {
+  flex: 1 1 280px;
+}
+
+.vc-product-tool-compact {
+  flex: 0 1 auto;
+}
+
+.vc-product-view-switch {
+  flex: 0 1 auto;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.vc-product-view-switch button {
+  min-height: 32px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.vc-product-view-switch button.is-active {
+  border-color: rgba(240, 118, 188, 0.75);
+  background: rgba(229, 0, 126, 0.25);
+}
+
+/* Main Workspace Layout */
+.vc-product-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(276px, 316px);
+  align-items: start;
+  gap: 16px;
+  min-width: 0;
+}
+
+.vc-product-canvas-column,
+.vc-product-inspector,
+.vc-product-tab-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.vc-product-stage-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+.vc-product-stage-grid.is-split {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.vc-product-canvas-viewer,
+.vc-product-3d-viewer-shell {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 320px;
+  padding: clamp(10px, 1.8vw, 18px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 18px;
+  background: radial-gradient(ellipse at 50% 28%, #343647, #1c1d28 76%);
+}
+
+.vc-product-canvas-surface {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 640px;
+  min-height: 0;
+}
+
+.vc-product-canvas-surface > div {
+  max-width: 100%;
+}
+
+.vc-product-canvas-surface canvas {
+  display: block;
+  max-width: 100%;
+  border-radius: 12px;
+}
+
+.vc-product-warped-preview {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.vc-product-warped-preview img {
+  display: block;
+  width: 100%;
+  max-height: 580px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.vc-product-warped-exit {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 7px 14px;
+  border: 1px solid rgba(240, 118, 188, 0.8);
+  border-radius: 999px;
+  background: rgba(16, 17, 28, 0.86);
+  color: #ffffff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vc-product-canvas-loading {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 300px;
+  padding: 20px;
+  color: #cbc7d7;
+  font-size: 12px;
+  text-align: center;
+}
+
+.vc-product-canvas-caption {
+  display: grid;
+  gap: 4px;
+  color: #b5b1c1;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+/* 3D Studio Panel */
+.vc-product-3d-panel {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 10px;
+}
+
+.vc-product-3d-meta {
+  color: #cfcbe0;
+  font-size: 10.5px;
+}
+
+.vc-product-3d-host {
+  position: relative;
+  width: 100%;
+  height: clamp(360px, 48vw, 560px);
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 13px;
+  background: #f1eff6;
+  touch-action: none;
+}
+
+.vc-product-3d-panel.is-compact .vc-product-3d-host {
+  height: clamp(340px, 38vw, 480px);
+}
+
+.vc-product-3d-host.is-transparent-grid {
+  background-color: #20222d;
+  background-image:
+    linear-gradient(45deg, #2d2f3e 25%, transparent 25%),
+    linear-gradient(-45deg, #2d2f3e 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #2d2f3e 75%),
+    linear-gradient(-45deg, transparent 75%, #2d2f3e 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+
+.vc-product-3d-host canvas {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+}
+
+.vc-product-3d-host canvas:active {
+  cursor: grabbing;
+}
+
+.vc-product-3d-host.is-placing canvas {
+  cursor: crosshair;
+}
+
+.vc-product-3d-error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 24px;
+  background: rgba(15, 16, 26, 0.72);
+  color: #f6f4fb;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Inspector Panel & Tabs */
+.vc-product-inspector {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.vc-product-inspector-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 11px;
+  background: rgba(5, 6, 12, 0.36);
+}
+
+.vc-product-inspector-tabs button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 44px;
+  padding: 5px 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #beb9cf;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.vc-product-inspector-tabs button.is-active {
+  border-color: rgba(240, 118, 188, 0.72);
+  background: rgba(229, 0, 126, 0.22);
+  color: #ffffff;
+}
+
+.vc-product-inspector-section {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vc-product-inspector-section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.vc-product-inspector-footer {
+  display: grid;
+  gap: 7px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vc-product-section-heading > span:last-child {
+  color: #aaa6b7;
+  font-size: 10px;
+}
+
+/* Swatches & Backgrounds */
+.vc-product-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.vc-product-swatch-btn {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.vc-product-swatch-btn:hover {
+  transform: scale(1.08);
+}
+
+.vc-product-swatch-btn.is-active {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px #e5007e;
+}
+
+.vc-product-bg-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.vc-product-bg-preset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e9e6f3;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vc-product-bg-preset.is-active {
+  border-color: #ed3da2;
+  background: rgba(229, 0, 126, 0.18);
+}
+
+.vc-product-bg-thumb {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.vc-product-bg-thumb.is-alpha {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #c5c2d1 25%, transparent 25%),
+    linear-gradient(-45deg, #c5c2d1 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #c5c2d1 75%),
+    linear-gradient(-45deg, transparent 75%, #c5c2d1 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+
+/* Layers List */
+.vc-product-layer-list {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  max-height: 195px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.vc-product-layer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(4, 28px);
+  gap: 3px;
+  align-items: center;
+  min-width: 0;
+}
+
+.vc-product-layer-row.is-active .vc-product-layer-select {
+  border-color: rgba(240, 118, 188, 0.72);
+  background: rgba(229, 0, 126, 0.14);
+}
+
+.vc-product-layer-select {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #e9e6f1;
+  font: inherit;
+  font-size: 10.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vc-product-layer-number {
+  display: grid;
+  flex: 0 0 19px;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #c9c5d4;
+  font-size: 9px;
+}
+
+.vc-product-layer-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc-product-layer-icon {
+  width: 28px;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 7px;
+  color: #c4c0ce;
+}
+
+.vc-product-layer-icon.is-danger:hover {
+  border-color: rgba(255, 102, 130, 0.8);
+  background: rgba(220, 38, 70, 0.22);
+  color: #ffd7df;
+}
+
+.vc-product-empty {
+  margin: 0;
+  color: #a9a5b5;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+/* Fields & Sliders */
+.vc-product-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  color: #d6d2e4;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.vc-product-field input:not([type="color"]),
+.vc-product-field textarea,
+.vc-product-field select {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+  font: inherit;
+  font-size: 11.5px;
+}
+
+.vc-product-field textarea {
+  resize: vertical;
+}
+
+.vc-product-field select option {
+  background: #151621;
+  color: #ffffff;
+}
+
+.vc-product-color-pair,
+.vc-product-position-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.vc-product-color-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.vc-product-color-field input[type="color"] {
+  width: 34px;
+  height: 26px;
+  padding: 1px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.vc-product-range-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  align-items: center;
+  min-width: 0;
+  color: #d3cfdf;
+  font-size: 10.5px;
+}
+
+.vc-product-range-field b {
+  color: #f0edf6;
+  font-size: 10px;
+}
+
+.vc-product-range-field input {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  accent-color: #e5007e;
+}
+
+.vc-product-studio label.vc-product-toggle-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: #d3cfdf;
+  font-size: 10.5px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.vc-product-studio label.vc-product-toggle-row input[type="checkbox"] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  margin: 0;
+  accent-color: #e5007e;
+  cursor: pointer;
+}
+
+.vc-product-custom3d-controls {
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid rgba(77, 225, 255, 0.28);
+  border-radius: 12px;
+  background: rgba(77, 225, 255, 0.06);
+}
+
+.vc-product-zone-details {
+  min-width: 0;
+  padding: 8px 0 2px;
+}
+
+.vc-product-zone-details summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #e8e4f1;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.vc-product-zone-details summary span {
+  color: #aaa6b7;
+  font-size: 9.5px;
+  font-weight: 600;
+}
+
+.vc-product-zone-details p {
+  margin: 8px 0 10px;
+  color: #aaa6b7;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.vc-product-zone-details[open] .vc-product-range-field + .vc-product-range-field {
+  margin-top: 9px;
+}
+
+/* Export Actions */
+.vc-product-export-actions {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vc-product-export-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 4px 0;
+}
+
+.vc-product-export-button,
+.vc-product-quote-button {
+  width: 100%;
+  min-height: 38px;
+  justify-content: center;
+  padding: 8px 11px;
+  border-color: rgba(229, 0, 126, 0.45);
+  background: rgba(229, 0, 126, 0.16);
+  overflow-wrap: anywhere;
+}
+
+.vc-product-export-button.is-secondary {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.vc-product-reset-button {
+  justify-self: start;
+  border-color: transparent;
+  background: transparent;
+  color: #c1bdcc;
+}
+
+.vc-product-quote-button {
+  justify-content: space-between;
+  border-color: #e5007e;
+  background: linear-gradient(120deg, #e5007e, #b80073);
+  color: #ffffff;
+}
+
+.vc-product-studio-shortcuts {
+  margin: -2px 0 0;
+  color: #aba7b7;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+/* ============================================================================
+   Light Theme Parity (Public Site + Admin Operations)
+   ============================================================================ */
+html[data-public-theme="light"] .vc-product-studio,
+html[data-vc-theme="light"] .vc-product-studio {
+  color: #211b2a;
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-template,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-template,
+html[data-public-theme="light"] .vc-product-studio .vc-product-action,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-action,
+html[data-public-theme="light"] .vc-product-studio .vc-product-add-own,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-add-own,
+html[data-public-theme="light"] .vc-product-studio .vc-product-icon-button,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-icon-button,
+html[data-public-theme="light"] .vc-product-studio .vc-product-family-pill,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-family-pill,
+html[data-public-theme="light"] .vc-product-studio .vc-product-preset-chip,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-preset-chip,
+html[data-public-theme="light"] .vc-product-studio .vc-product-option-chip,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-option-chip,
+html[data-public-theme="light"] .vc-product-studio .vc-product-3d-chip,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-3d-chip,
+html[data-public-theme="light"] .vc-product-studio .vc-product-mini-btn,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-mini-btn,
+html[data-public-theme="light"] .vc-product-studio .vc-product-bg-preset,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-bg-preset,
+html[data-public-theme="light"] .vc-product-studio .vc-product-layer-icon,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-layer-icon,
+html[data-public-theme="light"] .vc-product-studio .vc-product-export-button.is-secondary,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-export-button.is-secondary {
+  border-color: #d9cfe4;
+  background: #ffffff;
+  color: #2b2236;
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-template.is-active,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-template.is-active,
+html[data-public-theme="light"] .vc-product-studio .vc-product-family-pill.is-active,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-family-pill.is-active,
+html[data-public-theme="light"] .vc-product-studio .vc-product-option-chip.is-active,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-option-chip.is-active,
+html[data-public-theme="light"] .vc-product-studio .vc-product-preset-chip.is-active,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-preset-chip.is-active,
+html[data-public-theme="light"] .vc-product-studio .vc-product-3d-chip.is-active,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-3d-chip.is-active,
+html[data-public-theme="light"] .vc-product-studio .vc-product-bg-preset.is-active,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-bg-preset.is-active,
+html[data-public-theme="light"] .vc-product-studio .vc-product-view-switch button.is-active,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-view-switch button.is-active,
+html[data-public-theme="light"] .vc-product-studio .vc-product-inspector-tabs button.is-active,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-inspector-tabs button.is-active {
+  border-color: #c2167c;
+  background: #fcebf5;
+  color: #7c0e52;
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-add-own.is-3d,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-add-own.is-3d,
+html[data-public-theme="light"] .vc-product-studio .vc-product-3d-chip.is-accent,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-3d-chip.is-accent {
+  border-color: #0e8db8;
+  background: #e9f8fd;
+  color: #09526c;
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-editor-toolbar,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-editor-toolbar,
+html[data-public-theme="light"] .vc-product-studio .vc-product-inspector,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-inspector,
+html[data-public-theme="light"] .vc-product-studio .vc-product-presets-strip,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-presets-strip {
+  border-color: #dfd5ea;
+  background: #f8f5fc;
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-view-switch,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-view-switch,
+html[data-public-theme="light"] .vc-product-studio .vc-product-inspector-tabs,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-inspector-tabs {
+  border-color: #dcd1e8;
+  background: #efe9f6;
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-view-switch button,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-view-switch button,
+html[data-public-theme="light"] .vc-product-studio .vc-product-inspector-tabs button,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-inspector-tabs button {
+  color: #4b3f5a;
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-canvas-viewer,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-canvas-viewer,
+html[data-public-theme="light"] .vc-product-studio .vc-product-3d-viewer-shell,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-3d-viewer-shell {
+  border-color: #dcd2e8;
+  background: radial-gradient(ellipse at 50% 25%, #ffffff, #ebe4f3 80%);
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-field,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-field,
+html[data-public-theme="light"] .vc-product-studio .vc-product-range-field,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-range-field,
+html[data-public-theme="light"] .vc-product-studio .vc-product-range-field b,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-range-field b,
+html[data-public-theme="light"] .vc-product-studio .vc-product-toggle-row,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-toggle-row,
+html[data-public-theme="light"] .vc-product-studio .vc-product-zone-details summary,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-zone-details summary,
+html[data-public-theme="light"] .vc-product-studio .vc-product-layer-select,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-layer-select,
+html[data-public-theme="light"] .vc-product-studio .vc-product-3d-meta,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-3d-meta,
+html[data-public-theme="light"] .vc-product-studio .vc-product-presets-label,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-presets-label {
+  color: #362c44;
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-field input:not([type="color"]),
+html[data-vc-theme="light"] .vc-product-studio .vc-product-field input:not([type="color"]),
+html[data-public-theme="light"] .vc-product-studio .vc-product-field textarea,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-field textarea,
+html[data-public-theme="light"] .vc-product-studio .vc-product-field select,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-field select,
+html[data-public-theme="light"] .vc-product-studio .vc-product-color-field,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-color-field {
+  border-color: #d6c9e3;
+  background: #ffffff;
+  color: #211b2a;
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-field select option,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-field select option {
+  background: #ffffff;
+  color: #211b2a;
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-template small,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-template small,
+html[data-public-theme="light"] .vc-product-studio .vc-product-empty,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-empty,
+html[data-public-theme="light"] .vc-product-studio .vc-product-canvas-caption,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-canvas-caption,
+html[data-public-theme="light"] .vc-product-studio .vc-product-studio-shortcuts,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-studio-shortcuts,
+html[data-public-theme="light"] .vc-product-studio .vc-product-reset-button,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-reset-button {
+  color: #5b5266;
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-export-button:not(.is-secondary),
+html[data-vc-theme="light"] .vc-product-studio .vc-product-export-button:not(.is-secondary) {
+  border-color: #c2167c;
+  background: #fcebf5;
+  color: #7c0e52;
+}
+
+html[data-public-theme="light"] .vc-product-studio .vc-product-inspector-section,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-inspector-section,
+html[data-public-theme="light"] .vc-product-studio .vc-product-inspector-footer,
+html[data-vc-theme="light"] .vc-product-studio .vc-product-inspector-footer {
+  border-color: #e2d8ec;
+}
+
+/* ============================================================================
+   Responsive Breakpoints (Zero Overflow across 320px -> 1920px & 950px laptop)
+   ============================================================================ */
+@media (max-width: 1320px) {
+  .vc-product-template-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1120px) {
+  .vc-product-template-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vc-product-stage-grid.is-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 960px) {
+  .vc-product-editor-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(248px, 286px);
+  }
+
+  .vc-product-editor-toolbar {
+    justify-content: flex-start;
+  }
+
+  .vc-product-tool-group {
+    flex-basis: auto;
+  }
+}
+
+@media (max-width: 780px) {
+  .vc-product-editor-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .vc-product-template-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vc-product-editor-toolbar {
+    align-items: flex-start;
+  }
+
+  .vc-product-tool-group {
+    flex: 1 1 100%;
+  }
+
+  .vc-product-action {
+    flex: 1 1 auto;
+  }
+
+  .vc-product-view-switch {
+    width: 100%;
+  }
+
+  .vc-product-view-switch button {
+    flex: 1 1 0;
+  }
+
+  .vc-product-preset-chip.is-warp-toggle {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .vc-product-3d-host {
+    height: 390px;
+  }
+}
+
+.vc-product-local-draft {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--vc-line, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  color: var(--vc-muted, #aeb4c4);
+  font-size: 12px;
+}
+
+.vc-product-local-draft span {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.vc-product-local-draft button {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--vc-line, rgba(255, 255, 255, 0.16));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.vc-product-local-draft button:hover:not(:disabled) {
+  border-color: var(--vc-accent, #ec1688);
+  color: var(--vc-text, #fff);
+}
+
+.vc-product-local-draft button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 380px) {
+  .vc-product-template-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vc-product-bg-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vc-product-layer-row {
+    grid-template-columns: minmax(0, 1fr) repeat(4, 26px);
+  }
+
+  .vc-product-layer-icon {
+    width: 26px;
+  }
+}

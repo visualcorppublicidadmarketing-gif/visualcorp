@@ -13,6 +13,9 @@
 .tools-hub__card-art { position: relative; display: grid; min-height: 190px; place-items: center; overflow: hidden; background: radial-gradient(ellipse at 50% 45%, rgba(92, 112, 148, .34), transparent 65%), linear-gradient(140deg, #171a26, #10131d); color: #edc767; }
 .tools-hub__art-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(203,213,227,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(203,213,227,.055) 1px, transparent 1px); background-size: 22px 22px; mask-image: radial-gradient(ellipse at center, black 10%, transparent 85%); }
 .tools-hub__box-drawing { position: relative; display: grid; width: 130px; height: 120px; place-items: center; transform: rotate(-8deg) skewY(-4deg); filter: drop-shadow(10px 16px 13px rgba(0,0,0,.36)); }
+.tools-hub__card-art--monogram { background: radial-gradient(ellipse at 50% 45%, rgba(91, 136, 151, .46), transparent 65%), linear-gradient(140deg, #17333a, #101a24); color: #e9bd78; }
+.tools-hub__monogram-glyph { position: relative; z-index: 1; font-family: Georgia, serif; font-size: clamp(76px, 12vw, 112px); font-weight: 700; line-height: 1; text-shadow: 0 10px 22px rgba(0,0,0,.42); }
+.tools-hub__monogram-glyph span { position: absolute; inset-inline-start: 58%; inset-block-start: 52%; color: #f3d9ae; font-family: Georgia, serif; font-size: 25px; font-style: italic; font-weight: 500; white-space: nowrap; }
 .tools-hub__art-tag { position: absolute; right: 12px; bottom: 11px; display: inline-flex; align-items: center; gap: 5px; padding: 6px 8px; border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: rgba(12,14,22,.72); color: #d5d9e4; font-size: 9px; font-weight: 700; }
 .tools-hub__card-content { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 15px; }
 .tools-hub__status { display: inline-flex; align-items: center; gap: 5px; color: var(--vc-muted, #6c6576); font-size: 9px; font-weight: 760; }
@@ -35,7 +38,3 @@
 @media (prefers-reduced-motion: reduce) {
   .tools-hub *, .tools-hub *::before, .tools-hub *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
-.tools-hub__card-art--monogram { background: radial-gradient(ellipse at 48% 30%, #345263, #182431 73%); }
-.tools-hub__monogram-glyph { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; color: #eabf77; font-family: Georgia, serif; font-size: clamp(64px, 8vw, 96px); line-height: .78; text-shadow: 0 7px 18px rgba(0,0,0,.42); }
-.tools-hub__monogram-glyph span { margin-top: 8px; color: #fff0d4; font-family: var(--vc-font-body, Arial, sans-serif); font-size: 13px; font-weight: 650; letter-spacing: .03em; }
-.tools-hub__status.is-prototype i { background: #d99e46; }

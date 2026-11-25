@@ -29,6 +29,28 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
+      - name: Test public storefront catalog
+        run: npm run test:storefront
+      - name: Test weekly finance summary
+        run: npm run test:finance-weekly
+      - name: Test durable POS checkout recovery
+        run: npm run test:pos-recovery
+      - name: Test POS cash session integrity
+        run: npm run test:cash-session-integrity
+      - name: Test commercial read permissions and cash scopes
+        run: npm run test:commercial-read-rls
+      - name: Test marketing workflow rules
+        run: npm run test:marketing
+      - name: Test personnel domain rules
+        run: npm run test:personnel
+      - name: Test geospatial calculations
+        run: npm run test:geospatial
+      - name: Test organization access request and invitation security
+        run: npm run test:access-requests
+      - name: Validate admin routes, menu and permissions
+        run: npm run validate:admin-routes
+      - name: Test admin route integrity validation
+        run: npm run test:admin-route-integrity
       - name: Check TypeScript types
         run: npm run typecheck
       - name: Verify protected manual access

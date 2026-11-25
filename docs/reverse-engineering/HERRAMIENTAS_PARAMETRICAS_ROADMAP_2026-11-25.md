@@ -1,6 +1,6 @@
 # Herramientas paramétricas 2D/3D de Visual Corp Suite
 
-**Fecha:** 2026-11-25  
+**Fecha:** 2026-11-25
 **Estado:** dirección técnica de desarrollo; algunas capacidades propuestas requieren pruebas y decisiones posteriores.
 
 ## Contrato común para nuevos generadores
@@ -20,13 +20,18 @@ No se debe convertir cada producto en un archivo de malla estático, ni forzar d
 
 | Módulo | Estado | Salida actual | Límite conocido |
 |---|---|---|---|
-| Generador de cajas | Prototipo local documentado en el README | SVG/DXF/JSON y visualización Three.js | Sin kerf/perfil de máquina ni validación física confirmada |
-| Monogramas | V1 implementada localmente; falta revisión de navegador | SVG de contornos y `.vcmg.json`; preview 2D/3D | Capas sin unión booleana, puentes, STL/3MF o validación de malla |
+| Generador de cajas | Disponible en Suite; se amplía la visualización de unidades | SVG/DXF/JSON y visualización Three.js | Sin kerf/perfil de máquina ni validación física confirmada |
+| Monogramas | V1 implementada en Suite | SVG de contornos y `.vcmg.json`; preview 2D/3D | Capas sin unión booleana, puentes, STL/3MF o validación de malla |
+| Ancho de impresión QR | Disponible con selección mm/cm | SVG y vista de impresión | El ancho se conserva en mm internamente |
 | Nuevos generadores | Candidatos | Por decidir | Elegir según demanda y geometría antes de implementar |
+
+## Unidades y precisión
+
+Las herramientas físicas mantienen sus magnitudes y geometría canónicas en milímetros. La unidad visible es una preferencia de interfaz: monogramas admiten mm/cm; caja admite mm/cm/in; el ancho impreso del QR admite mm/cm. Los campos de mm avanzan 0,1 mm; en cm, 0,01 cm (también 0,1 mm); en pulgadas, Caja conserva el paso de 0,01 in. Las exportaciones de fabricación mantienen escala mm para no reinterpretar los proyectos existentes.
 
 ## Secuencia propuesta
 
-1. Completar revisión manual del editor de monogramas y corregir problemas de interacción, fuente y responsive que aparezcan.
+1. Revisar el preview del editor de monogramas, verificar los campos en mm/cm y corregir problemas de interacción, fuente y responsive que aparezcan.
 2. Acordar el comportamiento de “pieza soldada”: unión 2D, reglas de islas, puentes y tolerancias; no inferirlo de la referencia por capturas.
 3. Preparar exportación según proceso: corte 2D primero; impresión 3D después de comprobar mallas y dimensiones.
 4. Investigar una biblioteca local de fuentes con procedencia y licencias claras; permitir fuentes externas solo con importación local explícita.

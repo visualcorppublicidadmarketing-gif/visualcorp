@@ -11,6 +11,7 @@ import { getGoogleMapsEmbedUrl, getGoogleMapsOpenUrl, isGoogleMapsUrl } from '..
 import { multiProductQuoteService, publicAddress, publicServiceFamilies, serviceDeliverableTags, serviceDetailContent, serviceProjectPrompts, type PublicServiceId } from './content.ts';
 import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategoryStrips, ServiceVisualShowcase, StrategicBenefitsGrid } from './SolutionsComponents';
 import { Title3D } from './Title3D';
+import { ServiceKeycap, getServiceKeycapColor } from './ServiceKeycap';
 import { AboutHero, ContactHero, ProcessHero } from './CompanyHeroes';
 import { companyProcessSteps } from './company-hero-content';
 import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
@@ -22,7 +23,12 @@ import { AnimatedThemeToggler } from '../components/ui/AnimatedThemeToggler';
 import { PublicSiteContextMenu } from './PublicSiteContextMenu';
 import { FooterParticles } from './FooterParticles';
 import { MobileBottomNavigation } from './MobileBottomNavigation';
+import { AmbientVideoLayer, type AmbientVideoClip } from './AmbientVideoLayer';
+import { DirectionalViewTransition, ViewTransitionLink } from './ViewTransitionLink';
+import { BrandBeforeAfterShowcase } from './BrandBeforeAfterShowcase';
+import { CreativeToolLink } from './tools/CreativeToolLink';
 import './public-site-v2.css';
+import './view-transitions.css';
 import './glass-system.css';
 import './public-navigation.css';
 import './public-footer.css';
@@ -167,7 +173,7 @@ function SiteHeader({ theme, onThemeChange }) {
   }, [openMenu]);
   const services = data.services.filter((service) => service.enabled);
   const serviceIsActive = location.pathname.startsWith('/servicios');
-  const exploreIsActive = ['/soluciones', '/portafolio', '/publicaciones', '/blog', '/tienda/promociones'].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
+  const exploreIsActive = ['/soluciones', '/herramientas', '/portafolio', '/publicaciones', '/blog', '/tienda/promociones'].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
   const companyIsActive = ['/nosotros', '/como-trabajamos', '/contacto'].includes(location.pathname);
   const storeIsActive = location.pathname.startsWith('/tienda') && !location.pathname.startsWith('/tienda/promociones');
   const userDisplayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'Tu cuenta';
@@ -202,6 +208,7 @@ function SiteHeader({ theme, onThemeChange }) {
         <div className="site-mega-intro"><span className="site-mega-kicker">IDEAS, PROYECTOS Y NOVEDADES <i/></span><h2>Encuentra<br/>inspiración<span>.</span></h2><p>Recorre nuestras soluciones, trabajos y contenidos, o encuentra promociones vigentes.</p><Link to="/soluciones" onClick={closeNavigation}>Ver soluciones <ArrowUpRight size={16} aria-hidden="true" /></Link></div>
         <div className="site-explore-links">
           <Link to="/soluciones" onClick={closeNavigation} className={location.pathname.startsWith('/soluciones') ? 'is-active' : ''}><span className="site-explore-icon"><PanelsTopLeft size={19} aria-hidden="true"/></span><span><strong>Soluciones</strong><small>Ideas para marcas, espacios y negocios.</small></span><ArrowUpRight size={17} aria-hidden="true"/></Link>
+          <Link to="/herramientas" onClick={closeNavigation} className={location.pathname.startsWith('/herramientas') ? 'is-active' : ''}><span className="site-explore-icon"><Sparkles size={19} aria-hidden="true"/></span><span><strong>Herramientas gratis</strong><small>Probador de logo, generador QR y verificador DPI.</small></span><ArrowUpRight size={17} aria-hidden="true"/></Link>
           <Link to="/portafolio" onClick={closeNavigation} className={location.pathname.startsWith('/portafolio') ? 'is-active' : ''}><span className="site-explore-icon"><ScanLine size={19} aria-hidden="true"/></span><span><strong>Portafolio</strong><small>Proyectos realizados para nuestros clientes.</small></span><ArrowUpRight size={17} aria-hidden="true"/></Link>
           <Link to="/publicaciones" onClick={closeNavigation} className={location.pathname.startsWith('/publicaciones') ? 'is-active' : ''}><span className="site-explore-icon"><Globe2 size={19} aria-hidden="true"/></span><span><strong>Publicaciones</strong><small>Campañas, ideas y contenido de marca.</small></span><ArrowUpRight size={17} aria-hidden="true"/></Link>
           <Link to="/blog" onClick={closeNavigation} className={location.pathname.startsWith('/blog') ? 'is-active' : ''}><span className="site-explore-icon"><Sparkles size={19} aria-hidden="true"/></span><span><strong>Blog</strong><small>Consejos, tendencias y novedades.</small></span><ArrowUpRight size={17} aria-hidden="true"/></Link>
@@ -233,7 +240,7 @@ function SiteFooter({ theme }: { theme: 'light' | 'dark' }) {
         </div>
         <nav className="footer-link-column" aria-label="Explorar">
           <b>Explorar</b>
-          <Link to="/">Inicio</Link><Link to="/soluciones">Soluciones y espacios</Link><Link to="/nosotros">La empresa</Link><Link to="/como-trabajamos">Cómo trabajamos</Link>
+          <Link to="/">Inicio</Link><Link to="/soluciones">Soluciones y espacios</Link><Link to="/herramientas">Herramientas gratis</Link><Link to="/nosotros">La empresa</Link><Link to="/como-trabajamos">Cómo trabajamos</Link>
           <Link to="/portafolio">Portafolio</Link><Link to="/publicaciones">Publicaciones</Link><Link to="/blog">Blog</Link>
           <Link to="/tienda">Tienda</Link><Link className="footer-sub-link" to="/tienda/promociones">Promociones y sorteos</Link><Link to="/pagos">Medios de pago</Link><Link to="/contacto">Contacto</Link>
         </nav>
@@ -291,7 +298,7 @@ function ServiceCard({ service, index = 0 }) {
   const info = familyInfo(service.id);
   const Icon = serviceIcons[service.id] || Sparkles;
   const examples = serviceDeliverableTags[service.id as PublicServiceId] || [];
-  return <Link className="site-service-card-link" to={`/servicios/${service.id}`}>
+  return <ViewTransitionLink className="site-service-card-link" to={`/servicios/${service.id}`} transitionType="nav-forward">
     <ShadcnCard className="site-service-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
     <SpotlightLayer/>
     <div className="site-service-card-topline"><span className="site-service-index">{info?.mark || String(index + 1).padStart(2, '0')}</span><span className="site-service-icon"><Icon size={20} aria-hidden="true"/></span></div>
@@ -301,7 +308,7 @@ function ServiceCard({ service, index = 0 }) {
     {examples.length > 0 && <><span className="site-service-tags-label">Ejemplos de piezas</span><ul className="site-service-tags" aria-label={`Ejemplos de piezas para ${service.name}`}>{examples.map((tag) => <li key={tag}>{tag}</li>)}</ul></>}
     <span className="site-card-link">Explorar servicio <ArrowUpRight size={15}/></span>
     </ShadcnCard>
-  </Link>;
+  </ViewTransitionLink>;
 }
 
 function LeadForm({ variant = 'contact', initialService = '', quoteData = null, selectedService = undefined, onServiceChange = undefined, onQuoteValidationError = undefined }) {
@@ -492,7 +499,7 @@ export { PublicHomePage } from './HomePage';
 export function ServicesIndexPage() {
   const { data } = useWorkspace();
   const services = data.services.filter((service) => service.enabled);
-  return <><SiteTitle>Servicios</SiteTitle><PageHero eyebrow="LO QUE HACEMOS" title={<>Ideas que encuentran<br/>su forma.</>} description="Explora las familias de trabajo de Visual Corp. Cada proyecto empieza con una conversación sobre lo que necesitas." primary={{ label: 'Cuéntanos tu proyecto', to: '/cotizador' }} secondary={{ label: 'Ver soluciones por espacio', to: '/soluciones' }}/><section className="site-page-section site-services-index" aria-labelledby="site-services-index-title">
+  return <DirectionalViewTransition><div><SiteTitle>Servicios</SiteTitle><PageHero ambientVideo="aurora" eyebrow="LO QUE HACEMOS" title={<>Ideas que encuentran<br/>su forma.</>} description="Explora las familias de trabajo de Visual Corp. Cada proyecto empieza con una conversación sobre lo que necesitas." primary={{ label: 'Cuéntanos tu proyecto', to: '/cotizador' }} secondary={{ label: 'Ver soluciones por espacio', to: '/soluciones' }}/><section className="site-page-section site-services-index" aria-labelledby="site-services-index-title">
     <div className="site-services-index-heading"><div><Eyebrow>FAMILIAS DE TRABAJO</Eyebrow><h2 id="site-services-index-title">Compara las familias.</h2></div><p>Revisa ejemplos de piezas y entra a la ficha que mejor se relaciona con tu idea.</p></div>
     <AnimatedList className="site-services-grid" stagger={0.075}>{services.map((service, index) => <ServiceCard key={service.id} service={service} index={index}/>)}</AnimatedList>
     <p className="site-service-note">Cada solicitud se revisa según su alcance. Materiales, disponibilidad, valores y tiempos se confirman para cada proyecto.</p>
@@ -504,11 +511,11 @@ export function ServicesIndexPage() {
       <div className="card__footer" data-slot="card-footer"><Link className="site-primary-button" to="/cotizador">Cuéntanos tu proyecto <ArrowUpRight size={16} aria-hidden="true"/></Link></div>
       <BorderBeam label="Luz de borde para el siguiente paso" size={72} duration={8} colorFrom="#009ee2" colorTo="#e5007e" className="services-next-step-beam" />
     </div>
-  </section><EnvironmentBrandingMatrix/><StrategicBenefitsGrid/><PanoramicCategoryStrips/><Callout data={data}/></>;
+  </section><EnvironmentBrandingMatrix/><StrategicBenefitsGrid/><PanoramicCategoryStrips/><Callout data={data}/></div></DirectionalViewTransition>;
 }
 
 export function SolutionsIndexPage() {
-  return <><SiteTitle>Soluciones por espacio</SiteTitle><PageHero eyebrow="SOLUCIONES POR ESPACIO" title={<>Ideas de marca<br/>para cada espacio.</>} description="Explora referencias de piezas gráficas y señalización que podrías consultar según el espacio donde interactúas con tus clientes." primary={{ label: 'Ver servicios', to: '/servicios' }} secondary={{ label: 'Preparar mi cotización', to: '/cotizador' }}/><EnvironmentBrandingMatrix/><PanoramicCategoryStrips/></>;
+  return <><SiteTitle>Soluciones por espacio</SiteTitle><PageHero ambientVideo="aurora" eyebrow="SOLUCIONES POR ESPACIO" title={<>Ideas de marca<br/>para cada espacio.</>} description="Explora referencias de piezas gráficas y señalización que podrías consultar según el espacio donde interactúas con tus clientes." primary={{ label: 'Ver servicios', to: '/servicios' }} secondary={{ label: 'Preparar mi cotización', to: '/cotizador' }}/><BrandBeforeAfterShowcase/><EnvironmentBrandingMatrix/><PanoramicCategoryStrips/></>;
 }
 
 export function ServiceDetailPage() {
@@ -517,17 +524,18 @@ export function ServiceDetailPage() {
   const service = data.services.find((item) => item.id === slug);
   const details = familyInfo(slug);
   if (!service?.enabled) return <PageNotFound title="Este servicio no está disponible"/>;
-  const Icon = serviceIcons[service.id] || Sparkles;
   const page = details ? serviceDetailContent[details.id] : undefined;
+  const serviceId = service.id as PublicServiceId;
+  const keycapColor = getServiceKeycapColor(serviceId);
   const quoteUrl = `/cotizador?servicio=${encodeURIComponent(service.name)}`;
   const relatedIds: string[] = page?.relatedServices || [];
   const relatedServices = data.services.filter((item) => item.enabled && relatedIds.includes(item.id)).sort((a, b) => relatedIds.indexOf(a.id) - relatedIds.indexOf(b.id));
-  return <><SiteTitle>{service.name}</SiteTitle>
-    <article className={`service-detail-page service-detail-${service.id}`}>
+  return <DirectionalViewTransition><article className={`service-detail-page service-detail-${service.id}`}>
+      <SiteTitle>{service.name}</SiteTitle>
       <header className="service-detail-hero">
-        <nav className="service-detail-breadcrumbs" aria-label="Ruta de navegación"><Link to="/">Inicio</Link><ChevronRight size={14} aria-hidden="true"/><Link to="/servicios">Servicios</Link><ChevronRight size={14} aria-hidden="true"/><span aria-current="page">{service.name}</span></nav>
-        <div className="service-detail-hero-grid"><div className="service-detail-hero-copy"><Eyebrow light>{`SERVICIOS · ${details?.mark || ''}`}</Eyebrow><div className="service-detail-title-3d-wrapper"><Title3D serviceId={service.id as PublicServiceId} variant="hero" priority /><h1 className="sr-only">{service.name}</h1></div><p className="service-detail-hero-description">{page?.headline || service.description}</p><p className="service-detail-hero-intro">{page?.introduction || serviceProjectPrompts[service.id] || 'Cuéntanos qué necesitas y revisaremos contigo los detalles del proyecto.'}</p><div className="service-detail-actions"><Link className="site-primary-button" to={quoteUrl}>Preparar mi cotización <ArrowUpRight size={16}/></Link><a className="site-secondary-button" href="#orientar-proyecto">¿Qué información compartir? <ArrowDownRight size={16}/></a></div><span className="service-detail-hero-footnote"><Check size={14}/> Revisaremos contigo los detalles antes de confirmar tu solicitud.</span></div>
-          <div className="service-detail-visual" aria-hidden="true"><div className="service-detail-visual-orbit"/><span className="service-detail-visual-number">{details?.mark || 'VC'}</span><div className="service-detail-visual-icon"><Icon size={76} strokeWidth={1.2}/></div><span className="service-detail-visual-label"><i/> IDEAS QUE TOMAN FORMA</span></div>
+        <nav className="service-detail-breadcrumbs" aria-label="Ruta de navegación"><ViewTransitionLink to="/" transitionType="nav-back">Inicio</ViewTransitionLink><ChevronRight size={14} aria-hidden="true"/><ViewTransitionLink to="/servicios" transitionType="nav-back">Servicios</ViewTransitionLink><ChevronRight size={14} aria-hidden="true"/><span aria-current="page">{service.name}</span></nav>
+        <div className="service-detail-hero-grid"><div className="service-detail-hero-copy"><Eyebrow light>{`SERVICIOS · ${details?.mark || ''}`}</Eyebrow><div className="service-detail-title-3d-wrapper"><Title3D serviceId={service.id as PublicServiceId} variant="hero" priority /><h1 className="sr-only">{service.name}</h1></div><p className="service-detail-hero-description">{page?.headline || service.description}</p><p className="service-detail-hero-intro">{page?.introduction || serviceProjectPrompts[service.id] || 'Cuéntanos qué necesitas y revisaremos contigo los detalles del proyecto.'}</p><div className="service-detail-actions"><Link className="site-primary-button" to={quoteUrl}>Preparar mi cotización <ArrowUpRight size={16}/></Link><a className="site-secondary-button" href="#orientar-proyecto">¿Qué información compartir? <ArrowDownRight size={16}/></a>{(['textil', 'rotulos', 'eventos'] as string[]).includes(service.id) && <CreativeToolLink base={service.id === 'textil' ? 'camiseta' : service.id === 'rotulos' ? 'rotulo' : 'rollup'} returnTo={`/servicios/${service.id}`} label="Probar un mockup"/>}</div><span className="service-detail-hero-footnote"><Check size={14}/> Revisaremos contigo los detalles antes de confirmar tu solicitud.</span></div>
+          <div className="service-detail-visual" style={{ '--detail-accent': keycapColor } as React.CSSProperties} aria-hidden="true"><div className="service-detail-visual-orbit"/><span className="service-detail-visual-number">{details?.mark || 'VC'}</span><ServiceKeycap serviceId={serviceId} className="service-detail-keycap-stage" interactive followPointerOutside/><span className="service-detail-visual-label"><i/> IDEAS QUE TOMAN FORMA</span></div>
         </div>
       </header>
       <section className="service-detail-brief service-detail-section" id="orientar-proyecto" tabIndex={-1} aria-labelledby="service-detail-brief-title"><div className="service-detail-brief-heading"><Eyebrow>PARA EMPEZAR</Eyebrow><h2 id="service-detail-brief-title">Cuéntanos un poco<br/>sobre tu idea.</h2><p>{serviceProjectPrompts[service.id] || 'Comparte el objetivo, el espacio o la necesidad que quieres resolver.'}</p><span>{page?.preparation}</span></div><div className="service-detail-checklist">{(page?.checklist || ['El objetivo que quieres conseguir', 'Las medidas o cantidad aproximadas, si las conoces', 'Una foto, diseño o referencia, si la tienes']).map((item, index) => <div key={item}><span>{String(index + 1).padStart(2, '0')}</span><p>{item}</p><Check size={17} aria-hidden="true"/></div>)}<Link className="site-primary-button" to={quoteUrl}>Continuar al cotizador <ArrowUpRight size={16} aria-hidden="true"/></Link></div></section>
@@ -536,7 +544,7 @@ export function ServiceDetailPage() {
       {relatedServices.length > 0 && <section className="service-detail-related service-detail-section" aria-labelledby="service-detail-related-title"><div className="service-detail-related-heading"><div><span className="service-detail-kicker">SIGUE EXPLORANDO</span><h2 id="service-detail-related-title">Tu proyecto puede<br/>tomar otra forma.</h2></div><Link to="/servicios">Ver todas las familias <ArrowRight size={16}/></Link></div><div className="service-detail-related-grid">{relatedServices.map((item, index) => { const RelatedIcon = serviceIcons[item.id] || Sparkles; return <Link to={`/servicios/${item.id}`} key={item.id}><span>{String(index + 1).padStart(2, '0')}</span><RelatedIcon size={22} aria-hidden="true"/><h3>{item.name}</h3><p>{item.description}</p><ArrowUpRight size={17} aria-hidden="true"/></Link>; })}</div></section>}
       <section className="service-detail-cta service-detail-section" aria-labelledby="service-detail-cta-title"><div><span className="service-detail-kicker">{`VISUAL CORP · ${data.settings.location}`}</span><h2 id="service-detail-cta-title">Toda gran pieza<br/>empieza <em>con una idea.</em></h2><p>Cuéntanos qué imaginas y revisaremos contigo los detalles de tu solicitud.</p></div><Link className="site-primary-button" to={quoteUrl}>Empezar mi cotización <ArrowUpRight size={18} aria-hidden="true"/></Link></section>
     </article>
-  </>;
+  </DirectionalViewTransition>;
 }
 
 export function AboutPage() {
@@ -670,13 +678,21 @@ export function PublicQuotePage() {
   const service = serviceName(requestedService);
   const itemServices = requestedFamilies.length ? requestedLines.map((line) => serviceName(line.family)) : [];
   const requestKey = `${searchParams.toString()}|${service}|${itemServices.join('|')}`;
-  return <><SiteTitle>Solicitar cotización</SiteTitle><PageHero eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp" tabIndex={-1}><nav className="site-quote-flow" aria-label="Etapas de la solicitud"><a href="#quote-items-title"><span className="site-quote-flow-index" aria-hidden="true">01</span><span><strong>Detalla tu proyecto</strong><small>Artículos y, si aplica, instalación.</small></span></a><a href="#formulario-cotizacion"><span className="site-quote-flow-index" aria-hidden="true">02</span><span><strong>Comparte tus datos</strong><small>Para que el equipo responda tu solicitud.</small></span></a></nav><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} validationMessage={quoteValidationError} onChange={handleQuoteChange}/><div className="site-quote-request" id="formulario-cotizacion" tabIndex={-1}><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData} onQuoteValidationError={setQuoteValidationError}/></div></section></>;
+  return <><SiteTitle>Solicitar cotización</SiteTitle><PageHero ambientVideo="aurora" eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp" tabIndex={-1}><nav className="site-quote-flow" aria-label="Etapas de la solicitud"><a href="#quote-items-title"><span className="site-quote-flow-index" aria-hidden="true">01</span><span><strong>Detalla tu proyecto</strong><small>Artículos y, si aplica, instalación.</small></span></a><a href="#formulario-cotizacion"><span className="site-quote-flow-index" aria-hidden="true">02</span><span><strong>Comparte tus datos</strong><small>Para que el equipo responda tu solicitud.</small></span></a></nav><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} validationMessage={quoteValidationError} onChange={handleQuoteChange}/><div className="site-quote-request" id="formulario-cotizacion" tabIndex={-1}><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData} onQuoteValidationError={setQuoteValidationError}/></div></section></>;
 }
-function PageHero({ eyebrow, title, description, compact = false, primary, secondary }) {
+function PageHero({ eyebrow, title, description, compact = false, primary, secondary, ambientVideo }: {
+  eyebrow: string;
+  title: React.ReactNode;
+  description: string;
+  compact?: boolean;
+  primary?: { label: string; to: string };
+  secondary?: { label: string; to: string };
+  ambientVideo?: AmbientVideoClip;
+}) {
   const action = (item, className, Icon) => item.to.startsWith('#')
     ? <a className={className} href={item.to}>{item.label} <Icon size={16}/></a>
     : <Link className={className} to={item.to}>{item.label} <Icon size={16}/></Link>;
-  return <section className={`site-page-hero${compact ? ' compact' : ''}`}><div className="site-hero-glow glow-pink"/><div className="site-page-hero-inner"><Eyebrow light>{eyebrow}</Eyebrow><h1>{title}</h1><p>{description}</p><div className="site-page-hero-actions">{primary && action(primary, 'site-primary-button', ArrowUpRight)}{secondary && action(secondary, 'site-secondary-button', ArrowRight)}</div></div></section>;
+  return <section className={`site-page-hero${compact ? ' compact' : ''}${ambientVideo ? ' has-ambient-video' : ''}`}>{ambientVideo ? <AmbientVideoLayer clip={ambientVideo} variant="page-hero" parallax playbackRate={0.78}/> : <div className="site-hero-glow glow-pink"/>}<div className="site-page-hero-inner"><Eyebrow light>{eyebrow}</Eyebrow><h1>{title}</h1><p>{description}</p><div className="site-page-hero-actions">{primary && action(primary, 'site-primary-button', ArrowUpRight)}{secondary && action(secondary, 'site-secondary-button', ArrowRight)}</div></div></section>;
 }
 
 function Callout({ data, title = '¿Tienes una idea en mente?' }) {

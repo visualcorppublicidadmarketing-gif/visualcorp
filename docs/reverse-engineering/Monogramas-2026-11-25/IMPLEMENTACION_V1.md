@@ -1,18 +1,20 @@
 # Monogramas 2D/3D — implementación local V1
 
-**Fecha:** 2026-11-25  
-**Estado:** código local integrado en el centro de herramientas; no desplegado ni comprobado en navegador.  
+**Fecha:** 2026-11-25
+**Estado:** V1 implementada en Suite; consulta la nota canónica de continuidad para el estado de publicación.
 **Ruta interna:** `/operaciones/herramientas/monogramas`.
 
 ## Alcance implementado
 
 - Módulo separado en `src/features/tools/monogram-generator/`; no cambia el modelo específico de cajas.
-- Modelo versionado `schemaVersion: 1`, coordenadas y medidas en milímetros y elementos de texto con ID estable dentro de `elements[]`.
+- Modelo versionado `schemaVersion: 1`, geometría y medidas canónicas en milímetros y elementos de texto con ID estable dentro de `elements[]`.
+- La UI permite elegir mm o cm en monogramas; los campos admiten pasos de 0,1 mm o 0,01 cm. El JSON v1 conserva `unit: "mm"` y magnitudes en mm; `displayUnit` es una preferencia opcional compatible con archivos anteriores.
 - Presets Inicial y Nombre + inicial. Se pueden añadir, duplicar, seleccionar, mover con arrastre o flechas, editar y quitar capas.
 - DM Sans se convierte localmente en contornos SVG usando `opentype.js` 2.0.0. La fuente ya existía en `public/public-site/fonts/DMSans-Regular.ttf`; su licencia OFL fue copiada junto a los archivos tipográficos.
 - La vista 2D y la extrusión Three.js se generan desde los mismos contornos. El visor conserva renderer y controles durante los cambios de texto, y libera las geometrías y materiales sustituidos o desmontados. Las capas se apilan en Z por su profundidad configurada.
 - Guarda parámetros en `localStorage`, permite guardar y abrir un `.vcmg.json`, y exporta un SVG con trazados vectoriales.
-- La UI usa controles internos, grid adaptable por container query, campos editables, movimiento por teclado y estilos de movimiento reducido.
+- La UI usa controles internos, grid adaptable por container query, campos decimales editables, movimiento por teclado y estilos de movimiento reducido.
+- Caja admite mm, cm y pulgadas en sus medidas y en las dimensiones de la plancha; QR permite definir el ancho impreso en mm o cm. Las tres interfaces convierten solo para mostrar/editar: las geometrías, salidas SVG/DXF y el ancho físico QR se normalizan o exportan en mm.
 
 ## Límites actuales de fabricación
 
@@ -31,7 +33,7 @@
 
 ## Siguiente cola de desarrollo
 
-1. Revisar la primera versión en navegador, resoluciones intermedias y teclado; aún no se ha ejecutado build, typecheck ni prueba visual en esta tarea.
+1. Revisar el editor en navegador, resoluciones intermedias y teclado con la sesión interna habilitada.
 2. Elegir un motor 2D de unión vectorial para exportar geometría combinada y estudiar detección de islas/puentes antes de anunciar corte láser soldado.
 3. Definir un validador de mallas cerradas y un formato de impresión 3D antes de habilitar STL/3MF.
 4. Añadir importación de fuentes solo después de acordar formatos, cobertura de caracteres, almacenamiento local y política de licencias.
@@ -42,4 +44,4 @@
 
 - Investigación de la interfaz de referencia: [ANALISIS_MONOGRAMAS.md](ANALISIS_MONOGRAMAS.md).
 - Arquitectura verificada de un generador paramétrico de referencia: [ANALISIS_ARQUITECTURA_GENERADORES.md](../BurroCreativo-2026-11-25/ANALISIS_ARQUITECTURA_GENERADORES.md).
-- Verificación de este cambio: `npm run typecheck` y `npm run build` completaron correctamente. Build advierte que otros bundles de la aplicación superan 500 kB; hay un reporte de build, pero no se inspeccionó la pantalla en navegador ni se probó fabricación.
+- Verificación en rama limpia: `npm run typecheck`, `npm run build` y `git diff --check` pasaron. Vite advierte sobre chunks mayores de 500 kB; el chunk de la página de monogramas mide 261,94 kB. CI/Preview debe completar el flujo de publicación; no se ha probado fabricación física.

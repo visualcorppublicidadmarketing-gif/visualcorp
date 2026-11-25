@@ -12,6 +12,7 @@ export interface MonogramOutline {
   depth: number;
   bounds: { x: number; y: number; width: number; height: number };
   missingCharacters: string[];
+  usedSimpleShaping: boolean;
 }
 
 const FONT_URLS = {
@@ -40,6 +41,35 @@ function round(value: number) {
   return Number(value.toFixed(3));
 }
 
+function createGlyphRunPath(
+  font: opentype.Font,
+  text: string,
+  x: number,
+  y: number,
+  fontSize: number,
+) {
+  const scale = fontSize / font.unitsPerEm;
+  let cursorX = x;
+  let previousGlyph: opentype.Glyph | null = null;
+  let path: opentype.Path | null = null;
+
+  // Avoid GSUB shaping here: opentype.js 2.0.0 cannot process some contextual
+  // substitution lookups found in otherwise valid fonts such as our DM Sans.
+  for (const character of Array.from(text.normalize('NFC'))) {
+    const glyph = font.charToGlyph(character);
+    if (!glyph) throw new Error(`No se pudo cargar el glifo «${character}».`);
+    if (previousGlyph) cursorX += font.getKerningValue(previousGlyph, glyph) * scale;
+    const glyphPath = glyph.getPath(cursorX, y, fontSize, undefined, font);
+    if (path) path.extend(glyphPath);
+    else path = glyphPath;
+    cursorX += (glyph.advanceWidth ?? 0) * scale;
+    previousGlyph = glyph;
+  }
+
+  if (!path) throw new Error('El texto no contiene glifos compatibles.');
+  return path;
+}
+
 export function createMonogramOutline(
   font: opentype.Font,
   projectHeight: number,
@@ -50,10 +80,17 @@ export function createMonogramOutline(
 
   // Project positions use a bottom-left origin; SVG uses a top-left origin.
   const baselineY = projectHeight - layer.y;
-  const path = font.getPath(text, layer.x, baselineY, layer.fontSize, {
-    kerning: true,
-    features: { liga: true },
-  });
+  let usedSimpleShaping = false;
+  let path: opentype.Path;
+  try {
+    path = font.getPath(text, layer.x, baselineY, layer.fontSize, {
+      kerning: true,
+      features: { liga: true },
+    });
+  } catch {
+    path = createGlyphRunPath(font, text, layer.x, baselineY, layer.fontSize);
+    usedSimpleShaping = true;
+  }
   const box = path.getBoundingBox();
   const d = path.toPathData(3);
   if (!d) return null;
@@ -75,6 +112,7 @@ export function createMonogramOutline(
     y: baselineY,
     fontSize: layer.fontSize,
     depth: layer.depth,
+    usedSimpleShaping,
     bounds: {
       x: round(box.x1),
       y: round(box.y1),

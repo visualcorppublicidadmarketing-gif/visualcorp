@@ -4,7 +4,7 @@ import { requestGlobalCommandPaletteOpen } from './ui/GlobalCommandPalette';
 
 type Props = { items: AppNavLink[] };
 
-/** Topbar entry point for the one shared command palette mounted at the app root. */
+/** Topbar entry point for the shared route and workspace command palette. */
 export function AdminCommandPalette({ items }: Props) {
   return (
     <button

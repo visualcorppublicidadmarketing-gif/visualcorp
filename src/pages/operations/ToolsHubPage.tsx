@@ -35,7 +35,7 @@ export function ToolsHubPage() {
               <span className="tools-hub__art-tag"><Type size={12} /> 3D + SVG + JSON</span>
             </div>
             <div className="tools-hub__card-content">
-              <div><span className="tools-hub__status is-prototype"><i /> Prototipo local · primera versión</span><h2>Editor de monogramas</h2><p>Combina textos independientes, colócalos en el editor 2D y previsualiza la extrusión 3D.</p></div>
+              <div><span className="tools-hub__status"><i /> Disponible · V1</span><h2>Editor de monogramas</h2><p>Combina textos independientes, colócalos en el editor 2D y previsualiza la extrusión 3D.</p></div>
               <span className="tools-hub__open"><span>Abrir herramienta</span><ArrowUpRight size={17} aria-hidden="true" /></span>
             </div>
           </Link>

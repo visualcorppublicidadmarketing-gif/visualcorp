@@ -10,6 +10,7 @@
 /** Only DM Sans is enabled until additional font licensing is confirmed. */
 export type MonogramFontId = 'dm-sans';
 export type MonogramPresetId = 'initial' | 'name-initial';
+export type MonogramDisplayUnit = 'mm' | 'cm';
 
 export interface MonogramElement {
   /** Stable within this project; do not use the array index as an identity. */
@@ -29,6 +30,8 @@ export interface MonogramElement {
 
 export interface MonogramProject {
   schemaVersion: 1;
+  /** All physical values stay in mm; this field controls presentation only. */
+  displayUnit: MonogramDisplayUnit;
   unit: 'mm';
   title: string;
   width: number;
@@ -101,6 +104,7 @@ const DEFAULT_TITLE = 'Monograma';
 /** Default project opens with one editable initial. */
 export const DEFAULT_MONOGRAM_PROJECT: MonogramProject = {
   schemaVersion: 1,
+  displayUnit: 'mm',
   unit: 'mm',
   title: DEFAULT_TITLE,
   width: 100,
@@ -128,6 +132,7 @@ export const MONOGRAM_PRESETS: Record<MonogramPresetId, MonogramPreset> = {
     description: 'Una inicial en una placa compacta.',
     project: {
       schemaVersion: 1,
+      displayUnit: 'mm',
       unit: 'mm',
       title: 'Inicial',
       width: 100,
@@ -144,6 +149,7 @@ export const MONOGRAM_PRESETS: Record<MonogramPresetId, MonogramPreset> = {
     description: 'Dos capas editables para combinar una inicial y un nombre.',
     project: {
       schemaVersion: 1,
+      displayUnit: 'mm',
       unit: 'mm',
       title: 'Nombre con inicial',
       width: 130,
@@ -172,6 +178,19 @@ function clamp(value: number, min: number, max: number): number {
 
 function round(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+export function millimetersToMonogramUnit(valueMm: number, unit: MonogramDisplayUnit): number {
+  return unit === 'cm' ? valueMm / 10 : valueMm;
+}
+
+export function monogramUnitToMillimeters(value: number, unit: MonogramDisplayUnit): number {
+  return unit === 'cm' ? value * 10 : value;
+}
+
+export function formatMonogramLength(valueMm: number, unit: MonogramDisplayUnit): string {
+  return new Intl.NumberFormat('es-EC', { maximumFractionDigits: unit === 'cm' ? 3 : 2 })
+    .format(millimetersToMonogramUnit(valueMm, unit));
 }
 
 function cleanText(value: unknown, maxLength: number): string {
@@ -253,6 +272,7 @@ export function normalizeMonogramProject(candidate: unknown): MonogramProject {
 
   return {
     schemaVersion: 1,
+    displayUnit: source.displayUnit === 'cm' ? 'cm' : 'mm',
     unit: 'mm',
     title: cleanText(source.title, MONOGRAM_LIMITS.maxTitleLength).trim() || DEFAULT_TITLE,
     width,

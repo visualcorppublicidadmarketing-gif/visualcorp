@@ -1,4 +1,57 @@
-import React, { useId, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
+import React, { lazy, Suspense, useEffect, useId, useState, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
+import type { LiquidGlassProps } from 'simple-liquid-glass';
+
+const LazyLiquidGlass = lazy(async () => {
+  const { LiquidGlass } = await import('simple-liquid-glass');
+  return { default: LiquidGlass };
+});
+
+function useReducedTransparency() {
+  const [reduced, setReduced] = useState(() => (
+    typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-transparency: reduce)').matches
+  ));
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return undefined;
+    const query = window.matchMedia('(prefers-reduced-transparency: reduce)');
+    const updatePreference = () => setReduced(query.matches);
+    updatePreference();
+    query.addEventListener('change', updatePreference);
+    return () => query.removeEventListener('change', updatePreference);
+  }, []);
+
+  return reduced;
+}
+
+type UiLiquidGlassAccentProps = Pick<LiquidGlassProps, 'className' | 'style'>;
+
+/** Decorative refractive layer, lazy-loaded and omitted when reduced transparency is requested. */
+export function UiLiquidGlassAccent({ className = '', style }: UiLiquidGlassAccentProps) {
+  const reducedTransparency = useReducedTransparency();
+
+  if (reducedTransparency) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <LazyLiquidGlass
+        aria-hidden="true"
+        className={`vc-ui-liquid-glass-accent${className ? ` ${className}` : ''}`}
+        effectMode="auto"
+        renderer="svg"
+        material="subtle"
+        quality="low"
+        radius={24}
+        blur={1}
+        saturation={115}
+        glassColor="rgba(255,255,255,0.045)"
+        borderColor="rgba(255,255,255,0.32)"
+        style={style}
+      />
+    </Suspense>
+  );
+}
 
 export type UiButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 

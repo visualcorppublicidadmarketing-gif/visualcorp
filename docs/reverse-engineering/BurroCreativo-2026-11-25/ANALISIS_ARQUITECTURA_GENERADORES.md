@@ -1,7 +1,7 @@
 # Generadores paramétricos de Burro Creativo: catálogo, presets y caja flexible
 
-**Fecha:** 2026-11-25  
-**Estado:** diez capturas archivadas y una inspección estática REA de Caja flexible; algunas afirmaciones del usuario quedan sin verificar o corregidas.  
+**Fecha:** 2026-11-25
+**Estado:** diez capturas archivadas y una inspección estática REA de Caja flexible; algunas afirmaciones del usuario quedan sin verificar o corregidas.
 **Objetivo:** preservar contexto reutilizable para el catálogo de herramientas paramétricas de Visual Corp Suite y relacionarlo con la futura herramienta de monogramas.
 
 ## Procedencia y cómo leer esta nota

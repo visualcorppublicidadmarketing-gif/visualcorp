@@ -36,8 +36,10 @@ Las migraciones versionadas están en `supabase/migrations/`. Revisa el estado l
 ## Rutas principales
 
 - Sitio público: `/`, `/servicios`, `/nosotros`, `/como-trabajamos`, `/contacto`, `/cotizador`, `/tienda`, `/portafolio`, `/blog` y `/publicaciones`.
-- Administración: `/admin`, `/admin/sitio`, `/admin/contenido`, `/admin/solicitudes` y `/admin/sugerencias`.
+- Administración: `/admin`, `/admin/sitio`, `/admin/contenido` y `/admin/solicitudes`.
 - Operaciones: /operaciones, /operaciones/pos, /operaciones/cotizador, /operaciones/inventario, /operaciones/compras, /operaciones/clientes y /operaciones/marketing.
+
+La tienda incluye una colección visual de ejemplos en `/tienda?coleccion=souvenirs`. Revisa [docs/GALERIA_SOUVENIRS_TIENDA.md](docs/GALERIA_SOUVENIRS_TIENDA.md) para el flujo y el cuidado de sus imágenes.
 
 Los perfiles configurables y la matriz de permisos ya están aplicados en Supabase con validación de servidor y RLS. Consulta [docs/MODELO_USUARIOS_ROLES_Y_PERMISOS_VISUAL_CORP.md](docs/MODELO_USUARIOS_ROLES_Y_PERMISOS_VISUAL_CORP.md) para el flujo de asignación, los límites de cuentas y el estado de verificación. Una cuenta nueva debe iniciar sesión una vez antes de que se le pueda asignar un perfil.
 
@@ -67,10 +69,28 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ## Continuidad del trabajo
 
-- **Sugerencias de mejora (25 de noviembre de 2026):** nueva página privada `/admin/sugerencias`, visible en «Equipo y sistema». Permite registrar propuestas para el sitio, el local físico, atención, procesos, equipo u otras áreas; filtra por texto, categoría y estado, y el seguimiento de estado requiere permiso de edición del equipo. La tabla `admin_suggestions` y sus políticas RLS están definidas en `supabase/migrations/20261125193000_admin_suggestions.sql`. Implementación local sin publicar; la migración queda pendiente de aplicación en Supabase. `npm run build:checked` y `git diff --check` pasaron.
+### Herramientas paramétricas 2D/3D · 25 de noviembre de 2026
 
-- **Monogramas 2D/3D (25 de noviembre de 2026):** primera herramienta local en `/operaciones/herramientas/monogramas`; editor de capas de texto, vista vectorial/Three.js y exportación SVG. Sus límites de fabricación y tareas siguientes están en [implementación V1](docs/reverse-engineering/Monogramas-2026-11-25/IMPLEMENTACION_V1.md) y el [roadmap de herramientas paramétricas](docs/reverse-engineering/HERRAMIENTAS_PARAMETRICAS_ROADMAP_2026-11-25.md). No publicado ni verificado en navegador.
-- **Generadores paramétricos Burro Creativo (25 de noviembre de 2026):** capturas del catálogo y Caja flexible, con observaciones de UI separadas de las hipótesis sobre el código, en [docs/reverse-engineering/BurroCreativo-2026-11-25/ANALISIS_ARQUITECTURA_GENERADORES.md](docs/reverse-engineering/BurroCreativo-2026-11-25/ANALISIS_ARQUITECTURA_GENERADORES.md).
+- **Monogramas:** V1 disponible en `/operaciones/herramientas/monogramas`, con capas editables, lienzo 2D, vista de extrusión 3D y exportación SVG/JSON. La interfaz admite mm y cm; la caja admite mm, cm y pulgadas, y el ancho de impresión QR admite mm y cm. Las medidas internas y los archivos de fabricación permanecen en mm para conservar escala y compatibilidad.
+- **Precisión:** los campos físicos admiten incrementos de 0,1 mm y 0,01 cm; Caja conserva incrementos de 0,01 in. El esquema `.vcmg.json` v1 sigue almacenando medidas en mm y acepta una preferencia opcional de visualización.
+- **Límites:** el editor de monogramas aún no une capas, valida puentes/islas ni exporta STL/3MF; SVG es vectorial y requiere revisión de fabricación. La documentación e investigación están en [Monogramas](docs/reverse-engineering/Monogramas-2026-11-25/IMPLEMENTACION_V1.md), [arquitectura paramétrica](docs/reverse-engineering/BurroCreativo-2026-11-25/ANALISIS_ARQUITECTURA_GENERADORES.md) y [roadmap](docs/reverse-engineering/HERRAMIENTAS_PARAMETRICAS_ROADMAP_2026-11-25.md).
+
+### Búsqueda de tazas en el POS · 23 de noviembre de 2026
+
+- **Causa:** los SKU físicos PF003 y PF007 están publicados en el mismo catálogo que lee el POS y el cotizador. Se llaman «Jarro» y describen el producto como taza; la búsqueda del POS no consultaba la descripción, mientras el cotizador sí.
+- **Corrección local:** el buscador del POS incluye ahora la descripción y reconoce consultas en singular/plural. La ayuda del campo indica que también busca por descripción. No cambian el catálogo, inventario, precios ni migraciones.
+- **Verificación:** lectura de catálogo en Supabase confirmó PF003/PF007; una búsqueda funcional de «tazas» devolvió ambos SKU; `npm run build:checked` y `git diff --check` pasaron.
+- **Estado:** publicado mediante el PR [#377](https://github.com/visualcorppublicidadmarketing-gif/visualcorp/pull/377), integrado en `main` en `c9e3dabc39cae20a63d9e8acd4af24820a4c09ec`; Vercel Production `READY` y `/operaciones/pos` responde HTTP 200.
+
+### Barra vertical global: refinamiento visual · 21 de noviembre de 2026
+
+- **Dirección visual:** tirador vertical degradado azul, violeta y magenta, con reflejo satinado y brillo moderado. El reposo se integra con los fondos claros y oscuros; hover y arrastre hacen el acento más visible.
+- **Alcance:** todas las barras verticales nativas en escritorio con puntero preciso, desde 1024 px. No cambia el tamaño ni el gesto nativo; las barras horizontales y la presentación táctil quedan intactas.
+- **Accesibilidad:** alto contraste conserva el estilo del sistema; transparencia reducida usa colores sólidos; la transición solo existe si el usuario no reduce el movimiento.
+- **Selección:** Originkit no ofreció una pieza específica para el control nativo; sus resultados de scroll son efectos animados. Magic UI y HeroUI ScrollShadow tampoco sustituyen ese control; shadcn no tiene registros configurados aquí. Se eligió CSS nativo sin dependencias nuevas.
+- **Fuentes:** [CSS Scrollbars en MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Scrollbars_styling), [`scrollbar-color`](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/scrollbar-color), [CSS Scrollbars Module del W3C](https://www.w3.org/TR/css-scrollbars-1/) y [catálogo Originkit](https://www.originkit.dev/category/background-animation).
+- **Verificación:** `npm run build:checked` pasó (TypeScript y Vite). La inspección visual del navegador no estuvo disponible en esta sesión por la configuración de Work.
+- **Fuentes locales:** `src/styles/desktop-scrollbars.css`, importado desde `src/main.tsx`; registro en `docs/CHANGELOG_INTERNO.md`.
 
 - **Usuarios y Accesos (19 de noviembre de 2026):** el panel incorpora solicitudes de usuarios de Google sin perfil, aprobación con perfil, descarte e invitaciones con mensaje copiable. La confirmación de registro se muestra después de recibir la respuesta de Supabase. El archivo `20261119184952_organization_access_requests.sql` coincide con la migración registrada en producción. La compilación y las pruebas locales de solicitudes y acceso manual pasaron.
 
@@ -176,10 +196,9 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ### Inicio de Admin: accesos por perfil y métricas — 2026-11-20
 
-- Se destacan cuatro herramientas según el orden de trabajo y los permisos del perfil; la búsqueda y los favoritos conservan el catálogo completo.
-- Métricas con periodos claros y cifras secundarias de ventas confirmadas y alertas de existencias. Al fallar la actualización, los últimos valores quedan visibles como datos anteriores.
-- Tarjetas glass con brillo al puntero, animación sutil y adaptación por ancho útil, tema y movimiento reducido. Sin cambios de permisos, datos, rutas, dependencias ni migraciones.
-- `npm run build:checked` y `git diff --check` pasan. La revisión visual autenticada confirmó los dos temas, las superficies glass y el ajuste en 390, 663 y 1366 px sin desbordamiento. El navegador usa transparencia reducida, por lo que presenta la alternativa sólida accesible; el vidrio se confirmó con la preferencia normal. Contexto y decisión de componentes: [ficha del inicio](docs/admin-home-refinement-20261109.md).
+- Se destacan cuatro herramientas según el orden y los permisos del perfil, en tarjetas cuadradas compactas de tres columnas en anchos habituales, dos en contenedores por debajo de 480 px y más columnas solo en escritorio amplio; la búsqueda y los favoritos conservan el catálogo completo. Las métricas incluyen tendencias reales de 14 días para ventas confirmadas y cotizaciones, agrupadas en fechas de Guayaquil y limitadas por organización, permisos y RLS.
+- Tarjetas glass con brillo, animación sutil y diseño adaptable; se mantiene el tratamiento para temas claro/oscuro, movimiento y transparencia reducidos. No cambian rutas ni permisos, no se agregan dependencias o migraciones y no se altera información persistida.
+- `npm run build:checked` y `git diff --check` pasan. La revisión visual autenticada confirmó ambos temas, tres columnas en 539 px y dos en espacios estrechos, sin desbordamiento visible. Investigación, decisiones y límites: [ficha del inicio](docs/admin-home-refinement-20261109.md).
 
 ### Tarjetas de publicaciones y Calendario de Marketing — 2026-11-09
 
@@ -233,3 +252,18 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 - **Revisión y aprobación:** typecheck y build local pasan; no se realizó una venta ni se comprobó con una sesión autenticada. Sin aprobación de publicación en esta solicitud.
 - **Siguiente acción:** aplicar la migración de forma controlada y publicar cuando se solicite.
 
+
+### Corrección de imagen al cambiar de artículo en Estudio Mockup · 2026-11-24
+
+- **Estado:** correcciones locales en `codex/fix-product-image-selection-20261124`, basada en `origin/main` (`396eb4a`); pendiente de PR y despliegue.
+- **Hallazgos:** al cargar otra foto base el lienzo podía renderizar la imagen anterior; un estado sin URL podía causar una excepción; y todas las bases compartían las mismas capas, así que el diseño de un artículo aparecía sobre otro.
+- **Correcciones:** la imagen del lienzo queda ligada a su URL activa y el estado nulo se gestiona sin excepción. El lienzo y el visor 3D se remontan por ID y URL de imagen al cambiar de producto; las texturas asíncronas también quedan etiquetadas por ID, evitando reutilizar el render del artículo anterior. Cada producto recuerda sus propias capas y apariencia; una foto de producto nueva inicia una composición limpia. Se limita el diseño a 80 capas y las cargas de imagen a 24 megapíxeles, además del máximo existente de 12 MB. El cambio de base se bloquea mientras se exporta y el guardado serializa una instantánea coherente. Un borrador se guarda automáticamente en IndexedDB por ruta y puede recuperarse o descartarse de forma explícita; `.vcdesign.json` sigue disponible como archivo portable. Se añadieron flechas, Inicio y Fin a las pestañas accesibles del inspector. El visor libera geometrías, materiales y texturas al reemplazar modelos; se retiró `.gltf` de la carga porque sus recursos externos no se empaquetan y el archivo aislado no es confiable. Las áreas siguen identificadas como referenciales; falta un modelo persistente de varias vistas y zonas.
+- **Verificación:** `npm run build:checked`, interacción manual en navegador local (añadir una capa, cambiar de gorra a taza y volver, verificar el borrador por artículo y navegar el inspector con flecha derecha), revisión visual y consola sin errores; `git diff --check` pasa. El ciclo de recuperación IndexedDB no se comprobó manualmente. No se desplegó.
+- **Fuente:** `src/public-site/tools/product-design/ProductDesignCanvas.tsx`.
+
+### Mockups blancos frontales del Estudio Mockup · 2026-11-24
+
+- **Solicitud:** renders realistas de frente para los once artículos, base blanca con cambio de color disponible y zonas de impresión alineadas. La gorra debe ser trucker con malla atrás/laterales y diseño solo en el panel frontal.
+- **Aplicado:** 11 PNG RGBA transparentes en `public/images/catalog-products/frontal-blanco-2026-11-24/`; conectados al lienzo 2D y a la vista 3D. Esta compone el render frontal con las capas y el color actuales y lo integra sobre el modelo de escena; el encuadre inicial es frontal y conserva controles para girar. Los archivos del usuario cargados como modelos 3D mantienen su proyección UV/decal. El blanco queda como color inicial y se mantienen las muestras de color. La zona de la gorra termina antes de la visera.
+- **Investigación UI:** Magic UI no devolvió un patrón de personalización pertinente; shadcn no tiene registros configurados; HeroUI ColorSwatchPicker coincide funcionalmente, pero el editor actual ya ofrece esa interacción y migrarla añadiría otra integración sin mejorar estos mockups. Se conservó React/CSS existente y no se añadieron dependencias.
+- **Verificación:** los 11 PNG son 1254×1254 RGBA con canal alfa; `npm run build:checked` y `git diff --check` pasan. Las imágenes son referencias de diseño, no especificaciones de fabricación. No se desplegó.

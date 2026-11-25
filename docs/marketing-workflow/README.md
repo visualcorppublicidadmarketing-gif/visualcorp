@@ -79,6 +79,14 @@ Referencias: [Sheet](https://ui.shadcn.com/docs/components/base/sheet), [Data Ta
 
 Estado: implementación local para revisión, con pruebas automatizadas y capturas de datos ficticios. Siguiente paso: revisión del cambio y preparación de la activación conjunta de migración y web; ninguna aprobación estética, publicación externa o despliegue se infiere de estas pruebas.
 
+## Vistas responsive de Marketing · 20 de noviembre de 2026
+
+- En móvil, semana y día se muestran como una agenda vertical; el selector indica cuántos elementos tiene cada fecha y ofrece accesos directos para crear publicaciones y actividades.
+- El calendario mensual permite abrir la agenda completa de una fecha. Kanban ofrece navegación rápida entre etapas; la tabla de publicaciones se reorganiza como tarjetas con sus rótulos y acciones.
+- Se conservaron los componentes de React/CSS existentes. Se revisaron patrones de Buffer, Outlook, Google Calendar, shadcn, HeroUI y Magic UI; no se añadió una dependencia porque ninguno reemplaza el flujo editorial propio con estados, actividades y programación.
+- Typecheck y build completaron correctamente. La vista previa de Vercel quedó lista. La revisión autenticada con datos de la aplicación no estuvo disponible en esta sesión; no se registraron cambios en datos ni se publicaron contenidos en redes.
+
+Referencias: [Buffer móvil](https://support.buffer.com/en-us/articles/using-the-calendar-feature-on-the-buffer-mobile-app-YxB7DmpyJI), [Outlook móvil](https://support.microsoft.com/en-us/outlook/how-do-i-switch-to-month-view), [Google Calendar móvil](https://support.google.com/calendar/answer/6110849?co=GENIE.Platform%3DAndroid&hl=en-7), [shadcn Calendar](https://ui.shadcn.com/docs/components/base/calendar), [HeroUI Calendar](https://heroui.com/docs/react/components/calendar).
 ## Refinamiento de vistas estrechas · 20 de noviembre de 2026
 
 - Semana y día usan en móvil una agenda vertical con selector táctil de fechas, cantidades por día, tarjetas legibles y accesos directos para crear publicaciones o actividades. La semana abre en hoy cuando esa fecha pertenece al rango; si no, abre el primer día visible.

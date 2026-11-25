@@ -42,7 +42,7 @@ import { useTheme } from '../../app/ThemeProvider';
 import { ChatterDrawer360 } from './ChatterDrawer360';
 import './global-command-palette.css';
 
-export const GLOBAL_COMMAND_PALETTE_OPEN_EVENT = 'visualcorp:open-global-command-palette';
+const GLOBAL_COMMAND_PALETTE_OPEN_EVENT = 'vc-open-global-command-palette';
 
 export function requestGlobalCommandPaletteOpen() {
   if (typeof window !== 'undefined') {
@@ -319,17 +319,16 @@ export function GlobalCommandPalette({
   }, [isControlled, externalOnClose]);
 
   const handleOpen = useCallback(() => {
-    if (isControlled) {
-      externalOnOpen?.();
-    } else {
-      setInternalOpen(true);
-    }
+    if (isControlled) externalOnOpen?.();
+    else setInternalOpen(true);
   }, [isControlled, externalOnOpen]);
 
-  // Una sola paleta escucha Ctrl+K/Cmd+K en toda la Suite.
+  // The Suite has one palette for routes and live workspace actions.
   useEffect(() => {
     const onGlobalKeyDown = (event: globalThis.KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      if ((event.metaKey || event.ctrlKey)
+        && event.key.toLowerCase() === 'k'
+        && (!event.shiftKey || isSuiteRoute)) {
         const target = event.target instanceof HTMLElement ? event.target : null;
         const editingText = Boolean(target?.closest('input, textarea, select, [contenteditable="true"], [role="textbox"]'));
         if (!open && editingText) return;
@@ -339,14 +338,13 @@ export function GlobalCommandPalette({
       }
     };
 
-    const onRequestOpen = () => handleOpen();
     window.addEventListener('keydown', onGlobalKeyDown);
-    window.addEventListener(GLOBAL_COMMAND_PALETTE_OPEN_EVENT, onRequestOpen);
+    window.addEventListener(GLOBAL_COMMAND_PALETTE_OPEN_EVENT, handleOpen);
     return () => {
       window.removeEventListener('keydown', onGlobalKeyDown);
-      window.removeEventListener(GLOBAL_COMMAND_PALETTE_OPEN_EVENT, onRequestOpen);
+      window.removeEventListener(GLOBAL_COMMAND_PALETTE_OPEN_EVENT, handleOpen);
     };
-  }, [open, handleClose, handleOpen]);
+  }, [open, handleClose, handleOpen, isSuiteRoute]);
 
   // Al abrir la paleta: resetear query, índice y dar autofocus
   useEffect(() => {
@@ -1042,7 +1040,7 @@ export function GlobalCommandPalette({
           className={`vc-palette-trigger ${triggerClassName}`}
           onClick={handleOpen}
           aria-label="Buscar en Visual Corp Suite"
-          aria-keyshortcuts="Control+K Meta+K"
+          aria-keyshortcuts={isSuiteRoute ? 'Control+K Meta+K Control+Shift+K Meta+Shift+K' : 'Control+K Meta+K'}
         >
           <Search size={15} className="vc-palette-trigger-search-icon" />
           <span className="vc-palette-trigger-text">Buscar comandos, clientes o stock…</span>

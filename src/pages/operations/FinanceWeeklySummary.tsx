@@ -15,7 +15,7 @@ import {
   mondayOf,
   normalizePaymentMethod,
   PAYMENT_METHODS,
-  saleReturnedCents,
+  summarizeWeeklyAttribution,
   weekdayLabel,
   type PaymentMethodId,
 } from './weeklyFinanceSummaryModel';
@@ -56,8 +56,6 @@ type SaleRow = {
   sale_code: string | null;
   status: string;
   total: number | string;
-  subtotal?: number | string;
-  discount_total?: number | string;
   created_at: string;
   branch_id: string | null;
   advisor_id: string | null;
@@ -121,10 +119,9 @@ export function FinanceWeeklySummary() {
     payments: PaymentRow[];
     refunds: RefundRow[];
     saleContext: SaleRow[];
-    returns: any[];
     branches: any[];
     team: any[];
-  }>({ sales: [], payments: [], refunds: [], saleContext: [], returns: [], branches: [], team: [] });
+  }>({ sales: [], payments: [], refunds: [], saleContext: [], branches: [], team: [] });
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -162,7 +159,7 @@ export function FinanceWeeklySummary() {
       if (refreshTimer.current !== null) window.clearTimeout(refreshTimer.current);
       refreshTimer.current = window.setTimeout(() => setReloadCount((value) => value + 1), 350);
     };
-    ['sales', 'sale_payments', 'sale_returns', 'sale_refund_settlements'].forEach((table) => {
+    ['sales', 'sale_payments', 'sale_refund_settlements'].forEach((table) => {
       channel.on('postgres_changes', {
         event: '*', schema: 'public', table, filter: `organization_id=eq.${organizationId}`,
       }, scheduleRefresh);
@@ -198,7 +195,7 @@ export function FinanceWeeklySummary() {
         const salesQuery = () => {
           let query = supabase!
             .from('sales')
-            .select('id,sale_code,status,total,subtotal,discount_total,created_at,branch_id,advisor_id')
+            .select('id,sale_code,status,total,created_at,branch_id,advisor_id')
             .eq('organization_id', organizationId)
             .eq('status', 'confirmed')
             .gte('created_at', startAt)
@@ -248,7 +245,7 @@ export function FinanceWeeklySummary() {
         const extraSaleRows = await Promise.all(saleBatches.map((ids) => readAllRows(() => {
           let query = supabase!
             .from('sales')
-            .select('id,sale_code,status,total,subtotal,discount_total,created_at,branch_id,advisor_id')
+            .select('id,sale_code,status,total,created_at,branch_id,advisor_id')
             .eq('organization_id', organizationId)
             .in('id', ids)
             .order('id');
@@ -257,24 +254,12 @@ export function FinanceWeeklySummary() {
         })));
         extraSaleRows.flat().forEach((sale: SaleRow) => knownSales.set(sale.id, sale));
 
-        const returnBatches: string[][] = [];
-        const weeklySaleIds = sales.map((sale: SaleRow) => sale.id);
-        for (let index = 0; index < weeklySaleIds.length; index += 250) returnBatches.push(weeklySaleIds.slice(index, index + 250));
-        const returnRows = await Promise.all(returnBatches.map((ids) => readAllRows(() => supabase!
-          .from('sale_returns')
-          .select('id,sale_id,kind,sale_return_lines(quantity,sale_lines(unit_price))')
-          .eq('organization_id', organizationId)
-          .in('sale_id', ids)
-          .order('created_at')
-          .order('id'))));
-
         if (!active) return;
         setSnapshot({
           sales: sales as SaleRow[],
           payments: payments as PaymentRow[],
           refunds: refunds as RefundRow[],
           saleContext: [...knownSales.values()],
-          returns: returnRows.flat(),
           branches: branchesResult.data || [],
           team: teamResult.data || [],
         });
@@ -283,7 +268,7 @@ export function FinanceWeeklySummary() {
         }
       } catch (loadError: any) {
         if (active) {
-          setSnapshot({ sales: [], payments: [], refunds: [], saleContext: [], returns: [], branches: [], team: [] });
+          setSnapshot({ sales: [], payments: [], refunds: [], saleContext: [], branches: [], team: [] });
           setError(loadError?.message || 'No se pudieron cargar las ventas y los cobros de esta semana.');
         }
       } finally {
@@ -296,16 +281,6 @@ export function FinanceWeeklySummary() {
 
   const branchNames = useMemo(() => new Map(snapshot.branches.map((branch) => [branch.id, branch.name])), [snapshot.branches]);
   const saleContextById = useMemo(() => new Map(snapshot.saleContext.map((sale) => [sale.id, sale])), [snapshot.saleContext]);
-  const returnsBySale = useMemo(() => {
-    const grouped = new Map<string, any[]>();
-    snapshot.returns.forEach((saleReturn) => {
-      const current = grouped.get(saleReturn.sale_id) || [];
-      current.push(saleReturn);
-      grouped.set(saleReturn.sale_id, current);
-    });
-    return grouped;
-  }, [snapshot.returns]);
-
   const advisorNames = useMemo(() => {
     const names = new Map<string, string>();
     snapshot.team.forEach((member: any) => {
@@ -369,8 +344,7 @@ export function FinanceWeeklySummary() {
     });
     sales.forEach((sale) => {
       const row = ensure(sale.advisor_id || 'unassigned');
-      const returnedCents = saleReturnedCents(sale, returnsBySale.get(sale.id) || []);
-      row.salesCents += Math.max(0, cents(sale.total) - returnedCents);
+      row.salesCents += cents(sale.total);
       row.salesCount += 1;
     });
     payments.forEach((payment) => {
@@ -384,7 +358,7 @@ export function FinanceWeeklySummary() {
         ? b.salesCents - a.salesCents || a.name.localeCompare(b.name, 'es')
         : b.collectionsCents - a.collectionsCents || a.name.localeCompare(b.name, 'es')
     ));
-  }, [directory, advisorFilter, sales, payments, returnsBySale, advisorNames, sortBy]);
+  }, [directory, advisorFilter, sales, payments, advisorNames, sortBy]);
 
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)), [weekStart]);
   const chartRows = useMemo(() => {
@@ -408,9 +382,8 @@ export function FinanceWeeklySummary() {
     });
   }, [advisorRows, allPayments]);
   const collectedCents = payments.reduce((sum, payment) => sum + payment.amountCents, 0);
-  const salesCents = advisorRows.reduce((sum, row) => sum + row.salesCents, 0);
-  const saleCount = advisorRows.reduce((sum, row) => sum + row.salesCount, 0);
-  const refundsCents = refunds.reduce((sum, refund) => sum + refund.amountCents, 0);
+  const weeklyAttribution = useMemo(() => summarizeWeeklyAttribution(sales, refunds, weekStart), [sales, refunds, weekStart]);
+  const { salesCents, saleCount, refundsCents, refundCount } = weeklyAttribution;
   const dailyTotals = useMemo(() => weekDays.map((date) => ({
     date,
     cents: payments.filter((payment) => payment.date === date).reduce((sum, payment) => sum + payment.amountCents, 0),
@@ -480,7 +453,7 @@ export function FinanceWeeklySummary() {
         <article className="weekly-finance-metric weekly-finance-metric--sales">
           <div className="weekly-finance-metric-label"><span>Ventas confirmadas</span><CircleDollarSign size={17} aria-hidden="true" /></div>
           <b>{loading ? '—' : <AnimatedCurrency value={salesCents} reduceMotion={reduceMotion} />}</b>
-          <small>{loading ? 'Cargando…' : 'Importe neto de artículos devueltos'}</small>
+          <small>{loading ? 'Cargando…' : 'Ventas confirmadas · semana del registro'}</small>
         </article>
         <article className="weekly-finance-metric weekly-finance-metric--collections">
           <div className="weekly-finance-metric-label"><span>Total cobrado{selectedMethod !== 'all' ? ` · ${PAYMENT_LABELS[selectedMethod]}` : ''}</span><Wallet size={17} aria-hidden="true" /></div>
@@ -490,7 +463,7 @@ export function FinanceWeeklySummary() {
         <article className="weekly-finance-metric weekly-finance-metric--refunds">
           <div className="weekly-finance-metric-label"><span>Reembolsos realizados</span><ReceiptText size={17} aria-hidden="true" /></div>
           <b>{loading || !canSeeRefunds ? '—' : <AnimatedCurrency value={refundsCents} reduceMotion={reduceMotion} />}</b>
-          <small>{loading ? 'Cargando…' : canSeeRefunds ? `${refunds.length} ${refunds.length === 1 ? 'liquidación' : 'liquidaciones'} · fecha de liquidación` : 'No disponible con este perfil'}</small>
+          <small>{loading ? 'Cargando…' : canSeeRefunds ? `${refundCount} ${refundCount === 1 ? 'liquidación' : 'liquidaciones'} · fecha de liquidación` : 'No disponible con este perfil'}</small>
         </article>
         <article className="weekly-finance-metric weekly-finance-metric--count">
           <div className="weekly-finance-metric-label"><span>Número de ventas</span><CreditCard size={17} aria-hidden="true" /></div>

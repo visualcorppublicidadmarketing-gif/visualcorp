@@ -1,5 +1,7 @@
 import { strToU8, zipSync } from 'fflate';
 import { planBoxSheets, type BoxSheetPlan } from './boxFabrication';
+import { estimateBoxProduction } from './boxCam';
+import { offsetBoxContour } from './boxKerf';
 import {
   boxProjectFilename,
   createBoxDxf,
@@ -9,6 +11,7 @@ import {
   type BoxPanelPlacement,
   type BoxProject,
 } from './boxModel';
+import { offsetBoxLayout } from './boxKerf';
 
 export interface BoxSheetArchiveManifest {
   formatVersion: 1;
@@ -19,12 +22,16 @@ export interface BoxSheetArchiveManifest {
     outsideMm: { width: number; height: number; depth: number };
     insideMm: { width: number; height: number; depth: number };
     thicknessMm: number;
+    panelThicknessMm: Partial<Record<BoxPanel['id'], number>>;
+    frontDropMm: number;
     jointStyle: BoxProject['jointStyle'];
     closure: BoxProject['closure'];
   };
   placement: {
-    method: 'shelf-bounding-boxes';
-    rotationAllowed: false;
+    method: 'polygon-contact-heuristic';
+    rotationAllowed: boolean;
+    sheetGrainDirection: 'x' | 'y' | 'none';
+    kerfMm: number | null;
     widthMm: number;
     heightMm: number;
     marginMm: number;
@@ -34,21 +41,41 @@ export interface BoxSheetArchiveManifest {
     sheets: number;
     panels: number;
     panelAreaMm2: number;
-    contourLengthMm: number;
+    nominalPerimeterMm: number;
+    cutLengthMm: number;
+  };
+  estimate: {
+    cutMinutes: number | null;
+    materialCost: number | null;
+    machineCost: number | null;
+    totalCost: number | null;
+    materialName: string;
+    inputs: {
+      kerfMm: number | null;
+      cutSpeedMmPerMin: number | null;
+      machineRatePerHour: number | null;
+      sheetPrice: number | null;
+    };
+    costUnit: 'u.m. ingresada por el operador';
   };
   sheets: Array<{
     index: number;
     svg: string;
     dxf: string;
     panelAreaMm2: number;
+    cutLengthMm: number;
     /** Net panel area / full sheet area, not a purchased-material yield. */
     efficiency: number;
     panels: Array<{
       id: BoxPanel['id'];
       label: string;
       contourLengthMm: number;
+      cutLengthMm: number;
       areaMm2: number;
-      boundsMm: { x: number; y: number; width: number; height: number };
+      thicknessMm: number;
+      rotationDeg: 0 | 90;
+      nominalBoundsMm: { x: number; y: number; width: number; height: number };
+      cutBoundsMm: { x: number; y: number; width: number; height: number };
     }>;
   }>;
   notes: string[];
@@ -60,9 +87,10 @@ export interface BoxSheetArchive {
   manifest: BoxSheetArchiveManifest;
 }
 
-function panelBounds({ points, x, y }: BoxPanelPlacement) {
-  const xs = points.map((point) => point.x + x);
-  const ys = points.map((point) => point.y + y);
+function panelBounds({ points, x, y }: BoxPanelPlacement, kerfMm = 0) {
+  const boundsPoints = kerfMm > 0 ? offsetBoxContour(points, kerfMm / 2) : points;
+  const xs = boundsPoints.map((point) => point.x + x);
+  const ys = boundsPoints.map((point) => point.y + y);
   const minX = Math.min(...xs);
   const minY = Math.min(...ys);
   return {
@@ -79,8 +107,10 @@ function panelBounds({ points, x, y }: BoxPanelPlacement) {
  * so a stale plan cannot mix old placements with new project dimensions.
  */
 export function createBoxSheetArchive(project: BoxProject, plan: BoxSheetPlan): BoxSheetArchive {
-  const current = planBoxSheets(project, plan.spec);
+  const kerfMm = project.camProfile.kerfMm ?? 0;
+  const current = planBoxSheets(project, plan.spec, kerfMm);
   const dimensions = resolveBoxDimensions(project);
+  const estimate = estimateBoxProduction(project, project.camProfile, current);
   const metrics = new Map(current.panelMetrics.map((item) => [item.panelId, item]));
   const files: Record<string, Uint8Array> = {};
   const manifest: BoxSheetArchiveManifest = {
@@ -92,12 +122,16 @@ export function createBoxSheetArchive(project: BoxProject, plan: BoxSheetPlan): 
       outsideMm: dimensions.outside,
       insideMm: dimensions.inside,
       thicknessMm: project.thicknessMm,
+      panelThicknessMm: Object.fromEntries(current.sheets.flatMap((sheet) => sheet.layout.panels.map(({ panel }) => [panel.id, panel.thicknessMm]))),
+      frontDropMm: project.frontDropMm,
       jointStyle: project.jointStyle,
       closure: project.closure,
     },
     placement: {
-      method: 'shelf-bounding-boxes',
-      rotationAllowed: false,
+      method: 'polygon-contact-heuristic',
+      rotationAllowed: current.spec.rotationAllowed,
+      sheetGrainDirection: current.spec.sheetGrainDirection ?? 'none',
+      kerfMm: project.camProfile.kerfMm,
       widthMm: current.spec.widthMm,
       heightMm: current.spec.heightMm,
       marginMm: current.spec.marginMm,
@@ -107,13 +141,28 @@ export function createBoxSheetArchive(project: BoxProject, plan: BoxSheetPlan): 
       sheets: current.totalSheets,
       panels: current.panelMetrics.length,
       panelAreaMm2: current.totalAreaMm2,
-      contourLengthMm: current.totalCutLengthMm,
+      nominalPerimeterMm: current.panelMetrics.reduce((sum, item) => sum + item.perimeterMm, 0),
+      cutLengthMm: current.totalCutLengthMm,
+    },
+    estimate: {
+      cutMinutes: estimate.cutMinutes,
+      materialCost: estimate.materialCost,
+      machineCost: estimate.machineCost,
+      totalCost: estimate.totalCost,
+      materialName: project.camProfile.materialName,
+      inputs: {
+        kerfMm: project.camProfile.kerfMm,
+        cutSpeedMmPerMin: project.camProfile.cutSpeedMmPerMin,
+        machineRatePerHour: project.camProfile.machineRatePerHour,
+        sheetPrice: project.camProfile.sheetPrice,
+      },
+      costUnit: 'u.m. ingresada por el operador',
     },
     sheets: [],
     notes: [
-      'Distribución por filas de rectángulos envolventes, sin rotación ni nesting poligonal óptimo.',
-      'Archivos preliminares: sin compensación de kerf, holgura ni perfil de máquina.',
-      'Las longitudes son perímetros geométricos; no estiman duración de corte ni precio.',
+      `Nesting poligonal heurístico${current.spec.rotationAllowed ? ', con rotación de 90° permitida' : ', sin rotación'}; no es una optimización global. Se validan contornos cóncavos, sin agujeros; veta de plancha: ${current.spec.sheetGrainDirection ?? 'none'}.`,
+      kerfMm > 0 ? `La ruta SVG/DXF se desplazó ${kerfMm.toFixed(3)} mm en total, equivalente a la mitad hacia afuera desde cada lado. Valida este valor con un cupón de prueba.` : 'Kerf no configurado: se exportaron contornos nominales, sin compensación.',
+      'El tiempo y coste solo se estiman cuando se ingresan valores del operador; no incluyen desplazamientos, aceleraciones, perforaciones, pasadas, preparación, impuestos o desperdicio.',
       'Verificar escala, capas, colores y ajuste físico en el software y material de destino.',
     ],
   };
@@ -122,13 +171,15 @@ export function createBoxSheetArchive(project: BoxProject, plan: BoxSheetPlan): 
     const prefix = `hojas/hoja-${String(sheet.index).padStart(3, '0')}`;
     const svg = `${prefix}.svg`;
     const dxf = `${prefix}.dxf`;
-    files[svg] = strToU8(createBoxSvg(project, sheet.layout));
-    files[dxf] = strToU8(createBoxDxf(project, sheet.layout));
+    const compensatedLayout = offsetBoxLayout(sheet.layout, kerfMm, false);
+    files[svg] = strToU8(createBoxSvg(project, compensatedLayout));
+    files[dxf] = strToU8(createBoxDxf(project, compensatedLayout));
     manifest.sheets.push({
       index: sheet.index,
       svg,
       dxf,
       panelAreaMm2: sheet.usedAreaMm2,
+      cutLengthMm: sheet.layout.panels.reduce((sum, placement) => sum + (metrics.get(placement.panel.id)?.cutLengthMm ?? 0), 0),
       efficiency: sheet.efficiency,
       panels: sheet.layout.panels.map((placement) => {
         const measured = metrics.get(placement.panel.id);
@@ -137,8 +188,12 @@ export function createBoxSheetArchive(project: BoxProject, plan: BoxSheetPlan): 
           id: placement.panel.id,
           label: placement.panel.label,
           contourLengthMm: measured.perimeterMm,
+          cutLengthMm: measured.cutLengthMm,
           areaMm2: measured.areaMm2,
-          boundsMm: panelBounds(placement),
+          thicknessMm: placement.panel.thicknessMm,
+          rotationDeg: placement.rotationDeg ?? 0,
+          nominalBoundsMm: panelBounds(placement),
+          cutBoundsMm: panelBounds(placement, kerfMm),
         };
       }),
     });

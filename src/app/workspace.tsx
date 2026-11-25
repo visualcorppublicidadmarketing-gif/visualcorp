@@ -4,6 +4,7 @@ import sourceCatalog from '../data/estebanicoSupabaseCatalog.snapshot.json';
 import { catalogImagesForProduct } from '../data/catalogProductImages';
 import { inventoryImageForSku } from '../data/inventoryProductImages';
 import { supabase, supabaseConfigured } from '../lib/supabaseClient';
+import { getStorefrontQuotePriceBasis } from '../public-site/quote/storefrontQuoteAliases';
 import { useAuth } from '../auth/AuthProvider';
 
 const STORAGE_KEY = 'visualcorp-suite-local-v1';
@@ -79,7 +80,7 @@ const catalog = (sourceCatalog.products || []).map((product, index) => {
   name: product.name,
   family: product.category || 'General',
   mode: product.calcType === 'm2' ? 'area' : 'quantity',
-  priceBasis: 'unit',
+  priceBasis: getStorefrontQuotePriceBasis(product.id) || 'unit',
   tiers: (product.priceScales || []).filter((scale) => scale.qty != null && (scale.pvp != null || scale.price != null)).map((scale) => ({ min_qty: Number(scale.qty), unit_price: Number(scale.pvp ?? scale.price) })),
   optionPrices: (product.priceScales || []).filter((scale) => scale.option != null && scale.price != null).map((scale) => ({ label: String(scale.option), price: Number(scale.price) })),
   unit: product.calcType === 'm2' ? 'm²' : 'unidad',
@@ -108,7 +109,7 @@ function mapRemoteCatalogProduct(row: any) {
   ].filter(Boolean);
   const product = {
     id: row.id, sku: row.sku || row.id, name: row.name, slug: row.slug, family: row.category || 'General', mode: row.calc_type === 'm2' ? 'area' : 'quantity', productType: row.type || row.product_type || '', productKind: row.product_kind || 'catalog',
-    priceBasis: 'unit', priceScales: row.price_scales || [],
+    priceBasis: row.calc_type === 'scale' ? getStorefrontQuotePriceBasis(row.sku) || 'unit' : 'unit', priceScales: row.price_scales || [],
     tiers: (row.price_scales || []).filter((scale: any) => scale.option == null && scale.qty != null && (scale.pvp != null || scale.price != null || scale.price_inst != null || scale.price_corp != null)).map((scale: any) => ({ min_qty: Number(scale.qty), unit_price: scale.pvp == null && scale.price == null ? null : Number(scale.pvp ?? scale.price), install_unit_price: scale.price_inst == null ? null : Number(scale.price_inst), corporate_unit_price: scale.price_corp == null ? null : Number(scale.price_corp) })),
     optionPrices: (row.price_scales || []).filter((scale: any) => scale.option != null && scale.price != null).map((scale: any) => ({ label: String(scale.option), price: Number(scale.price) })),
     unit: row.calc_type === 'm2' ? 'm²' : 'unidad', price: Number(row.price) || 0, installPrice: row.price_inst == null ? null : Number(row.price_inst),

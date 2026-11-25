@@ -531,6 +531,309 @@
   }
 }
 
+/* Resolve remaining light-first controls visible in the current dark theme. */
+.work-app.theme-dark .vc-marketing-calendar.is-kanban .vc-marketing-kanban-column-head {
+  border-bottom-color: #363a4d;
+  background: transparent;
+  color: #f1f3f8;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-column-head :is(b, small) {
+  color: #f1f3f8;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-column-head small {
+  color: #b2b8c8;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-empty {
+  border-color: #41455a;
+  background: #171a25;
+  color: #b2b8c8;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card {
+  border-color: color-mix(in srgb, var(--event-color, #9a70ba) 34%, #303447);
+  background: linear-gradient(150deg, #222131, #191c27 68%);
+  color: #e8ebf3;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card:is(.tone-review, .tone-published, .tone-blocked) {
+  background: linear-gradient(150deg, #222131, #191c27 68%);
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card-top,
+.work-app.theme-dark .vc-marketing-kanban-card-topic,
+.work-app.theme-dark .vc-marketing-kanban-card-meta {
+  color: #b2b8c8;
+}
+
+.work-app.theme-dark .vc-marketing-week-card-status {
+  border: 1px solid #45495e;
+  background: #252939;
+  color: #e7e9f1;
+}
+
+.work-app.theme-dark .vc-marketing-week-card-status.tone-working,
+.work-app.theme-dark .vc-marketing-week-card-status.tone-approved {
+  border-color: #594573;
+  background: #30243d;
+  color: #e7d2f4;
+}
+
+.work-app.theme-dark .vc-marketing-week-card-status.tone-review {
+  border-color: #715d37;
+  background: #332b1e;
+  color: #f3d48c;
+}
+
+.work-app.theme-dark .vc-marketing-week-card-status.tone-published,
+.work-app.theme-dark .vc-marketing-week-card-status.tone-completed {
+  border-color: #37644e;
+  background: #1d3028;
+  color: #b4e7c9;
+}
+
+.work-app.theme-dark .vc-marketing-week-card-status:is(.tone-blocked, .tone-cancelled) {
+  border-color: #71434a;
+  background: #392529;
+  color: #ffc0b8;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) {
+  border-color: #51445f;
+  background: #1b1e2a;
+  color: #d4b7e8;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) :is(.vc-marketing-post-artwork-paste, .vc-marketing-post-artwork-browse) {
+  border-color: #48415a;
+  background: #292438;
+  color: #eadcf7;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) :is(.vc-marketing-post-artwork-paste:hover, .vc-marketing-post-artwork-browse:hover) {
+  border-color: #9b72b5;
+  background: #352944;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) kbd {
+  border-color: #554b66;
+  background: #201d2b;
+  color: #d8c5e6;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-insights :is(.inventory-insights-modes, .inventory-quick-status button, .inventory-bulk-bar) {
+  border-color: #363a4d;
+  background: #1b1e2a;
+  color: #e1e4ed;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-insights-modes button {
+  color: #c0c5d2;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-insights-modes button.active {
+  background: #633a7d;
+  color: #fff;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-quick-status button b {
+  background: #292d3d;
+  color: #d9deea;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-quick-status button:hover {
+  border-color: #665078;
+  background: #252131;
+  color: #f1e7f8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-quick-status button.active {
+  border-color: #9465ac;
+  background: #392544;
+  color: #f4e8fc;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-quick-status button.active b {
+  background: #57366c;
+  color: #fff;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-quick-status button.attention:not(.active) {
+  border-color: #66502b;
+  background: #2a2419;
+  color: #f0d18d;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-quick-status button.attention:not(.active) b {
+  background: #3a2f1c;
+  color: #f0d18d;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-insights-filters :is(select, .inventory-insights-search) {
+  border-color: #42475d;
+  background: #11141d;
+  color: #f1f3f8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-insights-filters .inventory-insights-search input {
+  background: transparent;
+  color: #f1f3f8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-insights-filters .inventory-insights-search input::placeholder {
+  color: #aab1c2;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-insights-filters > span,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-bulk-select,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-bulk-tools small {
+  color: #c0c5d2;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-bulk-bar {
+  border: 1px solid #363a4d;
+  border-radius: 10px;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-insights .inventory-status {
+  border: 1px solid #45495e;
+  background: #262a39;
+  color: #e1e4ed;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-insights .inventory-status.ok {
+  border-color: #37644e;
+  background: #1d3028;
+  color: #b4e7c9;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-insights .inventory-status.low {
+  border-color: #715d37;
+  background: #332b1e;
+  color: #f3d48c;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-insights .inventory-status.pending {
+  border-color: #514b6e;
+  background: #282536;
+  color: #d4c6f1;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-tags em {
+  background: #2a2436;
+  color: #d9c4ec;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-actions button,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-clear-filters {
+  border-color: #41465b;
+  background: #202433;
+  color: #d9deea;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-actions button:hover,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-clear-filters:hover {
+  border-color: #665078;
+  background: #2a2436;
+  color: #f3e8fb;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-cart-builder {
+  border-color: #363a4d;
+  background: linear-gradient(145deg, #191c28, #171a25 72%);
+  color: #f1f3f8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-cart-builder-heading > span:last-child,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-checkout-main .pos-field-help {
+  color: #b2b8c8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-mode-switch {
+  border-color: #3d4054;
+  background: #11141d;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-mode-switch button {
+  color: #c0c5d2;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-mode-switch button.active {
+  background: #392544;
+  color: #f4e8fc;
+  box-shadow: inset 0 0 0 1px #815b98;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-browser .search-input,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-search-wrap {
+  border-color: #42475d;
+  background: #11141d;
+  color: #aeb5c5;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-picker-heading {
+  color: #f1f3f8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-picker-heading small {
+  color: #b2b8c8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-search-wrap input {
+  background: transparent;
+  color: #f1f3f8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-search-wrap input::placeholder {
+  color: #aab1c2;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-search-wrap .pos-customer-clear {
+  border-color: #45495e;
+  background: #242838;
+  color: #d8dce7;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-new,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-results,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-selected,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-no-match,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-result-hint {
+  border-color: #363a4d;
+  background: #1b1e2a;
+  color: #d9deea;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-result {
+  border-bottom-color: #363a4d;
+  background: transparent;
+  color: #e8ebf3;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-result:hover,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-result.active {
+  background: #292437;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-result-copy small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-new > p {
+  color: #b2b8c8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-selected-product,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-calculation-total {
+  border-color: #3d4054;
+  background: #1d2130;
+  color: #e8ebf3;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-selected-product small,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-calculation-total span {
+  color: #b2b8c8;
+}
+
 /* Bring inventory detail tiles into the same contrast system as their card. */
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-product-card .inventory-product-facts {
   border-top-color: #34384b;
@@ -2956,3 +3259,89 @@
   }
 }
 
+/* Complete light-first details still visible in the dark theme. */
+.work-app.theme-dark .vc-marketing-kanban-filters :is(.vc-marketing-filter-clear, .vc-marketing-empty-lanes-toggle) {
+  border-color: #45495e !important;
+  background: #222536 !important;
+  color: #e1e4ed !important;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-result-count {
+  background: #2b2437;
+  color: #e2c8f3;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-rule {
+  border-color: #315742;
+  background: linear-gradient(100deg, #182a22, #19231f);
+  color: #d1e7d8;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-rule > span {
+  background: #234633;
+  color: #b7ebc8;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-rule b { color: #d9f0e0; }
+.work-app.theme-dark .vc-marketing-kanban-rule small { color: #b5cdbb; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-bulk-tools,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-bulk-branch {
+  border-color: #363a4d;
+  background: #202332;
+  color: #e1e4ed;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-bulk-count {
+  background: #352943;
+  color: #ead6f7;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-bulk-branch select {
+  background: transparent;
+  color: #f1f3f8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-bulk-clear { color: #c7cbd7; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-bulk-clear:hover { background: #2e2938; color: #f1e7f8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-bulk-feedback { color: #d5c5e5; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-card-select {
+  border-color: #4a4e63;
+  background: #202433;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .inventory-card-select input { accent-color: #c084fc; }
+
+.work-app.theme-dark .vc-marketing-kanban-column.can-drop {
+  border-color: #805d9a;
+  background: #211c2d;
+  box-shadow: inset 0 0 0 1px #6a4d80;
+}
+
+.work-app.theme-dark .vc-marketing-kanban-card .vc-marketing-post-artwork.is-kanban:not(.has-image) .vc-marketing-kanban-empty-cue {
+  color: #d4b7e8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-tile-copy :is(small, strong) { color: #c1c7d6; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-tile-copy strong { color: #f1f3f8; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-no-match span,
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-result-hint { color: #b2b8c8; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-new-fields input {
+  border-color: #42475d;
+  background: #11141d;
+  color: #f1f3f8;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-customer-new-fields input::placeholder { color: #aab1c2; }
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-browser .pos-catalog-empty {
+  border-color: #45495e;
+  background: #1b1e2a;
+  color: #c5cad7;
+}
+
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-browser .pos-catalog-empty > b { color: #f1f3f8; }
+:is(.work-app.theme-dark, .vc-dialog.theme-dark) .pos-product-browser .pos-catalog-empty > span { color: #b2b8c8; }

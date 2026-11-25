@@ -1,7 +1,7 @@
 # Herramienta de monogramas 2D/3D y personalización por capas
 
-**Fecha:** 2026-11-25  
-**Estado:** investigación concluida; implementación local de primera versión iniciada el 25 de noviembre de 2026. Ver [estado y límites de la implementación](IMPLEMENTACION_V1.md).  
+**Fecha:** 2026-11-25
+**Estado:** investigación concluida; implementación local de primera versión iniciada el 25 de noviembre de 2026. Ver [estado y límites de la implementación](IMPLEMENTACION_V1.md).
 **Objetivo:** incorporar a Herramientas de Visual Corp Suite una experiencia para diseñar monogramas compuestos por varias piezas editables, verlos en 2D y 3D y preparar archivos según el proceso de fabricación que se defina.
 
 ## Resumen de decisiones para retomar

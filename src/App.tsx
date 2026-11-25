@@ -8,13 +8,13 @@ import { supabase } from './lib/supabaseClient';
 import { AppFrame, Brand, PageHeading, StatCard } from './app/layout';
 import { ThemeProvider } from './app/ThemeProvider';
 import { EmptyState, StageBadge } from './components/feedback';
-import { OperationsQuotePage as QuotePage } from './pages/operations/OperationsQuotePage';
 import { DialogProvider } from './components/ui/OperationalKit';
 import GlobalCommandPalette from './components/ui/GlobalCommandPalette';
 import './app.css';
 import './public-site/deployment.css';
 import './design-system.css';
 
+const SuitePresentation = lazy(() => import('./pages/admin/SuitePresentation'));
 const UnifiedHome = lazy(() => import('./pages/admin/DashboardPages').then((module) => ({ default: module.UnifiedHome })));
 const AdminSuggestionsPage = lazy(() => import('./pages/admin/AdminSuggestionsPage').then((module) => ({ default: module.AdminSuggestionsPage })));
 const WebsiteAdmin = lazy(() => import('./pages/admin/WebsiteAdminPage').then((module) => ({ default: module.WebsiteAdmin })));
@@ -34,6 +34,7 @@ const CatalogPage = lazy(() => import('./pages/admin/CatalogPage').then((module)
 const ServiceCatalogPage = lazy(() => import('./pages/admin/ServiceCatalogPage').then((module) => ({ default: module.ServiceCatalogPage })));
 const PosPage = lazy(() => import('./pages/pos/CheckoutWorkspace').then((module) => ({ default: module.PosPage })));
 const AdvisorFinance = lazy(() => import('./pages/operations/AdvisorFinance').then((module) => ({ default: module.AdvisorFinance })));
+const QuotePage = lazy(() => import('./pages/operations/OperationsQuotePage').then((module) => ({ default: module.OperationsQuotePage })));
 const ProductWorkflowRoutesPage = lazy(() => import('./pages/operations/ProductWorkflowRoutesPage').then((module) => ({ default: module.ProductWorkflowRoutesPage })));
 const ProductionJobsPage = lazy(() => import('./pages/operations/ProductionJobsPage').then((module) => ({ default: module.ProductionJobsPage })));
 const ProductionCoordinationPage = lazy(() => import('./pages/operations/ProductionCoordinationPage').then((module) => ({ default: module.ProductionCoordinationPage })));
@@ -55,6 +56,8 @@ const PublicationDetailPage = lazy(() => import('./public-site/ShowcasePages').t
 const PortfolioDetailPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.PortfolioArticleDetailPage })));
 const StorefrontPage = lazy(() => import('./public-site/ShowcasePages').then((module) => ({ default: module.StorefrontPage })));
 const StorePromotionsPage = lazy(() => import('./public-site/StorePromotionsPage').then((module) => ({ default: module.StorePromotionsPage })));
+const CreativeToolsPage = lazy(() => import('./public-site/tools/CreativeToolsPage').then((module) => ({ default: module.CreativeToolsPage })));
+const ProductDesignStudio = lazy(() => import('./public-site/tools/ProductDesignStudio').then((module) => ({ default: module.ProductDesignStudio })));
 const PaymentsPage = lazy(() => import('./public-site/PaymentsPage').then((module) => ({ default: module.PaymentsPage })));
 const InventoryWorkspace = lazy(() => import('./components/InventoryWorkspace').then((module) => ({ default: module.InventoryWorkspace })));
 const EquipmentInventory = lazy(() => import('./pages/operations/EquipmentInventory').then((module) => ({ default: module.EquipmentInventory })));
@@ -97,6 +100,26 @@ function AutomationPage() { return <AppFrame area="operations"><AutomationCenter
 function VaultPage() { return <AppFrame area="operations"><VisualCorpVault/></AppFrame>; }
 function KioskPage() { return <AppFrame area="operations"><ShopFloorKiosk/></AppFrame>; }
 
+function RouteNotFound() {
+  const { pathname } = useLocation();
+  const isWorkspaceRoute = ['/panel', '/admin', '/operaciones'].some((basePath) =>
+    pathname === basePath || pathname.startsWith(`${basePath}/`));
+  const homePath = isWorkspaceRoute ? '/panel' : '/';
+
+  return <main className="access-screen">
+    <section className="access-card" aria-labelledby="route-not-found-title">
+      <span className="site-eyebrow"><i/> {isWorkspaceRoute ? 'ESPACIO DE TRABAJO' : 'VISUAL CORP'}</span>
+      <h1 id="route-not-found-title">No encontramos esta página.</h1>
+      <p>La dirección puede haber cambiado o no estar disponible. Regresa al inicio para continuar.</p>
+      <Link className="site-primary-button" to={homePath}>
+        {isWorkspaceRoute ? 'Volver al panel' : 'Ir al inicio'}
+        <ArrowUpRight size={17} aria-hidden="true"/>
+      </Link>
+      {isWorkspaceRoute && <Link className="button button-outline" to="/">Ir al sitio público</Link>}
+    </section>
+  </main>;
+}
+
 function AppRouter() {
   const location=useLocation();
   if(location.pathname==='/publico') return <Navigate to="/" replace/>;
@@ -113,6 +136,7 @@ function AppRouter() {
       <Route path="/cotizador" element={<MultiPageQuotePage/>}/>
       <Route path="/tienda" element={<StorefrontPage/>}/>
       <Route path="/tienda/promociones" element={<StorePromotionsPage/>}/>
+      <Route path="/herramientas" element={<CreativeToolsPage/>}/>
       <Route path="/portafolio" element={<PortfolioIndexPage/>}/>
       <Route path="/portafolio/:slug" element={<PortfolioDetailPage/>}/>
       <Route path="/blog" element={<BlogIndexPage/>}/>
@@ -122,8 +146,24 @@ function AppRouter() {
       <Route path="/seguimiento" element={<ClientOrderPortalPage/>}/>
       <Route path="/seguimiento/:code" element={<ClientOrderPortalPage/>}/>
     </Route>
+    <Route path="/admin/presentacion" element={<ProtectedPage area="operations"><SuitePresentation/></ProtectedPage>}/>
     <Route path="/admin/sugerencias" element={<ProtectedPage area="team"><AdminSuggestionsPage/></ProtectedPage>}/>
     <Route path="/panel" element={<ProtectedPage area="operations"><UnifiedHome/></ProtectedPage>}/><Route path="/admin" element={<Navigate to="/panel" replace/>}/><Route path="/operaciones" element={<Navigate to="/panel" replace/>}/><Route path="/admin/sitio" element={<ProtectedPage area="website"><WebsiteAdmin/></ProtectedPage>}/><Route path="/admin/servicios" element={<ProtectedPage area="website"><ServicesAdmin/></ProtectedPage>}/><Route path="/admin/tienda" element={<ProtectedPage area="website"><StorefrontAdmin/></ProtectedPage>}/><Route path="/admin/contacto" element={<ProtectedPage area="website"><ContactAdmin/></ProtectedPage>}/><Route path="/admin/contenido" element={<ProtectedPage area="website"><SiteArticleManager/></ProtectedPage>}/><Route path="/admin/blog" element={<ProtectedPage area="website"><BlogAdmin/></ProtectedPage>}/><Route path="/admin/publicaciones" element={<ProtectedPage area="website"><PublicationsAdmin/></ProtectedPage>}/><Route path="/admin/portafolio" element={<ProtectedPage area="website"><PortfolioAdmin/></ProtectedPage>}/><Route path="/admin/cambios" element={<Navigate to="/operaciones/cambios" replace/>}/><Route path="/admin/solicitudes" element={<Navigate to="/operaciones/crm" replace/>}/><Route path="/operaciones/catalogo" element={<ProtectedPage area="catalog"><CatalogPage/></ProtectedPage>}/><Route path="/operaciones/servicios" element={<ProtectedPage area="catalog"><ServiceCatalogPage/></ProtectedPage>}/><Route path="/admin/catalogo" element={<Navigate to="/operaciones/catalogo" replace/>}/><Route path="/admin/marketing" element={<Navigate to="/operaciones/marketing" replace/>}/><Route path="/admin/marketing/calendario" element={<Navigate to="/operaciones/marketing/calendario" replace/>}/><Route path="/admin/marketing/campanas" element={<Navigate to="/operaciones/marketing/campanas" replace/>}/><Route path="/admin/respaldo" element={<ProtectedPage area="website"><AppFrame area="admin"><PageHeading eyebrow="DATOS" title="Respaldo y migración" description="Consulta el respaldo y la procedencia de datos."/><BackupWorkspace/></AppFrame></ProtectedPage>}/>
+    <Route
+      path="/operaciones/marketing/editor"
+      element={
+        <ProtectedPage area="operations">
+          <AppFrame area="operations">
+            <PageHeading eyebrow="MARKETING · DISEÑO" title="Estudio de diseño de productos" description="Crea composiciones para prendas, promocionales y exhibidores en el editor compartido." />
+            <div className="vc-tools-workspace vc-admin-creative-workspace">
+              <ProductDesignStudio quotePath="/operaciones/cotizador" />
+            </div>
+          </AppFrame>
+        </ProtectedPage>
+      }
+    />
+    <Route path="/admin/editor" element={<Navigate to="/operaciones/marketing/editor" replace/>}/>
+    <Route path="/admin/marketing/editor" element={<Navigate to="/operaciones/marketing/editor" replace/>}/>
     <Route path="/admin/manual-aprendizaje/*" element={<ProtectedPage area="website"><ManualLearningPage area="admin"/></ProtectedPage>}/>
     <Route path="/operaciones/manual-aprendizaje/*" element={<ProtectedPage area="operations"><ManualLearningPage area="operations"/></ProtectedPage>}/>
     <Route path="/operaciones/herramientas" element={<ProtectedPage area="operations"><ToolsHub/></ProtectedPage>}/>
@@ -131,8 +171,8 @@ function AppRouter() {
     <Route path="/operaciones/herramientas/monogramas" element={<ProtectedPage area="operations"><MonogramGeneratorPage/></ProtectedPage>}/>
     <Route path="/operaciones/equipo/horarios" element={<ProtectedPage area="team"><AppFrame area="operations"><TeamSchedulePage/></AppFrame></ProtectedPage>}/>
     <Route path="/operaciones/equipo/biblioteca-ui" element={<ProtectedPage area="team"><AppFrame area="operations"><DesignSystemPage/></AppFrame></ProtectedPage>}/>
-    <Route path="/operaciones/cambios" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="EQUIPO" title="Novedades" description="Consulta los cambios compartidos por todo el equipo."/><ChangeLogPanel area="operations"/></AppFrame></ProtectedPage>}/> <Route path="/operaciones/pos" element={<ProtectedPage area="operations"><PosPage/></ProtectedPage>}/><Route path="/operaciones/mi-semana" element={<ProtectedPage area="operations"><AdvisorFinance/></ProtectedPage>}/><Route path="/operaciones/rutas-productos" element={<ProtectedPage area="operations"><ProductWorkflowRoutesPage/></ProtectedPage>}/><Route path="/operaciones/automatizaciones" element={<ProtectedPage area="operations"><AutomationPage/></ProtectedPage>}/><Route path="/operaciones/archivos" element={<ProtectedPage area="operations"><VaultPage/></ProtectedPage>}/><Route path="/operaciones/vault" element={<Navigate to="/operaciones/archivos" replace/>}/><Route path="/operaciones/kiosk" element={<ProtectedPage area="operations"><KioskPage/></ProtectedPage>}/><Route path="/operaciones/taller-kiosk" element={<Navigate to="/operaciones/kiosk" replace/>}/><Route path="/operaciones/coordinacion-trabajos" element={<ProtectedPage area="operations"><ProductionCoordinationPage/></ProtectedPage>}/><Route path="/operaciones/cartelera-taller" element={<ProtectedPage area="operations"><WorkshopBillboardCalendarPage/></ProtectedPage>}/><Route path="/operaciones/cartelera" element={<Navigate to="/operaciones/cartelera-taller" replace/>}/><Route path="/operaciones/calendario-taller" element={<Navigate to="/operaciones/cartelera-taller?tab=calendar" replace/>}/><Route path="/operaciones/trabajos" element={<ProtectedPage area="operations"><ProductionCoordinationPage/></ProtectedPage>}/><Route path="/operaciones/trabajos/:area" element={<ProtectedPage area="operations"><ProductionJobsPage/></ProtectedPage>}/><Route path="/operaciones/finanzas/resumen-semanal" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="FINANZAS · RESUMEN SEMANAL" title="Resumen semanal" description="Ventas confirmadas, cobros y reembolsos de la semana, desglosados por asesora, día y medio de pago."/><FinanceWeeklySummary/></AppFrame></ProtectedPage>}/><Route path="/operaciones/finanzas" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="OPERACIONES · VENTAS" title="Finanzas" description="Consulta ventas confirmadas, pagos registrados y saldos por fecha, sucursal y asesora responsable."/><OperationsFinance/></AppFrame></ProtectedPage>}/><Route path="/operaciones/cajas-abiertas" element={<ProtectedPage area="operations"><OpenCashMonitor/></ProtectedPage>}/><Route path="/operaciones/flujos" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="OPERACIONES" title="Flujos conectados" description="Revisa caja, devoluciones, compras, traslados, producción y cotizaciones desde sus registros compartidos."/><OperationsLifecycle/></AppFrame></ProtectedPage>}/><Route path="/operaciones/cotizador" element={<ProtectedPage area="operations"><QuotePage/></ProtectedPage>}/><Route path="/operaciones/inventario" element={<ProtectedPage area="operations"><InventoryPage/></ProtectedPage>}/><Route path="/operaciones/equipos" element={<ProtectedPage area="operations"><EquipmentPage/></ProtectedPage>}/><Route path="/operaciones/compras" element={<ProtectedPage area="operations"><PurchasingPage/></ProtectedPage>}/><Route path="/operaciones/solicitudes-compras" element={<ProtectedPage area="operations"><PurchaseRequestsPage/></ProtectedPage>}/><Route path="/operaciones/clientes" element={<ProtectedPage area="operations"><AppFrame area="operations"><CustomerBook/></AppFrame></ProtectedPage>}/><Route path="/operaciones/crm" element={<ProtectedPage area="operations"><LeadsPage area="operations"/></ProtectedPage>}/><Route path="/operaciones/marketing" element={<ProtectedPage area="operations"><CampaignPage area="operations" initialSection="overview"/></ProtectedPage>}/><Route path="/operaciones/marketing/calendario" element={<ProtectedPage area="operations"><CampaignPage area="operations" initialSection="calendar"/></ProtectedPage>}/><Route path="/operaciones/marketing/campanas" element={<ProtectedPage area="operations"><CampaignPage area="operations" initialSection="campaigns"/></ProtectedPage>}/><Route path="/operaciones/personal" element={<ProtectedPage area="operations"><AppFrame area="operations"><PersonnelPage/></AppFrame></ProtectedPage>}/><Route path="/operaciones/equipo" element={<Navigate to="/operaciones/equipo/usuarios" replace/>}/><Route path="/operaciones/equipo/:section" element={<ProtectedPage area="team"><AppFrame area="operations"><TeamAccess/></AppFrame></ProtectedPage>}/><Route path="/operaciones/equipo/*" element={<ProtectedPage area="team"><AppFrame area="operations"><TeamAccess/></AppFrame></ProtectedPage>}/>
-    <Route path="*" element={<Navigate to="/" replace/>}/>
+    <Route path="/operaciones/cambios" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="EQUIPO" title="Novedades" description="Consulta los cambios compartidos por todo el equipo."/><ChangeLogPanel area="operations"/></AppFrame></ProtectedPage>}/> <Route path="/operaciones/pos" element={<ProtectedPage area="operations"><PosPage/></ProtectedPage>}/><Route path="/operaciones/mi-semana" element={<ProtectedPage area="operations"><AdvisorFinance/></ProtectedPage>}/><Route path="/operaciones/rutas-productos" element={<ProtectedPage area="operations"><ProductWorkflowRoutesPage/></ProtectedPage>}/><Route path="/operaciones/automatizaciones" element={<ProtectedPage area="operations"><AutomationPage/></ProtectedPage>}/><Route path="/operaciones/archivos" element={<ProtectedPage area="operations"><VaultPage/></ProtectedPage>}/><Route path="/operaciones/vault" element={<Navigate to="/operaciones/archivos" replace/>}/><Route path="/operaciones/kiosk" element={<ProtectedPage area="operations"><KioskPage/></ProtectedPage>}/><Route path="/operaciones/taller-kiosk" element={<Navigate to="/operaciones/kiosk" replace/>}/><Route path="/operaciones/coordinacion-trabajos" element={<ProtectedPage area="operations"><ProductionCoordinationPage/></ProtectedPage>}/><Route path="/operaciones/cartelera-taller" element={<ProtectedPage area="operations"><WorkshopBillboardCalendarPage/></ProtectedPage>}/><Route path="/operaciones/cartelera" element={<Navigate to="/operaciones/cartelera-taller" replace/>}/><Route path="/operaciones/calendario-taller" element={<Navigate to="/operaciones/cartelera-taller?tab=calendar" replace/>}/><Route path="/operaciones/trabajos" element={<ProtectedPage area="operations"><ProductionCoordinationPage/></ProtectedPage>}/><Route path="/operaciones/trabajos/:area" element={<ProtectedPage area="operations"><ProductionJobsPage/></ProtectedPage>}/><Route path="/operaciones/finanzas" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="OPERACIONES · VENTAS" title="Finanzas" description="Consulta ventas confirmadas, pagos registrados y saldos por fecha, sucursal y asesora responsable."/><OperationsFinance/></AppFrame></ProtectedPage>}/><Route path="/operaciones/finanzas/resumen-semanal" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="OPERACIONES · VENTAS" title="Resumen semanal" description="Revisa ventas y cobros por asesora, medio de pago y día."/><FinanceWeeklySummary/></AppFrame></ProtectedPage>}/><Route path="/operaciones/cajas-abiertas" element={<ProtectedPage area="operations"><OpenCashMonitor/></ProtectedPage>}/><Route path="/operaciones/flujos" element={<ProtectedPage area="operations"><AppFrame area="operations"><PageHeading eyebrow="OPERACIONES" title="Flujos conectados" description="Revisa caja, devoluciones, compras, traslados, producción y cotizaciones desde sus registros compartidos."/><OperationsLifecycle/></AppFrame></ProtectedPage>}/><Route path="/operaciones/cotizador" element={<ProtectedPage area="operations"><QuotePage/></ProtectedPage>}/><Route path="/operaciones/inventario" element={<ProtectedPage area="operations"><InventoryPage/></ProtectedPage>}/><Route path="/operaciones/equipos" element={<ProtectedPage area="operations"><EquipmentPage/></ProtectedPage>}/><Route path="/operaciones/compras" element={<ProtectedPage area="operations"><PurchasingPage/></ProtectedPage>}/><Route path="/operaciones/solicitudes-compras" element={<ProtectedPage area="operations"><PurchaseRequestsPage/></ProtectedPage>}/><Route path="/operaciones/clientes" element={<ProtectedPage area="operations"><AppFrame area="operations"><CustomerBook/></AppFrame></ProtectedPage>}/><Route path="/operaciones/crm" element={<ProtectedPage area="operations"><LeadsPage area="operations"/></ProtectedPage>}/><Route path="/operaciones/marketing" element={<ProtectedPage area="operations"><CampaignPage area="operations" initialSection="overview"/></ProtectedPage>}/><Route path="/operaciones/marketing/calendario" element={<ProtectedPage area="operations"><CampaignPage area="operations" initialSection="calendar"/></ProtectedPage>}/><Route path="/operaciones/marketing/campanas" element={<ProtectedPage area="operations"><CampaignPage area="operations" initialSection="campaigns"/></ProtectedPage>}/><Route path="/operaciones/personal" element={<ProtectedPage area="operations"><AppFrame area="operations"><PersonnelPage/></AppFrame></ProtectedPage>}/><Route path="/operaciones/equipo" element={<Navigate to="/operaciones/equipo/usuarios" replace/>}/><Route path="/operaciones/equipo/:section" element={<ProtectedPage area="team"><AppFrame area="operations"><TeamAccess/></AppFrame></ProtectedPage>}/><Route path="/operaciones/equipo/*" element={<ProtectedPage area="team"><AppFrame area="operations"><TeamAccess/></AppFrame></ProtectedPage>}/>
+    <Route path="*" element={<RouteNotFound/>}/>
   </Routes></Suspense>;
 }
 

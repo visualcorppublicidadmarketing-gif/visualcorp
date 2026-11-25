@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronRight, MoreHorizontal } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import './context-menu.css';
 
 export type ContextMenuAction = {
@@ -12,6 +12,7 @@ export type ContextMenuAction = {
   disabled?: boolean;
   shortcut?: string;
   checked?: boolean;
+  current?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   group?: string;
   radioGroup?: string;
@@ -39,6 +40,7 @@ type ContextSubmenuProps = {
   action: ContextMenuAction;
   submenuKey: string;
   contextMenuId: string;
+  scope: 'element' | 'document';
   themeClassName: string;
   isOpen: boolean;
   onOpenChange: (key: string, open: boolean) => void;
@@ -47,7 +49,7 @@ type ContextSubmenuProps = {
   renderActions: (items: ContextMenuAction[], path: string) => React.ReactNode;
 };
 
-function ContextSubmenu({ action, submenuKey, contextMenuId, themeClassName, isOpen, onOpenChange, cancelClose, scheduleClose, renderActions }: ContextSubmenuProps) {
+function ContextSubmenu({ action, submenuKey, contextMenuId, scope, themeClassName, isOpen, onOpenChange, cancelClose, scheduleClose, renderActions }: ContextSubmenuProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [placement, setPlacement] = useState<{ left: number; top: number; side: 'left' | 'right' } | null>(null);
@@ -89,6 +91,7 @@ function ContextSubmenu({ action, submenuKey, contextMenuId, themeClassName, isO
       role="menu"
       aria-label={action.label}
       data-vc-context-menu={contextMenuId}
+      data-vc-context-scope={scope}
       data-vc-context-submenu-panel="true"
       data-vc-submenu-key={submenuKey}
       data-side={placement?.side || 'right'}
@@ -97,6 +100,21 @@ function ContextSubmenu({ action, submenuKey, contextMenuId, themeClassName, isO
       onPointerLeave={() => scheduleClose(submenuKey)}
       onFocus={cancelClose}
     >
+      {scope === 'document' && <>
+        <button
+          type="button"
+          className="vc-context-mobile-back"
+          role="menuitem"
+          onClick={() => {
+            onOpenChange(submenuKey, false);
+            requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }));
+          }}
+        >
+          <ChevronLeft size={15} aria-hidden="true" />
+          <span>Volver a acciones de navegación</span>
+        </button>
+        <div className="vc-context-group-label vc-context-mobile-submenu-title" role="presentation">{action.label}</div>
+      </>}
       {renderActions(action.children || [], submenuKey)}
     </div>,
     document.body,
@@ -107,10 +125,11 @@ function ContextSubmenu({ action, submenuKey, contextMenuId, themeClassName, isO
       ref={triggerRef}
       type="button"
       className="vc-context-submenu-trigger"
+      data-current-branch={action.current ? 'true' : undefined}
       role="menuitem"
       aria-haspopup="menu"
       aria-expanded={isOpen}
-      aria-label={`${action.label}, submenú`}
+      aria-label={action.current ? `${action.label}, contiene la página actual, submenú` : `${action.label}, submenú`}
       disabled={action.disabled}
       data-vc-context-menu={contextMenuId}
       data-vc-submenu-trigger={submenuKey}
@@ -181,7 +200,7 @@ export function ContextMenu({ actions, label = 'Más opciones', children, classN
     cancelSubmenuClose();
     setOpen(false);
     setActiveSubmenuKeys([]);
-    if (restoreFocus) requestAnimationFrame(() => (triggerRef.current || focusReturnRef.current)?.focus?.());
+    if (restoreFocus) requestAnimationFrame(() => (focusReturnRef.current || triggerRef.current)?.focus?.({ preventScroll: true }));
   };
 
   const cancelLongPress = () => {
@@ -242,13 +261,15 @@ export function ContextMenu({ actions, label = 'Más opciones', children, classN
 
     if (action.kind === 'separator') return <React.Fragment key={key}>{groupLabel}<div className="vc-context-separator" role="separator"/></React.Fragment>;
     if (action.kind === 'label') return <React.Fragment key={key}>{groupLabel}<div className="vc-context-group-label" role="presentation">{action.label}</div></React.Fragment>;
-    if (action.children?.length) return <React.Fragment key={key}>{groupLabel}<ContextSubmenu action={action} submenuKey={key} contextMenuId={contextMenuId} themeClassName={themeClassName} isOpen={activeSubmenuKeys.includes(key)} onOpenChange={(submenuKey, shouldOpen) => shouldOpen ? openSubmenu(submenuKey) : closeSubmenu(submenuKey)} cancelClose={cancelSubmenuClose} scheduleClose={scheduleSubmenuClose} renderActions={renderActions}/></React.Fragment>;
+    if (action.children?.length) return <React.Fragment key={key}>{groupLabel}<ContextSubmenu action={action} submenuKey={key} contextMenuId={contextMenuId} scope={scope} themeClassName={themeClassName} isOpen={activeSubmenuKeys.includes(key)} onOpenChange={(submenuKey, shouldOpen) => shouldOpen ? openSubmenu(submenuKey) : closeSubmenu(submenuKey)} cancelClose={cancelSubmenuClose} scheduleClose={scheduleSubmenuClose} renderActions={renderActions}/></React.Fragment>;
 
     const role = action.kind === 'radio' ? 'menuitemradio' : action.kind === 'checkbox' || action.checked !== undefined ? 'menuitemcheckbox' : 'menuitem';
-    return <React.Fragment key={key}>{groupLabel}<button type="button" role={role} aria-checked={role === 'menuitem' ? undefined : Boolean(action.checked)} disabled={action.disabled} className={action.destructive ? 'is-destructive' : ''} onClick={() => selectAction(action)}>
+    const itemClassName = [action.destructive && 'is-destructive', action.current && 'is-current-page'].filter(Boolean).join(' ');
+    return <React.Fragment key={key}>{groupLabel}<button type="button" role={role} aria-checked={role === 'menuitem' ? undefined : Boolean(action.checked)} aria-current={action.current ? 'page' : undefined} disabled={action.disabled} className={itemClassName} onClick={() => selectAction(action)}>
       {action.icon && <span className="vc-context-action-icon" aria-hidden="true">{action.icon}</span>}
       <span className="vc-context-action-label">{action.label}</span>
       {action.shortcut && <kbd>{action.shortcut}</kbd>}
+      {action.current && <Check className="vc-context-current-indicator" size={14} aria-hidden="true"/>}
       {(role === 'menuitemcheckbox' || role === 'menuitemradio') && <span className="vc-context-check" aria-hidden="true">{action.checked ? '✓' : ''}</span>}
     </button></React.Fragment>;
   });
@@ -381,9 +402,27 @@ export function ContextMenu({ actions, label = 'Más opciones', children, classN
     return () => window.removeEventListener('resize', updatePlacement);
   }, [open, revision]);
 
-  const menu = open && <div ref={menuRef} data-vc-context-menu={contextMenuId} className={`vc-context-menu ${themeClassName}`.trim()} role="menu" aria-label={label} aria-orientation="vertical" style={{ left: position.x, top: position.y }} onContextMenu={(event) => event.preventDefault()}>{renderActions(actions)}</div>;
+  const menu = open && <div ref={menuRef} data-vc-context-menu={contextMenuId} data-vc-context-scope={scope} className={`vc-context-menu ${themeClassName}`.trim()} role="menu" aria-label={label} aria-orientation="vertical" style={{ left: position.x, top: position.y }} onContextMenu={(event) => event.preventDefault()}>{renderActions(actions)}</div>;
   const floatingMenu = menu && typeof document !== 'undefined' ? createPortal(menu, document.body) : menu;
-  if (scope === 'document') return <>{floatingMenu}</>;
+  if (scope === 'document') return <>
+    {trigger && <button
+      ref={triggerRef}
+      type="button"
+      className="vc-context-document-trigger"
+      aria-label={label}
+      title={label}
+      aria-haspopup="menu"
+      aria-expanded={open}
+      aria-keyshortcuts="ContextMenu Shift+F10"
+      data-vc-context-menu={contextMenuId}
+      onClick={(event) => {
+        if (open) { close(false); return; }
+        const rect = event.currentTarget.getBoundingClientRect();
+        show(rect.left, rect.bottom, event.currentTarget);
+      }}
+    ><MoreHorizontal size={18} aria-hidden="true"/></button>}
+    {floatingMenu}
+  </>;
 
   return <div ref={rootRef} className={`vc-context-anchor ${displayContents ? 'vc-context-contents' : ''} ${className}`} onContextMenu={handleContextMenu} onKeyDown={handleKeyboardOpen} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={cancelLongPress} onPointerCancel={cancelLongPress}>
     {children}

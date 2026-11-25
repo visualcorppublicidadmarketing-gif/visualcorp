@@ -1,0 +1,53 @@
+.store-souvenirs-page{min-height:100vh;background:#0b0c12;color:#f8f7fa}
+.store-souvenirs-hero{position:relative;display:grid;grid-template-columns:minmax(0,1.04fr) minmax(360px,.96fr);align-items:center;gap:32px;overflow:hidden;min-height:570px;padding:122px max(32px,calc((100vw - 1260px)/2)) 50px;background:radial-gradient(ellipse at 81% 45%,#4c1d5838,transparent 40%),radial-gradient(ellipse at 12% 105%,#102d3b70,transparent 42%),linear-gradient(120deg,#101017,#121019 55%,#15101b);border-bottom:1px solid #ffffff18}
+.store-souvenirs-hero:after{position:absolute;inset:auto 0 0;height:2px;background:linear-gradient(90deg,#e33aa8,#a847c8 48%,#f3c448);content:"";opacity:.85}
+.store-souvenirs-hero-copy{position:relative;z-index:1;max-width:620px}
+.store-souvenirs-back{display:inline-flex;align-items:center;gap:7px;margin-bottom:45px;color:#cbc6d2;font-size:11px;font-weight:700;text-decoration:none;transition:color .18s ease}
+.store-souvenirs-back:hover{color:#fff}
+.store-souvenirs-hero-copy .site-eyebrow{margin-bottom:17px}
+.store-souvenirs-hero h1{margin:0;color:#f8f5fa;font-family:VisualCorpDisplay,VisualCorpPublicDMSans,sans-serif;font-size:clamp(58px,7.4vw,94px);font-weight:400;line-height:.9;letter-spacing:-.05em}
+.store-souvenirs-hero h1 em,.store-souvenirs-heading h2 em,.store-souvenirs-cta h2 em{color:transparent;font-style:normal;background:linear-gradient(96deg,#f15bb6,#c188f0 53%,#f3c447);background-clip:text}
+.store-souvenirs-hero-copy>p{max-width:530px;margin:23px 0 25px;color:#bcb7c5;font-size:14px;line-height:1.75}
+.store-souvenirs-hero-meta{display:flex;align-items:center;gap:13px;color:#dfd8e7;font-size:10px;font-weight:700}
+.store-souvenirs-hero-meta i{width:3px;height:3px;border-radius:50%;background:#e74bab}
+.store-souvenirs-hero-art{position:relative;display:flex;align-items:center;justify-content:center;min-height:430px;isolation:isolate}
+.store-souvenirs-art-orbit{position:absolute;z-index:-1;width:360px;aspect-ratio:1;border:1px solid #ef40b225;border-radius:50%;box-shadow:0 0 0 36px #ffffff04,0 0 0 78px #ffffff03}
+.store-souvenirs-art-card{position:absolute;width:197px;aspect-ratio:9/16;overflow:hidden;padding:0;border:1px solid #ffffff4a;border-radius:16px;background:#17141f;box-shadow:0 25px 65px #0008;cursor:zoom-in;transition:transform .28s ease,border-color .25s ease,box-shadow .25s ease}
+.store-souvenirs-art-card img{width:100%;height:100%;object-fit:cover}
+.store-souvenirs-art-card-1{z-index:2;transform:translateX(-90px) rotate(-9deg)}
+.store-souvenirs-art-card-2{z-index:3;transform:translate(0,-15px) rotate(2deg)}
+.store-souvenirs-art-card-3{z-index:1;transform:translateX(92px) rotate(10deg)}
+.store-souvenirs-art-card:hover{z-index:5;border-color:#f28acb;box-shadow:0 28px 75px #000b,0 0 30px #e348a333;transform:translateY(-15px) rotate(0)}
+.store-souvenirs-gallery{width:min(1260px,calc(100% - 64px));margin:0 auto;padding:76px 0 86px}
+.store-souvenirs-heading{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.55fr);align-items:end;gap:40px;margin-bottom:28px}
+.store-souvenirs-heading h2,.store-souvenirs-cta h2{margin:12px 0 0;color:#f7f5fa;font-family:VisualCorpDisplay,VisualCorpPublicDMSans,sans-serif;font-size:clamp(40px,5vw,62px);font-weight:400;line-height:.98;letter-spacing:-.035em}
+.store-souvenirs-heading>p{max-width:490px;margin:0 0 3px;color:#aaa7b6;font-size:12px;line-height:1.7}
+.store-souvenirs-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin:0;padding:0;list-style:none}
+.store-souvenir-card{min-width:0;overflow:hidden;border:1px solid #ffffff1b;border-radius:15px;background:linear-gradient(145deg,#1b1a23,#131219 82%);box-shadow:0 15px 42px #0003;transition:transform .24s ease,border-color .22s ease,box-shadow .22s ease}
+.store-souvenir-card:hover{transform:translateY(-4px);border-color:#e345ac77;box-shadow:0 20px 48px #0006,0 0 26px #e32c9b11}
+.store-souvenir-image-button{position:relative;display:block;width:100%;overflow:hidden;aspect-ratio:9/16;padding:0;border:0;background:#15131c;cursor:zoom-in}
+.store-souvenir-image-button:after{position:absolute;inset:45% 0 0;background:linear-gradient(transparent,#09090f70);content:"";pointer-events:none}
+.store-souvenir-image-button img{width:100%;height:100%;object-fit:cover;transition:transform .4s ease,filter .3s ease}
+.store-souvenir-card:hover .store-souvenir-image-button img{transform:scale(1.035);filter:saturate(1.04)}
+.store-souvenir-zoom{position:absolute;right:10px;bottom:11px;z-index:1;display:flex;align-items:center;gap:5px;padding:7px 9px;border:1px solid #ffffff42;border-radius:999px;background:#100e18bc;color:#fff;font-size:9px;font-weight:750;opacity:0;transform:translateY(4px);transition:opacity .2s ease,transform .2s ease}
+.store-souvenir-card:hover .store-souvenir-zoom,.store-souvenir-image-button:focus-visible .store-souvenir-zoom{opacity:1;transform:none}
+.store-souvenir-card-copy{display:grid;gap:5px;padding:13px 13px 15px}
+.store-souvenir-card-copy>span{color:#e778bc;font-size:8px;font-weight:800;letter-spacing:.14em}
+.store-souvenir-card-copy h3{margin:0;color:#f4f1f7;font-size:12px;line-height:1.35}
+.store-souvenirs-disclaimer{margin:20px 0 0;color:#868291;font-size:9px;line-height:1.6}
+.store-souvenirs-cta{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-top:62px;padding:32px 36px;border:1px solid #e249a539;border-radius:20px;background:radial-gradient(ellipse at 80% 15%,#903d7825,transparent 42%),linear-gradient(110deg,#1d1723,#14131b 72%);box-shadow:0 22px 60px #0003}
+.store-souvenirs-cta h2{margin:8px 0 7px;font-size:clamp(32px,4.2vw,49px)}
+.store-souvenirs-cta p{margin:0;color:#aaa7b6;font-size:11px;line-height:1.6}
+.store-souvenirs-cta>.site-primary-button{flex:none}
+.store-souvenir-preview{width:auto;max-width:min(94vw,930px);max-height:94dvh;overflow:visible;padding:0;border:1px solid #ffffff38;border-radius:17px;background:#111017;color:#f8f7fa;box-shadow:0 30px 100px #000a}
+.store-souvenir-preview::backdrop{background:#050509d9;backdrop-filter:blur(9px)}
+.store-souvenir-preview-frame{position:relative;display:grid;justify-items:center;gap:10px;padding:12px}
+.store-souvenir-preview-frame img{display:block;width:auto;height:auto;max-width:min(88vw,760px);max-height:calc(88dvh - 48px);object-fit:contain;border-radius:8px}
+.store-souvenir-preview-title{padding:3px 0 1px;color:#e6e1ea;font-size:11px;font-weight:700}
+.store-souvenir-preview-close{position:absolute;z-index:1;top:20px;right:20px;display:grid;width:39px;height:39px;place-items:center;border:1px solid #ffffff50;border-radius:50%;background:#100e18e8;color:#fff;cursor:pointer}
+.store-souvenir-preview-close:hover{border-color:#ef64b9;background:#251729}
+.store-souvenir-preview:focus-visible,.store-souvenir-preview-close:focus-visible,.store-souvenir-image-button:focus-visible,.store-souvenirs-art-card:focus-visible,.store-souvenirs-back:focus-visible{outline:3px solid #f184cb;outline-offset:3px}
+@media(max-width:1080px){.store-souvenirs-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.store-souvenirs-hero{grid-template-columns:minmax(0,1fr) minmax(310px,.8fr);padding-inline:38px}.store-souvenirs-art-card{width:175px}}
+@media(max-width:760px){.store-souvenirs-hero{grid-template-columns:1fr;gap:0;min-height:0;padding:110px 22px 30px}.store-souvenirs-back{margin-bottom:38px}.store-souvenirs-hero h1{font-size:clamp(51px,12vw,72px)}.store-souvenirs-hero-copy>p{max-width:550px;margin:16px 0 17px;font-size:12px}.store-souvenirs-hero-meta{flex-wrap:wrap;gap:8px;font-size:8px}.store-souvenirs-hero-art{min-height:320px;margin-top:4px}.store-souvenirs-art-orbit{width:250px}.store-souvenirs-art-card{width:143px;border-radius:12px}.store-souvenirs-art-card-1{transform:translateX(-62px) rotate(-8deg)}.store-souvenirs-art-card-2{transform:translateY(-8px) rotate(1deg)}.store-souvenirs-art-card-3{transform:translateX(64px) rotate(9deg)}.store-souvenirs-gallery{width:calc(100% - 36px);padding:46px 0 61px}.store-souvenirs-heading{grid-template-columns:1fr;gap:10px;margin-bottom:19px}.store-souvenirs-heading h2{font-size:clamp(35px,8vw,48px)}.store-souvenirs-heading>p{font-size:10px}.store-souvenirs-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.store-souvenir-card{border-radius:11px}.store-souvenir-card-copy{gap:4px;padding:9px 9px 11px}.store-souvenir-card-copy>span{font-size:7px}.store-souvenir-card-copy h3{font-size:10px}.store-souvenir-zoom{right:6px;bottom:6px;padding:5px 6px;font-size:7px;opacity:1;transform:none}.store-souvenirs-disclaimer{font-size:8px}.store-souvenirs-cta{align-items:flex-start;flex-direction:column;margin-top:36px;padding:23px 20px;border-radius:15px}.store-souvenirs-cta h2{font-size:38px}.store-souvenirs-cta p{font-size:10px}.store-souvenir-preview{max-width:calc(100vw - 20px);max-height:calc(100dvh - 20px);border-radius:12px}.store-souvenir-preview-frame{padding:7px}.store-souvenir-preview-frame img{max-width:calc(100vw - 34px);max-height:calc(92dvh - 46px)}.store-souvenir-preview-close{top:13px;right:13px;width:35px;height:35px}}
+@media(max-width:430px){.store-souvenirs-hero{padding-right:16px;padding-left:16px}.store-souvenirs-hero h1{font-size:48px}.store-souvenirs-hero-art{min-height:280px}.store-souvenirs-art-card{width:124px}.store-souvenirs-gallery{width:calc(100% - 28px)}.store-souvenirs-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.store-souvenir-card-copy h3{font-size:9px}.store-souvenirs-cta h2{font-size:33px}}
+@media(prefers-reduced-motion:reduce){.store-souvenirs-back,.store-souvenirs-art-card,.store-souvenir-card,.store-souvenir-image-button img,.store-souvenir-zoom{transition:none!important;animation:none!important}.store-souvenirs-art-card:hover,.store-souvenir-card:hover{transform:none}}
