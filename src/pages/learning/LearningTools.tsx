@@ -54,13 +54,29 @@ function ProtectedLearningQuiz({ accessToken }: { accessToken?: string }) {
 function AreaCalculator() {
   const [width, setWidth] = useState('');
   const [height, setHeight] = useState('');
+  const [unit, setUnit] = useState<'cm' | 'm'>('m');
   const [quantity, setQuantity] = useState('1');
-  const result = calculateArea(width, height, quantity);
+  const widthM = unit === 'cm' ? String(Number(width.replace(',', '.')) / 100) : width;
+  const heightM = unit === 'cm' ? String(Number(height.replace(',', '.')) / 100) : height;
+  const result = calculateArea(widthM, heightM, quantity);
+  const changeUnit = (next: 'cm' | 'm') => {
+    const convert = (value: string) => {
+      if (!value.trim()) return value;
+      const entered = Number(value.replace(',', '.'));
+      if (!Number.isFinite(entered)) return value;
+      const converted = next === 'cm' ? (unit === 'm' ? entered * 100 : entered) : (unit === 'cm' ? entered / 100 : entered);
+      return String(Number(converted.toFixed(next === 'cm' ? 2 : 4)));
+    };
+    setWidth(convert(width));
+    setHeight(convert(height));
+    setUnit(next);
+  };
   return <div className="learning-tool-card">
-    <div className="learning-tool-heading"><span className="learning-tool-symbol violet"><Activity size={19}/></span><div><span className="learning-mini-label">ÁREA Y CANTIDAD</span><h3>Calcula el metraje</h3><p>Ingresa medidas en metros para obtener el área por pieza y el total.</p></div></div>
+    <div className="learning-tool-heading"><span className="learning-tool-symbol violet"><Activity size={19}/></span><div><span className="learning-mini-label">ÁREA Y CANTIDAD</span><h3>Calcula el metraje</h3><p>Ingresa medidas en centímetros o metros, con decimales, para obtener el área por pieza y el total.</p></div></div>
+    <label className="learning-unit-select">Unidad de medida<select value={unit} onChange={(event) => changeUnit(event.target.value as 'cm' | 'm')}><option value="m">Metros (m)</option><option value="cm">Centímetros (cm)</option></select></label>
     <div className="learning-input-grid">
-      <label>Ancho (m)<input type="number" min="0" step="0.01" inputMode="decimal" value={width} onChange={(event) => setWidth(event.target.value)} placeholder="Ej. 1.20"/></label>
-      <label>Alto (m)<input type="number" min="0" step="0.01" inputMode="decimal" value={height} onChange={(event) => setHeight(event.target.value)} placeholder="Ej. 0.80"/></label>
+      <label>Ancho ({unit})<input type="number" min="0" step={unit === 'cm' ? '0.01' : '0.0001'} inputMode="decimal" value={width} onChange={(event) => setWidth(event.target.value)} placeholder={unit === 'cm' ? 'Ej. 120,5' : 'Ej. 1,205'}/></label>
+      <label>Alto ({unit})<input type="number" min="0" step={unit === 'cm' ? '0.01' : '0.0001'} inputMode="decimal" value={height} onChange={(event) => setHeight(event.target.value)} placeholder={unit === 'cm' ? 'Ej. 80,5' : 'Ej. 0,805'}/></label>
       <label>Cantidad<input type="number" min="1" step="1" inputMode="numeric" value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder="1"/></label>
     </div>
     <div className="learning-area-result" aria-live="polite"><div><span>Área por pieza</span><b>{result ? `${result.perPiece.toFixed(2)} m²` : '—'}</b></div><ArrowRight size={18}/><div><span>Área total</span><b>{result ? `${result.total.toFixed(2)} m²` : 'Completa las medidas'}</b></div></div>
@@ -75,14 +91,15 @@ function VisualDistance() {
   const meters = Number(distance) || 0;
   const isClear = Boolean(range && meters <= range.limit);
   const blur = range && meters > range.limit ? Math.min(4, (meters - range.limit) / 20) : 0;
+  const formatMeters = (value: number) => new Intl.NumberFormat('es-EC', { maximumFractionDigits: 1 }).format(value);
   return <div className="learning-tool-card">
     <div className="learning-tool-heading"><span className="learning-tool-symbol cyan"><Target size={19}/></span><div><span className="learning-mini-label">LECTURA A DISTANCIA</span><h3>Prueba el tamaño de letra</h3><p>Ajusta la altura y la distancia para comparar una referencia visual.</p></div></div>
     <div className="learning-input-grid learning-input-grid-two">
-      <label>Altura de letra (cm)<input type="number" min="1" step="1" value={height} onChange={(event) => setHeight(event.target.value)}/></label>
-      <label>Distancia observada <strong className="learning-inline-value">{Math.round(meters)} m</strong><input type="range" min="1" max={Math.max(100, Math.round((range?.limit || 30) * 2))} value={distance} onChange={(event) => setDistance(event.target.value)}/></label>
+      <label>Altura de letra (cm)<input type="number" min="1" step="0.01" inputMode="decimal" value={height} onChange={(event) => setHeight(event.target.value)} placeholder="Ej. 8,5"/></label>
+      <label>Distancia observada <strong className="learning-inline-value">{formatMeters(meters)} m</strong><input type="range" min="1" step="0.1" max={Math.max(100, Math.round((range?.limit || 30) * 2))} value={distance} onChange={(event) => setDistance(event.target.value)}/></label>
     </div>
     <div className={`learning-sign-sim ${isClear ? 'is-clear' : 'is-soft'}`}><span className="learning-sign-grid" aria-hidden="true"/><b style={{ filter: `blur(${blur}px)`, opacity: Math.max(.28, 1 - blur / 5) }}>VISUAL CORP</b><small>{isClear ? 'REFERENCIA DE LECTURA' : 'AUMENTA EL TAMAÑO O ACÉRCATE'}</small></div>
-    <div className="learning-distance-results"><div><span>Zona orientativa</span><b>{range ? `${Math.round(range.suggested)} m` : '—'}</b></div><div><span>Límite orientativo</span><b>{range ? `${Math.round(range.limit)} m` : '—'}</b></div><div><span>Distancia elegida</span><b>{Math.round(meters)} m</b></div></div>
+    <div className="learning-distance-results"><div><span>Zona orientativa</span><b>{range ? `${formatMeters(range.suggested)} m` : '—'}</b></div><div><span>Límite orientativo</span><b>{range ? `${formatMeters(range.limit)} m` : '—'}</b></div><div><span>Distancia elegida</span><b>{formatMeters(meters)} m</b></div></div>
     <div className="learning-note"><Activity size={16}/><span>Estimación heredada del manual: 3× y 4.5× la altura de letra. No sustituye una prueba en el lugar, el contraste real ni la revisión del diseño.</span></div>
   </div>;
 }
