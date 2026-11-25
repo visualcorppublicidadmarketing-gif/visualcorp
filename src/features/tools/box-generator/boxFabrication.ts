@@ -7,20 +7,18 @@ import {
   type BoxPanelPlacement,
   type BoxPoint,
   type BoxProject,
+  type BoxSheetSpec,
 } from './boxModel';
+import { offsetBoxContour } from './boxKerf';
+import { nestPolygons } from './boxPolygonNesting';
 
-/** Dimensions are in millimetres. No machine profile or kerf is implied. */
-export interface BoxSheetSpec {
-  widthMm: number;
-  heightMm: number;
-  marginMm: number;
-  gapMm: number;
-}
+export type { BoxSheetSpec } from './boxModel';
 
 export interface BoxPanelMetrics {
   panelId: BoxPanel['id'];
   label: string;
   perimeterMm: number;
+  cutLengthMm: number;
   areaMm2: number;
 }
 
@@ -50,6 +48,11 @@ interface MeasuredPanel {
   minY: number;
   width: number;
   height: number;
+  cutPoints: BoxPoint[];
+  cutMinX: number;
+  cutMinY: number;
+  cutWidth: number;
+  cutHeight: number;
   metrics: BoxPanelMetrics;
 }
 
@@ -80,105 +83,141 @@ export function measureBoxContour(points: readonly BoxPoint[]) {
   return { perimeterMm, areaMm2 };
 }
 
-function measurePanel(panel: BoxPanel, project: BoxProject): MeasuredPanel {
-  const points = buildPanelOutline(panel, project);
+function bounds(points: readonly BoxPoint[]) {
   const xs = points.map((point) => point.x);
   const ys = points.map((point) => point.y);
+  return {
+    minX: Math.min(...xs), minY: Math.min(...ys),
+    width: Math.max(...xs) - Math.min(...xs),
+    height: Math.max(...ys) - Math.min(...ys),
+  };
+}
+
+function rotatePoints(points: readonly BoxPoint[]) {
+  return points.map(({ x, y }) => ({ x: -y, y: x }));
+}
+
+function measurePanel(panel: BoxPanel, project: BoxProject, kerfMm: number): MeasuredPanel {
+  const points = buildPanelOutline(panel, project);
+  const nominalBounds = bounds(points);
   const { perimeterMm, areaMm2 } = measureBoxContour(points);
-  const minX = Math.min(...xs);
-  const minY = Math.min(...ys);
-  const width = Math.max(...xs) - minX;
-  const height = Math.max(...ys) - minY;
-  if (width <= 0 || height <= 0) throw new Error(`La pieza ${panel.label} no tiene dimensiones válidas.`);
+  const cutPoints = offsetBoxContour(points, kerfMm / 2);
+  const cutBounds = bounds(cutPoints);
+  const { perimeterMm: cutLengthMm } = measureBoxContour(cutPoints);
+  if (nominalBounds.width <= 0 || nominalBounds.height <= 0 || cutBounds.width <= 0 || cutBounds.height <= 0) {
+    throw new Error(`La pieza ${panel.label} no tiene dimensiones válidas.`);
+  }
   return {
     panel,
     points,
-    minX,
-    minY,
-    width,
-    height,
-    metrics: { panelId: panel.id, label: panel.label, perimeterMm, areaMm2 },
+    minX: nominalBounds.minX,
+    minY: nominalBounds.minY,
+    width: nominalBounds.width,
+    height: nominalBounds.height,
+    cutPoints,
+    cutMinX: cutBounds.minX,
+    cutMinY: cutBounds.minY,
+    cutWidth: cutBounds.width,
+    cutHeight: cutBounds.height,
+    metrics: { panelId: panel.id, label: panel.label, perimeterMm, cutLengthMm, areaMm2 },
   };
 }
 
 /**
- * Deterministic shelf placement using contour bounding boxes. It does not rotate
- * pieces or claim optimal nesting, but never overlaps bounding boxes.
+ * Deterministic polygon nesting of kerf-compensated contours. Sheet dimensions,
+ * clearances, and kerf are in millimetres regardless of the project's display unit.
  */
-export function planBoxSheets(project: BoxProject, spec: BoxSheetSpec): BoxSheetPlan {
+export function planBoxSheets(
+  project: BoxProject,
+  spec: BoxSheetSpec,
+  kerfMm = project.camProfile.kerfMm ?? 0,
+): BoxSheetPlan {
   requireFinite(spec.widthMm, 'El ancho de la plancha', 0, project.unit);
   requireFinite(spec.heightMm, 'El alto de la plancha', 0, project.unit);
   requireFinite(spec.marginMm, 'El margen', 0, project.unit, true);
   requireFinite(spec.gapMm, 'La separación', 0, project.unit, true);
+  requireFinite(kerfMm, 'La compensación de kerf', 0, 'mm', true);
+  if (kerfMm > 0 && spec.gapMm + 1e-6 < kerfMm) {
+    throw new Error(`La separación entre rutas debe ser al menos ${kerfMm.toFixed(3)} mm cuando hay kerf configurado.`);
+  }
   if (!Number.isFinite(spec.widthMm * spec.heightMm)) {
     throw new Error('El área de la plancha excede el rango numérico permitido.');
   }
   const usableWidth = spec.widthMm - spec.marginMm * 2;
   const usableHeight = spec.heightMm - spec.marginMm * 2;
-  if (usableWidth <= 0 || usableHeight <= 0) {
-    throw new Error('El margen deja la plancha sin área útil.');
-  }
+  if (usableWidth <= 0 || usableHeight <= 0) throw new Error('El margen deja la plancha sin área útil.');
 
-  const measured = buildBoxPanels(project).map((panel) => measurePanel(panel, project));
-  for (const item of measured) {
-    if (item.width > usableWidth + 1e-6 || item.height > usableHeight + 1e-6) {
-      throw new Error(`${item.panel.label} (${formatBoxLength(item.width, project.unit)} × ${formatBoxLength(item.height, project.unit)}) no cabe en el área útil de la plancha (${formatBoxLength(usableWidth, project.unit)} × ${formatBoxLength(usableHeight, project.unit)}).`);
+  const measured = buildBoxPanels(project).map((panel) => measurePanel(panel, project, kerfMm));
+  const allowedRotationsDeg = spec.rotationAllowed ? [0, 90] : [0];
+  const sheetGrainDirection = spec.sheetGrainDirection === 'x'
+    ? { x: 1, y: 0 }
+    : spec.sheetGrainDirection === 'y'
+      ? { x: 0, y: 1 }
+      : undefined;
+  const nesting = nestPolygons(
+    measured.map((item) => ({
+      id: item.panel.id,
+      points: item.cutPoints,
+      allowedRotationsDeg,
+      // Local X is the panel's grain reference when a sheet grain is selected.
+      ...(sheetGrainDirection ? { grainDirection: { x: 1, y: 0 } } : {}),
+    })),
+    {
+      sheetWidthMm: spec.widthMm,
+      sheetHeightMm: spec.heightMm,
+      marginMm: spec.marginMm,
+      gapMm: spec.gapMm,
+      allowedRotationsDeg,
+      sheetGrainDirection,
+    },
+  );
+  if (nesting.failures.length > 0) {
+    const failure = nesting.failures[0];
+    const item = measured.find(({ panel }) => panel.id === failure.id);
+    const label = item?.panel.label ?? failure.id;
+    if (failure.code === 'too-large') {
+      throw new Error(`${label}, con compensación incluida, no cabe en el área útil de la plancha (${usableWidth.toFixed(1)} × ${usableHeight.toFixed(1)} mm).`);
     }
+    if (failure.code === 'no-grain-compatible-rotation') {
+      throw new Error(`${label}: ninguna rotación permitida alinea el eje de veta con la plancha.`);
+    }
+    throw new Error(`${label}: ${failure.message}`);
   }
 
-  // Sort large pieces first; retain stable order for equal areas.
-  const ordered = measured.map((item, index) => ({ item, index }))
-    .sort((a, b) => b.item.width * b.item.height - a.item.width * a.item.height || a.index - b.index);
-  const sheets: BoxPlannedSheet[] = [];
-  const newSheet = (): BoxPlannedSheet => {
-    const sheet: BoxPlannedSheet = {
-      index: sheets.length + 1,
-      layout: { width: spec.widthMm, height: spec.heightMm, panels: [] },
-      usedAreaMm2: 0,
-      efficiency: 0,
+  const measuredById = new Map<string, MeasuredPanel>(measured.map((item) => [item.panel.id, item]));
+  const sheets: BoxPlannedSheet[] = nesting.sheets.map((nestedSheet) => {
+    const panels: BoxPanelPlacement[] = nestedSheet.placements.map((placement) => {
+      const item = measuredById.get(placement.id);
+      if (!item) throw new Error(`No se encontró la geometría fuente de la pieza ${placement.id}.`);
+      const rotated = placement.rotationDeg === 90;
+      const nominalRotated = rotated ? rotatePoints(item.points) : item.points;
+      const cutRotated = rotated ? rotatePoints(item.cutPoints) : item.cutPoints;
+      const cutOrigin = bounds(cutRotated);
+      const nominalLocal = nominalRotated.map((point) => ({ x: point.x - cutOrigin.minX, y: point.y - cutOrigin.minY }));
+      return {
+        panel: item.panel,
+        points: nominalLocal,
+        cutPoints: placement.points,
+        x: placement.x,
+        y: placement.y,
+        rotationDeg: rotated ? 90 : 0,
+      };
+    });
+    const usedAreaMm2 = nestedSheet.placements.reduce((sum, placement) => sum + placement.areaMm2, 0);
+    const sheetAreaMm2 = spec.widthMm * spec.heightMm;
+    return {
+      index: nestedSheet.index,
+      layout: { width: spec.widthMm, height: spec.heightMm, panels },
+      usedAreaMm2,
+      efficiency: usedAreaMm2 / sheetAreaMm2,
     };
-    sheets.push(sheet);
-    return sheet;
-  };
-  let sheet = newSheet();
-  let cursorX = spec.marginMm;
-  let cursorY = spec.marginMm;
-  let rowHeight = 0;
-  const rightLimit = spec.widthMm - spec.marginMm;
-  const bottomLimit = spec.heightMm - spec.marginMm;
-
-  for (const { item } of ordered) {
-    if (cursorX + item.width > rightLimit + 1e-6) {
-      cursorX = spec.marginMm;
-      cursorY += rowHeight + spec.gapMm;
-      rowHeight = 0;
-    }
-    if (cursorY + item.height > bottomLimit + 1e-6) {
-      sheet = newSheet();
-      cursorX = spec.marginMm;
-      cursorY = spec.marginMm;
-      rowHeight = 0;
-    }
-    const placement: BoxPanelPlacement = {
-      panel: item.panel,
-      points: item.points,
-      x: cursorX - item.minX,
-      y: cursorY - item.minY,
-    };
-    sheet.layout.panels.push(placement);
-    sheet.usedAreaMm2 += item.metrics.areaMm2;
-    cursorX += item.width + spec.gapMm;
-    rowHeight = Math.max(rowHeight, item.height);
-  }
-
-  const sheetArea = spec.widthMm * spec.heightMm;
-  sheets.forEach((placed) => { placed.efficiency = placed.usedAreaMm2 / sheetArea; });
+  });
   return {
-    spec: { ...spec },
+    spec: { ...spec, sheetGrainDirection: spec.sheetGrainDirection ?? 'none' },
     sheets,
     panelMetrics: measured.map(({ metrics }) => metrics),
     totalSheets: sheets.length,
     totalAreaMm2: measured.reduce((sum, { metrics }) => sum + metrics.areaMm2, 0),
-    totalCutLengthMm: measured.reduce((sum, { metrics }) => sum + metrics.perimeterMm, 0),
+    totalCutLengthMm: measured.reduce((sum, { metrics }) => sum + metrics.cutLengthMm, 0),
   };
 }
