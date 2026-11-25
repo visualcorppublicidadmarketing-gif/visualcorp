@@ -131,7 +131,6 @@ export interface BoxPanel {
   thicknessMm: number;
   column: number;
   row: number;
-  edges: Record<'bottom' | 'right' | 'top' | 'left', BoxEdgeStyle>;
   assembly: BoxPanelAssembly;
   topStartHeight?: number;
   topEndHeight?: number;
@@ -197,9 +196,9 @@ export const boxUnitToMm = (value: number, unit: BoxUnit) => unit === 'in' ? val
 export function maxBoxThicknessMm(project: Pick<BoxProject, 'dimensionsMm' | 'dimensionMode'>) {
   return Math.max(0.5, Math.min(
     30,
-    project.dimensionsMm.width / 3,
-    project.dimensionsMm.depth / 3,
-    project.dimensionsMm.height / 3,
+    (project.dimensionsMm.width - 1) / 3,
+    (project.dimensionsMm.depth - 1) / 3,
+    (project.dimensionsMm.height - 1) / 3,
   ));
 }
 
@@ -333,11 +332,11 @@ function pairBoxPanelEdges(project: BoxProject, panels: BoxPanel[]) {
     const roleOf = (style: BoxEdgeStyle): BoxPanelEdgeJoint['role'] => style === 'tab' ? 'male' : style === 'slot' ? 'female' : 'flat';
     const clearanceMm = project.jointStyle === 'flat' ? 0 : project.jointClearanceMm;
     aPanel.edgeJoints = { ...aPanel.edgeJoints, [pair.a.edge]: {
-      pairId: pair.id, matePanelId: bPanel.id, mateEdge: pair.b.edge,
+      pairId: pair.id, matePanelId: bPanel.id as BoxPanelId, mateEdge: pair.b.edge,
       role: roleOf(aStyle), depthMm: bPanel.thicknessMm, clearanceMm,
     } };
     bPanel.edgeJoints = { ...bPanel.edgeJoints, [pair.b.edge]: {
-      pairId: pair.id, matePanelId: aPanel.id, mateEdge: pair.a.edge,
+      pairId: pair.id, matePanelId: aPanel.id as BoxPanelId, mateEdge: pair.a.edge,
       role: roleOf(bStyle), depthMm: aPanel.thicknessMm, clearanceMm,
     } };
   }

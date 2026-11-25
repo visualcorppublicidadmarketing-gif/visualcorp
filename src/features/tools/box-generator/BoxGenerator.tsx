@@ -27,6 +27,7 @@ import {
   normalizeBoxProject,
   resolveBoxDimensions,
   type BoxPanel,
+  type BoxPanelId,
   type BoxModelType,
   type BoxProject,
   type BoxUnit,
@@ -36,7 +37,7 @@ import './box-generator.css';
 type DimensionKey = 'width' | 'height' | 'depth';
 type NumericField = DimensionKey | 'thickness' | 'fingerWidth' | 'panelGap' | 'frontDrop' | 'slidingClearance';
 type DraftValues = Record<NumericField, string>;
-type MixedDraftValues = Record<BoxPanel['id'], string> & { clearance: string };
+type MixedDraftValues = Record<BoxPanelId, string> & { clearance: string };
 
 interface SavedBoxDesign {
   id: string;
@@ -147,12 +148,12 @@ function draftValues(project: BoxProject): DraftValues {
 }
 
 function mixedDraftValues(project: BoxProject): MixedDraftValues {
-  const panelIds: BoxPanel['id'][] = ['base', 'front', 'back', 'left', 'right', 'lid'];
+  const panelIds: BoxPanelId[] = ['base', 'front', 'back', 'left', 'right', 'lid'];
   return {
     ...Object.fromEntries(panelIds.map((panelId) => [
       panelId,
       displayLength(getBoxPanelThicknessMm(project, panelId), project.unit),
-    ])) as Record<BoxPanel['id'], string>,
+    ])) as Record<BoxPanelId, string>,
     clearance: displayLength(project.jointClearanceMm, project.unit),
   };
 }
