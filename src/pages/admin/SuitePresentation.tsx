@@ -4,6 +4,10 @@ import { ArrowLeft, ArrowRight, NotebookPen, RotateCcw } from 'lucide-react';
 import services from './presentation-media/servicios.webp';
 import tools from './presentation-media/herramientas.webp';
 import panel from './presentation-media/panel.webp';
+import publicHome from './presentation-media/web-inicio.webp';
+import portfolio from './presentation-media/portafolio.webp';
+import quote from './presentation-media/cotizador.webp';
+import crm from './presentation-media/crm.webp';
 import './suite-presentation.css';
 
 const slides = [
@@ -14,10 +18,28 @@ const slides = [
     note: 'Abre con una pregunta para gerencia. Si mañana alguien quiere renovar su fachada, ¿qué necesita ver para dar el primer paso?',
   },
   {
+    chapter: 'La web pública', title: 'La primera impresión también orienta.',
+    body: 'La portada presenta la marca y abre caminos claros hacia los servicios, el portafolio y la solicitud de cotización.',
+    image: publicHome, alt: 'Captura de la portada pública de Visual Corp', caption: 'Web pública · página de inicio', link: '/', action: 'Abrir la web pública',
+    note: 'Empieza por la portada y señala cómo la navegación ayuda a pasar de descubrir la empresa a elegir qué hacer después.',
+  },
+  {
     chapter: 'La web pública', title: 'Antes de pedir un rótulo, hay que imaginarlo.',
     body: 'El cliente explora los servicios, contrasta opciones en el portafolio y puede abrir el cotizador cuando ya tiene una idea de lo que busca.',
     image: services, alt: 'Vista de la sección de servicios de la web pública', link: '/servicios', action: 'Explorar los servicios',
     note: 'Entra a Servicios y elige una categoría. Explica qué pregunta responde el portafolio para alguien que todavía está eligiendo materiales o acabados.',
+  },
+  {
+    chapter: 'La web pública', title: 'Las muestras ayudan a concretar una idea.',
+    body: 'El portafolio reúne ejemplos visuales para orientar la conversación sobre estilo y aplicación. Las imágenes de esta sección son muestras conceptuales ilustrativas, no proyectos de clientes.',
+    image: portfolio, alt: 'Captura de la página pública de portafolio con muestras conceptuales', caption: 'Portafolio · muestras conceptuales ilustrativas', link: '/portafolio', action: 'Ver el portafolio',
+    note: 'Aclara que los visuales de muestra son conceptuales y no atribuyen trabajos a clientes. Úsalos para explicar la función de la galería, no como casos de éxito.',
+  },
+  {
+    chapter: 'La web pública', title: 'Una consulta empieza con los detalles del proyecto.',
+    body: 'El cotizador guía la solicitud de artículos, medidas y datos de contacto. El equipo confirma valores y condiciones antes de presentar una cotización.',
+    image: quote, alt: 'Captura de la entrada al cotizador público y los primeros pasos del formulario', caption: 'Cotizador público · entrada al formulario', link: '/cotizador', action: 'Abrir el cotizador',
+    note: 'Muestra la entrada al flujo y explica qué información puede preparar el cliente. Los precios y condiciones se confirman con el equipo.',
   },
   {
     chapter: 'Herramientas de diseño', title: '¿Alcanzará la resolución para esa fachada?',
@@ -32,6 +54,12 @@ const slides = [
     note: 'Señala las solicitudes abiertas. Para dirección, el dato sirve como punto de partida para preguntar qué cliente espera respuesta y quién lo está atendiendo.',
   },
   {
+    chapter: 'Seguimiento comercial', title: 'Cada solicitud puede tener un siguiente paso.',
+    body: 'El CRM reúne consultas del sitio y del cotizador para revisar su origen y etapa. Esta captura local usa contactos, registros y métricas ficticios; no representa actividad real.',
+    image: crm, alt: 'Captura del CRM interno con tres contactos y cifras de demostración', caption: 'CRM · contactos y métricas de demostración', link: '/operaciones/crm', action: 'Ver el CRM',
+    note: 'Todos los nombres, contactos y conteos de esta captura fueron simulados. En una demostración con sesión real, confirma los datos autorizados antes de exponerlos.',
+  },
+  {
     chapter: 'El trabajo del equipo', title: '¿Quién tiene el siguiente paso?',
     body: 'En el ejemplo del rótulo, cada área resuelve una pregunta distinta. El panel ofrece un lugar para registrar las decisiones y consultar el avance.',
     rows: [['Asesoría', 'En el CRM se da seguimiento a la solicitud. El cotizador permite preparar una propuesta con el catálogo.'], ['Coordinación', 'El equipo organiza responsables y fechas, y consulta las etapas de trabajo del producto.'], ['Taller e inventario', 'El taller revisa tareas y el equipo de bodega consulta existencias y movimientos de material.']],
@@ -42,6 +70,12 @@ const slides = [
     body: 'El editor de productos se abre tanto desde la web como desde operaciones. Ambos usan el mismo componente y cada uno lleva a su propio cotizador. Una mejora del editor llega a las dos pantallas.',
     rows: [['Interfaz · React + TypeScript', 'Las pantallas combinan componentes reutilizables. React Router dirige cada enlace a su vista pública o protegida.'], ['Datos · Supabase', 'La sesión identifica al usuario. Los permisos por organización delimitan los datos y módulos que puede consultar.'], ['Entrega · Vite + Vercel', 'Vite compila la aplicación. El equipo comprueba tipos y prueba recorridos en el navegador con Playwright antes de publicar versiones.']],
     note: 'Menciona un ejemplo concreto. Si se mejora la colocación de un logotipo sobre un producto, clientes y asesores reciben esa mejora en el mismo editor.',
+  },
+  {
+    chapter: 'Para la siguiente etapa', title: 'De una experiencia completa a una experiencia medible.',
+    body: 'Estas ideas pueden orientar la evolución de la plataforma. Son propuestas para evaluar, no funciones o resultados que ya estén confirmados.',
+    rows: [['Portafolio real', 'Incorporar proyectos terminados con fotografías y aprobación, y reemplazar progresivamente las muestras conceptuales.'], ['Seguimiento visible', 'Demostrar con una cuenta autorizada el recorrido desde la solicitud web hasta el CRM y la cotización.'], ['Indicadores confiables', 'Definir eventos y periodos para medir consultas, tiempos de respuesta y conversión antes de presentar resultados.']],
+    note: 'Presenta estas ideas como opciones para priorizar. Antes de mostrar indicadores, acuerda qué se medirá, en qué periodo y de qué fuente saldrá cada dato.',
   },
   {
     chapter: 'Cierre', title: 'Volvamos al rótulo.',
@@ -73,7 +107,7 @@ export default function SuitePresentation() {
       <img src="/brand/visualcorp-wordmark-white-original.png" alt="Visual Corp" width="145"/>
       <Link to="/panel"><ArrowLeft size={16}/> Volver al panel</Link>
     </header>
-    <section key={index} className={'suite-deck-stage' + (slide.cover ? ' is-cover' : '')} aria-labelledby="deck-title">
+    <section key={index} className={'suite-deck-stage' + (slide.cover ? ' is-cover' : '') + (slide.image && !slide.cover ? ' is-screenshot' : '')} aria-labelledby="deck-title">
       {slide.cover && <img className="suite-deck-backdrop" src={slide.image} alt=""/>}
       <div className="suite-deck-copy">
         <p className="suite-deck-chapter">{slide.chapter}</p>
