@@ -11,6 +11,7 @@ export type AppNavLink = {
   module: string;
   end?: boolean;
   anyOf?: string[];
+  keywords?: string[];
   /** Legacy or equivalent entry paths that share the same protected page. */
   aliases?: string[];
 };
@@ -144,12 +145,12 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/catalogo', label: 'Catálogo y tarifas', icon: ShoppingBag, module: 'catalog_admin' },
   { to: '/operaciones/servicios', label: 'Catálogo de servicios', icon: BriefcaseBusiness, module: 'catalog_admin' },
   { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'finance' },
-  { to: '/operaciones/finanzas/resumen-semanal', label: 'Resumen semanal', icon: CalendarDays, module: 'finance' },
+  { to: '/operaciones/finanzas/resumen-semanal', label: 'Resumen semanal', icon: CalendarDays, module: 'finance', keywords: ['ventas', 'cobros', 'asesoras', 'semana', 'pagos'] },
   { to: '/operaciones/cajas-abiertas', label: 'Cajas abiertas', icon: Radio, module: 'sales', anyOf: ['sales', 'cash'] },
   { to: '/operaciones/rutas-productos', label: 'Rutas por producto', icon: Workflow, module: 'workshop', anyOf: ['sales', 'workshop'] },
-  { to: '/operaciones/herramientas', label: 'Todas las herramientas', icon: Wrench, module: 'workshop' },
-  { to: '/operaciones/herramientas/generador-cajas', label: 'Generador de cajas', icon: Box, module: 'workshop' },
-  { to: '/operaciones/herramientas/monogramas', label: 'Editor de monogramas', icon: Type, module: 'workshop' },
+  { to: '/operaciones/herramientas', label: 'Todas las herramientas', icon: Wrench, module: 'workshop', keywords: ['generadores', 'caja', 'monogramas', 'fabricación', 'corte láser'] },
+  { to: '/operaciones/herramientas/generador-cajas', label: 'Generador de cajas', icon: Box, module: 'workshop', keywords: ['caja', 'cajas', 'encastres', 'nesting', 'láser', 'CAM', 'MakerCase'] },
+  { to: '/operaciones/herramientas/monogramas', label: 'Editor de monogramas', icon: Type, module: 'workshop', keywords: ['monograma', 'monogramas', 'iniciales', 'texto', 'tipografía', 'SVG', 'corte láser'] },
   { to: '/operaciones/automatizaciones', label: 'Automatizaciones', icon: Sparkles, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
   { to: '/operaciones/flujos', label: 'Flujos y producción', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
   { to: '/operaciones/coordinacion-trabajos', aliases: ['/operaciones/trabajos'], label: 'Coordinación de trabajos', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'workshop'] },
