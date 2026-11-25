@@ -28,6 +28,27 @@ type PreflightReport = {
   detail: string;
 };
 
+const MIN_TARGET_CM = 2;
+const MAX_TARGET_CM = 2000;
+
+function clampTargetCm(value: number) {
+  return Number.isFinite(value)
+    ? Math.min(MAX_TARGET_CM, Math.max(MIN_TARGET_CM, value))
+    : MIN_TARGET_CM;
+}
+
+function targetCmInputValue(value: number) {
+  return String(Number(clampTargetCm(value).toFixed(2)));
+}
+
+function parseTargetCm(value: string) {
+  return clampTargetCm(Number(value.replace(',', '.')));
+}
+
+function formatTargetCm(value: number) {
+  return new Intl.NumberFormat('es-EC', { maximumFractionDigits: 2 }).format(value);
+}
+
 function evaluatePreflight(
   file: File,
   pixelWidth: number | null,
@@ -140,8 +161,10 @@ export function ArtworkPreflightDropzone({
   compact?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [targetWidthCm, setTargetWidthCm] = useState(Math.max(2, Math.round(initialWidthCm)));
-  const [targetHeightCm, setTargetHeightCm] = useState(Math.max(2, Math.round(initialHeightCm)));
+  const [targetWidthCm, setTargetWidthCm] = useState(targetCmInputValue(initialWidthCm));
+  const [targetHeightCm, setTargetHeightCm] = useState(targetCmInputValue(initialHeightCm));
+  const targetWidthCmValue = parseTargetCm(targetWidthCm);
+  const targetHeightCmValue = parseTargetCm(targetHeightCm);
   const [isDragging, setIsDragging] = useState(false);
   const [showGuides, setShowGuides] = useState(true);
   const [fileState, setFileState] = useState<{
@@ -153,8 +176,8 @@ export function ArtworkPreflightDropzone({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setTargetWidthCm(Math.max(2, Math.round(initialWidthCm)));
-    setTargetHeightCm(Math.max(2, Math.round(initialHeightCm)));
+    setTargetWidthCm(targetCmInputValue(initialWidthCm));
+    setTargetHeightCm(targetCmInputValue(initialHeightCm));
   }, [initialWidthCm, initialHeightCm]);
 
   useEffect(() => {
@@ -224,8 +247,8 @@ export function ArtworkPreflightDropzone({
         fileState.pixelWidth,
         fileState.pixelHeight,
         fileState.previewUrl,
-        targetWidthCm,
-        targetHeightCm,
+        targetWidthCmValue,
+        targetHeightCmValue,
       )
     : null;
 
@@ -238,7 +261,7 @@ export function ArtworkPreflightDropzone({
             VERIFICADOR DE ARTE PARA IMPRENTA
           </span>
           <h3>Comprueba si tu diseño se imprimirá nítido</h3>
-          <p>Arrastra tu logo o arte y revisa al instante su resolución real (DPI), proporción y zona de corte.</p>
+          <p>Arrastra tu logo o arte y revisa su resolución real (DPI), proporción y zona de corte. Ajusta el tamaño final en centímetros con hasta dos decimales.</p>
         </div>
         <span className="vc-preflight-privacy">
           <ShieldCheck size={14} aria-hidden="true" />
@@ -251,27 +274,33 @@ export function ArtworkPreflightDropzone({
           Ancho final (cm)
           <input
             type="number"
-            min={2}
-            max={2000}
+            inputMode="decimal"
+            min={MIN_TARGET_CM}
+            max={MAX_TARGET_CM}
+            step="0.01"
             value={targetWidthCm}
-            onChange={(event) => setTargetWidthCm(Math.max(2, Number(event.target.value) || 2))}
+            onChange={(event) => setTargetWidthCm(event.target.value)}
+            onBlur={() => setTargetWidthCm(targetCmInputValue(targetWidthCmValue))}
           />
         </label>
         <label>
           Alto final (cm)
           <input
             type="number"
-            min={2}
-            max={2000}
+            inputMode="decimal"
+            min={MIN_TARGET_CM}
+            max={MAX_TARGET_CM}
+            step="0.01"
             value={targetHeightCm}
-            onChange={(event) => setTargetHeightCm(Math.max(2, Number(event.target.value) || 2))}
+            onChange={(event) => setTargetHeightCm(event.target.value)}
+            onBlur={() => setTargetHeightCm(targetCmInputValue(targetHeightCmValue))}
           />
         </label>
         <div className="vc-preflight-presets" role="group" aria-label="Tamaños frecuentes">
-          <button type="button" onClick={() => { setTargetWidthCm(9); setTargetHeightCm(5); }}>Tarjeta 9×5</button>
-          <button type="button" onClick={() => { setTargetWidthCm(21); setTargetHeightCm(30); }}>A4</button>
-          <button type="button" onClick={() => { setTargetWidthCm(80); setTargetHeightCm(200); }}>Roll-Up 80×200</button>
-          <button type="button" onClick={() => { setTargetWidthCm(200); setTargetHeightCm(100); }}>Lona 2×1 m</button>
+          <button type="button" onClick={() => { setTargetWidthCm('9'); setTargetHeightCm('5'); }}>Tarjeta 9×5</button>
+          <button type="button" onClick={() => { setTargetWidthCm('21'); setTargetHeightCm('30'); }}>A4</button>
+          <button type="button" onClick={() => { setTargetWidthCm('80'); setTargetHeightCm('200'); }}>Roll-Up 80×200</button>
+          <button type="button" onClick={() => { setTargetWidthCm('200'); setTargetHeightCm('100'); }}>Lona 2×1 m</button>
         </div>
       </div>
 
@@ -346,13 +375,13 @@ export function ArtworkPreflightDropzone({
             {report.effectiveDpi !== null && (
               <span><small>DPI efectivo</small><b>{report.effectiveDpi} DPI</b></span>
             )}
-            <span><small>Medida objetivo</small><b>{targetWidthCm} × {targetHeightCm} cm</b></span>
+            <span><small>Medida objetivo</small><b>{formatTargetCm(targetWidthCmValue)} × {formatTargetCm(targetHeightCmValue)} cm</b></span>
           </div>
 
           {report.ratioMismatchPct !== null && report.ratioMismatchPct >= 14 && (
             <p className="vc-preflight-ratio-note">
               <Sparkles size={14} aria-hidden="true" />
-              La proporción de tu imagen difiere en ~{report.ratioMismatchPct}% respecto a {targetWidthCm} × {targetHeightCm} cm; al imprimir requerirá recorte o ajuste de formato.
+              La proporción de tu imagen difiere en ~{report.ratioMismatchPct}% respecto a {formatTargetCm(targetWidthCmValue)} × {formatTargetCm(targetHeightCmValue)} cm; al imprimir requerirá recorte o ajuste de formato.
             </p>
           )}
 
