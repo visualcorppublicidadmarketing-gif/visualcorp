@@ -10,7 +10,7 @@
 .suite-deck, .suite-deck * { box-sizing: border-box; min-width: 0; max-width: 100%; }
 .suite-deck-bar, .suite-deck-controls, .suite-deck nav { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .suite-deck-bar { justify-content: space-between; margin-bottom: 24px; }
-.suite-deck-bar img { object-fit: contain; height: 40px; }
+.suite-deck-bar img { width: 145px; height: 40px; object-fit: cover; object-position: center; }
 .suite-deck a, .suite-deck button {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 42px; padding: 8px 14px; border: 1px solid #586378; border-radius: 24px;
@@ -32,12 +32,14 @@
 .suite-deck .suite-deck-lead { color: #e0e6ef; font-size: clamp(1rem,1.35vw,1.35rem); line-height: 1.55; margin: 22px 0 0; max-width: 56ch; }
 .suite-deck-copy a { margin-top: 20px; }
 .suite-deck-stage.is-cover { grid-template-columns: minmax(0,1fr); }
+.suite-deck-stage.is-screenshot { grid-template-columns: minmax(0,.72fr) minmax(0,1.28fr); }
 .suite-deck-stage.is-cover .suite-deck-copy { max-width: 55%; }
 .suite-deck-stage.is-cover h1 { font-size: clamp(2.8rem,6.2vw,6.5rem); }
 .suite-deck-backdrop, .suite-deck-stage.is-cover::after { position: absolute; z-index: -2; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .suite-deck-stage.is-cover::after { content: ''; z-index: -1; background: linear-gradient(90deg,#091122 1%,#091122ef 31%,#091122af 53%,#0911220d 88%); }
 .suite-deck figure { margin: 0; }
 .suite-deck figure img { display: block; width: 100%; border: 1px solid #57627b; border-radius: 12px; box-shadow: 0 22px 50px #05081480; }
+.suite-deck-stage.is-screenshot figure img { max-height: min(58svh, 640px); object-fit: contain; object-position: center; background: #0b1020; }
 .suite-deck figcaption { color: #c5d3e4; margin-top: 12px; font-size: .85rem; }
 .suite-deck dl { margin: 0; }
 .suite-deck dl div { border-top: 1px solid #526277; padding: 16px 0; }
@@ -52,6 +54,8 @@
 .suite-deck-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 @media (max-width: 780px) {
   .suite-deck-stage { grid-template-columns: 1fr; min-height: auto; }
+  .suite-deck-stage.is-screenshot { grid-template-columns: 1fr; }
+  .suite-deck-stage.is-screenshot figure img { max-height: none; }
   .suite-deck-stage.is-cover { min-height: 62svh; align-items: end; }
   .suite-deck-stage.is-cover .suite-deck-copy { max-width: 100%; }
   .suite-deck-stage.is-cover::after { background: linear-gradient(0deg,#091122 0%,#091122e8 57%,#09112248 100%); }
