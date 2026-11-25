@@ -1,12 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { buildBoxPanels, buildPanelOutline, resolveBoxDimensions, type BoxPanel, type BoxProject } from './boxModel';
+import { boxModelLabels, buildBoxPanels, buildPanelOutline, formatBoxLength, resolveBoxDimensions, type BoxPanel, type BoxProject } from './boxModel';
 
 interface BoxGenerator3DProps {
   project: BoxProject;
   resetToken: number;
   explosion?: number;
+  /** 0 starts with all panels separated; 1 completes the assembly sequence. */
+  assemblyProgress?: number;
+}
+
+const assemblyOrder: BoxPanel['id'][] = ['base', 'back', 'left', 'right', 'front', 'lid'];
+
+function clamp01(value: number, fallback: number) {
+  return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
+}
+
+function easeInOut(value: number) {
+  return value * value * (3 - 2 * value);
 }
 
 interface SceneRuntime {
@@ -25,8 +37,6 @@ function addPanel(
   group: THREE.Group,
   panel: BoxPanel,
   project: BoxProject,
-  position: [number, number, number],
-  rotation: [number, number, number],
 ) {
   // The cut path is the source for both the exported 2D panel and its 3D preview.
   const points = buildPanelOutline(panel, project);
@@ -46,9 +56,10 @@ function addPanel(
   const part = new THREE.Group();
   part.name = panel.id;
   part.userData.panelId = panel.id;
-  part.position.set(...position);
+  part.position.set(...panel.assembly.positionMm);
   part.userData.basePosition = part.position.clone();
-  part.rotation.set(...rotation);
+  part.userData.explosionDirection = new THREE.Vector3(...panel.assembly.explosionDirection);
+  part.rotation.set(...panel.assembly.rotationRad);
   part.add(mesh);
   part.add(new THREE.LineSegments(
     new THREE.EdgesGeometry(geometry),
@@ -66,7 +77,7 @@ function disposePanelObjects(group: THREE.Group) {
   });
 }
 
-export function BoxGenerator3D({ project, resetToken, explosion = 0 }: BoxGenerator3DProps) {
+export function BoxGenerator3D({ project, resetToken, explosion = 0, assemblyProgress }: BoxGenerator3DProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef<SceneRuntime | null>(null);
   const previousScaleRef = useRef<number | null>(null);
@@ -176,31 +187,9 @@ export function BoxGenerator3D({ project, resetToken, explosion = 0 }: BoxGenera
     disposePanelObjects(boxGroup);
     boxGroup.clear();
     const dimensions = resolveBoxDimensions(project);
-    const { outside, baseWidth, baseDepth } = dimensions;
-    const thickness = project.thicknessMm;
+    const { outside } = dimensions;
     const panels = buildBoxPanels(project);
-    for (const panel of panels) {
-      switch (panel.id) {
-        case 'base':
-          addPanel(boxGroup, panel, project, [-baseWidth / 2, 0, baseDepth / 2], [-Math.PI / 2, 0, 0]);
-          break;
-        case 'front':
-          addPanel(boxGroup, panel, project, [-baseWidth / 2, 0, baseDepth / 2], [0, 0, 0]);
-          break;
-        case 'back':
-          addPanel(boxGroup, panel, project, [baseWidth / 2, 0, -baseDepth / 2], [0, Math.PI, 0]);
-          break;
-        case 'left':
-          addPanel(boxGroup, panel, project, [-baseWidth / 2, 0, -outside.depth / 2], [0, -Math.PI / 2, 0]);
-          break;
-        case 'right':
-          addPanel(boxGroup, panel, project, [baseWidth / 2, 0, outside.depth / 2], [0, Math.PI / 2, 0]);
-          break;
-        case 'lid':
-          addPanel(boxGroup, panel, project, [-baseWidth / 2, outside.height - thickness, baseDepth / 2], [-Math.PI / 2, 0, 0]);
-          break;
-      }
-    }
+    panels.forEach((panel) => addPanel(boxGroup, panel, project));
 
     const scale = Math.max(outside.width, outside.height, outside.depth, 30);
     const target = new THREE.Vector3(0, outside.height / 2, 0);
@@ -230,23 +219,33 @@ export function BoxGenerator3D({ project, resetToken, explosion = 0 }: BoxGenera
 
     const { outside } = resolveBoxDimensions(project);
     const baseScale = Math.max(outside.width, outside.height, outside.depth, 30);
-    const spread = baseScale * 0.42 * Math.min(1, Math.max(0, explosion));
-    const normals: Record<BoxPanel['id'], THREE.Vector3> = {
-      base: new THREE.Vector3(0, -1, 0),
-      front: new THREE.Vector3(0, 0, 1),
-      back: new THREE.Vector3(0, 0, -1),
-      left: new THREE.Vector3(-1, 0, 0),
-      right: new THREE.Vector3(1, 0, 0),
-      lid: new THREE.Vector3(0, 1, 0),
-    };
+    const fullSpread = baseScale * 0.42;
+    const assembling = assemblyProgress !== undefined;
+    const progress = assembling && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 1
+      : clamp01(assemblyProgress ?? 1, 1);
+    const panelCount = runtime.boxGroup.children.length;
+    const stagger = panelCount > 1 ? 0.5 / (panelCount - 1) : 0;
+    let largestOffset = 0;
 
     runtime.boxGroup.children.forEach((part) => {
       const panelId = part.userData.panelId as BoxPanel['id'];
       const basePosition = part.userData.basePosition as THREE.Vector3;
-      if (basePosition && normals[panelId]) part.position.copy(basePosition).addScaledVector(normals[panelId], spread);
+      const direction = part.userData.explosionDirection as THREE.Vector3 | undefined;
+      if (!basePosition || !direction) return;
+      const order = assemblyOrder.indexOf(panelId);
+      const localProgress = clamp01((progress - Math.max(0, order) * stagger) / 0.5, 1);
+      const offsetFactor = assembling ? 1 - easeInOut(localProgress) : clamp01(explosion, 0);
+      const offset = fullSpread * offsetFactor;
+      largestOffset = Math.max(largestOffset, offset);
+      part.position.set(
+        basePosition.x + direction.x * offset,
+        basePosition.y + direction.y * offset,
+        basePosition.z + direction.z * offset,
+      );
     });
 
-    const scale = baseScale + spread * 2;
+    const scale = baseScale + largestOffset * 2;
     const previousScale = previousScaleRef.current ?? baseScale;
     const target = new THREE.Vector3(0, outside.height / 2, 0);
     const offset = runtime.camera.position.clone().sub(runtime.controls.target).multiplyScalar(scale / previousScale);
@@ -260,7 +259,7 @@ export function BoxGenerator3D({ project, resetToken, explosion = 0 }: BoxGenera
     runtime.controls.update();
     previousScaleRef.current = scale;
     runtime.setSize();
-  }, [explosion, project, resetToken]);
+  }, [assemblyProgress, explosion, project, resetToken]);
 
   const resolved = resolveBoxDimensions(project);
   return (
@@ -268,7 +267,7 @@ export function BoxGenerator3D({ project, resetToken, explosion = 0 }: BoxGenera
       className="box-generator__viewer3d"
       ref={hostRef}
       role="img"
-      aria-label={`Vista 3D de caja ${project.closure === 'open' ? 'abierta' : 'cerrada'}, medidas interiores ${resolved.inside.width.toFixed(0)} por ${resolved.inside.height.toFixed(0)} por ${resolved.inside.depth.toFixed(0)} milímetros.${explosion > 0.01 ? ' Piezas separadas para inspeccionar los encastres.' : ''} Arrastra para girar y usa la rueda o el gesto de pinza para acercar.`}
+      aria-label={`Vista 3D de ${boxModelLabels[project.modelType]}, ${project.closure === 'open' ? 'abierta' : 'cerrada'}, medidas interiores ${formatBoxLength(resolved.inside.width, project.unit)} por ${formatBoxLength(resolved.inside.height, project.unit)} por ${formatBoxLength(resolved.inside.depth, project.unit)}.${assemblyProgress !== undefined && assemblyProgress < 1 ? ' Secuencia de armado en curso.' : assemblyProgress === undefined && explosion > 0.01 ? ' Piezas separadas para inspeccionar los encastres.' : ''} Arrastra para girar y usa la rueda o el gesto de pinza para acercar.`}
     >
       {renderError && <div className="box-generator__webgl-error" role="status">{renderError}</div>}
     </div>

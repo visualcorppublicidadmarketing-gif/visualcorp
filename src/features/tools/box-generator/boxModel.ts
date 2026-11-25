@@ -1,12 +1,22 @@
-export type BoxUnit = 'mm' | 'in';
+export type BoxUnit = 'mm' | 'cm' | 'in';
+export type BoxModelType = 'basic' | 'flexible' | 'sliding' | 'bottle' | 'jewelry';
 export type BoxDimensionMode = 'outside' | 'inside';
 export type BoxClosure = 'open' | 'closed';
 export type BoxJointStyle = 'finger' | 'flat';
 export type BoxEdgeStyle = 'flat' | 'tab' | 'slot';
 
+export type BoxVector3 = [number, number, number];
+
+export interface BoxPanelAssembly {
+  positionMm: BoxVector3;
+  rotationRad: BoxVector3;
+  explosionDirection: BoxVector3;
+}
+
 export interface BoxProject {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   title: string;
+  modelType: BoxModelType;
   dimensionsMm: { width: number; height: number; depth: number };
   thicknessMm: number;
   unit: BoxUnit;
@@ -14,6 +24,9 @@ export interface BoxProject {
   closure: BoxClosure;
   jointStyle: BoxJointStyle;
   fingerWidthMm: number;
+  dividerCount: number;
+  lidOpenDegrees: number;
+  slidingClearanceMm: number;
   panelGapMm: number;
   previewColor: string;
   includePartLabels: boolean;
@@ -34,13 +47,14 @@ export interface BoxPoint {
 }
 
 export interface BoxPanel {
-  id: 'base' | 'front' | 'back' | 'left' | 'right' | 'lid';
+  id: string;
   label: string;
   width: number;
   height: number;
   column: number;
   row: number;
   edges: Record<'bottom' | 'right' | 'top' | 'left', BoxEdgeStyle>;
+  assembly: BoxPanelAssembly;
   edgeInsets?: Partial<Record<'bottom' | 'right' | 'top' | 'left', number>>;
   edgePhases?: Partial<Record<'bottom' | 'right' | 'top' | 'left', 0 | 1>>;
 }
@@ -59,8 +73,9 @@ export interface BoxCutLayout {
 }
 
 export const defaultBoxProject: BoxProject = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   title: 'Caja básica',
+  modelType: 'basic',
   dimensionsMm: { width: 100, height: 50, depth: 100 },
   thicknessMm: 3,
   unit: 'mm',
@@ -68,14 +83,25 @@ export const defaultBoxProject: BoxProject = {
   closure: 'open',
   jointStyle: 'finger',
   fingerWidthMm: 12,
+  dividerCount: 0,
+  lidOpenDegrees: 110,
+  slidingClearanceMm: 0.5,
   panelGapMm: 5,
   previewColor: '#d6ad56',
   includePartLabels: false,
   sheetSpec: null,
 };
 
-export const mmToBoxUnit = (value: number, unit: BoxUnit) => unit === 'in' ? value / 25.4 : value;
-export const boxUnitToMm = (value: number, unit: BoxUnit) => unit === 'in' ? value * 25.4 : value;
+export const boxModelLabels: Record<BoxModelType, string> = {
+  basic: 'Caja básica',
+  flexible: 'Caja flexible con tapa articulada',
+  sliding: 'Caja con tapa deslizable',
+  bottle: 'Caja para botellas',
+  jewelry: 'Caja para joyas',
+};
+
+export const mmToBoxUnit = (value: number, unit: BoxUnit) => unit === 'in' ? value / 25.4 : unit === 'cm' ? value / 10 : value;
+export const boxUnitToMm = (value: number, unit: BoxUnit) => unit === 'in' ? value * 25.4 : unit === 'cm' ? value * 10 : value;
 
 export function maxBoxThicknessMm(project: Pick<BoxProject, 'dimensionsMm' | 'dimensionMode'>) {
   return Math.max(0.5, Math.min(
@@ -89,6 +115,12 @@ export function maxBoxThicknessMm(project: Pick<BoxProject, 'dimensionsMm' | 'di
 export function formatBoxLength(mm: number, unit: BoxUnit, maximumFractionDigits = 2) {
   const value = mmToBoxUnit(mm, unit);
   return `${new Intl.NumberFormat('es-EC', { maximumFractionDigits }).format(value)} ${unit}`;
+}
+
+export function formatBoxArea(mm2: number, unit: BoxUnit, maximumFractionDigits = 1) {
+  const divisor = unit === 'in' ? 25.4 ** 2 : unit === 'cm' ? 100 : 1;
+  const label = unit === 'in' ? 'in²' : unit === 'cm' ? 'cm²' : 'mm²';
+  return `${new Intl.NumberFormat('es-EC', { maximumFractionDigits }).format(mm2 / divisor)} ${label}`;
 }
 
 export function resolveBoxDimensions(project: BoxProject): BoxResolvedDimensions {
@@ -122,32 +154,122 @@ function edgeStyle(project: BoxProject, style: BoxEdgeStyle): BoxEdgeStyle {
 export function buildBoxPanels(project: BoxProject): BoxPanel[] {
   const dimensions = resolveBoxDimensions(project);
   const { outside, baseWidth, baseDepth, wallHeight } = dimensions;
+  const thickness = project.thicknessMm;
+  const edge = (style: BoxEdgeStyle) => edgeStyle(project, style);
+  const panel = (
+    id: string,
+    label: string,
+    width: number,
+    height: number,
+    edges: BoxPanel['edges'],
+    assembly: BoxPanelAssembly,
+    edgeInsets?: BoxPanel['edgeInsets'],
+    edgePhases?: BoxPanel['edgePhases'],
+  ): BoxPanel => ({ id, label, width, height, column: 0, row: 0, edges, assembly, edgeInsets, edgePhases });
   const bottom: BoxPanel = {
-    id: 'base', label: 'Base', width: baseWidth, height: baseDepth, column: 0, row: 0,
-    edges: { bottom: edgeStyle(project, 'tab'), right: edgeStyle(project, 'tab'), top: edgeStyle(project, 'tab'), left: edgeStyle(project, 'tab') },
+    ...panel('base', 'Base', baseWidth, baseDepth,
+      { bottom: edge('tab'), right: edge('tab'), top: edge('tab'), left: edge('tab') },
+      { positionMm: [-baseWidth / 2, 0, baseDepth / 2], rotationRad: [-Math.PI / 2, 0, 0], explosionDirection: [0, -1, 0] }),
   };
   const front: BoxPanel = {
-    id: 'front', label: 'Frente', width: baseWidth, height: wallHeight, column: 1, row: 0,
-    edges: { bottom: edgeStyle(project, 'slot'), right: edgeStyle(project, 'tab'), top: edgeStyle(project, project.closure === 'closed' ? 'slot' : 'flat'), left: edgeStyle(project, 'tab') },
+    ...panel('front', 'Frente', baseWidth, wallHeight,
+      { bottom: edge('slot'), right: edge('tab'), top: edge(project.closure === 'closed' && project.modelType !== 'sliding' ? 'slot' : 'flat'), left: edge('tab') },
+      { positionMm: [-baseWidth / 2, 0, baseDepth / 2], rotationRad: [0, 0, 0], explosionDirection: [0, 0, 1] }),
   };
   // These panels traverse the base/lid edges in the opposite direction once assembled.
-  const back: BoxPanel = { ...front, id: 'back', label: 'Fondo', column: 2, edgePhases: { bottom: 1, top: 0 } };
-  const left: BoxPanel = {
-    id: 'left', label: 'Lateral izquierdo', width: outside.depth, height: wallHeight, column: 0, row: 1,
-    edges: { bottom: edgeStyle(project, 'slot'), right: edgeStyle(project, 'slot'), top: edgeStyle(project, project.closure === 'closed' ? 'slot' : 'flat'), left: edgeStyle(project, 'slot') },
-    edgeInsets: { bottom: project.thicknessMm, top: project.thicknessMm },
+  const back: BoxPanel = {
+    ...front,
+    id: 'back', label: 'Fondo',
+    assembly: { positionMm: [baseWidth / 2, 0, -baseDepth / 2], rotationRad: [0, Math.PI, 0], explosionDirection: [0, 0, -1] },
     edgePhases: { bottom: 1, top: 0 },
   };
-  const right: BoxPanel = { ...left, id: 'right', label: 'Lateral derecho', column: 1, edgePhases: undefined };
+  const left: BoxPanel = {
+    ...panel('left', 'Lateral izquierdo', outside.depth, wallHeight,
+      { bottom: edge('slot'), right: edge('slot'), top: edge(project.closure === 'closed' && project.modelType !== 'sliding' ? 'slot' : 'flat'), left: edge('slot') },
+      { positionMm: [-baseWidth / 2, 0, -outside.depth / 2], rotationRad: [0, -Math.PI / 2, 0], explosionDirection: [-1, 0, 0] },
+      { bottom: thickness, top: thickness }),
+    edgePhases: { bottom: 1, top: 0 },
+  };
+  const right: BoxPanel = {
+    ...left, id: 'right', label: 'Lateral derecho',
+    assembly: { positionMm: [baseWidth / 2, 0, outside.depth / 2], rotationRad: [0, Math.PI / 2, 0], explosionDirection: [1, 0, 0] },
+    edgePhases: undefined,
+  };
 
   const panels = [bottom, front, back, left, right];
-  if (project.closure === 'closed') {
-    panels.push({
-      id: 'lid', label: 'Tapa', width: baseWidth, height: baseDepth, column: 2, row: 1,
-      edges: { bottom: edgeStyle(project, 'tab'), right: edgeStyle(project, 'tab'), top: edgeStyle(project, 'tab'), left: edgeStyle(project, 'tab') },
-    });
+  const hasLid = project.modelType === 'flexible' || project.modelType === 'sliding' || project.modelType === 'jewelry' || project.closure === 'closed';
+  if (hasLid) {
+    const lidWidth = project.modelType === 'sliding' ? Math.max(1, baseWidth - thickness * 2 - project.slidingClearanceMm * 2) : baseWidth;
+    const lidDepth = project.modelType === 'sliding' ? Math.max(1, baseDepth - project.slidingClearanceMm * 2) : baseDepth;
+    let lidAssembly: BoxPanelAssembly = {
+      positionMm: [-baseWidth / 2, outside.height - thickness, baseDepth / 2],
+      rotationRad: [-Math.PI / 2, 0, 0],
+      explosionDirection: [0, 1, 0],
+    };
+    if (project.modelType === 'flexible') {
+      const angle = project.closure === 'closed' ? 0 : project.lidOpenDegrees;
+      lidAssembly = {
+        positionMm: [-baseWidth / 2, outside.height - thickness, -baseDepth / 2],
+        rotationRad: [Math.PI / 2 - angle * Math.PI / 180, 0, 0],
+        explosionDirection: [0, 1, -0.6],
+      };
+    } else if (project.modelType === 'sliding') {
+      lidAssembly = {
+        positionMm: [-baseWidth / 2 + thickness + project.slidingClearanceMm, outside.height - thickness * 2, baseDepth / 2 - project.slidingClearanceMm + (project.closure === 'open' ? baseDepth * 0.72 : 0)],
+        rotationRad: [-Math.PI / 2, 0, 0],
+        explosionDirection: [0, 0.35, 1],
+      };
+    } else if (project.modelType === 'jewelry' && project.closure === 'open') {
+      lidAssembly = {
+        positionMm: [-baseWidth / 2 - lidWidth - thickness * 2, 0, baseDepth / 2],
+        rotationRad: [-Math.PI / 2, 0, 0],
+        explosionDirection: [-1, 0.35, 0],
+      };
+    }
+    panels.push(panel(
+      'lid', project.modelType === 'jewelry' ? 'Tapa suelta' : project.modelType === 'sliding' ? 'Tapa deslizable' : 'Tapa',
+      lidWidth, lidDepth,
+      { bottom: 'flat', right: 'flat', top: 'flat', left: 'flat' },
+      lidAssembly,
+    ));
   }
-  return panels;
+
+  if (project.modelType === 'sliding') {
+    const railThickness = Math.max(1, thickness * 0.65);
+    const railEdges = { bottom: 'flat', right: 'flat', top: 'flat', left: 'flat' } as const;
+    panels.push(panel('guide-left', 'Guía izquierda', baseDepth, railThickness, railEdges,
+      { positionMm: [-baseWidth / 2 + thickness, outside.height - thickness * 2.6, baseDepth / 2], rotationRad: [0, Math.PI / 2, 0], explosionDirection: [-1, 0.2, 0] }));
+    panels.push(panel('guide-right', 'Guía derecha', baseDepth, railThickness, railEdges,
+      { positionMm: [baseWidth / 2 - thickness * 1.5, outside.height - thickness * 2.6, baseDepth / 2], rotationRad: [0, Math.PI / 2, 0], explosionDirection: [1, 0.2, 0] }));
+  }
+
+  if (project.modelType === 'bottle' && project.dividerCount > 0) {
+    for (let index = 1; index <= project.dividerCount; index += 1) {
+      const x = -baseWidth / 2 + (baseWidth * index) / (project.dividerCount + 1);
+      panels.push(panel(`divider-${index}`, `Separador ${index}`, baseDepth, wallHeight,
+        { bottom: 'flat', right: 'flat', top: 'flat', left: 'flat' },
+        { positionMm: [x, 0, baseDepth / 2], rotationRad: [0, Math.PI / 2, 0], explosionDirection: [index % 2 ? -0.3 : 0.3, 0, 0] }));
+    }
+  }
+
+  if (project.modelType === 'jewelry' && project.dividerCount > 0) {
+    const alongDepth = Math.ceil(project.dividerCount / 2);
+    const alongWidth = Math.floor(project.dividerCount / 2);
+    for (let index = 1; index <= alongDepth; index += 1) {
+      const x = -baseWidth / 2 + (baseWidth * index) / (alongDepth + 1);
+      panels.push(panel(`divider-depth-${index}`, `Separador de fondo ${index}`, baseDepth, wallHeight,
+        { bottom: 'flat', right: 'flat', top: 'flat', left: 'flat' },
+        { positionMm: [x, 0, baseDepth / 2], rotationRad: [0, Math.PI / 2, 0], explosionDirection: [index % 2 ? -0.3 : 0.3, 0, 0] }));
+    }
+    for (let index = 1; index <= alongWidth; index += 1) {
+      const z = baseDepth / 2 - (baseDepth * index) / (alongWidth + 1);
+      panels.push(panel(`divider-width-${index}`, `Separador lateral ${index}`, baseWidth, wallHeight,
+        { bottom: 'flat', right: 'flat', top: 'flat', left: 'flat' },
+        { positionMm: [-baseWidth / 2, 0, z], rotationRad: [0, 0, 0], explosionDirection: [0, 0, index % 2 ? -0.3 : 0.3] }));
+    }
+  }
+
+  return panels.map((item, index) => ({ ...item, column: index % 3, row: Math.floor(index / 3) }));
 }
 
 function addPoint(points: BoxPoint[], point: BoxPoint) {
@@ -240,9 +362,10 @@ export function buildBoxCutLayout(project: BoxProject): BoxCutLayout {
     return { panel, points, minX: Math.min(...xs), minY: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
   });
   const columns = Array.from({ length: 3 }, (_, column) => Math.max(0, ...outlined.filter(({ panel }) => panel.column === column).map((item) => item.width)));
-  const rows = Array.from({ length: 2 }, (_, row) => Math.max(0, ...outlined.filter(({ panel }) => panel.row === row).map((item) => item.height)));
+  const rowCount = Math.max(1, ...outlined.map(({ panel }) => panel.row + 1));
+  const rows = Array.from({ length: rowCount }, (_, row) => Math.max(0, ...outlined.filter(({ panel }) => panel.row === row).map((item) => item.height)));
   const columnOffsets = [0, columns[0] + gap, columns[0] + columns[1] + gap * 2];
-  const rowOffsets = [0, rows[0] + gap];
+  const rowOffsets = rows.map((_, row) => rows.slice(0, row).reduce((sum, value) => sum + value + gap, 0));
   const placedPanels = outlined.map(({ panel, points, minX, minY }): BoxPanelPlacement => ({
     panel,
     x: columnOffsets[panel.column] - minX,
@@ -251,7 +374,7 @@ export function buildBoxCutLayout(project: BoxProject): BoxCutLayout {
   }));
   return {
     width: columns.reduce((sum, value) => sum + value, 0) + gap * 2,
-    height: rows.reduce((sum, value) => sum + value, 0) + gap,
+    height: rows.reduce((sum, value) => sum + value, 0) + gap * Math.max(0, rows.length - 1),
     panels: placedPanels,
   };
 }
@@ -297,9 +420,10 @@ export function createBoxDxf(project: BoxProject, layout = buildBoxCutLayout(pro
 export function normalizeBoxProject(candidate: unknown): BoxProject {
   if (!candidate || typeof candidate !== 'object') throw new Error('El archivo no contiene un diseño válido.');
   const source = candidate as Partial<BoxProject>;
-  if (source.schemaVersion !== 1 || !source.dimensionsMm) throw new Error('La versión del archivo no es compatible.');
+  if ((source.schemaVersion !== 1 && source.schemaVersion !== 2) || !source.dimensionsMm) throw new Error('La versión del archivo no es compatible.');
   const numberOr = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback;
-  const unit: BoxUnit = source.unit === 'in' ? 'in' : 'mm';
+  const unit: BoxUnit = source.unit === 'in' ? 'in' : source.unit === 'cm' ? 'cm' : 'mm';
+  const modelType: BoxModelType = source.modelType === 'flexible' || source.modelType === 'sliding' || source.modelType === 'bottle' || source.modelType === 'jewelry' ? source.modelType : 'basic';
   const dimensionMode: BoxDimensionMode = source.dimensionMode === 'inside' ? 'inside' : 'outside';
   const closure: BoxClosure = source.closure === 'closed' ? 'closed' : 'open';
   const jointStyle: BoxJointStyle = source.jointStyle === 'flat' ? 'flat' : 'finger';
@@ -324,11 +448,15 @@ export function normalizeBoxProject(candidate: unknown): BoxProject {
   return {
     ...defaultBoxProject,
     ...source,
-    schemaVersion: 1,
+    schemaVersion: 2,
     title: typeof source.title === 'string' ? source.title.slice(0, 100) : defaultBoxProject.title,
+    modelType,
     dimensionsMm,
     thicknessMm: Math.min(maximumThickness, thicknessMm),
     fingerWidthMm: Math.min(120, Math.max(3, numberOr(source.fingerWidthMm, 12))),
+    dividerCount: Math.round(Math.min(6, Math.max(0, numberOr(source.dividerCount, modelType === 'bottle' ? 1 : modelType === 'jewelry' ? 3 : 0)))),
+    lidOpenDegrees: Math.min(135, Math.max(0, numberOr(source.lidOpenDegrees, 110))),
+    slidingClearanceMm: Math.min(5, Math.max(0, numberOr(source.slidingClearanceMm, 0.5))),
     panelGapMm: Math.min(100, Math.max(0, numberOr(source.panelGapMm, 5))),
     unit,
     dimensionMode,

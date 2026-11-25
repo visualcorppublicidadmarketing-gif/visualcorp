@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { buildBoxCutLayout } from './boxModel';
+import { boxModelLabels, buildBoxCutLayout } from './boxModel';
 import type { BoxCutLayout, BoxProject } from './boxModel';
 
 interface BoxCutPreviewProps {
@@ -25,7 +25,7 @@ export function BoxCutPreview({ project, sheetLayout, sheetNumber }: BoxCutPrevi
         className="box-generator__flat-plan"
         viewBox={`-${padding} -${padding} ${width} ${height}`}
         role="img"
-        aria-label={`${sheetNumber ? `Hoja ${sheetNumber}` : 'Plano de corte'} con ${layout.panels.length} piezas para una caja ${project.jointStyle === 'finger' ? 'con dedos' : 'de unión plana'}`}
+        aria-label={`${sheetNumber ? `Hoja ${sheetNumber}` : 'Plano de corte'} de ${boxModelLabels[project.modelType]} con ${layout.panels.length} piezas; unión ${project.jointStyle === 'finger' ? 'por dedos' : 'plana'}`}
       >
         {layout.panels.map(({ panel, x, y, points }) => (
           <g key={panel.id}>
