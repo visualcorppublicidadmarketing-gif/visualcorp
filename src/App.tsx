@@ -14,6 +14,7 @@ import './app.css';
 import './public-site/deployment.css';
 import './design-system.css';
 
+const SuitePresentation = lazy(() => import('./pages/admin/SuitePresentation'));
 const UnifiedHome = lazy(() => import('./pages/admin/DashboardPages').then((module) => ({ default: module.UnifiedHome })));
 const WebsiteAdmin = lazy(() => import('./pages/admin/WebsiteAdminPage').then((module) => ({ default: module.WebsiteAdmin })));
 const SiteArticleManager = lazy(() => import('./pages/admin/SiteArticleManager').then((module) => ({ default: module.SiteArticleManager })));
@@ -144,6 +145,7 @@ function AppRouter() {
       <Route path="/seguimiento" element={<ClientOrderPortalPage/>}/>
       <Route path="/seguimiento/:code" element={<ClientOrderPortalPage/>}/>
     </Route>
+    <Route path="/admin/presentacion" element={<ProtectedPage area="operations"><SuitePresentation/></ProtectedPage>}/>
     <Route path="/panel" element={<ProtectedPage area="operations"><UnifiedHome/></ProtectedPage>}/><Route path="/admin" element={<Navigate to="/panel" replace/>}/><Route path="/operaciones" element={<Navigate to="/panel" replace/>}/><Route path="/admin/sitio" element={<ProtectedPage area="website"><WebsiteAdmin/></ProtectedPage>}/><Route path="/admin/servicios" element={<ProtectedPage area="website"><ServicesAdmin/></ProtectedPage>}/><Route path="/admin/tienda" element={<ProtectedPage area="website"><StorefrontAdmin/></ProtectedPage>}/><Route path="/admin/contacto" element={<ProtectedPage area="website"><ContactAdmin/></ProtectedPage>}/><Route path="/admin/contenido" element={<ProtectedPage area="website"><SiteArticleManager/></ProtectedPage>}/><Route path="/admin/blog" element={<ProtectedPage area="website"><BlogAdmin/></ProtectedPage>}/><Route path="/admin/publicaciones" element={<ProtectedPage area="website"><PublicationsAdmin/></ProtectedPage>}/><Route path="/admin/portafolio" element={<ProtectedPage area="website"><PortfolioAdmin/></ProtectedPage>}/><Route path="/admin/cambios" element={<Navigate to="/operaciones/cambios" replace/>}/><Route path="/admin/solicitudes" element={<Navigate to="/operaciones/crm" replace/>}/><Route path="/operaciones/catalogo" element={<ProtectedPage area="catalog"><CatalogPage/></ProtectedPage>}/><Route path="/operaciones/servicios" element={<ProtectedPage area="catalog"><ServiceCatalogPage/></ProtectedPage>}/><Route path="/admin/catalogo" element={<Navigate to="/operaciones/catalogo" replace/>}/><Route path="/admin/marketing" element={<Navigate to="/operaciones/marketing" replace/>}/><Route path="/admin/marketing/calendario" element={<Navigate to="/operaciones/marketing/calendario" replace/>}/><Route path="/admin/marketing/campanas" element={<Navigate to="/operaciones/marketing/campanas" replace/>}/><Route path="/admin/respaldo" element={<ProtectedPage area="website"><AppFrame area="admin"><PageHeading eyebrow="DATOS" title="Respaldo y migración" description="Consulta el respaldo y la procedencia de datos."/><BackupWorkspace/></AppFrame></ProtectedPage>}/>
     <Route
       path="/operaciones/marketing/editor"
