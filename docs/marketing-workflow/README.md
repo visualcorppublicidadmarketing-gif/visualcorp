@@ -68,4 +68,23 @@ Se conservaron React/Vite, la identidad y las vistas existentes. Se consultaron 
 
 Referencias: [Sheet](https://ui.shadcn.com/docs/components/base/sheet), [Data Table](https://ui.shadcn.com/docs/components/base/data-table), [licencia shadcn](https://github.com/shadcn-ui/ui/blob/main/LICENSE.md), [licencia HeroUI v3](https://raw.githubusercontent.com/heroui-inc/heroui/v3/LICENSE), [licencia Magic UI](https://raw.githubusercontent.com/magicuidesign/magicui/main/LICENSE.md), [funciones de base de datos](https://supabase.com/docs/guides/database/functions), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
 
+## Ajustes responsive y accesibilidad · 20 de noviembre de 2026
+
+- En anchos de hasta 900 px, el calendario mensual se presenta como una agenda por día con nombre del día, mejor espacio para títulos y controles más cómodos; al expandir un día aparecen publicaciones y actividades.
+- La navegación, filtros y grupos de acciones se reorganizan para pantallas estrechas; métricas pasan de cuatro columnas a dos y luego a una. Tablas y líneas de tiempo mantienen el desplazamiento dentro de su propio contenedor.
+- Se añadieron límites de ancho y `min-width: 0` en los contenedores principales, estados de foco visibles y ajustes para movimiento reducido y modo oscuro.
+- Revisión visual local en 390, 768 y 1280 px. No se cambiaron registros ni se publicó la app.
+- Catálogos considerados: Magic UI (sin patrón de calendario editorial adecuado), shadcn Calendar y HeroUI Calendar/Tabs/Toolbar. Se conservaron los componentes y dependencias existentes porque sus calendarios son selectores de fecha y no sustituyen el calendario editorial con estados, actividades y programación.
+- La build quedó pendiente: `vite` no está disponible en la instalación local y `npm ci` no pudo reemplazar un binario bloqueado por otro proceso. No se ejecutaron pruebas automatizadas.
+
 Estado: implementación local para revisión, con pruebas automatizadas y capturas de datos ficticios. Siguiente paso: revisión del cambio y preparación de la activación conjunta de migración y web; ninguna aprobación estética, publicación externa o despliegue se infiere de estas pruebas.
+
+## Refinamiento de vistas estrechas · 20 de noviembre de 2026
+
+- Semana y día usan en móvil una agenda vertical con selector táctil de fechas, cantidades por día, tarjetas legibles y accesos directos para crear publicaciones o actividades. La semana abre en hoy cuando esa fecha pertenece al rango; si no, abre el primer día visible.
+- Kanban se apila por etapas y ofrece saltos rápidos con el total de fichas. La vista de tabla conserva sus datos y acciones como tarjetas rotuladas en pantallas pequeñas; en escritorio mantiene la tabla.
+- La decisión sigue el patrón de Buffer de navegar por semana y abrir el día seleccionado, junto a las vistas Agenda/Día/3 días de Outlook y la lista Schedule de Google Calendar. Esas opciones conservan contexto de fecha sin comprimir siete columnas en un teléfono.
+- Se conservaron React, CSS y los componentes propios. Magic UI no arrojó patrones pertinentes para calendario editorial o Kanban; el MCP de shadcn no encontró registros configurados, por lo que se revisó su documentación oficial. Sus componentes Calendar y Table son bases de calendario/tabulación, no resuelven por sí solos el flujo editorial. HeroUI Calendar y su fuente documentan un selector de fecha construido con React Aria; HeroUI v3 requiere React 19+ y Tailwind CSS v4. No se añadió dependencia ni se reemplazó el calendario especializado del producto.
+- Las vistas mantienen etiquetas accesibles, foco visible, áreas táctiles y respeto por movimiento reducido y modo oscuro.
+
+Referencias de benchmark: [Buffer en móvil](https://support.buffer.com/en-us/articles/using-the-calendar-feature-on-the-buffer-mobile-app-YxB7DmpyJI), [Outlook móvil: Agenda, Día, 3 días y Mes](https://support.microsoft.com/en-us/outlook/how-do-i-switch-to-month-view), [Google Calendar móvil: Schedule y Month](https://support.google.com/calendar/answer/6110849?co=GENIE.Platform%3DAndroid&hl=en-7). Documentación consultada: [shadcn Calendar](https://ui.shadcn.com/docs/components/base/calendar), [shadcn Table](https://ui.shadcn.com/docs/components/base/table), [HeroUI Calendar](https://heroui.com/docs/react/components/calendar) y [requisitos de HeroUI v3](https://heroui.com/docs/react/getting-started/quick-start).

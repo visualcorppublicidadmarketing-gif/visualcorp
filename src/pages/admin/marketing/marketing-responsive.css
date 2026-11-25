@@ -1,0 +1,880 @@
+/* Shared guardrails for every Marketing subview. */
+.work-app .vc-content-workspace,
+.work-app .vc-content-workspace > *,
+.work-app .vc-content-workspace :is(
+  .vc-content-post-grid,
+  .vc-content-post-list,
+  .vc-content-toolbar,
+  .vc-content-tabs,
+  .vc-strategy-section,
+  .vc-ops-section,
+  .vc-results-section,
+  .vc-library-grid,
+  .vc-strategy-grid,
+  .vc-ops-grid,
+  .vc-results-top-grid,
+  .vc-marketing-calendar,
+  .vc-marketing-campaign-list,
+  .vc-marketing-kanban-board,
+  .vc-marketing-intake,
+  .vc-marketing-asset-preview
+) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.work-app .vc-content-workspace {
+  width: 100%;
+}
+
+.work-app .vc-content-workspace :is(img, video) {
+  max-width: 100%;
+}
+
+.work-app .vc-content-workspace :is(
+  .vc-content-hero-copy,
+  .vc-content-toolbar > div,
+  .vc-content-kpi > div,
+  .vc-library-info,
+  .vc-strategy-column,
+  .vc-ops-card,
+  .vc-results-card,
+  .vc-marketing-campaign-card,
+  .vc-marketing-calendar-day,
+  .vc-marketing-calendar-events
+) {
+  min-width: 0;
+}
+
+.work-app .vc-content-workspace :is(
+  .vc-content-actions,
+  .vc-marketing-bulk-bar,
+  .vc-marketing-calendar-toolbar,
+  .vc-marketing-calendar-controls,
+  .vc-marketing-filters-meta,
+  .vc-marketing-intake-footer,
+  .vc-marketing-campaign-actions
+) {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.work-app .vc-content-workspace :is(button, input, select, textarea) {
+  max-width: 100%;
+}
+
+.work-app .vc-content-workspace :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid #8b4daf;
+  outline-offset: 2px;
+}
+
+.vc-marketing-calendar-day-weekday {
+  display: none;
+}
+
+.vc-marketing-mobile-agenda { display: none; }
+.vc-marketing-kanban-quick-nav { display: none; }
+.vc-marketing-mobile-date-picker { display: none; }
+.vc-marketing-hint-mobile { display: none; }
+
+.vc-marketing-agenda-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+@media (max-width: 1000px) {
+  .work-app .vc-content-workspace .vc-marketing-insight-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-toolbar {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* At tablet widths a seven-column month is too compressed to read.
+   Keep the calendar in its month context, but present dates as a daily agenda. */
+@media (max-width: 900px) {
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: auto;
+    overflow: visible;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-weekday,
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-week-number {
+    display: none;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day.is-outside {
+    display: none;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day {
+    display: grid;
+    grid-template-columns: minmax(82px, 0.22fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 0 10px;
+    min-height: 0;
+    padding: 10px;
+    border-right: 0;
+    border-top-color: var(--mk-glass-line, #ebe6ee);
+    background: var(--mk-glass-surface, #fff);
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day-head {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: 6px;
+    min-width: 0;
+    color: var(--mk-glass-ink, #5c5662);
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-day-number {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-day-weekday {
+    display: block;
+    color: var(--mk-glass-muted, #756d7d);
+    font-size: 10px;
+    font-weight: 750;
+    line-height: 1.25;
+    text-transform: capitalize;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day.is-today .vc-marketing-calendar-day-weekday {
+    width: auto;
+    height: auto;
+    place-items: initial;
+    border-radius: 0;
+    background: transparent;
+    color: var(--mk-glass-muted, #756d7d);
+    box-shadow: none;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day.is-today .vc-marketing-calendar-day-number {
+    background: #874caa;
+    color: #fff;
+    box-shadow: 0 0 0 3px rgb(135 76 170 / 12%);
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day-head > button {
+    width: 40px;
+    height: 40px;
+    opacity: 1;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-cal-nonprod-strip {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    margin-bottom: 6px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-events {
+    grid-column: 2;
+    grid-row: 2;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-event-row,
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-task-event-row,
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-event-context {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-event-select {
+    width: 18px;
+    height: 18px;
+    opacity: 1;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill {
+    width: 100%;
+    min-height: 40px;
+    padding: 7px 44px 7px 9px;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row .vc-cal-compact-row {
+    padding-right: 0;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row > .vc-marketing-event-select,
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-event-row.is-compact-row .vc-marketing-post-drag-handle.vc-marketing-post-drag-handle-compact {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-cal-compact-row {
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-event-label {
+    flex: 1 1 130px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-more {
+    min-height: 42px;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 900px) {
+  .work-app .vc-content-workspace .vc-content-actions {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .work-app .vc-content-workspace .vc-content-actions .button {
+    min-height: 42px;
+  }
+
+  .work-app .vc-content-workspace .vc-content-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+    align-items: stretch;
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .work-app .vc-content-workspace .vc-content-tabs button {
+    min-width: 0;
+    min-height: 44px;
+    justify-content: flex-start;
+    padding: 0 11px;
+    font-size: 11px;
+    text-align: left;
+  }
+
+  .work-app .vc-content-workspace .vc-content-tabs button > span {
+    margin-left: auto;
+  }
+
+  .work-app .vc-content-workspace .vc-content-toolbar {
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .work-app .vc-content-workspace .vc-content-toolbar > div:first-child {
+    min-width: 0;
+  }
+
+  .work-app .vc-content-workspace .vc-content-toolbar .vc-content-search,
+  .work-app .vc-content-workspace .vc-content-toolbar .vc-select-wrap {
+    flex: 1 1 190px;
+    min-width: min(100%, 170px);
+    max-width: 100%;
+  }
+
+  .work-app .vc-content-workspace .vc-library-card {
+    grid-template-columns: 39px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .work-app .vc-content-workspace .vc-library-availability {
+    grid-column: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .work-app .vc-content-workspace .vc-library-path {
+    grid-column: 2;
+  }
+
+  .work-app .vc-content-workspace .vc-content-footnote,
+  .work-app .vc-content-workspace .vc-ops-card > p,
+  .work-app .vc-content-workspace .vc-strategy-column > article > p {
+    overflow-wrap: anywhere;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-kanban-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-kanban-filters label {
+    min-width: 0;
+    flex: auto;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-kanban-filters select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-kanban-result-count {
+    flex-basis: 100%;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-campaign-pulse-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-campaign-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .work-app .vc-content-workspace .vc-marketing-calendar {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-head {
+    gap: 10px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-head h2 {
+    font-size: clamp(18px, 5vw, 22px);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-head p {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-toolbar > .vc-animated-tabs:first-child {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-toolbar > .vc-animated-tabs:nth-child(2) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-toolbar .vc-tab-button {
+    min-width: 0;
+    min-height: 42px;
+    justify-content: center;
+    padding: 6px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-toolbar .vc-tab-label-wrap {
+    min-width: 0;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-sunday-toggle-btn {
+    min-height: 42px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-controls {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(44px, 1fr));
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-controls .ok-date {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-content: stretch;
+    gap: 8px;
+    min-width: 0;
+    font-size: 11px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-controls .ok-date input {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    font-size: 12px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-controls > .button,
+  .work-app .vc-content-workspace .vc-marketing-calendar-controls > .icon-button,
+  .work-app .vc-content-workspace .vc-marketing-calendar-controls > .vc-calendar-toolbar-context {
+    min-width: 0;
+    min-height: 42px;
+    justify-content: center;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: auto;
+    overflow: visible;
+    border-color: var(--mk-glass-border, #e6dfeb);
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: auto;
+    overflow: visible;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-weekday,
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-week-number {
+    display: none;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day.is-outside {
+    display: none;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day {
+    display: grid;
+    grid-template-columns: minmax(82px, 0.22fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 0 10px;
+    min-height: 0;
+    padding: 10px;
+    border-right: 0;
+    border-top-color: var(--mk-glass-line, #ebe6ee);
+    background: var(--mk-glass-surface, #fff);
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day-head {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: 6px;
+    min-width: 0;
+    color: var(--mk-glass-ink, #5c5662);
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-day-number {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-day-weekday {
+    display: block;
+    color: var(--mk-glass-muted, #756d7d);
+    font-size: 10px;
+    font-weight: 750;
+    line-height: 1.25;
+    text-transform: capitalize;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day.is-today .vc-marketing-calendar-day-weekday {
+    width: auto;
+    height: auto;
+    place-items: initial;
+    border-radius: 0;
+    background: transparent;
+    color: var(--mk-glass-muted, #756d7d);
+    box-shadow: none;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day.is-today .vc-marketing-calendar-day-number {
+    background: #874caa;
+    color: #fff;
+    box-shadow: 0 0 0 3px rgb(135 76 170 / 12%);
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day-head > button {
+    width: 40px;
+    height: 40px;
+    opacity: 1;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-cal-nonprod-strip {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    margin-bottom: 6px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-events {
+    grid-column: 2;
+    grid-row: 2;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-event-row,
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-task-event-row,
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-event-context {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-event-select {
+    width: 18px;
+    height: 18px;
+    opacity: 1;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill {
+    width: 100%;
+    min-height: 40px;
+    padding: 7px 44px 7px 9px;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-cal-compact-row {
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-event-label {
+    flex: 1 1 130px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-event.is-compact-pill .vc-marketing-event-label {
+    flex-basis: 100%;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-more {
+    min-height: 42px;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-day-agenda {
+    padding: 10px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-day-agenda > header {
+    align-items: flex-start;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-day-agenda > header b {
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-agenda-actions > .button {
+    flex: 1 1 145px;
+    min-height: 42px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-insight-strip,
+  .work-app .vc-content-workspace .vc-content-kpis,
+  .work-app .vc-content-workspace .vc-marketing-campaign-pulse-grid,
+  .work-app .vc-content-workspace .vc-marketing-campaign-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-insight-strip > article {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4px 10px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-insight-strip > article > strong {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-insight-strip > article > small {
+    grid-column: 1;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-kanban-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-kanban-rule {
+    align-items: flex-start;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-time-toolbar-strip {
+    align-items: stretch;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-time-range-toggle {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-time-scroll,
+  .work-app .vc-content-workspace .vc-marketing-table-wrap,
+  .work-app .vc-content-workspace .vc-marketing-post-table-wrap {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-foot {
+    gap: 8px 12px;
+    font-size: 10px;
+  }
+
+  .work-app .vc-content-workspace .vc-content-modal-editor,
+  .work-app .vc-content-workspace .vc-marketing-planning-dialog {
+    width: min(100%, 100vw);
+    max-width: 100vw;
+  }
+}
+
+@media (max-width: 420px) {
+  .work-app .vc-content-workspace .vc-content-tabs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .work-app .vc-content-workspace .vc-content-tabs button {
+    min-height: 42px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar-controls {
+    grid-template-columns: repeat(4, minmax(40px, 1fr));
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day {
+    grid-template-columns: minmax(68px, 0.2fr) minmax(0, 1fr);
+    gap: 0 7px;
+    padding: 8px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-event-select {
+    width: 16px;
+    height: 16px;
+  }
+
+  .work-app .vc-content-workspace .vc-content-modal-actions .button {
+    flex: 1 1 135px;
+    min-height: 42px;
+  }
+}
+
+/* The mobile calendar is an agenda, not a shrunken desktop grid. */
+@media (max-width: 900px) {
+  .work-app .vc-content-workspace .vc-marketing-time-grid,
+  .work-app .vc-content-workspace .vc-marketing-time-toolbar-strip {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-time-scroll {
+    display: none !important;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda {
+    display: grid;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-mobile-date-picker {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    padding: 0 0 4px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, #8b4daf 44%, transparent) transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-mobile-date-picker button {
+    display: grid;
+    flex: 0 0 54px;
+    min-height: 66px;
+    justify-items: center;
+    align-content: center;
+    gap: 2px;
+    padding: 5px 3px;
+    border: 1px solid var(--mk-glass-border, #e6dfeb);
+    border-radius: 11px;
+    background: var(--mk-glass-surface, #fff);
+    color: var(--mk-glass-muted, #756d7d);
+    font: inherit;
+    cursor: pointer;
+    scroll-snap-align: start;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-mobile-date-picker button[aria-pressed="true"] {
+    border-color: #8b4daf;
+    background: color-mix(in srgb, #8b4daf 11%, var(--mk-glass-surface, #fff));
+    color: var(--mk-glass-ink, #47384e);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #8b4daf 20%, transparent);
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-mobile-date-picker button > span { font-size: 10px; font-weight: 750; text-transform: capitalize; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-date-picker button > b { font-size: 15px; line-height: 1; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-date-picker button > small { min-width: 16px; height: 16px; border-radius: 999px; background: color-mix(in srgb, #8b4daf 12%, var(--mk-glass-surface, #fff)); color: #754396; font-size: 10px; line-height: 16px; text-align: center; }
+
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--mk-glass-border, #e6dfeb);
+    border-radius: 14px;
+    background: var(--mk-glass-surface, #fff);
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day.is-today {
+    border-color: color-mix(in srgb, #8b4daf 42%, var(--mk-glass-border, #e6dfeb));
+    box-shadow: 0 0 0 2px color-mix(in srgb, #8b4daf 10%, transparent);
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+    margin-bottom: 10px;
+  }
+
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day-head > div:first-child { min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day-head h3 { margin: 0; color: var(--mk-glass-ink, #302737); font-size: 14px; font-weight: 800; line-height: 1.4; text-transform: capitalize; overflow-wrap: anywhere; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day-head span { display: block; margin-top: 2px; color: var(--mk-glass-muted, #756d7d); font-size: 11px; }
+
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day-actions button { min-height: 38px; padding: 6px 9px; border: 1px solid var(--mk-glass-border, #e6dfeb); border-radius: 9px; background: var(--mk-glass-pill, #faf7fc); color: var(--mk-glass-ink, #47384e); font: inherit; font-size: 11px; font-weight: 750; cursor: pointer; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day-actions .is-post { border-color: color-mix(in srgb, #8b4daf 28%, var(--mk-glass-border, #e6dfeb)); }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day-actions .is-task { border-color: color-mix(in srgb, #168a75 28%, var(--mk-glass-border, #e6dfeb)); }
+
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-entries { display: grid; gap: 8px; min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event { display: block; width: 100%; min-width: 0; min-height: 0; margin: 0; padding: 11px 12px; border-radius: 11px; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-event-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; margin-bottom: 5px; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-event-head time { margin-right: auto; color: var(--mk-glass-muted, #756d7d); font-size: 11px; font-weight: 800; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-event-body { display: block; min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-event-text { display: grid; gap: 3px; min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-event-text b { font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-event-text > span { color: var(--mk-glass-muted, #756d7d); font-size: 11px; line-height: 1.4; white-space: normal; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-event-foot { margin-top: 6px; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-event-thumb { display: none; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-event-day-layout { grid-template-columns: 62px minmax(0, 1fr); align-items: start; gap: 9px; min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-day-media { width: 62px; min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-day-info { min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-day-info > b { font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-day-summary,
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-day-owner { font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-event .vc-time-day-controls { grid-column: 1 / -1; min-width: 0; margin-top: 5px; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-empty { margin: 0; padding: 11px; border-radius: 9px; background: var(--mk-glass-soft, #faf8fb); color: var(--mk-glass-muted, #756d7d); font-size: 12px; }
+
+  .work-app .vc-content-workspace .vc-marketing-time-range-toggle { display: none; }
+  .work-app .vc-content-workspace .vc-marketing-hint-desktop { display: none; }
+  .work-app .vc-content-workspace .vc-marketing-hint-mobile { display: inline; }
+
+  .work-app .vc-content-workspace .vc-marketing-kanban-quick-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .work-app .vc-content-workspace .vc-marketing-kanban-quick-nav button { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; min-height: 42px; padding: 7px 10px; border: 1px solid var(--mk-glass-border, #e6dfeb); border-radius: 10px; background: var(--mk-glass-surface, #fff); color: var(--mk-glass-ink, #47384e); font: inherit; font-size: 11px; font-weight: 750; text-align: left; cursor: pointer; }
+  .work-app .vc-content-workspace .vc-marketing-kanban-quick-nav button span { display: grid; min-width: 24px; height: 24px; place-items: center; border-radius: 999px; background: color-mix(in srgb, #8b4daf 12%, var(--mk-glass-surface, #fff)); color: #8b4daf; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-kanban .vc-marketing-kanban-board { display: grid; grid-auto-flow: row; grid-template-columns: minmax(0, 1fr) !important; grid-auto-columns: minmax(0, 1fr) !important; gap: 12px; width: 100%; min-width: 0; max-width: 100%; overflow: visible; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-kanban .vc-marketing-kanban-column { width: 100%; min-width: 0; scroll-snap-align: none; scroll-margin-top: 14px; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-kanban .vc-marketing-kanban-column-head { position: static; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-kanban .vc-marketing-kanban-cards { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-kanban .vc-marketing-kanban-card { min-width: 0; max-width: 100%; }
+
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-wrap { width: 100%; min-width: 0; max-width: 100%; overflow: visible; border: 0; background: transparent; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table { display: block; width: 100%; min-width: 0 !important; border-collapse: separate; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table thead { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table tbody { display: grid; gap: 10px; width: 100%; min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table tbody tr { position: relative; display: grid; gap: 9px; width: 100%; min-width: 0; padding: 13px 12px; border: 1px solid var(--mk-glass-border, #e6dfeb); border-radius: 13px; background: var(--mk-glass-surface, #fff); }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table td { display: grid; grid-template-columns: 88px minmax(0, 1fr); align-items: start; gap: 9px; min-width: 0; padding: 0; border: 0; background: transparent; white-space: normal; overflow-wrap: anywhere; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table td::before { content: attr(data-label); padding-top: 2px; color: var(--mk-glass-muted, #756d7d); font-size: 10px; font-weight: 800; line-height: 1.35; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table .vc-marketing-table-select,
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table .vc-marketing-table-actions { position: absolute; z-index: 1; display: block; width: 36px; height: 36px; padding: 0; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table .vc-marketing-table-select { top: 7px; right: 50px; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table .vc-marketing-table-actions { top: 7px; right: 7px; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table .vc-marketing-table-select::before,
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table .vc-marketing-table-actions::before { content: none; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table .vc-marketing-table-select input { width: 18px; height: 18px; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-date { grid-template-columns: minmax(0, 1fr); padding-right: 92px !important; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-date::before { content: none; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-date b { font-size: 12px; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-date small { margin: 2px 0 0; color: var(--mk-glass-muted, #756d7d); }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-publication-main { grid-template-columns: 56px minmax(0, 1fr); gap: 9px; min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-artwork { width: 56px; height: 48px; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-publication-copy { min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-publication-main>button,
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-publication-main>div>button { min-width: 0; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-publication-main>div>button b { display: block; font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-publication-main>div>button small { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; white-space: normal; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-channel .vc-table-channel-wrap { min-width: 0; flex-wrap: wrap; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-actions .vc-marketing-context-menu { min-width: 36px; min-height: 36px; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table-empty { display: block; grid-column: 1 / -1; }
+}
+
+@media (max-width: 420px) {
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day { padding: 10px; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day-head { display: grid; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day-actions { justify-content: stretch; }
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day-actions button { flex: 1 1 120px; }
+  .work-app .vc-content-workspace .vc-marketing-calendar.is-table .vc-marketing-table td { grid-template-columns: 76px minmax(0, 1fr); gap: 7px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .work-app .vc-content-workspace .vc-marketing-mobile-agenda-day,
+  .work-app .vc-content-workspace .vc-marketing-kanban-quick-nav button { scroll-behavior: auto; transition-duration: 0.01ms !important; }
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day-weekday,
+:root[data-theme='dark'] .vc-content-workspace .vc-marketing-calendar.is-month .vc-marketing-calendar-day-weekday {
+  color: var(--mk-glass-muted, #b5adc0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .work-app .vc-content-workspace .vc-content-tabs button:hover,
+  .work-app .vc-content-workspace .vc-marketing-calendar-event:hover,
+  .work-app .vc-content-workspace .vc-content-kpi:hover,
+  .work-app .vc-content-workspace .vc-library-card:hover {
+    transform: none;
+  }
+}

@@ -26,6 +26,7 @@ export const specialPermissionActions = [
   { module: 'marketing', action: 'approve_content', label: 'Aprobar contenido y solicitar cambios (requiere ver y editar Marketing)' },
   { module: 'team', action: 'manage_members', label: 'Asignar perfiles y activar o pausar accesos' },
   { module: 'team', action: 'manage_profiles', label: 'Crear y configurar perfiles' },
+  { module: 'team', action: 'manage_suggestions', label: 'Revisar y actualizar el estado de sugerencias internas' },
   { module: 'inventory_costs', action: 'view_costs', label: 'Ver costos y márgenes' },
   { module: 'inventory_costs', action: 'edit_costs', label: 'Editar costos' },
   { module: 'catalog_admin', action: 'edit_prices', label: 'Cambiar precios y tarifas' },
@@ -39,6 +40,15 @@ export const specialPermissionActions = [
   { module: 'personnel', action: 'view_compensation', label: 'Consultar remuneración e historial de pagos del personal' },
   { module: 'personnel', action: 'edit_compensation', label: 'Registrar cambios de remuneración del personal' },
 ] as const;
+
+export type PermissionModuleKey = (typeof permissionModules)[number][0];
+
+type SpecialPermissionKey<T = (typeof specialPermissionActions)[number]> = T extends {
+  module: infer Module extends string;
+  action: infer Action extends string;
+} ? `${Module}.${Action}` : never;
+
+export type PermissionKey = `${PermissionModuleKey}.${'view' | 'edit'}` | SpecialPermissionKey;
 
 export const legacyRoleNames: Record<string, string> = {
   owner: 'Propietario',

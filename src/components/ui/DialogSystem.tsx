@@ -449,7 +449,7 @@ export function AlertDialog({
   checkboxLabel,
   requireCheckbox = false,
   closeOnConfirm = true,
-  closeOnOverlayClick = false,
+  closeOnOverlayClick = true,
   magicBorder = false,
   secondaryAction,
   onConfirm,

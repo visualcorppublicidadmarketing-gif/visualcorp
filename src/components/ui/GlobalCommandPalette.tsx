@@ -36,9 +36,19 @@ import {
   Zap,
 } from 'lucide-react';
 import { useWorkspace, formatMoney } from '../../app/workspace';
+import { useAuth } from '../../auth/AuthProvider';
+import { canViewNavigationItem, workspaceNavigation, workspaceNavGroups } from '../../app/navigation';
 import { useTheme } from '../../app/ThemeProvider';
 import { ChatterDrawer360 } from './ChatterDrawer360';
 import './global-command-palette.css';
+
+export const GLOBAL_COMMAND_PALETTE_OPEN_EVENT = 'visualcorp:open-global-command-palette';
+
+export function requestGlobalCommandPaletteOpen() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(GLOBAL_COMMAND_PALETTE_OPEN_EVENT));
+  }
+}
 
 /* --------------------------------------------------------------------------
    Types & Interfaces
@@ -83,6 +93,8 @@ export interface CommandItem {
 export interface GlobalCommandPaletteProps {
   /** Permite control externo de apertura */
   isOpen?: boolean;
+  /** Callback invocado al abrir el diálogo controlado */
+  onOpen?: () => void;
   /** Callback invocado al cerrar el diálogo */
   onClose?: () => void;
   /** Si debe renderizar un botón disparador inline en el layout */
@@ -236,12 +248,14 @@ const DEMO_INVENTORY = [
    -------------------------------------------------------------------------- */
 export function GlobalCommandPalette({
   isOpen: externalIsOpen,
+  onOpen: externalOnOpen,
   onClose: externalOnClose,
   triggerButton = false,
   triggerClassName = '',
 }: GlobalCommandPaletteProps) {
   const navigate = useNavigate();
   const workspace = useSafeWorkspace();
+  const { hasPermission } = useAuth();
 
   // Estado interno de apertura
   const [internalOpen, setInternalOpen] = useState(false);
@@ -304,27 +318,35 @@ export function GlobalCommandPalette({
     }
   }, [isControlled, externalOnClose]);
 
-  // Manejo de atajo global Ctrl+K / Cmd+K
+  const handleOpen = useCallback(() => {
+    if (isControlled) {
+      externalOnOpen?.();
+    } else {
+      setInternalOpen(true);
+    }
+  }, [isControlled, externalOnOpen]);
+
+  // Una sola paleta escucha Ctrl+K/Cmd+K en toda la Suite.
   useEffect(() => {
     const onGlobalKeyDown = (event: globalThis.KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        const editingText = Boolean(target?.closest('input, textarea, select, [contenteditable="true"], [role="textbox"]'));
+        if (!open && editingText) return;
         event.preventDefault();
-        if (isControlled) {
-          if (open) {
-            externalOnClose?.();
-          } else {
-            // Si el padre controla isOpen pero no provee toggle, invocamos onClose como señal
-            externalOnClose?.();
-          }
-        } else {
-          setInternalOpen((curr) => !curr);
-        }
+        if (open) handleClose();
+        else handleOpen();
       }
     };
 
+    const onRequestOpen = () => handleOpen();
     window.addEventListener('keydown', onGlobalKeyDown);
-    return () => window.removeEventListener('keydown', onGlobalKeyDown);
-  }, [isControlled, open, externalOnClose]);
+    window.addEventListener(GLOBAL_COMMAND_PALETTE_OPEN_EVENT, onRequestOpen);
+    return () => {
+      window.removeEventListener('keydown', onGlobalKeyDown);
+      window.removeEventListener(GLOBAL_COMMAND_PALETTE_OPEN_EVENT, onRequestOpen);
+    };
+  }, [open, handleClose, handleOpen]);
 
   // Al abrir la paleta: resetear query, índice y dar autofocus
   useEffect(() => {
@@ -834,6 +856,37 @@ export function GlobalCommandPalette({
       });
     });
 
+    const groupLabelByPath = new Map(
+      workspaceNavGroups.flatMap((group) => group.paths.map((path) => [path, group.label] as const)),
+    );
+    const normalizePath = (path: string) => path === '/operaciones/pos' ? '/pos' : path;
+    const knownPaths = new Set(
+      items.map((item) => item.extraInfo?.path).filter((path): path is string => Boolean(path)).map(normalizePath),
+    );
+
+    workspaceNavigation
+      .filter((link) => canViewNavigationItem(link, hasPermission))
+      .filter((link) => !knownPaths.has(normalizePath(link.to)))
+      .forEach((link) => {
+        const Icon = link.icon;
+        const groupLabel = groupLabelByPath.get(link.to) || 'Visual Corp Suite';
+        items.push({
+          id: `nav-${link.to}`,
+          category: 'modulos',
+          title: link.label,
+          subtitle: `${groupLabel} · ${link.to}`,
+          keywords: [link.to, link.module, ...(link.keywords || [])],
+          icon: Icon,
+          badge: groupLabel,
+          shortcut: link.to,
+          onSelect: () => {
+            navigate(link.to);
+            handleClose();
+          },
+          extraInfo: { path: link.to },
+        });
+      });
+
     return items;
   }, [
     navigate,
@@ -846,6 +899,7 @@ export function GlobalCommandPalette({
     customersList,
     quotesList,
     inventoryList,
+    hasPermission,
   ]);
 
   /* --------------------------------------------------------------------------
@@ -986,7 +1040,7 @@ export function GlobalCommandPalette({
         <button
           type="button"
           className={`vc-palette-trigger ${triggerClassName}`}
-          onClick={() => (isControlled ? externalOnClose?.() : setInternalOpen(true))}
+          onClick={handleOpen}
           aria-label="Buscar en Visual Corp Suite"
           aria-keyshortcuts="Control+K Meta+K"
         >

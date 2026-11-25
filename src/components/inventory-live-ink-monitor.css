@@ -2460,3 +2460,238 @@
     justify-content: center;
   }
 }
+
+/* Mantiene las ventanas dentro del viewport y deja accesibles su cabecera y acciones. */
+.vc-live-modal-backdrop {
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  align-items: center;
+  padding: 16px;
+}
+
+.vc-live-modal {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: min(500px, 100%);
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+}
+
+.vc-live-modal > header,
+.vc-live-modal > footer {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.vc-live-modal > header > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.vc-live-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.vc-live-modal footer {
+  flex-wrap: wrap;
+}
+
+.vc-live-modal footer > button {
+  max-width: 100%;
+}
+
+.vc-printer-form-modal {
+  width: min(780px, 100%);
+  max-width: min(780px, 100%) !important;
+}
+
+.vc-batch-modal {
+  max-width: min(580px, 100%);
+}
+
+.vc-printer-form-modal .vc-live-modal-body,
+.vc-printer-form-modal .vc-form-grid,
+.vc-printer-form-modal .vc-channels-config-section,
+.vc-printer-form-modal .vc-channels-config-table {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vc-printer-form-modal .vc-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.vc-printer-form-modal .vc-form-grid > *,
+.vc-printer-form-modal input,
+.vc-printer-form-modal select,
+.vc-printer-form-modal textarea {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vc-channel-config-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.85fr) minmax(0, 1.6fr) minmax(88px, 0.65fr) 28px;
+  align-items: center;
+  min-width: 0;
+}
+
+.vc-channel-badge-col,
+.vc-channel-code-select,
+.vc-channel-variant-col,
+.vc-channel-capacity-col,
+.vc-channel-remove-col {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vc-channel-code-select,
+.vc-channel-variant-col select,
+.vc-channel-capacity-col input {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.vc-channel-capacity-col {
+  width: auto;
+}
+
+.vc-batch-channel-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.6fr) minmax(0, 1.4fr);
+  align-items: center;
+  min-width: 0;
+}
+
+.vc-batch-col-badge,
+.vc-batch-col-controls {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vc-batch-col-controls {
+  display: grid;
+  grid-template-columns: 45px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.vc-batch-pct-badge {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.vc-batch-preset-btns {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 3px;
+  min-width: 0;
+}
+
+.vc-batch-preset-btns button {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 4px 2px;
+  white-space: nowrap;
+}
+
+.vc-batch-col-controls input[type='range'] {
+  grid-column: 1 / -1;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 2px 0;
+}
+
+@media (max-width: 768px) {
+  .vc-live-modal-backdrop {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .vc-live-modal {
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+
+  .vc-printer-form-modal .vc-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vc-batch-channel-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+
+@media (max-width: 560px) {
+  .vc-live-modal-backdrop {
+    padding: 8px;
+  }
+
+  .vc-live-modal {
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 13px;
+  }
+
+  .vc-live-modal header {
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .vc-live-modal-body {
+    padding: 16px;
+  }
+
+  .vc-live-modal footer {
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .vc-live-modal footer > button {
+    flex: 1 1 130px;
+  }
+
+  .vc-printer-form-modal {
+    width: 100%;
+  }
+
+  .vc-channels-config-section {
+    padding: 12px;
+  }
+
+  .vc-channels-section-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .vc-channel-config-row {
+    grid-template-columns: minmax(0, 1fr) minmax(96px, 0.7fr) 28px;
+    grid-template-areas:
+      'badge badge remove'
+      'variant variant variant'
+      'capacity capacity remove';
+    gap: 8px;
+  }
+
+  .vc-channel-badge-col { grid-area: badge; }
+  .vc-channel-variant-col { grid-area: variant; }
+  .vc-channel-capacity-col { grid-area: capacity; }
+  .vc-channel-remove-col { grid-area: remove; align-self: start; }
+
+  .vc-batch-col-controls {
+    grid-template-columns: 45px minmax(0, 1fr);
+  }
+
+  .vc-batch-preset-btns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

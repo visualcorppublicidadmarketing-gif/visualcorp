@@ -1,0 +1,356 @@
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import type { ChangeEvent } from 'react';
+import { ArrowDownToLine, Copy, FileUp, Layers3, Plus, RotateCcw, Trash2, Type } from 'lucide-react';
+import {
+  createMonogramLayer,
+  createMonogramPreset,
+  DEFAULT_MONOGRAM_PROJECT,
+  MONOGRAM_GEOMETRY_LIMITATION,
+  MONOGRAM_LIMITS,
+  normalizeMonogramProject,
+  validateMonogramProject,
+} from './monogramModel';
+import type { MonogramElement, MonogramProject } from './monogramModel';
+import { createMonogramOutline, createMonogramSvg, estimateOutlineBounds, loadMonogramFont } from './monogramVector';
+import type { MonogramOutline } from './monogramVector';
+import { Monogram2DStage } from './Monogram2DStage';
+import './monogram-generator.css';
+
+const STORAGE_KEY = 'visualcorp-monogram-generator-v1';
+type ViewMode = '2d' | '3d';
+const Monogram3DViewer = lazy(() => import('./Monogram3DViewer').then((module) => ({ default: module.Monogram3DViewer })));
+
+function readSavedProject(): MonogramProject {
+  if (typeof window === 'undefined') return DEFAULT_MONOGRAM_PROJECT;
+  try {
+    const value = window.localStorage.getItem(STORAGE_KEY);
+    return value ? normalizeMonogramProject(JSON.parse(value)) : DEFAULT_MONOGRAM_PROJECT;
+  } catch {
+    return DEFAULT_MONOGRAM_PROJECT;
+  }
+}
+
+function safeFilename(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'monograma';
+}
+
+function downloadFile(filename: string, data: Blob) {
+  const url = URL.createObjectURL(data);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function layerName(element: MonogramElement, index: number) {
+  return element.text.trim() || `Texto ${index + 1}`;
+}
+
+interface MonogramNumberFieldProps {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onCommit: (value: number) => void;
+}
+
+function MonogramNumberField({ label, value, min, max, step, onCommit }: MonogramNumberFieldProps) {
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => { setDraft(String(value)); }, [value]);
+
+  const commitDraft = () => {
+    const parsed = Number(draft);
+    const normalized = Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : value;
+    onCommit(normalized);
+    setDraft(String(normalized));
+  };
+
+  return (
+    <label className="monogram__field">
+      {label}
+      <input
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        value={draft}
+        onChange={(event) => {
+          const next = event.target.value;
+          setDraft(next);
+          if (!next || next === '-' || next === '.') return;
+          const numeric = Number(next);
+          if (Number.isFinite(numeric) && numeric >= min && numeric <= max) onCommit(numeric);
+        }}
+        onBlur={commitDraft}
+      />
+    </label>
+  );
+}
+
+export function MonogramGenerator() {
+  const [project, setProject] = useState<MonogramProject>(readSavedProject);
+  const [selectedId, setSelectedId] = useState<string | null>(() => project.elements[0]?.id ?? null);
+  const [view, setView] = useState<ViewMode>('2d');
+  const [font, setFont] = useState<Awaited<ReturnType<typeof loadMonogramFont>> | null>(null);
+  const [fontError, setFontError] = useState('');
+  const [status, setStatus] = useState('Los cambios se guardan en este navegador.');
+  const importRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    loadMonogramFont('dm-sans')
+      .then((loadedFont) => { if (active) setFont(loadedFont); })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setFontError(error instanceof Error ? error.message : 'No se pudo cargar DM Sans.');
+      });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
+    } catch {
+      setStatus('El navegador no permitió guardar automáticamente. Puedes descargar el archivo del diseño.');
+    }
+  }, [project]);
+
+  const selected = project.elements.find((element) => element.id === selectedId) ?? null;
+  const outlines = useMemo<MonogramOutline[]>(() => {
+    if (!font) return [];
+    return project.elements
+      .map((element) => createMonogramOutline(font, project.height, element))
+      .filter((outline): outline is MonogramOutline => outline !== null);
+  }, [font, project]);
+  const validation = useMemo(() => validateMonogramProject(project), [project]);
+  const outsideWarnings = font
+    ? outlines.flatMap((outline) => {
+      const bounds = estimateOutlineBounds(outline);
+      const edges = [
+        bounds.x < 0 ? 'izquierdo' : '',
+        bounds.x + bounds.width > project.width ? 'derecho' : '',
+        bounds.y < 0 ? 'superior' : '',
+        bounds.y + bounds.height > project.height ? 'inferior' : '',
+      ].filter(Boolean);
+      return edges.length > 0 ? [{ elementId: outline.id, message: `«${outline.text}» sobresale por el borde ${edges.join(' y ')} del artboard.` }] : [];
+    })
+    : validation.warnings.filter((warning) => warning.code === 'outside-artboard');
+  const missingCharacters = Array.from(new Set(outlines.flatMap((outline) => outline.missingCharacters)));
+  const exportReady = Boolean(font && outlines.length > 0 && missingCharacters.length === 0);
+  const visibleDepth = outlines.length > 0
+    ? Number(outlines.reduce((sum, outline) => sum + outline.depth, 0).toFixed(1))
+    : 0;
+
+  const updateLayer = (id: string, patch: Partial<MonogramElement>) => {
+    setProject((current) => normalizeMonogramProject({
+      ...current,
+      elements: current.elements.map((element) => element.id === id ? { ...element, ...patch } : element),
+    }));
+  };
+
+  const moveLayer = (id: string, dx: number, dy: number) => {
+    setProject((current) => normalizeMonogramProject({
+      ...current,
+      elements: current.elements.map((element) => element.id === id
+        ? { ...element, x: element.x + dx, y: element.y + dy }
+        : element),
+    }));
+  };
+
+  const choosePreset = (id: 'initial' | 'name-initial') => {
+    const next = createMonogramPreset(id);
+    setProject(next);
+    setSelectedId(next.elements[0]?.id ?? null);
+    setStatus(`Preajuste «${next.title}» aplicado.`);
+  };
+
+  const addLayer = () => {
+    try {
+      const added = createMonogramLayer(project, { text: 'Texto' });
+      setProject(added.project);
+      setSelectedId(added.layer.id);
+      setStatus('Capa de texto añadida. Puedes escribirla y moverla en el lienzo.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'No se pudo añadir otra capa.');
+    }
+  };
+
+  const duplicateLayer = (source: MonogramElement | null = selected) => {
+    if (!source) return;
+    try {
+      const added = createMonogramLayer(project, {
+        text: source.text,
+        x: source.x + 5,
+        y: source.y - 5,
+        fontSize: source.fontSize,
+        fontId: source.fontId,
+        rotation: source.rotation,
+        depth: source.depth,
+      });
+      setProject(added.project);
+      setSelectedId(added.layer.id);
+      setStatus('Capa duplicada.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'No se pudo duplicar la capa.');
+    }
+  };
+
+  const removeLayerById = (id: string) => {
+    const next = project.elements.filter((element) => element.id !== id);
+    setProject({ ...project, elements: next });
+    setSelectedId(next[0]?.id ?? null);
+    setStatus('Capa eliminada.');
+  };
+
+  const exportSvg = () => {
+    if (!font || outlines.length === 0) return;
+    const svg = createMonogramSvg(project, outlines, project.title);
+    downloadFile(`${safeFilename(project.title)}.svg`, new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+    setStatus('SVG de contornos descargado. Revisa solapes y puentes antes de fabricar.');
+  };
+
+  const saveJson = () => {
+    downloadFile(`${safeFilename(project.title)}.vcmg.json`, new Blob([JSON.stringify(project, null, 2)], { type: 'application/json;charset=utf-8' }));
+    setStatus('Archivo editable del proyecto descargado.');
+  };
+
+  const openJson = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+    if (file.size > 1_000_000) {
+      setStatus('El archivo supera el límite de 1 MB para diseños de monograma.');
+      return;
+    }
+    try {
+      const candidate = JSON.parse(await file.text());
+      if (!candidate || candidate.schemaVersion !== 1 || candidate.unit !== 'mm' || !Array.isArray(candidate.elements)) {
+        throw new Error('Formato de proyecto no reconocido.');
+      }
+      const loaded = normalizeMonogramProject(candidate);
+      setProject(loaded);
+      setSelectedId(loaded.elements[0]?.id ?? null);
+      setView('2d');
+      setStatus(`Diseño «${loaded.title}» abierto. Revisa las advertencias de fabricación.`);
+    } catch {
+      setStatus('No se pudo abrir el archivo. Selecciona un JSON de monograma válido.');
+    }
+  };
+
+  const reset = () => {
+    const clean = normalizeMonogramProject(DEFAULT_MONOGRAM_PROJECT);
+    setProject(clean);
+    setSelectedId(clean.elements[0]?.id ?? null);
+    setView('2d');
+    setStatus('Diseño reiniciado.');
+  };
+
+  return (
+    <section className="monogram" aria-label="Editor paramétrico de monogramas">
+      <div className="monogram__topbar">
+        <div className="monogram__topbar-copy"><span className="monogram__eyebrow">DISEÑO PARAMÉTRICO · CAPAS DE TEXTO</span><strong>{project.title || 'Monograma sin título'}</strong></div>
+        <div className="monogram__actions">
+          <button type="button" className="button button-outline" onClick={() => importRef.current?.click()}><FileUp size={15} /> Abrir</button>
+          <button type="button" className="button button-outline" onClick={saveJson}><ArrowDownToLine size={15} /> Guardar</button>
+          <button type="button" className="button button-dark" onClick={exportSvg} disabled={!exportReady}><ArrowDownToLine size={15} /> Exportar SVG</button>
+          <input ref={importRef} className="monogram__visually-hidden" type="file" accept=".json,.vcmg.json,application/json" onChange={openJson} aria-label="Abrir diseño de monograma" />
+        </div>
+      </div>
+
+      <div className="monogram__workspace">
+        <aside className="monogram__sidebar" aria-label="Controles del diseño">
+          <section className="monogram__card">
+            <div className="monogram__section-heading"><div><span className="monogram__eyebrow">01 · EMPIEZA RÁPIDO</span><h2>Preajustes</h2></div></div>
+            <div className="monogram__presets">
+              <button type="button" onClick={() => choosePreset('initial')}><span className="monogram__preset-glyph">A</span><span><strong>Inicial</strong><small>Una capa</small></span></button>
+              <button type="button" onClick={() => choosePreset('name-initial')}><span className="monogram__preset-glyph is-combo">A<span>Nombre</span></span><span><strong>Nombre + inicial</strong><small>Dos capas</small></span></button>
+            </div>
+          </section>
+
+          <section className="monogram__card">
+            <div className="monogram__section-heading"><div><span className="monogram__eyebrow">02 · TU COMPOSICIÓN</span><h2>Capas de texto</h2></div><span className="monogram__layer-count">{project.elements.length}/{MONOGRAM_LIMITS.maxElements}</span></div>
+            <div className="monogram__layer-list" role="list" aria-label="Capas del monograma">
+              {project.elements.map((element, index) => (
+                <div className={`monogram__layer-row${element.id === selectedId ? ' is-active' : ''}`} key={element.id} role="listitem">
+                  <button type="button" className="monogram__layer-select" aria-pressed={element.id === selectedId} onClick={() => setSelectedId(element.id)}>
+                    <span className="monogram__layer-icon"><Type size={15} /></span><span><strong>{layerName(element, index)}</strong><small>{element.fontSize} mm · DM Sans</small></span>
+                  </button>
+                  <button type="button" className="monogram__icon-action" onClick={() => { setSelectedId(element.id); duplicateLayer(element); }} aria-label={`Duplicar ${layerName(element, index)}`} title="Duplicar capa"><Copy size={14} /></button>
+                  <button type="button" className="monogram__icon-action is-danger" onClick={() => removeLayerById(element.id)} aria-label={`Eliminar ${layerName(element, index)}`} title="Eliminar capa"><Trash2 size={14} /></button>
+                </div>
+              ))}
+              {project.elements.length === 0 && <p className="monogram__empty-note">No hay capas. Añade texto para iniciar.</p>}
+            </div>
+            <button type="button" className="button button-outline monogram__add-layer" onClick={addLayer} disabled={project.elements.length >= MONOGRAM_LIMITS.maxElements}><Plus size={15} /> Añadir texto</button>
+          </section>
+
+          {selected && <section className="monogram__card">
+            <div className="monogram__section-heading"><div><span className="monogram__eyebrow">03 · CAPA SELECCIONADA</span><h2>Editar texto</h2></div></div>
+            <label className="monogram__field monogram__field--full">Texto
+              <input type="text" maxLength={MONOGRAM_LIMITS.maxTextLength} value={selected.text} onChange={(event) => updateLayer(selected.id, { text: event.target.value })} placeholder="Escribe un nombre o inicial" />
+            </label>
+            <div className="monogram__field-grid">
+              <MonogramNumberField label="Tamaño de letra (mm)" min={MONOGRAM_LIMITS.minFontSize} max={MONOGRAM_LIMITS.maxFontSize} step={1} value={selected.fontSize} onCommit={(fontSize) => updateLayer(selected.id, { fontSize })} />
+              <MonogramNumberField label="Profundidad 3D (mm)" min={MONOGRAM_LIMITS.minDepth} max={MONOGRAM_LIMITS.maxDepth} step={0.1} value={selected.depth} onCommit={(depth) => updateLayer(selected.id, { depth })} />
+              <MonogramNumberField label="Posición X (mm)" min={MONOGRAM_LIMITS.minCoordinate} max={MONOGRAM_LIMITS.maxCoordinate} step={1} value={selected.x} onCommit={(x) => updateLayer(selected.id, { x })} />
+              <MonogramNumberField label="Línea base Y (mm)" min={MONOGRAM_LIMITS.minCoordinate} max={MONOGRAM_LIMITS.maxCoordinate} step={1} value={selected.y} onCommit={(y) => updateLayer(selected.id, { y })} />
+            </div>
+            <label className="monogram__field monogram__rotation">Rotación <span>{selected.rotation}°</span>
+              <input type="range" min={MONOGRAM_LIMITS.minRotation} max={MONOGRAM_LIMITS.maxRotation} step="1" value={selected.rotation} onChange={(event) => updateLayer(selected.id, { rotation: Number(event.target.value) })} />
+            </label>
+            <p className="monogram__font-note">Fuente local: DM Sans. El archivo de proyecto guarda medidas y texto; no contiene archivos de fuente.</p>
+          </section>}
+
+          <section className="monogram__card">
+            <div className="monogram__section-heading"><div><span className="monogram__eyebrow">04 · MEDIDAS DEL DISEÑO</span><h2>Área de trabajo</h2></div></div>
+            <label className="monogram__field">Nombre del diseño<input type="text" maxLength={MONOGRAM_LIMITS.maxTitleLength} value={project.title} onChange={(event) => setProject((current) => normalizeMonogramProject({ ...current, title: event.target.value }))} /></label>
+            <div className="monogram__field-grid">
+              <MonogramNumberField label="Ancho (mm)" min={MONOGRAM_LIMITS.minArtboard} max={MONOGRAM_LIMITS.maxArtboard} step={1} value={project.width} onCommit={(width) => setProject((current) => normalizeMonogramProject({ ...current, width }))} />
+              <MonogramNumberField label="Alto (mm)" min={MONOGRAM_LIMITS.minArtboard} max={MONOGRAM_LIMITS.maxArtboard} step={1} value={project.height} onCommit={(height) => setProject((current) => normalizeMonogramProject({ ...current, height }))} />
+            </div>
+            <MonogramNumberField label="Profundidad predeterminada (mm)" min={MONOGRAM_LIMITS.minDepth} max={MONOGRAM_LIMITS.maxDepth} step={0.1} value={project.thickness} onCommit={(thickness) => setProject((current) => normalizeMonogramProject({ ...current, thickness }))} />
+            <button type="button" className="button button-quiet monogram__reset" onClick={reset}><RotateCcw size={14} /> Reiniciar diseño</button>
+          </section>
+        </aside>
+
+        <div className="monogram__canvas-column">
+          <section className="monogram__card monogram__preview-card" aria-label="Vista previa del monograma">
+            <div className="monogram__preview-toolbar">
+              <div className="monogram__view-tabs" role="group" aria-label="Vista del diseño">
+                <button type="button" aria-pressed={view === '2d'} onClick={() => setView('2d')}>2D · vector</button>
+                <button type="button" aria-pressed={view === '3d'} onClick={() => setView('3d')}>3D · extrusión</button>
+              </div>
+              <span className="monogram__dimensions"><Layers3 size={14} /> {project.width} × {project.height} × {visibleDepth} mm</span>
+            </div>
+            <div className={`monogram__stage${view === '2d' ? ' is-flat' : ''}`}>
+              {view === '2d'
+                ? <Monogram2DStage width={project.width} height={project.height} outlines={outlines} selectedId={selectedId} onSelect={setSelectedId} onMove={moveLayer} />
+                : <Suspense fallback={<div className="monogram__viewer-loading" role="status">Preparando la vista 3D…</div>}><Monogram3DViewer width={project.width} height={project.height} outlines={outlines} /></Suspense>}
+            </div>
+            <div className="monogram__preview-footer"><span>Vista vectorial local · unidades en milímetros</span><span>Flechas mueven 1 mm; Shift + flecha, 10 mm</span></div>
+          </section>
+
+          <section className="monogram__card monogram__export-card">
+            <div className="monogram__export-heading"><div><span className="monogram__eyebrow">SALIDA ACTUAL</span><h2>SVG y archivo editable</h2></div><span className="monogram__ready-badge">Contornos vectoriales</span></div>
+            <div className="monogram__export-actions">
+              <button type="button" className="button button-dark" onClick={exportSvg} disabled={!exportReady}><ArrowDownToLine size={15} /> Exportar SVG</button>
+              <button type="button" className="button button-outline" onClick={saveJson}><ArrowDownToLine size={15} /> Guardar proyecto JSON</button>
+            </div>
+            <div className="monogram__manufacturing-note" role="note">
+              <strong>Antes de cortar o imprimir</strong>
+              <p>{MONOGRAM_GEOMETRY_LIMITATION} El SVG no incluye unión de contornos, puentes para islas, compensación de kerf ni validación de fabricación. La vista 3D apila las capas en Z como previsualización; todavía no exporta STL/3MF.</p>
+            </div>
+            {outsideWarnings.length > 0 && <div className="monogram__validation-warning" role="status"><strong>Revisa el área de trabajo</strong>{outsideWarnings.map((warning) => <p key={`${warning.elementId}-outside`}>{warning.message}</p>)}</div>}
+            {missingCharacters.length > 0 && <div className="monogram__validation-warning" role="status"><strong>Caracteres sin glifo en DM Sans</strong><p>{missingCharacters.join(' ')}. Cambia la fuente o el texto antes de exportar.</p></div>}
+            {validation.errors.map((error) => <p className="monogram__validation-error" key={error}>{error}</p>)}
+            {fontError && <p className="monogram__validation-error" role="alert">{fontError}</p>}
+            <p className="monogram__status" role="status" aria-live="polite">{status}</p>
+          </section>
+        </div>
+      </div>
+    </section>
+  );
+}

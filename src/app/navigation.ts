@@ -1,16 +1,18 @@
 import {
-  BookOpen, Boxes, BriefcaseBusiness, ChartNoAxesCombined,
+  BookOpen, Box, Boxes, BriefcaseBusiness, ChartNoAxesCombined,
   CalendarClock, CalendarDays, ClipboardList, Database, FileText, FolderOpen, Globe2, History, Image, Inbox, LayoutDashboard, Megaphone,
-  Newspaper, Palette, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Target, Truck, Users, Wallet, Radio, Workflow, MapPin, type LucideIcon,
+  Newspaper, Palette, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Target, Truck, Users, Wallet, Radio, Workflow, MapPin, Wrench, Lightbulb, type LucideIcon,
 } from 'lucide-react';
+import type { PermissionModuleKey } from '../auth/accessCatalog';
 
 export type AppNavLink = {
   to: string;
   label: string;
   icon: LucideIcon;
-  module: string;
+  module: PermissionModuleKey;
   end?: boolean;
-  anyOf?: string[];
+  anyOf?: PermissionModuleKey[];
+  keywords?: string[];
 };
 
 export type AppNavGroup = { id: string; label: string; icon: LucideIcon; paths: string[] };
@@ -21,8 +23,12 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/pos', label: 'Punto de venta', icon: ShoppingCart, module: 'sales' },
   { to: '/operaciones/mi-semana', label: 'Mi semana', icon: ChartNoAxesCombined, module: 'sales' },
   { to: '/operaciones/rutas-productos', label: 'Rutas por producto', icon: Workflow, module: 'workshop', anyOf: ['sales', 'workshop'] },
+  { to: '/operaciones/herramientas', label: 'Todas las herramientas', icon: Wrench, module: 'workshop', keywords: ['generadores', 'caja', 'monogramas', 'fabricación', 'corte láser'] },
+  { to: '/operaciones/herramientas/generador-cajas', label: 'Generador de cajas', icon: Box, module: 'workshop', keywords: ['caja', 'cajas', 'encastres', 'nesting', 'láser', 'CAM', 'MakerCase'] },
+  { to: '/operaciones/herramientas/monogramas', label: 'Generador de monogramas', icon: Sparkles, module: 'workshop', keywords: ['monograma', 'monogramas', 'iniciales', 'texto', 'tipografía', 'SVG', 'corte láser'] },
   { to: '/operaciones/trabajos/asesoria', label: 'Trabajos de asesoría', icon: ClipboardList, module: 'sales', anyOf: ['sales', 'workshop'] },
   { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'finance' },
+  { to: '/operaciones/finanzas/resumen-semanal', label: 'Resumen semanal', icon: CalendarDays, module: 'finance', keywords: ['ventas', 'cobros', 'asesoras', 'semana', 'pagos'] },
   { to: '/operaciones/cajas-abiertas', label: 'Cajas abiertas', icon: Radio, module: 'sales', anyOf: ['sales', 'cash'] },
   { to: '/operaciones/cotizador', label: 'Cotizador', icon: FileText, module: 'quotes' },
   { to: '/operaciones/crm', label: 'Solicitudes', icon: Inbox, module: 'crm' },
@@ -61,29 +67,32 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/equipo/horarios', label: 'Horarios y turnos', icon: CalendarClock, module: 'team_schedule' },
   { to: '/operaciones/manual-aprendizaje', label: 'Aprendizaje', icon: BookOpen, module: 'dashboard' },
   { to: '/operaciones/cambios', label: 'Novedades', icon: History, module: 'team' },
+  { to: '/admin/sugerencias', label: 'Sugerencias', icon: Lightbulb, module: 'team', keywords: ['mejoras', 'ideas', 'local', 'sitio web', 'procesos'] },
   { to: '/admin/respaldo', label: 'Respaldo y migración', icon: Database, module: 'backup' },
 ];
 
 export const workspaceNavGroups: AppNavGroup[] = [
-  { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/mi-semana', '/operaciones/rutas-productos', '/operaciones/trabajos/asesoria', '/operaciones/finanzas', '/operaciones/cajas-abiertas', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes', '/operaciones/catalogo', '/operaciones/servicios', '/seguimiento'] },
+  { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/mi-semana', '/operaciones/rutas-productos', '/operaciones/trabajos/asesoria', '/operaciones/finanzas', '/operaciones/finanzas/resumen-semanal', '/operaciones/cajas-abiertas', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes', '/operaciones/catalogo', '/operaciones/servicios', '/seguimiento'] },
   { id: 'production', label: 'Producción y abastecimiento', icon: Boxes, paths: ['/operaciones/automatizaciones', '/operaciones/archivos', '/operaciones/flujos', '/operaciones/kiosk', '/operaciones/coordinacion-trabajos', '/operaciones/cartelera-taller', '/operaciones/trabajos/diseno', '/operaciones/trabajos/impresion', '/operaciones/trabajos/sublimacion', '/operaciones/trabajos/laser', '/operaciones/trabajos/taller', '/operaciones/inventario', '/operaciones/compras', '/operaciones/solicitudes-compras', '/operaciones/equipos'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing', '/operaciones/marketing/calendario', '/operaciones/marketing/campanas'] },
+  { id: 'tools', label: 'Herramientas', icon: Wrench, paths: ['/operaciones/herramientas', '/operaciones/herramientas/generador-cajas', '/operaciones/herramientas/monogramas'] },
   { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
-  { id: 'team', label: 'Equipo y sistema', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo', '/operaciones/equipo/horarios', '/operaciones/equipo/biblioteca-ui', '/operaciones/manual-aprendizaje', '/operaciones/cambios', '/admin/respaldo'] },
+  { id: 'team', label: 'Equipo y sistema', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo', '/operaciones/equipo/horarios', '/operaciones/equipo/biblioteca-ui', '/operaciones/manual-aprendizaje', '/operaciones/cambios', '/admin/sugerencias', '/admin/respaldo'] },
 ];
 
 /**
  * Route-to-module index shared by the route guard and sidebar.
  * Existing /admin and /operaciones roots are compatibility aliases to /panel.
  */
-export const permissionByPath: Record<string, string> = Object.fromEntries(
+export const permissionByPath: Record<string, PermissionModuleKey> = Object.fromEntries(
   [
     ...workspaceNavigation.map(({ to, module }) => [to, module]),
+    ['/operaciones/herramientas/', 'workshop'], ['/operaciones/herramientas/generador-cajas/', 'workshop'],
     ['/admin/solicitudes', 'crm'], ['/admin/marketing', 'marketing'],
     ['/admin/cambios', 'team'], ['/admin/contenido', 'website'], ['/admin/catalogo', 'catalog_admin'],
     ['/admin', 'dashboard'], ['/operaciones', 'dashboard'],
   ],
-);
+) as Record<string, PermissionModuleKey>;
 
 export const legacyPanelPaths = new Set(['/admin', '/operaciones']);
 

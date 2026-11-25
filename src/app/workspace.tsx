@@ -180,6 +180,7 @@ function readState() {
 
 export function WorkspaceProvider({ children }) {
   const [data, setData] = useState(readState);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected' | 'unavailable'>(() => supabaseConfigured ? 'checking' : 'unavailable');
   const [notice, setNotice] = useState('');
   const noticeTimerRef = useRef<number | null>(null);
   const { organizationId, user, hasPermission } = useAuth();
@@ -206,7 +207,10 @@ export function WorkspaceProvider({ children }) {
     return () => { active = false; };
   }, [user]);
   const refreshRemote = useCallback(async () => {
-    if (!supabase || !organizationId || !user) return;
+    if (!supabase || !supabaseConfigured) { setConnectionStatus('unavailable'); return; }
+    if (!organizationId || !user) return;
+    setConnectionStatus('checking');
+    try {
     const read = (query: any, module: string, action = 'view'): Promise<any> => {
       const costActionAllowed = !['view_costs','edit_costs'].includes(action) || hasPermission('inventory_costs', action === 'view_costs' ? 'view' : 'edit');
       return hasPermission(module, action) && costActionAllowed ? query : Promise.resolve({ data: [], error: null });
@@ -241,7 +245,7 @@ export function WorkspaceProvider({ children }) {
       supabase.from('public_quote_catalog_products').select('*').order('sort_order'),
     ]);
     const failed = [itemsResult, variantsResult, stockResult, areasResult, categoriesResult, branchesResult, locationsResult, movementsResult, customersResult, salesResult, costsResult, metricsResult, groupsResult].find((result) => result.error);
-    if (failed) { setNotice(`No se pudieron sincronizar todos los datos operativos: ${failed.error.message}`); return; }
+    if (failed) { setConnectionStatus('disconnected'); setNotice(`No se pudieron sincronizar todos los datos operativos: ${failed.error.message}`); return; }
     const itemById = new Map<string, any>((itemsResult.data || []).map((row: any) => [row.id, row]));
     const inventoryImagePaths: string[] = [...new Set<string>((itemsResult.data || []).flatMap((row: any) => [inventoryReferenceStoragePath(row.reference_image_url), ...(Array.isArray(row.custom_fields?.product_image_paths) ? row.custom_fields.product_image_paths.map((value: unknown) => inventoryReferenceStoragePath(typeof value === 'string' ? value : '')) : [])]).filter((path: string | null): path is string => Boolean(path)))];
     const signedInventoryImages = new Map<string, string>();
@@ -316,6 +320,11 @@ export function WorkspaceProvider({ children }) {
     const paymentLabels = { cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', other: 'Otro' };
     const remoteSales = (salesResult.data || []).map((row) => { const paid = (row.sale_payments || []).reduce((sum, payment) => sum + Number(payment.amount), 0); const methods = [...new Set((row.sale_payments || []).map((payment) => payment.method))]; return { id: row.id, code: row.sale_code || row.id.slice(0, 8), total: Number(row.total), paid, balance: Math.max(0, Number(row.total) - paid), date: row.created_at, method: methods.length > 1 ? 'Pago dividido' : paymentLabels[methods[0] || row.payment_method] || 'Otro', customer: customerById.get(row.customer_id)?.name || '', description: (row.sale_lines || []).map((line) => line.description_snapshot).join(', '), quantity: (row.sale_lines || []).reduce((sum, line) => sum + Number(line.quantity), 0), urgent: row.urgent_backorder, status: row.status, note: row.note }; });
     setData((current) => ({ ...current, branches: branchesResult.data || [], inventoryLocations, inventory: remoteInventory, catalog: catalogResult.error ? current.catalog : (catalogResult.data || []).map(mapRemoteCatalogProduct), inventoryGroups: (groupsResult.data || []).map((row: any) => ({ id: row.id, organizationId: row.organization_id, name: row.name, description: row.description || '', iconKey: row.icon_key, colorKey: row.color_key, showInMain: row.show_in_main, displayOrder: row.display_order || 0, archivedAt: row.archived_at || null })), inventoryMovements: remoteMovements, customers: remoteCustomers, sales: remoteSales }));
+    setConnectionStatus('connected');
+    } catch (error: any) {
+      setConnectionStatus('disconnected');
+      setNotice(`No se pudo comprobar la conexión con Supabase: ${error?.message || 'Error de red.'}`);
+    }
   }, [organizationId, user, hasPermission]);
   useEffect(() => { void refreshRemote(); }, [refreshRemote]);
   useEffect(() => {
@@ -355,7 +364,7 @@ export function WorkspaceProvider({ children }) {
   };
   const update = (collection, id, patch) => setData((current) => ({ ...current, [collection]: current[collection].map((row) => row.id === id ? { ...row, ...patch, updatedAt: new Date().toISOString() } : row) }));
   const remove = (collection, id) => setData((current) => ({ ...current, [collection]: current[collection].filter((row) => row.id !== id) }));
-  const api = useMemo(() => ({ data, setData, add, update, remove, flash, notice, refreshRemote }), [data, flash, notice, refreshRemote]);
+  const api = useMemo(() => ({ data, setData, add, update, remove, flash, notice, refreshRemote, connectionStatus }), [data, flash, notice, refreshRemote, connectionStatus]);
   return <WorkspaceContext.Provider value={api}>{children}{notice && <div className="vc-app-toast" role="status" aria-live="polite" aria-atomic="true"><span className="vc-app-toast-icon" aria-hidden="true"><Info size={17}/></span><p>{notice}</p><button type="button" aria-label="Cerrar aviso" onClick={dismissNotice}><X size={17}/></button></div>}</WorkspaceContext.Provider>;
 }
 

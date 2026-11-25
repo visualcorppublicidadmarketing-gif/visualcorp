@@ -34,6 +34,14 @@ import { supabase } from '../lib/supabaseClient';
 import { InventoryCmykBatchModal } from './InventoryCmykBatchModal';
 import './inventory-live-ink-monitor.css';
 
+const closeLiveModalOnBackdrop = (
+  event: React.MouseEvent<HTMLDivElement>,
+  onClose: () => void,
+  busy = false,
+) => {
+  if (event.target === event.currentTarget && !busy) onClose();
+};
+
 export type ActiveInk = {
   id: string;
   organization_id: string;
@@ -2026,7 +2034,11 @@ export function InventoryLiveInkMonitor({
 
       {/* MODAL: Crear Nueva Impresora / Plotter */}
       {showCreatePrinterModal && (
-        <div className="vc-live-modal-backdrop" role="presentation">
+        <div
+          className="vc-live-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => closeLiveModalOnBackdrop(event, () => setShowCreatePrinterModal(false))}
+        >
           <form className="vc-live-modal vc-printer-form-modal" onSubmit={handleCreatePrinterSubmit}>
             <header>
               <Printer size={22} className="vc-modal-icon-printer" />
@@ -2309,7 +2321,11 @@ export function InventoryLiveInkMonitor({
 
       {/* MODAL: Configurar / Editar Impresora y Canales */}
       {editPrinterTarget && (
-        <div className="vc-live-modal-backdrop" role="presentation">
+        <div
+          className="vc-live-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => closeLiveModalOnBackdrop(event, () => setEditPrinterTarget(null))}
+        >
           <form className="vc-live-modal vc-printer-form-modal" onSubmit={handleEditPrinterSubmit}>
             <header>
               <Settings size={22} className="vc-modal-icon-settings" />
@@ -2549,7 +2565,11 @@ export function InventoryLiveInkMonitor({
 
       {/* MODAL: Eliminar Impresora */}
       {deletePrinterTarget && (
-        <div className="vc-live-modal-backdrop" role="presentation">
+        <div
+          className="vc-live-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => closeLiveModalOnBackdrop(event, () => setDeletePrinterTarget(null))}
+        >
           <div className="vc-live-modal vc-delete-printer-modal">
             <header className="vc-modal-danger-header">
               <ShieldAlert size={24} className="vc-modal-icon-danger" />
@@ -2603,7 +2623,11 @@ export function InventoryLiveInkMonitor({
 
       {/* MODAL: Flota Completa de Impresoras (Resumen Ejecutivo) */}
       {showFleetModal && (
-        <div className="vc-live-modal-backdrop" role="presentation">
+        <div
+          className="vc-live-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => closeLiveModalOnBackdrop(event, () => setShowFleetModal(false))}
+        >
           <div className="vc-live-modal vc-fleet-modal">
             <header>
               <Printer size={22} className="vc-modal-icon-printer" />
@@ -2728,7 +2752,11 @@ export function InventoryLiveInkMonitor({
 
       {/* MODAL: Vinculación Rápida de Tinta con Bodega */}
       {quickLinkInk && (
-        <div className="vc-live-modal-backdrop" role="presentation">
+        <div
+          className="vc-live-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => closeLiveModalOnBackdrop(event, () => setQuickLinkInk(null))}
+        >
           <div className="vc-live-modal vc-quick-link-modal">
             <header>
               <Link size={20} className="vc-modal-icon-zap" />
@@ -2790,7 +2818,11 @@ export function InventoryLiveInkMonitor({
 
       {/* MODAL: Rellenar Tanque Individual */}
       {refillTarget && (
-        <div className="vc-live-modal-backdrop" role="presentation">
+        <div
+          className="vc-live-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => closeLiveModalOnBackdrop(event, () => setRefillTarget(null), Boolean(updatingId))}
+        >
           <div className="vc-live-modal">
             <header>
               <Zap size={22} className="vc-modal-icon-zap" />
@@ -2889,7 +2921,11 @@ export function InventoryLiveInkMonitor({
 
       {/* MODAL: Ajuste Rápido por Lote de Máquina */}
       {batchMachine && (
-        <div className="vc-live-modal-backdrop" role="presentation">
+        <div
+          className="vc-live-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => closeLiveModalOnBackdrop(event, () => setBatchMachine(null), batchSaving)}
+        >
           <div className="vc-live-modal vc-batch-modal">
             <header>
               <SlidersHorizontal size={22} className="vc-modal-icon-zap" />
@@ -2952,6 +2988,7 @@ export function InventoryLiveInkMonitor({
                           </div>
                           <input
                             type="range"
+                            aria-label={`Nivel de ${colorCfg.name} en ${batchMachine}`}
                             min="0"
                             max="100"
                             step="5"
@@ -3015,7 +3052,11 @@ export function InventoryLiveInkMonitor({
 
       {/* MODAL: Test de Inyectores (Nozzle Check) */}
       {nozzleCheckModalMachine && (
-        <div className="vc-live-modal-backdrop" role="presentation">
+        <div
+          className="vc-live-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => closeLiveModalOnBackdrop(event, () => setNozzleCheckModalMachine(null))}
+        >
           <div className="vc-live-modal vc-nozzle-modal">
             <header>
               <Sparkles size={22} className="vc-modal-icon-settings" />
@@ -3115,7 +3156,11 @@ export function InventoryLiveInkMonitor({
 
       {/* MODAL: Entrada Rápida a Bodega */}
       {quickEntryInk && (
-        <div className="vc-live-modal-backdrop" role="presentation">
+        <div
+          className="vc-live-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => closeLiveModalOnBackdrop(event, () => setQuickEntryInk(null), quickEntryBusy)}
+        >
           <div className="vc-live-modal">
             <header>
               <Boxes size={22} className="vc-modal-icon-settings" />

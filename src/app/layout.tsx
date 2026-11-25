@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowUpRight, ChevronDown, ChevronRight, CircleHelp, LayoutDashboard, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, X, type LucideIcon } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, ChevronRight, CircleHelp, LayoutDashboard, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Search, Sun, X, type LucideIcon } from 'lucide-react';
 import { useWorkspace } from './workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { AdminCommandPalette } from '../components/AdminCommandPalette';
@@ -12,6 +12,7 @@ import { Avatar, getGoogleAvatarUrl } from '../components/ui/Avatar';
 import { ProductionAttention } from '../pages/operations/ProductionAttention';
 import { Sidebar } from './Sidebar';
 import { ThemeSwitcher } from '../components/ui/ThemeSwitcher';
+import { requestGlobalCommandPaletteOpen } from '../components/ui/GlobalCommandPalette';
 import { useTheme } from './ThemeProvider';
 import './admin-dark-theme.css';
 import './admin-dark-refinements.css';
@@ -27,12 +28,14 @@ export function Brand({ dark = false }: BrandProps) {
 }
 export interface AppFrameProps { area: AppArea; children: React.ReactNode }
 export function AppFrame({ area, children }: AppFrameProps) {
-  const { data } = useWorkspace();
+  const { data, connectionStatus } = useWorkspace();
   const { user, roles, profiles, hasPermission, signOut } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const { theme, toggleTheme } = useTheme();
+  const connectionLabel = connectionStatus === 'connected' ? 'Conexión con Supabase activa' : connectionStatus === 'checking' ? 'Comprobando conexión con Supabase' : connectionStatus === 'unavailable' ? 'Supabase no está configurado' : 'Sin conexión con Supabase';
+  const connectionColor = connectionStatus === 'connected' ? '#10b981' : connectionStatus === 'checking' ? '#d88928' : '#e05d70';
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return window.localStorage.getItem('vc-suite-sidebar-collapsed') === 'true'; } catch { return false; }
@@ -78,6 +81,8 @@ export function AppFrame({ area, children }: AppFrameProps) {
   const googleAvatarUrl = getGoogleAvatarUrl(user);
   const directNavLinks = nav.filter((link) => !navGroupDefinitions.some((group) => group.paths.includes(link.to)));
   const contextActions: ContextMenuAction[] = [
+    { label: 'Buscar en toda la Suite', icon: <Search size={14}/>, shortcut: 'Ctrl+K', onSelect: requestGlobalCommandPaletteOpen },
+    { kind: 'separator', label: '', onSelect: () => {} },
     { label: 'Ir al inicio del panel', icon: <LayoutDashboard size={14}/>, onSelect: () => navigate('/panel') },
     ...navGroups.map((group) => {
       const GroupIcon = group.icon;
@@ -119,7 +124,7 @@ export function AppFrame({ area, children }: AppFrameProps) {
       toggleTheme={toggleTheme}
     />
     {mobileNavOpen && <button className="mobile-nav-backdrop" aria-label="Cerrar menú" onClick={() => setMobileNavOpen(false)}/>}
-    <div className="main-shell"><header className="topbar"><button className="desktop-sidebar-toggle" type="button" aria-label={sidebarCollapsed ? 'Expandir barra lateral (Ctrl+B)' : 'Contraer barra lateral (Ctrl+B)'} aria-pressed={sidebarCollapsed} title={sidebarCollapsed ? 'Expandir barra lateral (Ctrl+B)' : 'Contraer barra lateral (Ctrl+B)'} onClick={toggleSidebar}>{sidebarCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}</button><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'} aria-expanded={mobileNavOpen} aria-controls="sidebar-workspace" onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}</button><div className="breadcrumbs"><span>{areaTitle}</span><ChevronRight size={14}/><b>{data.settings.name}</b></div><div className="topbar-right"><ThemeSwitcher theme={theme} onToggle={toggleTheme} variant="capsule" /><AdminCommandPalette items={nav}/><ProductionAttention/><span className="local-badge"><PulsingBeacon size={7} color="#10b981" /> Supabase conectado</span><button className="top-avatar" aria-label={`Cerrar sesión de ${userDisplayName}`} title={userDisplayName} onClick={signOut}><Avatar name={userDisplayName} src={googleAvatarUrl} size="sm" badge={googleAvatarUrl ? <span className="vc-google-avatar-mark">G</span> : undefined}/></button></div></header><main className="main-content"><motion.div key={pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.24 }}>{children}</motion.div><footer className="local-footer">Acceso autenticado y permisos comprobados en Supabase.</footer></main></div>
+    <div className="main-shell"><header className="topbar"><button className="desktop-sidebar-toggle" type="button" aria-label={sidebarCollapsed ? 'Expandir barra lateral (Ctrl+B)' : 'Contraer barra lateral (Ctrl+B)'} aria-pressed={sidebarCollapsed} title={sidebarCollapsed ? 'Expandir barra lateral (Ctrl+B)' : 'Contraer barra lateral (Ctrl+B)'} onClick={toggleSidebar}>{sidebarCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}</button><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'} aria-expanded={mobileNavOpen} aria-controls="sidebar-workspace" onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}</button><div className="breadcrumbs"><span>{areaTitle}</span><ChevronRight size={14}/><b>{data.settings.name}</b></div><div className="topbar-right"><ThemeSwitcher theme={theme} onToggle={toggleTheme} variant="capsule" /><AdminCommandPalette items={nav}/><ProductionAttention/><span className="local-badge connection-indicator" title={connectionLabel}><PulsingBeacon size={8} color={connectionColor} label={connectionLabel}/></span><button className="top-avatar" aria-label={`Cerrar sesión de ${userDisplayName}`} title={userDisplayName} onClick={signOut}><Avatar name={userDisplayName} src={googleAvatarUrl} size="sm" badge={googleAvatarUrl ? <span className="vc-google-avatar-mark">G</span> : undefined}/></button></div></header><main className="main-content"><motion.div key={pathname} className="vc-route-frame" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.24 }}>{children}</motion.div><footer className="local-footer">Acceso autenticado y permisos comprobados en Supabase.</footer></main></div>
   </div>;
 }
 

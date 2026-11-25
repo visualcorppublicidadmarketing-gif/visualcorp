@@ -36,7 +36,7 @@ Las migraciones versionadas están en `supabase/migrations/`. Revisa el estado l
 ## Rutas principales
 
 - Sitio público: `/`, `/servicios`, `/nosotros`, `/como-trabajamos`, `/contacto`, `/cotizador`, `/tienda`, `/portafolio`, `/blog` y `/publicaciones`.
-- Administración: `/admin`, `/admin/sitio`, `/admin/contenido` y `/admin/solicitudes`.
+- Administración: `/admin`, `/admin/sitio`, `/admin/contenido`, `/admin/solicitudes` y `/admin/sugerencias`.
 - Operaciones: /operaciones, /operaciones/pos, /operaciones/cotizador, /operaciones/inventario, /operaciones/compras, /operaciones/clientes y /operaciones/marketing.
 
 Los perfiles configurables y la matriz de permisos ya están aplicados en Supabase con validación de servidor y RLS. Consulta [docs/MODELO_USUARIOS_ROLES_Y_PERMISOS_VISUAL_CORP.md](docs/MODELO_USUARIOS_ROLES_Y_PERMISOS_VISUAL_CORP.md) para el flujo de asignación, los límites de cuentas y el estado de verificación. Una cuenta nueva debe iniciar sesión una vez antes de que se le pueda asignar un perfil.
@@ -66,6 +66,11 @@ Consulta `docs/FLUJO_TRABAJO_EN_PARALELO_Y_PUBLICACION.md` para el flujo detalla
 La carpeta `src/legacy-reference/` contiene material de referencia. No importes sus datos, tarifas, migraciones ni activos en Visual Corp sin cotejar su procedencia y vigencia. Los precios y especificaciones comerciales deben permanecer pendientes hasta confirmarlos con una fuente vigente.
 
 ## Continuidad del trabajo
+
+- **Sugerencias de mejora (25 de noviembre de 2026):** nueva página privada `/admin/sugerencias`, visible en «Equipo y sistema». Permite registrar propuestas para el sitio, el local físico, atención, procesos, equipo u otras áreas; filtra por texto, categoría y estado, y el seguimiento de estado requiere permiso de edición del equipo. La tabla `admin_suggestions` y sus políticas RLS están definidas en `supabase/migrations/20261125193000_admin_suggestions.sql`. Implementación local sin publicar; la migración queda pendiente de aplicación en Supabase. `npm run build:checked` y `git diff --check` pasaron.
+
+- **Monogramas 2D/3D (25 de noviembre de 2026):** primera herramienta local en `/operaciones/herramientas/monogramas`; editor de capas de texto, vista vectorial/Three.js y exportación SVG. Sus límites de fabricación y tareas siguientes están en [implementación V1](docs/reverse-engineering/Monogramas-2026-11-25/IMPLEMENTACION_V1.md) y el [roadmap de herramientas paramétricas](docs/reverse-engineering/HERRAMIENTAS_PARAMETRICAS_ROADMAP_2026-11-25.md). No publicado ni verificado en navegador.
+- **Generadores paramétricos Burro Creativo (25 de noviembre de 2026):** capturas del catálogo y Caja flexible, con observaciones de UI separadas de las hipótesis sobre el código, en [docs/reverse-engineering/BurroCreativo-2026-11-25/ANALISIS_ARQUITECTURA_GENERADORES.md](docs/reverse-engineering/BurroCreativo-2026-11-25/ANALISIS_ARQUITECTURA_GENERADORES.md).
 
 - **Usuarios y Accesos (19 de noviembre de 2026):** el panel incorpora solicitudes de usuarios de Google sin perfil, aprobación con perfil, descarte e invitaciones con mensaje copiable. La confirmación de registro se muestra después de recibir la respuesta de Supabase. El archivo `20261119184952_organization_access_requests.sql` coincide con la migración registrada en producción. La compilación y las pruebas locales de solicitudes y acceso manual pasaron.
 
