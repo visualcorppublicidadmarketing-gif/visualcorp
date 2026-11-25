@@ -36,7 +36,7 @@ Las migraciones versionadas están en `supabase/migrations/`. Revisa el estado l
 ## Rutas principales
 
 - Sitio público: `/`, `/servicios`, `/nosotros`, `/como-trabajamos`, `/contacto`, `/cotizador`, `/tienda`, `/portafolio`, `/blog` y `/publicaciones`.
-- Administración: `/admin`, `/admin/sitio`, `/admin/contenido` y `/admin/solicitudes`.
+- Administración: `/admin`, `/admin/sitio`, `/admin/contenido`, `/admin/solicitudes` y `/admin/sugerencias`.
 - Operaciones: /operaciones, /operaciones/pos, /operaciones/cotizador, /operaciones/inventario, /operaciones/compras, /operaciones/clientes y /operaciones/marketing.
 
 La tienda incluye una colección visual de ejemplos en `/tienda?coleccion=souvenirs`. Revisa [docs/GALERIA_SOUVENIRS_TIENDA.md](docs/GALERIA_SOUVENIRS_TIENDA.md) para el flujo y el cuidado de sus imágenes.
@@ -68,6 +68,8 @@ Consulta `docs/FLUJO_TRABAJO_EN_PARALELO_Y_PUBLICACION.md` para el flujo detalla
 La carpeta `src/legacy-reference/` contiene material de referencia. No importes sus datos, tarifas, migraciones ni activos en Visual Corp sin cotejar su procedencia y vigencia. Los precios y especificaciones comerciales deben permanecer pendientes hasta confirmarlos con una fuente vigente.
 
 ## Continuidad del trabajo
+
+- **Sugerencias de mejora (25 de noviembre de 2026):** nueva página privada `/admin/sugerencias`, visible en «Administración». Permite registrar propuestas para el sitio, el local físico, atención, procesos, equipo u otras áreas; filtra por texto, categoría y estado, y el seguimiento de estado requiere permiso de edición del equipo. La tabla `admin_suggestions` y sus políticas RLS están definidas en `supabase/migrations/20261125193000_admin_suggestions.sql`. Implementación preparada para publicar; la migración queda pendiente de aplicación en Supabase. `npm run build:checked` y `git diff --check` pasaron.
 
 ### Herramientas paramétricas 2D/3D · 25 de noviembre de 2026
 

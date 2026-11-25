@@ -28,16 +28,15 @@ Permitir varios frentes de trabajo sin sobrescribir archivos y agrupar cambios p
 - No hacer que el despliegue de Vercel aplique SQL. Código web y esquema tienen pasos separados para que la vista previa no altere producción.
 - Una corrección de producción se entrega como una migración nueva. No fingir reversión eliminando del historial una migración aplicada.
 
-## Estado que bloquea nuevas migraciones remotas
+## Reconciliación del historial remoto (2026-11-25)
 
-Al cotejar `supabase/migrations/` con el historial remoto de `visualcorp-suite` el 22 de octubre de 2026, encontré dos versiones con el mismo nombre pero distinto timestamp:
+El historial de `visualcorp-suite` se reconcilió contra `supabase_migrations.schema_migrations`, usando las versiones y el SQL aplicado almacenado en `statements`. Supabase reportó 191 migraciones aplicadas. Se restauraron en `supabase/migrations/` las 26 versiones que faltaban localmente, con su timestamp, nombre y SQL remoto. Las 22 versiones locales cuyo timestamp no corresponde al aplicado se conservaron intactas en `supabase/migration-archive/before-remote-history-sync-2026-11-25/`; el directorio de archivo queda fuera de la ruta que procesa la CLI.
 
-| Nombre | Archivo local | Versión reportada por Supabase |
-|---|---:|---:|
-| `inventory_catalog_metrics` | `20261022174504` | `20261022175320` |
-| `inventory_metrics_fk_indexes` | `20261022180025` | `20261022180053` |
+La comparación posterior confirma que los 191 timestamps remotos están presentes localmente, sin duplicados. La única versión local pendiente es la migración de la entrega activa, `20261125193000_admin_suggestions`. No se ejecutó `migration repair` ni se volvió a aplicar SQL histórico. Las migraciones que ya tenían el mismo timestamp se dejaron intactas.
 
-No renombrar archivos ni ejecutar `migration repair` a ciegas. Primero confirmar que el SQL local coincide con lo que realmente se aplicó y determinar si el registro remoto se corrigió intencionalmente. Mientras ese cotejo no esté resuelto, no ejecutar `supabase db push` ni los scripts históricos de aplicación directa.
+La CLI de Supabase no estaba instalada en el entorno de esta reconciliación. La comparación se hizo mediante consultas de solo lectura a la conexión del proyecto Visual Corp y se verificó por separado que el conjunto de versiones locales coincide con el remoto, salvo la migración nueva pendiente.
+
+Para futuras publicaciones, repetir `supabase migration list --remote` y confirmar que la única diferencia local sea la migración nueva de la entrega. No volver a incorporar al directorio activo los archivos archivados. Los scripts `scripts/migrate-supabase.mjs`, `scripts/apply-one-migration.mjs` y `scripts/apply-supabase-sql.mjs` conservan referencias o comprobaciones históricas y no forman parte del flujo recomendado hasta su reemplazo y validación.
 
 Los scripts `scripts/migrate-supabase.mjs`, `scripts/apply-one-migration.mjs` y `scripts/apply-supabase-sql.mjs` conservan referencias o comprobaciones históricas y no forman parte del flujo recomendado para el proyecto Visual Corp hasta su reemplazo y validación.
 
