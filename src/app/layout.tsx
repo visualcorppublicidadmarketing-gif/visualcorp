@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowUp, ArrowUpRight, ChevronDown, ChevronRight, Command, Copy, LayoutDashboard, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Search, Sun, X, type LucideIcon } from 'lucide-react';
+import { ArrowUp, ArrowUpRight, ChevronDown, ChevronRight, Copy, LayoutDashboard, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Search, Sun, X, type LucideIcon } from 'lucide-react';
 import { useWorkspace } from './workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { AdminCommandPalette } from '../components/AdminCommandPalette';
@@ -12,6 +12,7 @@ import { Avatar, getGoogleAvatarUrl } from '../components/ui/Avatar';
 import { ProductionAttention } from '../pages/operations/ProductionAttention';
 import { Sidebar } from './Sidebar';
 import { ThemeSwitcher } from '../components/ui/ThemeSwitcher';
+import { requestGlobalCommandPaletteOpen } from '../components/ui/GlobalCommandPalette';
 import { useTheme } from './ThemeProvider';
 import './admin-dark-theme.css';
 import './admin-dark-refinements.css';
@@ -151,13 +152,8 @@ export function AppFrame({ area, children }: AppFrameProps) {
     }
     announceContextFeedback(copied ? 'Enlace de esta página copiado.' : 'No se pudo copiar el enlace.');
   };
-  const openPanelSearch = () => {
-    document.querySelector<HTMLButtonElement>('.admin-command-trigger[aria-label="Buscar páginas del panel"]')?.click();
-  };
-  const openGlobalSearch = () => window.dispatchEvent(new Event('vc-open-global-command-palette'));
   const contextActions: ContextMenuAction[] = [
-    { label: 'Buscar una página', icon: <Search size={14}/>, shortcut: 'Ctrl+K / ⌘K', group: 'Herramientas', onSelect: openPanelSearch },
-    { label: 'Buscar clientes, inventario y herramientas', icon: <Command size={14}/>, shortcut: 'Ctrl+Shift+K / ⌘Shift+K', group: 'Herramientas', onSelect: openGlobalSearch },
+    { label: 'Buscar en toda la Suite', icon: <Search size={14}/>, shortcut: 'Ctrl+K / ⌘K', group: 'Herramientas', onSelect: requestGlobalCommandPaletteOpen },
     { label: 'Copiar enlace de esta página', icon: <Copy size={14}/>, group: 'Herramientas', onSelect: () => { void copyCurrentPageLink(); } },
     { label: theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro', icon: theme === 'dark' ? <Sun size={14}/> : <Moon size={14}/>, group: 'Vista', onSelect: toggleTheme },
     { kind: 'checkbox', label: 'Barra lateral compacta', icon: <PanelLeftClose size={14}/>, checked: isCompactSidebar, disabled: isAdaptiveTablet || (navigationStyle !== 'categories' && navigationStyle !== 'adaptive'), shortcut: 'Ctrl+B', group: 'Vista', onSelect: () => {}, onCheckedChange: toggleSidebar },
