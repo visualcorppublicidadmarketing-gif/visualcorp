@@ -1,7 +1,7 @@
 import {
   BookOpen, Boxes, BriefcaseBusiness, ChartNoAxesCombined,
   CalendarClock, CalendarDays, ClipboardList, Database, FileText, FolderOpen, Globe2, History, Image, Inbox, LayoutDashboard, Megaphone,
-  Newspaper, Palette, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Target, Truck, Users, Wallet, Radio, Workflow, MapPin, Box, Type, Wrench, type LucideIcon,
+  Newspaper, Palette, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Target, Truck, Users, Wallet, Radio, Workflow, MapPin, Box, Type, Wrench, Lightbulb, type LucideIcon,
 } from 'lucide-react';
 
 export type AppNavLink = {
@@ -185,6 +185,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/admin/manual-aprendizaje', label: 'Manual de administración web', icon: BookOpen, module: 'website' },
   { to: '/operaciones/equipo', aliases: ['/operaciones/equipo/usuarios'], label: 'Usuarios, perfiles y permisos', icon: ShieldCheck, module: 'team' },
   { to: '/operaciones/cambios', label: 'Novedades', icon: History, module: 'team' },
+  { to: '/admin/sugerencias', label: 'Sugerencias', icon: Lightbulb, module: 'team', keywords: ['mejoras', 'ideas', 'local', 'sitio web', 'procesos'] },
   { to: '/admin/respaldo', label: 'Respaldo y migración', icon: Database, module: 'backup' },
 ];
 
@@ -198,7 +199,7 @@ export const workspaceNavGroups: AppNavGroup[] = [
   { id: 'tools', label: 'Herramientas', icon: Wrench, paths: ['/operaciones/herramientas', '/operaciones/herramientas/generador-cajas', '/operaciones/herramientas/monogramas'] },
   { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/contenido', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
   { id: 'people', label: 'Personas', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo/horarios', '/operaciones/manual-aprendizaje'] },
-  { id: 'administration', label: 'Administración', icon: ShieldCheck, paths: ['/admin/manual-aprendizaje', '/operaciones/equipo', '/operaciones/equipo/biblioteca-ui', '/operaciones/cambios', '/admin/respaldo'] },
+  { id: 'administration', label: 'Administración', icon: ShieldCheck, paths: ['/admin/manual-aprendizaje', '/operaciones/equipo', '/operaciones/equipo/biblioteca-ui', '/operaciones/cambios', '/admin/sugerencias', '/admin/respaldo'] },
 ];
 
 /**
