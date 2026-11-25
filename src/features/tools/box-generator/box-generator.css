@@ -94,6 +94,27 @@
 .box-generator__measure-mode { display: grid; gap: 7px; margin-top: 13px; color: var(--box-muted); font-size: 11px; font-weight: 670; }
 .box-generator__measure-mode .box-generator__segmented button { min-height: 36px; }
 .box-generator__field-note { margin: 9px 0 0; color: var(--box-muted); font-size: 10px; line-height: 1.45; }
+.box-generator__model-select { display: block; width: 100%; min-width: 0; height: 40px; padding: 0 34px 0 11px; border: 1px solid var(--box-line); border-radius: 9px; background: var(--box-surface-raised); color: var(--box-ink); font: inherit; font-size: 12px; font-weight: 700; }
+.box-generator__model-number-field,
+.box-generator__model-range-field { margin-top: 12px; }
+.box-generator__model-resources { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--box-line); color: var(--box-muted); }
+.box-generator__model-resources summary { min-height: 34px; cursor: pointer; color: var(--box-accent); font-size: 11px; font-weight: 740; }
+.box-generator__model-resources p { margin: 4px 0 9px; font-size: 10px; line-height: 1.45; }
+.box-generator__model-resources ul { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.box-generator__model-resources li { display: grid; gap: 2px; min-width: 0; }
+.box-generator__model-resources a { width: fit-content; max-width: 100%; color: var(--box-accent); font-size: 11px; font-weight: 750; text-decoration-thickness: 1px; text-underline-offset: 2px; overflow-wrap: anywhere; }
+.box-generator__model-resources li span { color: var(--box-muted); font-size: 10px; line-height: 1.4; }
+.box-generator__saved-library { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--box-line); color: var(--box-muted); }
+.box-generator__saved-library summary { min-height: 34px; cursor: pointer; color: var(--box-accent); font-size: 11px; font-weight: 740; }
+.box-generator__saved-library>p { margin: 4px 0 9px; font-size: 10px; line-height: 1.45; }
+.box-generator__saved-library .box-generator__saved-empty { padding: 9px 10px; border: 1px dashed var(--box-line); border-radius: 8px; }
+.box-generator__saved-library ul { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.box-generator__saved-library li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; min-width: 0; padding: 8px; border: 1px solid var(--box-line); border-radius: 9px; background: var(--box-surface-raised); }
+.box-generator__saved-info { display: grid; gap: 3px; min-width: 0; }
+.box-generator__saved-info strong { overflow: hidden; color: var(--box-ink); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.box-generator__saved-info small { color: var(--box-muted); font-size: 9px; }
+.box-generator__saved-actions { display: flex; gap: 5px; }
+.box-generator__saved-actions .button { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 0 9px; font-size: 10px; }
 
 .box-generator__control-stack { display: grid; gap: 14px; }
 .box-generator__choice-field { display: grid; gap: 7px; color: var(--box-muted); font-size: 11px; font-weight: 680; }
@@ -179,7 +200,9 @@
 
 .box-generator button:focus-visible,
 .box-generator input:focus-visible,
-.box-generator summary:focus-visible { outline: 3px solid color-mix(in srgb, var(--box-accent), transparent 35%); outline-offset: 2px; }
+.box-generator select:focus-visible,
+.box-generator summary:focus-visible,
+.box-generator a:focus-visible { outline: 3px solid color-mix(in srgb, var(--box-accent), transparent 35%); outline-offset: 2px; }
 
 .work-app.theme-dark .box-generator,
 [data-theme='dark'] .work-app .box-generator { --box-line: var(--vc-line, #292d41); --box-surface: var(--vc-surface, #161927); --box-surface-raised: var(--vc-surface-raised, #1b2030); --box-ink: var(--vc-ink, #f1f2f7); --box-muted: var(--vc-muted, #a3a9bc); --box-accent: var(--vc-brand, #f472b6); }
@@ -197,6 +220,8 @@
   .box-generator__header { gap: 12px; }
   .box-generator__file-actions { width: 100%; }
   .box-generator__file-actions .button { flex: 1 1 145px; justify-content: center; }
+  .box-generator__saved-library li { grid-template-columns: minmax(0, 1fr); }
+  .box-generator__saved-actions { justify-content: flex-end; }
   .box-generator__controls { grid-template-columns: minmax(0, 1fr); }
   .box-generator__stage { height: clamp(260px, 80vw, 390px); }
   .box-generator__stage.is-flat { padding: 14px 10px; }

@@ -141,3 +141,11 @@ Las capturas adjuntas y su procedencia están documentadas en [references/README
 - [JSCAD/OpenJSCAD — proyecto y licencia](https://github.com/jscad/OpenJSCAD.org)
 - [Clipper2 — upstream](https://github.com/AngusJohnson/Clipper2), [port TS](https://github.com/countertype/clipper2-ts) y [port WASM](https://github.com/ErikSom/Clipper2-WASM)
 - [Three.js — ARButton](https://threejs.org/docs/pages/ARButton.html) y [MDN — WebXR](https://developer.mozilla.org/en-US/docs/Web/API/XRSystem/requestSession)
+
+## Iteración de modelos y biblioteca personal — 2026-11-25
+
+- El selector agrega caja articulada, tapa deslizable, caja para botellas con separadores y joyero compartimentado, junto a la caja básica. Medidas, grosor y planchas admiten mm, cm y pulgadas; la geometría y los vectores siguen usando milímetros.
+- Cada proyecto puede guardarse como una instantánea nombrada en el almacenamiento local del navegador, consultarse, abrirse y borrarse con confirmación. La descarga portable `.vcbox.json` usa versión 2; proyectos v1 se migran al importarlos. La biblioteca local no sincroniza entre perfiles, dispositivos ni usuarios.
+- Se muestran enlaces a MIDILLI, Buddy Packaging, BoxDiegen, Packaging Dieline, Packfino, Packaging Dock, Boxes.py y MakerCase. MIDILLI exporta JSON de su propio esquema, incompatible con `.vcbox.json`; las demás fuentes enlazadas ofrecen sobre todo vectores editables.
+- **Límite de fabricación:** la tapa flexible solo se articula en 3D; guías deslizables y separadores aún son paneles sin ranuras/tolerancias de ajuste. Cortes, kerf, herrajes y material deben validarse con probeta. La interfaz enumera estos límites antes de exportar.
+- **Verificación local:** `npm run build:checked` pasó tras añadir la biblioteca personal; no se ejecutaron pruebas automatizadas. El cambio permanece en una rama local y no está publicado.
