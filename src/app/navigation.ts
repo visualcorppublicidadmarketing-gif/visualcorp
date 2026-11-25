@@ -1,7 +1,7 @@
 import {
   BookOpen, Boxes, BriefcaseBusiness, ChartNoAxesCombined,
   CalendarClock, CalendarDays, ClipboardList, Database, FileText, FolderOpen, Globe2, History, Image, Inbox, LayoutDashboard, Megaphone,
-  Newspaper, Palette, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Target, Truck, Users, Wallet, Radio, Workflow, MapPin, Box, Wrench, type LucideIcon,
+  Newspaper, Palette, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Target, Truck, Users, Wallet, Radio, Workflow, MapPin, Box, Type, Wrench, type LucideIcon,
 } from 'lucide-react';
 
 export type AppNavLink = {
@@ -149,6 +149,7 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/operaciones/rutas-productos', label: 'Rutas por producto', icon: Workflow, module: 'workshop', anyOf: ['sales', 'workshop'] },
   { to: '/operaciones/herramientas', label: 'Todas las herramientas', icon: Wrench, module: 'workshop' },
   { to: '/operaciones/herramientas/generador-cajas', label: 'Generador de cajas', icon: Box, module: 'workshop' },
+  { to: '/operaciones/herramientas/monogramas', label: 'Editor de monogramas', icon: Type, module: 'workshop' },
   { to: '/operaciones/automatizaciones', label: 'Automatizaciones', icon: Sparkles, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
   { to: '/operaciones/flujos', label: 'Flujos y producción', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'inventory', 'workshop', 'quotes', 'purchases'] },
   { to: '/operaciones/coordinacion-trabajos', aliases: ['/operaciones/trabajos'], label: 'Coordinación de trabajos', icon: ClipboardList, module: 'workshop', anyOf: ['sales', 'workshop'] },
@@ -193,7 +194,7 @@ export const workspaceNavGroups: AppNavGroup[] = [
   { id: 'workshop-areas', label: 'Taller y áreas de trabajo', icon: ClipboardList, paths: ['/operaciones/kiosk', '/operaciones/archivos', '/operaciones/trabajos/diseno', '/operaciones/trabajos/impresion', '/operaciones/trabajos/sublimacion', '/operaciones/trabajos/laser', '/operaciones/trabajos/taller'] },
   { id: 'inventory-purchasing', label: 'Inventario y compras', icon: Boxes, paths: ['/operaciones/inventario', '/operaciones/solicitudes-compras', '/operaciones/compras', '/operaciones/equipos'] },
   { id: 'marketing', label: 'Marketing', icon: Megaphone, paths: ['/operaciones/marketing', '/operaciones/marketing/calendario', '/operaciones/marketing/campanas', '/operaciones/marketing/editor'] },
-  { id: 'tools', label: 'Herramientas', icon: Wrench, paths: ['/operaciones/herramientas', '/operaciones/herramientas/generador-cajas'] },
+  { id: 'tools', label: 'Herramientas', icon: Wrench, paths: ['/operaciones/herramientas', '/operaciones/herramientas/generador-cajas', '/operaciones/herramientas/monogramas'] },
   { id: 'website', label: 'Sitio y contenido', icon: Globe2, paths: ['/admin/sitio', '/admin/servicios', '/admin/tienda', '/admin/contenido', '/admin/blog', '/admin/publicaciones', '/admin/portafolio', '/admin/contacto'] },
   { id: 'people', label: 'Personas', icon: Users, paths: ['/operaciones/personal', '/operaciones/equipo/horarios', '/operaciones/manual-aprendizaje'] },
   { id: 'administration', label: 'Administración', icon: ShieldCheck, paths: ['/admin/manual-aprendizaje', '/operaciones/equipo', '/operaciones/equipo/biblioteca-ui', '/operaciones/cambios', '/admin/respaldo'] },
@@ -209,7 +210,7 @@ export const permissionByPath: Record<string, string> = Object.fromEntries(
       [to, module],
       ...(aliases || []).map((alias) => [alias, module]),
     ]),
-    ['/operaciones/herramientas/', 'workshop'], ['/operaciones/herramientas/generador-cajas/', 'workshop'],
+    ['/operaciones/herramientas/', 'workshop'], ['/operaciones/herramientas/generador-cajas/', 'workshop'], ['/operaciones/herramientas/monogramas/', 'workshop'],
     ['/admin/solicitudes', 'crm'], ['/admin/marketing', 'marketing'],
     ['/admin/cambios', 'team'], ['/admin/catalogo', 'catalog_admin'],
     ['/admin', 'dashboard'], ['/operaciones', 'dashboard'],

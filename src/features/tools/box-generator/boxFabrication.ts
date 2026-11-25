@@ -1,6 +1,7 @@
 import {
   buildBoxPanels,
   buildPanelOutline,
+  formatBoxLength,
   type BoxCutLayout,
   type BoxPanel,
   type BoxPanelPlacement,
@@ -52,9 +53,9 @@ interface MeasuredPanel {
   metrics: BoxPanelMetrics;
 }
 
-function requireFinite(value: number, label: string, minimum: number, inclusive = false) {
+function requireFinite(value: number, label: string, minimum: number, unit: BoxProject['unit'], inclusive = false) {
   if (!Number.isFinite(value) || (inclusive ? value < minimum : value <= minimum)) {
-    throw new Error(`${label} debe ser ${inclusive ? 'mayor o igual' : 'mayor'} que ${minimum} mm.`);
+    throw new Error(`${label} debe ser ${inclusive ? 'mayor o igual' : 'mayor'} que ${formatBoxLength(minimum, unit)}.`);
   }
 }
 
@@ -105,10 +106,10 @@ function measurePanel(panel: BoxPanel, project: BoxProject): MeasuredPanel {
  * pieces or claim optimal nesting, but never overlaps bounding boxes.
  */
 export function planBoxSheets(project: BoxProject, spec: BoxSheetSpec): BoxSheetPlan {
-  requireFinite(spec.widthMm, 'El ancho de la plancha', 0);
-  requireFinite(spec.heightMm, 'El alto de la plancha', 0);
-  requireFinite(spec.marginMm, 'El margen', 0, true);
-  requireFinite(spec.gapMm, 'La separación', 0, true);
+  requireFinite(spec.widthMm, 'El ancho de la plancha', 0, project.unit);
+  requireFinite(spec.heightMm, 'El alto de la plancha', 0, project.unit);
+  requireFinite(spec.marginMm, 'El margen', 0, project.unit, true);
+  requireFinite(spec.gapMm, 'La separación', 0, project.unit, true);
   if (!Number.isFinite(spec.widthMm * spec.heightMm)) {
     throw new Error('El área de la plancha excede el rango numérico permitido.');
   }
@@ -121,7 +122,7 @@ export function planBoxSheets(project: BoxProject, spec: BoxSheetSpec): BoxSheet
   const measured = buildBoxPanels(project).map((panel) => measurePanel(panel, project));
   for (const item of measured) {
     if (item.width > usableWidth + 1e-6 || item.height > usableHeight + 1e-6) {
-      throw new Error(`${item.panel.label} (${item.width.toFixed(1)} × ${item.height.toFixed(1)} mm) no cabe en el área útil de la plancha (${usableWidth.toFixed(1)} × ${usableHeight.toFixed(1)} mm).`);
+      throw new Error(`${item.panel.label} (${formatBoxLength(item.width, project.unit)} × ${formatBoxLength(item.height, project.unit)}) no cabe en el área útil de la plancha (${formatBoxLength(usableWidth, project.unit)} × ${formatBoxLength(usableHeight, project.unit)}).`);
     }
   }
 

@@ -99,7 +99,6 @@ export const boxModelLabels: Record<BoxModelType, string> = {
   bottle: 'Caja para botellas',
   jewelry: 'Caja para joyas',
 };
-
 export const mmToBoxUnit = (value: number, unit: BoxUnit) => unit === 'in' ? value / 25.4 : unit === 'cm' ? value / 10 : value;
 export const boxUnitToMm = (value: number, unit: BoxUnit) => unit === 'in' ? value * 25.4 : unit === 'cm' ? value * 10 : value;
 

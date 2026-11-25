@@ -5,6 +5,7 @@ import { buildStyledQrSvg, contrastRatio, type QrDotStyle } from './qrEncoder';
 import './qr-print-studio.css';
 
 type Kind = 'url' | 'whatsapp' | 'instagram' | 'wifi' | 'sms' | 'email' | 'text' | 'contact';
+type PrintUnit = 'mm' | 'cm';
 type Fields = Record<string, string | boolean>;
 const TYPES: Array<{ id: Kind; label: string; icon: ReactNode }> = [
   { id: 'url', label: 'Página web', icon: <Globe2 size={15}/> }, { id: 'whatsapp', label: 'WhatsApp', icon: <MessageCircle size={15}/> },
@@ -18,6 +19,9 @@ const presets = [
   { label: 'Violeta pro', colors: ['#4b1e8a', '#b8137c'], bg: '#ffffff' }, { label: 'Placa oscura', colors: ['#15121c', '#402338'], bg: '#fffdfb' },
 ];
 const get = (fields: Fields, key: string) => String(fields[key] ?? '');
+const printUnitToMm = (value: number, unit: PrintUnit) => unit === 'cm' ? value * 10 : value;
+const mmToPrintUnit = (value: number, unit: PrintUnit) => unit === 'cm' ? value / 10 : value;
+const formatPrintWidth = (value: number) => String(Number(value.toFixed(2)));
 const encodeWifi = (value: string) => value.replace(/([\\;,:\"])/g, '\\$1');
 const validEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 const escapeVCard = (value: string) => value.replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1');
@@ -48,7 +52,8 @@ export function QrPrintStudio() {
   const [angle, setAngle] = useState(135);
   const [logo, setLogo] = useState<string | null>(null);
   const [logoPercent, setLogoPercent] = useState(14);
-  const [widthMm, setWidthMm] = useState('30');
+  const [widthInput, setWidthInput] = useState('30');
+  const [printUnit, setPrintUnit] = useState<PrintUnit>('mm');
   const [dpi, setDpi] = useState('300');
   const [advanced, setAdvanced] = useState(false);
   const [preview, setPreview] = useState<'print' | 'plaque'>('print');
@@ -57,6 +62,10 @@ export function QrPrintStudio() {
   const [verification, setVerification] = useState<'idle' | 'checking' | 'verified' | 'failed'>('idle');
   const [verifiedSvg, setVerifiedSvg] = useState('');
   const [verifiedPng, setVerifiedPng] = useState('');
+  const parsedWidth = Number(widthInput);
+  const widthMm = widthInput.trim() && Number.isFinite(parsedWidth)
+    ? formatPrintWidth(printUnitToMm(parsedWidth, printUnit))
+    : '';
   const result = useMemo(() => serialize(kind, fields), [kind, fields]);
   const rawWhatsAppPhone = get(fields, 'phone').trim();
   const whatsappDigits = rawWhatsAppPhone.replace(/\D/g, '');
@@ -70,6 +79,13 @@ export function QrPrintStudio() {
   const ppm = moduleMm && printDpi ? moduleMm * printDpi / 25.4 : 0;
   const verified = verification === 'verified' && verifiedSvg === qr?.svg && Boolean(verifiedPng);
   const changeField = (key: string, value: string | boolean) => setFields(current => ({ ...current, [key]: value }));
+  const changePrintUnit = (nextUnit: PrintUnit) => {
+    if (widthInput.trim() && Number.isFinite(parsedWidth)) {
+      const canonicalMm = printUnitToMm(parsedWidth, printUnit);
+      setWidthInput(formatPrintWidth(mmToPrintUnit(canonicalMm, nextUnit)));
+    }
+    setPrintUnit(nextUnit);
+  };
   const verify = async () => {
     if (!qr || !result.value || !contrastOk || (logo && Number(logoPercent) > 18)) return;
     setVerification('checking');
@@ -157,7 +173,7 @@ export function QrPrintStudio() {
     <aside className="vc-qr-result"><div className="vc-qr-preview-tabs"><button type="button" className={preview==='print'?'is-active':''} aria-pressed={preview==='print'} onClick={()=>setPreview('print')}>Archivo de impresión</button><button type="button" className={preview==='plaque'?'is-active':''} aria-pressed={preview==='plaque'} onClick={()=>setPreview('plaque')}>Vista en placa</button></div>
       <div className={`vc-qr-preview ${preview==='plaque'?'is-plaque':''}`}>{preview==='plaque'?<div className="vc-qr-plaque-frame"><img className="vc-qr-plaque-base" src="/images/catalog-products/placa_qr_base.webp" alt=""/><div className="vc-qr-plaque-overlay">{qr&&<img src={svgUri} alt="Vista previa del QR en placa"/>}<span>{plaqueTitle}</span></div></div>:qr&&<img className="vc-qr-image" src={svgUri} alt="Vista previa del código QR"/>}{qr&&<span>Versión {qr.matrix.version} · Corrección {qr.matrix.ecc} · {qr.matrix.size}×{qr.matrix.size} módulos</span>}</div>
       {preview==='plaque'&&<label>Texto de la placa<input value={plaqueTitle} onChange={event=>setPlaqueTitle(event.target.value)} maxLength={24}/></label>}
-      <div className="vc-qr-print-size"><label>Ancho impreso (mm)<input type="number" min="1" max="5000" value={widthMm} onChange={event=>setWidthMm(event.target.value)}/></label><label>Resolución (DPI)<input type="number" min="1" max="9600" value={dpi} onChange={event=>setDpi(event.target.value)}/></label><p>{moduleMm?`Módulo ${moduleMm.toFixed(2)} mm · ${ppm.toFixed(1)} puntos por módulo`: 'Ingresa un ancho para calcular el tamaño del módulo.'}{ppm>0&&ppm<4?' · Considera aumentar el tamaño impreso.':''}</p></div>
+      <div className="vc-qr-print-size"><label>Ancho impreso ({printUnit})<span className="vc-qr-print-width-control"><input type="number" inputMode="decimal" min={printUnit === 'cm' ? '0.1' : '1'} max={printUnit === 'cm' ? '500' : '5000'} step={printUnit === 'cm' ? '0.01' : '0.1'} value={widthInput} onChange={event=>setWidthInput(event.target.value)}/><select value={printUnit} onChange={event=>changePrintUnit(event.target.value as PrintUnit)} aria-label="Unidad del ancho impreso"><option value="mm">mm</option><option value="cm">cm</option></select></span></label><label>Resolución (DPI)<input type="number" min="1" max="9600" value={dpi} onChange={event=>setDpi(event.target.value)}/></label><p>{moduleMm?`Módulo ${moduleMm.toFixed(2)} mm · ${ppm.toFixed(1)} puntos por módulo`: 'Ingresa un ancho para calcular el tamaño del módulo.'}{ppm>0&&ppm<4?' · Considera aumentar el tamaño impreso.':''}</p></div>
       {(result.error||capacityError)&&<p className="vc-qr-error" role="alert">{result.error||capacityError}</p>}{result.value&&<p className="vc-qr-privacy-note"><ShieldCheck size={14}/> El contenido y la clave Wi-Fi se procesan localmente.</p>}
       <div className="vc-qr-verify"><button type="button" className="site-primary-button" onClick={verify} disabled={!result.value||!qr||!contrastOk||verification==='checking'}>{verification==='checking'?'Comprobando lectura':'Comprobar lectura'}</button>{verification==='verified'&&verified&&<p className="vc-qr-success" role="status"><CheckCircle2 size={16}/> Lectura digital verificada · comprueba una muestra a tamaño real.</p>}{verification==='failed'&&<p className="vc-qr-error" role="alert">No pudimos confirmar el destino. Prueba el estilo clásico, reduce el logo y vuelve a comprobar.</p>}</div>
       <div className="vc-qr-downloads"><button type="button" onClick={()=>download('svg')} disabled={!verified||!contrastOk}><Download size={16}/> Descargar SVG</button><button type="button" onClick={()=>download('png')} disabled={!verified||!contrastOk}><Download size={16}/> Descargar PNG · 1200 px</button></div>

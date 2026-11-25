@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Box, Download, FileDown, FolderOpen, Info, RotateCcw, Save, Trash2 } from 'lucide-react';
 import { BoxCutPreview } from './BoxCutPreview';
 import { BoxGenerator3D } from './BoxGenerator3D';
@@ -26,7 +26,7 @@ import {
 import './box-generator.css';
 
 type DimensionKey = 'width' | 'height' | 'depth';
-type NumericField = DimensionKey | 'thickness' | 'fingerWidth' | 'panelGap';
+type NumericField = DimensionKey | 'thickness' | 'fingerWidth' | 'panelGap' | 'slidingClearance';
 type DraftValues = Record<NumericField, string>;
 interface SavedBoxDesign {
   id: string;
@@ -75,16 +75,33 @@ const fieldLabels: Record<NumericField, string> = {
   thickness: 'Grosor del material',
   fingerWidth: 'Ancho del dedo',
   panelGap: 'Separación entre piezas',
+  slidingClearance: 'Holgura de la tapa',
 };
+
+function displayPrecision(unit: BoxUnit) {
+  return unit === 'mm' ? 2 : unit === 'cm' ? 3 : 5;
+}
+
+function displayLength(valueMm: number, unit: BoxUnit) {
+  return String(Number(mmToBoxUnit(valueMm, unit).toFixed(displayPrecision(unit))));
+}
+
+function convertDraftValue(value: string, fromUnit: BoxUnit, toUnit: BoxUnit) {
+  if (value.trim() === '') return '';
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return value;
+  return displayLength(boxUnitToMm(numeric, fromUnit), toUnit);
+}
 
 function draftValues(project: BoxProject): DraftValues {
   return {
-    width: String(Number(mmToBoxUnit(project.dimensionsMm.width, project.unit).toFixed(2))),
-    height: String(Number(mmToBoxUnit(project.dimensionsMm.height, project.unit).toFixed(2))),
-    depth: String(Number(mmToBoxUnit(project.dimensionsMm.depth, project.unit).toFixed(2))),
-    thickness: String(Number(mmToBoxUnit(project.thicknessMm, project.unit).toFixed(2))),
-    fingerWidth: String(Number(mmToBoxUnit(project.fingerWidthMm, project.unit).toFixed(2))),
-    panelGap: String(Number(mmToBoxUnit(project.panelGapMm, project.unit).toFixed(2))),
+    width: displayLength(project.dimensionsMm.width, project.unit),
+    height: displayLength(project.dimensionsMm.height, project.unit),
+    depth: displayLength(project.dimensionsMm.depth, project.unit),
+    thickness: displayLength(project.thicknessMm, project.unit),
+    fingerWidth: displayLength(project.fingerWidthMm, project.unit),
+    panelGap: displayLength(project.panelGapMm, project.unit),
+    slidingClearance: displayLength(project.slidingClearanceMm, project.unit),
   };
 }
 
@@ -92,6 +109,7 @@ function lengthForField(project: BoxProject, field: NumericField) {
   if (field === 'thickness') return project.thicknessMm;
   if (field === 'fingerWidth') return project.fingerWidthMm;
   if (field === 'panelGap') return project.panelGapMm;
+  if (field === 'slidingClearance') return project.slidingClearanceMm;
   return project.dimensionsMm[field];
 }
 
@@ -99,10 +117,11 @@ function fieldRange(field: NumericField) {
   if (field === 'thickness') return { min: 0.5, max: 30 };
   if (field === 'fingerWidth') return { min: 3, max: 120 };
   if (field === 'panelGap') return { min: 0, max: 100 };
+  if (field === 'slidingClearance') return { min: 0, max: 5 };
   return { min: 10, max: 2000 };
 }
 
-function inputStep(unit: BoxUnit, millimeterStep = 1) {
+function inputStep(unit: BoxUnit, millimeterStep = 0.1) {
   if (unit === 'in') return '0.01';
   return String(unit === 'cm' ? millimeterStep / 10 : millimeterStep);
 }
@@ -127,6 +146,10 @@ const externalBoxResources = [
   { name: 'MakerCase', href: 'https://www.makercase.com/', note: 'Cajas, tapas, divisores y variantes para corte láser/CNC; SVG y DXF.' },
 ];
 
+function defaultSheetDraft(unit: BoxUnit) {
+  return { widthMm: '', heightMm: '', marginMm: displayLength(10, unit), gapMm: displayLength(5, unit) };
+}
+
 export function BoxGenerator() {
   const id = useId().replaceAll(':', '');
   const importRef = useRef<HTMLInputElement>(null);
@@ -134,7 +157,8 @@ export function BoxGenerator() {
   const [savedDesigns, setSavedDesigns] = useState<SavedBoxDesign[]>(readSavedDesigns);
   const [drafts, setDrafts] = useState<DraftValues>(() => draftValues(defaultBoxProject));
   const [view, setView] = useState<'3d' | '2d' | 'sheet'>('3d');
-  const [sheetDraft, setSheetDraft] = useState({ widthMm: '', heightMm: '', marginMm: '10', gapMm: '5' });
+  // Sheet draft strings remain in the selected display unit until Apply converts them to mm.
+  const [sheetDraft, setSheetDraft] = useState(() => defaultSheetDraft(defaultBoxProject.unit));
   const [sheetIndex, setSheetIndex] = useState(0);
   const [resetToken, setResetToken] = useState(0);
   const [explosion, setExplosion] = useState(0);
@@ -150,17 +174,14 @@ export function BoxGenerator() {
   const activeSheetIndex = sheetPlan ? Math.min(sheetIndex, sheetPlan.sheets.length - 1) : 0;
   const selectedSheet = sheetPlan?.sheets[activeSheetIndex];
 
-  useEffect(() => {
-    setDrafts(draftValues(project));
-  }, [project.unit, project.dimensionsMm.width, project.dimensionsMm.height, project.dimensionsMm.depth, project.thicknessMm, project.fingerWidthMm, project.panelGapMm]);
-
-  useEffect(() => {
-    setSheetDraft(project.sheetSpec
-      ? Object.fromEntries(Object.entries(project.sheetSpec).map(([key, value]) => [key, String(Number(mmToBoxUnit(value, project.unit).toFixed(2)))])) as typeof sheetDraft
-      : { widthMm: '', heightMm: '', marginMm: String(Number(mmToBoxUnit(10, project.unit).toFixed(2))), gapMm: String(Number(mmToBoxUnit(5, project.unit).toFixed(2))) });
-  }, [project.sheetSpec, project.unit]);
-
-  const updateProject = (change: Partial<BoxProject>) => setProject((current) => normalizeBoxProject({ ...current, ...change }));
+  const updateProject = (change: Partial<BoxProject>) => {
+    const nextUnit = change.unit;
+    if (nextUnit && nextUnit !== project.unit) {
+      setDrafts((current) => Object.fromEntries(Object.entries(current).map(([field, value]) => [field, convertDraftValue(value, project.unit, nextUnit)])) as DraftValues);
+      setSheetDraft((current) => Object.fromEntries(Object.entries(current).map(([field, value]) => [field, convertDraftValue(value, project.unit, nextUnit)])) as typeof sheetDraft);
+    }
+    setProject((current) => normalizeBoxProject({ ...current, ...change }));
+  };
 
   const selectModel = (modelType: BoxModelType) => {
     setProject((current) => normalizeBoxProject({
@@ -188,17 +209,21 @@ export function BoxGenerator() {
       if (field === 'thickness') return normalizeBoxProject({ ...current, thicknessMm: millimeters });
       if (field === 'fingerWidth') return normalizeBoxProject({ ...current, fingerWidthMm: millimeters });
       if (field === 'panelGap') return normalizeBoxProject({ ...current, panelGapMm: millimeters });
+      if (field === 'slidingClearance') return normalizeBoxProject({ ...current, slidingClearanceMm: millimeters });
       return normalizeBoxProject({ ...current, dimensionsMm: { ...current.dimensionsMm, [field]: millimeters } });
     });
   };
 
   const resetNumericDraft = (field: NumericField) => {
-    const value = mmToBoxUnit(lengthForField(project, field), project.unit);
-    setDrafts((current) => ({ ...current, [field]: String(Number(value.toFixed(2))) }));
+    setDrafts((current) => ({ ...current, [field]: displayLength(lengthForField(project, field), project.unit) }));
   };
 
   const applyProject = (next: BoxProject, message: string) => {
     setProject(next);
+    setDrafts(draftValues(next));
+    setSheetDraft(next.sheetSpec
+      ? Object.fromEntries(Object.entries(next.sheetSpec).map(([key, value]) => [key, displayLength(value, next.unit)])) as typeof sheetDraft
+      : defaultSheetDraft(next.unit));
     setNotice(message);
   };
 
@@ -275,16 +300,15 @@ export function BoxGenerator() {
   };
 
   const applySheet = () => {
-    const displayed = Object.fromEntries(Object.entries(sheetDraft).map(([key, value]) => [key, Number(value)])) as unknown as BoxSheetSpec;
-    const spec = {
-      widthMm: boxUnitToMm(displayed.widthMm, project.unit),
-      heightMm: boxUnitToMm(displayed.heightMm, project.unit),
-      marginMm: boxUnitToMm(displayed.marginMm, project.unit),
-      gapMm: boxUnitToMm(displayed.gapMm, project.unit),
-    };
     if (Object.values(sheetDraft).some((value) => value.trim() === '')) { setNotice('Completa las cuatro medidas de la plancha.'); return; }
+    const spec: BoxSheetSpec = {
+      widthMm: boxUnitToMm(Number(sheetDraft.widthMm), project.unit),
+      heightMm: boxUnitToMm(Number(sheetDraft.heightMm), project.unit),
+      marginMm: boxUnitToMm(Number(sheetDraft.marginMm), project.unit),
+      gapMm: boxUnitToMm(Number(sheetDraft.gapMm), project.unit),
+    };
     if (spec.widthMm < 50 || spec.widthMm > 4000 || spec.heightMm < 50 || spec.heightMm > 4000 || spec.marginMm < 0 || spec.marginMm > 100 || spec.gapMm < 0 || spec.gapMm > 100) {
-      setNotice('La plancha debe medir 50–4000 mm por lado, con margen y separación entre 0 y 100 mm.'); return;
+      setNotice(`La plancha debe medir entre ${formatBoxLength(50, project.unit)} y ${formatBoxLength(4000, project.unit)} por lado, con margen y separación entre 0 y ${formatBoxLength(100, project.unit)}.`); return;
     }
     try {
       const planned = planBoxSheets(project, spec);
@@ -398,7 +422,7 @@ export function BoxGenerator() {
               <label className="box-generator__dimension-field box-generator__model-number-field">
                 <span>Holgura de la tapa</span>
                 <span className="box-generator__input-wrap">
-                  <input type="number" inputMode="decimal" min={mmToBoxUnit(0, project.unit)} max={mmToBoxUnit(5, project.unit)} step={inputStep(project.unit, 0.1)} value={Number(mmToBoxUnit(project.slidingClearanceMm, project.unit).toFixed(2))} onChange={(event) => updateProject({ slidingClearanceMm: boxUnitToMm(Number(event.currentTarget.value), project.unit) })} aria-label={`Holgura de tapa en ${project.unit}`} />
+                  <input type="number" inputMode="decimal" min={mmToBoxUnit(0, project.unit)} max={mmToBoxUnit(5, project.unit)} step={inputStep(project.unit, 0.1)} value={drafts.slidingClearance} onChange={(event) => setNumericField('slidingClearance', event.currentTarget.value)} onBlur={() => resetNumericDraft('slidingClearance')} aria-label={`${fieldLabels.slidingClearance} en ${project.unit}`} />
                   <span>{project.unit}</span>
                 </span>
               </label>
@@ -444,7 +468,7 @@ export function BoxGenerator() {
               <label className="box-generator__dimension-field">
                 <span>{fieldLabels.thickness}</span>
                 <span className="box-generator__input-wrap">
-                  <input type="number" inputMode="decimal" min={mmToBoxUnit(0.5, project.unit)} max={mmToBoxUnit(maxBoxThicknessMm(project), project.unit)} step={inputStep(project.unit, 0.5)} value={drafts.thickness} onChange={(event) => setNumericField('thickness', event.currentTarget.value)} onBlur={() => resetNumericDraft('thickness')} aria-label={`${fieldLabels.thickness} en ${project.unit}`} />
+                  <input type="number" inputMode="decimal" min={mmToBoxUnit(0.5, project.unit)} max={mmToBoxUnit(maxBoxThicknessMm(project), project.unit)} step={inputStep(project.unit, 0.1)} value={drafts.thickness} onChange={(event) => setNumericField('thickness', event.currentTarget.value)} onBlur={() => resetNumericDraft('thickness')} aria-label={`${fieldLabels.thickness} en ${project.unit}`} />
                   <span>{project.unit}</span>
                 </span>
               </label>
@@ -456,7 +480,7 @@ export function BoxGenerator() {
                 <button type="button" aria-pressed={project.dimensionMode === 'inside'} onClick={() => updateProject({ dimensionMode: 'inside' })}>Interior</button>
               </div>
             </div>
-            <p className="box-generator__field-note">Los valores se guardan en milímetros y cambian de unidad solo en pantalla.</p>
+            <p className="box-generator__field-note">Elige mm, cm o pulgadas. Las medidas se convierten a milímetros para generar la geometría y los archivos de corte.</p>
           </section>
 
           <section className="box-generator__control-section">
@@ -480,7 +504,7 @@ export function BoxGenerator() {
               {project.jointStyle === 'finger' && (
                 <label className="box-generator__range-field">
                   <span>Ancho del dedo <b>{formatBoxLength(project.fingerWidthMm, project.unit)}</b></span>
-                  <input type="range" min={mmToBoxUnit(3, project.unit)} max={mmToBoxUnit(120, project.unit)} step={inputStep(project.unit)} value={mmToBoxUnit(project.fingerWidthMm, project.unit)} onChange={(event) => setNumericField('fingerWidth', event.currentTarget.value)} aria-label="Ancho del dedo de ensamble" />
+                  <input type="range" min={mmToBoxUnit(3, project.unit)} max={mmToBoxUnit(120, project.unit)} step={inputStep(project.unit)} value={mmToBoxUnit(project.fingerWidthMm, project.unit)} onChange={(event) => setNumericField('fingerWidth', event.currentTarget.value)} aria-label={`Ancho del dedo de ensamble en ${project.unit}`} />
                   <span className="box-generator__range-scale"><small>Fino</small><small>Ancho</small></span>
                 </label>
               )}
@@ -505,13 +529,22 @@ export function BoxGenerator() {
           <details className="box-generator__advanced">
             <summary><span><span className="box-generator__section-index">05</span> Plancha de corte</span><span className="box-generator__summary-chevron" aria-hidden="true">⌄</span></summary>
             <div className="box-generator__advanced-content">
-              <p className="box-generator__field-note">Introduce las medidas totales de tu plancha en {project.unit}; el margen reduce el área útil. Los archivos vectoriales se exportan en milímetros. Esta distribución usa rectángulos envolventes, sin rotar piezas.</p>
+              <p className="box-generator__field-note">Introduce las medidas de la plancha en {project.unit}; se convierten a milímetros para calcular el acomodo. Los archivos vectoriales se exportan en milímetros. El margen reduce el área útil y las piezas no se rotan.</p>
               <div className="box-generator__sheet-fields">
                 {([['widthMm', 'Ancho de plancha'], ['heightMm', 'Alto de plancha'], ['marginMm', 'Margen'], ['gapMm', 'Separación']] as const).map(([key, label]) => (
                   <label className="box-generator__dimension-field" key={key}>
                     <span>{label}</span>
                     <span className="box-generator__input-wrap">
-                      <input type="number" inputMode="decimal" min={mmToBoxUnit(key === 'marginMm' || key === 'gapMm' ? 0 : 50, project.unit)} max={mmToBoxUnit(key === 'marginMm' || key === 'gapMm' ? 100 : 4000, project.unit)} step={inputStep(project.unit, 0.1)} value={sheetDraft[key]} onChange={(event) => setSheetDraft((current) => ({ ...current, [key]: event.currentTarget.value }))} aria-label={`${label} en ${project.unit}`} />
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min={mmToBoxUnit(key === 'marginMm' || key === 'gapMm' ? 0 : 50, project.unit)}
+                        max={mmToBoxUnit(key === 'marginMm' || key === 'gapMm' ? 100 : 4000, project.unit)}
+                        step={inputStep(project.unit, 0.1)}
+                        value={sheetDraft[key]}
+                        onChange={(event) => setSheetDraft((current) => ({ ...current, [key]: event.currentTarget.value }))}
+                        aria-label={`${label} en ${project.unit}`}
+                      />
                       <span>{project.unit}</span>
                     </span>
                   </label>
