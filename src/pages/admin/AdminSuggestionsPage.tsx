@@ -74,7 +74,7 @@ function formatSuggestionDate(value: string) {
 
 export function AdminSuggestionsPage() {
   const { organizationId, hasPermission } = useAuth();
-  const canUpdateStatus = hasPermission('team', 'edit');
+  const canUpdateStatus = hasPermission('team', 'manage_suggestions');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [draft, setDraft] = useState<SuggestionDraft>(initialDraft);
   const [search, setSearch] = useState('');
