@@ -27,7 +27,7 @@ import { Avatar } from './ui/Avatar';
 import { useConfirm } from './ui/OperationalKit';
 import { supabase } from '../lib/supabaseClient';
 import { normalizePersonName } from '../lib/personName';
-import { legacyRoleNames, permissionModules, specialPermissionActions } from '../auth/accessCatalog';
+import { legacyRoleNames, permissionModules, specialPermissionActions, type PermissionKey } from '../auth/accessCatalog';
 import './team-access.css';
 
 const modules = permissionModules;
@@ -40,7 +40,7 @@ interface RolePreset {
   keySuggestion: string;
   badge: string;
   description: string;
-  permissions: string[];
+  permissions: PermissionKey[];
 }
 
 const ROLE_PRESETS: RolePreset[] = [
@@ -77,7 +77,7 @@ const ROLE_PRESETS: RolePreset[] = [
       'sales.edit',
       'cash.view',
       'cash.edit',
-      'cash.settle_refund',
+      'sales.settle_refund',
       'crm.view',
       'quotes.view',
       'finance.view',
@@ -93,12 +93,8 @@ const ROLE_PRESETS: RolePreset[] = [
       'dashboard.view',
       'workshop.view',
       'workshop.edit',
-      'workshop.assign_responsible',
-      'workshop.change_stage',
-      'workshop.close_order',
       'inventory.view',
       'inventory.edit',
-      'inventory.adjust_stock',
       'quotes.view',
       'sales.view',
     ],
@@ -113,13 +109,14 @@ const ROLE_PRESETS: RolePreset[] = [
       'dashboard.view',
       'inventory.view',
       'inventory.edit',
-      'inventory.adjust_stock',
       'inventory_costs.view',
       'inventory_costs.edit',
-      'inventory_costs.view_cost',
+      'inventory_costs.view_costs',
+      'inventory_costs.edit_costs',
       'purchases.view',
       'purchases.edit',
       'purchases.approve_purchase',
+      'purchases.receive_purchase',
       'catalog_admin.view',
     ],
   },
@@ -133,13 +130,26 @@ const ROLE_PRESETS: RolePreset[] = [
       'dashboard.view',
       'marketing.view',
       'marketing.edit',
-      'marketing.publish_campaign',
       'website.view',
       'website.edit',
-      'website.publish',
+      'website.publish_content',
       'catalog_admin.view',
       'catalog_admin.edit',
       'crm.view',
+    ],
+  },
+  {
+    id: 'hr_schedule_admin',
+    name: 'Gestión de Personal y Horarios',
+    keySuggestion: 'gestion_personal_horarios',
+    badge: 'Personal · Horarios · Turnos',
+    description: 'Gestiona fichas laborales, horarios y turnos, sin acceso a remuneraciones ni finanzas.',
+    permissions: [
+      'dashboard.view',
+      'personnel.view',
+      'personnel.edit',
+      'team_schedule.view',
+      'team_schedule.edit',
     ],
   },
   {
@@ -158,9 +168,11 @@ const ROLE_PRESETS: RolePreset[] = [
       'personnel.edit',
       'personnel.view_compensation',
       'personnel.edit_compensation',
+      'team_schedule.view',
+      'team_schedule.edit',
       'cash.view',
       'cash.edit',
-      'cash.settle_refund',
+      'sales.settle_refund',
       'sales.view',
       'sales.edit',
       'quotes.view',
@@ -169,7 +181,7 @@ const ROLE_PRESETS: RolePreset[] = [
       'crm.edit',
       'inventory.view',
       'inventory_costs.view',
-      'inventory_costs.view_cost',
+      'inventory_costs.view_costs',
       'purchases.view',
       'purchases.edit',
       'purchases.approve_purchase',
@@ -513,6 +525,8 @@ export function TeamAccess() {
       const [moduleKey, actionKey] = key.split('.');
       if (actionKey === 'edit' && enabled) next[`${moduleKey}.view`] = true;
       if (actionKey === 'view' && !enabled) next[`${moduleKey}.edit`] = false;
+      if (moduleKey === 'team' && actionKey === 'view' && !enabled) next['team.manage_suggestions'] = false;
+      if (moduleKey === 'team' && actionKey === 'manage_suggestions' && enabled) next['team.view'] = true;
       if (moduleKey === 'personnel' && actionKey === 'view' && !enabled) {
         next['personnel.view_compensation'] = false;
         next['personnel.edit_compensation'] = false;
@@ -1192,7 +1206,7 @@ export function TeamAccess() {
                         const avatarUrl = account.googleAccount?.avatar_url;
                         const linkedWorker = account.linkedPersonnel;
                         const canSellPos = account.isOwner || account.effectivePerms.has('sales.edit');
-                        const canSettleRefund = account.isOwner || account.effectivePerms.has('cash.settle_refund');
+                        const canSettleRefund = account.isOwner || account.effectivePerms.has('sales.settle_refund');
                         const canManageSalaries = account.isOwner || account.effectivePerms.has('personnel.edit_compensation');
                         const canEditPrices = account.isOwner || account.effectivePerms.has('catalog_admin.edit_prices');
                         const assignedProfileIds = new Set(account.memberships.map((m: any) => m.access_profile_id));
@@ -1923,11 +1937,11 @@ export function TeamAccess() {
                       )}
                     </div>
 
-                    <div className={`team-gov-box ${matrix['cash.settle_refund'] ? 'is-enabled' : ''}`}>
+                    <div className={`team-gov-box ${matrix['sales.settle_refund'] ? 'is-enabled' : ''}`}>
                       <div className="team-gov-box-head">
                         <BadgeDollarSign size={15} />
                         <b>Liquidación de Devoluciones en Caja</b>
-                        <span className="team-gov-status">{matrix['cash.settle_refund'] ? 'Autorizado' : 'Restringido'}</span>
+                        <span className="team-gov-status">{matrix['sales.settle_refund'] ? 'Autorizado' : 'Restringido'}</span>
                       </div>
                       <p>
                         Controla quién puede ejecutar devoluciones de dinero en efectivo o transferencia y saldar notas de crédito en sesiones de caja.
@@ -1936,13 +1950,13 @@ export function TeamAccess() {
                         <label className="team-gov-quick-check">
                           <input
                             type="checkbox"
-                            checked={Boolean(matrix['cash.settle_refund'])}
+                            checked={Boolean(matrix['sales.settle_refund'])}
                             onChange={(e) => {
                               if (e.target.checked) {
                                 setPermission('cash.view', true);
                                 setPermission('cash.edit', true);
                               }
-                              setPermission('cash.settle_refund', e.target.checked);
+                              setPermission('sales.settle_refund', e.target.checked);
                             }}
                           />
                           <span>Autorizar liquidación de devoluciones en caja</span>
@@ -1950,12 +1964,12 @@ export function TeamAccess() {
                       )}
                     </div>
 
-                    <div className={`team-gov-box ${matrix['catalog_admin.edit_prices'] || matrix['inventory_costs.view_cost'] ? 'is-enabled' : ''}`}>
+                    <div className={`team-gov-box ${matrix['catalog_admin.edit_prices'] || matrix['inventory_costs.view_costs'] ? 'is-enabled' : ''}`}>
                       <div className="team-gov-box-head">
                         <KeyRound size={15} />
                         <b>Tarifas de Catálogo y Costos</b>
                         <span className="team-gov-status">
-                          {matrix['catalog_admin.edit_prices'] ? 'Edita precios' : matrix['inventory_costs.view_cost'] ? 'Ve costos' : 'Protegido'}
+                          {matrix['catalog_admin.edit_prices'] ? 'Edita precios' : matrix['inventory_costs.view_costs'] ? 'Ve costos' : 'Protegido'}
                         </span>
                       </div>
                       <p>
@@ -1977,10 +1991,10 @@ export function TeamAccess() {
                           <label className="team-gov-quick-check">
                             <input
                               type="checkbox"
-                              checked={Boolean(matrix['inventory_costs.view_cost'])}
+                              checked={Boolean(matrix['inventory_costs.view_costs'])}
                               onChange={(e) => {
                                 if (e.target.checked) setPermission('inventory_costs.view', true);
-                                setPermission('inventory_costs.view_cost', e.target.checked);
+                                setPermission('inventory_costs.view_costs', e.target.checked);
                               }}
                             />
                             <span>Ver costos de inventario</span>
