@@ -414,6 +414,7 @@ export function UnifiedHome() {
           </div>
           <div className="unified-dashboard-hero-actions">
           {(loading || updatedAt) && <div className="unified-summary-meta" role="status" aria-live="polite"><span className={`status-dot${error ? ' is-warning' : ''}`}/>{loading ? 'Actualizando información…' : error ? `Última consulta: ${updatedAt} · sin actualizar` : `Información actualizada a las ${updatedAt}`}</div>}
+          <Link className="unified-dashboard-action" to="/admin/presentacion">Presentar la Suite <ArrowUpRight size={17} aria-hidden="true"/></Link>
           <a className="unified-dashboard-action" href="#dashboard-shortcuts">Ver accesos directos <ArrowUpRight size={17} aria-hidden="true"/></a>
           </div>
         </div>
