@@ -42,6 +42,26 @@ import {
 } from 'lucide-react';
 import './AutomationCenter.css';
 
+type BomDimensionUnit = 'cm' | 'm';
+
+function formatBomDimensionInput(valueM: number, unit: BomDimensionUnit) {
+  const value = unit === 'cm' ? valueM * 100 : valueM;
+  return String(Number(value.toFixed(unit === 'cm' ? 2 : 4)));
+}
+
+function parseBomDimensionInput(value: string, unit: BomDimensionUnit) {
+  if (!value.trim()) return null;
+  const entered = Number(value.replace(',', '.'));
+  if (!Number.isFinite(entered)) return null;
+  const meters = unit === 'cm' ? entered / 100 : entered;
+  return Math.max(0.1, Number(meters.toFixed(4)));
+}
+
+function formatBomDimension(valueM: number, unit: BomDimensionUnit) {
+  const value = unit === 'cm' ? valueM * 100 : valueM;
+  return new Intl.NumberFormat('es-EC', { maximumFractionDigits: unit === 'cm' ? 2 : 4 }).format(value);
+}
+
 export type AutomationModule =
   | 'Producción & MRP'
   | 'Inventario & Stock'
@@ -402,9 +422,28 @@ export function AutomationCenter() {
   const [bomJobType, setBomJobType] = useState<string>('lona-320');
   const [bomWidthM, setBomWidthM] = useState<number>(3.0);
   const [bomHeightM, setBomHeightM] = useState<number>(2.0);
+  const [bomUnit, setBomUnit] = useState<BomDimensionUnit>('m');
+  const [bomWidthDraft, setBomWidthDraft] = useState<string | null>(null);
+  const [bomHeightDraft, setBomHeightDraft] = useState<string | null>(null);
   const [bomQuantity, setBomQuantity] = useState<number>(1);
   const [bomWastePercent, setBomWastePercent] = useState<number>(10);
   const [bomInkProfile, setBomInkProfile] = useState<'eco' | 'std' | 'high'>('std');
+
+  const changeBomUnit = (unit: BomDimensionUnit) => {
+    setBomWidthDraft(null);
+    setBomHeightDraft(null);
+    setBomUnit(unit);
+  };
+
+  const updateBomDimension = (dimension: 'width' | 'height', value: string) => {
+    if (dimension === 'width') setBomWidthDraft(value);
+    else setBomHeightDraft(value);
+
+    const meters = parseBomDimensionInput(value, bomUnit);
+    if (meters === null) return;
+    if (dimension === 'width') setBomWidthM(meters);
+    else setBomHeightM(meters);
+  };
 
   // Live Inks & Rolls reading with fallback
   const liveInks: ActiveInkTank[] = useMemo(() => {
@@ -949,14 +988,14 @@ export function AutomationCenter() {
       ruleCode: 'AUTO-MRP-01',
       ruleName: 'Simulación de Receta BOM (Medusa ReservationItem)',
       trigger: 'manual_webhook',
-      affectedRecord: `Trabajo: ${bomJobType} (${bomWidthM}m x ${bomHeightM}m)`,
+      affectedRecord: `Trabajo: ${bomJobType} (${formatBomDimension(bomWidthM, bomUnit)} ${bomUnit} x ${formatBomDimension(bomHeightM, bomUnit)} ${bomUnit})`,
       module: 'Producción & MRP',
       detail: `Reservados virtualmente ${bomCalculated.totalAreaM2} m² de sustrato y ${bomCalculated.totalInkMl} ml de tinta CMYK en el motor Autopilot.`,
       status: 'Éxito',
     };
     setLogs((prev) => [newLog, ...prev]);
     flash(`✅ Reserva Medusa simulada: ${bomCalculated.totalAreaM2} m² apartados en inventario.`);
-  }, [bomJobType, bomWidthM, bomHeightM, bomCalculated, flash]);
+  }, [bomJobType, bomWidthM, bomHeightM, bomUnit, bomCalculated, flash]);
 
   return (
     <div className="vc-auto-container" role="main" aria-label="Centro de Automatización Empresarial">
@@ -1498,7 +1537,7 @@ export function AutomationCenter() {
                 </div>
                 <div>
                   <h3 className="vc-auto-diag-title">Simulador de Receta BOM (Medusa ReservationItem)</h3>
-                  <p className="vc-auto-diag-subtitle">Calcula consumo anticipado de sustratos y tintas antes de mandar a imprimir</p>
+                  <p className="vc-auto-diag-subtitle">Calcula consumo de sustratos y tintas con medidas decimales en metros o centímetros</p>
                 </div>
               </div>
               <span className="vc-auto-badge vc-auto-badge-success">Motor Predictivo</span>
@@ -1522,28 +1561,47 @@ export function AutomationCenter() {
                   </select>
                 </div>
 
+                <div className="vc-auto-field-group">
+                  <label className="vc-auto-field-label" htmlFor="vc-auto-bom-unit">Unidad de medida</label>
+                  <select
+                    id="vc-auto-bom-unit"
+                    className="vc-auto-filter-select"
+                    value={bomUnit}
+                    onChange={(e) => changeBomUnit(e.target.value as BomDimensionUnit)}
+                  >
+                    <option value="m">Metros (m)</option>
+                    <option value="cm">Centímetros (cm)</option>
+                  </select>
+                </div>
+
                 <div className="vc-auto-input-row">
                   <div className="vc-auto-field-group">
-                    <label className="vc-auto-field-label">Ancho (Metros)</label>
+                    <label className="vc-auto-field-label" htmlFor="vc-auto-bom-width">Ancho ({bomUnit})</label>
                     <input
+                      id="vc-auto-bom-width"
                       type="number"
-                      step="0.05"
-                      min="0.1"
+                      inputMode="decimal"
+                      step={bomUnit === 'cm' ? '0.01' : '0.0001'}
+                      min={bomUnit === 'cm' ? '10' : '0.1'}
                       className="vc-auto-input-number"
-                      value={bomWidthM}
-                      onChange={(e) => setBomWidthM(Math.max(0.1, Number(e.target.value)))}
+                      value={bomWidthDraft ?? formatBomDimensionInput(bomWidthM, bomUnit)}
+                      onChange={(e) => updateBomDimension('width', e.target.value)}
+                      onBlur={() => setBomWidthDraft(null)}
                     />
                   </div>
 
                   <div className="vc-auto-field-group">
-                    <label className="vc-auto-field-label">Alto (Metros)</label>
+                    <label className="vc-auto-field-label" htmlFor="vc-auto-bom-height">Alto ({bomUnit})</label>
                     <input
+                      id="vc-auto-bom-height"
                       type="number"
-                      step="0.05"
-                      min="0.1"
+                      inputMode="decimal"
+                      step={bomUnit === 'cm' ? '0.01' : '0.0001'}
+                      min={bomUnit === 'cm' ? '10' : '0.1'}
                       className="vc-auto-input-number"
-                      value={bomHeightM}
-                      onChange={(e) => setBomHeightM(Math.max(0.1, Number(e.target.value)))}
+                      value={bomHeightDraft ?? formatBomDimensionInput(bomHeightM, bomUnit)}
+                      onChange={(e) => updateBomDimension('height', e.target.value)}
+                      onBlur={() => setBomHeightDraft(null)}
                     />
                   </div>
                 </div>
