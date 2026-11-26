@@ -71,7 +71,7 @@ La carpeta `src/legacy-reference/` contiene material de referencia. No importes 
 
 ### Resumen diario de Finanzas · 26 de noviembre de 2026
 
-- **Estado.** Implementado en la rama local `codex/finance-daily-20261126`, pendiente de publicación.
+- **Estado.** Publicado en Vercel Production mediante PR [#410](https://github.com/visualcorppublicidadmarketing-gif/visualcorp/pull/410), merge `b10e59a`. Despliegue `READY`; la ruta `/operaciones/finanzas/resumen-diario` responde HTTP 200.
 - **Ruta.** Finanzas → Resumen diario, `/operaciones/finanzas/resumen-diario`. La vista sigue el día actual de Ecuador continental y enlaza con el resumen semanal. Ventas, cobros y reembolsos usan la lectura compartida de Finanzas y sus permisos.
 - **Verificación.** Compilación y pruebas de rutas y resumen semanal aprobadas. Chrome con datos simulados verificó cambio de día, atribución de cobros y reembolsos, filtros, permisos y ausencia de desbordamiento de 320 a 1600 px.
 
