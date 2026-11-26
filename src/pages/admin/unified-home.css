@@ -1113,3 +1113,119 @@
   }
 }
 
+/* Dashboard layout: put the user's real work ahead of decorative shortcuts. */
+.work-app .unified-dashboard-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr);
+  align-items: center;
+  gap: clamp(20px, 3vw, 36px);
+  min-height: 0;
+  padding: clamp(22px, 2.8vw, 34px);
+  border-radius: 22px;
+}
+
+.work-app .unified-dashboard-hero-copy { max-width: 680px; }
+.work-app .unified-dashboard-eyebrow { margin-bottom: 13px; }
+.work-app .unified-dashboard-mark { width: 32px; height: 32px; }
+.work-app .unified-dashboard-hero h1 { font-size: clamp(31px, 3.2vw, 42px); }
+.work-app .unified-dashboard-hero-copy > p { margin-top: 10px; font-size: 13px; }
+.work-app .unified-dashboard-badges { margin-top: 14px; }
+
+.work-app .unified-dashboard-hero-side {
+  width: 100%;
+  min-width: 0;
+  flex: initial;
+  gap: 10px;
+}
+
+.work-app .unified-clock-card,
+.work-app .unified-weather-card {
+  min-height: 96px;
+  padding: 12px 14px;
+  border-radius: 15px;
+}
+
+.work-app .unified-context-label { margin-bottom: 6px; }
+.work-app .unified-clock-card > strong { font-size: clamp(22px, 2vw, 27px); }
+.work-app .unified-weather-card > strong { font-size: 26px; }
+
+.work-app .unified-dashboard-hero-side .unified-dashboard-hero-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 8px;
+}
+
+.work-app .unified-dashboard-hero .unified-summary-meta {
+  grid-column: 1 / -1;
+  justify-content: flex-start;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.work-app .unified-dashboard-action {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  gap: 7px;
+  padding-inline: 10px;
+  border-radius: 11px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.work-app .dashboard-shortcut-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: none;
+  gap: 10px;
+}
+
+.work-app .dashboard-shortcut {
+  position: relative;
+  aspect-ratio: auto;
+  min-height: 142px;
+  padding: 15px;
+  border-radius: 16px;
+}
+
+.work-app .dashboard-shortcut-top { margin-bottom: 9px; }
+.work-app .dashboard-shortcut > strong { font-size: 13px; }
+.work-app .dashboard-shortcut > small { font-size: 10px; }
+.work-app .dashboard-shortcut-cta { padding-top: 9px; }
+.work-app .dashboard-shortcut.is-featured { padding: 15px; }
+.work-app .dashboard-shortcut.is-featured > strong { margin-top: 12px; font-size: 17px; }
+.work-app .dashboard-shortcut.is-featured > small { font-size: 10px; }
+.work-app .dashboard-shortcut-art { transform: translateY(-38%) scale(.68); }
+
+@container (min-width: 1261px) {
+  .unified-dashboard .dashboard-shortcut-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .unified-dashboard .unified-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@container (max-width: 820px) {
+  .work-app .unified-dashboard-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .work-app .unified-dashboard-hero-side { max-width: 560px; }
+}
+
+@container (max-width: 600px) {
+  .work-app .dashboard-shortcut-grid,
+  .work-app .unified-dashboard .unified-stat-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .work-app .dashboard-shortcut { min-height: 0; }
+  .work-app .dashboard-shortcut > small { display: block; }
+  .work-app .dashboard-shortcut-cta { display: inline-flex; }
+  .work-app .dashboard-shortcut.is-featured > strong { max-width: 100%; margin-top: 9px; }
+  .work-app .dashboard-shortcut.is-featured > small { max-width: 100%; }
+  .work-app .dashboard-shortcut-art { display: none; }
+  .work-app .unified-dashboard-hero { padding: 20px; }
+}
+
+@container (max-width: 400px) {
+  .work-app .unified-dashboard-hero-side .unified-dashboard-hero-actions { grid-template-columns: minmax(0, 1fr); }
+  .work-app .unified-dashboard-hero .unified-summary-meta { grid-column: auto; }
+}
+
