@@ -15,6 +15,8 @@
     "test:finance-weekly": "node --experimental-strip-types --test scripts/test-weekly-finance-summary.mjs",
     "test:cash-session-integrity": "node --test scripts/test-cash-session-integrity.mjs",
     "test:commercial-read-rls": "node --test scripts/test-commercial-read-rls.mjs",
+    "test:crm-follow-up": "node --test scripts/test-crm-follow-up.mjs",
+    "test:crm-ui": "node scripts/test-crm-ui.mjs",
     "test:access-requests": "node --test scripts/test-access-requests.mjs",
     "test:learning": "node --test scripts/test-learning.mjs",
     "test:inventory-sku": "node --test scripts/test-inventory-sku.mjs",
