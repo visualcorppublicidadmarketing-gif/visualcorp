@@ -1239,7 +1239,7 @@
 .work-app .dashboard-overview-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  align-items: stretch;
+  align-items: start;
   gap: 14px;
   max-width: 100%;
   min-width: 0;
@@ -1277,10 +1277,14 @@
 
 .work-app .unified-dashboard .unified-stat-grid {
   grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: min-content;
+  align-items: start;
   gap: 11px;
 }
 
 .work-app .unified-dashboard .unified-metric-link {
+  align-self: start;
+  min-height: 166px;
   border-top: 2px solid color-mix(in srgb, var(--metric-accent, var(--dashboard-accent)) 64%, transparent);
   background:
     radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--metric-accent, var(--dashboard-accent)) 18%, transparent), transparent 58%),
@@ -1293,6 +1297,7 @@
 .work-app .unified-dashboard .unified-metric-link.metric-rose { --metric-accent: var(--vc-state-danger, #bd4052); }
 
 .work-app .unified-dashboard .unified-priority-panel {
+  align-self: start;
   min-width: 0;
   border-top-width: 2px;
   background:
