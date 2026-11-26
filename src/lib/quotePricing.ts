@@ -7,10 +7,11 @@ export function getQuoteBasis(product, { quantity = 1, area = 0 } = {}) {
   return product?.mode === 'area' ? Math.max(0, Number(area) || 0) * Math.max(1, Number(quantity) || 1) : Math.max(1, Number(quantity) || 1);
 }
 
-function getApplicableTier(product, basis) {
+export function getApplicableTier(product, basis) {
   return [...(product?.tiers || [])]
     .map((tier) => ({ ...tier, min_qty: Number(tier.min_qty) }))
-    .filter((tier) => Number.isFinite(tier.min_qty) && tier.min_qty > 0 && tier.min_qty <= basis)
+    .filter((tier) => Number.isFinite(tier.min_qty) && tier.min_qty > 0 && tier.min_qty <= basis
+      && (tier.max_qty == null || basis <= Number(tier.max_qty)))
     .sort((a, b) => a.min_qty - b.min_qty)
     .at(-1) || null;
 }
@@ -23,12 +24,15 @@ function getBaseRate(product, basis) {
 export function calculateQuotePrice(product, tier, basis, optionChoice = '') {
   if (!product || !Number.isFinite(Number(basis)) || Number(basis) <= 0) return null;
   const applicable = getApplicableTier(product, Number(basis));
+  if (product.customOptions?.quantity_pricing && !applicable) return null;
   const rate = tier === 'instalacion'
     ? numeric(applicable?.install_unit_price) ?? numeric(product.installPrice)
     : tier === 'corporativo'
       ? numeric(applicable?.corporate_unit_price) ?? numeric(product.corporatePrice)
       : optionChoice
-        ? numeric(product.optionPrices?.find((option) => option.label === optionChoice)?.price)
+        ? product.customOptions?.quantity_pricing
+          ? numeric(applicable?.option_prices?.find((option) => option.option === optionChoice)?.price)
+          : numeric(product.optionPrices?.find((option) => option.label === optionChoice)?.price)
         : getBaseRate(product, Number(basis));
   if (rate === null) return null;
   const total = product.priceBasis === 'total' ? rate : rate * Number(basis);

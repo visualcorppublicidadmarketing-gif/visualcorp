@@ -32,6 +32,8 @@ export type StorefrontCatalogItem = StorefrontProductRecord & {
   images?: string[] | null;
   featured?: boolean;
   sort_order?: number | null;
+  custom_options?: { quantity_pricing?: { legacy_skus?: string[]; legacy_ids?: string[] } };
+  price_scales?: unknown;
   quantityTiers?: string[];
   sourceIds?: string[];
   sourceSkus?: string[];
@@ -173,6 +175,18 @@ export function consolidateStorefrontQuantityTiers<T extends StorefrontCatalogIt
   const products: Array<T & ConsolidatedStorefrontCatalogItem> = [];
 
   rows.forEach((product) => {
+    const volume = product.custom_options?.quantity_pricing;
+    if (volume) {
+      const scales = Array.isArray(product.price_scales) ? product.price_scales : [];
+      products.push({
+        ...product,
+        sourceIds: volume.legacy_ids,
+        sourceSkus: volume.legacy_skus,
+        quantityTiers: scales.flatMap((scale) => scale && Number.isSafeInteger(scale.qty) && Number.isSafeInteger(scale.max_qty)
+          ? [scale.qty === scale.max_qty ? String(scale.qty) : `${scale.qty} - ${scale.max_qty}`] : []),
+      });
+      return;
+    }
     const calcType = product.calc_type?.trim().toLocaleLowerCase('es');
     const isTier = calcType === 'scale'
       && /^[\d\s.,–-]+$/.test(product.name.trim())

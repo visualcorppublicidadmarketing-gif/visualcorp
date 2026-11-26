@@ -1,0 +1,17 @@
+.quantity-price-table {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  margin-block: .5rem;
+  padding: .65rem;
+  border: 1px solid var(--vc-line);
+  border-radius: .65rem;
+}
+.quantity-price-table summary { cursor: pointer; font-weight: 650; overflow-wrap: anywhere; }
+.quantity-price-table .table-wrap { width: 100%; max-width: 100%; overflow-x: auto; }
+.quantity-price-table table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.quantity-price-table caption { text-align: start; padding-block: .5rem; }
+.quantity-price-table th, .quantity-price-table td { padding: .45rem .35rem; text-align: start; border-bottom: 1px solid var(--vc-line); }
+.quantity-price-table td { white-space: nowrap; }
+.quantity-price-table tr[aria-current="true"] { background: color-mix(in srgb, var(--vc-brand) 19%, transparent); font-weight: 700; }
