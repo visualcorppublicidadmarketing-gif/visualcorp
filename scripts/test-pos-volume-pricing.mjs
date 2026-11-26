@@ -5,7 +5,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { createServer } from 'vite';
 
 const source = JSON.parse(await readFile(new URL('../src/data/estebanicoSupabaseCatalog.snapshot.json', import.meta.url), 'utf8'));
-const migration = await readFile(new URL('../supabase/migrations/20261126183000_consolidate_catalog_quantity_ranges.sql', import.meta.url), 'utf8');
+const migration = await readFile(new URL('../supabase/migrations/20261126175205_consolidate_catalog_quantity_ranges.sql', import.meta.url), 'utf8');
 const stems = ['dtf-a3-colores', 'dtf-a4-colores', 'polo-bordado', 'sublimacion-a3', 'sublimacion-a4', 'almohadas-blanco', 'body-recien-nacido', 'bolso-cambrella', 'mochila-tela-rodeo'];
 const rows = source.products.filter((item) => stems.some((stem) => item.id.startsWith(`prod-${stem}-`)));
 
