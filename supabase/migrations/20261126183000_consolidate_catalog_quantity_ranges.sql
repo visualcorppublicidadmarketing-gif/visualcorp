@@ -2,6 +2,8 @@
 do $migration$
 declare
   family record;
+  v_org uuid;
+  owner_id uuid;
   base_row public.catalog_products%rowtype;
   entry public.catalog_products%rowtype;
   bounds text[];
@@ -14,6 +16,26 @@ declare
   option_names text[];
   expected_options text[];
 begin
+  -- Respect the catalog guard by running this data change with the existing
+  -- owner permission for this organization. The JWT claim is transaction-local.
+  select id into strict v_org
+  from public.organizations
+  where slug='visual-corp';
+  select m.user_id into owner_id
+  from public.organization_memberships m
+  where m.organization_id = v_org
+    and role='owner' and active
+  order by created_at
+  limit 1;
+  if owner_id is null then
+    raise exception 'No active organization owner is available to update catalog prices';
+  end if;
+  perform set_config('request.jwt.claim.sub', owner_id::text, true);
+  if not app_private.has_visualcorp_access(v_org,'catalog_admin','edit',null)
+     or not app_private.has_visualcorp_access(v_org,'catalog_admin','edit_prices',null) then
+    raise exception 'Organization owner lacks catalog edit permissions';
+  end if;
+
   for family in select * from (values
     ('dtf-a3-colores', 'Camiseta DTF A3 Colores', 10),
     ('dtf-a4-colores', 'Camiseta DTF A4 Colores', 10),

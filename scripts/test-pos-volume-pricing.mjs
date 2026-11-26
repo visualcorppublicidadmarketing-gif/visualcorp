@@ -14,9 +14,22 @@ test('catalog consolidation preserves every price and the POS uses the correct i
   const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom' });
   try {
     await db.exec(`
-      create table organizations(id int primary key, slug text);
-      insert into organizations values(1,'visual-corp');
-      create table catalog_products(id text primary key, organization_id int, name text, slug text unique,
+      create schema auth;
+      create function auth.uid() returns uuid language sql stable as $fn$
+        select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
+      $fn$;
+      create schema app_private;
+      create function app_private.has_visualcorp_access(p_org uuid, p_module text, p_action text, p_branch uuid default null)
+        returns boolean language sql stable as $fn$
+          select auth.uid()='20000000-0000-4000-8000-000000000002'::uuid
+            and p_org='10000000-0000-4000-8000-000000000001'::uuid
+            and p_module='catalog_admin' and p_action in ('edit','edit_prices')
+        $fn$;
+      create table organizations(id uuid primary key, slug text);
+      insert into organizations values('10000000-0000-4000-8000-000000000001','visual-corp');
+      create table organization_memberships(organization_id uuid, user_id uuid, role text, active boolean, created_at timestamptz);
+      insert into organization_memberships values('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002','owner',true,now());
+      create table catalog_products(id text primary key, organization_id uuid, name text, slug text unique,
         price numeric, price_inst numeric, price_corp numeric, price_scales jsonb, custom_options jsonb,
         is_published boolean, calc_type text, product_type text, product_kind text, sku text, currency text,
         updated_at timestamptz);
@@ -26,7 +39,7 @@ test('catalog consolidation preserves every price and the POS uses the correct i
       create table catalog_product_area_routes(catalog_product_id text);
     `);
     for (const [index, row] of rows.entries()) {
-      await db.query(`insert into catalog_products values($1,1,$2,$3,$4,$5,$6,$7,$8,true,'scale','service','catalog',$9,'USD',now())`,
+      await db.query(`insert into catalog_products values($1,'10000000-0000-4000-8000-000000000001',$2,$3,$4,$5,$6,$7,$8,true,'scale','service','catalog',$9,'USD',now())`,
         [row.id, row.name, row.slug, row.price, row.installPrice, row.corporatePrice, JSON.stringify(row.priceScales), '{}', `OLD-${index}`]);
     }
     await db.exec(migration);
