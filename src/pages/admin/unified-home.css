@@ -1202,7 +1202,7 @@
   .unified-dashboard .unified-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
-@container (max-width: 820px) {
+@container (max-width: 760px) {
   .work-app .unified-dashboard-hero {
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;
@@ -1227,5 +1227,117 @@
 @container (max-width: 400px) {
   .work-app .unified-dashboard-hero-side .unified-dashboard-hero-actions { grid-template-columns: minmax(0, 1fr); }
   .work-app .unified-dashboard-hero .unified-summary-meta { grid-column: auto; }
+}
+
+/* A compact operations bento: real indicators and real work stay together. */
+.work-app .unified-dashboard-hero {
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr);
+  min-height: 0;
+  padding: clamp(20px, 2.4vw, 30px);
+}
+
+.work-app .dashboard-overview-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 14px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.work-app .unified-overview {
+  min-width: 0;
+  container: dashboard-metrics / inline-size;
+}
+
+.work-app .unified-overview-heading {
+  align-items: center;
+  gap: 14px;
+  margin: 0 2px 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--admin-glass-line);
+}
+
+.work-app .unified-overview-heading > div { min-width: 0; }
+.work-app .unified-overview-title {
+  margin: 0;
+  color: var(--admin-glass-ink);
+  font-size: clamp(17px, 1.8vw, 21px);
+  font-weight: 760;
+  letter-spacing: -.035em;
+  line-height: 1.2;
+}
+
+.work-app .unified-overview-heading > div > p {
+  margin: 5px 0 0;
+  color: var(--admin-glass-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.work-app .unified-dashboard .unified-stat-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 11px;
+}
+
+.work-app .unified-dashboard .unified-metric-link {
+  border-top: 2px solid color-mix(in srgb, var(--metric-accent, var(--dashboard-accent)) 64%, transparent);
+  background:
+    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--metric-accent, var(--dashboard-accent)) 18%, transparent), transparent 58%),
+    var(--admin-frosted-bg);
+}
+
+.work-app .unified-dashboard .unified-metric-link.metric-blue { --metric-accent: var(--vc-brand-blue, #069cdb); }
+.work-app .unified-dashboard .unified-metric-link.metric-violet { --metric-accent: var(--vc-brand, #a51091); }
+.work-app .unified-dashboard .unified-metric-link.metric-amber { --metric-accent: var(--vc-state-warning, #9a5608); }
+.work-app .unified-dashboard .unified-metric-link.metric-rose { --metric-accent: var(--vc-state-danger, #bd4052); }
+
+.work-app .unified-dashboard .unified-priority-panel {
+  min-width: 0;
+  border-top-width: 2px;
+  background:
+    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--vc-brand-blue, #069cdb) 10%, transparent), transparent 68%),
+    var(--admin-frosted-bg);
+}
+
+.work-app .unified-dashboard .unified-priority-count {
+  border: 1px solid color-mix(in srgb, var(--vc-brand, #a51091) 28%, var(--admin-glass-line));
+  background: color-mix(in srgb, var(--vc-brand, #a51091) 12%, var(--admin-glass-card));
+}
+
+@container (min-width: 1080px) {
+  .work-app .dashboard-overview-layout {
+    grid-template-columns: minmax(0, 1.55fr) minmax(320px, .9fr);
+  }
+}
+
+@container dashboard-metrics (min-width: 640px) {
+  .work-app .unified-dashboard .unified-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container dashboard-metrics (min-width: 1000px) {
+  .work-app .unified-dashboard .unified-stat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container dashboard-metrics (max-width: 600px) {
+  .work-app .unified-dashboard .unified-stat-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (max-width: 760px) {
+  .work-app .unified-dashboard-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 17px;
+  }
+}
+
+@container (max-width: 400px) {
+  .work-app .unified-overview-heading { align-items: flex-start; }
+  .work-app .unified-overview-heading .unified-refresh { flex: 0 0 auto; }
 }
 
