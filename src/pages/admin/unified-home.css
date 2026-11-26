@@ -1322,7 +1322,7 @@
   }
 }
 
-@container dashboard-metrics (min-width: 1000px) {
+@container dashboard-metrics (min-width: 1261px) {
   .work-app .unified-dashboard .unified-stat-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
