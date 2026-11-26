@@ -8,7 +8,8 @@ import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import { buildProductWorkflowRecommendations, type FamilyWorkflowRouteRule } from '../../lib/productWorkflowRoutes';
 import { QuotePriceComparison } from '../../components/QuotePriceComparison';
-import { calculateQuotePrice, getQuoteBasis } from '../../lib/quotePricing';
+import { calculateQuotePrice, getApplicableTier, getQuoteBasis } from '../../lib/quotePricing';
+import { QuantityPriceTable } from '../../components/ui/QuantityPriceTable';
 import { calculatePOSLine, formatPOSLineDescription } from '../../lib/posPricing';
 import { CommercialFinishingControls } from '../../components/CommercialFinishingControls';
 import { calculateCommercialFinishing, emptyCommercialFinishing, sanitizeCommercialFinishing, snapshotCommercialFinishing, type CommercialFinishingValue } from '../../lib/commercialFinishing';
@@ -50,6 +51,12 @@ const stablePOSJson = (value: unknown): string => {
 };
 const pluralizePOSUnit = (unit:string) => /^(?:m|mm|cm|km|m2|m²|cm2|cm²|m3|m³|cm3|cm³|kg|g|mg|l|lt|ml|hz)$/i.test(unit.trim())||/s$/i.test(unit)||/[^\p{L}]$/u.test(unit) ? unit : /[aeiouáéó]$/i.test(unit) ? `${unit}s` : `${unit}es`;
 const isPOSServiceProduct = (product:any) => product?.productKind==='service'||String(product?.productType||'').trim().toLocaleLowerCase('es')==='service';
+const catalogContexts = [
+  { kind: 'product', mode: 'quantity', label: 'Productos por cantidad' },
+  { kind: 'product', mode: 'area', label: 'Productos por m²' },
+  { kind: 'service', mode: 'quantity', label: 'Servicios por cantidad' },
+  { kind: 'service', mode: 'area', label: 'Servicios por m²' },
+] as const;
 const normalizeCustomerPhone = (value) => { const digits=String(value||'').replace(/\D/g,'');return digits.startsWith('593')&&digits.length===12?`0${digits.slice(3)}`:digits; };
 type POSMaterialRequestDraft = { recipeId: string; quantity: string };
 const sanitizePOSMaterialRequests = (value: unknown): POSMaterialRequestDraft[] => {
@@ -412,6 +419,7 @@ function POSCartLineEditor({
   onDuplicate?: () => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [quantityPricingError, setQuantityPricingError] = useState('');
   const [draft, setDraft] = useState({
     name: String(line.name || ''),
     description: String(line.description || ''),
@@ -458,7 +466,11 @@ function POSCartLineEditor({
     nextLineDiscount: number,
     nextFinishing: CommercialFinishingValue,
   ) => {
-    if (!Number.isFinite(nextQty) || nextQty <= 0) return false;
+    setQuantityPricingError('');
+    if (!Number.isSafeInteger(nextQty) || nextQty <= 0) {
+      setQuantityPricingError('Ingresa una cantidad entera mayor que cero.');
+      return false;
+    }
     const cleanDiscount = Math.min(100, Math.max(0, nextLineDiscount || 0));
     const normalizedFinishing = sanitizeCommercialFinishing(nextFinishing);
     const finishing = calculateCommercialFinishing(normalizedFinishing, nextQty, finishingPrices);
@@ -470,7 +482,7 @@ function POSCartLineEditor({
       const calculation = calculatePOSLine({
         product,
         mode: line.mode,
-        quantity: Math.max(1, Math.round(nextQty)),
+        quantity: nextQty,
         widthCm: nextWidthCm,
         heightCm: nextHeightCm,
         tier: nextTier,
@@ -478,7 +490,10 @@ function POSCartLineEditor({
         customUnitPrice: customPriceArg,
         lineDiscountPercent: cleanDiscount,
       });
-      if (!calculation) return false;
+      if (!calculation) {
+        setQuantityPricingError('No hay una tarifa disponible para esta cantidad y modalidad.');
+        return false;
+      }
       const tierLabel = { pvp: 'Normal', instalacion: 'Con instalación', corporativo: 'Corporativo' }[nextTier] || 'Normal';
       const formattedDesc = formatPOSLineDescription({
         name: nextName || line.name,
@@ -590,6 +605,7 @@ function POSCartLineEditor({
   };
 
   return <article className="pos-cart-line-wrap">
+    {quantityPricingError && <p className="pos-calculation-warning" role="status">{quantityPricingError}</p>}
     <div className="pos-cart-line">
       <POSProductVisual src={line.image} className="pos-cart-image" iconSize={16}/>
       <span className="pos-line-main">
@@ -645,7 +661,7 @@ function POSCartLineEditor({
       <label className="pos-line-editor-span-2">Nombre / Concepto<input type="text" value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}/></label>
       <label className="pos-line-editor-span-2">Descripción visible<input type="text" value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}/></label>
       <label>Cantidad<input type="number" min="0.001" step="any" value={draft.quantity} onChange={(event) => setDraft((current) => ({ ...current, quantity: event.target.value }))}/></label>
-      <label>Precio unit. / m² ($)<div className="money-input"><span>$</span><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(event) => setDraft((current) => ({ ...current, unitPrice: event.target.value, priceMode: 'agreed' }))}/></div><small>{draft.priceMode==='catalog'?'Se recalcula según la tarifa y la cantidad.':'Se conserva como precio acordado.'}</small></label>
+      <label>{line.mode === 'area' ? 'Precio por m² ($)' : 'Precio por unidad ($)'}<div className="money-input"><span>$</span><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(event) => setDraft((current) => ({ ...current, unitPrice: event.target.value, priceMode: 'agreed' }))}/></div><small>{draft.priceMode==='catalog'?'Se recalcula según la tarifa y la cantidad.':'Se conserva como precio acordado.'}</small></label>
       {line.productId && <label>Tarifa<select value={draft.pricingTier} onChange={(event) => setDraft((current) => ({ ...current, pricingTier: event.target.value as 'pvp' | 'instalacion' | 'corporativo' }))}><option value="pvp">Normal (PVP)</option><option value="instalacion">Con instalación</option><option value="corporativo">Corporativo</option></select></label>}
       <label>Desc. línea (%)<input type="number" min="0" max="100" step="1" value={draft.lineDiscountPercent} onChange={(event) => setDraft((current) => ({ ...current, lineDiscountPercent: event.target.value }))}/></label>
       {line.mode === 'area' && <><label>Ancho (cm)<input type="number" min="0.01" step="0.01" value={draft.widthCm} onChange={(event) => setDraft((current) => ({ ...current, widthCm: event.target.value }))}/></label><label>Alto (cm)<input type="number" min="0.01" step="0.01" value={draft.heightCm} onChange={(event) => setDraft((current) => ({ ...current, heightCm: event.target.value }))}/></label></>}
@@ -1494,10 +1510,8 @@ export function PosPage() {
   const paymentPreview=paymentBreakdown.applied;
   const selectedCartProduct=data.catalog.find((product)=>product.id===cartProductId);
   const catalogKindProducts=useMemo(()=>data.catalog.filter(product=>catalogKind==='service'?isPOSServiceProduct(product):!isPOSServiceProduct(product)),[data.catalog,catalogKind]);
-  const catalogModeCounts=useMemo(()=>({quantity:catalogKindProducts.filter(product=>product.mode!=='area').length,area:catalogKindProducts.filter(product=>product.mode==='area').length}),[catalogKindProducts]);
-  const otherKindAreaCount=useMemo(()=>data.catalog.filter(product=>product.mode==='area'&&(catalogKind==='product'?isPOSServiceProduct(product):!isPOSServiceProduct(product))).length,[data.catalog,catalogKind]);
-  const measurementTargetKind=catalogModeCounts.area===0&&otherKindAreaCount>0?(catalogKind==='product'?'service':'product'):catalogKind;
-  const measurementTargetCount=measurementTargetKind===catalogKind?catalogModeCounts.area:otherKindAreaCount;
+  const catalogContextCounts=useMemo(()=>catalogContexts.map(({kind,mode})=>data.catalog.filter(product=>
+    isPOSServiceProduct(product)===(kind==='service')&&(product.mode==='area'?'area':'quantity')===mode).length),[data.catalog]);
   const modeCatalog=useMemo(()=>catalogKindProducts.filter(product=>(product.mode==='area'?'area':'quantity')===cartMode),[catalogKindProducts,cartMode]);
   const cartFamilies=useMemo(()=>[...new Set<string>(modeCatalog.map(product=>String(product.family||'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[modeCatalog]);
   const canViewPOSSales=hasPermission('sales','view');
@@ -1616,10 +1630,11 @@ export function PosPage() {
   const linksByProduct=useMemo(()=>catalogLinks.filter(link=>link.active&&link.branch_id===selectedBranchId).reduce((links,link)=>{
     links.set(link.catalog_product_id,[...(links.get(link.catalog_product_id)||[]),link]);return links;
   },new Map<string,any[]>()),[catalogLinks,selectedBranchId]);
-  const skuCodesByProduct=useMemo(()=>Object.fromEntries([...linksByProduct].map(([productId,links])=>{
+  const skuCodesByProduct=useMemo(()=>Object.fromEntries(data.catalog.map(product=>{
+    const links=linksByProduct.get(product.id)||[];
     const codes=links.flatMap(link=>(inventoryByVariant.get(link.inventory_variant_id)||[]).filter(stock=>stock.location===(link.location_code||'MAIN')).flatMap(stock=>[stock.sku,stock.variantSku].filter(Boolean)));
-    return [productId,[...new Set(codes)]];
-  })),[linksByProduct,inventoryByVariant]);
+    return [product.id,[...new Set([...codes,...(product.customOptions?.quantity_pricing?.legacy_skus||[])])]];
+  })),[data.catalog,linksByProduct,inventoryByVariant]);
   const stockByProduct=useMemo(()=>Object.fromEntries(modeCatalog.map(product=>{
     const links=linksByProduct.get(product.id)||[];
     if(!links.length)return [product.id,'Sin vínculo de inventario'];
@@ -1687,6 +1702,8 @@ export function PosPage() {
   const cartHeightNumber=Number(cartHeightCm);
   const cartAreaPerPiece=cartMode==='area'&&cartWidthNumber>0&&cartHeightNumber>0?Math.round((cartWidthNumber*cartHeightNumber/10000)*10000)/10000:0;
   const cartPricingBasis=selectedCartProduct?getQuoteBasis(selectedCartProduct,{quantity:cartQuantityNumber,area:cartAreaPerPiece}):0;
+  const volumePricing=Boolean(selectedCartProduct?.customOptions?.quantity_pricing);
+  const activeVolumeTier=volumePricing?getApplicableTier(selectedCartProduct,cartQuantityNumber):null;
   const customAgreedPriceNumber = Number(cartCustomUnitPrice);
   const hasCustomAgreedPrice = Number.isFinite(customAgreedPriceNumber) && customAgreedPriceNumber > 0;
   const cartCalculation=selectedCartProduct?calculatePOSLine({product:selectedCartProduct,mode:cartMode,quantity:cartQuantityNumber,widthCm:cartWidthNumber,heightCm:cartHeightNumber,tier:cartPriceTier,optionChoice:cartOptionChoice,customUnitPrice:hasCustomAgreedPrice?customAgreedPriceNumber:undefined}):null;
@@ -1733,6 +1750,7 @@ export function PosPage() {
   };
   const quickAddProductToCart=(product:any)=>{
     if(!product||product.mode==='area')return;
+    if(product.optionPrices?.length||product.customOptions?.quantity_pricing){chooseCartProduct(product);return;}
     const variantLinks=catalogLinks.filter((link)=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===product.id);
     if(variantLinks.length>1){chooseCartProduct(product);flash(`Selecciona la talla, el color o la variante de ${product.name} antes de agregarla.`);return;}
     const inventoryVariantId=variantLinks.length===1?variantLinks[0].inventory_variant_id:'';
@@ -1781,7 +1799,14 @@ export function PosPage() {
   };
   const chooseCartProduct=(product)=>{
     const links=catalogLinks.filter((link)=>link.active&&link.branch_id===selectedBranchId&&link.catalog_product_id===product.id);
-    setCartVariantId(links.length===1?links[0].inventory_variant_id:'');setCartMode(product.mode==='area'?'area':'quantity');setCartFamily(product.family||'Todas');setCartProductId(product.id);setCartItemName('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartPriceTier('pvp');setCartOptionChoice('');setCartFinishing({...emptyCommercialFinishing});setCartSearch('');
+    setCatalogKind(isPOSServiceProduct(product)?'service':'product');
+    setCartVariantId(links.length===1?links[0].inventory_variant_id:'');setCartMode(product.mode==='area'?'area':'quantity');setCartFamily(product.family||'Todas');setCartProductId(product.id);setCartItemName('');setCartUnitPrice('');setCartCustomUnitPrice('');setCartPriceTier('pvp');setCartFinishing({...emptyCommercialFinishing});setCartSearch('');
+    const quantityPricing = product.customOptions?.quantity_pricing;
+    setCartOptionChoice(quantityPricing ? product.optionPrices?.[0]?.label || '' : '');
+    if (quantityPricing) {
+      const minimum = Math.min(...(product.tiers || []).map((tier) => tier.min_qty));
+      setCartQuantity(Number.isSafeInteger(minimum) ? String(minimum) : '1');
+    }
     requestAnimationFrame(()=>document.getElementById(product.mode==='area'?'pos-cart-width':'pos-cart-quantity')?.focus());
   };
   const changeCatalogContext=(nextKind:'product'|'service',nextMode:'quantity'|'area')=>{
@@ -1790,7 +1815,8 @@ export function PosPage() {
   const handleCartScan=(query:string,highlightedProduct?:any)=>{
     const scannedCode=query.trim().toLocaleUpperCase('es');
     if(!scannedCode)return;
-    const catalogProduct=data.catalog.find(product=>String(product.sku||'').trim().toLocaleUpperCase('es')===scannedCode);
+    const catalogProduct=data.catalog.find(product=>[product.sku,...(product.customOptions?.quantity_pricing?.legacy_skus||[])]
+      .some(sku=>String(sku||'').trim().toLocaleUpperCase('es')===scannedCode));
     if(catalogProduct){chooseCartProduct(catalogProduct);flash(`Código ${scannedCode} reconocido: ${catalogProduct.name}. Revisa cantidad, medidas y tarifa.`);return;}
     const stock=data.inventory.find(row=>row.branchId===selectedBranchId&&!row.archived&&[row.sku,row.variantSku].some(code=>String(code||'').trim().toLocaleUpperCase('es')===scannedCode));
     if(!stock){if(highlightedProduct){chooseCartProduct(highlightedProduct);return;}flash(`No encontramos el código ${scannedCode} en el catálogo ni en el inventario de ${branchName}.`);return;}
@@ -2510,15 +2536,13 @@ export function PosPage() {
             </div>
             {cartEntryType!=='catalog'&&<p className="pos-entry-kind-note">Concepto manual · no descuenta inventario · precio confirmado por el asesor.</p>}
             {cartEntryType==='catalog'&&<>
-            <div className="pos-mode-switch" role="group" aria-label="Tipo de catálogo">
-              <button type="button" className={catalogKind==='product'?'active':''} aria-pressed={catalogKind==='product'} onClick={()=>changeCatalogContext('product','quantity')}>Productos y artículos</button>
-              <button type="button" className={catalogKind==='service'?'active':''} aria-pressed={catalogKind==='service'} onClick={()=>changeCatalogContext('service','quantity')}>Servicios ({data.catalog.filter(isPOSServiceProduct).length})</button>
-            </div>
-            <div className="pos-mode-switch" role="group" aria-label={`Forma de calcular ${catalogKind==='service'?'el servicio':'el producto'}`}>
-              <button type="button" className={cartMode==='quantity'?'active':''} aria-pressed={cartMode==='quantity'} onClick={()=>changeCatalogContext(catalogKind,'quantity')}>Por cantidad ({catalogModeCounts.quantity})</button>
-              <button type="button" className={cartMode==='area'?'active':''} aria-pressed={cartMode==='area'} onClick={()=>changeCatalogContext(measurementTargetKind,'area')}>Por medidas m² ({measurementTargetCount})</button>
-              {catalogKind==='service'&&<span className="pos-entry-kind-note">Los servicios no descuentan existencias por unidad. Las medidas m² calculan la tarifa por superficie.</span>}
-              {catalogKind==='product'&&catalogModeCounts.area===0&&otherKindAreaCount>0&&<span className="pos-entry-kind-note">Las {otherKindAreaCount} referencias por m² están en Servicios. Pulsa el filtro para verlas.</span>}
+            <div className="pos-mode-switch pos-catalog-contexts" role="group" aria-label="Tipo de artículo y forma de cálculo">
+              {catalogContexts.map(({kind,mode,label},index)=>{
+                const selected=catalogKind===kind&&cartMode===mode;
+                return <button key={`${kind}:${mode}`} type="button" className={selected?'active':''}
+                  aria-pressed={selected} disabled={!catalogContextCounts[index]&&!selected}
+                  onClick={()=>changeCatalogContext(kind,mode)}>{label} ({catalogContextCounts[index]})</button>;
+              })}
             </div>
             <POSProductSearch
               contextKey={`${catalogKind}:${cartMode}`}
@@ -2591,7 +2615,13 @@ export function PosPage() {
               <label><span>Precio acordado ($) · <small>Opcional: sobrescribe PVP unitario/m²</small></span><div className="money-input"><span>$</span><input type="number" min="0.01" step="0.01" value={cartCustomUnitPrice} onChange={(event)=>setCartCustomUnitPrice(event.target.value)} placeholder={cartCalculation?cartCalculation.unitPrice.toFixed(2):'0.00'}/></div></label>
               {hasCustomAgreedPrice&&<button type="button" className="button button-outline pos-reset-agreed-btn" onClick={()=>setCartCustomUnitPrice('')}>Usar catálogo</button>}
             </div>}
-            {selectedCartProduct&&<>{selectedCartProduct.optionPrices?.length>0&&<label>{catalogKind==='service'?'Paquete de servicio':'Material / acabado'}<select value={cartOptionChoice} onChange={(event)=>setCartOptionChoice(event.target.value)}><option value="">{catalogKind==='service'?'Selecciona un paquete':'Tarifa base'}</option>{selectedCartProduct.optionPrices.filter((option)=>catalogKind!=='service'||option.label!=='Cambio adicional').map(option=><option key={option.label} value={option.label}>{option.label} · {formatMoney(option.price)}{catalogKind==='service'?' / unidad':''}</option>)}</select></label>}{catalogKind!=='service'&&<QuotePriceComparison product={selectedCartProduct} basis={cartPricingBasis} selectedTier={cartPriceTier} onSelect={setCartPriceTier} optionChoice={cartOptionChoice}/ >}{cartMode==='area'&&invalidMeasurementStockLink&&<p className="pos-calculation-warning">Este artículo descuenta inventario medido en “{measurementStockUnit}”. Asigna una existencia en m² antes de venderlo para evitar un descuento incorrecto.</p>}</>}
+            {selectedCartProduct&&<>{selectedCartProduct.optionPrices?.length>0&&<label>{volumePricing?'Talla u opción de producción':catalogKind==='service'?'Paquete de servicio':'Material / acabado'}<select value={cartOptionChoice} onChange={(event)=>setCartOptionChoice(event.target.value)}><option value="">{volumePricing?'Selecciona una opción':catalogKind==='service'?'Selecciona un paquete':'Tarifa base'}</option>{selectedCartProduct.optionPrices.filter((option)=>catalogKind!=='service'||option.label!=='Cambio adicional').map(option=><option key={option.label} value={option.label}>{option.label}{!volumePricing&&` · ${formatMoney(option.price)}${catalogKind==='service'?' / unidad':''}`}</option>)}</select></label>}{catalogKind!=='service'&&<QuotePriceComparison product={selectedCartProduct} basis={cartPricingBasis} selectedTier={cartPriceTier} onSelect={setCartPriceTier} optionChoice={cartOptionChoice}/ >}{cartMode==='area'&&invalidMeasurementStockLink&&<p className="pos-calculation-warning">Este artículo descuenta inventario medido en “{measurementStockUnit}”. Asigna una existencia en m² antes de venderlo para evitar un descuento incorrecto.</p>}</>}
+            {volumePricing&&<>
+              <QuantityPriceTable product={selectedCartProduct} quantity={cartQuantityNumber}/>
+              {Number.isSafeInteger(cartQuantityNumber)&&cartQuantityNumber>0&&!activeVolumeTier&&!hasCustomAgreedPrice&&
+                <p className="pos-calculation-warning" role="status">No hay tarifa para esa cantidad. Ingresa un precio acordado para continuar.</p>}
+              {cartPriceAvailable&&cartCalculation&&<p className="pos-entry-kind-note" aria-live="polite">{formatMoney(cartCalculation.baseUnitPrice)} por unidad</p>}
+            </>}
             {(selectedCartProduct||cartEntryType==='custom-area'||cartEntryType==='custom-quantity')&&<CommercialFinishingControls value={cartFinishing} onChange={setCartFinishing} quantity={cartQuantityNumber} prices={data.calculatorSettings||{}} allowEyelets={cartMode==='area'&&(cartEntryType!=='catalog'||selectedCartProduct?.customOptions?.allow_eyelets!==false)} allowDesign={selectedCartProduct?.customOptions?.allow_design!==false} idPrefix="pos-cart-finishing"/>}
             {selectedCartProduct&&cartCalculation&&<div className="pos-calculation-total"><span>{cartMode==='area'?`${cartAreaPerPiece.toFixed(4)} m² por pieza × ${cartQuantityNumber} · ${cartCalculation.billedQuantity.toFixed(4)} m² en total`:`${cartQuantityNumber} ${selectedCartProduct.unit||'unidades'} · tarifa por ${selectedCartProduct.unit||'unidad'}`}</span><strong>{formatMoney(cartCalculation.total+cartFinishingEstimate.total)}</strong></div>}
             <button className="button button-outline pos-add-item" type="button" onClick={addCartLine} disabled={Boolean(selectedCartProduct&&!cartPriceAvailable)||Boolean(invalidMeasurementStockLink)}><Plus size={15}/> Agregar al carrito</button>

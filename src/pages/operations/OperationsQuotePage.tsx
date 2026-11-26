@@ -1647,7 +1647,7 @@ export function OperationsQuotePage() {
                       <option value="">{line.isServiceProduct ? 'Selecciona un paquete' : 'Usar tarifa base del producto'}</option>
                       {line.servicePackageOptions.map((option: any, optionIndex: number) => (
                         <option key={`${option.label}-${optionIndex}`} value={option.label}>
-                          {option.label} · {formatMoney(option.price)}{line.isServiceProduct ? ' / unidad' : ''}
+                          {option.label}{!line.product?.customOptions?.quantity_pricing && ` · ${formatMoney(option.price)}${line.isServiceProduct ? ' / unidad' : ''}`}
                         </option>
                       ))}
                     </select>

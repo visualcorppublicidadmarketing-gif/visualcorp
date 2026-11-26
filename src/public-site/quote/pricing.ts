@@ -44,9 +44,10 @@ function mapLiveQuoteProduct(row: PublicQuoteCatalogRow & ConsolidatedStorefront
   if (!row.id || !row.name?.trim() || !['m2', 'unit', 'scale'].includes(calcType)) return null;
 
   const mode = calcType === 'm2' ? 'area' : 'quantity';
-  const sourceSkus = row.sourceSkus?.length ? row.sourceSkus : row.sku ? [row.sku] : [];
+  const volume = row.custom_options?.quantity_pricing;
+  const sourceSkus = [...new Set([...(row.sourceSkus || []), ...(row.sku ? [row.sku] : []), ...(volume?.legacy_skus || [])])];
   const isQuantityTierGroup = Boolean(row.sourceIds?.length);
-  const priceBasis = isQuantityTierGroup
+  const priceBasis = isQuantityTierGroup || volume
     ? 'unknown'
     : calcType === 'scale'
     ? getStorefrontQuotePriceBasis(row.sku) || 'unknown'
@@ -94,7 +95,7 @@ export async function loadQuoteProducts(): Promise<QuoteProduct[]> {
   for (let offset = 0; ; offset += pageSize) {
     const { data, error } = await supabase
       .from('public_quote_catalog_products')
-      .select('id,sku,name,slug,description,type,category_id,category,calc_type,price,price_inst,price_corp,price_scales,features,currency,is_published,featured,sort_order')
+      .select('id,sku,name,slug,description,type,category_id,category,calc_type,price,price_inst,price_corp,price_scales,custom_options,features,currency,is_published,featured,sort_order')
       .eq('is_published', true)
       .order('sort_order', { ascending: true })
       .order('id', { ascending: true })
