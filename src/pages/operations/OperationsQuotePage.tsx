@@ -1090,7 +1090,10 @@ export function OperationsQuotePage() {
         if (recoveryStorageKey && !canPersistQuoteAssetRecovery(recoveryStorageKey)) {
           throw new Error('Este navegador no permite conservar la recuperación de adjuntos. Habilita el almacenamiento de sesión o guarda la cotización sin adjuntos para evitar duplicarla si se pierde la respuesta.');
         }
-        const { data: createdQuote, error } = await supabase.rpc('create_central_quote', quotePayload);
+        const { data: createdQuote, error } = await supabase.rpc('create_central_quote_from_request', {
+          ...quotePayload,
+          p_public_request_id: fromRequest || null,
+        });
         if (error) throw error;
         if (!createdQuote?.id || !createdQuote?.quote_code) throw new Error('La respuesta del servidor no incluyó el identificador de la cotización. Revisa el historial antes de volver a guardar.');
         result = createdQuote;
