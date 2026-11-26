@@ -144,7 +144,8 @@ export const workspaceNavigation: AppNavLink[] = [
   { to: '/seguimiento', label: 'Portal de aprobación', icon: ShieldCheck, module: 'workshop', anyOf: ['sales', 'workshop', 'quotes', 'crm'] },
   { to: '/operaciones/catalogo', label: 'Catálogo y tarifas', icon: ShoppingBag, module: 'catalog_admin' },
   { to: '/operaciones/servicios', label: 'Catálogo de servicios', icon: BriefcaseBusiness, module: 'catalog_admin' },
-  { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'finance' },
+  { to: '/operaciones/finanzas', label: 'Finanzas', icon: ChartNoAxesCombined, module: 'finance', end: true },
+  { to: '/operaciones/finanzas/resumen-diario', label: 'Resumen diario', icon: CalendarDays, module: 'finance', keywords: ['hoy', 'ventas', 'cobros', 'pagos', 'día'] },
   { to: '/operaciones/finanzas/resumen-semanal', label: 'Resumen semanal', icon: CalendarDays, module: 'finance', keywords: ['ventas', 'cobros', 'asesoras', 'semana', 'pagos'] },
   { to: '/operaciones/cajas-abiertas', label: 'Cajas abiertas', icon: Radio, module: 'sales', anyOf: ['sales', 'cash'] },
   { to: '/operaciones/rutas-productos', label: 'Rutas por producto', icon: Workflow, module: 'workshop', anyOf: ['sales', 'workshop'] },
@@ -191,7 +192,7 @@ export const workspaceNavigation: AppNavLink[] = [
 
 export const workspaceNavGroups: AppNavGroup[] = [
   { id: 'commercial', label: 'Comercial', icon: BriefcaseBusiness, paths: ['/operaciones/pos', '/operaciones/cotizador', '/operaciones/crm', '/operaciones/clientes', '/operaciones/trabajos/asesoria', '/seguimiento', '/operaciones/catalogo', '/operaciones/servicios'] },
-  { id: 'finance', label: 'Finanzas', icon: Wallet, paths: ['/operaciones/finanzas', '/operaciones/finanzas/resumen-semanal', '/operaciones/cajas-abiertas'] },
+  { id: 'finance', label: 'Finanzas', icon: Wallet, paths: ['/operaciones/finanzas', '/operaciones/finanzas/resumen-diario', '/operaciones/finanzas/resumen-semanal', '/operaciones/cajas-abiertas'] },
   { id: 'production-planning', label: 'Planificación y coordinación', icon: Workflow, paths: ['/operaciones/rutas-productos', '/operaciones/automatizaciones', '/operaciones/flujos', '/operaciones/coordinacion-trabajos', '/operaciones/cartelera-taller'] },
   { id: 'workshop-areas', label: 'Taller y áreas de trabajo', icon: ClipboardList, paths: ['/operaciones/kiosk', '/operaciones/archivos', '/operaciones/trabajos/diseno', '/operaciones/trabajos/impresion', '/operaciones/trabajos/sublimacion', '/operaciones/trabajos/laser', '/operaciones/trabajos/taller'] },
   { id: 'inventory-purchasing', label: 'Inventario y compras', icon: Boxes, paths: ['/operaciones/inventario', '/operaciones/solicitudes-compras', '/operaciones/compras', '/operaciones/equipos'] },
