@@ -397,10 +397,10 @@ export function UnifiedHome() {
       <header className="unified-dashboard-hero">
         <UiLiquidGlassAccent />
         <div className="unified-dashboard-hero-copy">
-          <div className="unified-dashboard-eyebrow"><span className="unified-dashboard-mark"><ClipboardCheck size={17} aria-hidden="true"/></span><span>INICIO PERSONALIZADO</span></div>
+          <div className="unified-dashboard-eyebrow"><span className="unified-dashboard-mark"><ClipboardCheck size={17} aria-hidden="true"/></span><span>PANEL DE TRABAJO</span></div>
           <h1>Hola, {greetingName}<span className="unified-greeting-dot">.</span></h1>
-          <p>Tu espacio está preparado para <strong>{primaryRole}</strong>. Aquí tienes lo importante para empezar bien.</p>
-          <div className="unified-dashboard-badges"><span><BriefcaseBusiness size={14} aria-hidden="true"/>Cargo · {primaryRole}</span><span><MapPin size={14} aria-hidden="true"/>{data?.settings?.location || 'Milagro, Ecuador'}</span></div>
+          <p>Revisa tus indicadores y pendientes en tu espacio de <strong>{primaryRole}</strong>.</p>
+          <div className="unified-dashboard-badges"><span><BriefcaseBusiness size={14} aria-hidden="true"/>Perfil · {primaryRole}</span><span><MapPin size={14} aria-hidden="true"/>{data?.settings?.location || 'Milagro, Ecuador'}</span></div>
         </div>
         <div className="unified-dashboard-hero-side">
           <div className="unified-dashboard-context">
@@ -419,24 +419,6 @@ export function UnifiedHome() {
           </div>
         </div>
       </header>
-    {quickLinks.length > 0 && <section className="dashboard-shortcuts" aria-labelledby="dashboard-shortcuts-heading" id="dashboard-shortcuts">
-      <div className="dashboard-section-heading"><div><span className="eyebrow">ACCESOS CLAVE · {primaryRole}</span><h2 id="dashboard-shortcuts-heading">Tus herramientas para empezar</h2><p>Atajos según tu perfil y permisos; las demás herramientas siguen disponibles más abajo.</p></div><span className="dashboard-shortcut-count">{quickLinks.length} de {workspaceToolCount} herramientas</span></div>
-      <AnimatedList className={`dashboard-shortcut-grid${quickLinks.length === 4 ? ' has-four-shortcuts' : ''}`} itemClassName="dashboard-shortcut-item" stagger={0.055}>
-        {quickLinks.map(({ to, label, icon: Icon, groupLabel }, index) => <Link key={to} className={`dashboard-shortcut vc-magic-card${index === 0 ? ' is-featured' : ''}`} to={to} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
-          <SpotlightLayer/>
-          {index === 0 && <span className="dashboard-shortcut-art" aria-hidden="true"><span className="dashboard-shortcut-art-back"/><span className="dashboard-shortcut-art-orbit"/><span className="dashboard-shortcut-art-front"><Icon size={46}/></span></span>}
-          <span className="dashboard-shortcut-top">{index !== 0 && <span className="dashboard-shortcut-icon"><Icon size={19} aria-hidden="true"/></span>}<span className="dashboard-shortcut-area">{groupLabel}</span><ArrowUpRight className="dashboard-shortcut-open" size={17} aria-hidden="true"/></span>
-          <strong>{label}</strong><small>{descriptions[to] || 'Consulta y gestiona los registros de este módulo.'}</small>
-          <span className="dashboard-shortcut-cta">Abrir herramienta <ArrowUpRight size={14} aria-hidden="true"/></span>
-        </Link>)}
-        <a className="dashboard-shortcut dashboard-shortcut-explore vc-magic-card" href="#dashboard-all-tools" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
-          <SpotlightLayer/>
-          <span className="dashboard-shortcut-top"><span className="dashboard-shortcut-icon"><LayoutGrid size={19} aria-hidden="true"/></span><span className="dashboard-shortcut-area">TU ESPACIO</span><ArrowUpRight className="dashboard-shortcut-open" size={17} aria-hidden="true"/></span>
-          <strong>Explora tus herramientas</strong><small>Busca por área, filtra opciones y guarda tus favoritas.</small>
-          <span className="dashboard-shortcut-cta">Ver todas las áreas <ArrowUpRight size={14} aria-hidden="true"/></span>
-        </a>
-      </AnimatedList>
-    </section>}
     {error && <div className="unified-summary-error" role="alert"><span>{error}</span><button type="button" className="button button-outline" onClick={() => setRefreshKey((value) => value + 1)} disabled={loading}><RefreshCw size={14}/> {loading ? 'Actualizando…' : 'Reintentar'}</button></div>}
     {trendLimitReached.length > 0 && <p className="unified-trend-limit" role="status">No se muestra la tendencia de {trendLimitReached.join(' y ')} porque la consulta alcanzó el límite de 1.000 registros. El resumen principal sigue disponible.</p>}
     {visibleMetrics.length > 0 && <section className="unified-overview" aria-label={`Indicadores disponibles para ${primaryRole}`}><div className="unified-overview-heading"><div><span className="eyebrow">INDICADORES DISPONIBLES</span><p>Datos reales, organizados por periodo y permisos de tu perfil.</p></div><button type="button" className="unified-refresh" onClick={() => setRefreshKey(value => value + 1)} disabled={loading}><RefreshCw size={14} aria-hidden="true"/>{loading ? 'Actualizando…' : 'Actualizar resumen'}</button></div><div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, to, key, label, scope, note, noteKey, icon: Icon, tone, money }) => {
@@ -477,6 +459,24 @@ export function UnifiedHome() {
       <div className="panel-heading"><div><span className="eyebrow">SIGUIENTE PASO</span><h2 id="unified-priority-heading">Pendientes que puedes atender</h2></div>{loading ? <span className="unified-priority-state">Actualizando</span> : error ? <span className="unified-priority-state">Sin actualizar</span> : priorities.length ? <span className="unified-priority-state has-items">{priorities.length} {priorities.length === 1 ? 'pendiente' : 'pendientes'}</span> : priorityDataComplete ? <span className="unified-priority-state is-clear"><CheckCircle2 size={15}/> Sin alertas</span> : <span className="unified-priority-state">Sin datos</span>}</div>
       {error ? <p className="unified-priority-empty">No se muestran pendientes hasta confirmar que la información está actualizada.</p> : loading ? <div className="unified-priority-loading" role="status"><span className="sr-only">Consultando los registros autorizados para tu perfil</span><Skeleton className="dashboard-priority-skeleton"/><Skeleton className="dashboard-priority-skeleton is-short"/></div> : priorities.length ? <div className="unified-priority-list">{priorities.map(({ key, to, icon: Icon, title, detail, count }) => <Link className="unified-priority-item" to={to} key={key}><span className={`unified-priority-icon ${key}`}><Icon size={18}/></span><span className="unified-priority-copy"><b>{title}</b><small>{detail}</small></span><span className="unified-priority-count">{count}</span><ArrowUpRight size={16} aria-hidden="true"/></Link>)}</div> : priorityDataComplete ? <p className="unified-priority-empty">No se detectan pendientes en los módulos visibles para tu perfil.</p> : <p className="unified-priority-empty">No se recibieron datos suficientes para confirmar si hay pendientes.</p>}
     </section> : null}
+    {quickLinks.length > 0 && <section className="dashboard-shortcuts" aria-labelledby="dashboard-shortcuts-heading" id="dashboard-shortcuts">
+      <div className="dashboard-section-heading"><div><span className="eyebrow">ACCESOS CLAVE · {primaryRole}</span><h2 id="dashboard-shortcuts-heading">Tus herramientas para empezar</h2><p>Atajos según tu perfil y permisos; las demás herramientas siguen disponibles más abajo.</p></div><span className="dashboard-shortcut-count">{quickLinks.length} de {workspaceToolCount} herramientas</span></div>
+      <AnimatedList className={`dashboard-shortcut-grid${quickLinks.length === 4 ? ' has-four-shortcuts' : ''}`} itemClassName="dashboard-shortcut-item" stagger={0.055}>
+        {quickLinks.map(({ to, label, icon: Icon, groupLabel }, index) => <Link key={to} className={`dashboard-shortcut vc-magic-card${index === 0 ? ' is-featured' : ''}`} to={to} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
+          <SpotlightLayer/>
+          {index === 0 && <span className="dashboard-shortcut-art" aria-hidden="true"><span className="dashboard-shortcut-art-back"/><span className="dashboard-shortcut-art-orbit"/><span className="dashboard-shortcut-art-front"><Icon size={46}/></span></span>}
+          <span className="dashboard-shortcut-top">{index !== 0 && <span className="dashboard-shortcut-icon"><Icon size={19} aria-hidden="true"/></span>}<span className="dashboard-shortcut-area">{groupLabel}</span><ArrowUpRight className="dashboard-shortcut-open" size={17} aria-hidden="true"/></span>
+          <strong>{label}</strong><small>{descriptions[to] || 'Consulta y gestiona los registros de este módulo.'}</small>
+          <span className="dashboard-shortcut-cta">Abrir herramienta <ArrowUpRight size={14} aria-hidden="true"/></span>
+        </Link>)}
+        <a className="dashboard-shortcut dashboard-shortcut-explore vc-magic-card" href="#dashboard-all-tools" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
+          <SpotlightLayer/>
+          <span className="dashboard-shortcut-top"><span className="dashboard-shortcut-icon"><LayoutGrid size={19} aria-hidden="true"/></span><span className="dashboard-shortcut-area">TU ESPACIO</span><ArrowUpRight className="dashboard-shortcut-open" size={17} aria-hidden="true"/></span>
+          <strong>Explora tus herramientas</strong><small>Busca por área, filtra opciones y guarda tus favoritas.</small>
+          <span className="dashboard-shortcut-cta">Ver todas las áreas <ArrowUpRight size={14} aria-hidden="true"/></span>
+        </a>
+      </AnimatedList>
+    </section>}
     <div id="dashboard-all-tools" className="dashboard-all-tools"><WorkspaceLauncher key={user?.id || 'anonymous'} userId={user?.id || 'anonymous'} groups={visibleGroups} descriptions={descriptions} heading={`Herramientas para ${primaryRole}`}/></div>
     {hasPermission('crm', 'view') && <section className="panel unified-recent-panel"><div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO COMERCIAL</span><h2>Solicitudes recientes</h2></div><Link className="text-link" to="/operaciones/crm">Abrir CRM <ArrowUpRight size={14}/></Link></div><LeadsTable/></section>}
     {hasPermission('team', 'view') && <ChangeLogPanel area="operations" compact/>}
