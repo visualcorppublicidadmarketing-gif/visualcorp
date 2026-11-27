@@ -27,8 +27,10 @@ import {
   List,
   ListOrdered,
   Maximize2,
+  MoreHorizontal,
   Quote,
   Redo2,
+  SlidersHorizontal,
   Strikethrough,
   Underline as UnderlineIcon,
   Undo2,
@@ -104,7 +106,7 @@ function normalizeImageUrl(value: string) {
 }
 
 export function RichTextEditor({
-  value = '<p>Escribe algo con intención…</p>',
+  value = '',
   onChange,
   placeholder = 'Escribe algo con intención…',
   minHeight = 230,
@@ -113,10 +115,14 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const id = useId();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showMoreFormatting, setShowMoreFormatting] = useState(false);
   const [insertMode, setInsertMode] = useState<InsertMode>(null);
   const [insertUrl, setInsertUrl] = useState('');
   const [insertError, setInsertError] = useState('');
   const savedSelection = useRef<SavedSelection | null>(null);
+  const fullscreenDialogRef = useRef<HTMLDialogElement>(null);
+  const fullscreenTriggerRef = useRef<HTMLButtonElement>(null);
+  const openedFullscreen = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -164,6 +170,8 @@ export function RichTextEditor({
       const headingAttributes = currentEditor.getAttributes('heading');
       const listAttributes = currentEditor.getAttributes('orderedList');
       const textAttributes = currentEditor.getAttributes('textStyle');
+      const darkTheme = typeof document !== 'undefined' && [document.documentElement, document.body]
+        .some((element) => element.matches('[data-theme="dark"], [data-vc-theme="dark"], .theme-dark'));
       const heading = currentEditor.isActive('heading', { level: 1 })
         ? 'h1'
         : currentEditor.isActive('heading', { level: 2 })
@@ -189,7 +197,7 @@ export function RichTextEditor({
         justify: (paragraphAttributes.textAlign || headingAttributes.textAlign) === 'justify',
         fontFamily: textAttributes.fontFamily || '',
         fontSize: textAttributes.fontSize || '',
-        textColor: safeColor(textAttributes.color, '#282532'),
+        textColor: safeColor(textAttributes.color, darkTheme ? '#f1eff7' : '#211d2a'),
         highlightColor: safeColor(currentEditor.getAttributes('highlight').color, '#fff176'),
         listStyleType: listAttributes.listStyleType || 'decimal',
         canUndo: currentEditor.can().undo(),
@@ -214,13 +222,38 @@ export function RichTextEditor({
   }, [isFullscreen]);
 
   useEffect(() => {
+    const dialog = fullscreenDialogRef.current;
+    if (!dialog) return;
+
+    if (isFullscreen && !dialog.open) {
+      dialog.showModal();
+      openedFullscreen.current = true;
+      requestAnimationFrame(() => {
+        if (insertMode) document.getElementById(`${id}-insert-url`)?.focus();
+        else editor?.commands.focus();
+      });
+      return;
+    }
+
+    if (!isFullscreen && dialog.open) dialog.close();
+    if (!isFullscreen && openedFullscreen.current) {
+      openedFullscreen.current = false;
+      requestAnimationFrame(() => fullscreenTriggerRef.current?.focus());
+    }
+  }, [id, insertMode, isFullscreen, editor]);
+
+  useEffect(() => {
     if (!isFullscreen && !insertMode) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       if (insertMode) {
+        event.preventDefault();
+        event.stopPropagation();
         setInsertMode(null);
         setInsertError('');
-      } else {
+      } else if (isFullscreen) {
+        event.preventDefault();
+        event.stopPropagation();
         setIsFullscreen(false);
       }
     };
@@ -292,7 +325,7 @@ export function RichTextEditor({
   );
 
   const toolbar = (
-    <div className="rich-editor-toolbar" aria-label="Herramientas de edición">
+    <div className="rich-editor-toolbar" role="group" aria-label="Herramientas de edición">
       {renderGroup('Historia', 'Deshacer y rehacer', <>
         {renderButton('undo', 'Deshacer', Undo2, false, !toolbarState.canUndo, 'default', false)}
         {renderButton('redo', 'Rehacer', Redo2, false, !toolbarState.canRedo, 'default', false)}
@@ -315,30 +348,51 @@ export function RichTextEditor({
         {renderButton('italic', 'Cursiva', Italic, toolbarState.italic)}
         {renderButton('underline', 'Subrayado', UnderlineIcon, toolbarState.underline)}
         {renderButton('strike', 'Tachado', Strikethrough, toolbarState.strike)}
-        {renderButton('highlight', 'Resaltar texto', Highlighter, toolbarState.highlight)}
       </>)}
       {renderGroup('Listas', 'Listas y bloques', <>
         {renderButton('bullet', 'Lista con viñetas', List, toolbarState.bullet)}
         {renderButton('ordered', 'Lista numerada', ListOrdered, toolbarState.ordered)}
-        {renderButton('quote', 'Cita', Quote, toolbarState.quote)}
-        {renderButton('code', 'Bloque de código', Code2, toolbarState.code)}
       </>)}
-      {renderGroup('Alinear', 'Alineación del texto', <>
-        {renderButton('left', 'Alinear a la izquierda', AlignLeft, toolbarState.left)}
-        {renderButton('center', 'Centrar', AlignCenter, toolbarState.center)}
-        {renderButton('right', 'Alinear a la derecha', AlignRight, toolbarState.right)}
-        {renderButton('justify', 'Justificar', AlignJustify, toolbarState.justify)}
-      </>)}
-      {renderGroup('Insertar', 'Insertar contenido o limpiar formato', <>
+      {renderGroup('Insertar', 'Insertar contenido', <>
         {renderButton('link', toolbarState.link ? 'Enlace en la selección' : 'Insertar enlace', Link2, insertMode === 'link' || toolbarState.link)}
         {renderButton('image', 'Insertar imagen desde enlace', ImagePlus, insertMode === 'image', false, 'default', false)}
-        {renderButton('clear', 'Quitar formato', Eraser, false, false, 'danger', false)}
       </>)}
+      <button
+        type="button"
+        className={`rich-editor-more-button${showMoreFormatting ? ' is-open' : ''}`}
+        aria-expanded={showMoreFormatting}
+        aria-controls={`${id}-advanced-formatting`}
+        onClick={() => setShowMoreFormatting((open) => !open)}
+      >
+        <SlidersHorizontal size={15} aria-hidden />
+        <span>Más formato</span>
+        <MoreHorizontal size={15} aria-hidden />
+      </button>
     </div>
   );
 
   const settings = (
-    <div className="rich-editor-settings" role="group" aria-label="Opciones de texto">
+    <div
+      className="rich-editor-advanced"
+      id={`${id}-advanced-formatting`}
+      hidden={!showMoreFormatting}
+      aria-label="Formato avanzado"
+    >
+      <div className="rich-editor-advanced-tools" role="group" aria-label="Más opciones de formato">
+        {renderGroup('Alinear', 'Alineación del texto', <>
+          {renderButton('left', 'Alinear a la izquierda', AlignLeft, toolbarState.left)}
+          {renderButton('center', 'Centrar', AlignCenter, toolbarState.center)}
+          {renderButton('right', 'Alinear a la derecha', AlignRight, toolbarState.right)}
+          {renderButton('justify', 'Justificar', AlignJustify, toolbarState.justify)}
+        </>)}
+        {renderGroup('Otros', 'Resaltado, cita, código y limpieza', <>
+          {renderButton('highlight', 'Resaltar texto', Highlighter, toolbarState.highlight)}
+          {renderButton('quote', 'Cita', Quote, toolbarState.quote)}
+          {renderButton('code', 'Bloque de código', Code2, toolbarState.code)}
+          {renderButton('clear', 'Quitar formato', Eraser, false, false, 'danger', false)}
+        </>)}
+      </div>
+      <div className="rich-editor-settings" role="group" aria-label="Tipografía y color">
       <div className="rich-editor-setting">
         <label htmlFor={`${id}-font`}>Tipografía</label>
         <div className="rich-editor-select-wrap">
@@ -390,7 +444,7 @@ export function RichTextEditor({
           onChange={(event) => editor.chain().focus().toggleHighlight({ color: event.target.value }).run()}
         />
       </div>
-      <div className="rich-editor-setting rich-editor-setting-list">
+      {toolbarState.ordered && <div className="rich-editor-setting rich-editor-setting-list">
         <label htmlFor={`${id}-list-style`}>Numeración</label>
         <div className="rich-editor-select-wrap">
           <select
@@ -410,6 +464,7 @@ export function RichTextEditor({
           </select>
           <ChevronDown size={13} aria-hidden />
         </div>
+      </div>}
       </div>
     </div>
   );
@@ -480,6 +535,7 @@ export function RichTextEditor({
       </div>
       {fullscreen && (
         <button
+          ref={fullscreenTriggerRef}
           className="rich-editor-expand"
           type="button"
           aria-label="Abrir editor a pantalla completa"
@@ -512,23 +568,36 @@ export function RichTextEditor({
         {settings}
         {insertPanel}
         {writingSurface}
-      </> : (
-        <div className="editor-fullscreen-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsFullscreen(false); }}>
-          <section className="editor-fullscreen-inner" role="dialog" aria-modal="true" aria-label={`${label}, pantalla completa`}>
+      </> : null}
+      <dialog
+        ref={fullscreenDialogRef}
+        className="editor-fullscreen-dialog"
+        aria-label={`${label}, pantalla completa`}
+        onCancel={(event) => {
+          event.preventDefault();
+          if (insertMode) {
+            setInsertMode(null);
+            setInsertError('');
+          } else {
+            setIsFullscreen(false);
+          }
+        }}
+        onClose={() => setIsFullscreen(false)}
+      >
+        {isFullscreen && <>
             <header className="rich-editor-full-head">
               <div className="rich-editor-full-heading">
                 <span className="rich-editor-title-mark" aria-hidden="true"><span /></span>
                 <div><span className="rich-editor-eyebrow">EDITOR DE TEXTO</span><h2>{label}</h2><p>Organiza las ideas y da formato al contenido.</p></div>
               </div>
-              <button type="button" onClick={() => setIsFullscreen(false)}><X size={17} /> <span>Cerrar</span></button>
+              <button type="button" aria-label="Cerrar pantalla completa" onClick={() => setIsFullscreen(false)}><X size={17} /> <span>Cerrar</span></button>
             </header>
             {toolbar}
             {settings}
             {insertPanel}
             {writingSurface}
-          </section>
-        </div>
-      )}
+        </>}
+      </dialog>
     </div>
   );
 }

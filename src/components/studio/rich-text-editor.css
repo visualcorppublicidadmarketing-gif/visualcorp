@@ -1,16 +1,23 @@
 .rich-editor-shell {
-  --editor-ink: #24212d;
-  --editor-muted: #777483;
-  --editor-line: #e9e4ed;
-  --editor-soft: #faf8fc;
-  --editor-accent: #991b82;
-  --editor-accent-soft: #f7edf8;
+  --editor-ink: #211d2a;
+  --editor-muted: #655e6f;
+  --editor-subtle: #706979;
+  --editor-line: #e5e1e9;
+  --editor-soft: #f7f5f8;
+  --editor-surface: #fff;
+  --editor-field: #fff;
+  --editor-accent: #92247f;
+  --editor-accent-soft: #f5eaf4;
+  color-scheme: light;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   position: relative;
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--editor-line);
   border-radius: 14px;
-  background: #fff;
+  background: var(--editor-surface);
   color: var(--editor-ink);
   box-shadow: 0 3px 12px rgb(39 19 46 / 4%);
 }
@@ -240,7 +247,7 @@
 .rich-editor-select-wrap select:focus-visible,
 .rich-editor-expand:focus-visible,
 .rich-editor-tool-button:focus-visible,
-.editor-fullscreen-inner button:focus-visible,
+.editor-fullscreen-dialog button:focus-visible,
 .rich-editor-insert-panel button:focus-visible {
   outline: 3px solid rgb(153 27 130 / 24%);
   outline-offset: 2px;
@@ -372,7 +379,205 @@
 .rich-editor-shell .rich-editor-content pre code { padding: 0; background: transparent; color: inherit; }
 .rich-editor-shell .rich-editor-content img { display: block; max-width: min(100%, 720px); height: auto; margin: 14px 0; border: 1px solid #eee8f0; border-radius: 10px; }
 .rich-editor-shell .rich-editor-content p.is-editor-empty:first-child::before { float: left; height: 0; color: #b0aab6; content: attr(data-placeholder); pointer-events: none; }
+.rich-editor-shell .rich-editor-content:has(> p:only-child > br.ProseMirror-trailingBreak)::before { float: left; height: 0; color: var(--editor-subtle); content: attr(data-placeholder); pointer-events: none; user-select: none; }
 .rich-editor-shell .rich-editor-content ::selection { background: #ead2ec; }
+
+/* Compact primary controls; secondary typography and alignment stay available on demand. */
+.rich-editor-toolbar {
+  align-items: center;
+  gap: 8px 10px;
+  padding: 10px 12px;
+}
+
+.rich-editor-group-label {
+  color: var(--editor-subtle);
+  font-size: 9px;
+  letter-spacing: .02em;
+  text-transform: none;
+}
+
+.rich-editor-tool-buttons { border-color: var(--editor-line); background: var(--editor-field); }
+.rich-editor-tool-button { width: 32px; height: 30px; color: var(--editor-muted); }
+.rich-editor-tool-button:hover:not(:disabled) { border-color: var(--editor-line); background: var(--editor-soft); color: var(--editor-accent); }
+.rich-editor-tool-button.is-active { border-color: color-mix(in srgb, var(--editor-accent) 26%, var(--editor-line)); background: var(--editor-accent-soft); color: var(--editor-accent); box-shadow: none; }
+.rich-editor-tool-button:disabled { color: color-mix(in srgb, var(--editor-muted) 38%, var(--editor-surface)); }
+
+.rich-editor-more-button {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  padding: 0 10px;
+  border: 1px solid var(--editor-line);
+  border-radius: 9px;
+  background: var(--editor-surface);
+  color: var(--editor-muted);
+  cursor: pointer;
+  font: 600 11px/1 var(--vc-font-sans, Inter, ui-sans-serif, system-ui, sans-serif);
+}
+
+.rich-editor-more-button:hover,
+.rich-editor-more-button.is-open { border-color: color-mix(in srgb, var(--editor-accent) 32%, var(--editor-line)); background: var(--editor-accent-soft); color: var(--editor-accent); }
+.rich-editor-more-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--editor-accent) 32%, transparent); outline-offset: 2px; }
+.rich-editor-more-button > svg:last-child { opacity: .65; }
+
+.rich-editor-advanced { border-bottom: 1px solid var(--editor-line); background: var(--editor-surface); }
+.rich-editor-advanced[hidden] { display: none; }
+.rich-editor-advanced-tools { display: flex; min-width: 0; align-items: flex-end; gap: 10px 14px; flex-wrap: wrap; padding: 10px 12px 2px; }
+.rich-editor-settings { border-bottom: 0; background: transparent; }
+.rich-editor-setting > label { color: var(--editor-muted); font-size: 10px; letter-spacing: 0; }
+.rich-editor-select-wrap select { min-height: 36px; border-color: var(--editor-line); background: var(--editor-field); color: var(--editor-ink); font-size: 12px; }
+.rich-editor-setting .rich-editor-select-wrap select { height: 36px; font-size: 12px; }
+.rich-editor-setting-color input[type="color"] { height: 36px; min-height: 36px; border-color: var(--editor-line); background: var(--editor-field); }
+.rich-editor-select-wrap select:focus-visible,
+.rich-editor-expand:focus-visible,
+.rich-editor-tool-button:focus-visible,
+.rich-editor-insert-panel button:focus-visible,
+.rich-editor-url-field input:focus-visible,
+.editor-fullscreen-dialog button:focus-visible { outline: 3px solid color-mix(in srgb, var(--editor-accent) 40%, transparent); outline-offset: 2px; }
+
+.rich-editor-head { border-color: var(--editor-line); background: var(--editor-surface); }
+.rich-editor-eyebrow { color: var(--editor-accent); font-size: 10px; letter-spacing: .04em; }
+.rich-editor-expand { min-height: 36px; border-color: var(--editor-line); background: var(--editor-surface); color: var(--editor-muted); font-size: 11px; }
+.rich-editor-toolbar { border-color: var(--editor-line); background: var(--editor-soft); }
+.rich-editor-writing-surface { background: var(--editor-surface); }
+.rich-editor-writing-hint { min-height: 34px; border-color: var(--editor-line); color: var(--editor-muted); font-size: 11px; }
+.rich-editor-writing-hint kbd { border-color: var(--editor-line); background: var(--editor-soft); color: var(--editor-muted); font-size: 10px; }
+.rich-editor-status { min-height: 38px; flex-wrap: wrap; border-color: var(--editor-line); background: var(--editor-soft); color: var(--editor-muted); font-size: 11px; }
+.rich-editor-status > span:first-child svg { color: var(--editor-accent); }
+.rich-editor-status-note { color: var(--editor-subtle); }
+.rich-editor-shell .rich-editor-content { color: var(--editor-ink); font-size: 14px; }
+.rich-editor-shell .rich-editor-content h1,
+.rich-editor-shell .rich-editor-content h2,
+.rich-editor-shell .rich-editor-content h3 { color: var(--editor-ink); }
+.rich-editor-shell .rich-editor-content a { color: var(--editor-accent); }
+.rich-editor-shell .rich-editor-content blockquote { color: var(--editor-muted); }
+.rich-editor-shell .rich-editor-content code { background: var(--editor-soft); color: var(--editor-accent); }
+.rich-editor-shell .rich-editor-content img { max-width: 100%; }
+
+.editor-fullscreen-dialog {
+  position: fixed;
+  width: min(1440px, calc(100vw - 32px));
+  height: min(92vh, 1050px);
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  min-width: 0;
+  min-height: min(380px, calc(100dvh - 32px));
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--editor-line);
+  border-radius: 18px;
+  background: var(--editor-surface);
+  color: var(--editor-ink);
+  box-shadow: 0 28px 110px rgb(15 7 22 / 28%);
+}
+
+.editor-fullscreen-dialog[open] { display: flex; }
+.editor-fullscreen-dialog::backdrop { background: rgb(15 12 22 / 58%); backdrop-filter: blur(5px); }
+.rich-editor-full-head { flex: none; border-color: var(--editor-line); background: var(--editor-surface); }
+.rich-editor-full-heading h2 { color: var(--editor-ink); }
+.rich-editor-full-heading p { color: var(--editor-muted); font-size: 12px; }
+.rich-editor-full-head > button { min-height: 38px; border-color: var(--editor-line); background: var(--editor-surface); color: var(--editor-muted); font-size: 11px; }
+.editor-fullscreen-dialog .rich-editor-toolbar,
+.editor-fullscreen-dialog .rich-editor-advanced { flex: none; }
+.editor-fullscreen-dialog .rich-editor-writing-surface { display: flex; min-height: 0; flex: 1; flex-direction: column; }
+.editor-fullscreen-dialog .rich-editor-content { min-height: 0; flex: 1; overflow-y: auto; padding: 24px clamp(20px, 5vw, 70px); font-size: 15px; }
+
+/* The editor follows the active Suite theme at every shared use site. */
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell {
+  --editor-ink: #f1eff7;
+  --editor-muted: #c2bdcf;
+  --editor-subtle: #a39caf;
+  --editor-line: #373646;
+  --editor-soft: #1a1923;
+  --editor-surface: #14131c;
+  --editor-field: #1b1a25;
+  --editor-accent: #df9bd7;
+  --editor-accent-soft: #35243a;
+  color-scheme: dark;
+  border-color: var(--editor-line);
+  background: var(--editor-surface);
+  box-shadow: none;
+}
+
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell :is(.rich-editor-head, .rich-editor-advanced, .rich-editor-settings, .rich-editor-writing-surface) { border-color: var(--editor-line); background: var(--editor-surface); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-head { background: linear-gradient(110deg, #171620 35%, #1c1923 100%); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-toolbar { border-color: var(--editor-line); background: #191821; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell :is(.rich-editor-title-mark, .rich-editor-tool-buttons, .rich-editor-expand, .rich-editor-more-button, .rich-editor-select-wrap select, .rich-editor-setting-color input[type="color"]) { border-color: var(--editor-line); background: var(--editor-field); color: var(--editor-ink); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-title-mark { background: #2a2031; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-title-mark::before { background: #211b29; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-title-mark::after { box-shadow: 0 0 0 2px #2a2031; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell :is(.rich-editor-tool-button, .rich-editor-expand, .rich-editor-more-button) { color: var(--editor-muted); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell :is(.rich-editor-tool-button:hover:not(:disabled), .rich-editor-more-button:hover, .rich-editor-more-button.is-open) { border-color: #5b4263; background: var(--editor-accent-soft); color: var(--editor-accent); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-tool-button.is-active { border-color: #694c70; background: #382741; color: #f0b5e8; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-tool-button.is-danger { color: #ff9ba6; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-tool-button.is-danger:hover:not(:disabled) { border-color: #71414d; background: #3b222a; color: #ffc0c7; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell :is(.rich-editor-select-wrap > svg, .rich-editor-group-label, .rich-editor-setting > label, .rich-editor-writing-hint, .rich-editor-status, .rich-editor-status-note, .rich-editor-full-heading p) { color: var(--editor-muted); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-writing-hint { border-color: var(--editor-line); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-writing-hint kbd { border-color: var(--editor-line); background: #211f2a; color: var(--editor-muted); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-status { border-color: var(--editor-line); background: #191821; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-content { color: var(--editor-ink); caret-color: var(--editor-accent); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-content ::selection { background: #694c70; color: #fff; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-content :is(h1, h2, h3) { color: var(--editor-ink); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-content a { color: #e4a9dc; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-content blockquote { border-color: #a965a3; color: #c5bdce; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-content code { background: #292433; color: #efb8e7; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-content pre { border-color: var(--editor-line); background: #0d0c13; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-content img { border-color: var(--editor-line); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-content p.is-editor-empty:first-child::before { color: #9e98ab; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell :is(.rich-editor-insert-panel, .rich-editor-url-field input) { border-color: var(--editor-line); background: #1b1a25; color: var(--editor-ink); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell :is(.rich-editor-insert-copy strong, .rich-editor-url-field) { color: var(--editor-ink); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-insert-copy span { color: var(--editor-muted); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-insert-icon { background: #35243a; color: #efb8e7; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-insert-actions button { border-color: var(--editor-line); background: #24222d; color: var(--editor-ink); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .rich-editor-shell .rich-editor-insert-actions .rich-editor-confirm { border-color: #844078; background: #844078; color: #fff; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .editor-fullscreen-dialog { border-color: #403d4d; background: #14131c; color: #f1eff7; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .editor-fullscreen-dialog .rich-editor-full-head { border-color: #373646; background: linear-gradient(110deg, #171620, #201a27); }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .editor-fullscreen-dialog .rich-editor-full-heading h2 { color: #f1eff7; }
+:is([data-theme='dark'], [data-vc-theme='dark'], .theme-dark) .editor-fullscreen-dialog .rich-editor-full-head > button { border-color: #373646; background: #1b1a25; color: #c2bdcf; }
+
+@media (max-width: 720px) {
+  .rich-editor-toolbar { align-items: center; gap: 8px; }
+  .rich-editor-more-button { margin-left: 0; }
+  .rich-editor-setting { flex-basis: 125px; }
+  .rich-editor-setting-size { flex-basis: 82px; }
+  .rich-editor-setting-color { flex-basis: 68px; }
+  .rich-editor-setting-list { flex-basis: 112px; }
+}
+
+@media (max-width: 480px) {
+  .rich-editor-group-label { font-size: 10px; }
+  .rich-editor-toolbar { padding: 9px; }
+  .rich-editor-tool-group { gap: 4px; }
+  .rich-editor-tool-button { width: 30px; height: 30px; }
+  .rich-editor-more-button { min-height: 36px; }
+  .rich-editor-settings { gap: 8px; padding: 8px 10px 10px; }
+  .rich-editor-setting { flex: 1 1 calc(50% - 4px); }
+  .rich-editor-setting-size,
+  .rich-editor-setting-color,
+  .rich-editor-setting-list { flex: 1 1 calc(50% - 4px); }
+  .rich-editor-advanced-tools { gap: 9px; padding: 9px 10px 1px; }
+  .rich-editor-writing-hint { padding: 0 11px; }
+  .rich-editor-status { gap: 8px 12px; padding: 7px 11px; }
+  .rich-editor-status-note { display: none; }
+  .rich-editor-shell .rich-editor-content { padding: 15px 13px; }
+  .rich-editor-insert-panel { grid-template-columns: 32px minmax(0, 1fr); gap: 8px; margin: 8px; padding: 10px; }
+  .rich-editor-insert-actions { grid-column: 1 / -1; }
+  .editor-fullscreen-dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; min-height: 0; border: 0; border-radius: 0; }
+  .editor-fullscreen-dialog .rich-editor-full-head { min-height: 68px; padding: 10px 12px; }
+  .editor-fullscreen-dialog .rich-editor-full-head > button { min-width: 40px; justify-content: center; padding: 0 9px; }
+  .editor-fullscreen-dialog .rich-editor-full-heading p { display: none; }
+  .editor-fullscreen-dialog .rich-editor-content { padding: 16px 14px; font-size: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rich-editor-expand,
+  .rich-editor-tool-button { transition: none; }
+  .rich-editor-tool-button:active:not(:disabled) { transform: none; }
+  .rich-editor-head.vc-magic-card::before { transition: none; }
+}
 
 .rich-editor-insert-panel {
   display: grid;
@@ -400,94 +605,3 @@
 .rich-editor-insert-actions button { display: inline-flex; min-height: 32px; align-items: center; justify-content: center; gap: 5px; padding: 0 10px; border: 1px solid #e7ddea; border-radius: 8px; background: #fff; color: #61576a; cursor: pointer; font-family: inherit; font-size: 10px; font-weight: 650; }
 .rich-editor-insert-actions .rich-editor-confirm { border-color: #8d277f; background: #8d277f; color: white; }
 .rich-editor-insert-actions .rich-editor-confirm:hover { background: #761b69; }
-
-.editor-fullscreen-overlay {
-  position: fixed;
-  z-index: 150;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: clamp(12px, 3.5vh, 34px) clamp(12px, 4vw, 54px);
-  background: rgb(26 21 31 / 54%);
-  backdrop-filter: blur(8px);
-}
-
-.editor-fullscreen-inner {
-  display: flex;
-  width: min(1440px, 100%);
-  height: min(92vh, 1050px);
-  min-height: 380px;
-  flex-direction: column;
-  overflow: auto;
-  border: 1px solid rgb(255 255 255 / 68%);
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 28px 110px rgb(15 7 22 / 28%);
-}
-
-.rich-editor-full-head {
-  display: flex;
-  min-height: 82px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 15px 20px;
-  border-bottom: 1px solid var(--editor-line);
-  background: linear-gradient(105deg, #fff 20%, #fcf7fd 100%);
-}
-
-.rich-editor-full-heading h2 { margin: 1px 0 0; color: #2e2935; font-size: 18px; line-height: 1.2; }
-.rich-editor-full-heading p { margin: 3px 0 0; color: #847e8d; font-size: 10px; }
-.rich-editor-full-head > button { display: inline-flex; min-height: 36px; flex: none; align-items: center; gap: 7px; padding: 0 11px; border: 1px solid #e8e1eb; border-radius: 9px; background: #fff; color: #615a69; cursor: pointer; font-family: inherit; font-size: 10px; font-weight: 650; }
-.rich-editor-full-head > button:hover { border-color: #dab9dc; color: var(--editor-accent); }
-.editor-fullscreen-inner .rich-editor-toolbar { flex: none; }
-.editor-fullscreen-inner .rich-editor-settings { flex: none; }
-.editor-fullscreen-inner .rich-editor-writing-surface { display: flex; min-height: 0; flex: 1; flex-direction: column; }
-.editor-fullscreen-inner .rich-editor-content { min-height: 55vh; flex: 1; padding: 24px clamp(20px, 5vw, 70px); font-size: 15px; }
-
-@media (max-width: 720px) {
-  .rich-editor-toolbar { gap: 8px; }
-  .rich-editor-tool-group .rich-editor-select-wrap { width: 118px; }
-  .rich-editor-settings { gap: 8px; }
-  .rich-editor-setting { flex-basis: 125px; }
-  .rich-editor-setting-size { flex-basis: 76px; }
-  .rich-editor-setting-color { flex-basis: 60px; }
-  .rich-editor-setting-list { flex-basis: 105px; }
-  .editor-fullscreen-overlay { padding: 8px; }
-  .editor-fullscreen-inner { height: 96vh; border-radius: 13px; }
-}
-
-@media (max-width: 480px) {
-  .rich-editor-head { min-height: 61px; padding: 10px 11px; }
-  .rich-editor-title-mark { width: 31px; height: 31px; }
-  .rich-editor-expand { width: 34px; padding: 0; }
-  .rich-editor-expand > span { display: none; }
-  .rich-editor-toolbar { align-items: flex-end; gap: 8px 9px; padding: 9px; }
-  .rich-editor-group-label { font-size: 7px; }
-  .rich-editor-tool-buttons { min-height: 30px; }
-  .rich-editor-tool-button { width: 27px; height: 26px; }
-  .rich-editor-tool-group .rich-editor-select-wrap { width: 112px; }
-  .rich-editor-settings { gap: 7px; padding: 8px 9px; }
-  .rich-editor-setting { flex-basis: calc(50% - 4px); }
-  .rich-editor-setting-size,
-  .rich-editor-setting-color { flex: 1 1 calc(50% - 4px); }
-  .rich-editor-setting-list { flex: 1 1 calc(50% - 4px); }
-  .rich-editor-writing-hint { padding: 0 10px; }
-  .rich-editor-status { min-height: 33px; gap: 9px; padding: 0 10px; font-size: 8px; }
-  .rich-editor-status-note { display: none !important; }
-  .rich-editor-shell .rich-editor-content { padding: 13px 12px 17px; font-size: 12px; }
-  .rich-editor-insert-panel { grid-template-columns: 32px minmax(0, 1fr); gap: 8px; margin: 8px; padding: 10px; }
-  .rich-editor-insert-actions { grid-column: 1 / -1; }
-  .rich-editor-full-head { min-height: 70px; padding: 11px; }
-  .rich-editor-full-head > button { width: 36px; justify-content: center; padding: 0; }
-  .rich-editor-full-head > button span { display: none; }
-  .rich-editor-full-heading p { display: none; }
-  .editor-fullscreen-inner .rich-editor-content { min-height: 52vh; padding: 16px 13px; font-size: 13px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rich-editor-expand,
-  .rich-editor-tool-button { transition: none; }
-  .rich-editor-tool-button:active:not(:disabled) { transform: none; }
-  .rich-editor-head.vc-magic-card::before { transition: none; }
-}
