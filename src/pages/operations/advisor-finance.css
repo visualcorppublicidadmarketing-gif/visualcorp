@@ -6,3 +6,194 @@
 @media(prefers-reduced-motion:reduce){.advisor-team-card{transition:none}.advisor-team-card:hover{transform:none}}
 .advisor-register-empty{margin:12px 0 0;padding:11px 13px;border:1px dashed #cbd8d5;border-radius:10px;background:#f8fbfa;color:var(--muted);font-size:.78rem;line-height:1.5}
 .advisor-finance-detail-trigger{display:grid;justify-items:start;gap:3px;padding:5px 7px;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}.advisor-finance-detail-trigger:hover{background:#f8f4fa}.advisor-finance-detail-trigger:focus-visible{outline:3px solid #8b42a7;outline-offset:2px}.advisor-finance-detail-trigger em{margin-top:2px;color:#713989;font-size:9px;font-style:normal;font-weight:750}
+
+/* Mi semana: one shared dashboard for Operations and the Finance embed. */
+.work-app .main-content:has(> .vc-route-frame > .advisor-week-dashboard:not(.is-embedded)){max-width:1660px;padding-inline:clamp(16px,2.8vw,44px)}
+.advisor-week-dashboard{
+  --week-panel:var(--panel,#fff);
+  --week-subtle:#f5f5f9;
+  --week-border:var(--line,#e8e9ee);
+  --week-soft-ink:#626574;
+  display:grid;gap:18px;min-width:0;max-width:100%;padding-bottom:24px;
+}
+.work-app.theme-dark .advisor-week-dashboard{
+  --week-panel:#171a25;
+  --week-subtle:#1d2130;
+  --week-border:#31364a;
+  --week-soft-ink:#b2b8c8;
+}
+.advisor-week-dashboard,.advisor-week-dashboard *{box-sizing:border-box}
+.advisor-week-dashboard :is(.panel,.stat-card,.advisor-team-card,.advisor-job){min-width:0;max-width:100%}
+.advisor-week-hero{
+  position:relative;isolation:isolate;overflow:hidden;min-width:0;
+  padding:clamp(23px,3vw,40px);border:1px solid #464767;border-radius:23px;
+  color:#f7f7ff;
+  background:radial-gradient(ellipse at 83% 8%,#a274e64a,transparent 35%),
+    radial-gradient(ellipse at 69% 118%,#3393d848,transparent 36%),
+    linear-gradient(118deg,#181f32 4%,#262747 55%,#34295a 100%);
+  box-shadow:0 22px 48px #10132620;
+}
+.advisor-week-hero::before{
+  content:"";position:absolute;inset:auto -8% -115% 24%;height:245%;z-index:-1;
+  border:1px solid #d4c9ff1c;border-radius:50%;transform:rotate(-17deg);
+}
+.advisor-week-hero::after{
+  content:"";position:absolute;right:10%;top:-48%;width:32%;aspect-ratio:1;z-index:-1;
+  border:1px solid #d4c9ff1b;border-radius:50%;box-shadow:0 0 0 44px #aab8ff08,0 0 0 92px #aab8ff05;
+}
+.advisor-week-hero .page-heading{position:relative;z-index:1;align-items:flex-start;margin:0 0 26px;max-width:100%}
+.advisor-week-hero .page-heading>div:first-child{min-width:0;max-width:790px}
+.advisor-week-hero .page-heading .eyebrow{color:#d7b0fa;font-size:.69rem;font-weight:800;letter-spacing:.12em}
+.advisor-week-hero .page-heading h1{max-width:27ch;margin:10px 0 11px;color:#fff;font-size:clamp(1.8rem,2.25vw,2.75rem);line-height:1.08;letter-spacing:-.055em;text-wrap:balance}
+.advisor-week-hero .page-heading p{max-width:62ch;color:#cdd0e3;font-size:.88rem;line-height:1.6}
+.advisor-week-hero-art{position:absolute;right:4%;top:-45px;width:330px;height:270px;pointer-events:none;opacity:.86;transform:rotate(-20deg)}
+.advisor-week-hero-art span{position:absolute;display:block;width:175px;height:185px;border:1px solid #ffffff75;border-radius:22px;box-shadow:0 22px 42px #14172d60,inset 0 1px #ffffff80;backdrop-filter:blur(2px)}
+.advisor-week-hero-art span:first-child{left:16px;top:72px;background:linear-gradient(155deg,#63c6ed8c,#4855b556 62%,#ffffff08);transform:rotate(-21deg)}
+.advisor-week-hero-art span:nth-child(2){left:95px;top:37px;background:linear-gradient(150deg,#b9a8ff9a,#505be484 55%,#ffffff0d);transform:rotate(13deg)}
+.advisor-week-hero-art span:last-child{left:126px;top:93px;background:linear-gradient(145deg,#fc7ac48c,#7460c88c 57%,#ffffff08);transform:rotate(38deg)}
+.advisor-week-hero-art span:last-child::after{content:"";position:absolute;inset:21px;border:1px solid #ffffff5c;border-radius:14px}
+.advisor-week-actions{position:relative;z-index:2;justify-content:flex-end}
+.advisor-week-actions .button{min-height:40px;padding:9px 13px;border:1px solid #d9d4ff58;border-radius:11px;background:#ffffff18;color:#fff;backdrop-filter:blur(12px);font-size:.76rem;font-weight:700;box-shadow:none}
+.advisor-week-actions .button:hover{border-color:#e6dcffb0;background:#ffffff2c;color:#fff}
+.advisor-week-actions .button:focus-visible,.advisor-finance-week a:focus-visible{outline:3px solid #d6b5ff;outline-offset:3px}
+.advisor-finance-week{position:relative;z-index:1;display:inline-flex;max-width:100%;flex-wrap:wrap;gap:13px;margin:0;padding:13px 15px;border:1px solid #e1ddff41;border-radius:13px;background:#10172872;box-shadow:inset 0 1px #ffffff16;backdrop-filter:blur(8px)}
+.advisor-finance-week .advisor-week-calendar-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:9px;background:#ad9dff30;color:#dccfff}
+.advisor-finance-week>span:nth-child(2){display:grid;gap:3px;min-width:0}
+.advisor-finance-week b{color:#fff;font-size:.82rem;line-height:1.3}
+.advisor-finance-week small{color:#c3c8de;font-size:.7rem}
+.advisor-finance-week>a{color:#e5d4ff;font-size:.74rem}
+.advisor-week-nav{display:flex;align-items:center;gap:6px;margin-left:auto}
+.advisor-week-nav button{display:inline-grid;place-items:center;flex:none;width:34px;height:34px;padding:0;border:1px solid #e1ddff42;border-radius:10px;background:#ffffff12;color:#f8f5ff;cursor:pointer;transition:background-color .16s,border-color .16s}
+.advisor-week-nav button:hover{border-color:#e6dcff9c;background:#ffffff26}
+.advisor-week-nav .advisor-week-nav-reset{display:inline-flex;width:auto;min-width:76px;padding:0 10px;font-size:.7rem;font-weight:750}
+.advisor-week-current{padding:6px 9px;border:1px solid #d6b5ff42;border-radius:999px;background:#bd8af326;color:#e8d5ff;font-size:.66rem;font-weight:750;white-space:nowrap}
+.advisor-finance-week>a{margin-left:0}
+.advisor-finance-week>a:hover{text-decoration:underline;text-underline-offset:3px}
+
+.advisor-week-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0}
+.advisor-week-dashboard .stat-card{position:relative;overflow:hidden;min-height:148px;padding:20px;border:1px solid var(--week-border);border-radius:17px;background:var(--week-panel);box-shadow:0 12px 30px #1315230b}
+.advisor-week-dashboard .stat-card::after{content:"";position:absolute;right:-21px;bottom:-48px;width:118px;height:118px;border:1px solid currentColor;border-radius:50%;opacity:.08;pointer-events:none}
+.advisor-week-dashboard .stat-card:first-child{border-color:#665ca0;background:linear-gradient(135deg,#273567 0%,#303365 56%,#5b347b 100%);color:#fff}
+.advisor-week-dashboard .stat-card:first-child::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 92% 18%,#ffffff37,transparent 38%);pointer-events:none}
+.advisor-week-dashboard .stat-card .stat-icon{width:42px;height:42px;border-radius:12px}
+.advisor-week-dashboard .stat-card .stat-meta{display:grid;align-content:center;min-width:0}
+.advisor-week-dashboard .stat-meta>span{color:var(--week-soft-ink);font-size:.74rem;font-weight:650}
+.advisor-week-dashboard .stat-meta>b{margin-top:7px;color:var(--ink);font-size:clamp(1.35rem,1.6vw,1.9rem);line-height:1.1;letter-spacing:-.045em}
+.advisor-week-dashboard .stat-meta>small{margin-top:8px;color:var(--week-soft-ink);font-size:.71rem;line-height:1.3;white-space:normal}
+.advisor-week-dashboard .stat-card:first-child :is(.stat-meta>span,.stat-meta>b,.stat-meta>small){color:#fff}
+.advisor-week-dashboard .stat-card:first-child .stat-meta>small{color:#d7dbef}
+.advisor-week-dashboard .stat-card:first-child .stat-icon{background:#ffffff2b;color:#fff}
+.advisor-week-dashboard .stat-icon.green{background:#dbf6ea;color:#148454}
+.work-app.theme-dark .advisor-week-dashboard .stat-icon.green{background:#1d483c;color:#7ae2b3}
+
+.advisor-week-dashboard .panel{border:1px solid var(--week-border);border-radius:18px;background:var(--week-panel);box-shadow:0 12px 32px #10121c0a}
+.advisor-week-dashboard .panel-heading{align-items:flex-start;gap:16px;flex-wrap:wrap}
+.advisor-week-dashboard .panel-heading h2,.advisor-week-dashboard .advisor-jobs-head h2{color:var(--ink);font-size:clamp(1.1rem,1.25vw,1.35rem);line-height:1.2;letter-spacing:-.035em}
+.advisor-week-dashboard .panel-heading p,.advisor-week-dashboard .advisor-jobs-head p{color:var(--week-soft-ink);font-size:.8rem;line-height:1.55}
+.advisor-team-week{margin:0;padding:clamp(18px,2vw,27px)}
+.advisor-team-week .panel-heading{margin-bottom:18px}
+.advisor-team-count{border-color:var(--week-border);background:var(--week-subtle);color:var(--week-soft-ink);font-size:.72rem;font-weight:650}
+.advisor-week-toolbar{align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:12px;padding:12px;border:1px solid var(--week-border);border-radius:13px;background:var(--week-subtle)}
+.advisor-week-segments{max-width:100%;flex-wrap:wrap;border-color:var(--week-border);border-radius:10px;background:var(--week-panel)}
+.advisor-week-segments button{min-height:37px;padding:8px 14px;color:var(--week-soft-ink);font-size:.76rem}
+.advisor-week-segments button[aria-pressed="true"]{background:linear-gradient(125deg,#a01891,#7546ad);color:#fff;box-shadow:0 4px 12px #751e8c36}
+.advisor-week-toolbar>label{color:var(--week-soft-ink);font-size:.72rem}
+.advisor-week-toolbar select{max-width:100%;border-color:var(--week-border);background:var(--week-panel);color:var(--ink)}
+.advisor-team-card-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
+.advisor-team-card{min-height:135px;padding:17px;border-color:var(--week-border);border-radius:13px;background:var(--week-subtle)}
+.advisor-team-card:hover{border-color:#af71d0;box-shadow:0 10px 28px #6f288d1a}
+.advisor-team-card>span,.advisor-team-card>small{color:var(--week-soft-ink)}
+.advisor-team-card>b{color:var(--ink);font-size:1.24rem}
+.advisor-team-card>em{color:#ac3b9b}
+.work-app.theme-dark .advisor-team-card>em{color:#e4a0dc}
+.advisor-register-cards{border-color:var(--week-border)}
+.advisor-team-week .advisor-finance-empty,.advisor-team-week .advisor-register-empty{display:flex;align-items:center;min-height:92px;margin:0;padding:16px 19px;border:1px dashed var(--week-border);border-radius:12px;background:var(--week-subtle);color:var(--week-soft-ink);font-size:.79rem;line-height:1.5}
+.advisor-team-week .advisor-register-empty{margin-top:12px}
+.advisor-week-dashboard .advisor-register-panel,.advisor-week-dashboard .advisor-finance-ledger,.advisor-week-dashboard .advisor-jobs{margin:0}
+.advisor-week-dashboard .advisor-jobs{padding:clamp(18px,2vw,27px)}
+.advisor-week-dashboard .advisor-jobs-empty{min-height:72px;display:flex;align-items:center;padding:18px;border:1px dashed var(--week-border);border-radius:12px;background:var(--week-subtle);color:var(--week-soft-ink);font-size:.79rem}
+.advisor-week-dashboard .advisor-jobs-filters button{border-color:var(--week-border);background:var(--week-subtle);color:var(--week-soft-ink)}
+.advisor-week-dashboard .advisor-jobs-filters button[aria-pressed=true]{border-color:#a455b1;background:color-mix(in srgb,#b10a89 15%,var(--week-panel));color:var(--ink)}
+.advisor-week-dashboard .advisor-job{border-color:var(--week-border);border-left-color:#a659b2;background:var(--week-subtle)}
+.advisor-week-dashboard .advisor-job-progress{border-color:var(--week-border);background:var(--week-panel)}
+.advisor-week-dashboard .advisor-job :is(h3,.advisor-job-progress b){color:var(--ink)}
+.advisor-week-dashboard .advisor-job :is(.advisor-job-customer,.advisor-job-progress small,.advisor-job-progress span){color:var(--week-soft-ink)}
+.advisor-week-dashboard .advisor-job-specs span{border-color:var(--week-border);color:var(--week-soft-ink)}
+
+.advisor-finance-ledger{padding:clamp(18px,2vw,27px)}
+.advisor-finance-ledger>.panel-heading{margin-bottom:17px}
+.advisor-finance-ledger>.panel-heading>span{padding:7px 11px;border:1px solid var(--week-border);border-radius:999px;background:var(--week-subtle);color:var(--week-soft-ink);font-size:.73rem;font-weight:700}
+.advisor-week-dashboard .advisor-finance-table-wrap{width:100%;max-width:100%;overflow-x:auto;border:1px solid var(--week-border);border-radius:12px;background:var(--week-panel);scrollbar-color:#8a729e transparent}
+.advisor-week-dashboard .advisor-finance-table-wrap table{min-width:1100px}
+.advisor-week-dashboard .advisor-finance-table-wrap th{padding:13px 12px;border-color:var(--week-border);background:var(--week-subtle);color:var(--week-soft-ink);font-size:.65rem;letter-spacing:.055em}
+.advisor-week-dashboard .advisor-finance-table-wrap td{padding:14px 12px;border-color:var(--week-border);color:var(--week-soft-ink);font-size:.78rem;line-height:1.5;vertical-align:top}
+.advisor-week-dashboard .advisor-finance-table-wrap tbody tr:hover{background:color-mix(in srgb,#a952bf 5%,var(--week-panel))}
+.advisor-week-dashboard .advisor-finance-table-wrap:focus-visible{outline:3px solid #bd7cd7;outline-offset:3px}
+.advisor-week-dashboard .advisor-finance-table-wrap td b{max-width:none;overflow:visible;color:var(--ink);font-size:.8rem;white-space:normal;text-overflow:clip;overflow-wrap:anywhere}
+.advisor-week-dashboard .advisor-finance-table-wrap td.advisor-finance-money-cell{white-space:nowrap}
+.advisor-week-dashboard .advisor-finance-table-wrap td.advisor-finance-money-cell b{white-space:nowrap;overflow-wrap:normal}
+.advisor-week-dashboard .advisor-finance-table-wrap td small{color:var(--week-soft-ink);font-size:.7rem}
+.advisor-week-dashboard .advisor-finance-item{max-width:300px;color:var(--ink);font-size:.77rem}
+.advisor-week-dashboard .advisor-finance-detail-trigger{padding:0;background:transparent}
+.advisor-week-dashboard .advisor-finance-detail-trigger:hover em{text-decoration:underline;text-underline-offset:2px}
+.advisor-week-dashboard .advisor-finance-detail-trigger em{color:#b66cc4;font-size:.68rem}
+.advisor-week-dashboard .advisor-finance-empty{margin:0;border:1px dashed var(--week-border);border-radius:12px;background:var(--week-subtle);color:var(--week-soft-ink);font-size:.8rem;line-height:1.5}
+.advisor-week-dashboard :is(button,a,select):focus-visible{outline:3px solid #bd7cd7;outline-offset:3px}
+
+/* The Suite's global glass theme has more specific panel and metric rules. */
+.work-app .main-content .advisor-week-dashboard .panel{background:var(--week-panel);border-color:var(--week-border)}
+.work-app .main-content .advisor-week-dashboard .stat-card{background:var(--week-panel);border-color:var(--week-border)}
+.work-app .main-content .advisor-week-dashboard .stat-card:first-child{border-color:#665ca0;background:linear-gradient(135deg,#273567 0%,#303365 56%,#5b347b 100%)}
+.work-app.theme-dark .main-content .advisor-week-dashboard .panel,
+.work-app.theme-dark .main-content .advisor-week-dashboard .stat-card{background-color:var(--week-panel)!important}
+.work-app .main-content .advisor-week-dashboard .advisor-week-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.work-app .advisor-week-hero .page-heading p{color:#d8daea}
+.work-app .advisor-week-hero .advisor-week-actions .button{border-color:#d9d4ff58;background:#ffffff18;color:#fff}
+.work-app .advisor-week-hero .advisor-week-actions .button:hover{border-color:#e6dcffb0;background:#ffffff2c;color:#fff}
+
+@media(min-width:1500px){
+  .advisor-week-dashboard:has(> .advisor-team-week){grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);align-items:start}
+  .advisor-week-dashboard:has(> .advisor-team-week)>*{grid-column:1/-1}
+  .advisor-week-dashboard:has(> .advisor-team-week)>.advisor-team-week{grid-column:1;align-self:stretch;height:100%}
+  .advisor-week-dashboard:has(> .advisor-team-week)>.advisor-jobs{grid-column:2;align-self:stretch;height:100%}
+}
+@media(max-width:1180px){
+  .advisor-week-hero-art{right:-5%;opacity:.56}
+  .advisor-week-hero .page-heading>div:first-child{max-width:620px}
+  .advisor-week-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .advisor-week-dashboard .stat-card{padding:17px;gap:10px}
+}
+@media(max-width:930px){
+  .advisor-week-hero .page-heading{display:grid;gap:18px}
+  .advisor-week-actions{justify-content:flex-start}
+  .advisor-week-hero-art{right:-130px;opacity:.38}
+  .work-app .main-content .advisor-week-dashboard .advisor-week-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .advisor-week-stats .stat-card:first-child{grid-column:1/-1}
+}
+@media(max-width:620px){
+  .work-app .main-content:has(> .vc-route-frame > .advisor-week-dashboard:not(.is-embedded)){padding-inline:13px}
+  .advisor-week-dashboard{gap:13px}
+  .advisor-week-hero{padding:23px 19px;border-radius:17px}
+  .advisor-week-hero .page-heading{margin-bottom:20px}
+  .advisor-week-hero .page-heading h1{font-size:clamp(1.75rem,8vw,2.2rem)}
+  .advisor-week-hero .page-heading p{font-size:.8rem}
+  .advisor-week-hero-art{right:-180px;top:-30px;opacity:.25}
+  .advisor-week-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .advisor-week-actions .button{justify-content:center;min-width:0;padding:9px 8px;text-align:center;font-size:.7rem}
+  .advisor-finance-week{display:flex;width:100%;align-items:flex-start;gap:10px}
+  .advisor-week-nav{width:calc(100% - 44px);margin-left:44px;justify-content:flex-start}
+  .advisor-finance-week>a{margin-left:44px}
+  .work-app .main-content .advisor-week-dashboard .advisor-week-stats{grid-template-columns:1fr;gap:10px}
+  .advisor-week-stats .stat-card:first-child{grid-column:auto}
+  .advisor-week-dashboard .stat-card{min-height:105px;padding:16px}
+  .advisor-week-dashboard .stat-meta>b{font-size:1.5rem}
+  .advisor-team-week,.advisor-week-dashboard .advisor-jobs,.advisor-finance-ledger{padding:17px}
+  .advisor-week-toolbar{padding:9px}
+  .advisor-week-segments{display:flex;width:100%}
+  .advisor-week-segments button{flex:1 1 90px;padding:8px 7px}
+  .advisor-team-card-grid{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  .advisor-week-dashboard :is(.advisor-team-card,.stat-card){transition:none;animation:none}
+  .advisor-week-dashboard :is(.advisor-team-card,.stat-card):hover{transform:none}
+}
