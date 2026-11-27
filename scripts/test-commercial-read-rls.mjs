@@ -7,7 +7,7 @@ import { PGlite } from '@electric-sql/pglite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const migrationPath = path.join(__dirname, '../supabase/migrations/20261122050821_restrict_commercial_data_read_permissions.sql');
-const priority1MigrationPath = path.join(__dirname, '../supabase/migrations/20261127010000_priority1_branch_permissions_and_roles.sql');
+const priority1MigrationPath = path.join(__dirname, '../supabase/migrations/20261127141520_priority1_branch_permissions_and_roles.sql');
 const migration = fs.readFileSync(migrationPath, 'utf8');
 const priority1Migration = fs.readFileSync(priority1MigrationPath, 'utf8');
 

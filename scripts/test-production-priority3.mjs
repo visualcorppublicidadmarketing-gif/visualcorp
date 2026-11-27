@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
 import { PGlite } from '@electric-sql/pglite';
 
-const migration = readFileSync(new URL('../supabase/migrations/20261127030000_production_coordination_and_private_vault.sql', import.meta.url), 'utf8');
+const migration = readFileSync(new URL('../supabase/migrations/20261127141606_production_coordination_and_private_vault.sql', import.meta.url), 'utf8');
 const raw = readFileSync(new URL('../src/lib/productionHub.ts', import.meta.url), 'utf8').replace(/import[\s\S]*?from ['"][^'"]+['"];?\r?\n/g, '');
 const stubbed = `const ClipboardList=()=>{}, PenTool=()=>{}, Printer=()=>{}, Shirt=()=>{}, ScanLine=()=>{}, Hammer=()=>{}; const supabase=null;\n${raw}`;
 const ui = await import(`data:text/javascript;base64,${Buffer.from(stripTypeScriptTypes(stubbed)).toString('base64')}`);

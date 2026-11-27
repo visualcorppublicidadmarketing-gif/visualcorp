@@ -19,7 +19,7 @@ import {
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const priority4Migration = fs.readFileSync(
-  path.join(root, '../supabase/migrations/20261127040000_priority4_public_catalog_tiers_and_intake.sql'),
+  path.join(root, '../supabase/migrations/20261127141609_priority4_public_catalog_tiers_and_intake.sql'),
   'utf8',
 );
 

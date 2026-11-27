@@ -422,7 +422,7 @@ test("Postgres migration, authenticated permissions, concurrency, approvals and 
       async () => {
         await db.exec(
           readFileSync(
-            "supabase/migrations/20261127060000_priority6_marketing_results_and_support.sql",
+            "supabase/migrations/20261127141618_priority6_marketing_results_and_support.sql",
             "utf8",
           ),
         );
