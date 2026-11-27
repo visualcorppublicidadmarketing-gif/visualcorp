@@ -71,12 +71,14 @@ export const PRODUCT_BASES: ProductBase[] = [
     quoteProduct: 'Taza personalizada',
     ratio: 1,
     model: 'mug',
-    printArea: { x: 25, y: 27, width: 39, height: 48 },
-    defaultX: 44.5,
-    defaultY: 51,
+    // Follows the straight printable wall of the mug, stopping before the
+    // handle roots and leaving the rounded lip and foot unobstructed.
+    printArea: { x: 14, y: 21, width: 48, height: 56 },
+    defaultX: 38,
+    defaultY: 49,
     defaultSize: 22,
     defaultColor: '#f5f5f7',
-    defaultAccentColor: '#e2e4e9',
+    defaultAccentColor: '#f9fafb',
     defaultFinish: 'glossy',
     defaultWarp: 'cylinder',
     defaultWarpStrength: 48,
