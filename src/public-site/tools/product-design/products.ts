@@ -72,9 +72,8 @@ const productBases: ProductBase[] = [
     quoteProduct: 'Taza personalizada',
     ratio: 1,
     model: 'mug',
-    // Follows the straight printable wall of the mug, stopping before the
-    // handle roots and leaving the rounded lip and foot unobstructed.
-    printArea: { x: 14, y: 21, width: 48, height: 56 },
+    // Horizontal 20:9 band on the front wall; the handle remains outside it.
+    printArea: { x: 14, y: 38.2, width: 48, height: 21.6 },
     defaultX: 38,
     defaultY: 49,
     defaultSize: 22,
@@ -83,7 +82,7 @@ const productBases: ProductBase[] = [
     defaultFinish: 'glossy',
     defaultWarp: 'cylinder',
     defaultWarpStrength: 100,
-    hint: 'Frente de taza · asa fuera del área referencial',
+    hint: 'Franja frontal 20:9 · asa fuera del área de diseño',
   },
   {
     id: 'tomatodo',
@@ -224,13 +223,9 @@ const PRODUCT_SURFACE_PROFILES: Record<string, ProductSurfaceProfile> = {
   camiseta: { kind: 'flat', aspectRatio: 36 / 31 },
   sudadera: { kind: 'flat', aspectRatio: 36 / 29 },
   polo: { kind: 'flat', aspectRatio: 1 },
-  // The 20:9 wrap follows the straight 72 mm body band, with relief around the handle roots.
+  // Keep the 20:9 print band on the mug's front wall, clear of the handle roots.
   taza: {
-    kind: 'cylinder', aspectRatio: 20 / 9, wrapAngleDegrees: 236, verticalCoverage: 0.76,
-    keepOutAreas: [
-      { x: 84, y: 0, width: 16, height: 18 },
-      { x: 84, y: 82, width: 16, height: 18 },
-    ],
+    kind: 'cylinder', aspectRatio: 20 / 9, wrapAngleDegrees: 160, verticalCoverage: 0.55,
   },
   tomatodo: { kind: 'cylinder', aspectRatio: 1.92, wrapAngleDegrees: 235, verticalCoverage: 0.79 },
   gorra: { kind: 'dome', aspectRatio: 42 / 36 },

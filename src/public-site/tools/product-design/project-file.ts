@@ -105,6 +105,15 @@ function normalizePrintArea(value: unknown): PrintArea {
   return area;
 }
 
+const LEGACY_DEFAULT_MUG_PRINT_AREA: PrintArea = { x: 14, y: 21, width: 48, height: 56 };
+
+function isLegacyDefaultMugPrintArea(area: PrintArea) {
+  return area.x === LEGACY_DEFAULT_MUG_PRINT_AREA.x
+    && area.y === LEGACY_DEFAULT_MUG_PRINT_AREA.y
+    && area.width === LEGACY_DEFAULT_MUG_PRINT_AREA.width
+    && area.height === LEGACY_DEFAULT_MUG_PRINT_AREA.height;
+}
+
 function dataUrlByteLength(value: unknown) {
   if (typeof value !== 'string') return fail('El proyecto contiene una imagen no válida.');
   const match = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(value);
@@ -302,7 +311,11 @@ export async function restoreDesignProject(contents: string): Promise<RestoredDe
   } else {
     const base = PRODUCT_BASES.find((candidate) => candidate.id === productInput.id);
     if (!base) return fail('El proyecto hace referencia a una base de producto desconocida.');
-    product = { ...base, printArea };
+    // Upgrade only the old built-in mug area; preserve any print area the user adjusted.
+    const restoredPrintArea = productInput.id === 'taza' && isLegacyDefaultMugPrintArea(printArea)
+      ? base.printArea
+      : printArea;
+    product = { ...base, printArea: restoredPrintArea };
   }
 
   let appearance = getDefaultAppearance(product);
