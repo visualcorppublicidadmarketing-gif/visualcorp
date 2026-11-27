@@ -434,6 +434,7 @@ export function ProductDesignCanvas({
   printArea,
   appearance,
   background,
+  surfaceArtwork = false,
   showPrintGuides = true,
   width,
   height,
@@ -447,6 +448,7 @@ export function ProductDesignCanvas({
   printArea: PrintArea;
   appearance: ProductAppearance;
   background: SceneBackground;
+  surfaceArtwork?: boolean;
   showPrintGuides?: boolean;
   width: number;
   height: number;
@@ -468,15 +470,24 @@ export function ProductDesignCanvas({
     canvas.height = Math.max(1, Math.round(height));
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
-    drawSceneBackground(ctx, canvas.width, canvas.height, background, bgImage, true);
+    drawSceneBackground(
+      ctx,
+      canvas.width,
+      canvas.height,
+      surfaceArtwork
+        ? { kind: 'solid', color: '#ffffff', color2: '#ffffff', angle: 180 }
+        : background,
+      surfaceArtwork ? null : bgImage,
+      !surfaceArtwork,
+    );
     return canvas;
-  }, [width, height, background, bgImage]);
+  }, [width, height, background, bgImage, surfaceArtwork]);
 
   const processedProductCanvas = useMemo(() => {
-    if (!productImage || product.isCustom3D) return null;
+    if (surfaceArtwork || !productImage || product.isCustom3D) return null;
     const extractBackdrop = background.kind !== 'solid' || background.color.toLowerCase() !== '#ffffff';
     return buildProcessedProductCanvas(productImage, product.image, appearance, extractBackdrop, 960);
-  }, [productImage, product.image, product.isCustom3D, appearance.mode, appearance.color, background.kind, background.color]);
+  }, [surfaceArtwork, productImage, product.image, product.isCustom3D, appearance.mode, appearance.color, background.kind, background.color]);
 
   useEffect(() => {
     const transformer = transformerRef.current;
@@ -495,10 +506,18 @@ export function ProductDesignCanvas({
     return <div className="vc-product-canvas-loading" role="status">Preparando lienzo…</div>;
   }
 
-  const areaX = (printArea.x / 100) * width;
-  const areaY = (printArea.y / 100) * height;
-  const areaW = (printArea.width / 100) * width;
-  const areaH = (printArea.height / 100) * height;
+  const stagePrintArea = surfaceArtwork ? { x: 0, y: 0, width: 100, height: 100 } : printArea;
+  const stageLayers = surfaceArtwork
+    ? layers.map((layer) => ({
+        ...layer,
+        x: ((layer.x - printArea.x) / Math.max(1, printArea.width)) * 100,
+        y: ((layer.y - printArea.y) / Math.max(1, printArea.height)) * 100,
+      }))
+    : layers;
+  const areaX = (stagePrintArea.x / 100) * width;
+  const areaY = (stagePrintArea.y / 100) * height;
+  const areaW = (stagePrintArea.width / 100) * width;
+  const areaH = (stagePrintArea.height / 100) * height;
   const centerPrintX = areaX + areaW / 2;
   const centerPrintY = areaY + areaH / 2;
 
@@ -511,10 +530,23 @@ export function ProductDesignCanvas({
       onMouseDown={handleStagePointer}
       onTouchStart={handleStagePointer}
       style={{ touchAction: 'none', display: 'block', maxWidth: '100%' }}
-      aria-label={`Lienzo editable de ${product.name}`}
+      aria-label={surfaceArtwork ? `Mapa de impresión desplegado de ${product.name}` : `Lienzo editable de ${product.name}`}
     >
       <CanvasLayer>
         {backgroundCanvas && <CanvasImage image={backgroundCanvas} x={0} y={0} width={width} height={height} listening={false} />}
+        {surfaceArtwork && (
+          <Rect
+            x={areaX + 1}
+            y={areaY + 1}
+            width={Math.max(0, areaW - 2)}
+            height={Math.max(0, areaH - 2)}
+            fill="#ffffff"
+            stroke="#4de1ff"
+            strokeWidth={1.5}
+            dash={[6, 5]}
+            listening={false}
+          />
+        )}
         {processedProductCanvas && (
           <CanvasImage image={processedProductCanvas} x={0} y={0} width={width} height={height} listening={false} />
         )}
@@ -532,19 +564,44 @@ export function ProductDesignCanvas({
         <Rect x={0} y={0} width={width} height={height} fill="#ffffff" opacity={0.005} listening={false} />
 
         <Group clipX={areaX} clipY={areaY} clipWidth={areaW} clipHeight={areaH}>
-          {layers.map((layer) => (
+          {stageLayers.map((layer) => (
             <LayerObject
               key={layer.id}
               layer={layer}
               size={size}
-              printArea={printArea}
+              printArea={stagePrintArea}
               selected={layer.id === selectedLayerId}
               onSelect={onSelectLayer}
-              onCommit={onCommitLayer}
+              onCommit={(id, changes) => {
+                if (!surfaceArtwork) {
+                  onCommitLayer(id, changes);
+                  return;
+                }
+                onCommitLayer(id, {
+                  ...changes,
+                  ...(changes.x === undefined ? {} : { x: printArea.x + (changes.x / 100) * printArea.width }),
+                  ...(changes.y === undefined ? {} : { y: printArea.y + (changes.y / 100) * printArea.height }),
+                });
+              }}
               onSnapChange={setSnapGuides}
             />
           ))}
         </Group>
+
+        {surfaceArtwork && product.surfaceProfile?.keepOutAreas?.map((safeArea, index) => (
+          <Rect
+            key={`surface-safe-${index}`}
+            x={areaX + (safeArea.x / 100) * areaW}
+            y={areaY + (safeArea.y / 100) * areaH}
+            width={(safeArea.width / 100) * areaW}
+            height={(safeArea.height / 100) * areaH}
+            fill="rgba(255,255,255,0.94)"
+            stroke="#f0a23b"
+            strokeWidth={1}
+            dash={[4, 4]}
+            listening={false}
+          />
+        ))}
 
         {showPrintGuides && (
           <>
@@ -558,7 +615,30 @@ export function ProductDesignCanvas({
               dash={[6, 5]}
               listening={false}
             />
-            {appearance.warpMode !== 'flat' && appearance.warpStrength > 5 && (
+            {surfaceArtwork ? (
+              <>
+                {[0.2, 0.4, 0.6, 0.8].map((fraction) => (
+                  <Line
+                    key={`surface-v-${fraction}`}
+                    points={[areaX + areaW * fraction, areaY, areaX + areaW * fraction, areaY + areaH]}
+                    stroke="rgba(13, 151, 183, 0.23)"
+                    strokeWidth={1}
+                    dash={[3, 5]}
+                    listening={false}
+                  />
+                ))}
+                {[0.25, 0.5, 0.75].map((fraction) => (
+                  <Line
+                    key={`surface-h-${fraction}`}
+                    points={[areaX, areaY + areaH * fraction, areaX + areaW, areaY + areaH * fraction]}
+                    stroke="rgba(13, 151, 183, 0.17)"
+                    strokeWidth={1}
+                    dash={[3, 5]}
+                    listening={false}
+                  />
+                ))}
+              </>
+            ) : appearance.warpMode !== 'flat' && appearance.warpStrength > 5 && (
               <>
                 <Line
                   points={[areaX + areaW * 0.25, areaY, areaX + areaW * 0.25, areaY + areaH]}

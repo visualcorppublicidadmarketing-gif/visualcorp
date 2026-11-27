@@ -330,21 +330,17 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
     ]);
     addMesh(group, new THREE.TubeGeometry(handleCurve, 64, 0.048, 24, false), accentMaterial);
 
-    // The artwork is cropped to the same print area used by the 2D editor.
-    // Its texture aspect ratio determines the cylindrical arc, so images keep
-    // their proportions as they curve around the mug and stop before the handle.
-    const artAspect = (product.printArea.width * product.ratio) / Math.max(1, product.printArea.height);
-    // The source mockup's mug silhouette occupies about 74% of the square
-    // canvas. Convert the shared 2D print-area height to model-space height.
-    const mugBodyHeight = 0.945;
-    const mugBodyHeightInArtwork = 0.74;
-    const areaWrapHeight = mugBodyHeight * (product.printArea.height / 100) / mugBodyHeightInArtwork;
+    // The unwrapped 20:9 UV board follows the outer wall and leaves a blank seam arc.
+    const artAspect = product.surfaceProfile?.aspectRatio || 20 / 9;
+    const mugRadius = 0.412;
+    const maxTheta = THREE.MathUtils.degToRad(product.surfaceProfile?.wrapAngleDegrees || 236);
+    const maxHeight = 0.945 * (product.surfaceProfile?.verticalCoverage || 0.76);
+    const baseWrapHeight = Math.min(mugRadius * maxTheta / artAspect, maxHeight);
     const wrapScale = Math.min(1, 0.85 + warpFactor * 0.22);
-    const wrapHeight = areaWrapHeight * wrapScale;
-    const mugRadius = 0.415;
-    const thetaSpan = Math.min(Math.PI * 1.48, Math.max(0.45, (wrapHeight * artAspect) / mugRadius));
-    const artCyl = new THREE.CylinderGeometry(mugRadius, mugRadius, wrapHeight, 128, 32, true, -thetaSpan / 2, thetaSpan);
-    const artMesh = addMesh(group, artCyl, createArtMaterial(), [0, 0.012, 0]);
+    const wrapHeight = baseWrapHeight * wrapScale;
+    const thetaSpan = (wrapHeight * artAspect) / mugRadius;
+    const artCyl = new THREE.CylinderGeometry(mugRadius, mugRadius, wrapHeight, 160, 40, true, -thetaSpan / 2, thetaSpan);
+    const artMesh = addMesh(group, artCyl, createArtMaterial(), [0, 0.01, 0]);
     artMesh.name = 'MugArtworkWrap';
     artMesh.renderOrder = 2;
   } else if (product.model === 'bottle') {
@@ -374,11 +370,13 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
     // Subtle collar ring under cap
     addMesh(group, new THREE.TorusGeometry(0.19, 0.012, 10, 36), hardwareMaterial, [0, 0.675, 0], [Math.PI / 2, 0, 0]);
 
-    // Curved cylindrical artwork wrap hugging the bottle body with accurate 1:1 aspect ratio
-    const bottleArtAspect = (product.printArea.width * product.ratio) / Math.max(1, product.printArea.height);
-    const bottleWrapHeight = 0.74;
+    // Product-specific unwrapped artboard drives the bottle's cylindrical UV area.
+    const bottleArtAspect = product.surfaceProfile?.aspectRatio || 1.92;
     const bottleRadius = 0.346;
-    const thetaSpan = Math.min(Math.PI * 1.5, Math.max(0.45, (bottleWrapHeight * bottleArtAspect) / bottleRadius));
+    const maxTheta = THREE.MathUtils.degToRad(product.surfaceProfile?.wrapAngleDegrees || 235);
+    const maxHeight = 0.94 * (product.surfaceProfile?.verticalCoverage || 0.79);
+    const bottleWrapHeight = Math.min(bottleRadius * maxTheta / bottleArtAspect, maxHeight);
+    const thetaSpan = (bottleWrapHeight * bottleArtAspect) / bottleRadius;
     const artCyl = new THREE.CylinderGeometry(bottleRadius, bottleRadius, bottleWrapHeight, 64, 1, true, -thetaSpan / 2, thetaSpan);
     const artMesh = addMesh(group, artCyl, createArtMaterial(), [0, -0.25, 0]);
     artMesh.renderOrder = 2;
@@ -412,7 +410,9 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
     addMesh(group, brimGeo, accentMaterial, [0, -0.05, 0.52]);
 
     // Spherically curved front cap artwork
-    const capArtGeo = createCurvedPatchGeometry(0.62, 0.38, 0.14 * (0.45 + warpFactor * 0.55), 0.07);
+    const capArtWidth = 0.62;
+    const capArtHeight = capArtWidth / (product.surfaceProfile?.aspectRatio || (42 / 36));
+    const capArtGeo = createCurvedPatchGeometry(capArtWidth, capArtHeight, 0.14 * (0.45 + warpFactor * 0.55), 0.07);
     const capArt = addMesh(group, capArtGeo, createArtMaterial(), [0, 0.16, 0.58], [-0.26, 0, 0]);
     capArt.renderOrder = 2;
   } else if (product.model === 'tote') {
@@ -439,11 +439,15 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
     addMesh(group, new THREE.TubeGeometry(frontStrap, 32, 0.026, 12, false), accentMaterial);
     addMesh(group, new THREE.TubeGeometry(backStrap, 32, 0.026, 12, false), accentMaterial);
 
-    const toteArt = addMesh(group, createCurvedPatchGeometry(0.68, 0.78, 0.018), createArtMaterial(), [0, -0.11, 0.116]);
+    const toteArtWidth = 0.68;
+    const toteArtHeight = toteArtWidth / (product.surfaceProfile?.aspectRatio || (52 / 38));
+    const toteArt = addMesh(group, createCurvedPatchGeometry(toteArtWidth, toteArtHeight, 0.018), createArtMaterial(), [0, -0.11, 0.116]);
     toteArt.renderOrder = 2;
   } else if (product.model === 'rollup') {
     addMesh(group, new RoundedBoxGeometry(0.88, 1.72, 0.032, 2, 0.008), bodyMaterial, [0, 0.08, 0]);
-    const artMesh = addMesh(group, new THREE.PlaneGeometry(0.84, 1.66), createArtMaterial(), [0, 0.08, 0.022]);
+    const artHeight = 1.66;
+    const artWidth = artHeight * (product.surfaceProfile?.aspectRatio || (34 / 82));
+    const artMesh = addMesh(group, new THREE.PlaneGeometry(artWidth, artHeight), createArtMaterial(), [0, 0.08, 0.022]);
     artMesh.renderOrder = 2;
     // Aluminum cassette base & swivel feet
     const cassette = addMesh(group, new THREE.CylinderGeometry(0.095, 0.11, 0.98, 28), accentMaterial, [0, -0.84, 0.01]);
@@ -455,7 +459,9 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
     addBar(group, new THREE.Vector3(-0.44, 0.96, 0), new THREE.Vector3(0.44, 0.96, 0), 0.02, accentMaterial);
   } else if (product.model === 'banner-x') {
     addMesh(group, new RoundedBoxGeometry(0.86, 1.56, 0.024, 2, 0.006), bodyMaterial, [0, 0.04, 0.01]);
-    const artMesh = addMesh(group, new THREE.PlaneGeometry(0.8, 1.48), createArtMaterial(), [0, 0.04, 0.028]);
+    const artHeight = 1.48;
+    const artWidth = artHeight * (product.surfaceProfile?.aspectRatio || (32 / 82));
+    const artMesh = addMesh(group, new THREE.PlaneGeometry(artWidth, artHeight), createArtMaterial(), [0, 0.04, 0.028]);
     artMesh.renderOrder = 2;
     // X-frame fiberglass rods & hub
     addBar(group, new THREE.Vector3(-0.44, 0.78, -0.05), new THREE.Vector3(0.48, -0.78, -0.22), 0.014, hardwareMaterial);
@@ -468,7 +474,9 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
     // True double-sided hinged A-frame stand
     const tilt = 0.21;
     const frontBoard = addMesh(group, new RoundedBoxGeometry(0.96, 1.22, 0.045, 3, 0.015), bodyMaterial, [0, 0.06, 0.16], [-tilt, 0, 0]);
-    const frontArt = addMesh(group, new THREE.PlaneGeometry(0.88, 1.12), createArtMaterial(), [0, 0.06, 0.188], [-tilt, 0, 0]);
+    const artHeight = 1.12;
+    const artWidth = artHeight * (product.surfaceProfile?.aspectRatio || (54 / 77));
+    const frontArt = addMesh(group, new THREE.PlaneGeometry(artWidth, artHeight), createArtMaterial(), [0, 0.06, 0.188], [-tilt, 0, 0]);
     frontArt.renderOrder = 2;
     addMesh(group, new RoundedBoxGeometry(0.96, 1.22, 0.045, 3, 0.015), bodyMaterial, [0, 0.06, -0.16], [tilt, 0, 0]);
     // Aluminum frame legs
@@ -481,11 +489,13 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
   } else if (product.model === 'sign') {
     const panelWidth = 1.38;
     const panelHeight = Math.min(1.65, panelWidth / ratio);
+    const artHeight = panelHeight * 0.94;
+    const artWidth = artHeight * (product.surfaceProfile?.aspectRatio || (54 / 82));
     addMesh(group, new RoundedBoxGeometry(panelWidth + 0.09, panelHeight + 0.09, 0.14, 4, 0.03), accentMaterial, [0, 0, -0.01]);
     addMesh(group, new RoundedBoxGeometry(panelWidth, panelHeight, 0.15, 3, 0.02), bodyMaterial, [0, 0, 0]);
     const artMesh = addMesh(
       group,
-      new THREE.PlaneGeometry(panelWidth * 0.94, panelHeight * 0.94),
+      new THREE.PlaneGeometry(artWidth, artHeight),
       createArtMaterial(),
       [0, 0, 0.082],
     );
@@ -700,6 +710,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
   const [error, setError] = useState('');
   const [loadingCustom, setLoadingCustom] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
+  const [sceneAspect, setSceneAspect] = useState(1);
 
   onPlaceDecalRef.current = onPlaceDecal;
   onDetectedMeshesRef.current = onDetectedMeshes;
@@ -891,6 +902,8 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      const nextAspect = width / height;
+      setSceneAspect((current) => Math.abs(current - nextAspect) < 0.01 ? current : nextAspect);
     };
     const observer = new ResizeObserver(resize);
     observer.observe(host);
@@ -970,9 +983,10 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
         return;
       }
 
+      const aspect = Math.min(3, Math.max(0.35, sceneAspect));
       const bgCanvas = document.createElement('canvas');
-      bgCanvas.width = 512;
-      bgCanvas.height = 512;
+      bgCanvas.width = aspect >= 1 ? 1024 : Math.max(1, Math.round(1024 * aspect));
+      bgCanvas.height = aspect >= 1 ? Math.max(1, Math.round(1024 / aspect)) : 1024;
       const ctx = bgCanvas.getContext('2d');
       if (!ctx) return;
 
@@ -986,7 +1000,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
       }
       if (cancelled) return;
 
-      drawSceneBackground(ctx, 512, 512, background, bgImg, false);
+      drawSceneBackground(ctx, bgCanvas.width, bgCanvas.height, background, bgImg, false);
       const texture = new THREE.CanvasTexture(bgCanvas);
       texture.colorSpace = THREE.SRGBColorSpace;
       bgTextureRef.current?.dispose();
@@ -996,7 +1010,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
 
     applyBg();
     return () => { cancelled = true; };
-  }, [background]);
+  }, [background, sceneAspect]);
 
   // 3. Build Built-In Product Model OR Load Custom 3D Model (.glb / .obj / .stl)
   useEffect(() => {

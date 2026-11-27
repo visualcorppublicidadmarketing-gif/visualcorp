@@ -54,7 +54,7 @@ import {
   Upload,
   Wand2,
 } from 'lucide-react';
-import { createArtworkCanvas, createFrontalMockupCanvas, createMockupCanvas, downloadCanvas } from './product-design/canvas-utils';
+import { createFrontalMockupCanvas, createMockupCanvas, createSurfaceArtworkCanvas, downloadCanvas } from './product-design/canvas-utils';
 import {
   createStarterPresetLayers,
   DEFAULT_PRODUCT_ID,
@@ -195,6 +195,17 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), Math.max(min, max));
 }
 
+function getSurfaceImageFit(width: number, height: number, product: ProductBase) {
+  const imageAspect = width / Math.max(1, height);
+  const surfaceAspect = product.surfaceProfile?.aspectRatio
+    || (product.printArea.width * product.ratio) / Math.max(1, product.printArea.height);
+  const matchesSurface = Math.abs(Math.log(imageAspect / surfaceAspect)) < 0.09;
+  const size = matchesSurface
+    ? 85
+    : clamp((62 * imageAspect) / surfaceAspect, 8, 72);
+  return { size, matchesSurface };
+}
+
 function fileTypeIsSupported(file: File) {
   return ['image/png', 'image/jpeg', 'image/webp'].includes(file.type);
 }
@@ -262,6 +273,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
   const [background, setBackground] = useState<SceneBackground>(DEFAULT_SCENE_BACKGROUND);
   const [customModelsByBaseId, setCustomModelsByBaseId] = useState<Record<string, Custom3DModelState>>({});
   const [viewMode, setViewMode] = useState<ViewMode>('2d');
+  const [canvasMode, setCanvasMode] = useState<'mockup' | 'surface'>('mockup');
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('layers');
   const [showPrintGuides, setShowPrintGuides] = useState(true);
   const [previewWarped2D, setPreviewWarped2D] = useState(false);
@@ -283,7 +295,12 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
   const selectedLayer = layers.find((layer) => layer.id === selectedLayerId) || null;
   const canUndo = historyRef.current.past.length > 0;
   const canRedo = historyRef.current.future.length > 0;
-  const canvasHeight = canvasWidth > 0 ? canvasWidth / activeBase.ratio : 0;
+  const surfaceAspect = activeBase.surfaceProfile?.aspectRatio || activeBase.ratio;
+  const surfaceAspectLabel = activeBase.id === 'taza'
+    ? '20:9'
+    : `${Math.round(surfaceAspect * 100) / 100}:1`;
+  const canvasRatio = canvasMode === 'surface' ? surfaceAspect : activeBase.ratio;
+  const canvasHeight = canvasWidth > 0 ? canvasWidth / canvasRatio : 0;
 
   const families = useMemo(() => {
     const unique = [...new Set(products.map((p) => p.family))];
@@ -351,19 +368,22 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
       const availableWidth = entry.contentRect.width;
       const maxHeight = viewMode === 'split' ? 500 : 600;
       const maxWidth = viewMode === 'split' ? 520 : 640;
-      const width = Math.max(0, Math.min(availableWidth, maxWidth, maxHeight * activeBase.ratio));
+      const ratio = canvasMode === 'surface'
+        ? activeBase.surfaceProfile?.aspectRatio || activeBase.ratio
+        : activeBase.ratio;
+      const width = Math.max(0, Math.min(availableWidth, maxWidth, maxHeight * ratio));
       setCanvasWidth(Math.floor(width));
     });
     observer.observe(host);
     return () => observer.disconnect();
-  }, [activeBase.ratio, viewMode]);
+  }, [activeBase.ratio, activeBase.surfaceProfile?.aspectRatio, canvasMode, viewMode]);
 
   // Live debounced artwork texture for 3D & Split views
   useEffect(() => {
     if (viewMode === '2d') return undefined;
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      createArtworkCanvas(activeBase, layers, 1024)
+      createSurfaceArtworkCanvas(activeBase, layers, 1024)
         .then((canvas) => canvas.toDataURL('image/png'))
         .then((url) => {
           if (!cancelled) setArtworkTexture({ productId: activeBase.id, url });
@@ -571,6 +591,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     if (!width || !height || width * height > MAX_UPLOAD_IMAGE_PIXELS) {
       throw new Error('La imagen supera el límite de 24 megapíxeles. Redúcela y vuelve a cargarla.');
     }
+    return { width, height };
   };
 
   const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -587,14 +608,16 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     }
     const src = URL.createObjectURL(file);
     objectUrlsRef.current.push(src);
+    let dimensions: { width: number; height: number };
     try {
-      await validateImagePixels(src);
+      dimensions = await validateImagePixels(src);
     } catch (error) {
       URL.revokeObjectURL(src);
       objectUrlsRef.current = objectUrlsRef.current.filter((url) => url !== src);
       setMessage(error instanceof Error ? error.message : 'No se pudo validar la imagen.');
       return;
     }
+    const fit = getSurfaceImageFit(dimensions.width, dimensions.height, activeBase);
     addLayer({
       id: createId('layer'),
       kind: 'image',
@@ -602,7 +625,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
       src,
       x: activeBase.printArea.x + activeBase.printArea.width / 2,
       y: activeBase.printArea.y + activeBase.printArea.height / 2,
-      size: Math.min(32, activeBase.printArea.width * 0.68),
+      size: fit.size,
       scaleY: 1,
       rotation: 0,
       opacity: 100,
@@ -622,6 +645,10 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
       visible: true,
       locked: false,
     });
+    if (fit.matchesSurface) {
+      setCanvasMode('surface');
+      setMessage(`Arte ${dimensions.width} × ${dimensions.height} ajustado al mapa de superficie de ${activeBase.name}. Puedes moverlo y escalarlo.`);
+    }
   };
 
   const handleReplaceLayerImage = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -638,16 +665,32 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     }
     const src = URL.createObjectURL(file);
     objectUrlsRef.current.push(src);
+    let dimensions: { width: number; height: number };
     try {
-      await validateImagePixels(src);
+      dimensions = await validateImagePixels(src);
     } catch (error) {
       URL.revokeObjectURL(src);
       objectUrlsRef.current = objectUrlsRef.current.filter((url) => url !== src);
       setMessage(error instanceof Error ? error.message : 'No se pudo validar la imagen.');
       return;
     }
-    updateLayer(selectedLayer.id, { src, name: file.name.slice(0, 70) }, `replace-img:${selectedLayer.id}`);
-    setMessage('Logo / diseño reemplazado conservando posición y escala.');
+    const fit = getSurfaceImageFit(dimensions.width, dimensions.height, activeBase);
+    updateLayer(
+      selectedLayer.id,
+      fit.matchesSurface
+        ? {
+            src,
+            name: file.name.slice(0, 70),
+            x: activeBase.printArea.x + activeBase.printArea.width / 2,
+            y: activeBase.printArea.y + activeBase.printArea.height / 2,
+            size: fit.size,
+            scaleY: 1,
+          }
+        : { src, name: file.name.slice(0, 70) },
+      `replace-img:${selectedLayer.id}`,
+    );
+    if (fit.matchesSurface) setCanvasMode('surface');
+    setMessage(fit.matchesSurface ? 'Diseño reemplazado y ajustado al mapa de impresión.' : 'Logo / diseño reemplazado conservando posición y escala.');
   };
 
   const handleProductUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -686,6 +729,10 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
         defaultFinish: 'satin',
         defaultWarp: 'flat',
         defaultWarpStrength: 0,
+        surfaceProfile: {
+          kind: 'flat',
+          aspectRatio: (60 * (dimensions.width / Math.max(1, dimensions.height))) / 60,
+        },
         hint: 'Ajusta la zona imprimible para tu foto',
         isCustom: true,
       };
@@ -987,7 +1034,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
       const canvas =
         kind === 'mockup'
           ? await createMockupCanvas(exportBase, exportLayers, 2400, exportAppearance, exportBackground)
-          : await createArtworkCanvas(exportBase, exportLayers, 4000);
+          : await createSurfaceArtworkCanvas(exportBase, exportLayers, 4000);
       await downloadCanvas(canvas, `visualcorp-${kind === 'mockup' ? 'mockup-2d' : 'arte-impresion'}-${exportBase.id}.png`);
       setMessage(
         kind === 'mockup'
@@ -1240,6 +1287,16 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
             <Box size={14} aria-hidden="true" /> Estudio 3D
           </button>
         </div>
+        {show2DPane && (
+          <div className="vc-product-view-switch vc-product-surface-switch" role="group" aria-label="Presentación del diseño 2D">
+            <button type="button" className={canvasMode === 'mockup' ? 'is-active' : ''} aria-pressed={canvasMode === 'mockup'} onClick={() => setCanvasMode('mockup')}>
+              Producto
+            </button>
+            <button type="button" className={canvasMode === 'surface' ? 'is-active' : ''} aria-pressed={canvasMode === 'surface'} onClick={() => { setCanvasMode('surface'); setPreviewWarped2D(false); }}>
+              Mapa UV · {surfaceAspectLabel}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Quick Starter Compositions */}
@@ -1285,13 +1342,14 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
                   ) : (
                     <Suspense fallback={<div className="vc-product-canvas-loading" role="status">Cargando el lienzo 2D…</div>}>
                       <ProductDesignCanvas
-                        key={`${activeBase.id}:${activeBase.image}`}
+                        key={`${activeBase.id}:${activeBase.image}:${canvasMode}`}
                         product={activeBase}
                         layers={layers}
                         selectedLayerId={selectedLayerId}
                         printArea={activeBase.printArea}
                         appearance={appearance}
                         background={background}
+                        surfaceArtwork={canvasMode === 'surface'}
                         showPrintGuides={showPrintGuides}
                         width={canvasWidth}
                         height={canvasHeight}
@@ -1336,6 +1394,8 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
                 ? 'Edita tus capas en 2D y proyecta en vivo sobre tu modelo 3D (Decal curvo o UV directo).'
                 : viewMode === '3d'
                   ? 'Render frontal fotorrealista integrado al modelo 3D; usa los controles para revisar otros ángulos.'
+                  : canvasMode === 'surface'
+                    ? `Mapa UV desplegado ${surfaceAspectLabel} · las guías muestran el perímetro imprimible${activeBase.surfaceProfile?.keepOutAreas?.length ? ' y las zonas ámbar libres junto al asa' : ''} de ${activeBase.name}.`
                   : `${activeBase.hint} · arrastra, redimensiona o activa 2D + 3D para ver cambios en vivo.`}
             </span>
             <span>Composición referencial; medidas, materiales y técnicas se confirman al cotizar.</span>
@@ -2071,11 +2131,15 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
                     const isActive =
                       background.kind === preset.value.kind &&
                       (preset.value.kind === 'transparent' ||
-                        (background.color.toLowerCase() === preset.value.color.toLowerCase() &&
-                          background.color2.toLowerCase() === preset.value.color2.toLowerCase()));
+                        (preset.value.kind === 'image'
+                          ? background.imageSrc === preset.value.imageSrc
+                          : background.color.toLowerCase() === preset.value.color.toLowerCase() &&
+                            background.color2.toLowerCase() === preset.value.color2.toLowerCase()));
                     const previewStyle =
                       preset.value.kind === 'transparent'
                         ? undefined
+                        : preset.value.kind === 'image'
+                          ? { backgroundImage: `url("${preset.value.imageSrc}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
                         : preset.value.kind === 'solid'
                           ? { background: preset.value.color }
                           : { background: `linear-gradient(${preset.value.angle}deg, ${preset.value.color}, ${preset.value.color2})` };
@@ -2084,6 +2148,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
                         key={preset.id}
                         type="button"
                         className={`vc-product-bg-preset${isActive ? ' is-active' : ''}`}
+                        aria-pressed={isActive}
                         onClick={() => setBackground({ ...preset.value })}
                       >
                         <span className={`vc-product-bg-thumb${preset.value.kind === 'transparent' ? ' is-alpha' : ''}`} style={previewStyle} />

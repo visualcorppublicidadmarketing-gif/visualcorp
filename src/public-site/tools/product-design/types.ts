@@ -36,6 +36,18 @@ export type PrintArea = {
   height: number;
 };
 
+export type ProductSurfaceProfile = {
+  kind: SurfaceWarpMode;
+  /** Physical artwork width divided by height on the unwrapped surface. */
+  aspectRatio: number;
+  /** Angular coverage used by cylindrical products, leaving room for seams/handles. */
+  wrapAngleDegrees?: number;
+  /** Fraction of the model's printable body height covered by the artwork. */
+  verticalCoverage?: number;
+  /** UV regions kept free around handles, seams or other product features. */
+  keepOutAreas?: PrintArea[];
+};
+
 export type ProductBase = {
   id: string;
   name: string;
@@ -53,6 +65,7 @@ export type ProductBase = {
   defaultFinish: ProductFinish;
   defaultWarp: SurfaceWarpMode;
   defaultWarpStrength: number;
+  surfaceProfile?: ProductSurfaceProfile;
   hint: string;
   isCustom?: boolean;
   isCustom3D?: boolean;

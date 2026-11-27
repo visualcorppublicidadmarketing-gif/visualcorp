@@ -752,6 +752,39 @@ export async function createArtworkCanvas(product: ProductBase, layers: DesignLa
   return canvas;
 }
 
+/** Builds the transparent, unwrapped print file used by the 3D surface material. */
+export async function createSurfaceArtworkCanvas(product: ProductBase, layers: DesignLayer[], width = 1024) {
+  const area = product.printArea;
+  const aspectRatio = Math.max(
+    0.25,
+    product.surfaceProfile?.aspectRatio || (area.width * product.ratio) / Math.max(1, area.height),
+  );
+  const exportWidth = Math.max(1, Math.min(width, Math.floor(Math.sqrt(24_000_000 * aspectRatio))));
+  const height = Math.max(1, Math.round(exportWidth / aspectRatio));
+  const { canvas, context } = createCanvas(exportWidth, height);
+  const surfaceLayers = layers.map((layer) => ({
+    ...layer,
+    x: ((layer.x - area.x) / Math.max(1, area.width)) * 100,
+    y: ((layer.y - area.y) / Math.max(1, area.height)) * 100,
+  }));
+  await drawDesignLayers(context, surfaceLayers, exportWidth, height, { x: 0, y: 0, width: 100, height: 100 });
+  const keepOutAreas = product.surfaceProfile?.keepOutAreas || [];
+  if (keepOutAreas.length > 0) {
+    context.save();
+    context.globalCompositeOperation = 'destination-out';
+    keepOutAreas.forEach((safeArea) => {
+      context.fillRect(
+        (safeArea.x / 100) * exportWidth,
+        (safeArea.y / 100) * height,
+        (safeArea.width / 100) * exportWidth,
+        (safeArea.height / 100) * height,
+      );
+    });
+    context.restore();
+  }
+  return canvas;
+}
+
 export async function createFrontalMockupCanvas(
   product: ProductBase,
   layers: DesignLayer[],
