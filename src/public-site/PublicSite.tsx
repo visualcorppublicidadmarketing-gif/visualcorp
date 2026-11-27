@@ -27,6 +27,7 @@ import { AmbientVideoLayer, type AmbientVideoClip } from './AmbientVideoLayer';
 import { DirectionalViewTransition, ViewTransitionLink } from './ViewTransitionLink';
 import { BrandBeforeAfterShowcase } from './BrandBeforeAfterShowcase';
 import { CreativeToolLink } from './tools/CreativeToolLink';
+import { PageMeta } from './seo';
 import './public-site-v2.css';
 import './view-transitions.css';
 import './glass-system.css';
@@ -40,6 +41,7 @@ import './mobile-bottom-navigation.css';
 import './navigation-refinement.css';
 import './ui-libraries.css';
 import './glass-refresh.css';
+import './glass-reference-polish.css';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 const familyInfo = (id) => publicServiceFamilies.find((family) => family.id === id);
@@ -86,11 +88,6 @@ function SocialMark({ platform, size = 16 }: { platform: keyof typeof socialHost
   if (platform === 'facebook') return <svg className={`social-mark social-mark-${platform}`} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.55 21v-8.2h2.76l.41-3.2h-3.17V7.56c0-.93.26-1.56 1.59-1.56h1.7V3.14C16.02 3.05 15.2 3 14.23 3c-2.86 0-4.82 1.75-4.82 4.96V9.6H6.65v3.2h2.76V21h4.14Z"/></svg>;
   if (platform === 'tiktok') return <svg className={`social-mark social-mark-${platform}`} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.33V2h-3.55v13.67a2.9 2.9 0 0 1-2.9 2.9 2.9 2.9 0 0 1-2.9-2.9 2.9 2.9 0 0 1 2.9-2.9c.28 0 .55.04.81.12V9.27a6.48 6.48 0 0 0-.81-.05 6.45 6.45 0 1 0 6.45 6.45V8.55a8.3 8.3 0 0 0 4.86 1.57V6.57c-.36 0-.72.04-1.09.12Z"/></svg>;
   return <svg className={`social-mark social-mark-${platform}`} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.6" cy="6.7" r=".85" fill="currentColor" stroke="none"/></svg>;
-}
-
-function SiteTitle({ children }) {
-  useEffect(() => { document.title = `${children} · Visual Corp`; }, [children]);
-  return null;
 }
 
 function BrandLink({ onClick = undefined, footer = false, theme = 'dark' }) {
@@ -499,7 +496,7 @@ export { PublicHomePage } from './HomePage';
 export function ServicesIndexPage() {
   const { data } = useWorkspace();
   const services = data.services.filter((service) => service.enabled);
-  return <DirectionalViewTransition><div><SiteTitle>Servicios</SiteTitle><PageHero ambientVideo="aurora" eyebrow="LO QUE HACEMOS" title={<>Ideas que encuentran<br/>su forma.</>} description="Explora las familias de trabajo de Visual Corp. Cada proyecto empieza con una conversación sobre lo que necesitas." primary={{ label: 'Cuéntanos tu proyecto', to: '/cotizador' }} secondary={{ label: 'Ver soluciones por espacio', to: '/soluciones' }}/><section className="site-page-section site-services-index" aria-labelledby="site-services-index-title">
+  return <DirectionalViewTransition><div><PageMeta title="Servicios" description="Explora nuestras seis especialidades en Milagro: impresión, gran formato, rótulos, textil, señalética a medida y exhibición." path="/servicios" /><PageHero ambientVideo="aurora" eyebrow="LO QUE HACEMOS" title={<>Ideas que encuentran<br/>su forma.</>} description="Explora las familias de trabajo de Visual Corp. Cada proyecto empieza con una conversación sobre lo que necesitas." primary={{ label: 'Cuéntanos tu proyecto', to: '/cotizador' }} secondary={{ label: 'Ver soluciones por espacio', to: '/soluciones' }}/><section className="site-page-section site-services-index" aria-labelledby="site-services-index-title">
     <div className="site-services-index-heading"><div><Eyebrow>FAMILIAS DE TRABAJO</Eyebrow><h2 id="site-services-index-title">Compara las familias.</h2></div><p>Revisa ejemplos de piezas y entra a la ficha que mejor se relaciona con tu idea.</p></div>
     <AnimatedList className="site-services-grid" stagger={0.075}>{services.map((service, index) => <ServiceCard key={service.id} service={service} index={index}/>)}</AnimatedList>
     <p className="site-service-note">Cada solicitud se revisa según su alcance. Materiales, disponibilidad, valores y tiempos se confirman para cada proyecto.</p>
@@ -515,7 +512,29 @@ export function ServicesIndexPage() {
 }
 
 export function SolutionsIndexPage() {
-  return <><SiteTitle>Soluciones por espacio</SiteTitle><PageHero ambientVideo="aurora" eyebrow="SOLUCIONES POR ESPACIO" title={<>Ideas de marca<br/>para cada espacio.</>} description="Explora referencias de piezas gráficas y señalización que podrías consultar según el espacio donde interactúas con tus clientes." primary={{ label: 'Ver servicios', to: '/servicios' }} secondary={{ label: 'Preparar mi cotización', to: '/cotizador' }}/><BrandBeforeAfterShowcase/><EnvironmentBrandingMatrix/><PanoramicCategoryStrips/></>;
+  const { data } = useWorkspace();
+  return <>
+    <PageMeta
+      title="Soluciones por espacio"
+      description="Catálogo completo de 38 referencias conceptuales, tiras panorámicas y soluciones por escenario para locales, oficinas, vehículos y eventos."
+      path="/soluciones"
+    />
+    <PageHero
+      ambientVideo="aurora"
+      eyebrow="SOLUCIONES POR ESPACIO"
+      title={<>Ideas de marca<br/>para cada espacio.</>}
+      description="Explora nuestro catálogo visual completo de referencias conceptuales, tiras panorámicas y aplicaciones por espacio."
+      primary={{ label: 'Explorar 38 referencias', to: '#catalogo-visual' }}
+      secondary={{ label: 'Preparar mi cotización', to: '/cotizador' }}
+    />
+    <EnvironmentBrandingMatrix/>
+    <StrategicBenefitsGrid/>
+    <PanoramicCategoryStrips/>
+    <div id="catalogo-visual">
+      <InteractiveCatalogGallery eyebrow="CATÁLOGO VISUAL INTERACTIVO" heading="Señalética, letreros, branding, BTL, cortes láser e impresión"/>
+    </div>
+    <Callout data={data}/>
+  </>;
 }
 
 export function ServiceDetailPage() {
@@ -531,7 +550,7 @@ export function ServiceDetailPage() {
   const relatedIds: string[] = page?.relatedServices || [];
   const relatedServices = data.services.filter((item) => item.enabled && relatedIds.includes(item.id)).sort((a, b) => relatedIds.indexOf(a.id) - relatedIds.indexOf(b.id));
   return <DirectionalViewTransition><article className={`service-detail-page service-detail-${service.id}`}>
-      <SiteTitle>{service.name}</SiteTitle>
+      <PageMeta title={service.name} description={page?.headline || service.description} path={`/servicios/${service.id}`} />
       <header className="service-detail-hero">
         <nav className="service-detail-breadcrumbs" aria-label="Ruta de navegación"><ViewTransitionLink to="/" transitionType="nav-back">Inicio</ViewTransitionLink><ChevronRight size={14} aria-hidden="true"/><ViewTransitionLink to="/servicios" transitionType="nav-back">Servicios</ViewTransitionLink><ChevronRight size={14} aria-hidden="true"/><span aria-current="page">{service.name}</span></nav>
         <div className="service-detail-hero-grid"><div className="service-detail-hero-copy"><Eyebrow light>{`SERVICIOS · ${details?.mark || ''}`}</Eyebrow><div className="service-detail-title-3d-wrapper"><Title3D serviceId={service.id as PublicServiceId} variant="hero" priority /><h1 className="sr-only">{service.name}</h1></div><p className="service-detail-hero-description">{page?.headline || service.description}</p><p className="service-detail-hero-intro">{page?.introduction || serviceProjectPrompts[service.id] || 'Cuéntanos qué necesitas y revisaremos contigo los detalles del proyecto.'}</p><div className="service-detail-actions"><Link className="site-primary-button" to={quoteUrl}>Preparar mi cotización <ArrowUpRight size={16}/></Link><a className="site-secondary-button" href="#orientar-proyecto">¿Qué información compartir? <ArrowDownRight size={16}/></a>{(['textil', 'rotulos', 'eventos'] as string[]).includes(service.id) && <CreativeToolLink base={service.id === 'textil' ? 'camiseta' : service.id === 'rotulos' ? 'rotulo' : 'rollup'} returnTo={`/servicios/${service.id}`} label="Probar un mockup"/>}</div><span className="service-detail-hero-footnote"><Check size={14}/> Revisaremos contigo los detalles antes de confirmar tu solicitud.</span></div>
@@ -549,12 +568,12 @@ export function ServiceDetailPage() {
 
 export function AboutPage() {
   const { data } = useWorkspace();
-  return <><SiteTitle>La empresa</SiteTitle><AboutHero location={data.settings.location}/><section className="site-about-section" id="el-estudio"><div className="about-mark"><img src="/brand/visualcorp-symbol.png" alt="Símbolo Visual Corp"/><span>VISUAL CORP<br/><small>AGENCIA CREATIVA</small></span></div><div><Eyebrow>QUIÉNES SOMOS</Eyebrow><h2>Hacemos visible<br/>lo que imaginas.</h2><p>En Visual Corp creemos que cada negocio tiene una historia que merece verse. Reunimos creatividad, publicidad y producción visual para ayudar a convertir ideas en proyectos concretos.</p><p>Estamos en Milagro, Ecuador. Cuéntanos qué estás pensando y encontraremos un primer paso contigo.</p><Link to="/como-trabajamos" className="site-text-link">Conoce nuestro proceso <ArrowRight size={16}/></Link></div></section><StrategicBenefitsGrid/><EnvironmentBrandingMatrix compact/><Callout data={data}/></>;
+  return <><PageMeta title="La empresa" description="Conoce a Visual Corp, agencia de publicidad, impresión y marketing en Milagro, Ecuador." path="/nosotros" /><AboutHero location={data.settings.location}/><section className="site-about-section" id="el-estudio"><div className="about-mark"><img src="/brand/visualcorp-symbol.png" alt="Símbolo Visual Corp"/><span>VISUAL CORP<br/><small>AGENCIA CREATIVA</small></span></div><div><Eyebrow>QUIÉNES SOMOS</Eyebrow><h2>Hacemos visible<br/>lo que imaginas.</h2><p>En Visual Corp creemos que cada negocio tiene una historia que merece verse. Reunimos creatividad, publicidad y producción visual para ayudar a convertir ideas en proyectos concretos.</p><p>Estamos en Milagro, Ecuador. Cuéntanos qué estás pensando y encontraremos un primer paso contigo.</p><Link to="/como-trabajamos" className="site-text-link">Conoce nuestro proceso <ArrowRight size={16}/></Link></div></section><StrategicBenefitsGrid/><EnvironmentBrandingMatrix compact/><Callout data={data}/></>;
 }
 
 export function ProcessPage() {
   const { data } = useWorkspace();
-  return <><SiteTitle>Cómo trabajamos</SiteTitle><ProcessHero/><section className="site-process-section" id="como-empezamos"><div className="process-intro"><Eyebrow>ASÍ EMPEZAMOS</Eyebrow><h2>Primero entendemos<br/>el proyecto.</h2><p>No necesitas tener todas las respuestas listas. Cuéntanos lo que tienes en mente y completamos la información contigo.</p><Link className="site-primary-button" to="/contacto">Iniciar una conversación <ArrowUpRight size={16}/></Link></div><AnimatedList className="process-list" stagger={0.1}>{companyProcessSteps.map((step) => (
+  return <><PageMeta title="Cómo trabajamos" description="Conoce nuestro proceso en Visual Corp: desde la primera idea hasta la producción y entrega en Milagro, Ecuador." path="/como-trabajamos" /><ProcessHero/><section className="site-process-section" id="como-empezamos"><div className="process-intro"><Eyebrow>ASÍ EMPEZAMOS</Eyebrow><h2>Primero entendemos<br/>el proyecto.</h2><p>No necesitas tener todas las respuestas listas. Cuéntanos lo que tienes en mente y completamos la información contigo.</p><Link className="site-primary-button" to="/contacto">Iniciar una conversación <ArrowUpRight size={16}/></Link></div><AnimatedList className="process-list" stagger={0.1}>{companyProcessSteps.map((step) => (
             <article key={step.n} id={`proceso-${step.n}`} tabIndex={-1}>
               <b>{step.n}</b>
               <div>
@@ -609,7 +628,7 @@ export function ContactPage() {
   const socials = socialLinks(data.settings);
   const googleMapsOpenUrl = getGoogleMapsOpenUrl('', publicAddress);
   const googleMapsEmbedUrl = getGoogleMapsEmbedUrl('', publicAddress);
-  return <><SiteTitle>Contacto</SiteTitle>
+  return <><PageMeta title="Contacto" description="Escríbenos por WhatsApp, consulta nuestra ubicación en Milagro o envía tu consulta a Visual Corp." path="/contacto" />
     <ContactHero sectionRef={contactHeroRef} whatsapp={whatsapp} address={publicAddress}/>
     <section className="contact-workspace" id="contacto-opciones" aria-label="Opciones para contactar a Visual Corp">
         <div className="contact-info-column"><div className="contact-section-heading"><Eyebrow>CONTACTO DIRECTO</Eyebrow><h2>Elige cómo<br/>empezar.</h2><p>Escríbenos directamente o déjanos los detalles y los revisaremos contigo.</p></div>
@@ -678,7 +697,7 @@ export function PublicQuotePage() {
   const service = serviceName(requestedService);
   const itemServices = requestedFamilies.length ? requestedLines.map((line) => serviceName(line.family)) : [];
   const requestKey = `${searchParams.toString()}|${service}|${itemServices.join('|')}`;
-  return <><SiteTitle>Solicitar cotización</SiteTitle><PageHero ambientVideo="aurora" eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp" tabIndex={-1}><nav className="site-quote-flow" aria-label="Etapas de la solicitud"><a href="#quote-items-title"><span className="site-quote-flow-index" aria-hidden="true">01</span><span><strong>Detalla tu proyecto</strong><small>Artículos y, si aplica, instalación.</small></span></a><a href="#formulario-cotizacion"><span className="site-quote-flow-index" aria-hidden="true">02</span><span><strong>Comparte tus datos</strong><small>Para que el equipo responda tu solicitud.</small></span></a></nav><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} validationMessage={quoteValidationError} onChange={handleQuoteChange}/><div className="site-quote-request" id="formulario-cotizacion" tabIndex={-1}><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData} onQuoteValidationError={setQuoteValidationError}/></div></section></>;
+  return <><PageMeta title="Solicitar cotización" description="Configura los artículos, medidas, acabados e instalación de tu proyecto y solicita una cotización personalizada con Visual Corp." path="/cotizador" /><PageHero ambientVideo="aurora" eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp" tabIndex={-1}><nav className="site-quote-flow" aria-label="Etapas de la solicitud"><a href="#quote-items-title"><span className="site-quote-flow-index" aria-hidden="true">01</span><span><strong>Detalla tu proyecto</strong><small>Artículos y, si aplica, instalación.</small></span></a><a href="#formulario-cotizacion"><span className="site-quote-flow-index" aria-hidden="true">02</span><span><strong>Comparte tus datos</strong><small>Para que el equipo responda tu solicitud.</small></span></a></nav><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} validationMessage={quoteValidationError} onChange={handleQuoteChange}/><div className="site-quote-request" id="formulario-cotizacion" tabIndex={-1}><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData} onQuoteValidationError={setQuoteValidationError}/></div></section></>;
 }
 function PageHero({ eyebrow, title, description, compact = false, primary, secondary, ambientVideo }: {
   eyebrow: string;
