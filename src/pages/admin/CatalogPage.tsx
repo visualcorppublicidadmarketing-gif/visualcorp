@@ -25,13 +25,12 @@ import { AppFrame, PageHeading } from '../../app/layout';
 import { formatMoney, useWorkspace } from '../../app/workspace';
 import { useAuth } from '../../auth/AuthProvider';
 import { NumberTicker } from '../../components/ui/MagicComponents';
-import { QuantityPriceTable } from '../../components/ui/QuantityPriceTable';
 import { supabase } from '../../lib/supabaseClient';
 import { StandardCustomProducts } from './StandardCustomProducts';
 import { CatalogProductCode, CatalogProductDetailDialog } from './CatalogProductDetailDialog';
 import './catalog-page.css';
 
-type PriceTierDraft = { min_qty: string; max_qty: string; normal: string; installation: string; corporate: string; options: Record<string, string> };
+type PriceTierDraft = { min_qty: string; normal: string; installation: string; corporate: string };
 type PricingDraft = { normal: string; installation: string; corporate: string; tiers: PriceTierDraft[] };
 type CatalogView = 'table' | 'cards' | 'list';
 
@@ -48,8 +47,6 @@ function makePricingDraft(item: any): PricingDraft {
     corporate: item.corporatePrice == null ? '' : String(item.corporatePrice),
     tiers: (item.tiers || []).map((tier: any) => ({
       min_qty: String(tier.min_qty ?? tier.qty ?? ''),
-      max_qty: tier.max_qty == null ? '' : String(tier.max_qty),
-      options: Object.fromEntries((tier.option_prices || []).map(({ option, price }) => [option, String(price)])),
       normal: tier.unit_price == null ? '' : String(tier.unit_price),
       installation: tier.install_unit_price == null ? '' : String(tier.install_unit_price),
       corporate: tier.corporate_unit_price == null ? '' : String(tier.corporate_unit_price),
@@ -63,6 +60,8 @@ function amount(value: string, required = false) {
   return Number.isFinite(result) && result > 0 ? result : NaN;
 }
 
+const normalizeCatalogSearchText = (value: unknown) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+
 export function CatalogPricingEditor({ item, editable, onSave }: { item: any; editable: boolean; onSave: (draft: PricingDraft) => Promise<boolean> }) {
   const signature = JSON.stringify(makePricingDraft(item));
   const [draft, setDraft] = useState(() => makePricingDraft(item));
@@ -72,9 +71,6 @@ export function CatalogPricingEditor({ item, editable, onSave }: { item: any; ed
   useEffect(() => { setDraft(makePricingDraft(item)); setError(''); }, [item.id, signature]);
 
   const unit = item.mode === 'area' || item.calc_type === 'm2' ? 'm²' : (item.unit || 'unidad');
-  const bounded = Boolean(item.customOptions?.quantity_pricing);
-  const optionLabels: string[] = bounded ? (item.optionPrices || []).map(({ label }) => label) : [];
-  const primaryOption = optionLabels[0];
   const normalizedTiers = draft.tiers.map((tier) => ({
     qty: amount(tier.min_qty, true),
     pvp: amount(tier.normal),
@@ -82,25 +78,16 @@ export function CatalogPricingEditor({ item, editable, onSave }: { item: any; ed
     price_corp: amount(tier.corporate),
   }));
   const quantities = normalizedTiers.map((tier) => tier.qty);
-  const sortedRanges = [...draft.tiers].sort((a, b) => Number(a.min_qty) - Number(b.min_qty));
-  const invalidRange = bounded && (!sortedRanges.length || sortedRanges.some((tier, index) => {
-    const min = Number(tier.min_qty);
-    const max = Number(tier.max_qty);
-    return !Number.isSafeInteger(min) || !Number.isSafeInteger(max) || min < 1 || max < min
-      || (index > 0 && min <= Number(sortedRanges[index - 1].max_qty))
-      || (!primaryOption && !Number.isFinite(amount(tier.normal, true)))
-      || optionLabels.some((label) => !Number.isFinite(amount(tier.options[label] || '', true)));
-  }));
   const invalidTier = normalizedTiers.some((tier) => !Number.isFinite(tier.qty) || tier.qty! <= 0 || [tier.pvp, tier.price_inst, tier.price_corp].some((price) => Number.isNaN(price)))
-    || new Set(quantities).size !== quantities.length || invalidRange;
+    || new Set(quantities).size !== quantities.length;
   const validBase = Number.isFinite(amount(draft.normal, true)) && !Number.isNaN(amount(draft.installation)) && !Number.isNaN(amount(draft.corporate));
   const dirty = signature !== JSON.stringify(draft);
 
   const setRate = (field: 'normal' | 'installation' | 'corporate', value: string) => { setDraft((current) => ({ ...current, [field]: value })); setSaved(false); setError(''); };
   const setTier = (index: number, field: keyof PriceTierDraft, value: string) => setDraft((current) => ({ ...current, tiers: current.tiers.map((tier, row) => row === index ? { ...tier, [field]: value } : tier) }));
   const addTier = () => {
-    const last = Math.max(0, ...draft.tiers.map((tier) => Number(bounded ? tier.max_qty : tier.min_qty) || 0));
-    setDraft((current) => ({ ...current, tiers: [...current.tiers, { min_qty: String(last + 1), max_qty: bounded ? String(last + 1) : '', normal: '', installation: '', corporate: '', options: {} }] }));
+    const last = Math.max(0, ...draft.tiers.map((tier) => Number(tier.min_qty) || 0));
+    setDraft((current) => ({ ...current, tiers: [...current.tiers, { min_qty: String(last + 1), normal: '', installation: '', corporate: '' }] }));
     setSaved(false); setError('');
   };
   const save = async () => {
@@ -114,30 +101,23 @@ export function CatalogPricingEditor({ item, editable, onSave }: { item: any; ed
   const input = (label: string, value: string, onChange: (value: string) => void) => <label className="catalog-rate-field"><span>{label}</span><span className="catalog-rate-input"><span>$</span><input aria-label={`${label} · ${item.name}`} type="number" min="0.0001" step="0.0001" value={value} onChange={(event) => onChange(event.target.value)} placeholder="Sin tarifa" disabled={!editable} /></span></label>;
 
   return <div className="catalog-pricing-editor">
-    <QuantityPriceTable product={item} />
     <div className="catalog-product-prices">
-      {(!bounded || !primaryOption) && input(`Normal / ${unit}`, draft.normal, (value) => setRate('normal', value))}
+      {input(`Normal / ${unit}`, draft.normal, (value) => setRate('normal', value))}
       {input(`Con instalación / ${unit}`, draft.installation, (value) => setRate('installation', value))}
       {input(`Corporativo / ${unit}`, draft.corporate, (value) => setRate('corporate', value))}
     </div>
     {editable && <div className="catalog-pricing-actions">
       <details className="catalog-tier-editor"><summary><SlidersHorizontal size={14}/>{draft.tiers.length ? `Editar escalas (${draft.tiers.length})` : `Añadir escalas por ${unit}`}</summary>
-        <div className="catalog-tier-help">{bounded ? 'Los límites son inclusivos. La tarifa del tramo se aplica a todas las unidades de la línea.' : 'Define el umbral de cada tarifa. Para productos por área se usa el total de m². Una tarifa vacía hereda el precio base de su modalidad.'}</div>
-        {invalidRange && <p className="catalog-rate-feedback error" role="status">Revisa que los rangos no se superpongan y que cada opción tenga tarifa.</p>}
-        <div className="table-wrap catalog-tier-table-wrap"><table className="catalog-tier-table"><thead><tr><th>Desde ({unit})</th>{bounded && <th>Hasta</th>}{!primaryOption && <th>Normal</th>}{optionLabels.map(label => <th key={label}>{label}</th>)}<th>Con instalación</th><th>Corporativo</th><th><span className="sr-only">Quitar escala</span></th></tr></thead><tbody>
+        <div className="catalog-tier-help">Define desde qué cantidad o medida aplica cada tarifa. En productos por área, el umbral se mide en m² totales. Deja una tarifa de escala vacía para heredar el precio base de esa modalidad.</div>
+        <div className="catalog-tier-table-wrap"><table className="catalog-tier-table"><thead><tr><th>Desde ({unit})</th><th>Normal</th><th>Con instalación</th><th>Corporativo</th><th><span className="sr-only">Quitar escala</span></th></tr></thead><tbody>
           {draft.tiers.map((tier, index) => <tr key={`${item.id}-tier-${index}`}>
             <td><input aria-label={`Cantidad mínima de escala ${index + 1} para ${item.name}`} type="number" min="0.0001" step="any" value={tier.min_qty} onChange={(event) => setTier(index, 'min_qty', event.target.value)} /></td>
-            {bounded && <td><input aria-label={`Cantidad máxima de escala ${index + 1}`} type="number" min="1" step="1" value={tier.max_qty} onChange={(event) => setTier(index, 'max_qty', event.target.value)} /></td>}
-            {!primaryOption && <td><input aria-label={`Precio normal desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0.0001" step="0.0001" value={tier.normal} onChange={(event) => setTier(index, 'normal', event.target.value)} placeholder="Base" /></td>}
-            {optionLabels.map(label => <td key={label}><input aria-label={`${label}, escala ${index + 1}`} type="number" min="0.0001" step="0.0001" value={tier.options[label] || ''} onChange={(event) => {
-              const value = event.target.value;
-              setDraft(current => ({ ...current, tiers: current.tiers.map((row, rowIndex) => rowIndex === index ? { ...row, options: { ...row.options, [label]: value } } : row) }));
-            }} /></td>)}
+            <td><input aria-label={`Precio normal desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0.0001" step="0.0001" value={tier.normal} onChange={(event) => setTier(index, 'normal', event.target.value)} placeholder="Base" /></td>
             <td><input aria-label={`Precio con instalación desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0.0001" step="0.0001" value={tier.installation} onChange={(event) => setTier(index, 'installation', event.target.value)} placeholder="Base" /></td>
             <td><input aria-label={`Precio corporativo desde ${tier.min_qty} ${unit} para ${item.name}`} type="number" min="0.0001" step="0.0001" value={tier.corporate} onChange={(event) => setTier(index, 'corporate', event.target.value)} placeholder="Base" /></td>
             <td><button className="catalog-tier-remove" type="button" aria-label={`Eliminar escala ${index + 1} para ${item.name}`} onClick={() => setDraft((current) => ({ ...current, tiers: current.tiers.filter((_, row) => row !== index) }))}><Trash2 size={14}/></button></td>
           </tr>)}
-          {!draft.tiers.length && <tr><td colSpan={5 + Number(bounded) + optionLabels.length} className="catalog-tier-empty">Todavía no hay escalas.</td></tr>}
+          {!draft.tiers.length && <tr><td colSpan={5} className="catalog-tier-empty">Todavía no hay escalas. Agrega una para configurar descuentos o modalidades por volumen/medida.</td></tr>}
         </tbody></table></div>
         <button className="catalog-tier-add" type="button" onClick={addTier}><Plus size={14}/> Añadir escala</button>
       </details>
@@ -217,14 +197,14 @@ export function CatalogPage() {
   const showCategoryGrid = !isSearchActive && !isViewingCategory;
 
   const filtered = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase('es');
+    const query = normalizeCatalogSearchText(search.trim());
     const matches = productCatalog.filter((item) => {
       const itemFamily = item.family?.trim() || 'General';
       if (selectedFamily && selectedFamily !== 'Todas' && itemFamily !== selectedFamily) {
         return false;
       }
       if (!query) return true;
-      return `${item.name} ${item.family} ${item.description || ''} ${item.unit || ''} ${item.sku || item.id || ''}`.toLocaleLowerCase('es').includes(query);
+      return normalizeCatalogSearchText(`${item.name} ${item.family} ${item.description || ''} ${item.unit || ''} ${item.sku || item.id || ''}`).includes(query);
     });
 
     return matches.sort((a, b) => {
@@ -270,10 +250,7 @@ export function CatalogPage() {
   const savePricing = async (item: any, draft: PricingDraft) => {
     if (!canEditPrices) throw new Error('Tu perfil no puede editar precios del catálogo.');
     if (!supabase || !organizationId) throw new Error('No hay conexión con el catálogo compartido.');
-    const bounded = Boolean(item.customOptions?.quantity_pricing);
-    const primaryOption = bounded ? item.optionPrices?.[0]?.label : undefined;
-    const firstRange = [...draft.tiers].sort((a, b) => Number(a.min_qty) - Number(b.min_qty))[0];
-    const price = amount(bounded ? (primaryOption ? firstRange?.options[primaryOption] : firstRange?.normal) || '' : draft.normal, true);
+    const price = amount(draft.normal, true);
     const installPrice = amount(draft.installation);
     const corporatePrice = amount(draft.corporate);
     if (!Number.isFinite(price) || Number.isNaN(installPrice) || Number.isNaN(corporatePrice)) return false;
@@ -282,20 +259,14 @@ export function CatalogPage() {
     const tierRows = draft.tiers.map((tier) => {
       const qty = amount(tier.min_qty, true)!;
       const old = originalScales.find((scale) => scale.option == null && Number(scale.qty) === qty) || {};
-      const pvp = amount(primaryOption ? tier.options[primaryOption] : tier.normal);
+      const pvp = amount(tier.normal);
       const price_inst = amount(tier.installation);
       const price_corp = amount(tier.corporate);
       const next = { ...old, qty, pvp, price_inst, price_corp };
-      if (item.customOptions?.quantity_pricing) {
-        next.max_qty = Number(tier.max_qty);
-        next.option_prices = Object.entries(tier.options).map(([option, value]) => ({ option, price: amount(value, true) }));
-      }
       if (Object.prototype.hasOwnProperty.call(old, 'price') && old.option == null) next.price = pvp;
       return next;
     }).sort((a, b) => a.qty - b.qty);
-    const preservedScales = originalScales.filter((scale) => scale.qty == null || scale.option != null)
-      .map((scale) => bounded && scale.option != null && firstRange?.options[scale.option] != null
-        ? { ...scale, price: amount(firstRange.options[scale.option], true) } : scale);
+    const preservedScales = originalScales.filter((scale) => scale.qty == null || scale.option != null);
     const priceScales = [...tierRows, ...preservedScales];
     const { data: savedRow, error } = await supabase.from('catalog_products').update({ price, price_inst: installPrice, price_corp: corporatePrice, price_scales: priceScales, updated_at: new Date().toISOString() }).eq('id', item.id).eq('organization_id', organizationId).select('id').maybeSingle();
     if (error) throw new Error(`No se guardó la tarifa: ${error.message}`);
@@ -303,8 +274,7 @@ export function CatalogPage() {
 
     update('catalog', item.id, {
       price, installPrice, corporatePrice, priceScales,
-      optionPrices: preservedScales.filter((scale) => scale.option != null && scale.price != null).map((scale) => ({ label: scale.option, price: Number(scale.price) })),
-      tiers: tierRows.map((tier) => ({ min_qty: tier.qty, max_qty: tier.max_qty, option_prices: tier.option_prices, unit_price: tier.pvp, install_unit_price: tier.price_inst, corporate_unit_price: tier.price_corp })),
+      tiers: tierRows.map((tier) => ({ min_qty: tier.qty, unit_price: tier.pvp, install_unit_price: tier.price_inst, corporate_unit_price: tier.price_corp })),
       confirmed: true,
     });
     return true;
@@ -319,6 +289,12 @@ export function CatalogPage() {
         action={<div className="catalog-heading-actions"><span className="rate-pending"><BadgeCheck size={15}/> {productCatalog.length} productos · {serviceCount} servicios publicados</span><Link className="button button-outline" to="/operaciones/servicios"><BriefcaseBusiness size={15}/> Abrir servicios</Link></div>}
       />
 
+      <section className="catalog-overview" aria-label="Resumen del catálogo">
+        <article className="panel"><span><Layers3 size={17}/></span><div><small>FAMILIAS DISPONIBLES</small><b><NumberTicker value={families.length}/></b><small>Categorías organizadas</small></div></article>
+        <article className="panel"><span><Grid2X2 size={17}/></span><div><small>{showCategoryGrid ? 'PRODUCTOS CATALOGADOS' : isSearchActive ? 'RESULTADOS EN VISTA' : `PRODUCTOS EN ${selectedFamily?.toUpperCase()}`}</small><b><NumberTicker value={showCategoryGrid ? productCatalog.length : filtered.length}/></b><small>{showCategoryGrid ? `En ${families.length} familias` : `${filtered.length} de ${productCatalog.length} productos`}</small></div></article>
+        <article className="panel catalog-service-overview"><span><BriefcaseBusiness size={17}/></span><div><small>SERVICIOS PUBLICADOS</small><b><NumberTicker value={serviceCount}/></b><small>Paquetes conectados con POS</small></div><Link to="/operaciones/servicios" aria-label="Administrar catálogo de servicios"><ArrowRight size={15}/></Link></article>
+      </section>
+
       {skuStatus !== 'hidden' && <section className={`catalog-sku-panel panel${legacySkuCount ? ' has-pending' : ''}`} aria-label="Códigos de identificación del catálogo">
         <span className="catalog-sku-panel-icon"><ScanLine size={18}/></span>
         <div className="catalog-sku-panel-copy">
@@ -330,11 +306,6 @@ export function CatalogPage() {
       </section>}
 
       <StandardCustomProducts key={standardProductsRevision} editable={canEditProducts} editablePrices={canEditPrices} />
-      <section className="catalog-overview" aria-label="Resumen del catálogo">
-        <article className="panel"><span><Layers3 size={17}/></span><div><small>FAMILIAS DISPONIBLES</small><b><NumberTicker value={families.length}/></b><small>Categorías organizadas</small></div></article>
-        <article className="panel"><span><Grid2X2 size={17}/></span><div><small>{isViewingCategory ? `PRODUCTOS EN ${selectedFamily?.toUpperCase()}` : 'ARTÍCULOS REGISTRADOS'}</small><b><NumberTicker value={showCategoryGrid ? productCatalog.length : filtered.length}/></b><small>{showCategoryGrid ? `En ${families.length} familias` : `${filtered.length} de ${productCatalog.length}`}</small></div></article>
-        <article className="panel catalog-service-overview"><span><BriefcaseBusiness size={17}/></span><div><small>SERVICIOS PUBLICADOS</small><b><NumberTicker value={serviceCount}/></b><small>Paquetes conectados con POS</small></div><Link to="/operaciones/servicios" aria-label="Administrar catálogo de servicios"><ArrowRight size={15}/></Link></article>
-      </section>
 
       {/* Main Exploration Section */}
       <section className="catalog-browser panel" aria-label="Exploración por categorías y búsqueda">
@@ -455,7 +426,7 @@ export function CatalogPage() {
               >
                 <div className="catalog-category-thumb">
                   {cat.image ? (
-                    <img src={cat.image} alt="" loading="lazy" />
+                    <img src={cat.image} alt={cat.family} loading="lazy" />
                   ) : (
                     <Layers3 size={24}/>
                   )}
@@ -517,7 +488,7 @@ export function CatalogPage() {
                 {items.map((item) => (
                   <article className="catalog-product-card" key={item.id}>
                     <div className="catalog-product-identity">
-                      {item.image && <img src={item.image} alt={`Referencia de ${item.name}`} loading="lazy"/>}
+                      <img src={item.image} alt={`Referencia de ${item.name}`} loading="lazy"/>
                       <div className="catalog-product-title-block">
                         <b>{item.name}</b>
                         <small>

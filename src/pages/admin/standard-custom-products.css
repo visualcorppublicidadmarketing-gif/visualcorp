@@ -6,6 +6,36 @@
 .standard-product-fields>label>small{color:#807987;font-size:9px;font-weight:500;line-height:1.4}.standard-product-row-copy>.catalog-product-code{margin-top:1px}.standard-products-list>article>.catalog-product-details-button{flex:none}
 .standard-image-guidance{color:#807987;font-size:9px;line-height:1.35;text-align:center}.standard-image-drop>small.standard-image-guidance{max-width:300px}
 
+/* Product catalog metrics, states and long-form editor navigation. */
+.standard-products-metrics{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:10px}
+.standard-products-metrics>span{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:4px 9px;border:1px solid var(--vc-line,#e4e2e9);border-radius:8px;background:var(--vc-surface-soft,#faf8fc);color:var(--vc-muted,#706979);font-size:10px;line-height:1.2}
+.standard-products-metrics>span>b{color:var(--vc-ink,#252531);font-size:12px;font-weight:800}
+.standard-products-search button{display:grid;flex:none;width:28px;height:28px;place-items:center;border:1px solid var(--vc-line,#e4e2e9);border-radius:7px;background:var(--vc-surface,#fff);color:var(--vc-muted,#706979);cursor:pointer}
+.standard-products-search button:focus-visible,.standard-products-categories button:focus-visible{outline:2px solid var(--vc-focus,#9660b4);outline-offset:2px}
+.standard-products-empty-state{display:grid;justify-items:center;gap:8px;padding:24px 16px;border:1px dashed var(--vc-line,#e4e2e9);border-radius:10px;color:var(--vc-brand-strong,#7e1977);text-align:center}
+.standard-products-empty-state>b{color:var(--vc-ink,#252531);font-size:13px}
+.standard-products-empty-state>span{max-width:420px;color:var(--vc-muted,#77717f);font-size:10px;line-height:1.5}
+.standard-products-empty-state .button{margin-top:3px}
+.standard-products-load-error{display:grid;justify-items:center;gap:8px;padding:24px 16px;border:1px solid color-mix(in srgb,var(--vc-danger,#c43e55) 35%,var(--vc-line,#e4e2e9));border-radius:10px;background:color-mix(in srgb,var(--vc-danger,#c43e55) 5%,var(--vc-surface,#fff));text-align:center}
+.standard-products-load-error>b{color:var(--vc-danger,#a82d43);font-size:13px}
+.standard-products-load-error>span{max-width:520px;color:var(--vc-muted,#77717f);font-size:10px;line-height:1.5;overflow-wrap:anywhere}
+.standard-product-editor{width:min(100%,960px);max-height:min(92dvh,940px);gap:10px}
+.standard-editor-nav{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 18px;padding:7px;border:1px solid var(--vc-line,#e5e0ea);border-radius:10px;background:var(--vc-surface-soft,#fcfbfe)}
+.standard-editor-nav>button{display:inline-flex;align-items:center;gap:6px;min-height:33px;padding:0 10px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--vc-muted,#655d6e);font:inherit;font-size:10px;font-weight:700;cursor:pointer}
+.standard-editor-nav>button>span:first-child{display:grid;width:20px;height:20px;place-items:center;border-radius:6px;background:var(--vc-brand-soft,#f5eefa);color:var(--vc-brand-strong,#7e1977);font-size:9px;font-weight:800}
+.standard-editor-nav>button:hover{border-color:var(--vc-line,#e5e0ea);background:var(--vc-surface,#fff);color:var(--vc-ink,#252531)}
+.standard-editor-nav>button:focus-visible{outline:2px solid var(--vc-focus,#9660b4);outline-offset:2px}
+.standard-editor-section,.standard-image-drop{scroll-margin-top:12px}
+.standard-editor-section>header h4:focus{outline:2px solid var(--vc-focus,#9660b4);outline-offset:4px;border-radius:3px}
+.standard-required-label{justify-self:start;color:var(--vc-brand-strong,#7e1977);font-size:9px;font-weight:750}
+.standard-editor-footer-note{min-width:0;max-width:70%;line-height:1.4}
+.standard-editor-footer-note>span{min-width:0;overflow-wrap:anywhere}
+@media(max-width:640px){
+  .standard-editor-nav{flex-wrap:nowrap;overflow-x:auto;max-width:calc(100% - 24px);margin-right:12px;margin-left:12px;scrollbar-width:thin}
+  .standard-editor-nav>button{flex:none;white-space:nowrap}
+  .standard-editor-footer-note{max-width:none}
+}
+
 
 /* Mejoras de productos estándar */
 .standard-products-filter-bar {
