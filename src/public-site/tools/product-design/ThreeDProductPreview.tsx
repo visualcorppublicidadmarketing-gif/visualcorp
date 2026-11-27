@@ -338,7 +338,9 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
     // canvas. Convert the shared 2D print-area height to model-space height.
     const mugBodyHeight = 0.945;
     const mugBodyHeightInArtwork = 0.74;
-    const wrapHeight = mugBodyHeight * (product.printArea.height / 100) / mugBodyHeightInArtwork;
+    const areaWrapHeight = mugBodyHeight * (product.printArea.height / 100) / mugBodyHeightInArtwork;
+    const wrapScale = Math.min(1, 0.85 + warpFactor * 0.22);
+    const wrapHeight = areaWrapHeight * wrapScale;
     const mugRadius = 0.415;
     const thetaSpan = Math.min(Math.PI * 1.48, Math.max(0.45, (wrapHeight * artAspect) / mugRadius));
     const artCyl = new THREE.CylinderGeometry(mugRadius, mugRadius, wrapHeight, 128, 32, true, -thetaSpan / 2, thetaSpan);
