@@ -126,7 +126,7 @@ export function RichTextEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] }, orderedList: false }),
+      StarterKit.configure({ heading: { levels: [1, 2, 3] }, orderedList: false, link: false, underline: false }),
       orderedListExtension,
       Link.configure({ openOnClick: false }),
       Image,
