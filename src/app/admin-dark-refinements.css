@@ -1298,56 +1298,6 @@
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .vc-marketing-campaign-task.is-high { border-color: #67522d; background: #332817; color: #f1d28b; }
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) .mk-dialog .mk-danger { border-color: #79464b; background: #44262b; color: #ffc0b8; }
 
-/* Rich text editor controls, insert panels, and fullscreen canvas. */
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell {
-  --editor-surface: #171a25;
-  --editor-raised: #202434;
-  --editor-line: #363a4d;
-  --editor-ink: #f1f3f8;
-  --editor-muted: #b2b8c8;
-}
-
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(.rich-editor-head, .rich-editor-toolbar,
-  .rich-editor-tool-group, .rich-editor-settings, .rich-editor-setting,
-  .rich-editor-insert-panel, .rich-editor-url-field, .rich-editor-writing-hint,
-  .editor-fullscreen-overlay, .editor-fullscreen-inner, .rich-editor-confirm) {
-  border-color: #363a4d;
-  background: #171a25;
-  color: #e8ebf3;
-  box-shadow: none;
-}
-
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell :is(h2, h3, h4, b, strong, label) { color: #f1f3f8; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell :is(p, small, .rich-editor-eyebrow, .rich-editor-group-label, .rich-editor-status-note) { color: #b2b8c8; }
-
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell :is(.rich-editor-tool-button, .rich-editor-expand,
-  .rich-editor-insert-actions button, .rich-editor-confirm button, .rich-editor-tool-buttons button) {
-  border-color: #41465a;
-  background: #202434;
-  color: #e5e8f1;
-}
-
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell :is(.rich-editor-tool-button, .rich-editor-expand,
-  .rich-editor-insert-actions button, .rich-editor-confirm button, .rich-editor-tool-buttons button):hover,
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell :is(.rich-editor-tool-button, .rich-editor-tool-buttons button).is-active {
-  border-color: #80609b;
-  background: #30253a;
-  color: #f2d9ff;
-}
-
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell :is(select, input, textarea, .rich-editor-url-field) {
-  border-color: #42475d;
-  background: #11141d;
-  color: #f1f3f8;
-  color-scheme: dark;
-}
-
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell .rich-editor-writing-surface { border-color: #363a4d; background: #11141d; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell .rich-editor-writing-surface :is(p, li, blockquote, h1, h2, h3) { color: #e8ebf3; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell .rich-editor-writing-surface a { color: #e3a6f4; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .editor-fullscreen-overlay { background: #090b11eF; }
-:is(.work-app.theme-dark, .vc-dialog.theme-dark) .rich-editor-shell .rich-editor-confirm { background: #171a25; }
-
 /* Operations Finance, Sales Insights, Cash Registers, Ledger & Advisor Dark Overrides */
 :is(.work-app.theme-dark, .vc-dialog.theme-dark) :is(
   .op-finance-page, .op-finance-filters, .op-finance-entry, .op-finance-cost-panel,
