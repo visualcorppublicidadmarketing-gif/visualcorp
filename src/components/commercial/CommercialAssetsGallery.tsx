@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ExternalLink, Image as ImageIcon, Link2, Trash2 } from 'lucide-react';
-import { COMMERCIAL_ASSET_BUCKET, loadCommercialAssets } from '../../lib/commercialAssets';
+import { loadCommercialAssets } from '../../lib/commercialAssets';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../auth/AuthProvider';
 import { useConfirm } from '../ui/OperationalKit';
@@ -18,7 +18,8 @@ export function CommercialAssetsGallery({ kind, documentId }: { kind: 'quote' | 
     const accepted = await confirm({ eyebrow: 'ARCHIVOS DEL TRABAJO', title: `¿Quitar “${asset.title || 'este archivo'}” de la ficha?`, description: 'El archivo dejará de estar vinculado a esta cotización o venta.', tone: 'warning', destructive: true, confirmLabel: 'Quitar archivo', cancelLabel: 'Conservar archivo' });
     if (!accepted) return;
     setError('');
-    if (asset.storage_path) { const { error: storageError } = await supabase.storage.from(COMMERCIAL_ASSET_BUCKET).remove([asset.storage_path]); if (storageError) { setError(storageError.message); return; } }
+    // The immutable binary may also be referenced by the originating quote or sale.
+    // Remove only this document link; storage retention is handled separately.
     const { error: rowError } = await supabase.from('commercial_document_assets').delete().eq('id', asset.id);
     if (rowError) { setError(rowError.message); return; }
     setAssets((current) => current.filter((row) => row.id !== asset.id));

@@ -22,6 +22,7 @@ import { supabase } from '../lib/supabaseClient';
 import { Spinner } from './ui/OperationalKit';
 import './commercial-document-details.css';
 import './commercial-quote-detail.css';
+import { CommercialAssetRepair } from './commercial/CommercialAssetRepair';
 import { CommercialAssetsGallery } from './commercial/CommercialAssetsGallery';
 import { GoogleMapsPreview } from './commercial/GoogleMapsPreview';
 import { RichTextContent } from './commercial/RichTextContent';
@@ -137,6 +138,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
   const products = useMemo(() => new Map<string, any>((data.catalog || []).map((product: any) => [String(product.id), product])), [data.catalog]);
 
   const isQuote = kind === 'quote';
+  const [assetRevision, setAssetRevision] = useState(0);
   const canEdit = hasPermission(isQuote ? 'quotes' : 'sales', 'edit');
   const canDeleteSale = !isQuote && canAdminDeleteSales(roles, hasPermission);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -1311,7 +1313,7 @@ export function CommercialDocumentDetails({ kind, documentId, initialDocument, c
         </section>
       )}
 
-      <CommercialAssetsGallery kind={kind} documentId={documentId}/>
+      <CommercialAssetRepair kind={kind} documentId={documentId} onSynced={() => setAssetRevision(value => value + 1)}/><CommercialAssetsGallery key={assetRevision} kind={kind} documentId={documentId}/>
       {!isQuote && document.urgent_backorder && (
         <div className="commercial-detail-warning" role="status"><AlertCircle size={16}/>La venta tiene un artículo marcado para compra urgente.</div>
       )}

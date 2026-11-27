@@ -129,6 +129,8 @@ export interface ProductionJob {
   branch?: { id: string; name: string; code?: string } | null;
   catalog_product?: { id: string; name: string; sku?: string } | null;
   balance_due?: boolean;
+  material_blocked?: boolean;
+  advisor_name?: string | null;
   can_open_detail?: boolean;
   lot_summary?: {
     unit: string;
@@ -153,6 +155,7 @@ export interface ProductionStep {
   status: StepStatus;
   review_hold?: boolean;
   assigned_to: string | null;
+  assigned_name?: string | null;
   due_at: string | null;
   notes: string | null;
   estimated_minutes?: number;
@@ -241,6 +244,8 @@ export interface LegacyProductionOrder {
   due_at: string | null;
   status: string;
   assigned?: boolean;
+  assigned_to?: string | null;
+  assigned_name?: string | null;
   area_id?: string | null;
   area_code?: string | null;
   area_name?: string | null;
@@ -754,8 +759,6 @@ export interface ProductionPermissions {
 export function resolveProductionPermissions(
   auth: ProductionAuthContextInput
 ): ProductionPermissions {
-  const roles = auth.roles || [];
-  const profiles = auth.profiles || [];
   const hasPermission = auth.hasPermission;
 
   const canViewWorkshop = hasPermission('workshop', 'view');
@@ -763,55 +766,27 @@ export function resolveProductionPermissions(
   const canViewSales = hasPermission('sales', 'view');
   const canEditSales = hasPermission('sales', 'edit');
 
+  const roles = auth.roles || [];
+  const profiles = auth.profiles || [];
   const profileKeys = new Set<string>(
-    profiles.map((p) => (typeof p === 'string' ? p : p?.key)).filter(Boolean)
+    profiles.map((profile) => (typeof profile === 'string' ? profile : profile?.key)).filter(Boolean)
   );
   const isOwnerOrAdmin = roles.some((role) => role === 'owner' || role === 'admin');
-
-  const canCoordinate =
-    canEditWorkshop &&
-    (isOwnerOrAdmin ||
-      ['admin', 'gerencia', 'coordinador_taller', 'encargado_local'].some((k) =>
-        profileKeys.has(k)
-      ));
-
+  const coordinatorProfiles = ['admin', 'gerencia', 'coordinador_taller', 'encargado_local'];
+  const canCoordinate = canEditWorkshop &&
+    (isOwnerOrAdmin || coordinatorProfiles.some((key) => profileKeys.has(key)));
   const canManageFulfillment = canCoordinate || canEditSales;
   const isOnlySalesViewer = canViewSales && !canViewWorkshop;
-
-  const canActInArea = (areaCode: AreaCode | string): boolean => {
-    if (
-      isOwnerOrAdmin ||
-      ['admin', 'gerencia', 'coordinador_taller', 'encargado_local'].some((k) =>
-        profileKeys.has(k)
-      )
-    ) {
-      return true;
-    }
-    const keysByArea: Record<string, string[]> = {
-      ASE: ['asesoras', 'coordinador_ventas'],
-      DIS: ['disenador_grafico'],
-      IMP: ['impresor'],
-      SUB: ['sublimacion'],
-      LAS: ['personal_taller'],
-      TAL: ['personal_taller'],
-    };
-    return (keysByArea[areaCode] || []).some((k) => profileKeys.has(k));
+  const canActInArea = (areaCode: AreaCode | string) => {
+    if (!canEditWorkshop) return areaCode === 'ASE' && canEditSales;
+    if (isOwnerOrAdmin || coordinatorProfiles.some((key) => profileKeys.has(key))) return true;
+    const areaConfig = PRODUCTION_AREA_CONFIG[AREA_CODE_TO_SLUG[areaCode as AreaCode]];
+    return areaCode === 'ASE'
+      ? canEditSales || (areaConfig?.profiles.some((key) => profileKeys.has(key)) ?? false)
+      : (areaConfig?.profiles.some((key) => profileKeys.has(key)) ?? false);
   };
-
   const canOpenDetail = canViewWorkshop || canViewSales;
-
-  const roleLabels: string[] = [];
-  if (roles.includes('owner')) roleLabels.push('Propietario');
-  if (roles.includes('admin')) roleLabels.push('Administrador');
-  if (profileKeys.has('gerencia')) roleLabels.push('Gerencia');
-  if (profileKeys.has('coordinador_taller')) roleLabels.push('Coordinador de Taller');
-  if (profileKeys.has('encargado_local')) roleLabels.push('Encargado de Local');
-  if (profileKeys.has('coordinador_ventas')) roleLabels.push('Coordinador de Ventas');
-  if (profileKeys.has('asesoras')) roleLabels.push('Asesoría');
-  if (profileKeys.has('disenador_grafico')) roleLabels.push('Diseño Gráfico');
-  if (profileKeys.has('impresor')) roleLabels.push('Impresión');
-  if (profileKeys.has('sublimacion')) roleLabels.push('Sublimación');
-  if (profileKeys.has('personal_taller')) roleLabels.push('Personal de Taller');
+  const roleLabels = [canCoordinate ? 'Coordinación' : '', canViewWorkshop ? 'Producción' : '', canViewSales ? 'Ventas' : ''].filter(Boolean);
 
   return {
     canViewWorkshop,
@@ -1165,4 +1140,70 @@ export async function fetchProductionJobDetail(
     events: (eventsResult.data || []) as ProductionJobEvent[],
     areas: (areasResult.data || []) as ProductionAreaRow[],
   };
+}
+
+/** Exact IDs only. Names and titles are display data, never record identity. */
+export function matchesProductionRecord(item: { recordId?: string; recordType?: string }, type: string, id: string) {
+  return Boolean(id && item.recordType === type && item.recordId === id);
+}
+
+export function productionArtworkLabel(job: Pick<ProductionJob, 'artwork_review_status' | 'approval_required'>) {
+  if (job.artwork_review_status === 'awaiting_art') return 'Archivo pendiente';
+  if (job.artwork_review_status === 'changes_requested') return 'Corrección de archivo pendiente';
+  if (job.artwork_review_status === 'awaiting_review') return 'Archivo pendiente de aprobación';
+  return '';
+}
+
+export async function enrichProductionJobs(organizationId: string, jobs: ProductionJob[], steps: ProductionStep[]) {
+  if (!supabase || !jobs.length) return;
+  const { data, error } = await supabase.rpc('production_coordination_metadata', {
+    p_organization_id: organizationId, p_job_ids: jobs.map((job) => job.id),
+  });
+  if (error) throw error;
+  const metadata = new Map<string, { material_blocked: boolean; advisor_name: string | null; steps: Array<{ id: string; assigned_name: string | null }> }>(
+    (data || []).map((row: any) => [row.id, row]),
+  );
+  const names = new Map<string, string | null>();
+  for (const job of jobs) {
+    const row = metadata.get(job.id);
+    if (!row) continue;
+    job.material_blocked = row.material_blocked;
+    job.advisor_name = row.advisor_name;
+    for (const step of row.steps) names.set(step.id, step.assigned_name);
+  }
+  for (const step of steps) step.assigned_name = names.get(step.id) || null;
+}
+
+export const PRODUCTION_VAULT_BUCKET = 'production-vault';
+export const PRODUCTION_VAULT_MAX_BYTES = 50 * 1024 * 1024;
+export function validateProductionVaultFile(file: { name: string; size: number; type: string }) {
+  const extension = file.name.split('.').pop()?.toLowerCase() || '';
+  const types: Record<string, string[]> = {
+    png: ['image/png'], jpg: ['image/jpeg'], jpeg: ['image/jpeg'], webp: ['image/webp'],
+    pdf: ['application/pdf'], svg: ['image/svg+xml'], ai: ['application/postscript','application/pdf'],
+    eps: ['application/postscript'], psd: ['image/vnd.adobe.photoshop','application/x-photoshop'],
+    cdr: ['application/vnd.corel-draw','application/x-coreldraw'], afdesign: [], dxf: ['application/dxf','image/vnd.dxf'],
+  };
+  if (!(extension in types) || (file.type && file.type !== 'application/octet-stream' && !types[extension].includes(file.type)))
+    throw new Error('Tipo de archivo no permitido o incompatible con su extensión.');
+  if (file.size <= 0 || file.size > PRODUCTION_VAULT_MAX_BYTES)
+    throw new Error('El archivo debe tener contenido y pesar como máximo 50 MB.');
+}
+
+// Injectable storage boundary allows deterministic failure/retry tests without remote I/O.
+export async function uploadProductionVaultFile(
+  bucket: { upload: (path: string, file: File, options: any) => Promise<any>; createSignedUrl: (path: string, seconds: number) => Promise<any> },
+  file: File, path: string, uploadedPath: string | undefined, rememberUploaded: (path: string) => void,
+): Promise<{ storagePath: string; fileUrl: string }> {
+  validateProductionVaultFile(file);
+  let storagePath = uploadedPath;
+  if (!storagePath) {
+    const { data, error } = await bucket.upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type || 'application/octet-stream' });
+    if (error || !data?.path) throw error || new Error('El servidor no confirmó la subida.');
+    storagePath = data.path as string;
+    rememberUploaded(storagePath);
+  }
+  const { data, error } = await bucket.createSignedUrl(storagePath, 3600);
+  if (error || !data?.signedUrl) throw error || new Error('No se pudo abrir el archivo privado.');
+  return { storagePath, fileUrl: data.signedUrl };
 }

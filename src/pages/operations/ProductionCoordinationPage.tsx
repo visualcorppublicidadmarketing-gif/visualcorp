@@ -55,6 +55,7 @@ import {
   isDateOverdue,
   isStepOpen,
   priorityDetails,
+  productionArtworkLabel,
   resolveProductionPermissions,
   safeDate,
   setGlobalProductionUiPrefs,
@@ -79,6 +80,8 @@ type CoordinationFilter =
   | 'all'
   | 'attention'
   | 'blocked'
+  | 'overdue'
+  | 'files'
   | 'quality'
   | 'delivery'
   | 'balance';
@@ -87,6 +90,8 @@ const FILTERS: Array<{ key: CoordinationFilter; label: string }> = [
   { key: 'all', label: 'Todos los trabajos' },
   { key: 'attention', label: 'Requieren atención' },
   { key: 'blocked', label: 'Bloqueados' },
+  { key: 'overdue', label: 'Vencidos' },
+  { key: 'files', label: 'Archivos pendientes' },
   { key: 'quality', label: 'Calidad' },
   { key: 'delivery', label: 'Entrega' },
   { key: 'balance', label: 'Saldo pendiente' },
@@ -96,6 +101,8 @@ const VALID_COORDINATION_FILTERS = new Set<CoordinationFilter>([
   'all',
   'attention',
   'blocked',
+  'overdue',
+  'files',
   'quality',
   'delivery',
   'balance',
@@ -162,6 +169,7 @@ export function ProductionCoordinationPage() {
     recordTitle: string;
     recordSubtitle: string;
     recordStage: string;
+    metadata?: { saleId: string; orderCode: string | null };
   } | null>(null);
 
   // Carga de página con paginación
@@ -357,15 +365,17 @@ export function ProductionCoordinationPage() {
       const dueAt = currentStep?.due_at || job.fulfillment_due_at || job.due_at;
       const isLate = isDateOverdue(dueAt);
 
+      if (activeFilter === 'overdue' && !isDateOverdue(dueAt)) return false;
+      if (activeFilter === 'files' && !productionArtworkLabel(job)) return false;
       if (activeFilter === 'attention') {
         const requiresAttention =
-          currentStep?.status === 'blocked' ||
+          currentStep?.status === 'blocked' || job.material_blocked ||
           isLate ||
           (currentStep?.status === 'ready' && !currentStep.assigned_to) ||
           (job.approval_required && job.artwork_review_status !== 'approved');
         if (!requiresAttention) return false;
       } else if (activeFilter === 'blocked') {
-        if (currentStep?.status !== 'blocked') return false;
+        if (currentStep?.status !== 'blocked' && !job.material_blocked) return false;
       } else if (activeFilter === 'quality') {
         const isQuality =
           job.fulfillment_status === 'quality_check' ||
@@ -382,7 +392,7 @@ export function ProductionCoordinationPage() {
       }
 
       if (needle) {
-        const searchStr = `${job.sale_code || ''} ${job.title} ${currentStep?.title || ''}`.toLocaleLowerCase('es');
+        const searchStr = `${job.sale_code || ''} ${job.customer_name || ''} ${job.title} ${currentStep?.title || ''} ${currentStep?.assigned_name || ''}`.toLocaleLowerCase('es');
         if (!searchStr.includes(needle)) return false;
       }
 
@@ -466,10 +476,13 @@ export function ProductionCoordinationPage() {
           ownerLabel: current?.assigned_to
             ? current.assigned_to === auth.user?.id
               ? 'A mi cargo'
-              : 'Asignado'
+              : current.assigned_name || 'Responsable asignado'
             : 'Sin responsable',
           overdue: isDateOverdue(dueAt),
           original: item,
+          materialBlocked: job.material_blocked,
+          artworkLabel: productionArtworkLabel(job),
+          instructions: current?.notes || String(job.specifications?.description || ''),
           stageName: current?.title || job.title,
           areaName: areaConfig?.title || 'Coordinación',
           balanceDue: Boolean(job.balance_due),
@@ -514,7 +527,7 @@ export function ProductionCoordinationPage() {
               : order.status === 'queued'
               ? 'En espera'
               : order.status,
-          ownerLabel: order.assigned ? 'Asignado' : 'Sin responsable',
+          ownerLabel: order.assigned_name || (order.assigned ? 'Responsable asignado' : 'Sin responsable'),
           overdue: isDateOverdue(order.due_at),
           original: {
             source: 'legacy' as const,
@@ -601,7 +614,7 @@ export function ProductionCoordinationPage() {
       <article className={`pc-order${compact ? ' is-compact' : ''}`}>
         <div className="pc-order-main">
           <div className="pc-order-title">
-            <span>{job.sale_code || 'Pedido activo'}</span>
+            <span>{job.sale_code || 'Pedido activo'} · {job.customer_name || 'Cliente por consultar'}</span>
             <h2>{job.title}</h2>
           </div>
           <span className={`pc-status${statusClass}`}>{viewItem.statusLabel}</span>
@@ -635,6 +648,11 @@ export function ProductionCoordinationPage() {
             </b>
           </div>
         </div>
+        <div className="production-job-signals">
+          {job.material_blocked && <span className="production-material-badge">Bloqueado por material</span>}
+          {productionArtworkLabel(job) && <span className="production-file-badge">{productionArtworkLabel(job)}</span>}
+          {(current?.notes || job.specifications?.description) && <p>{current?.notes || String(job.specifications?.description)}</p>}
+        </div>
         <div className="pc-order-bottom">
           <span>
             {job.fulfillment_status === 'quality_check'
@@ -655,7 +673,8 @@ export function ProductionCoordinationPage() {
               onClick={(e) => {
                 e.stopPropagation();
                 setChatterTarget({
-                  recordId: code,
+                  recordId: job.id,
+                  metadata: { saleId: job.sale_id, orderCode: job.sale_code },
                   recordTitle: job.title,
                   recordSubtitle: `${current?.area_name || stepAreaCode} · ${code}`,
                   recordStage: viewItem.statusLabel,
@@ -705,7 +724,7 @@ export function ProductionCoordinationPage() {
       if (!job) return false;
       const dueAt = currentStep?.due_at || job.fulfillment_due_at || job.due_at;
       return (
-        currentStep?.status === 'blocked' ||
+        currentStep?.status === 'blocked' || job.material_blocked ||
         isDateOverdue(dueAt) ||
         (currentStep?.status === 'ready' && !currentStep.assigned_to) ||
         (job.approval_required && job.artwork_review_status !== 'approved')
@@ -738,7 +757,7 @@ export function ProductionCoordinationPage() {
     legacyOrders.filter((order) => order.status === 'ready').length;
 
   const blockedCount =
-    jobItems.filter(({ currentStep }) => currentStep?.status === 'blocked').length +
+    jobItems.filter(({ job, currentStep }) => currentStep?.status === 'blocked' || job?.material_blocked).length +
     legacyOrders.filter((order) => order.status === 'blocked').length;
 
   const balanceCount = jobItems.filter(({ job }) => job?.balance_due).length;
@@ -1014,6 +1033,7 @@ export function ProductionCoordinationPage() {
             open={Boolean(chatterTarget)}
             onClose={() => setChatterTarget(null)}
             recordType="job"
+            metadata={chatterTarget.metadata}
             recordId={chatterTarget.recordId}
             recordTitle={chatterTarget.recordTitle}
             recordSubtitle={chatterTarget.recordSubtitle}

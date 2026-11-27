@@ -73,6 +73,7 @@ export function WorkshopBillboardCalendarPage() {
   const dateScope = normalizeScope(searchParams.get('alcance'));
   const areaFilter = (searchParams.get('area') || 'ALL') as 'ALL' | AreaCode;
   const searchQuery = searchParams.get('q') || '';
+  const overdueOnly = searchParams.get('vencidos') === '1';
   const installationOnly = searchParams.get('instalacion') === '1';
   const selectedJobId = searchParams.get('trabajo') || null;
   const isFichaOpen = searchParams.get('ficha') === '1' && Boolean(selectedJobId);
@@ -219,6 +220,7 @@ export function WorkshopBillboardCalendarPage() {
   const visibleJobs = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase('es');
     return schedule.jobs.filter((job) => {
+      if (overdueOnly && !schedule.events.some((event) => event.jobId === job.id && event.date < getWorkshopTodayKey() && !['completed','cancelled','delivered','installed'].includes(event.status))) return false;
       if (installationOnly && !job.requiresInstallation) return false;
       if (areaFilter !== 'ALL') {
         const jobAreaCode = job.areaCode || (job.area ? AREA_SLUG_TO_CODE[job.area] : 'TAL');
@@ -228,7 +230,7 @@ export function WorkshopBillboardCalendarPage() {
       return [job.code, job.title, job.clientName, job.address, job.areaLabel || '']
         .some((value) => value.toLocaleLowerCase('es').includes(query));
     });
-  }, [schedule.jobs, searchQuery, installationOnly, areaFilter]);
+  }, [schedule.jobs, schedule.events, searchQuery, installationOnly, areaFilter, overdueOnly]);
 
   const visibleIds = useMemo(() => new Set(visibleJobs.map((job) => job.id)), [visibleJobs]);
 
@@ -244,11 +246,11 @@ export function WorkshopBillboardCalendarPage() {
 
   // Trabajos a desplegar en el mapa según el toggle explícito de fecha
   const mapJobs = useMemo(() => {
-    if (dateScope === 'day' && selectedDate) {
+    if (!overdueOnly && dateScope === 'day' && selectedDate) {
       return installationJobs.filter((job) => (job.executionDate || job.scheduledDate) === selectedDate);
     }
     return installationJobs;
-  }, [installationJobs, dateScope, selectedDate]);
+  }, [installationJobs, dateScope, selectedDate, overdueOnly]);
 
   const mappedCount = installationJobs.filter(hasWorkshopMapLocation).length;
   const unmappedJobs = installationJobs.filter((job) => !hasWorkshopMapLocation(job));
@@ -447,6 +449,14 @@ export function WorkshopBillboardCalendarPage() {
           </label>
 
           <label className="ws-install-filter">
+            <input type="checkbox" checked={overdueOnly} onChange={(event) => setSearchParams((current) => {
+              const next = new URLSearchParams(current);
+              if (event.target.checked) next.set('vencidos', '1'); else next.delete('vencidos');
+              return next;
+            }, { replace: true })} />
+            <span>Vencidos</span>
+          </label>
+          <label className="ws-install-filter">
             <input
               type="checkbox"
               checked={installationOnly}
@@ -475,6 +485,13 @@ export function WorkshopBillboardCalendarPage() {
           </div>
         </section>
 
+        {overdueOnly && <section className="production-overdue-agenda" aria-label="Trabajos vencidos">
+          <h2>Vencidos de fechas anteriores</h2>
+          {visibleJobs.length === 0 && <p>No hay trabajos vencidos con estos filtros.</p>}
+          {visibleJobs.map((job) => <button className="button button-outline" key={job.id} type="button" onClick={() => openJobDetail(job.id)}>
+            {job.code} · {job.title} · {job.clientName} · Vencido
+          </button>)}
+        </section>}
         {schedule.loading && <p className="ws-loading" role="status">Cargando trabajos y fechas registradas…</p>}
         {schedule.error && (
           <div className="ws-alert" role="alert">

@@ -1247,3 +1247,8 @@
     width: 100%;
   }
 }
+
+.vc-vault-upload-state { min-width:0; max-width:100%; padding:12px; border:1px solid var(--admin-glass-border,#cfc6d4); border-radius:12px; background:var(--admin-glass-card,#fff); color:var(--admin-glass-ink,#292533); overflow-wrap:anywhere; }
+.vc-vault-upload-state select { max-width:100%; min-width:0; }
+.vc-vault-upload-state [role="alert"] { font-weight:700; }
+@media (prefers-reduced-transparency: reduce) { .vc-vault-upload-state { background:var(--vc-surface,#fff); backdrop-filter:none; } }

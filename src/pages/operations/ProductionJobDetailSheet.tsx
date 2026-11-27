@@ -34,6 +34,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { Sheet, useConfirm } from '../../components/ui/OperationalKit';
 import { DateTimePicker } from '../../components/ui/Calendar';
 import { ChatterDrawer360 } from '../../components/ui/ChatterDrawer360';
+import { ProductionMaterialPanel } from '../../components/inventory/ProductionMaterialPanel';
 import { ProductionArtworkReference } from './ProductionArtworkReference';
 import { ProductionSpecReview } from './ProductionSpecReview';
 import {
@@ -299,6 +300,7 @@ export function ProductionJobDetailSheet({
   const [lotNote, setLotNote] = useState('');
 
   // Drawer de Chatter 360
+  const [orphanArtworkPath, setOrphanArtworkPath] = useState('');
   const [chatterOpen, setChatterOpen] = useState(false);
 
   // Identificadores de accesibilidad
@@ -585,7 +587,7 @@ export function ProductionJobDetailSheet({
     job?.approval_required &&
       job?.status === 'open' &&
       selectedStep?.step_key === 'design' &&
-      (assignedToMe || perms.canCoordinate) &&
+      assignedToMe &&
       perms.canActInArea('DIS') &&
       perms.canEditWorkshop &&
       ['awaiting_art', 'changes_requested'].includes(job.artwork_review_status) &&
@@ -1034,7 +1036,7 @@ export function ProductionJobDetailSheet({
       !selectedStep ||
       busy ||
       selectedStep.step_key !== 'design' ||
-      (!assignedToMe && !perms.canCoordinate) ||
+      !assignedToMe ||
       !perms.canActInArea('DIS') ||
       !perms.canEditWorkshop
     )
@@ -1062,7 +1064,11 @@ export function ProductionJobDetailSheet({
     setBusy(true);
     setActionError('');
     setActionMessage('');
+    let uploadedPath = '';
     try {
+      // Recheck ownership immediately before uploading, not only at render time.
+      const { data: currentStep, error: ownerError } = await supabase.from('production_job_steps').select('assigned_to').eq('id', selectedStep.id).single();
+      if (ownerError || currentStep?.assigned_to !== user?.id) throw new Error('La etapa debe estar asignada a ti antes de subir el arte. Actualiza la ficha.');
       let reference = artworkReference.trim();
       if (artworkFile) {
         const path = `${job.organization_id}/${job.id}/${crypto.randomUUID()}.${ARTWORK_FILE_TYPES[artworkFile.type]}`;
@@ -1074,6 +1080,7 @@ export function ProductionJobDetailSheet({
             upsert: false,
           });
         if (uploadError) throw new Error(`No pudimos subir la prueba privada: ${uploadError.message}`);
+        uploadedPath = path;
         reference = `storage://production-artwork/${path}`;
         setArtworkReference(reference);
         setArtworkFile(null);
@@ -1086,10 +1093,16 @@ export function ProductionJobDetailSheet({
         p_note: artworkNote.trim(),
       });
       if (error) throw error;
+      setOrphanArtworkPath('');
       setArtworkNote('');
       setActionMessage('Arte entregado. Asesoría recibirá un aviso para aprobarlo o pedir correcciones.');
       await refreshAfterChange();
     } catch (error) {
+      if (uploadedPath) {
+        const cleanup = await supabase.storage.from('production-artwork').remove([uploadedPath]);
+        if (cleanup.error) setOrphanArtworkPath(uploadedPath);
+        else { setArtworkReference(''); setOrphanArtworkPath(''); }
+      }
       setActionError(error instanceof Error ? error.message : 'No pudimos entregar el arte.');
     } finally {
       setBusy(false);
@@ -1359,6 +1372,7 @@ export function ProductionJobDetailSheet({
               </section>
 
               {/* PASE ENTRE ÁREAS (HANDOFF) */}
+              <ProductionMaterialPanel key={`${job.id}:${selectedStep?.id || "none"}`} job={job} step={selectedStep} onChanged={refreshAfterChange}/>
               <ProductionHandoffSection
                 step={selectedStep}
                 areas={areas}
@@ -1395,6 +1409,7 @@ export function ProductionJobDetailSheet({
                   />
 
                   {/* Formulario de entrega de arte (Diseño) */}
+                  {orphanArtworkPath && <div className="pj-artwork-form"><p>La prueba no quedó vinculada. Puedes descartar el archivo pendiente antes de intentar otra entrega.</p><button type="button" className="button button-outline" disabled={busy} onClick={async () => { if (!supabase) return; setBusy(true); const { error } = await supabase.storage.from('production-artwork').remove([orphanArtworkPath]); setBusy(false); if (error) setActionError(error.message); else { setOrphanArtworkPath(''); setArtworkReference(''); setActionMessage('Prueba pendiente descartada.'); } }}>Descartar prueba pendiente</button></div>}
                   {canSubmitArtwork && (
                     <div className="pj-artwork-form">
                       <label>
