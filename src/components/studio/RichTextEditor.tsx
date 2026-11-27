@@ -1,14 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
-import TextAlign from '@tiptap/extension-text-align';
-import { OrderedList } from '@tiptap/extension-list';
-import Underline from '@tiptap/extension-underline';
-import Highlight from '@tiptap/extension-highlight';
-import Color from '@tiptap/extension-color';
-import { TextStyle } from '@tiptap/extension-text-style';
+import { BubbleMenu } from '@tiptap/react/menus';
 import {
   AlignCenter,
   AlignJustify,
@@ -17,6 +9,7 @@ import {
   Bold,
   Check,
   ChevronDown,
+  Columns3,
   Code2,
   Eraser,
   FileText,
@@ -26,17 +19,24 @@ import {
   Link2,
   List,
   ListOrdered,
+  LoaderCircle,
   Maximize2,
   MoreHorizontal,
   Quote,
   Redo2,
+  Rows3,
   SlidersHorizontal,
   Strikethrough,
+  Table2,
+  Trash2,
   Underline as UnderlineIcon,
   Undo2,
   X,
 } from 'lucide-react';
 import { clearSpotlight, SpotlightLayer, updateSpotlight } from '../ui/MagicComponents';
+import { optimizeCommercialImage } from '../../lib/commercialAssets';
+import { createRichTextExtensions } from './richTextExtensions';
+import { sanitizeRichTextHtml } from './richTextHtml';
 import './rich-text-editor.css';
 
 type RichTextEditorProps = {
@@ -46,22 +46,77 @@ type RichTextEditorProps = {
   minHeight?: number;
   label?: string;
   fullscreen?: boolean;
+  onImageUpload?: (file: File) => Promise<string>;
 };
 
 type InsertMode = 'link' | 'image' | null;
 type SavedSelection = { from: number; to: number };
+type TableContext = { tablePos: number; cellPos: number; rowIndex: number; colIndex: number };
+type EditorInstance = NonNullable<ReturnType<typeof useEditor>>;
 
-const orderedListExtension = OrderedList.extend({
-  addAttributes() {
-    return {
-      listStyleType: {
-        default: 'decimal',
-        parseHTML: (element) => element.style.listStyleType || 'decimal',
-        renderHTML: (attributes) => ({ style: `list-style-type:${attributes.listStyleType || 'decimal'}` }),
-      },
-    };
-  },
-});
+function getCellAt(editor: EditorInstance, tablePos: number, rowIndex: number, colIndex: number): TableContext | null {
+  const table = editor.state.doc.nodeAt(tablePos);
+  if (table?.type.name !== 'table' || !table.childCount) return null;
+  const targetRowIndex = Math.min(Math.max(rowIndex, 0), table.childCount - 1);
+  let result: TableContext | null = null;
+  table.forEach((row, rowOffset, currentRowIndex) => {
+    if (currentRowIndex !== targetRowIndex || !row.childCount) return;
+    const targetColIndex = Math.min(Math.max(colIndex, 0), row.childCount - 1);
+    row.forEach((_cell, cellOffset, currentColIndex) => {
+      if (currentColIndex === targetColIndex) {
+        result = {
+          tablePos,
+          cellPos: tablePos + 2 + rowOffset + cellOffset,
+          rowIndex: targetRowIndex,
+          colIndex: targetColIndex,
+        };
+      }
+    });
+  });
+  return result;
+}
+
+function getTableContext(editor: EditorInstance): TableContext | null {
+  const { $from } = editor.state.selection;
+  let cellDepth = -1;
+  let tableDepth = -1;
+  for (let depth = $from.depth; depth > 0; depth -= 1) {
+    const name = $from.node(depth).type.name;
+    if (cellDepth < 0 && (name === 'tableCell' || name === 'tableHeader')) cellDepth = depth;
+    if (name === 'table') {
+      tableDepth = depth;
+      break;
+    }
+  }
+  if (cellDepth < 0 || tableDepth < 0) return null;
+  const tablePos = $from.before(tableDepth);
+  const cellPos = $from.before(cellDepth);
+  const table = editor.state.doc.nodeAt(tablePos);
+  if (table?.type.name !== 'table') return null;
+  let rowIndex = -1;
+  let colIndex = -1;
+  table.forEach((row, rowOffset, currentRowIndex) => {
+    row.forEach((_cell, cellOffset, currentColIndex) => {
+      if (tablePos + 2 + rowOffset + cellOffset === cellPos) {
+        rowIndex = currentRowIndex;
+        colIndex = currentColIndex;
+      }
+    });
+  });
+  return rowIndex < 0 || colIndex < 0 ? null : { tablePos, cellPos, rowIndex, colIndex };
+}
+
+function findTableCell(editor: EditorInstance, nearPosition: number, rowIndex = 0, colIndex = 0): TableContext | null {
+  let closest: { distance: number; tablePos: number } | null = null;
+  editor.state.doc.descendants((node, position) => {
+    if (node.type.name !== 'table') return true;
+    const distance = Math.abs(position - nearPosition);
+    if (closest && closest.distance <= distance) return false;
+    closest = { distance, tablePos: position };
+    return false;
+  });
+  return closest ? getCellAt(editor, closest.tablePos, rowIndex, colIndex) : null;
+}
 
 function safeColor(value: string | undefined, fallback: string) {
   if (!value) return fallback;
@@ -102,7 +157,7 @@ function normalizeWebUrl(value: string) {
 function normalizeImageUrl(value: string) {
   const url = normalizeWebUrl(value);
   if (!/^https?:\/\//i.test(url)) throw new Error('Para imágenes usa una dirección web pública.');
-  return url;
+  return url.replace(/^http:\/\//i, 'https://');
 }
 
 export function RichTextEditor({
@@ -112,6 +167,7 @@ export function RichTextEditor({
   minHeight = 230,
   label = 'Contenido',
   fullscreen = true,
+  onImageUpload,
 }: RichTextEditorProps) {
   const id = useId();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -119,46 +175,52 @@ export function RichTextEditor({
   const [insertMode, setInsertMode] = useState<InsertMode>(null);
   const [insertUrl, setInsertUrl] = useState('');
   const [insertError, setInsertError] = useState('');
+  const [imageAlt, setImageAlt] = useState('');
+  const [imageIsDecorative, setImageIsDecorative] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [tableToolbarPinned, setTableToolbarPinned] = useState(false);
   const savedSelection = useRef<SavedSelection | null>(null);
+  const tableContext = useRef<TableContext | null>(null);
+  const imageUploadToken = useRef(0);
+  const preserveTableToolbar = useRef(false);
+  const imageFileRef = useRef<HTMLInputElement>(null);
+  const toolbarTabStop = useRef('bold');
   const fullscreenDialogRef = useRef<HTMLDialogElement>(null);
   const fullscreenTriggerRef = useRef<HTMLButtonElement>(null);
   const openedFullscreen = useRef(false);
 
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] }, orderedList: false, link: false, underline: false }),
-      orderedListExtension,
-      Link.configure({ openOnClick: false }),
-      Image,
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Underline,
-      Highlight.configure({ multicolor: true }),
-      TextStyle.extend({
-        addAttributes() {
-          return {
-            fontFamily: {
-              default: null,
-              parseHTML: (element) => element.style.fontFamily?.replaceAll('"', '') || null,
-              renderHTML: (attributes) => attributes.fontFamily ? { style: `font-family:${attributes.fontFamily}` } : {},
-            },
-            fontSize: {
-              default: null,
-              parseHTML: (element) => element.style.fontSize || null,
-              renderHTML: (attributes) => attributes.fontSize ? { style: `font-size:${attributes.fontSize}` } : {},
-            },
-          };
-        },
-      }),
-      Color,
-    ],
-    content: value,
+    extensions: createRichTextExtensions(),
+    content: sanitizeRichTextHtml(value),
     onUpdate: ({ editor: instance }) => onChange?.(instance.getHTML()),
+    onTransaction: ({ transaction }) => {
+      if (!tableContext.current || !transaction.docChanged) return;
+      tableContext.current = {
+        tablePos: transaction.mapping.map(tableContext.current.tablePos, -1),
+        cellPos: transaction.mapping.map(tableContext.current.cellPos, -1),
+        rowIndex: tableContext.current.rowIndex,
+        colIndex: tableContext.current.colIndex,
+      };
+    },
+    onSelectionUpdate: ({ editor: instance }) => {
+      const context = getTableContext(instance);
+      if (context) {
+        tableContext.current = context;
+        setTableToolbarPinned(true);
+      } else if (!preserveTableToolbar.current) {
+        tableContext.current = null;
+        setTableToolbarPinned(false);
+      }
+    },
     editorProps: {
       attributes: {
         class: 'rich-editor-content',
+        role: 'textbox',
+        'aria-multiline': 'true',
         'data-placeholder': placeholder,
         'aria-label': label,
       },
+      transformPastedHTML: (html) => sanitizeRichTextHtml(html),
     },
   });
 
@@ -171,7 +233,8 @@ export function RichTextEditor({
       const listAttributes = currentEditor.getAttributes('orderedList');
       const textAttributes = currentEditor.getAttributes('textStyle');
       const darkTheme = typeof document !== 'undefined' && [document.documentElement, document.body]
-        .some((element) => element.matches('[data-theme="dark"], [data-vc-theme="dark"], .theme-dark'));
+        .some((element) => element.matches('[data-theme="dark"], [data-vc-theme="dark"], .theme-dark'))
+        || Boolean(currentEditor.view.dom.closest('.theme-dark, [data-theme="dark"], [data-vc-theme="dark"]'));
       const heading = currentEditor.isActive('heading', { level: 1 })
         ? 'h1'
         : currentEditor.isActive('heading', { level: 2 })
@@ -202,6 +265,7 @@ export function RichTextEditor({
         listStyleType: listAttributes.listStyleType || 'decimal',
         canUndo: currentEditor.can().undo(),
         canRedo: currentEditor.can().redo(),
+        inTable: currentEditor.isActive('table') || currentEditor.isActive('tableCell') || currentEditor.isActive('tableHeader') || tableToolbarPinned,
         wordCount: currentEditor.getText().trim().split(/\s+/).filter(Boolean).length,
         characterCount: currentEditor.getText().length,
       };
@@ -209,8 +273,9 @@ export function RichTextEditor({
   });
 
   useEffect(() => {
-    if (editor && value !== editor.getHTML() && !editor.isFocused) {
-      editor.commands.setContent(value, { emitUpdate: false });
+    const safeValue = sanitizeRichTextHtml(value);
+    if (editor && safeValue !== editor.getHTML() && !editor.isFocused) {
+      editor.commands.setContent(safeValue, { emitUpdate: false });
     }
   }, [value, editor]);
 
@@ -243,9 +308,16 @@ export function RichTextEditor({
   }, [id, insertMode, isFullscreen, editor]);
 
   useEffect(() => {
+    if (!insertMode) return;
+    const frame = requestAnimationFrame(() => document.getElementById(`${id}-insert-url`)?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [id, insertMode]);
+
+  useEffect(() => {
     if (!isFullscreen && !insertMode) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
+      if (imageUploading) return;
       if (insertMode) {
         event.preventDefault();
         event.stopPropagation();
@@ -259,7 +331,7 @@ export function RichTextEditor({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [insertMode, isFullscreen]);
+  }, [imageUploading, insertMode, isFullscreen]);
 
   if (!editor || !toolbarState) return null;
 
@@ -276,6 +348,41 @@ export function RichTextEditor({
     else if (action === 'ordered') chain.toggleOrderedList().run();
     else if (action === 'quote') chain.toggleBlockquote().run();
     else if (action === 'code') chain.toggleCodeBlock().run();
+    else if (['table', 'add-row', 'add-column', 'delete-row', 'delete-column', 'delete-table'].includes(action)) {
+      preserveTableToolbar.current = true;
+      const previousPosition = editor.state.selection.from;
+      let context = getTableContext(editor) || tableContext.current;
+      if (action === 'table') {
+        editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+        context = getTableContext(editor) || findTableCell(editor, previousPosition);
+      } else if (context) {
+        // Toolbar buttons take DOM focus. Restore the last selected cell before running
+        // the table command so consecutive row/column edits target the same table.
+        editor.commands.setTextSelection(context.cellPos + 2);
+        const tableChain = editor.chain().focus();
+        if (action === 'add-row') tableChain.addRowAfter().run();
+        else if (action === 'add-column') tableChain.addColumnAfter().run();
+        else if (action === 'delete-row') tableChain.deleteRow().run();
+        else if (action === 'delete-column') tableChain.deleteColumn().run();
+        else tableChain.deleteTable().run();
+        if (action !== 'delete-table') {
+          const mappedTablePosition = tableContext.current?.tablePos ?? context.tablePos;
+          context = findTableCell(editor, mappedTablePosition, context.rowIndex, context.colIndex);
+          if (context) {
+            editor.commands.setTextSelection(context.cellPos + 2);
+            context = getTableContext(editor) || context;
+          }
+        }
+      }
+      if (action === 'delete-table' || !context) {
+        tableContext.current = null;
+        setTableToolbarPinned(false);
+      } else {
+        tableContext.current = context;
+        setTableToolbarPinned(true);
+      }
+      requestAnimationFrame(() => { preserveTableToolbar.current = false; });
+    }
     else if (action === 'left') chain.setTextAlign('left').run();
     else if (action === 'center') chain.setTextAlign('center').run();
     else if (action === 'right') chain.setTextAlign('right').run();
@@ -289,8 +396,48 @@ export function RichTextEditor({
       savedSelection.current = { from: editor.state.selection.from, to: editor.state.selection.to };
       setInsertMode(action);
       setInsertUrl('');
+      setImageAlt('');
+      setImageIsDecorative(false);
       setInsertError('');
     }
+  };
+
+  const syncToolbarRovingTabStop = (event: React.FocusEvent<HTMLDivElement>) => {
+    const target = event.target.closest<HTMLElement>('[data-editor-toolbar-item]');
+    const toolbarElement = event.currentTarget;
+    if (!target) return;
+    toolbarTabStop.current = target.dataset.editorToolbarItem || toolbarTabStop.current;
+    toolbarElement.querySelectorAll<HTMLElement>('[data-editor-toolbar-item]').forEach((item) => {
+      item.tabIndex = item === target ? 0 : -1;
+    });
+  };
+
+  const navigateToolbar = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.target instanceof HTMLInputElement) return;
+    if (event.target instanceof HTMLSelectElement && !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('[data-editor-toolbar-item]:not(:disabled)'));
+    if (!items.length) return;
+    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+    if (currentIndex < 0) return;
+    event.preventDefault();
+    const nextIndex = event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? items.length - 1
+        : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + items.length) % items.length;
+    items[nextIndex].focus();
+  };
+
+  const focusEditorToolbar = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!event.altKey || event.key !== 'F10') return;
+    const toolbarElement = event.currentTarget.querySelector<HTMLElement>('.rich-editor-toolbar');
+    const activeItem = toolbarElement?.querySelector<HTMLElement>('[data-editor-toolbar-item][tabindex="0"]:not(:disabled)')
+      || toolbarElement?.querySelector<HTMLElement>('button[data-editor-toolbar-item]:not(:disabled)')
+      || toolbarElement?.querySelector<HTMLElement>('select[data-editor-toolbar-item]:not(:disabled)');
+    if (!activeItem) return;
+    event.preventDefault();
+    activeItem.focus();
   };
 
   const renderButton = (
@@ -317,6 +464,19 @@ export function RichTextEditor({
     </button>
   );
 
+  const renderToolbarButton = (
+    action: string,
+    labelText: string,
+    Icon: React.ComponentType<{ size?: number; 'aria-hidden'?: boolean }>,
+    active = false,
+    disabled = false,
+    tone: 'default' | 'danger' = 'default',
+    toggle = true,
+  ) => React.cloneElement(renderButton(action, labelText, Icon, active, disabled, tone, toggle), {
+    'data-editor-toolbar-item': action,
+    tabIndex: toolbarTabStop.current === action ? 0 : -1,
+  });
+
   const renderGroup = (name: string, ariaLabel: string, children: React.ReactNode) => (
     <div className="rich-editor-tool-group" role="group" aria-label={ariaLabel} key={name}>
       <span className="rich-editor-group-label" aria-hidden="true">{name}</span>
@@ -324,15 +484,86 @@ export function RichTextEditor({
     </div>
   );
 
+  const uploadAndInsertImage = async (file: File) => {
+    if (!onImageUpload) return;
+    if (!imageIsDecorative && !imageAlt.trim()) {
+      setInsertError('Añade una descripción o marca la imagen como decorativa.');
+      return;
+    }
+    const uploadToken = imageUploadToken.current + 1;
+    imageUploadToken.current = uploadToken;
+    setImageUploading(true);
+    setInsertError('');
+    try {
+      const optimized = await optimizeCommercialImage(file);
+      const src = normalizeImageUrl(await onImageUpload(optimized));
+      if (uploadToken !== imageUploadToken.current) return;
+      const selection = savedSelection.current || { from: editor.state.selection.from, to: editor.state.selection.to };
+      editor.chain().focus().setTextSelection(selection).setImage({ src, alt: imageAlt.trim() }).run();
+      setInsertMode(null);
+      setInsertUrl('');
+      setImageAlt('');
+      savedSelection.current = null;
+    } catch (error) {
+      setInsertError(error instanceof Error ? error.message : 'No se pudo subir la imagen.');
+    } finally {
+      if (uploadToken === imageUploadToken.current) setImageUploading(false);
+      if (imageFileRef.current) imageFileRef.current.value = '';
+    }
+  };
+
   const toolbar = (
-    <div className="rich-editor-toolbar" role="group" aria-label="Herramientas de edición">
+    <div
+      className="rich-editor-toolbar"
+      role="toolbar"
+      aria-label="Herramientas de edición"
+      aria-orientation="horizontal"
+      onFocusCapture={syncToolbarRovingTabStop}
+      onKeyDown={navigateToolbar}
+    >
       {renderGroup('Historia', 'Deshacer y rehacer', <>
-        {renderButton('undo', 'Deshacer', Undo2, false, !toolbarState.canUndo, 'default', false)}
-        {renderButton('redo', 'Rehacer', Redo2, false, !toolbarState.canRedo, 'default', false)}
+        {renderToolbarButton('undo', 'Deshacer', Undo2, false, !toolbarState.canUndo, 'default', false)}
+        {renderToolbarButton('redo', 'Rehacer', Redo2, false, !toolbarState.canRedo, 'default', false)}
       </>)}
+      {renderGroup('Texto', 'Formato de texto', <>
+        {renderToolbarButton('bold', 'Negrita', Bold, toolbarState.bold)}
+        {renderToolbarButton('italic', 'Cursiva', Italic, toolbarState.italic)}
+        {renderToolbarButton('underline', 'Subrayado', UnderlineIcon, toolbarState.underline)}
+        {renderToolbarButton('strike', 'Tachado', Strikethrough, toolbarState.strike)}
+      </>)}
+      {renderGroup('Listas', 'Listas y bloques', <>
+        {renderToolbarButton('bullet', 'Lista con viñetas', List, toolbarState.bullet)}
+        {renderToolbarButton('ordered', 'Lista numerada', ListOrdered, toolbarState.ordered)}
+      </>)}
+      {renderGroup('Insertar', 'Insertar contenido', <>
+        {renderToolbarButton('link', toolbarState.link ? 'Enlace en la selección' : 'Insertar enlace', Link2, insertMode === 'link' || toolbarState.link)}
+        {renderToolbarButton('image', 'Insertar imagen desde enlace', ImagePlus, insertMode === 'image', false, 'default', false)}
+      </>)}
+      <button
+        type="button"
+        className={`rich-editor-more-button${showMoreFormatting ? ' is-open' : ''}`}
+        aria-expanded={showMoreFormatting}
+        aria-controls={`${id}-advanced-formatting`}
+        data-editor-toolbar-item="more"
+        tabIndex={toolbarTabStop.current === 'more' ? 0 : -1}
+        onFocus={(event) => {
+          toolbarTabStop.current = 'more';
+          const toolbarElement = event.currentTarget.closest('.rich-editor-toolbar');
+          toolbarElement?.querySelectorAll<HTMLElement>('[data-editor-toolbar-item]').forEach((item) => {
+            item.tabIndex = item === event.currentTarget ? 0 : -1;
+          });
+        }}
+        onClick={() => setShowMoreFormatting((open) => !open)}
+      >
+        <SlidersHorizontal size={15} aria-hidden />
+        <span>Más formato</span>
+        <MoreHorizontal size={15} aria-hidden />
+      </button>
       {renderGroup('Bloque', 'Estilo de párrafo', <div className="rich-editor-select-wrap">
         <select
           aria-label="Estilo del bloque"
+          data-editor-toolbar-item="paragraph"
+          tabIndex={toolbarTabStop.current === 'paragraph' ? 0 : -1}
           value={toolbarState.heading}
           onChange={(event) => run(event.target.value)}
         >
@@ -343,31 +574,6 @@ export function RichTextEditor({
         </select>
         <ChevronDown size={13} aria-hidden />
       </div>)}
-      {renderGroup('Texto', 'Formato de texto', <>
-        {renderButton('bold', 'Negrita', Bold, toolbarState.bold)}
-        {renderButton('italic', 'Cursiva', Italic, toolbarState.italic)}
-        {renderButton('underline', 'Subrayado', UnderlineIcon, toolbarState.underline)}
-        {renderButton('strike', 'Tachado', Strikethrough, toolbarState.strike)}
-      </>)}
-      {renderGroup('Listas', 'Listas y bloques', <>
-        {renderButton('bullet', 'Lista con viñetas', List, toolbarState.bullet)}
-        {renderButton('ordered', 'Lista numerada', ListOrdered, toolbarState.ordered)}
-      </>)}
-      {renderGroup('Insertar', 'Insertar contenido', <>
-        {renderButton('link', toolbarState.link ? 'Enlace en la selección' : 'Insertar enlace', Link2, insertMode === 'link' || toolbarState.link)}
-        {renderButton('image', 'Insertar imagen desde enlace', ImagePlus, insertMode === 'image', false, 'default', false)}
-      </>)}
-      <button
-        type="button"
-        className={`rich-editor-more-button${showMoreFormatting ? ' is-open' : ''}`}
-        aria-expanded={showMoreFormatting}
-        aria-controls={`${id}-advanced-formatting`}
-        onClick={() => setShowMoreFormatting((open) => !open)}
-      >
-        <SlidersHorizontal size={15} aria-hidden />
-        <span>Más formato</span>
-        <MoreHorizontal size={15} aria-hidden />
-      </button>
     </div>
   );
 
@@ -390,8 +596,18 @@ export function RichTextEditor({
           {renderButton('quote', 'Cita', Quote, toolbarState.quote)}
           {renderButton('code', 'Bloque de código', Code2, toolbarState.code)}
           {renderButton('clear', 'Quitar formato', Eraser, false, false, 'danger', false)}
+          {renderButton('table', 'Insertar tabla', Table2, false, false, 'default', false)}
         </>)}
       </div>
+      {toolbarState.inTable && <div className="rich-editor-advanced-tools" role="group" aria-label="Editar tabla">
+        {renderGroup('Tabla', 'Filas y columnas', <>
+          {renderButton('add-row', 'Añadir fila debajo', Rows3, false, false, 'default', false)}
+          {renderButton('add-column', 'Añadir columna a la derecha', Columns3, false, false, 'default', false)}
+          {renderButton('delete-row', 'Eliminar fila', Rows3, false, false, 'danger', false)}
+          {renderButton('delete-column', 'Eliminar columna', Columns3, false, false, 'danger', false)}
+          {renderButton('delete-table', 'Eliminar tabla', Trash2, false, false, 'danger', false)}
+        </>)}
+      </div>}
       <div className="rich-editor-settings" role="group" aria-label="Tipografía y color">
       <div className="rich-editor-setting">
         <label htmlFor={`${id}-font`}>Tipografía</label>
@@ -476,6 +692,9 @@ export function RichTextEditor({
       onSubmit={(event) => {
         event.preventDefault();
         try {
+          if (insertMode === 'image' && !imageIsDecorative && !imageAlt.trim()) {
+            throw new Error('Añade una descripción o marca la imagen como decorativa.');
+          }
           const url = insertMode === 'image' ? normalizeImageUrl(insertUrl) : normalizeWebUrl(insertUrl);
           const selection = savedSelection.current || { from: editor.state.selection.from, to: editor.state.selection.to };
           const chain = editor.chain().focus().setTextSelection(selection);
@@ -483,7 +702,7 @@ export function RichTextEditor({
             if (selection.from === selection.to) chain.setLink({ href: url }).insertContent(url).run();
             else chain.setLink({ href: url }).run();
           } else {
-            chain.setImage({ src: url, alt: 'Imagen insertada' }).run();
+            chain.setImage({ src: url, alt: imageAlt.trim() }).run();
           }
           setInsertMode(null);
           setInsertUrl('');
@@ -499,8 +718,8 @@ export function RichTextEditor({
         <strong>{insertMode === 'link' ? 'Añadir enlace' : 'Añadir imagen desde una dirección web'}</strong>
         <span>{insertMode === 'link' ? 'Admite dominios directos, www, rutas, correo y teléfono.' : 'Pega la dirección pública de la imagen; el dominio puede ir sin https://.'}</span>
       </div>
-      <label className="rich-editor-url-field" htmlFor={`${id}-insert-url`}>
-        <span>{insertMode === 'link' ? 'Dirección del enlace' : 'Dirección de la imagen'}</span>
+      <div className="rich-editor-url-field">
+        <label htmlFor={`${id}-insert-url`}>{insertMode === 'link' ? 'Dirección del enlace' : 'Dirección de la imagen'}</label>
         <input
           id={`${id}-insert-url`}
           type="text"
@@ -514,11 +733,56 @@ export function RichTextEditor({
           onChange={(event) => { setInsertUrl(event.target.value); setInsertError(''); }}
           placeholder={insertMode === 'link' ? 'www.ejemplo.com o drive.google.com/…' : 'ejemplo.com/imagen.png'}
         />
+        {insertMode === 'image' && (
+          <label className="rich-editor-alt-field" htmlFor={`${id}-image-alt`}>
+            <span>Texto alternativo</span>
+            <input
+              id={`${id}-image-alt`}
+              type="text"
+              value={imageAlt}
+              maxLength={240}
+              required={!imageIsDecorative}
+              disabled={imageIsDecorative}
+              onChange={(event) => setImageAlt(event.target.value)}
+              placeholder="Describe brevemente la imagen"
+            />
+            <small>Describe su propósito; déjalo vacío si la imagen es decorativa.</small>
+          </label>
+        )}
+        {insertMode === 'image' && <label className="rich-editor-decorative-toggle">
+          <input
+            type="checkbox"
+            checked={imageIsDecorative}
+            onChange={(event) => {
+              setImageIsDecorative(event.target.checked);
+              if (event.target.checked) setImageAlt('');
+            }}
+          />
+          <span>La imagen es decorativa</span>
+        </label>}
         {insertError && <small id={`${id}-insert-error`} role="alert">{insertError}</small>}
-      </label>
+      </div>
       <div className="rich-editor-insert-actions">
-        <button className="rich-editor-cancel" type="button" onClick={() => { setInsertMode(null); setInsertError(''); }}>Cancelar</button>
-        <button className="rich-editor-confirm" type="submit"><Check size={14} /> Insertar</button>
+        {insertMode === 'image' && onImageUpload && <>
+          <input
+            ref={imageFileRef}
+            className="rich-editor-file-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/avif"
+            aria-label="Seleccionar archivo de imagen"
+            tabIndex={-1}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              if (file) void uploadAndInsertImage(file);
+            }}
+          />
+          <button className="rich-editor-upload-button" type="button" disabled={imageUploading || (!imageIsDecorative && !imageAlt.trim())} onClick={() => imageFileRef.current?.click()}>
+            {imageUploading ? <LoaderCircle className="rich-editor-spinner" size={14} /> : <ImagePlus size={14} />}
+            {imageUploading ? 'Subiendo…' : 'Subir imagen'}
+          </button>
+        </>}
+        <button className="rich-editor-cancel" type="button" disabled={imageUploading} onClick={() => { imageUploadToken.current += 1; setInsertMode(null); setInsertError(''); }}>Cancelar</button>
+        <button className="rich-editor-confirm" type="submit" disabled={imageUploading}><Check size={14} /> Insertar</button>
       </div>
     </form>
   );
@@ -552,6 +816,19 @@ export function RichTextEditor({
     <div className="rich-editor-writing-surface">
       <div className="rich-editor-writing-hint"><span /> Área de escritura {isFullscreen && <kbd>Esc</kbd>}</div>
       <EditorContent editor={editor} />
+      <BubbleMenu
+        editor={editor}
+        className="rich-editor-bubble-menu"
+        updateDelay={100}
+        shouldShow={({ editor: currentEditor, from, to }) => from !== to && !currentEditor.isActive('codeBlock')}
+        aria-label="Formato de la selección"
+        role="group"
+      >
+        {renderButton('bold', 'Negrita', Bold, toolbarState.bold)}
+        {renderButton('italic', 'Cursiva', Italic, toolbarState.italic)}
+        {renderButton('underline', 'Subrayado', UnderlineIcon, toolbarState.underline)}
+        {renderButton('link', 'Enlace en la selección', Link2, toolbarState.link, false, 'default', false)}
+      </BubbleMenu>
       <footer className="rich-editor-status" aria-label="Recuento del contenido">
         <span><FileText size={13} aria-hidden /> {toolbarState.wordCount} {toolbarState.wordCount === 1 ? 'palabra' : 'palabras'}</span>
         <span>{toolbarState.characterCount} {toolbarState.characterCount === 1 ? 'carácter' : 'caracteres'}</span>
@@ -561,7 +838,7 @@ export function RichTextEditor({
   );
 
   return (
-    <div className={`rich-editor-shell${isFullscreen ? ' is-fullscreen' : ''}`} style={{ '--editor-min-height': `${minHeight}px` } as React.CSSProperties}>
+    <div className={`rich-editor-shell${isFullscreen ? ' is-fullscreen' : ''}`} style={{ '--editor-min-height': `${minHeight}px` } as React.CSSProperties} onKeyDownCapture={focusEditorToolbar}>
       {!isFullscreen ? <>
         {editorHeader}
         {toolbar}

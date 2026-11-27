@@ -29,6 +29,8 @@
   background: var(--cream);
   font-synthesis: none;
 }
+
+.block-social-preview{display:grid;gap:7px;padding:10px;border:1px solid var(--studio-border);border-radius:8px;background:var(--studio-soft)}.block-social-preview>div{display:flex;min-width:0;flex-wrap:wrap;justify-content:space-between;gap:5px 12px;padding:8px 9px;border:1px solid var(--studio-border);border-radius:6px;background:var(--studio-panel)}.block-social-preview b{color:var(--ink);font-size:10px}.block-social-preview span{min-width:0;overflow-wrap:anywhere;color:var(--studio-muted);font-size:10px}
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; }
 body { margin:0; min-width:320px; background:var(--cream); }
