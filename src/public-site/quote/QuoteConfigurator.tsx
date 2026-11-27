@@ -1,11 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, ArrowUpRight, CircleHelp, MapPin, Plus, Printer, Ruler, Sparkles, Trash2, Wrench } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowRight, ArrowUpRight, CircleHelp, MapPin, Plus, Printer, RotateCcw, Ruler, Sparkles, Trash2, Wrench } from 'lucide-react';
 import { getGoogleMapsOpenUrl, isGoogleMapsUrl } from '../../lib/maps';
 import './quote-calculator.css';
 import { calculateScenario, loadQuoteProducts, type PricingMode, type QuoteProduct } from './pricing';
 import { multiProductQuoteService } from '../content';
 import { MAX_QUOTE_ITEMS } from './quoteConstants';
 import { getStorefrontQuoteSourceKey } from './storefrontQuoteAliases';
+import { buildInitialQuoteItemFromUrl, type StorefrontQuoteSourceChannel } from '../storefrontCatalog';
 import { SignageScaleVisualizer } from './SignageScaleVisualizer';
 import { ArtworkPreflightDropzone } from './ArtworkPreflightDropzone';
 
@@ -17,6 +18,7 @@ export type QuoteLineItemDraft = {
   id: string;
   service: string;
   project: string;
+  sku?: string;
   calculationMode: QuoteCalculationMode;
   measurementUnit: 'cm' | 'm';
   width: number;
@@ -54,6 +56,7 @@ export type QuoteInstallationLocation = {
 
 export type QuoteDraft = {
   /** Legacy summary fields are retained for current CRM and request reporting. */
+  sourceChannel?: StorefrontQuoteSourceChannel;
   service: string;
   project: string;
   calculationMode: QuoteCalculationMode;
@@ -83,6 +86,8 @@ type Props = {
   initialProductSkus?: string[];
   initialItemServices?: string[];
   initialQuantityRanges?: string[];
+  sourceChannel?: StorefrontQuoteSourceChannel;
+  draftKey?: string;
   validationMessage?: string;
   onChange: (quote: QuoteDraft) => void;
 };
@@ -111,13 +116,97 @@ function makeId() {
   return globalThis.crypto?.randomUUID?.() || `quote-item-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function makeItem(service = '', project = '', quantity = 1, quantityRange = ''): QuoteLineItemDraft {
+function makeItem(service = '', project = '', quantity = 1, quantityRange = '', sku = ''): QuoteLineItemDraft {
+  const seed = buildInitialQuoteItemFromUrl({ service, project, sku, quantityRange });
   return {
-    id: makeId(), service, project, calculationMode: 'unknown', measurementUnit: 'cm',
-    width: 100, height: 100, area: 0, quantity, quantityRange: quantityRange || undefined, designSupport: 'unknown', finishing: '',
-    grommets: false, grommetSize: '', grommetCount: null, grommetUnitAmount: '',
-    designService: 'none', designDescription: '', designAmount: '', installation: false,
+    id: makeId(),
+    service: seed.service,
+    project: seed.project,
+    ...(seed.sku ? { sku: seed.sku } : {}),
+    calculationMode: 'unknown',
+    measurementUnit: 'cm',
+    width: 100,
+    height: 100,
+    area: 0,
+    quantity: quantity > 1 ? quantity : seed.quantity,
+    quantityRange: seed.quantityRange,
+    designSupport: 'unknown',
+    finishing: '',
+    grommets: false,
+    grommetSize: '',
+    grommetCount: null,
+    grommetUnitAmount: '',
+    designService: 'none',
+    designDescription: '',
+    designAmount: '',
+    installation: false,
   };
+}
+
+const defaultLocation: QuoteInstallationLocation = {
+  address: '',
+  mapsUrl: '',
+  locationUnknown: false,
+  floor: '',
+  workHeight: '',
+  accessNotes: '',
+};
+
+const QUOTE_SESSION_PREFIX = 'vc-public-quote-draft:';
+
+export function clearQuoteConfiguratorDraft(draftKey = 'default') {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(`${QUOTE_SESSION_PREFIX}${draftKey || 'default'}`);
+  } catch {
+    // Ignore storage removal errors.
+  }
+}
+
+function readQuoteSessionDraft(draftKey: string): { items: QuoteLineItemDraft[]; location: QuoteInstallationLocation } | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(`${QUOTE_SESSION_PREFIX}${draftKey || 'default'}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { items?: unknown; location?: unknown };
+    if (!parsed || !Array.isArray(parsed.items) || parsed.items.length === 0) return null;
+    const items = parsed.items.slice(0, MAX_QUOTE_ITEMS).flatMap((entry): QuoteLineItemDraft[] => {
+      if (!entry || typeof entry !== 'object') return [];
+      const row = entry as Partial<QuoteLineItemDraft>;
+      return [{
+        ...makeItem(
+          typeof row.service === 'string' ? row.service : '',
+          typeof row.project === 'string' ? row.project : '',
+          typeof row.quantity === 'number' && Number.isFinite(row.quantity) ? Math.max(1, Math.floor(row.quantity)) : 1,
+          typeof row.quantityRange === 'string' ? row.quantityRange : '',
+          typeof row.sku === 'string' ? row.sku : '',
+        ),
+        ...row,
+        id: typeof row.id === 'string' && row.id ? row.id : makeId(),
+        service: typeof row.service === 'string' ? row.service : '',
+        project: typeof row.project === 'string' ? row.project : '',
+        sku: typeof row.sku === 'string' && row.sku.trim() ? row.sku.trim() : undefined,
+        width: typeof row.width === 'number' && Number.isFinite(row.width) ? Math.max(0.01, row.width) : 100,
+        height: typeof row.height === 'number' && Number.isFinite(row.height) ? Math.max(0.01, row.height) : 100,
+        quantity: typeof row.quantity === 'number' && Number.isFinite(row.quantity) ? Math.max(1, Math.floor(row.quantity)) : 1,
+      }];
+    });
+    if (!items.length) return null;
+    const loc = parsed.location && typeof parsed.location === 'object' ? parsed.location as Partial<QuoteInstallationLocation> : {};
+    return {
+      items,
+      location: {
+        address: typeof loc.address === 'string' ? loc.address : '',
+        mapsUrl: typeof loc.mapsUrl === 'string' ? loc.mapsUrl : '',
+        locationUnknown: Boolean(loc.locationUnknown),
+        floor: typeof loc.floor === 'string' ? loc.floor : '',
+        workHeight: typeof loc.workHeight === 'string' ? loc.workHeight : '',
+        accessNotes: typeof loc.accessNotes === 'string' ? loc.accessNotes : '',
+      },
+    };
+  } catch {
+    return null;
+  }
 }
 
 function areaOf(item: QuoteLineItemDraft) {
@@ -236,6 +325,7 @@ function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate,
     update({
       productId: product.source_key,
       productName: product.name,
+      sku: product.sku || item.sku,
       quantityRange: undefined,
       calculationMode: product.mode === 'area' ? 'area' : 'units',
       project: item.project.trim() ? item.project : product.name,
@@ -256,7 +346,10 @@ function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate,
 
   return <article className="quote-item-card" aria-labelledby={`quote-item-title-${item.id}`}>
     <header className="quote-item-heading">
-      <div><span>ARTÍCULO {String(index + 1).padStart(2, '0')}</span><h4 id={`quote-item-title-${item.id}`}>{item.project.trim() || `Artículo ${index + 1}`}</h4></div>
+      <div>
+        <span>ARTÍCULO {String(index + 1).padStart(2, '0')}{item.sku ? ` · SKU ${item.sku}` : ''}</span>
+        <h4 id={`quote-item-title-${item.id}`}>{item.project.trim() || `Artículo ${index + 1}`}</h4>
+      </div>
       {canRemove && <button type="button" className="quote-remove-item" onClick={() => onRemove(item.id)} aria-label={`Quitar artículo ${index + 1}`}><Trash2 size={15}/><span>Quitar</span></button>}
     </header>
     <div className="quote-step-fields quote-item-fields">
@@ -375,7 +468,7 @@ function QuoteItemEditor({ item, index, services, products, canRemove, onUpdate,
   </article>;
 }
 
-export function QuoteConfigurator({ services, initialService = '', initialProducts = [], initialProductSkus = [], initialItemServices = [], initialQuantityRanges = [], validationMessage = '', onChange }: Props) {
+export function QuoteConfigurator({ services, initialService = '', initialProducts = [], initialProductSkus = [], initialItemServices = [], initialQuantityRanges = [], sourceChannel = 'quote_page', draftKey = 'default', validationMessage = '', onChange }: Props) {
   const initialProductsKey = initialProducts.join('\u001f');
   const initialProductSkusKey = initialProductSkus.join('\u001f');
   const initialItemServicesKey = initialItemServices.join('\u001f');
@@ -386,20 +479,38 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
   const requestedServices = hasItemServiceOverrides ? initialItemServicesKey.split('\u001f').slice(0, MAX_QUOTE_ITEMS) : [];
   const requestedRanges = initialQuantityRangesKey ? initialQuantityRangesKey.split('\u001f').slice(0, MAX_QUOTE_ITEMS) : [];
   const hasExtraRequestedProducts = initialProducts.length > MAX_QUOTE_ITEMS;
-  const [items, setItems] = useState<QuoteLineItemDraft[]>(() => {
-    if (requestedProducts.length) return requestedProducts.map((product, index) => makeItem(
-      hasItemServiceOverrides ? requestedServices[index] || '' : initialService,
-      product,
-      requestedRanges[index] ? quantityFromRange(requestedRanges[index]) : 1,
-      requestedRanges[index] || '',
-    ));
+
+  const buildFreshItems = () => {
+    if (requestedProducts.length) {
+      return requestedProducts.map((product, index) => makeItem(
+        hasItemServiceOverrides ? requestedServices[index] || '' : initialService,
+        product,
+        requestedRanges[index] ? quantityFromRange(requestedRanges[index]) : 1,
+        requestedRanges[index] || '',
+        requestedProductSkus[index] || '',
+      ));
+    }
+    if (requestedProductSkus.some((sku) => Boolean(sku.trim()))) {
+      return requestedProductSkus.map((sku, index) => makeItem(
+        hasItemServiceOverrides ? requestedServices[index] || '' : initialService,
+        '',
+        requestedRanges[index] ? quantityFromRange(requestedRanges[index]) : 1,
+        requestedRanges[index] || '',
+        sku,
+      ));
+    }
     return [makeItem(initialService)];
-  });
-  const [location, setLocation] = useState<QuoteInstallationLocation>({ address: '', mapsUrl: '', locationUnknown: false, floor: '', workHeight: '', accessNotes: '' });
+  };
+
+  const initialSessionDraft = useMemo(() => readQuoteSessionDraft(draftKey), [draftKey]);
+  const [restoredFromSession, setRestoredFromSession] = useState(() => Boolean(initialSessionDraft));
+  const [items, setItems] = useState<QuoteLineItemDraft[]>(() => initialSessionDraft?.items || buildFreshItems());
+  const [location, setLocation] = useState<QuoteInstallationLocation>(() => initialSessionDraft?.location || defaultLocation);
   const [products, setProducts] = useState<QuoteProduct[]>([]);
   const [productLoadError, setProductLoadError] = useState(false);
   const [productLoadAttempt, setProductLoadAttempt] = useState(0);
   const [quoteDataLoadError, setQuoteDataLoadError] = useState(false);
+  const userTouchedRef = useRef(Boolean(initialSessionDraft));
 
   useEffect(() => {
     let active = true;
@@ -410,12 +521,29 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
     return () => { active = false; };
   }, [productLoadAttempt]);
 
+  // Gently backfill item service if WorkspaceProvider finishes hydrating after mount.
   useEffect(() => {
-    if (!requestedProducts.length || !products.length) return;
+    if (!initialService && !hasItemServiceOverrides) return;
+    setItems((current) => {
+      let changed = false;
+      const next = current.map((item, index) => {
+        if (item.service.trim()) return item;
+        const resolved = hasItemServiceOverrides ? requestedServices[index] || initialService : initialService;
+        if (!resolved) return item;
+        changed = true;
+        return { ...item, service: resolved };
+      });
+      return changed ? next : current;
+    });
+  }, [initialService, hasItemServiceOverrides, initialItemServicesKey]);
+
+  useEffect(() => {
+    if ((!requestedProducts.length && !requestedProductSkus.some(Boolean)) || !products.length) return;
     setItems((current) => current.map((item, index) => {
+      if (item.productId) return item;
       const target = normalize(requestedProducts[index] || '');
-      const requestedSku = requestedProductSkus[index]?.trim().toLocaleUpperCase('es');
-      const aliasSourceKey = getStorefrontQuoteSourceKey(requestedProductSkus[index]);
+      const requestedSku = (item.sku || requestedProductSkus[index] || '').trim().toLocaleUpperCase('es');
+      const aliasSourceKey = getStorefrontQuoteSourceKey(requestedSku);
       const skuMatches = requestedSku
         ? products.filter((product) => product.sku?.trim().toLocaleUpperCase('es') === requestedSku
           || product.source_skus?.some((sku) => sku.trim().toLocaleUpperCase('es') === requestedSku))
@@ -424,28 +552,80 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
         ? skuMatches
         : aliasSourceKey
           ? products.filter((product) => product.source_key === aliasSourceKey)
-          : products.filter((product) => normalize(product.source_key) === target);
-      const nameMatches = aliasSourceKey || sourceKeyMatches.length
+          : target
+            ? products.filter((product) => normalize(product.source_key) === target)
+            : [];
+      const nameMatches = aliasSourceKey || sourceKeyMatches.length || !target
         ? []
         : products.filter((product) => normalize(product.name) === target);
       const match = sourceKeyMatches.length === 1 ? sourceKeyMatches[0] : nameMatches.length === 1 ? nameMatches[0] : undefined;
-      if (!match) return item;
+      if (!match) {
+        return requestedSku && !item.sku ? { ...item, sku: requestedSku } : item;
+      }
       return {
         ...item,
         project: item.project || match.name,
+        sku: item.sku || match.sku || (requestedSku || undefined),
         productId: match.source_key,
         productName: match.name,
-        calculationMode: match.mode === 'area' ? 'area' : 'units',
-        quantity: requestedRanges[index] ? quantityFromRange(requestedRanges[index]) : item.quantity,
+        calculationMode: item.calculationMode === 'unknown' ? (match.mode === 'area' ? 'area' : 'units') : item.calculationMode,
+        quantity: !userTouchedRef.current && requestedRanges[index] ? quantityFromRange(requestedRanges[index]) : item.quantity,
       };
     }));
   }, [initialProductsKey, initialProductSkusKey, initialQuantityRangesKey, products]);
 
-  const updateItem = (id: string, patch: Partial<QuoteLineItemDraft>) => setItems((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item));
-  const removeItem = (id: string) => setItems((current) => current.length > 1 ? current.filter((item) => item.id !== id) : current);
+  const persistSessionDraft = (nextItems: QuoteLineItemDraft[], nextLocation: QuoteInstallationLocation) => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.sessionStorage.setItem(
+        `${QUOTE_SESSION_PREFIX}${draftKey || 'default'}`,
+        JSON.stringify({ items: nextItems, location: nextLocation }),
+      );
+    } catch {
+      // Ignore storage quota errors.
+    }
+  };
+
+  const updateItem = (id: string, patch: Partial<QuoteLineItemDraft>) => {
+    userTouchedRef.current = true;
+    setItems((current) => {
+      const next = current.map((item) => item.id === id ? { ...item, ...patch } : item);
+      persistSessionDraft(next, location);
+      return next;
+    });
+  };
+  const removeItem = (id: string) => {
+    userTouchedRef.current = true;
+    setItems((current) => {
+      if (current.length <= 1) return current;
+      const next = current.filter((item) => item.id !== id);
+      persistSessionDraft(next, location);
+      return next;
+    });
+  };
   const addItem = () => {
     if (items.length >= MAX_QUOTE_ITEMS) return;
-    setItems((current) => [...current, makeItem(initialService)]);
+    userTouchedRef.current = true;
+    setItems((current) => {
+      const next = [...current, makeItem(initialService)];
+      persistSessionDraft(next, location);
+      return next;
+    });
+  };
+  const updateLocation = (updater: (current: QuoteInstallationLocation) => QuoteInstallationLocation) => {
+    userTouchedRef.current = true;
+    setLocation((current) => {
+      const next = updater(current);
+      persistSessionDraft(items, next);
+      return next;
+    });
+  };
+  const resetQuoteDraft = () => {
+    clearQuoteConfiguratorDraft(draftKey);
+    setRestoredFromSession(false);
+    userTouchedRef.current = false;
+    setItems(buildFreshItems());
+    setLocation(defaultLocation);
   };
 
   const normalizedDraft = useMemo<QuoteDraft>(() => {
@@ -466,6 +646,7 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
       } : undefined;
       return {
         ...item,
+        sku: item.sku?.trim() || selectedProduct?.sku || undefined,
         grommetUnitAmount: amountValue(item.grommetUnitAmount),
         designAmount: amountValue(item.designAmount),
         productId: selectedProduct?.source_key,
@@ -483,6 +664,7 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
     const installRequested = itemsWithPrice.some((item) => item.installation);
     const projectNames = itemsWithPrice.map((item) => item.project.trim()).filter(Boolean);
     return {
+      sourceChannel,
       service: distinctServices.length > 1 ? multiProductQuoteService : distinctServices[0] || '',
       project: projectNames.slice(0, 4).join(' · ').slice(0, 160),
       calculationMode: first.calculationMode,
@@ -506,7 +688,7 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
       items: itemsWithPrice,
       installationLocation: installRequested ? location : undefined,
     };
-  }, [items, location, products, initialProductsKey, initialQuantityRangesKey]);
+  }, [items, location, products, initialProductsKey, initialQuantityRangesKey, sourceChannel]);
 
   useEffect(() => {
     const payloadBytes = new TextEncoder().encode(JSON.stringify({ request: normalizedDraft })).length;
@@ -540,6 +722,14 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
         <h2 id="quote-builder-title">Arma tu solicitud</h2>
         <p>Añade cada artículo por separado. Puedes indicar medidas, cantidad, diseño, acabados y si requiere instalación.</p>
       </div>
+      {restoredFromSession && (
+        <div className="quote-data-notice" role="status" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+          <span>Recuperamos los artículos que estabas configurando antes de recargar.</span>
+          <button type="button" onClick={resetQuoteDraft} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <RotateCcw size={13} aria-hidden="true" /> Empezar de cero
+          </button>
+        </div>
+      )}
       {hasExtraRequestedProducts && <p className="quote-data-notice" role="status">El enlace incluía más de {MAX_QUOTE_ITEMS} artículos. Se cargaron los primeros {MAX_QUOTE_ITEMS}; revisa la lista antes de enviar.</p>}
       {productLoadError && <div className="quote-data-warning" role="alert"><span>No se cargó la matriz de tarifas. Puedes solicitar una revisión sin seleccionar tarifas.</span><button type="button" onClick={() => setProductLoadAttempt((attempt) => attempt + 1)}>Reintentar</button></div>}
       {quoteDataLoadError && <div className="quote-data-warning" role="alert"><span>La solicitud supera el límite de datos. Reduce texto o artículos antes de enviarla.</span></div>}
@@ -554,14 +744,14 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
 
       {installItems.length > 0 && <section className="quote-step quote-location-step" aria-labelledby="quote-location-title">
         <div className="quote-step-heading"><span aria-hidden="true">02</span><div><h3 id="quote-location-title">Lugar de instalación</h3><p>Indica el mismo lugar para los {installItems.length} {installItems.length === 1 ? 'artículo con instalación solicitada' : 'artículos con instalación solicitada'}.</p></div></div>
-        <label className="quote-check-option quote-location-unknown"><input type="checkbox" checked={location.locationUnknown} onChange={(event) => setLocation((current) => ({ ...current, locationUnknown: event.target.checked }))}/><span><b>Aún no conozco el lugar exacto</b><small>El equipo me ayudará a precisarlo antes de confirmar el valor.</small></span></label>
+        <label className="quote-check-option quote-location-unknown"><input type="checkbox" checked={location.locationUnknown} onChange={(event) => updateLocation((current) => ({ ...current, locationUnknown: event.target.checked }))}/><span><b>Aún no conozco el lugar exacto</b><small>El equipo me ayudará a precisarlo antes de confirmar el valor.</small></span></label>
         {!location.locationUnknown && <>
           <div className="quote-step-fields quote-location-fields">
             <label>Dirección o referencia del lugar <span>(necesaria para estimar instalación)</span>
-            <input id="quote-installation-address" required value={location.address} onChange={(event) => setLocation((current) => ({ ...current, address: event.target.value }))} placeholder="Ciudad, calle, local o referencia" maxLength={240}/>
+            <input id="quote-installation-address" required value={location.address} onChange={(event) => updateLocation((current) => ({ ...current, address: event.target.value }))} placeholder="Ciudad, calle, local o referencia" maxLength={240}/>
             </label>
             <label>Enlace del pin de Google Maps <span>(opcional)</span>
-              <input id="quote-installation-maps-url" value={location.mapsUrl} onChange={(event) => setLocation((current) => ({ ...current, mapsUrl: event.target.value }))} placeholder="Pega el enlace compartido desde Google Maps" maxLength={1000} aria-invalid={mapsUrlInvalid} aria-describedby="quote-maps-help"/>
+              <input id="quote-installation-maps-url" value={location.mapsUrl} onChange={(event) => updateLocation((current) => ({ ...current, mapsUrl: event.target.value }))} placeholder="Pega el enlace compartido desde Google Maps" maxLength={1000} aria-invalid={mapsUrlInvalid} aria-describedby="quote-maps-help"/>
             </label>
           </div>
           <div className="quote-maps-actions">
@@ -572,9 +762,9 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
           {location.mapsUrl.trim() && !mapsUrlInvalid && <p className="quote-pin-confirmation"><MapPin size={14}/> Enlace de ubicación listo para incluir en la solicitud.</p>}
         </>}
         <div className="quote-step-fields quote-install-details">
-          <label>Piso o nivel <span>(si aplica)</span><input value={location.floor} onChange={(event) => setLocation((current) => ({ ...current, floor: event.target.value }))} placeholder="Ej. planta baja, piso 2" maxLength={80}/></label>
-          <label>Altura aproximada de trabajo <span>(opcional)</span><div className="quote-number-unit"><input type="number" inputMode="decimal" min={0} step="0.1" value={location.workHeight} onChange={(event) => setLocation((current) => ({ ...current, workHeight: event.target.value }))} placeholder="Por definir"/><span>m</span></div></label>
-          <label className="quote-location-wide">Acceso, horario o detalle del sitio <span>(opcional)</span><input value={location.accessNotes} onChange={(event) => setLocation((current) => ({ ...current, accessNotes: event.target.value }))} placeholder="Describe cualquier condición que debamos considerar" maxLength={240}/></label>
+          <label>Piso o nivel <span>(si aplica)</span><input value={location.floor} onChange={(event) => updateLocation((current) => ({ ...current, floor: event.target.value }))} placeholder="Ej. planta baja, piso 2" maxLength={80}/></label>
+          <label>Altura aproximada de trabajo <span>(opcional)</span><div className="quote-number-unit"><input type="number" inputMode="decimal" min={0} step="0.1" value={location.workHeight} onChange={(event) => updateLocation((current) => ({ ...current, workHeight: event.target.value }))} placeholder="Por definir"/><span>m</span></div></label>
+          <label className="quote-location-wide">Acceso, horario o detalle del sitio <span>(opcional)</span><input value={location.accessNotes} onChange={(event) => updateLocation((current) => ({ ...current, accessNotes: event.target.value }))} placeholder="Describe cualquier condición que debamos considerar" maxLength={240}/></label>
         </div>
       </section>}
 
@@ -603,7 +793,7 @@ export function QuoteConfigurator({ services, initialService = '', initialProduc
       <div className="quote-summary-items">
         {items.map((item, index) => <section key={item.id} className="quote-summary-item">
           <b>{String(index + 1).padStart(2, '0')} · {item.project.trim() || 'Artículo por definir'}</b>
-          <small>{item.service || 'Familia por seleccionar'} · {item.productName || 'Producto por definir'}</small>
+          <small>{item.service || 'Familia por seleccionar'} · {item.productName || 'Producto por definir'}{item.sku ? ` · SKU ${item.sku}` : ''}</small>
           <small>{itemSummary(item)}</small>
           {item.pricePreview && <small className="quote-summary-item-prices">Estimado por artículo · Normal {item.pricePreview.normal == null ? 'pendiente' : formatPrice(item.pricePreview.normal)} · Instalación {item.pricePreview.installation == null ? 'pendiente' : formatPrice(item.pricePreview.installation)} · Corporativo {item.pricePreview.corporate == null ? 'pendiente' : formatPrice(item.pricePreview.corporate)}</small>}
           {(item.extrasTotal || 0) > 0 && <small className="quote-summary-item-extras">Extras incluidos: {formatPrice(item.extrasTotal || 0)}</small>}

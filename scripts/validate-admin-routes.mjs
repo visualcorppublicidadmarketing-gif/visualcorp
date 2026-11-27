@@ -13,7 +13,7 @@ function quotedValues(source) {
   return [...source.matchAll(/['"]([^'"]+)['"]/g)].map((match) => match[1]);
 }
 
-function parseNavigation(source) {
+export function parseNavigation(source) {
   const block = sectionBetween(
     source,
     'export const workspaceNavigation',
@@ -27,10 +27,12 @@ function parseNavigation(source) {
     const module = objectText.match(/\bmodule:\s*['"]([^'"]+)['"]/);
     if (!to) continue;
     const aliasesBlock = objectText.match(/\baliases:\s*\[([^\]]*)\]/);
+    const anyOfBlock = objectText.match(/\banyOf:\s*\[([^\]]*)\]/);
     items.push({
       to: to[1],
       module: module?.[1] || '',
       aliases: aliasesBlock ? quotedValues(aliasesBlock[1]) : [],
+      anyOf: anyOfBlock ? quotedValues(anyOfBlock[1]) : [],
     });
   }
 
@@ -54,10 +56,65 @@ function parseNavigation(source) {
 }
 
 function parseRoutes(source) {
-  const routes = [...source.matchAll(/<Route\s+path="([^"]+)"/g)].map((match) => match[1]);
-  const protectedRoutes = [...source.matchAll(/<Route\s+path="([^"]+)"\s+element=\{<ProtectedPage\b/g)]
-    .map((match) => match[1]);
-  return { routes, protectedRoutes };
+  const routes = [...source.matchAll(/<Route\b[^>]*\bpath="([^"]+)"/g)].map((match) => match[1]);
+  const protectedRouteEntries = [
+    ...source.matchAll(/<Route\b[^>]*\bpath="([^"]+)"\s+element=\{\s*<ProtectedPage\b[^>]*\barea="([^"]+)"/gs),
+  ].map((match) => ({ path: match[1], area: match[2] }));
+  const protectedRoutes = protectedRouteEntries.map((entry) => entry.path);
+  return { routes, protectedRoutes, protectedRouteEntries };
+}
+
+const OPERATIONS_AREA_MODULES = new Set([
+  'dashboard',
+  'sales',
+  'quotes',
+  'crm',
+  'finance',
+  'cash',
+  'workshop',
+  'inventory',
+  'inventory_costs',
+  'purchases',
+  'marketing',
+  'personnel',
+]);
+
+const AREA_MODULE_MAP = {
+  website: new Set(['website']),
+  catalog: new Set(['catalog_admin']),
+  team: new Set(['team']),
+  backup: new Set(['backup']),
+  team_schedule: new Set(['team_schedule']),
+  operations: OPERATIONS_AREA_MODULES,
+};
+
+function isAreaCompatibleWithModule(area, moduleKey) {
+  const allowedModules = AREA_MODULE_MAP[area];
+  if (allowedModules) return allowedModules.has(moduleKey);
+  return area === moduleKey;
+}
+
+function routeSpecificityScore(pattern) {
+  if (pattern.endsWith('/*')) return 1;
+  if (pattern.includes('/:')) return 2;
+  return 3;
+}
+
+function findMatchingProtectedRoute(protectedRouteEntries, path) {
+  const matches = protectedRouteEntries.filter((entry) => routePatternMatches(entry.path, path));
+  if (!matches.length) return null;
+  matches.sort((a, b) => routeSpecificityScore(b.path) - routeSpecificityScore(a.path) || b.path.length - a.path.length);
+  return matches[0];
+}
+
+export function canViewParsedNavigationItem(item, items, hasPermission) {
+  if (item.to === '/panel') {
+    return hasPermission('dashboard', 'view')
+      || items.some((link) => link.to !== '/panel' && canViewParsedNavigationItem(link, items, hasPermission));
+  }
+  return item.anyOf?.length
+    ? item.anyOf.some((module) => hasPermission(module, 'view'))
+    : hasPermission(item.module, 'view');
 }
 
 function escapeRegExp(value) {
@@ -80,7 +137,7 @@ export function routePatternMatches(pattern, path) {
 
 export function validateAdminRouteIntegrity({ appSource, navigationSource }) {
   const { items, groups, explicitPermissions } = parseNavigation(navigationSource);
-  const { routes, protectedRoutes } = parseRoutes(appSource);
+  const { routes, protectedRoutes, protectedRouteEntries } = parseRoutes(appSource);
   const errors = [];
 
   if (!items.length) errors.push('No se pudo leer workspaceNavigation.');
@@ -125,7 +182,37 @@ export function validateAdminRouteIntegrity({ appSource, navigationSource }) {
     }
   }
 
-  return { errors, routeCount: routes.length, protectedRouteCount: protectedRoutes.length, menuPathCount: menuPaths.size };
+  const matchedByProtectedRoute = new Map();
+  for (const [path, moduleKey] of permissionModules.entries()) {
+    const routeEntry = findMatchingProtectedRoute(protectedRouteEntries, path);
+    if (!routeEntry) continue;
+    if (!matchedByProtectedRoute.has(routeEntry)) {
+      matchedByProtectedRoute.set(routeEntry, []);
+    }
+    matchedByProtectedRoute.get(routeEntry).push({ path, moduleKey });
+    if (!isAreaCompatibleWithModule(routeEntry.area, moduleKey)) {
+      errors.push(
+        `La ruta protegida ${routeEntry.path} usa area="${routeEntry.area}", pero navigation.ts asigna el módulo "${moduleKey}" a ${path}.`,
+      );
+    }
+  }
+
+  for (const routeEntry of protectedRouteEntries) {
+    const matched = matchedByProtectedRoute.get(routeEntry) || [];
+    if (matched.length === 0) {
+      const hasAnyMenuMatch = menuPathsHasMatch(menuPaths, routeEntry.path);
+      if (hasAnyMenuMatch) {
+        errors.push(`La ruta protegida ${routeEntry.path} (area="${routeEntry.area}") no quedó asociada a ningún módulo compatible.`);
+      }
+    }
+  }
+
+  return {
+    errors,
+    routeCount: routes.length,
+    protectedRouteCount: protectedRoutes.length,
+    menuPathCount: menuPaths.size,
+  };
 }
 
 function menuPathsHasMatch(menuPaths, routePattern) {

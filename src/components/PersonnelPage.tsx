@@ -1438,30 +1438,48 @@ export function PersonnelPage() {
 
       {/* MODE 2: DAILY ROLL CALL */}
       {mode === 'rollcall' && (
-        <PersonnelDailyRollCall
-          dateIso={rollCallDate}
-          onChangeDate={setRollCallDate}
-          personnel={personnel}
-          googleAccountByPersonnelId={googleAccountByPersonnelId}
-          attendanceEntries={Object.values(attendanceByPersonnel).flat()}
-          workHours={workHours}
-          workExceptions={workExceptions}
-          areaRotations={areaRotations}
-          canViewSchedule={canViewSchedule}
-          canEdit={canEdit}
-          onQuickMark={({ personnelId, date, status, checkIn, lateMinutes, note }) =>
-            handleRecordAttendance({
-              personnelId,
-              date,
-              status,
-              checkIn,
-              lateMinutes,
-              note: note || '',
-              origin: 'roll_call_quick',
-            })
-          }
-          onOpenPersonnel={(id, tab) => handleSelectPerson(id, tab)}
-        />
+        <>
+          <div className="personnel-sync-callout is-local-attendance" role="note">
+            <div className="personnel-banner-copy">
+              <AlertTriangle size={16} aria-hidden="true" />
+              <div>
+                <b>Asistencia local del navegador vs. registros centrales en Supabase</b>
+                <p>
+                  Las marcaciones de pase de lista se guardan únicamente en este navegador (<code className="personnel-inline-code">localStorage</code>), mientras que las fichas laborales, salarios, deducciones y horarios viven sincronizados en Supabase.
+                </p>
+              </div>
+            </div>
+            {canViewSchedule && (
+              <Link className="site-secondary-button" to="/operaciones/equipo/horarios">
+                <CalendarCheck2 size={14} /> Ver horarios en Supabase
+              </Link>
+            )}
+          </div>
+          <PersonnelDailyRollCall
+            dateIso={rollCallDate}
+            onChangeDate={setRollCallDate}
+            personnel={personnel}
+            googleAccountByPersonnelId={googleAccountByPersonnelId}
+            attendanceEntries={Object.values(attendanceByPersonnel).flat()}
+            workHours={workHours}
+            workExceptions={workExceptions}
+            areaRotations={areaRotations}
+            canViewSchedule={canViewSchedule}
+            canEdit={canEdit}
+            onQuickMark={({ personnelId, date, status, checkIn, lateMinutes, note }) =>
+              handleRecordAttendance({
+                personnelId,
+                date,
+                status,
+                checkIn,
+                lateMinutes,
+                note: note || '',
+                origin: 'roll_call_quick',
+              })
+            }
+            onOpenPersonnel={(id, tab) => handleSelectPerson(id, tab)}
+          />
+        </>
       )}
 
       {/* MODE 3: ECUADOR PAYROLL OVERVIEW */}

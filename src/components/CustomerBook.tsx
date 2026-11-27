@@ -22,6 +22,7 @@ import {
   Wallet,
   X,
 } from 'lucide-react';
+import { withCommercialBalances } from '../lib/commercialBalances';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useWorkspace, formatDate, formatMoney } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
@@ -287,7 +288,7 @@ export function CustomerBook() {
       canViewSales
         ? supabase
             .from('sales')
-            .select('id,customer_id,subtotal,discount_total,total,paid_total,balance_due,status,created_at')
+            .select('id,customer_id,subtotal,discount_total,total,status,created_at')
             .eq('organization_id', organizationId)
             .eq('status', 'confirmed')
             .order('created_at', { ascending: false })
@@ -301,7 +302,7 @@ export function CustomerBook() {
             .order('created_at', { ascending: false })
             .limit(500)
         : Promise.resolve({ data: [], error: null }),
-    ]).then(([{ data: rows, error }, avatarResult, orgSalesResult, orgQuotesResult]) => {
+    ]).then(async ([{ data: rows, error }, avatarResult, orgSalesResult, orgQuotesResult]) => {
       if (!active) return;
       if (error) flash(`No se pudo cargar la base de clientes: ${error.message}`);
       else {
@@ -321,11 +322,14 @@ export function CustomerBook() {
             tags: row.tags || [],
           })),
         );
-        setOrgSales(orgSalesResult.data || []);
+        if (orgSalesResult.error) throw orgSalesResult.error;
+        const balanced = await withCommercialBalances(orgSalesResult.data || []);
+        if (!active) return;
+        setOrgSales(balanced);
         setOrgQuotes(orgQuotesResult.data || []);
       }
       setLoading(false);
-    });
+    }).catch(error => { if (active) { flash(`No se pudo comprobar el historial: ${error.message}`); setLoading(false); } });
     return () => {
       active = false;
     };
@@ -476,7 +480,7 @@ export function CustomerBook() {
       canViewSales
         ? supabase
             .from('sales')
-            .select('id,sale_number,status,subtotal,discount_total,discount_reason,total,paid_total,balance_due,created_at,note,sale_lines(description_snapshot,quantity,line_total)')
+            .select('id,sale_code,central_quote_id,status,subtotal,discount_total,discount_reason,total,created_at,note,sale_lines(description_snapshot,quantity,line_total)')
             .eq('organization_id', organizationId)
             .eq('customer_id', selectedId)
             .eq('status', 'confirmed')
@@ -503,15 +507,19 @@ export function CustomerBook() {
         ? supabase.rpc('get_visualcorp_pos_customer_summary', { p_customer_id: selectedId })
         : Promise.resolve({ data: null, error: null }),
     ])
-      .then(([salesResult, quoteResult, interactionResult, summaryResult]) => {
+      .then(async ([salesResult, quoteResult, interactionResult, summaryResult]) => {
         if (!active) return;
         const resultWithError = [salesResult, quoteResult, interactionResult].find((result) => result.error);
         if (resultWithError?.error) flash(`No se pudo completar el historial: ${resultWithError.error.message}`);
-        setSales(salesResult.data || []);
+        if (salesResult.error) throw salesResult.error;
+        const balanced = await withCommercialBalances(salesResult.data || []);
+        if (!active) return;
+        setSales(balanced);
         setQuotes(quoteResult.data || []);
         setInteractions(interactionResult.data || []);
         setPosSummary(summaryResult?.data || null);
       })
+      .catch(error => { if (active) flash(`No se pudo comprobar el saldo: ${error.message}`); })
       .finally(() => {
         if (active) setDetailLoading(false);
       });
@@ -1185,7 +1193,7 @@ export function CustomerBook() {
                       <article key={sale.id}>
                         <span>
                           <b>
-                            {sale.sale_number ? `${sale.sale_number} · ` : ''}
+                            <Link to={`/operaciones/finanzas?saleId=${sale.id}`}>{sale.sale_code || sale.id.slice(0, 8)}</Link> ·
                             {formatDate(sale.created_at)}
                           </b>
                           <small>
@@ -1231,7 +1239,7 @@ export function CustomerBook() {
                     {quotes.map((quote) => (
                       <article key={quote.id}>
                         <span>
-                          <b>{quote.quote_code}</b>
+                          <Link to={`/operaciones/cotizador?quoteId=${quote.id}`}><b>{quote.quote_code}</b></Link>
                           <small>
                             {formatDate(quote.created_at)} · Estado: {quote.status}
                           </small>

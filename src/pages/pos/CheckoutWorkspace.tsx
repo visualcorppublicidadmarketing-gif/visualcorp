@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowDownRight, ArrowUpRight, BadgeCheck, Boxes, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Copy, Database, FileText, Globe2, History, Image, LayoutDashboard, Link2, LogOut, Megaphone, Menu, Minus, Package, Pencil, Plus, Route, Ruler, Search, Settings2, ShoppingBag, ShoppingCart, Sparkles, Store, Trash2, TriangleAlert, Truck, Users, Wallet, X } from 'lucide-react';
 import { AppFrame, PageHeading, StatCard } from '../../app/layout';
 import { EmptyState, StageBadge } from '../../components/feedback';
@@ -22,7 +22,7 @@ import { CommercialAssetsEditor } from '../../components/commercial/CommercialAs
 import { CommercialAssetsGallery } from '../../components/commercial/CommercialAssetsGallery';
 import { GoogleMapsPreview } from '../../components/commercial/GoogleMapsPreview';
 import { RichTextEditor } from '../../components/studio/RichTextEditor';
-import { persistCommercialAssets, type CommercialAssetDraft } from '../../lib/commercialAssets';
+import { commercialAssetManifest, persistCommercialAssets, type CommercialAssetDraft } from '../../lib/commercialAssets';
 import { posSaleAssetRecovery } from '../../lib/posSaleAssetRecovery';
 import { clearPendingPOSCashMovement, createPOSCashMovementKey, loadPendingPOSCashMovement, savePendingPOSCashMovement, type PendingPOSCashMovement } from '../../lib/posCashMovementRecovery';
 import { normalizeGoogleMapsUrl } from '../../lib/maps';
@@ -912,7 +912,7 @@ export function PosPage() {
             const {count,error:assetsReadError}=await supabase.from('commercial_document_assets').select('id',{count:'exact',head:true}).eq('document_kind','sale').eq('document_id',existingSale.id);
             if(assetsReadError)throw assetsReadError;
             if(count===null)throw new Error('No pude comprobar si los adjuntos ya estaban vinculados a la venta.');
-            if(count===0&&loadedAssets.length)await persistCommercialAssets({organizationId,documentId:existingSale.id,kind:'sale',assets:loadedAssets});
+            if(loadedAssets.length)await persistCommercialAssets({organizationId,documentId:existingSale.id,kind:'sale',assets:loadedAssets});
             await posSaleAssetRecovery.clear(posSaleAssetScopeKey);
             if(active){loadedAssets.forEach(asset=>asset.previewUrl&&URL.revokeObjectURL(asset.previewUrl));setSaleAssets([]);previewsAdopted=true;setSaleAssetsRecoveryMustResolve(false);setSaleAssetsRecoveryNotice(loadedAssets.length?`Recuperé y vinculé los adjuntos de la venta ${existingSale.sale_code||existingSale.id}.`:'');setSaleAssetsRecoveryStatus('ready');}
             return{idempotencyKey:loadedKey,error:null,hasRecord:true,checkedSale:existingSale};
@@ -2035,8 +2035,8 @@ export function PosPage() {
     pendingSaleKey.current=order.idempotency_key;pendingSaleSnapshotRef.current=recoveredSnapshot;setPendingSaleRecoveryMode(true);setPendingSaleRecoveryError('');
     flash('Orden recuperada. Revisa los datos y confirma la venta cuando esté lista.');
   };
-  const handleQuoteSelection=async(nextQuoteId:string,select:HTMLSelectElement)=>{
-    if(nextQuoteId&&(cart.length||form.quoteId)){const accepted=await confirmDialog({eyebrow:'ORIGEN DE LA VENTA',title:'¿Cargar esta cotización aprobada?',description:'Los artículos o la cotización que ya tienes en el POS serán reemplazados por el contenido de la cotización elegida.',tone:'warning',confirmLabel:'Cargar cotización',cancelLabel:'Conservar pedido actual',consequences:['Se conserva la cotización aprobada y su total confirmado.','Puedes revisar los datos antes de registrar la venta.']});if(!accepted){select.value=form.quoteId;return;}}
+  const handleQuoteSelection=async(nextQuoteId:string,select?:HTMLSelectElement)=>{
+    if(nextQuoteId&&(cart.length||form.quoteId)){const accepted=await confirmDialog({eyebrow:'ORIGEN DE LA VENTA',title:'¿Cargar esta cotización aprobada?',description:'Los artículos o la cotización que ya tienes en el POS serán reemplazados por el contenido de la cotización elegida.',tone:'warning',confirmLabel:'Cargar cotización',cancelLabel:'Conservar pedido actual',consequences:['Se conserva la cotización aprobada y su total confirmado.','Puedes revisar los datos antes de registrar la venta.']});if(!accepted){if(select)select.value=form.quoteId;return;}}
     const quote=centralQuotes.find((item)=>item.id===nextQuoteId);
     const knownCustomer=(data.customers||[]).find((customer)=>quote?.customer_id&&customer.id===quote.customer_id)||(data.customers||[]).find((customer)=>quote?.customer_phone&&customer.phone===quote.customer_phone)||(data.customers||[]).find((customer)=>quote?.customer_name&&customer.name.trim().toLocaleLowerCase('es')===quote.customer_name.trim().toLocaleLowerCase('es'));
     setSelectedCustomerSnapshot(knownCustomer||null);
@@ -2044,6 +2044,14 @@ export function PosPage() {
     if(nextQuoteId){setDiscountPercent('0');setDiscountReason('');}
     setSelectedQuoteVariants({});setCustomerQuery(knownCustomer?.name||quote?.customer_name||'');setClientBriefHtml(quote?.client_brief_html||'<p></p>');if(nextQuoteId)setCart([]);
   };
+  const [entryParams] = useSearchParams();
+  const appliedEntryQuote = useRef('');
+  useEffect(() => {
+    const quoteId = entryParams.get('quoteId');
+    if (!quoteId || appliedEntryQuote.current === quoteId || !centralQuotes.some(quote => quote.id === quoteId) || pendingSaleRecoveryMode || saleAssetsRecoveryStatus !== 'ready') return;
+    appliedEntryQuote.current = quoteId;
+    void handleQuoteSelection(quoteId);
+  }, [entryParams, centralQuotes, pendingSaleRecoveryMode, saleAssetsRecoveryStatus]);
   const addCartLine=()=>{
     const quantity=cartQuantityNumber;
     if(!Number.isSafeInteger(quantity)||quantity<1){flash('La cantidad debe ser un número entero mayor que cero.');return;}
@@ -2219,7 +2227,7 @@ export function PosPage() {
       sessionStorage.setItem(pendingSaleSnapshotStorageKey,JSON.stringify({version:1,savedAt:Date.now(),...currentSnapshot}));
       pendingSaleSnapshotRef.current=currentSnapshot;setPendingSaleRecoveryMode(true);
       saleRequestStarted=true;
-      const {data:sale,error}=await supabase.rpc('confirm_pos_sale_with_workflows',{
+      const {data:sale,error}=await supabase.rpc('confirm_pos_sale_with_assets',{
         p_idempotency_key:pendingSaleKey.current,
         p_branch_code:form.branchCode,
         p_customer_id:form.customerId||null,
@@ -2233,9 +2241,10 @@ export function PosPage() {
         p_production_jobs:productionJobs,
         p_client_brief_html:clientBriefHtml,
         p_parked_order:activeParkedOrderId||null,
+        p_expected_assets_manifest:await commercialAssetManifest(saleAssets),
       });
       if(error)throw error;
-      if(saleAssets.length){const {count:existingAssets,error:assetsReadError}=await supabase.from('commercial_document_assets').select('id',{count:'exact',head:true}).eq('document_kind','sale').eq('document_id',sale.sale_id);if(assetsReadError)throw assetsReadError;if(existingAssets===null)throw new Error('No pude comprobar si los adjuntos ya se guardaron. Conservé la clave de recuperación.');if(existingAssets===0)await persistCommercialAssets({organizationId,documentId:sale.sale_id,kind:'sale',assets:saleAssets});await posSaleAssetRecovery.clear(posSaleAssetScopeKey);}
+      if(saleAssets.length){const {count:existingAssets,error:assetsReadError}=await supabase.from('commercial_document_assets').select('id',{count:'exact',head:true}).eq('document_kind','sale').eq('document_id',sale.sale_id);if(assetsReadError)throw assetsReadError;if(existingAssets===null)throw new Error('No pude comprobar si los adjuntos ya se guardaron. Conservé la clave de recuperación.');await persistCommercialAssets({organizationId,documentId:sale.sale_id,kind:'sale',assets:saleAssets});await posSaleAssetRecovery.clear(posSaleAssetScopeKey);}
       window.dispatchEvent(new Event('visualcorp:production-changed'));
       let materialBackorder=false;
       try{const {data:materialRows}=await supabase.from('sale_material_consumptions').select('backordered_quantity').eq('sale_id',sale.sale_id).gt('backordered_quantity',0);materialBackorder=Boolean(materialRows?.length);}catch{}

@@ -14,8 +14,8 @@ import { Title3D } from './Title3D';
 import { ServiceKeycap, getServiceKeycapColor } from './ServiceKeycap';
 import { AboutHero, ContactHero, ProcessHero } from './CompanyHeroes';
 import { companyProcessSteps } from './company-hero-content';
-import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
-import { STOREFRONT_SKU_PARAM } from './storefrontCatalog';
+import { clearQuoteConfiguratorDraft, QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
+import { resolveQuoteSourceChannel, STOREFRONT_SKU_PARAM, type StorefrontQuoteSourceChannel } from './storefrontCatalog';
 import { AnimatedList, BorderBeam, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight, PulsingBeacon, AnimatedShinyText } from '../components/ui/MagicComponents';
 import { FloatInput, FloatTextarea, FeedbackAlert } from '../components/ui/FormControls';
 import { SelectDropdown } from '../components/ui/SelectDropdown';
@@ -41,7 +41,6 @@ import './mobile-bottom-navigation.css';
 import './navigation-refinement.css';
 import './ui-libraries.css';
 import './glass-refresh.css';
-import './glass-reference-polish.css';
 
 const wordmark = '/brand/visualcorp-wordmark.png';
 const familyInfo = (id) => publicServiceFamilies.find((family) => family.id === id);
@@ -88,6 +87,11 @@ function SocialMark({ platform, size = 16 }: { platform: keyof typeof socialHost
   if (platform === 'facebook') return <svg className={`social-mark social-mark-${platform}`} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.55 21v-8.2h2.76l.41-3.2h-3.17V7.56c0-.93.26-1.56 1.59-1.56h1.7V3.14C16.02 3.05 15.2 3 14.23 3c-2.86 0-4.82 1.75-4.82 4.96V9.6H6.65v3.2h2.76V21h4.14Z"/></svg>;
   if (platform === 'tiktok') return <svg className={`social-mark social-mark-${platform}`} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.33V2h-3.55v13.67a2.9 2.9 0 0 1-2.9 2.9 2.9 2.9 0 0 1-2.9-2.9 2.9 2.9 0 0 1 2.9-2.9c.28 0 .55.04.81.12V9.27a6.48 6.48 0 0 0-.81-.05 6.45 6.45 0 1 0 6.45 6.45V8.55a8.3 8.3 0 0 0 4.86 1.57V6.57c-.36 0-.72.04-1.09.12Z"/></svg>;
   return <svg className={`social-mark social-mark-${platform}`} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.6" cy="6.7" r=".85" fill="currentColor" stroke="none"/></svg>;
+}
+
+function SiteTitle({ children }) {
+  useEffect(() => { document.title = `${children} · Visual Corp`; }, [children]);
+  return null;
 }
 
 function BrandLink({ onClick = undefined, footer = false, theme = 'dark' }) {
@@ -291,12 +295,15 @@ function SectionTitle({ eyebrow, title, description, light = false }) {
   return <div className={`site-section-title${light ? ' light' : ''}`}><div><Eyebrow light={light}>{eyebrow}</Eyebrow><h2>{title}</h2></div>{description && <p>{description}</p>}</div>;
 }
 
-function ServiceCard({ service, index = 0 }) {
+export function ServiceCard({ service, index = 0, previewOnly = false }: {
+  service: any;
+  index?: number;
+  previewOnly?: boolean;
+}) {
   const info = familyInfo(service.id);
   const Icon = serviceIcons[service.id] || Sparkles;
   const examples = serviceDeliverableTags[service.id as PublicServiceId] || [];
-  return <ViewTransitionLink className="site-service-card-link" to={`/servicios/${service.id}`} transitionType="nav-forward">
-    <ShadcnCard className="site-service-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
+  const card = <ShadcnCard className="site-service-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
     <SpotlightLayer/>
     <div className="site-service-card-topline"><span className="site-service-index">{info?.mark || String(index + 1).padStart(2, '0')}</span><span className="site-service-icon"><Icon size={20} aria-hidden="true"/></span></div>
     <div className="site-service-card-3d-wrap"><Title3D serviceId={service.id as PublicServiceId} variant="badge" maxWidth={180} showAura={false} interactive={false} /></div>
@@ -304,17 +311,125 @@ function ServiceCard({ service, index = 0 }) {
     <p>{service.description}</p>
     {examples.length > 0 && <><span className="site-service-tags-label">Ejemplos de piezas</span><ul className="site-service-tags" aria-label={`Ejemplos de piezas para ${service.name}`}>{examples.map((tag) => <li key={tag}>{tag}</li>)}</ul></>}
     <span className="site-card-link">Explorar servicio <ArrowUpRight size={15}/></span>
-    </ShadcnCard>
-  </ViewTransitionLink>;
+  </ShadcnCard>;
+  if (previewOnly) {
+    return <div className="site-service-card-link is-preview" aria-label={`Vista previa de ${service.name}`}>{card}</div>;
+  }
+  return <ViewTransitionLink className="site-service-card-link" to={`/servicios/${service.id}`} transitionType="nav-forward">{card}</ViewTransitionLink>;
 }
 
-function LeadForm({ variant = 'contact', initialService = '', quoteData = null, selectedService = undefined, onServiceChange = undefined, onQuoteValidationError = undefined }) {
+type LeadFormFields = {
+  name: string;
+  phone: string;
+  company: string;
+  email: string;
+  service: string;
+  details: string;
+};
+
+type StoredLeadFormDraft = LeadFormFields & { savedAt?: number };
+
+function readLeadSessionDraft(storageKey: string): StoredLeadFormDraft | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(storageKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<StoredLeadFormDraft>;
+    if (!parsed || typeof parsed !== 'object') return null;
+    const restored: StoredLeadFormDraft = {
+      name: typeof parsed.name === 'string' ? parsed.name : '',
+      phone: typeof parsed.phone === 'string' ? parsed.phone : '',
+      company: typeof parsed.company === 'string' ? parsed.company : '',
+      email: typeof parsed.email === 'string' ? parsed.email : '',
+      service: typeof parsed.service === 'string' ? parsed.service : '',
+      details: typeof parsed.details === 'string' ? parsed.details : '',
+      savedAt: typeof parsed.savedAt === 'number' ? parsed.savedAt : undefined,
+    };
+    const hasContent = Boolean(
+      restored.name.trim() ||
+      restored.phone.trim() ||
+      restored.company.trim() ||
+      restored.email.trim() ||
+      restored.details.trim()
+    );
+    return hasContent ? restored : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLeadSessionDraft(storageKey: string, fields: LeadFormFields) {
+  if (typeof window === 'undefined') return;
+  const hasContent = Boolean(
+    fields.name.trim() ||
+    fields.phone.trim() ||
+    fields.company.trim() ||
+    fields.email.trim() ||
+    fields.details.trim()
+  );
+  try {
+    if (!hasContent) {
+      window.sessionStorage.removeItem(storageKey);
+      return;
+    }
+    window.sessionStorage.setItem(storageKey, JSON.stringify({ ...fields, savedAt: Date.now() }));
+  } catch {
+    // Ignore sessionStorage availability or quota failures.
+  }
+}
+
+function clearLeadSessionDraft(storageKey: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(storageKey);
+  } catch {
+    // Ignore sessionStorage removal failures.
+  }
+}
+
+function LeadForm({
+  variant = 'contact',
+  initialService = '',
+  quoteData = null,
+  selectedService = undefined,
+  onServiceChange = undefined,
+  onQuoteValidationError = undefined,
+  draftStorageKey = '',
+  onSubmitSuccess = undefined,
+}: {
+  variant?: 'contact' | 'quote';
+  initialService?: string;
+  quoteData?: QuoteDraft | null;
+  selectedService?: string;
+  onServiceChange?: (value: string) => void;
+  onQuoteValidationError?: (message: string) => void;
+  draftStorageKey?: string;
+  onSubmitSuccess?: () => void;
+}) {
   const { data, add } = useWorkspace();
-  const [form, setForm] = useState({ name: '', phone: '', company: '', service: initialService, details: '' });
+  const storageKey = useMemo(
+    () => `vc-public-lead-draft:${variant}:${draftStorageKey || 'default'}`,
+    [variant, draftStorageKey]
+  );
+  const initialRestored = useMemo(() => readLeadSessionDraft(storageKey), [storageKey]);
+  const [form, setForm] = useState<LeadFormFields>(() => {
+    if (initialRestored) {
+      return {
+        name: initialRestored.name,
+        phone: initialRestored.phone,
+        company: initialRestored.company,
+        email: initialRestored.email,
+        service: initialService || initialRestored.service,
+        details: initialRestored.details,
+      };
+    }
+    return { name: '', phone: '', company: '', email: '', service: initialService, details: '' };
+  });
+  const [recoveredDraft, setRecoveredDraft] = useState(() => Boolean(initialRestored));
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
-  const reportQuoteValidationError = (message, fieldId = '') => {
+  const reportQuoteValidationError = (message: string, fieldId = '') => {
     if (onQuoteValidationError) {
       setError('');
       onQuoteValidationError(message);
@@ -325,9 +440,49 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
   };
   useEffect(() => setForm((current) => ({ ...current, service: initialService || current.service })), [initialService]);
   useEffect(() => { if (selectedService !== undefined) setForm((current) => ({ ...current, service: selectedService })); }, [selectedService]);
-  const submit = async (event) => {
+  useEffect(() => {
+    if (sent) return;
+    writeLeadSessionDraft(storageKey, form);
+  }, [storageKey, form, sent]);
+  const clearDraft = () => {
+    clearLeadSessionDraft(storageKey);
+    setRecoveredDraft(false);
+    setError('');
+    setForm({ name: '', phone: '', company: '', email: '', service: initialService, details: '' });
+  };
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!form.name.trim() || !form.phone.trim() || sending) return;
+    if (sending) return;
+    if (!form.name.trim()) {
+      setSent(false);
+      setError('Ingresa tu nombre para poder responderte.');
+      document.getElementById('lead-form-name')?.focus();
+      return;
+    }
+    if (!form.phone.trim()) {
+      setSent(false);
+      setError('Ingresa un teléfono o WhatsApp de contacto.');
+      document.getElementById('lead-form-phone')?.focus();
+      return;
+    }
+    const trimmedEmail = form.email.trim();
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmedEmail)) {
+      setSent(false);
+      setError('Revisa el formato del correo electrónico o déjalo vacío.');
+      document.getElementById('lead-form-email')?.focus();
+      return;
+    }
+    const requestService = variant === 'quote' && quoteData?.service ? quoteData.service : selectedService ?? form.service;
+    const sourceChannel: StorefrontQuoteSourceChannel = quoteData?.sourceChannel || 'quote_page';
+    const normalizedQuoteData = quoteData ? { ...quoteData, sourceChannel } : null;
+    const quotePayload = variant === 'quote'
+      ? {
+          details: form.details.trim(),
+          service: requestService,
+          sourceChannel,
+          request: normalizedQuoteData,
+        }
+      : {};
     if (variant === 'quote') {
       const items = quoteData?.items || [];
       const missingService = items.find((item) => !item.service.trim());
@@ -355,32 +510,47 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
         reportQuoteValidationError('El enlace del pin debe ser un enlace HTTPS válido de Google Maps.', 'quote-installation-maps-url');
         return;
       }
-      const requestBytes = new TextEncoder().encode(JSON.stringify({ details: form.details.trim(), service: quoteData.service, request: quoteData })).length;
+      const requestBytes = new TextEncoder().encode(JSON.stringify(quotePayload)).length;
       if (requestBytes > 19000) {
         reportQuoteValidationError('La solicitud es demasiado extensa para guardarse. Reduce texto o artículos y vuelve a intentar.');
         return;
       }
     }
-    const requestService = variant === 'quote' && quoteData?.service ? quoteData.service : selectedService ?? form.service;
     setSending(true);
     setError('');
     try {
       if (supabaseConfigured) {
         const { error: requestError } = await supabase.from('public_requests').insert({
           request_type: variant === 'quote' ? 'quote' : 'contact',
-          name: form.name.trim(), phone: form.phone.trim(), company: form.company.trim(),
-          service: requestService, message: form.details.trim(),
-          quote_data: variant === 'quote' ? { details: form.details.trim(), service: requestService, request: quoteData } : {},
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          company: form.company.trim(),
+          email: trimmedEmail,
+          service: requestService,
+          message: form.details.trim(),
+          quote_data: variant === 'quote' ? quotePayload : {},
         });
         if (requestError) throw requestError;
       } else if (import.meta.env.PROD) {
         throw new Error('El formulario todavía no está conectado. Escríbenos por WhatsApp.');
       } else {
-        add('leads', { ...form, service: requestService, quoteData: variant === 'quote' ? quoteData : null, source: variant === 'quote' ? 'Cotizador público' : 'Sitio web', stage: 'Nuevo', notes: '', campaignId: '' });
+        add('leads', {
+          ...form,
+          email: trimmedEmail,
+          service: requestService,
+          quoteData: normalizedQuoteData,
+          source: variant === 'quote' ? 'Cotizador público' : 'Sitio web',
+          stage: 'Nuevo',
+          notes: '',
+          campaignId: '',
+        });
       }
-      setForm({ name: '', phone: '', company: '', service: initialService, details: '' });
+      clearLeadSessionDraft(storageKey);
+      setRecoveredDraft(false);
+      setForm({ name: '', phone: '', company: '', email: '', service: initialService, details: '' });
       setSent(true);
-    } catch (cause) {
+      onSubmitSuccess?.();
+    } catch (cause: any) {
       setError(cause?.message || 'No se pudo enviar la solicitud. Intenta nuevamente o escríbenos por WhatsApp.');
     } finally {
       setSending(false);
@@ -407,6 +577,42 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
         <small>Los campos con * son necesarios.</small>
       </div>
 
+      {recoveredDraft && !sent && (
+        <div
+          role="status"
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            padding: '8px 12px',
+            borderRadius: 12,
+            border: '1px solid rgba(116, 19, 111, 0.25)',
+            background: 'rgba(116, 19, 111, 0.08)',
+            fontSize: 12.5,
+          }}
+        >
+          <span>Recuperamos los datos que estabas escribiendo.</span>
+          <button
+            type="button"
+            onClick={clearDraft}
+            style={{
+              border: 0,
+              background: 'transparent',
+              color: 'inherit',
+              fontWeight: 650,
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              padding: 0,
+              fontSize: 12,
+            }}
+          >
+            Limpiar borrador
+          </button>
+        </div>
+      )}
+
       {sent && (
         <FeedbackAlert type="success">
           Solicitud registrada. Gracias por escribirnos.
@@ -428,28 +634,53 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
 
       <div className="site-form-row">
         <FloatInput
+          id="lead-form-name"
           label="Nombre"
           required
           autoComplete="name"
           value={form.name}
-          onChange={(event) => setForm({ ...form, name: event.target.value })}
+          onChange={(event) => {
+            setSent(false);
+            setForm({ ...form, name: event.target.value });
+          }}
         />
         <FloatInput
+          id="lead-form-phone"
           label="Teléfono o WhatsApp"
           required
           type="tel"
           autoComplete="tel"
           inputMode="tel"
           value={form.phone}
-          onChange={(event) => setForm({ ...form, phone: event.target.value })}
+          onChange={(event) => {
+            setSent(false);
+            setForm({ ...form, phone: event.target.value });
+          }}
         />
       </div>
 
-      <FloatInput
-        label="Negocio (opcional)"
-        value={form.company}
-        onChange={(event) => setForm({ ...form, company: event.target.value })}
-      />
+      <div className="site-form-row">
+        <FloatInput
+          id="lead-form-company"
+          label="Negocio (opcional)"
+          value={form.company}
+          onChange={(event) => {
+            setSent(false);
+            setForm({ ...form, company: event.target.value });
+          }}
+        />
+        <FloatInput
+          id="lead-form-email"
+          label="Correo electrónico (opcional)"
+          type="email"
+          autoComplete="email"
+          value={form.email}
+          onChange={(event) => {
+            setSent(false);
+            setForm({ ...form, email: event.target.value });
+          }}
+        />
+      </div>
 
       {variant !== 'quote' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -496,7 +727,7 @@ export { PublicHomePage } from './HomePage';
 export function ServicesIndexPage() {
   const { data } = useWorkspace();
   const services = data.services.filter((service) => service.enabled);
-  return <DirectionalViewTransition><div><PageMeta title="Servicios" description="Explora nuestras seis especialidades en Milagro: impresión, gran formato, rótulos, textil, señalética a medida y exhibición." path="/servicios" /><PageHero ambientVideo="aurora" eyebrow="LO QUE HACEMOS" title={<>Ideas que encuentran<br/>su forma.</>} description="Explora las familias de trabajo de Visual Corp. Cada proyecto empieza con una conversación sobre lo que necesitas." primary={{ label: 'Cuéntanos tu proyecto', to: '/cotizador' }} secondary={{ label: 'Ver soluciones por espacio', to: '/soluciones' }}/><section className="site-page-section site-services-index" aria-labelledby="site-services-index-title">
+  return <DirectionalViewTransition><div><SiteTitle>Servicios</SiteTitle><PageHero ambientVideo="aurora" eyebrow="LO QUE HACEMOS" title={<>Ideas que encuentran<br/>su forma.</>} description="Explora las familias de trabajo de Visual Corp. Cada proyecto empieza con una conversación sobre lo que necesitas." primary={{ label: 'Cuéntanos tu proyecto', to: '/cotizador' }} secondary={{ label: 'Ver soluciones por espacio', to: '/soluciones' }}/><section className="site-page-section site-services-index" aria-labelledby="site-services-index-title">
     <div className="site-services-index-heading"><div><Eyebrow>FAMILIAS DE TRABAJO</Eyebrow><h2 id="site-services-index-title">Compara las familias.</h2></div><p>Revisa ejemplos de piezas y entra a la ficha que mejor se relaciona con tu idea.</p></div>
     <AnimatedList className="site-services-grid" stagger={0.075}>{services.map((service, index) => <ServiceCard key={service.id} service={service} index={index}/>)}</AnimatedList>
     <p className="site-service-note">Cada solicitud se revisa según su alcance. Materiales, disponibilidad, valores y tiempos se confirman para cada proyecto.</p>
@@ -512,29 +743,7 @@ export function ServicesIndexPage() {
 }
 
 export function SolutionsIndexPage() {
-  const { data } = useWorkspace();
-  return <>
-    <PageMeta
-      title="Soluciones por espacio"
-      description="Catálogo completo de 38 referencias conceptuales, tiras panorámicas y soluciones por escenario para locales, oficinas, vehículos y eventos."
-      path="/soluciones"
-    />
-    <PageHero
-      ambientVideo="aurora"
-      eyebrow="SOLUCIONES POR ESPACIO"
-      title={<>Ideas de marca<br/>para cada espacio.</>}
-      description="Explora nuestro catálogo visual completo de referencias conceptuales, tiras panorámicas y aplicaciones por espacio."
-      primary={{ label: 'Explorar 38 referencias', to: '#catalogo-visual' }}
-      secondary={{ label: 'Preparar mi cotización', to: '/cotizador' }}
-    />
-    <EnvironmentBrandingMatrix/>
-    <StrategicBenefitsGrid/>
-    <PanoramicCategoryStrips/>
-    <div id="catalogo-visual">
-      <InteractiveCatalogGallery eyebrow="CATÁLOGO VISUAL INTERACTIVO" heading="Señalética, letreros, branding, BTL, cortes láser e impresión"/>
-    </div>
-    <Callout data={data}/>
-  </>;
+  return <><SiteTitle>Soluciones por espacio</SiteTitle><PageHero ambientVideo="aurora" eyebrow="SOLUCIONES POR ESPACIO" title={<>Ideas de marca<br/>para cada espacio.</>} description="Explora referencias de piezas gráficas y señalización que podrías consultar según el espacio donde interactúas con tus clientes." primary={{ label: 'Ver servicios', to: '/servicios' }} secondary={{ label: 'Preparar mi cotización', to: '/cotizador' }}/><BrandBeforeAfterShowcase/><EnvironmentBrandingMatrix/><PanoramicCategoryStrips/></>;
 }
 
 export function ServiceDetailPage() {
@@ -550,7 +759,7 @@ export function ServiceDetailPage() {
   const relatedIds: string[] = page?.relatedServices || [];
   const relatedServices = data.services.filter((item) => item.enabled && relatedIds.includes(item.id)).sort((a, b) => relatedIds.indexOf(a.id) - relatedIds.indexOf(b.id));
   return <DirectionalViewTransition><article className={`service-detail-page service-detail-${service.id}`}>
-      <PageMeta title={service.name} description={page?.headline || service.description} path={`/servicios/${service.id}`} />
+      <SiteTitle>{service.name}</SiteTitle>
       <header className="service-detail-hero">
         <nav className="service-detail-breadcrumbs" aria-label="Ruta de navegación"><ViewTransitionLink to="/" transitionType="nav-back">Inicio</ViewTransitionLink><ChevronRight size={14} aria-hidden="true"/><ViewTransitionLink to="/servicios" transitionType="nav-back">Servicios</ViewTransitionLink><ChevronRight size={14} aria-hidden="true"/><span aria-current="page">{service.name}</span></nav>
         <div className="service-detail-hero-grid"><div className="service-detail-hero-copy"><Eyebrow light>{`SERVICIOS · ${details?.mark || ''}`}</Eyebrow><div className="service-detail-title-3d-wrapper"><Title3D serviceId={service.id as PublicServiceId} variant="hero" priority /><h1 className="sr-only">{service.name}</h1></div><p className="service-detail-hero-description">{page?.headline || service.description}</p><p className="service-detail-hero-intro">{page?.introduction || serviceProjectPrompts[service.id] || 'Cuéntanos qué necesitas y revisaremos contigo los detalles del proyecto.'}</p><div className="service-detail-actions"><Link className="site-primary-button" to={quoteUrl}>Preparar mi cotización <ArrowUpRight size={16}/></Link><a className="site-secondary-button" href="#orientar-proyecto">¿Qué información compartir? <ArrowDownRight size={16}/></a>{(['textil', 'rotulos', 'eventos'] as string[]).includes(service.id) && <CreativeToolLink base={service.id === 'textil' ? 'camiseta' : service.id === 'rotulos' ? 'rotulo' : 'rollup'} returnTo={`/servicios/${service.id}`} label="Probar un mockup"/>}</div><span className="service-detail-hero-footnote"><Check size={14}/> Revisaremos contigo los detalles antes de confirmar tu solicitud.</span></div>
@@ -568,12 +777,12 @@ export function ServiceDetailPage() {
 
 export function AboutPage() {
   const { data } = useWorkspace();
-  return <><PageMeta title="La empresa" description="Conoce a Visual Corp, agencia de publicidad, impresión y marketing en Milagro, Ecuador." path="/nosotros" /><AboutHero location={data.settings.location}/><section className="site-about-section" id="el-estudio"><div className="about-mark"><img src="/brand/visualcorp-symbol.png" alt="Símbolo Visual Corp"/><span>VISUAL CORP<br/><small>AGENCIA CREATIVA</small></span></div><div><Eyebrow>QUIÉNES SOMOS</Eyebrow><h2>Hacemos visible<br/>lo que imaginas.</h2><p>En Visual Corp creemos que cada negocio tiene una historia que merece verse. Reunimos creatividad, publicidad y producción visual para ayudar a convertir ideas en proyectos concretos.</p><p>Estamos en Milagro, Ecuador. Cuéntanos qué estás pensando y encontraremos un primer paso contigo.</p><Link to="/como-trabajamos" className="site-text-link">Conoce nuestro proceso <ArrowRight size={16}/></Link></div></section><StrategicBenefitsGrid/><EnvironmentBrandingMatrix compact/><Callout data={data}/></>;
+  return <><SiteTitle>La empresa</SiteTitle><AboutHero location={data.settings.location}/><section className="site-about-section" id="el-estudio"><div className="about-mark"><img src="/brand/visualcorp-symbol.png" alt="Símbolo Visual Corp"/><span>VISUAL CORP<br/><small>AGENCIA CREATIVA</small></span></div><div><Eyebrow>QUIÉNES SOMOS</Eyebrow><h2>Hacemos visible<br/>lo que imaginas.</h2><p>En Visual Corp creemos que cada negocio tiene una historia que merece verse. Reunimos creatividad, publicidad y producción visual para ayudar a convertir ideas en proyectos concretos.</p><p>Estamos en Milagro, Ecuador. Cuéntanos qué estás pensando y encontraremos un primer paso contigo.</p><Link to="/como-trabajamos" className="site-text-link">Conoce nuestro proceso <ArrowRight size={16}/></Link></div></section><StrategicBenefitsGrid/><EnvironmentBrandingMatrix compact/><Callout data={data}/></>;
 }
 
 export function ProcessPage() {
   const { data } = useWorkspace();
-  return <><PageMeta title="Cómo trabajamos" description="Conoce nuestro proceso en Visual Corp: desde la primera idea hasta la producción y entrega en Milagro, Ecuador." path="/como-trabajamos" /><ProcessHero/><section className="site-process-section" id="como-empezamos"><div className="process-intro"><Eyebrow>ASÍ EMPEZAMOS</Eyebrow><h2>Primero entendemos<br/>el proyecto.</h2><p>No necesitas tener todas las respuestas listas. Cuéntanos lo que tienes en mente y completamos la información contigo.</p><Link className="site-primary-button" to="/contacto">Iniciar una conversación <ArrowUpRight size={16}/></Link></div><AnimatedList className="process-list" stagger={0.1}>{companyProcessSteps.map((step) => (
+  return <><SiteTitle>Cómo trabajamos</SiteTitle><ProcessHero/><section className="site-process-section" id="como-empezamos"><div className="process-intro"><Eyebrow>ASÍ EMPEZAMOS</Eyebrow><h2>Primero entendemos<br/>el proyecto.</h2><p>No necesitas tener todas las respuestas listas. Cuéntanos lo que tienes en mente y completamos la información contigo.</p><Link className="site-primary-button" to="/contacto">Iniciar una conversación <ArrowUpRight size={16}/></Link></div><AnimatedList className="process-list" stagger={0.1}>{companyProcessSteps.map((step) => (
             <article key={step.n} id={`proceso-${step.n}`} tabIndex={-1}>
               <b>{step.n}</b>
               <div>
@@ -628,7 +837,7 @@ export function ContactPage() {
   const socials = socialLinks(data.settings);
   const googleMapsOpenUrl = getGoogleMapsOpenUrl('', publicAddress);
   const googleMapsEmbedUrl = getGoogleMapsEmbedUrl('', publicAddress);
-  return <><PageMeta title="Contacto" description="Escríbenos por WhatsApp, consulta nuestra ubicación en Milagro o envía tu consulta a Visual Corp." path="/contacto" />
+  return <><SiteTitle>Contacto</SiteTitle>
     <ContactHero sectionRef={contactHeroRef} whatsapp={whatsapp} address={publicAddress}/>
     <section className="contact-workspace" id="contacto-opciones" aria-label="Opciones para contactar a Visual Corp">
         <div className="contact-info-column"><div className="contact-section-heading"><Eyebrow>CONTACTO DIRECTO</Eyebrow><h2>Elige cómo<br/>empezar.</h2><p>Escríbenos directamente o déjanos los detalles y los revisaremos contigo.</p></div>
@@ -674,6 +883,9 @@ export function ContactPage() {
 
 export function PublicQuotePage() {
   const [searchParams] = useSearchParams();
+  const urlKey = searchParams.toString();
+  const sourceChannel = useMemo(() => resolveQuoteSourceChannel(searchParams), [searchParams]);
+  const [quoteResetVersion, setQuoteResetVersion] = useState(0);
   const requestedService = searchParams.get('servicio') || '';
   const requestedFamilies = searchParams.getAll('familia');
   const requestedSkus = searchParams.getAll(STOREFRONT_SKU_PARAM);
@@ -692,12 +904,16 @@ export function PublicQuotePage() {
     setQuoteData(draft);
     setQuoteValidationError('');
   }, []);
+  const handleQuoteSubmitted = useCallback(() => {
+    clearQuoteConfiguratorDraft(urlKey);
+    setQuoteResetVersion((version) => version + 1);
+  }, [urlKey]);
   const services = useMemo(() => data.services.filter((item) => item.enabled), [data.services]);
   const serviceName = (value: string) => services.find((item) => item.id === value || item.name.toLocaleLowerCase('es') === value.toLocaleLowerCase('es'))?.name || '';
   const service = serviceName(requestedService);
   const itemServices = requestedFamilies.length ? requestedLines.map((line) => serviceName(line.family)) : [];
-  const requestKey = `${searchParams.toString()}|${service}|${itemServices.join('|')}`;
-  return <><PageMeta title="Solicitar cotización" description="Configura los artículos, medidas, acabados e instalación de tu proyecto y solicita una cotización personalizada con Visual Corp." path="/cotizador" /><PageHero ambientVideo="aurora" eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp" tabIndex={-1}><nav className="site-quote-flow" aria-label="Etapas de la solicitud"><a href="#quote-items-title"><span className="site-quote-flow-index" aria-hidden="true">01</span><span><strong>Detalla tu proyecto</strong><small>Artículos y, si aplica, instalación.</small></span></a><a href="#formulario-cotizacion"><span className="site-quote-flow-index" aria-hidden="true">02</span><span><strong>Comparte tus datos</strong><small>Para que el equipo responda tu solicitud.</small></span></a></nav><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} validationMessage={quoteValidationError} onChange={handleQuoteChange}/><div className="site-quote-request" id="formulario-cotizacion" tabIndex={-1}><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData} onQuoteValidationError={setQuoteValidationError}/></div></section></>;
+  const requestKey = `${urlKey}|${service}|${itemServices.join('|')}|${quoteResetVersion}`;
+  return <><PageMeta title="Solicitar cotización" description="Configura los artículos, medidas, acabados e instalación de tu proyecto y solicita una cotización personalizada con Visual Corp." path="/cotizador"/><SiteTitle>Solicitar cotización</SiteTitle><PageHero ambientVideo="aurora" eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp" tabIndex={-1}><nav className="site-quote-flow" aria-label="Etapas de la solicitud"><a href="#quote-items-title"><span className="site-quote-flow-index" aria-hidden="true">01</span><span><strong>Detalla tu proyecto</strong><small>Artículos y, si aplica, instalación.</small></span></a><a href="#formulario-cotizacion"><span className="site-quote-flow-index" aria-hidden="true">02</span><span><strong>Comparte tus datos</strong><small>Para que el equipo responda tu solicitud.</small></span></a></nav><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} sourceChannel={sourceChannel} draftKey={urlKey} validationMessage={quoteValidationError} onChange={handleQuoteChange}/><div className="site-quote-request" id="formulario-cotizacion" tabIndex={-1}><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData} draftStorageKey={urlKey} onQuoteValidationError={setQuoteValidationError} onSubmitSuccess={handleQuoteSubmitted}/></div></section></>;
 }
 function PageHero({ eyebrow, title, description, compact = false, primary, secondary, ambientVideo }: {
   eyebrow: string;

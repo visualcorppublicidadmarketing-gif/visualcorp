@@ -646,3 +646,7 @@
     grid-template-columns: 1fr;
   }
 }
+
+.production-overdue-agenda { display:flex; flex-wrap:wrap; gap:10px; max-width:100%; min-width:0; padding:16px; border:1px solid var(--admin-glass-border); border-radius:16px; background:var(--admin-glass-card); }
+.production-overdue-agenda h2 { flex-basis:100%; }
+.production-overdue-agenda button { white-space:normal; overflow-wrap:anywhere; min-width:0; max-width:100%; text-align:left; }

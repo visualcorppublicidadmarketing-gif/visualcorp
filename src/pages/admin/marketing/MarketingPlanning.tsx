@@ -46,6 +46,8 @@ export type MarketingCampaignPost = {
   interactions?: number | string | null;
   clicks?: number | string | null;
   leads?: number | string | null;
+  published_url?: string | null;
+  results_updated_at?: string | null;
 };
 
 export type PlanningKind = 'campaign' | 'post' | 'task';
@@ -197,7 +199,7 @@ export function CampaignPlanningSection({ campaigns, tasks, posts, campaignArtwo
         const activeTasks = campaignTasks.filter((task) => !/cancelad/i.test(task.status));
         const readyTasks = activeTasks.filter((task) => /^listo$/i.test(task.status.trim())).length;
         const publishedPosts = campaignPosts.filter((post) => /^publicad[oa]$/i.test(post.status.trim())).length;
-        const metricPosts = campaignPosts.filter((post) => [post.reach, post.interactions, post.clicks, post.leads]
+        const metricPosts = campaignPosts.filter((post) => Boolean(post.results_updated_at) || [post.reach, post.interactions, post.clicks, post.leads]
           .some((value) => Number.isFinite(Number(value)) && Number(value) > 0));
         const metricTotals = [
           { key: 'reach' as const, label: 'Alcance acumulado' },

@@ -32,6 +32,7 @@ import {
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabaseClient';
 import { useConfirm } from './ui/OperationalKit';
+import { ProductionMaterialPanel } from './inventory/ProductionMaterialPanel';
 import { ProductionJobDetailSheet } from '../pages/operations/ProductionJobDetailSheet';
 import {
   type AreaCode,
@@ -1537,19 +1538,8 @@ export function ShopFloorKiosk({
               </button>
             </div>
 
-            {/* Explicación explícita de brecha de esquema */}
-            <div className="sf-scrap-schema-callout" role="alert">
-              <ShieldAlert size={20} />
-              <div>
-                <strong>Aviso de Base de Datos (Fase de Transición):</strong>
-                <p>
-                  La tabla estructurada de conteo físico de mermas (<code>production_scraps</code>) está
-                  pendiente de aprobación de migración SQL en Supabase. No se guardan registros falsos en{' '}
-                  <code>localStorage</code>. Puedes registrar este incidente de forma 100% auditable
-                  mediante las siguientes opciones autorizadas:
-                </p>
-              </div>
-            </div>
+            <ProductionMaterialPanel key={scrapModalItem.step.id} job={scrapModalItem.job} step={scrapModalItem.step} initialKind="scrap" onChanged={() => { emitProductionChanged(); }}/>
+            <p>Si el incidente también requiere detener la etapa, registra la causa a continuación.</p>
 
             {/* Selector de Causa de la Merma */}
             <div>

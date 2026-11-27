@@ -4,6 +4,7 @@ import {
   BadgeDollarSign,
   Ban,
   Briefcase,
+  Building2,
   Check,
   Clock,
   Copy,
@@ -27,17 +28,34 @@ import { Avatar } from './ui/Avatar';
 import { useConfirm } from './ui/OperationalKit';
 import { supabase } from '../lib/supabaseClient';
 import { normalizePersonName } from '../lib/personName';
-import { legacyRoleNames, permissionModules, specialPermissionActions, type PermissionKey } from '../auth/accessCatalog';
+import {
+  applyPermissionMatrixChange,
+  assignableBaseRoles,
+  canActorManageBaseRole,
+  legacyRoleNames,
+  permissionModules,
+  specialPermissionActions,
+  type BaseRoleKey,
+  type PermissionKey,
+} from '../auth/accessCatalog';
 import './team-access.css';
 
 const modules = permissionModules;
 const specialActions = specialPermissionActions;
 const roleNames = legacyRoleNames;
 
+interface BranchOption {
+  id: string;
+  code: string;
+  name: string;
+  active?: boolean;
+}
+
 interface RolePreset {
   id: string;
   name: string;
   keySuggestion: string;
+  baseRole: Exclude<BaseRoleKey, 'owner'>;
   badge: string;
   description: string;
   permissions: PermissionKey[];
@@ -48,8 +66,9 @@ const ROLE_PRESETS: RolePreset[] = [
     id: 'advisor_pos',
     name: 'Asesora Comercial y POS',
     keySuggestion: 'asesora_comercial_pos',
-    badge: 'Ventas · POS · CRM',
-    description: 'Atiende clientes, emite cotizaciones, registra ventas en POS (con descuento comercial máx. 40% justificado) y opera su turno de caja.',
+    baseRole: 'advisor',
+    badge: 'Ventas · POS · Turno propio',
+    description: 'Atiende clientes, emite cotizaciones, registra ventas en POS (descuento comercial máx. 40% justificado) y abre su propio turno de caja.',
     permissions: [
       'dashboard.view',
       'crm.view',
@@ -69,14 +88,16 @@ const ROLE_PRESETS: RolePreset[] = [
     id: 'cashier_collections',
     name: 'Cajero y Recaudación',
     keySuggestion: 'cajero_recaudacion',
-    badge: 'Caja · Abonos · Devoluciones',
-    description: 'Administra aperturas y cierres de caja, cobros de saldos pendientes y liquidación autorizada de devoluciones.',
+    baseRole: 'advisor',
+    badge: 'Cajero · Movimientos · Devoluciones',
+    description: 'Rol operativo de caja: controla aperturas, movimientos de caja, cobros de saldos y liquidación de devoluciones sin gestión financiera global.',
     permissions: [
       'dashboard.view',
       'sales.view',
       'sales.edit',
       'cash.view',
       'cash.edit',
+      'cash.manage_cash',
       'sales.settle_refund',
       'crm.view',
       'quotes.view',
@@ -87,6 +108,7 @@ const ROLE_PRESETS: RolePreset[] = [
     id: 'workshop_lead',
     name: 'Jefe de Taller y Producción',
     keySuggestion: 'jefe_taller_produccion',
+    baseRole: 'production',
     badge: 'Taller · OT · Inventario',
     description: 'Coordina órdenes de trabajo, asigna responsables de producción, cambia etapas, cierra órdenes y registra consumo de materiales.',
     permissions: [
@@ -103,6 +125,7 @@ const ROLE_PRESETS: RolePreset[] = [
     id: 'warehouse_purchasing',
     name: 'Bodega, Compras y Costos',
     keySuggestion: 'bodega_compras_costos',
+    baseRole: 'warehouse',
     badge: 'Stock · Costos · Proveedores',
     description: 'Controla existencias físicas, ajustes de conteo, costos unitarios de inventario y órdenes de compra a proveedores.',
     permissions: [
@@ -124,6 +147,7 @@ const ROLE_PRESETS: RolePreset[] = [
     id: 'marketing_web',
     name: 'Marketing y Sitio Web',
     keySuggestion: 'marketing_contenido_web',
+    baseRole: 'marketing',
     badge: 'Campañas · Web · Catálogo',
     description: 'Gestiona campañas publicitarias, publicaciones del sitio web, portafolio y fichas comerciales del catálogo.',
     permissions: [
@@ -142,6 +166,7 @@ const ROLE_PRESETS: RolePreset[] = [
     id: 'hr_schedule_admin',
     name: 'Gestión de Personal y Horarios',
     keySuggestion: 'gestion_personal_horarios',
+    baseRole: 'manager',
     badge: 'Personal · Horarios · Turnos',
     description: 'Gestiona fichas laborales, horarios y turnos, sin acceso a remuneraciones ni finanzas.',
     permissions: [
@@ -154,10 +179,11 @@ const ROLE_PRESETS: RolePreset[] = [
   },
   {
     id: 'hr_finance_admin',
-    name: 'Administración, RR.HH. y Finanzas',
+    name: 'Supervisor: Administración, RR.HH. y Finanzas',
     keySuggestion: 'admin_rrhh_finanzas',
-    badge: 'Finanzas · Salarios · Descuentos',
-    description: 'Supervisa flujo financiero, fichas laborales, salarios base, descuentos de nómina, asistencia y precios de catálogo.',
+    baseRole: 'manager',
+    badge: 'Supervisor · Finanzas · Nómina · Caja',
+    description: 'Supervisa flujo financiero, movimientos de caja, fichas laborales, salarios base, descuentos de nómina, asistencia y tarifas.',
     permissions: [
       'dashboard.view',
       'dashboard.edit',
@@ -172,6 +198,7 @@ const ROLE_PRESETS: RolePreset[] = [
       'team_schedule.edit',
       'cash.view',
       'cash.edit',
+      'cash.manage_cash',
       'sales.settle_refund',
       'sales.view',
       'sales.edit',
@@ -210,19 +237,30 @@ function formatRelativeAccess(isoDate: string | null | undefined): string {
 export function TeamAccess() {
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
-  const { organizationId, roles, hasPermission, refreshAccess } = useAuth();
+  const { organizationId, roles, branchScopes, hasPermission, refreshAccess } = useAuth();
   const confirm = useConfirm();
-  const canManageProfiles = hasPermission('team', 'manage_profiles');
+
+  const isOwner = useMemo(
+    () =>
+      roles.includes('owner') &&
+      (branchScopes.length === 0 || branchScopes.some((scope) => scope.role === 'owner' && scope.branch_id === null)),
+    [roles, branchScopes],
+  );
+  const canManageProfiles = hasPermission('team', 'manage_profiles', null);
   const canManageMembers = hasPermission('team', 'manage_members');
+  const canManageOrgWideMembers = isOwner || hasPermission('team', 'manage_members', null);
+
   const [profiles, setProfiles] = useState<any[]>([]);
   const [permissionRows, setPermissionRows] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
+  const [branches, setBranches] = useState<BranchOption[]>([]);
   const [googleAccounts, setGoogleAccounts] = useState<any[]>([]);
   const [personnelRecords, setPersonnelRecords] = useState<any[]>([]);
   const [invitations, setInvitations] = useState<any[]>([]);
   const [invitationLoadError, setInvitationLoadError] = useState(false);
   const [accessRequests, setAccessRequests] = useState<any[]>([]);
   const [requestProfilesById, setRequestProfilesById] = useState<Record<string, string>>({});
+  const [requestBranchesById, setRequestBranchesById] = useState<Record<string, string>>({});
   const [requestLoadingId, setRequestLoadingId] = useState<string | null>(null);
   const [requestsRefreshing, setRequestsRefreshing] = useState(false);
   const [lastInvitationEmail, setLastInvitationEmail] = useState('');
@@ -234,10 +272,13 @@ export function TeamAccess() {
   const [profileName, setProfileName] = useState('');
   const [profileDescription, setProfileDescription] = useState('');
   const [profileKey, setProfileKey] = useState('');
+  const [profileBaseRole, setProfileBaseRole] = useState<string>('advisor');
   const [matrix, setMatrix] = useState<Record<string, boolean>>({});
   const [email, setEmail] = useState('');
   const [assignProfileId, setAssignProfileId] = useState('');
+  const [assignBranchId, setAssignBranchId] = useState('');
   const [inlineAssignByEmail, setInlineAssignByEmail] = useState<Record<string, string>>({});
+  const [inlineBranchByEmail, setInlineBranchByEmail] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -246,6 +287,7 @@ export function TeamAccess() {
   const [accountQuery, setAccountQuery] = useState('');
   const [accountState, setAccountState] = useState<'all' | 'active' | 'blocked' | 'unassigned' | 'with_personnel' | 'without_personnel'>('all');
   const [profileFilterId, setProfileFilterId] = useState('all');
+  const [branchFilterId, setBranchFilterId] = useState<'all' | 'global' | string>('all');
   const [matrixFilter, setMatrixFilter] = useState('');
 
   const load = useCallback(async (preferredId?: string) => {
@@ -258,10 +300,11 @@ export function TeamAccess() {
     setLoading(true);
     setLoadFailed(false);
     setError('');
-    const [profileResult, permissionResult, memberResult, googleResult, invitationResult, personnelResult, requestsResult] = await Promise.all([
+    const [profileResult, permissionResult, memberResult, branchResult, googleResult, invitationResult, personnelResult, requestsResult] = await Promise.all([
       supabase.from('access_profiles').select('id,profile_key,name,description,base_role,is_system,active').eq('organization_id', organizationId).order('name'),
       supabase.from('access_profile_permissions').select('profile_id,module_key,action_key,enabled'),
       supabase.rpc('list_visualcorp_team_members'),
+      supabase.from('branches').select('id,code,name,active').eq('organization_id', organizationId).eq('active', true).order('name'),
       supabase.rpc('list_visualcorp_team_accounts_with_avatars'),
       supabase.rpc('list_organization_access_invitations', { p_organization_id: organizationId }),
       supabase.from('personnel_records').select('id,full_name,email,department,job_title,status').eq('organization_id', organizationId),
@@ -278,6 +321,7 @@ export function TeamAccess() {
     }
     setProfiles(profileRows);
     setPermissionRows(permissionResult.data || []);
+    setBranches(branchResult.data || []);
     setMembers(
       membershipRows.map((member: any) => ({
         ...member,
@@ -302,6 +346,7 @@ export function TeamAccess() {
       setProfileName(selected.name);
       setProfileDescription(selected.description || '');
       setProfileKey(selected.profile_key);
+      setProfileBaseRole(selected.base_role || 'advisor');
       setMatrix(
         Object.fromEntries(
           loadedPermRows.filter((row: any) => row.profile_id === chosen).map((row: any) => [`${row.module_key}.${row.action_key}`, row.enabled]),
@@ -312,7 +357,7 @@ export function TeamAccess() {
   }, [organizationId]);
 
   const reloadAccessRequests = useCallback(async (showSpinner = false) => {
-    if (!organizationId || !supabase) return;
+    if (!organizationId || !supabase || !canManageOrgWideMembers) return;
     if (showSpinner) setRequestsRefreshing(true);
     try {
       const { data, error: reqError } = await supabase.rpc('list_organization_access_requests', { p_organization_id: organizationId });
@@ -324,7 +369,7 @@ export function TeamAccess() {
     } finally {
       if (showSpinner) setRequestsRefreshing(false);
     }
-  }, [organizationId]);
+  }, [organizationId, canManageOrgWideMembers]);
 
   useEffect(() => {
     void load();
@@ -345,6 +390,22 @@ export function TeamAccess() {
     };
   }, [reloadAccessRequests]);
 
+  const manageableBranches = useMemo(
+    () => branches.filter((branch) => hasPermission('team', 'manage_members', branch.id)),
+    [branches, hasPermission],
+  );
+
+  const defaultScopedBranchId = useMemo(
+    () => (canManageOrgWideMembers ? '' : manageableBranches[0]?.id || ''),
+    [canManageOrgWideMembers, manageableBranches],
+  );
+
+  const effectiveAssignBranchId = useMemo(() => {
+    if (canManageOrgWideMembers) return assignBranchId;
+    if (assignBranchId && manageableBranches.some((b) => b.id === assignBranchId)) return assignBranchId;
+    return manageableBranches[0]?.id || '';
+  }, [canManageOrgWideMembers, assignBranchId, manageableBranches]);
+
   const selectedProfile = profiles.find((profile) => profile.id === selectedId);
   const lastPathPart = pathname.split('/').filter(Boolean).at(-1) || '';
   const section: 'usuarios' | 'perfiles' | 'permisos' = ['usuarios', 'perfiles', 'permisos'].includes(lastPathPart)
@@ -356,14 +417,13 @@ export function TeamAccess() {
     permisos: 'Permisos y Gobernanza',
   };
   const sectionDescriptions = {
-    usuarios: 'Administra las cuentas del equipo, sus perfiles de acceso, su vínculo con fichas laborales y las políticas operativas activas.',
-    perfiles: 'Organiza funciones del equipo mediante perfiles claros o plantillas rápidas por área operativa.',
+    usuarios: 'Administra las cuentas del equipo, su alcance por sucursal, perfiles de acceso y políticas operativas activas.',
+    perfiles: 'Organiza funciones del equipo mediante perfiles claros, roles base del sistema y plantillas por área operativa.',
     permisos: 'Configura la matriz de permisos por módulo y las reglas críticas de descuentos comerciales, precios, devoluciones y nómina.',
   };
   const profileQuery = selectedId && section !== 'usuarios' ? `?perfil=${encodeURIComponent(selectedId)}` : '';
   const teamPage = (page: 'usuarios' | 'perfiles' | 'permisos') => `/operaciones/equipo/${page}${page === 'usuarios' ? '' : profileQuery}`;
 
-  // Map profile permissions for quick lookup on user cards and profile cards
   const permissionsByProfileId = useMemo(() => {
     const map = new Map<string, Set<string>>();
     for (const row of permissionRows) {
@@ -374,6 +434,74 @@ export function TeamAccess() {
     }
     return map;
   }, [permissionRows]);
+
+  const orgWideActorRoles = useMemo(() => {
+    if (!branchScopes.length) return roles;
+    return [...new Set(branchScopes.filter((s) => s.branch_id === null).map((s) => s.role).filter(Boolean))];
+  }, [branchScopes, roles]);
+
+  const actorRolesForBranch = useCallback(
+    (targetBranchId: string | null): string[] => {
+      if (!branchScopes.length) return roles;
+      const matching = branchScopes.filter((scope) =>
+        targetBranchId === null ? scope.branch_id === null : scope.branch_id === null || scope.branch_id === targetBranchId,
+      );
+      return [...new Set(matching.map((scope) => scope.role).filter(Boolean))];
+    },
+    [branchScopes, roles],
+  );
+
+  const canDelegateProfileForBranch = useCallback(
+    (profile: any, targetBranchId: string | null): boolean => {
+      if (!profile?.active || profile.profile_key === 'owner' || profile.base_role === 'owner') return false;
+      if (isOwner) return true;
+      if (
+        profile.base_role === 'admin' ||
+        profile.base_role === 'website_admin' ||
+        ['admin', 'website_admin'].includes(profile.profile_key)
+      ) {
+        return false;
+      }
+      const scopedRoles = actorRolesForBranch(targetBranchId);
+      if (!canActorManageBaseRole(scopedRoles, profile.base_role || '')) return false;
+      const profilePerms = permissionsByProfileId.get(profile.id);
+      if (!profilePerms) return true;
+      for (const permKey of profilePerms) {
+        const [mod, act] = permKey.split('.');
+        if (!hasPermission(mod, act, targetBranchId)) return false;
+      }
+      return true;
+    },
+    [isOwner, actorRolesForBranch, permissionsByProfileId, hasPermission],
+  );
+
+  const canEditSelectedProfile = useMemo(() => {
+    if (!canManageProfiles) return false;
+    if (!selectedProfile) return true;
+    if (selectedProfile.profile_key === 'owner' || selectedProfile.base_role === 'owner') return false;
+    if (isOwner) return true;
+    if (
+      selectedProfile.base_role === 'admin' ||
+      selectedProfile.base_role === 'website_admin' ||
+      ['admin', 'website_admin'].includes(selectedProfile.profile_key)
+    ) {
+      return false;
+    }
+    return canActorManageBaseRole(orgWideActorRoles, selectedProfile.base_role || '');
+  }, [canManageProfiles, selectedProfile, isOwner, orgWideActorRoles]);
+
+  const canUsePreset = useCallback(
+    (preset: RolePreset): boolean => {
+      if (!canEditSelectedProfile) return false;
+      if (isOwner) return true;
+      if (!canActorManageBaseRole(orgWideActorRoles, preset.baseRole)) return false;
+      return preset.permissions.every((permKey) => {
+        const [mod, act] = permKey.split('.');
+        return hasPermission(mod, act, null);
+      });
+    },
+    [canEditSelectedProfile, isOwner, orgWideActorRoles, hasPermission],
+  );
 
   const personnelLookup = useMemo(() => {
     const byId = new Map<string, any>();
@@ -434,10 +562,10 @@ export function TeamAccess() {
           personnelLookup.byEmail.get(emailLower) ||
           null;
         const effectivePerms = new Set<string>();
-        const isOwner = account.memberships.some((m: any) => m.active && m.role === 'owner');
+        const isOwnerAccount = account.memberships.some((m: any) => m.active && m.role === 'owner');
         for (const m of account.memberships) {
           if (!m.active) continue;
-          const pSet = permissionsByProfileId.get(m.access_profile_id);
+          const pSet = permissionsByProfileId.get(m.profile_id || m.access_profile_id);
           if (pSet) {
             pSet.forEach((perm) => effectivePerms.add(perm));
           }
@@ -445,7 +573,7 @@ export function TeamAccess() {
         return {
           ...account,
           linkedPersonnel,
-          isOwner,
+          isOwner: isOwnerAccount,
           effectivePerms,
         };
       })
@@ -464,11 +592,12 @@ export function TeamAccess() {
   const memberCountByProfileId = useMemo(() => {
     const counts = new Map<string, { total: number; active: number }>();
     for (const member of members) {
-      if (!member.access_profile_id) continue;
-      const prev = counts.get(member.access_profile_id) || { total: 0, active: 0 };
+      const pid = member.profile_id || member.access_profile_id;
+      if (!pid) continue;
+      const prev = counts.get(pid) || { total: 0, active: 0 };
       prev.total += 1;
       if (member.active) prev.active += 1;
-      counts.set(member.access_profile_id, prev);
+      counts.set(pid, prev);
     }
     return counts;
   }, [members]);
@@ -483,18 +612,24 @@ export function TeamAccess() {
       if (accountState === 'unassigned' && account.memberships.length > 0) return false;
       if (accountState === 'with_personnel' && !hasPersonnel) return false;
       if (accountState === 'without_personnel' && hasPersonnel) return false;
-      if (profileFilterId !== 'all' && !account.memberships.some((m: any) => m.access_profile_id === profileFilterId)) {
+      if (profileFilterId !== 'all' && !account.memberships.some((m: any) => (m.profile_id || m.access_profile_id) === profileFilterId)) {
         return false;
       }
-      const haystack = `${account.full_name} ${account.email} ${account.linkedPersonnel?.full_name || ''} ${account.linkedPersonnel?.position_title || ''} ${account.memberships
-        .map((membership: any) => membership.access_profiles?.name || roleNames[membership.role] || membership.role)
+      if (branchFilterId === 'global' && !account.memberships.some((m: any) => !m.branch_id)) {
+        return false;
+      }
+      if (branchFilterId !== 'all' && branchFilterId !== 'global' && !account.memberships.some((m: any) => m.branch_id === branchFilterId)) {
+        return false;
+      }
+      const haystack = `${account.full_name} ${account.email} ${account.linkedPersonnel?.full_name || ''} ${account.linkedPersonnel?.job_title || ''} ${account.linkedPersonnel?.department || ''} ${account.memberships
+        .map((membership: any) => `${membership.access_profiles?.name || roleNames[membership.role] || membership.role} ${membership.branch_name || 'Todas las sucursales'} ${membership.branch_code || ''}`)
         .join(' ')}`
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLocaleLowerCase('es');
       return !query || haystack.includes(query);
     });
-  }, [accountDirectory, accountQuery, accountState, profileFilterId]);
+  }, [accountDirectory, accountQuery, accountState, profileFilterId, branchFilterId]);
 
   const selectProfile = (id: string) => {
     setSelectedId(id);
@@ -506,12 +641,14 @@ export function TeamAccess() {
       setProfileName('');
       setProfileDescription('');
       setProfileKey('nuevo_perfil');
+      setProfileBaseRole('advisor');
       setMatrix({});
       return;
     }
     setProfileName(selected.name);
     setProfileDescription(selected.description || '');
     setProfileKey(selected.profile_key);
+    setProfileBaseRole(selected.base_role || 'advisor');
     setMatrix(
       Object.fromEntries(
         permissionRows.filter((row) => row.profile_id === id).map((row) => [`${row.module_key}.${row.action_key}`, row.enabled]),
@@ -519,38 +656,21 @@ export function TeamAccess() {
     );
   };
 
-  const setPermission = (key: string, enabled: boolean) =>
-    setMatrix((current) => {
-      const next = { ...current, [key]: enabled };
-      const [moduleKey, actionKey] = key.split('.');
-      if (actionKey === 'edit' && enabled) next[`${moduleKey}.view`] = true;
-      if (actionKey === 'view' && !enabled) next[`${moduleKey}.edit`] = false;
-      if (moduleKey === 'team' && actionKey === 'view' && !enabled) next['team.manage_suggestions'] = false;
-      if (moduleKey === 'team' && actionKey === 'manage_suggestions' && enabled) next['team.view'] = true;
-      if (moduleKey === 'personnel' && actionKey === 'view' && !enabled) {
-        next['personnel.view_compensation'] = false;
-        next['personnel.edit_compensation'] = false;
-      }
-      if (moduleKey === 'personnel' && actionKey === 'view_compensation' && enabled) next['personnel.view'] = true;
-      if (moduleKey === 'finance' && actionKey === 'manage_finance' && enabled) next['finance.view'] = true;
-      if (moduleKey === 'finance' && actionKey === 'view' && !enabled) next['finance.manage_finance'] = false;
-      if (moduleKey === 'personnel' && actionKey === 'view_compensation' && !enabled) next['personnel.edit_compensation'] = false;
-      if (moduleKey === 'personnel' && actionKey === 'edit_compensation' && enabled) {
-        next['personnel.view'] = true;
-        next['personnel.edit'] = true;
-        next['personnel.view_compensation'] = true;
-      }
-      if (moduleKey === 'personnel' && actionKey === 'edit' && !enabled) next['personnel.edit_compensation'] = false;
-      return next;
-    });
+  const setPermission = (key: string, enabled: boolean) => {
+    if (!canEditSelectedProfile) return;
+    setMatrix((current) => applyPermissionMatrixChange(current, key, enabled));
+  };
 
   const applyRolePreset = (preset: RolePreset) => {
-    if (!canManageProfiles) return;
+    if (!canUsePreset(preset)) return;
     const nextMatrix: Record<string, boolean> = {};
     for (const permKey of preset.permissions) {
       nextMatrix[permKey] = true;
     }
     setMatrix(nextMatrix);
+    if (!selectedProfile?.is_system) {
+      setProfileBaseRole(preset.baseRole);
+    }
     if (!selectedId) {
       setProfileName(preset.name);
       setProfileKey(preset.keySuggestion);
@@ -558,12 +678,12 @@ export function TeamAccess() {
     } else if (!profileDescription.trim()) {
       setProfileDescription(preset.description);
     }
-    setMessage(`Plantilla "${preset.name}" aplicada en la matriz. Guarda el perfil para confirmar los cambios.`);
+    setMessage(`Plantilla "${preset.name}" aplicada en la matriz (${roleNames[preset.baseRole] || preset.baseRole}). Guarda el perfil para confirmar los cambios.`);
     setError('');
   };
 
   const applyBulkMatrixAction = (mode: 'all_view' | 'all_edit' | 'clear_all') => {
-    if (!canManageProfiles) return;
+    if (!canEditSelectedProfile) return;
     if (mode === 'clear_all') {
       setMatrix({});
       return;
@@ -571,8 +691,10 @@ export function TeamAccess() {
     setMatrix((current) => {
       const next = { ...current };
       for (const [moduleKey] of modules) {
-        next[`${moduleKey}.view`] = true;
-        if (mode === 'all_edit') {
+        if (isOwner || hasPermission(moduleKey, 'view', null)) {
+          next[`${moduleKey}.view`] = true;
+        }
+        if (mode === 'all_edit' && (isOwner || hasPermission(moduleKey, 'edit', null))) {
           next[`${moduleKey}.edit`] = true;
         }
       }
@@ -581,13 +703,12 @@ export function TeamAccess() {
   };
 
   const toggleModuleRowAll = (moduleKey: string, enable: boolean) => {
-    if (!canManageProfiles) return;
+    if (!canEditSelectedProfile) return;
     setMatrix((current) => {
-      const next = { ...current };
-      next[`${moduleKey}.view`] = enable;
-      next[`${moduleKey}.edit`] = enable;
+      let next = applyPermissionMatrixChange(current, `${moduleKey}.view`, enable);
+      next = applyPermissionMatrixChange(next, `${moduleKey}.edit`, enable && (isOwner || hasPermission(moduleKey, 'edit', null)));
       if (!enable) {
-        next[`${moduleKey}.delete_records`] = false;
+        next = applyPermissionMatrixChange(next, `${moduleKey}.delete_records`, false);
       }
       return next;
     });
@@ -595,7 +716,7 @@ export function TeamAccess() {
 
   const saveProfile = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canManageProfiles || saving) return;
+    if (!canEditSelectedProfile || saving) return;
     setSaving(true);
     setMessage('');
     setError('');
@@ -612,7 +733,7 @@ export function TeamAccess() {
       ...modules.map(([module]) => ({
         module_key: module,
         action_key: 'delete_records',
-        enabled: Boolean(matrix[`${module}.delete_records`]),
+        enabled: module === 'personnel' ? false : Boolean(matrix[`${module}.delete_records`]),
       })),
     ];
     try {
@@ -622,11 +743,12 @@ export function TeamAccess() {
         p_name: profileName,
         p_description: profileDescription,
         p_permissions: entries,
+        p_base_role: selectedProfile?.is_system ? selectedProfile.base_role : profileBaseRole,
       });
       if (saveError) throw saveError;
       setSelectedId(data);
       await load(data);
-      setMessage('Perfil guardado. Los permisos se aplican desde la base de datos.');
+      setMessage('Perfil guardado. Los permisos y el rol base se aplican desde la base de datos.');
       await refreshAccess();
     } catch (saveError: any) {
       setError(saveError.message || 'No se pudo guardar el perfil.');
@@ -640,6 +762,7 @@ export function TeamAccess() {
     setProfileName('');
     setProfileDescription('');
     setProfileKey('nuevo_perfil');
+    setProfileBaseRole('advisor');
     setMatrix({});
     setMessage('');
     setError('');
@@ -652,23 +775,26 @@ export function TeamAccess() {
     setSaving(true);
     setMessage('');
     setError('');
+    const branchIdArg = effectiveAssignBranchId || null;
     try {
       const { data, error: assignError } = await supabase.rpc('create_organization_access_invitation', {
         p_organization_id: organizationId,
         p_email: email.trim(),
         p_profile_id: assignProfileId,
+        p_branch_id: branchIdArg,
       });
       if (assignError) throw assignError;
       const invitedTargetEmail = data?.email || email.trim();
       setEmail('');
       await load();
+      const targetBranchName = branchIdArg ? branches.find((b) => b.id === branchIdArg)?.name || 'la sucursal seleccionada' : 'todas las sucursales';
       if (data?.status === 'assigned') {
         setLastInvitationEmail('');
-        setMessage(`Acceso asignado a ${data.email}. Los permisos se actualizarán en su sesión.`);
+        setMessage(`Acceso asignado a ${data.email} (${targetBranchName}). Los permisos se actualizarán en su sesión.`);
       } else {
         setLastInvitationEmail(invitedTargetEmail);
         setMessage(
-          `Invitación creada para ${invitedTargetEmail}. Vence el ${
+          `Invitación creada para ${invitedTargetEmail} (${targetBranchName}). Vence el ${
             data?.expires_at ? new Date(data.expires_at).toLocaleDateString('es-EC') : 'en 7 días'
           }. Comunica el acceso por un canal verificado; la aplicación no envía correos.`,
         );
@@ -680,7 +806,7 @@ export function TeamAccess() {
     }
   };
 
-  const assignInlineProfileToAccount = async (accountEmail: string, profileIdToAssign: string) => {
+  const assignInlineProfileToAccount = async (accountEmail: string, profileIdToAssign: string, branchIdToAssign: string | null) => {
     if (!canManageMembers || saving || !accountEmail || !profileIdToAssign) return;
     setSaving(true);
     setMessage('');
@@ -690,19 +816,44 @@ export function TeamAccess() {
         p_organization_id: organizationId,
         p_email: accountEmail.trim(),
         p_profile_id: profileIdToAssign,
+        p_branch_id: branchIdToAssign,
       });
       if (assignError) throw assignError;
       setInlineAssignByEmail((prev) => ({ ...prev, [accountEmail]: '' }));
       await load();
       const assignedProfileName = profiles.find((p) => p.id === profileIdToAssign)?.name || 'perfil seleccionado';
+      const branchLabel = branchIdToAssign ? branches.find((b) => b.id === branchIdToAssign)?.name || 'sucursal' : 'todas las sucursales';
       setMessage(
         data?.status === 'assigned'
-          ? `Perfil "${assignedProfileName}" asignado a ${accountEmail}.`
-          : `Invitación de perfil "${assignedProfileName}" registrada para ${accountEmail}.`,
+          ? `Perfil "${assignedProfileName}" asignado a ${accountEmail} (${branchLabel}).`
+          : `Invitación de perfil "${assignedProfileName}" registrada para ${accountEmail} (${branchLabel}).`,
       );
       await refreshAccess();
     } catch (assignError: any) {
       setError(assignError.message || 'No se pudo asignar el perfil a la cuenta.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const changeMembershipBranch = async (member: any, nextBranchId: string) => {
+    if (!canManageOrgWideMembers || saving || member.role === 'owner') return;
+    setSaving(true);
+    setMessage('');
+    setError('');
+    try {
+      const { error: branchError } = await supabase.rpc('assign_visualcorp_membership_branch', {
+        p_organization_id: organizationId,
+        p_membership_id: member.id,
+        p_branch_id: nextBranchId || null,
+      });
+      if (branchError) throw branchError;
+      await load();
+      const label = nextBranchId ? branches.find((b) => b.id === nextBranchId)?.name || 'Sucursal asignada' : 'Todas las sucursales';
+      setMessage(`Alcance actualizado a "${label}".`);
+      await refreshAccess();
+    } catch (branchError: any) {
+      setError(branchError.message || 'No se pudo actualizar la sucursal de la membresía.');
     } finally {
       setSaving(false);
     }
@@ -726,7 +877,16 @@ export function TeamAccess() {
   };
 
   const approveAccessRequest = async (req: any) => {
-    const profileId = requestProfilesById[req.id] || assignableProfiles[0]?.id || '';
+    const reqBranchId = canManageOrgWideMembers
+      ? requestBranchesById[req.id] || ''
+      : requestBranchesById[req.id] && manageableBranches.some((b) => b.id === requestBranchesById[req.id])
+      ? requestBranchesById[req.id]
+      : defaultScopedBranchId;
+    const branchArg = reqBranchId || null;
+    const eligibleProfiles = profiles.filter((p) => canDelegateProfileForBranch(p, branchArg));
+    const profileId = requestProfilesById[req.id] && eligibleProfiles.some((p) => p.id === requestProfilesById[req.id])
+      ? requestProfilesById[req.id]
+      : eligibleProfiles[0]?.id || '';
     if (!canManageMembers || requestLoadingId || !profileId) return;
     setRequestLoadingId(req.id);
     setMessage('');
@@ -735,11 +895,13 @@ export function TeamAccess() {
       const { data, error: approveError } = await supabase.rpc('approve_organization_access_request', {
         p_request_id: req.id,
         p_profile_id: profileId,
+        p_branch_id: branchArg,
       });
       if (approveError) throw approveError;
       await load();
       const profName = data?.profile_name || profiles.find((p) => p.id === profileId)?.name || 'perfil asignado';
-      setMessage(`Acceso aprobado para ${data?.email || req.email} con el perfil "${profName}".`);
+      const branchText = branchArg ? branches.find((b) => b.id === branchArg)?.name || 'sucursal' : 'todas las sucursales';
+      setMessage(`Acceso aprobado para ${data?.email || req.email} con el perfil "${profName}" (${branchText}).`);
     } catch (approveError: any) {
       setError(approveError.message || 'No se pudo aprobar la solicitud de acceso.');
     } finally {
@@ -748,7 +910,7 @@ export function TeamAccess() {
   };
 
   const dismissAccessRequest = async (req: any) => {
-    if (!canManageMembers || requestLoadingId) return;
+    if (!canManageOrgWideMembers || requestLoadingId) return;
     setRequestLoadingId(req.id);
     setMessage('');
     setError('');
@@ -800,7 +962,7 @@ export function TeamAccess() {
   };
 
   const setAccountAccessActive = async (account: any, active: boolean) => {
-    if (!canManageMembers || saving || account.memberships.some((membership: any) => membership.role === 'owner')) return;
+    if (!canManageOrgWideMembers || saving || account.memberships.some((membership: any) => membership.role === 'owner')) return;
     if (
       !active &&
       !(await confirm({
@@ -847,7 +1009,7 @@ export function TeamAccess() {
   };
 
   const removeAccountAccess = async (account: any) => {
-    if (!canManageMembers || saving || !account.memberships.length || account.memberships.some((membership: any) => membership.role === 'owner'))
+    if (!canManageOrgWideMembers || saving || !account.memberships.length || account.memberships.some((membership: any) => membership.role === 'owner'))
       return;
     if (
       !(await confirm({
@@ -887,7 +1049,7 @@ export function TeamAccess() {
   };
 
   const setProfileActive = async () => {
-    if (!selectedProfile || !canManageProfiles || saving || selectedProfile.profile_key === 'owner') return;
+    if (!selectedProfile || !canEditSelectedProfile || saving || selectedProfile.profile_key === 'owner') return;
     setSaving(true);
     setMessage('');
     setError('');
@@ -912,8 +1074,9 @@ export function TeamAccess() {
   };
 
   const visibleProfiles = profiles.filter((profile) => profile.profile_key !== 'owner');
-  const assignableProfiles = profiles.filter(
-    (profile) => profile.active && profile.profile_key !== 'owner' && (roles.includes('owner') || !['admin', 'website_admin'].includes(profile.profile_key)),
+  const assignableProfilesForInvite = useMemo(
+    () => profiles.filter((profile) => canDelegateProfileForBranch(profile, effectiveAssignBranchId || null)),
+    [profiles, canDelegateProfileForBranch, effectiveAssignBranchId],
   );
   const assignedAccounts = accountDirectory.filter((account) => account.memberships.length > 0).length;
 
@@ -974,7 +1137,7 @@ export function TeamAccess() {
           <Users size={18} />
           <span className="team-subpage-copy">
             <b>Usuarios</b>
-            <small>Cuentas, roles y fichas</small>
+            <small>Cuentas, sucursales y fichas</small>
           </span>
           <span className="team-subpage-count">{loading || loadFailed ? '—' : accountDirectory.length}</span>
         </Link>
@@ -1123,13 +1286,13 @@ export function TeamAccess() {
                   <div className="team-account-filters team-account-filters-extended">
                     <label className="team-account-search">
                       <Search size={16} aria-hidden="true" />
-                      <span className="sr-only">Buscar por nombre o correo</span>
+                      <span className="sr-only">Buscar por nombre, cargo o correo</span>
                       <input
                         type="search"
-                        aria-label="Buscar por nombre o correo"
+                        aria-label="Buscar por nombre, cargo o correo"
                         value={accountQuery}
                         onChange={(event) => setAccountQuery(event.target.value)}
-                        placeholder="Buscar por nombre o correo"
+                        placeholder="Buscar por nombre, cargo o correo"
                       />
                     </label>
                     <label className="team-account-state">
@@ -1139,6 +1302,18 @@ export function TeamAccess() {
                         {profiles.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="team-account-state">
+                      <span className="sr-only">Filtrar por sucursal</span>
+                      <select aria-label="Filtrar por sucursal" value={branchFilterId} onChange={(event) => setBranchFilterId(event.target.value)}>
+                        <option value="all">Todas las sucursales</option>
+                        <option value="global">Acceso global</option>
+                        {branches.map((branch) => (
+                          <option key={branch.id} value={branch.id}>
+                            {branch.name} ({branch.code})
                           </option>
                         ))}
                       </select>
@@ -1196,22 +1371,39 @@ export function TeamAccess() {
                         <Search size={20} />
                       </span>
                       <b>No encontramos coincidencias</b>
-                      <span>Prueba con otro nombre, correo, perfil o estado.</span>
+                      <span>Prueba con otro nombre, cargo, sucursal, perfil o estado.</span>
                     </div>
                   ) : (
                     <div className="team-access-list">
                       {filteredAccounts.map((account) => {
                         const accountActive = account.memberships.some((membership: any) => membership.active);
                         const protectedOwner = account.memberships.some((membership: any) => membership.role === 'owner');
+                        const hasAdminMembership = account.memberships.some((membership: any) => ['admin', 'website_admin'].includes(membership.role));
                         const avatarUrl = account.googleAccount?.avatar_url;
                         const linkedWorker = account.linkedPersonnel;
                         const canSellPos = account.isOwner || account.effectivePerms.has('sales.edit');
                         const canSettleRefund = account.isOwner || account.effectivePerms.has('sales.settle_refund');
                         const canManageSalaries = account.isOwner || account.effectivePerms.has('personnel.edit_compensation');
                         const canEditPrices = account.isOwner || account.effectivePerms.has('catalog_admin.edit_prices');
-                        const assignedProfileIds = new Set(account.memberships.map((m: any) => m.access_profile_id));
-                        const availableProfilesForUser = assignableProfiles.filter((p) => !assignedProfileIds.has(p.id));
-                        const inlineSelectedProfile = inlineAssignByEmail[account.email] || '';
+
+                        const inlineBranchValue = canManageOrgWideMembers
+                          ? inlineBranchByEmail[account.email] ?? ''
+                          : inlineBranchByEmail[account.email] && manageableBranches.some((b) => b.id === inlineBranchByEmail[account.email])
+                          ? inlineBranchByEmail[account.email]
+                          : defaultScopedBranchId;
+                        const inlineBranchId = inlineBranchValue || null;
+                        const existingScopeKeys = new Set(
+                          account.memberships.map((m: any) => `${m.profile_id || m.access_profile_id}:${m.branch_id || 'global'}`),
+                        );
+                        const availableProfilesForUser = profiles.filter(
+                          (p) =>
+                            canDelegateProfileForBranch(p, inlineBranchId) &&
+                            !existingScopeKeys.has(`${p.id}:${inlineBranchId || 'global'}`),
+                        );
+                        const inlineSelectedProfile =
+                          inlineAssignByEmail[account.email] && availableProfilesForUser.some((p) => p.id === inlineAssignByEmail[account.email])
+                            ? inlineAssignByEmail[account.email]
+                            : '';
 
                         return (
                           <article className="team-account-row" key={account.user_id}>
@@ -1289,72 +1481,123 @@ export function TeamAccess() {
 
                             {account.memberships.length > 0 ? (
                               <div className="team-account-profiles" aria-label={`Perfiles de ${account.full_name || account.email || 'la cuenta'}`}>
-                                {account.memberships.map((member: any) => (
-                                  <div className={'team-account-profile ' + (member.active ? '' : 'inactive')} key={member.id}>
-                                    <span>
-                                      <b>{member.access_profiles?.name || roleNames[member.role] || member.role}</b>
-                                      <small>{member.active ? 'Activo' : 'Pausado'}</small>
-                                    </span>
-                                    <div className="team-member-chip-actions">
-                                      {member.access_profile_id && (
-                                        <Link
-                                          className="team-profile-inspect-link"
-                                          to={`/operaciones/equipo/permisos?perfil=${encodeURIComponent(member.access_profile_id)}`}
-                                          title="Ver permisos de este perfil"
-                                        >
-                                          Permisos
-                                        </Link>
-                                      )}
-                                      {canManageMembers && member.role !== 'owner' && (
-                                        <button
-                                          type="button"
-                                          className="button button-outline team-member-toggle"
-                                          disabled={saving}
-                                          onClick={() => void setMemberActive(member)}
-                                          aria-label={`${member.active ? 'Pausar' : 'Reactivar'} perfil ${
-                                            member.access_profiles?.name || roleNames[member.role] || member.role
-                                          } para ${account.full_name || account.email}`}
-                                        >
-                                          {member.active ? 'Pausar' : 'Reactivar'}
-                                        </button>
-                                      )}
+                                {account.memberships.map((member: any) => {
+                                  const memberProfileId = member.profile_id || member.access_profile_id;
+                                  const canToggleThisMember =
+                                    canManageMembers &&
+                                    member.role !== 'owner' &&
+                                    (isOwner || !['admin', 'website_admin'].includes(member.role)) &&
+                                    (member.branch_id ? hasPermission('team', 'manage_members', member.branch_id) : canManageOrgWideMembers);
+                                  const canReassignBranch =
+                                    canManageOrgWideMembers &&
+                                    member.role !== 'owner' &&
+                                    (isOwner || !['admin', 'website_admin'].includes(member.role)) &&
+                                    branches.length > 0;
+
+                                  return (
+                                    <div className={'team-account-profile ' + (member.active ? '' : 'inactive')} key={member.id}>
+                                      <span>
+                                        <b>{member.access_profiles?.name || roleNames[member.role] || member.role}</b>
+                                        <span className={`team-branch-badge ${member.branch_id ? 'is-branch' : 'is-global'}`}>
+                                          <Building2 size={10} aria-hidden="true" />
+                                          {member.branch_id
+                                            ? member.branch_name || member.branch_code || 'Sucursal'
+                                            : 'Todas las sucursales'}
+                                        </span>
+                                        <small>{member.active ? 'Activo' : 'Pausado'}</small>
+                                      </span>
+                                      <div className="team-member-chip-actions">
+                                        {canReassignBranch && (
+                                          <select
+                                            className="team-member-branch-select"
+                                            aria-label={`Sucursal para ${member.access_profiles?.name || member.role} de ${account.full_name || account.email}`}
+                                            value={member.branch_id || ''}
+                                            disabled={saving}
+                                            onChange={(e) => void changeMembershipBranch(member, e.target.value)}
+                                          >
+                                            <option value="">Todas las sucursales</option>
+                                            {branches.map((b) => (
+                                              <option key={b.id} value={b.id}>
+                                                {b.name} ({b.code})
+                                              </option>
+                                            ))}
+                                          </select>
+                                        )}
+                                        {memberProfileId && (
+                                          <Link
+                                            className="team-profile-inspect-link"
+                                            to={`/operaciones/equipo/permisos?perfil=${encodeURIComponent(memberProfileId)}`}
+                                            title="Ver permisos de este perfil"
+                                          >
+                                            Permisos
+                                          </Link>
+                                        )}
+                                        {canToggleThisMember && (
+                                          <button
+                                            type="button"
+                                            className="button button-outline team-member-toggle"
+                                            disabled={saving}
+                                            onClick={() => void setMemberActive(member)}
+                                            aria-label={`${member.active ? 'Pausar' : 'Reactivar'} perfil ${
+                                              member.access_profiles?.name || roleNames[member.role] || member.role
+                                            } para ${account.full_name || account.email}`}
+                                          >
+                                            {member.active ? 'Pausar' : 'Reactivar'}
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             ) : (
                               <p className="team-account-unassigned">La cuenta ya inició sesión, pero todavía no tiene perfiles asignados.</p>
                             )}
 
                             <div className="team-account-actions">
-                              {canManageMembers && account.email && availableProfilesForUser.length > 0 && (
+                              {canManageMembers && account.email && (canManageOrgWideMembers || manageableBranches.length > 0) && (
                                 <div className="team-inline-assign">
                                   <select
-                                    aria-label={`Agregar perfil a ${account.full_name || account.email}`}
-                                    value={inlineSelectedProfile}
-                                    onChange={(e) => setInlineAssignByEmail((prev) => ({ ...prev, [account.email]: e.target.value }))}
+                                    aria-label={`Sucursal al añadir perfil a ${account.full_name || account.email}`}
+                                    value={inlineBranchValue}
+                                    onChange={(e) => setInlineBranchByEmail((prev) => ({ ...prev, [account.email]: e.target.value }))}
                                     disabled={saving}
                                   >
-                                    <option value="">+ Añadir perfil…</option>
-                                    {availableProfilesForUser.map((p) => (
-                                      <option key={p.id} value={p.id}>
-                                        {p.name}
+                                    {canManageOrgWideMembers && <option value="">Todas las sucursales</option>}
+                                    {manageableBranches.map((b) => (
+                                      <option key={b.id} value={b.id}>
+                                        {b.name} ({b.code})
                                       </option>
                                     ))}
                                   </select>
+                                  {availableProfilesForUser.length > 0 && (
+                                    <select
+                                      aria-label={`Agregar perfil a ${account.full_name || account.email}`}
+                                      value={inlineSelectedProfile}
+                                      onChange={(e) => setInlineAssignByEmail((prev) => ({ ...prev, [account.email]: e.target.value }))}
+                                      disabled={saving}
+                                    >
+                                      <option value="">+ Añadir perfil…</option>
+                                      {availableProfilesForUser.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                          {p.name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
                                   {inlineSelectedProfile && (
                                     <button
                                       type="button"
                                       className="button button-dark team-inline-assign-btn"
                                       disabled={saving}
-                                      onClick={() => void assignInlineProfileToAccount(account.email, inlineSelectedProfile)}
+                                      onClick={() => void assignInlineProfileToAccount(account.email, inlineSelectedProfile, inlineBranchId)}
                                     >
                                       <Plus size={13} /> Asignar
                                     </button>
                                   )}
                                 </div>
                               )}
-                              {canManageMembers && !protectedOwner && account.memberships.length > 0 && (
+                              {canManageOrgWideMembers && !protectedOwner && account.memberships.length > 0 && (isOwner || !hasAdminMembership) && (
                                 <>
                                   <button
                                     type="button"
@@ -1408,7 +1651,7 @@ export function TeamAccess() {
                       <div>
                         <span className="eyebrow">COLA DE INGRESO</span>
                         <h2 id="team-requests-title">Solicitudes de acceso</h2>
-                        <p>Cuentas que iniciaron sesión sin invitación y esperan que un administrador les asigne perfil.</p>
+                        <p>Cuentas que iniciaron sesión sin invitación y esperan que un administrador global les asigne perfil.</p>
                       </div>
                       <div className="team-requests-head-actions">
                         <span
@@ -1417,21 +1660,27 @@ export function TeamAccess() {
                         >
                           {accessRequests.length}
                         </span>
-                        <button
-                          type="button"
-                          className="button button-outline team-requests-refresh"
-                          disabled={requestsRefreshing}
-                          onClick={() => void reloadAccessRequests(true)}
-                          aria-label="Actualizar solicitudes de acceso"
-                          title="Actualizar solicitudes de acceso"
-                        >
-                          <RotateCcw size={13} className={requestsRefreshing ? 'is-spinning' : ''} />
-                          <span>{requestsRefreshing ? 'Actualizando…' : 'Actualizar'}</span>
-                        </button>
+                        {canManageOrgWideMembers && (
+                          <button
+                            type="button"
+                            className="button button-outline team-requests-refresh"
+                            disabled={requestsRefreshing}
+                            onClick={() => void reloadAccessRequests(true)}
+                            aria-label="Actualizar solicitudes de acceso"
+                            title="Actualizar solicitudes de acceso"
+                          >
+                            <RotateCcw size={13} className={requestsRefreshing ? 'is-spinning' : ''} />
+                            <span>{requestsRefreshing ? 'Actualizando…' : 'Actualizar'}</span>
+                          </button>
+                        )}
                       </div>
                     </header>
 
-                    {accessRequests.length === 0 ? (
+                    {!canManageOrgWideMembers ? (
+                      <p className="team-access-help">
+                        La cola global de solicitudes solo está disponible para administradores con alcance en toda la organización.
+                      </p>
+                    ) : accessRequests.length === 0 ? (
                       <div className="team-requests-empty" role="status">
                         <span className="team-empty-mark">
                           <UserCheck size={18} />
@@ -1444,7 +1693,13 @@ export function TeamAccess() {
                     ) : (
                       <ul className="team-request-list">
                         {accessRequests.map((req) => {
-                          const reqSelectedProfile = requestProfilesById[req.id] ?? (assignableProfiles[0]?.id || '');
+                          const reqBranchValue = requestBranchesById[req.id] ?? '';
+                          const reqBranchId = reqBranchValue || null;
+                          const eligibleProfiles = profiles.filter((p) => canDelegateProfileForBranch(p, reqBranchId));
+                          const reqSelectedProfile =
+                            requestProfilesById[req.id] && eligibleProfiles.some((p) => p.id === requestProfilesById[req.id])
+                              ? requestProfilesById[req.id]
+                              : eligibleProfiles[0]?.id || '';
                           const isRowLoading = requestLoadingId === req.id;
                           const seenAt = req.last_seen_at || req.requested_at;
                           const attempts = Number(req.request_count) || 1;
@@ -1473,55 +1728,72 @@ export function TeamAccess() {
                                 </div>
                               </div>
 
-                              {canManageMembers ? (
-                                <div className="team-request-controls">
-                                  <label className="team-request-select-wrap">
-                                    <span className="sr-only">Perfil para {req.full_name || req.email}</span>
-                                    <select
-                                      aria-label={`Perfil para ${req.full_name || req.email}`}
-                                      value={reqSelectedProfile}
-                                      disabled={isRowLoading || assignableProfiles.length === 0}
-                                      onChange={(event) =>
-                                        setRequestProfilesById((prev) => ({
-                                          ...prev,
-                                          [req.id]: event.target.value,
-                                        }))
-                                      }
-                                    >
-                                      {assignableProfiles.length === 0 ? (
-                                        <option value="">Sin perfiles asignables</option>
-                                      ) : (
-                                        assignableProfiles.map((profile) => (
-                                          <option key={profile.id} value={profile.id}>
-                                            {profile.name}
-                                          </option>
-                                        ))
-                                      )}
-                                    </select>
-                                  </label>
-                                  <div className="team-request-buttons">
-                                    <button
-                                      type="button"
-                                      className="button button-dark team-request-approve"
-                                      disabled={isRowLoading || !reqSelectedProfile}
-                                      onClick={() => void approveAccessRequest(req)}
-                                    >
-                                      <Check size={14} />
-                                      {isRowLoading ? 'Procesando…' : 'Aprobar'}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="button button-outline team-request-dismiss"
-                                      disabled={isRowLoading}
-                                      onClick={() => void dismissAccessRequest(req)}
-                                    >
-                                      Descartar
-                                    </button>
-                                  </div>
+                              <div className="team-request-controls">
+                                <label className="team-request-select-wrap">
+                                  <span className="sr-only">Sucursal para {req.full_name || req.email}</span>
+                                  <select
+                                    aria-label={`Sucursal para ${req.full_name || req.email}`}
+                                    value={reqBranchValue}
+                                    disabled={isRowLoading}
+                                    onChange={(event) =>
+                                      setRequestBranchesById((prev) => ({
+                                        ...prev,
+                                        [req.id]: event.target.value,
+                                      }))
+                                    }
+                                  >
+                                    <option value="">Todas las sucursales</option>
+                                    {branches.map((branch) => (
+                                      <option key={branch.id} value={branch.id}>
+                                        {branch.name} ({branch.code})
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                                <label className="team-request-select-wrap">
+                                  <span className="sr-only">Perfil para {req.full_name || req.email}</span>
+                                  <select
+                                    aria-label={`Perfil para ${req.full_name || req.email}`}
+                                    value={reqSelectedProfile}
+                                    disabled={isRowLoading || eligibleProfiles.length === 0}
+                                    onChange={(event) =>
+                                      setRequestProfilesById((prev) => ({
+                                        ...prev,
+                                        [req.id]: event.target.value,
+                                      }))
+                                    }
+                                  >
+                                    {eligibleProfiles.length === 0 ? (
+                                      <option value="">Sin perfiles asignables</option>
+                                    ) : (
+                                      eligibleProfiles.map((profile) => (
+                                        <option key={profile.id} value={profile.id}>
+                                          {profile.name}
+                                        </option>
+                                      ))
+                                    )}
+                                  </select>
+                                </label>
+                                <div className="team-request-buttons">
+                                  <button
+                                    type="button"
+                                    className="button button-dark team-request-approve"
+                                    disabled={isRowLoading || !reqSelectedProfile}
+                                    onClick={() => void approveAccessRequest(req)}
+                                  >
+                                    <Check size={14} />
+                                    {isRowLoading ? 'Procesando…' : 'Aprobar'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="button button-outline team-request-dismiss"
+                                    disabled={isRowLoading}
+                                    onClick={() => void dismissAccessRequest(req)}
+                                  >
+                                    Descartar
+                                  </button>
                                 </div>
-                              ) : (
-                                <p className="team-access-help">Solo un administrador puede aprobar o descartar esta solicitud.</p>
-                              )}
+                              </div>
                             </li>
                           );
                         })}
@@ -1534,7 +1806,7 @@ export function TeamAccess() {
                       <div>
                         <span className="eyebrow">NUEVO ACCESO</span>
                         <h2 id="team-invite-title">Asignar o invitar por correo</h2>
-                        <p>Agrega una cuenta Google al espacio y asígnale su perfil inicial.</p>
+                        <p>Agrega una cuenta Google al espacio y asígnale su perfil y sucursal.</p>
                       </div>
                       <span className="team-panel-mark is-accent">
                         <UserPlus size={18} />
@@ -1555,10 +1827,28 @@ export function TeamAccess() {
                             />
                           </label>
                           <label>
+                            Sucursal de acceso
+                            <select
+                              aria-label="Sucursal de acceso"
+                              value={effectiveAssignBranchId}
+                              onChange={(event) => {
+                                setAssignBranchId(event.target.value);
+                                setAssignProfileId('');
+                              }}
+                            >
+                              {canManageOrgWideMembers && <option value="">Todas las sucursales (acceso global)</option>}
+                              {manageableBranches.map((branch) => (
+                                <option key={branch.id} value={branch.id}>
+                                  {branch.name} ({branch.code})
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label>
                             Perfil de acceso
                             <select required value={assignProfileId} onChange={(event) => setAssignProfileId(event.target.value)}>
                               <option value="">Selecciona un perfil</option>
-                              {assignableProfiles.map((profile) => (
+                              {assignableProfilesForInvite.map((profile) => (
                                 <option key={profile.id} value={profile.id}>
                                   {profile.name}
                                 </option>
@@ -1566,9 +1856,13 @@ export function TeamAccess() {
                             </select>
                           </label>
                           <p className="team-access-help">
-                            Si la cuenta todavía no existe o no está verificada, se creará una invitación por 7 días. La aplicación no envía el correo: comunica el acceso por un canal seguro.
+                            Solo puedes delegar perfiles dentro de tu rol base, tus permisos y las sucursales que administras. Si la cuenta aún no existe, se crea una invitación por 7 días.
                           </p>
-                          <button className="button button-dark team-invite-submit" type="submit" disabled={saving || !assignProfileId}>
+                          <button
+                            className="button button-dark team-invite-submit"
+                            type="submit"
+                            disabled={saving || !assignProfileId || (!canManageOrgWideMembers && !effectiveAssignBranchId)}
+                          >
                             <UserPlus size={15} />
                             {saving ? 'Guardando…' : 'Asignar o invitar'}
                           </button>
@@ -1625,7 +1919,11 @@ export function TeamAccess() {
                               <span>
                                 <b>{invitation.invited_email}</b>
                                 <small>
-                                  {invitation.profile_name} · vence {new Date(invitation.expires_at).toLocaleDateString('es-EC')}
+                                  {invitation.profile_name} ·{' '}
+                                  <span className={`team-branch-badge ${invitation.branch_id ? 'is-branch' : 'is-global'}`}>
+                                    {invitation.branch_id ? invitation.branch_name || invitation.branch_code || 'Sucursal' : 'Todas las sucursales'}
+                                  </span>{' '}
+                                  · vence {new Date(invitation.expires_at).toLocaleDateString('es-EC')}
                                 </small>
                               </span>
                               <div className="team-invitation-actions">
@@ -1659,13 +1957,16 @@ export function TeamAccess() {
                     <header className="team-panel-heading">
                       <div>
                         <span className="eyebrow">POLÍTICAS ACTIVAS</span>
-                        <h2>Descuentos y Salarios</h2>
+                        <h2>Descuentos, Caja y Salarios</h2>
                       </div>
                       <span className="team-panel-mark">
                         <Percent size={17} />
                       </span>
                     </header>
                     <ul className="team-governance-list">
+                      <li>
+                        <b>Cajero vs Supervisor:</b> <code>cash.manage_cash</code> habilita operación y movimientos de caja; <code>finance.manage_finance</code> habilita egresos y finanzas de la sucursal.
+                      </li>
                       <li>
                         <b>Descuento comercial POS:</b> Tope automático del <b>40%</b> sobre el subtotal y motivo obligatorio auditado en la venta.
                       </li>
@@ -1674,7 +1975,7 @@ export function TeamAccess() {
                         <Link to="/operaciones/personal">Personal → Salarios y Descuentos</Link>.
                       </li>
                       <li>
-                        <b>Liquidación de devoluciones:</b> Requiere el permiso especial <code>Liquidar devoluciones en caja</code>.
+                        <b>Liquidación de devoluciones:</b> Requiere <code>sales.view</code>, <code>cash.view</code>, <code>cash.edit</code> y <code>sales.settle_refund</code>.
                       </li>
                     </ul>
                   </section>
@@ -1690,7 +1991,7 @@ export function TeamAccess() {
                   <div>
                     <span className="eyebrow">ROLES DEL EQUIPO</span>
                     <h2 id="team-profile-directory-title">Perfiles configurados</h2>
-                    <p>Elige un perfil para revisar sus usuarios, alcance y permisos.</p>
+                    <p>Elige un perfil para revisar sus usuarios, rol base y permisos.</p>
                   </div>
                   <span className="team-panel-mark">
                     <IdCard size={18} />
@@ -1731,7 +2032,8 @@ export function TeamAccess() {
                             <b>{profile.name}</b>
                             <small>{profile.description || 'Sin descripción adicional'}</small>
                             <span className="team-profile-choice-metrics">
-                              <em>{memberStats.active} usuarios activos</em>
+                              <em>Base: {roleNames[profile.base_role] || profile.base_role}</em>
+                              <em>{memberStats.active} activos</em>
                               <em>{viewModulesCount} consulta · {editModulesCount} edición</em>
                             </span>
                           </span>
@@ -1753,8 +2055,8 @@ export function TeamAccess() {
                     <h2 id="team-profile-editor-title">{selectedProfile?.name || 'Nuevo perfil'}</h2>
                     <p>
                       {selectedProfile
-                        ? 'Define el nombre, la descripción o aplica una plantilla rápida de funciones operativas.'
-                        : 'Empieza con un nombre claro o selecciona una plantilla rápida de rol para preconfigurar sus permisos.'}
+                        ? 'Define el nombre, rol base y descripción, o aplica una plantilla rápida de funciones operativas.'
+                        : 'Empieza con un nombre claro, elige el rol base del sistema o selecciona una plantilla rápida.'}
                     </p>
                   </div>
                   <span className="team-panel-mark is-accent">
@@ -1768,6 +2070,9 @@ export function TeamAccess() {
                       <i aria-hidden="true" />
                       {selectedProfile.active ? 'Perfil activo' : 'Perfil pausado'}
                     </span>
+                    <span className="team-branch-badge is-global">
+                      Rol base: {roleNames[selectedProfile.base_role] || selectedProfile.base_role}
+                    </span>
                     <span>
                       <b>{memberCountByProfileId.get(selectedProfile.id)?.active || 0}</b> cuentas activas con este perfil ·{' '}
                       <b>{activeMatrixSummary.viewCount}</b> módulos con consulta · <b>{activeMatrixSummary.editCount}</b> con edición ·{' '}
@@ -1776,26 +2081,31 @@ export function TeamAccess() {
                   </div>
                 )}
 
-                {canManageProfiles && (
+                {canEditSelectedProfile && (
                   <div className="team-role-presets" aria-label="Plantillas rápidas de rol">
                     <div className="team-role-presets-head">
                       <span>
-                        <Sparkles size={14} /> <b>Plantillas rápidas de rol</b> — Precarga permisos recomendados en 1 clic
+                        <Sparkles size={14} /> <b>Plantillas rápidas de rol</b> — Precarga permisos y rol base en 1 clic
                       </span>
                     </div>
                     <div className="team-role-presets-grid">
-                      {ROLE_PRESETS.map((preset) => (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          className="team-role-preset-card"
-                          onClick={() => applyRolePreset(preset)}
-                        >
-                          <span className="team-role-preset-badge">{preset.badge}</span>
-                          <b>{preset.name}</b>
-                          <small>{preset.description}</small>
-                        </button>
-                      ))}
+                      {ROLE_PRESETS.map((preset) => {
+                        const presetAllowed = canUsePreset(preset);
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            className="team-role-preset-card"
+                            disabled={!presetAllowed}
+                            title={presetAllowed ? preset.description : 'Este preset excede tu rol base o permisos globales'}
+                            onClick={() => applyRolePreset(preset)}
+                          >
+                            <span className="team-role-preset-badge">{preset.badge}</span>
+                            <b>{preset.name}</b>
+                            <small>{preset.description}</small>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -1810,7 +2120,7 @@ export function TeamAccess() {
                         required
                         minLength={2}
                         maxLength={80}
-                        disabled={!canManageProfiles}
+                        disabled={!canEditSelectedProfile}
                         placeholder="Ej. Asesora Comercial y POS"
                       />
                     </label>
@@ -1821,10 +2131,37 @@ export function TeamAccess() {
                         onChange={(event) => setProfileKey(event.target.value)}
                         required
                         pattern="[a-z0-9_]{2,48}"
-                        disabled={!canManageProfiles || Boolean(selectedId)}
+                        disabled={!canEditSelectedProfile || Boolean(selectedId)}
                         aria-describedby="team-profile-key-help"
                       />
                       <small id="team-profile-key-help">Solo minúsculas, números y guion bajo.</small>
+                    </label>
+                    <label>
+                      Rol base del sistema
+                      <select
+                        aria-label="Rol base del sistema"
+                        value={profileBaseRole}
+                        onChange={(event) => setProfileBaseRole(event.target.value)}
+                        disabled={!canEditSelectedProfile || Boolean(selectedProfile?.is_system)}
+                      >
+                        {assignableBaseRoles.map((option) => {
+                          const roleAllowed = isOwner || (!option.ownerOnly && canActorManageBaseRole(orgWideActorRoles, option.value));
+                          return (
+                            <option
+                              key={option.value}
+                              value={option.value}
+                              disabled={!roleAllowed}
+                            >
+                              {option.label}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <small>
+                        {selectedProfile?.is_system
+                          ? 'El rol base de los perfiles del sistema está protegido.'
+                          : 'Define el techo técnico en políticas SQL y auditoría.'}
+                      </small>
                     </label>
                     <label className="team-profile-description">
                       Descripción operativa
@@ -1832,7 +2169,7 @@ export function TeamAccess() {
                         value={profileDescription}
                         onChange={(event) => setProfileDescription(event.target.value)}
                         maxLength={300}
-                        disabled={!canManageProfiles}
+                        disabled={!canEditSelectedProfile}
                         placeholder="Qué tareas, módulos y límites operativos tiene este perfil"
                       />
                     </label>
@@ -1845,26 +2182,28 @@ export function TeamAccess() {
                     <Link to={teamPage('permisos')}>Configurar matriz de permisos →</Link>
                   </div>
                   <div className="team-profile-actions">
-                    {canManageProfiles && (
+                    {canEditSelectedProfile && (
                       <button className="button button-dark" type="submit" disabled={saving}>
                         <Save size={15} />
                         {saving ? 'Guardando…' : 'Guardar perfil'}
                       </button>
                     )}
-                    {selectedProfile && canManageProfiles && (
+                    {selectedProfile && canEditSelectedProfile && (
                       <button
                         type="button"
                         className="button button-outline"
                         onClick={setProfileActive}
-                        disabled={saving || (selectedProfile.profile_key === 'admin' && !roles.includes('owner'))}
+                        disabled={saving || ((selectedProfile.profile_key === 'admin' || selectedProfile.base_role === 'admin') && !isOwner)}
                       >
                         <RotateCcw size={15} />
                         {selectedProfile.active ? 'Pausar perfil' : 'Reactivar perfil'}
                       </button>
                     )}
-                    {!canManageProfiles && (
+                    {!canEditSelectedProfile && (
                       <p className="team-access-help">
-                        Puedes consultar estos perfiles. La configuración está reservada a personas con permiso de gestión.
+                        {selectedProfile && ['admin', 'website_admin'].includes(selectedProfile.base_role)
+                          ? 'Solo el propietario puede modificar o desactivar perfiles administrativos o de sitio web.'
+                          : 'Puedes consultar estos perfiles. La configuración está reservada a cuentas con permiso de gestión en toda la organización.'}
                       </p>
                     )}
                   </div>
@@ -1925,11 +2264,12 @@ export function TeamAccess() {
                       <p>
                         Al habilitar <b>Ventas y POS (Editar)</b>, el perfil puede aplicar descuentos en POS/Cotizador hasta el <b>tope del 40%</b> con motivo obligatorio registrado.
                       </p>
-                      {canManageProfiles && (
+                      {canEditSelectedProfile && (
                         <label className="team-gov-quick-check">
                           <input
                             type="checkbox"
                             checked={Boolean(matrix['sales.edit'])}
+                            disabled={!isOwner && !hasPermission('sales', 'edit', null)}
                             onChange={(e) => setPermission('sales.edit', e.target.checked)}
                           />
                           <span>Permitir emitir ventas y aplicar descuentos comerciales (≤40%)</span>
@@ -1944,20 +2284,20 @@ export function TeamAccess() {
                         <span className="team-gov-status">{matrix['sales.settle_refund'] ? 'Autorizado' : 'Restringido'}</span>
                       </div>
                       <p>
-                        Controla quién puede ejecutar devoluciones de dinero en efectivo o transferencia y saldar notas de crédito en sesiones de caja.
+                        Controla quién puede ejecutar devoluciones en efectivo o transferencia. Activa automáticamente <b>Ventas (Ver)</b>, <b>Caja (Ver)</b> y <b>Caja (Editar)</b>.
                       </p>
-                      {canManageProfiles && (
+                      {canEditSelectedProfile && (
                         <label className="team-gov-quick-check">
                           <input
                             type="checkbox"
                             checked={Boolean(matrix['sales.settle_refund'])}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setPermission('cash.view', true);
-                                setPermission('cash.edit', true);
-                              }
-                              setPermission('sales.settle_refund', e.target.checked);
-                            }}
+                            disabled={
+                              !isOwner &&
+                              (!hasPermission('sales', 'settle_refund', null) ||
+                                !hasPermission('sales', 'view', null) ||
+                                !hasPermission('cash', 'edit', null))
+                            }
+                            onChange={(e) => setPermission('sales.settle_refund', e.target.checked)}
                           />
                           <span>Autorizar liquidación de devoluciones en caja</span>
                         </label>
@@ -1975,16 +2315,17 @@ export function TeamAccess() {
                       <p>
                         Separa la consulta del catálogo de la edición de precios base (Normal, Instalación, Corporativo) y del costo confidencial de inventario.
                       </p>
-                      {canManageProfiles && (
+                      {canEditSelectedProfile && (
                         <div className="team-gov-dual-checks">
                           <label className="team-gov-quick-check">
                             <input
                               type="checkbox"
                               checked={Boolean(matrix['catalog_admin.edit_prices'])}
-                              onChange={(e) => {
-                                if (e.target.checked) setPermission('catalog_admin.view', true);
-                                setPermission('catalog_admin.edit_prices', e.target.checked);
-                              }}
+                              disabled={
+                                !isOwner &&
+                                (!hasPermission('catalog_admin', 'edit_prices', null) || !hasPermission('catalog_admin', 'edit', null))
+                              }
+                              onChange={(e) => setPermission('catalog_admin.edit_prices', e.target.checked)}
                             />
                             <span>Editar precios del catálogo</span>
                           </label>
@@ -1992,10 +2333,8 @@ export function TeamAccess() {
                             <input
                               type="checkbox"
                               checked={Boolean(matrix['inventory_costs.view_costs'])}
-                              onChange={(e) => {
-                                if (e.target.checked) setPermission('inventory_costs.view', true);
-                                setPermission('inventory_costs.view_costs', e.target.checked);
-                              }}
+                              disabled={!isOwner && !hasPermission('inventory_costs', 'view_costs', null)}
+                              onChange={(e) => setPermission('inventory_costs.view_costs', e.target.checked)}
                             />
                             <span>Ver costos de inventario</span>
                           </label>
@@ -2014,12 +2353,13 @@ export function TeamAccess() {
                       <p>
                         Autoriza ver o modificar el salario base del trabajador, registrar descuentos de nómina (anticipos, multas, préstamos) y administrar finanzas.
                       </p>
-                      {canManageProfiles && (
+                      {canEditSelectedProfile && (
                         <div className="team-gov-dual-checks">
                           <label className="team-gov-quick-check">
                             <input
                               type="checkbox"
                               checked={Boolean(matrix['personnel.view_compensation'])}
+                              disabled={!isOwner && !hasPermission('personnel', 'view_compensation', null)}
                               onChange={(e) => setPermission('personnel.view_compensation', e.target.checked)}
                             />
                             <span>Ver salarios y descuentos</span>
@@ -2028,6 +2368,7 @@ export function TeamAccess() {
                             <input
                               type="checkbox"
                               checked={Boolean(matrix['personnel.edit_compensation'])}
+                              disabled={!isOwner && !hasPermission('personnel', 'edit_compensation', null)}
                               onChange={(e) => setPermission('personnel.edit_compensation', e.target.checked)}
                             />
                             <span>Editar salarios y deducciones</span>
@@ -2047,7 +2388,7 @@ export function TeamAccess() {
                         placeholder="Filtrar módulo en la matriz…"
                       />
                     </label>
-                    {canManageProfiles && (
+                    {canEditSelectedProfile && (
                       <div className="team-matrix-bulk-buttons">
                         <button type="button" className="button button-outline" onClick={() => applyBulkMatrixAction('all_view')}>
                           Marcar todo Consultar
@@ -2075,7 +2416,7 @@ export function TeamAccess() {
                           <th scope="col">Consultar</th>
                           <th scope="col">Editar</th>
                           <th scope="col">Eliminar</th>
-                          {canManageProfiles && <th scope="col">Fila rápida</th>}
+                          {canEditSelectedProfile && <th scope="col">Fila rápida</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -2097,7 +2438,8 @@ export function TeamAccess() {
                                       type="checkbox"
                                       checked={Boolean(matrix[`${key}.${action}`])}
                                       disabled={
-                                        !canManageProfiles ||
+                                        !canEditSelectedProfile ||
+                                        (!isOwner && !hasPermission(key, action, null)) ||
                                         (key === 'personnel' && action === 'delete_records') ||
                                         (action === 'delete_records' && selectedProfile.profile_key === 'admin')
                                       }
@@ -2107,7 +2449,7 @@ export function TeamAccess() {
                                   </label>
                                 </td>
                               ))}
-                              {canManageProfiles && (
+                              {canEditSelectedProfile && (
                                 <td>
                                   <button
                                     type="button"
@@ -2136,7 +2478,7 @@ export function TeamAccess() {
                           <input
                             type="checkbox"
                             checked={Boolean(matrix[`${module}.${action}`])}
-                            disabled={!canManageProfiles}
+                            disabled={!canEditSelectedProfile || (!isOwner && !hasPermission(module, action, null))}
                             onChange={(event) => setPermission(`${module}.${action}`, event.target.checked)}
                           />
                           <span>{label}</span>
@@ -2146,15 +2488,17 @@ export function TeamAccess() {
                   </details>
 
                   <div className="team-profile-actions">
-                    {canManageProfiles && (
+                    {canEditSelectedProfile && (
                       <button className="button button-dark" type="submit" disabled={saving}>
                         <Save size={15} />
                         {saving ? 'Guardando…' : 'Guardar permisos'}
                       </button>
                     )}
-                    {!canManageProfiles && (
+                    {!canEditSelectedProfile && (
                       <p className="team-access-help">
-                        Puedes consultar la matriz. Cambiar permisos requiere autorización de gestión de perfiles.
+                        {['admin', 'website_admin'].includes(selectedProfile.base_role)
+                          ? 'Solo el propietario puede modificar permisos de perfiles administrativos o de sitio web.'
+                          : 'Puedes consultar la matriz. Cambiar permisos requiere autorización de gestión de perfiles en toda la organización.'}
                       </p>
                     )}
                   </div>
@@ -2182,7 +2526,7 @@ export function TeamAccess() {
         </span>
         <div>
           <b>La base central valida cada cambio</b>
-          <p>Los permisos se verifican en Supabase. El perfil Propietario permanece reservado.</p>
+          <p>Los permisos, sucursales y roles base se verifican en Supabase. El perfil Propietario permanece reservado.</p>
         </div>
       </aside>
     </div>

@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowRight, Bell, CalendarClock, CircleCheck, RefreshCw,
 import { useAuth } from '../../auth/AuthProvider';
 import { Sheet } from '../../components/ui/OperationalKit';
 import { supabase } from '../../lib/supabaseClient';
+import { enrichProductionJobs, type ProductionJob } from '../../lib/productionHub';
 import './production-attention.css';
 
 type Area = { code: string; name: string };
@@ -13,7 +14,7 @@ type Step = {
 };
 type Job = {
   id: string; advisor_id: string | null; sale_code: string | null; customer_name: string | null;
-  title: string; status: string; due_at: string | null; artwork_review_status: string;
+  title: string; status: string; due_at: string | null; artwork_review_status: string; material_blocked?: boolean;
 };
 type AttentionKind = 'blocked' | 'unassigned' | 'due' | 'ready' | 'assigned' | 'review' | 'artwork';
 type Attention = {
@@ -52,6 +53,7 @@ function buildAttention(assigned: Step[], blocked: Step[], unassigned: Step[], a
   const addStep = (step: Step, kind: AttentionKind, description: string, priority: number, audience: 'mine' | 'team') => {
     const job = jobs.get(step.job_id);
     if (!job || ['completed', 'cancelled'].includes(job.status)) return;
+    if (job.material_blocked) { kind = 'blocked'; description = 'Bloqueado por material: hay faltantes o solicitudes de compra abiertas.'; priority = 0; }
     const key = `${audience}:${step.id}`;
     const previous = items.get(key);
     if (previous && previous.priority <= priority) return;
@@ -59,6 +61,7 @@ function buildAttention(assigned: Step[], blocked: Step[], unassigned: Step[], a
   };
 
   assigned.forEach((step) => {
+    if (jobs.get(step.job_id)?.material_blocked) addStep(step, 'blocked', 'Bloqueado por material', 0, 'mine');
     const due = dateMs(step.due_at);
     if (step.status === 'blocked') addStep(step, 'blocked', 'Tu etapa está bloqueada. Revisa la indicación y coordina el siguiente paso.', 0, 'mine');
     else if (Number.isFinite(due) && due <= now + HORIZON_MS) addStep(step, 'due', due < now ? 'La fecha límite de tu etapa ya pasó.' : 'Tu etapa vence en las próximas 48 horas.', due < now ? 1 : 2, 'mine');
@@ -98,8 +101,7 @@ export function ProductionAttention() {
   const canSeeWorkshop = hasPermission('workshop', 'view');
   const canSeeSales = hasPermission('sales', 'view');
   const enabled = Boolean(supabase && organizationId && user?.id && (canSeeWorkshop || canSeeSales));
-  const canCoordinate = hasPermission('workshop', 'edit') && ((roles || []).some((role) => role === 'owner' || role === 'admin')
-    || (profiles || []).some((profile) => ['admin', 'gerencia', 'coordinador_taller'].includes(profile.key)));
+  const canCoordinate = hasPermission('workshop', 'edit');
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Attention[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
@@ -154,6 +156,7 @@ export function ProductionAttention() {
         .eq('organization_id', organizationId).in('id', ids) : null;
       if (jobResult?.error) throw jobResult.error;
       const jobs = new Map<string, Job>([...advisorJobs, ...((jobResult?.data || []) as Job[])].map((job) => [job.id, job]));
+      await enrichProductionJobs(organizationId, [...jobs.values()] as ProductionJob[], []);
       const stepIds = [...new Set(notifications.map((notice) => notice.step_id).filter((id): id is string => Boolean(id)))];
       const noticeStepsResult = stepIds.length ? await client.from('production_job_steps')
         .select('id,job_id,title,status,assigned_to,due_at,updated_at,areas(code,name)').in('id', stepIds) : null;

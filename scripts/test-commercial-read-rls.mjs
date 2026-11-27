@@ -7,7 +7,16 @@ import { PGlite } from '@electric-sql/pglite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const migrationPath = path.join(__dirname, '../supabase/migrations/20261122050821_restrict_commercial_data_read_permissions.sql');
+const priority1MigrationPath = path.join(__dirname, '../supabase/migrations/20261127141520_priority1_branch_permissions_and_roles.sql');
 const migration = fs.readFileSync(migrationPath, 'utf8');
+const priority1Migration = fs.readFileSync(priority1MigrationPath, 'utf8');
+
+function extractFinanceRlsFromPriority1(sql) {
+  const start = sql.indexOf('drop policy if exists finance_expenses_access_select');
+  const end = sql.indexOf('-- 3. Harden save_visualcorp_access_profile');
+  assert.ok(start >= 0 && end > start, 'Priority 1 migration must declare finance_expenses and finance_expense_payments RLS');
+  return sql.slice(start, end);
+}
 
 const org = '10000000-0000-0000-0000-000000000001';
 const branchA = '10000000-0000-0000-0000-000000000101';
@@ -485,4 +494,219 @@ test('migration leaves grants, RLS enablement and existing customer policies unt
   assert.doesNotMatch(migration, /drop policy\s+.*sale_refund_settlements/i);
   assert.match(migration, /create policy vc_sale_refund_settlements_read_permission_scope[\s\S]*?has_visualcorp_access\(organization_id, 'sales', 'view', branch_id\)/i);
   assert.doesNotMatch(migration, /customers_read|public\.customers/i);
+});
+
+const priority1Users = {
+  advisorA: '10000000-0000-0000-0000-000000001201',
+  advisorB: '10000000-0000-0000-0000-000000001202',
+  cashierA: '10000000-0000-0000-0000-000000001203',
+  financeB: '10000000-0000-0000-0000-000000001204',
+  financeGlobal: '10000000-0000-0000-0000-000000001205',
+  productionB: '10000000-0000-0000-0000-000000001206',
+  managerA: '10000000-0000-0000-0000-000000001207',
+  managerGlobal: '10000000-0000-0000-0000-000000001208',
+};
+
+const expenses = {
+  a: '10000000-0000-0000-0000-000000001301',
+  b: '10000000-0000-0000-0000-000000001302',
+  global: '10000000-0000-0000-0000-000000001303',
+};
+
+const expensePayments = {
+  a: '10000000-0000-0000-0000-000000001401',
+  b: '10000000-0000-0000-0000-000000001402',
+  global: '10000000-0000-0000-0000-000000001403',
+};
+
+async function bootPriority1MultiBranchDb() {
+  const db = await bootDb();
+  const financeRls = extractFinanceRlsFromPriority1(priority1Migration);
+  await db.exec(`
+    reset role;
+    create or replace function app_private.has_visualcorp_access_orgwide(
+      p_org uuid, p_module text, p_action text
+    ) returns boolean language sql stable security definer set search_path = '' as $$
+      select exists (
+        select 1
+        from public.organization_memberships m
+        join public.access_profiles p on p.id = m.profile_id and p.organization_id = m.organization_id
+        left join public.access_profile_permissions permission
+          on permission.profile_id = p.id and permission.module_key = p_module
+          and permission.action_key = p_action and permission.enabled
+        where m.organization_id = p_org and m.user_id = (select auth.uid())
+          and m.active and m.branch_id is null and p.active
+          and (m.role = 'owner' or permission.profile_id is not null or (
+            p_action = 'view' and exists (
+              select 1 from public.access_profile_permissions edit_permission
+              where edit_permission.profile_id = p.id and edit_permission.module_key = p_module
+                and edit_permission.action_key = 'edit' and edit_permission.enabled
+            )
+          ))
+      );
+    $$;
+    grant execute on function app_private.has_visualcorp_access_orgwide(uuid, text, text) to authenticated;
+
+    create table public.finance_expenses (
+      id uuid primary key,
+      organization_id uuid not null,
+      branch_id uuid,
+      category text not null default 'operativo'
+    );
+    create table public.finance_expense_payments (
+      id uuid primary key,
+      organization_id uuid not null,
+      expense_id uuid not null,
+      amount numeric not null default 100
+    );
+    alter table public.finance_expenses enable row level security;
+    alter table public.finance_expense_payments enable row level security;
+    grant select on public.finance_expenses, public.finance_expense_payments to authenticated;
+
+    create policy finance_expenses_access_select on public.finance_expenses for select to authenticated
+      using (app_private.has_org_role(organization_id));
+    create policy finance_expense_payments_access_select on public.finance_expense_payments for select to authenticated
+      using (app_private.has_org_role(organization_id));
+
+    insert into public.access_profiles (id, organization_id, profile_key, active) values
+      ('${priority1Users.advisorA}', '${org}', 'asesora_a', true),
+      ('${priority1Users.advisorB}', '${org}', 'asesora_b', true),
+      ('${priority1Users.cashierA}', '${org}', 'cajero_a', true),
+      ('${priority1Users.financeB}', '${org}', 'finanzas_b', true),
+      ('${priority1Users.financeGlobal}', '${org}', 'finanzas_global', true),
+      ('${priority1Users.productionB}', '${org}', 'taller_b', true),
+      ('${priority1Users.managerA}', '${org}', 'gerencia_a', true),
+      ('${priority1Users.managerGlobal}', '${org}', 'gerencia_global', true);
+
+    insert into public.organization_memberships (organization_id, user_id, branch_id, profile_id, role, active) values
+      ('${org}', '${priority1Users.advisorA}', '${branchA}', '${priority1Users.advisorA}', 'advisor', true),
+      ('${org}', '${priority1Users.advisorB}', '${branchB}', '${priority1Users.advisorB}', 'advisor', true),
+      ('${org}', '${priority1Users.cashierA}', '${branchA}', '${priority1Users.cashierA}', 'advisor', true),
+      ('${org}', '${priority1Users.financeB}', '${branchB}', '${priority1Users.financeB}', 'advisor', true),
+      ('${org}', '${priority1Users.financeGlobal}', null, '${priority1Users.financeGlobal}', 'manager', true),
+      ('${org}', '${priority1Users.productionB}', '${branchB}', '${priority1Users.productionB}', 'production', true),
+      ('${org}', '${priority1Users.managerA}', '${branchA}', '${priority1Users.managerA}', 'manager', true),
+      ('${org}', '${priority1Users.managerGlobal}', null, '${priority1Users.managerGlobal}', 'manager', true);
+
+    insert into public.access_profile_permissions (profile_id, module_key, action_key, enabled) values
+      ('${priority1Users.advisorA}', 'sales', 'view', true),
+      ('${priority1Users.advisorA}', 'sales', 'edit', true),
+      ('${priority1Users.advisorA}', 'cash', 'view', true),
+      ('${priority1Users.advisorA}', 'cash', 'edit', true),
+      ('${priority1Users.advisorA}', 'workshop', 'view', true),
+      ('${priority1Users.advisorB}', 'sales', 'view', true),
+      ('${priority1Users.advisorB}', 'sales', 'edit', true),
+      ('${priority1Users.advisorB}', 'cash', 'view', true),
+      ('${priority1Users.advisorB}', 'cash', 'edit', true),
+      ('${priority1Users.advisorB}', 'workshop', 'view', true),
+      ('${priority1Users.cashierA}', 'cash', 'view', true),
+      ('${priority1Users.cashierA}', 'cash', 'manage_cash', true),
+      ('${priority1Users.financeB}', 'finance', 'view', true),
+      ('${priority1Users.financeGlobal}', 'finance', 'view', true),
+      ('${priority1Users.productionB}', 'workshop', 'view', true),
+      ('${priority1Users.productionB}', 'workshop', 'edit', true),
+      ('${priority1Users.managerA}', 'sales', 'view', true),
+      ('${priority1Users.managerA}', 'sales', 'edit', true),
+      ('${priority1Users.managerA}', 'sales', 'settle_refund', true),
+      ('${priority1Users.managerA}', 'cash', 'view', true),
+      ('${priority1Users.managerA}', 'cash', 'manage_cash', true),
+      ('${priority1Users.managerA}', 'finance', 'view', true),
+      ('${priority1Users.managerA}', 'finance', 'manage_finance', true),
+      ('${priority1Users.managerA}', 'workshop', 'view', true),
+      ('${priority1Users.managerGlobal}', 'sales', 'view', true),
+      ('${priority1Users.managerGlobal}', 'sales', 'edit', true),
+      ('${priority1Users.managerGlobal}', 'sales', 'settle_refund', true),
+      ('${priority1Users.managerGlobal}', 'cash', 'view', true),
+      ('${priority1Users.managerGlobal}', 'cash', 'manage_cash', true),
+      ('${priority1Users.managerGlobal}', 'finance', 'view', true),
+      ('${priority1Users.managerGlobal}', 'finance', 'manage_finance', true),
+      ('${priority1Users.managerGlobal}', 'workshop', 'view', true);
+
+    insert into public.finance_expenses (id, organization_id, branch_id) values
+      ('${expenses.a}', '${org}', '${branchA}'),
+      ('${expenses.b}', '${org}', '${branchB}'),
+      ('${expenses.global}', '${org}', null);
+    insert into public.finance_expense_payments (id, organization_id, expense_id, amount) values
+      ('${expensePayments.a}', '${org}', '${expenses.a}', 120),
+      ('${expensePayments.b}', '${org}', '${expenses.b}', 240),
+      ('${expensePayments.global}', '${org}', '${expenses.global}', 500);
+  `);
+  await db.exec(financeRls);
+  await db.exec('set role authenticated');
+  return db;
+}
+
+test('finance.view isolates finance_expenses and payments by branch_id while orgwide finance reads all scopes', async () => {
+  const db = await bootPriority1MultiBranchDb();
+  try {
+    await asUser(db, users.finance);
+    assertIds(await visibleIds(db, 'finance_expenses'), [expenses.a], 'branch-A finance sees only branch-A expenses');
+    assertIds(await visibleIds(db, 'finance_expense_payments'), [expensePayments.a], 'branch-A finance sees only branch-A expense payments');
+
+    await asUser(db, priority1Users.financeB);
+    assertIds(await visibleIds(db, 'finance_expenses'), [expenses.b], 'branch-B finance sees only branch-B expenses');
+    assertIds(await visibleIds(db, 'finance_expense_payments'), [expensePayments.b], 'branch-B finance sees only branch-B expense payments');
+    assertIds(await visibleIds(db, 'sales'), [sales.b], 'branch-B finance sees only branch-B sales');
+
+    await asUser(db, priority1Users.financeGlobal);
+    assertIds(await visibleIds(db, 'finance_expenses'), [expenses.a, expenses.b, expenses.global], 'org-wide finance sees both branches plus global expenses');
+    assertIds(await visibleIds(db, 'finance_expense_payments'), [expensePayments.a, expensePayments.b, expensePayments.global], 'org-wide finance sees all expense payments');
+    assertIds(await visibleIds(db, 'sales'), [sales.a, sales.b], 'org-wide finance sees sales from both branches');
+  } finally {
+    await db.close();
+  }
+});
+
+test('realistic advisor, cashier, production and manager profiles isolate data across two branches', async () => {
+  const db = await bootPriority1MultiBranchDb();
+  try {
+    // Advisor in Branch A vs Branch B
+    await asUser(db, priority1Users.advisorA);
+    assertIds(await visibleIds(db, 'sales'), [sales.a], 'advisor A sees only branch A sales');
+    assertIds(await visibleIds(db, 'sale_lines'), [lines.a], 'advisor A sees only branch A lines');
+    assertIds(await visibleIds(db, 'cash_sessions'), [sessions.ownA, sessions.otherA], 'advisor A with cash.view sees only branch A cash sessions');
+    assertIds(await visibleIds(db, 'production_jobs'), [jobs.a], 'advisor A sees only branch A jobs');
+    assertIds(await visibleIds(db, 'finance_expenses'), [], 'advisor A cannot read finance expenses');
+    assertIds(await visibleIds(db, 'finance_expense_payments'), [], 'advisor A cannot read finance expense payments');
+
+    await asUser(db, priority1Users.advisorB);
+    assertIds(await visibleIds(db, 'sales'), [sales.b], 'advisor B sees only branch B sales');
+    assertIds(await visibleIds(db, 'sale_payments'), [payments.b], 'advisor B sees only branch B sale payments');
+    assertIds(await visibleIds(db, 'cash_sessions'), [sessions.b], 'advisor B sees only branch B cash sessions');
+    assertIds(await visibleIds(db, 'production_jobs'), [jobs.b], 'advisor B sees only branch B jobs');
+    assertIds(await visibleIds(db, 'finance_expenses'), [], 'advisor B cannot read finance expenses');
+
+    // Cashier (cash.view + cash.manage_cash) in Branch A
+    await asUser(db, priority1Users.cashierA);
+    assertIds(await visibleIds(db, 'cash_sessions'), [sessions.ownA, sessions.otherA], 'cashier A sees only branch A sessions');
+    assertIds(await visibleIds(db, 'cash_session_movements'), [movements.ownA, movements.otherA], 'cashier A sees only branch A movements');
+    assertIds(await visibleIds(db, 'sale_payments'), [payments.ownA, payments.otherA], 'cashier A sees only session-linked payments in branch A');
+    assertIds(await visibleIds(db, 'sales'), [], 'cashier without sales.view cannot read sales');
+    assertIds(await visibleIds(db, 'finance_expenses'), [], 'cashier without finance.view cannot read finance expenses');
+
+    // Production (workshop) in Branch B
+    await asUser(db, priority1Users.productionB);
+    assertIds(await visibleIds(db, 'production_jobs'), [jobs.b], 'production B sees only branch B jobs');
+    assertIds(await visibleSaleIds(db, 'sale_fulfillment_details'), [sales.b], 'production B reads fulfillment details only for branch B jobs');
+    assertIds(await visibleIds(db, 'sales'), [], 'production cannot read sales');
+    assertIds(await visibleIds(db, 'cash_sessions'), [], 'production cannot read cash sessions');
+    assertIds(await visibleIds(db, 'finance_expenses'), [], 'production cannot read finance expenses');
+
+    // Branch-scoped Manager vs Org-wide Manager
+    await asUser(db, priority1Users.managerA);
+    assertIds(await visibleIds(db, 'sales'), [sales.a], 'branch-A manager sees only branch A sales');
+    assertIds(await visibleIds(db, 'cash_sessions'), [sessions.ownA, sessions.otherA], 'branch-A manager sees only branch A cash sessions');
+    assertIds(await visibleIds(db, 'finance_expenses'), [expenses.a], 'branch-A manager cannot read branch B or org-wide null expenses');
+    assertIds(await visibleIds(db, 'finance_expense_payments'), [expensePayments.a], 'branch-A manager sees only branch A expense payments');
+    assertIds(await visibleIds(db, 'sale_refund_settlements'), [refunds.a], 'branch-A manager sees only branch A settlements');
+
+    await asUser(db, priority1Users.managerGlobal);
+    assertIds(await visibleIds(db, 'sales'), [sales.a, sales.b], 'org-wide manager sees sales from both branches');
+    assertIds(await visibleIds(db, 'cash_sessions'), [sessions.ownA, sessions.otherA, sessions.b], 'org-wide manager sees all cash sessions');
+    assertIds(await visibleIds(db, 'finance_expenses'), [expenses.a, expenses.b, expenses.global], 'org-wide manager sees branch and global expenses');
+    assertIds(await visibleIds(db, 'finance_expense_payments'), [expensePayments.a, expensePayments.b, expensePayments.global], 'org-wide manager sees all expense payments');
+    assertIds(await visibleIds(db, 'sale_refund_settlements'), [refunds.a, refunds.b], 'org-wide manager sees all settlements');
+  } finally {
+    await db.close();
+  }
 });

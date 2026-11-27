@@ -2,18 +2,74 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { supabase } from '../lib/supabaseClient';
 import { syncManualAccessCookie } from './manualAccessCookie';
 
-type AccessProfile = { key: string; name: string; role: string };
-type PermissionMap = Record<string, Record<string, boolean>>;
-type AccessRequestStatus = 'idle' | 'recorded' | 'dismissed' | 'unavailable' | 'error';
-const AuthContext = createContext<any>(null);
+export type AccessProfile = { key: string; name: string; role: string };
+export type PermissionMap = Record<string, Record<string, boolean>>;
+export type BranchScope = {
+  branch_id: string | null;
+  branch_name: string | null;
+  branch_code: string | null;
+  role: string;
+  profile_key: string;
+  permissions: PermissionMap;
+};
+export type WorkHourEntry = {
+  weekday: number;
+  is_open: boolean;
+  opens_at: string | null;
+  closes_at: string | null;
+};
+export type WorkExceptionEntry = {
+  work_date: string;
+  kind: 'open' | 'closed';
+  opens_at: string | null;
+  closes_at: string | null;
+  note: string;
+  personal: boolean;
+} | null;
 
-export function AuthProvider({ children }) {
+type AccessRequestStatus = 'idle' | 'recorded' | 'dismissed' | 'unavailable' | 'error';
+
+export type AuthContextValue = {
+  session: any;
+  user: any;
+  roles: string[];
+  profiles: AccessProfile[];
+  permissions: PermissionMap;
+  branchScopes: BranchScope[];
+  organizationId: string | null;
+  loading: boolean;
+  accessError: string;
+  accessRequestStatus: AccessRequestStatus;
+  workAccessOpen: boolean;
+  workHours: WorkHourEntry[];
+  workException: WorkExceptionEntry;
+  refreshAccess: (currentSession?: any) => Promise<void>;
+  hasPermission: (module: string, action: string, branchId?: string | null) => boolean;
+  allowedBranchIds: (module: string, action: string) => string[] | null;
+  sendSignInLink: (email: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+function scopeGrantsPermission(scope: BranchScope, module: string, action: string): boolean {
+  if (scope.role === 'owner') return true;
+  if (scope.permissions?.[module]?.[action] === true) return true;
+  return action === 'view' && scope.permissions?.[module]?.edit === true;
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<any>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [profiles, setProfiles] = useState<AccessProfile[]>([]);
   const [permissions, setPermissions] = useState<PermissionMap>({});
+  const [branchScopes, setBranchScopes] = useState<BranchScope[]>([]);
+  const [hasScopePayload, setHasScopePayload] = useState(false);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [workAccessOpen, setWorkAccessOpen] = useState(true);
+  const [workHours, setWorkHours] = useState<WorkHourEntry[]>([]);
+  const [workException, setWorkException] = useState<WorkExceptionEntry>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
   const [accessError, setAccessError] = useState('');
   const [accessRequestStatus, setAccessRequestStatus] = useState<AccessRequestStatus>('idle');
@@ -22,6 +78,20 @@ export function AuthProvider({ children }) {
   const lastInvitationClaimAtRef = useRef(0);
   const recordedAccessRequestRef = useRef(false);
 
+  const resetAccessState = useCallback((nextOrgId: string | null = null, keepScheduleOpen = true) => {
+    setRoles([]);
+    setProfiles([]);
+    setPermissions({});
+    setBranchScopes([]);
+    setHasScopePayload(false);
+    setOrganizationId(nextOrgId);
+    if (keepScheduleOpen) {
+      setWorkAccessOpen(true);
+      setWorkHours([]);
+      setWorkException(null);
+    }
+  }, []);
+
   const refreshAccess = useCallback(async (currentSession?: any) => {
     if (!supabase) { setLoading(false); return; }
     const previousSession = sessionRef.current;
@@ -29,7 +99,7 @@ export function AuthProvider({ children }) {
     const userChanged = previousSession?.user?.id !== nextSession?.user?.id;
     const requestId = ++accessRequestRef.current;
     sessionRef.current = nextSession;
-    setSession((previous) => previous?.user?.id === nextSession?.user?.id
+    setSession((previous: any) => previous?.user?.id === nextSession?.user?.id
       && previous?.access_token === nextSession?.access_token
       ? previous
       : nextSession);
@@ -41,10 +111,15 @@ export function AuthProvider({ children }) {
 
     if (!nextSession?.user) {
       syncManualAccessCookie(null, []);
-      setRoles([]); setProfiles([]); setPermissions({}); setOrganizationId(null); setWorkAccessOpen(true); setAccessError(''); setLoading(false); return;
+      resetAccessState(null, true);
+      setAccessError('');
+      setLoading(false);
+      return;
     }
     if (userChanged) {
-      setRoles([]); setProfiles([]); setPermissions({}); setOrganizationId(null); setAccessError(''); setLoading(true);
+      resetAccessState(null, true);
+      setAccessError('');
+      setLoading(true);
     }
 
     try {
@@ -58,18 +133,24 @@ export function AuthProvider({ children }) {
       if (requestId !== accessRequestRef.current) return;
       if (error) {
         syncManualAccessCookie(null, []);
-        setRoles([]); setProfiles([]); setPermissions({}); setOrganizationId(null);
+        resetAccessState(null, false);
         setAccessError('No pudimos comprobar tus permisos. Revisa tu conexión e inténtalo de nuevo.');
         return;
       }
       const access = data || {};
       const scheduleAllowsAccess = access.work_access_open !== false;
+      const nextWorkHours: WorkHourEntry[] = Array.isArray(access.work_hours) ? access.work_hours : [];
+      const nextWorkException: WorkExceptionEntry = access.work_exception || null;
       setWorkAccessOpen(scheduleAllowsAccess);
-      const assigned = Array.isArray(access.roles) ? access.roles : [];
-      const nextRoles = scheduleAllowsAccess ? [...new Set<string>(assigned.map((profile: AccessProfile) => profile.role).filter(Boolean))] : [];
+      setWorkHours((previous) => JSON.stringify(previous) === JSON.stringify(nextWorkHours) ? previous : nextWorkHours);
+      setWorkException((previous) => JSON.stringify(previous) === JSON.stringify(nextWorkException) ? previous : nextWorkException);
+
+      const assigned: AccessProfile[] = Array.isArray(access.roles) ? access.roles : [];
+      const nextRoles = scheduleAllowsAccess ? [...new Set<string>(assigned.map((profile) => profile.role).filter(Boolean))] : [];
       if (!scheduleAllowsAccess) {
         syncManualAccessCookie(null, []);
-        setProfiles([]); setRoles([]); setPermissions({}); setOrganizationId(access.organization_id || null); setAccessError('');
+        resetAccessState(access.organization_id || null, false);
+        setAccessError('');
         return;
       }
       if (assigned.length) {
@@ -94,22 +175,26 @@ export function AuthProvider({ children }) {
         }
       }
       syncManualAccessCookie(nextSession, nextRoles);
-      const nextPermissions = access.permissions || {};
+      const nextPermissions: PermissionMap = access.permissions || {};
+      const hasScopes = Array.isArray(access.branch_scopes);
+      const nextBranchScopes: BranchScope[] = hasScopes ? access.branch_scopes : [];
       setProfiles((previous) => JSON.stringify(previous) === JSON.stringify(assigned) ? previous : assigned);
       setRoles((previous) => JSON.stringify(previous) === JSON.stringify(nextRoles) ? previous : nextRoles);
       setPermissions((previous) => JSON.stringify(previous) === JSON.stringify(nextPermissions) ? previous : nextPermissions);
+      setBranchScopes((previous) => JSON.stringify(previous) === JSON.stringify(nextBranchScopes) ? previous : nextBranchScopes);
+      setHasScopePayload(hasScopes);
       setOrganizationId(access.organization_id || null);
       setAccessError('');
     } catch {
       if (requestId === accessRequestRef.current) {
         syncManualAccessCookie(null, []);
-        setRoles([]); setProfiles([]); setPermissions({}); setOrganizationId(null);
+        resetAccessState(null, false);
         setAccessError('No pudimos comprobar tus permisos. Revisa tu conexión e inténtalo de nuevo.');
       }
     } finally {
       if (requestId === accessRequestRef.current) setLoading(false);
     }
-  }, []);
+  }, [resetAccessState]);
 
   useEffect(() => {
     if (!supabase) { setLoading(false); return undefined; }
@@ -144,9 +229,52 @@ export function AuthProvider({ children }) {
     };
   }, [refreshAccess]);
 
-  const value = useMemo(() => ({
-    session, user: session?.user || null, roles, profiles, permissions, organizationId, loading, accessError, accessRequestStatus, workAccessOpen, refreshAccess,
-    hasPermission: (module: string, action: string) => roles.includes('owner') || permissions?.[module]?.[action] === true || (action === 'view' && permissions?.[module]?.edit === true),
+  const hasPermission = useCallback((module: string, action: string, branchId?: string | null): boolean => {
+    if (hasScopePayload) {
+      if (branchId === undefined) {
+        return branchScopes.some((scope) => scopeGrantsPermission(scope, module, action));
+      }
+      if (branchId === null) {
+        return branchScopes.some((scope) => scope.branch_id === null && scopeGrantsPermission(scope, module, action));
+      }
+      return branchScopes.some(
+        (scope) => (scope.branch_id === null || scope.branch_id === branchId) && scopeGrantsPermission(scope, module, action),
+      );
+    }
+    return roles.includes('owner') || permissions?.[module]?.[action] === true || (action === 'view' && permissions?.[module]?.edit === true);
+  }, [hasScopePayload, branchScopes, roles, permissions]);
+
+  const allowedBranchIds = useCallback((module: string, action: string): string[] | null => {
+    if (hasScopePayload) {
+      if (branchScopes.some((scope) => scope.branch_id === null && scopeGrantsPermission(scope, module, action))) {
+        return null;
+      }
+      const ids = branchScopes
+        .filter((scope) => Boolean(scope.branch_id) && scopeGrantsPermission(scope, module, action))
+        .map((scope) => scope.branch_id as string);
+      return [...new Set(ids)];
+    }
+    const allowed = roles.includes('owner') || permissions?.[module]?.[action] === true || (action === 'view' && permissions?.[module]?.edit === true);
+    return allowed ? null : [];
+  }, [hasScopePayload, branchScopes, roles, permissions]);
+
+  const value = useMemo<AuthContextValue>(() => ({
+    session,
+    user: session?.user || null,
+    roles,
+    profiles,
+    permissions,
+    branchScopes,
+    organizationId,
+    loading,
+    accessError,
+    accessRequestStatus,
+    workAccessOpen,
+    workHours,
+    workException,
+    refreshAccess,
+    hasPermission,
+    allowedBranchIds,
     sendSignInLink: async (email: string) => {
       if (!supabase) throw new Error('La conexión con Supabase todavía no está configurada.');
       const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}${window.location.pathname}` } });
@@ -158,7 +286,23 @@ export function AuthProvider({ children }) {
       if (error) throw error;
     },
     signOut: async () => { if (supabase) await supabase.auth.signOut(); },
-  }), [session, roles, profiles, permissions, organizationId, loading, accessError, accessRequestStatus, workAccessOpen, refreshAccess]);
+  }), [
+    session,
+    roles,
+    profiles,
+    permissions,
+    branchScopes,
+    organizationId,
+    loading,
+    accessError,
+    accessRequestStatus,
+    workAccessOpen,
+    workHours,
+    workException,
+    refreshAccess,
+    hasPermission,
+    allowedBranchIds,
+  ]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
@@ -167,4 +311,3 @@ export function useAuth() {
   if (!value) throw new Error('useAuth debe usarse dentro de AuthProvider');
   return value;
 }
-

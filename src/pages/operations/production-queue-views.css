@@ -1719,3 +1719,10 @@
     border-color: currentColor !important;
   }
 }
+
+/* P3: operational signals reuse the existing glass tokens and never widen queues. */
+.production-job-signals { display:flex; flex-wrap:wrap; gap:6px; min-width:0; max-width:100%; margin-block:8px; }
+.production-job-signals p { flex-basis:100%; margin:0; font-size:.82rem; color:var(--admin-glass-muted, #5d5969); overflow-wrap:anywhere; white-space:normal; }
+.production-material-badge, .production-file-badge { display:inline-flex; max-width:100%; white-space:normal; overflow-wrap:anywhere; padding:4px 8px; border:1px solid var(--admin-glass-line, #d7cddd); border-radius:8px; font-size:.75rem; font-weight:700; color:var(--admin-glass-ink,#292533); background:var(--admin-glass-tint,#f3eaf9); }
+.production-material-badge { border-color:#c17e27; }
+@media (prefers-reduced-transparency: reduce) { .production-material-badge, .production-file-badge { background:var(--vc-surface,#fff); } }

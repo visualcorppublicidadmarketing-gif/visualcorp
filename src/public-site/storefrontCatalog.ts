@@ -11,6 +11,13 @@ export type StorefrontProductGroup =
 
 export type StorefrontServiceId = PublicServiceId | '';
 
+export type PublicQuantityTier = {
+  min_qty: number;
+  max_qty: number;
+};
+
+export type StorefrontQuoteSourceChannel = 'storefront' | 'quote_page';
+
 /** Visible catalog fields used by storefront discovery and filtering. */
 export type StorefrontProductRecord = {
   id?: string | null;
@@ -32,6 +39,7 @@ export type StorefrontCatalogItem = StorefrontProductRecord & {
   images?: string[] | null;
   featured?: boolean;
   sort_order?: number | null;
+  quantity_tiers?: readonly PublicQuantityTier[] | null;
   custom_options?: { quantity_pricing?: { legacy_skus?: string[]; legacy_ids?: string[] } };
   price_scales?: unknown;
   quantityTiers?: string[];
@@ -56,7 +64,7 @@ export const STOREFRONT_SORT_PARAM = 'orden';
  * `custom_options` are excluded from the public storefront view by design.
  */
 export const PUBLIC_CATALOG_SELECT_COLUMNS =
-  'id,sku,name,slug,description,type,category_id,category,calc_type,featured,sort_order,image,images,features';
+  'id,sku,name,slug,description,type,category_id,category,calc_type,featured,sort_order,image,images,features,quantity_tiers';
 
 export type StorefrontSortOrder = 'relevance' | 'az' | 'za';
 
@@ -97,6 +105,33 @@ export function clearStorefrontCatalogState(searchParams: URLSearchParams) {
   const next = clearStorefrontSearchAndFamily(searchParams);
   next.delete(STOREFRONT_SORT_PARAM);
   return next;
+}
+
+export function resolveQuoteSourceChannel(searchParams: URLSearchParams): StorefrontQuoteSourceChannel {
+  return searchParams.has(STOREFRONT_SKU_PARAM)
+    || searchParams.has(STOREFRONT_FAMILY_PARAM)
+    || searchParams.has('cantidad')
+    ? 'storefront'
+    : 'quote_page';
+}
+
+export function buildInitialQuoteItemFromUrl(params: {
+  service: string;
+  project: string;
+  sku?: string;
+  quantityRange?: string;
+}) {
+  const trimmedSku = params.sku?.trim() || undefined;
+  const trimmedRange = params.quantityRange?.trim() || undefined;
+  const firstNumber = trimmedRange?.match(/[\d]+(?:[.,][\d]+)?/)?.[0];
+  const quantity = firstNumber ? Math.max(1, Math.floor(Number(firstNumber.replace(',', '.')) || 1)) : 1;
+  return {
+    service: params.service,
+    project: params.project,
+    sku: trimmedSku,
+    quantity,
+    quantityRange: trimmedRange,
+  };
 }
 
 export function reconcileStorefrontSelection(
@@ -174,8 +209,25 @@ function numericProductVariantLabel(product: StorefrontCatalogItem) {
   return '';
 }
 
+export function formatPublicQuantityTiers(tiers: readonly PublicQuantityTier[] | null | undefined): string[] {
+  if (!Array.isArray(tiers)) return [];
+  const formatted = tiers.flatMap((tier) => {
+    if (!tier || typeof tier !== 'object') return [];
+    const minQty = Number(tier.min_qty);
+    const maxQty = Number(tier.max_qty);
+    if (!Number.isSafeInteger(minQty) || minQty < 1 || !Number.isSafeInteger(maxQty) || maxQty < minQty) {
+      return [];
+    }
+    return [minQty === maxQty ? String(minQty) : `${minQty} - ${maxQty}`];
+  });
+  return [...new Set(formatted)];
+}
+
 /**
  * Keeps quantity tiers as one product in every public catalog surface.
+ * Reads safe public `quantity_tiers` (`[{ min_qty, max_qty }]`) without needing
+ * internal `price_scales` or `custom_options`, while remaining compatible with
+ * internal quote catalog rows and legacy `calc_type === 'scale'` rows.
  * Size/pliego variants in the two named families remain separate products.
  */
 export function consolidateStorefrontQuantityTiers<T extends StorefrontCatalogItem>(rows: readonly T[]) {
@@ -183,15 +235,22 @@ export function consolidateStorefrontQuantityTiers<T extends StorefrontCatalogIt
   const products: Array<T & ConsolidatedStorefrontCatalogItem> = [];
 
   rows.forEach((product) => {
+    const publicTiers = formatPublicQuantityTiers(product.quantity_tiers);
     const volume = product.custom_options?.quantity_pricing;
-    if (volume) {
+    if (publicTiers.length > 0 || volume) {
       const scales = Array.isArray(product.price_scales) ? product.price_scales : [];
+      const scaleTiers = scales.flatMap((scale) => {
+        if (!scale || typeof scale !== 'object') return [];
+        const entry = scale as { qty?: unknown; max_qty?: unknown };
+        return Number.isSafeInteger(entry.qty) && Number.isSafeInteger(entry.max_qty)
+          ? [entry.qty === entry.max_qty ? String(entry.qty) : `${entry.qty} - ${entry.max_qty}`]
+          : [];
+      });
       products.push({
         ...product,
-        sourceIds: volume.legacy_ids,
-        sourceSkus: volume.legacy_skus,
-        quantityTiers: scales.flatMap((scale) => scale && Number.isSafeInteger(scale.qty) && Number.isSafeInteger(scale.max_qty)
-          ? [scale.qty === scale.max_qty ? String(scale.qty) : `${scale.qty} - ${scale.max_qty}`] : []),
+        ...(volume?.legacy_ids ? { sourceIds: volume.legacy_ids } : {}),
+        ...(volume?.legacy_skus ? { sourceSkus: volume.legacy_skus } : {}),
+        quantityTiers: publicTiers.length > 0 ? publicTiers : [...new Set(scaleTiers)],
       });
       return;
     }

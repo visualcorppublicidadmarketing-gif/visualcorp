@@ -62,6 +62,9 @@ export type ProductionQueueViewItem<T = unknown> = {
   canAct?: boolean;
   actionLabel?: string;
   secondaryActionLabel?: string;
+  materialBlocked?: boolean;
+  artworkLabel?: string;
+  instructions?: string;
 };
 
 export type ProductionQueueViewsProps<T = unknown> = {
@@ -299,6 +302,15 @@ function isItemActionable<T>(
   return true;
 }
 
+function QueueSignals<T>({ item }: { item: ProductionQueueViewItem<T> }) {
+  if (!item.materialBlocked && !item.artworkLabel && !item.instructions) return null;
+  return <div className="production-job-signals">
+    {item.materialBlocked && <span className="production-material-badge">Bloqueado por material</span>}
+    {item.artworkLabel && <span className="production-file-badge">{item.artworkLabel}</span>}
+    {item.instructions && <p>{item.instructions}</p>}
+  </div>;
+}
+
 function DefaultQueueCard<T>({
   item,
   compact = false,
@@ -375,6 +387,7 @@ function DefaultQueueCard<T>({
           )}
         </div>
         <h2>{item.title}</h2>
+        <QueueSignals item={item} />
         <div className="pj-card-meta">
           <span>
             <UserRound size={13} />
@@ -401,6 +414,7 @@ function DefaultQueueCard<T>({
             {stage}
           </span>
           <span>{item.ownerLabel}</span>
+                          <QueueSignals item={item} />
           {balance.balanceDue && (
             <span className="pj-balance-badge is-due">
               <AlertTriangle size={11} /> Saldo pendiente
@@ -817,6 +831,7 @@ export function ProductionQueueViews<T>({
                       <b>{item.code}</b>
                       <strong>{item.title}</strong>
                       <small>{extractStageName(item)}</small>
+                      <QueueSignals item={item} />
                     </div>
                     <div className="pj-list-view-client">
                       <span>{item.customer}</span>
@@ -926,6 +941,7 @@ export function ProductionQueueViews<T>({
                         </td>
                         <td className="pj-list-view-owner">
                           <span>{item.ownerLabel}</span>
+                          <QueueSignals item={item} />
                         </td>
                         <td>
                           <span className="pj-status" data-state={item.status}>

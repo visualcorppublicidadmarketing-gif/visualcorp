@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { useWorkspace, formatMoney, formatDate } from '../../app/workspace';
 import { useAuth } from '../../auth/AuthProvider';
+import { matchesProductionRecord } from '../../lib/productionHub';
 import './ChatterDrawer360.css';
 
 /* --------------------------------------------------------------------------
@@ -180,7 +181,7 @@ function extractMentions(text: string): string[] {
 /* --------------------------------------------------------------------------
    ChatterTimelinePanel (Standalone or Inside Drawer)
    -------------------------------------------------------------------------- */
-export function ChatterTimelinePanel({
+function ChatterTimelinePanelContent({
   recordType,
   recordId,
   recordTitle,
@@ -190,12 +191,14 @@ export function ChatterTimelinePanel({
   metadata
 }: Omit<ChatterDrawer360Props, 'open' | 'onClose'>) {
   const { data, flash } = useWorkspace();
-  const { user } = useAuth();
+  const { user, organizationId } = useAuth();
+  const chatterStorageKey = `${CHATTER_STORAGE_KEY}:${organizationId || 'none'}:${user?.id || 'none'}`;
+  const vaultStorageKey = `${VAULT_STORAGE_KEY}:${organizationId || 'none'}:${user?.id || 'none'}`;
 
   // Local storage state
   const [storedChatter, setStoredChatter] = useState<ChatterStoragePayload>(() => {
     try {
-      const raw = localStorage.getItem(CHATTER_STORAGE_KEY);
+      const raw = localStorage.getItem(chatterStorageKey);
       if (!raw) return { items: [], activities: [] };
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
@@ -214,11 +217,11 @@ export function ChatterTimelinePanel({
   const saveChatterPayload = useCallback((next: ChatterStoragePayload) => {
     setStoredChatter(next);
     try {
-      localStorage.setItem(CHATTER_STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(chatterStorageKey, JSON.stringify(next));
     } catch (e) {
       console.warn('Error al guardar en vc-enterprise-chatter-v1', e);
     }
-  }, []);
+  }, [chatterStorageKey]);
 
   // Composer Tabs State
   const [composerTab, setComposerTab] = useState<'note' | 'activity' | 'client'>('note');
@@ -288,11 +291,10 @@ export function ChatterTimelinePanel({
         if (recordType === 'sale' && (saleId === normalizedRecordId || saleCode === normalizedRecordId)) {
           matches = true;
         } else if (recordType === 'customer' && (
-          (saleCustomerId && saleCustomerId === normalizedRecordId) ||
-          (saleCustomer && normalizedRecordTitle && saleCustomer.includes(normalizedRecordTitle))
+          (saleCustomerId && saleCustomerId === normalizedRecordId)
         )) {
           matches = true;
-        } else if (recordType === 'job' && (saleId === normalizedRecordId || saleCode === normalizedRecordId)) {
+        } else if (recordType === 'job' && Boolean(metadata?.saleId) && saleId === String(metadata?.saleId).toLowerCase()) {
           matches = true;
         }
 
@@ -330,11 +332,10 @@ export function ChatterTimelinePanel({
         if (recordType === 'quote' && quoteId === normalizedRecordId) {
           matches = true;
         } else if (recordType === 'customer' && (
-          (quoteCustomer && normalizedRecordTitle && quoteCustomer.includes(normalizedRecordTitle)) ||
-          (phoneDigits && quotePhone && phoneDigits === quotePhone)
+          String(quote.customerId || quote.customer_id || '').toLowerCase() === normalizedRecordId
         )) {
           matches = true;
-        } else if (recordType === 'job' && (quoteId === normalizedRecordId || String(quote.jobId || '').toLowerCase() === normalizedRecordId)) {
+        } else if (recordType === 'job' && String(quote.jobId || '').toLowerCase() === normalizedRecordId) {
           matches = true;
         }
 
@@ -364,9 +365,9 @@ export function ChatterTimelinePanel({
         const itemName = String(mov.itemName || '').toLowerCase();
 
         let matches = false;
-        if (recordType === 'inventory' && (itemId === normalizedRecordId || (itemName && normalizedRecordTitle && itemName.includes(normalizedRecordTitle)))) {
+        if (recordType === 'inventory' && itemId === normalizedRecordId) {
           matches = true;
-        } else if (recordType === 'job' && (ref === normalizedRecordId || reason.includes(normalizedRecordId))) {
+        } else if (recordType === 'job' && Boolean(normalizedRecordId) && String(mov.jobId || mov.production_job_id || '').toLowerCase() === normalizedRecordId) {
           matches = true;
         }
 
@@ -389,19 +390,18 @@ export function ChatterTimelinePanel({
 
     // 4. Live Files from Vault (vc-enterprise-vault-v1)
     try {
-      const vaultRaw = localStorage.getItem(VAULT_STORAGE_KEY);
+      const vaultRaw = localStorage.getItem(vaultStorageKey);
       if (vaultRaw) {
         const vaultFiles = JSON.parse(vaultRaw);
         if (Array.isArray(vaultFiles)) {
           vaultFiles.forEach((file: any) => {
-            const fRecordId = String(file.recordId || file.jobId || file.customerId || '').toLowerCase();
-            const fCustomer = String(file.customerName || file.client || '').toLowerCase();
-            const tags = Array.isArray(file.tags) ? file.tags.map((t: any) => String(t).toLowerCase()) : [];
-
-            let matches = false;
-            if (fRecordId === normalizedRecordId) matches = true;
-            else if (tags.includes(normalizedRecordId) || (normalizedRecordTitle && tags.includes(normalizedRecordTitle))) matches = true;
-            else if (recordType === 'customer' && fCustomer && normalizedRecordTitle && fCustomer.includes(normalizedRecordTitle)) matches = true;
+            const matches = recordType === 'customer'
+              ? Boolean(normalizedRecordId) && String(file.customerId || '').toLowerCase() === normalizedRecordId
+              : recordType === 'job' && Boolean(normalizedRecordId) && (
+                String(file.jobId || '').toLowerCase() === normalizedRecordId
+                || (Boolean(metadata?.orderCode) && file.orderCode === metadata?.orderCode)
+                || (file.recordType === 'job' && String(file.recordId || '').toLowerCase() === normalizedRecordId)
+              );
 
             if (matches) {
               list.push({
@@ -431,12 +431,13 @@ export function ChatterTimelinePanel({
         const portalOrders = JSON.parse(portalRaw);
         if (Array.isArray(portalOrders)) {
           portalOrders.forEach((order: any) => {
+            if (order.organizationId !== organizationId) return;
             const orderId = String(order.id || order.jobId || order.code || '').toLowerCase();
             const orderCustomer = String(order.customer || '').toLowerCase();
 
             let matches = false;
-            if (orderId === normalizedRecordId) matches = true;
-            else if (recordType === 'customer' && orderCustomer && normalizedRecordTitle && orderCustomer.includes(normalizedRecordTitle)) matches = true;
+            if (recordType === 'job' && String(order.jobId || '').toLowerCase() === normalizedRecordId) matches = true;
+            else if (recordType === 'customer' && String(order.customerId || '').toLowerCase() === normalizedRecordId) matches = true;
 
             if (matches) {
               list.push({
@@ -460,19 +461,19 @@ export function ChatterTimelinePanel({
     }
 
     return list;
-  }, [data, recordId, recordTitle, recordType, recordPhone]);
+  }, [data, recordId, recordTitle, recordType, recordPhone, metadata?.saleId, metadata?.orderCode, organizationId, vaultStorageKey]);
 
   // Combine stored items + live events, matching this record
   const matchingStoredItems = useMemo(() => {
     return storedChatter.items.filter(
-      (item) => item.recordId === recordId || (item.recordTitle && recordTitle && item.recordTitle.toLowerCase() === recordTitle.toLowerCase())
+      (item) => matchesProductionRecord(item, recordType, recordId)
     );
-  }, [storedChatter.items, recordId, recordTitle]);
+  }, [storedChatter.items, recordId, recordType]);
 
   // If completely empty, generate initial baseline demo/reference items (marked as Referencia / Demo operativa)
   const initialDemoItems = useMemo<ChatterEvent[]>(() => {
     if (matchingStoredItems.length > 0 || liveEvents.length > 0) return [];
-    
+
     return [
       {
         id: `demo-init-${recordId}`,
@@ -549,9 +550,9 @@ export function ChatterTimelinePanel({
   // Pending scheduled activities for this record
   const pendingActivities = useMemo(() => {
     return storedChatter.activities.filter(
-      (a) => (a.recordId === recordId || a.recordTitle === recordTitle) && a.status === 'pending'
+      (a) => matchesProductionRecord(a, recordType, recordId) && a.status === 'pending'
     );
-  }, [storedChatter.activities, recordId, recordTitle]);
+  }, [storedChatter.activities, recordId, recordType]);
 
   /* --------------------------------------------------------------------------
      Executive KPIs Calculation
@@ -566,8 +567,7 @@ export function ChatterTimelinePanel({
     switch (recordType) {
       case 'customer': {
         const customerSales = (data?.sales || []).filter((s: any) =>
-          String(s.customer || '').toLowerCase().includes(recordTitle.toLowerCase()) ||
-          String(s.customerId || '').toLowerCase() === recordId.toLowerCase()
+          String(s.customerId || s.customer_id || '').toLowerCase() === recordId.toLowerCase()
         );
         const totalPurchased = customerSales.reduce((acc: number, s: any) => acc + (Number(s.total) || 0), 0);
         const totalPending = customerSales.reduce((acc: number, s: any) => acc + (Number(s.balance) || 0), 0);
@@ -580,7 +580,7 @@ export function ChatterTimelinePanel({
         ];
       }
       case 'job': {
-        const matchingSale = (data?.sales || []).find((s: any) => s.id === recordId || s.code === recordId);
+        const matchingSale = (data?.sales || []).find((s: any) => Boolean(metadata?.saleId) && s.id === metadata?.saleId);
         const totalVal = metadata?.total ?? matchingSale?.total ?? 0;
         const balVal = metadata?.balance ?? matchingSale?.balance ?? 0;
         const vaultCount = filterCounts.file;
@@ -642,7 +642,7 @@ export function ChatterTimelinePanel({
   const handleOpenWhatsApp = () => {
     const phone = normalizeEcuadorPhone(recordPhone);
     const text = buildWhatsAppMessage(recordType, recordTitle, recordId);
-    
+
     // Log WhatsApp launch to timeline
     const auditItem: ChatterEvent = {
       id: `wa-${Date.now()}`,
@@ -1570,3 +1570,8 @@ export function ChatterDrawer360({
 }
 
 export default ChatterDrawer360;
+
+export function ChatterTimelinePanel(props: Omit<ChatterDrawer360Props, 'open' | 'onClose'>) {
+  const { organizationId, user } = useAuth();
+  return <ChatterTimelinePanelContent key={`${organizationId}:${user?.id}:${props.recordType}:${props.recordId}`} {...props} />;
+}

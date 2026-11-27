@@ -5,7 +5,7 @@ import {
   Eye,
   Image as ImageIcon,
   Layers,
-  MessageCircle,
+  Plus,
   RotateCcw,
   Save,
   Search,
@@ -17,6 +17,15 @@ import { Link } from 'react-router-dom';
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
+import { usePersistentDraft } from '../../lib/usePersistentDraft';
+import { DraftRecoveryBanner, PublishConfirmBar } from '../../components/ui/PublishConfirmBar';
+import { Dialog, useConfirm } from '../../components/ui/OperationalKit';
+import { catalogImagesForProduct } from '../../data/catalogProductImages';
+import {
+  consolidateStorefrontQuantityTiers,
+  getStorefrontProductGroup,
+  type PublicQuantityTier,
+} from '../../public-site/storefrontCatalog';
 import { SiteAdminNav } from './SiteAdminNav';
 
 type BaseProductInfo = {
@@ -29,11 +38,18 @@ type BaseProductInfo = {
 
 type StoreProduct = {
   id: string;
+  slug: string;
+  sku?: string | null;
   name: string;
   description: string;
   category: string | null;
+  calc_type?: string | null;
   sort_order: number;
   image: string | null;
+  images?: string[] | null;
+  features?: string[] | null;
+  quantity_tiers?: PublicQuantityTier[] | null;
+  quantityTiers?: string[];
   is_published: boolean;
   hasOverride: boolean;
   baseProduct: BaseProductInfo;
@@ -68,22 +84,52 @@ const toDraft = (product: StoreProduct): ProductDraft => ({
 
 export function StorefrontAdminPage() {
   const { organizationId, user, hasPermission } = useAuth();
+  const confirm = useConfirm();
   const canEdit = hasPermission('catalog_admin', 'edit');
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [selectedId, setSelectedId] = useState('');
-  const [draft, setDraft] = useState<ProductDraft | null>(null);
   const [term, setTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const [previewFailed, setPreviewFailed] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
-  const selected = products.find((product) => product.id === selectedId) || null;
+  const selected = useMemo(
+    () => products.find((product) => product.id === selectedId) || null,
+    [products, selectedId]
+  );
+
+  const serverDraft = useMemo<ProductDraft>(
+    () =>
+      selected
+        ? toDraft(selected)
+        : { name: '', description: '', category: '', image: '', order: '0' },
+    [selected]
+  );
+
+  const {
+    draft,
+    setDraft,
+    isDirty,
+    draftSavedAt,
+    isRecovered,
+    pendingRecovery,
+    recoverDraft,
+    dismissRecovery,
+    discardDraft,
+    markSaved,
+  } = usePersistentDraft<ProductDraft>({
+    orgId: organizationId,
+    draftKey: selectedId ? `storefront:${selectedId}` : 'storefront:none',
+    serverValue: serverDraft,
+    enabled: Boolean(selected),
+  });
 
   const refresh = useCallback(async () => {
     if (!supabase || !organizationId) {
@@ -97,7 +143,7 @@ export function StorefrontAdminPage() {
       const [{ data: productRows, error: productsError }, { data: overrideRows, error: overridesError }] = await Promise.all([
         supabase
           .from('public_catalog_products')
-          .select('id,name,description,category,sort_order,image,is_published')
+          .select('id,sku,slug,name,description,category,calc_type,sort_order,image,images,features,quantity_tiers,is_published')
           .order('sort_order')
           .limit(500),
         supabase
@@ -114,17 +160,34 @@ export function StorefrontAdminPage() {
 
       type RawCatalogRow = {
         id: string;
+        sku?: string | null;
+        slug: string;
         name: string;
         description: string;
         category: string | null;
+        calc_type?: string | null;
         sort_order: number;
         image: string | null;
+        images?: string[] | null;
+        features?: string[] | null;
+        quantity_tiers?: PublicQuantityTier[] | null;
         is_published: boolean;
       };
 
-      const merged: StoreProduct[] = (((productRows as RawCatalogRow[] | null) || [])).map((product) => {
+      const consolidated = consolidateStorefrontQuantityTiers((productRows as RawCatalogRow[] | null) || []);
+      const merged: StoreProduct[] = consolidated.map((product) => {
         const override = overrides.get(product.id);
         const hasOverride = Boolean(override);
+        const effectiveCategory = override?.display_category || product.category;
+        const effectiveName = override?.display_name || product.name;
+        const effectiveImage = override?.display_image_url || product.image;
+        const resolvedImages = catalogImagesForProduct({
+          id: product.id,
+          name: effectiveName,
+          family: effectiveCategory || '',
+          image: effectiveImage,
+          images: product.images || [],
+        });
         const baseProduct: BaseProductInfo = {
           name: product.name,
           description: product.description,
@@ -134,10 +197,12 @@ export function StorefrontAdminPage() {
         };
         return {
           ...product,
-          name: override?.display_name || product.name,
+          sku: product.sku?.trim() || null,
+          name: effectiveName,
           description: override?.display_description || product.description,
-          category: override?.display_category || product.category,
-          image: override?.display_image_url || product.image,
+          category: effectiveCategory,
+          image: resolvedImages[0] || effectiveImage,
+          images: resolvedImages.length ? resolvedImages : product.images || [],
           sort_order: override?.sort_order ?? product.sort_order,
           hasOverride,
           baseProduct,
@@ -158,10 +223,28 @@ export function StorefrontAdminPage() {
   }, [refresh]);
 
   useEffect(() => {
-    setDraft(selected ? toDraft(selected) : null);
+    setPreviewFailed(false);
+  }, [selectedId, draft.image]);
+
+  const selectProduct = async (nextId: string) => {
+    if (nextId === selectedId) return;
+    if (isDirty || isRecovered) {
+      const accepted = await confirm({
+        eyebrow: 'CAMBIOS SIN PUBLICAR',
+        title: `¿Cambiar de producto sin publicar "${selected?.name || ''}"?`,
+        description:
+          'Los cambios sin guardar permanecerán respaldados localmente en este navegador para este producto hasta que vuelvas.',
+        tone: 'warning',
+        confirmLabel: 'Cambiar de producto',
+        cancelLabel: 'Seguir editando',
+      });
+      if (!accepted) return;
+    }
+    setSelectedId(nextId);
     setPreviewFailed(false);
     setNotice('');
-  }, [selectedId, selected?.name, selected?.description, selected?.category, selected?.image, selected?.sort_order]);
+    setError('');
+  };
 
   const uniqueCategories = useMemo(() => {
     const cats = new Set<string>();
@@ -190,7 +273,7 @@ export function StorefrontAdminPage() {
     const normalizedTerm = term.trim().toLocaleLowerCase('es');
     return products.filter((product) => {
       if (normalizedTerm) {
-        const haystack = `${product.name} ${product.category || ''} ${product.description || ''}`.toLocaleLowerCase('es');
+        const haystack = `${product.name} ${product.sku || ''} ${product.category || ''} ${product.description || ''}`.toLocaleLowerCase('es');
         if (!haystack.includes(normalizedTerm)) return false;
       }
       if (statusFilter === 'custom' && !product.hasOverride) return false;
@@ -209,8 +292,7 @@ export function StorefrontAdminPage() {
     });
   }, [products, term, statusFilter, categoryFilter, failedImages]);
 
-  const save = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const publishPresentation = async () => {
     if (!supabase || !organizationId || !selected || !draft || !canEdit || saving || restoring) return;
     setSaving(true);
     setError('');
@@ -236,28 +318,41 @@ export function StorefrontAdminPage() {
         .upsert(values, { onConflict: 'organization_id,product_id' });
       if (saveError) throw saveError;
 
+      const nextName = values.display_name || selected.baseProduct.name;
+      const nextDescription = values.display_description || selected.baseProduct.description;
+      const nextCategory = values.display_category || selected.baseProduct.category;
+      const nextImage = values.display_image_url || selected.baseProduct.image;
+      const savedDraft: ProductDraft = {
+        name: nextName,
+        description: nextDescription,
+        category: nextCategory || '',
+        image: nextImage || '',
+        order: String(order),
+      };
+
       setProducts((current) =>
         current.map((product) =>
           product.id === selected.id
             ? {
                 ...product,
-                name: values.display_name || selected.baseProduct.name,
-                description: values.display_description || selected.baseProduct.description,
-                category: values.display_category || selected.baseProduct.category,
-                image: values.display_image_url || selected.baseProduct.image,
+                name: nextName,
+                description: nextDescription,
+                category: nextCategory,
+                image: nextImage,
                 sort_order: order,
                 hasOverride: true,
               }
             : product
         )
       );
+      markSaved(savedDraft);
       setFailedImages((prev) => {
         const next = { ...prev };
         delete next[selected.id];
         return next;
       });
       setPreviewFailed(false);
-      setNotice('Presentación guardada. Las tarifas y datos de cálculo no se modificaron.');
+      setNotice('Presentación publicada en /tienda. Las tarifas y escalas internas no se modificaron.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se pudo guardar la presentación del producto.');
     } finally {
@@ -265,11 +360,44 @@ export function StorefrontAdminPage() {
     }
   };
 
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selected || !canEdit || (!isDirty && !isRecovered) || saving || restoring) return;
+    const accepted = await confirm({
+      eyebrow: 'CONFIRMAR PUBLICACIÓN EN /TIENDA',
+      title: `¿Publicar cambios en "${draft.name.trim() || selected.name}"?`,
+      description:
+        'La ficha pública de este producto en /tienda actualizará de inmediato nombre, descripción, categoría, imagen y orden.',
+      summaryItems: [
+        { label: 'Nombre visible', value: draft.name.trim() || selected.baseProduct.name },
+        { label: 'Categoría', value: draft.category.trim() || selected.baseProduct.category || 'Sin categoría' },
+        { label: 'Orden', value: `#${draft.order}` },
+      ],
+      consequences: [
+        'Los precios internos y rangos de cantidad del catálogo no se alteran.',
+        'La tarjeta de /tienda reflejará esta presentación inmediatamente.',
+      ],
+      tone: 'brand',
+      confirmLabel: 'Publicar en /tienda',
+      cancelLabel: 'Revisar antes',
+    });
+    if (accepted) {
+      await publishPresentation();
+    }
+  };
+
   const handleRestoreOriginal = async () => {
     if (!supabase || !organizationId || !selected || !canEdit || saving || restoring) return;
-    const confirmed = window.confirm(
-      `¿Deseas restaurar "${selected.name}" a los valores originales del catálogo y eliminar la personalización en web?`
-    );
+    const confirmed = await confirm({
+      eyebrow: 'RESTAURAR CATÁLOGO BASE',
+      title: `¿Restaurar "${selected.name}" a los valores originales?`,
+      description:
+        'Se eliminará la personalización web actual y el producto volverá a mostrar los datos base del catálogo.',
+      tone: 'danger',
+      destructive: true,
+      confirmLabel: 'Sí, restaurar original',
+      cancelLabel: 'Cancelar',
+    });
     if (!confirmed) return;
     setRestoring(true);
     setError('');
@@ -293,7 +421,7 @@ export function StorefrontAdminPage() {
       };
 
       setProducts((current) => current.map((item) => (item.id === selected.id ? restoredProduct : item)));
-      setDraft(toDraft(restoredProduct));
+      markSaved(toDraft(restoredProduct));
       setFailedImages((prev) => {
         const next = { ...prev };
         delete next[selected.id];
@@ -306,6 +434,36 @@ export function StorefrontAdminPage() {
     } finally {
       setRestoring(false);
     }
+  };
+
+  const handleClearImage = async () => {
+    if (!canEdit || !draft.image) return;
+    const accepted = await confirm({
+      eyebrow: 'LIMPIAR IMAGEN EN BORRADOR',
+      title: '¿Quitar la URL de imagen del borrador?',
+      description: 'El producto mostrará el marcador de posición en vista previa hasta que definas o restaures una imagen.',
+      tone: 'warning',
+      confirmLabel: 'Sí, limpiar imagen',
+      cancelLabel: 'Cancelar',
+    });
+    if (!accepted) return;
+    setDraft({ ...draft, image: '' });
+    setPreviewFailed(false);
+  };
+
+  const handleRestoreBaseImage = async () => {
+    if (!canEdit || !selected?.baseProduct.image) return;
+    const accepted = await confirm({
+      eyebrow: 'RESTAURAR IMAGEN BASE',
+      title: '¿Cargar la imagen original del catálogo en el borrador?',
+      description: 'Se reemplazará la URL actual del borrador con la imagen original sincronizada del producto.',
+      tone: 'info',
+      confirmLabel: 'Restaurar imagen',
+      cancelLabel: 'Cancelar',
+    });
+    if (!accepted) return;
+    setDraft({ ...draft, image: selected.baseProduct.image || '' });
+    setPreviewFailed(false);
   };
 
   return (
@@ -323,7 +481,7 @@ export function StorefrontAdminPage() {
           gap: 12px;
           margin: 0 0 18px 0;
         }
-        @media (max-width: 1100px) {
+        @media (max-width: 1260px) {
           .site-admin-kpi-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
@@ -339,15 +497,20 @@ export function StorefrontAdminPage() {
           align-items: center;
           gap: 12px;
           padding: 13px 15px;
-          background: #ffffff;
-          border: 1px solid #e7e6ec;
-          border-radius: 12px;
-          box-shadow: 0 1px 3px rgba(32, 33, 41, 0.04);
+          background: var(--admin-frosted-bg, #ffffff);
+          border: 1px solid var(--admin-frosted-border, #e7e6ec);
+          border-radius: 14px;
+          backdrop-filter: blur(var(--admin-frosted-blur, 16px));
+          -webkit-backdrop-filter: blur(var(--admin-frosted-blur, 16px));
+          box-shadow: var(--admin-frosted-shadow, 0 1px 3px rgba(32, 33, 41, 0.04));
           transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+          min-width: 0;
+          max-width: 100%;
+          box-sizing: border-box;
         }
         .site-admin-kpi-card:hover {
-          border-color: #cb84c5;
-          box-shadow: 0 3px 10px rgba(116, 19, 111, 0.08);
+          border-color: rgba(165, 16, 145, 0.36);
+          box-shadow: 0 3px 12px rgba(116, 19, 111, 0.1);
         }
         .site-admin-kpi-icon {
           display: flex;
@@ -356,8 +519,8 @@ export function StorefrontAdminPage() {
           width: 40px;
           height: 40px;
           border-radius: 10px;
-          background: #fbf5fc;
-          color: #74136f;
+          background: rgba(165, 16, 145, 0.11);
+          color: #a51091;
           flex-shrink: 0;
         }
         .site-admin-kpi-body {
@@ -369,7 +532,7 @@ export function StorefrontAdminPage() {
         .site-admin-kpi-label {
           font-size: 9px;
           font-weight: 750;
-          color: #656673;
+          color: var(--admin-glass-muted, #656673);
           letter-spacing: 0.06em;
           text-transform: uppercase;
           white-space: nowrap;
@@ -379,12 +542,12 @@ export function StorefrontAdminPage() {
         .site-admin-kpi-val {
           font-size: 21px;
           font-weight: 850;
-          color: #1f2028;
+          color: var(--admin-glass-ink, #1f2028);
           line-height: 1.2;
         }
         .site-admin-kpi-hint {
           font-size: 9.5px;
-          color: #8c8d98;
+          color: var(--admin-glass-muted, #8c8d98);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -880,6 +1043,39 @@ export function StorefrontAdminPage() {
           -webkit-box-orient: vertical;
           min-height: 42px;
         }
+        .store-live-card-meta {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 6px;
+        }
+        .store-live-card-sku {
+          display: inline-flex;
+          align-items: center;
+          padding: 2px 7px;
+          border-radius: 999px;
+          background: rgba(39, 213, 236, 0.14);
+          border: 1px solid rgba(39, 213, 236, 0.34);
+          color: #67e8f9;
+          font-size: 8px;
+          font-weight: 750;
+          letter-spacing: 0.04em;
+        }
+        .store-live-card-tiers {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+          margin-top: 2px;
+        }
+        .store-live-card-tier-pill {
+          font-size: 8.5px;
+          padding: 2px 7px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          color: #d8d9e6;
+          font-weight: 650;
+        }
         .store-live-card-footer {
           display: flex;
           flex-direction: column;
@@ -888,26 +1084,36 @@ export function StorefrontAdminPage() {
           padding-top: 10px;
           border-top: 1px solid rgba(255, 255, 255, 0.09);
         }
-        .store-live-card-whatsapp-btn {
+        .store-live-card-add-btn {
           display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 6px;
           width: 100%;
-          min-height: 32px;
+          min-height: 34px;
           padding: 0 12px;
-          border-radius: 8px;
-          background: linear-gradient(135deg, #25d366, #128c7e);
+          border-radius: 999px;
+          background: linear-gradient(135deg, #a51091, #74136f);
+          border: 1px solid rgba(255, 255, 255, 0.18);
           color: #ffffff;
           font-size: 10px;
           font-weight: 800;
-          box-shadow: 0 3px 10px rgba(37, 211, 102, 0.25);
+          box-shadow: 0 4px 14px rgba(165, 16, 145, 0.35);
           user-select: none;
         }
         .store-live-card-price-note {
-          color: #8b8a97;
-          font-size: 8.5px;
+          color: #a7a6b2;
+          font-size: 9px;
           text-align: center;
+        }
+        .work-app.theme-dark .search-box input,
+        .work-app.theme-dark .store-admin-category-select,
+        .work-app.theme-dark .store-inline-btn,
+        .work-app.theme-dark .store-step-btn,
+        .work-app.theme-dark .site-admin-filter-pill:not(.is-active) {
+          background: var(--admin-clear-bg);
+          border-color: var(--admin-frosted-border);
+          color: var(--admin-glass-ink);
         }
 
         .store-admin-editor-actions {
@@ -940,6 +1146,40 @@ export function StorefrontAdminPage() {
       />
 
       <SiteAdminNav active="/admin/tienda" />
+
+      <DraftRecoveryBanner
+        pendingRecovery={pendingRecovery}
+        itemLabel={selected ? `la presentación de "${selected.name}"` : 'el producto'}
+        onRecover={recoverDraft}
+        onDismiss={dismissRecovery}
+      />
+
+      {selected && (
+        <PublishConfirmBar
+          isDirty={isDirty}
+          isRecovered={isRecovered}
+          draftSavedAt={draftSavedAt}
+          sectionName={`Tienda · ${selected.name}`}
+          canPublish={canEdit}
+          publishing={saving || restoring}
+          previewLabel="Vista previa de ficha"
+          publishLabel="Publicar en /tienda"
+          publishConfirmTitle={`¿Publicar cambios en "${draft.name.trim() || selected.name}"?`}
+          publishConfirmDescription="La tarjeta de /tienda mostrará de inmediato estos textos, categoría, imagen y orden de aparición."
+          publishSummaryItems={[
+            { label: 'Nombre visible', value: draft.name.trim() || selected.baseProduct.name },
+            { label: 'Categoría', value: draft.category.trim() || selected.baseProduct.category || 'Sin categoría' },
+            { label: 'Orden', value: `#${draft.order}` },
+          ]}
+          publishConsequences={[
+            'Las tarifas internas, costos y escalas de cálculo no se modifican.',
+            'El producto seleccionado quedará sincronizado en el catálogo web.',
+          ]}
+          onPreview={() => setPreviewOpen(true)}
+          onDiscard={discardDraft}
+          onPublish={publishPresentation}
+        />
+      )}
 
       {notice && (
         <div className="site-content-notice" role="status">
@@ -1115,7 +1355,7 @@ export function StorefrontAdminPage() {
                   <button
                     type="button"
                     key={product.id}
-                    onClick={() => setSelectedId(product.id)}
+                    onClick={() => void selectProduct(product.id)}
                     className={`store-admin-item${selectedId === product.id ? ' is-selected' : ''}`}
                     aria-selected={selectedId === product.id}
                   >
@@ -1155,12 +1395,12 @@ export function StorefrontAdminPage() {
         </section>
 
         {/* 3. Right Column: Presentation Studio & Live Card Preview */}
-        <form className="panel form-panel store-admin-editor" onSubmit={save}>
+        <form className="panel form-panel store-admin-editor" onSubmit={(event) => void save(event)}>
           <div className="panel-heading store-admin-header-main">
             <div className="store-admin-header-info">
               <span className="eyebrow">ESTUDIO DE PRESENTACIÓN</span>
               <h2>{selected?.name || 'Selecciona un producto'}</h2>
-              {selected && draft && (
+              {selected && (
                 <div className="store-admin-status-badges">
                   {selected.hasOverride ? (
                     <span className="store-badge-override">
@@ -1172,6 +1412,7 @@ export function StorefrontAdminPage() {
                     </span>
                   )}
                   <span className="store-badge-order">Orden #{draft.order}</span>
+                  {selected.sku && <span className="store-badge-category">SKU {selected.sku}</span>}
                   {selected.baseProduct.category && selected.baseProduct.category !== draft.category && (
                     <span className="store-badge-category">
                       Original: {selected.baseProduct.category}
@@ -1183,7 +1424,7 @@ export function StorefrontAdminPage() {
             <ShoppingBag size={20} className="store-admin-header-icon" aria-hidden="true" />
           </div>
 
-          {!selected || !draft ? (
+          {!selected ? (
             <div className="empty-state">Selecciona un producto para editar su presentación.</div>
           ) : (
             <>
@@ -1287,10 +1528,7 @@ export function StorefrontAdminPage() {
                       type="button"
                       className="store-inline-btn"
                       disabled={!canEdit}
-                      onClick={() => {
-                        setDraft({ ...draft, image: '' });
-                        setPreviewFailed(false);
-                      }}
+                      onClick={() => void handleClearImage()}
                     >
                       <X size={12} /> Limpiar imagen
                     </button>
@@ -1300,10 +1538,7 @@ export function StorefrontAdminPage() {
                       type="button"
                       className="store-inline-btn is-restore"
                       disabled={!canEdit}
-                      onClick={() => {
-                        setDraft({ ...draft, image: selected.baseProduct.image || '' });
-                        setPreviewFailed(false);
-                      }}
+                      onClick={() => void handleRestoreBaseImage()}
                     >
                       <RotateCcw size={12} /> Restaurar imagen original
                     </button>
@@ -1369,13 +1604,13 @@ export function StorefrontAdminPage() {
                 </div>
               </div>
 
-              {/* Live Storefront Card Preview */}
+              {/* Live Storefront Card Preview aligned with /tienda */}
               <div className="store-admin-live-preview-wrap">
                 <div className="store-admin-live-preview-head">
                   <span>
-                    <Eye size={13} /> VISTA PREVIA EN TIENDA PÚBLICA (/tienda)
+                    <Eye size={13} /> VISTA PREVIA REAL EN /TIENDA
                   </span>
-                  <small>Aspecto exacto para el cliente</small>
+                  <small>Tarjeta pública para lista de cotización</small>
                 </div>
                 <div className="store-admin-live-card">
                   <div className="store-live-card-media">
@@ -1397,23 +1632,44 @@ export function StorefrontAdminPage() {
                     </span>
                   </div>
                   <div className="store-live-card-content">
-                    <span className="store-live-card-category">
-                      {draft.category.trim() || selected.category || 'Categoría'}
-                    </span>
+                    <div className="store-live-card-meta">
+                      <span className="store-live-card-category">
+                        {getStorefrontProductGroup({
+                          name: draft.name.trim() || selected.name,
+                          category: draft.category.trim() || selected.category,
+                        })}
+                      </span>
+                      {selected.sku && !selected.quantityTiers?.length && (
+                        <span className="store-live-card-sku">Código · {selected.sku}</span>
+                      )}
+                    </div>
                     <h3 className="store-live-card-title">
                       {draft.name.trim() || selected.name || 'Nombre del producto'}
                     </h3>
                     <p className="store-live-card-desc">
                       {draft.description.trim() ||
                         selected.description ||
-                        'Consulta los detalles al cotizar con nuestros asesores de Visual Corp.'}
+                        'Cuéntanos qué tienes en mente y revisamos los detalles contigo.'}
                     </p>
-                    <div className="store-live-card-footer">
-                      <div className="store-live-card-whatsapp-btn" role="button" aria-disabled="true">
-                        <MessageCircle size={14} />
-                        <span>Cotizar por WhatsApp</span>
+                    {selected.quantityTiers && selected.quantityTiers.length > 0 && (
+                      <div className="store-live-card-tiers" aria-label="Opciones de cantidad disponibles">
+                        {selected.quantityTiers.map((tierLabel) => (
+                          <span key={tierLabel} className="store-live-card-tier-pill">
+                            {tierLabel}
+                          </span>
+                        ))}
                       </div>
-                      <span className="store-live-card-price-note">Precio según proyecto</span>
+                    )}
+                    <div className="store-live-card-footer">
+                      <div className="store-live-card-add-btn" role="button" aria-disabled="true">
+                        <Plus size={14} />
+                        <span>Añadir a mi lista</span>
+                      </div>
+                      <span className="store-live-card-price-note">
+                        {selected.quantityTiers?.length
+                          ? `${selected.quantityTiers.length} opciones de cantidad · Precio según proyecto`
+                          : 'Precio según proyecto'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1421,7 +1677,7 @@ export function StorefrontAdminPage() {
 
               <p className="field-hint">
                 La tienda consume el catálogo público sincronizado. Esta pantalla solo cambia nombre, descripción,
-                categoría, imagen y orden; no permite crear productos ni alterar precios.
+                categoría, imagen y orden; no permite crear productos ni alterar precios o rangos internos.
               </p>
 
               {/* Actions */}
@@ -1429,10 +1685,10 @@ export function StorefrontAdminPage() {
                 <button
                   className="button button-dark"
                   type="submit"
-                  disabled={!canEdit || saving || restoring}
+                  disabled={!canEdit || (!isDirty && !isRecovered) || saving || restoring}
                 >
                   <Save size={16} />
-                  {saving ? 'Guardando…' : 'Guardar presentación'}
+                  {saving ? 'Publicando…' : 'Publicar en /tienda'}
                 </button>
 
                 {selected.hasOverride && canEdit && (
@@ -1440,7 +1696,7 @@ export function StorefrontAdminPage() {
                     type="button"
                     className="button button-outline store-restore-btn"
                     disabled={!canEdit || saving || restoring}
-                    onClick={handleRestoreOriginal}
+                    onClick={() => void handleRestoreOriginal()}
                     title="Elimina el override y restaura los datos originales del catálogo"
                   >
                     <RotateCcw size={16} />
@@ -1452,6 +1708,77 @@ export function StorefrontAdminPage() {
           )}
         </form>
       </div>
+
+      {selected && (
+        <Dialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          size="md"
+          tone="brand"
+          eyebrow="VISTA PREVIA EN VIVO · /TIENDA"
+          title={draft.name.trim() || selected.name}
+          description="Simulación de cómo se verá este artículo en la vitrina pública sin exponer tarifas internas."
+          footer={
+            <button type="button" className="button button-outline" onClick={() => setPreviewOpen(false)}>
+              Cerrar vista previa
+            </button>
+          }
+        >
+          <div className="store-admin-live-preview-wrap" style={{ marginTop: 0 }}>
+            <div className="store-admin-live-card">
+              <div className="store-live-card-media">
+                {draft.image && !previewFailed ? (
+                  <img
+                    src={draft.image}
+                    alt={draft.name || selected.name}
+                    onError={() => setPreviewFailed(true)}
+                  />
+                ) : (
+                  <div className="store-live-card-placeholder">
+                    <ShoppingBag size={34} />
+                    <span>Sin imagen publicada</span>
+                  </div>
+                )}
+              </div>
+              <div className="store-live-card-content">
+                <div className="store-live-card-meta">
+                  <span className="store-live-card-category">
+                    {getStorefrontProductGroup({
+                      name: draft.name.trim() || selected.name,
+                      category: draft.category.trim() || selected.category,
+                    })}
+                  </span>
+                  {selected.sku && <span className="store-live-card-sku">Código · {selected.sku}</span>}
+                </div>
+                <h3 className="store-live-card-title">{draft.name.trim() || selected.name}</h3>
+                <p className="store-live-card-desc">
+                  {draft.description.trim() ||
+                    selected.description ||
+                    'Cuéntanos qué tienes en mente y revisamos los detalles contigo.'}
+                </p>
+                {selected.quantityTiers && selected.quantityTiers.length > 0 && (
+                  <div className="store-live-card-tiers">
+                    {selected.quantityTiers.map((tierLabel) => (
+                      <span key={tierLabel} className="store-live-card-tier-pill">
+                        {tierLabel}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="store-live-card-footer">
+                  <div className="store-live-card-add-btn" role="button" aria-disabled="true">
+                    <Plus size={14} />
+                    <span>Añadir a mi lista</span>
+                  </div>
+                  <span className="store-live-card-price-note">
+                    {selected.quantityTiers?.length ? 'Opciones por cantidad · Precio según proyecto' : 'Precio según proyecto'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Dialog>
+      )}
     </AppFrame>
   );
 }

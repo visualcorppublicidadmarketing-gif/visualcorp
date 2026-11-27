@@ -21,6 +21,7 @@ export type POSSaleAssetRecoveryRecord = {
   idempotencyKey: string | null;
   updatedAt: number;
   assets: StoredAsset[];
+  operationRecordKey?: string;
 };
 
 export type POSSaleAssetRecoveryAdapter = {
@@ -81,14 +82,15 @@ function browserAdapter(): POSSaleAssetRecoveryAdapter {
 }
 
 function assertScopeKey(scopeKey: string) {
-  if (!scopeKey || scopeKey.length > 200) throw new Error('No se pudo identificar de forma segura el borrador de adjuntos.');
+  if (!scopeKey || scopeKey.length > 500) throw new Error('No se pudo identificar de forma segura el borrador de adjuntos.');
 }
 
 export function createPOSSaleAssetRecoveryStore(adapter: POSSaleAssetRecoveryAdapter = browserAdapter()) {
   return {
-    async load(scopeKey: string): Promise<{ idempotencyKey: string | null; updatedAt: number; assets: CommercialAssetDraft[] } | null> {
+    async load(scopeKey: string, operationKey?: string): Promise<{ idempotencyKey: string | null; updatedAt: number; assets: CommercialAssetDraft[] } | null> {
       assertScopeKey(scopeKey);
-      const record = await adapter.get(scopeKey);
+      const pointer = await adapter.get(operationKey ? `${scopeKey}:operation:${operationKey}` : scopeKey);
+      const record = pointer?.operationRecordKey ? await adapter.get(pointer.operationRecordKey) : pointer;
       if (!record) return null;
       if (!Array.isArray(record.assets) || record.assets.length > 40) throw new Error('El borrador guardado de adjuntos no tiene un formato válido.');
       const assets = record.assets.map((asset): CommercialAssetDraft => {
@@ -116,12 +118,18 @@ export function createPOSSaleAssetRecoveryStore(adapter: POSSaleAssetRecoveryAda
         if (!asset.file || asset.file.size < 1 || asset.file.size > 10 * 1024 * 1024) throw new Error(`La imagen ${asset.title || asset.file?.name || ''} no está lista o supera 10 MB.`);
         return { id: asset.id, kind: 'image', title: asset.title.slice(0, 160), description: asset.description.slice(0, 500), fileName: asset.file.name, fileType: asset.file.type || 'image/webp', fileLastModified: asset.file.lastModified, fileBlob: asset.file };
       });
-      await adapter.put({ scopeKey, idempotencyKey: idempotencyKey || null, updatedAt: Date.now(), assets: storedAssets });
+      const operationRecordKey = idempotencyKey ? `${scopeKey}:operation:${idempotencyKey}` : scopeKey;
+      await adapter.put({ scopeKey: operationRecordKey, idempotencyKey: idempotencyKey || null, updatedAt: Date.now(), assets: storedAssets });
+      // The pointer is only a convenience. Every committed operation keeps its own Blob record.
+      if (idempotencyKey) await adapter.put({ scopeKey, idempotencyKey, operationRecordKey, updatedAt: Date.now(), assets: [] });
     },
 
-    async clear(scopeKey: string) {
+    async clear(scopeKey: string, operationKey?: string) {
       assertScopeKey(scopeKey);
-      await adapter.delete(scopeKey);
+      const pointer = await adapter.get(scopeKey);
+      const operationRecordKey = operationKey ? `${scopeKey}:operation:${operationKey}` : pointer?.operationRecordKey;
+      if (operationRecordKey) await adapter.delete(operationRecordKey);
+      if (!operationKey || pointer?.idempotencyKey === operationKey) await adapter.delete(scopeKey);
     },
   };
 }

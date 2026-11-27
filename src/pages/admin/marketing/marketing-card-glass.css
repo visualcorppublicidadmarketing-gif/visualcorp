@@ -978,6 +978,532 @@
   color: var(--mk-glass-muted);
 }
 
+/* =========================================================================
+   WorkflowToolbar, Estrategia, Operación, Resultados y Campañas (Glassmorph)
+   ========================================================================= */
+
+.work-app .vc-content-workspace .mk-work-toolbar {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--mk-glass-border);
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at 92% 6%, rgb(165 16 145 / 9%), transparent 46%),
+    radial-gradient(ellipse at 8% 92%, rgb(6 156 219 / 8%), transparent 44%),
+    var(--mk-glass-surface);
+  box-shadow: var(--mk-glass-shadow);
+  color: var(--mk-glass-ink);
+  backdrop-filter: var(--mk-glass-blur);
+  -webkit-backdrop-filter: var(--mk-glass-blur);
+}
+
+.work-app.theme-dark .vc-content-workspace .mk-work-toolbar,
+:root[data-theme='dark'] .vc-content-workspace .mk-work-toolbar {
+  border-color: var(--mk-glass-border);
+  background:
+    radial-gradient(ellipse at 92% 6%, rgb(208 147 240 / 15%), transparent 48%),
+    radial-gradient(ellipse at 8% 92%, rgb(56 189 248 / 11%), transparent 46%),
+    var(--mk-glass-surface);
+  box-shadow: var(--mk-glass-shadow);
+  color: var(--mk-glass-ink);
+}
+
+.work-app .vc-content-workspace .mk-work-toolbar :is(h2, p, label) {
+  color: var(--mk-glass-ink);
+}
+
+.work-app .vc-content-workspace .mk-work-toolbar .eyebrow {
+  color: var(--admin-glass-accent, #7e1977);
+}
+
+.work-app .vc-content-workspace .mk-work-queues button {
+  border: 1px solid var(--mk-glass-border);
+  border-radius: 11px;
+  background: var(--mk-glass-pill);
+  color: var(--mk-glass-ink);
+  box-shadow: var(--mk-glass-highlight);
+  backdrop-filter: var(--mk-glass-pill-blur);
+  -webkit-backdrop-filter: var(--mk-glass-pill-blur);
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.work-app .vc-content-workspace .mk-work-queues button:hover {
+  transform: translateY(-1px);
+  border-color: var(--mk-glass-border-hover);
+  background: color-mix(in srgb, var(--mk-glass-surface) 88%, white);
+}
+
+.work-app.theme-dark .vc-content-workspace .mk-work-queues button:hover,
+:root[data-theme='dark'] .vc-content-workspace .mk-work-queues button:hover {
+  background: rgb(255 255 255 / 10%);
+}
+
+.work-app .vc-content-workspace .mk-work-queues button[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--admin-glass-accent-strong, #a51091) 46%, var(--mk-glass-border));
+  background: linear-gradient(115deg, #8c35c8, #ba188f 65%, #268fc2);
+  color: #ffffff;
+  box-shadow: 0 8px 22px rgb(129 36 146 / 24%);
+}
+
+.work-app .vc-content-workspace .mk-work-queues button[aria-pressed='true'] b {
+  background: rgb(255 255 255 / 22%);
+  color: #ffffff;
+}
+
+/* Estrategia (.vc-strategy-column) */
+.work-app .vc-content-workspace .vc-strategy-column {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--mk-glass-border);
+  border-radius: 17px;
+  background: var(--mk-glass-column);
+  box-shadow: var(--mk-glass-shadow);
+  color: var(--mk-glass-ink);
+  backdrop-filter: var(--mk-glass-blur);
+  -webkit-backdrop-filter: var(--mk-glass-blur);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-strategy-column,
+:root[data-theme='dark'] .vc-content-workspace .vc-strategy-column {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-column);
+  box-shadow: var(--mk-glass-shadow);
+  color: var(--mk-glass-ink);
+}
+
+.work-app .vc-content-workspace .vc-strategy-column > header {
+  border-bottom-color: var(--mk-glass-line);
+}
+
+.work-app .vc-content-workspace .vc-strategy-column > header b {
+  color: var(--mk-glass-ink);
+}
+
+.work-app .vc-content-workspace .vc-strategy-column > header small,
+.work-app .vc-content-workspace .vc-strategy-column > article > small {
+  color: var(--mk-glass-muted);
+}
+
+.work-app .vc-content-workspace .vc-strategy-column > article {
+  border: 1px solid var(--mk-glass-border);
+  border-radius: 12px;
+  background: var(--mk-glass-pill);
+  box-shadow: var(--mk-glass-highlight);
+  color: var(--mk-glass-ink);
+}
+
+.work-app .vc-content-workspace .vc-strategy-column > article > b {
+  color: var(--mk-glass-ink);
+}
+
+.work-app .vc-content-workspace .vc-strategy-column > article > p,
+.work-app .vc-content-workspace .vc-strategy-column > article > div > span:first-child {
+  color: var(--mk-glass-muted);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-strategy-column > header > span {
+  background: rgb(52 211 153 / 16%);
+  color: #6ee7b7;
+}
+.work-app.theme-dark .vc-content-workspace .vc-strategy-column.is-debilidad > header > span {
+  background: rgb(251 146 60 / 16%);
+  color: #fdba74;
+}
+.work-app.theme-dark .vc-content-workspace .vc-strategy-column.is-oportunidad > header > span {
+  background: rgb(96 165 250 / 16%);
+  color: #93c5fd;
+}
+.work-app.theme-dark .vc-content-workspace .vc-strategy-column.is-amenaza > header > span {
+  background: rgb(244 114 182 / 16%);
+  color: #f9a8d4;
+}
+
+/* Operación (.vc-ops-card) */
+.work-app .vc-content-workspace .vc-ops-card {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--mk-glass-border);
+  border-radius: 17px;
+  background:
+    radial-gradient(ellipse at 92% 4%, rgb(165 16 145 / 8%), transparent 46%),
+    var(--mk-glass-surface);
+  box-shadow: var(--mk-glass-shadow);
+  color: var(--mk-glass-ink);
+  backdrop-filter: var(--mk-glass-blur);
+  -webkit-backdrop-filter: var(--mk-glass-blur);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.work-app .vc-content-workspace .vc-ops-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--mk-glass-border-hover);
+  box-shadow: var(--mk-glass-shadow-hover);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-ops-card,
+:root[data-theme='dark'] .vc-content-workspace .vc-ops-card {
+  border-color: var(--mk-glass-border);
+  background:
+    radial-gradient(ellipse at 92% 4%, rgb(208 147 240 / 13%), transparent 48%),
+    var(--mk-glass-surface);
+  box-shadow: var(--mk-glass-shadow);
+  color: var(--mk-glass-ink);
+}
+
+.work-app .vc-content-workspace .vc-ops-card h3 {
+  color: var(--mk-glass-ink);
+}
+
+.work-app .vc-content-workspace .vc-ops-card > p,
+.work-app .vc-content-workspace .vc-ops-meta {
+  border-top-color: var(--mk-glass-line);
+  color: var(--mk-glass-muted);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-ops-card-top > span {
+  color: #dfb2f0;
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-ops-blocked {
+  border: 1px solid rgb(251 146 60 / 32%);
+  background: rgb(234 88 12 / 15%);
+  color: #fdba74;
+}
+
+/* Resultados (.vc-results-card, .vc-results-posts) */
+.work-app .vc-content-workspace .vc-results-card,
+.work-app .vc-content-workspace .vc-results-posts {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--mk-glass-border);
+  border-radius: 17px;
+  background: var(--mk-glass-surface);
+  box-shadow: var(--mk-glass-shadow);
+  color: var(--mk-glass-ink);
+  backdrop-filter: var(--mk-glass-blur);
+  -webkit-backdrop-filter: var(--mk-glass-blur);
+}
+
+.work-app .vc-content-workspace .vc-results-card.is-sales {
+  background:
+    radial-gradient(ellipse at 90% 4%, rgb(165 16 145 / 13%), transparent 52%),
+    var(--mk-glass-surface);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-results-card,
+.work-app.theme-dark .vc-content-workspace .vc-results-posts,
+:root[data-theme='dark'] .vc-content-workspace .vc-results-card,
+:root[data-theme='dark'] .vc-content-workspace .vc-results-posts {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-surface);
+  box-shadow: var(--mk-glass-shadow);
+  color: var(--mk-glass-ink);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-results-card.is-sales,
+:root[data-theme='dark'] .vc-content-workspace .vc-results-card.is-sales {
+  background:
+    radial-gradient(ellipse at 90% 4%, rgb(208 147 240 / 18%), transparent 54%),
+    var(--mk-glass-surface);
+}
+
+.work-app .vc-content-workspace .vc-results-card > strong,
+.work-app .vc-content-workspace .vc-results-posts > article > div:first-child b,
+.work-app .vc-content-workspace .vc-results-posts > article strong {
+  color: var(--mk-glass-ink);
+}
+
+.work-app .vc-content-workspace .vc-results-card > p,
+.work-app .vc-content-workspace .vc-results-card > small,
+.work-app .vc-content-workspace .vc-results-posts > article > div:first-child span,
+.work-app .vc-content-workspace .vc-results-posts > article small {
+  color: var(--mk-glass-muted);
+}
+
+.work-app .vc-content-workspace .vc-results-tags span {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-pill);
+  color: var(--mk-glass-muted);
+}
+
+.work-app .vc-content-workspace .vc-results-posts > article {
+  flex-wrap: wrap;
+  border-top-color: var(--mk-glass-line);
+}
+
+.work-app .vc-content-workspace .vc-results-posts > article > div:last-child {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.work-app .vc-content-workspace .vc-results-count {
+  display: inline-grid;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  place-items: center;
+  border: 1px solid var(--mk-glass-border);
+  border-radius: 999px;
+  background: var(--mk-glass-pill);
+  color: var(--mk-glass-ink);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.work-app .vc-content-workspace .vc-results-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.work-app .vc-content-workspace .vc-results-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--mk-glass-border);
+  border-radius: 999px;
+  background: var(--mk-glass-pill);
+  color: var(--mk-glass-ink);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.work-app .vc-content-workspace .vc-results-action-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--mk-glass-border-hover);
+}
+
+.work-app .vc-content-workspace .vc-results-action-btn.is-primary {
+  border-color: transparent;
+  background: linear-gradient(105deg, #8c35c8, #ba188f 58%, #268fc2);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgb(129 36 146 / 22%);
+}
+
+.work-app .vc-content-workspace .vc-results-url-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  color: var(--admin-glass-accent, #7e1977);
+  font-size: 10px;
+  font-weight: 650;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.work-app .vc-content-workspace .vc-results-url-link:hover {
+  text-decoration: underline;
+}
+
+/* Post-publication results card inside Publication Editor */
+.vc-publication-results-card {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--admin-blur-border, rgb(118 108 152 / 18%));
+  border-radius: 15px;
+  background:
+    radial-gradient(ellipse at 92% 8%, rgb(16 185 129 / 11%), transparent 48%),
+    var(--admin-blur-bg, rgb(255 255 255 / 78%));
+  box-shadow: var(--admin-blur-shadow, 0 10px 28px rgb(34 24 54 / 6%));
+  backdrop-filter: var(--admin-blur-blur, blur(16px));
+  -webkit-backdrop-filter: var(--admin-blur-blur, blur(16px));
+}
+
+.vc-publication-results-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.vc-publication-results-head > div {
+  display: grid;
+  gap: 3px;
+}
+
+.vc-publication-results-head b {
+  color: var(--vc-ink, #261f30);
+  font-size: 14px;
+}
+
+.vc-publication-results-head small {
+  color: var(--vc-muted, #625a6e);
+  font-size: 11px;
+}
+
+.vc-publication-results-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.vc-publication-results-metrics > div {
+  display: grid;
+  gap: 3px;
+  padding: 9px 11px;
+  border: 1px solid var(--admin-clear-border, rgb(118 108 152 / 16%));
+  border-radius: 11px;
+  background: var(--admin-clear-bg, rgb(255 255 255 / 62%));
+}
+
+.vc-publication-results-metrics span {
+  color: var(--vc-muted, #625a6e);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.vc-publication-results-metrics strong {
+  color: var(--vc-ink, #261f30);
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vc-publication-results-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
+  color: var(--vc-brand-strong, #7e1977);
+  font-size: 11px;
+  font-weight: 650;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.vc-publication-results-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 620px) {
+  .vc-publication-results-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Campañas (.vc-marketing-campaign-card, .vc-marketing-campaign-pulse) */
+.work-app .vc-content-workspace .vc-marketing-campaign-card,
+.work-app .vc-content-workspace .vc-marketing-standalone-tasks {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--mk-glass-border);
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at 92% 4%, rgb(165 16 145 / 8%), transparent 46%),
+    var(--mk-glass-surface);
+  box-shadow: var(--mk-glass-shadow);
+  color: var(--mk-glass-ink);
+  backdrop-filter: var(--mk-glass-blur);
+  -webkit-backdrop-filter: var(--mk-glass-blur);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-campaign-card,
+.work-app.theme-dark .vc-content-workspace .vc-marketing-standalone-tasks,
+:root[data-theme='dark'] .vc-content-workspace .vc-marketing-campaign-card,
+:root[data-theme='dark'] .vc-content-workspace .vc-marketing-standalone-tasks {
+  border-color: var(--mk-glass-border);
+  background:
+    radial-gradient(ellipse at 92% 4%, rgb(208 147 240 / 13%), transparent 48%),
+    var(--mk-glass-surface);
+  box-shadow: var(--mk-glass-shadow);
+  color: var(--mk-glass-ink);
+}
+
+.work-app .vc-content-workspace .vc-marketing-campaign-card-head,
+.work-app .vc-content-workspace .vc-marketing-standalone-tasks > header {
+  border-bottom-color: var(--mk-glass-line);
+  background: transparent;
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-campaign-card-head,
+.work-app.theme-dark .vc-content-workspace .vc-marketing-standalone-tasks > header {
+  border-bottom-color: var(--mk-glass-line);
+  background: transparent;
+}
+
+.work-app .vc-content-workspace .vc-marketing-campaign-pulse {
+  border-bottom-color: var(--mk-glass-line);
+  background: color-mix(in srgb, var(--mk-glass-column) 72%, transparent);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-campaign-pulse,
+:root[data-theme='dark'] .vc-content-workspace .vc-marketing-campaign-pulse {
+  border-bottom-color: var(--mk-glass-line);
+  background: color-mix(in srgb, var(--mk-glass-column) 78%, transparent);
+}
+
+.work-app .vc-content-workspace .vc-marketing-campaign-pulse-grid > article,
+.work-app .vc-content-workspace .vc-marketing-campaign-metrics > div {
+  border: 1px solid var(--mk-glass-border);
+  border-radius: 12px;
+  background: var(--mk-glass-pill);
+  box-shadow: var(--mk-glass-highlight);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-campaign-pulse-grid > article,
+.work-app.theme-dark .vc-content-workspace .vc-marketing-campaign-metrics > div {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-pill);
+}
+
+.work-app .vc-content-workspace .vc-marketing-campaign-children,
+.work-app .vc-content-workspace .vc-marketing-campaign-post,
+.work-app .vc-content-workspace .vc-marketing-campaign-task,
+.work-app .vc-content-workspace .vc-marketing-campaign-no-children {
+  background: transparent;
+  border-color: var(--mk-glass-line);
+  color: var(--mk-glass-ink);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-campaign-children,
+.work-app.theme-dark .vc-content-workspace .vc-marketing-campaign-post,
+.work-app.theme-dark .vc-content-workspace .vc-marketing-campaign-task,
+.work-app.theme-dark .vc-content-workspace .vc-marketing-campaign-no-children {
+  background: transparent;
+  border-color: var(--mk-glass-line);
+  color: var(--mk-glass-ink);
+}
+
+.work-app .vc-content-workspace .vc-marketing-campaign-card-title h3,
+.work-app .vc-content-workspace .vc-marketing-campaign-pulse-grid > article > strong,
+.work-app .vc-content-workspace .vc-marketing-campaign-metrics dd,
+.work-app .vc-content-workspace .vc-marketing-campaign-post b,
+.work-app .vc-content-workspace .vc-marketing-campaign-task-main > b {
+  color: var(--mk-glass-ink);
+}
+
+.work-app .vc-content-workspace .vc-marketing-campaign-actions {
+  border-top-color: var(--mk-glass-line);
+}
+
+.work-app .vc-content-workspace .vc-marketing-campaign-actions button {
+  border-color: var(--mk-glass-border);
+  border-radius: 10px;
+  background: var(--mk-glass-pill);
+  color: var(--mk-glass-ink);
+}
+
+.work-app.theme-dark .vc-content-workspace .vc-marketing-campaign-actions button {
+  border-color: var(--mk-glass-border);
+  background: var(--mk-glass-pill);
+  color: var(--mk-glass-ink);
+}
+
 @media (max-width: 1120px) {
   .work-app .vc-content-workspace .vc-content-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1075,7 +1601,14 @@
   .work-app .vc-marketing-kanban-column-head,
   .work-app .vc-marketing-kanban-card,
   .work-app .vc-content-workspace .vc-marketing-table-wrap,
-  .work-app .vc-content-workspace .vc-marketing-post-table-wrap {
+  .work-app .vc-content-workspace .vc-marketing-post-table-wrap,
+  .work-app .vc-content-workspace .mk-work-toolbar,
+  .work-app .vc-content-workspace .vc-strategy-column,
+  .work-app .vc-content-workspace .vc-ops-card,
+  .work-app .vc-content-workspace .vc-results-card,
+  .work-app .vc-content-workspace .vc-results-posts,
+  .work-app .vc-content-workspace .vc-marketing-campaign-card,
+  .work-app .vc-content-workspace .vc-marketing-standalone-tasks {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     background: #ffffff;
@@ -1097,6 +1630,13 @@
   .work-app.theme-dark .vc-marketing-kanban-card,
   .work-app.theme-dark .vc-content-workspace .vc-marketing-table-wrap,
   .work-app.theme-dark .vc-content-workspace .vc-marketing-post-table-wrap,
+  .work-app.theme-dark .vc-content-workspace .mk-work-toolbar,
+  .work-app.theme-dark .vc-content-workspace .vc-strategy-column,
+  .work-app.theme-dark .vc-content-workspace .vc-ops-card,
+  .work-app.theme-dark .vc-content-workspace .vc-results-card,
+  .work-app.theme-dark .vc-content-workspace .vc-results-posts,
+  .work-app.theme-dark .vc-content-workspace .vc-marketing-campaign-card,
+  .work-app.theme-dark .vc-content-workspace .vc-marketing-standalone-tasks,
   :root[data-theme='dark'] .vc-content-workspace .vc-content-kpi,
   :root[data-theme='dark'] .vc-content-workspace .vc-content-hero.is-compact,
   :root[data-theme='dark'] .vc-content-workspace .vc-content-side-panel,
@@ -1111,7 +1651,14 @@
   :root[data-theme='dark'] .vc-marketing-kanban-column-head,
   :root[data-theme='dark'] .vc-marketing-kanban-card,
   :root[data-theme='dark'] .vc-content-workspace .vc-marketing-table-wrap,
-  :root[data-theme='dark'] .vc-content-workspace .vc-marketing-post-table-wrap {
+  :root[data-theme='dark'] .vc-content-workspace .vc-marketing-post-table-wrap,
+  :root[data-theme='dark'] .vc-content-workspace .mk-work-toolbar,
+  :root[data-theme='dark'] .vc-content-workspace .vc-strategy-column,
+  :root[data-theme='dark'] .vc-content-workspace .vc-ops-card,
+  :root[data-theme='dark'] .vc-content-workspace .vc-results-card,
+  :root[data-theme='dark'] .vc-content-workspace .vc-results-posts,
+  :root[data-theme='dark'] .vc-content-workspace .vc-marketing-campaign-card,
+  :root[data-theme='dark'] .vc-content-workspace .vc-marketing-standalone-tasks {
     background: #171a25;
   }
 }
@@ -1136,7 +1683,16 @@
   .work-app .vc-marketing-kanban-column-head,
   .work-app .vc-marketing-kanban-card,
   .work-app .vc-content-workspace .vc-marketing-table-wrap,
-  .work-app .vc-content-workspace .vc-marketing-post-table-wrap {
+  .work-app .vc-content-workspace .vc-marketing-post-table-wrap,
+  .work-app .vc-content-workspace .mk-work-toolbar,
+  .work-app .vc-content-workspace .mk-work-queues button,
+  .work-app .vc-content-workspace .vc-strategy-column,
+  .work-app .vc-content-workspace .vc-ops-card,
+  .work-app .vc-content-workspace .vc-results-card,
+  .work-app .vc-content-workspace .vc-results-posts,
+  .work-app .vc-content-workspace .vc-marketing-campaign-card,
+  .work-app .vc-content-workspace .vc-marketing-standalone-tasks,
+  .vc-publication-results-card {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -1156,7 +1712,15 @@
   .work-app .vc-marketing-kanban-column-head,
   .work-app .vc-marketing-kanban-card,
   .work-app .vc-content-workspace .vc-marketing-table-wrap,
-  .work-app .vc-content-workspace .vc-marketing-post-table-wrap {
+  .work-app .vc-content-workspace .vc-marketing-post-table-wrap,
+  .work-app .vc-content-workspace .mk-work-toolbar,
+  .work-app .vc-content-workspace .vc-strategy-column,
+  .work-app .vc-content-workspace .vc-ops-card,
+  .work-app .vc-content-workspace .vc-results-card,
+  .work-app .vc-content-workspace .vc-results-posts,
+  .work-app .vc-content-workspace .vc-marketing-campaign-card,
+  .work-app .vc-content-workspace .vc-marketing-standalone-tasks,
+  .vc-publication-results-card {
     background: #ffffff;
   }
 
@@ -1176,6 +1740,14 @@
   .work-app.theme-dark .vc-marketing-kanban-card,
   .work-app.theme-dark .vc-content-workspace .vc-marketing-table-wrap,
   .work-app.theme-dark .vc-content-workspace .vc-marketing-post-table-wrap,
+  .work-app.theme-dark .vc-content-workspace .mk-work-toolbar,
+  .work-app.theme-dark .vc-content-workspace .vc-strategy-column,
+  .work-app.theme-dark .vc-content-workspace .vc-ops-card,
+  .work-app.theme-dark .vc-content-workspace .vc-results-card,
+  .work-app.theme-dark .vc-content-workspace .vc-results-posts,
+  .work-app.theme-dark .vc-content-workspace .vc-marketing-campaign-card,
+  .work-app.theme-dark .vc-content-workspace .vc-marketing-standalone-tasks,
+  .work-app.theme-dark .vc-publication-results-card,
   :root[data-theme='dark'] .vc-content-workspace .vc-content-kpi,
   :root[data-theme='dark'] .vc-content-workspace .vc-content-hero.is-compact,
   :root[data-theme='dark'] .vc-content-workspace .vc-content-side-panel,
@@ -1190,7 +1762,15 @@
   :root[data-theme='dark'] .vc-marketing-kanban-column-head,
   :root[data-theme='dark'] .vc-marketing-kanban-card,
   :root[data-theme='dark'] .vc-content-workspace .vc-marketing-table-wrap,
-  :root[data-theme='dark'] .vc-content-workspace .vc-marketing-post-table-wrap {
+  :root[data-theme='dark'] .vc-content-workspace .vc-marketing-post-table-wrap,
+  :root[data-theme='dark'] .vc-content-workspace .mk-work-toolbar,
+  :root[data-theme='dark'] .vc-content-workspace .vc-strategy-column,
+  :root[data-theme='dark'] .vc-content-workspace .vc-ops-card,
+  :root[data-theme='dark'] .vc-content-workspace .vc-results-card,
+  :root[data-theme='dark'] .vc-content-workspace .vc-results-posts,
+  :root[data-theme='dark'] .vc-content-workspace .vc-marketing-campaign-card,
+  :root[data-theme='dark'] .vc-content-workspace .vc-marketing-standalone-tasks,
+  :root[data-theme='dark'] .vc-publication-results-card {
     background: #171a25;
   }
 }

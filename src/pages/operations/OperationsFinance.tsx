@@ -1,3 +1,4 @@
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowUpRight,
@@ -200,6 +201,8 @@ function PaymentMethodBreakdown({
 }
 
 export function OperationsFinance() {
+  const navigate = useNavigate();
+  const [documentParams] = useSearchParams();
   const { organizationId, hasPermission, user, roles } = useAuth();
   const canManageFinance = hasPermission('finance', 'manage_finance');
   const canManageCashRegisters = canManageCashControl(roles, hasPermission);
@@ -284,6 +287,7 @@ export function OperationsFinance() {
   const [materialCostError, setMaterialCostError] = useState('');
   const [inspectorSessionId, setInspectorSessionId] = useState<string | null>(null);
   const [docSaleTarget, setDocSaleTarget] = useState<{ id: string; code: string } | null>(null);
+  useEffect(() => { const id = documentParams.get('saleId'); if (id) setDocSaleTarget({ id, code: 'Venta' }); }, [documentParams]);
   const [editingSaleTarget, setEditingSaleTarget] = useState<{ id: string; branchName: string } | null>(null);
   const [adminDeleteTarget, setAdminDeleteTarget] = useState<AdminDeleteTarget | null>(null);
   const [selectedTestSaleIds, setSelectedTestSaleIds] = useState<string[]>([]);
@@ -1474,10 +1478,10 @@ export function OperationsFinance() {
         if (!isOpen) setInspectorSessionId(null);
       }}
       onEditSession={() => {
-        window.location.href = '/operaciones/cajas-abiertas';
+        navigate('/operaciones/cajas-abiertas');
       }}
       onCloseOrReopenSession={() => {
-        window.location.href = '/operaciones/cajas-abiertas';
+        navigate('/operaciones/cajas-abiertas');
       }}
       onDeleteSession={(detail) => {
         setInspectorSessionId(null);
@@ -2101,7 +2105,7 @@ export function OperationsFinance() {
           <div className="panel-heading"><div><span className="eyebrow">POS → DEVOLUCIONES → CAJA → FINANZAS</span><h2 id="op-finance-refund-title">Cobros y reembolsos liquidados</h2><p className="op-finance-cost-note">Filtra por la fecha real del cobro o de la liquidación, además de asesora, sucursal y medio.</p></div><button className="button button-outline" onClick={downloadRefundsCsv} disabled={!refundsSettledInPeriod.length}><Download size={15}/> Exportar reembolsos</button></div>
           {refundSettlementError ? <p className="op-finance-cost-error" role="alert">{refundSettlementError}</p> : <>
             <div className="op-finance-refund-metrics"><article><span>Cobros POS del periodo</span><b>{money(posCashInflow)}</b><small>Incluye ventas anuladas si hubo cobro efectivo registrado</small></article><article><span>Reembolsos liquidados</span><b>{money(posRefundOutflow)}</b><small>{refundsSettledInPeriod.length} liquidaciones con fecha efectiva</small></article><article className={posNetCashFlow < 0 ? 'is-negative' : ''}><span>Flujo neto POS</span><b>{money(posNetCashFlow)}</b><small>Cobros menos reembolsos liquidados</small></article></div>
-            <div className="op-finance-table-wrap"><table className="op-finance-table"><thead><tr><th>Liquidado</th><th>Devolución</th><th>Venta</th><th>Asesora</th><th>Sucursal</th><th>Medio</th><th>Referencia / caja</th><th>Monto</th></tr></thead><tbody>{[...refundsSettledInPeriod].sort((a, b) => new Date(b.settled_at).getTime() - new Date(a.settled_at).getTime()).slice(0, 100).map((refund) => { const sale = salesById.get(refund.sale_id); return <tr key={refund.id}><td>{timestamp(refund.settled_at)}</td><td>{refund.return_code}</td><td>{sale?.sale_code || refund.sale_id.slice(0, 8)}</td><td>{personName(sale?.advisor_id)}</td><td>{branchName(refund.branch_id)}</td><td>{refund.method}</td><td>{refund.reference || (refund.cash_session_id ? `Caja ${refund.cash_session_id.slice(0, 8)}` : '—')}</td><td>{money(refund.amount)}</td></tr>; })}{!refundsSettledInPeriod.length && <tr><td colSpan={8}>No hay reembolsos liquidados en el periodo seleccionado.</td></tr>}</tbody></table></div>
+            <div className="op-finance-table-wrap"><table className="op-finance-table"><thead><tr><th>Liquidado</th><th>Devolución</th><th>Venta</th><th>Asesora</th><th>Sucursal</th><th>Medio</th><th>Referencia / caja</th><th>Monto</th></tr></thead><tbody>{[...refundsSettledInPeriod].sort((a, b) => new Date(b.settled_at).getTime() - new Date(a.settled_at).getTime()).slice(0, 100).map((refund) => { const sale = salesById.get(refund.sale_id); return <tr key={refund.id}><td>{timestamp(refund.settled_at)}</td><td><Link to={`/operaciones/finanzas?saleId=${refund.sale_id}&returnId=${refund.return_id}`}>{refund.return_code}</Link></td><td><Link to={`/operaciones/finanzas?saleId=${refund.sale_id}`}>{sale?.sale_code || refund.sale_id.slice(0, 8)}</Link></td><td>{personName(sale?.advisor_id)}</td><td>{branchName(refund.branch_id)}</td><td>{refund.method}</td><td>{refund.reference || (refund.cash_session_id ? `Caja ${refund.cash_session_id.slice(0, 8)}` : '—')}</td><td>{money(refund.amount)}</td></tr>; })}{!refundsSettledInPeriod.length && <tr><td colSpan={8}>No hay reembolsos liquidados en el periodo seleccionado.</td></tr>}</tbody></table></div>
             <p className="op-finance-cost-note">El flujo neto POS incluye cobros y reembolsos liquidados; no descuenta compras, nómina ni otros egresos. Los reembolsos en efectivo se registran también como salida en el cierre de su caja. La tabla muestra hasta 100 liquidaciones; los indicadores incluyen todo el periodo.</p>
           </>}
         </section>}
@@ -2298,7 +2302,7 @@ export function OperationsFinance() {
                       <td>{timestamp(sale.created_at)}</td>
                       <td>
                         <div className="op-finance-sale-code-cell">
-                          <b>{sale.sale_code || sale.id.slice(0, 8)}</b>
+                          <Link to={`/operaciones/finanzas?saleId=${sale.id}`}><b>{sale.sale_code || sale.id.slice(0, 8)}</b></Link>{sale.central_quote_id && <Link to={`/operaciones/cotizador?quoteId=${sale.central_quote_id}`}>Cotización origen</Link>}
                           {probableTest && <span className="op-finance-test-pill"><FlaskConical size={11} /> Ejemplo/Test</span>}
                         </div>
                       </td>
@@ -2372,7 +2376,7 @@ export function OperationsFinance() {
               const sale = salesById.get(payment.sale_id);
               return <tr key={payment.id}>
                 <td>{timestamp(payment.created_at)}</td><td>{personName(sale?.advisor_id)}</td>
-                <td>{sale?.sale_code || payment.sale_id.slice(0, 8)} · {sale?.customers?.full_name || 'Cliente sin nombre'}</td>
+                <td><Link to={`/operaciones/finanzas?saleId=${payment.sale_id}`}>{sale?.sale_code || payment.sale_id.slice(0, 8)}</Link> · {sale?.customers?.full_name || 'Cliente sin nombre'}</td>
                 <td>{branchName(sale?.branch_id)}</td><td>{paymentMethodLabel(payment.method)}</td>
                 <td>{personName(payment.created_by)}</td><td>{money(payment.amount)}</td>
               </tr>;

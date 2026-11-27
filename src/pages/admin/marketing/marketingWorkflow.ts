@@ -40,7 +40,9 @@ export type MarketingReview = {
 export type WorkQueue =
   | "all"
   | "open"
+  | "approved"
   | "published"
+  | "published_no_results"
   | "today"
   | "week"
   | "overdue"
@@ -135,6 +137,15 @@ export function publicationWarnings(
     warnings.push("sin aprobación vigente de esta versión");
   return warnings;
 }
+export function hasPostResults(post: WorkflowPost): boolean {
+  return Boolean(
+    Number(post.reach) > 0 ||
+    Number(post.interactions) > 0 ||
+    Number(post.clicks) > 0 ||
+    Number(post.leads) > 0 ||
+    post.results_updated_at,
+  );
+}
 export function matchesQueue(
   post: WorkflowPost,
   queue: WorkQueue,
@@ -144,9 +155,12 @@ export function matchesQueue(
 ): boolean {
   if (queue === "all") return true;
   if (queue === "published") return /publicad/i.test(post.status || "");
+  if (queue === "published_no_results")
+    return /publicad/i.test(post.status || "") && !hasPostResults(post);
   const open = !isTerminalMarketingStatus(post.status);
   if (queue === "open") return open;
   if (!open) return false;
+  if (queue === "approved") return /aprobad/i.test(post.status || "");
   const deadline = post.due_date || post.scheduled_date;
   if (queue === "today")
     return post.due_date === today || post.scheduled_date === today;

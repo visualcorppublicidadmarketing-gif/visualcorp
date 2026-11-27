@@ -25,7 +25,8 @@ import { CommercialAssetsEditor } from '../../components/commercial/CommercialAs
 import { GoogleMapsPreview } from '../../components/commercial/GoogleMapsPreview';
 import { RichTextEditor } from '../../components/studio/RichTextEditor';
 import { DatePicker } from '../../components/ui/Calendar';
-import { persistCommercialAssets, type CommercialAssetDraft } from '../../lib/commercialAssets';
+import { posSaleAssetRecovery } from '../../lib/posSaleAssetRecovery';
+import { commercialAssetManifest, persistCommercialAssets, type CommercialAssetDraft } from '../../lib/commercialAssets';
 import { isGoogleMapsUrl, normalizeGoogleMapsUrl } from '../../lib/maps';
 import { ChatterDrawer360 } from '../../components/ui/ChatterDrawer360';
 import { ExecutiveQuotePdfModal, type QuoteData } from '../../components/ExecutiveQuotePdfModal';
@@ -252,6 +253,8 @@ export function OperationsQuotePage() {
 
   const [searchParams] = useSearchParams();
   const fromRequest = searchParams.get('fromRequest');
+  const [sourceRequestId, setSourceRequestId] = useState(fromRequest || '');
+  const [sourceQuoteId, setSourceQuoteId] = useState('');
   const loadedRequestRef = useRef<string>('');
 
   const [branchCode, setBranchCode] = useState('VIS');
@@ -325,6 +328,8 @@ export function OperationsQuotePage() {
 
         if (!active || error || !req) return;
 
+        setSourceRequestId(req.id);
+        setCustomerId(req.customer_id || '');
         if (req.name) setCustomer(req.name);
         if (req.phone) setPhone(req.phone);
         if (req.email) setCustomerEmail(req.email);
@@ -612,6 +617,8 @@ export function OperationsQuotePage() {
 
   // Load a saved quote back into the editor for editing / duplicating
   const loadQuoteIntoEditor = (quoteDoc: any) => {
+    setSourceRequestId(quoteDoc.public_request_id || '');
+    setSourceQuoteId(quoteDoc.id);
     const items = Array.isArray(quoteDoc.items) ? quoteDoc.items : [];
     const docDetails = items.find((item: any) => item?.document_details)?.document_details || null;
     const restoredLines: QuoteDraftLine[] = items.length
@@ -936,6 +943,7 @@ export function OperationsQuotePage() {
   };
 
   const resetForm = () => {
+    setSourceRequestId(''); setSourceQuoteId('');
     setLines([createLine()]);
     setPriceTier('pvp');
     setCustomer('');
@@ -1074,9 +1082,7 @@ export function OperationsQuotePage() {
         p_notes: notes,
         p_client_brief_html: clientBriefHtml,
       };
-      const recoveryFingerprint = documentAssets.length
-        ? await fingerprintQuoteAssetSave(quotePayload, documentAssets)
-        : '';
+      const recoveryFingerprint = await fingerprintQuoteAssetSave({ ...quotePayload, sourceRequestId, sourceQuoteId }, documentAssets);
       const recoveryStorageKey = recoveryFingerprint
         ? quoteAssetRecoveryStorageKey(organizationId, user?.id || 'sin-usuario', recoveryFingerprint)
         : '';
@@ -1088,11 +1094,15 @@ export function OperationsQuotePage() {
       }
       if (!result) {
         if (recoveryStorageKey && !canPersistQuoteAssetRecovery(recoveryStorageKey)) {
-          throw new Error('Este navegador no permite conservar la recuperación de adjuntos. Habilita el almacenamiento de sesión o guarda la cotización sin adjuntos para evitar duplicarla si se pierde la respuesta.');
+          throw new Error('Este navegador no permite conservar la recuperación de la operación. Habilita el almacenamiento local antes de guardar.');
         }
-        const { data: createdQuote, error } = await supabase.rpc('create_central_quote_from_request', {
-          ...quotePayload,
-          p_public_request_id: fromRequest || null,
+        const operationStorageKey = `${recoveryStorageKey}:operation`;
+        let operationKey = localStorage.getItem(operationStorageKey);
+        if (!operationKey) { operationKey = crypto.randomUUID(); localStorage.setItem(operationStorageKey, operationKey); }
+        await posSaleAssetRecovery.save(`${organizationId}:${user?.id}:quote:${operationKey}`, documentAssets, operationKey);
+        const { data: createdQuote, error } = await supabase.rpc('create_commercial_quote_durable', {
+          p_payload: { ...quotePayload, p_public_request_id: sourceRequestId || null },
+          p_operation_key: operationKey, p_manifest: await commercialAssetManifest(documentAssets), p_source_quote_id: sourceQuoteId || null,
         });
         if (error) throw error;
         if (!createdQuote?.id || !createdQuote?.quote_code) throw new Error('La respuesta del servidor no incluyó el identificador de la cotización. Revisa el historial antes de volver a guardar.');
@@ -1116,6 +1126,10 @@ export function OperationsQuotePage() {
           clearQuoteAssetRecovery(recoveryStorageKey);
         }
       }
+      const finishedOperation = localStorage.getItem(`${recoveryStorageKey}:operation`);
+      if (finishedOperation) await posSaleAssetRecovery.clear(`${organizationId}:${user?.id}:quote:${finishedOperation}`);
+      localStorage.removeItem(`${recoveryStorageKey}:operation`);
+      quoteAssetRecoveryRef.current.delete(recoveryStorageKey); clearQuoteAssetRecovery(recoveryStorageKey);
       let historyRefreshed = true;
       try { await loadHistory(); } catch { historyRefreshed = false; }
       resetForm();
@@ -2267,7 +2281,7 @@ export function OperationsQuotePage() {
                     <button
                       className="operations-quote-detail-link is-pos"
                       type="button"
-                      onClick={() => navigate('/operaciones/pos')}
+                      onClick={() => navigate(`/operaciones/pos?quoteId=${encodeURIComponent(document.id)}`)}
                     >
                       <ShoppingCart size={12}/> Cobrar en POS
                     </button>
@@ -2277,7 +2291,7 @@ export function OperationsQuotePage() {
                     type="button"
                     onClick={() => setChatterTarget({
                       recordType: isSale ? 'sale' : 'quote',
-                      recordId: document.documentCode || document.id,
+                      recordId: document.id,
                       recordTitle: `${document.documentCode} · ${document.customerLabel}`,
                       recordSubtitle: isSale ? 'Venta confirmada' : `Cotización · ${document.status}`,
                       recordPhone: document.customer_phone || '',
@@ -2292,8 +2306,8 @@ export function OperationsQuotePage() {
                     onClick={() => setSelectedQuoteForPdf({
                       quote_code: document.documentCode || document.quote_code || document.id,
                       customer_name: document.customerLabel || 'Cliente Visual Corp',
-                      total: document.total || 0,
-                      subtotal: document.subtotal || document.total || 0,
+                      total: document.total ?? document.selected_total ?? 0,
+                      subtotal: document.subtotal ?? document.selected_total ?? document.total ?? 0,
                       tax: document.tax || 0,
                       date: document.formattedDate || new Date().toISOString(),
                       items: document.items || [],

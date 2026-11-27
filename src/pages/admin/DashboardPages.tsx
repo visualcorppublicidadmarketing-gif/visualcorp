@@ -7,7 +7,7 @@ import { workspaceNavigation, workspaceNavGroups, canViewNavigationItem } from '
 import { legacyRoleNames } from '../../auth/accessCatalog';
 import { ChangeLogPanel } from '../../components/ChangeLog';
 import { WorkspaceLauncher } from '../../components/workspace';
-import { AnimatedList, clearSpotlight, NumberTicker, SpotlightLayer, updateSpotlight } from '../../components/ui/MagicComponents';
+import { AnimatedList, clearSpotlight, GlassSparkline, NumberTicker, SpotlightLayer, updateSpotlight } from '../../components/ui/MagicComponents';
 import { LeadsTable } from './CRMPage';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
@@ -34,12 +34,12 @@ const roleCardPriority: Record<string, string[]> = {
 };
 
 const roleGroupPriority: Record<string, string[]> = {
-  owner: ['commercial', 'production', 'team', 'marketing', 'website'],
-  admin: ['commercial', 'production', 'team', 'marketing', 'website'],
-  manager: ['commercial', 'production', 'team', 'marketing'],
-  advisor: ['commercial', 'production'],
-  warehouse: ['production', 'commercial'],
-  production: ['production', 'commercial'],
+  owner: ['commercial', 'production-planning', 'workshop-areas', 'people', 'administration', 'marketing', 'website'],
+  admin: ['commercial', 'production-planning', 'workshop-areas', 'people', 'administration', 'marketing', 'website'],
+  manager: ['commercial', 'production-planning', 'workshop-areas', 'people', 'administration', 'marketing'],
+  advisor: ['commercial', 'production-planning', 'workshop-areas'],
+  warehouse: ['production-planning', 'workshop-areas', 'commercial'],
+  production: ['production-planning', 'workshop-areas', 'commercial'],
   marketing: ['marketing', 'website', 'commercial'],
   website_admin: ['website', 'marketing'],
 };
@@ -122,8 +122,10 @@ const descriptions: Record<string, string> = {
   '/admin/contacto': 'Edita la información y canales de contacto.',
   '/operaciones/personal': 'Consulta y administra fichas de personal.',
   '/operaciones/equipo': 'Configura usuarios, perfiles y permisos.',
+  '/operaciones/equipo/biblioteca-ui': 'Explora componentes, tokens y patrones de interfaz de la Suite.',
   '/operaciones/cambios': 'Revisa novedades compartidas del equipo.',
-  '/admin/respaldo': 'Consulta respaldos y procedencia de datos.',
+  '/admin/sugerencias': 'Registra y da seguimiento a sugerencias de mejora del equipo.',
+  '/admin/respaldo': 'Consulta respaldos locales y el alcance de sincronización.',
 };
 
 type TrendPoint = { key: string; shortLabel: string; fullLabel: string; value: number };
@@ -422,7 +424,7 @@ export function UnifiedHome() {
     {error && <div className="unified-summary-error" role="alert"><span>{error}</span><button type="button" className="button button-outline" onClick={() => setRefreshKey((value) => value + 1)} disabled={loading}><RefreshCw size={14}/> {loading ? 'Actualizando…' : 'Reintentar'}</button></div>}
     {trendLimitReached.length > 0 && <p className="unified-trend-limit" role="status">No se muestra la tendencia de {trendLimitReached.join(' y ')} porque la consulta alcanzó el límite de 1.000 registros. El resumen principal sigue disponible.</p>}
     <div className="dashboard-overview-layout">
-    {visibleMetrics.length > 0 && <section className="unified-overview" aria-labelledby="unified-overview-heading"><div className="unified-overview-heading"><div><h2 className="unified-overview-title" id="unified-overview-heading">Resumen de operación</h2><p>Cifras del periodo, según los módulos que puedes consultar.</p></div><button type="button" className="unified-refresh" onClick={() => setRefreshKey(value => value + 1)} disabled={loading}><RefreshCw size={14} aria-hidden="true"/>{loading ? 'Actualizando…' : 'Actualizar resumen'}</button></div><div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, to, key, label, scope, note, noteKey, icon: Icon, tone, money }) => {
+    {visibleMetrics.length > 0 && <section className="unified-overview" aria-labelledby="unified-overview-heading"><div className="unified-overview-heading"><div><h2 className="unified-overview-title" id="unified-overview-heading">Resumen de operación</h2><p>Cifras del periodo, según los módulos que puedes consultar.</p></div><button type="button" className="unified-refresh" onClick={() => setRefreshKey(value => value + 1)} disabled={loading}><RefreshCw size={14} aria-hidden="true"/>{loading ? 'Actualizando…' : 'Actualizar resumen'}</button></div><div className="stat-grid unified-stat-grid">{visibleMetrics.map(({ module, to, key, label, scope, note, noteKey, icon: Icon, tone, money }, metricIndex) => {
       const value = metricValue(summary, key);
       const trend = key === 'sales_today_total' || key === 'quotes_this_month' ? metricTrends[key] : undefined;
       const initialLoading = loading && !summary;
@@ -441,12 +443,15 @@ export function UnifiedHome() {
             : note;
       const trendMax = trend ? Math.max(0, ...trend.points.map((point) => point.value)) : 0;
       const trendAccessibleLabel = trend ? metricTrendAccessibleLabel(trend, Boolean(money)) : '';
-      return <Link key={module} className={`unified-metric-link vc-magic-card metric-${tone}`} to={to} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight} aria-label={`${label}: ${typeof value === 'number' ? value : value}. ${detail}. ${trendAccessibleLabel} Abrir módulo`}>
+      return <Link key={module} className={`unified-metric-link vc-magic-card metric-${tone}${metricIndex === 0 ? ' is-featured-kpi' : ''}`} to={to} onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight} aria-label={`${label}: ${typeof value === 'number' ? value : value}. ${detail}. ${trendAccessibleLabel} Abrir módulo`}>
         <SpotlightLayer/>
         <span className={`dashboard-metric-icon tone-${tone}`}><Icon size={19} aria-hidden="true"/></span><span className="dashboard-metric-scope">{error ? 'SIN ACTUALIZAR' : scope}</span><span className="unified-metric-open" aria-hidden="true"><ArrowUpRight size={16}/></span>
         <strong className="dashboard-metric-value">{displayValue}</strong><span className="dashboard-metric-label">{label}</span><small className="dashboard-metric-note">{detail}</small>
         {trend && <span className="dashboard-metric-trend">
           <span className="dashboard-metric-trend-heading"><span>{money ? 'VENTAS' : 'COTIZACIONES'} · 14 DÍAS</span><strong>{trend.changePercent !== null && trend.changePercent !== 0 && (trend.changePercent > 0 ? <TrendingUp size={12} aria-hidden="true"/> : <TrendingDown size={12} aria-hidden="true"/>)}{metricTrendLabel(trend)}</strong></span>
+          <span className="dashboard-metric-spark-wrap" aria-hidden="true">
+            <GlassSparkline values={trend.points.map((point) => point.value)} stroke={metricIndex === 0 ? 'currentColor' : tone === 'blue' ? 'var(--vc-brand-blue, #069cdb)' : 'var(--vc-brand, #a51091)'} />
+          </span>
           <span className="dashboard-metric-trend-bars" aria-hidden="true">{trend.points.map((point, index) => {
             const height = trendMax > 0 ? Math.max(8, Math.round((point.value / trendMax) * 100)) : 5;
             const valueLabel = money ? formatMoney(point.value) : `${point.value} ${point.value === 1 ? 'cotización' : 'cotizaciones'}`;

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useWorkspace, formatDate } from '../app/workspace';
 import { useAuth } from '../auth/AuthProvider';
-import { supabase, supabaseConfigured } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
+import { PRODUCTION_VAULT_BUCKET, validateProductionVaultFile, uploadProductionVaultFile } from '../lib/productionHub';
 import './VisualCorpVault.css';
 import {
   FileText,
@@ -116,6 +117,9 @@ export interface VaultAsset {
   externalUrl?: string;
   storageProvider: 'local' | 'supabase' | 'external';
   storagePath?: string;
+  organizationId?: string;
+  branchId?: string;
+  jobId?: string;
   isSeedDemo?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -169,7 +173,7 @@ function generateSvgThumbnail(type: VaultCategory, title: string, subtitle: stri
     </defs>
     <rect width="640" height="400" fill="url(#g_${type})" />
     <rect width="640" height="400" fill="url(#grid_${type})" />
-    
+
     <!-- Outer Safe Frame & CMYK Mark -->
     <rect x="24" y="24" width="592" height="352" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5" stroke-dasharray="6,4" rx="10" />
     <circle cx="48" cy="48" r="8" fill="#00ffff" opacity="0.8" />
@@ -195,7 +199,7 @@ function generateSvgThumbnail(type: VaultCategory, title: string, subtitle: stri
     <text x="60" y="306" fill="#a78bfa" font-family="system-ui, sans-serif" font-size="11" font-weight="750" letter-spacing="0.5">${catLabel.toUpperCase()}</text>
     <text x="60" y="330" fill="#ffffff" font-family="system-ui, sans-serif" font-size="15" font-weight="800">${title.slice(0, 48)}</text>
     <text x="60" y="348" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">${subtitle} · ${dims}</text>
-    
+
     <!-- Watermark Stamp -->
     <text x="575" y="338" fill="rgba(255,255,255,0.3)" font-family="system-ui, sans-serif" font-size="10" font-weight="700" text-anchor="end">MILAGRO, EC</text>
   </svg>`;
@@ -228,11 +232,11 @@ function createInitialSeedAssets(): VaultAsset[] {
         { version: 'v2', updatedAt: '2026-10-26T10:15:00Z', notes: 'Ajuste de cables de alimentación ocultos aprobado por gerencia', author: 'taller@visualcorp.ec' },
       ],
       prepressChecklist: {
-        fontsCurved: true,
-        bleedConfirmed: true,
-        resolutionVerified: true,
-        colorProfileCMYK: true,
-        safeMarginVerified: true,
+        fontsCurved: false,
+        bleedConfirmed: false,
+        resolutionVerified: false,
+        colorProfileCMYK: false,
+        safeMarginVerified: false,
       },
       customerId: 'CUST-001',
       customerName: 'Restaurante Los Portales Milagro',
@@ -305,11 +309,11 @@ function createInitialSeedAssets(): VaultAsset[] {
         { version: 'v3', updatedAt: '2026-09-18T15:20:00Z', notes: 'Versión corporativa con tipografía homologada en curvas', author: 'gerencia@visualcorp.ec' },
       ],
       prepressChecklist: {
-        fontsCurved: true,
-        bleedConfirmed: true,
-        resolutionVerified: true,
-        colorProfileCMYK: true,
-        safeMarginVerified: true,
+        fontsCurved: false,
+        bleedConfirmed: false,
+        resolutionVerified: false,
+        colorProfileCMYK: false,
+        safeMarginVerified: false,
       },
       customerId: 'CUST-003',
       customerName: 'Farmacias Cruz Azul Suc. Milagro',
@@ -343,11 +347,11 @@ function createInitialSeedAssets(): VaultAsset[] {
         { version: 'v1', updatedAt: '2026-10-30T17:10:00Z', notes: 'Foto tomada por el equipo de instalación tras conectar iluminación LED', author: 'instalacion@visualcorp.ec' },
       ],
       prepressChecklist: {
-        fontsCurved: true,
-        bleedConfirmed: true,
-        resolutionVerified: true,
-        colorProfileCMYK: true,
-        safeMarginVerified: true,
+        fontsCurved: false,
+        bleedConfirmed: false,
+        resolutionVerified: false,
+        colorProfileCMYK: false,
+        safeMarginVerified: false,
       },
       customerId: 'CUST-004',
       customerName: 'Heladería y Frutería El Pingüino',
@@ -382,11 +386,11 @@ function createInitialSeedAssets(): VaultAsset[] {
         { version: 'v2', updatedAt: '2026-11-03T09:40:00Z', notes: 'Ajuste de tolerancia de encastre a 5.8mm para acrílico colado', author: 'laser@visualcorp.ec' },
       ],
       prepressChecklist: {
-        fontsCurved: true,
-        bleedConfirmed: true,
-        resolutionVerified: true,
-        colorProfileCMYK: true,
-        safeMarginVerified: true,
+        fontsCurved: false,
+        bleedConfirmed: false,
+        resolutionVerified: false,
+        colorProfileCMYK: false,
+        safeMarginVerified: false,
       },
       customerId: 'CUST-005',
       customerName: 'Unidad Educativa Dr. José María Velasco Ibarra',
@@ -420,11 +424,11 @@ function createInitialSeedAssets(): VaultAsset[] {
         { version: 'v1', updatedAt: '2026-11-02T17:00:00Z', notes: 'Validado en banca en línea cuenta corriente Visual Corp', author: 'administracion@visualcorp.ec' },
       ],
       prepressChecklist: {
-        fontsCurved: true,
-        bleedConfirmed: true,
-        resolutionVerified: true,
-        colorProfileCMYK: true,
-        safeMarginVerified: true,
+        fontsCurved: false,
+        bleedConfirmed: false,
+        resolutionVerified: false,
+        colorProfileCMYK: false,
+        safeMarginVerified: false,
       },
       customerId: 'CUST-002',
       customerName: 'Distribuidora El Rosado Milagro',
@@ -491,11 +495,11 @@ function createInitialSeedAssets(): VaultAsset[] {
         { version: 'v1', updatedAt: '2026-11-05T10:00:00Z', notes: 'Montaje de 3 poses por hoja A4 para impresión en serie', author: 'sublimacion@visualcorp.ec' },
       ],
       prepressChecklist: {
-        fontsCurved: true,
-        bleedConfirmed: true,
-        resolutionVerified: true,
-        colorProfileCMYK: true,
-        safeMarginVerified: true,
+        fontsCurved: false,
+        bleedConfirmed: false,
+        resolutionVerified: false,
+        colorProfileCMYK: false,
+        safeMarginVerified: false,
       },
       customerId: 'CUST-008',
       customerName: 'Cooperativa de Ahorro y Crédito Milagro',
@@ -516,7 +520,7 @@ function createInitialSeedAssets(): VaultAsset[] {
    MAIN COMPONENT: VisualCorpVault
    ========================================================================== */
 
-export function VisualCorpVault({
+function VisualCorpVaultContent({
   embeddedCustomerId,
   embeddedJobCode,
   compact = false,
@@ -526,12 +530,25 @@ export function VisualCorpVault({
   compact?: boolean;
 }) {
   const { data, flash } = useWorkspace();
-  const { user } = useAuth();
+  const { user, organizationId, hasPermission } = useAuth();
+  const storageKey = `${VAULT_STORAGE_KEY}:${organizationId || 'none'}:${user?.id || 'none'}`;
+  const [persistenceError, setPersistenceError] = useState('');
+  const [uploadError, setUploadError] = useState('');
+  const [uploadBranchId, setUploadBranchId] = useState('');
+  const pendingUploads = useRef(new Map<File, string>());
+  const permittedBranches = (data?.branches || []).filter((branch: any) => hasPermission('workshop', 'edit', branch.id));
+  const branchId = uploadBranchId || (permittedBranches.length === 1 ? permittedBranches[0].id : '');
+  const serializeAssets = (items: VaultAsset[]) => JSON.stringify(items.map((asset) => asset.storageProvider === 'supabase'
+    ? { ...asset, fileUrl: '', thumbnailUrl: '' } : asset));
+  const persistAssets = (items: VaultAsset[]) => {
+    localStorage.setItem(storageKey, serializeAssets(items));
+    setPersistenceError('');
+  };
 
   // Assets State & Persistence
   const [assets, setAssets] = useState<VaultAsset[]>(() => {
     try {
-      const raw = localStorage.getItem(VAULT_STORAGE_KEY);
+      const raw = localStorage.getItem(storageKey);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -539,17 +556,39 @@ export function VisualCorpVault({
     } catch {
       // Fallback to initial seeds
     }
-    return createInitialSeedAssets();
+    return [];
   });
 
   // Save to localStorage whenever assets change
   useEffect(() => {
     try {
-      localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(assets));
+      persistAssets(assets);
     } catch (e) {
-      console.warn('No se pudo guardar la bóveda en localStorage:', e);
+      setPersistenceError('No se pudo guardar el índice de archivos en este navegador. Libera espacio y reintenta; no cierres la pestaña.');
     }
-  }, [assets]);
+  }, [assets, storageKey]);
+
+  // Signed links are kept only in memory and refreshed before they expire.
+  const pathsKey = assets.filter((asset) => asset.storageProvider === 'supabase').map((asset) => asset.storagePath).join('|');
+  useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      if (!supabase) return;
+      const links = new Map<string, string>();
+      for (const path of pathsKey.split('|').filter(Boolean)) {
+        const { data: signed, error } = await supabase.storage.from(PRODUCTION_VAULT_BUCKET).createSignedUrl(path, 3600);
+        if (error) { if (active) setPersistenceError('No pudimos abrir algunos archivos privados. Reintenta con una sesión vigente.'); continue; }
+        if (signed?.signedUrl) links.set(path, signed.signedUrl);
+      }
+      if (active) setAssets((current) => current.map((asset) => {
+        const url = links.get(asset.storagePath || '');
+        return url ? { ...asset, fileUrl: url, thumbnailUrl: /^image\/(png|jpeg|webp)$/.test(asset.mimeType) ? url : undefined } : asset;
+      }));
+    };
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 45 * 60 * 1000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [pathsKey]);
 
   // Filtering & View state
   const [searchQuery, setSearchQuery] = useState('');
@@ -595,11 +634,11 @@ export function VisualCorpVault({
     orderCode: embeddedJobCode || '',
     notes: '',
     externalUrl: '',
-    fontsCurved: true,
-    bleedConfirmed: true,
-    resolutionVerified: true,
-    colorProfileCMYK: true,
-    safeMarginVerified: true,
+    fontsCurved: false,
+    bleedConfirmed: false,
+    resolutionVerified: false,
+    colorProfileCMYK: false,
+    safeMarginVerified: false,
   });
   const [isUploading, setIsUploading] = useState(false);
 
@@ -671,7 +710,12 @@ export function VisualCorpVault({
   };
 
   const handleFilesSelected = (files: File[]) => {
-    setUploadPendingFiles(files);
+    try { files.forEach(validateProductionVaultFile); } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Archivo no válido.');
+      setIsUploadModalOpen(true); return;
+    }
+    setUploadError('');
+    setUploadPendingFiles((current) => [...current, ...files.filter((file) => !current.includes(file))]);
     const first = files[0];
     if (first) {
       const baseName = first.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
@@ -694,9 +738,12 @@ export function VisualCorpVault({
   // Execute Upload & Save
   const handleSaveAsset = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isUploading) return;
     setIsUploading(true);
+    setUploadError('');
 
     try {
+      if (!organizationId || !user?.id || !branchId || !hasPermission('workshop', 'edit', branchId)) throw new Error('Selecciona una sucursal con permiso de edición de taller.');
       const newAssets: VaultAsset[] = [];
       const currentAuthor = user?.email || 'Taller Visual Corp';
 
@@ -706,49 +753,17 @@ export function VisualCorpVault({
             ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
             : `${Math.round(file.size / 1024)} KB`;
 
-          let fileUrl = '';
-          let storageProvider: 'local' | 'supabase' = 'local';
-          let storagePath = '';
+          validateProductionVaultFile(file);
+          if (!supabase) throw new Error('No hay conexión con el almacenamiento privado. Reintenta.');
+          const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+          const { storagePath, fileUrl } = await uploadProductionVaultFile(
+            supabase.storage.from(PRODUCTION_VAULT_BUCKET), file,
+            `${organizationId}/${branchId}/${user.id}/${crypto.randomUUID()}-${cleanName}`,
+            pendingUploads.current.get(file), (path) => pendingUploads.current.set(file, path),
+          );
+          const storageProvider = 'supabase' as const;
 
-          // 1. Try reading local preview via DataURL
-          if (file.type.startsWith('image/') || file.name.endsWith('.svg')) {
-            try {
-              fileUrl = await new Promise<string>((resolve) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = () => resolve('');
-                reader.readAsDataURL(file);
-              });
-            } catch {
-              fileUrl = URL.createObjectURL(file);
-            }
-          } else {
-            fileUrl = generateSvgThumbnail(uploadFormData.category, uploadFormData.title || file.name, uploadFormData.customerName || 'Visual Corp', uploadFormData.dimensionsNote || 'Preprensa');
-          }
-
-          // 2. Optional Supabase Storage upload
-          if (supabaseConfigured && supabase) {
-            try {
-              const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-              const path = `vault/${Date.now()}-${cleanFileName}`;
-              const { data: uploadResult, error: uploadError } = await supabase.storage
-                .from('inventory-reference-images')
-                .upload(path, file, { cacheControl: '3600', upsert: true });
-
-              if (!uploadError && uploadResult?.path) {
-                storagePath = uploadResult.path;
-                storageProvider = 'supabase';
-                const { data: pubData } = supabase.storage.from('inventory-reference-images').getPublicUrl(path);
-                if (pubData?.publicUrl) {
-                  fileUrl = pubData.publicUrl;
-                }
-              }
-            } catch (err) {
-              console.warn('Supabase storage upload fell back to local storage:', err);
-            }
-          }
-
-          const assetId = `VC-VLT-${String(assets.length + newAssets.length + 1).padStart(3, '0')}`;
+          const assetId = crypto.randomUUID();
           const newAsset: VaultAsset = {
             id: assetId,
             title: uploadFormData.title || file.name,
@@ -757,7 +772,7 @@ export function VisualCorpVault({
             fileSizeBytes: file.size,
             mimeType: file.type || 'application/octet-stream',
             fileUrl: fileUrl || generateSvgThumbnail(uploadFormData.category, uploadFormData.title || file.name, uploadFormData.customerName || 'Visual Corp', uploadFormData.dimensionsNote || 'Preprensa'),
-            thumbnailUrl: fileUrl,
+            thumbnailUrl: /^image\/(png|jpeg|webp)$/.test(file.type) ? fileUrl : undefined,
             category: uploadFormData.category,
             approvalStatus: 'en_revision',
             colorProfile: uploadFormData.colorProfile,
@@ -787,6 +802,8 @@ export function VisualCorpVault({
             notes: uploadFormData.notes,
             storageProvider,
             storagePath,
+            organizationId,
+            branchId,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
@@ -794,8 +811,9 @@ export function VisualCorpVault({
           newAssets.push(newAsset);
         }
       } else if (uploadFormData.externalUrl) {
+        if (!/^https?:$/.test(new URL(uploadFormData.externalUrl).protocol)) throw new Error('Usa un enlace HTTPS o HTTP válido.');
         // Link without local file
-        const assetId = `VC-VLT-${String(assets.length + 1).padStart(3, '0')}`;
+        const assetId = crypto.randomUUID();
         const newAsset: VaultAsset = {
           id: assetId,
           title: uploadFormData.title || 'Enlace de diseño externo',
@@ -841,7 +859,11 @@ export function VisualCorpVault({
         newAssets.push(newAsset);
       }
 
-      setAssets((prev) => [...newAssets, ...prev]);
+      if (!newAssets.length) throw new Error('Selecciona archivos o añade un enlace.');
+      const nextAssets = [...newAssets, ...assets];
+      persistAssets(nextAssets);
+      setAssets(nextAssets);
+      pendingUploads.current.clear();
       flash(`Se ${newAssets.length === 1 ? 'registró el archivo' : `registraron ${newAssets.length} archivos`} correctamente en la bóveda.`);
       setIsUploadModalOpen(false);
       setUploadPendingFiles([]);
@@ -857,14 +879,14 @@ export function VisualCorpVault({
         orderCode: embeddedJobCode || '',
         notes: '',
         externalUrl: '',
-        fontsCurved: true,
-        bleedConfirmed: true,
-        resolutionVerified: true,
-        colorProfileCMYK: true,
-        safeMarginVerified: true,
+        fontsCurved: false,
+        bleedConfirmed: false,
+        resolutionVerified: false,
+        colorProfileCMYK: false,
+        safeMarginVerified: false,
       });
     } catch (err: any) {
-      flash(`Error al guardar archivo: ${err?.message || 'Error desconocido'}`);
+      setUploadError(`No se completó el guardado: ${err?.message || 'Error desconocido'}. Conservamos la cola para reintentar.`);
     } finally {
       setIsUploading(false);
     }
@@ -966,11 +988,22 @@ export function VisualCorpVault({
   };
 
   // Delete Asset
-  const handleDeleteAsset = (assetId: string) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este archivo de la bóveda? Esta acción no se puede deshacer.')) {
-      setAssets((prev) => prev.filter((a) => a.id !== assetId));
+  const handleDeleteAsset = async (assetId: string) => {
+    const asset = assets.find((entry) => entry.id === assetId);
+    if (!asset || !window.confirm('¿Eliminar este archivo de la bóveda y su copia en Storage?')) return;
+    try {
+      if (asset.storageProvider === 'supabase') {
+        if (!supabase || !asset.storagePath) throw new Error('No hay conexión con el archivo remoto.');
+        const { data: removed, error } = await supabase.storage.from(PRODUCTION_VAULT_BUCKET).remove([asset.storagePath]);
+        if (error || !removed?.length) throw error || new Error('El servidor no confirmó la eliminación del archivo.');
+      }
+      const next = assets.filter((entry) => entry.id !== assetId);
+      persistAssets(next);
+      setAssets(next);
       if (inspectedAsset?.id === assetId) setInspectedAsset(null);
       flash('Archivo eliminado de la bóveda.');
+    } catch (error) {
+      setPersistenceError(`No se completó la eliminación: ${error instanceof Error ? error.message : 'Reintenta con una sesión vigente.'}`);
     }
   };
 
@@ -1007,7 +1040,7 @@ export function VisualCorpVault({
     if (asset.orderCode) msg += ` (Orden #${asset.orderCode})`;
     msg += `.\n\n`;
     msg += `📱 *Portal de Aprobación en Línea:* ${trackingUrl}\n`;
-    if (asset.fileUrl && !asset.fileUrl.startsWith('data:')) {
+    if (asset.storageProvider === 'external' && asset.fileUrl && !asset.fileUrl.startsWith('data:')) {
       msg += `📥 *Descarga de Arte:* ${asset.fileUrl}\n`;
     }
     msg += `\n🔍 *Detalles técnicos:* ${asset.colorProfile} · ${asset.dimensionsNote || 'Escala 1:1'}\n`;
@@ -1090,11 +1123,13 @@ export function VisualCorpVault({
       onDrop={handleDrop}
     >
       {/* Hidden file input for file pickers */}
+      {persistenceError && <p className="vc-vault-upload-state" role="alert">{persistenceError}</p>}
+      {uploadPendingFiles.length > 0 && !isUploadModalOpen && <button className="vc-vault-btn" type="button" onClick={() => setIsUploadModalOpen(true)}>Reintentar {uploadPendingFiles.length} archivos pendientes</button>}
       <input
         type="file"
         ref={fileInputRef}
         multiple
-        accept="image/*,.pdf,.svg,.ai,.cdr,.eps,.psd,.afdesign,.dxf"
+        accept=".png,.jpg,.jpeg,.webp,.pdf,.svg,.ai,.cdr,.eps,.psd,.afdesign,.dxf"
         style={{ display: 'none' }}
         onChange={handleFileInputChange}
       />
@@ -1364,7 +1399,7 @@ export function VisualCorpVault({
               <div key={asset.id} className="vc-vault-card">
                 <div className="vc-vault-card-thumb-wrap">
                   <img
-                    src={asset.thumbnailUrl || asset.fileUrl}
+                    src={asset.thumbnailUrl || generateSvgThumbnail(asset.category, 'Archivo privado', 'Visual Corp', 'Descarga disponible')}
                     alt={asset.title}
                     className="vc-vault-card-img"
                     loading="lazy"
@@ -1510,7 +1545,7 @@ export function VisualCorpVault({
                     <td>
                       <div className="vc-vault-table-file-cell">
                         <img
-                          src={asset.thumbnailUrl || asset.fileUrl}
+                          src={asset.thumbnailUrl || generateSvgThumbnail(asset.category, 'Archivo privado', 'Visual Corp', 'Descarga disponible')}
                           alt={asset.title}
                           className="vc-vault-table-thumb"
                         />
@@ -1616,6 +1651,16 @@ export function VisualCorpVault({
             </div>
 
             <form onSubmit={handleSaveAsset}>
+              <div className="vc-vault-upload-state">
+                <p>Almacenamiento privado · máximo 50 MB por archivo. El índice se guarda en este navegador.</p>
+                <label>Sucursal <select value={branchId} onChange={(event) => setUploadBranchId(event.target.value)} disabled={isUploading || pendingUploads.current.size > 0} required>
+                  <option value="">Seleccionar sucursal</option>
+                  {permittedBranches.map((branch: any) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+                </select></label>
+                {uploadError && <p role="alert">{uploadError}</p>}
+                {uploadPendingFiles.length > 0 && <p role="status">{uploadPendingFiles.length} archivos en cola. Mantén esta pestaña abierta hasta completar el guardado. Puedes reintentar con el botón Guardar.</p>}
+              </div>
+
               <div className="vc-vault-modal-body">
                 {uploadPendingFiles.length > 0 ? (
                   <div className="vc-vault-dropzone" style={{ padding: '12px 14px' }}>
@@ -1880,7 +1925,7 @@ export function VisualCorpVault({
                 {/* Left Column: Image Canvas Preview */}
                 <div className="vc-vault-preview-col">
                   <div className="vc-vault-preview-canvas">
-                    <img src={inspectedAsset.fileUrl} alt={inspectedAsset.title} />
+                    {(inspectedAsset.thumbnailUrl || /^image\/(png|jpeg|webp)$/.test(inspectedAsset.mimeType)) ? <img src={inspectedAsset.thumbnailUrl || inspectedAsset.fileUrl} alt={inspectedAsset.title} /> : <FileText size={80} aria-label="Archivo privado disponible para descargar" />}
                   </div>
 
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -2050,4 +2095,9 @@ export function VisualCorpVault({
       )}
     </div>
   );
+}
+
+export function VisualCorpVault(props: { embeddedCustomerId?: string; embeddedJobCode?: string; compact?: boolean }) {
+  const { organizationId, user } = useAuth();
+  return <VisualCorpVaultContent key={`${organizationId}:${user?.id}`} {...props} />;
 }

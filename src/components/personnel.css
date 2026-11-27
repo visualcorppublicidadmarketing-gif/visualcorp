@@ -134,14 +134,15 @@
 }
 
 .personnel-page .site-primary-button,
-.personnel-page .site-secondary-button {
+.personnel-page .site-secondary-button,
+.personnel-page .button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   min-height: 36px;
-  padding: 7px 13px;
-  border-radius: 10px;
+  padding: 7px 14px;
+  border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
   line-height: 1.25;
@@ -151,46 +152,53 @@
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
-.personnel-page .site-primary-button {
+.personnel-page .site-primary-button,
+.personnel-page .button-dark {
   background: linear-gradient(135deg, #8f1680, #6d28d9);
   border: 1px solid #7a126e;
   color: #ffffff;
+  box-shadow: 0 8px 20px rgb(109 40 217 / 20%);
 }
 
-.personnel-page .site-primary-button:hover:not(:disabled) {
+.personnel-page .site-primary-button:hover:not(:disabled),
+.personnel-page .button-dark:hover:not(:disabled) {
   background: linear-gradient(135deg, #a31b92, #7c3aed);
   transform: translateY(-1px);
 }
 
-.personnel-page .site-secondary-button {
-  background: var(--pers-surface);
-  border: 1px solid var(--pers-line-strong);
+.personnel-page .site-secondary-button,
+.personnel-page .button-outline {
+  background: var(--admin-clear-bg, var(--pers-surface));
+  border: 1px solid var(--admin-clear-border, var(--pers-line-strong));
   color: var(--pers-ink);
+  backdrop-filter: var(--admin-clear-blur, blur(14px));
+  -webkit-backdrop-filter: var(--admin-clear-blur, blur(14px));
 }
 
-.personnel-page .site-secondary-button:hover:not(:disabled) {
-  background: var(--pers-surface-soft);
+.personnel-page .site-secondary-button:hover:not(:disabled),
+.personnel-page .button-outline:hover:not(:disabled) {
+  background: var(--admin-blur-bg, var(--pers-surface-soft));
   border-color: var(--pers-accent-border);
 }
 
-.personnel-page :is(.site-primary-button, .site-secondary-button):disabled {
+.personnel-page :is(.site-primary-button, .site-secondary-button, .button):disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-:is(html[data-theme='dark'], body[data-theme='dark'], .work-app.theme-dark, .work-app[data-theme='dark']) .personnel-page .site-secondary-button {
-  background: var(--pers-surface-elevated);
-  border-color: var(--pers-line-strong);
+:is(html[data-theme='dark'], body[data-theme='dark'], .work-app.theme-dark, .work-app[data-theme='dark']) .personnel-page :is(.site-secondary-button, .button-outline) {
+  background: var(--admin-clear-bg, var(--pers-surface-elevated));
+  border-color: var(--admin-clear-border, var(--pers-line-strong));
   color: var(--pers-ink);
 }
 
-:is(html[data-theme='dark'], body[data-theme='dark'], .work-app.theme-dark, .work-app[data-theme='dark']) .personnel-page .site-secondary-button:hover:not(:disabled) {
-  background: #272c40;
+:is(html[data-theme='dark'], body[data-theme='dark'], .work-app.theme-dark, .work-app[data-theme='dark']) .personnel-page :is(.site-secondary-button, .button-outline):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pers-surface-elevated) 85%, white 8%);
   border-color: var(--pers-accent-border);
   color: #ffffff;
 }
 
-:is(html[data-theme='dark'], body[data-theme='dark'], .work-app.theme-dark, .work-app[data-theme='dark']) .personnel-page .site-primary-button {
+:is(html[data-theme='dark'], body[data-theme='dark'], .work-app.theme-dark, .work-app[data-theme='dark']) .personnel-page :is(.site-primary-button, .button-dark) {
   background: linear-gradient(135deg, #a21caf, #7c3aed);
   border-color: rgba(216, 180, 254, 0.45);
   color: #ffffff;
@@ -294,9 +302,12 @@
   width: 100%;
   min-width: 0;
   padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid var(--pers-line);
-  background: var(--pers-surface);
+  border-radius: 16px;
+  border: 1px solid var(--admin-frosted-border, var(--pers-line));
+  background: var(--admin-frosted-bg, var(--pers-surface));
+  box-shadow: var(--admin-frosted-shadow, none);
+  backdrop-filter: var(--admin-frosted-blur, blur(20px));
+  -webkit-backdrop-filter: var(--admin-frosted-blur, blur(20px));
   color: var(--pers-ink);
   text-align: left;
   cursor: pointer;
@@ -305,14 +316,14 @@
 
 .personnel-metric-card:hover {
   border-color: var(--pers-accent-border);
-  background: var(--pers-surface-elevated);
+  background: var(--admin-blur-bg, var(--pers-surface-elevated));
   transform: translateY(-1px);
 }
 
 .personnel-metric-card.is-active {
   border-color: var(--pers-accent);
-  box-shadow: inset 0 0 0 1px var(--pers-accent);
-  background: var(--pers-surface-elevated);
+  box-shadow: inset 0 0 0 1px var(--pers-accent), var(--admin-blur-shadow, none);
+  background: var(--admin-blur-bg, var(--pers-surface-elevated));
 }
 
 .personnel-metric-card > div {
@@ -516,12 +527,22 @@
 .personnel-detail-panel,
 .personnel-rollcall-panel,
 .personnel-payroll-panel {
-  border: 1px solid var(--pers-line);
-  border-radius: 16px;
-  background: var(--pers-surface);
+  border: 1px solid var(--admin-frosted-border, var(--pers-line));
+  border-radius: 18px;
+  background: var(--admin-frosted-bg, var(--pers-surface));
+  box-shadow: var(--admin-frosted-shadow, none);
+  backdrop-filter: var(--admin-frosted-blur, blur(20px));
+  -webkit-backdrop-filter: var(--admin-frosted-blur, blur(20px));
   color: var(--pers-ink);
   min-width: 0;
   max-width: 100%;
+}
+
+.personnel-sync-callout.is-local-attendance {
+  border-color: var(--pers-warn-bd);
+  background: color-mix(in srgb, var(--pers-warn-bg) 52%, var(--admin-frosted-bg, var(--pers-surface)));
+  backdrop-filter: var(--admin-blur-blur, blur(16px));
+  -webkit-backdrop-filter: var(--admin-blur-blur, blur(16px));
 }
 
 .personnel-directory {
@@ -2010,5 +2031,20 @@
 
   .personnel-employment-action {
     width: 100%;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .personnel-page .site-secondary-button,
+  .personnel-page .button-outline,
+  .personnel-metric-card,
+  .personnel-directory,
+  .personnel-detail-panel,
+  .personnel-rollcall-panel,
+  .personnel-payroll-panel,
+  .personnel-sync-callout.is-local-attendance {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--pers-surface);
   }
 }

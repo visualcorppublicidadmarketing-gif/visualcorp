@@ -27,6 +27,8 @@ import {
 } from './storefrontCatalog';
 import { ArticleMarkdown } from './ArticleMarkdown';
 import { SouvenirCollectionPage, SOUVENIR_EXAMPLE_COUNT } from './SouvenirCollectionPage';
+import { EnvironmentBrandingMatrix, InteractiveCatalogGallery, PanoramicCategoryStrips } from './SolutionsComponents';
+import { PortfolioPracticalExamples } from './PortfolioPracticalExamples';
 import { StoreCinemaHero } from './StoreCinemaHero';
 import { CreativeToolLink } from './tools/CreativeToolLink';
 import { AmbientVideoLayer } from './AmbientVideoLayer';
@@ -198,63 +200,11 @@ function ContentCard({ article, kind }: { article: SiteArticle; kind: ContentKin
   </article>;
 }
 
-const WORKSHOP_SAMPLE_PHOTOS = [
-  { image: '/images/catalog-real/taza-personalizada.webp', title: 'Tazas personalizadas', family: 'Sublimación · Taller' },
-  { image: '/images/catalog-real/polo.webp', title: 'Prendas e identidad textil', family: 'Bordado y DTF · Taller' },
-  { image: '/images/catalog-real/gorra-sublimada.webp', title: 'Gorras promocionales', family: 'Textil · Taller' },
-  { image: '/images/catalog-real/tarjeta-presentacion.webp', title: 'Tarjetas e impresos', family: 'Imprenta · Taller' },
-  { image: '/images/catalog-real/cuaderno-corporativo.webp', title: 'Cuadernos corporativos', family: 'Papelería · Taller' },
-  { image: '/images/catalog-real/bolso.webp', title: 'Bolsos y empaques', family: 'Promocionales · Taller' },
-];
-
 function EmptyContent({ kind }: { kind: ContentKind }) {
-  if (kind === 'portafolio') {
-    return (
-      <div className="portfolio-trust-bento">
-        <article className="portfolio-trust-lead glass-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
-          <SpotlightLayer />
-          <div className="portfolio-trust-badge-row">
-            <span className="portfolio-trust-pill"><Sparkles size={13} aria-hidden="true" /> Casos autorizados</span>
-            <span className="portfolio-trust-status">Documentación en curso</span>
-          </div>
-          <h3>Publicamos únicamente trabajos con autorización explícita del cliente.</h3>
-          <p>
-            Estamos reuniendo fotografías reales y fichas verificadas de instalaciones y campañas realizadas desde nuestro taller en Milagro. Mientras tanto, revisa muestras reales de producción interna y explora referencias conceptuales por industria en Soluciones.
-          </p>
-          <div className="portfolio-trust-actions">
-            <Link className="site-primary-button" to="/cotizador">Cotizar mi proyecto <ArrowUpRight size={15} /></Link>
-            <Link className="site-secondary-button" to="/soluciones#catalogo-visual">Ver 38 referencias en Soluciones <ArrowRight size={15} /></Link>
-          </div>
-        </article>
-
-        <section className="portfolio-workshop-samples glass-card" aria-labelledby="portfolio-workshop-title">
-          <div className="portfolio-workshop-head">
-            <div>
-              <span className="site-eyebrow light"><i /> EVIDENCIA DE TALLER</span>
-              <h3 id="portfolio-workshop-title">Muestras reales de producción</h3>
-            </div>
-            <span className="portfolio-workshop-disclaimer">Muestras internas · Sin atribución de clientes</span>
-          </div>
-          <div className="portfolio-workshop-grid">
-            {WORKSHOP_SAMPLE_PHOTOS.map((sample) => (
-              <figure key={sample.image} className="portfolio-workshop-card">
-                <div className="portfolio-workshop-media">
-                  <img src={sample.image} alt={`${sample.title} — muestra interna de taller Visual Corp`} loading="lazy" decoding="async" />
-                  <span className="portfolio-workshop-tag">MUESTRA REAL</span>
-                </div>
-                <figcaption>
-                  <strong>{sample.title}</strong>
-                  <small>{sample.family}</small>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </section>
-      </div>
-    );
-  }
-  const title = kind === 'publicaciones' ? 'Aún no hay publicaciones visibles.' : 'Aún no hay artículos publicados.';
-  const text = 'Este espacio mostrará contenido publicado por Visual Corp. Mientras tanto, puedes explorar nuestros servicios.';
+  const title = kind === 'portafolio' ? 'Estamos preparando esta galería.' : kind === 'publicaciones' ? 'Aún no hay publicaciones visibles.' : 'Aún no hay artículos publicados.';
+  const text = kind === 'portafolio'
+    ? 'Los casos de clientes aparecerán aquí cuando el equipo confirme sus imágenes, descripciones y autorización para publicarlos. Mientras tanto, explora los ejemplos prácticos y las soluciones que ofrecemos.'
+    : 'Este espacio mostrará contenido publicado por Visual Corp. Mientras tanto, puedes explorar nuestros servicios.';
   return <div className="showcase-empty glass-card"><span><Sparkles size={20}/></span><h2>{title}</h2><p>{text}</p><Link className="site-secondary-button" to="/servicios">Explorar servicios <ArrowRight size={15}/></Link></div>;
 }
 
@@ -271,52 +221,23 @@ function ArticleIndex({ kind }: { kind: ContentKind }) {
     ? 'Consejos, ideas y novedades sobre comunicación visual, producción y presencia de marca.'
     : kind === 'publicaciones'
       ? 'Una selección de novedades y piezas compartidas por Visual Corp.'
-      : 'Casos autorizados, muestras reales de taller y simulaciones conceptuales para orientar tu próximo proyecto.';
-  return <><ShowcaseHero kind={kind} description={description}/>
-    <section className="showcase-section" id={kind === 'portafolio' ? 'casos-documentados' : undefined}>
-      <div className="showcase-toolbar"><div><span className="site-eyebrow"><i/>VISUAL CORP</span><h2>{kind === 'portafolio' ? 'Casos autorizados y muestras de taller' : kind === 'publicaciones' ? 'Últimas publicaciones' : 'Lecturas recientes'}</h2></div><label className="showcase-search"><Search size={16}/><span className="sr-only">Buscar contenido</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar contenido"/></label></div>
-      {loading ? <div className="showcase-empty glass-card" role="status">Cargando contenido…</div> : error ? (kind === 'portafolio' ? <><div className="portfolio-load-notice glass-card" role="status"><span>No pudimos consultar casos en línea en este momento; mostramos la política vigente y muestras reales de taller.</span><button type="button" className="site-secondary-button" onClick={retry}>Reintentar <ArrowRight size={15}/></button></div><EmptyContent kind="portafolio"/></> : <ContentLoadError message={error} onRetry={retry}/>) : matches.length ? <AnimatedList className="showcase-grid" stagger={0.045}>{matches.map((article) => <ContentCard key={article.id} article={article} kind={kind}/>)}</AnimatedList> : sectionArticles.length && search.trim() ? <div className="showcase-empty glass-card" role="status"><h2>No encontramos resultados para “{search.trim()}”.</h2><p>Prueba con otras palabras o vuelve a ver todo el contenido.</p><button type="button" className="site-secondary-button" onClick={() => setSearch('')}>Limpiar búsqueda <ArrowRight size={15}/></button></div> : <EmptyContent kind={kind}/>}
-    </section>
-    {kind === 'portafolio' && <>
-      <BrandBeforeAfterShowcase/>
-      <section className="showcase-section portfolio-solutions-bridge-wrap">
-        <div className="portfolio-solutions-bridge glass-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
-          <SpotlightLayer />
-          <div>
-            <span className="site-eyebrow light"><i /> CATÁLOGO DE REFERENCIAS CONCEPTUALES</span>
-            <h2>¿Buscas ideas por espacio, industria o formato?</h2>
-            <p>Explora las 38 fichas conceptuales (señalética, rótulos, branding vehicular, BTL, corte láser e impresión) y las tiras panorámicas en Soluciones.</p>
-          </div>
-          <div className="portfolio-trust-actions">
-            <Link className="site-primary-button" to="/soluciones#catalogo-visual">Explorar Soluciones <ArrowUpRight size={15} /></Link>
-            <Link className="site-secondary-button" to="/tienda">Ver productos en Tienda <ArrowRight size={15} /></Link>
-          </div>
-        </div>
-      </section>
-    </>}
-  </>;
+      : 'Explora ejemplos prácticos de lo que hacemos y casos documentados cuando están disponibles.';
+  return <><ShowcaseHero kind={kind} description={description}/>{kind === 'portafolio' && <><BrandBeforeAfterShowcase/><PortfolioPracticalExamples/><InteractiveCatalogGallery eyebrow="TRABAJOS Y SOLUCIONES POR CATEGORÍA" heading="Señalética, letreros, branding, BTL, cortes láser e impresión"/><PanoramicCategoryStrips/><EnvironmentBrandingMatrix compact/></>}<section className="showcase-section">
+    <div className="showcase-toolbar"><div><span className="site-eyebrow"><i/>VISUAL CORP</span><h2>{kind === 'portafolio' ? 'Casos documentados' : kind === 'publicaciones' ? 'Últimas publicaciones' : 'Lecturas recientes'}</h2></div><label className="showcase-search"><Search size={16}/><span className="sr-only">Buscar contenido</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar contenido"/></label></div>
+    {loading ? <div className="showcase-empty glass-card" role="status">Cargando contenido…</div> : error ? <ContentLoadError message={error} onRetry={retry}/> : matches.length ? <AnimatedList className="showcase-grid" stagger={0.045}>{matches.map((article) => <ContentCard key={article.id} article={article} kind={kind}/>)}</AnimatedList> : sectionArticles.length && search.trim() ? <div className="showcase-empty glass-card" role="status"><h2>No encontramos resultados para “{search.trim()}”.</h2><p>Prueba con otras palabras o vuelve a ver todo el contenido.</p><button type="button" className="site-secondary-button" onClick={() => setSearch('')}>Limpiar búsqueda <ArrowRight size={15}/></button></div> : <EmptyContent kind={kind}/>}
+  </section></>;
 }
 
-export function BlogIndexPage() {
-  return <>
-    <PageMeta title="Blog" description="Consejos, ideas y guías prácticas sobre diseño gráfico, rotulación, impresión y presencia de marca en Visual Corp." path="/blog" />
-    <ArticleIndex kind="blog"/>
-  </>;
-}
-export function PublicationIndexPage() {
-  return <>
-    <PageMeta title="Publicaciones" description="Novedades, campañas y lanzamientos compartidos por Visual Corp en Milagro, Ecuador." path="/publicaciones" />
-    <ArticleIndex kind="publicaciones"/>
-  </>;
-}
-export function PortfolioIndexPage() {
-  return <>
-    <PageMeta title="Portafolio" description="Casos autorizados, muestras reales de taller y simulador conceptual de Visual Corp en Milagro, Ecuador." path="/portafolio" />
-    <ArticleIndex kind="portafolio"/>
-  </>;
-}
+export function BlogIndexPage() { return <><PageMeta title="Blog" description="Consejos, ideas y guías prácticas sobre diseño gráfico, rotulación, impresión y presencia de marca en Visual Corp." path="/blog"/><ArticleIndex kind="blog"/></>; }
+export function PublicationIndexPage() { return <><PageMeta title="Publicaciones" description="Novedades, campañas y lanzamientos compartidos por Visual Corp en Milagro, Ecuador." path="/publicaciones"/><ArticleIndex kind="publicaciones"/></>; }
+export function PortfolioIndexPage() { return <><PageMeta title="Portafolio" description="Casos autorizados, muestras reales de taller y simulador conceptual de Visual Corp en Milagro, Ecuador." path="/portafolio"/><ArticleIndex kind="portafolio"/></>; }
 export function PublicationArticleDetailPage() { return <ArticleDetailPage kind="publicaciones"/>; }
 export function PortfolioArticleDetailPage() { return <ArticleDetailPage kind="portafolio"/>; }
+
+function DocumentTitle({ title }: { title: string }) {
+  useEffect(() => { document.title = `${title} · Visual Corp`; }, [title]);
+  return null;
+}
 
 type StoreCategoryModule = { name: string; count: number; product?: CatalogProduct };
 
@@ -372,12 +293,13 @@ export function ArticleDetailPage({ kind = 'blog' }: { kind?: ContentKind }) {
   const { slug = '' } = useParams();
   const { articles, loading, error, retry } = usePublishedArticles();
   const article = articles.find((item) => item.slug === slug && articleMatches(item, kind));
+  useEffect(() => { if (article) document.title = `${article.title} · Visual Corp`; }, [article]);
   const fallbackBase = kind === 'publicaciones' ? '/publicaciones' : kind === 'portafolio' ? '/portafolio' : '/blog';
-  const fallbackTitle = kind === 'publicaciones' ? 'Publicación' : kind === 'portafolio' ? 'Proyecto de portafolio' : 'Artículo del blog';
-  if (loading) return <><PageMeta title={fallbackTitle} description="Cargando publicación de Visual Corp." path={`${fallbackBase}/${slug}`} ogType="article" /><section className="showcase-section"><div className="showcase-empty glass-card" role="status">Cargando artículo…</div></section></>;
-  if (error) return <><PageMeta title={fallbackTitle} description="Contenido publicado de Visual Corp." path={`${fallbackBase}/${slug}`} ogType="article" /><section className="showcase-section"><ContentLoadError message={error} onRetry={retry}/></section></>;
-  if (!article) return <><PageMeta title="Contenido no disponible" description="El contenido solicitado no está disponible en Visual Corp." path={`${fallbackBase}/${slug}`} ogType="article" /><section className="showcase-section"><div className="showcase-empty glass-card"><h1>Este contenido no está disponible.</h1><p>Revisa el enlace o vuelve a la lista de artículos.</p><Link className="site-secondary-button" to={fallbackBase}>Volver <ArrowRight size={15}/></Link></div></section></>;
-  return <><PageMeta title={article.title} description={article.excerpt || `${article.title} en Visual Corp.`} path={`${fallbackBase}/${article.slug}`} ogType="article" image={article.cover_image || undefined} /><header className="article-hero"><Link className="article-back" to={kind === 'publicaciones' ? '/publicaciones' : kind === 'portafolio' ? '/portafolio' : '/blog'}><ArrowRight size={15}/> Volver</Link><span className="site-eyebrow light"><i/>{kind === 'publicaciones' ? 'PUBLICACIÓN' : kind === 'portafolio' ? 'PORTAFOLIO VISUAL CORP' : 'BLOG VISUAL CORP'}</span><h1>{article.title}</h1>{article.excerpt && <p>{article.excerpt}</p>}{article.published_at && <time dateTime={article.published_at}>{new Date(article.published_at).toLocaleDateString('es-EC', { dateStyle: 'long' })}</time>}</header><article className="article-body glass-card">{article.cover_image && <img className="article-cover" src={article.cover_image} alt=""/>}<ArticleMarkdown value={article.body_markdown}/>{article.tags?.length > 0 && <div className="article-tags">{article.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}</article></>;
+  const fallbackTitle = kind === 'publicaciones' ? 'Publicación' : kind === 'portafolio' ? 'Caso de portafolio' : 'Artículo';
+  if (loading) return <><PageMeta title={fallbackTitle} description="Cargando contenido publicado de Visual Corp." path={`${fallbackBase}/${slug}`} ogType="article"/><section className="showcase-section"><div className="showcase-empty glass-card" role="status">Cargando artículo…</div></section></>;
+  if (error) return <><PageMeta title={fallbackTitle} description="Contenido publicado de Visual Corp." path={`${fallbackBase}/${slug}`} ogType="article"/><section className="showcase-section"><ContentLoadError message={error} onRetry={retry}/></section></>;
+  if (!article) return <><PageMeta title="Contenido no disponible" description="El contenido solicitado no está disponible en Visual Corp." path={`${fallbackBase}/${slug}`} ogType="article"/><section className="showcase-section"><div className="showcase-empty glass-card"><h1>Este contenido no está disponible.</h1><p>Revisa el enlace o vuelve a la lista de artículos.</p><Link className="site-secondary-button" to={fallbackBase}>Volver <ArrowRight size={15}/></Link></div></section></>;
+  return <><PageMeta title={article.title} description={article.excerpt || `${article.title} en Visual Corp.`} path={`${fallbackBase}/${article.slug}`} ogType="article" image={article.cover_image || undefined}/><DocumentTitle title={article.title}/><header className="article-hero"><Link className="article-back" to={kind === 'publicaciones' ? '/publicaciones' : kind === 'portafolio' ? '/portafolio' : '/blog'}><ArrowRight size={15}/> Volver</Link><span className="site-eyebrow light"><i/>{kind === 'publicaciones' ? 'PUBLICACIÓN' : kind === 'portafolio' ? 'PORTAFOLIO VISUAL CORP' : 'BLOG VISUAL CORP'}</span><h1>{article.title}</h1>{article.excerpt && <p>{article.excerpt}</p>}{article.published_at && <time dateTime={article.published_at}>{new Date(article.published_at).toLocaleDateString('es-EC', { dateStyle: 'long' })}</time>}</header><article className="article-body glass-card">{article.cover_image && <img className="article-cover" src={article.cover_image} alt=""/>}<ArticleMarkdown value={article.body_markdown}/>{article.tags?.length > 0 && <div className="article-tags">{article.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}</article></>;
 }
 
 export function StorefrontPage() {
@@ -646,8 +568,8 @@ export function StorefrontPage() {
       <div className="store-product-copy"><div className="store-product-card-meta"><span className="store-product-category">{productGroup}</span>{isDuplicateName&&product.sku&&!product.quantityTiers?.length&&<span className="store-product-sku-tag">Código · {product.sku}</span>}</div><h3><button type="button" aria-label={`Ver detalles de ${productLabel(product)}`} onClick={()=>openProduct(product)}>{product.name}</button></h3><p>{product.description || 'Cuéntanos qué tienes en mente y revisamos los detalles contigo.'}</p>{product.quantityTiers?.length ? <span className="store-product-tier-hint">{product.quantityTiers.length} opciones de cantidad</span> : null}<div className="store-product-card-bottom"><button type="button" className={`store-product-add${isSelected?' is-selected':''}`} aria-label={isSelected?`Quitar ${identity} de tu lista para cotizar`:`Añadir ${identity} a tu lista para cotizar`} aria-pressed={isSelected} onClick={()=>toggleSelection(product.id)}>{isSelected?<><Check size={15}/>En tu lista</>:<>+ Añadir a mi lista</>}</button><span>{product.quantityTiers?.length ? 'Opciones por cantidad' : 'Precio según proyecto'}</span></div><button type="button" className={`store-product-compare${isCompared?' is-selected':''}`} aria-label={isCompared?`Quitar ${identity} de la comparación`:`Comparar ${identity}`} aria-pressed={isCompared} onClick={()=>toggleComparison(product.id)}><ArrowLeftRight size={14}/>{isCompared?'En comparación':'Comparar'}</button></div>
     </article></ViewTransition>;
   };
-  if (showSouvenirs) return <><PageMeta title="Souvenirs personalizados" description="Colección de souvenirs personalizados e ideas promocionales de Visual Corp para marcas y eventos." path="/tienda?coleccion=souvenirs" /><SouvenirCollectionPage/></>;
-  return <><PageMeta title="Tienda" description="Explora el catálogo público de productos personalizables de Visual Corp en Milagro, arma tu lista y solicita tu cotización." path="/tienda" /><div className="storefront-page">
+  if (showSouvenirs) return <><PageMeta title="Souvenirs personalizados" description="Colección de souvenirs personalizados e ideas promocionales de Visual Corp para marcas y eventos." path="/tienda?coleccion=souvenirs"/><DocumentTitle title="Souvenirs personalizados"/><SouvenirCollectionPage/></>;
+  return <><PageMeta title="Tienda" description="Explora el catálogo público de productos personalizables de Visual Corp en Milagro, arma tu lista y solicita tu cotización." path="/tienda"/><DocumentTitle title="Tienda"/><div className="storefront-page">
     <StoreCinemaHero
       productsCount={products.length}
       categories={categories}

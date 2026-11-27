@@ -38,6 +38,8 @@ import {
   isDateOverdue,
   isStepOpen,
   priorityDetails,
+  productionArtworkLabel,
+  enrichProductionJobs,
   resolveProductionPermissions,
   safeDate,
   setProductionViewMode,
@@ -126,7 +128,7 @@ const matchesQueueFilter = (
     return Boolean(step && isStepOpen(step.status) && isDateOverdue(due));
   }
   if (filter === 'blocked') {
-    return (step?.status === 'blocked') || (item.currentStep?.status === 'blocked');
+    return item.job.material_blocked || (step?.status === 'blocked') || (item.currentStep?.status === 'blocked');
   }
   return true;
 };
@@ -279,6 +281,7 @@ export function ProductionJobsPage() {
         setBalanceFlags({});
       }
 
+      await enrichProductionJobs(organizationId, loadedJobs, loadedSteps);
       setJobs(loadedJobs);
       setSteps(loadedSteps);
     } catch (err) {
@@ -564,9 +567,12 @@ export function ProductionJobsPage() {
         status,
         statusLabel: STEP_STATUS_LABELS[status] || status,
         ownerLabel:
-          owner === user?.id ? 'A mi cargo' : owner ? 'Asignado' : 'Sin responsable',
+          owner === user?.id ? 'A mi cargo' : owner ? (areaConfig.code === 'ASE' ? item.job.advisor_name : shownStep?.assigned_name) || 'Responsable asignado' : 'Sin responsable',
         overdue: isOverdue,
         original: item,
+        materialBlocked: item.job.material_blocked,
+        artworkLabel: productionArtworkLabel(item.job),
+        instructions: shownStep?.notes || String(item.job.specifications?.description || ''),
         stageName: shownStep?.title || item.job.title,
         areaName: areaConfig.areaName,
         balanceDue: isBalanceDue,

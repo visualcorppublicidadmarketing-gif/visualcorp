@@ -648,3 +648,113 @@ export function InteractiveHoverButton({
     </button>
   );
 }
+
+export type GlassSparklineProps = {
+  values: number[];
+  stroke?: string;
+  height?: number;
+  className?: string;
+  label?: string;
+};
+
+/** Smooth mini-sparkline with gradient fill and glowing terminal point for KPI cards. */
+export function GlassSparkline({
+  values,
+  stroke = 'currentColor',
+  height = 34,
+  className = '',
+  label,
+}: GlassSparklineProps) {
+  const id = useId().replace(/:/g, '');
+  const safe = values.length ? values : [0, 0];
+  const min = Math.min(...safe);
+  const max = Math.max(...safe);
+  const span = Math.max(1, max - min);
+  const width = 120;
+  const padY = 5;
+  const usableH = Math.max(8, height - padY * 2);
+
+  const coords = safe.map((val, index) => {
+    const x = safe.length === 1 ? width : (index / (safe.length - 1)) * width;
+    const y = padY + usableH - ((val - min) / span) * usableH;
+    return { x, y };
+  });
+
+  const linePath = coords
+    .map((pt, index) => {
+      if (index === 0) return `M ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`;
+      const prev = coords[index - 1];
+      const cx = ((prev.x + pt.x) / 2).toFixed(1);
+      return `C ${cx} ${prev.y.toFixed(1)}, ${cx} ${pt.y.toFixed(1)}, ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`;
+    })
+    .join(' ');
+  const last = coords[coords.length - 1];
+  const first = coords[0];
+  const areaPath = `${linePath} L ${last.x.toFixed(1)} ${height} L ${first.x.toFixed(1)} ${height} Z`;
+
+  return (
+    <svg
+      className={`vc-glass-sparkline ${className}`}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      aria-hidden={label ? undefined : true}
+      role={label ? 'img' : undefined}
+      aria-label={label}
+    >
+      <defs>
+        <linearGradient id={`vc-spark-fill-${id}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill={`url(#vc-spark-fill-${id})`} />
+      <path d={linePath} fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={last.x} cy={last.y} r="3" fill={stroke} className="vc-sparkline-dot" />
+    </svg>
+  );
+}
+
+export type GlassAvatarMember = {
+  id?: string;
+  name: string;
+  badge?: number | string;
+};
+
+/** Overlapping circular avatar stack inspired by SugarCRM/Nexora reference patterns. */
+export function GlassAvatarStack({
+  members,
+  max = 4,
+  className = '',
+}: {
+  members: GlassAvatarMember[];
+  max?: number;
+  className?: string;
+}) {
+  const visible = members.slice(0, max);
+  const extra = Math.max(0, members.length - visible.length);
+  if (!members.length) return null;
+
+  const initials = (name: string) =>
+    name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || '')
+      .join('') || 'VC';
+
+  return (
+    <div className={`vc-avatar-stack ${className}`} aria-label={members.map((m) => m.name).join(', ')}>
+      {visible.map((member, index) => (
+        <span
+          key={member.id || `${member.name}-${index}`}
+          className={`vc-avatar-chip tone-${index % 4}`}
+          title={member.name}
+        >
+          <span>{initials(member.name)}</span>
+          {member.badge !== undefined && <em className="vc-avatar-badge">{member.badge}</em>}
+        </span>
+      ))}
+      {extra > 0 && <span className="vc-avatar-chip is-extra">+{extra}</span>}
+    </div>
+  );
+}
