@@ -245,7 +245,7 @@ const CLIP_OPTIONS: Array<{ value: LayerClipShape; label: string }> = [
   { value: 'pill', label: 'Cápsula' },
 ];
 
-export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }: { initialBaseId?: string; quotePath?: string }) {
+export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', focusedEntry = false }: { initialBaseId?: string; quotePath?: string; focusedEntry?: boolean }) {
   const layerInputRef = useRef<HTMLInputElement>(null);
   const replaceImageInputRef = useRef<HTMLInputElement>(null);
   const productInputRef = useRef<HTMLInputElement>(null);
@@ -267,12 +267,17 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
 
   const [baseId, setBaseId] = useState(initialBase.id);
   const [familyFilter, setFamilyFilter] = useState<string>('Todos');
+  const [showProductCatalog, setShowProductCatalog] = useState(!focusedEntry);
+  const [showMoreShapes, setShowMoreShapes] = useState(false);
   const [layers, setLayers] = useState<DesignLayer[]>(() => [getDefaultLogoLayer(initialBase)]);
   const [selectedLayerId, setSelectedLayerId] = useState('brand-logo');
   const [appearance, setAppearance] = useState<ProductAppearance>(() => getDefaultAppearance(initialBase));
-  const [background, setBackground] = useState<SceneBackground>(DEFAULT_SCENE_BACKGROUND);
+  const initialSceneBackground = focusedEntry && initialBase.model === 'mug'
+    ? SCENE_BACKGROUND_PRESETS.find((preset) => preset.id === 'visual-gradient')?.value || DEFAULT_SCENE_BACKGROUND
+    : DEFAULT_SCENE_BACKGROUND;
+  const [background, setBackground] = useState<SceneBackground>(initialSceneBackground);
   const [customModelsByBaseId, setCustomModelsByBaseId] = useState<Record<string, Custom3DModelState>>({});
-  const [viewMode, setViewMode] = useState<ViewMode>('2d');
+  const [viewMode, setViewMode] = useState<ViewMode>(focusedEntry ? '3d' : '2d');
   const [canvasMode, setCanvasMode] = useState<'mockup' | 'surface'>('mockup');
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('layers');
   const [showPrintGuides, setShowPrintGuides] = useState(true);
@@ -285,10 +290,12 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
   const [projectAction, setProjectAction] = useState<'save' | 'open' | ''>('');
   const [message, setMessage] = useState('');
   const [localDraftContents, setLocalDraftContents] = useState('');
-  const [localDraftLoaded, setLocalDraftLoaded] = useState(false);
+  const [localDraftLoadedKey, setLocalDraftLoadedKey] = useState('');
   const [localDraftStatus, setLocalDraftStatus] = useState<'loading' | 'ready' | 'saving' | 'saved' | 'unavailable'>('loading');
   const draftsRef = useRef<Record<string, { layers: DesignLayer[]; appearance: ProductAppearance }>>({});
   const localDraftSequenceRef = useRef(0);
+  const routeBaseIdRef = useRef(initialBase.id);
+  const routeFocusRef = useRef(focusedEntry);
 
   const activeBase = useMemo(() => products.find((product) => product.id === baseId) || products[0], [products, baseId]);
   const activeCustomModel = activeBase.isCustom3D ? customModelsByBaseId[activeBase.id] || null : null;
@@ -320,14 +327,17 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     draftsRef.current[baseId] = { layers, appearance };
   }, [baseId, layers, appearance]);
 
-  const localDraftKey = `${window.location.pathname}:studio:${initialBase.id}`;
+  const localDraftBaseId = focusedEntry ? activeBase.id : initialBase.id;
+  const localDraftKey = `${window.location.pathname}:studio:${localDraftBaseId}`;
   useEffect(() => {
     let cancelled = false;
+    setLocalDraftContents('');
+    setLocalDraftStatus('loading');
     readLocalDesignDraft(localDraftKey)
       .then((contents) => {
         if (cancelled) return;
         setLocalDraftContents(contents || '');
-        setLocalDraftLoaded(true);
+        setLocalDraftLoadedKey(localDraftKey);
         setLocalDraftStatus('ready');
       })
       .catch(() => {
@@ -337,7 +347,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
   }, [localDraftKey]);
 
   useEffect(() => {
-    if (!localDraftLoaded || localDraftContents) return undefined;
+    if (localDraftLoadedKey !== localDraftKey || localDraftContents) return undefined;
     const sequence = ++localDraftSequenceRef.current;
     const snapshotBase = activeBase;
     const snapshotLayers = layers;
@@ -357,7 +367,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
         });
     }, 1400);
     return () => window.clearTimeout(timer);
-  }, [localDraftLoaded, localDraftContents, localDraftKey, activeBase, layers, appearance, background]);
+  }, [localDraftLoadedKey, localDraftContents, localDraftKey, activeBase, layers, appearance, background]);
 
   useEffect(() => () => objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
@@ -526,6 +536,22 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
     }
     setMessage(`Base activa: ${product.name}.`);
   };
+
+  useEffect(() => {
+    if (projectAction || exporting) return;
+
+    if (routeBaseIdRef.current !== initialBase.id) {
+      routeBaseIdRef.current = initialBase.id;
+      const routeBase = products.find((product) => product.id === initialBase.id) || products[0];
+      if (activeBase.id !== routeBase.id) selectProduct(routeBase);
+    }
+
+    if (routeFocusRef.current !== focusedEntry) {
+      routeFocusRef.current = focusedEntry;
+      setShowProductCatalog(!focusedEntry);
+      setViewMode(focusedEntry ? '3d' : '2d');
+    }
+  }, [activeBase.id, exporting, focusedEntry, initialBase.id, products, projectAction]);
 
   const applyStarterPreset = (presetId: 'logo-only' | 'badge-pro' | 'minimal-brand' | 'promo-banner') => {
     const existingLogo = layersRef.current.find((l) => l.kind === 'image' && l.src)?.src;
@@ -1118,98 +1144,113 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
 
   const show2DPane = viewMode === '2d' || viewMode === 'split';
   const show3DPane = viewMode === '3d' || viewMode === 'split';
+  const localDraftNotice = (localDraftContents || ['saving', 'saved', 'unavailable'].includes(localDraftStatus)) ? (
+    <div className="vc-product-local-draft" role="status" aria-live="polite">
+      {localDraftContents ? (
+        <>
+          <span>Hay un borrador local anterior para este estudio.</span>
+          <button type="button" onClick={recoverLocalDraft} disabled={Boolean(projectAction || exporting)}>Recuperar borrador</button>
+          <button type="button" onClick={dismissLocalDraft} disabled={Boolean(projectAction || exporting)}>Descartar borrador</button>
+        </>
+      ) : localDraftStatus === 'saving' ? (
+        <span>Guardando borrador local…</span>
+      ) : localDraftStatus === 'saved' ? (
+        <span>Borrador guardado en este navegador.</span>
+      ) : (
+        <span>El guardado automático local no está disponible; usa Guardar proyecto para conservar un archivo.</span>
+      )}
+    </div>
+  ) : null;
+  const quickPresets = (
+    <div className="vc-product-presets-strip" role="group" aria-label="Composiciones rápidas">
+      <span className="vc-product-presets-label"><Wand2 size={13} aria-hidden="true" /> Diseños rápidos:</span>
+      <button type="button" className="vc-product-preset-chip" onClick={() => applyStarterPreset('logo-only')}>Logo centrado</button>
+      <button type="button" className="vc-product-preset-chip" onClick={() => applyStarterPreset('minimal-brand')}>Marca minimalista</button>
+      <button type="button" className="vc-product-preset-chip" onClick={() => applyStarterPreset('badge-pro')}>Sello curvo</button>
+      <button type="button" className="vc-product-preset-chip" onClick={() => applyStarterPreset('promo-banner')}>Cápsula promo</button>
+      {show2DPane && !activeBase.isCustom3D && appearance.warpMode !== 'flat' && (
+        <button
+          type="button"
+          className={`vc-product-preset-chip is-warp-toggle${previewWarped2D ? ' is-active' : ''}`}
+          aria-pressed={previewWarped2D}
+          onClick={() => setPreviewWarped2D((v) => !v)}
+        >
+          {previewWarped2D ? 'Volver a editar capas' : `Previa adaptada (${WARP_OPTIONS.find((w) => w.value === appearance.warpMode)?.label})`}
+        </button>
+      )}
+    </div>
+  );
 
   return (
-    <section id="probador-logo" className="vc-tool-card vc-product-studio" aria-labelledby="vc-product-studio-title">
+    <section id="probador-logo" className={`vc-tool-card vc-product-studio${focusedEntry ? ' is-focused-entry' : ''}`} aria-labelledby="vc-product-studio-title">
       <div className="vc-tool-card-head">
         <div>
           <span className="vc-tool-kicker">
             <Sparkles size={14} aria-hidden="true" /> ESTUDIO MOCKUP 2D &amp; 3D PROFESIONAL
           </span>
-          <h2 id="vc-product-studio-title">Diseña y visualiza mockups 2D y 3D gratis</h2>
-          <p>
+          <h2 id="vc-product-studio-title">{focusedEntry ? `Diseña tu ${activeBase.name.toLocaleLowerCase('es')}` : 'Diseña y visualiza mockups 2D y 3D gratis'}</h2>
+          {!focusedEntry && <p>
             Cambia colores del producto, fondos de estudio, logos, tipografías curvas, formas y capas con adaptación a la superficie.
             Incluso puedes subir tus propios objetos 3D (<code>.glb</code>, <code>.obj</code>, <code>.stl</code>) y proyectar tu arte en vivo.
-          </p>
+          </p>}
         </div>
-        <span className="vc-tool-privacy">
+        {!focusedEntry && <span className="vc-tool-privacy">
           <ShieldCheck size={14} aria-hidden="true" /> 100 % local en tu navegador · gratis
-        </span>
+        </span>}
       </div>
 
-      {/* Base Selector & Uploaders */}
+      {/* Shared product selector; focused product entries keep the scene in view. */}
       <div className="vc-product-base-bar">
-        <div className="vc-product-template-heading">
-          <div className="vc-product-family-pills" role="group" aria-label="Filtrar categoría de producto">
-            {families.map((fam) => (
-              <button
-                key={fam}
-                type="button"
-                className={`vc-product-family-pill${familyFilter === fam ? ' is-active' : ''}`}
-                aria-pressed={familyFilter === fam}
-                onClick={() => setFamilyFilter(fam)}
-              >
-                {fam}
+        <div className="vc-product-current-base">
+          {activeBase.isCustom3D ? <span className="vc-product-template-3d-badge" aria-hidden="true"><Box size={22} /></span> : <img src={activeBase.image} alt="" loading="lazy" />}
+          <span className="vc-product-current-base-copy"><b>{activeBase.name}</b><small>{activeBase.isCustom3D ? 'Objeto 3D propio' : activeBase.family}</small></span>
+          <button
+            type="button"
+            className="vc-product-catalog-toggle"
+            aria-expanded={showProductCatalog}
+            aria-controls="vc-product-catalog"
+            onClick={() => setShowProductCatalog((open) => !open)}
+          >
+            {showProductCatalog ? 'Cerrar catálogo' : 'Cambiar producto'}
+            {showProductCatalog ? <ChevronUp size={15} aria-hidden="true" /> : <ChevronDown size={15} aria-hidden="true" />}
+          </button>
+        </div>
+
+        <div id="vc-product-catalog" className="vc-product-catalog" hidden={!showProductCatalog}>
+          <div className="vc-product-template-heading">
+            <div className="vc-product-family-pills" role="group" aria-label="Filtrar categoría de producto">
+              {families.map((fam) => (
+                <button key={fam} type="button" className={`vc-product-family-pill${familyFilter === fam ? ' is-active' : ''}`} aria-pressed={familyFilter === fam} onClick={() => setFamilyFilter(fam)}>
+                  {fam}
+                </button>
+              ))}
+            </div>
+
+            <div className="vc-product-upload-pair">
+              <button type="button" className="vc-product-add-own" disabled={Boolean(exporting || projectAction)} onClick={() => productInputRef.current?.click()}>
+                <ImagePlus size={14} aria-hidden="true" /> Foto 2D propia
+              </button>
+              <input ref={productInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={handleProductUpload} />
+
+              <button type="button" className="vc-product-add-own is-3d" disabled={Boolean(exporting || projectAction)} onClick={() => model3DInputRef.current?.click()}>
+                <Box size={14} aria-hidden="true" /> Subir objeto 3D
+              </button>
+              <input ref={model3DInputRef} type="file" accept=".glb,.obj,.stl" className="sr-only" onChange={handle3DModelUpload} />
+            </div>
+          </div>
+
+          <div className="vc-product-template-grid" role="group" aria-label="Elegir producto base">
+            {filteredProducts.map((product) => (
+              <button key={product.id} type="button" className={`vc-product-template${product.id === activeBase.id ? ' is-active' : ''}`} aria-pressed={product.id === activeBase.id} disabled={Boolean(exporting || projectAction)} onClick={() => { selectProduct(product); if (focusedEntry) setShowProductCatalog(false); }}>
+                {product.isCustom3D ? <span className="vc-product-template-3d-badge" aria-hidden="true"><Box size={22} /></span> : <img src={product.image} alt="" loading="lazy" />}
+                <span><b>{product.name}</b><small>{product.isCustom3D ? 'Objeto 3D propio' : product.family}</small></span>
               </button>
             ))}
           </div>
-
-          <div className="vc-product-upload-pair">
-            <button type="button" className="vc-product-add-own" disabled={Boolean(exporting || projectAction)} onClick={() => productInputRef.current?.click()}>
-              <ImagePlus size={14} aria-hidden="true" /> Foto 2D propia
-            </button>
-            <input ref={productInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={handleProductUpload} />
-
-            <button type="button" className="vc-product-add-own is-3d" disabled={Boolean(exporting || projectAction)} onClick={() => model3DInputRef.current?.click()}>
-              <Box size={14} aria-hidden="true" /> Subir objeto 3D
-            </button>
-            <input ref={model3DInputRef} type="file" accept=".glb,.obj,.stl" className="sr-only" onChange={handle3DModelUpload} />
-          </div>
-        </div>
-
-        <div className="vc-product-template-grid" role="group" aria-label="Elegir producto base">
-          {filteredProducts.map((product) => (
-            <button
-              key={product.id}
-              type="button"
-              className={`vc-product-template${product.id === activeBase.id ? ' is-active' : ''}`}
-              aria-pressed={product.id === activeBase.id}
-              disabled={Boolean(exporting || projectAction)}
-              onClick={() => selectProduct(product)}
-            >
-              {product.isCustom3D ? (
-                <span className="vc-product-template-3d-badge" aria-hidden="true">
-                  <Box size={22} />
-                </span>
-              ) : (
-                <img src={product.image} alt="" loading="lazy" />
-              )}
-              <span>
-                <b>{product.name}</b>
-                <small>{product.isCustom3D ? 'Objeto 3D propio' : product.family}</small>
-              </span>
-            </button>
-          ))}
         </div>
       </div>
 
-      {(localDraftContents || ['saving', 'saved', 'unavailable'].includes(localDraftStatus)) && (
-        <div className="vc-product-local-draft" role="status" aria-live="polite">
-          {localDraftContents ? (
-          <>
-            <span>Hay un borrador local anterior para este estudio.</span>
-            <button type="button" onClick={recoverLocalDraft} disabled={Boolean(projectAction || exporting)}>Recuperar borrador</button>
-            <button type="button" onClick={dismissLocalDraft} disabled={Boolean(projectAction || exporting)}>Descartar borrador</button>
-          </>
-          ) : localDraftStatus === 'saving' ? (
-            <span>Guardando borrador local…</span>
-          ) : localDraftStatus === 'saved' ? (
-            <span>Borrador guardado en este navegador.</span>
-          ) : (
-            <span>El guardado automático local no está disponible; usa Guardar proyecto para conservar un archivo.</span>
-          )}
-        </div>
-      )}
+      {!focusedEntry && localDraftNotice}
 
       {/* Main Studio Action Toolbar */}
       <div className="vc-product-editor-toolbar">
@@ -1222,24 +1263,29 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
           <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('text', activeBase.printArea))}>
             <Type size={15} aria-hidden="true" /> Texto
           </button>
-          <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('rectangle', activeBase.printArea))} title="Añadir rectángulo o franja">
-            <RectangleHorizontal size={15} aria-hidden="true" /> Franja
-          </button>
-          <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('circle', activeBase.printArea))} title="Añadir círculo">
-            <Circle size={15} aria-hidden="true" /> Círculo
-          </button>
-          <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('badge', activeBase.printArea))} title="Añadir cápsula / insignia">
-            <Tag size={15} aria-hidden="true" /> Cápsula
-          </button>
-          <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('star', activeBase.printArea))} title="Añadir estrella">
-            <Star size={15} aria-hidden="true" /> Estrella
-          </button>
-          <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('triangle', activeBase.printArea))} title="Añadir triángulo">
-            <Triangle size={15} aria-hidden="true" /> Triángulo
-          </button>
-          <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('line', activeBase.printArea))} title="Añadir línea divisoria">
-            <Minus size={15} aria-hidden="true" /> Línea
-          </button>
+          {focusedEntry && <button type="button" className="vc-product-action vc-product-more-shapes" aria-expanded={showMoreShapes} aria-controls="vc-product-extra-shapes" onClick={() => setShowMoreShapes((open) => !open)}>
+            {showMoreShapes ? 'Menos formas' : 'Más formas'} {showMoreShapes ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
+          </button>}
+          <div id={focusedEntry ? 'vc-product-extra-shapes' : undefined} className="vc-product-extra-shapes" hidden={focusedEntry && !showMoreShapes}>
+            <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('rectangle', activeBase.printArea))} title="Añadir rectángulo o franja">
+              <RectangleHorizontal size={15} aria-hidden="true" /> Franja
+            </button>
+            <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('circle', activeBase.printArea))} title="Añadir círculo">
+              <Circle size={15} aria-hidden="true" /> Círculo
+            </button>
+            <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('badge', activeBase.printArea))} title="Añadir cápsula / insignia">
+              <Tag size={15} aria-hidden="true" /> Cápsula
+            </button>
+            <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('star', activeBase.printArea))} title="Añadir estrella">
+              <Star size={15} aria-hidden="true" /> Estrella
+            </button>
+            <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('triangle', activeBase.printArea))} title="Añadir triángulo">
+              <Triangle size={15} aria-hidden="true" /> Triángulo
+            </button>
+            <button type="button" className="vc-product-action" onClick={() => addLayer(createLayer('line', activeBase.printArea))} title="Añadir línea divisoria">
+              <Minus size={15} aria-hidden="true" /> Línea
+            </button>
+          </div>
         </div>
 
         <div className="vc-product-tool-group vc-product-tool-compact" role="group" aria-label="Historial y archivo">
@@ -1299,24 +1345,8 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
         )}
       </div>
 
-      {/* Quick Starter Compositions */}
-      <div className="vc-product-presets-strip" role="group" aria-label="Composiciones rápidas">
-        <span className="vc-product-presets-label"><Wand2 size={13} aria-hidden="true" /> Diseños rápidos:</span>
-        <button type="button" className="vc-product-preset-chip" onClick={() => applyStarterPreset('logo-only')}>Logo centrado</button>
-        <button type="button" className="vc-product-preset-chip" onClick={() => applyStarterPreset('minimal-brand')}>Marca minimalista</button>
-        <button type="button" className="vc-product-preset-chip" onClick={() => applyStarterPreset('badge-pro')}>Sello curvo</button>
-        <button type="button" className="vc-product-preset-chip" onClick={() => applyStarterPreset('promo-banner')}>Cápsula promo</button>
-        {show2DPane && !activeBase.isCustom3D && appearance.warpMode !== 'flat' && (
-          <button
-            type="button"
-            className={`vc-product-preset-chip is-warp-toggle${previewWarped2D ? ' is-active' : ''}`}
-            aria-pressed={previewWarped2D}
-            onClick={() => setPreviewWarped2D((v) => !v)}
-          >
-            {previewWarped2D ? 'Volver a editar capas' : `Previa adaptada (${WARP_OPTIONS.find((w) => w.value === appearance.warpMode)?.label})`}
-          </button>
-        )}
-      </div>
+      {/* Quick starter compositions */}
+      {!focusedEntry && quickPresets}
 
       {/* Main Editor Workspace: Stage(s) + 4-Tab Pro Inspector */}
       <div className={`vc-product-editor-layout${viewMode === 'split' ? ' is-split' : ''}`}>
@@ -2340,6 +2370,9 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador' }:
           )}
         </aside>
       </div>
+
+      {focusedEntry && quickPresets}
+      {focusedEntry && localDraftNotice}
 
       <p className="vc-product-studio-shortcuts">
         Atajos: arrastra para mover con imán al centro · Ctrl/Cmd+Z deshacer · Ctrl/Cmd+D duplicar · flechas ajuste fino · Suprimir eliminar.

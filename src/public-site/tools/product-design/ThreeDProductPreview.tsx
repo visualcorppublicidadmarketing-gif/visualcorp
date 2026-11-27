@@ -1020,6 +1020,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
     if (!modelRoot || !camera || !controls) return undefined;
 
     let cancelled = false;
+    if (floorRef.current) floorRef.current.position.y = -1.06;
 
     // Clear previous model & decal
     if (decalMeshRef.current) {
@@ -1068,6 +1069,11 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
     const bundle = createBuiltInProductModel(product, appearance);
     modelRoot.add(bundle.group);
     builtInBundleRef.current = bundle;
+
+    if (product.model === 'mug' && floorRef.current) {
+      const modelBounds = new THREE.Box3().setFromObject(bundle.group);
+      if (!modelBounds.isEmpty()) floorRef.current.position.y = modelBounds.min.y - 0.008;
+    }
 
     const worldHeight = product.model === 'rollup' || product.model === 'banner-x'
       ? 2.25
