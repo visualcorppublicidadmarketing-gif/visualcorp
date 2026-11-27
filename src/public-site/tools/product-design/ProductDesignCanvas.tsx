@@ -17,6 +17,7 @@ import {
 import {
   blendModeToCompositeOp,
   buildProcessedProductCanvas,
+  createMugSidePreviewCanvas,
   drawSceneBackground,
 } from './canvas-utils';
 import type {
@@ -170,7 +171,7 @@ function LayerObject({
   onSnapChange: (guides: { x: boolean; y: boolean }) => void;
 }) {
   const image = useImageElement(layer.kind === 'image' ? layer.src : undefined);
-  const width = (layer.size / 100) * size.width;
+  const width = (layer.size / 100) * size.width * (layer.scaleX ?? 1);
   const aspectScaleY = layer.scaleY ?? 1;
   const defaultAspect =
     layer.kind === 'circle' || layer.kind === 'star'
@@ -435,11 +436,14 @@ export function ProductDesignCanvas({
   appearance,
   background,
   surfaceArtwork = false,
+  mugSideView,
+  editingPrintArea = false,
   showPrintGuides = true,
   width,
   height,
   onSelectLayer,
   onCommitLayer,
+  onCommitPrintArea,
   onClearSelection,
 }: {
   product: ProductBase;
@@ -449,18 +453,24 @@ export function ProductDesignCanvas({
   appearance: ProductAppearance;
   background: SceneBackground;
   surfaceArtwork?: boolean;
+  mugSideView?: 'front' | 'back';
+  editingPrintArea?: boolean;
   showPrintGuides?: boolean;
   width: number;
   height: number;
   onSelectLayer: (id: string) => void;
   onCommitLayer: (id: string, changes: Partial<DesignLayer>) => void;
+  onCommitPrintArea?: (area: PrintArea) => void;
   onClearSelection: () => void;
 }) {
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const printAreaRectRef = useRef<Konva.Rect>(null);
+  const printAreaTransformerRef = useRef<Konva.Transformer>(null);
   const productImage = useImageElement(product.isCustom3D ? undefined : product.image);
   const bgImage = useImageElement(background.kind === 'image' ? background.imageSrc : undefined);
   const [snapGuides, setSnapGuides] = useState({ x: false, y: false });
+  const [mugSideCanvas, setMugSideCanvas] = useState<HTMLCanvasElement | null>(null);
   const size = { width, height };
 
   const backgroundCanvas = useMemo(() => {
@@ -484,19 +494,40 @@ export function ProductDesignCanvas({
   }, [width, height, background, bgImage, surfaceArtwork]);
 
   const processedProductCanvas = useMemo(() => {
-    if (surfaceArtwork || !productImage || product.isCustom3D) return null;
+    if (surfaceArtwork || mugSideView || !productImage || product.isCustom3D) return null;
     const extractBackdrop = background.kind !== 'solid' || background.color.toLowerCase() !== '#ffffff';
     return buildProcessedProductCanvas(productImage, product.image, appearance, extractBackdrop, 960);
-  }, [surfaceArtwork, productImage, product.image, product.isCustom3D, appearance.mode, appearance.color, background.kind, background.color]);
+  }, [surfaceArtwork, mugSideView, productImage, product.image, product.isCustom3D, appearance.mode, appearance.color, background.kind, background.color]);
+
+  useEffect(() => {
+    if (!mugSideView || product.model !== 'mug' || width < 1) {
+      setMugSideCanvas(null);
+      return undefined;
+    }
+    let active = true;
+    setMugSideCanvas(null);
+    createMugSidePreviewCanvas(product, layers, width, mugSideView, appearance.warpStrength, showPrintGuides)
+      .then((canvas) => {
+        if (active) setMugSideCanvas(canvas);
+      })
+      .catch(() => {
+        if (active) setMugSideCanvas(null);
+      });
+    return () => { active = false; };
+  }, [product, layers, width, mugSideView, appearance.warpStrength, showPrintGuides]);
 
   useEffect(() => {
     const transformer = transformerRef.current;
+    const areaTransformer = printAreaTransformerRef.current;
     const stage = stageRef.current;
-    if (!transformer || !stage) return;
+    if (!transformer || !areaTransformer || !stage) return;
     const selected = selectedLayerId ? stage.findOne(`#design-${selectedLayerId}`) : undefined;
-    transformer.nodes(selected ? [selected] : []);
+    const canEditArea = editingPrintArea && !surfaceArtwork;
+    transformer.nodes(!canEditArea && selected ? [selected] : []);
+    areaTransformer.nodes(canEditArea && printAreaRectRef.current ? [printAreaRectRef.current] : []);
     transformer.getLayer()?.batchDraw();
-  }, [layers, selectedLayerId, width, height]);
+    areaTransformer.getLayer()?.batchDraw();
+  }, [layers, selectedLayerId, width, height, editingPrintArea, surfaceArtwork, mugSideView, printArea]);
 
   const handleStagePointer = (event: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     if (event.target === event.target.getStage()) onClearSelection();
@@ -512,6 +543,7 @@ export function ProductDesignCanvas({
         ...layer,
         x: ((layer.x - printArea.x) / Math.max(1, printArea.width)) * 100,
         y: ((layer.y - printArea.y) / Math.max(1, printArea.height)) * 100,
+        size: (layer.size / Math.max(1, printArea.width)) * 100,
       }))
     : layers;
   const areaX = (stagePrintArea.x / 100) * width;
@@ -530,7 +562,9 @@ export function ProductDesignCanvas({
       onMouseDown={handleStagePointer}
       onTouchStart={handleStagePointer}
       style={{ touchAction: 'none', display: 'block', maxWidth: '100%' }}
-      aria-label={surfaceArtwork ? `Mapa de impresión desplegado de ${product.name}` : `Lienzo editable de ${product.name}`}
+      aria-label={mugSideView
+        ? `Vista ${mugSideView === 'front' ? 'frontal' : 'trasera'} en 2D de ${product.name}`
+        : surfaceArtwork ? `Mapa de impresión desplegado de ${product.name}` : `Lienzo editable de ${product.name}`}
     >
       <CanvasLayer>
         {backgroundCanvas && <CanvasImage image={backgroundCanvas} x={0} y={0} width={width} height={height} listening={false} />}
@@ -550,6 +584,9 @@ export function ProductDesignCanvas({
         {processedProductCanvas && (
           <CanvasImage image={processedProductCanvas} x={0} y={0} width={width} height={height} listening={false} />
         )}
+        {mugSideCanvas && (
+          <CanvasImage image={mugSideCanvas} x={0} y={0} width={width} height={height} listening={false} />
+        )}
         {product.isCustom3D && (
           <Rect
             x={areaX}
@@ -563,8 +600,9 @@ export function ProductDesignCanvas({
         )}
         <Rect x={0} y={0} width={width} height={height} fill="#ffffff" opacity={0.005} listening={false} />
 
-        <Group clipX={areaX} clipY={areaY} clipWidth={areaW} clipHeight={areaH}>
-          {stageLayers.map((layer) => (
+        {!mugSideView && (
+          <Group clipX={areaX} clipY={areaY} clipWidth={areaW} clipHeight={areaH}>
+            {stageLayers.map((layer) => (
             <LayerObject
               key={layer.id}
               layer={layer}
@@ -581,12 +619,14 @@ export function ProductDesignCanvas({
                   ...changes,
                   ...(changes.x === undefined ? {} : { x: printArea.x + (changes.x / 100) * printArea.width }),
                   ...(changes.y === undefined ? {} : { y: printArea.y + (changes.y / 100) * printArea.height }),
+                  ...(changes.size === undefined ? {} : { size: (changes.size / 100) * printArea.width }),
                 });
               }}
               onSnapChange={setSnapGuides}
             />
-          ))}
-        </Group>
+            ))}
+          </Group>
+        )}
 
         {surfaceArtwork && product.surfaceProfile?.keepOutAreas?.map((safeArea, index) => (
           <Rect
@@ -603,17 +643,43 @@ export function ProductDesignCanvas({
           />
         ))}
 
-        {showPrintGuides && (
+        {(showPrintGuides && !mugSideView || (editingPrintArea && !surfaceArtwork)) && (
           <>
             <Rect
+              ref={!surfaceArtwork ? printAreaRectRef : undefined}
               x={areaX}
               y={areaY}
               width={areaW}
               height={areaH}
+              fill={editingPrintArea && !surfaceArtwork ? 'rgba(77, 225, 255, 0.045)' : undefined}
               stroke="#4de1ff"
-              strokeWidth={1.5}
-              dash={[6, 5]}
-              listening={false}
+              strokeWidth={editingPrintArea && !surfaceArtwork ? 2 : 1.5}
+              dash={editingPrintArea && !surfaceArtwork ? [8, 5] : [6, 5]}
+              draggable={editingPrintArea && !surfaceArtwork}
+              listening={editingPrintArea && !surfaceArtwork}
+              dragBoundFunc={(position) => ({
+                x: clamp(position.x, 0, Math.max(0, width - areaW)),
+                y: clamp(position.y, 0, Math.max(0, height - areaH)),
+              })}
+              onDragEnd={(event) => onCommitPrintArea?.({
+                ...printArea,
+                x: clamp((event.target.x() / width) * 100, 0, 100 - printArea.width),
+                y: clamp((event.target.y() / height) * 100, 0, 100 - printArea.height),
+              })}
+              onTransformEnd={(event) => {
+                const node = event.target;
+                const nextWidth = clamp((node.width() * node.scaleX() / width) * 100, 10, 100);
+                const nextHeight = clamp((node.height() * node.scaleY() / height) * 100, 10, 100);
+                const next = {
+                  x: clamp((node.x() / width) * 100, 0, 100 - nextWidth),
+                  y: clamp((node.y() / height) * 100, 0, 100 - nextHeight),
+                  width: nextWidth,
+                  height: nextHeight,
+                };
+                node.scaleX(1);
+                node.scaleY(1);
+                onCommitPrintArea?.(next);
+              }}
             />
             {surfaceArtwork ? (
               <>
@@ -692,6 +758,26 @@ export function ProductDesignCanvas({
           anchorFill="#ffffff"
           boundBoxFunc={(oldBox, nextBox) => (nextBox.width < 16 || nextBox.height < 16 ? oldBox : nextBox)}
         />
+        {editingPrintArea && !surfaceArtwork && (
+          <Transformer
+            ref={printAreaTransformerRef}
+            rotateEnabled={false}
+            keepRatio={false}
+            flipEnabled={false}
+            padding={4}
+            anchorSize={10}
+            anchorCornerRadius={5}
+            borderStroke="#38cfff"
+            anchorStroke="#38cfff"
+            anchorFill="#ffffff"
+            boundBoxFunc={(oldBox, nextBox) => (
+              nextBox.width < 24 || nextBox.height < 24 || nextBox.x < 0 || nextBox.y < 0 ||
+              nextBox.x + nextBox.width > width || nextBox.y + nextBox.height > height
+                ? oldBox
+                : nextBox
+            )}
+          />
+        )}
       </CanvasLayer>
     </Stage>
   );

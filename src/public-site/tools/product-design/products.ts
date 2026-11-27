@@ -359,6 +359,7 @@ export function getDefaultLogoLayer(product: ProductBase): DesignLayer {
     x: product.defaultX,
     y: product.defaultY,
     size: product.defaultSize,
+    scaleX: 1,
     scaleY: 1,
     rotation: 0,
     opacity: 96,

@@ -105,6 +105,7 @@ const MAX_DESIGN_LAYERS = 80;
 type StudioHistory = { past: DesignLayer[][]; future: DesignLayer[][]; lastKey: string; lastAt: number };
 type InspectorTab = 'layers' | 'product' | 'background' | 'export';
 type ViewMode = '2d' | 'split' | '3d';
+type CanvasMode = 'mockup' | 'surface' | 'mug-front' | 'mug-back';
 
 function createId(prefix: string) {
   return `${prefix}-${window.crypto.randomUUID()}`;
@@ -163,6 +164,7 @@ function createLayer(kind: LayerKind, area: PrintArea): DesignLayer {
     x,
     y,
     size,
+    scaleX: 1,
     scaleY: 1,
     rotation: 0,
     opacity: 100,
@@ -200,9 +202,12 @@ function getSurfaceImageFit(width: number, height: number, product: ProductBase)
   const surfaceAspect = product.surfaceProfile?.aspectRatio
     || (product.printArea.width * product.ratio) / Math.max(1, product.printArea.height);
   const matchesSurface = Math.abs(Math.log(imageAspect / surfaceAspect)) < 0.09;
+  const area = product.printArea;
+  const maxWidth = area.width * 0.98;
+  const maxHeightAsWidth = (area.height * imageAspect) / Math.max(0.01, product.ratio) * 0.96;
   const size = matchesSurface
-    ? 85
-    : clamp((62 * imageAspect) / surfaceAspect, 8, 72);
+    ? maxWidth
+    : clamp(Math.min(maxWidth, maxHeightAsWidth), 8, maxWidth);
   return { size, matchesSurface };
 }
 
@@ -272,21 +277,24 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
   const [layers, setLayers] = useState<DesignLayer[]>(() => [getDefaultLogoLayer(initialBase)]);
   const [selectedLayerId, setSelectedLayerId] = useState('brand-logo');
   const [appearance, setAppearance] = useState<ProductAppearance>(() => getDefaultAppearance(initialBase));
-  const initialSceneBackground = focusedEntry && initialBase.model === 'mug'
+  const initialSceneBackground: SceneBackground = focusedEntry && initialBase.model === 'mug'
     ? SCENE_BACKGROUND_PRESETS.find((preset) => preset.id === 'visual-gradient')?.value || DEFAULT_SCENE_BACKGROUND
-    : DEFAULT_SCENE_BACKGROUND;
+    : initialBase.id === 'sudadera'
+      ? { kind: 'gradient', color: '#1b1133', color2: '#8a0f5c', angle: 135 }
+      : DEFAULT_SCENE_BACKGROUND;
   const [background, setBackground] = useState<SceneBackground>(initialSceneBackground);
   const [customModelsByBaseId, setCustomModelsByBaseId] = useState<Record<string, Custom3DModelState>>({});
   const [viewMode, setViewMode] = useState<ViewMode>(focusedEntry ? '3d' : '2d');
-  const [canvasMode, setCanvasMode] = useState<'mockup' | 'surface'>('mockup');
+  const [canvasMode, setCanvasMode] = useState<CanvasMode>('mockup');
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('layers');
   const [showPrintGuides, setShowPrintGuides] = useState(true);
+  const [editingPrintArea, setEditingPrintArea] = useState(false);
   const [previewWarped2D, setPreviewWarped2D] = useState(false);
   const [warpedPreviewUrl, setWarpedPreviewUrl] = useState('');
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [artworkTexture, setArtworkTexture] = useState<{ productId: string; url: string }>({ productId: '', url: '' });
   const [frontalMockup, setFrontalMockup] = useState<{ productId: string; url: string }>({ productId: '', url: '' });
-  const [exporting, setExporting] = useState<'mockup' | 'mockup-3d' | 'mockup-3d-alpha' | 'art' | ''>('');
+  const [exporting, setExporting] = useState<'mockup' | 'mockup-3d' | 'mockup-3d-alpha' | 'model-3d' | 'art' | ''>('');
   const [projectAction, setProjectAction] = useState<'save' | 'open' | ''>('');
   const [message, setMessage] = useState('');
   const [localDraftContents, setLocalDraftContents] = useState('');
@@ -652,7 +660,9 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
       x: activeBase.printArea.x + activeBase.printArea.width / 2,
       y: activeBase.printArea.y + activeBase.printArea.height / 2,
       size: fit.size,
+      scaleX: 1,
       scaleY: 1,
+      imageAspect: dimensions.width / Math.max(1, dimensions.height),
       rotation: 0,
       opacity: 100,
       color: '#ffffff',
@@ -710,9 +720,11 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
             x: activeBase.printArea.x + activeBase.printArea.width / 2,
             y: activeBase.printArea.y + activeBase.printArea.height / 2,
             size: fit.size,
+            scaleX: 1,
             scaleY: 1,
+            imageAspect: dimensions.width / Math.max(1, dimensions.height),
           }
-        : { src, name: file.name.slice(0, 70) },
+        : { src, name: file.name.slice(0, 70), imageAspect: dimensions.width / Math.max(1, dimensions.height) },
       `replace-img:${selectedLayer.id}`,
     );
     if (fit.matchesSurface) setCanvasMode('surface');
@@ -1005,18 +1017,25 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
     }
   };
 
-  const updatePrintArea = (field: keyof PrintArea, value: number) => {
+  const commitPrintArea = (area: PrintArea) => {
     setProducts((current) =>
       current.map((product) => {
         if (product.id !== activeBase.id) return product;
-        const next = { ...product.printArea };
-        if (field === 'x') next.x = clamp(value, 0, 100 - next.width);
-        if (field === 'y') next.y = clamp(value, 0, 100 - next.height);
-        if (field === 'width') next.width = clamp(value, 10, 100 - next.x);
-        if (field === 'height') next.height = clamp(value, 10, 100 - next.y);
+        const next = {
+          width: clamp(area.width, 10, 100),
+          height: clamp(area.height, 10, 100),
+          x: 0,
+          y: 0,
+        };
+        next.x = clamp(area.x, 0, 100 - next.width);
+        next.y = clamp(area.y, 0, 100 - next.height);
         return { ...product, printArea: next };
       }),
     );
+  };
+
+  const updatePrintArea = (field: keyof PrintArea, value: number) => {
+    commitPrintArea({ ...activeBase.printArea, [field]: value });
   };
 
   const resetDesign = () => {
@@ -1028,7 +1047,7 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
     setMessage('Diseño y apariencia restablecidos.');
   };
 
-  const exportDesign = async (kind: 'mockup' | 'mockup-3d' | 'mockup-3d-alpha' | 'art') => {
+  const exportDesign = async (kind: 'mockup' | 'mockup-3d' | 'mockup-3d-alpha' | 'model-3d' | 'art') => {
     if (exporting) return;
     const exportBase = activeBase;
     const exportLayers = layers;
@@ -1037,6 +1056,13 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
     setExporting(kind);
     setMessage('');
     try {
+      if (kind === 'model-3d') {
+        const exported = await threeDPreviewRef.current?.exportGlb();
+        if (!exported) throw new Error('No se pudo exportar el modelo GLB.');
+        setMessage('Modelo 3D GLB descargado sin guías de edición.');
+        return;
+      }
+
       if (kind === 'mockup-3d' || kind === 'mockup-3d-alpha') {
         if (viewMode === '2d') {
           setViewMode('3d');
@@ -1068,7 +1094,11 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
           : 'Arte de impresión PNG descargado con fondo transparente.',
       );
     } catch {
-      setMessage('No se pudo exportar el PNG. Revisa las imágenes o la vista 3D e inténtalo de nuevo.');
+      setMessage(
+        kind === 'model-3d'
+          ? 'No se pudo exportar el modelo GLB. Comprueba que el Estudio 3D haya terminado de cargar e inténtalo de nuevo.'
+          : 'No se pudo exportar el PNG. Revisa las imágenes o la vista 3D e inténtalo de nuevo.',
+      );
     } finally {
       setExporting('');
     }
@@ -1338,9 +1368,40 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
             <button type="button" className={canvasMode === 'mockup' ? 'is-active' : ''} aria-pressed={canvasMode === 'mockup'} onClick={() => setCanvasMode('mockup')}>
               Producto
             </button>
-            <button type="button" className={canvasMode === 'surface' ? 'is-active' : ''} aria-pressed={canvasMode === 'surface'} onClick={() => { setCanvasMode('surface'); setPreviewWarped2D(false); }}>
+            <button type="button" className={canvasMode === 'surface' ? 'is-active' : ''} aria-pressed={canvasMode === 'surface'} onClick={() => { setCanvasMode('surface'); setEditingPrintArea(false); setPreviewWarped2D(false); }}>
               Mapa UV · {surfaceAspectLabel}
             </button>
+            {activeBase.model === 'mug' && (
+              <>
+                <button
+                  type="button"
+                  className={canvasMode === 'mug-front' ? 'is-active' : ''}
+                  aria-pressed={canvasMode === 'mug-front'}
+                  onClick={() => { setCanvasMode('mug-front'); setEditingPrintArea(false); setPreviewWarped2D(false); }}
+                >
+                  Taza · frente
+                </button>
+                <button
+                  type="button"
+                  className={canvasMode === 'mug-back' ? 'is-active' : ''}
+                  aria-pressed={canvasMode === 'mug-back'}
+                  onClick={() => { setCanvasMode('mug-back'); setEditingPrintArea(false); setPreviewWarped2D(false); }}
+                >
+                  Taza · reverso
+                </button>
+              </>
+            )}
+            {canvasMode === 'mockup' && (
+              <button
+                type="button"
+                className={editingPrintArea ? 'is-active' : ''}
+                aria-pressed={editingPrintArea}
+                onClick={() => setEditingPrintArea((value) => !value)}
+                title="Arrastra el marco cian para moverlo y sus esquinas para redimensionarlo"
+              >
+                {editingPrintArea ? 'Listo con área azul' : 'Ajustar área azul'}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -1380,12 +1441,15 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
                         appearance={appearance}
                         background={background}
                         surfaceArtwork={canvasMode === 'surface'}
+                        mugSideView={canvasMode === 'mug-front' ? 'front' : canvasMode === 'mug-back' ? 'back' : undefined}
+                        editingPrintArea={editingPrintArea}
                         showPrintGuides={showPrintGuides}
                         width={canvasWidth}
                         height={canvasHeight}
                         onSelectLayer={setSelectedLayerId}
                         onClearSelection={() => setSelectedLayerId('')}
                         onCommitLayer={(id, changes) => updateLayer(id, changes, `canvas:${id}`)}
+                        onCommitPrintArea={commitPrintArea}
                       />
                     </Suspense>
                   )}
@@ -1402,6 +1466,8 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
                     product={activeBase}
                     artworkUrl={artworkTexture.productId === activeBase.id ? artworkTexture.url : ''}
                     frontalMockupUrl={frontalMockup.productId === activeBase.id ? frontalMockup.url : ''}
+                    selectedLayer={selectedLayer}
+                    showPrintGuides={showPrintGuides}
                     appearance={appearance}
                     background={background}
                     customModel={activeCustomModel}
@@ -1412,6 +1478,9 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
                       updateActiveCustomModel({ placementMode: !activeCustomModel?.placementMode })
                     }
                     onExport3D={(transparent) => exportDesign(transparent ? 'mockup-3d-alpha' : 'mockup-3d')}
+                    onMoveLayer={(id, x, y) => updateLayer(id, { x, y }, '3d-drag:' + id)}
+                    onExportModel={() => exportDesign('model-3d')}
+                    exportingModel={exporting === 'model-3d'}
                   />
                 </Suspense>
               </div>
@@ -1426,6 +1495,10 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
                   ? 'Render frontal fotorrealista integrado al modelo 3D; usa los controles para revisar otros ángulos.'
                   : canvasMode === 'surface'
                     ? `Mapa UV desplegado ${surfaceAspectLabel} · las guías muestran el perímetro imprimible${activeBase.surfaceProfile?.keepOutAreas?.length ? ' y las zonas ámbar libres junto al asa' : ''} de ${activeBase.name}.`
+                    : canvasMode === 'mug-front'
+                      ? 'Vista 2D frontal de la taza: el diseño conserva la proyección cilíndrica y el asa queda a la derecha.'
+                      : canvasMode === 'mug-back'
+                        ? 'Vista 2D del reverso: el asa queda a la izquierda y solo se muestra el tramo del estampado visible desde ese lado.'
                   : `${activeBase.hint} · arrastra, redimensiona o activa 2D + 3D para ver cambios en vivo.`}
             </span>
             <span>Composición referencial; medidas, materiales y técnicas se confirman al cotizar.</span>
@@ -1776,6 +1849,21 @@ export function ProductDesignStudio({ initialBaseId, quotePath = '/cotizador', f
                       onChange={(event) => updateLayer(selectedLayer.id, { size: Number(event.target.value) })}
                     />
                   </label>
+
+                  {selectedLayer.kind !== 'text' && (
+                    <label className="vc-product-range-field">
+                      <span>Proporción horizontal</span>
+                      <b>{Math.round((selectedLayer.scaleX ?? 1) * 100)}%</b>
+                      <input
+                        type="range"
+                        min="0.3"
+                        max="2"
+                        step="0.05"
+                        value={selectedLayer.scaleX ?? 1}
+                        onChange={(event) => updateLayer(selectedLayer.id, { scaleX: Number(event.target.value) })}
+                      />
+                    </label>
+                  )}
 
                   {selectedLayer.kind !== 'text' && (
                     <label className="vc-product-range-field">
