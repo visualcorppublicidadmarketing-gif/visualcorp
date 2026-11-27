@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:visualcorp:schema:vector-model:v1",
+  "title": "Visual Corp Vector Model",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "schemaVersion", "metadata", "coordinateSystem", "source", "defaults", "layers", "controls", "controlValues", "diagnostics"],
+  "properties": {
+    "format": { "const": "visualcorp.vector-model" },
+    "schemaVersion": { "const": 1 },
+    "metadata": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "title", "sourceFileName", "sourceFormat", "sourceBytes", "createdAt"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9_.-]{1,160}$" },
+        "title": { "type": "string", "maxLength": 100 },
+        "sourceFileName": { "type": "string", "maxLength": 240 },
+        "sourceFormat": { "const": "svg" },
+        "sourceBytes": { "type": "integer", "minimum": 0, "maximum": 8388608 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "coordinateSystem": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "handedness": { "const": "right" }, "plane": { "const": "XY" },
+        "origin": { "const": "lower-left" }, "extrusionAxis": { "const": "+Z" }, "lengthUnit": { "const": "mm" }
+      },
+      "required": ["handedness", "plane", "origin", "extrusionAxis", "lengthUnit"]
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["svgText", "viewBox", "widthMm", "heightMm", "mmPerSourceUnit", "scaleConfirmed", "sourceUnits"],
+      "properties": {
+        "svgText": { "type": "string", "maxLength": 8388608 },
+        "viewBox": { "$ref": "#/$defs/viewBox" },
+        "widthMm": { "type": "number", "minimum": 0.001, "maximum": 10000000 },
+        "heightMm": { "type": "number", "minimum": 0.001, "maximum": 10000000 },
+        "mmPerSourceUnit": { "type": "number", "minimum": 0.00000001, "maximum": 10000000 },
+        "scaleConfirmed": { "type": "boolean" },
+        "sourceUnits": { "enum": ["mm", "cm", "in", "pt", "pc", "px", null] }
+      }
+    },
+    "defaults": {
+      "type": "object", "additionalProperties": false,
+      "required": ["thicknessMm", "faceColors", "bevelEnabled", "bevelSizeMm", "bevelThicknessMm"],
+      "properties": {
+        "thicknessMm": { "type": "number", "minimum": 0.001, "maximum": 100000 },
+        "faceColors": { "$ref": "#/$defs/faceColors" },
+        "bevelEnabled": { "type": "boolean" },
+        "bevelSizeMm": { "type": "number", "minimum": 0, "maximum": 100000 },
+        "bevelThicknessMm": { "type": "number", "minimum": 0, "maximum": 100000 }
+      }
+    },
+    "layers": { "type": "array", "maxItems": 600, "items": { "$ref": "#/$defs/layer" } },
+    "controls": { "type": "array", "maxItems": 80, "items": { "$ref": "#/$defs/control" } },
+    "controlValues": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean"] } },
+    "diagnostics": { "type": "array", "maxItems": 400, "items": { "$ref": "#/$defs/diagnostic" } }
+  },
+  "$defs": {
+    "viewBox": {
+      "type": "object", "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number", "minimum": -10000000, "maximum": 10000000 }, "y": { "type": "number", "minimum": -10000000, "maximum": 10000000 },
+        "width": { "type": "number", "minimum": 0.001, "maximum": 10000000 }, "height": { "type": "number", "minimum": 0.001, "maximum": 10000000 }
+      }
+    },
+    "faceColors": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "front": { "$ref": "#/$defs/color" }, "back": { "$ref": "#/$defs/color" }, "side": { "$ref": "#/$defs/color" } }
+    },
+    "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+    "layer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "sourcePathIndex", "visible", "fillRule", "color", "strokeColor", "strokeWidthMm", "opacity", "widthMm", "heightMm", "xMm", "yMm", "rotationDeg", "scaleX", "scaleY", "thicknessMm", "faceColors", "isClosed", "canExtrude"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9_.-]{1,160}$" }, "name": { "type": "string", "maxLength": 160 },
+        "sourcePathIndex": { "type": "integer", "minimum": 0, "maximum": 600 }, "visible": { "type": "boolean" },
+        "fillRule": { "enum": ["evenodd", "nonzero"] }, "color": { "$ref": "#/$defs/color" },
+        "strokeColor": { "oneOf": [{ "$ref": "#/$defs/color" }, { "type": "null" }] }, "strokeWidthMm": { "type": "number", "minimum": 0, "maximum": 100000 },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "widthMm": { "type": "number", "minimum": 0, "maximum": 10000000 }, "heightMm": { "type": "number", "minimum": 0, "maximum": 10000000 },
+        "xMm": { "type": "number", "minimum": -10000000, "maximum": 10000000 }, "yMm": { "type": "number", "minimum": -10000000, "maximum": 10000000 }, "rotationDeg": { "type": "number", "minimum": -10000000, "maximum": 10000000 },
+        "scaleX": { "oneOf": [{ "type": "number", "minimum": -10000, "maximum": -0.001 }, { "type": "number", "minimum": 0.001, "maximum": 10000 }] }, "scaleY": { "oneOf": [{ "type": "number", "minimum": -10000, "maximum": -0.001 }, { "type": "number", "minimum": 0.001, "maximum": 10000 }] },
+        "thicknessMm": { "oneOf": [{ "type": "number", "minimum": 0.001, "maximum": 100000 }, { "type": "null" }] },
+        "faceColors": { "type": "object", "additionalProperties": false, "properties": { "front": { "$ref": "#/$defs/color" }, "back": { "$ref": "#/$defs/color" }, "side": { "$ref": "#/$defs/color" } } },
+        "isClosed": { "type": "boolean" }, "canExtrude": { "type": "boolean" }
+      },
+      "allOf": [{ "if": { "properties": { "canExtrude": { "const": true } }, "required": ["canExtrude"] }, "then": { "properties": { "isClosed": { "const": true }, "fillRule": { "const": "nonzero" } } } }]
+    },
+    "control": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "label", "type", "target", "defaultValue"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9_.-]{1,160}$" }, "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "type": { "enum": ["number", "length", "color", "select", "boolean", "text"] },
+        "target": { "enum": ["custom.parameter", "document.widthMm", "document.heightMm", "document.thicknessMm", "layer.widthMm", "layer.heightMm", "layer.xMm", "layer.yMm", "layer.rotationDeg", "layer.scaleX", "layer.scaleY", "layer.thicknessMm", "layer.color", "layer.strokeColor", "layer.strokeWidthMm", "layer.faceColors.front", "layer.faceColors.back", "layer.faceColors.side"] },
+        "targetLayerId": { "type": "string", "maxLength": 160, "pattern": "^[A-Za-z0-9_.-]{1,160}$" }, "defaultValue": { "type": ["string", "number", "boolean"], "maxLength": 500 },
+        "unit": { "enum": ["mm", "deg", "ratio", "%", "text"] }, "min": { "type": "number" }, "max": { "type": "number" }, "step": { "type": "number", "exclusiveMinimum": 0 },
+        "options": { "type": "array", "maxItems": 40, "items": { "type": "string", "maxLength": 80 } }
+      },
+      "allOf": [
+        { "if": { "properties": { "target": { "enum": ["document.widthMm", "document.heightMm", "document.thicknessMm", "layer.widthMm", "layer.heightMm", "layer.xMm", "layer.yMm", "layer.thicknessMm", "layer.strokeWidthMm"] } }, "required": ["target"] }, "then": { "properties": { "type": { "const": "length" } } } },
+        { "if": { "properties": { "target": { "enum": ["layer.rotationDeg", "layer.scaleX", "layer.scaleY"] } }, "required": ["target"] }, "then": { "properties": { "type": { "const": "number" } } } },
+        { "if": { "properties": { "target": { "enum": ["layer.color", "layer.strokeColor", "layer.faceColors.front", "layer.faceColors.back", "layer.faceColors.side"] } }, "required": ["target"] }, "then": { "properties": { "type": { "const": "color" }, "defaultValue": { "$ref": "#/$defs/color" } } } },
+        { "if": { "properties": { "type": { "const": "select" } }, "required": ["type"] }, "then": { "required": ["options"], "properties": { "options": { "minItems": 1 } } } },
+        { "if": { "properties": { "type": { "enum": ["number", "length"] } }, "required": ["type"] }, "then": { "properties": { "defaultValue": { "type": "number" } } } },
+        { "if": { "properties": { "type": { "const": "boolean" } }, "required": ["type"] }, "then": { "properties": { "defaultValue": { "type": "boolean" } } } },
+        { "if": { "properties": { "type": { "enum": ["text", "select"] } }, "required": ["type"] }, "then": { "properties": { "defaultValue": { "type": "string" } } } },
+        { "if": { "properties": { "target": { "enum": ["layer.widthMm", "layer.heightMm", "layer.xMm", "layer.yMm", "layer.rotationDeg", "layer.scaleX", "layer.scaleY", "layer.thicknessMm", "layer.color", "layer.strokeColor", "layer.strokeWidthMm", "layer.faceColors.front", "layer.faceColors.back", "layer.faceColors.side"] } }, "required": ["target"] }, "then": { "required": ["targetLayerId"] } }
+      ]
+    },
+    "diagnostic": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "severity", "message"],
+      "properties": { "id": { "type": "string", "maxLength": 160 }, "severity": { "enum": ["info", "warning", "error"] }, "message": { "type": "string", "maxLength": 500 }, "layerId": { "type": "string", "maxLength": 160, "pattern": "^[A-Za-z0-9_.-]{1,160}$" } }
+    }
+  }
+}
