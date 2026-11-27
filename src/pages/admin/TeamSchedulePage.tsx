@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { CalendarClock, Check, Clock3, Plus, RotateCcw, Save, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import { Calendar, DatePicker, dateFromKey, dateToKey } from '../../components/ui/Calendar';
@@ -134,7 +136,24 @@ export function TeamSchedulePage() {
   };
 
   return <div className="team-schedule">
-    <header className="team-schedule-hero"><div><span className="eyebrow">ADMINISTRACIÓN · EQUIPO</span><h1>Horarios y turnos</h1><p>Define cuándo puede ingresar el equipo y organiza las tareas recurrentes por área. Todas las horas usan Ecuador (America/Guayaquil).</p></div><span className="team-schedule-zone"><Clock3 size={17}/> Ecuador · UTC−5</span></header>
+    <PageHeading
+      eyebrow="ADMINISTRACIÓN · EQUIPO"
+      title="Horarios y turnos"
+      description="Define cuándo puede ingresar el equipo y organiza las tareas recurrentes por área. Todas las horas usan Ecuador (America/Guayaquil)."
+      action={
+        <div className="team-schedule-header-actions">
+          <span className="team-schedule-zone">
+            <Clock3 size={15} aria-hidden="true" /> Ecuador · UTC−5
+          </span>
+          <Link className="button button-outline" to="/operaciones/personal">
+            <Users size={15} aria-hidden="true" /> Personal
+          </Link>
+          <Link className="button button-outline" to="/operaciones/equipo/usuarios">
+            <ShieldCheck size={15} aria-hidden="true" /> Usuarios y permisos
+          </Link>
+        </div>
+      }
+    />
     <div className="team-schedule-stats"><article><Clock3 size={19}/><span><b>Horario base</b><small>Lun–vie 08:00–18:30 · Sáb 08:00–13:00</small></span></article><article><CalendarClock size={19}/><span><b>{exceptions.length} excepciones</b><small>Fechas con horario especial o cierre</small></span></article><article><Users size={19}/><span><b>{activeRotations} turnos activos</b><small>La persona asignada cambia cada semana</small></span></article></div>
     {notice && <p className="team-schedule-notice" role="status"><Check size={16}/>{notice}</p>}
     {error && <p className="team-schedule-error" role="alert">{error} <button type="button" onClick={() => void load()}>Reintentar</button></p>}

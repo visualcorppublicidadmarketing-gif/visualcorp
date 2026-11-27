@@ -2,7 +2,7 @@ import { supabase } from './supabaseClient';
 
 export const ADMIN_CONTROL_BASE_ROLES = new Set(['owner', 'admin', 'manager']);
 
-export type HasPermissionFn = (module: string, action: string) => boolean;
+export type HasPermissionFn = (module: string, action: string, branchId?: string | null) => boolean;
 
 export function hasAdminControlRole(roles: readonly string[] | null | undefined): boolean {
   if (!Array.isArray(roles)) return false;
@@ -11,25 +11,28 @@ export function hasAdminControlRole(roles: readonly string[] | null | undefined)
 
 export function canAdminDeleteSales(
   roles: readonly string[] | null | undefined,
-  hasPermission: HasPermissionFn
+  hasPermission: HasPermissionFn,
+  branchId?: string | null
 ): boolean {
-  return hasAdminControlRole(roles) && hasPermission('sales', 'delete_records');
+  return hasAdminControlRole(roles) && hasPermission('sales', 'delete_records', branchId);
 }
 
 export function canAdminDeleteCash(
   roles: readonly string[] | null | undefined,
-  hasPermission: HasPermissionFn
+  hasPermission: HasPermissionFn,
+  branchId?: string | null
 ): boolean {
-  return hasAdminControlRole(roles) && hasPermission('cash', 'delete_records');
+  return hasAdminControlRole(roles) && hasPermission('cash', 'delete_records', branchId);
 }
 
 export function canManageCashControl(
   roles: readonly string[] | null | undefined,
-  hasPermission: HasPermissionFn
+  hasPermission: HasPermissionFn,
+  branchId?: string | null
 ): boolean {
   return (
     hasAdminControlRole(roles) &&
-    (hasPermission('cash', 'manage_cash') || hasPermission('finance', 'manage_finance'))
+    (hasPermission('cash', 'manage_cash', branchId) || hasPermission('finance', 'manage_finance', branchId))
   );
 }
 

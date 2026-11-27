@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import {
   AlertCircle,
   ArrowUpRight,
@@ -13,18 +13,11 @@ import {
   Layers,
   MapPin,
   MessageCircle,
-  PanelsTopLeft,
   Phone,
-  Printer,
   RotateCcw,
   Save,
-  ScanLine,
-  Scissors,
   Search,
   Share2,
-  Shirt,
-  Sparkles,
-  Store,
   X,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -33,16 +26,12 @@ import { useWorkspace } from '../../app/workspace';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
 import { saveServiceVisibility, saveWebsiteSettings } from '../../lib/websiteAdminRepository';
+import { usePersistentDraft } from '../../lib/usePersistentDraft';
+import { DraftRecoveryBanner, PublishConfirmBar } from '../../components/ui/PublishConfirmBar';
+import { Dialog, useConfirm } from '../../components/ui/OperationalKit';
+import { ServiceCard } from '../../public-site/PublicSite';
+import { publicAddress } from '../../public-site/content';
 import { SiteAdminNav } from './SiteAdminNav';
-
-const serviceIcons: Record<string, typeof Sparkles> = {
-  impresion: Printer,
-  'gran-formato': PanelsTopLeft,
-  rotulos: Store,
-  textil: Shirt,
-  corte: Scissors,
-  eventos: ScanLine,
-};
 
 const socialHosts: Record<string, string[]> = {
   instagram: ['instagram.com', 'www.instagram.com'],
@@ -111,17 +100,20 @@ const siteEditorStyles = `
   align-items: center;
   gap: 12px;
   padding: 13px 16px;
-  border: 1px solid #ebe8ef;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  border: 1px solid var(--admin-frosted-border, #ebe8ef);
+  border-radius: 14px;
+  background: var(--admin-frosted-bg, #fff);
+  backdrop-filter: blur(var(--admin-frosted-blur, 16px));
+  -webkit-backdrop-filter: blur(var(--admin-frosted-blur, 16px));
+  box-shadow: var(--admin-frosted-shadow, 0 2px 8px rgba(0,0,0,0.03));
   transition: transform 0.18s ease, border-color 0.18s ease;
   min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
 }
 .site-admin-kpi-card:hover {
   transform: translateY(-1px);
-  border-color: #d6b5da;
+  border-color: rgba(165, 16, 145, 0.36);
 }
 .site-admin-kpi-icon {
   width: 38px;
@@ -131,10 +123,10 @@ const siteEditorStyles = `
   place-items: center;
   flex-shrink: 0;
 }
-.site-admin-kpi-icon.purple { background: #f5e8f7; color: #8e1787; }
-.site-admin-kpi-icon.blue { background: #e0f2fe; color: #0284c7; }
-.site-admin-kpi-icon.amber { background: #fef3c7; color: #d97706; }
-.site-admin-kpi-icon.emerald { background: #dcfce7; color: #16a34a; }
+.site-admin-kpi-icon.purple { background: rgba(165, 16, 145, 0.12); color: #a51091; }
+.site-admin-kpi-icon.blue { background: rgba(14, 165, 233, 0.14); color: #0284c7; }
+.site-admin-kpi-icon.amber { background: rgba(245, 158, 11, 0.14); color: #d97706; }
+.site-admin-kpi-icon.emerald { background: rgba(16, 185, 129, 0.14); color: #16a34a; }
 .site-admin-kpi-info {
   display: grid;
   min-width: 0;
@@ -142,7 +134,7 @@ const siteEditorStyles = `
 }
 .site-admin-kpi-label {
   font-size: 10.5px;
-  color: #6b7280;
+  color: var(--admin-glass-muted, #6b7280);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -151,12 +143,12 @@ const siteEditorStyles = `
 .site-admin-kpi-value {
   font-size: 19px;
   font-weight: 750;
-  color: #111827;
+  color: var(--admin-glass-ink, #111827);
   line-height: 1.2;
 }
 .site-admin-kpi-hint {
   font-size: 10px;
-  color: #9ca3af;
+  color: var(--admin-glass-muted, #9ca3af);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -169,9 +161,11 @@ const siteEditorStyles = `
   flex-wrap: wrap;
   margin-bottom: 18px;
   padding: 10px 14px;
-  border: 1px solid #ecebf0;
-  border-radius: 12px;
-  background: #fafafc;
+  border: 1px solid var(--admin-frosted-border, #ecebf0);
+  border-radius: 14px;
+  background: var(--admin-frosted-bg, #fafafc);
+  backdrop-filter: blur(var(--admin-frosted-blur, 14px));
+  -webkit-backdrop-filter: blur(var(--admin-frosted-blur, 14px));
   box-sizing: border-box;
   max-width: 100%;
 }
@@ -180,13 +174,13 @@ const siteEditorStyles = `
   align-items: center;
   gap: 10px;
   flex: 1;
-  min-width: 260px;
+  min-width: 240px;
   flex-wrap: wrap;
 }
 .site-admin-search-box {
   position: relative;
   flex: 1;
-  min-width: 210px;
+  min-width: 200px;
   max-width: 420px;
 }
 .site-admin-search-box svg.search-icon {
@@ -194,23 +188,23 @@ const siteEditorStyles = `
   left: 10px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--admin-glass-muted, #9ca3af);
   pointer-events: none;
 }
 .site-admin-search-box input {
   width: 100%;
   height: 36px;
   padding: 0 30px 0 33px;
-  border: 1px solid #e4e4e9;
-  border-radius: 8px;
-  background: #fff;
-  color: #252630;
+  border: 1px solid var(--admin-frosted-border, #e4e4e9);
+  border-radius: 9px;
+  background: var(--admin-clear-bg, #fff);
+  color: var(--admin-glass-ink, #252630);
   font-size: 11px;
   box-sizing: border-box;
 }
 .site-admin-search-box input:focus {
-  outline: 2px solid #8e1787;
-  border-color: #8e1787;
+  outline: 2px solid #a51091;
+  border-color: #a51091;
 }
 .site-admin-search-clear {
   position: absolute;
@@ -224,24 +218,25 @@ const siteEditorStyles = `
   padding: 0;
   border: 0;
   border-radius: 4px;
-  background: #e5e7eb;
-  color: #4b5563;
+  background: var(--admin-clear-bg, #e5e7eb);
+  color: var(--admin-glass-muted, #4b5563);
   cursor: pointer;
 }
 .site-admin-filters {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 3px;
-  border: 1px solid #e4e4e9;
-  border-radius: 8px;
-  background: #fff;
+  border: 1px solid var(--admin-frosted-border, #e4e4e9);
+  border-radius: 9px;
+  background: var(--admin-clear-bg, #fff);
 }
 .site-filter-pill {
   padding: 5px 12px;
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #6b7280;
+  color: var(--admin-glass-muted, #6b7280);
   font-size: 11px;
   font-weight: 650;
   cursor: pointer;
@@ -258,10 +253,10 @@ const siteEditorStyles = `
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  border-radius: 6px;
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.32);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -276,7 +271,7 @@ const siteEditorStyles = `
 .site-char-meter {
   flex: 1;
   height: 4px;
-  background: #ecebf0;
+  background: var(--admin-clear-bg, #ecebf0);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -285,67 +280,133 @@ const siteEditorStyles = `
   border-radius: 999px;
   transition: width 0.2s ease, background 0.2s ease;
 }
-.site-service-mini-preview {
+.vc-service-preview-stage {
   margin-top: 4px;
-  padding: 13px 14px;
-  border-radius: 10px;
-  background: #0d0f17;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #f1f3f9;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  padding: 12px;
+  border-radius: 14px;
+  background: radial-gradient(circle at 80% 10%, rgba(39, 213, 236, 0.12), transparent 52%),
+              radial-gradient(circle at 15% 20%, rgba(165, 16, 145, 0.16), transparent 55%),
+              #0d0c14;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f4f1f8;
   box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
 }
-.site-service-mini-preview-header {
+.vc-service-preview-caption {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 7px;
-}
-.site-service-mini-tag {
-  font-size: 8.5px;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 9.5px;
   font-weight: 750;
   letter-spacing: 0.07em;
-  color: #8b8ea2;
   text-transform: uppercase;
+  color: rgba(235, 232, 246, 0.68);
 }
-.site-service-mini-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  background: rgba(229, 0, 126, 0.16);
-  color: #ff3da3;
-  display: grid;
-  place-items: center;
+.vc-service-preview-stage .site-service-card-link.is-preview {
+  display: block;
+  text-decoration: none;
+  color: inherit;
 }
-.site-service-mini-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  margin: 0 0 3px;
-  letter-spacing: -0.01em;
-}
-.site-service-mini-desc {
-  font-size: 10.5px;
-  line-height: 1.45;
-  color: #9ba0b4;
-  margin: 0 0 8px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+.vc-service-preview-stage .site-service-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f4f1f8;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
-.site-service-mini-cta {
+.vc-service-preview-stage .site-service-card-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.vc-service-preview-stage .site-service-index {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #27d5ec;
+}
+.vc-service-preview-stage .site-service-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: rgba(165, 16, 145, 0.22);
+  color: #f472b6;
+}
+.vc-service-preview-stage .site-service-card-3d-wrap {
+  max-height: 44px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.vc-service-preview-stage .site-service-card-3d-wrap img {
+  max-height: 42px;
+  width: auto;
+  object-fit: contain;
+}
+.vc-service-preview-stage .site-service-card h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 750;
+  color: #ffffff;
+}
+.vc-service-preview-stage .site-service-card p {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: rgba(235, 232, 246, 0.78);
+}
+.vc-service-preview-stage .site-service-tags-label {
+  font-size: 9px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(235, 232, 246, 0.56);
+}
+.vc-service-preview-stage .site-service-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vc-service-preview-stage .site-service-tags li {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e6e4f2;
+}
+.vc-service-preview-stage .site-card-link {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
-  font-weight: 650;
-  color: #00b4d8;
-  letter-spacing: 0.01em;
+  font-size: 11px;
+  font-weight: 700;
+  color: #27d5ec;
+  margin-top: 4px;
+}
+.vc-services-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 .site-contact-admin-layout {
   display: grid;
-  grid-template-columns: minmax(360px, 1.15fr) minmax(320px, 0.85fr);
+  grid-template-columns: minmax(320px, 1.15fr) minmax(300px, 0.85fr);
   gap: 18px;
   align-items: start;
   box-sizing: border-box;
@@ -355,9 +416,9 @@ const siteEditorStyles = `
   display: grid;
   gap: 12px;
   padding: 14px;
-  border: 1px solid #ebe8ef;
-  border-radius: 10px;
-  background: #fafafc;
+  border: 1px solid var(--admin-frosted-border, #ebe8ef);
+  border-radius: 12px;
+  background: var(--admin-clear-bg, #fafafc);
   margin-bottom: 12px;
   box-sizing: border-box;
 }
@@ -367,10 +428,10 @@ const siteEditorStyles = `
   gap: 8px;
   font-size: 11.5px;
   font-weight: 750;
-  color: #2b2b36;
+  color: var(--admin-glass-ink, #2b2b36);
 }
 .site-contact-section-title svg {
-  color: #8e1787;
+  color: #a51091;
 }
 .site-field-helper {
   display: flex;
@@ -378,12 +439,12 @@ const siteEditorStyles = `
   justify-content: space-between;
   gap: 8px;
   font-size: 10px;
-  color: #6b7280;
+  color: var(--admin-glass-muted, #6b7280);
   margin-top: 4px;
   flex-wrap: wrap;
 }
 .site-field-helper a {
-  color: #8e1787;
+  color: #a51091;
   font-weight: 650;
   display: inline-flex;
   align-items: center;
@@ -399,9 +460,9 @@ const siteEditorStyles = `
   justify-content: space-between;
   gap: 10px;
   padding: 9px 13px;
-  border-radius: 8px;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.34);
   color: #92400e;
   font-size: 11px;
   font-weight: 650;
@@ -411,10 +472,11 @@ const siteEditorStyles = `
 .site-contact-preview-panel {
   position: sticky;
   top: 16px;
-  border-radius: 14px;
-  background: #0d0f17;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  border-radius: 16px;
+  background: radial-gradient(circle at 80% 10%, rgba(39, 213, 236, 0.1), transparent 55%),
+              #0d0f17;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
   color: #f1f3f9;
   overflow: hidden;
   box-sizing: border-box;
@@ -424,6 +486,7 @@ const siteEditorStyles = `
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 12px 16px;
   background: rgba(255, 255, 255, 0.04);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -431,23 +494,25 @@ const siteEditorStyles = `
 .site-contact-preview-body {
   padding: 16px;
   display: grid;
-  gap: 14px;
+  gap: 12px;
   box-sizing: border-box;
 }
 .site-contact-preview-card {
-  padding: 14px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 13px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(10px);
 }
 .site-preview-channel-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 9px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   font-size: 11px;
 }
 .site-preview-status-badge {
@@ -473,9 +538,9 @@ const siteEditorStyles = `
   display: grid;
   gap: 6px;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 .site-diagnostic-item {
   display: flex;
@@ -487,13 +552,21 @@ const siteEditorStyles = `
 .site-diagnostic-item.is-ready {
   color: #86efac;
 }
-@media (max-width: 1024px) {
+.work-app.theme-dark .site-dirty-badge,
+.work-app.theme-dark .site-dirty-banner {
+  color: #fcd34d;
+}
+.work-app.theme-dark .site-field-helper a {
+  color: #f0abfc;
+}
+@media (max-width: 1260px) {
   .site-admin-kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 960px) {
-  .site-contact-admin-layout {
+  .site-contact-admin-layout,
+  .vc-services-modal-grid {
     grid-template-columns: 1fr;
   }
   .site-contact-preview-panel {
@@ -517,24 +590,45 @@ const siteEditorStyles = `
 }
 `;
 
+type ServiceDraftMap = Record<string, { name: string; description: string }>;
+
 export function ServicesAdminPage() {
   const { data, setData, flash } = useWorkspace();
   const { organizationId, hasPermission } = useAuth();
+  const confirm = useConfirm();
   const canEdit = hasPermission('website', 'edit');
-  const [drafts, setDrafts] = useState<Record<string, { name: string; description: string }>>({});
   const [savingId, setSavingId] = useState('');
   const [isSavingAll, setIsSavingAll] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'visible' | 'hidden'>('all');
 
-  useEffect(() => {
-    setDrafts(
+  const serverDrafts = useMemo<ServiceDraftMap>(
+    () =>
       Object.fromEntries(
         data.services.map((service) => [service.id, { name: service.name, description: service.description }])
-      )
-    );
-  }, [data.services]);
+      ),
+    [data.services]
+  );
+
+  const {
+    draft: drafts,
+    setDraft: setDrafts,
+    isDirty: anyServicesDirty,
+    draftSavedAt,
+    isRecovered,
+    pendingRecovery,
+    recoverDraft,
+    dismissRecovery,
+    discardDraft,
+    markSaved,
+  } = usePersistentDraft<ServiceDraftMap>({
+    orgId: organizationId,
+    draftKey: 'services',
+    serverValue: serverDrafts,
+    enabled: data.services.length > 0,
+  });
 
   const totalServices = data.services.length;
   const visibleCount = useMemo(() => data.services.filter((service) => service.enabled).length, [data.services]);
@@ -579,19 +673,37 @@ export function ServicesAdminPage() {
     event.preventDefault();
     if (!canEdit || !supabase || !organizationId || isSavingAll) return;
     const draft = drafts[serviceId];
+    const original = data.services.find((service) => service.id === serviceId);
     if (!draft?.name.trim()) {
       setError('Cada servicio necesita un nombre.');
       return;
     }
+    const accepted = await confirm({
+      eyebrow: 'CONFIRMAR PUBLICACIÓN',
+      title: `¿Publicar cambios en "${draft.name.trim()}"?`,
+      description:
+        'El nombre y resumen de esta familia se actualizarán de inmediato en la portada, /servicios y cotizador.',
+      summaryItems: [
+        { label: 'Nombre visible', value: draft.name.trim() },
+        { label: 'Estado en la web', value: original?.enabled ? 'Visible' : 'Oculto' },
+      ],
+      tone: 'brand',
+      confirmLabel: 'Publicar servicio',
+      cancelLabel: 'Revisar antes',
+    });
+    if (!accepted) return;
+
     setSavingId(serviceId);
     setError('');
     try {
+      const trimmedName = draft.name.trim();
+      const trimmedDesc = draft.description.trim();
       const { data: row, error: saveError } = await supabase
         .from('services')
         .update({
-          name: draft.name.trim(),
-          short: draft.description.trim(),
-          detail: draft.description.trim(),
+          name: trimmedName,
+          short: trimmedDesc,
+          detail: trimmedDesc,
           updated_at: new Date().toISOString(),
         })
         .eq('id', serviceId)
@@ -600,11 +712,22 @@ export function ServicesAdminPage() {
         .single();
       if (saveError) throw saveError;
       if (!row) throw new Error('No se encontró el servicio para guardar.');
+      const nextDrafts: ServiceDraftMap = {
+        ...drafts,
+        [serviceId]: { name: trimmedName, description: trimmedDesc },
+      };
+      setDrafts(nextDrafts);
+      if (dirtyCount <= 1) {
+        markSaved({
+          ...serverDrafts,
+          [serviceId]: { name: trimmedName, description: trimmedDesc },
+        });
+      }
       setData((current) => ({
         ...current,
         services: current.services.map((service) =>
           service.id === serviceId
-            ? { ...service, name: draft.name.trim(), description: draft.description.trim() }
+            ? { ...service, name: trimmedName, description: trimmedDesc }
             : service
         ),
       }));
@@ -629,12 +752,14 @@ export function ServicesAdminPage() {
       const results = await Promise.all(
         dirtyServices.map(async (service) => {
           const draft = drafts[service.id];
+          const trimmedName = draft.name.trim();
+          const trimmedDesc = draft.description.trim();
           const { data: row, error: saveError } = await supabase
             .from('services')
             .update({
-              name: draft.name.trim(),
-              short: draft.description.trim(),
-              detail: draft.description.trim(),
+              name: trimmedName,
+              short: trimmedDesc,
+              detail: trimmedDesc,
               updated_at: new Date().toISOString(),
             })
             .eq('id', service.id)
@@ -643,10 +768,21 @@ export function ServicesAdminPage() {
             .single();
           if (saveError) throw saveError;
           if (!row) throw new Error(`No se encontró el servicio "${service.name}".`);
-          return { id: service.id, name: draft.name.trim(), description: draft.description.trim() };
+          return { id: service.id, name: trimmedName, description: trimmedDesc };
         })
       );
       const updatedMap = new Map(results.map((r) => [r.id, r]));
+      const nextSavedSnapshot: ServiceDraftMap = Object.fromEntries(
+        data.services.map((service) => {
+          const updated = updatedMap.get(service.id);
+          return [
+            service.id,
+            updated
+              ? { name: updated.name, description: updated.description }
+              : { name: service.name, description: service.description },
+          ];
+        })
+      );
       setData((current) => ({
         ...current,
         services: current.services.map((service) => {
@@ -654,6 +790,7 @@ export function ServicesAdminPage() {
           return updated ? { ...service, name: updated.name, description: updated.description } : service;
         }),
       }));
+      markSaved(nextSavedSnapshot);
       flash(`${dirtyServices.length} ${dirtyServices.length === 1 ? 'servicio guardado' : 'servicios guardados'} en la web.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se pudieron guardar los servicios.');
@@ -662,17 +799,41 @@ export function ServicesAdminPage() {
     }
   };
 
-  const discardChanges = (serviceId: string) => {
+  const discardChanges = async (serviceId: string) => {
     const original = data.services.find((s) => s.id === serviceId);
-    if (original) {
-      setDrafts((current) => ({
-        ...current,
-        [serviceId]: { name: original.name, description: original.description },
-      }));
-    }
+    if (!original) return;
+    const accepted = await confirm({
+      eyebrow: 'DESCARTAR EDICIÓN DE FAMILIA',
+      title: `¿Descartar los cambios en "${original.name}"?`,
+      description: 'Esta tarjeta recuperará el nombre y resumen publicados actualmente.',
+      tone: 'danger',
+      destructive: true,
+      confirmLabel: 'Sí, descartar',
+      cancelLabel: 'Seguir editando',
+    });
+    if (!accepted) return;
+    setDrafts((current) => ({
+      ...current,
+      [serviceId]: { name: original.name, description: original.description },
+    }));
   };
 
   const toggle = async (id: string, enabled: boolean) => {
+    const target = data.services.find((service) => service.id === id);
+    if (!target) return;
+    const accepted = await confirm({
+      eyebrow: 'VISIBILIDAD EN EL SITIO',
+      title: enabled
+        ? `¿Mostrar "${target.name}" en el sitio público?`
+        : `¿Ocultar "${target.name}" del sitio público?`,
+      description: enabled
+        ? 'La familia volverá a mostrarse en portada (/) y en /servicios.'
+        : 'La familia dejará de aparecer en el sitio público hasta que vuelvas a activarla.',
+      tone: enabled ? 'brand' : 'warning',
+      confirmLabel: enabled ? 'Sí, mostrar' : 'Sí, ocultar',
+      cancelLabel: 'Cancelar',
+    });
+    if (!accepted) return;
     try {
       await saveServiceVisibility(id, enabled, organizationId);
       setData((current) => ({
@@ -699,6 +860,42 @@ export function ServicesAdminPage() {
         }
       />
       <SiteAdminNav active="/admin/servicios" />
+
+      <DraftRecoveryBanner
+        pendingRecovery={pendingRecovery}
+        itemLabel="las familias de servicio"
+        onRecover={recoverDraft}
+        onDismiss={dismissRecovery}
+      />
+
+      <PublishConfirmBar
+        isDirty={anyServicesDirty || dirtyCount > 0}
+        isRecovered={isRecovered}
+        draftSavedAt={draftSavedAt}
+        sectionName="Familias de servicio (/servicios)"
+        statusNote={
+          dirtyCount > 0
+            ? `${dirtyCount} ${dirtyCount === 1 ? 'familia con cambios locales pendientes' : 'familias con cambios locales pendientes'} de publicación.`
+            : undefined
+        }
+        canPublish={canEdit && dirtyCount > 0}
+        publishing={isSavingAll}
+        previewLabel="Vista previa de tarjetas"
+        publishLabel={dirtyCount > 0 ? `Publicar cambios (${dirtyCount})` : 'Publicar en vivo'}
+        publishConfirmTitle={`¿Publicar ${dirtyCount} ${dirtyCount === 1 ? 'familia editada' : 'familias editadas'} en /servicios?`}
+        publishConfirmDescription="Los nuevos títulos y resúmenes serán visibles de inmediato en la portada (/), en /servicios y en el selector de cotizaciones."
+        publishSummaryItems={dirtyServices.slice(0, 5).map((service) => ({
+          label: service.name,
+          value: drafts[service.id]?.name.trim() || service.name,
+        }))}
+        publishConsequences={[
+          'Se actualizarán en vivo todas las familias editadas.',
+          'Las familias ocultas conservan sus nuevos textos hasta que las actives.',
+        ]}
+        onPreview={() => setPreviewOpen(true)}
+        onDiscard={discardDraft}
+        onPublish={saveAll}
+      />
 
       {error && (
         <div className="op-flow-alert error" role="alert" style={{ marginBottom: 16 }}>
@@ -815,7 +1012,7 @@ export function ServicesAdminPage() {
               aria-label={`Guardar todos los ${dirtyCount} servicios con cambios`}
             >
               <Save size={15} />
-              {isSavingAll ? 'Guardando todos…' : `Guardar todos (${dirtyCount})`}
+              {isSavingAll ? 'Guardando todos…' : `Publicar cambios (${dirtyCount})`}
             </button>
           )}
         </div>
@@ -823,11 +1020,17 @@ export function ServicesAdminPage() {
 
       {/* Service Family Cards */}
       <div className="site-service-editor-grid">
-        {filteredServices.map((service) => {
+        {filteredServices.map((service, idx) => {
           const draft = drafts[service.id] || { name: service.name, description: service.description };
           const isDirty = draft.name !== service.name || draft.description !== service.description;
-          const ServiceIcon = serviceIcons[service.id] || Sparkles;
           const charPercent = Math.min(100, Math.round((draft.description.length / 220) * 100));
+          const previewService = {
+            ...service,
+            name: draft.name.trim() || service.name,
+            description:
+              draft.description.trim() ||
+              'Sin descripción. Este texto se muestra en las tarjetas interactivas de la página de servicios.',
+          };
 
           return (
             <form
@@ -908,22 +1111,13 @@ export function ServicesAdminPage() {
                 </div>
               </label>
 
-              {/* Live mini-preview of how the service card appears on /servicios */}
-              <div className="site-service-mini-preview" aria-label={`Vista previa de ${draft.name || service.name}`}>
-                <div className="site-service-mini-preview-header">
-                  <span className="site-service-mini-tag">VISTA PREVIA EN /SERVICIOS</span>
-                  <span className="site-service-mini-icon">
-                    <ServiceIcon size={15} aria-hidden="true" />
-                  </span>
+              {/* Faithful preview using shared ServiceCard component */}
+              <div className="vc-service-preview-stage" aria-label={`Vista previa de ${previewService.name}`}>
+                <div className="vc-service-preview-caption">
+                  <span>VISTA PREVIA REAL EN /SERVICIOS</span>
+                  <span>{service.enabled ? 'VISIBLE' : 'OCULTA EN WEB'}</span>
                 </div>
-                <h3 className="site-service-mini-title">{draft.name.trim() || service.name}</h3>
-                <p className="site-service-mini-desc">
-                  {draft.description.trim() ||
-                    'Sin descripción. Este texto se muestra en las tarjetas interactivas de la página de servicios.'}
-                </p>
-                <span className="site-service-mini-cta" aria-hidden="true">
-                  Solicitar cotización →
-                </span>
+                <ServiceCard service={previewService} index={idx} previewOnly />
               </div>
 
               <div className="site-service-actions">
@@ -931,16 +1125,16 @@ export function ServicesAdminPage() {
                   <button
                     className="button button-dark"
                     type="submit"
-                    disabled={!canEdit || savingId === service.id || isSavingAll}
+                    disabled={!canEdit || !isDirty || savingId === service.id || isSavingAll}
                   >
                     <Save size={15} />
-                    {savingId === service.id ? 'Guardando…' : 'Guardar texto'}
+                    {savingId === service.id ? 'Publicando…' : 'Publicar servicio'}
                   </button>
                   {isDirty && (
                     <button
                       className="button button-outline"
                       type="button"
-                      onClick={() => discardChanges(service.id)}
+                      onClick={() => void discardChanges(service.id)}
                       disabled={!canEdit || savingId === service.id || isSavingAll}
                     >
                       <RotateCcw size={14} />
@@ -964,7 +1158,7 @@ export function ServicesAdminPage() {
       </div>
 
       {filteredServices.length === 0 && (
-        <div className="panel" style={{ textAlign: 'center', padding: '36px 20px', color: '#6b7280' }}>
+        <div className="panel" style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--admin-glass-muted, #6b7280)' }}>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>
             No se encontraron familias de servicio que coincidan con los filtros.
           </p>
@@ -982,32 +1176,100 @@ export function ServicesAdminPage() {
           </div>
         </div>
       )}
+
+      <Dialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        size="xl"
+        tone="brand"
+        eyebrow="VISTA PREVIA EN VIVO · /SERVICIOS"
+        title="Tarjetas públicas con los borradores actuales"
+        description={`Se muestran ${visibleCount} familias visibles en el sitio web y cualquier cambio local aún no publicado.`}
+        footer={
+          <button type="button" className="button button-outline" onClick={() => setPreviewOpen(false)}>
+            Cerrar vista previa
+          </button>
+        }
+      >
+        <div className="vc-service-preview-stage" style={{ padding: 16 }}>
+          <div className="vc-services-modal-grid">
+            {data.services.map((service, idx) => {
+              const draft = drafts[service.id] || { name: service.name, description: service.description };
+              const previewService = {
+                ...service,
+                name: draft.name.trim() || service.name,
+                description: draft.description.trim() || service.description,
+              };
+              return (
+                <div key={service.id} style={{ opacity: service.enabled ? 1 : 0.45 }}>
+                  <div className="vc-service-preview-caption" style={{ marginBottom: 6 }}>
+                    <span>{service.enabled ? 'Visible en web' : 'Oculta en web'}</span>
+                    <span>{draft.name !== service.name || draft.description !== service.description ? 'Editado' : 'Sincronizado'}</span>
+                  </div>
+                  <ServiceCard service={previewService} index={idx} previewOnly />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Dialog>
     </AppFrame>
   );
 }
 
+type ContactDraft = {
+  location: string;
+  contactPhone: string;
+  whatsappSecondary: string;
+  instagram: string;
+  facebook: string;
+  tiktok: string;
+};
+
 export function ContactAdminPage() {
   const { data, setData, flash } = useWorkspace();
   const { organizationId, hasPermission } = useAuth();
+  const confirm = useConfirm();
   const canEdit = hasPermission('website', 'edit');
-  const [draft, setDraft] = useState(data.settings);
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    setDraft(data.settings);
-  }, [data.settings]);
+  const serverContact = useMemo<ContactDraft>(
+    () => ({
+      location: String(data.settings?.location || ''),
+      contactPhone: String(data.settings?.contactPhone || ''),
+      whatsappSecondary: String(data.settings?.whatsappSecondary || ''),
+      instagram: String(data.settings?.instagram || ''),
+      facebook: String(data.settings?.facebook || ''),
+      tiktok: String(data.settings?.tiktok || ''),
+    }),
+    [
+      data.settings?.location,
+      data.settings?.contactPhone,
+      data.settings?.whatsappSecondary,
+      data.settings?.instagram,
+      data.settings?.facebook,
+      data.settings?.tiktok,
+    ]
+  );
 
-  const isDirty = useMemo(() => {
-    return (
-      (draft.location || '') !== (data.settings.location || '') ||
-      (draft.contactPhone || '') !== (data.settings.contactPhone || '') ||
-      (draft.whatsappSecondary || '') !== (data.settings.whatsappSecondary || '') ||
-      (draft.instagram || '') !== (data.settings.instagram || '') ||
-      (draft.facebook || '') !== (data.settings.facebook || '') ||
-      (draft.tiktok || '') !== (data.settings.tiktok || '')
-    );
-  }, [draft, data.settings]);
+  const {
+    draft,
+    setDraft,
+    isDirty,
+    draftSavedAt,
+    isRecovered,
+    pendingRecovery,
+    recoverDraft,
+    dismissRecovery,
+    discardDraft,
+    markSaved,
+  } = usePersistentDraft<ContactDraft>({
+    orgId: organizationId,
+    draftKey: 'contact',
+    serverValue: serverContact,
+  });
 
   const mainWa = useMemo(() => normalizeWhatsApp(draft.contactPhone), [draft.contactPhone]);
   const secondaryWa = useMemo(() => normalizeWhatsApp(draft.whatsappSecondary || ''), [draft.whatsappSecondary]);
@@ -1036,37 +1298,68 @@ export function ContactAdminPage() {
   const locationVerified = Boolean(String(draft.location || '').trim());
   const whatsappOperational = Boolean(mainWa.international);
 
-  const resetDraft = () => {
-    setDraft(data.settings);
+  const handleResetWithConfirm = async () => {
+    if (!isDirty && !isRecovered) return;
+    const accepted = await confirm({
+      eyebrow: 'DESCARTAR CAMBIOS DE CONTACTO',
+      title: '¿Restaurar los datos de contacto publicados?',
+      description: 'Se perderán tus ediciones locales y se restaurarán los valores actuales en vivo.',
+      tone: 'danger',
+      destructive: true,
+      confirmLabel: 'Sí, restaurar',
+      cancelLabel: 'Seguir editando',
+    });
+    if (accepted) discardDraft();
   };
 
-  const usePresetLocation = () => {
+  const usePresetLocation = async () => {
+    if (!canEdit) return;
+    if (draft.location.trim() && draft.location.trim() !== publicAddress) {
+      const accepted = await confirm({
+        eyebrow: 'DIRECCIÓN MATRIZ VERIFICADA',
+        title: '¿Reemplazar la ubicación actual con la dirección matriz?',
+        description: `Se cargará "${publicAddress}" en tu borrador local de ubicación de pie de página.`,
+        tone: 'info',
+        confirmLabel: 'Aplicar dirección matriz',
+        cancelLabel: 'Mantener actual',
+      });
+      if (!accepted) return;
+    }
     setDraft((current) => ({
       ...current,
-      location: 'Av. Juan X. Marcos y calle 5ta, Milagro, Guayas, Ecuador',
+      location: publicAddress,
     }));
   };
 
-  const save = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const publishContact = async () => {
     if (!canEdit || saving) return;
     setSaving(true);
     setError('');
+    const nextSettings = {
+      ...(data.settings || {}),
+      location: draft.location.trim(),
+      contactPhone: draft.contactPhone.trim(),
+      whatsappSecondary: draft.whatsappSecondary.trim(),
+      instagram: draft.instagram.trim(),
+      facebook: draft.facebook.trim(),
+      tiktok: draft.tiktok.trim(),
+    };
+    const savedContact: ContactDraft = {
+      location: nextSettings.location,
+      contactPhone: nextSettings.contactPhone,
+      whatsappSecondary: nextSettings.whatsappSecondary,
+      instagram: nextSettings.instagram,
+      facebook: nextSettings.facebook,
+      tiktok: nextSettings.tiktok,
+    };
     try {
-      await saveWebsiteSettings(draft, organizationId);
+      await saveWebsiteSettings(nextSettings, organizationId);
       setData((current) => ({
         ...current,
-        settings: {
-          ...current.settings,
-          location: draft.location,
-          contactPhone: draft.contactPhone,
-          whatsappSecondary: draft.whatsappSecondary,
-          instagram: draft.instagram,
-          facebook: draft.facebook,
-          tiktok: draft.tiktok,
-        },
+        settings: nextSettings,
       }));
-      flash('Datos de contacto guardados.');
+      markSaved(savedContact);
+      flash('Datos de contacto publicados en la web.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se pudieron guardar los datos.');
     } finally {
@@ -1074,13 +1367,222 @@ export function ContactAdminPage() {
     }
   };
 
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!canEdit || (!isDirty && !isRecovered) || saving) return;
+    const accepted = await confirm({
+      eyebrow: 'CONFIRMAR PUBLICACIÓN EN VIVO',
+      title: '¿Publicar cambios de contacto y redes en la web?',
+      description:
+        'Se actualizarán el botón de WhatsApp, los enlaces de llamada, las redes sociales y la dirección de pie de página en todo el sitio público.',
+      summaryItems: [
+        { label: 'WhatsApp principal', value: mainWa.display },
+        { label: 'WhatsApp secundario', value: secondaryWa.international ? secondaryWa.display : 'Sin configurar' },
+        { label: 'Ubicación pie/nosotros', value: draft.location.trim() || '(sin cambios)' },
+      ],
+      consequences: [
+        'Los enlaces directos de /contacto y el botón flotante de WhatsApp usarán estos números.',
+        `La página /contacto mantiene además la matriz fija verificada (${publicAddress}).`,
+      ],
+      tone: 'brand',
+      confirmLabel: 'Publicar en vivo',
+      cancelLabel: 'Revisar antes',
+    });
+    if (accepted) {
+      await publishContact();
+    }
+  };
+
+  const renderContactPreviewContent = () => (
+    <div className="site-contact-preview-body">
+      {/* Direct Contact Cards aligned with ContactPage */}
+      <div style={{ display: 'grid', gap: 6 }}>
+        <span style={{ fontSize: 9, fontWeight: 750, letterSpacing: '0.07em', color: '#8e92a8', textTransform: 'uppercase' }}>
+          CANALES DIRECTOS EN /CONTACTO
+        </span>
+
+        <div
+          style={{
+            padding: '10px 12px',
+            borderRadius: 9,
+            background: whatsappOperational ? 'rgba(34, 197, 94, 0.14)' : 'rgba(255, 255, 255, 0.04)',
+            border: `1px solid ${whatsappOperational ? 'rgba(34, 197, 94, 0.28)' : 'rgba(255, 255, 255, 0.08)'}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            color: whatsappOperational ? '#86efac' : '#9ca3af',
+            fontSize: 11,
+            fontWeight: 650,
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <MessageCircle size={15} />
+            WhatsApp principal
+          </span>
+          <span style={{ fontSize: 10, color: whatsappOperational ? '#bbf7d0' : '#6b7280' }}>
+            {mainWa.display}
+          </span>
+        </div>
+
+        {secondaryWa.international && (
+          <div
+            style={{
+              padding: '10px 12px',
+              borderRadius: 9,
+              background: 'rgba(34, 197, 94, 0.08)',
+              border: '1px solid rgba(34, 197, 94, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: '#86efac',
+              fontSize: 11,
+              fontWeight: 650,
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <MessageCircle size={15} />
+              WhatsApp alternativo
+            </span>
+            <span style={{ fontSize: 10, color: '#bbf7d0' }}>{secondaryWa.display}</span>
+          </div>
+        )}
+
+        <div
+          style={{
+            padding: '10px 12px',
+            borderRadius: 9,
+            background: 'rgba(56, 189, 248, 0.1)',
+            border: '1px solid rgba(56, 189, 248, 0.24)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            color: '#bae6fd',
+            fontSize: 11,
+            fontWeight: 650,
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <Phone size={14} />
+            Llámanos directo (tel:)
+          </span>
+          <span style={{ fontSize: 10, color: '#e0f2fe' }}>{mainWa.display}</span>
+        </div>
+      </div>
+
+      {/* Location distinction: /contacto matrix vs footer/nosotros */}
+      <div className="site-contact-preview-card">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: 'rgba(229,0,126,0.18)',
+              color: '#ff3da3',
+              display: 'grid',
+              placeItems: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <MapPin size={16} />
+          </div>
+          <div style={{ minWidth: 0, display: 'grid', gap: 6 }}>
+            <div>
+              <small style={{ fontSize: 8.5, letterSpacing: '0.06em', color: '#27d5ec', textTransform: 'uppercase', fontWeight: 750 }}>
+                MATRIZ VERIFICADA EN /CONTACTO Y MAPA
+              </small>
+              <strong style={{ display: 'block', fontSize: 12, color: '#fff', marginTop: 2 }}>
+                {publicAddress}
+              </strong>
+            </div>
+            <div style={{ paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <small style={{ fontSize: 8.5, letterSpacing: '0.06em', color: '#a5a9bd', textTransform: 'uppercase', fontWeight: 700 }}>
+                TEXTO EDITABLE EN PIE DE PÁGINA Y /NOSOTROS
+              </small>
+              <span style={{ display: 'block', fontSize: 10.5, color: '#d4d7e6', lineHeight: 1.4, marginTop: 2 }}>
+                {draft.location.trim() || `Sin dirección personalizada (usa ${publicAddress})`}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Social Channels Preview List */}
+      <div style={{ display: 'grid', gap: 6 }}>
+        <span style={{ fontSize: 9, fontWeight: 750, letterSpacing: '0.07em', color: '#8e92a8', textTransform: 'uppercase' }}>
+          CANALES SOCIALES DETECTADOS
+        </span>
+
+        <div className="site-preview-channel-row">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#e1306c', fontWeight: 700 }}>Instagram</span>
+            <span style={{ color: '#9ca3af', fontSize: 10.5 }}>{formatSocialDisplay(draft.instagram || '')}</span>
+          </div>
+          <span className={`site-preview-status-badge ${igUrl ? 'connected' : 'pending'}`}>
+            {igUrl ? 'Conectado' : 'Pendiente'}
+          </span>
+        </div>
+
+        <div className="site-preview-channel-row">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#1877f2', fontWeight: 700 }}>Facebook</span>
+            <span style={{ color: '#9ca3af', fontSize: 10.5 }}>{formatSocialDisplay(draft.facebook || '')}</span>
+          </div>
+          <span className={`site-preview-status-badge ${fbUrl ? 'connected' : 'pending'}`}>
+            {fbUrl ? 'Conectado' : 'Pendiente'}
+          </span>
+        </div>
+
+        <div className="site-preview-channel-row">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#00f2fe', fontWeight: 700 }}>TikTok</span>
+            <span style={{ color: '#9ca3af', fontSize: 10.5 }}>{formatSocialDisplay(draft.tiktok || '')}</span>
+          </div>
+          <span className={`site-preview-status-badge ${ttUrl ? 'connected' : 'pending'}`}>
+            {ttUrl ? 'Conectado' : 'Pendiente'}
+          </span>
+        </div>
+      </div>
+
+      {/* Diagnostic Checklist */}
+      <div className="site-contact-diagnostic-list" aria-label="Diagnóstico de integridad de canales">
+        <span style={{ fontSize: 9, fontWeight: 750, letterSpacing: '0.07em', color: '#8e92a8', textTransform: 'uppercase', marginBottom: 2 }}>
+          DIAGNÓSTICO DE INTEGRIDAD
+        </span>
+
+        <div className={`site-diagnostic-item ${locationVerified ? 'is-ready' : ''}`}>
+          {locationVerified ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
+          <span>Pie de página y Nosotros: {locationVerified ? 'Dirección configurada' : 'Falta dirección'}</span>
+        </div>
+
+        <div className={`site-diagnostic-item ${whatsappOperational ? 'is-ready' : ''}`}>
+          {whatsappOperational ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
+          <span>Línea principal y Llámanos: {whatsappOperational ? `${mainWa.display} verificado` : 'Sin WhatsApp configurado'}</span>
+        </div>
+
+        <div className={`site-diagnostic-item ${secondaryWa.international ? 'is-ready' : ''}`}>
+          {secondaryWa.international ? <CheckCircle2 size={13} /> : <ChevronRight size={13} />}
+          <span>
+            Línea secundaria:{' '}
+            {secondaryWa.international ? `${secondaryWa.display} lista` : 'Opcional (no establecida)'}
+          </span>
+        </div>
+
+        <div className={`site-diagnostic-item ${socialsConnectedCount >= 2 ? 'is-ready' : ''}`}>
+          {socialsConnectedCount >= 2 ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
+          <span>Redes oficiales: {socialsConnectedCount} de 3 perfiles listos para redirigir</span>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <AppFrame area="admin">
       <style>{siteEditorStyles}</style>
       <PageHeading
         eyebrow="EDITOR DEL SITIO"
         title="Contacto"
-        description="Actualiza los datos que se muestran en la web. Verifica cada valor antes de guardarlo."
+        description="Actualiza WhatsApp, redes sociales y la ubicación compartida del sitio. Revisa la vista previa antes de publicar."
         action={
           <Link className="button button-outline" to="/contacto" target="_blank" rel="noreferrer">
             Ver página pública <ArrowUpRight size={16} />
@@ -1088,6 +1590,37 @@ export function ContactAdminPage() {
         }
       />
       <SiteAdminNav active="/admin/contacto" />
+
+      <DraftRecoveryBanner
+        pendingRecovery={pendingRecovery}
+        itemLabel="los datos de contacto"
+        onRecover={recoverDraft}
+        onDismiss={dismissRecovery}
+      />
+
+      <PublishConfirmBar
+        isDirty={isDirty}
+        isRecovered={isRecovered}
+        draftSavedAt={draftSavedAt}
+        sectionName="Contacto, WhatsApp y redes"
+        canPublish={canEdit}
+        publishing={saving}
+        previewLabel="Vista previa /contacto"
+        publishConfirmTitle="¿Publicar cambios de contacto en vivo?"
+        publishConfirmDescription="Se actualizarán WhatsApp, enlace de llamada, redes sociales y pie de página en el sitio público."
+        publishSummaryItems={[
+          { label: 'WhatsApp principal', value: mainWa.display },
+          { label: 'WhatsApp alternativo', value: secondaryWa.international ? secondaryWa.display : 'Opcional (vacío)' },
+          { label: 'Pie / Nosotros', value: draft.location.trim() || '(sin cambios)' },
+        ]}
+        publishConsequences={[
+          'Los botones de WhatsApp, Llámanos y redes sociales usarán de inmediato estos datos.',
+          `La página /contacto conserva la dirección verificada de la matriz (${publicAddress}).`,
+        ]}
+        onPreview={() => setPreviewOpen(true)}
+        onDiscard={discardDraft}
+        onPublish={publishContact}
+      />
 
       {/* 1. Executive KPI Strip */}
       <section className="site-admin-kpi-grid" aria-label="Estado general de canales de contacto">
@@ -1129,9 +1662,9 @@ export function ContactAdminPage() {
             <MapPin size={19} />
           </div>
           <div className="site-admin-kpi-info">
-            <span className="site-admin-kpi-label">Ubicación verificada</span>
-            <strong className="site-admin-kpi-value">{locationVerified ? 'Verificada' : 'Pendiente'}</strong>
-            <small className="site-admin-kpi-hint">{locationVerified ? 'Milagro, Guayas' : 'Falta dirección'}</small>
+            <span className="site-admin-kpi-label">Ubicación pie/nosotros</span>
+            <strong className="site-admin-kpi-value">{locationVerified ? 'Configurada' : 'Pendiente'}</strong>
+            <small className="site-admin-kpi-hint">{locationVerified ? 'Milagro, Guayas' : 'Usa matriz verificada'}</small>
           </div>
         </article>
       </section>
@@ -1139,7 +1672,7 @@ export function ContactAdminPage() {
       {/* 2. Two-Column Layout */}
       <div className="site-contact-admin-layout">
         {/* Left Column: Form Editor */}
-        <form className="panel form-panel site-contact-editor" onSubmit={save}>
+        <form className="panel form-panel site-contact-editor" onSubmit={(event) => void save(event)}>
           <div className="panel-heading">
             <div>
               <span className="eyebrow">DATOS COMPARTIDOS</span>
@@ -1155,18 +1688,18 @@ export function ContactAdminPage() {
             </div>
           )}
 
-          {isDirty && (
+          {(isDirty || isRecovered) && (
             <div className="site-dirty-banner" role="status">
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <AlertCircle size={15} /> Tienes cambios sin guardar en los datos de contacto.
+                <AlertCircle size={15} /> Tienes cambios sin publicar en los datos de contacto.
               </span>
               <button
                 type="button"
                 className="button button-outline button-small"
                 style={{ fontSize: 10, padding: '3px 8px', height: 26 }}
-                onClick={resetDraft}
+                onClick={() => void handleResetWithConfirm()}
               >
-                <RotateCcw size={12} /> Restaurar valores guardados
+                <RotateCcw size={12} /> Restaurar valores publicados
               </button>
             </div>
           )}
@@ -1175,24 +1708,26 @@ export function ContactAdminPage() {
           <section className="site-contact-section" aria-labelledby="section-location-heading">
             <div className="site-contact-section-title" id="section-location-heading">
               <MapPin size={16} aria-hidden="true" />
-              <span>Ubicación y atención</span>
+              <span>Ubicación en pie de página y /nosotros</span>
             </div>
             <label>
-              Ubicación física del local
+              Dirección mostrada en el pie y páginas institucionales
               <input
                 disabled={!canEdit}
-                placeholder="Ej. Av. Juan X. Marcos y calle 5ta, Milagro, Ecuador"
+                placeholder={`Ej. ${publicAddress}`}
                 value={draft.location}
                 onChange={(event) => setDraft({ ...draft, location: event.target.value })}
               />
             </label>
             <div className="site-field-helper">
-              <span>Se utiliza en el pie del sitio web, sección de mapa y consultas de clientes.</span>
+              <span>
+                Actualiza el pie de página y /nosotros. La ficha principal, el mapa y las FAQ de /contacto muestran la dirección matriz oficial ({publicAddress}).
+              </span>
               <button
                 type="button"
                 className="button button-outline"
                 style={{ fontSize: 10, padding: '2px 8px', height: 24, cursor: 'pointer' }}
-                onClick={usePresetLocation}
+                onClick={() => void usePresetLocation()}
                 disabled={!canEdit}
               >
                 Usar dirección matriz
@@ -1204,11 +1739,11 @@ export function ContactAdminPage() {
           <section className="site-contact-section" aria-labelledby="section-whatsapp-heading">
             <div className="site-contact-section-title" id="section-whatsapp-heading">
               <MessageCircle size={16} aria-hidden="true" />
-              <span>Líneas de WhatsApp y ventas</span>
+              <span>Líneas de WhatsApp y llamadas</span>
             </div>
 
             <label>
-              WhatsApp principal
+              WhatsApp principal (también alimenta "Llámanos")
               <input
                 disabled={!canEdit}
                 inputMode="tel"
@@ -1218,7 +1753,7 @@ export function ContactAdminPage() {
               />
               <div className="site-field-helper">
                 <span>
-                  Normalizado para enlaces directos: <b>{mainWa.display}</b>
+                  Normalizado para WhatsApp y llamada directa: <b>{mainWa.display}</b>
                 </span>
                 {mainWa.url && (
                   <a href={mainWa.url} target="_blank" rel="noreferrer">
@@ -1318,9 +1853,9 @@ export function ContactAdminPage() {
             </label>
           </section>
 
-          <button className="button button-dark" type="submit" disabled={!canEdit || saving}>
+          <button className="button button-dark" type="submit" disabled={!canEdit || (!isDirty && !isRecovered) || saving}>
             <Check size={16} />
-            {saving ? 'Guardando…' : 'Guardar contacto'}
+            {saving ? 'Publicando…' : 'Publicar contacto en vivo'}
           </button>
         </form>
 
@@ -1331,7 +1866,7 @@ export function ContactAdminPage() {
               <span style={{ fontSize: 9, fontWeight: 750, letterSpacing: '0.08em', color: '#8e92a8', display: 'block' }}>
                 VISTA PREVIA EN VIVO
               </span>
-              <strong style={{ fontSize: 13, color: '#fff' }}>Tarjeta de contacto (/contacto)</strong>
+              <strong style={{ fontSize: 13, color: '#fff' }}>Canales y ubicación (/contacto y pie)</strong>
             </div>
             <span
               style={{
@@ -1359,156 +1894,28 @@ export function ContactAdminPage() {
             </span>
           </div>
 
-          <div className="site-contact-preview-body">
-            {/* Location card */}
-            <div className="site-contact-preview-card">
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 8,
-                    background: 'rgba(229,0,126,0.18)',
-                    color: '#ff3da3',
-                    display: 'grid',
-                    placeItems: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <MapPin size={16} />
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <small style={{ fontSize: 8.5, letterSpacing: '0.06em', color: '#9ca3af', textTransform: 'uppercase' }}>
-                    VISÍTANOS EN
-                  </small>
-                  <strong style={{ display: 'block', fontSize: 12.5, color: '#fff', margin: '1px 0 2px' }}>
-                    Milagro, Ecuador
-                  </strong>
-                  <span style={{ display: 'block', fontSize: 10.5, color: '#a5a9bd', lineHeight: 1.4 }}>
-                    {draft.location || 'Sin dirección ingresada'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Direct WhatsApp Callouts */}
-            <div style={{ display: 'grid', gap: 6 }}>
-              <div
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: 8,
-                  background: whatsappOperational ? 'rgba(34, 197, 94, 0.14)' : 'rgba(255, 255, 255, 0.04)',
-                  border: `1px solid ${whatsappOperational ? 'rgba(34, 197, 94, 0.28)' : 'rgba(255, 255, 255, 0.08)'}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  color: whatsappOperational ? '#86efac' : '#9ca3af',
-                  fontSize: 11,
-                  fontWeight: 650,
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <MessageCircle size={15} />
-                  Escribir al WhatsApp principal
-                </span>
-                <span style={{ fontSize: 10, color: whatsappOperational ? '#bbf7d0' : '#6b7280' }}>
-                  {mainWa.display}
-                </span>
-              </div>
-
-              {secondaryWa.international && (
-                <div
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: 8,
-                    background: 'rgba(34, 197, 94, 0.08)',
-                    border: '1px solid rgba(34, 197, 94, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    color: '#86efac',
-                    fontSize: 11,
-                    fontWeight: 650,
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <MessageCircle size={15} />
-                    WhatsApp secundario
-                  </span>
-                  <span style={{ fontSize: 10, color: '#bbf7d0' }}>{secondaryWa.display}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Social Channels Preview List */}
-            <div style={{ display: 'grid', gap: 6 }}>
-              <span style={{ fontSize: 9, fontWeight: 750, letterSpacing: '0.07em', color: '#8e92a8', textTransform: 'uppercase' }}>
-                CANALES SOCIALES DETECTADOS
-              </span>
-
-              <div className="site-preview-channel-row">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: '#e1306c', fontWeight: 700 }}>Instagram</span>
-                  <span style={{ color: '#9ca3af', fontSize: 10.5 }}>{formatSocialDisplay(draft.instagram || '')}</span>
-                </div>
-                <span className={`site-preview-status-badge ${igUrl ? 'connected' : 'pending'}`}>
-                  {igUrl ? 'Conectado' : 'Pendiente'}
-                </span>
-              </div>
-
-              <div className="site-preview-channel-row">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: '#1877f2', fontWeight: 700 }}>Facebook</span>
-                  <span style={{ color: '#9ca3af', fontSize: 10.5 }}>{formatSocialDisplay(draft.facebook || '')}</span>
-                </div>
-                <span className={`site-preview-status-badge ${fbUrl ? 'connected' : 'pending'}`}>
-                  {fbUrl ? 'Conectado' : 'Pendiente'}
-                </span>
-              </div>
-
-              <div className="site-preview-channel-row">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: '#00f2fe', fontWeight: 700 }}>TikTok</span>
-                  <span style={{ color: '#9ca3af', fontSize: 10.5 }}>{formatSocialDisplay(draft.tiktok || '')}</span>
-                </div>
-                <span className={`site-preview-status-badge ${ttUrl ? 'connected' : 'pending'}`}>
-                  {ttUrl ? 'Conectado' : 'Pendiente'}
-                </span>
-              </div>
-            </div>
-
-            {/* Diagnostic Checklist */}
-            <div className="site-contact-diagnostic-list" aria-label="Diagnóstico de integridad de canales">
-              <span style={{ fontSize: 9, fontWeight: 750, letterSpacing: '0.07em', color: '#8e92a8', textTransform: 'uppercase', marginBottom: 2 }}>
-                DIAGNÓSTICO DE INTEGRIDAD
-              </span>
-
-              <div className={`site-diagnostic-item ${locationVerified ? 'is-ready' : ''}`}>
-                {locationVerified ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
-                <span>Ubicación física: {locationVerified ? 'Completa y georreferenciable' : 'Falta dirección'}</span>
-              </div>
-
-              <div className={`site-diagnostic-item ${whatsappOperational ? 'is-ready' : ''}`}>
-                {whatsappOperational ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
-                <span>Línea principal: {whatsappOperational ? `${mainWa.display} verificado` : 'Sin WhatsApp configurado'}</span>
-              </div>
-
-              <div className={`site-diagnostic-item ${secondaryWa.international ? 'is-ready' : ''}`}>
-                {secondaryWa.international ? <CheckCircle2 size={13} /> : <ChevronRight size={13} />}
-                <span>
-                  Línea secundaria:{' '}
-                  {secondaryWa.international ? `${secondaryWa.display} lista` : 'Opcional (no establecida)'}
-                </span>
-              </div>
-
-              <div className={`site-diagnostic-item ${socialsConnectedCount >= 2 ? 'is-ready' : ''}`}>
-                {socialsConnectedCount >= 2 ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
-                <span>Redes oficiales: {socialsConnectedCount} de 3 perfiles listos para redirigir</span>
-              </div>
-            </div>
-          </div>
+          {renderContactPreviewContent()}
         </aside>
       </div>
+
+      <Dialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        size="lg"
+        tone="brand"
+        eyebrow="VISTA PREVIA EN VIVO · /CONTACTO Y PIE DEL SITIO"
+        title="Cómo verán tus clientes los canales de contacto"
+        description="Incluye los enlaces directos de /contacto y la distinción entre la dirección matriz fija y la ubicación de pie de página."
+        footer={
+          <button type="button" className="button button-outline" onClick={() => setPreviewOpen(false)}>
+            Cerrar vista previa
+          </button>
+        }
+      >
+        <div className="site-contact-preview-panel" style={{ position: 'static' }}>
+          {renderContactPreviewContent()}
+        </div>
+      </Dialog>
     </AppFrame>
   );
 }

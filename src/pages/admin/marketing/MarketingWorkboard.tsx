@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   AlertCircle,
+  BarChart3,
   CalendarDays,
   Check,
   CheckCircle2,
@@ -169,7 +170,9 @@ export function WorkflowToolbar({
   const entries: [WorkQueue, string][] = [
     ["all", "Todas"],
     ["open", "Abiertas"],
+    ["approved", "Aprobadas (listas)"],
     ["published", "Publicadas"],
+    ["published_no_results", "Publicadas sin resultados"],
     ["today", "Hoy"],
     ["week", "Esta semana"],
     ["overdue", "Vencidas"],
@@ -248,7 +251,9 @@ export function WorkDetails({
   onReview,
   onReschedule,
   onOpen,
+  onRecordResults,
   canEdit,
+  canRecordResults = false,
   compact = false,
 }: {
   post: WorkflowPost;
@@ -258,7 +263,9 @@ export function WorkDetails({
   onReview: () => void;
   onReschedule: () => void;
   onOpen?: () => void;
+  onRecordResults?: () => void;
   canEdit: boolean;
+  canRecordResults?: boolean;
   compact?: boolean;
 }) {
   const progress = checklistProgress(post);
@@ -394,6 +401,12 @@ export function WorkDetails({
           <button type="button" onClick={onReview}>
             <ClipboardCheck size={15} />
             Revisar pieza
+          </button>
+        )}
+        {publication && /publicad/i.test(post.status || "") && onRecordResults && canRecordResults && (
+          <button type="button" onClick={onRecordResults}>
+            <BarChart3 size={15} />
+            Resultados
           </button>
         )}
         {canEdit && (
@@ -878,7 +891,7 @@ export function BulkStageChange({
 }) {
   const [stage, setStage] = useState("");
   const availableStatuses = useMemo(() => {
-    const canonical = ['Por iniciar', 'En diseño', 'En producción', 'En revisión', 'Programada', 'Publicada'];
+    const canonical = ['Por iniciar', 'Planificada', 'En diseño', 'En producción', 'En revisión', 'Programada', 'Publicada'];
     const extra = (statuses || []).filter((s) => s && s !== 'Todos los estados');
     const merged = [...new Set([...canonical, ...extra])];
     return [
@@ -910,5 +923,170 @@ export function BulkStageChange({
         Cambiar etapa
       </button>
     </div>
+  );
+}
+
+export type PostResultsPayload = {
+  reach: number;
+  interactions: number;
+  clicks: number;
+  leads: number;
+  published_url: string;
+};
+
+export function PostResultsDialog({
+  post,
+  onSave,
+  onClose,
+}: {
+  post: WorkflowPost;
+  onSave: (payload: PostResultsPayload) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [reach, setReach] = useState(() => String(Number(post.reach) || 0));
+  const [interactions, setInteractions] = useState(() => String(Number(post.interactions) || 0));
+  const [clicks, setClicks] = useState(() => String(Number(post.clicks) || 0));
+  const [leads, setLeads] = useState(() => String(Number(post.leads) || 0));
+  const [publishedUrl, setPublishedUrl] = useState(() => String(post.published_url || ""));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const parsed = {
+      reach: Number(reach),
+      interactions: Number(interactions),
+      clicks: Number(clicks),
+      leads: Number(leads),
+    };
+    if (
+      Object.values(parsed).some((n) => !Number.isInteger(n) || n < 0)
+    ) {
+      setError("Todas las métricas deben ser números enteros iguales o mayores a 0.");
+      return;
+    }
+    const cleanUrl = publishedUrl.trim();
+    if (cleanUrl && !/^https?:\/\//i.test(cleanUrl)) {
+      setError("El enlace publicado debe comenzar con http:// o https://.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await onSave({ ...parsed, published_url: cleanUrl });
+      onClose();
+    } catch (err: any) {
+      setError(err?.message || "No se pudieron guardar los resultados.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <WorkflowDialog
+      title={`Resultados · ${post.title || "Publicación"}`}
+      onClose={() => {
+        if (!busy) onClose();
+      }}
+    >
+      <form onSubmit={submit}>
+        <div className="mk-panel-body">
+          <p>
+            Registra las métricas observadas después de publicar en{" "}
+            <b>{post.platform || "redes"}</b>. Los datos quedan vinculados a esta
+            ficha sin alterar su aprobación editorial.
+          </p>
+          {post.results_updated_at && (
+            <p>
+              <small>
+                Última medición:{" "}
+                {new Date(post.results_updated_at).toLocaleString("es-EC", {
+                  timeZone: "America/Guayaquil",
+                })}
+              </small>
+            </p>
+          )}
+          <div className="vc-post-form-grid">
+            <label className="mk-field">
+              Alcance
+              <input
+                type="number"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                required
+                disabled={busy}
+                value={reach}
+                onChange={(e) => setReach(e.target.value)}
+              />
+            </label>
+            <label className="mk-field">
+              Interacciones
+              <input
+                type="number"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                required
+                disabled={busy}
+                value={interactions}
+                onChange={(e) => setInteractions(e.target.value)}
+              />
+            </label>
+            <label className="mk-field">
+              Clics
+              <input
+                type="number"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                required
+                disabled={busy}
+                value={clicks}
+                onChange={(e) => setClicks(e.target.value)}
+              />
+            </label>
+            <label className="mk-field">
+              Leads informados
+              <input
+                type="number"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                required
+                disabled={busy}
+                value={leads}
+                onChange={(e) => setLeads(e.target.value)}
+              />
+            </label>
+          </div>
+          <label className="mk-field">
+            URL publicada (opcional)
+            <input
+              type="url"
+              disabled={busy}
+              value={publishedUrl}
+              onChange={(e) => setPublishedUrl(e.target.value)}
+              placeholder="https://www.instagram.com/p/..."
+              maxLength={500}
+            />
+          </label>
+          {error && (
+            <p role="alert" className="mk-danger">
+              {error}
+            </p>
+          )}
+        </div>
+        <footer>
+          <button type="button" disabled={busy} onClick={onClose}>
+            Cancelar
+          </button>
+          <button type="submit" className="button button-dark" disabled={busy}>
+            <BarChart3 size={15} />
+            {busy ? "Guardando…" : "Guardar resultados"}
+          </button>
+        </footer>
+      </form>
+    </WorkflowDialog>
   );
 }

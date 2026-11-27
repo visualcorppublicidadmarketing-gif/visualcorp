@@ -25,6 +25,9 @@ import {
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase } from '../../lib/supabaseClient';
+import { usePersistentDraft } from '../../lib/usePersistentDraft';
+import { DraftRecoveryBanner, PublishConfirmBar } from '../../components/ui/PublishConfirmBar';
+import { Dialog, useConfirm } from '../../components/ui/OperationalKit';
 import { SiteAdminNav } from './SiteAdminNav';
 import { MarkdownBlockEditor } from './MarkdownBlockEditor';
 import { ArticlePreview } from '../../public-site/ArticleMarkdown';
@@ -271,11 +274,26 @@ function ArticleListThumbnail({ src, title }: { src: string | null; title: strin
   );
 }
 
+function articleToEditorState(article: SiteArticle): EditorState {
+  return {
+    id: article.id,
+    title: article.title,
+    slug: article.slug,
+    excerpt: article.excerpt,
+    body: article.body_markdown,
+    image: article.cover_image || '',
+    kind: kindFromTags(article.tags),
+    published: article.is_published,
+    publishedAt: article.published_at,
+  };
+}
+
 export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind } = {}) {
   const { organizationId, user, hasPermission } = useAuth();
+  const confirm = useConfirm();
   const canPublish = hasPermission('website', 'publish_content');
   const [articles, setArticles] = useState<SiteArticle[]>([]);
-  const [editor, setEditor] = useState<EditorState>(blankEditor);
+  const [activeArticleId, setActiveArticleId] = useState<string | undefined>(undefined);
   const [term, setTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
   const [loading, setLoading] = useState(true);
@@ -284,9 +302,44 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
   const [notice, setNotice] = useState('');
   const [bodyMode, setBodyMode] = useState<'blocks' | 'markdown'>('blocks');
   const [viewLayout, setViewLayout] = useState<'edit' | 'split' | 'preview'>('edit');
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const serverEditor = useMemo<EditorState>(() => {
+    if (activeArticleId) {
+      const found = articles.find((article) => article.id === activeArticleId);
+      if (found) return articleToEditorState(found);
+    }
+    return { ...blankEditor, kind: initialKind || 'blog' };
+  }, [activeArticleId, articles, initialKind]);
+
+  const {
+    draft: editor,
+    setDraft: setEditor,
+    isDirty,
+    draftSavedAt,
+    isRecovered,
+    pendingRecovery,
+    recoverDraft,
+    dismissRecovery,
+    discardDraft,
+    markSaved,
+  } = usePersistentDraft<EditorState>({
+    orgId: organizationId,
+    draftKey: `article:${initialKind || 'contenido'}`,
+    serverValue: serverEditor,
+  });
+
+  const handleRecoverArticleDraft = () => {
+    if (pendingRecovery?.value.id) {
+      setActiveArticleId(pendingRecovery.value.id);
+    } else {
+      setActiveArticleId(undefined);
+    }
+    recoverDraft();
+    setBodyMode('blocks');
+  };
 
   const refresh = useCallback(async () => {
     if (!supabase || !organizationId) {
@@ -311,12 +364,6 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
   useEffect(() => {
     setCoverFailed(false);
   }, [editor.image]);
-
-  useEffect(() => {
-    if (initialKind) {
-      setEditor((current) => ({ ...current, kind: initialKind }));
-    }
-  }, [initialKind]);
 
   // Section-scoped articles
   const sectionArticles = useMemo(() => {
@@ -343,36 +390,65 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
     });
   }, [sectionArticles, statusFilter, term]);
 
-  const editArticle = (article: SiteArticle) => {
+  const confirmDiscardIfDirty = async (actionTitle: string, actionDescription: string) => {
+    if (!isDirty && !isRecovered) return true;
+    return confirm({
+      eyebrow: 'BORRADOR SIN GUARDAR',
+      title: actionTitle,
+      description: actionDescription,
+      tone: 'warning',
+      confirmLabel: 'Sí, continuar',
+      cancelLabel: 'Seguir editando',
+    });
+  };
+
+  const editArticle = async (article: SiteArticle) => {
     if (article.created_by && article.created_by !== user?.id) {
       setError('Por seguridad, solo puedes modificar entradas creadas por tu cuenta.');
       return;
     }
-    setEditor({
-      id: article.id,
-      title: article.title,
-      slug: article.slug,
-      excerpt: article.excerpt,
-      body: article.body_markdown,
-      image: article.cover_image || '',
-      kind: kindFromTags(article.tags),
-      published: article.is_published,
-      publishedAt: article.published_at,
-    });
+    if (editor.id !== article.id) {
+      const ok = await confirmDiscardIfDirty(
+        `¿Reemplazar el editor con "${article.title}"?`,
+        'Tienes cambios sin guardar en el formulario actual. Si continúas, se cargará el artículo seleccionado.'
+      );
+      if (!ok) return;
+    }
+    setActiveArticleId(article.id);
+    markSaved(articleToEditorState(article));
     setBodyMode('blocks');
     setError('');
     setNotice('');
   };
 
-  const reset = () => {
-    setEditor({ ...blankEditor, kind: initialKind || 'blog' });
+  const reset = async (skipConfirm = false) => {
+    if (!skipConfirm && (isDirty || isRecovered)) {
+      const ok = await confirm({
+        eyebrow: 'LIMPIAR EDITOR',
+        title: '¿Descartar el borrador actual y empezar una nueva entrada?',
+        description: 'Se eliminarán los cambios locales no guardados en esta sección.',
+        tone: 'danger',
+        destructive: true,
+        confirmLabel: 'Sí, limpiar',
+        cancelLabel: 'Volver al editor',
+      });
+      if (!ok) return;
+    }
+    const cleanBlank: EditorState = { ...blankEditor, kind: initialKind || 'blog' };
+    setActiveArticleId(undefined);
+    markSaved(cleanBlank);
     setBodyMode('blocks');
     setError('');
     setNotice('');
-    setConfirmDeleteId(null);
   };
 
-  const duplicateArticle = (article: SiteArticle) => {
+  const duplicateArticle = async (article: SiteArticle) => {
+    const ok = await confirmDiscardIfDirty(
+      `¿Duplicar "${article.title}" en el editor?`,
+      'Tienes cambios locales pendientes que serán reemplazados por la copia.'
+    );
+    if (!ok) return;
+    setActiveArticleId(undefined);
     setEditor({
       title: `${article.title} (Copia)`,
       slug: slugify(`${article.slug}-copia`),
@@ -396,6 +472,26 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
       return;
     }
     const nextPublished = !article.is_published;
+    const kindPath =
+      kindFromTags(article.tags) === 'portafolio'
+        ? '/portafolio'
+        : kindFromTags(article.tags) === 'publicaciones'
+        ? '/publicaciones'
+        : '/blog';
+    const accepted = await confirm({
+      eyebrow: nextPublished ? 'PUBLICAR EN VIVO' : 'OCULTAR DE LA WEB',
+      title: nextPublished
+        ? `¿Publicar "${article.title}" en ${kindPath}?`
+        : `¿Ocultar "${article.title}" y pasarla a borrador?`,
+      description: nextPublished
+        ? `La entrada quedará visible para cualquier visitante en ${kindPath}/${article.slug}.`
+        : `La entrada dejará de mostrarse en ${kindPath} y pasará a borrador interno.`,
+      tone: nextPublished ? 'brand' : 'warning',
+      confirmLabel: nextPublished ? 'Sí, publicar' : 'Sí, pasar a borrador',
+      cancelLabel: 'Cancelar',
+    });
+    if (!accepted) return;
+
     const nextPublishedAt = nextPublished ? (article.published_at || new Date().toISOString()) : null;
     try {
       const { error: updateError } = await supabase
@@ -408,6 +504,13 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
         .eq('id', article.id)
         .eq('organization_id', organizationId);
       if (updateError) throw updateError;
+      if (activeArticleId === article.id && !isDirty) {
+        setEditor((current) => ({
+          ...current,
+          published: nextPublished,
+          publishedAt: nextPublishedAt,
+        }));
+      }
       setNotice(nextPublished ? `"${article.title}" publicada en la web.` : `"${article.title}" pasada a borrador.`);
       await refresh();
     } catch (cause) {
@@ -415,19 +518,28 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
     }
   };
 
-  const deleteArticle = async (articleId: string) => {
+  const deleteArticle = async (article: SiteArticle) => {
     if (!supabase || !organizationId) return;
+    const accepted = await confirm({
+      eyebrow: 'ELIMINAR ENTRADA',
+      title: `¿Eliminar permanentemente "${article.title}"?`,
+      description: 'Esta acción elimina el artículo de la base compartida y lo retira del sitio web si estaba publicado.',
+      tone: 'danger',
+      destructive: true,
+      confirmLabel: 'Sí, eliminar',
+      cancelLabel: 'Cancelar',
+    });
+    if (!accepted) return;
     try {
       const { error: deleteError } = await supabase
         .from('site_articles')
         .delete()
-        .eq('id', articleId)
+        .eq('id', article.id)
         .eq('organization_id', organizationId);
       if (deleteError) throw deleteError;
       setNotice('Entrada eliminada de la base compartida.');
-      setConfirmDeleteId(null);
-      if (editor.id === articleId) {
-        reset();
+      if (editor.id === article.id) {
+        await reset(true);
       }
       await refresh();
     } catch (cause) {
@@ -435,14 +547,14 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
     }
   };
 
-  const save = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const executeSave = async () => {
     if (!supabase || !organizationId || !editor.title.trim() || saving) return;
     setSaving(true);
     setError('');
     setNotice('');
     const tags = [editor.kind];
-    const publishedAt = editor.published ? (editor.publishedAt || new Date().toISOString()) : null;
+    const shouldPublish = Boolean(editor.published && canPublish);
+    const publishedAt = shouldPublish ? (editor.publishedAt || new Date().toISOString()) : null;
     const values = {
       organization_id: organizationId,
       title: editor.title.trim(),
@@ -451,7 +563,7 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
       body_markdown: editor.body.trim(),
       cover_image: editor.image.trim() || null,
       tags,
-      is_published: editor.published,
+      is_published: shouldPublish,
       published_at: publishedAt,
       updated_at: new Date().toISOString(),
     };
@@ -460,13 +572,43 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
         ? await supabase.from('site_articles').update(values).eq('id', editor.id).eq('organization_id', organizationId)
         : await supabase.from('site_articles').insert({ ...values, created_by: user?.id || null });
       if (result.error) throw result.error;
-      setNotice(editor.published ? 'Contenido publicado y listo para la página web.' : 'Borrador guardado sin mostrarlo en la página.');
-      setEditor({ ...blankEditor, kind: initialKind || 'blog' });
+      setNotice(shouldPublish ? 'Contenido publicado y listo para la página web.' : 'Borrador guardado sin mostrarlo en la página.');
+      const cleanBlank: EditorState = { ...blankEditor, kind: initialKind || 'blog' };
+      setActiveArticleId(undefined);
+      markSaved(cleanBlank);
       await refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se pudo guardar el contenido.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supabase || !organizationId || !editor.title.trim() || saving) return;
+    const willPublish = Boolean(editor.published && canPublish);
+    const base = editor.kind === 'portafolio' ? '/portafolio' : editor.kind === 'publicaciones' ? '/publicaciones' : '/blog';
+    const previewSlug = `${base}/${editor.slug || slugify(editor.title) || 'url-del-articulo'}`;
+    const accepted = await confirm({
+      eyebrow: willPublish ? 'CONFIRMAR PUBLICACIÓN EN VIVO' : 'GUARDAR BORRADOR INTERNO',
+      title: willPublish
+        ? `¿Publicar "${editor.title.trim()}" en ${base}?`
+        : `¿Guardar "${editor.title.trim()}" como borrador interno?`,
+      description: willPublish
+        ? `La entrada quedará visible para el público en ${previewSlug}.`
+        : 'La entrada se guardará en la base compartida como borrador privado (no visible en la web).',
+      summaryItems: [
+        { label: 'Sección', value: formatKind(editor.kind) },
+        { label: 'Ruta web', value: previewSlug },
+        { label: 'Estado', value: willPublish ? 'Visible en la página web' : 'Borrador interno' },
+      ],
+      tone: willPublish ? 'brand' : 'info',
+      confirmLabel: willPublish ? 'Publicar en vivo' : 'Guardar borrador',
+      cancelLabel: 'Revisar antes',
+    });
+    if (accepted) {
+      await executeSave();
     }
   };
 
@@ -507,12 +649,48 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
         title={title}
         description="Crea borradores, ordénalos con bloques visuales y publica cada entrada en su sección correspondiente."
         action={
-          <button className="button button-dark" type="button" onClick={reset}>
+          <button className="button button-dark" type="button" onClick={() => void reset()}>
             <FilePlus2 size={16} /> Nuevo contenido
           </button>
         }
       />
       <SiteAdminNav active={activeTab} />
+
+      <DraftRecoveryBanner
+        pendingRecovery={pendingRecovery}
+        itemLabel={title.toLowerCase()}
+        onRecover={handleRecoverArticleDraft}
+        onDismiss={dismissRecovery}
+      />
+
+      <PublishConfirmBar
+        isDirty={isDirty}
+        isRecovered={isRecovered}
+        draftSavedAt={draftSavedAt}
+        sectionName={`${title} · ${editor.title.trim() || 'Nueva entrada'}`}
+        canPublish={Boolean(editor.title.trim()) && (!editor.published || canPublish)}
+        publishing={saving}
+        previewLabel="Vista previa completa"
+        publishLabel={editor.published && canPublish ? 'Publicar en vivo' : 'Guardar borrador'}
+        publishConfirmTitle={
+          editor.published && canPublish
+            ? `¿Publicar "${editor.title.trim() || 'esta entrada'}" en ${basePath}?`
+            : `¿Guardar "${editor.title.trim() || 'esta entrada'}" como borrador?`
+        }
+        publishConfirmDescription={
+          editor.published && canPublish
+            ? `La entrada quedará publicada de inmediato en ${slugPreview}.`
+            : 'Se guardará en la base compartida sin mostrarse todavía en la página pública.'
+        }
+        publishSummaryItems={[
+          { label: 'Sección', value: formatKind(editor.kind) },
+          { label: 'Ruta web', value: slugPreview },
+          { label: 'Estado', value: editor.published && canPublish ? 'Visible en la web' : 'Borrador interno' },
+        ]}
+        onPreview={() => setPreviewOpen(true)}
+        onDiscard={discardDraft}
+        onPublish={executeSave}
+      />
 
       {/* Executive KPI Strip */}
       <section className="site-admin-kpi-grid" aria-label="Métricas de contenido en esta sección">
@@ -623,7 +801,18 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
                     key={tpl.name}
                     type="button"
                     className="template-pill-button"
-                    onClick={() => {
+                    onClick={async () => {
+                      if (editor.body.trim()) {
+                        const ok = await confirm({
+                          eyebrow: 'APLICAR PLANTILLA',
+                          title: `¿Reemplazar el cuerpo actual con la plantilla "${tpl.name}"?`,
+                          description: 'El contenido del cuerpo actual será reemplazado en tu borrador local.',
+                          tone: 'warning',
+                          confirmLabel: 'Sí, cargar plantilla',
+                          cancelLabel: 'Cancelar',
+                        });
+                        if (!ok) return;
+                      }
                       setEditor((current) => ({
                         ...current,
                         title: current.title ? current.title : tpl.title,
@@ -849,9 +1038,9 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
           <div className="site-content-actions">
             <button className="button button-dark" type="submit" disabled={saving || !editor.title.trim()}>
               <Save size={16} />
-              {saving ? 'Guardando…' : 'Guardar contenido'}
+              {saving ? 'Guardando…' : editor.published && canPublish ? 'Publicar en vivo' : 'Guardar borrador'}
             </button>
-            <button className="button button-light" type="button" onClick={reset}>
+            <button className="button button-light" type="button" onClick={() => void reset()}>
               Limpiar
             </button>
           </div>
@@ -921,7 +1110,6 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
                 const path = kind === 'portafolio' ? '/portafolio' : kind === 'publicaciones' ? '/publicaciones' : '/blog';
                 const canEdit = !article.created_by || article.created_by === user?.id;
                 const isSelected = editor.id === article.id;
-                const isConfirmingDelete = confirmDeleteId === article.id;
 
                 return (
                   <article
@@ -971,7 +1159,7 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
                         className="icon-button edit"
                         aria-label={canEdit ? `Editar ${article.title}` : `${article.title}, solo lectura`}
                         disabled={!canEdit}
-                        onClick={() => editArticle(article)}
+                        onClick={() => void editArticle(article)}
                         title="Editar entrada en el formulario"
                       >
                         <Pencil size={15} />
@@ -981,7 +1169,7 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
                         <button
                           type="button"
                           className={`icon-button toggle-pub ${article.is_published ? 'is-pub' : ''}`}
-                          onClick={() => togglePublishArticle(article)}
+                          onClick={() => void togglePublishArticle(article)}
                           title={article.is_published ? 'Ocultar (pasar a borrador)' : 'Publicar en la web'}
                           aria-label={article.is_published ? 'Ocultar' : 'Publicar'}
                         >
@@ -992,7 +1180,7 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
                       <button
                         type="button"
                         className="icon-button duplicate"
-                        onClick={() => duplicateArticle(article)}
+                        onClick={() => void duplicateArticle(article)}
                         title="Duplicar como nuevo borrador"
                         aria-label="Duplicar como nuevo borrador"
                       >
@@ -1000,37 +1188,15 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
                       </button>
 
                       {canEdit && (
-                        isConfirmingDelete ? (
-                          <div className="inline-confirm-delete">
-                            <button
-                              type="button"
-                              className="confirm-delete-btn"
-                              onClick={() => deleteArticle(article.id)}
-                              title="Confirmar eliminación permanente"
-                            >
-                              ¿Confirmar?
-                            </button>
-                            <button
-                              type="button"
-                              className="cancel-delete-btn"
-                              onClick={() => setConfirmDeleteId(null)}
-                              title="Cancelar"
-                              aria-label="Cancelar eliminación"
-                            >
-                              <X size={13} />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            className="icon-button delete"
-                            onClick={() => setConfirmDeleteId(article.id)}
-                            title="Eliminar entrada"
-                            aria-label="Eliminar entrada"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        )
+                        <button
+                          type="button"
+                          className="icon-button delete"
+                          onClick={() => void deleteArticle(article)}
+                          title="Eliminar entrada"
+                          aria-label="Eliminar entrada"
+                        >
+                          <Trash2 size={15} />
+                        </button>
                       )}
                     </div>
                   </article>
@@ -1048,6 +1214,35 @@ export function SiteArticleManager({ initialKind }: { initialKind?: ContentKind 
           )}
         </section>
       </div>
+
+      <Dialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        size="xl"
+        tone="brand"
+        eyebrow={`VISTA PREVIA EN VIVO · ${slugPreview.toUpperCase()}`}
+        title={editor.title.trim() || 'Artículo sin título'}
+        description={
+          editor.published
+            ? 'Así se mostrará esta entrada en el sitio público al confirmar.'
+            : 'Previsualización interna (actualmente marcada como borrador).'
+        }
+        footer={
+          <button type="button" className="button button-outline" onClick={() => setPreviewOpen(false)}>
+            Cerrar vista previa
+          </button>
+        }
+      >
+        <section className="site-content-preview-panel" style={{ border: 0, boxShadow: 'none', padding: 0 }}>
+          <ArticlePreview
+            title={editor.title}
+            excerpt={editor.excerpt}
+            cover={editor.image}
+            body={editor.body}
+            kind={editor.kind}
+          />
+        </section>
+      </Dialog>
     </AppFrame>
   );
 }

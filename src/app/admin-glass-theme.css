@@ -21,113 +21,69 @@
   --admin-hero-action-ink: #fff;
   --admin-glass-blur: var(--glass-blur, var(--vc-glass-blur, 16px));
 
-  /* 3 Physical Materials for Admin / Operations (Light Mode) */
-  --admin-frosted-bg: color-mix(in srgb, var(--vc-surface, #fff) 84%, transparent);
-  --admin-frosted-blur: blur(20px) saturate(155%);
-  --admin-frosted-border: color-mix(in srgb, var(--vc-brand, #a51091) 14%, var(--admin-glass-line));
-  --admin-frosted-shadow: 0 16px 44px rgb(42 24 58 / 8%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  /* 3 Physical Materials for Admin / Operations (Light Mode — Finexy / SugarCRM frosted pearl) */
+  --admin-frosted-bg: color-mix(in srgb, #ffffff 78%, #f6f4fc);
+  --admin-frosted-blur: blur(24px) saturate(160%);
+  --admin-frosted-border: rgba(118, 108, 152, 0.16);
+  --admin-frosted-shadow: 0 18px 44px rgb(34 24 54 / 7%), 0 2px 6px rgb(34 24 54 / 3%), inset 0 1px 0 rgb(255 255 255 / 92%);
 
-  --admin-clear-bg: color-mix(in srgb, var(--vc-surface, #fff) 70%, transparent);
-  --admin-clear-blur: blur(12px) saturate(135%);
-  --admin-clear-border: color-mix(in srgb, var(--vc-brand, #a51091) 18%, var(--admin-glass-line));
-  --admin-clear-shadow: 0 6px 18px rgb(42 24 58 / 5%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  --admin-clear-bg: color-mix(in srgb, #ffffff 62%, transparent);
+  --admin-clear-blur: blur(16px) saturate(145%);
+  --admin-clear-border: rgba(118, 108, 152, 0.18);
+  --admin-clear-shadow: 0 8px 22px rgb(34 24 54 / 5%), inset 0 1px 0 rgb(255 255 255 / 90%);
 
-  --admin-blur-bg: color-mix(in srgb, var(--vc-surface, #fff) 88%, transparent);
-  --admin-blur-blur: blur(14px) saturate(125%);
-  --admin-blur-border: var(--admin-glass-line);
-  --admin-blur-shadow: 0 8px 26px rgb(42 24 58 / 6%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  --admin-blur-bg: color-mix(in srgb, #ffffff 80%, #f8f7fc);
+  --admin-blur-blur: blur(20px) saturate(148%);
+  --admin-blur-border: rgba(118, 108, 152, 0.14);
+  --admin-blur-shadow: 0 12px 32px rgb(34 24 54 / 6%), inset 0 1px 0 rgb(255 255 255 / 90%);
+  --admin-glass-nav: color-mix(in srgb, #ffffff 78%, transparent);
+  --admin-glass-panel: var(--admin-blur-bg);
+  --admin-glass-specular: linear-gradient(135deg, rgb(255 255 255 / 66%) 0%, rgb(255 255 255 / 14%) 34%, transparent 68%);
 }
 
 .work-app.theme-dark {
-  --admin-glass-nav-fallback: var(--vc-surface-soft, #10111a);
-  --admin-glass-nav: var(--glass-bg-strong, color-mix(in srgb, var(--vc-surface-soft, #10111a), transparent 16%));
-  --admin-glass-card: var(--glass-bg, var(--vc-glass-surface, var(--vc-surface, #171a25)));
-  --admin-glass-panel: var(--glass-bg-strong, var(--vc-surface, #171a25));
-  --admin-glass-border: var(--glass-border, var(--vc-glass-border, rgb(255 255 255 / 12%)));
-  --admin-glass-line: var(--vc-line, rgb(217 204 235 / 15%));
-  --admin-glass-shadow: var(--glass-shadow, var(--vc-glass-shadow, 0 20px 58px rgb(0 0 0 / 30%), inset 0 1px 0 rgb(255 255 255 / 7%)));
+  --admin-glass-nav-fallback: var(--vc-surface-soft, #0d1019);
+  --admin-glass-nav: color-mix(in srgb, #0f1320 76%, transparent);
+  --admin-glass-card: var(--glass-bg, var(--vc-glass-surface, rgb(18 22 35 / 74%)));
+  --admin-glass-panel: var(--admin-blur-bg, rgb(18 22 35 / 78%));
+  --admin-glass-border: var(--glass-border, var(--vc-glass-border, rgb(188 210 255 / 12%)));
+  --admin-glass-line: var(--vc-line, rgb(188 210 255 / 12%));
+  --admin-glass-shadow: var(--glass-shadow, var(--vc-glass-shadow, 0 22px 58px rgb(0 0 0 / 38%), inset 0 1px 0 rgb(255 255 255 / 8%)));
   --admin-glass-ink: var(--vc-ink, #f2eff8);
-  --admin-glass-muted: var(--vc-muted, #b9b4c8);
+  --admin-glass-muted: var(--vc-muted, #b3b9cd);
   --admin-glass-accent: var(--vc-brand-strong, #e3bcff);
   --admin-glass-accent-strong: var(--vc-brand, #d093f0);
   --admin-glass-focus: var(--vc-focus, #d093f0);
-  --admin-glass-tint: var(--vc-brand-soft, #30223d);
-  --admin-glass-surface-highlight: var(--glass-highlight, rgb(255 255 255 / 7%));
-  --admin-glass-surface-shadow: 0 10px 30px rgb(0 0 0 / 22%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  --admin-glass-tint: var(--vc-brand-soft, #2c203b);
+  --admin-glass-surface-highlight: var(--glass-highlight, rgb(255 255 255 / 8%));
+  --admin-glass-surface-shadow: 0 14px 36px rgb(0 0 0 / 28%), inset 0 1px 0 var(--admin-glass-surface-highlight);
   --admin-hero-ink: var(--vc-ink, #f5f1fa);
   --admin-hero-muted: var(--vc-muted, #d0c9db);
   --admin-hero-action-bg: var(--vc-brand, #d093f0);
-  --admin-hero-action-ink: #211329;
+  --admin-hero-action-ink: #1a1024;
+  --admin-glass-specular: linear-gradient(135deg, rgb(255 255 255 / 12%) 0%, rgb(255 255 255 / 3%) 32%, transparent 66%);
 
-  /* 3 Physical Materials for Admin / Operations (Dark Mode) */
-  --admin-frosted-bg: color-mix(in srgb, var(--vc-surface-soft, #10111a) 86%, transparent);
-  --admin-frosted-blur: blur(20px) saturate(155%);
-  --admin-frosted-border: color-mix(in srgb, var(--vc-brand, #d093f0) 20%, var(--admin-glass-line));
-  --admin-frosted-shadow: 0 18px 48px rgb(0 0 0 / 28%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  /* 3 Physical Materials for Admin / Operations (Dark Mode — Nexora obsidian glass) */
+  --admin-frosted-bg: color-mix(in srgb, #121624 76%, transparent);
+  --admin-frosted-blur: blur(24px) saturate(155%);
+  --admin-frosted-border: rgba(188, 210, 255, 0.13);
+  --admin-frosted-shadow: 0 22px 54px rgb(0 0 0 / 42%), inset 0 1px 0 var(--admin-glass-surface-highlight);
 
-  --admin-clear-bg: color-mix(in srgb, var(--vc-surface-raised, #1e2230) 72%, transparent);
-  --admin-clear-blur: blur(12px) saturate(135%);
-  --admin-clear-border: color-mix(in srgb, var(--vc-brand, #d093f0) 24%, var(--admin-glass-line));
-  --admin-clear-shadow: 0 8px 22px rgb(0 0 0 / 20%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  --admin-clear-bg: color-mix(in srgb, #171c2e 64%, transparent);
+  --admin-clear-blur: blur(16px) saturate(145%);
+  --admin-clear-border: rgba(188, 210, 255, 0.16);
+  --admin-clear-shadow: 0 10px 26px rgb(0 0 0 / 28%), inset 0 1px 0 var(--admin-glass-surface-highlight);
 
-  --admin-blur-bg: color-mix(in srgb, var(--vc-surface, #171a25) 90%, transparent);
-  --admin-blur-blur: blur(14px) saturate(125%);
-  --admin-blur-border: var(--admin-glass-line);
-  --admin-blur-shadow: 0 10px 30px rgb(0 0 0 / 22%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  --admin-blur-bg: color-mix(in srgb, #141828 78%, transparent);
+  --admin-blur-blur: blur(20px) saturate(145%);
+  --admin-blur-border: rgba(188, 210, 255, 0.11);
+  --admin-blur-shadow: 0 16px 40px rgb(0 0 0 / 34%), inset 0 1px 0 var(--admin-glass-surface-highlight);
 }
 
-/* Admin-only glass polish keeps the shared Operations and POS surfaces unchanged. */
-.work-app.area-admin {
-  --admin-glass-nav: color-mix(in srgb, var(--vc-surface, #fff) 72%, transparent);
-  --admin-glass-panel: var(--admin-blur-bg, var(--vc-surface, #fff));
-  --admin-glass-specular: linear-gradient(135deg, rgb(255 255 255 / 58%) 0%, rgb(255 255 255 / 12%) 30%, transparent 64%);
-  --admin-frosted-bg: color-mix(in srgb, var(--vc-surface, #fff) 76%, transparent);
-  --admin-frosted-border: color-mix(in srgb, var(--vc-brand, #a51091) 18%, var(--admin-glass-line));
-  --admin-frosted-shadow: 0 18px 46px rgb(42 24 58 / 9%), inset 0 1px 0 var(--admin-glass-surface-highlight), inset 0 -1px 0 rgb(126 25 119 / 5%);
-  --admin-blur-bg: color-mix(in srgb, var(--vc-surface, #fff) 80%, transparent);
-  --admin-blur-blur: blur(16px) saturate(138%);
-  --admin-blur-border: color-mix(in srgb, var(--vc-brand, #a51091) 10%, var(--admin-glass-line));
-  --admin-blur-shadow: 0 12px 32px rgb(42 24 58 / 8%), inset 0 1px 0 rgb(255 255 255 / 82%), inset 0 -1px 0 rgb(126 25 119 / 4%);
-}
-
-.work-app.area-admin.theme-dark {
-  --admin-glass-nav: color-mix(in srgb, var(--vc-surface-soft, #10111a) 76%, transparent);
-  --admin-glass-panel: var(--admin-blur-bg, var(--vc-surface, #171a25));
-  --admin-glass-specular: linear-gradient(135deg, rgb(255 255 255 / 14%) 0%, rgb(255 255 255 / 3%) 32%, transparent 66%);
-  --admin-frosted-bg: color-mix(in srgb, var(--vc-surface-soft, #10111a) 80%, transparent);
-  --admin-frosted-border: color-mix(in srgb, var(--vc-brand, #d093f0) 24%, var(--admin-glass-line));
-  --admin-frosted-shadow: 0 20px 50px rgb(0 0 0 / 30%), inset 0 1px 0 var(--admin-glass-surface-highlight), inset 0 -1px 0 rgb(208 147 240 / 6%);
-  --admin-blur-bg: color-mix(in srgb, var(--vc-surface, #171a25) 83%, transparent);
-  --admin-blur-blur: blur(16px) saturate(138%);
-  --admin-blur-border: color-mix(in srgb, var(--vc-brand, #d093f0) 12%, var(--admin-glass-line));
-  --admin-blur-shadow: 0 14px 36px rgb(0 0 0 / 27%), inset 0 1px 0 rgb(255 255 255 / 9%), inset 0 -1px 0 rgb(208 147 240 / 5%);
-}
-
-/* Scope the admin-home polish to its real dashboard, not the shared POS shell. */
-.work-app:has(.unified-dashboard) {
-  --admin-glass-nav: color-mix(in srgb, var(--vc-surface, #fff) 72%, transparent);
-  --admin-glass-panel: var(--admin-blur-bg, var(--vc-surface, #fff));
-  --admin-glass-specular: linear-gradient(135deg, rgb(255 255 255 / 58%) 0%, rgb(255 255 255 / 12%) 30%, transparent 64%);
-  --admin-frosted-bg: color-mix(in srgb, var(--vc-surface, #fff) 76%, transparent);
-  --admin-frosted-border: color-mix(in srgb, var(--vc-brand, #a51091) 18%, var(--admin-glass-line));
-  --admin-frosted-shadow: 0 18px 46px rgb(42 24 58 / 9%), inset 0 1px 0 var(--admin-glass-surface-highlight), inset 0 -1px 0 rgb(126 25 119 / 5%);
-  --admin-blur-bg: color-mix(in srgb, var(--vc-surface, #fff) 80%, transparent);
-  --admin-blur-blur: blur(16px) saturate(138%);
-  --admin-blur-border: color-mix(in srgb, var(--vc-brand, #a51091) 10%, var(--admin-glass-line));
-  --admin-blur-shadow: 0 12px 32px rgb(42 24 58 / 8%), inset 0 1px 0 rgb(255 255 255 / 82%), inset 0 -1px 0 rgb(126 25 119 / 4%);
-}
-
-.work-app.theme-dark:has(.unified-dashboard) {
-  --admin-glass-nav: color-mix(in srgb, var(--vc-surface-soft, #10111a) 76%, transparent);
-  --admin-glass-panel: var(--admin-blur-bg, var(--vc-surface, #171a25));
-  --admin-glass-specular: linear-gradient(135deg, rgb(255 255 255 / 14%) 0%, rgb(255 255 255 / 3%) 32%, transparent 66%);
-  --admin-frosted-bg: color-mix(in srgb, var(--vc-surface-soft, #10111a) 80%, transparent);
-  --admin-frosted-border: color-mix(in srgb, var(--vc-brand, #d093f0) 24%, var(--admin-glass-line));
-  --admin-frosted-shadow: 0 20px 50px rgb(0 0 0 / 30%), inset 0 1px 0 var(--admin-glass-surface-highlight), inset 0 -1px 0 rgb(208 147 240 / 6%);
-  --admin-blur-bg: color-mix(in srgb, var(--vc-surface, #171a25) 83%, transparent);
-  --admin-blur-blur: blur(16px) saturate(138%);
-  --admin-blur-border: color-mix(in srgb, var(--vc-brand, #d093f0) 12%, var(--admin-glass-line));
-  --admin-blur-shadow: 0 14px 36px rgb(0 0 0 / 27%), inset 0 1px 0 rgb(255 255 255 / 9%), inset 0 -1px 0 rgb(208 147 240 / 5%);
+/* Unified workspace glass polish applies across ALL authenticated Admin & Operations routes. */
+.work-app.area-admin,
+.work-app.area-operations {
+  --admin-glass-card: var(--admin-blur-bg);
 }
 
 @supports not (color: color-mix(in srgb, #fff, #000)) {
@@ -166,46 +122,100 @@
   -webkit-backdrop-filter: blur(20px) saturate(155%) !important;
 }
 
-/* A quiet, static brand wash sits behind the authenticated workspace. */
+/* Soft atmospheric mesh behind frosted glass cards (Finexy/SugarCRM light & Nexora dark). */
 .work-app .main-shell {
-  background-color: var(--vc-canvas, #f7f6fa);
+  background-color: #f2f4fa;
   background-image:
-    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--vc-brand-magenta, #a51091) 7%, transparent), transparent 35rem),
-    radial-gradient(ellipse at 0% 28%, color-mix(in srgb, var(--vc-brand-blue, #069cdb) 6%, transparent), transparent 31rem),
-    radial-gradient(ellipse at 92% 100%, rgb(245 157 73 / 4%), transparent 32rem);
+    radial-gradient(ellipse at 95% 4%, color-mix(in srgb, var(--vc-brand-magenta, #a51091) 11%, transparent), transparent 36rem),
+    radial-gradient(ellipse at 4% 24%, color-mix(in srgb, var(--vc-brand-blue, #069cdb) 11%, transparent), transparent 34rem),
+    radial-gradient(ellipse at 52% 96%, rgb(134 92 224 / 8%), transparent 36rem);
 }
 
 .work-app.theme-dark .main-shell {
-  background-color: var(--vc-canvas, #0d0e15);
+  background-color: #090b12;
   background-image:
-    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--vc-brand, #d093f0) 11%, transparent), transparent 35rem),
-    radial-gradient(ellipse at 0% 28%, color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 9%, transparent), transparent 31rem),
-    radial-gradient(ellipse at 92% 100%, rgb(245 157 73 / 5%), transparent 32rem);
+    radial-gradient(ellipse at 96% 2%, color-mix(in srgb, var(--vc-brand, #d093f0) 16%, transparent), transparent 36rem),
+    radial-gradient(ellipse at 6% 22%, color-mix(in srgb, var(--vc-brand-blue, #62c8f0) 14%, transparent), transparent 34rem),
+    radial-gradient(ellipse at 52% 100%, rgb(88 101 242 / 10%), transparent 38rem);
 }
 
-/* Shared work surfaces: Blur physical diffusion with 1px border and internal specular highlight */
+/* Shared work surfaces: Frosted glass diffusion with 1px border, rounded 20px corners and specular highlight */
 .work-app .main-content .panel,
 .work-app .unified-priority-panel {
-  border: 1px solid var(--admin-blur-border);
-  background-color: var(--admin-blur-bg);
-  box-shadow: var(--admin-blur-shadow);
+  border: 1px solid var(--admin-blur-border) !important;
+  border-radius: 20px;
+  background-color: var(--admin-blur-bg) !important;
+  box-shadow: var(--admin-blur-shadow) !important;
   backdrop-filter: var(--admin-blur-blur);
   -webkit-backdrop-filter: var(--admin-blur-blur);
 }
 
 .work-app .main-content :is(.stat-card, .operation-card) {
-  border: 1px solid var(--admin-blur-border);
-  background-color: var(--admin-blur-bg);
-  box-shadow: var(--admin-blur-shadow);
+  border: 1px solid var(--admin-blur-border) !important;
+  border-radius: 20px;
+  background-color: var(--admin-blur-bg) !important;
+  box-shadow: var(--admin-blur-shadow) !important;
   backdrop-filter: var(--admin-blur-blur);
   -webkit-backdrop-filter: var(--admin-blur-blur);
-  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease, transform 180ms ease;
 }
 
 .work-app .main-content :is(.stat-card, .operation-card):hover {
-  transform: none;
-  border-color: color-mix(in srgb, var(--admin-glass-accent-strong) 36%, var(--admin-glass-line));
-  box-shadow: 0 12px 30px rgb(42 24 58 / 10%), inset 0 1px 0 var(--admin-glass-surface-highlight);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--admin-glass-accent-strong) 34%, var(--admin-glass-line)) !important;
+  box-shadow: 0 16px 36px rgb(42 24 58 / 10%), inset 0 1px 0 var(--admin-glass-surface-highlight) !important;
+}
+
+/* Topbar pill & circular icon styling (Finexy / Nexora reference) */
+.work-app .topbar {
+  padding-inline: clamp(16px, 2.5vw, 30px);
+}
+
+.work-app .admin-command-trigger {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-clear-border);
+  background: var(--admin-clear-bg);
+  color: var(--admin-glass-ink);
+  backdrop-filter: var(--admin-clear-blur);
+  -webkit-backdrop-filter: var(--admin-clear-blur);
+}
+
+.work-app .topbar-right .icon-button,
+.work-app .topbar-right .vc-ctx-trigger {
+  border-radius: 999px;
+  border: 1px solid var(--admin-clear-border);
+  background: var(--admin-clear-bg);
+  color: var(--admin-glass-ink);
+}
+
+.work-app .button-dark {
+  border-radius: 999px;
+  background: #17161e;
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgb(20 18 28 / 18%);
+}
+
+.work-app .button-dark:hover {
+  background: #2b2738;
+}
+
+.work-app.theme-dark .button-dark {
+  background: linear-gradient(135deg, #a51091, #6b38b5);
+  color: #ffffff;
+  box-shadow: 0 10px 26px rgb(165 16 145 / 26%), inset 0 1px 0 rgb(255 255 255 / 20%);
+}
+
+.work-app.theme-dark .button-dark:hover {
+  background: linear-gradient(135deg, #be1aa7, #7d45cf);
+}
+
+.work-app .button-outline {
+  border-radius: 999px;
+  border-color: var(--admin-clear-border);
+  background: var(--admin-clear-bg);
+  color: var(--admin-glass-ink);
 }
 
 .work-app.theme-dark .main-content .panel,

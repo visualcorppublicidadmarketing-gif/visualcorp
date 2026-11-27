@@ -14,8 +14,8 @@ import { Title3D } from './Title3D';
 import { ServiceKeycap, getServiceKeycapColor } from './ServiceKeycap';
 import { AboutHero, ContactHero, ProcessHero } from './CompanyHeroes';
 import { companyProcessSteps } from './company-hero-content';
-import { QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
-import { STOREFRONT_SKU_PARAM } from './storefrontCatalog';
+import { clearQuoteConfiguratorDraft, QuoteConfigurator, type QuoteDraft } from './quote/QuoteConfigurator';
+import { resolveQuoteSourceChannel, STOREFRONT_SKU_PARAM, type StorefrontQuoteSourceChannel } from './storefrontCatalog';
 import { AnimatedList, BorderBeam, ScrollProgress, SpotlightLayer, clearSpotlight, updateSpotlight, PulsingBeacon, AnimatedShinyText } from '../components/ui/MagicComponents';
 import { FloatInput, FloatTextarea, FeedbackAlert } from '../components/ui/FormControls';
 import { SelectDropdown } from '../components/ui/SelectDropdown';
@@ -294,12 +294,15 @@ function SectionTitle({ eyebrow, title, description, light = false }) {
   return <div className={`site-section-title${light ? ' light' : ''}`}><div><Eyebrow light={light}>{eyebrow}</Eyebrow><h2>{title}</h2></div>{description && <p>{description}</p>}</div>;
 }
 
-function ServiceCard({ service, index = 0 }) {
+export function ServiceCard({ service, index = 0, previewOnly = false }: {
+  service: any;
+  index?: number;
+  previewOnly?: boolean;
+}) {
   const info = familyInfo(service.id);
   const Icon = serviceIcons[service.id] || Sparkles;
   const examples = serviceDeliverableTags[service.id as PublicServiceId] || [];
-  return <ViewTransitionLink className="site-service-card-link" to={`/servicios/${service.id}`} transitionType="nav-forward">
-    <ShadcnCard className="site-service-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
+  const card = <ShadcnCard className="site-service-card vc-magic-card" onPointerMove={updateSpotlight} onPointerLeave={clearSpotlight}>
     <SpotlightLayer/>
     <div className="site-service-card-topline"><span className="site-service-index">{info?.mark || String(index + 1).padStart(2, '0')}</span><span className="site-service-icon"><Icon size={20} aria-hidden="true"/></span></div>
     <div className="site-service-card-3d-wrap"><Title3D serviceId={service.id as PublicServiceId} variant="badge" maxWidth={180} showAura={false} interactive={false} /></div>
@@ -307,17 +310,125 @@ function ServiceCard({ service, index = 0 }) {
     <p>{service.description}</p>
     {examples.length > 0 && <><span className="site-service-tags-label">Ejemplos de piezas</span><ul className="site-service-tags" aria-label={`Ejemplos de piezas para ${service.name}`}>{examples.map((tag) => <li key={tag}>{tag}</li>)}</ul></>}
     <span className="site-card-link">Explorar servicio <ArrowUpRight size={15}/></span>
-    </ShadcnCard>
-  </ViewTransitionLink>;
+  </ShadcnCard>;
+  if (previewOnly) {
+    return <div className="site-service-card-link is-preview" aria-label={`Vista previa de ${service.name}`}>{card}</div>;
+  }
+  return <ViewTransitionLink className="site-service-card-link" to={`/servicios/${service.id}`} transitionType="nav-forward">{card}</ViewTransitionLink>;
 }
 
-function LeadForm({ variant = 'contact', initialService = '', quoteData = null, selectedService = undefined, onServiceChange = undefined, onQuoteValidationError = undefined }) {
+type LeadFormFields = {
+  name: string;
+  phone: string;
+  company: string;
+  email: string;
+  service: string;
+  details: string;
+};
+
+type StoredLeadFormDraft = LeadFormFields & { savedAt?: number };
+
+function readLeadSessionDraft(storageKey: string): StoredLeadFormDraft | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(storageKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<StoredLeadFormDraft>;
+    if (!parsed || typeof parsed !== 'object') return null;
+    const restored: StoredLeadFormDraft = {
+      name: typeof parsed.name === 'string' ? parsed.name : '',
+      phone: typeof parsed.phone === 'string' ? parsed.phone : '',
+      company: typeof parsed.company === 'string' ? parsed.company : '',
+      email: typeof parsed.email === 'string' ? parsed.email : '',
+      service: typeof parsed.service === 'string' ? parsed.service : '',
+      details: typeof parsed.details === 'string' ? parsed.details : '',
+      savedAt: typeof parsed.savedAt === 'number' ? parsed.savedAt : undefined,
+    };
+    const hasContent = Boolean(
+      restored.name.trim() ||
+      restored.phone.trim() ||
+      restored.company.trim() ||
+      restored.email.trim() ||
+      restored.details.trim()
+    );
+    return hasContent ? restored : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLeadSessionDraft(storageKey: string, fields: LeadFormFields) {
+  if (typeof window === 'undefined') return;
+  const hasContent = Boolean(
+    fields.name.trim() ||
+    fields.phone.trim() ||
+    fields.company.trim() ||
+    fields.email.trim() ||
+    fields.details.trim()
+  );
+  try {
+    if (!hasContent) {
+      window.sessionStorage.removeItem(storageKey);
+      return;
+    }
+    window.sessionStorage.setItem(storageKey, JSON.stringify({ ...fields, savedAt: Date.now() }));
+  } catch {
+    // Ignore sessionStorage availability or quota failures.
+  }
+}
+
+function clearLeadSessionDraft(storageKey: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(storageKey);
+  } catch {
+    // Ignore sessionStorage removal failures.
+  }
+}
+
+function LeadForm({
+  variant = 'contact',
+  initialService = '',
+  quoteData = null,
+  selectedService = undefined,
+  onServiceChange = undefined,
+  onQuoteValidationError = undefined,
+  draftStorageKey = '',
+  onSubmitSuccess = undefined,
+}: {
+  variant?: 'contact' | 'quote';
+  initialService?: string;
+  quoteData?: QuoteDraft | null;
+  selectedService?: string;
+  onServiceChange?: (value: string) => void;
+  onQuoteValidationError?: (message: string) => void;
+  draftStorageKey?: string;
+  onSubmitSuccess?: () => void;
+}) {
   const { data, add } = useWorkspace();
-  const [form, setForm] = useState({ name: '', phone: '', company: '', service: initialService, details: '' });
+  const storageKey = useMemo(
+    () => `vc-public-lead-draft:${variant}:${draftStorageKey || 'default'}`,
+    [variant, draftStorageKey]
+  );
+  const initialRestored = useMemo(() => readLeadSessionDraft(storageKey), [storageKey]);
+  const [form, setForm] = useState<LeadFormFields>(() => {
+    if (initialRestored) {
+      return {
+        name: initialRestored.name,
+        phone: initialRestored.phone,
+        company: initialRestored.company,
+        email: initialRestored.email,
+        service: initialService || initialRestored.service,
+        details: initialRestored.details,
+      };
+    }
+    return { name: '', phone: '', company: '', email: '', service: initialService, details: '' };
+  });
+  const [recoveredDraft, setRecoveredDraft] = useState(() => Boolean(initialRestored));
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
-  const reportQuoteValidationError = (message, fieldId = '') => {
+  const reportQuoteValidationError = (message: string, fieldId = '') => {
     if (onQuoteValidationError) {
       setError('');
       onQuoteValidationError(message);
@@ -328,9 +439,49 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
   };
   useEffect(() => setForm((current) => ({ ...current, service: initialService || current.service })), [initialService]);
   useEffect(() => { if (selectedService !== undefined) setForm((current) => ({ ...current, service: selectedService })); }, [selectedService]);
-  const submit = async (event) => {
+  useEffect(() => {
+    if (sent) return;
+    writeLeadSessionDraft(storageKey, form);
+  }, [storageKey, form, sent]);
+  const clearDraft = () => {
+    clearLeadSessionDraft(storageKey);
+    setRecoveredDraft(false);
+    setError('');
+    setForm({ name: '', phone: '', company: '', email: '', service: initialService, details: '' });
+  };
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!form.name.trim() || !form.phone.trim() || sending) return;
+    if (sending) return;
+    if (!form.name.trim()) {
+      setSent(false);
+      setError('Ingresa tu nombre para poder responderte.');
+      document.getElementById('lead-form-name')?.focus();
+      return;
+    }
+    if (!form.phone.trim()) {
+      setSent(false);
+      setError('Ingresa un teléfono o WhatsApp de contacto.');
+      document.getElementById('lead-form-phone')?.focus();
+      return;
+    }
+    const trimmedEmail = form.email.trim();
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmedEmail)) {
+      setSent(false);
+      setError('Revisa el formato del correo electrónico o déjalo vacío.');
+      document.getElementById('lead-form-email')?.focus();
+      return;
+    }
+    const requestService = variant === 'quote' && quoteData?.service ? quoteData.service : selectedService ?? form.service;
+    const sourceChannel: StorefrontQuoteSourceChannel = quoteData?.sourceChannel || 'quote_page';
+    const normalizedQuoteData = quoteData ? { ...quoteData, sourceChannel } : null;
+    const quotePayload = variant === 'quote'
+      ? {
+          details: form.details.trim(),
+          service: requestService,
+          sourceChannel,
+          request: normalizedQuoteData,
+        }
+      : {};
     if (variant === 'quote') {
       const items = quoteData?.items || [];
       const missingService = items.find((item) => !item.service.trim());
@@ -358,32 +509,47 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
         reportQuoteValidationError('El enlace del pin debe ser un enlace HTTPS válido de Google Maps.', 'quote-installation-maps-url');
         return;
       }
-      const requestBytes = new TextEncoder().encode(JSON.stringify({ details: form.details.trim(), service: quoteData.service, request: quoteData })).length;
+      const requestBytes = new TextEncoder().encode(JSON.stringify(quotePayload)).length;
       if (requestBytes > 19000) {
         reportQuoteValidationError('La solicitud es demasiado extensa para guardarse. Reduce texto o artículos y vuelve a intentar.');
         return;
       }
     }
-    const requestService = variant === 'quote' && quoteData?.service ? quoteData.service : selectedService ?? form.service;
     setSending(true);
     setError('');
     try {
       if (supabaseConfigured) {
         const { error: requestError } = await supabase.from('public_requests').insert({
           request_type: variant === 'quote' ? 'quote' : 'contact',
-          name: form.name.trim(), phone: form.phone.trim(), company: form.company.trim(),
-          service: requestService, message: form.details.trim(),
-          quote_data: variant === 'quote' ? { details: form.details.trim(), service: requestService, request: quoteData } : {},
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          company: form.company.trim(),
+          email: trimmedEmail,
+          service: requestService,
+          message: form.details.trim(),
+          quote_data: variant === 'quote' ? quotePayload : {},
         });
         if (requestError) throw requestError;
       } else if (import.meta.env.PROD) {
         throw new Error('El formulario todavía no está conectado. Escríbenos por WhatsApp.');
       } else {
-        add('leads', { ...form, service: requestService, quoteData: variant === 'quote' ? quoteData : null, source: variant === 'quote' ? 'Cotizador público' : 'Sitio web', stage: 'Nuevo', notes: '', campaignId: '' });
+        add('leads', {
+          ...form,
+          email: trimmedEmail,
+          service: requestService,
+          quoteData: normalizedQuoteData,
+          source: variant === 'quote' ? 'Cotizador público' : 'Sitio web',
+          stage: 'Nuevo',
+          notes: '',
+          campaignId: '',
+        });
       }
-      setForm({ name: '', phone: '', company: '', service: initialService, details: '' });
+      clearLeadSessionDraft(storageKey);
+      setRecoveredDraft(false);
+      setForm({ name: '', phone: '', company: '', email: '', service: initialService, details: '' });
       setSent(true);
-    } catch (cause) {
+      onSubmitSuccess?.();
+    } catch (cause: any) {
       setError(cause?.message || 'No se pudo enviar la solicitud. Intenta nuevamente o escríbenos por WhatsApp.');
     } finally {
       setSending(false);
@@ -410,6 +576,42 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
         <small>Los campos con * son necesarios.</small>
       </div>
 
+      {recoveredDraft && !sent && (
+        <div
+          role="status"
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            padding: '8px 12px',
+            borderRadius: 12,
+            border: '1px solid rgba(116, 19, 111, 0.25)',
+            background: 'rgba(116, 19, 111, 0.08)',
+            fontSize: 12.5,
+          }}
+        >
+          <span>Recuperamos los datos que estabas escribiendo.</span>
+          <button
+            type="button"
+            onClick={clearDraft}
+            style={{
+              border: 0,
+              background: 'transparent',
+              color: 'inherit',
+              fontWeight: 650,
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              padding: 0,
+              fontSize: 12,
+            }}
+          >
+            Limpiar borrador
+          </button>
+        </div>
+      )}
+
       {sent && (
         <FeedbackAlert type="success">
           Solicitud registrada. Gracias por escribirnos.
@@ -431,28 +633,53 @@ function LeadForm({ variant = 'contact', initialService = '', quoteData = null, 
 
       <div className="site-form-row">
         <FloatInput
+          id="lead-form-name"
           label="Nombre"
           required
           autoComplete="name"
           value={form.name}
-          onChange={(event) => setForm({ ...form, name: event.target.value })}
+          onChange={(event) => {
+            setSent(false);
+            setForm({ ...form, name: event.target.value });
+          }}
         />
         <FloatInput
+          id="lead-form-phone"
           label="Teléfono o WhatsApp"
           required
           type="tel"
           autoComplete="tel"
           inputMode="tel"
           value={form.phone}
-          onChange={(event) => setForm({ ...form, phone: event.target.value })}
+          onChange={(event) => {
+            setSent(false);
+            setForm({ ...form, phone: event.target.value });
+          }}
         />
       </div>
 
-      <FloatInput
-        label="Negocio (opcional)"
-        value={form.company}
-        onChange={(event) => setForm({ ...form, company: event.target.value })}
-      />
+      <div className="site-form-row">
+        <FloatInput
+          id="lead-form-company"
+          label="Negocio (opcional)"
+          value={form.company}
+          onChange={(event) => {
+            setSent(false);
+            setForm({ ...form, company: event.target.value });
+          }}
+        />
+        <FloatInput
+          id="lead-form-email"
+          label="Correo electrónico (opcional)"
+          type="email"
+          autoComplete="email"
+          value={form.email}
+          onChange={(event) => {
+            setSent(false);
+            setForm({ ...form, email: event.target.value });
+          }}
+        />
+      </div>
 
       {variant !== 'quote' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -655,6 +882,9 @@ export function ContactPage() {
 
 export function PublicQuotePage() {
   const [searchParams] = useSearchParams();
+  const urlKey = searchParams.toString();
+  const sourceChannel = useMemo(() => resolveQuoteSourceChannel(searchParams), [searchParams]);
+  const [quoteResetVersion, setQuoteResetVersion] = useState(0);
   const requestedService = searchParams.get('servicio') || '';
   const requestedFamilies = searchParams.getAll('familia');
   const requestedSkus = searchParams.getAll(STOREFRONT_SKU_PARAM);
@@ -673,12 +903,15 @@ export function PublicQuotePage() {
     setQuoteData(draft);
     setQuoteValidationError('');
   }, []);
+  const handleQuoteSubmitted = useCallback(() => {
+    clearQuoteConfiguratorDraft(urlKey);
+    setQuoteResetVersion((version) => version + 1);
+  }, [urlKey]);
   const services = useMemo(() => data.services.filter((item) => item.enabled), [data.services]);
   const serviceName = (value: string) => services.find((item) => item.id === value || item.name.toLocaleLowerCase('es') === value.toLocaleLowerCase('es'))?.name || '';
   const service = serviceName(requestedService);
   const itemServices = requestedFamilies.length ? requestedLines.map((line) => serviceName(line.family)) : [];
-  const requestKey = `${searchParams.toString()}|${service}|${itemServices.join('|')}`;
-  return <><SiteTitle>Solicitar cotización</SiteTitle><PageHero ambientVideo="aurora" eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp" tabIndex={-1}><nav className="site-quote-flow" aria-label="Etapas de la solicitud"><a href="#quote-items-title"><span className="site-quote-flow-index" aria-hidden="true">01</span><span><strong>Detalla tu proyecto</strong><small>Artículos y, si aplica, instalación.</small></span></a><a href="#formulario-cotizacion"><span className="site-quote-flow-index" aria-hidden="true">02</span><span><strong>Comparte tus datos</strong><small>Para que el equipo responda tu solicitud.</small></span></a></nav><QuoteConfigurator key={requestKey} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} validationMessage={quoteValidationError} onChange={handleQuoteChange}/><div className="site-quote-request" id="formulario-cotizacion" tabIndex={-1}><LeadForm key={requestKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData} onQuoteValidationError={setQuoteValidationError}/></div></section></>;
+  return <><SiteTitle>Solicitar cotización</SiteTitle><PageHero ambientVideo="aurora" eyebrow="COTIZA TU PROYECTO" title={<>Cuéntanos lo que<br/>quieres hacer.</>} description="Prepara los detalles de tu proyecto y envía una solicitud al equipo. Los valores y condiciones se confirman antes de cotizar." primary={{ label: 'Armar mi solicitud', to: '#cotizador-visualcorp' }} secondary={{ label: 'Ver servicios', to: '/servicios' }}/><section className="site-quote-workspace" id="cotizador-visualcorp" tabIndex={-1}><nav className="site-quote-flow" aria-label="Etapas de la solicitud"><a href="#quote-items-title"><span className="site-quote-flow-index" aria-hidden="true">01</span><span><strong>Detalla tu proyecto</strong><small>Artículos y, si aplica, instalación.</small></span></a><a href="#formulario-cotizacion"><span className="site-quote-flow-index" aria-hidden="true">02</span><span><strong>Comparte tus datos</strong><small>Para que el equipo responda tu solicitud.</small></span></a></nav><QuoteConfigurator key={`${urlKey}|${quoteResetVersion}`} services={services} initialService={service} initialProducts={requestedProducts} initialProductSkus={requestedProductSkus} initialItemServices={itemServices} initialQuantityRanges={requestedQuantityRanges} sourceChannel={sourceChannel} draftKey={urlKey} validationMessage={quoteValidationError} onChange={handleQuoteChange}/><div className="site-quote-request" id="formulario-cotizacion" tabIndex={-1}><LeadForm key={urlKey} variant="quote" initialService={quoteData?.service || service} quoteData={quoteData} draftStorageKey={urlKey} onQuoteValidationError={setQuoteValidationError} onSubmitSuccess={handleQuoteSubmitted}/></div></section></>;
 }
 function PageHero({ eyebrow, title, description, compact = false, primary, secondary, ambientVideo }: {
   eyebrow: string;

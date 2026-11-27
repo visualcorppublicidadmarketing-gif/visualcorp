@@ -23,11 +23,14 @@
   min-width: 0;
   padding: 24px;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--vc-brand, #a51091) 16%, var(--vc-line, #e5e0ea));
+  border: 1px solid var(--admin-frosted-border, color-mix(in srgb, var(--vc-brand, #a51091) 16%, var(--vc-line, #e5e0ea)));
   border-radius: 18px;
   background:
     radial-gradient(ellipse at 95% 10%, color-mix(in srgb, var(--vc-blue, #069cdb) 13%, transparent), transparent 47%),
-    linear-gradient(125deg, color-mix(in srgb, var(--vc-brand, #a51091) 9%, var(--vc-surface, #fff)), var(--vc-surface, #fff) 68%);
+    linear-gradient(125deg, color-mix(in srgb, var(--vc-brand, #a51091) 9%, var(--admin-frosted-bg, var(--vc-surface, #fff))), var(--admin-frosted-bg, var(--vc-surface, #fff)) 68%);
+  box-shadow: var(--admin-frosted-shadow, 0 14px 36px rgb(34 23 47 / 7%));
+  backdrop-filter: var(--admin-frosted-blur, blur(24px) saturate(160%));
+  -webkit-backdrop-filter: var(--admin-frosted-blur, blur(24px) saturate(160%));
 }
 
 .work-app .suggestions-intro-icon,
@@ -87,9 +90,12 @@
   min-width: 0;
   min-height: 92px;
   padding: 14px;
-  border: 1px solid var(--vc-line, #e5e0ea);
+  border: 1px solid var(--admin-blur-border, var(--vc-line, #e5e0ea));
   border-radius: 15px;
-  background: var(--vc-glass-surface, var(--vc-surface, #fff));
+  background: var(--admin-blur-bg, var(--vc-glass-surface, var(--vc-surface, #fff)));
+  box-shadow: var(--admin-blur-shadow, 0 8px 24px rgb(34 23 47 / 5%));
+  backdrop-filter: var(--admin-blur-blur, blur(20px) saturate(148%));
+  -webkit-backdrop-filter: var(--admin-blur-blur, blur(20px) saturate(148%));
 }
 
 .work-app .suggestions-metrics span {
@@ -119,10 +125,12 @@
   min-width: 0;
   max-width: 100%;
   padding: 19px;
-  border: 1px solid var(--vc-line, #e5e0ea);
-  border-radius: 17px;
-  background: var(--vc-glass-surface, var(--vc-surface, #fff));
-  box-shadow: var(--vc-elevation-1, 0 2px 8px rgb(34 23 47 / 5%));
+  border: 1px solid var(--admin-blur-border, var(--vc-line, #e5e0ea));
+  border-radius: 18px;
+  background: var(--admin-blur-bg, var(--vc-glass-surface, var(--vc-surface, #fff)));
+  box-shadow: var(--admin-blur-shadow, var(--vc-elevation-1, 0 2px 8px rgb(34 23 47 / 5%)));
+  backdrop-filter: var(--admin-blur-blur, blur(20px) saturate(148%));
+  -webkit-backdrop-filter: var(--admin-blur-blur, blur(20px) saturate(148%));
 }
 
 .work-app .suggestions-panel-heading,
@@ -363,9 +371,10 @@
   align-content: start;
   min-width: 0;
   padding: 14px;
-  border: 1px solid var(--vc-line, #e5e0ea);
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--vc-surface, #fff) 90%, var(--vc-canvas, #f7f6fa));
+  border: 1px solid var(--admin-clear-border, var(--vc-line, #e5e0ea));
+  border-radius: 14px;
+  background: var(--admin-clear-bg, color-mix(in srgb, var(--vc-surface, #fff) 90%, var(--vc-canvas, #f7f6fa)));
+  box-shadow: var(--admin-clear-shadow, none);
 }
 
 .work-app .suggestion-card-topline,
@@ -583,6 +592,22 @@
   .work-app .suggestions-filters { grid-template-columns: minmax(0, 1fr); }
   .work-app .suggestions-cards { grid-template-columns: minmax(0, 1fr); }
   .work-app .suggestion-status-control { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .work-app .suggestions-intro,
+  .work-app .suggestions-metrics > div,
+  .work-app .suggestions-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--vc-surface, #ffffff);
+  }
+
+  .work-app.theme-dark .suggestions-intro,
+  .work-app.theme-dark .suggestions-metrics > div,
+  .work-app.theme-dark .suggestions-panel {
+    background: var(--vc-surface, #171a25);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

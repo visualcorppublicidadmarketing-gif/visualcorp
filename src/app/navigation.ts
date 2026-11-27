@@ -224,7 +224,7 @@ export const legacyPanelPaths = new Set(['/admin', '/operaciones']);
 
 export function canViewNavigationItem(
   item: AppNavLink,
-  hasPermission: (module: string, action: string) => boolean,
+  hasPermission: (module: string, action: string, branchId?: string | null) => boolean,
 ) {
   if (item.to === '/panel') {
     return hasPermission('dashboard', 'view')

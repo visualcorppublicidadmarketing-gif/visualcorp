@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle,
   ArrowUpRight,
-  Check,
   CheckCircle2,
   Eye,
   Globe2,
@@ -20,10 +19,21 @@ import {
 import { AppFrame, PageHeading } from '../../app/layout';
 import { useWorkspace } from '../../app/workspace';
 import { useAuth } from '../../auth/AuthProvider';
-import { saveWebsiteContent } from '../../lib/websiteAdminRepository';
+import { saveServiceVisibility, saveWebsiteSettings } from '../../lib/websiteAdminRepository';
+import { usePersistentDraft } from '../../lib/usePersistentDraft';
+import { DraftRecoveryBanner, PublishConfirmBar } from '../../components/ui/PublishConfirmBar';
+import { Dialog, useConfirm } from '../../components/ui/OperationalKit';
 import { SiteAdminNav } from './SiteAdminNav';
 
 const symbol = '/brand/visualcorp-symbol.png';
+const heroOpeningPoster = '/public-site/home-film/apertura.webp';
+const heroMobilePoster = '/public-site/home-film/apertura-portrait.webp';
+
+type HeroDraft = {
+  heroEyebrow: string;
+  heroTitle: string;
+  heroText: string;
+};
 
 const heroPresets = [
   {
@@ -52,54 +62,68 @@ const heroPresets = [
 export function WebsiteAdmin() {
   const { data, setData, flash } = useWorkspace();
   const { organizationId, hasPermission } = useAuth();
+  const confirm = useConfirm();
   const canEdit = hasPermission('website', 'edit');
 
-  const [draft, setDraft] = useState<any>(data.settings || {});
+  const serverHero = useMemo<HeroDraft>(
+    () => ({
+      heroEyebrow: String(data.settings?.heroEyebrow || ''),
+      heroTitle: String(data.settings?.heroTitle || ''),
+      heroText: String(data.settings?.heroText || ''),
+    }),
+    [data.settings?.heroEyebrow, data.settings?.heroTitle, data.settings?.heroText]
+  );
+
+  const {
+    draft,
+    setDraft,
+    isDirty,
+    draftSavedAt,
+    isRecovered,
+    pendingRecovery,
+    recoverDraft,
+    dismissRecovery,
+    discardDraft,
+    markSaved,
+  } = usePersistentDraft<HeroDraft>({
+    orgId: organizationId,
+    draftKey: 'website-hero',
+    serverValue: serverHero,
+    isEqual: (a, b) =>
+      a.heroEyebrow.trim() === b.heroEyebrow.trim() &&
+      a.heroTitle.trim() === b.heroTitle.trim() &&
+      a.heroText.trim() === b.heroText.trim(),
+  });
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   // Local state for UI enhancements
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [serviceSearch, setServiceSearch] = useState('');
   const [serviceFilter, setServiceFilter] = useState<'all' | 'visible' | 'hidden'>('all');
 
-  useEffect(() => {
-    setDraft(data.settings || {});
-  }, [data.settings]);
-
-  // Dirty state detection
-  const isDirty = useMemo(() => {
-    const origEyebrow = (data.settings?.heroEyebrow || '').trim();
-    const origTitle = (data.settings?.heroTitle || '').trim();
-    const origText = (data.settings?.heroText || '').trim();
-
-    const curEyebrow = (draft?.heroEyebrow || '').trim();
-    const curTitle = (draft?.heroTitle || '').trim();
-    const curText = (draft?.heroText || '').trim();
-
-    return (
-      curEyebrow !== origEyebrow ||
-      curTitle !== origTitle ||
-      curText !== origText
-    );
-  }, [draft, data.settings]);
-
   // KPI Calculations
   const isHeroConfigured = Boolean(
-    (draft?.heroTitle || '').trim() && (draft?.heroText || '').trim()
+    draft.heroTitle.trim() && draft.heroText.trim()
   );
 
   const totalServices = (data.services || []).length;
-  const visibleServicesCount = (data.services || []).filter((s: any) => s.enabled).length;
+  const visibleServices = useMemo(
+    () => (data.services || []).filter((s: any) => s.enabled),
+    [data.services]
+  );
+  const visibleServicesCount = visibleServices.length;
 
   const contactKeys = ['location', 'contactPhone', 'instagram', 'facebook', 'tiktok'] as const;
   const activeContactsCount = contactKeys.filter((k) =>
-    Boolean((draft?.[k] || data.settings?.[k] || '').trim())
+    Boolean((data.settings?.[k] || '').trim())
   ).length;
 
   const totalSeoChars =
-    ((draft?.heroTitle || '').trim().length) +
-    ((draft?.heroText || '').trim().length);
+    draft.heroTitle.trim().length +
+    draft.heroText.trim().length;
 
   const seoStatus = useMemo(() => {
     if (totalSeoChars === 0) {
@@ -114,16 +138,27 @@ export function WebsiteAdmin() {
     return { label: 'Extenso', badgeClass: 'is-warning', hint: 'Puede truncarse en pantallas móviles' };
   }, [totalSeoChars]);
 
-  // Save handler
-  const save = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!canEdit) return;
+  // Publish Hero settings only (never leaks or mixes service visibility toggles)
+  const publishHero = async () => {
+    if (!canEdit || saving) return;
     setSaving(true);
     setError('');
+    const nextSettings = {
+      ...(data.settings || {}),
+      heroEyebrow: draft.heroEyebrow.trim(),
+      heroTitle: draft.heroTitle.trim(),
+      heroText: draft.heroText.trim(),
+    };
+    const savedSnapshot: HeroDraft = {
+      heroEyebrow: nextSettings.heroEyebrow,
+      heroTitle: nextSettings.heroTitle,
+      heroText: nextSettings.heroText,
+    };
     try {
-      await saveWebsiteContent(draft, data.services, organizationId);
-      setData((current: any) => ({ ...current, settings: draft }));
-      flash('Cambios del sitio guardados en la base compartida.');
+      await saveWebsiteSettings(nextSettings, organizationId);
+      setData((current: any) => ({ ...current, settings: nextSettings }));
+      markSaved(savedSnapshot);
+      flash('Mensajes de portada publicados en la web.');
     } catch (err: any) {
       setError(err?.message || 'No se guardaron los cambios.');
     } finally {
@@ -131,29 +166,109 @@ export function WebsiteAdmin() {
     }
   };
 
-  // Toggle single service visibility
-  const toggleService = async (id: string) => {
-    if (!canEdit) return;
-    const next = (data.services || []).map((service: any) =>
-      service.id === id ? { ...service, enabled: !service.enabled } : service
-    );
-    try {
-      await saveWebsiteContent(draft, next, organizationId);
-      setData((current: any) => ({ ...current, services: next }));
-      flash('Visibilidad del servicio actualizada.');
-    } catch (err: any) {
-      setError(err?.message || 'No se guardó el servicio.');
+  const handleFormSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!canEdit || (!isDirty && !isRecovered) || saving) return;
+    const accepted = await confirm({
+      eyebrow: 'CONFIRMAR PUBLICACIÓN EN VIVO',
+      title: '¿Publicar cambios en la portada principal (Hero)?',
+      description:
+        'Los textos de antetítulo, titular y descripción reemplazarán la apertura pública del sitio de inmediato.',
+      summaryItems: [
+        { label: 'Antetítulo', value: draft.heroEyebrow.trim() || '(vacío)' },
+        { label: 'Titular', value: draft.heroTitle.trim() || '(vacío)' },
+      ],
+      consequences: [
+        'Se actualiza la apertura de la página de inicio (/) para todos los visitantes.',
+        'La visibilidad de familias de servicio no se altera en esta acción.',
+      ],
+      tone: 'brand',
+      confirmLabel: 'Publicar en vivo',
+      cancelLabel: 'Revisar antes',
+    });
+    if (accepted) {
+      await publishHero();
     }
   };
 
-  // Bulk set service visibility
+  // Toggle single service visibility WITHOUT saving unsaved Hero drafts
+  const toggleService = async (id: string) => {
+    if (!canEdit || saving) return;
+    const target = (data.services || []).find((service: any) => service.id === id);
+    if (!target) return;
+    const nextEnabled = !target.enabled;
+    const accepted = await confirm({
+      eyebrow: 'VISIBILIDAD EN PORTADA',
+      title: nextEnabled
+        ? `¿Mostrar "${target.name}" en el sitio público?`
+        : `¿Ocultar "${target.name}" del sitio público?`,
+      description: nextEnabled
+        ? 'Esta familia volverá a mostrarse en la portada (/), en /servicios y en el selector público.'
+        : 'Esta familia dejará de aparecer en la portada (/), en /servicios y en el selector público.',
+      consequences: isDirty
+        ? ['Tu borrador local del Hero se conservará intacto y no se publicará todavía.']
+        : undefined,
+      tone: nextEnabled ? 'brand' : 'warning',
+      confirmLabel: nextEnabled ? 'Sí, mostrar en vivo' : 'Sí, ocultar en vivo',
+      cancelLabel: 'Cancelar',
+    });
+    if (!accepted) return;
+
+    setSaving(true);
+    setError('');
+    try {
+      await saveServiceVisibility(id, nextEnabled, organizationId);
+      setData((current: any) => ({
+        ...current,
+        services: (current.services || []).map((service: any) =>
+          service.id === id ? { ...service, enabled: nextEnabled } : service
+        ),
+      }));
+      flash(
+        nextEnabled
+          ? `Servicio "${target.name}" publicado como visible.`
+          : `Servicio "${target.name}" ocultado de la portada.`
+      );
+    } catch (err: any) {
+      setError(err?.message || 'No se guardó el servicio.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Bulk set service visibility WITHOUT saving unsaved Hero drafts
   const setAllServices = async (enabled: boolean) => {
-    if (!canEdit) return;
-    const next = (data.services || []).map((service: any) => ({ ...service, enabled }));
+    if (!canEdit || saving) return;
+    const changed = (data.services || []).filter((service: any) => service.enabled !== enabled);
+    if (changed.length === 0) return;
+
+    const accepted = await confirm({
+      eyebrow: 'CAMBIO MASIVO DE VISIBILIDAD',
+      title: enabled
+        ? `¿Mostrar todas las familias (${changed.length}) en la portada?`
+        : `¿Ocultar todas las familias (${changed.length}) de la portada?`,
+      description: enabled
+        ? 'Todas las familias de servicio aparecerán en la web pública.'
+        : 'Todas las familias dejarán de mostrarse en la portada y /servicios hasta reactivarlas.',
+      consequences: isDirty
+        ? ['Tu borrador sin guardar del Hero permanecerá local y no se publicará.']
+        : undefined,
+      tone: enabled ? 'brand' : 'warning',
+      confirmLabel: enabled ? 'Mostrar todas' : 'Ocultar todas',
+      cancelLabel: 'Cancelar',
+    });
+    if (!accepted) return;
+
     try {
       setSaving(true);
-      await saveWebsiteContent(draft, next, organizationId);
-      setData((current: any) => ({ ...current, services: next }));
+      setError('');
+      await Promise.all(
+        changed.map((service: any) => saveServiceVisibility(service.id, enabled, organizationId))
+      );
+      setData((current: any) => ({
+        ...current,
+        services: (current.services || []).map((service: any) => ({ ...service, enabled })),
+      }));
       flash(
         enabled
           ? 'Todas las familias de servicio quedaron visibles.'
@@ -166,15 +281,42 @@ export function WebsiteAdmin() {
     }
   };
 
-  // Apply preset
-  const applyPreset = (preset: typeof heroPresets[0]) => {
+  // Apply preset with confirmation
+  const applyPreset = async (preset: typeof heroPresets[0]) => {
     if (!canEdit) return;
-    setDraft((current: any) => ({
-      ...current,
+    const accepted = await confirm({
+      eyebrow: 'APLICAR SUGERENCIA DE TONO',
+      title: `¿Cargar plantilla "${preset.name}" en el borrador?`,
+      description:
+        'Se reemplazarán los campos actuales del editor únicamente en tu borrador local. Nada se publicará hasta que presiones "Publicar en vivo".',
+      tone: 'info',
+      confirmLabel: 'Cargar en borrador',
+      cancelLabel: 'Mantener actual',
+    });
+    if (!accepted) return;
+    setDraft({
       heroEyebrow: preset.eyebrow,
       heroTitle: preset.title,
       heroText: preset.text,
-    }));
+    });
+  };
+
+  // Restore original with confirmation
+  const handleRestoreOriginal = async () => {
+    if (!isDirty && !isRecovered) return;
+    const accepted = await confirm({
+      eyebrow: 'RESTAURAR VERSIÓN EN VIVO',
+      title: '¿Descartar cambios locales y restaurar el Hero actual?',
+      description:
+        'El editor recuperará los textos publicados actualmente y eliminará el borrador guardado en este navegador.',
+      tone: 'danger',
+      destructive: true,
+      confirmLabel: 'Sí, restaurar original',
+      cancelLabel: 'Seguir editando',
+    });
+    if (accepted) {
+      discardDraft();
+    }
   };
 
   // Filtered services list
@@ -215,6 +357,7 @@ export function WebsiteAdmin() {
           gap: 12px;
           margin-bottom: 22px;
           width: 100%;
+          max-width: 100%;
           box-sizing: border-box;
         }
         .site-admin-kpi-card {
@@ -222,11 +365,14 @@ export function WebsiteAdmin() {
           flex-direction: column;
           justify-content: space-between;
           padding: 13px 15px;
-          background: #ffffff;
-          border: 1px solid #e7e6ec;
-          border-radius: 12px;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+          background: var(--admin-frosted-bg, #ffffff);
+          border: 1px solid var(--admin-frosted-border, #e7e6ec);
+          border-radius: 14px;
+          box-shadow: var(--admin-frosted-shadow, 0 4px 16px rgba(16, 17, 24, 0.05));
+          backdrop-filter: blur(var(--admin-frosted-blur, 16px));
+          -webkit-backdrop-filter: blur(var(--admin-frosted-blur, 16px));
           min-width: 0;
+          max-width: 100%;
           box-sizing: border-box;
         }
         .site-admin-kpi-top {
@@ -241,9 +387,10 @@ export function WebsiteAdmin() {
           place-items: center;
           width: 32px;
           height: 32px;
-          border-radius: 8px;
-          background: #faf4fb;
-          color: #74136f;
+          border-radius: 9px;
+          background: rgba(165, 16, 145, 0.1);
+          color: #a51091;
+          border: 1px solid rgba(165, 16, 145, 0.16);
         }
         .site-admin-kpi-badge {
           font-size: 10px;
@@ -254,37 +401,37 @@ export function WebsiteAdmin() {
           letter-spacing: 0.04em;
         }
         .site-admin-kpi-badge.is-success {
-          background: #e8f9ee;
+          background: rgba(16, 185, 129, 0.12);
           color: #0f766e;
-          border: 1px solid #bbf2ce;
+          border: 1px solid rgba(16, 185, 129, 0.28);
         }
         .site-admin-kpi-badge.is-warning {
-          background: #fef7e7;
+          background: rgba(245, 158, 11, 0.13);
           color: #b45309;
-          border: 1px solid #fde5a7;
+          border: 1px solid rgba(245, 158, 11, 0.3);
         }
         .site-admin-kpi-badge.is-neutral {
-          background: #f1f1f4;
-          color: #555663;
-          border: 1px solid #e1e1e6;
+          background: var(--admin-clear-bg, rgba(16, 17, 24, 0.04));
+          color: var(--admin-glass-muted, #555663);
+          border: 1px solid var(--admin-frosted-border, #e1e1e6);
         }
         .site-admin-kpi-value {
           font-size: 18px;
           font-weight: 850;
-          color: #1e1f29;
+          color: var(--admin-glass-ink, #1e1f29);
           line-height: 1.2;
         }
         .site-admin-kpi-label {
           font-size: 10.5px;
           font-weight: 750;
-          color: #6a6b79;
+          color: var(--admin-glass-muted, #6a6b79);
           margin-top: 3px;
           text-transform: uppercase;
           letter-spacing: 0.04em;
         }
         .site-admin-kpi-meta {
           font-size: 11px;
-          color: #8c8d99;
+          color: var(--admin-glass-muted, #6a6b79);
           margin-top: 4px;
           line-height: 1.35;
         }
@@ -294,20 +441,20 @@ export function WebsiteAdmin() {
           display: inline-flex;
           align-items: center;
           gap: 5px;
-          padding: 3px 9px;
+          padding: 4px 10px;
           border-radius: 999px;
           font-size: 11px;
           font-weight: 750;
         }
         .site-hero-sync-badge.is-dirty {
-          background: #fff6e9;
+          background: rgba(245, 158, 11, 0.14);
           color: #b45309;
-          border: 1px solid #fed7aa;
+          border: 1px solid rgba(245, 158, 11, 0.35);
         }
         .site-hero-sync-badge.is-synced {
-          background: #eefbf3;
+          background: rgba(16, 185, 129, 0.12);
           color: #065f46;
-          border: 1px solid #a7f3d0;
+          border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
         /* Hero Presets */
@@ -316,19 +463,22 @@ export function WebsiteAdmin() {
           flex-direction: column;
           gap: 8px;
           padding: 11px 13px;
-          background: #fbfafc;
-          border: 1px solid #eceaf1;
-          border-radius: 10px;
+          background: var(--admin-clear-bg, rgba(255, 255, 255, 0.6));
+          border: 1px solid var(--admin-frosted-border, #eceaf1);
+          border-radius: 12px;
           margin-bottom: 16px;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
         }
         .site-hero-presets-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
+          flex-wrap: wrap;
           gap: 10px;
           font-size: 11px;
           font-weight: 700;
-          color: #5d5e6e;
+          color: var(--admin-glass-muted, #5d5e6e);
         }
         .site-hero-preset-chips {
           display: flex;
@@ -340,31 +490,31 @@ export function WebsiteAdmin() {
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          padding: 5px 9px;
-          background: #ffffff;
-          border: 1px solid #dedde5;
-          border-radius: 7px;
-          color: #494a58;
+          padding: 5px 10px;
+          background: var(--admin-frosted-bg, #ffffff);
+          border: 1px solid var(--admin-frosted-border, #dedde5);
+          border-radius: 8px;
+          color: var(--admin-glass-ink, #494a58);
           font-size: 10.5px;
           font-weight: 650;
           cursor: pointer;
           transition: all 0.15s ease;
         }
         .site-hero-preset-btn:hover {
-          border-color: #bd7bb6;
-          color: #74136f;
-          background: #faf4fb;
+          border-color: rgba(165, 16, 145, 0.45);
+          color: #a51091;
+          background: rgba(165, 16, 145, 0.08);
         }
         .site-hero-preset-btn--reset {
           margin-left: auto;
-          border-color: #fbcfe8;
-          color: #9d174d;
-          background: #fff1f2;
+          border-color: rgba(225, 29, 72, 0.28);
+          color: #be123c;
+          background: rgba(225, 29, 72, 0.07);
         }
         .site-hero-preset-btn--reset:hover {
-          background: #ffe4e6;
-          border-color: #f43f5e;
-          color: #881337;
+          background: rgba(225, 29, 72, 0.14);
+          border-color: rgba(225, 29, 72, 0.45);
+          color: #9f1239;
         }
 
         /* Field header with counter */
@@ -384,48 +534,51 @@ export function WebsiteAdmin() {
         }
         .site-char-counter.is-ideal {
           color: #059669;
-          background: #ecfdf5;
+          background: rgba(16, 185, 129, 0.12);
         }
         .site-char-counter.is-notice {
           color: #d97706;
-          background: #fffbeb;
+          background: rgba(245, 158, 11, 0.13);
         }
         .site-char-counter.is-muted {
-          color: #888996;
+          color: var(--admin-glass-muted, #888996);
         }
 
-        /* Live Preview Panel */
+        /* Live Preview Panel (faithful public HomeFilm aesthetic) */
         .site-hero-live-preview {
           margin-top: 18px;
-          background: #0f1015;
-          border: 1px solid #232533;
-          border-radius: 13px;
+          background: #0a0910;
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          border-radius: 16px;
           overflow: hidden;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+          box-shadow: 0 14px 36px rgba(6, 5, 12, 0.3);
+          max-width: 100%;
+          box-sizing: border-box;
         }
         .site-hero-preview-topbar {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 12px;
-          padding: 9px 13px;
-          background: #171821;
-          border-bottom: 1px solid #282a3a;
+          flex-wrap: wrap;
+          gap: 10px;
+          padding: 10px 14px;
+          background: rgba(18, 16, 28, 0.92);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         .site-hero-preview-title {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          color: #d1d2dc;
+          color: #e6e4f2;
           font-size: 11px;
           font-weight: 750;
         }
         .site-hero-device-toggle {
           display: inline-flex;
           align-items: center;
-          background: #0a0b0e;
-          border: 1px solid #282a3a;
-          border-radius: 7px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          border-radius: 8px;
           padding: 2px;
           gap: 2px;
         }
@@ -435,95 +588,119 @@ export function WebsiteAdmin() {
           gap: 4px;
           padding: 4px 8px;
           border: 0;
-          border-radius: 5px;
+          border-radius: 6px;
           background: transparent;
-          color: #808294;
+          color: #9ea1b8;
           font-size: 10px;
           font-weight: 700;
           cursor: pointer;
           transition: all 0.15s ease;
         }
         .site-hero-device-btn.is-active {
-          background: #2b2d3d;
+          background: rgba(165, 16, 145, 0.34);
           color: #ffffff;
         }
         .site-hero-preview-viewport-wrap {
           padding: 18px 14px;
-          background: radial-gradient(circle at 50% 10%, rgba(116, 19, 111, 0.22) 0%, transparent 68%), #0c0d12;
+          background: radial-gradient(circle at 75% 15%, rgba(39, 213, 236, 0.16) 0%, transparent 50%),
+                      radial-gradient(circle at 20% 25%, rgba(165, 16, 145, 0.24) 0%, transparent 58%),
+                      #08070d;
           display: flex;
           justify-content: center;
           overflow: hidden;
+          max-width: 100%;
+          box-sizing: border-box;
         }
         .site-hero-preview-stage {
+          position: relative;
           width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
+          border-radius: 16px;
+          padding: 20px 18px;
+          background-size: cover;
+          background-position: center;
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 32px rgba(0, 0, 0, 0.45);
           transition: max-width 0.22s ease;
+          overflow: hidden;
         }
         .site-hero-preview-stage.is-mobile {
           max-width: 360px;
-          border: 1px solid #2a2c3a;
-          border-radius: 16px;
-          padding: 16px 14px;
-          background: #0e0f16;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-        }
-        .site-hero-preview-stage.is-desktop {
-          max-width: 100%;
-          padding: 6px 2px;
+          padding: 18px 15px;
         }
         .site-hero-preview-browser-dots {
           display: flex;
-          gap: 5px;
-          margin-bottom: 12px;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          margin-bottom: 14px;
         }
-        .site-hero-preview-browser-dots span {
+        .site-hero-preview-dots-group {
+          display: inline-flex;
+          gap: 5px;
+        }
+        .site-hero-preview-dots-group span {
           width: 8px;
           height: 8px;
           border-radius: 50%;
-          background: #2a2c3a;
         }
-        .site-hero-preview-browser-dots span:nth-child(1) { background: #ef4444; }
-        .site-hero-preview-browser-dots span:nth-child(2) { background: #f59e0b; }
-        .site-hero-preview-browser-dots span:nth-child(3) { background: #10b981; }
+        .site-hero-preview-dots-group span:nth-child(1) { background: #ef4444; }
+        .site-hero-preview-dots-group span:nth-child(2) { background: #f59e0b; }
+        .site-hero-preview-dots-group span:nth-child(3) { background: #10b981; }
+        .site-hero-preview-url-chip {
+          font-size: 9.5px;
+          color: rgba(244, 241, 248, 0.72);
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          border-radius: 999px;
+          padding: 2px 9px;
+          backdrop-filter: blur(10px);
+        }
         .site-hero-preview-kicker {
           display: inline-flex;
           align-items: center;
           gap: 7px;
           font-size: 9.5px;
           font-weight: 800;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.09em;
           text-transform: uppercase;
-          color: #27d5ec;
-          margin-bottom: 10px;
-          background: rgba(39, 213, 236, 0.09);
-          padding: 3px 9px;
+          color: #f4f1f8;
+          margin-bottom: 12px;
+          background: rgba(255, 255, 255, 0.09);
+          padding: 4px 11px;
           border-radius: 999px;
-          border: 1px solid rgba(39, 213, 236, 0.25);
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          backdrop-filter: blur(12px);
         }
         .site-hero-preview-kicker-dot {
           width: 6px;
           height: 6px;
           border-radius: 50%;
           background: #27d5ec;
-          box-shadow: 0 0 7px #27d5ec;
+          box-shadow: 0 0 8px #27d5ec;
         }
         .site-hero-preview-h1 {
-          font-size: 21px;
+          font-size: 22px;
           font-weight: 850;
           color: #ffffff;
-          line-height: 1.25;
+          line-height: 1.2;
           margin: 0 0 10px 0;
-          letter-spacing: -0.02em;
+          letter-spacing: -0.025em;
+          overflow-wrap: anywhere;
         }
         .site-hero-preview-h1-gradient {
-          background: linear-gradient(135deg, #27d5ec 0%, #ec4899 100%);
+          background: linear-gradient(110deg, #ff70df 0%, #27d5ec 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
         .site-hero-preview-desc {
           font-size: 12px;
           line-height: 1.6;
-          color: #a0a1b2;
-          margin: 0 0 15px 0;
+          color: rgba(235, 232, 246, 0.84);
+          margin: 0 0 16px 0;
+          max-width: 52ch;
+          overflow-wrap: anywhere;
         }
         .site-hero-preview-actions {
           display: flex;
@@ -535,28 +712,29 @@ export function WebsiteAdmin() {
           display: inline-flex;
           align-items: center;
           gap: 5px;
-          padding: 6px 12px;
-          border-radius: 7px;
+          padding: 7px 14px;
+          border-radius: 999px;
           background: linear-gradient(135deg, #a51091, #74136f);
           color: #ffffff;
           font-size: 10.5px;
           font-weight: 750;
-          box-shadow: 0 2px 7px rgba(165, 16, 145, 0.35);
+          box-shadow: 0 6px 16px rgba(165, 16, 145, 0.4);
         }
         .site-hero-preview-btn-secondary {
           display: inline-flex;
           align-items: center;
           gap: 5px;
-          padding: 6px 12px;
-          border-radius: 7px;
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.16);
-          color: #d8d9e2;
+          padding: 7px 14px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          backdrop-filter: blur(12px);
+          color: #f3f1fa;
           font-size: 10.5px;
           font-weight: 700;
         }
         .site-hero-preview-services-tray {
-          border-top: 1px solid #1f212e;
+          border-top: 1px solid rgba(255, 255, 255, 0.12);
           padding-top: 12px;
         }
         .site-hero-preview-services-label {
@@ -565,7 +743,7 @@ export function WebsiteAdmin() {
           font-weight: 750;
           text-transform: uppercase;
           letter-spacing: 0.06em;
-          color: #6a6c7e;
+          color: rgba(226, 224, 240, 0.65);
           margin-bottom: 7px;
         }
         .site-hero-preview-services-list {
@@ -576,16 +754,43 @@ export function WebsiteAdmin() {
         .site-hero-preview-pill {
           font-size: 9.5px;
           font-weight: 650;
-          padding: 3px 8px;
-          border-radius: 5px;
-          background: #191b24;
-          color: #b5b7c8;
-          border: 1px solid #2b2e3e;
+          padding: 4px 9px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.08);
+          color: #e6e4f4;
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          backdrop-filter: blur(8px);
         }
         .site-hero-preview-empty-pill {
           font-size: 10px;
-          color: #686979;
+          color: rgba(226, 224, 240, 0.58);
           font-style: italic;
+        }
+
+        .site-hero-modal-services-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 16px;
+        }
+        .site-hero-modal-service-card {
+          padding: 12px;
+          border-radius: 12px;
+          background: var(--admin-frosted-bg, rgba(255, 255, 255, 0.85));
+          border: 1px solid var(--admin-frosted-border, rgba(16, 17, 24, 0.1));
+          min-width: 0;
+        }
+        .site-hero-modal-service-card b {
+          display: block;
+          font-size: 12.5px;
+          color: var(--admin-glass-ink, #1e1f29);
+          margin-bottom: 4px;
+        }
+        .site-hero-modal-service-card small {
+          display: block;
+          font-size: 11px;
+          line-height: 1.45;
+          color: var(--admin-glass-muted, #5c5d6b);
         }
 
         /* Services Toolbar & Filtering */
@@ -603,31 +808,31 @@ export function WebsiteAdmin() {
         .site-services-search-icon {
           position: absolute;
           left: 10px;
-          color: #8b8c98;
+          color: var(--admin-glass-muted, #8b8c98);
           pointer-events: none;
         }
         .site-services-search-input {
           width: 100%;
           padding: 7px 30px 7px 32px;
-          border: 1px solid #e3e2e8;
-          border-radius: 8px;
+          border: 1px solid var(--admin-frosted-border, #e3e2e8);
+          border-radius: 9px;
           font-size: 11px;
-          background: #fafafc;
-          color: #272832;
+          background: var(--admin-clear-bg, #fafafc);
+          color: var(--admin-glass-ink, #272832);
           transition: all 0.15s ease;
           box-sizing: border-box;
         }
         .site-services-search-input:focus {
-          background: #fff;
+          background: var(--admin-frosted-bg, #fff);
           border-color: #a51091;
-          outline: 3px solid rgba(165, 16, 145, 0.12);
+          outline: 3px solid rgba(165, 16, 145, 0.14);
         }
         .site-services-search-clear {
           position: absolute;
           right: 8px;
           border: 0;
           background: transparent;
-          color: #8b8c98;
+          color: var(--admin-glass-muted, #8b8c98);
           cursor: pointer;
           display: grid;
           place-items: center;
@@ -642,26 +847,28 @@ export function WebsiteAdmin() {
         }
         .site-services-filters {
           display: inline-flex;
-          background: #f1f0f4;
+          flex-wrap: wrap;
+          background: var(--admin-clear-bg, #f1f0f4);
+          border: 1px solid var(--admin-frosted-border, #e5e4eb);
           padding: 2px;
-          border-radius: 7px;
+          border-radius: 8px;
           gap: 2px;
         }
         .site-services-filter-btn {
           border: 0;
           background: transparent;
-          color: #636472;
+          color: var(--admin-glass-muted, #636472);
           padding: 4px 8px;
-          border-radius: 5px;
+          border-radius: 6px;
           font-size: 10px;
           font-weight: 700;
           cursor: pointer;
           transition: all 0.15s ease;
         }
         .site-services-filter-btn.is-active {
-          background: #fff;
-          color: #74136f;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+          background: var(--admin-frosted-bg, #fff);
+          color: #a51091;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
         .site-services-bulk-actions {
           display: inline-flex;
@@ -670,19 +877,19 @@ export function WebsiteAdmin() {
           flex-wrap: wrap;
         }
         .site-services-bulk-btn {
-          border: 1px solid #e1e0e7;
-          background: #fff;
-          color: #4b4c59;
+          border: 1px solid var(--admin-frosted-border, #e1e0e7);
+          background: var(--admin-frosted-bg, #fff);
+          color: var(--admin-glass-ink, #4b4c59);
           font-size: 10px;
           font-weight: 700;
-          padding: 4px 8px;
-          border-radius: 6px;
+          padding: 4px 9px;
+          border-radius: 7px;
           cursor: pointer;
           transition: all 0.15s ease;
         }
         .site-services-bulk-btn:hover:not(:disabled) {
-          background: #f7f6f9;
-          border-color: #cccad5;
+          background: rgba(165, 16, 145, 0.08);
+          border-color: rgba(165, 16, 145, 0.3);
         }
         .site-services-bulk-btn:disabled {
           opacity: 0.5;
@@ -692,7 +899,7 @@ export function WebsiteAdmin() {
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          color: #74136f;
+          color: #a51091;
           font-size: 10.5px;
           font-weight: 750;
           text-decoration: none;
@@ -706,6 +913,7 @@ export function WebsiteAdmin() {
         .site-service-row-header {
           display: flex;
           align-items: center;
+          flex-wrap: wrap;
           gap: 6px;
         }
         .site-service-status-pill {
@@ -720,23 +928,23 @@ export function WebsiteAdmin() {
           flex-shrink: 0;
         }
         .site-service-status-pill.is-visible {
-          background: #e8f9ee;
+          background: rgba(16, 185, 129, 0.13);
           color: #0f766e;
-          border: 1px solid #bbf2ce;
+          border: 1px solid rgba(16, 185, 129, 0.3);
         }
         .site-service-status-pill.is-hidden {
-          background: #f3f3f6;
-          color: #7b7c88;
-          border: 1px solid #e1e1e6;
+          background: var(--admin-clear-bg, #f3f3f6);
+          color: var(--admin-glass-muted, #7b7c88);
+          border: 1px solid var(--admin-frosted-border, #e1e1e6);
         }
         .site-services-empty-state {
           padding: 20px;
           text-align: center;
-          color: #7c7d8a;
+          color: var(--admin-glass-muted, #7c7d8a);
           font-size: 11px;
-          background: #fafafc;
-          border-radius: 8px;
-          border: 1px dashed #e3e2e8;
+          background: var(--admin-clear-bg, #fafafc);
+          border-radius: 10px;
+          border: 1px dashed var(--admin-frosted-border, #e3e2e8);
         }
 
         /* Error alert */
@@ -745,22 +953,47 @@ export function WebsiteAdmin() {
           align-items: center;
           gap: 8px;
           padding: 10px 14px;
-          background: #fef2f2;
-          border: 1px solid #fecaca;
-          color: #991b1b;
-          border-radius: 9px;
+          background: rgba(225, 29, 72, 0.08);
+          border: 1px solid rgba(225, 29, 72, 0.28);
+          color: #be123c;
+          border-radius: 10px;
           font-size: 11px;
           font-weight: 600;
           margin-bottom: 16px;
         }
 
-        @media (max-width: 1100px) {
+        /* Dark Mode Glass Overrides */
+        .work-app.theme-dark .site-admin-kpi-badge.is-success,
+        .work-app.theme-dark .site-hero-sync-badge.is-synced,
+        .work-app.theme-dark .site-service-status-pill.is-visible {
+          color: #6ee7b7;
+        }
+        .work-app.theme-dark .site-admin-kpi-badge.is-warning,
+        .work-app.theme-dark .site-hero-sync-badge.is-dirty {
+          color: #fcd34d;
+        }
+        .work-app.theme-dark .site-services-edit-link,
+        .work-app.theme-dark .site-services-filter-btn.is-active {
+          color: #f0abfc;
+        }
+        .work-app.theme-dark .site-hero-preset-btn--reset {
+          color: #fda4af;
+        }
+        .work-app.theme-dark .site-admin-alert-error {
+          color: #fda4af;
+        }
+
+        @media (max-width: 1260px) {
           .site-admin-kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .site-hero-modal-services-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
         @media (max-width: 600px) {
-          .site-admin-kpi-grid {
+          .site-admin-kpi-grid,
+          .site-hero-modal-services-grid {
             grid-template-columns: 1fr;
           }
           .site-services-filter-row {
@@ -782,6 +1015,42 @@ export function WebsiteAdmin() {
       />
 
       <SiteAdminNav active="/admin/sitio" />
+
+      <DraftRecoveryBanner
+        pendingRecovery={pendingRecovery}
+        itemLabel="el Hero de portada"
+        onRecover={recoverDraft}
+        onDismiss={dismissRecovery}
+      />
+
+      <PublishConfirmBar
+        isDirty={isDirty}
+        isRecovered={isRecovered}
+        draftSavedAt={draftSavedAt}
+        sectionName="Portada principal (Hero)"
+        statusNote={
+          isDirty
+            ? 'Los cambios del Hero se mantienen en borrador local; activar o desactivar familias a la derecha no los publicará.'
+            : undefined
+        }
+        canPublish={canEdit}
+        publishing={saving}
+        previewLabel="Vista previa completa"
+        publishConfirmTitle="¿Publicar cambios en la portada principal?"
+        publishConfirmDescription="Los textos de antetítulo, titular y descripción reemplazarán la apertura visible de Visual Corp."
+        publishSummaryItems={[
+          { label: 'Antetítulo', value: draft.heroEyebrow.trim() || '(vacío)' },
+          { label: 'Titular', value: draft.heroTitle.trim() || '(vacío)' },
+          { label: 'Familias activas', value: `${visibleServicesCount} de ${totalServices}` },
+        ]}
+        publishConsequences={[
+          'Se actualizará en vivo la apertura de la página principal (/).',
+          'Los cambios locales pendientes quedarán sincronizados.',
+        ]}
+        onPreview={() => setPreviewOpen(true)}
+        onDiscard={discardDraft}
+        onPublish={publishHero}
+      />
 
       {/* 1. Executive KPI Strip */}
       <section className="site-admin-kpi-grid" aria-label="Métricas y estado general del sitio">
@@ -877,19 +1146,23 @@ export function WebsiteAdmin() {
 
       <div className="editor-grid">
         {/* 2. Main Hero Editor */}
-        <form className="panel form-panel" onSubmit={save}>
+        <form className="panel form-panel" onSubmit={handleFormSubmit}>
           <div className="panel-heading">
             <div>
               <span className="eyebrow">CONTENIDO PRINCIPAL</span>
               <h2>Mensajes del sitio</h2>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <span
                 className={`site-hero-sync-badge ${
-                  isDirty ? 'is-dirty' : 'is-synced'
+                  isDirty || isRecovered ? 'is-dirty' : 'is-synced'
                 }`}
               >
-                {isDirty ? (
+                {isRecovered ? (
+                  <>
+                    <span style={{ fontSize: 9 }}>●</span> Borrador recuperado
+                  </>
+                ) : isDirty ? (
                   <>
                     <span style={{ fontSize: 9 }}>●</span> Cambios sin guardar
                   </>
@@ -899,11 +1172,6 @@ export function WebsiteAdmin() {
                   </>
                 )}
               </span>
-              {canEdit && (
-                <button className="button button-dark" type="submit" disabled={saving}>
-                  <Check size={16} /> {saving ? 'Guardando...' : 'Guardar cambios'}
-                </button>
-              )}
             </div>
           </div>
 
@@ -912,14 +1180,14 @@ export function WebsiteAdmin() {
             <div className="site-hero-presets">
               <div className="site-hero-presets-header">
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                  <Sparkles size={13} color="#74136f" /> Sugerencias de tono institucional:
+                  <Sparkles size={13} color="#a51091" /> Sugerencias de tono institucional:
                 </span>
-                {isDirty && (
+                {(isDirty || isRecovered) && (
                   <button
                     type="button"
                     className="site-hero-preset-btn site-hero-preset-btn--reset"
-                    onClick={() => setDraft(data.settings || {})}
-                    title="Restaurar a los textos guardados"
+                    onClick={() => void handleRestoreOriginal()}
+                    title="Restaurar a los textos guardados en vivo"
                   >
                     <RotateCcw size={12} /> Restaurar original
                   </button>
@@ -931,7 +1199,7 @@ export function WebsiteAdmin() {
                     key={preset.id}
                     type="button"
                     className="site-hero-preset-btn"
-                    onClick={() => applyPreset(preset)}
+                    onClick={() => void applyPreset(preset)}
                   >
                     {preset.name}
                   </button>
@@ -1045,11 +1313,19 @@ export function WebsiteAdmin() {
                 className={`site-hero-preview-stage ${
                   previewDevice === 'mobile' ? 'is-mobile' : 'is-desktop'
                 }`}
+                style={{
+                  backgroundImage: `linear-gradient(112deg, rgba(8, 7, 13, 0.92) 0%, rgba(15, 11, 24, 0.8) 54%, rgba(116, 19, 111, 0.36) 100%), url(${
+                    previewDevice === 'mobile' ? heroMobilePoster : heroOpeningPoster
+                  })`,
+                }}
               >
                 <div className="site-hero-preview-browser-dots" aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
+                  <div className="site-hero-preview-dots-group">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                  <span className="site-hero-preview-url-chip">visualcorp.ec/</span>
                 </div>
 
                 {/* Eyebrow Kicker */}
@@ -1075,10 +1351,10 @@ export function WebsiteAdmin() {
                 {/* CTA Buttons */}
                 <div className="site-hero-preview-actions">
                   <span className="site-hero-preview-btn-primary">
-                    Cotizar proyecto <ArrowUpRight size={13} />
+                    Solicitar cotización <ArrowUpRight size={13} />
                   </span>
                   <span className="site-hero-preview-btn-secondary">
-                    Ver portafolio
+                    Explorar servicios
                   </span>
                 </div>
 
@@ -1088,8 +1364,7 @@ export function WebsiteAdmin() {
                     Familias activas en la portada ({visibleServicesCount})
                   </span>
                   <div className="site-hero-preview-services-list">
-                    {(data.services || [])
-                      .filter((s: any) => s.enabled)
+                    {visibleServices
                       .slice(0, 6)
                       .map((s: any) => (
                         <span key={s.id} className="site-hero-preview-pill">
@@ -1255,12 +1530,86 @@ export function WebsiteAdmin() {
 
       <div className="preview-strip">
         <span>
-          <Globe2 size={17} /> La página pública se actualiza al guardar
+          <Globe2 size={17} /> Publica el borrador cuando confirmes la vista previa. Las familias visibles se guardan de forma independiente.
         </span>
         <Link to="/" target="_blank" rel="noreferrer">
-          Ver el resultado <ArrowUpRight size={15} />
+          Abrir sitio público <ArrowUpRight size={15} />
         </Link>
       </div>
+
+      <Dialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        size="xl"
+        tone="brand"
+        eyebrow="VISTA PREVIA EN VIVO · PORTADA PÚBLICA (/)"
+        title="Simulación de Hero y familias visibles"
+        description="Revisa cómo lucirá tu borrador antes de confirmar la publicación."
+        footer={
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between', width: '100%' }}>
+            <div className="site-hero-device-toggle" style={{ background: 'var(--admin-clear-bg)', borderColor: 'var(--admin-frosted-border)' }}>
+              <button
+                type="button"
+                className={`site-hero-device-btn ${previewDevice === 'desktop' ? 'is-active' : ''}`}
+                onClick={() => setPreviewDevice('desktop')}
+              >
+                <Monitor size={12} /> Escritorio
+              </button>
+              <button
+                type="button"
+                className={`site-hero-device-btn ${previewDevice === 'mobile' ? 'is-active' : ''}`}
+                onClick={() => setPreviewDevice('mobile')}
+              >
+                <Smartphone size={12} /> Móvil
+              </button>
+            </div>
+            <button type="button" className="button button-outline" onClick={() => setPreviewOpen(false)}>
+              Cerrar vista previa
+            </button>
+          </div>
+        }
+      >
+        <div className="site-hero-preview-viewport-wrap" style={{ borderRadius: 14 }}>
+          <div
+            className={`site-hero-preview-stage ${previewDevice === 'mobile' ? 'is-mobile' : 'is-desktop'}`}
+            style={{
+              backgroundImage: `linear-gradient(112deg, rgba(8, 7, 13, 0.92) 0%, rgba(15, 11, 24, 0.8) 54%, rgba(116, 19, 111, 0.36) 100%), url(${
+                previewDevice === 'mobile' ? heroMobilePoster : heroOpeningPoster
+              })`,
+            }}
+          >
+            <div className="site-hero-preview-kicker">
+              <span className="site-hero-preview-kicker-dot" />
+              <span>{draft.heroEyebrow || 'AGENCIA DE PUBLICIDAD & ROTULACIÓN'}</span>
+            </div>
+            <h3 className="site-hero-preview-h1" style={{ fontSize: previewDevice === 'mobile' ? 20 : 28 }}>
+              {previewLeadingWords}{' '}
+              <span className="site-hero-preview-h1-gradient">{previewLastWord || previewTitleRaw}</span>
+            </h3>
+            <p className="site-hero-preview-desc" style={{ fontSize: 13 }}>
+              {draft.heroText ||
+                'Diseño publicitario, rotulación comercial, gran formato y branding integral para impulsar tu marca en Milagro y Ecuador.'}
+            </p>
+            <div className="site-hero-preview-actions">
+              <span className="site-hero-preview-btn-primary">
+                Solicitar cotización <ArrowUpRight size={13} />
+              </span>
+              <span className="site-hero-preview-btn-secondary">Explorar servicios</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="site-hero-modal-services-grid" aria-label="Familias visibles en la portada">
+          {visibleServices.map((service: any, idx: number) => (
+            <article key={service.id} className="site-hero-modal-service-card">
+              <b>
+                {String(idx + 1).padStart(2, '0')} · {service.name}
+              </b>
+              <small>{service.description || 'Sin descripción pública.'}</small>
+            </article>
+          ))}
+        </div>
+      </Dialog>
     </AppFrame>
   );
 }

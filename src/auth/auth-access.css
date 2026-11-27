@@ -45,21 +45,27 @@
 }
 
 :root[data-vc-theme="dark"] .access-screen,
-body[data-vc-theme="dark"] .access-screen {
+body[data-vc-theme="dark"] .access-screen,
+:root[data-theme="dark"] .access-screen,
+body[data-theme="dark"] .access-screen {
   --access-accent: #e3a0ea;
   --access-accent-deep: #c97bd9;
   color-scheme: dark;
 }
 
 :root[data-vc-theme="dark"] .access-screen::before,
-body[data-vc-theme="dark"] .access-screen::before {
+body[data-vc-theme="dark"] .access-screen::before,
+:root[data-theme="dark"] .access-screen::before,
+body[data-theme="dark"] .access-screen::before {
   background:
     radial-gradient(ellipse at 23% 38%, rgb(193 73 189 / 16%), transparent 37%),
     radial-gradient(ellipse at 78% 72%, rgb(27 159 212 / 12%), transparent 34%);
 }
 
 :root[data-vc-theme="dark"] .access-screen::after,
-body[data-vc-theme="dark"] .access-screen::after {
+body[data-vc-theme="dark"] .access-screen::after,
+:root[data-theme="dark"] .access-screen::after,
+body[data-theme="dark"] .access-screen::after {
   opacity: 0.18;
   background-image: radial-gradient(rgb(225 220 242 / 36%) 0.7px, transparent 0.7px);
 }
@@ -105,6 +111,7 @@ body[data-vc-theme="dark"] .access-screen::after {
 
 .access-theme-toggle:focus-visible,
 .access-screen button:focus-visible,
+.access-screen a:focus-visible,
 .access-screen input:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--vc-focus, #a51091) 58%, transparent);
   outline-offset: 3px;
@@ -329,60 +336,80 @@ body[data-vc-theme="dark"] .access-screen::after {
   min-width: 0;
 }
 
-.access-card {
+/* Qualified with .access-screen to preserve 24px-28px rounded Glassmorph corners over design-system.css and app.css */
+.access-screen .access-card {
   box-sizing: border-box;
   display: grid;
   width: min(100%, 460px);
   gap: 16px;
   margin-inline: auto;
   padding: clamp(27px, 4vw, 38px);
-  border: 1px solid color-mix(in srgb, var(--vc-line, #e5e0ea) 86%, transparent);
+  border: 1px solid color-mix(in srgb, var(--glass-border, rgb(111 105 143 / 22%)) 80%, var(--vc-line, #e5e0ea));
   border-radius: 28px;
-  background: var(--vc-surface-raised, #fff);
+  background: var(--glass-frosted-bg, color-mix(in srgb, var(--vc-surface-raised, #fff) 80%, transparent));
   color: var(--vc-ink, #191522);
-  box-shadow: 0 28px 85px rgb(34 23 47 / 12%), inset 0 1px rgb(255 255 255 / 78%);
+  box-shadow: var(--glass-frosted-shadow, 0 28px 85px rgb(34 23 47 / 12%), inset 0 1px rgb(255 255 255 / 78%));
   transition: background-color 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
 }
 
-@supports (backdrop-filter: blur(1px)) {
-  .access-card {
-    background: color-mix(in srgb, var(--vc-surface-raised, #fff) 82%, transparent);
-    backdrop-filter: blur(24px) saturate(145%);
-    -webkit-backdrop-filter: blur(24px) saturate(145%);
+.access-screen .access-card--status {
+  width: min(100%, 520px);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .access-screen .access-card,
+  .access-screen > p {
+    background: var(--glass-frosted-bg, color-mix(in srgb, var(--vc-surface-raised, #fff) 78%, transparent));
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
   }
 }
 
-.access-card > img {
+:root[data-vc-theme="dark"] .access-screen .access-card,
+body[data-vc-theme="dark"] .access-screen .access-card,
+:root[data-theme="dark"] .access-screen .access-card,
+body[data-theme="dark"] .access-screen .access-card,
+:root[data-vc-theme="dark"] .access-screen > p,
+body[data-vc-theme="dark"] .access-screen > p {
+  border-color: var(--glass-frosted-border, rgb(255 255 255 / 16%));
+  background: var(--glass-frosted-bg, rgb(23 26 37 / 78%));
+  box-shadow: var(--glass-frosted-shadow, 0 24px 64px rgb(0 0 0 / 42%), inset 0 1px rgb(255 255 255 / 14%));
+}
+
+.access-screen .access-card > img {
   width: 190px;
   max-height: 50px;
   object-fit: contain;
   object-position: left;
 }
 
-:root[data-vc-theme="dark"] .access-card > img,
-body[data-vc-theme="dark"] .access-card > img {
+:root[data-vc-theme="dark"] .access-screen .access-card > img,
+body[data-vc-theme="dark"] .access-screen .access-card > img,
+:root[data-theme="dark"] .access-screen .access-card > img,
+body[data-theme="dark"] .access-screen .access-card > img {
   filter: brightness(0) invert(1);
 }
 
-.access-card h1,
-.access-card h2 {
+.access-screen .access-card h1,
+.access-screen .access-card h2 {
   margin: 0;
   color: var(--vc-ink, #191522);
 }
 
-.access-card h1 {
-  font-size: 30px;
-  line-height: 1.1;
+.access-screen .access-card h1 {
+  font-size: clamp(24px, 2.8vw, 30px);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
 }
 
-.access-card h2 {
+.access-screen .access-card h2 {
   font-size: clamp(25px, 2.5vw, 30px);
   font-weight: 760;
   letter-spacing: -0.045em;
   line-height: 1.12;
 }
 
-.access-card p {
+.access-screen .access-card p {
   margin: 0;
   color: var(--vc-muted, #5e566b);
   line-height: 1.6;
@@ -401,6 +428,20 @@ body[data-vc-theme="dark"] .access-card > img {
 .access-card-heading p {
   font-size: 13px;
   line-height: 1.65;
+}
+
+.access-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.access-card-actions > .site-primary-button,
+.access-card-actions > .site-secondary-button {
+  flex: 1 1 170px;
+  min-height: 48px;
 }
 
 .access-oauth-button,
@@ -588,10 +629,43 @@ body[data-vc-theme="dark"] .access-card > img {
   color: var(--vc-state-success, #16805d);
 }
 
-.access-card .site-primary-button {
+.access-screen .access-card .site-primary-button,
+.access-screen .access-card .site-secondary-button {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  border: 0;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
   cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.access-screen .access-card .site-primary-button {
+  border: 1px solid color-mix(in srgb, #fff 20%, transparent);
+  background: linear-gradient(112deg, #a51091 0%, #7e1977 100%);
+  color: #fff;
+  box-shadow: 0 12px 26px rgb(132 25 119 / 20%), inset 0 1px rgb(255 255 255 / 20%);
+}
+
+.access-screen .access-card .site-primary-button:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(112deg, #b819a2 0%, #8f1d86 100%);
+}
+
+.access-screen .access-card .site-secondary-button {
+  border: 1px solid var(--vc-line, #e5e0ea);
+  background: var(--glass-clear-bg, color-mix(in srgb, var(--vc-surface-raised, #fff) 66%, transparent));
+  color: var(--vc-ink, #191522);
+}
+
+.access-screen .access-card .site-secondary-button:hover {
+  border-color: color-mix(in srgb, var(--access-accent) 42%, var(--vc-line, #e5e0ea));
 }
 
 .access-screen:not(.access-screen--login) {
@@ -607,11 +681,14 @@ body[data-vc-theme="dark"] .access-card > img {
 }
 
 .access-screen > p {
-  padding: 16px 20px;
-  border: 1px solid var(--vc-line, #e5e0ea);
-  border-radius: 14px;
-  background: var(--vc-surface-raised, #fff);
-  color: var(--vc-muted, #5e566b);
+  padding: 18px 24px;
+  border: 1px solid color-mix(in srgb, var(--glass-border, rgb(111 105 143 / 22%)) 80%, var(--vc-line, #e5e0ea));
+  border-radius: 24px;
+  background: var(--glass-frosted-bg, var(--vc-surface-raised, #fff));
+  color: var(--vc-ink, #191522);
+  box-shadow: var(--glass-frosted-shadow, 0 18px 48px rgb(34 23 47 / 10%));
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .access-error {
@@ -687,7 +764,7 @@ body[data-vc-theme="dark"] .access-card > img {
   }
 
   .access-panel,
-  .access-card--login {
+  .access-screen .access-card--login {
     width: 100%;
   }
 }
@@ -780,13 +857,14 @@ body[data-vc-theme="dark"] .access-card > img {
     height: 13px;
   }
 
-  .access-card--login {
+  .access-screen .access-card,
+  .access-screen .access-card--login {
     gap: 13px;
     padding: 23px 20px 19px;
-    border-radius: 23px;
+    border-radius: 24px;
   }
 
-  .access-card h2 {
+  .access-screen .access-card h2 {
     font-size: 25px;
   }
 
@@ -826,9 +904,44 @@ body[data-vc-theme="dark"] .access-card > img {
     height: 100px;
   }
 
-  .access-card--login {
+  .access-screen .access-card--login {
     gap: 12px;
     padding-block: 27px;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .access-screen .access-card,
+  .access-screen > p,
+  .access-theme-toggle,
+  .access-visual-mark,
+  .access-visual-note,
+  .access-capabilities > li,
+  .access-oauth-button,
+  .access-field input,
+  .access-screen .access-card .site-secondary-button {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--vc-surface-raised, #fff) !important;
+    border-color: color-mix(in srgb, var(--vc-ink, #191522) 34%, transparent) !important;
+  }
+
+  :root[data-vc-theme="dark"] .access-screen .access-card,
+  body[data-vc-theme="dark"] .access-screen .access-card,
+  :root[data-theme="dark"] .access-screen .access-card,
+  body[data-theme="dark"] .access-screen .access-card,
+  :root[data-vc-theme="dark"] .access-screen > p,
+  body[data-vc-theme="dark"] .access-screen > p,
+  :root[data-vc-theme="dark"] .access-theme-toggle,
+  body[data-vc-theme="dark"] .access-theme-toggle,
+  :root[data-vc-theme="dark"] .access-oauth-button,
+  body[data-vc-theme="dark"] .access-oauth-button,
+  :root[data-vc-theme="dark"] .access-field input,
+  body[data-vc-theme="dark"] .access-field input,
+  :root[data-vc-theme="dark"] .access-screen .access-card .site-secondary-button,
+  body[data-vc-theme="dark"] .access-screen .access-card .site-secondary-button {
+    background: var(--vc-surface-raised, #1e2230) !important;
+    border-color: color-mix(in srgb, var(--vc-ink, #f1f3f8) 38%, transparent) !important;
   }
 }
 

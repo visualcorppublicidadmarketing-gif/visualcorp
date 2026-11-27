@@ -1,5 +1,6 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import {
+  BarChart3,
   CalendarDays,
   Check,
   CheckCircle2,
@@ -7,6 +8,7 @@ import {
   Clock,
   Copy,
   CopyCheck,
+  ExternalLink,
   Hash,
   Megaphone,
   MessageSquareText,
@@ -84,6 +86,8 @@ type Props = {
   campaigns?: MarketingCampaign[];
   assignees?: Assignee[];
   canApprove?: boolean;
+  canRecordResults?: boolean;
+  onRecordResults?: () => void;
 };
 
 type PublicationFieldProps = {
@@ -441,13 +445,17 @@ export function PublicationEditorSections({
   draft,
   onChange,
   canEdit,
+  isNew,
   activeTab,
   onTabChange,
+  selectedPost,
   events,
   formatDate,
   knownTags,
   campaigns = [],
   assignees = [],
+  canRecordResults = false,
+  onRecordResults,
 }: Props) {
   const [copiedCopy, setCopiedCopy] = useState(false);
 
@@ -553,6 +561,47 @@ export function PublicationEditorSections({
           </div>
         </div>
       </div>
+
+      {!isNew && selectedPost && /publicad/i.test(selectedPost.status || draft.status) && (
+        <section className="vc-publication-results-card" aria-label="Resultados post-publicación">
+          <div className="vc-publication-results-head">
+            <div>
+              <span className="eyebrow">SEGUIMIENTO POST-PUBLICACIÓN</span>
+              <b>Resultados de la pieza</b>
+              <small>
+                {selectedPost.results_updated_at
+                  ? `Última medición: ${new Date(selectedPost.results_updated_at).toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })}`
+                  : 'Aún sin medición registrada para esta publicación.'}
+              </small>
+            </div>
+            {canRecordResults && onRecordResults && (
+              <button type="button" className="button button-outline" onClick={onRecordResults}>
+                <BarChart3 size={14} />
+                {selectedPost.results_updated_at || Number(selectedPost.reach) || Number(selectedPost.interactions) || Number(selectedPost.clicks) || Number(selectedPost.leads)
+                  ? 'Actualizar resultados'
+                  : 'Registrar resultados'}
+              </button>
+            )}
+          </div>
+          <div className="vc-publication-results-metrics">
+            <div><span>Alcance</span><strong>{Number(selectedPost.reach || 0).toLocaleString('es-EC')}</strong></div>
+            <div><span>Interacciones</span><strong>{Number(selectedPost.interactions || 0).toLocaleString('es-EC')}</strong></div>
+            <div><span>Clics</span><strong>{Number(selectedPost.clicks || 0).toLocaleString('es-EC')}</strong></div>
+            <div><span>Leads</span><strong>{Number(selectedPost.leads || 0).toLocaleString('es-EC')}</strong></div>
+          </div>
+          {selectedPost.published_url && (
+            <a
+              className="vc-publication-results-link"
+              href={selectedPost.published_url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <ExternalLink size={13} />
+              <span>{selectedPost.published_url}</span>
+            </a>
+          )}
+        </section>
+      )}
 
       <nav className="vc-publication-steps" role="tablist" aria-label="Secciones de la ficha de publicación">
         {tabs.map(({ id, label, icon: Icon, hint }, index) => (

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowUp, ArrowUpRight, ChevronDown, ChevronRight, Copy, LayoutDashboard, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Search, Sun, X, type LucideIcon } from 'lucide-react';
+import { ArrowUp, ArrowUpRight, ChevronDown, ChevronRight, Copy, LayoutDashboard, Menu, Moon, PanelLeftClose, PanelLeftOpen, Search, Sun, X, type LucideIcon } from 'lucide-react';
 import { useWorkspace } from './workspace';
 import { useAuth } from '../auth/AuthProvider';
 import { AdminCommandPalette } from '../components/AdminCommandPalette';
@@ -207,18 +207,6 @@ export function AppFrame({ area, children }: AppFrameProps) {
   </div>;
 }
 
-function ProtectedPage({ area, children }) {
-  const auth = useAuth();
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
-  const [oauthLoading, setOauthLoading] = useState(false);
-  const allowed = area === 'website' ? ['website_admin'] : area === 'catalog' || area === 'team' ? ['admin','manager'] : ['admin','manager','advisor','warehouse','production','marketing'];
-  if (auth.loading) return <main className="access-screen"><p>Verificando acceso seguro…</p></main>;
-  if (!auth.user) return <main className="access-screen"><form className="access-card" onSubmit={async (event)=>{event.preventDefault();setError('');setMessage('');try{await auth.sendSignInLink(email.trim());setMessage('Te enviamos un enlace de acceso al correo. Ábrelo en este mismo navegador para continuar.');}catch(err){setError(err.message||'No pudimos iniciar sesión.');}}}><img src={wordmark} alt="Visual Corp"/><span className="site-eyebrow"><i/> ACCESO INTERNO</span><h1>{area==='website'?'Administración de la página web':'Administración POS y gestión interna'}</h1><p>Inicia sesión con tu cuenta de Google autorizada o solicita un enlace seguro por correo.</p><button className="site-primary-button" type="button" disabled={oauthLoading} onClick={async()=>{setError('');setMessage('');setOauthLoading(true);try{await auth.signInWithGoogle();}catch(err){setError(err.message||'No pudimos iniciar sesión con Google.');setOauthLoading(false);}}}>{oauthLoading?'Conectando con Google…':'Continuar con Google'} <ArrowUpRight size={16}/></button><div className="divider-label">O USA UN ENLACE POR CORREO</div><label>Correo de Visual Corp<input type="email" required autoComplete="email" value={email} onChange={(event)=>setEmail(event.target.value)}/></label><button className="site-primary-button" type="submit">Enviar enlace de acceso <ArrowUpRight size={16}/></button>{message&&<small role="status">{message}</small>}{error&&<small className="access-error" role="alert">{error}</small>}</form></main>;
-  if (!auth.canAccess(allowed)) return <main className="access-screen"><section className="access-card"><img src={wordmark} alt="Visual Corp"/><span className="site-eyebrow"><i/> PERMISOS</span><h1>Tu perfil no tiene acceso a este panel.</h1><p>La página web y las operaciones internas usan permisos separados. Solicita al propietario que asigne el rol correspondiente.</p><button className="site-primary-button" onClick={auth.signOut}>Cerrar sesión <LogOut size={16}/></button></section></main>;
-  return children;
-}
 export interface PageHeadingProps { eyebrow: string; title: string; description?: string; action?: React.ReactNode }
 export function PageHeading({ eyebrow, title, description, action }: PageHeadingProps) {
   return <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1>{description&&<p>{description}</p>}</div>{action&&<div className="heading-action">{action}</div>}</div>;

@@ -349,7 +349,7 @@ export function StorefrontPage() {
     const load = async () => {
       try {
         const { data: rows, error: productError } = await supabase.from('public_catalog_products')
-          .select('id,sku,name,slug,description,type,category_id,category,calc_type,featured,sort_order,image,images,features,price_scales,custom_options')
+          .select('id,sku,name,slug,description,type,category_id,category,calc_type,featured,sort_order,image,images,features,quantity_tiers')
           .eq('is_published', true).order('sort_order', { ascending: true });
         if (!current) return;
         if (productError) { setError('No pudimos cargar el catálogo. Comprueba tu conexión e inténtalo de nuevo.'); return; }

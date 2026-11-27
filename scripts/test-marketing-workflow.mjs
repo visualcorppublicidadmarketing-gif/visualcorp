@@ -51,6 +51,55 @@ test("Queues separate plans, untitled ideas, overdue production and missing publ
       USERS.editor,
     ),
   );
+  assert(
+    rules.matchesQueue(
+      { ...p, status: "Aprobada" },
+      "approved",
+      "2026-10-31",
+    ),
+  );
+  assert(
+    !rules.matchesQueue(
+      { ...p, status: "En revisión" },
+      "approved",
+      "2026-10-31",
+    ),
+  );
+  assert(
+    !rules.matchesQueue(
+      { ...p, status: "Publicada" },
+      "approved",
+      "2026-10-31",
+    ),
+  );
+  assert(
+    rules.matchesQueue(
+      { ...p, status: "Publicada", reach: 0, interactions: 0, clicks: 0, leads: 0 },
+      "published_no_results",
+      "2026-10-31",
+    ),
+  );
+  assert(
+    !rules.matchesQueue(
+      { ...p, status: "Publicada", reach: 120, interactions: 0, clicks: 0, leads: 0 },
+      "published_no_results",
+      "2026-10-31",
+    ),
+  );
+  assert(
+    !rules.matchesQueue(
+      { ...p, status: "Publicada", reach: 0, results_updated_at: "2026-11-27T05:00:00Z" },
+      "published_no_results",
+      "2026-10-31",
+    ),
+  );
+  assert(
+    !rules.matchesQueue(
+      { ...p, status: "Aprobada", reach: 0 },
+      "published_no_results",
+      "2026-10-31",
+    ),
+  );
 });
 test("Checklist denominator excludes N/A and proposals skip weekends and confirmed closures", () => {
   assert.deepEqual(
@@ -366,6 +415,130 @@ test("Postgres migration, authenticated permissions, concurrency, approvals and 
           [USERS.manager],
         );
         await assert.rejects(review("manager", "approved"), /gerencia/);
+      },
+    );
+    await t.test(
+      "Priority 6: save_marketing_post_results enforces permissions, persists metrics/URL and logs audit without invalidating approval",
+      async () => {
+        await db.exec(
+          readFileSync(
+            "supabase/migrations/20261127060000_priority6_marketing_results_and_support.sql",
+            "utf8",
+          ),
+        );
+        post = await asUser(db, "editor", (tx) =>
+          save(tx, { status: "Publicada" }, post),
+        );
+        const revBefore = post.content_revision;
+
+        const saveResults = (user, params, current = post) =>
+          asUser(
+            db,
+            user,
+            async (tx) =>
+              (
+                await tx.query(
+                  `select * from public.save_marketing_post_results($1,$2,$3,$4,$5,$6,$7,$8)`,
+                  [
+                    ORG,
+                    current.id,
+                    params.reach,
+                    params.interactions,
+                    params.clicks,
+                    params.leads,
+                    params.published_url ?? null,
+                    params.measured_at ?? "2026-11-27T10:00:00Z",
+                  ],
+                )
+              ).rows[0],
+          );
+
+        await assert.rejects(
+          saveResults("viewer", { reach: 100, interactions: 10, clicks: 2, leads: 1 }),
+          /permiso/,
+        );
+        await assert.rejects(
+          saveResults("outsider", { reach: 100, interactions: 10, clicks: 2, leads: 1 }),
+          /permiso/,
+        );
+        await assert.rejects(
+          saveResults("manager", { reach: 100, interactions: 10, clicks: 2, leads: 1 }),
+          /permiso/,
+        );
+        await assert.rejects(
+          saveResults("editor", { reach: -1, interactions: 0, clicks: 0, leads: 0 }),
+          /iguales o mayores a cero/,
+        );
+        await assert.rejects(
+          saveResults("editor", {
+            reach: 10,
+            interactions: 1,
+            clicks: 0,
+            leads: 0,
+            published_url: "ftp://invalid.example",
+          }),
+          /http/,
+        );
+
+        const updated = await saveResults("editor", {
+          reach: 1250,
+          interactions: 84,
+          clicks: 32,
+          leads: 5,
+          published_url: "https://instagram.com/p/demo",
+        });
+        assert.equal(updated.reach, 1250);
+        assert.equal(updated.interactions, 84);
+        assert.equal(updated.clicks, 32);
+        assert.equal(updated.leads, 5);
+        assert.equal(updated.published_url, "https://instagram.com/p/demo");
+        assert.ok(updated.results_updated_at);
+        assert.equal(updated.content_revision, revBefore);
+
+        const events = (
+          await db.query(
+            `select field_name, previous_value, new_value from marketing_post_events where post_id=$1 and field_name='results'`,
+            [post.id],
+          )
+        ).rows;
+        assert.equal(events.length, 1);
+        assert.match(events[0].new_value, /alcance 1250/);
+        assert.match(events[0].new_value, /https:\/\/instagram\.com\/p\/demo/);
+
+        // Approver-only (without marketing.edit) can still record post-publication results and preserves URL when null is passed
+        const editorProfile = (
+          await db.query(
+            `select profile_id from organization_memberships where user_id=$1`,
+            [USERS.editor],
+          )
+        ).rows[0].profile_id;
+        await db.query(
+          `update access_profile_permissions set enabled=false where profile_id=$1 and module_key='marketing' and action_key='edit'`,
+          [editorProfile],
+        );
+        const approverOnly = await saveResults("editor", {
+          reach: 1500,
+          interactions: 95,
+          clicks: 40,
+          leads: 7,
+          published_url: null,
+        });
+        assert.equal(approverOnly.reach, 1500);
+        assert.equal(approverOnly.published_url, "https://instagram.com/p/demo");
+
+        // Restore marketing.edit so RLS allows reaching the controlled-write trigger
+        await db.query(
+          `update access_profile_permissions set enabled=true where profile_id=$1 and module_key='marketing' and action_key='edit'`,
+          [editorProfile],
+        );
+
+        // Direct table writes remain blocked by marketing_controlled_write
+        await assert.rejects(
+          asUser(db, "editor", (tx) =>
+            tx.exec(`update marketing_posts set reach=999 where id='${post.id}'`),
+          ),
+          /Actualiza la página/,
+        );
       },
     );
   } finally {
