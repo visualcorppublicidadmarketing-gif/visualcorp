@@ -2,10 +2,11 @@ import type {
   DesignLayer,
   ProductAppearance,
   ProductBase,
+  ProductSurfaceProfile,
   SceneBackground,
 } from './types';
 
-export const PRODUCT_BASES: ProductBase[] = [
+const productBases: ProductBase[] = [
   {
     id: 'camiseta',
     name: 'Camiseta',
@@ -81,7 +82,7 @@ export const PRODUCT_BASES: ProductBase[] = [
     defaultAccentColor: '#f9fafb',
     defaultFinish: 'glossy',
     defaultWarp: 'cylinder',
-    defaultWarpStrength: 48,
+    defaultWarpStrength: 100,
     hint: 'Frente de taza · asa fuera del área referencial',
   },
   {
@@ -219,6 +220,35 @@ export const PRODUCT_BASES: ProductBase[] = [
   },
 ];
 
+const PRODUCT_SURFACE_PROFILES: Record<string, ProductSurfaceProfile> = {
+  camiseta: { kind: 'flat', aspectRatio: 36 / 31 },
+  sudadera: { kind: 'flat', aspectRatio: 36 / 29 },
+  polo: { kind: 'flat', aspectRatio: 1 },
+  // The 20:9 wrap follows the straight 72 mm body band, with relief around the handle roots.
+  taza: {
+    kind: 'cylinder', aspectRatio: 20 / 9, wrapAngleDegrees: 236, verticalCoverage: 0.76,
+    keepOutAreas: [
+      { x: 84, y: 0, width: 16, height: 18 },
+      { x: 84, y: 82, width: 16, height: 18 },
+    ],
+  },
+  tomatodo: { kind: 'cylinder', aspectRatio: 1.92, wrapAngleDegrees: 235, verticalCoverage: 0.79 },
+  gorra: { kind: 'dome', aspectRatio: 42 / 36 },
+  bolsa: { kind: 'flat', aspectRatio: 52 / 38 },
+  rotulo: { kind: 'perspective', aspectRatio: 54 / 82 },
+  rollup: { kind: 'flat', aspectRatio: 34 / 82 },
+  'banner-arana': { kind: 'perspective', aspectRatio: 32 / 82 },
+  'banner-en-a': { kind: 'perspective', aspectRatio: 54 / 77 },
+};
+
+export const PRODUCT_BASES: ProductBase[] = productBases.map((product) => ({
+  ...product,
+  surfaceProfile: PRODUCT_SURFACE_PROFILES[product.id] || {
+    kind: product.defaultWarp,
+    aspectRatio: (product.printArea.width * product.ratio) / product.printArea.height,
+  },
+}));
+
 export const DEFAULT_PRODUCT_ID = 'camiseta';
 
 export const PRODUCT_COLOR_SWATCHES = [
@@ -265,6 +295,30 @@ export const SCENE_BACKGROUND_PRESETS: Array<{
     id: 'warm-editorial',
     label: 'Arena editorial',
     value: { kind: 'gradient', color: '#f3e9dc', color2: '#d9c5b2', angle: 155 },
+  },
+  {
+    id: 'restaurant-table',
+    label: 'Mesa restaurante',
+    value: {
+      kind: 'image', color: '#f4f2f8', color2: '#dcd7e8', angle: 180,
+      imageSrc: '/images/product-design-backgrounds/restaurant-table.png', imageName: 'Mesa de restaurante',
+    },
+  },
+  {
+    id: 'advertising-studio',
+    label: 'Mesa publicitaria',
+    value: {
+      kind: 'image', color: '#f4f2f8', color2: '#dcd7e8', angle: 180,
+      imageSrc: '/images/product-design-backgrounds/advertising-studio.png', imageName: 'Estudio publicitario',
+    },
+  },
+  {
+    id: 'stone-abstract',
+    label: 'Piedra abstracta',
+    value: {
+      kind: 'image', color: '#f4f2f8', color2: '#dcd7e8', angle: 180,
+      imageSrc: '/images/product-design-backgrounds/stone-abstract.png', imageName: 'Piedra con fondo abstracto',
+    },
   },
   {
     id: 'pure-white',
