@@ -1591,6 +1591,29 @@ begin
   ) then
     raise exception 'Solo el propietario puede retirar cuentas administrativas.' using errcode = '42501';
   end if;
+  if not v_owner and exists (
+    select 1 from public.organization_memberships target_membership
+    where target_membership.organization_id = v_org
+      and target_membership.user_id = p_user_id
+      and not exists (
+        select 1 from public.organization_memberships actor_membership
+        join public.access_profiles actor_profile
+          on actor_profile.id = actor_membership.profile_id
+         and actor_profile.organization_id = actor_membership.organization_id
+         and actor_profile.active
+        where actor_membership.organization_id = v_org
+          and actor_membership.user_id = v_actor
+          and actor_membership.active
+          and actor_membership.branch_id is null
+          and (
+            actor_membership.role = target_membership.role
+            or (actor_membership.role = 'admin' and target_membership.role in ('manager','advisor','warehouse','production','marketing'))
+            or (actor_membership.role = 'manager' and target_membership.role in ('advisor','warehouse','production','marketing'))
+          )
+      )
+  ) then
+    raise exception 'No puedes retirar una cuenta con rol superior al tuyo.' using errcode = '42501';
+  end if;
 
   select count(*) into v_admin_memberships from public.organization_memberships
     where organization_id = v_org and role = 'admin' and active and user_id <> p_user_id;

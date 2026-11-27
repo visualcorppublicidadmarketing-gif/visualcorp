@@ -26,8 +26,18 @@ create or replace view public.public_catalog_products
       when jsonb_typeof(p.custom_options->'quantity_pricing') = 'object' then coalesce((
         select jsonb_agg(
           jsonb_build_object(
-            'min_qty', (scale->>'qty')::numeric::int,
-            'max_qty', (scale->>'max_qty')::numeric::int
+            'min_qty', case
+              when length(scale->>'qty') <= 32 and (scale->>'qty') ~ '^[0-9]+(\.[0-9]+)?$' then
+                case when (scale->>'qty')::numeric between 1 and 2147483647
+                  and trunc((scale->>'qty')::numeric) = (scale->>'qty')::numeric
+                  then (scale->>'qty')::numeric::int else null end
+              else null end,
+            'max_qty', case
+              when length(scale->>'max_qty') <= 32 and (scale->>'max_qty') ~ '^[0-9]+(\.[0-9]+)?$' then
+                case when (scale->>'max_qty')::numeric between 1 and 2147483647
+                  and trunc((scale->>'max_qty')::numeric) = (scale->>'max_qty')::numeric
+                  then (scale->>'max_qty')::numeric::int else null end
+              else null end
           )
           order by elem.ordinality
         )
@@ -40,10 +50,25 @@ create or replace view public.public_catalog_products
         where jsonb_typeof(scale) = 'object'
           and scale ? 'qty'
           and scale ? 'max_qty'
-          and (scale->>'qty') ~ '^[0-9]+(\.[0-9]+)?$'
-          and (scale->>'max_qty') ~ '^[0-9]+(\.[0-9]+)?$'
-          and (scale->>'qty')::numeric >= 1
-          and (scale->>'max_qty')::numeric >= (scale->>'qty')::numeric
+          and case
+            when length(scale->>'qty') <= 32 and (scale->>'qty') ~ '^[0-9]+(\.[0-9]+)?$' then
+              (scale->>'qty')::numeric >= 1
+              and (scale->>'qty')::numeric <= 2147483647
+              and trunc((scale->>'qty')::numeric) = (scale->>'qty')::numeric
+            else false
+          end
+          and case
+            when length(scale->>'max_qty') <= 32 and (scale->>'max_qty') ~ '^[0-9]+(\.[0-9]+)?$' then
+              (scale->>'max_qty')::numeric >= 1
+              and (scale->>'max_qty')::numeric <= 2147483647
+              and trunc((scale->>'max_qty')::numeric) = (scale->>'max_qty')::numeric
+              and case
+                when length(scale->>'qty') <= 32 and (scale->>'qty') ~ '^[0-9]+(\.[0-9]+)?$' then
+                  (scale->>'max_qty')::numeric >= (scale->>'qty')::numeric
+                else false
+              end
+            else false
+          end
       ), '[]'::jsonb)
       else '[]'::jsonb
     end as quantity_tiers

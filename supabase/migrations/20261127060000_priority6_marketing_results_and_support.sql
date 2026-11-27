@@ -79,8 +79,12 @@ begin
 
   if p_published_url is not null then
     v_url := trim(p_published_url);
-    if v_url <> '' and v_url !~* '^https?://' then
-      raise exception 'El enlace publicado debe comenzar con http:// o https://.';
+    if v_url <> '' and (
+      length(v_url) > 2048
+      or v_url ~ '[[:space:][:cntrl:]]'
+      or v_url !~* '^https://([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)(\.([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?))+(\:[0-9]{1,5})?([/?#][^[:space:][:cntrl:]]*)?$'
+    ) then
+      raise exception 'El enlace publicado debe ser una URL HTTPS válida de hasta 2048 caracteres.';
     end if;
   end if;
 
@@ -100,6 +104,10 @@ begin
     else v_url
   end;
   v_measured_at := coalesce(p_measured_at, clock_timestamp());
+  if not pg_catalog.isfinite(v_measured_at)
+    or v_measured_at > clock_timestamp() + interval '5 minutes' then
+    raise exception 'La fecha de medición debe ser finita y no posterior a la hora actual.' using errcode = '22023';
+  end if;
 
   update public.marketing_posts
   set
