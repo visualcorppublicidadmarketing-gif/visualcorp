@@ -1,8 +1,11 @@
 import * as opentype from 'opentype.js';
-import type { MonogramElement, MonogramFontId, MonogramProject } from './monogramModel';
+import { MONOGRAM_SHAPES } from './monogramModel';
+import type { MonogramElement, MonogramFontId, MonogramProject, MonogramShapeId } from './monogramModel';
 
 export interface MonogramOutline {
   id: string;
+  kind: 'text' | 'ornament';
+  shapeId: MonogramShapeId | null;
   text: string;
   d: string;
   transform?: string;
@@ -10,6 +13,7 @@ export interface MonogramOutline {
   y: number;
   fontSize: number;
   depth: number;
+  color: string;
   bounds: { x: number; y: number; width: number; height: number };
   missingCharacters: string[];
   usedSimpleShaping: boolean;
@@ -71,12 +75,13 @@ function createGlyphRunPath(
 }
 
 export function createMonogramOutline(
-  font: opentype.Font,
+  font: opentype.Font | null,
   projectHeight: number,
   layer: MonogramElement,
 ): MonogramOutline | null {
+  if (layer.kind === 'ornament') return createMonogramOrnamentOutline(projectHeight, layer);
   const text = layer.text.trim();
-  if (!text) return null;
+  if (!text || !font) return null;
 
   // Project positions use a bottom-left origin; SVG uses a top-left origin.
   const baselineY = projectHeight - layer.y;
@@ -105,6 +110,8 @@ export function createMonogramOutline(
 
   return {
     id: layer.id,
+    kind: 'text',
+    shapeId: null,
     text,
     d,
     transform: rotation,
@@ -112,6 +119,7 @@ export function createMonogramOutline(
     y: baselineY,
     fontSize: layer.fontSize,
     depth: layer.depth,
+    color: layer.color,
     usedSimpleShaping,
     bounds: {
       x: round(box.x1),
@@ -120,6 +128,47 @@ export function createMonogramOutline(
       height: round(Math.max(0, box.y2 - box.y1)),
     },
     missingCharacters,
+  };
+}
+
+function createMonogramOrnamentOutline(projectHeight: number, layer: MonogramElement): MonogramOutline | null {
+  const shapeId = layer.shapeId ?? 'star';
+  const label = MONOGRAM_SHAPES.find((shape) => shape.id === shapeId)?.label ?? 'Adorno';
+  const radius = layer.fontSize / 2;
+  const baselineY = projectHeight - layer.y;
+  let d: string;
+  if (shapeId === 'circle') {
+    d = `M ${round(layer.x - radius)} ${round(baselineY)} a ${round(radius)} ${round(radius)} 0 1 0 ${round(radius * 2)} 0 a ${round(radius)} ${round(radius)} 0 1 0 ${round(-radius * 2)} 0 Z`;
+  } else if (shapeId === 'diamond') {
+    d = `M ${round(layer.x)} ${round(baselineY - radius)} L ${round(layer.x + radius)} ${round(baselineY)} ${round(layer.x)} ${round(baselineY + radius)} ${round(layer.x - radius)} ${round(baselineY)} Z`;
+  } else if (shapeId === 'heart') {
+    d = `M ${round(layer.x)} ${round(baselineY + radius * 0.88)} C ${round(layer.x - radius * 0.18)} ${round(baselineY + radius * 0.68)}, ${round(layer.x - radius)} ${round(baselineY + radius * 0.2)}, ${round(layer.x - radius)} ${round(baselineY - radius * 0.08)} C ${round(layer.x - radius)} ${round(baselineY - radius * 0.72)}, ${round(layer.x - radius * 0.2)} ${round(baselineY - radius * 0.92)}, ${round(layer.x)} ${round(baselineY - radius * 0.34)} C ${round(layer.x + radius * 0.2)} ${round(baselineY - radius * 0.92)}, ${round(layer.x + radius)} ${round(baselineY - radius * 0.72)}, ${round(layer.x + radius)} ${round(baselineY - radius * 0.08)} C ${round(layer.x + radius)} ${round(baselineY + radius * 0.2)}, ${round(layer.x + radius * 0.18)} ${round(baselineY + radius * 0.68)}, ${round(layer.x)} ${round(baselineY + radius * 0.88)} Z`;
+  } else {
+    const points = Array.from({ length: 10 }, (_, index) => {
+      const angle = -Math.PI / 2 + (index * Math.PI) / 5;
+      const pointRadius = index % 2 === 0 ? radius : radius * 0.46;
+      return `${round(layer.x + Math.cos(angle) * pointRadius)} ${round(baselineY + Math.sin(angle) * pointRadius)}`;
+    });
+    d = `M ${points.join(' L ')} Z`;
+  }
+  const rotation = Math.abs(layer.rotation) > 0.001
+    ? `rotate(${round(-layer.rotation)} ${round(layer.x)} ${round(baselineY)})`
+    : undefined;
+  return {
+    id: layer.id,
+    kind: 'ornament',
+    shapeId,
+    text: label,
+    d,
+    transform: rotation,
+    x: layer.x,
+    y: baselineY,
+    fontSize: layer.fontSize,
+    depth: layer.depth,
+    color: layer.color,
+    bounds: { x: layer.x - radius, y: baselineY - radius, width: radius * 2, height: radius * 2 },
+    missingCharacters: [],
+    usedSimpleShaping: false,
   };
 }
 
@@ -143,7 +192,7 @@ export function createMonogramSvg(
     return `<path data-layer-id="${escapeXml(outline.id)}" d="${outline.d}"${transform} fill="#111827" fill-rule="nonzero"/>`;
   }).join('\n  ');
 
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${project.width}mm" height="${project.height}mm" viewBox="0 0 ${project.width} ${project.height}" role="img" aria-labelledby="title desc">\n  <title id="title">${escapeXml(title)}</title>\n  <desc id="desc">Contornos tipográficos independientes. El archivo no aplica unión booleana, compensación de corte ni puentes.</desc>\n  ${paths}\n</svg>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${project.width}mm" height="${project.height}mm" viewBox="0 0 ${project.width} ${project.height}" role="img" aria-labelledby="title desc">\n  <title id="title">${escapeXml(title)}</title>\n  <desc id="desc">Capas de texto y adornos como contornos independientes. El archivo no aplica unión booleana, compensación de corte ni puentes.</desc>\n  ${paths}\n</svg>`;
 }
 
 export function estimateOutlineBounds(outline: MonogramOutline) {
