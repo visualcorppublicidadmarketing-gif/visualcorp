@@ -39,7 +39,7 @@ export function PaymentsPage() {
 
   return <div className="vc-payments-page">
     <section className="vc-payments-hero" aria-labelledby="payments-title">
-      <img className="vc-payments-hero-image" src="/payments/pagos-glass-hero-marca.webp" alt="" aria-hidden="true" fetchPriority="high" />
+      <img className="vc-payments-hero-image" src="/payments/pagos-glass-hero.webp" alt="" aria-hidden="true" fetchPriority="high" />
       <div className="vc-payments-hero-shade" aria-hidden="true" />
       <div className="vc-payments-hero-content">
         <span className="vc-payments-eyebrow"><span /> MEDIOS DE PAGO</span>
@@ -48,7 +48,6 @@ export function PaymentsPage() {
         <a className="vc-payments-scroll" href="#opciones-de-pago">Ver opciones <ArrowDown size={15} aria-hidden="true"/></a>
       </div>
       <div className="vc-payments-hero-art" aria-hidden="true">
-        <img className="vc-payments-hero-orbit" src="/payments/pagos-glass-orbita-marca.webp" alt="" />
         <div className="vc-payments-hero-card">
           <WalletCards size={27}/>
           <span>PAGO<br/>FÁCIL</span>
@@ -101,7 +100,6 @@ export function PaymentsPage() {
       </div>
 
       <section className="vc-payment-next" aria-labelledby="payment-next-title">
-        <img className="vc-payment-next-art" src="/payments/pagos-glass-acento-marca.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" />
         <div className="vc-payment-next-heading"><span className="vc-payment-next-icon"><ClipboardCheck size={20}/></span><div><span className="vc-payments-kicker">DESPUÉS DE PAGAR</span><h2 id="payment-next-title">Envía tu comprobante</h2></div></div>
         <div className="vc-payment-steps">
           <div><span>01</span><p>Ten a mano tu número de proforma o pedido.</p></div>
