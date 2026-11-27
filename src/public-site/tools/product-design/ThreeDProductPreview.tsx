@@ -56,6 +56,8 @@ type BuiltInModelBundle = {
   guideTexture?: THREE.CanvasTexture;
 };
 
+const BUILT_IN_HOODIE_MODEL_URL = '/public-site/models/premium-eco-hoodie.gltf';
+
 function getFinishParams(finish: ProductFinish) {
   if (finish === 'glossy') return { roughness: 0.16, metalness: 0.08, envMapIntensity: 1.15 };
   if (finish === 'metallic') return { roughness: 0.24, metalness: 0.8, envMapIntensity: 1.3 };
@@ -924,6 +926,223 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
   return { group, bodyMaterials, accentMaterials, artMaterials, chestArtworkMesh, guideMesh, guideCanvas, guideTexture };
 }
 
+function getBoundsInLocalSpace(object: THREE.Object3D, space: THREE.Object3D) {
+  const worldBounds = new THREE.Box3().setFromObject(object);
+  const localBounds = new THREE.Box3();
+  for (const x of [worldBounds.min.x, worldBounds.max.x]) {
+    for (const y of [worldBounds.min.y, worldBounds.max.y]) {
+      for (const z of [worldBounds.min.z, worldBounds.max.z]) {
+        localBounds.expandByPoint(space.worldToLocal(new THREE.Vector3(x, y, z)));
+      }
+    }
+  }
+  return localBounds;
+}
+
+function findHoodieFrontPanel(root: THREE.Object3D) {
+  let namedPanel: THREE.Mesh | null = null;
+  const candidates: Array<{ mesh: THREE.Mesh; score: number }> = [];
+  root.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    if (object.name.toLowerCase() === 'pattern_135774') namedPanel = object;
+    object.geometry.computeBoundingBox();
+    const localBox = object.geometry.boundingBox;
+    if (!localBox) return;
+    const worldBox = localBox.clone().applyMatrix4(object.matrixWorld);
+    const size = worldBox.getSize(new THREE.Vector3());
+    const center = worldBox.getCenter(new THREE.Vector3());
+    if (center.z <= 0.015 || Math.abs(center.x) > 0.35 || size.x < 0.48 || size.y < 0.55) return;
+    candidates.push({ mesh: object, score: size.x * size.y + center.z * 0.01 });
+  });
+  if (namedPanel) return namedPanel;
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates[0]?.mesh ?? null;
+}
+
+function createConformingGarmentPatch(
+  target: THREE.Mesh,
+  wrapper: THREE.Group,
+  product: ProductBase,
+) {
+  const bounds = getBoundsInLocalSpace(target, wrapper);
+  const width = bounds.max.x - bounds.min.x;
+  const height = bounds.max.y - bounds.min.y;
+  const area = product.printArea;
+  const xMin = bounds.min.x + width * (area.x / 100);
+  const xMax = bounds.min.x + width * ((area.x + area.width) / 100);
+  const yMax = bounds.max.y - height * (area.y / 100);
+  const yMin = bounds.max.y - height * ((area.y + area.height) / 100);
+  const columns = 40;
+  const rows = 30;
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+  const raycaster = new THREE.Raycaster();
+  const direction = new THREE.Vector3(0, 0, -1);
+  const normalMatrix = new THREE.Matrix3();
+  const offset = 0.0028;
+
+  wrapper.updateMatrixWorld(true);
+  target.updateMatrixWorld(true);
+  for (let row = 0; row <= rows; row += 1) {
+    const v = row / rows;
+    const y = yMin + (yMax - yMin) * v;
+    for (let column = 0; column <= columns; column += 1) {
+      const u = column / columns;
+      const x = xMin + (xMax - xMin) * u;
+      const localOrigin = new THREE.Vector3(x, y, bounds.max.z + 1);
+      const worldOrigin = wrapper.localToWorld(localOrigin);
+      raycaster.set(worldOrigin, direction);
+      const hit = raycaster.intersectObject(target, false)[0];
+      let vertex: THREE.Vector3;
+      if (hit?.face) {
+        normalMatrix.getNormalMatrix(target.matrixWorld);
+        const worldNormal = hit.face.normal.clone().applyMatrix3(normalMatrix).normalize();
+        vertex = wrapper.worldToLocal(hit.point.clone().addScaledVector(worldNormal, offset));
+      } else {
+        vertex = new THREE.Vector3(x, y, bounds.max.z + offset);
+      }
+      positions.push(vertex.x, vertex.y, vertex.z);
+      uvs.push(u, v);
+    }
+  }
+
+  const stride = columns + 1;
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const a = row * stride + column;
+      const b = a + 1;
+      const c = a + stride;
+      const d = c + 1;
+      indices.push(a, c, b, b, c, d);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function createImportedHoodieBundle(
+  root: THREE.Group,
+  product: ProductBase,
+  appearance: ProductAppearance,
+  selectedLayer: DesignLayer | null,
+  showPrintGuides: boolean,
+): BuiltInModelBundle {
+  root.updateMatrixWorld(true);
+  const sourceBounds = new THREE.Box3().setFromObject(root);
+  const sourceSize = sourceBounds.getSize(new THREE.Vector3());
+  const sourceCenter = sourceBounds.getCenter(new THREE.Vector3());
+  const scale = 1.85 / Math.max(sourceSize.x, sourceSize.y, sourceSize.z, 0.001);
+  const wrapper = new THREE.Group();
+  wrapper.add(root);
+  wrapper.scale.setScalar(scale);
+  wrapper.position.copy(sourceCenter).multiplyScalar(-scale);
+  wrapper.updateMatrixWorld(true);
+
+  const fabricMaterials: THREE.MeshStandardMaterial[] = [];
+  const accentMaterials: THREE.MeshStandardMaterial[] = [];
+  const seenMaterials = new Set<THREE.Material>();
+  wrapper.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    object.castShadow = true;
+    object.receiveShadow = true;
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    materials.forEach((material) => {
+      if (seenMaterials.has(material) || !(material instanceof THREE.MeshStandardMaterial)) return;
+      seenMaterials.add(material);
+      const name = material.name.toLowerCase();
+      if (name.includes('fabric') || name.includes('textile') || name.includes('cotton')) {
+        // This asset's fabric base-color map is a UV checker; keep its normal/roughness maps for the knit folds.
+        material.map = null;
+        material.color.set(appearance.mode === 'custom' ? appearance.color : product.defaultColor);
+        material.roughness = 0.88;
+        material.metalness = 0;
+        fabricMaterials.push(material);
+      } else if (name === 'material.002' || name.includes('cord') || name.includes('string')) {
+        material.color.set(appearance.mode === 'custom' ? appearance.accentColor : product.defaultAccentColor);
+        material.roughness = 0.92;
+        material.metalness = 0;
+        accentMaterials.push(material);
+      }
+      material.needsUpdate = true;
+    });
+  });
+
+  const frontPanel = findHoodieFrontPanel(wrapper);
+  let chestArtworkMesh: THREE.Mesh | undefined;
+  let guideMesh: THREE.Mesh | undefined;
+  let guideCanvas: HTMLCanvasElement | undefined;
+  let guideTexture: THREE.CanvasTexture | undefined;
+  const artMaterials: THREE.MeshStandardMaterial[] = [];
+
+  if (frontPanel) {
+    const patchGeometry = createConformingGarmentPatch(frontPanel, wrapper, product);
+    const artMaterial = new THREE.MeshPhysicalMaterial({
+      color: '#ffffff',
+      transparent: true,
+      alphaTest: 0.01,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      roughness: 0.88,
+      metalness: 0,
+      sheen: 0.65,
+      sheenRoughness: 0.75,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+    });
+    artMaterials.push(artMaterial);
+    chestArtworkMesh = new THREE.Mesh(patchGeometry, artMaterial);
+    chestArtworkMesh.name = 'HoodieChestArtwork';
+    chestArtworkMesh.renderOrder = 2;
+    wrapper.add(chestArtworkMesh);
+
+    const surfaceAspect = product.surfaceProfile?.aspectRatio || (product.printArea.width * product.ratio) / product.printArea.height;
+    guideCanvas = document.createElement('canvas');
+    guideCanvas.width = 768;
+    guideCanvas.height = Math.max(1, Math.round(guideCanvas.width / surfaceAspect));
+    drawGarmentGuideCanvas(guideCanvas, product, selectedLayer, showPrintGuides);
+    guideTexture = new THREE.CanvasTexture(guideCanvas);
+    guideTexture.colorSpace = THREE.SRGBColorSpace;
+    guideTexture.anisotropy = 4;
+    const guideMaterial = new THREE.MeshPhysicalMaterial({
+      map: guideTexture,
+      transparent: true,
+      alphaTest: 0.01,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -3,
+      roughness: 0.84,
+      metalness: 0,
+      sheen: 0.55,
+      sheenRoughness: 0.8,
+    });
+    guideMesh = new THREE.Mesh(patchGeometry.clone(), guideMaterial);
+    guideMesh.name = 'Guías de edición';
+    guideMesh.renderOrder = 4;
+    guideMesh.visible = showPrintGuides;
+    guideMesh.castShadow = false;
+    guideMesh.receiveShadow = false;
+    wrapper.add(guideMesh);
+  }
+
+  return {
+    group: wrapper,
+    bodyMaterials: fabricMaterials,
+    accentMaterials,
+    artMaterials,
+    chestArtworkMesh,
+    guideMesh,
+    guideCanvas,
+    guideTexture,
+  };
+}
+
 function disposeObject3D(root: THREE.Object3D) {
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
@@ -1109,6 +1328,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
   const selectedLayerRef = useRef(selectedLayer);
   const onMoveLayerRef = useRef(onMoveLayer);
   const productRef = useRef(product);
+  const appearanceRef = useRef(appearance);
   const showPrintGuidesRef = useRef(showPrintGuides);
   const shadowKeyLightRef = useRef<THREE.DirectionalLight | null>(null);
 
@@ -1123,6 +1343,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
   selectedLayerRef.current = selectedLayer;
   onMoveLayerRef.current = onMoveLayer;
   productRef.current = product;
+  appearanceRef.current = appearance;
   showPrintGuidesRef.current = showPrintGuides;
   placementModeRef.current = Boolean(customModel?.placementMode);
   autoRotateRef.current = autoRotate;
@@ -1657,6 +1878,60 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
     }
 
     setLoadingCustom(false);
+    setError('');
+
+    if (product.id === 'sudadera' && !product.isCustom3D) {
+      setLoadingCustom(true);
+      const installHoodieBundle = (bundle: BuiltInModelBundle) => {
+        modelRoot.add(bundle.group);
+        builtInBundleRef.current = bundle;
+        if (artTextureRef.current) {
+          bundle.artMaterials.forEach((material) => {
+            material.map = artTextureRef.current;
+            material.needsUpdate = true;
+          });
+        }
+        if (bundle.guideCanvas && bundle.guideTexture && bundle.guideMesh) {
+          drawGarmentGuideCanvas(bundle.guideCanvas, productRef.current, selectedLayerRef.current, showPrintGuidesRef.current);
+          bundle.guideTexture.needsUpdate = true;
+          bundle.guideMesh.visible = showPrintGuidesRef.current;
+        }
+        const bounds = new THREE.Box3().setFromObject(bundle.group);
+        const size = bounds.getSize(new THREE.Vector3());
+        if (floorRef.current && !bounds.isEmpty()) floorRef.current.position.y = bounds.min.y - 0.008;
+        const dist = Math.max(3.35, Math.max(size.x * 1.95, size.y * 2.35));
+        baseDistanceRef.current = dist;
+        camera.position.set(0, 0.03, dist);
+        controls.target.set(0, 0, 0);
+        controls.update();
+      };
+
+      new GLTFLoader().loadAsync(BUILT_IN_HOODIE_MODEL_URL)
+        .then((gltf) => {
+          if (cancelled) {
+            disposeObject3D(gltf.scene);
+            return;
+          }
+          const bundle = createImportedHoodieBundle(
+            gltf.scene,
+            productRef.current,
+            appearanceRef.current,
+            selectedLayerRef.current,
+            showPrintGuidesRef.current,
+          );
+          installHoodieBundle(bundle);
+          setLoadingCustom(false);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          const fallback = createBuiltInProductModel(productRef.current, appearanceRef.current);
+          installHoodieBundle(fallback);
+          setLoadingCustom(false);
+          setError('No se pudo cargar el modelo original del buzo; se muestra una vista de referencia.');
+        });
+      return () => { cancelled = true; };
+    }
+
     const bundle = createBuiltInProductModel(product, appearance);
     modelRoot.add(bundle.group);
     builtInBundleRef.current = bundle;
@@ -1708,7 +1983,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
   // A photorealistic frontal render sits over the matching 3D form for the straight-on studio view.
   useEffect(() => {
     const modelRoot = modelRootRef.current;
-    if (!modelRoot || product.isCustom3D || !frontalMockupUrl || product.model === 'mug') return undefined;
+    if (!modelRoot || product.isCustom3D || product.id === 'sudadera' || !frontalMockupUrl || product.model === 'mug') return undefined;
 
     let active = true;
     let mockupMesh: THREE.Mesh | null = null;

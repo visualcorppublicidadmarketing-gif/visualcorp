@@ -31,6 +31,13 @@ La tabla tiene políticas RLS por organización, audiencia y rol. Usuarios inter
 
 Las publicaciones las redacta el equipo desde el panel o Codex con la credencial de propósito limitado; la lista no se rellena automáticamente a partir de commits para evitar publicar cambios sin revisar su alcance o impacto.
 
+## 2026-11-27 — Modelo real de buzo en el configurador 3D
+
+- La opción Buso carga el GLTF de la biblioteca de Visual Corp, centra y encuadra la malla, y usa blanco como color inicial de la tela sin cambiar los metales ni borrar los mapas de relieve.
+- El arte y las guías del pecho se proyectan sobre una malla densa ajustada a la superficie exterior del panel frontal. El mockup fotográfico frontal deja de cubrir el modelo 3D.
+- Si el GLTF no está disponible, el configurador conserva una vista de referencia y comunica el problema.
+- Verificación local: `npm run build:checked` y revisión visual con Playwright en `/herramientas`.
+
 ## 2026-11-08 — Pulso de avance y medición por campaña
 
 - Las fichas de campaña resumen actividades listas, publicaciones marcadas como publicadas y cobertura de resultados informados en las piezas vinculadas.
