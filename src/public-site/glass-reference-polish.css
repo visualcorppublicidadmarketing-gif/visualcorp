@@ -1,0 +1,866 @@
+/* ==========================================================================
+   Visual Corp — Glassmorphism Reference Polish & Mobile Focus
+   Inspired by modern optical glass bento UIs across Dark & Light themes:
+   - Floating glass pill navigation with high-contrast active pill
+   - Atmospheric iridescent background washes behind frosted glass bento cards
+   - Subtle specular glare sweep (adapted from Magic UI glare-hover MIT pattern)
+   - Focused mobile heights on Home & Portfolio with zero horizontal overflow
+   ========================================================================== */
+
+/* 1. Atmospheric Depth & Iridescent Backdrop */
+.public-site {
+  background-color: #070911;
+  background-image:
+    radial-gradient(ellipse 48rem 36rem at 8% 10%, rgba(0, 158, 226, 0.14), transparent 72%),
+    radial-gradient(ellipse 46rem 34rem at 92% 24%, rgba(154, 78, 232, 0.14), transparent 72%),
+    radial-gradient(ellipse 52rem 38rem at 82% 72%, rgba(229, 0, 126, 0.13), transparent 74%),
+    radial-gradient(ellipse 44rem 32rem at 18% 92%, rgba(255, 134, 62, 0.08), transparent 74%);
+}
+
+html[data-public-theme="light"] .public-site {
+  background-color: #f3f5fb;
+  background-image:
+    radial-gradient(ellipse 52rem 36rem at 12% 8%, rgba(124, 154, 255, 0.16), transparent 70%),
+    radial-gradient(ellipse 46rem 34rem at 88% 18%, rgba(229, 120, 198, 0.14), transparent 70%),
+    radial-gradient(ellipse 54rem 38rem at 76% 86%, rgba(255, 186, 138, 0.13), transparent 72%),
+    radial-gradient(ellipse 44rem 30rem at 16% 78%, rgba(56, 196, 240, 0.10), transparent 72%);
+}
+
+/* 2. Floating Glass Pill Navigation (Desktop Pill & Light Active State) */
+@media (min-width: 1101px) {
+  .public-site .site-header-inner {
+    border-radius: 999px;
+    padding-inline: 18px 14px;
+    border-color: rgba(205, 220, 255, 0.12);
+    box-shadow:
+      0 22px 54px rgba(0, 0, 0, 0.44),
+      0 2px 10px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .public-site .site-nav-link,
+  .public-site .site-nav-trigger {
+    border-radius: 999px;
+    min-height: 38px;
+    padding-inline: 14px;
+  }
+
+  .public-site .site-nav-link.is-active,
+  .public-site .site-nav-trigger.is-active {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(229, 0, 126, 0.16));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 4px 14px rgba(0, 0, 0, 0.18);
+  }
+
+  .public-site .site-nav-link.is-active::after,
+  .public-site .site-nav-trigger.is-active::after {
+    display: none;
+  }
+
+  .public-site .site-header .site-admin-access,
+  .public-site .site-header .site-quote-button {
+    border-radius: 999px;
+    min-height: 40px;
+  }
+
+  html[data-public-theme="light"] .public-site .site-header-inner {
+    border-color: rgba(118, 86, 152, 0.14);
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(247, 249, 255, 0.72));
+    box-shadow:
+      0 18px 46px rgba(32, 24, 58, 0.10),
+      0 2px 8px rgba(32, 24, 58, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.98);
+  }
+
+  html[data-public-theme="light"] .public-site .site-nav-link,
+  html[data-public-theme="light"] .public-site .site-nav-trigger {
+    color: #463f58;
+  }
+
+  html[data-public-theme="light"] .public-site .site-nav-link:hover,
+  html[data-public-theme="light"] .public-site .site-nav-trigger:hover {
+    background: rgba(24, 20, 38, 0.06);
+    color: #151221;
+  }
+
+  html[data-public-theme="light"] .public-site .site-nav-link.is-active,
+  html[data-public-theme="light"] .public-site .site-nav-trigger.is-active {
+    background: #161322;
+    color: #ffffff;
+    box-shadow: 0 8px 20px rgba(22, 19, 34, 0.18);
+  }
+
+  html[data-public-theme="light"] .public-site .site-nav-trigger.is-active svg {
+    color: #f49bd2;
+  }
+}
+
+/* 3. Shared Optical Glass Bento Surface Treatment + Specular Glare */
+.public-site .home-solutions-bento-card,
+.public-site .portfolio-trust-lead,
+.public-site .portfolio-workshop-samples,
+.public-site .portfolio-solutions-bridge,
+.public-site .store-product-card,
+.public-site .showcase-card {
+  position: relative;
+  border-radius: 22px;
+  border: 1px solid rgba(196, 214, 255, 0.11);
+  background:
+    radial-gradient(120% 95% at 8% 0%, rgba(0, 158, 226, 0.075), transparent 54%),
+    radial-gradient(110% 95% at 92% 100%, rgba(229, 0, 126, 0.08), transparent 54%),
+    linear-gradient(145deg, rgba(20, 24, 42, 0.56), rgba(11, 14, 26, 0.44));
+  box-shadow:
+    0 22px 54px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(22px) saturate(155%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%);
+}
+
+html[data-public-theme="light"] .public-site .home-solutions-bento-card,
+html[data-public-theme="light"] .public-site .portfolio-trust-lead,
+html[data-public-theme="light"] .public-site .portfolio-workshop-samples,
+html[data-public-theme="light"] .public-site .portfolio-solutions-bridge,
+html[data-public-theme="light"] .public-site .store-product-card,
+html[data-public-theme="light"] .public-site .showcase-card {
+  border-color: rgba(116, 78, 146, 0.13);
+  background:
+    radial-gradient(120% 95% at 8% 0%, rgba(0, 158, 226, 0.055), transparent 54%),
+    radial-gradient(110% 95% at 92% 100%, rgba(229, 0, 126, 0.055), transparent 54%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(246, 244, 252, 0.68));
+  color: #1b1628;
+  box-shadow:
+    0 18px 46px rgba(36, 24, 62, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
+}
+
+html[data-public-theme="light"] .public-site .showcase-card-copy h2,
+html[data-public-theme="light"] .public-site .showcase-toolbar h2,
+html[data-public-theme="light"] .public-site .store-product-copy h3 {
+  color: #191526;
+}
+
+html[data-public-theme="light"] .public-site .showcase-card-copy p,
+html[data-public-theme="light"] .public-site .showcase-toolbar p,
+html[data-public-theme="light"] .public-site .store-product-copy > p {
+  color: #5a5369;
+}
+
+/* Light-theme parity for Storefront catalog surface */
+html[data-public-theme="light"] .public-site .storefront-page {
+  background: transparent;
+  color: #1b1628;
+}
+
+html[data-public-theme="light"] .public-site .storefront-heading h2,
+html[data-public-theme="light"] .public-site .store-module-heading h3,
+html[data-public-theme="light"] .public-site .store-product-browser-heading h3,
+html[data-public-theme="light"] .public-site .store-results-copy b {
+  color: #191526;
+}
+
+html[data-public-theme="light"] .public-site .storefront-heading p,
+html[data-public-theme="light"] .public-site .store-product-browser-heading p,
+html[data-public-theme="light"] .public-site .store-results-copy span,
+html[data-public-theme="light"] .public-site .store-product-card-bottom > span {
+  color: #5b546b;
+}
+
+html[data-public-theme="light"] .public-site .storefront-promise {
+  border-color: rgba(116, 78, 146, 0.14);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 12px 30px rgba(36, 24, 62, 0.06), inset 0 1px 0 #ffffff;
+}
+
+html[data-public-theme="light"] .public-site .storefront-promise b {
+  color: #191526;
+}
+
+html[data-public-theme="light"] .public-site .storefront-promise small {
+  color: #5c556c;
+}
+
+html[data-public-theme="light"] .public-site .store-catalog-controls {
+  border-color: rgba(116, 78, 146, 0.14);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 16px 38px rgba(36, 24, 62, 0.08), inset 0 1px 0 #ffffff;
+}
+
+html[data-public-theme="light"] .public-site .store-category-rail {
+  border-bottom-color: rgba(116, 78, 146, 0.12);
+}
+
+html[data-public-theme="light"] .public-site .store-category-rail button {
+  border-color: rgba(116, 78, 146, 0.14);
+  background: rgba(255, 255, 255, 0.72);
+  color: #3f3852;
+}
+
+html[data-public-theme="light"] .public-site .store-category-rail button.active {
+  border-color: #161322;
+  background: #161322;
+  color: #ffffff;
+}
+
+html[data-public-theme="light"] .public-site .store-inline-search,
+html[data-public-theme="light"] .public-site .store-results-toolbar select {
+  border-color: rgba(116, 78, 146, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+  color: #1d182b;
+}
+
+html[data-public-theme="light"] .public-site .store-inline-search input {
+  color: #1d182b;
+}
+
+html[data-public-theme="light"] .public-site .store-product-image {
+  background: radial-gradient(ellipse at 50% 35%, rgba(229, 0, 126, 0.07), #ede9f5 72%);
+}
+
+html[data-public-theme="light"] .public-site .store-product-category {
+  border-color: rgba(168, 28, 114, 0.22);
+  background: rgba(229, 0, 126, 0.08);
+  color: #8b1b62;
+}
+
+html[data-public-theme="light"] .public-site .store-product-add {
+  border-color: rgba(116, 78, 146, 0.18);
+  background: rgba(255, 255, 255, 0.88);
+  color: #211b30;
+}
+
+html[data-public-theme="light"] .public-site .store-product-compare {
+  color: #5b536b;
+}
+
+/* 4. Home Solutions Bento Teaser (Replaces Heavy Matrices on Home) */
+.home-solutions-teaser {
+  background:
+    radial-gradient(ellipse 56% 52% at 15% 20%, rgba(0, 158, 226, 0.10), transparent 64%),
+    radial-gradient(ellipse 54% 52% at 85% 80%, rgba(229, 0, 126, 0.10), transparent 64%),
+    var(--home-bg);
+  border-bottom: 1px solid var(--home-line);
+}
+
+.home-solutions-teaser .home-kicker {
+  color: #7ad7ff;
+}
+
+.home-solutions-bento {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+.home-solutions-bento-card.vc-glass-surface {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 14px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.home-solutions-bento-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: radial-gradient(circle at 50% 42%, rgba(229, 0, 126, 0.16), rgba(11, 13, 22, 0.9));
+}
+
+.home-solutions-bento-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+  transition: transform 0.35s ease;
+}
+
+.home-solutions-bento-card:hover .home-solutions-bento-media img {
+  transform: scale(1.05);
+}
+
+.home-solutions-bento-index {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(11, 14, 26, 0.68);
+  color: #f4eff9;
+  font-size: 11px;
+  font-weight: 800;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.home-solutions-bento-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 4px 4px;
+}
+
+.vc-home .home-solutions-bento-copy h3 {
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.vc-home .home-solutions-bento-copy p {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--home-muted);
+}
+
+.home-solutions-bento-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f39fd2;
+}
+
+html[data-public-theme="light"] .home-solutions-teaser {
+  background:
+    radial-gradient(ellipse 56% 52% at 15% 20%, rgba(0, 158, 226, 0.08), transparent 64%),
+    radial-gradient(ellipse 54% 52% at 85% 80%, rgba(229, 0, 126, 0.08), transparent 64%),
+    linear-gradient(180deg, #f4f3fa, #f8f7fc);
+}
+
+html[data-public-theme="light"] .home-solutions-teaser .home-kicker {
+  color: #0377ae;
+}
+
+html[data-public-theme="light"] .home-solutions-bento-media {
+  border-color: rgba(116, 78, 146, 0.12);
+  background: radial-gradient(circle at 50% 42%, rgba(0, 158, 226, 0.08), #f1eef8);
+}
+
+html[data-public-theme="light"] .home-solutions-bento-index {
+  border-color: rgba(116, 78, 146, 0.16);
+  background: rgba(255, 255, 255, 0.88);
+  color: #1c1628;
+}
+
+html[data-public-theme="light"] .home-solutions-bento-link {
+  color: #931b6c;
+}
+
+/* 5. Portfolio Trust Bento & Workshop Samples */
+.portfolio-trust-bento {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 18px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.portfolio-trust-lead {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  min-width: 0;
+  padding: clamp(22px, 3vw, 34px);
+}
+
+.portfolio-trust-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.portfolio-trust-pill,
+.portfolio-trust-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.portfolio-trust-pill {
+  border: 1px solid rgba(56, 214, 255, 0.34);
+  background: rgba(0, 158, 226, 0.14);
+  color: #8ee6ff;
+}
+
+.portfolio-trust-status {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ded9ea;
+}
+
+.portfolio-trust-lead h3 {
+  margin: 0;
+  color: #f8f6fc;
+  font-family: VisualCorpDisplay, VisualCorpPublicDMSans, sans-serif;
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 400;
+  line-height: 1.04;
+}
+
+.portfolio-trust-lead p {
+  margin: 0;
+  color: #c2bdd0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.portfolio-trust-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.portfolio-workshop-samples {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: clamp(20px, 2.6vw, 28px);
+}
+
+.portfolio-workshop-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.portfolio-workshop-head h3 {
+  margin: 8px 0 0;
+  color: #f8f6fc;
+  font-size: 20px;
+  font-weight: 750;
+}
+
+.portfolio-workshop-disclaimer {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbc6d8;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.portfolio-workshop-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.portfolio-workshop-card {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.portfolio-workshop-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #141726;
+}
+
+.portfolio-workshop-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portfolio-workshop-tag {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(11, 13, 24, 0.72);
+  color: #f6f4fa;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.portfolio-workshop-card figcaption {
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+}
+
+.portfolio-workshop-card strong {
+  font-size: 12.5px;
+  line-height: 1.3;
+  color: #f4f2f9;
+}
+
+.portfolio-workshop-card small {
+  font-size: 11px;
+  color: #b4aec4;
+}
+
+.portfolio-solutions-bridge-wrap {
+  padding-top: 12px;
+}
+
+.portfolio-solutions-bridge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: clamp(24px, 3.2vw, 38px);
+}
+
+.portfolio-solutions-bridge h2 {
+  margin: 10px 0 8px;
+  color: #f8f6fc;
+  font-family: VisualCorpDisplay, VisualCorpPublicDMSans, sans-serif;
+  font-size: clamp(30px, 3.6vw, 48px);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.portfolio-solutions-bridge p {
+  margin: 0;
+  max-width: 62ch;
+  color: #c2bdd0;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+html[data-public-theme="light"] .portfolio-trust-pill {
+  border-color: rgba(3, 119, 174, 0.24);
+  background: rgba(0, 158, 226, 0.1);
+  color: #03699a;
+}
+
+html[data-public-theme="light"] .portfolio-trust-status,
+html[data-public-theme="light"] .portfolio-workshop-disclaimer {
+  border-color: rgba(116, 78, 146, 0.16);
+  background: rgba(255, 255, 255, 0.72);
+  color: #4f4761;
+}
+
+html[data-public-theme="light"] .portfolio-trust-lead h3,
+html[data-public-theme="light"] .portfolio-workshop-head h3,
+html[data-public-theme="light"] .portfolio-workshop-card strong,
+html[data-public-theme="light"] .portfolio-solutions-bridge h2 {
+  color: #191526;
+}
+
+html[data-public-theme="light"] .portfolio-trust-lead p,
+html[data-public-theme="light"] .portfolio-workshop-card small,
+html[data-public-theme="light"] .portfolio-solutions-bridge p {
+  color: #575068;
+}
+
+html[data-public-theme="light"] .portfolio-workshop-card {
+  border-color: rgba(116, 78, 146, 0.14);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+/* 5b. Showcase Search Pill & Non-blocking Portfolio Sync Notice */
+.public-site label.showcase-search {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 290px);
+  min-height: 44px;
+  margin: 0;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(196, 214, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #b8bed0;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.public-site label.showcase-search svg {
+  flex: none;
+  margin: 0;
+}
+
+.public-site label.showcase-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  min-height: 40px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 13px;
+}
+
+html[data-public-theme="light"] .public-site label.showcase-search {
+  border-color: rgba(116, 78, 146, 0.16);
+  background: rgba(255, 255, 255, 0.88);
+  color: #574e68;
+  box-shadow: 0 8px 22px rgba(36, 24, 62, 0.06), inset 0 1px 0 #ffffff;
+}
+
+.portfolio-load-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(196, 214, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #d6d2e4;
+  font-size: 12.5px;
+}
+
+html[data-public-theme="light"] .portfolio-load-notice {
+  border-color: rgba(116, 78, 146, 0.16);
+  background: rgba(255, 255, 255, 0.84);
+  color: #463f58;
+}
+
+/* 6. Responsive Breakpoints & Focused Mobile Height */
+@media (max-width: 1120px) {
+  .home-solutions-bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portfolio-trust-bento {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 820px) {
+  /* Condense mobile scroll film from 440dvh to 148dvh while preserving key hero/orbit beat */
+  .public-site .vc-home .home-film.is-cinematic {
+    height: 148svh;
+    height: 148dvh;
+  }
+}
+
+@media (max-width: 760px) {
+  .public-site label.showcase-search {
+    width: 100%;
+  }
+
+  .public-site .vc-home .home-project-entry {
+    padding: 26px 16px;
+  }
+
+  .public-site .vc-home .home-section {
+    padding: 34px 16px;
+  }
+
+  .public-site .vc-home .home-section-heading {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  /* Force compact 2-column service bento grid on mobile to halve vertical scroll */
+  .public-site .vc-home .home-services-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 228px;
+    gap: 9px;
+  }
+
+  .public-site .vc-home .home-service {
+    padding: 13px !important;
+    border-radius: 18px;
+  }
+
+  .public-site .vc-home .home-service .home-service-art.is-originkit-keyboard {
+    inset: 28px 0 68px;
+  }
+
+  .public-site .vc-home .home-service-copy {
+    padding-top: 66px;
+  }
+
+  .public-site .vc-home .home-service .home-service-copy h3 {
+    font-size: clamp(17px, 4.4vw, 22px);
+    line-height: 1.04;
+  }
+
+  .public-site .vc-home .home-service .home-service-copy p {
+    margin-top: 4px;
+    font-size: 11px;
+    line-height: 1.34;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .public-site .vc-home .home-service-quickview {
+    top: 10px;
+    right: 44px;
+    min-height: 32px;
+    padding: 3px 7px;
+    font-size: 10px;
+  }
+
+  .public-site .vc-home .home-service-quickview span {
+    display: none;
+  }
+
+  .public-site .vc-home .home-service-arrow {
+    width: 26px;
+    height: 26px;
+  }
+
+  .public-site .vc-home .home-service-link {
+    margin-top: 8px;
+    padding-top: 8px;
+    font-size: 10.5px;
+  }
+
+  .public-site .vc-home .home-pillars-layout {
+    gap: 10px;
+  }
+
+  .public-site .vc-home .home-pillar-showcase {
+    padding: 18px 16px;
+  }
+
+  .public-site .vc-home .home-pillar-visual.vc-magic-card,
+  .public-site .vc-home .home-pillar-visual-inner {
+    min-height: 220px;
+  }
+
+  .public-site .vc-home .home-process-panel {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .public-site .vc-home .home-process-options > button {
+    padding: 12px 8px;
+  }
+
+  .public-site .vc-home .home-discover {
+    padding: 24px 16px;
+    gap: 10px;
+  }
+
+  .public-site .vc-home .home-contact {
+    padding-top: 38px;
+    padding-bottom: 42px;
+  }
+
+  .public-site .vc-home .home-contact-notch-wrap {
+    margin-bottom: 14px;
+  }
+
+  .public-site .site-footer {
+    padding: 20px 12px 12px;
+  }
+
+  .public-site .site-footer-main {
+    padding: 20px 0 18px;
+    gap: 18px 14px;
+  }
+
+  .portfolio-workshop-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .home-solutions-bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .home-solutions-bento-card.vc-glass-surface {
+    padding: 10px;
+    gap: 7px;
+    border-radius: 17px;
+  }
+
+  .vc-home .home-solutions-bento-copy h3 {
+    font-size: 14px;
+  }
+
+  .vc-home .home-solutions-bento-copy p {
+    font-size: 11px;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .public-site .vc-home .home-services-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 214px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 350px) {
+  .home-services-grid,
+  .home-solutions-bento,
+  .portfolio-workshop-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-solutions-bento-media img {
+    transition: none;
+  }
+
+  .home-solutions-bento-card:hover .home-solutions-bento-media img {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .public-site .home-solutions-bento-card,
+  .public-site .portfolio-trust-lead,
+  .public-site .portfolio-workshop-samples,
+  .public-site .portfolio-solutions-bridge,
+  .public-site .store-product-card,
+  .public-site .showcase-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: Canvas !important;
+    color: CanvasText !important;
+    border-color: CanvasText !important;
+  }
+}

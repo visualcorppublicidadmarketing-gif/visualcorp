@@ -58,6 +58,14 @@ export const STOREFRONT_FAMILY_PARAM = 'familia';
 export const STOREFRONT_SKU_PARAM = 'sku';
 export const STOREFRONT_SORT_PARAM = 'orden';
 
+/**
+ * Columns explicitly exposed by `public.public_catalog_products`.
+ * Pricing columns (`price`, `price_inst`, `price_corp`, `price_scales`) and internal
+ * `custom_options` are excluded from the public storefront view by design.
+ */
+export const PUBLIC_CATALOG_SELECT_COLUMNS =
+  'id,sku,name,slug,description,type,category_id,category,calc_type,featured,sort_order,image,images,features,quantity_tiers';
+
 export type StorefrontSortOrder = 'relevance' | 'az' | 'za';
 
 const storefrontSortOrders = new Set<StorefrontSortOrder>(['relevance', 'az', 'za']);

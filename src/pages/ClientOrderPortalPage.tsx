@@ -44,6 +44,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import './ClientOrderPortalPage.css';
+import { PageMeta } from '../public-site/seo';
 
 // ============================================================================
 // Tipos & Modelos de Datos del Portal de Seguimiento y Aprobación
@@ -1258,6 +1259,12 @@ export function ClientOrderPortalPage() {
 
   return (
     <div className="vc-portal-page work-app">
+      <PageMeta
+        title="Seguimiento de orden"
+        description="Consulta el estado de tu orden y aprobación de arte en Visual Corp."
+        path="/seguimiento"
+        robots="noindex, nofollow"
+      />
       {/* ====================================================================
           1. HEADER & LOOKUP BAR
       ==================================================================== */}

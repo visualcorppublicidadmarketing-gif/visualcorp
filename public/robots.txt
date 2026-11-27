@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /panel
+Disallow: /admin
+Disallow: /operaciones
+Disallow: /seguimiento
+
+Sitemap: https://visualcorp-suite.vercel.app/sitemap.xml

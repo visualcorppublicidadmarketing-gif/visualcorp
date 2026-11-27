@@ -16,6 +16,7 @@ import {
   getStorefrontSearchQuery,
   getStorefrontSortOrder,
   normalizeStorefrontSearch,
+  PUBLIC_CATALOG_SELECT_COLUMNS,
   reconcileStorefrontSelection,
   type StorefrontCatalogItem,
   STOREFRONT_FAMILY_PARAM,
@@ -32,6 +33,7 @@ import { StoreCinemaHero } from './StoreCinemaHero';
 import { CreativeToolLink } from './tools/CreativeToolLink';
 import { AmbientVideoLayer } from './AmbientVideoLayer';
 import { BrandBeforeAfterShowcase } from './BrandBeforeAfterShowcase';
+import { PageMeta } from './seo';
 import './storefront.css';
 import './store-promo-teaser.css';
 import './store-product-sku.css';
@@ -226,9 +228,9 @@ function ArticleIndex({ kind }: { kind: ContentKind }) {
   </section></>;
 }
 
-export function BlogIndexPage() { return <><DocumentTitle title="Blog"/><ArticleIndex kind="blog"/></>; }
-export function PublicationIndexPage() { return <><DocumentTitle title="Publicaciones"/><ArticleIndex kind="publicaciones"/></>; }
-export function PortfolioIndexPage() { return <><DocumentTitle title="Portafolio"/><ArticleIndex kind="portafolio"/></>; }
+export function BlogIndexPage() { return <><PageMeta title="Blog" description="Consejos, ideas y guías prácticas sobre diseño gráfico, rotulación, impresión y presencia de marca en Visual Corp." path="/blog"/><ArticleIndex kind="blog"/></>; }
+export function PublicationIndexPage() { return <><PageMeta title="Publicaciones" description="Novedades, campañas y lanzamientos compartidos por Visual Corp en Milagro, Ecuador." path="/publicaciones"/><ArticleIndex kind="publicaciones"/></>; }
+export function PortfolioIndexPage() { return <><PageMeta title="Portafolio" description="Casos autorizados, muestras reales de taller y simulador conceptual de Visual Corp en Milagro, Ecuador." path="/portafolio"/><ArticleIndex kind="portafolio"/></>; }
 export function PublicationArticleDetailPage() { return <ArticleDetailPage kind="publicaciones"/>; }
 export function PortfolioArticleDetailPage() { return <ArticleDetailPage kind="portafolio"/>; }
 
@@ -292,10 +294,12 @@ export function ArticleDetailPage({ kind = 'blog' }: { kind?: ContentKind }) {
   const { articles, loading, error, retry } = usePublishedArticles();
   const article = articles.find((item) => item.slug === slug && articleMatches(item, kind));
   useEffect(() => { if (article) document.title = `${article.title} · Visual Corp`; }, [article]);
-  if (loading) return <section className="showcase-section"><div className="showcase-empty glass-card" role="status">Cargando artículo…</div></section>;
-  if (error) return <section className="showcase-section"><ContentLoadError message={error} onRetry={retry}/></section>;
-  if (!article) return <section className="showcase-section"><div className="showcase-empty glass-card"><h1>Este contenido no está disponible.</h1><p>Revisa el enlace o vuelve a la lista de artículos.</p><Link className="site-secondary-button" to={kind === 'publicaciones' ? '/publicaciones' : kind === 'portafolio' ? '/portafolio' : '/blog'}>Volver <ArrowRight size={15}/></Link></div></section>;
-  return <><DocumentTitle title={article.title}/><header className="article-hero"><Link className="article-back" to={kind === 'publicaciones' ? '/publicaciones' : kind === 'portafolio' ? '/portafolio' : '/blog'}><ArrowRight size={15}/> Volver</Link><span className="site-eyebrow light"><i/>{kind === 'publicaciones' ? 'PUBLICACIÓN' : kind === 'portafolio' ? 'PORTAFOLIO VISUAL CORP' : 'BLOG VISUAL CORP'}</span><h1>{article.title}</h1>{article.excerpt && <p>{article.excerpt}</p>}{article.published_at && <time dateTime={article.published_at}>{new Date(article.published_at).toLocaleDateString('es-EC', { dateStyle: 'long' })}</time>}</header><article className="article-body glass-card">{article.cover_image && <img className="article-cover" src={article.cover_image} alt=""/>}<ArticleMarkdown value={article.body_markdown}/>{article.tags?.length > 0 && <div className="article-tags">{article.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}</article></>;
+  const fallbackBase = kind === 'publicaciones' ? '/publicaciones' : kind === 'portafolio' ? '/portafolio' : '/blog';
+  const fallbackTitle = kind === 'publicaciones' ? 'Publicación' : kind === 'portafolio' ? 'Caso de portafolio' : 'Artículo';
+  if (loading) return <><PageMeta title={fallbackTitle} description="Cargando contenido publicado de Visual Corp." path={`${fallbackBase}/${slug}`} ogType="article"/><section className="showcase-section"><div className="showcase-empty glass-card" role="status">Cargando artículo…</div></section></>;
+  if (error) return <><PageMeta title={fallbackTitle} description="Contenido publicado de Visual Corp." path={`${fallbackBase}/${slug}`} ogType="article"/><section className="showcase-section"><ContentLoadError message={error} onRetry={retry}/></section></>;
+  if (!article) return <><PageMeta title="Contenido no disponible" description="El contenido solicitado no está disponible en Visual Corp." path={`${fallbackBase}/${slug}`} ogType="article"/><section className="showcase-section"><div className="showcase-empty glass-card"><h1>Este contenido no está disponible.</h1><p>Revisa el enlace o vuelve a la lista de artículos.</p><Link className="site-secondary-button" to={fallbackBase}>Volver <ArrowRight size={15}/></Link></div></section></>;
+  return <><PageMeta title={article.title} description={article.excerpt || `${article.title} en Visual Corp.`} path={`${fallbackBase}/${article.slug}`} ogType="article" image={article.cover_image || undefined}/><DocumentTitle title={article.title}/><header className="article-hero"><Link className="article-back" to={kind === 'publicaciones' ? '/publicaciones' : kind === 'portafolio' ? '/portafolio' : '/blog'}><ArrowRight size={15}/> Volver</Link><span className="site-eyebrow light"><i/>{kind === 'publicaciones' ? 'PUBLICACIÓN' : kind === 'portafolio' ? 'PORTAFOLIO VISUAL CORP' : 'BLOG VISUAL CORP'}</span><h1>{article.title}</h1>{article.excerpt && <p>{article.excerpt}</p>}{article.published_at && <time dateTime={article.published_at}>{new Date(article.published_at).toLocaleDateString('es-EC', { dateStyle: 'long' })}</time>}</header><article className="article-body glass-card">{article.cover_image && <img className="article-cover" src={article.cover_image} alt=""/>}<ArticleMarkdown value={article.body_markdown}/>{article.tags?.length > 0 && <div className="article-tags">{article.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}</article></>;
 }
 
 export function StorefrontPage() {
@@ -349,7 +353,7 @@ export function StorefrontPage() {
     const load = async () => {
       try {
         const { data: rows, error: productError } = await supabase.from('public_catalog_products')
-          .select('id,sku,name,slug,description,type,category_id,category,calc_type,featured,sort_order,image,images,features,quantity_tiers')
+          .select(PUBLIC_CATALOG_SELECT_COLUMNS)
           .eq('is_published', true).order('sort_order', { ascending: true });
         if (!current) return;
         if (productError) { setError('No pudimos cargar el catálogo. Comprueba tu conexión e inténtalo de nuevo.'); return; }
@@ -564,8 +568,8 @@ export function StorefrontPage() {
       <div className="store-product-copy"><div className="store-product-card-meta"><span className="store-product-category">{productGroup}</span>{isDuplicateName&&product.sku&&!product.quantityTiers?.length&&<span className="store-product-sku-tag">Código · {product.sku}</span>}</div><h3><button type="button" aria-label={`Ver detalles de ${productLabel(product)}`} onClick={()=>openProduct(product)}>{product.name}</button></h3><p>{product.description || 'Cuéntanos qué tienes en mente y revisamos los detalles contigo.'}</p>{product.quantityTiers?.length ? <span className="store-product-tier-hint">{product.quantityTiers.length} opciones de cantidad</span> : null}<div className="store-product-card-bottom"><button type="button" className={`store-product-add${isSelected?' is-selected':''}`} aria-label={isSelected?`Quitar ${identity} de tu lista para cotizar`:`Añadir ${identity} a tu lista para cotizar`} aria-pressed={isSelected} onClick={()=>toggleSelection(product.id)}>{isSelected?<><Check size={15}/>En tu lista</>:<>+ Añadir a mi lista</>}</button><span>{product.quantityTiers?.length ? 'Opciones por cantidad' : 'Precio según proyecto'}</span></div><button type="button" className={`store-product-compare${isCompared?' is-selected':''}`} aria-label={isCompared?`Quitar ${identity} de la comparación`:`Comparar ${identity}`} aria-pressed={isCompared} onClick={()=>toggleComparison(product.id)}><ArrowLeftRight size={14}/>{isCompared?'En comparación':'Comparar'}</button></div>
     </article></ViewTransition>;
   };
-  if (showSouvenirs) return <><DocumentTitle title="Souvenirs personalizados"/><SouvenirCollectionPage/></>;
-  return <><DocumentTitle title="Tienda"/><div className="storefront-page">
+  if (showSouvenirs) return <><PageMeta title="Souvenirs personalizados" description="Colección de souvenirs personalizados e ideas promocionales de Visual Corp para marcas y eventos." path="/tienda?coleccion=souvenirs"/><DocumentTitle title="Souvenirs personalizados"/><SouvenirCollectionPage/></>;
+  return <><PageMeta title="Tienda" description="Explora el catálogo público de productos personalizables de Visual Corp en Milagro, arma tu lista y solicita tu cotización." path="/tienda"/><DocumentTitle title="Tienda"/><div className="storefront-page">
     <StoreCinemaHero
       productsCount={products.length}
       categories={categories}

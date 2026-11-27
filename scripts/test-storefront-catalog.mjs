@@ -12,6 +12,7 @@ import {
   formatPublicQuantityTiers,
   getStorefrontProductGroup,
   getStorefrontSortOrder,
+  PUBLIC_CATALOG_SELECT_COLUMNS,
   reconcileStorefrontSelection,
   resolveQuoteSourceChannel,
   withStorefrontSortOrder,
@@ -22,6 +23,18 @@ const priority4Migration = fs.readFileSync(
   path.join(root, '../supabase/migrations/20261127141609_priority4_public_catalog_tiers_and_intake.sql'),
   'utf8',
 );
+
+test('public storefront catalog select excludes private pricing and custom_options columns', () => {
+  const columns = PUBLIC_CATALOG_SELECT_COLUMNS.split(',').map((column) => column.trim());
+  assert.ok(columns.includes('id'));
+  assert.ok(columns.includes('name'));
+  assert.ok(columns.includes('slug'));
+  assert.ok(columns.includes('images'));
+  assert.ok(columns.includes('quantity_tiers'));
+  for (const forbidden of ['price', 'price_inst', 'price_corp', 'price_scales', 'custom_options']) {
+    assert.equal(columns.includes(forbidden), false, `Forbidden public column ${forbidden}`);
+  }
+});
 
 test('the 29 published catalog categories map to the seven storefront families', () => {
   const mappings = [

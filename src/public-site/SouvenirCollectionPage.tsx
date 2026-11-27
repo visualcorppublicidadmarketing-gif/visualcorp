@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Sparkles, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { PageMeta } from './seo';
 import './souvenir-collection.css';
 
 type SouvenirExample = {
@@ -41,6 +42,11 @@ export function SouvenirCollectionPage() {
 
   return (
     <div className="storefront-page store-souvenirs-page">
+      <PageMeta
+        title="Souvenirs personalizados"
+        description="Ideas visuales de souvenirs personalizados en Visual Corp: tazas, camisetas, gorras, bolsos y artículos promocionales."
+        path="/tienda/souvenirs"
+      />
       <header className="store-souvenirs-hero">
         <div className="store-souvenirs-hero-copy">
           <Link className="store-souvenirs-back" to="/tienda"><ArrowLeft size={15} /> Volver a categorías</Link>

@@ -1,5 +1,10 @@
 {
   "installCommand": "npm install --no-audit --no-fund",
   "git": { "deploymentEnabled": true },
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/((?!robots\\.txt$|sitemap\\.xml$|manifest\\.webmanifest$|favicon\\.svg$|assets/|brand/|fonts/|images/|payments/|public-site/).*)",
+      "destination": "/index.html"
+    }
+  ]
 }
