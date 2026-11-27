@@ -8,6 +8,7 @@ import type {
   SceneBackground,
   SurfaceWarpMode,
 } from './types';
+import { getMugWrapSettings } from './mug-wrap';
 
 export function loadCanvasImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -534,7 +535,7 @@ export async function drawDesignLayers(
     if (!layer.visible) return;
     const centerX = (layer.x / 100) * width;
     const centerY = (layer.y / 100) * height;
-    const elementWidth = (layer.size / 100) * width;
+    const elementWidth = (layer.size / 100) * width * (layer.scaleX ?? 1);
     const aspectScaleY = layer.scaleY ?? 1;
     const strokeWidthPx = (layer.strokeWidth ?? 0) * (width / 640);
     const strokeColor = layer.strokeColor || '#000000';
@@ -766,6 +767,7 @@ export async function createSurfaceArtworkCanvas(product: ProductBase, layers: D
     ...layer,
     x: ((layer.x - area.x) / Math.max(1, area.width)) * 100,
     y: ((layer.y - area.y) / Math.max(1, area.height)) * 100,
+    size: (layer.size / Math.max(1, area.width)) * 100,
   }));
   await drawDesignLayers(context, surfaceLayers, exportWidth, height, { x: 0, y: 0, width: 100, height: 100 });
   const keepOutAreas = product.surfaceProfile?.keepOutAreas || [];
@@ -782,6 +784,216 @@ export async function createSurfaceArtworkCanvas(product: ProductBase, layers: D
     });
     context.restore();
   }
+  return canvas;
+}
+
+/** Renders the same cylindrical UV artwork as a clean front or back 2D mug view. */
+export async function createMugSidePreviewCanvas(
+  product: ProductBase,
+  layers: DesignLayer[],
+  width: number,
+  side: 'front' | 'back',
+  warpStrength = 100,
+  showGuides = true,
+) {
+  const canvasWidth = Math.max(1, Math.round(width));
+  const canvasHeight = Math.max(1, Math.round(canvasWidth / product.ratio));
+  const { canvas, context } = createCanvas(canvasWidth, canvasHeight);
+  const artwork = await createSurfaceArtworkCanvas(product, layers, Math.max(1024, canvasWidth * 2));
+  const wrap = getMugWrapSettings(product, warpStrength);
+  const bodyWidth = canvasWidth * 0.48;
+  const bodyHeight = canvasHeight * 0.64;
+  const bodyX = (canvasWidth - bodyWidth) / 2;
+  const bodyY = canvasHeight * 0.18;
+  const centerX = canvasWidth / 2;
+  const bodyBottom = bodyY + bodyHeight;
+  const handleSide = side === 'front' ? 1 : -1;
+  const handleStartX = centerX + handleSide * bodyWidth * 0.43;
+  const handleOuterX = centerX + handleSide * bodyWidth * 0.91;
+  const handleTop = bodyY + bodyHeight * 0.25;
+  const handleBottom = bodyY + bodyHeight * 0.76;
+
+  // Soft contact shadow under the mug.
+  context.save();
+  context.fillStyle = 'rgba(28, 30, 40, 0.13)';
+  context.filter = `blur(${Math.max(2, canvasWidth * 0.012)}px)`;
+  context.beginPath();
+  context.ellipse(centerX, bodyBottom + canvasHeight * 0.028, bodyWidth * 0.56, bodyHeight * 0.035, 0, 0, Math.PI * 2);
+  context.fill();
+  context.restore();
+
+  // Ceramic handle sits behind the cup body and changes sides with the view.
+  context.save();
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+  const drawHandle = () => {
+    context.beginPath();
+    context.moveTo(handleStartX, handleTop);
+    context.bezierCurveTo(
+      centerX + handleSide * bodyWidth * 0.72, handleTop,
+      handleOuterX, bodyY + bodyHeight * 0.29,
+      handleOuterX, bodyY + bodyHeight * 0.5,
+    );
+    context.bezierCurveTo(
+      handleOuterX, bodyY + bodyHeight * 0.71,
+      centerX + handleSide * bodyWidth * 0.72, handleBottom,
+      handleStartX, handleBottom,
+    );
+    context.stroke();
+  };
+  context.strokeStyle = 'rgba(76, 80, 93, 0.2)';
+  context.lineWidth = bodyWidth * 0.19;
+  context.shadowColor = 'rgba(20, 23, 31, 0.2)';
+  context.shadowBlur = canvasWidth * 0.018;
+  context.shadowOffsetY = canvasHeight * 0.006;
+  drawHandle();
+  context.shadowColor = 'transparent';
+  context.lineWidth = bodyWidth * 0.155;
+  const handleGradient = context.createLinearGradient(centerX - bodyWidth * 0.9, 0, centerX + bodyWidth * 0.9, 0);
+  handleGradient.addColorStop(0, '#c9cbd1');
+  handleGradient.addColorStop(0.48, '#ffffff');
+  handleGradient.addColorStop(1, '#d9dbe0');
+  context.strokeStyle = handleGradient;
+  drawHandle();
+  context.restore();
+
+  const bodyPath = () => {
+    const radius = bodyWidth * 0.075;
+    context.beginPath();
+    context.moveTo(bodyX + radius, bodyY);
+    context.lineTo(bodyX + bodyWidth - radius, bodyY);
+    context.quadraticCurveTo(bodyX + bodyWidth, bodyY, bodyX + bodyWidth, bodyY + radius);
+    context.lineTo(bodyX + bodyWidth, bodyBottom - radius * 1.45);
+    context.quadraticCurveTo(bodyX + bodyWidth, bodyBottom, bodyX + bodyWidth - radius * 1.55, bodyBottom);
+    context.lineTo(bodyX + radius * 1.55, bodyBottom);
+    context.quadraticCurveTo(bodyX, bodyBottom, bodyX, bodyBottom - radius * 1.45);
+    context.lineTo(bodyX, bodyY + radius);
+    context.quadraticCurveTo(bodyX, bodyY, bodyX + radius, bodyY);
+    context.closePath();
+  };
+
+  bodyPath();
+  const ceramicGradient = context.createLinearGradient(bodyX, 0, bodyX + bodyWidth, 0);
+  ceramicGradient.addColorStop(0, '#d1d2d7');
+  ceramicGradient.addColorStop(0.12, '#f0f0f2');
+  ceramicGradient.addColorStop(0.48, '#ffffff');
+  ceramicGradient.addColorStop(0.86, '#efeff2');
+  ceramicGradient.addColorStop(1, '#c9cbd1');
+  context.fillStyle = ceramicGradient;
+  context.shadowColor = 'rgba(22, 25, 35, 0.18)';
+  context.shadowBlur = canvasWidth * 0.024;
+  context.shadowOffsetY = canvasHeight * 0.008;
+  context.fill();
+  context.shadowColor = 'transparent';
+  context.save();
+  bodyPath();
+  context.clip();
+
+  const printableTop = bodyY + ((0.475 - wrap.yMax) / 0.945) * bodyHeight;
+  const printableHeight = ((wrap.yMax - wrap.yMin) / 0.945) * bodyHeight;
+  const columns = Math.max(320, Math.ceil(bodyWidth));
+  const stripWidth = bodyWidth / columns + 0.75;
+  const sourceStripWidth = artwork.width / columns + 1;
+  const normalizedAngle = (angle: number) => {
+    let result = angle;
+    while (result > Math.PI) result -= Math.PI * 2;
+    while (result < -Math.PI) result += Math.PI * 2;
+    return result;
+  };
+  const uForScreenX = (screenX: number) => {
+    const viewAngle = Math.asin(Math.max(-1, Math.min(1, screenX)));
+    const theta = normalizedAngle(side === 'front' ? viewAngle : Math.PI + viewAngle);
+    return { theta, u: (theta - wrap.thetaStart) / wrap.thetaSpan };
+  };
+
+  for (let column = 0; column < columns; column += 1) {
+    const xNorm = ((column + 0.5) / columns) * 2 - 1;
+    const { theta, u } = uForScreenX(xNorm);
+    if (u < 0 || u > 1) continue;
+    const sourceX = Math.min(artwork.width - 1, Math.max(0, Math.floor(u * artwork.width)));
+    const destinationX = bodyX + (column / columns) * bodyWidth;
+    context.drawImage(
+      artwork,
+      sourceX,
+      0,
+      Math.min(sourceStripWidth, artwork.width - sourceX),
+      artwork.height,
+      destinationX,
+      printableTop,
+      stripWidth,
+      printableHeight,
+    );
+
+    // Cylinder form darkens toward its silhouette, matching the 3D mockup.
+    const shade = side === 'front'
+      ? (1 - Math.max(0, Math.cos(theta))) * 0.32
+      : 0.1 + (1 - Math.abs(Math.cos(theta))) * 0.18;
+    if (shade > 0.015) {
+      context.fillStyle = `rgba(12, 17, 30, ${shade.toFixed(3)})`;
+      context.fillRect(destinationX, bodyY, stripWidth, bodyHeight);
+    }
+  }
+
+  if (showGuides) {
+    context.strokeStyle = '#4de1ff';
+    context.lineWidth = Math.max(1.5, canvasWidth / 480);
+    context.setLineDash([canvasWidth * 0.012, canvasWidth * 0.008]);
+    for (const y of [printableTop, printableTop + printableHeight]) {
+      context.beginPath();
+      let drawing = false;
+      for (let column = 0; column <= columns; column += 1) {
+        const xNorm = (column / columns) * 2 - 1;
+        const { u } = uForScreenX(xNorm);
+        if (u >= 0 && u <= 1) {
+          const x = bodyX + (column / columns) * bodyWidth;
+          if (!drawing) context.moveTo(x, y);
+          else context.lineTo(x, y);
+          drawing = true;
+        } else {
+          drawing = false;
+        }
+      }
+      context.stroke();
+    }
+
+    if (side === 'back') {
+      for (const theta of [wrap.thetaStart, wrap.thetaEnd]) {
+        const screenX = -Math.sin(theta);
+        const x = centerX + screenX * bodyWidth / 2;
+        context.beginPath();
+        context.moveTo(x, printableTop);
+        context.lineTo(x, printableTop + printableHeight);
+        context.stroke();
+      }
+    }
+  }
+  context.restore();
+
+  // Glazed lip and unprinted foot remain part of the white porcelain.
+  context.save();
+  context.fillStyle = 'rgba(170, 174, 184, 0.28)';
+  context.beginPath();
+  context.ellipse(centerX, bodyY + bodyWidth * 0.025, bodyWidth * 0.485, bodyWidth * 0.094, 0, 0, Math.PI * 2);
+  context.fill();
+  context.fillStyle = '#f4f4f6';
+  context.beginPath();
+  context.ellipse(centerX, bodyY + bodyWidth * 0.014, bodyWidth * 0.466, bodyWidth * 0.073, 0, 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = 'rgba(127, 132, 145, 0.38)';
+  context.lineWidth = Math.max(1, canvasWidth / 700);
+  context.beginPath();
+  context.ellipse(centerX, bodyY + bodyWidth * 0.026, bodyWidth * 0.472, bodyWidth * 0.078, 0, 0, Math.PI * 2);
+  context.stroke();
+  context.strokeStyle = 'rgba(161, 164, 173, 0.32)';
+  context.beginPath();
+  context.ellipse(centerX, bodyBottom - bodyWidth * 0.012, bodyWidth * 0.42, bodyWidth * 0.035, 0, 0, Math.PI);
+  context.stroke();
+  context.restore();
+
+  bodyPath();
+  context.strokeStyle = 'rgba(161, 164, 174, 0.34)';
+  context.lineWidth = Math.max(1, canvasWidth / 520);
+  context.stroke();
   return canvas;
 }
 

@@ -7,11 +7,14 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { Camera, Crosshair, Pause, Play, RotateCcw, RotateCw } from 'lucide-react';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { Camera, Crosshair, Download, Pause, Play, RotateCcw, RotateCw } from 'lucide-react';
 import { drawSceneBackground, loadCanvasImage } from './canvas-utils';
+import { createMugWrapGeometry, getMugWrapSettings } from './mug-wrap';
 import type {
   CameraPreset3D,
   Custom3DModelState,
+  DesignLayer,
   ProductAppearance,
   ProductBase,
   ProductFinish,
@@ -20,12 +23,15 @@ import type {
 
 export type ThreeDPreviewHandle = {
   capturePng: (transparentBackdrop?: boolean) => Promise<HTMLCanvasElement | null>;
+  exportGlb: () => Promise<boolean>;
 };
 
 type ThreeDProductPreviewProps = {
   product: ProductBase;
   artworkUrl: string;
   frontalMockupUrl: string;
+  selectedLayer: DesignLayer | null;
+  showPrintGuides: boolean;
   appearance: ProductAppearance;
   background: SceneBackground;
   customModel: Custom3DModelState | null;
@@ -34,6 +40,9 @@ type ThreeDProductPreviewProps = {
   onPlaceDecal?: (point: [number, number, number], normal: [number, number, number]) => void;
   onTogglePlacementMode?: () => void;
   onExport3D?: (transparent: boolean) => void;
+  onMoveLayer?: (layerId: string, x: number, y: number) => void;
+  onExportModel?: () => void;
+  exportingModel?: boolean;
 };
 
 type BuiltInModelBundle = {
@@ -41,6 +50,10 @@ type BuiltInModelBundle = {
   bodyMaterials: THREE.MeshStandardMaterial[];
   accentMaterials: THREE.MeshStandardMaterial[];
   artMaterials: THREE.MeshStandardMaterial[];
+  chestArtworkMesh?: THREE.Mesh;
+  guideMesh?: THREE.Mesh;
+  guideCanvas?: HTMLCanvasElement;
+  guideTexture?: THREE.CanvasTexture;
 };
 
 function getFinishParams(finish: ProductFinish) {
@@ -99,7 +112,204 @@ function createCurvedPatchGeometry(width: number, height: number, bendX: number,
   return geo;
 }
 
+function createFabricNormalMap(isRibbed = false) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+
+  const imageData = context.createImageData(canvas.width, canvas.height);
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      const index = (y * canvas.width + x) * 4;
+      const phase = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+      const noise = (phase - Math.floor(phase) - 0.5) * 0.12;
+      const nx = isRibbed
+        ? Math.sin(x * 0.52) * 0.42 + noise
+        : Math.sin(x * 1.1) * Math.cos(y * 1.1) * 0.2 + noise;
+      const ny = isRibbed
+        ? Math.sin(y * 1.35) * 0.16 + noise * 0.4
+        : Math.cos(x * 1.1) * Math.sin(y * 1.1) * 0.2 + noise;
+      imageData.data[index] = Math.round(127 + nx * 72);
+      imageData.data[index + 1] = Math.round(127 + ny * 72);
+      imageData.data[index + 2] = 255;
+      imageData.data[index + 3] = 255;
+    }
+  }
+
+  context.putImageData(imageData, 0, 0);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(isRibbed ? 14 : 24, isRibbed ? 6 : 24);
+  return texture;
+}
+
+function drawGarmentGuideCanvas(
+  canvas: HTMLCanvasElement,
+  product: ProductBase,
+  selectedLayer: DesignLayer | null,
+  visible: boolean,
+) {
+  const context = canvas.getContext('2d');
+  if (!context) return;
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  if (!visible) return;
+
+  const { width, height } = canvas;
+  const area = product.printArea;
+  const lineWidth = Math.max(2, width / 180);
+  context.save();
+  context.strokeStyle = '#38bdf8';
+  context.lineWidth = lineWidth;
+  context.setLineDash([width * 0.035, width * 0.025]);
+  context.strokeRect(lineWidth * 2, lineWidth * 2, width - lineWidth * 4, height - lineWidth * 4);
+  context.restore();
+  if (!selectedLayer) return;
+
+  const centerX = ((selectedLayer.x - area.x) / Math.max(1, area.width)) * width;
+  const centerY = ((selectedLayer.y - area.y) / Math.max(1, area.height)) * height;
+  const boxWidth = Math.max(width * 0.08, (selectedLayer.size / Math.max(1, area.width)) * width * (selectedLayer.scaleX ?? 1));
+  const layerHeightToWidth = selectedLayer.kind === 'image'
+    ? 1 / (selectedLayer.imageAspect || product.surfaceProfile?.aspectRatio || product.ratio)
+    : selectedLayer.kind === 'text'
+      ? 0.34
+    : selectedLayer.kind === 'line'
+      ? 0.08
+      : selectedLayer.kind === 'triangle'
+        ? 0.86
+        : 0.72;
+  const boxHeight = Math.max(height * 0.08, boxWidth * layerHeightToWidth * (selectedLayer.scaleY ?? 1));
+  const rotation = (selectedLayer.rotation * Math.PI) / 180;
+  context.save();
+  context.translate(centerX, centerY);
+  context.rotate(rotation);
+  context.strokeStyle = '#ec4899';
+  context.lineWidth = lineWidth * 1.4;
+  context.setLineDash([width * 0.02, width * 0.014]);
+  context.strokeRect(-boxWidth * 0.44, -boxHeight * 0.44, boxWidth * 0.88, boxHeight * 0.88);
+  context.setLineDash([]);
+  context.lineWidth = lineWidth * 1.6;
+  context.strokeRect(-boxWidth / 2, -boxHeight / 2, boxWidth, boxHeight);
+  context.beginPath();
+  context.moveTo(0, -boxHeight / 2);
+  context.lineTo(0, -boxHeight / 2 - height * 0.09);
+  context.stroke();
+  const radius = Math.max(5, width / 52);
+  const handles: Array<[number, number]> = [
+    [-boxWidth / 2, -boxHeight / 2], [0, -boxHeight / 2], [boxWidth / 2, -boxHeight / 2],
+    [-boxWidth / 2, 0], [boxWidth / 2, 0],
+    [-boxWidth / 2, boxHeight / 2], [0, boxHeight / 2], [boxWidth / 2, boxHeight / 2],
+    [0, -boxHeight / 2 - height * 0.09],
+  ];
+  handles.forEach(([x, y]) => {
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fillStyle = '#ffffff';
+    context.fill();
+    context.lineWidth = lineWidth * 1.2;
+    context.strokeStyle = '#ec4899';
+    context.stroke();
+  });
+  context.restore();
+}
+
+function drawSurfaceGuideCanvas(
+  canvas: HTMLCanvasElement,
+  product: ProductBase,
+  selectedLayer: DesignLayer | null,
+  visible: boolean,
+) {
+  const context = canvas.getContext('2d');
+  if (!context) return;
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  if (!visible) return;
+
+  const { width, height } = canvas;
+  const area = product.printArea;
+  const lineWidth = Math.max(2, width / 180);
+  context.save();
+  context.strokeStyle = '#38bdf8';
+  context.lineWidth = lineWidth;
+  context.setLineDash([width * 0.035, width * 0.025]);
+  context.strokeRect(lineWidth * 2, lineWidth * 2, width - lineWidth * 4, height - lineWidth * 4);
+  context.restore();
+  if (!selectedLayer) return;
+
+  const centerX = ((selectedLayer.x - area.x) / Math.max(1, area.width)) * width;
+  const centerY = ((selectedLayer.y - area.y) / Math.max(1, area.height)) * height;
+  const layerHeightRatio = selectedLayer.kind === 'image'
+    ? 1 / (selectedLayer.imageAspect || product.surfaceProfile?.aspectRatio || 1)
+    : selectedLayer.kind === 'text'
+      ? 0.34
+      : selectedLayer.kind === 'line'
+        ? 0.08
+        : selectedLayer.kind === 'triangle'
+          ? 0.86
+          : selectedLayer.kind === 'badge'
+            ? 0.56
+            : 1;
+  const boxWidth = Math.max(width * 0.08, (selectedLayer.size / Math.max(1, area.width)) * width * (selectedLayer.scaleX ?? 1));
+  const boxHeight = Math.max(height * 0.08, boxWidth * layerHeightRatio * (selectedLayer.scaleY ?? 1));
+  const rotation = (selectedLayer.rotation * Math.PI) / 180;
+  context.save();
+  context.translate(centerX, centerY);
+  context.rotate(rotation);
+  context.strokeStyle = '#ec4899';
+  context.lineWidth = lineWidth * 1.4;
+  context.setLineDash([width * 0.02, width * 0.014]);
+  context.strokeRect(-boxWidth * 0.44, -boxHeight * 0.44, boxWidth * 0.88, boxHeight * 0.88);
+  context.setLineDash([]);
+  context.lineWidth = lineWidth * 1.6;
+  context.strokeRect(-boxWidth / 2, -boxHeight / 2, boxWidth, boxHeight);
+  context.beginPath();
+  context.moveTo(0, -boxHeight / 2);
+  context.lineTo(0, -boxHeight / 2 - height * 0.09);
+  context.stroke();
+  const radius = Math.max(5, width / 52);
+  const handles: Array<[number, number]> = [
+    [-boxWidth / 2, -boxHeight / 2], [0, -boxHeight / 2], [boxWidth / 2, -boxHeight / 2],
+    [-boxWidth / 2, 0], [boxWidth / 2, 0],
+    [-boxWidth / 2, boxHeight / 2], [0, boxHeight / 2], [boxWidth / 2, boxHeight / 2],
+    [0, -boxHeight / 2 - height * 0.09],
+  ];
+  handles.forEach(([x, y]) => {
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fillStyle = '#ffffff';
+    context.fill();
+    context.lineWidth = lineWidth * 1.2;
+    context.strokeStyle = '#ec4899';
+    context.stroke();
+  });
+  context.restore();
+}
+
+function createHoodieTorsoGeometry() {
+  const geometry = new THREE.CylinderGeometry(0.45, 0.49, 1.16, 96, 72, false);
+  const positions = geometry.attributes.position;
+  for (let i = 0; i < positions.count; i += 1) {
+    let x = positions.getX(i);
+    const y = positions.getY(i);
+    let z = positions.getZ(i) * 0.72;
+    const normalizedY = THREE.MathUtils.clamp((y + 0.58) / 1.16, 0, 1);
+    const angle = Math.atan2(x, z);
+    const chestBulge = Math.sin(normalizedY * Math.PI) * 0.045;
+    const sideFold = Math.sin(angle * 5 + y * 10) * 0.012 * (0.4 + Math.sin(normalizedY * Math.PI));
+    const waistGather = normalizedY < 0.16 ? Math.sin(angle * 18) * 0.01 : 0;
+    const radialScale = 1 + chestBulge + sideFold + waistGather;
+    x *= radialScale;
+    z *= radialScale;
+    positions.setXYZ(i, x, y, z);
+  }
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function getFrontalMockupFrame(product: ProductBase): { width: number; height: number; z: number } {
+  if (product.id === 'sudadera') return { width: 2.06, height: 2.06, z: 0.42 };
   switch (product.model) {
     case 'apparel': return { width: 2.34, height: 2.06, z: 0.19 };
     case 'mug': return { width: 1.75, height: 1.24, z: 0.49 };
@@ -191,9 +401,25 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
     envMapIntensity: finish.envMapIntensity,
     side: THREE.DoubleSide,
   };
+  const isHoodie = product.id === 'sudadera';
+  const fleeceNormal = isHoodie ? createFabricNormalMap(false) : null;
+  const ribbedNormal = isHoodie ? createFabricNormalMap(true) : null;
+  const hoodieSurfaceOptions = isHoodie
+    ? {
+      roughness: 0.88,
+      metalness: 0,
+      normalMap: fleeceNormal || undefined,
+      normalScale: new THREE.Vector2(0.34, 0.34),
+      sheen: 0.65,
+      sheenRoughness: 0.75,
+      sheenColor: new THREE.Color('#ffffff'),
+    }
+    : {};
   const bodyMaterial = product.model === 'mug'
     ? new THREE.MeshPhysicalMaterial({ ...bodyMaterialOptions, clearcoat: 0.9, clearcoatRoughness: 0.045, ior: 1.54 })
-    : new THREE.MeshStandardMaterial(bodyMaterialOptions);
+    : isHoodie
+      ? new THREE.MeshPhysicalMaterial({ ...bodyMaterialOptions, ...hoodieSurfaceOptions })
+      : new THREE.MeshStandardMaterial(bodyMaterialOptions);
   const accentMaterialOptions = {
     color: accentColor,
     roughness: product.model === 'bottle' || product.model === 'rollup' || product.model === 'banner-x' || product.model === 'banner-a' ? 0.24 : Math.max(0.18, finish.roughness - 0.08),
@@ -203,7 +429,18 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
   };
   const accentMaterial = product.model === 'mug'
     ? new THREE.MeshPhysicalMaterial({ ...accentMaterialOptions, clearcoat: 0.9, clearcoatRoughness: 0.045, ior: 1.54 })
-    : new THREE.MeshStandardMaterial(accentMaterialOptions);
+    : isHoodie
+      ? new THREE.MeshPhysicalMaterial({
+        ...accentMaterialOptions,
+        roughness: 0.92,
+        metalness: 0,
+        normalMap: ribbedNormal || undefined,
+        normalScale: new THREE.Vector2(0.5, 0.5),
+        sheen: 0.5,
+        sheenRoughness: 0.8,
+        sheenColor: new THREE.Color('#ffffff'),
+      })
+      : new THREE.MeshStandardMaterial(accentMaterialOptions);
   const hardwareMaterial = new THREE.MeshStandardMaterial({
     color: '#b7c2d0',
     roughness: 0.26,
@@ -229,7 +466,18 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
     };
     const mat = product.model === 'mug'
       ? new THREE.MeshPhysicalMaterial({ ...artMaterialOptions, clearcoat: 0.72, clearcoatRoughness: 0.055, ior: 1.54 })
-      : new THREE.MeshStandardMaterial(artMaterialOptions);
+      : isHoodie
+        ? new THREE.MeshPhysicalMaterial({
+          ...artMaterialOptions,
+          normalMap: fleeceNormal || undefined,
+          normalScale: new THREE.Vector2(0.34, 0.34),
+          roughness: 0.88,
+          metalness: 0,
+          sheen: 0.65,
+          sheenRoughness: 0.75,
+          sheenColor: new THREE.Color('#ffffff'),
+        })
+        : new THREE.MeshStandardMaterial(artMaterialOptions);
     artMaterials.push(mat);
     return mat;
   };
@@ -242,32 +490,156 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
   const artX = ((product.printArea.x + product.printArea.width / 2 - 50) / 100) * bodyWidth;
   const artY = ((50 - product.printArea.y - product.printArea.height / 2) / 100) * bodyHeight;
   const warpFactor = Math.max(0.15, Math.min(1, appearance.warpStrength / 100));
+  let chestArtworkMesh: THREE.Mesh | undefined;
+  let guideMesh: THREE.Mesh | undefined;
+  let guideCanvas: HTMLCanvasElement | undefined;
+  let guideTexture: THREE.CanvasTexture | undefined;
 
   if (product.model === 'apparel') {
-    addMesh(group, createSculptedGarmentGeometry(product.id), bodyMaterial);
+    if (isHoodie) {
+      addMesh(group, createHoodieTorsoGeometry(), bodyMaterial);
 
-    // Ribbed crew collar ring
-    const collarRing = addMesh(group, new THREE.TorusGeometry(0.24, 0.036, 12, 32, Math.PI), accentMaterial, [0, 0.78, 0.04], [Math.PI * 0.92, 0, 0]);
-    collarRing.scale.set(1.18, 0.7, 0.9);
-
-    if (product.id === 'sudadera') {
-      const hood = new THREE.Shape();
-      hood.moveTo(-0.3, 0.72);
-      hood.quadraticCurveTo(0, 1.24, 0.3, 0.72);
-      hood.lineTo(0.22, 0.56);
-      hood.quadraticCurveTo(0, 0.76, -0.22, 0.56);
-      hood.closePath();
-      const hoodGeo = new THREE.ExtrudeGeometry(hood, {
-        depth: 0.14,
+      // Soft hood shell and recessed lining frame the neckline.
+      const hoodShape = new THREE.Shape();
+      hoodShape.moveTo(-0.32, 0.52);
+      hoodShape.bezierCurveTo(-0.4, 0.76, -0.31, 0.92, 0, 0.96);
+      hoodShape.bezierCurveTo(0.31, 0.92, 0.4, 0.76, 0.32, 0.52);
+      hoodShape.lineTo(0.21, 0.57);
+      hoodShape.bezierCurveTo(0.2, 0.76, 0.13, 0.8, 0, 0.82);
+      hoodShape.bezierCurveTo(-0.13, 0.8, -0.2, 0.76, -0.21, 0.57);
+      hoodShape.closePath();
+      const hoodGeometry = new THREE.ExtrudeGeometry(hoodShape, {
+        depth: 0.13,
         bevelEnabled: true,
-        bevelSize: 0.03,
-        bevelThickness: 0.03,
+        bevelSize: 0.018,
+        bevelThickness: 0.018,
+        bevelSegments: 3,
+        curveSegments: 20,
+      });
+      hoodGeometry.translate(0, 0, -0.18);
+      addMesh(group, hoodGeometry, bodyMaterial);
+
+      const innerHoodShape = new THREE.Shape();
+      innerHoodShape.moveTo(-0.2, 0.61);
+      innerHoodShape.quadraticCurveTo(-0.2, 0.78, 0, 0.83);
+      innerHoodShape.quadraticCurveTo(0.2, 0.78, 0.2, 0.61);
+      innerHoodShape.quadraticCurveTo(0, 0.73, -0.2, 0.61);
+      const innerHood = addMesh(group, new THREE.ShapeGeometry(innerHoodShape, 20), accentMaterial, [0, 0, -0.045]);
+      innerHood.scale.set(0.92, 0.86, 1);
+
+      // Relaxed sleeves curve from the shoulder seam into ribbed cuffs.
+      [-1, 1].forEach((side) => {
+        const sleeveCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(side * 0.34, 0.44, -0.01),
+          new THREE.Vector3(side * 0.5, 0.25, 0.015),
+          new THREE.Vector3(side * 0.62, 0.01, 0.05),
+          new THREE.Vector3(side * 0.69, -0.28, 0.07),
+          new THREE.Vector3(side * 0.68, -0.46, 0.08),
+        ]);
+        const sleeveGeometry = new THREE.TubeGeometry(sleeveCurve, 72, 0.145, 32, false);
+        sleeveGeometry.scale(1, 1, 0.82);
+        addMesh(group, sleeveGeometry, bodyMaterial);
+
+        const cuffGeometry = new THREE.CylinderGeometry(0.118, 0.13, 0.16, 40, 8);
+        cuffGeometry.scale(1, 1, 0.82);
+        const cuff = addMesh(group, cuffGeometry, accentMaterial, [side * 0.68, -0.48, 0.08]);
+        cuff.rotation.z = -side * 0.06;
+      });
+
+      const waistbandGeometry = new THREE.CylinderGeometry(0.48, 0.49, 0.17, 96, 12);
+      waistbandGeometry.scale(1, 1, 0.72);
+      addMesh(group, waistbandGeometry, accentMaterial, [0, -0.58, 0]);
+
+      // The kangaroo pocket follows the torso instead of floating as a flat card.
+      const pocketShape = new THREE.Shape();
+      pocketShape.moveTo(-0.2, 0.13);
+      pocketShape.lineTo(0.2, 0.13);
+      pocketShape.quadraticCurveTo(0.25, 0.03, 0.3, -0.03);
+      pocketShape.lineTo(0.27, -0.23);
+      pocketShape.lineTo(-0.27, -0.23);
+      pocketShape.lineTo(-0.3, -0.03);
+      pocketShape.quadraticCurveTo(-0.25, 0.03, -0.2, 0.13);
+      pocketShape.closePath();
+      const pocketGeometry = new THREE.ExtrudeGeometry(pocketShape, {
+        depth: 0.025,
+        bevelEnabled: true,
+        bevelSize: 0.008,
+        bevelThickness: 0.006,
         bevelSegments: 3,
       });
-      hoodGeo.translate(0, 0, -0.18);
-      addMesh(group, hoodGeo, accentMaterial);
-      addMesh(group, new RoundedBoxGeometry(0.64, 0.27, 0.04, 3, 0.02), accentMaterial, [0, -0.52, 0.18]);
-    } else if (product.id === 'polo') {
+      const pocketPositions = pocketGeometry.attributes.position;
+      for (let i = 0; i < pocketPositions.count; i += 1) {
+        const x = pocketPositions.getX(i);
+        const z = Math.sqrt(Math.max(0.16, 1 - (x * x) / 0.48 ** 2)) * 0.35;
+        pocketPositions.setZ(i, z + pocketPositions.getZ(i) + 0.009);
+      }
+      pocketGeometry.computeVertexNormals();
+      addMesh(group, pocketGeometry, bodyMaterial, [0, -0.29, 0]);
+
+      // The cords sit above the print so their soft shadows cross the fabric and artwork.
+      [-1, 1].forEach((side) => {
+        const cordCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(side * 0.072, 0.67, 0.26),
+          new THREE.Vector3(side * 0.078, 0.48, 0.34),
+          new THREE.Vector3(side * 0.082, 0.26, 0.36),
+          new THREE.Vector3(side * 0.085, 0.045, 0.35),
+        ]);
+        const cord = addMesh(group, new THREE.TubeGeometry(cordCurve, 56, 0.012, 12, false), accentMaterial);
+        cord.castShadow = true;
+        const aglet = addMesh(
+          group,
+          new THREE.CylinderGeometry(0.009, 0.009, 0.04, 14),
+          accentMaterial,
+          [side * 0.085, 0.025, 0.35],
+        );
+        aglet.castShadow = true;
+      });
+
+      const artGeometry = createCurvedPatchGeometry(artWidth * 0.96, artHeight * 0.96, 0.1, 0.014);
+      chestArtworkMesh = addMesh(group, artGeometry, createArtMaterial(), [artX, artY + 0.02, 0.35]);
+      chestArtworkMesh.name = 'HoodieChestArtwork';
+      chestArtworkMesh.renderOrder = 2;
+
+      const surfaceAspect = product.surfaceProfile?.aspectRatio || (product.printArea.width * product.ratio) / product.printArea.height;
+      const guideWidth = 768;
+      guideCanvas = document.createElement('canvas');
+      guideCanvas.width = guideWidth;
+      guideCanvas.height = Math.max(1, Math.round(guideWidth / surfaceAspect));
+      guideTexture = new THREE.CanvasTexture(guideCanvas);
+      guideTexture.colorSpace = THREE.SRGBColorSpace;
+      guideTexture.anisotropy = 4;
+      const guideMaterial = new THREE.MeshPhysicalMaterial({
+        map: guideTexture,
+        transparent: true,
+        alphaTest: 0.01,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: -3,
+        normalMap: fleeceNormal || undefined,
+        normalScale: new THREE.Vector2(0.34, 0.34),
+        roughness: 0.84,
+        metalness: 0,
+        sheen: 0.55,
+        sheenRoughness: 0.8,
+        sheenColor: new THREE.Color('#ffffff'),
+      });
+      guideMesh = addMesh(
+        group,
+        artGeometry.clone(),
+        guideMaterial,
+        [artX, artY + 0.02, 0.352],
+      );
+      guideMesh.name = 'Guías de edición';
+      guideMesh.renderOrder = 4;
+      guideMesh.visible = false;
+    } else {
+      addMesh(group, createSculptedGarmentGeometry(product.id), bodyMaterial);
+      const collarRing = addMesh(group, new THREE.TorusGeometry(0.24, 0.036, 12, 32, Math.PI), accentMaterial, [0, 0.78, 0.04], [Math.PI * 0.92, 0, 0]);
+      collarRing.scale.set(1.18, 0.7, 0.9);
+    }
+
+    if (product.id === 'polo') {
       const collar = new THREE.Shape();
       collar.moveTo(-0.28, 0.85);
       collar.lineTo(-0.08, 0.68);
@@ -280,10 +652,11 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
       addMesh(group, new THREE.ExtrudeGeometry(collar, { depth: 0.03, bevelEnabled: false }), accentMaterial, [0, 0, 0.15]);
     }
 
-    // Chest-conforming curved artwork
-    const chestArtGeo = createCurvedPatchGeometry(artWidth * 0.96, artHeight * 0.96, 0.055 * (0.4 + warpFactor), 0.015);
-    const chestArt = addMesh(group, chestArtGeo, createArtMaterial(), [artX, artY + 0.02, 0.242]);
-    chestArt.renderOrder = 2;
+    if (!isHoodie) {
+      const chestArtGeo = createCurvedPatchGeometry(artWidth * 0.96, artHeight * 0.96, 0.055 * (0.4 + warpFactor), 0.015);
+      chestArtworkMesh = addMesh(group, chestArtGeo, createArtMaterial(), [artX, artY + 0.02, 0.242]);
+      chestArtworkMesh.renderOrder = 2;
+    }
   } else if (product.model === 'mug') {
     // Tall ceramic profile with a rounded lip and a clean inner wall.
     const points = [
@@ -331,18 +704,35 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
     addMesh(group, new THREE.TubeGeometry(handleCurve, 64, 0.048, 24, false), accentMaterial);
 
     // The unwrapped 20:9 UV board follows the outer wall and leaves a blank seam arc.
-    const artAspect = product.surfaceProfile?.aspectRatio || 20 / 9;
-    const mugRadius = 0.412;
-    const maxTheta = THREE.MathUtils.degToRad(product.surfaceProfile?.wrapAngleDegrees || 236);
-    const maxHeight = 0.945 * (product.surfaceProfile?.verticalCoverage || 0.76);
-    const baseWrapHeight = Math.min(mugRadius * maxTheta / artAspect, maxHeight);
-    const wrapScale = Math.min(1, 0.85 + warpFactor * 0.22);
-    const wrapHeight = baseWrapHeight * wrapScale;
-    const thetaSpan = (wrapHeight * artAspect) / mugRadius;
-    const artCyl = new THREE.CylinderGeometry(mugRadius, mugRadius, wrapHeight, 160, 40, true, -thetaSpan / 2, thetaSpan);
-    const artMesh = addMesh(group, artCyl, createArtMaterial(), [0, 0.01, 0]);
+    const wrapSettings = getMugWrapSettings(product, appearance.warpStrength);
+    const artGeometry = createMugWrapGeometry(wrapSettings, 0.00025);
+    const artMesh = addMesh(group, artGeometry, createArtMaterial(), [0, wrapSettings.centerY, 0]);
     artMesh.name = 'MugArtworkWrap';
     artMesh.renderOrder = 2;
+
+    const guideWidth = 768;
+    const surfaceAspect = wrapSettings.aspectRatio;
+    guideCanvas = document.createElement('canvas');
+    guideCanvas.width = guideWidth;
+    guideCanvas.height = Math.max(1, Math.round(guideWidth / surfaceAspect));
+    guideTexture = new THREE.CanvasTexture(guideCanvas);
+    guideTexture.colorSpace = THREE.SRGBColorSpace;
+    guideTexture.anisotropy = 4;
+    const guideMaterial = new THREE.MeshBasicMaterial({
+      map: guideTexture,
+      transparent: true,
+      alphaTest: 0.01,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -3,
+    });
+    const guideGeometry = createMugWrapGeometry(wrapSettings, 0.0005);
+    guideMesh = addMesh(group, guideGeometry, guideMaterial, [0, wrapSettings.centerY, 0]);
+    guideMesh.name = 'Guías de impresión';
+    guideMesh.renderOrder = 4;
+    guideMesh.visible = false;
   } else if (product.model === 'bottle') {
     // Sleek insulated Tomatodo LatheGeometry
     const bottlePoints = [
@@ -526,8 +916,12 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
       obj.receiveShadow = true;
     }
   });
+  if (guideMesh) {
+    guideMesh.castShadow = false;
+    guideMesh.receiveShadow = false;
+  }
 
-  return { group, bodyMaterials, accentMaterials, artMaterials };
+  return { group, bodyMaterials, accentMaterials, artMaterials, chestArtworkMesh, guideMesh, guideCanvas, guideTexture };
 }
 
 function disposeObject3D(root: THREE.Object3D) {
@@ -674,6 +1068,8 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
     product,
     artworkUrl,
     frontalMockupUrl,
+    selectedLayer,
+    showPrintGuides,
     appearance,
     background,
     customModel,
@@ -682,6 +1078,9 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
     onPlaceDecal,
     onTogglePlacementMode,
     onExport3D,
+    onMoveLayer,
+    onExportModel,
+    exportingModel = false,
   },
   ref,
 ) {
@@ -698,6 +1097,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
   const artTextureRef = useRef<THREE.Texture | null>(null);
   const frontalTextureRef = useRef<THREE.Texture | null>(null);
   const frontalMockupMeshRef = useRef<THREE.Mesh | null>(null);
+  const glbExportingRef = useRef(false);
   const floorRef = useRef<THREE.Mesh | null>(null);
   const targetCameraPosRef = useRef<THREE.Vector3 | null>(null);
   const baseDistanceRef = useRef(4.1);
@@ -706,6 +1106,11 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
   const onPlaceDecalRef = useRef(onPlaceDecal);
   const onDetectedMeshesRef = useRef(onDetectedMeshes);
   const customModelRef = useRef(customModel);
+  const selectedLayerRef = useRef(selectedLayer);
+  const onMoveLayerRef = useRef(onMoveLayer);
+  const productRef = useRef(product);
+  const showPrintGuidesRef = useRef(showPrintGuides);
+  const shadowKeyLightRef = useRef<THREE.DirectionalLight | null>(null);
 
   const [error, setError] = useState('');
   const [loadingCustom, setLoadingCustom] = useState(false);
@@ -715,6 +1120,10 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
   onPlaceDecalRef.current = onPlaceDecal;
   onDetectedMeshesRef.current = onDetectedMeshes;
   customModelRef.current = customModel;
+  selectedLayerRef.current = selectedLayer;
+  onMoveLayerRef.current = onMoveLayer;
+  productRef.current = product;
+  showPrintGuidesRef.current = showPrintGuides;
   placementModeRef.current = Boolean(customModel?.placementMode);
   autoRotateRef.current = autoRotate;
 
@@ -765,6 +1174,65 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
         camera.aspect = prevSize.x / Math.max(1, prevSize.y);
         camera.updateProjectionMatrix();
         renderer.render(scene, camera);
+      }
+    },
+    async exportGlb() {
+      const bundle = builtInBundleRef.current;
+      if (!bundle) return false;
+      const guideMesh = bundle.guideMesh;
+      const previousGuideVisibility = guideMesh?.visible ?? false;
+      const artMesh = bundle.chestArtworkMesh;
+      const previousArtMeshVisibility = artMesh?.visible ?? true;
+      const previousBodyColorWrite = bundle.bodyMaterials.map((material) => material.colorWrite);
+      const previousAccentColorWrite = bundle.accentMaterials.map((material) => material.colorWrite);
+      const previousArtMaterialVisibility = bundle.artMaterials.map((material) => material.visible);
+
+      try {
+        glbExportingRef.current = true;
+        if (guideMesh) guideMesh.visible = false;
+        if (artMesh) artMesh.visible = true;
+        bundle.bodyMaterials.forEach((material) => { material.colorWrite = true; material.needsUpdate = true; });
+        bundle.accentMaterials.forEach((material) => { material.colorWrite = true; material.needsUpdate = true; });
+        bundle.artMaterials.forEach((material) => { material.visible = true; material.needsUpdate = true; });
+        await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+        const exporter = new GLTFExporter();
+        const output = await new Promise<ArrayBuffer>((resolve, reject) => {
+          exporter.parse(
+            bundle.group,
+            (result) => {
+              if (result instanceof ArrayBuffer) resolve(result);
+              else reject(new Error('El exportador no devolvió un archivo GLB binario.'));
+            },
+            reject,
+            { binary: true },
+          );
+        });
+        const blob = new Blob([output], { type: 'model/gltf-binary' });
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = objectUrl;
+        anchor.download = 'visualcorp-' + productRef.current.id + '.glb';
+        anchor.click();
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        return true;
+      } catch {
+        return false;
+      } finally {
+        if (guideMesh) guideMesh.visible = previousGuideVisibility;
+        if (artMesh) artMesh.visible = previousArtMeshVisibility;
+        bundle.bodyMaterials.forEach((material, index) => {
+          material.colorWrite = previousBodyColorWrite[index];
+          material.needsUpdate = true;
+        });
+        bundle.accentMaterials.forEach((material, index) => {
+          material.colorWrite = previousAccentColorWrite[index];
+          material.needsUpdate = true;
+        });
+        bundle.artMaterials.forEach((material, index) => {
+          material.visible = previousArtMaterialVisibility[index];
+          material.needsUpdate = true;
+        });
+        glbExportingRef.current = false;
       }
     },
   }));
@@ -829,8 +1297,17 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
     const keyLight = new THREE.DirectionalLight('#ffffff', 1.8);
     keyLight.position.set(-2.6, 4.2, 4.4);
     keyLight.castShadow = true;
-    keyLight.shadow.mapSize.set(1024, 1024);
+    keyLight.shadow.mapSize.set(2048, 2048);
     keyLight.shadow.bias = -0.0005;
+    keyLight.shadow.normalBias = 0.006;
+    keyLight.shadow.camera.left = -1.8;
+    keyLight.shadow.camera.right = 1.8;
+    keyLight.shadow.camera.top = 1.8;
+    keyLight.shadow.camera.bottom = -1.8;
+    keyLight.shadow.camera.near = 0.1;
+    keyLight.shadow.camera.far = 12;
+    keyLight.shadow.camera.updateProjectionMatrix();
+    shadowKeyLightRef.current = keyLight;
     scene.add(keyLight);
 
     const fillLight = new THREE.DirectionalLight('#d8e6ff', 0.72);
@@ -843,7 +1320,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
 
     const floor = new THREE.Mesh(
       new THREE.CircleGeometry(1.55, 64),
-      new THREE.ShadowMaterial({ opacity: 0.2 }),
+      new THREE.ShadowMaterial({ opacity: product.id === 'sudadera' ? 0.12 : 0.2 }),
     );
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -1.06;
@@ -857,12 +1334,87 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
 
     // Raycast click-to-place for custom 3D decals
     const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
     const pointerDownPos = { x: 0, y: 0 };
+    let draggingLayer = false;
+    let dragPointerId = -1;
+    let dragMesh: THREE.Mesh | null = null;
+    let dragUsesProductUv = false;
+    const updatePointer = (event: PointerEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.set(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -((event.clientY - rect.top) / rect.height) * 2 + 1,
+      );
+      raycaster.setFromCamera(pointer, camera);
+    };
     const onPointerDown = (event: PointerEvent) => {
       pointerDownPos.x = event.clientX;
       pointerDownPos.y = event.clientY;
+      const layer = selectedLayerRef.current;
+      const artworkMesh = builtInBundleRef.current?.chestArtworkMesh;
+      if (layer && !layer.locked && artworkMesh && !customModelRef.current?.placementMode) {
+        updatePointer(event);
+        const frontPhoto = frontalMockupMeshRef.current?.visible ? frontalMockupMeshRef.current : null;
+        const targetMesh = frontPhoto || artworkMesh;
+        const hits = raycaster.intersectObject(targetMesh, false);
+        if (hits.length > 0 && hits[0].uv) {
+          const area = productRef.current.printArea;
+          const x = frontPhoto ? hits[0].uv.x * 100 : 50;
+          const y = frontPhoto ? (1 - hits[0].uv.y) * 100 : 50;
+          const isOnPrintArea = !frontPhoto || (
+            x >= area.x && x <= area.x + area.width && y >= area.y && y <= area.y + area.height
+          );
+          if (isOnPrintArea) {
+            draggingLayer = true;
+            dragPointerId = event.pointerId;
+            dragMesh = targetMesh;
+            dragUsesProductUv = Boolean(frontPhoto);
+            controls.enabled = false;
+            renderer.domElement.setPointerCapture(event.pointerId);
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }
+      }
+    };
+    const onPointerMove = (event: PointerEvent) => {
+      if (!draggingLayer || event.pointerId !== dragPointerId) return;
+      const layer = selectedLayerRef.current;
+      const hitMesh = dragMesh;
+      const onMove = onMoveLayerRef.current;
+      if (!layer || layer.locked || !hitMesh || !onMove) return;
+      updatePointer(event);
+      const hits = raycaster.intersectObject(hitMesh, false);
+      if (hits.length === 0 || !hits[0].uv) return;
+      const area = productRef.current.printArea;
+      const pointX = hits[0].uv.x;
+      const pointY = 1 - hits[0].uv.y;
+      const localX = dragUsesProductUv ? (pointX * 100 - area.x) / area.width : pointX;
+      const localY = dragUsesProductUv ? (pointY * 100 - area.y) / area.height : pointY;
+      const paddingX = Math.min(layer.size / 2, area.width * 0.45);
+      const paddingY = Math.min(layer.size * 0.35, area.height * 0.45);
+      const x = area.x + localX * area.width;
+      const y = area.y + localY * area.height;
+      onMove(
+        layer.id,
+        THREE.MathUtils.clamp(x, area.x + paddingX, area.x + area.width - paddingX),
+        THREE.MathUtils.clamp(y, area.y + paddingY, area.y + area.height - paddingY),
+      );
+      event.preventDefault();
+      event.stopImmediatePropagation();
     };
     const onPointerUp = (event: PointerEvent) => {
+      if (draggingLayer && (dragPointerId === -1 || event.pointerId === dragPointerId)) {
+        draggingLayer = false;
+        dragPointerId = -1;
+        dragMesh = null;
+        dragUsesProductUv = false;
+        controls.enabled = true;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
       if (!placementModeRef.current || !customWrapperRef.current || !onPlaceDecalRef.current) return;
       const dist = Math.hypot(event.clientX - pointerDownPos.x, event.clientY - pointerDownPos.y);
       if (dist > 6) return;
@@ -892,8 +1444,10 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
       }
     };
 
-    renderer.domElement.addEventListener('pointerdown', onPointerDown);
+    renderer.domElement.addEventListener('pointerdown', onPointerDown, true);
+    renderer.domElement.addEventListener('pointermove', onPointerMove, true);
     renderer.domElement.addEventListener('pointerup', onPointerUp);
+    renderer.domElement.addEventListener('pointercancel', onPointerUp);
 
     const resize = () => {
       const bounds = host.getBoundingClientRect();
@@ -921,6 +1475,40 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
       }
       controls.autoRotate = autoRotateRef.current;
       controls.update();
+      if (productRef.current.id === 'sudadera' && !glbExportingRef.current) {
+        const horizontalDistance = Math.hypot(camera.position.x, camera.position.z);
+        const frontPhotoVisible = Boolean(
+          frontalMockupMeshRef.current &&
+          camera.position.z > 0 &&
+          Math.abs(camera.position.x) < horizontalDistance * 0.2 &&
+          Math.abs(camera.position.y) < camera.position.distanceTo(controls.target) * 0.2,
+        );
+        if (frontalMockupMeshRef.current) frontalMockupMeshRef.current.visible = frontPhotoVisible;
+        const bundle = builtInBundleRef.current;
+        bundle?.bodyMaterials.forEach((material) => {
+          const nextColorWrite = !frontPhotoVisible;
+          if (material.colorWrite !== nextColorWrite) {
+            material.colorWrite = nextColorWrite;
+            material.needsUpdate = true;
+          }
+        });
+        bundle?.accentMaterials.forEach((material) => {
+          const nextColorWrite = !frontPhotoVisible;
+          if (material.colorWrite !== nextColorWrite) {
+            material.colorWrite = nextColorWrite;
+            material.needsUpdate = true;
+          }
+        });
+        bundle?.artMaterials.forEach((material) => {
+          const nextVisible = !frontPhotoVisible;
+          if (material.visible !== nextVisible) {
+            material.visible = nextVisible;
+            material.needsUpdate = true;
+          }
+        });
+        const artMesh = bundle?.chestArtworkMesh;
+        if (artMesh && artMesh.visible !== !frontPhotoVisible) artMesh.visible = !frontPhotoVisible;
+      }
       renderer.render(scene, camera);
     };
     rafId = window.requestAnimationFrame(tick);
@@ -928,8 +1516,10 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
     return () => {
       window.cancelAnimationFrame(rafId);
       observer.disconnect();
-      renderer.domElement.removeEventListener('pointerdown', onPointerDown);
+      renderer.domElement.removeEventListener('pointerdown', onPointerDown, true);
+      renderer.domElement.removeEventListener('pointermove', onPointerMove, true);
       renderer.domElement.removeEventListener('pointerup', onPointerUp);
+      renderer.domElement.removeEventListener('pointercancel', onPointerUp);
       controls.dispose();
       envTarget.dispose();
       bgTextureRef.current?.dispose();
@@ -957,6 +1547,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
       builtInBundleRef.current = null;
       customWrapperRef.current = null;
       floorRef.current = null;
+      shadowKeyLightRef.current = null;
     };
   }, []);
 
@@ -1101,6 +1692,19 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
     customModel?.format,
   ]);
 
+  // Keep the cyan print-area frame and magenta layer gizmo attached to the hoodie surface.
+  useEffect(() => {
+    const bundle = builtInBundleRef.current;
+    if (!bundle?.guideCanvas || !bundle.guideTexture || !bundle.guideMesh) return;
+    if (product.id === 'sudadera') {
+      drawGarmentGuideCanvas(bundle.guideCanvas, product, selectedLayer, showPrintGuides);
+    } else {
+      drawSurfaceGuideCanvas(bundle.guideCanvas, product, selectedLayer, showPrintGuides);
+    }
+    bundle.guideTexture.needsUpdate = true;
+    bundle.guideMesh.visible = showPrintGuides;
+  }, [product, selectedLayer, showPrintGuides, artworkUrl]);
+
   // A photorealistic frontal render sits over the matching 3D form for the straight-on studio view.
   useEffect(() => {
     const modelRoot = modelRootRef.current;
@@ -1130,7 +1734,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
       });
       mockupMesh = new THREE.Mesh(new THREE.PlaneGeometry(frame.width, frame.height), material);
       mockupMesh.position.set(0, 0, frame.z);
-      mockupMesh.renderOrder = 4;
+      mockupMesh.renderOrder = 3;
       modelRoot.add(mockupMesh);
       mockupTexture = loadedTexture;
       frontalTextureRef.current = loadedTexture;
@@ -1160,17 +1764,22 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
       const nextAccentColor = appearance.mode === 'custom' ? appearance.accentColor : product.defaultAccentColor;
       bundle.bodyMaterials.forEach((mat) => {
         mat.color.set(nextBodyColor);
-        mat.roughness = finish.roughness;
-        mat.metalness = finish.metalness;
+        mat.roughness = product.id === 'sudadera' ? 0.88 : finish.roughness;
+        mat.metalness = product.id === 'sudadera' ? 0 : finish.metalness;
         mat.envMapIntensity = finish.envMapIntensity;
         mat.needsUpdate = true;
       });
       bundle.accentMaterials.forEach((mat) => {
         mat.color.set(nextAccentColor);
+        if (product.id === 'sudadera') {
+          mat.roughness = 0.92;
+          mat.metalness = 0;
+        }
         mat.needsUpdate = true;
       });
       bundle.artMaterials.forEach((mat) => {
-        mat.roughness = Math.min(0.92, finish.roughness + 0.08);
+        mat.roughness = product.id === 'sudadera' ? 0.88 : Math.min(0.92, finish.roughness + 0.08);
+        if (product.id === 'sudadera') mat.metalness = 0;
         mat.needsUpdate = true;
       });
     }
@@ -1203,6 +1812,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
     appearance.finish,
     product.defaultColor,
     product.defaultAccentColor,
+    product.id,
     loadingCustom,
   ]);
 
@@ -1391,6 +2001,8 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
         <span>
           {customModel?.placementMode
             ? 'Haz clic sobre el modelo para fijar el diseño'
+            : product.model === 'apparel' && selectedLayer && !selectedLayer.locked
+              ? 'Arrastra sobre el pecho para mover la capa · fuera del estampado para girar'
             : 'Arrastra para girar · rueda o pellizco para zoom'}
         </span>
       </div>
@@ -1440,6 +2052,17 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
           {onExport3D && (
             <button type="button" className="vc-product-3d-chip is-accent" onClick={() => onExport3D(false)}>
               <Camera size={13} aria-hidden="true" /> Captura 3D PNG
+            </button>
+          )}
+          {onExportModel && !product.isCustom3D && (
+            <button
+              type="button"
+              className="vc-product-3d-chip is-accent"
+              onClick={onExportModel}
+              disabled={exportingModel}
+            >
+              <Download size={13} aria-hidden="true" />
+              {exportingModel ? 'Exportando GLB…' : 'Exportar modelo GLB'}
             </button>
           )}
         </div>

@@ -127,7 +127,9 @@ export type DesignLayer = {
   x: number;
   y: number;
   size: number;
+  scaleX?: number;
   scaleY?: number;
+  imageAspect?: number;
   rotation: number;
   opacity: number;
   color: string;
