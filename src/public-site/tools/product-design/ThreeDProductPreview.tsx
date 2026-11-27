@@ -184,20 +184,26 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
   const bodyColor = appearance.mode === 'custom' ? appearance.color : product.defaultColor;
   const accentColor = appearance.mode === 'custom' ? appearance.accentColor : product.defaultAccentColor;
 
-  const bodyMaterial = new THREE.MeshStandardMaterial({
+  const bodyMaterialOptions = {
     color: bodyColor,
     roughness: finish.roughness,
     metalness: finish.metalness,
     envMapIntensity: finish.envMapIntensity,
     side: THREE.DoubleSide,
-  });
-  const accentMaterial = new THREE.MeshStandardMaterial({
+  };
+  const bodyMaterial = product.model === 'mug'
+    ? new THREE.MeshPhysicalMaterial({ ...bodyMaterialOptions, clearcoat: 0.9, clearcoatRoughness: 0.045, ior: 1.54 })
+    : new THREE.MeshStandardMaterial(bodyMaterialOptions);
+  const accentMaterialOptions = {
     color: accentColor,
     roughness: product.model === 'bottle' || product.model === 'rollup' || product.model === 'banner-x' || product.model === 'banner-a' ? 0.24 : Math.max(0.18, finish.roughness - 0.08),
     metalness: product.model === 'bottle' || product.model === 'rollup' || product.model === 'banner-x' || product.model === 'banner-a' ? 0.82 : finish.metalness,
     envMapIntensity: 1.15,
     side: THREE.DoubleSide,
-  });
+  };
+  const accentMaterial = product.model === 'mug'
+    ? new THREE.MeshPhysicalMaterial({ ...accentMaterialOptions, clearcoat: 0.9, clearcoatRoughness: 0.045, ior: 1.54 })
+    : new THREE.MeshStandardMaterial(accentMaterialOptions);
   const hardwareMaterial = new THREE.MeshStandardMaterial({
     color: '#b7c2d0',
     roughness: 0.26,
@@ -210,7 +216,7 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
   const artMaterials: THREE.MeshStandardMaterial[] = [];
 
   const createArtMaterial = () => {
-    const mat = new THREE.MeshStandardMaterial({
+    const artMaterialOptions = {
       color: '#ffffff',
       transparent: true,
       alphaTest: 0.01,
@@ -220,7 +226,10 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
       metalness: Math.max(0, finish.metalness * 0.25),
       polygonOffset: true,
       polygonOffsetFactor: -2,
-    });
+    };
+    const mat = product.model === 'mug'
+      ? new THREE.MeshPhysicalMaterial({ ...artMaterialOptions, clearcoat: 0.72, clearcoatRoughness: 0.055, ior: 1.54 })
+      : new THREE.MeshStandardMaterial(artMaterialOptions);
     artMaterials.push(mat);
     return mat;
   };
@@ -276,46 +285,65 @@ function createBuiltInProductModel(product: ProductBase, appearance: ProductAppe
     const chestArt = addMesh(group, chestArtGeo, createArtMaterial(), [artX, artY + 0.02, 0.242]);
     chestArt.renderOrder = 2;
   } else if (product.model === 'mug') {
-    // True ceramic LatheGeometry: outer wall, rounded rim, hollow inner wall
+    // Tall ceramic profile with a rounded lip and a clean inner wall.
     const points = [
       new THREE.Vector2(0.001, -0.47),
-      new THREE.Vector2(0.41, -0.47),
-      new THREE.Vector2(0.445, -0.44),
-      new THREE.Vector2(0.455, -0.38),
-      new THREE.Vector2(0.46, 0.43),
-      new THREE.Vector2(0.445, 0.47),
-      new THREE.Vector2(0.415, 0.47),
-      new THREE.Vector2(0.398, 0.43),
+      new THREE.Vector2(0.33, -0.47),
+      new THREE.Vector2(0.37, -0.455),
+      new THREE.Vector2(0.397, -0.41),
+      new THREE.Vector2(0.409, -0.35),
+      new THREE.Vector2(0.41, 0.37),
+      new THREE.Vector2(0.402, 0.43),
+      new THREE.Vector2(0.39, 0.466),
+      new THREE.Vector2(0.38, 0.475),
+      new THREE.Vector2(0.372, 0.471),
+      new THREE.Vector2(0.366, 0.451),
+      new THREE.Vector2(0.364, 0.42),
     ];
-    const outerMug = new THREE.LatheGeometry(points, 64);
+    points.push(
+      new THREE.Vector2(0.364, -0.31),
+      new THREE.Vector2(0.35, -0.39),
+      new THREE.Vector2(0.29, -0.42),
+      new THREE.Vector2(0.001, -0.42),
+    );
+    const outerMug = new THREE.LatheGeometry(points, 128);
     addMesh(group, outerMug, bodyMaterial);
 
-    // Inner ceramic cavity (accent color)
+    // The inner cavity and handle stay porcelain white by default.
     const innerPoints = [
-      new THREE.Vector2(0.398, 0.44),
-      new THREE.Vector2(0.392, -0.39),
-      new THREE.Vector2(0.36, -0.42),
+      new THREE.Vector2(0.364, 0.42),
+      new THREE.Vector2(0.36, -0.32),
+      new THREE.Vector2(0.34, -0.39),
       new THREE.Vector2(0.001, -0.42),
     ];
-    addMesh(group, new THREE.LatheGeometry(innerPoints, 48), accentMaterial);
+    addMesh(group, new THREE.LatheGeometry(innerPoints, 96), accentMaterial);
 
     // Sculpted ergonomic C-handle
     const handleCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0.43, 0.29, 0),
-      new THREE.Vector3(0.67, 0.28, 0),
-      new THREE.Vector3(0.74, 0.01, 0),
-      new THREE.Vector3(0.67, -0.25, 0),
-      new THREE.Vector3(0.43, -0.27, 0),
+      new THREE.Vector3(0.39, 0.31, 0),
+      new THREE.Vector3(0.52, 0.29, 0),
+      new THREE.Vector3(0.68, 0.18, 0),
+      new THREE.Vector3(0.72, 0.01, 0),
+      new THREE.Vector3(0.68, -0.19, 0),
+      new THREE.Vector3(0.52, -0.28, 0),
+      new THREE.Vector3(0.39, -0.30, 0),
     ]);
-    addMesh(group, new THREE.TubeGeometry(handleCurve, 32, 0.052, 16, false), accentMaterial);
+    addMesh(group, new THREE.TubeGeometry(handleCurve, 64, 0.048, 24, false), accentMaterial);
 
-    // Curved cylindrical artwork wrap hugging outer ceramic wall with accurate 1:1 aspect ratio
+    // The artwork is cropped to the same print area used by the 2D editor.
+    // Its texture aspect ratio determines the cylindrical arc, so images keep
+    // their proportions as they curve around the mug and stop before the handle.
     const artAspect = (product.printArea.width * product.ratio) / Math.max(1, product.printArea.height);
-    const wrapHeight = Math.min(0.72, Math.max(0.46, 0.66 * (0.85 + warpFactor * 0.22)));
-    const mugRadius = 0.466;
+    // The source mockup's mug silhouette occupies about 74% of the square
+    // canvas. Convert the shared 2D print-area height to model-space height.
+    const mugBodyHeight = 0.945;
+    const mugBodyHeightInArtwork = 0.74;
+    const wrapHeight = mugBodyHeight * (product.printArea.height / 100) / mugBodyHeightInArtwork;
+    const mugRadius = 0.415;
     const thetaSpan = Math.min(Math.PI * 1.48, Math.max(0.45, (wrapHeight * artAspect) / mugRadius));
-    const artCyl = new THREE.CylinderGeometry(mugRadius, mugRadius, wrapHeight, 64, 1, true, -thetaSpan / 2, thetaSpan);
-    const artMesh = addMesh(group, artCyl, createArtMaterial(), [0, 0.01, 0]);
+    const artCyl = new THREE.CylinderGeometry(mugRadius, mugRadius, wrapHeight, 128, 32, true, -thetaSpan / 2, thetaSpan);
+    const artMesh = addMesh(group, artCyl, createArtMaterial(), [0, 0.012, 0]);
+    artMesh.name = 'MugArtworkWrap';
     artMesh.renderOrder = 2;
   } else if (product.model === 'bottle') {
     // Sleek insulated Tomatodo LatheGeometry
@@ -1054,7 +1082,7 @@ export const ThreeDProductPreview = forwardRef<ThreeDPreviewHandle, ThreeDProduc
   // A photorealistic frontal render sits over the matching 3D form for the straight-on studio view.
   useEffect(() => {
     const modelRoot = modelRootRef.current;
-    if (!modelRoot || product.isCustom3D || !frontalMockupUrl) return undefined;
+    if (!modelRoot || product.isCustom3D || !frontalMockupUrl || product.model === 'mug') return undefined;
 
     let active = true;
     let mockupMesh: THREE.Mesh | null = null;
