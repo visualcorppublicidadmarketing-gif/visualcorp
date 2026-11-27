@@ -108,7 +108,7 @@ export function Monogram2DStage({ width, height, displayUnit, outlines, selected
             className={`monogram__vector-layer${selected ? ' is-selected' : ''}`}
             role="button"
             tabIndex={0}
-            aria-label={`Capa de texto: ${outline.text || 'vacía'}. Usa flechas para mover ${normalMove}; Shift más flecha mueve ${largerMove}.`}
+            aria-label={`Capa ${outline.kind === 'ornament' ? 'de adorno' : 'de texto'}: ${outline.text || 'vacía'}. Usa flechas para mover ${normalMove}; Shift más flecha mueve ${largerMove}.`}
             aria-pressed={selected}
             onPointerDown={(event) => startDrag(event, outline.id)}
             onKeyDown={(event) => moveByKeyboard(event, outline.id)}
@@ -116,7 +116,7 @@ export function Monogram2DStage({ width, height, displayUnit, outlines, selected
             <path
               d={outline.d}
               transform={outline.transform}
-              fill="#eabf77"
+              fill={outline.color}
               fillRule="nonzero"
               stroke={selected ? '#f8f1df' : '#3a2e1e'}
               strokeWidth={selected ? '.6' : '.18'}

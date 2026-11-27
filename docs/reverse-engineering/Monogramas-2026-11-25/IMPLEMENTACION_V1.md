@@ -45,3 +45,17 @@
 - Investigación de la interfaz de referencia: [ANALISIS_MONOGRAMAS.md](ANALISIS_MONOGRAMAS.md).
 - Arquitectura verificada de un generador paramétrico de referencia: [ANALISIS_ARQUITECTURA_GENERADORES.md](../BurroCreativo-2026-11-25/ANALISIS_ARQUITECTURA_GENERADORES.md).
 - Verificación en rama limpia: `npm run typecheck`, `npm run build` y `git diff --check` pasaron. Vite advierte sobre chunks mayores de 500 kB; el chunk de la página de monogramas mide 261,94 kB. CI/Preview debe completar el flujo de publicación; no se ha probado fabricación física.
+
+## Evolución V2 — estudio paramétrico y presentación
+
+**Fecha:** 2026-11-27
+**Registro de trabajo:** evolución desarrollada inicialmente en la rama aislada `codex/monogram-studio-20261127`; el estado final de publicación está en la nota canónica de continuidad del proyecto.
+
+- El esquema JSON pasa a `schemaVersion: 2`. El importador sigue aceptando v1 y migra sus capas de texto al modelo nuevo, asignando valores visuales predeterminados sin cambiar medidas físicas.
+- Se añadieron capas paramétricas de corazón, estrella, círculo y diamante. Cada adorno comparte el mismo contorno vectorial entre la vista 2D, la extrusión 3D y SVG. Los adornos se pueden seleccionar, mover, rotar, dimensionar, duplicar, colorear y guardar.
+- El visor 3D ahora ofrece materiales mate, satín y metálico, bisel suave opcional, separación animada entre capas, giro automático voluntario y restablecimiento de cámara. El giro respeta `prefers-reduced-motion`; el renderer conserva canal alfa y se combina con los fondos de la interfaz.
+- Los fondos disponibles son transparencia ajedrezada, blanco, estudio 3D, degradado de dos colores con ángulo editable, papel y mármol generados localmente. Son fondos de presentación; no se descargan imágenes ni se incorporan a los contornos SVG.
+- Los colores por capa, los materiales, el bisel, el giro y los fondos solo afectan la previsualización. El SVG mantiene relleno neutro y no convierte las capas independientes en una malla soldada.
+- No se añadieron dependencias UI/3D: la implementación conserva React 19 y el visor imperativo con Three.js 0.187.0. No se adoptó React Three Fiber porque el módulo existente no usa R3F.
+- Los catálogos consultados para esta iteración fueron Magic UI, shadcn y HeroUI. Magic UI mostró patrones animados de fondo que no encajaban con el editor; el registro shadcn del proyecto no tenía catálogos disponibles; HeroUI ofrece controles de color, pero introducir `@heroui/react` para este editor habría añadido una dependencia nueva. Se conservaron los controles nativos, el CSS y el sistema existente.
+- Esta evolución no implementa booleans, soldadura de contornos, validación de sólidos, ni exportación STL/3MF. Se mantiene la advertencia de revisión de fabricación.
