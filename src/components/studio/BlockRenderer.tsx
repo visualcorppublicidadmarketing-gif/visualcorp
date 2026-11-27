@@ -3,6 +3,8 @@ import { ArrowUpRight, Code2, MapPin, Share2 } from 'lucide-react';
 import { MediaGallery, VideoEmbed } from './MediaGallery';
 import { FormRenderer } from './FieldRenderer';
 import { assetPath } from '../../data/media';
+import { sanitizeRichTextHtml } from './richTextHtml';
+import '../commercial/rich-text-content.css';
 
 function appHref(href = '') {
   if (/^(?:https?:|mailto:|tel:|#)/i.test(href)) return href;
@@ -13,8 +15,9 @@ function appHref(href = '') {
 function cleanHtmlContent(html = '') {
   if (!html || typeof html !== 'string') return '';
   const base = import.meta.env.BASE_URL || '/';
-  if (base === '/') return html;
-  return html.replace(/src=["']\/(?:gigaprint-webpage\/)?(media|images|brand)\/([^"']+)["']/gi, (match, folder, rest) => {
+  const safeHtml = sanitizeRichTextHtml(html);
+  if (base === '/') return safeHtml;
+  return safeHtml.replace(/src=["']\/(?:gigaprint-webpage\/)?(media|images|brand)\/([^"']+)["']/gi, (match, folder, rest) => {
     const cleanBase = base.endsWith('/') ? base : `${base}/`;
     return `src="${cleanBase}${folder}/${rest}"`;
   });
@@ -169,7 +172,7 @@ function SingleBlock({ block, onFormSubmit }) {
         <div className="embed-label">
           <Code2 size={14} /> {block.label}
         </div>
-        <div dangerouslySetInnerHTML={{ __html: block.html || '' }} />
+        <div dangerouslySetInnerHTML={{ __html: cleanHtmlContent(block.html || '') }} />
       </div>
     );
   }

@@ -1,0 +1,16 @@
+.commercial-rich-content,
+.public-block .commercial-rich-content { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.rich-text-table,
+.public-block table,
+.commercial-rich-content table { display: block; width: max-content; min-width: 100%; max-width: 100%; overflow-x: auto; border-collapse: collapse; border-spacing: 0; }
+.rich-text-table th,
+.rich-text-table td,
+.public-block table th,
+.public-block table td,
+.commercial-rich-content table th,
+.commercial-rich-content table td { min-width: 96px; padding: 8px 10px; border: 1px solid currentColor; text-align: start; vertical-align: top; }
+.rich-text-table th,
+.public-block table th,
+.commercial-rich-content table th { background: color-mix(in srgb, currentColor 8%, transparent); font-weight: 700; }
+.commercial-rich-content img,
+.public-block .rich-editor-content img { display: block; max-width: 100%; height: auto; }
