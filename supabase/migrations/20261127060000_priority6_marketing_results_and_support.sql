@@ -84,7 +84,7 @@ begin
       or v_url ~ '[[:space:][:cntrl:]]'
       or v_url !~* '^https://([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)(\.([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?))+(\:[0-9]{1,5})?([/?#][^[:space:][:cntrl:]]*)?$'
     ) then
-      raise exception 'El enlace publicado debe ser una URL HTTPS válida de hasta 2048 caracteres.';
+      raise exception 'El enlace publicado debe usar una URL https:// válida de hasta 2048 caracteres; http:// no se admite.';
     end if;
   end if;
 
