@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ArrowDown, ArrowRight, BadgeCheck, Building2, Check, ClipboardCheck, Copy, Mail, MapPin, QrCode, ShieldCheck, WalletCards } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { publicPaymentDetails as details } from '../lib/publicPaymentDetails';
+import { PageMeta } from './seo';
 import './payments-page.css';
 
 async function copyText(value: string) {
@@ -12,8 +13,6 @@ async function copyText(value: string) {
 export function PaymentsPage() {
   const [copied, setCopied] = useState('');
   const [copyError, setCopyError] = useState(false);
-
-  useEffect(() => { document.title = 'Medios de pago · Visual Corp'; }, []);
 
   const copy = async (label: string, value: string) => {
     setCopyError(false);
@@ -38,6 +37,11 @@ export function PaymentsPage() {
   const receiptMail = `mailto:${details.receiptEmail}?subject=${encodeURIComponent('Comprobante de pago | Visual Corp')}&body=${encodeURIComponent('Hola, adjunto el comprobante de pago.\n\nNúmero de proforma o pedido: \nNombre del cliente: \nMétodo de pago: ')}`;
 
   return <div className="vc-payments-page">
+    <PageMeta
+      title="Medios de pago"
+      description="Consulta la cuenta bancaria de Visual Corp y código QR Deuna para realizar tus pagos y enviar el comprobante."
+      path="/pagos"
+    />
     <section className="vc-payments-hero" aria-labelledby="payments-title">
       <img className="vc-payments-hero-image" src="/payments/pagos-glass-hero.webp" alt="" aria-hidden="true" fetchPriority="high" />
       <div className="vc-payments-hero-shade" aria-hidden="true" />

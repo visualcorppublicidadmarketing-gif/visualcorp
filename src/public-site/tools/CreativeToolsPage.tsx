@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, FileCheck2, QrCode, Sparkles } from 'lucide-react';
 import { AmbientVideoLayer } from '../AmbientVideoLayer';
+import { PageMeta } from '../seo';
 import { ProductDesignStudio } from './ProductDesignStudio';
 import { QrPrintStudio } from './QrPrintStudio';
 import { ArtworkPreflightDropzone } from '../quote/ArtworkPreflightDropzone';
@@ -10,16 +10,14 @@ export function CreativeToolsPage() {
   const [searchParams] = useSearchParams();
   const initialBaseId = searchParams.get('base') || undefined;
   const returnTo = searchParams.get('returnTo');
-  useEffect(() => {
-    const prev = document.title;
-    document.title = 'Herramientas creativas gratis · Visual Corp';
-    return () => {
-      document.title = prev;
-    };
-  }, []);
 
   return (
     <div className="vc-tools-page">
+      <PageMeta
+        title="Herramientas creativas gratis"
+        description="Prueba tu logo en mockups, genera códigos QR vectoriales y verifica el DPI para impresión gratis desde tu navegador."
+        path="/herramientas"
+      />
       <header className="site-page-hero has-ambient-video vc-tools-hero">
         <AmbientVideoLayer clip="aurora" variant="page-hero" parallax playbackRate={0.78} />
         <div className="site-page-hero-inner">

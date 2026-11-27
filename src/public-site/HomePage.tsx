@@ -51,7 +51,8 @@ import { ServiceKeycap, getServiceKeycapColor } from './ServiceKeycap';
 import './home-page.css';
 import { HomeFilm } from './HomeFilm';
 import { AmbientVideoLayer } from './AmbientVideoLayer';
-import { EnvironmentBrandingMatrix, PanoramicCategoryStrips } from './SolutionsComponents';
+import { PageMeta } from './seo';
+import { brandingEnvironments } from './solutionsCatalog';
 
 const Highlights = lazy(() => import('./ShowcasePages').then((module) => ({ default: module.HomeContentHighlights })));
 
@@ -502,10 +503,6 @@ export function PublicHomePage() {
     navigate(query ? `/cotizador?${query}` : '/cotizador');
   };
 
-  useEffect(() => {
-    document.title = 'Inicio · Visual Corp';
-  }, []);
-
   const openOrientatorForService = (serviceId?: PublicServiceId) => {
     if (serviceId) {
       const matchingGoal = projectOrientatorGoals.find((goal) => goal.serviceId === serviceId);
@@ -556,6 +553,11 @@ export function PublicHomePage() {
 
   return (
     <div className="vc-home">
+      <PageMeta
+        title="Inicio"
+        description="Visual Corp en Milagro, Ecuador: diseño gráfico, impresión, rótulos, gran formato, corte láser, textil y soluciones visuales para tu marca."
+        path="/"
+      />
       <HomeFilm
         eyebrow={data.settings.heroEyebrow?.trim() || 'Agencia de publicidad y marketing'}
         title={data.settings.heroTitle?.trim() || 'Hacemos visible lo que imaginas.'}
@@ -702,9 +704,55 @@ export function PublicHomePage() {
 
       <CreativeStudioSection services={services} onOpenOrientator={openOrientatorForService} />
 
-      <EnvironmentBrandingMatrix compact />
+      <section className="home-solutions-teaser home-section" aria-labelledby="home-solutions-teaser-title">
+        <Reveal className="home-section-heading">
+          <div>
+            <span className="home-kicker">SOLUCIONES POR ESPACIO</span>
+            <h2 id="home-solutions-teaser-title">
+              Ideas listas para
+              <br />
+              <span>cada punto de contacto.</span>
+            </h2>
+          </div>
+          <div>
+            <p>
+              Reunimos el catálogo visual completo de 38 referencias y tiras panorámicas en Soluciones para que compares por espacio sin alargar este recorrido.
+            </p>
+            <Link className="home-text-link" to="/soluciones">
+              Explorar Soluciones por espacio <ArrowUpRight size={17} />
+            </Link>
+          </div>
+        </Reveal>
 
-      <PanoramicCategoryStrips />
+        <div className="home-solutions-bento">
+          {brandingEnvironments.map((env, index) => (
+            <GlassCard
+              as={Link}
+              key={env.id}
+              to={`/soluciones#catalogo-visual`}
+              variant="card"
+              radius="lg"
+              padding="md"
+              glow={index % 2 === 0 ? 'brand' : 'cyan'}
+              interactive
+              spotlight
+              className="home-solutions-bento-card"
+            >
+              <div className="home-solutions-bento-media">
+                <img src={env.primaryImage} alt={`${env.title} — referencia conceptual`} loading="lazy" decoding="async" />
+                <span className="home-solutions-bento-index">0{index + 1}</span>
+              </div>
+              <div className="home-solutions-bento-copy">
+                <h3>{env.title}</h3>
+                <p>{env.subtitle}</p>
+                <span className="home-solutions-bento-link">
+                  Ver en Soluciones <ArrowUpRight size={15} aria-hidden="true" />
+                </span>
+              </div>
+            </GlassCard>
+          ))}
+        </div>
+      </section>
 
       <ProcessSection onOpenOrientator={() => setOrientatorOpen(true)} />
 

@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ArrowUpRight, BadgePercent, Gift, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { AmbientVideoLayer } from './AmbientVideoLayer';
+import { PageMeta } from './seo';
 import './store-promotions.css';
 
 const sections = [
@@ -24,13 +24,12 @@ const sections = [
 ];
 
 export function StorePromotionsPage() {
-  useEffect(() => {
-    const previousTitle = document.title;
-    document.title = 'Promociones y sorteos | Visual Corp';
-    return () => { document.title = previousTitle; };
-  }, []);
-
   return <div className="store-promo-page">
+    <PageMeta
+      title="Promociones y sorteos"
+      description="Consulta las promociones vigentes y sorteos oficiales publicados en la tienda de Visual Corp."
+      path="/tienda/promociones"
+    />
     <header className="store-promo-hero has-ambient-video">
       <AmbientVideoLayer clip="silk" variant="promo-hero" parallax playbackRate={0.78} />
       <div className="store-promo-hero-copy">
