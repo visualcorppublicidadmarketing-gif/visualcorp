@@ -37,7 +37,7 @@ Las migraciones versionadas están en `supabase/migrations/`. Revisa el estado l
 
 - Sitio público: `/`, `/servicios`, `/nosotros`, `/como-trabajamos`, `/contacto`, `/cotizador`, `/tienda`, `/portafolio`, `/blog` y `/publicaciones`.
 - Administración: `/admin`, `/admin/sitio`, `/admin/contenido`, `/admin/solicitudes` y `/admin/sugerencias`.
-- Operaciones: /operaciones, /operaciones/pos, /operaciones/cotizador, /operaciones/inventario, /operaciones/compras, /operaciones/clientes y /operaciones/marketing.
+- Operaciones: /operaciones, /operaciones/pos, /operaciones/cotizador, /operaciones/inventario, /operaciones/compras, /operaciones/clientes, /operaciones/marketing y /operaciones/herramientas/solidos-3d.
 
 La tienda incluye una colección visual de ejemplos en `/tienda?coleccion=souvenirs`. Revisa [docs/GALERIA_SOUVENIRS_TIENDA.md](docs/GALERIA_SOUVENIRS_TIENDA.md) para el flujo y el cuidado de sus imágenes.
 
@@ -68,6 +68,11 @@ Consulta `docs/FLUJO_TRABAJO_EN_PARALELO_Y_PUBLICACION.md` para el flujo detalla
 La carpeta `src/legacy-reference/` contiene material de referencia. No importes sus datos, tarifas, migraciones ni activos en Visual Corp sin cotejar su procedencia y vigencia. Los precios y especificaciones comerciales deben permanecer pendientes hasta confirmarlos con una fuente vigente.
 
 ## Continuidad del trabajo
+
+### Modelador de sólidos paramétricos · 28 de noviembre de 2026
+
+- Herramienta privada en /operaciones/herramientas/solidos-3d con seis primitivas editables, colocación por cara, operaciones de sólido/vaciado, historial y proyectos .vcparam.json.
+- La vista CSG es experimental; el archivo conserva parámetros y transformaciones originales. No produce mallas CAD ni planos certificados.
 
 ### Resumen diario de Finanzas · 26 de noviembre de 2026
 

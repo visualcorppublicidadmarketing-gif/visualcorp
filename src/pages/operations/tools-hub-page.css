@@ -40,3 +40,6 @@
 @media (prefers-reduced-motion: reduce) {
   .tools-hub *, .tools-hub *::before, .tools-hub *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+.tools-hub__card-art--solids { background: radial-gradient(ellipse at 50% 45%, rgba(70, 124, 138, .48), transparent 65%), linear-gradient(140deg, #17313d, #111923); color: #a7d9da; }
+.tools-hub__solids-glyph { position: relative; z-index: 1; display: grid; width: 130px; height: 120px; place-items: center; filter: drop-shadow(8px 12px 13px rgba(0,0,0,.36)); }

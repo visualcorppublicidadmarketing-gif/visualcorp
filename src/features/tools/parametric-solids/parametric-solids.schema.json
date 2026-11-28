@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "visualcorp.parametric-solids.v1.schema.json",
+  "title": "Visual Corp Parametric Solids V1 Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "id", "title", "units", "coordinateSystem", "primitives"],
+  "properties": {
+    "format": { "const": "visualcorp.parametric-solids" },
+    "version": { "const": 1 },
+    "id": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "title": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "units": { "const": "mm" },
+    "coordinateSystem": { "const": "right-handed-y-up" },
+    "primitives": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "type", "operation", "visible", "color", "transform", "geometry"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "type": { "enum": ["box", "cylinder", "cone", "sphere", "prism", "pyramid"] },
+          "operation": { "enum": ["solid", "hole"] },
+          "visible": { "type": "boolean" },
+          "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+          "transform": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["xMm", "yMm", "zMm", "rotationXDeg", "rotationYDeg", "rotationZDeg"],
+            "properties": {
+              "xMm": { "type": "number", "minimum": -10000, "maximum": 10000 },
+              "yMm": { "type": "number", "minimum": -10000, "maximum": 10000 },
+              "zMm": { "type": "number", "minimum": -10000, "maximum": 10000 },
+              "rotationXDeg": { "type": "number", "minimum": -3600, "maximum": 3600 },
+              "rotationYDeg": { "type": "number", "minimum": -3600, "maximum": 3600 },
+              "rotationZDeg": { "type": "number", "minimum": -3600, "maximum": 3600 }
+            }
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "type": "object", "additionalProperties": false,
+                "required": ["widthMm", "heightMm", "depthMm"],
+                "properties": {
+                  "widthMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 5000 },
+                  "heightMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 5000 },
+                  "depthMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 5000 }
+                }
+              },
+              {
+                "type": "object", "additionalProperties": false,
+                "required": ["topRadiusMm", "bottomRadiusMm", "heightMm", "sides"],
+                "properties": {
+                  "topRadiusMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 2500 },
+                  "bottomRadiusMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 2500 },
+                  "heightMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 5000 },
+                  "sides": { "type": "integer", "minimum": 8, "maximum": 64 }
+                }
+              },
+              {
+                "type": "object", "additionalProperties": false,
+                "required": ["radiusMm", "heightMm", "sides"],
+                "properties": {
+                  "radiusMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 2500 },
+                  "heightMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 5000 },
+                  "sides": { "type": "integer", "minimum": 8, "maximum": 64 }
+                }
+              },
+              {
+                "type": "object", "additionalProperties": false,
+                "required": ["radiusMm"],
+                "properties": { "radiusMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 2500 } }
+              },
+              {
+                "type": "object", "additionalProperties": false,
+                "required": ["radiusMm", "heightMm", "sides"],
+                "properties": {
+                  "radiusMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 2500 },
+                  "heightMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 5000 },
+                  "sides": { "type": "integer", "minimum": 3, "maximum": 12 }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
