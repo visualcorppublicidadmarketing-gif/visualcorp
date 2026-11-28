@@ -1,4 +1,4 @@
-import { ArrowUpRight, Box, Layers3, Type, Wrench } from 'lucide-react';
+import { ArrowUpRight, Box, Layers3, Shapes, Type, Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AppFrame, PageHeading } from '../../app/layout';
 import './tools-hub-page.css';
@@ -14,7 +14,7 @@ export function ToolsHubPage() {
       <section className="tools-hub" aria-label="Herramientas disponibles">
         <div className="tools-hub__intro">
           <div><span className="tools-hub__intro-icon"><Wrench size={18} aria-hidden="true" /></span><p>Utilidades internas para preparar modelos, planos y recursos de producción.</p></div>
-          <span className="tools-hub__count">3 disponibles</span>
+          <span className="tools-hub__count">4 disponibles</span>
         </div>
         <div className="tools-hub__grid">
           <Link className="tools-hub__card" to="/operaciones/herramientas/generador-cajas">
@@ -47,6 +47,17 @@ export function ToolsHubPage() {
             </div>
             <div className="tools-hub__card-content">
               <div><span className="tools-hub__status"><i /> Disponible · V1</span><h2>Importador vectorial</h2><p>Configura un SVG por capas, define medidas y revisa su extrusión antes de guardar el JSON del modelo.</p></div>
+              <span className="tools-hub__open"><span>Abrir herramienta</span><ArrowUpRight size={17} aria-hidden="true" /></span>
+            </div>
+          </Link>
+          <Link className="tools-hub__card" to="/operaciones/herramientas/solidos-3d">
+            <div className="tools-hub__card-art tools-hub__card-art--solids" aria-hidden="true">
+              <div className="tools-hub__art-grid" />
+              <div className="tools-hub__solids-glyph"><Shapes size={78} strokeWidth={1.1} /></div>
+              <span className="tools-hub__art-tag"><Layers3 size={12} /> SÓLIDO + VACIADO</span>
+            </div>
+            <div className="tools-hub__card-content">
+              <div><span className="tools-hub__status"><i /> Disponible · V1</span><h2>Modelador paramétrico 3D</h2><p>Combina seis formas, perfora sólidos y vuelve a editar cada pieza por medidas, posición y rotación.</p></div>
               <span className="tools-hub__open"><span>Abrir herramienta</span><ArrowUpRight size={17} aria-hidden="true" /></span>
             </div>
           </Link>

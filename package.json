@@ -67,6 +67,8 @@
     "simple-liquid-glass": "6.0.0",
     "sonner": "^2.0.8",
     "three": "^0.187.0",
+    "three-bvh-csg": "0.0.19",
+    "three-mesh-bvh": "0.9.11",
     "vaul": "^1.1.2",
     "vite": "^8.3.5"
   },
